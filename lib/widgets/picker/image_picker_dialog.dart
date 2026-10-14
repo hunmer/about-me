@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart' show StorageFileInfo;
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +9,8 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:smooth_sheets/smooth_sheets.dart';
+import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
+import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import 'package:aboutme/core/app_initializer.dart';
@@ -18,10 +20,14 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/utils/platform_utils.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/multi_filter_bar.dart';
 
 /// 图片选择器底部弹窗（smooth_sheets ModalSheet）
 ///
-/// 结构：DSLightHeader（右侧为 拍照 / 在线URL 入口）+ 图片网格。
+/// 结构：PersistentNavigationBar 头部（右侧为 拍照 / 在线URL 入口）+
+/// MultiFilterBar 多条件过滤（插件/日期/大小）+ 图片网格。
 /// 网格聚合展示应用存储内各插件上传的图片（chat、calendar_album 等），
 /// 首格为相册入口：移动端使用 wechat_assets_picker，桌面端走系统文件选择。
 class ImagePickerDialog extends StatefulWidget {
@@ -103,9 +109,20 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
   bool _isValidUrl = false;
   bool _showUrlInput = false;
 
-  /// 应用存储内的图片 key（相对 app_data，如 chat/chat_files/xxx.jpg）
-  List<String> _images = [];
-  Set<String> _keySet = {};
+  /// PersistentNavigationBar 组件 key（GlobalKey 需跨帧稳定，不能每次 build 新建）
+  final NavigationBarStaticComponentsKeys _navBarKeys =
+      NavigationBarStaticComponentsKeys();
+
+  /// 多条件过滤状态
+  final MultiFilterState _filterState = MultiFilterState();
+
+  /// 应用存储内的图片元信息（相对 app_data，如 chat/chat_files/xxx.jpg），
+  /// 按修改时间倒序，最多 300 条
+  List<StorageFileInfo> _allInfos = [];
+
+  /// 全量图片 key（含 .thumb 缩略图），用于推断 thumbUrl
+  Set<String> _imageKeySet = {};
+
   bool _loading = true;
 
   /// 多选模式下已选中的图片 key
@@ -122,6 +139,26 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     '.heif',
   };
 
+  static const _kb = 1024;
+  static const _mb = 1024 * 1024;
+
+  /// 日期过滤选项（key -> 显示文本）
+  Map<String, String> get _dateFilterOptions => {
+    'today': 'image_picker_date_today'.tr,
+    'week': 'image_picker_date_week'.tr,
+    'month': 'image_picker_date_month'.tr,
+    'quarter': 'image_picker_date_quarter'.tr,
+    'older': 'image_picker_date_older'.tr,
+  };
+
+  /// 大小过滤选项（key -> 显示文本）
+  static const Map<String, String> _sizeFilterOptions = {
+    'lt100k': '< 100KB',
+    'to1m': '100KB - 1MB',
+    'to10m': '1MB - 10MB',
+    'gt10m': '> 10MB',
+  };
+
   @override
   void initState() {
     super.initState();
@@ -133,6 +170,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
   @override
   void dispose() {
     _urlController.dispose();
+    _filterState.dispose();
     super.dispose();
   }
 
@@ -144,45 +182,48 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     });
   }
 
-  bool _isImageKey(String key) {
-    if (!_imageExtensions.contains(path.extension(key).toLowerCase())) {
-      return false;
-    }
-    // 排除压缩生成的缩略图（name.thumb.ext）
-    return !path.basename(key).contains('.thumb');
-  }
+  bool _isImageExtension(String key) =>
+      _imageExtensions.contains(path.extension(key).toLowerCase());
 
-  /// 汇总应用存储内各目录的图片，最近修改的在前
+  /// 汇总应用存储内各目录的图片元信息，最近修改的在前
   Future<void> _loadImages() async {
     try {
-      final keys = await globalStorage.getKeysWithPrefix('');
-      var images = keys.where(_isImageKey).toList();
+      final infos = await globalStorage.listFileInfos('');
 
-      // 本地存储按修改时间倒序；远端返回顺序与服务端一致
-      if (!kIsWeb && !globalStorage.isRemote) {
-        final withTime = <(String, DateTime)>[];
-        for (final key in images) {
-          try {
-            final absolute = await ImageUtils.getAbsolutePath('./$key');
-            final stat = await File(absolute).stat();
-            withTime.add((key, stat.modified));
-          } catch (_) {
-            withTime.add((key, DateTime.fromMillisecondsSinceEpoch(0)));
-          }
+      final imageKeys = <String>{};
+      final images = <StorageFileInfo>[];
+      for (final info in infos) {
+        // 统一正斜杠，屏蔽本地(Windows)与远端路径分隔符差异
+        final key = info.path.replaceAll(r'\', '/');
+        if (!_isImageExtension(key)) {
+          continue;
         }
-        withTime.sort((a, b) => b.$2.compareTo(a.$2));
-        images = withTime.map((e) => e.$1).toList();
+        imageKeys.add(key);
+        if (!path.basename(key).contains('.thumb')) {
+          images.add(StorageFileInfo(
+            path: key,
+            size: info.size,
+            updatedAt: info.updatedAt,
+          ));
+        }
       }
+
+      // 按修改时间倒序；无时间信息的排最后
+      images.sort(
+        (a, b) =>
+            (b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+              a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+      );
 
       // 上限保护，避免网格过大
-      if (images.length > 300) {
-        images = images.sublist(0, 300);
-      }
+      final limited =
+          images.length > 300 ? images.sublist(0, 300) : images;
 
       if (mounted) {
         setState(() {
-          _images = images;
-          _keySet = images.toSet();
+          _allInfos = limited;
+          _imageKeySet = imageKeys;
         });
       }
     } catch (e) {
@@ -192,13 +233,85 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     }
   }
 
+  /// 图片所属的顶层目录（插件维度），如 chat/chat_files/x.jpg -> chat
+  String? _pluginDirOf(String key) {
+    final index = key.indexOf('/');
+    return index > 0 ? key.substring(0, index) : null;
+  }
+
+  /// 可选的插件（顶层目录）列表
+  List<String> get _pluginDirs {
+    final dirs = <String>{};
+    for (final info in _allInfos) {
+      final dir = _pluginDirOf(info.path);
+      if (dir != null) dirs.add(dir);
+    }
+    return dirs.toList()..sort();
+  }
+
+  /// 应用过滤条件后的图片列表
+  List<StorageFileInfo> get _filteredInfos {
+    if (!_filterState.hasAnyFilter) return _allInfos;
+
+    final values = _filterState.getAllValues();
+    final plugins = (values['plugin'] as List?)?.cast<String>().toList();
+    final date = values['date'] as String?;
+    final size = values['size'] as String?;
+
+    final now = DateTime.now();
+    final DateTime? minDate = switch (date) {
+      'today' => DateTime(now.year, now.month, now.day),
+      'week' => now.subtract(const Duration(days: 7)),
+      'month' => now.subtract(const Duration(days: 30)),
+      'quarter' => now.subtract(const Duration(days: 90)),
+      _ => null,
+    };
+    final bool olderOnly = date == 'older';
+    final DateTime olderCutoff = now.subtract(const Duration(days: 90));
+
+    return _allInfos.where((info) {
+      // 插件过滤
+      if (plugins != null && plugins.isNotEmpty) {
+        final dir = _pluginDirOf(info.path);
+        if (dir == null || !plugins.contains(dir)) return false;
+      }
+
+      // 日期过滤
+      if (olderOnly) {
+        final updated = info.updatedAt;
+        if (updated == null || !updated.isBefore(olderCutoff)) return false;
+      } else if (minDate != null) {
+        final updated = info.updatedAt;
+        if (updated == null || !updated.isAfter(minDate)) return false;
+      }
+
+      // 大小过滤
+      if (size != null) {
+        final s = info.size;
+        if (s == null) return false;
+        switch (size) {
+          case 'lt100k':
+            if (s >= 100 * _kb) return false;
+          case 'to1m':
+            if (s < 100 * _kb || s >= _mb) return false;
+          case 'to10m':
+            if (s < _mb || s >= 10 * _mb) return false;
+          case 'gt10m':
+            if (s < 10 * _mb) return false;
+        }
+      }
+
+      return true;
+    }).toList();
+  }
+
   /// 压缩图片的伴生缩略图 key（存在时作为 thumbUrl 返回）
   String? _thumbUrlFor(String key) {
     final dir = path.dirname(key);
     final name = path.basenameWithoutExtension(key);
     final ext = path.extension(key);
     final thumbKey = '$dir/$name.thumb$ext';
-    return _keySet.contains(thumbKey) ? './$thumbKey' : null;
+    return _imageKeySet.contains(thumbKey) ? './$thumbKey' : null;
   }
 
   /// 点击网格内已有图片
@@ -306,37 +419,14 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DSLightHeader(
-              title:
-                  widget.multiple
-                      ? 'image_picker_selectMultipleImages'.tr
-                      : 'image_picker_selectImage'.tr,
-              trailingWidth: 80,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DSIconButton(
-                    icon: DsIconKind.camera,
-                    size: 38,
-                    color: theme.surface,
-                    iconColor: theme.text,
-                    tooltip: 'image_picker_takePhoto'.tr,
-                    onPressed: () => _takePhoto(context),
-                  ),
-                  const SizedBox(width: 4),
-                  DSIconButton(
-                    icon: DsIconKind.link,
-                    size: 38,
-                    color: theme.surface,
-                    iconColor: theme.text,
-                    tooltip: 'image_picker_onlineUrl'.tr,
-                    onPressed: () => setState(() => _showUrlInput = !_showUrlInput),
-                  ),
-                ],
-              ),
-              onBack: () => Navigator.of(context).maybePop(),
-            ),
+            _buildHeader(context, theme),
             if (_showUrlInput) _buildUrlInput(theme),
+            if (_allInfos.isNotEmpty)
+              MultiFilterBar(
+                filterItems: _buildFilterItems(),
+                filterState: _filterState,
+                onFilterChanged: (_) => setState(() {}),
+              ),
             SizedBox(height: screenHeight * 0.5, child: _buildGrid(theme)),
             if (widget.multiple) _buildConfirmBar(theme),
             SafeArea(
@@ -347,6 +437,128 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         ),
       ),
     );
+  }
+
+  /// 顶部导航：嵌入式 PersistentNavigationBar（super_cupertino_navigation_bar）
+  Widget _buildHeader(BuildContext context, AppThemeData theme) {
+    return PersistentNavigationBar(
+      components: NavigationBarStaticComponents(
+        keys: _navBarKeys,
+        route: null,
+        // NavigationToolbar 对 leading 施加紧高度约束会把按钮拉变形，
+        // 用 Align 转成宽松约束保持正圆
+        userLeading: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: DSIconButton(
+            icon: DsIconKind.chevronLeft,
+            size: 36,
+            color: theme.surfaceAlt,
+            iconColor: theme.textSub,
+            tooltip: 'app_cancel'.tr,
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+        ),
+        automaticallyImplyLeading: false,
+        automaticallyImplyTitle: false,
+        previousPageTitle: null,
+        userMiddle: Text(
+          widget.multiple
+              ? 'image_picker_selectMultipleImages'.tr
+              : 'image_picker_selectImage'.tr,
+          style: DsTypography.title.copyWith(color: theme.text),
+        ),
+        userTrailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DSIconButton(
+              icon: DsIconKind.camera,
+              size: 36,
+              color: theme.surfaceAlt,
+              iconColor: theme.textSub,
+              tooltip: 'image_picker_takePhoto'.tr,
+              onPressed: () => _takePhoto(context),
+            ),
+            const SizedBox(width: 4),
+            DSIconButton(
+              icon: DsIconKind.link,
+              size: 36,
+              color: theme.surfaceAlt,
+              iconColor: theme.textSub,
+              tooltip: 'image_picker_onlineUrl'.tr,
+              onPressed: () => setState(() => _showUrlInput = !_showUrlInput),
+            ),
+          ],
+        ),
+        userLargeTitle: null,
+        largeTitleActions: null,
+        appbarBottom: null,
+        padding: null,
+        // 嵌入式小导航（底部弹窗），非大标题模式
+        large: false,
+      ),
+    );
+  }
+
+  /// 多条件过滤项：插件 / 日期 / 大小
+  List<FilterItem> _buildFilterItems() {
+    final dirs = _pluginDirs;
+
+    return [
+      // 1. 插件（顶层目录）多选过滤
+      if (dirs.isNotEmpty)
+        FilterItem(
+          id: 'plugin',
+          title: 'image_picker_filter_plugin'.tr,
+          type: FilterType.tagsMultiple,
+          builder: (context, currentValue, onChanged) {
+            return FilterBuilders.buildTagsFilter(
+              context: context,
+              currentValue: currentValue,
+              onChanged: onChanged,
+              availableTags: dirs,
+            );
+          },
+          getBadge: FilterBuilders.tagsBadge,
+        ),
+
+      // 2. 日期单选过滤
+      FilterItem(
+        id: 'date',
+        title: 'image_picker_filter_date'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, currentValue, onChanged) {
+          return FilterBuilders.buildSingleChoiceFilter(
+            context: context,
+            currentValue: currentValue,
+            onChanged: onChanged,
+            options: _dateFilterOptions,
+            allItemsKey: 'all',
+            allItemsLabel: 'image_picker_filter_all'.tr,
+          );
+        },
+        getBadge: (value) =>
+            FilterBuilders.singleChoiceBadge(value, _dateFilterOptions),
+      ),
+
+      // 3. 大小单选过滤
+      FilterItem(
+        id: 'size',
+        title: 'image_picker_filter_size'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, currentValue, onChanged) {
+          return FilterBuilders.buildSingleChoiceFilter(
+            context: context,
+            currentValue: currentValue,
+            onChanged: onChanged,
+            options: _sizeFilterOptions,
+            allItemsKey: 'all',
+            allItemsLabel: 'image_picker_filter_all'.tr,
+          );
+        },
+        getBadge: (value) =>
+            FilterBuilders.singleChoiceBadge(value, _sizeFilterOptions),
+      ),
+    ];
   }
 
   /// 在线 URL 输入区（由 Header 右侧链接按钮展开）
@@ -370,8 +582,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
                   label: 'app_cancel'.tr,
                   variant: DSButtonVariant.outline,
                   size: DSButtonSize.sm,
-                  onPressed:
-                      () => setState(() => _showUrlInput = false),
+                  onPressed: () => setState(() => _showUrlInput = false),
                 ),
               ),
               const SizedBox(width: 8),
@@ -407,6 +618,8 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
       );
     }
 
+    final images = _filteredInfos;
+
     return Column(
       children: [
         Expanded(
@@ -417,18 +630,20 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
             ),
-            itemCount: _images.length + 1,
+            itemCount: images.length + 1,
             itemBuilder: (context, index) {
               if (index == 0) return _buildAlbumTile(theme);
-              return _buildImageTile(theme, index - 1);
+              return _buildImageTile(theme, images[index - 1]);
             },
           ),
         ),
-        if (_images.isEmpty)
+        if (images.isEmpty)
           Padding(
             padding: EdgeInsets.only(bottom: theme.spacing.xl),
             child: Text(
-              'image_picker_noImages'.tr,
+              _allInfos.isEmpty
+                  ? 'image_picker_noImages'.tr
+                  : 'image_picker_noMatches'.tr,
               style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
           ),
@@ -465,8 +680,8 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     );
   }
 
-  Widget _buildImageTile(AppThemeData theme, int index) {
-    final key = _images[index];
+  Widget _buildImageTile(AppThemeData theme, StorageFileInfo info) {
+    final key = info.path;
     final isSelected = _selected.contains(key);
     final selectedIndex = _selected.indexOf(key) + 1;
 
@@ -476,9 +691,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         decoration: BoxDecoration(
           borderRadius: theme.radii.md,
           border:
-              isSelected
-                  ? Border.all(color: theme.primary, width: 2)
-                  : null,
+              isSelected ? Border.all(color: theme.primary, width: 2) : null,
         ),
         child: ClipRRect(
           borderRadius: theme.radii.md,
@@ -514,9 +727,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
                               ? theme.primary
                               : Colors.black.withValues(alpha: 0.25),
                       border:
-                          isSelected
-                              ? null
-                              : Border.all(color: Colors.white70),
+                          isSelected ? null : Border.all(color: Colors.white70),
                     ),
                     child: Center(
                       child: Text(
@@ -544,7 +755,9 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
           Text(
             _selected.isEmpty
                 ? ''
-                : 'image_picker_selected'.trParams({'n': '${_selected.length}'}),
+                : 'image_picker_selected'.trParams({
+                  'n': '${_selected.length}',
+                }),
             style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
           const Spacer(),

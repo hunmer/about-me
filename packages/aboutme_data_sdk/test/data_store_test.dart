@@ -24,6 +24,12 @@ class MemoryStorage implements StorageInterface {
       files.keys.where((key) => key.startsWith(prefix)).toList();
 
   @override
+  Future<List<StorageFileInfo>> listFileInfos(String prefix) async => [
+    for (final key in await getKeysWithPrefix(prefix))
+      StorageFileInfo(path: key),
+  ];
+
+  @override
   Future<bool> hasData(String key) async => files.containsKey(key);
 
   @override

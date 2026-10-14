@@ -129,6 +129,13 @@ class WebStorage implements StorageInterface {
         .toList();
   }
 
+  /// 列出前缀下所有文件的元信息（IndexedDB 后端暂无元数据，仅回填路径）
+  @override
+  Future<List<StorageFileInfo>> listFileInfos(String prefix) async {
+    final keys = await getKeysWithPrefix(prefix);
+    return [for (final key in keys) StorageFileInfo(path: key)];
+  }
+
   /// 清除所有以指定前缀开头的数据
   @override
   Future<void> clearWithPrefix(String prefix) async {

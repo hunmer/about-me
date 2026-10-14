@@ -332,6 +332,24 @@ class HttpStorage implements StorageInterface {
   }
 
   @override
+  Future<List<StorageFileInfo>> listFileInfos(String prefix) async {
+    final response = await _request(
+      () => _client.get(_filesUri(null, prefix), headers: _headers),
+    );
+    if (response.statusCode != 200) _throwFor(response);
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return (body['files'] as List<dynamic>).map((e) {
+      if (e is String) return StorageFileInfo(path: e);
+      final info = e as Map<String, dynamic>;
+      return StorageFileInfo(
+        path: info['path'] as String,
+        size: (info['size'] as num?)?.toInt(),
+        updatedAt: DateTime.tryParse(info['updated_at'] as String? ?? ''),
+      );
+    }).toList();
+  }
+
+  @override
   Future<void> clearWithPrefix(String prefix) async {
     final response = await _request(
       () => _client.delete(_filesUri(null, prefix), headers: _headers),

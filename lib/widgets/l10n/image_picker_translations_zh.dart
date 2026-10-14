@@ -30,7 +30,19 @@ const Map<String, String> imagePickerTranslationsZh = {
   // 底部弹窗
   'image_picker_onlineUrl': '在线图片',
   'image_picker_noImages': '暂无图片，可从相册选择或拍照',
+  'image_picker_noMatches': '没有符合过滤条件的图片',
   'image_picker_selected': '已选 @n 张',
+
+  // 过滤
+  'image_picker_filter_plugin': '插件',
+  'image_picker_filter_date': '日期',
+  'image_picker_filter_size': '大小',
+  'image_picker_filter_all': '全部',
+  'image_picker_date_today': '今天',
+  'image_picker_date_week': '近7天',
+  'image_picker_date_month': '近30天',
+  'image_picker_date_quarter': '近90天',
+  'image_picker_date_older': '更早',
 
   // 裁剪相关
   'image_picker_cropImage': '裁剪图片',

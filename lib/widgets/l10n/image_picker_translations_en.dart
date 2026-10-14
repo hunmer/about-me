@@ -31,7 +31,19 @@ const Map<String, String> imagePickerTranslationsEn = {
   // Bottom sheet
   'image_picker_onlineUrl': 'Online Image',
   'image_picker_noImages': 'No images yet. Pick from gallery or take a photo',
+  'image_picker_noMatches': 'No images match the filters',
   'image_picker_selected': 'Selected @n',
+
+  // Filters
+  'image_picker_filter_plugin': 'Plugin',
+  'image_picker_filter_date': 'Date',
+  'image_picker_filter_size': 'Size',
+  'image_picker_filter_all': 'All',
+  'image_picker_date_today': 'Today',
+  'image_picker_date_week': 'Last 7 days',
+  'image_picker_date_month': 'Last 30 days',
+  'image_picker_date_quarter': 'Last 90 days',
+  'image_picker_date_older': 'Older',
 
   // Crop related
   'image_picker_cropImage': 'Crop Image',

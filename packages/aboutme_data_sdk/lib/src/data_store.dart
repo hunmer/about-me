@@ -64,6 +64,11 @@ class DataStore {
     return await _storage.getKeysWithPrefix(prefix);
   }
 
+  /// 列出指定前缀下所有文件的元信息（大小/修改时间，取决于后端实现）
+  Future<List<StorageFileInfo>> listFileInfos(String prefix) async {
+    return await _storage.listFileInfos(prefix);
+  }
+
   /// 获取插件存储路径
   String getPluginPath(String pluginId) => pluginId;
 

@@ -132,6 +132,12 @@ const Map<String, String> settingsScreenTranslationsZh = {
   'settings_screen_changeUsername': '修改用户名',
   'settings_screen_appSettings': '应用设置',
   'settings_screen_interfaceSettings': '界面设置',
+  // 手绘便签效果设置
+  'settings_screen_handDrawnGroupTitle': '手绘便签效果',
+  'settings_screen_handDrawnTapeTitle': '贴条',
+  'settings_screen_handDrawnTapeSubtitle': '显示卡片顶部胶带贴条',
+  'settings_screen_handDrawnTiltTitle': '倾斜角度',
+  'settings_screen_handDrawnTiltSubtitle': '卡片保持轻微随机倾斜',
   'settings_screen_speechRecognitionSettings': 'Speech Recognition Settings',
   'settings_screen_confirmClear': 'Confirm Clear',
   'settings_screen_confirmClearAiCorrection': 'Clear AI correction agent settings?',

@@ -180,6 +180,44 @@ class MobileStorage implements StorageInterface {
     }
   }
 
+  /// 列出前缀下所有文件的元信息（含大小与修改时间）
+  @override
+  Future<List<StorageFileInfo>> listFileInfos(String prefix) async {
+    try {
+      await _ensureInitialized();
+      final fullPath = path.join(_basePath, prefix);
+      final directory = io.Directory(fullPath);
+
+      if (!await directory.exists()) {
+        return [];
+      }
+
+      final files = await directory.list(recursive: true).toList();
+      final result = <StorageFileInfo>[];
+      for (final entity in files) {
+        if (entity is! io.File) continue;
+        try {
+          final stat = await entity.stat();
+          result.add(
+            StorageFileInfo(
+              path: path.relative(entity.path, from: _basePath),
+              size: stat.size,
+              updatedAt: stat.modified,
+            ),
+          );
+        } catch (_) {
+          result.add(
+            StorageFileInfo(path: path.relative(entity.path, from: _basePath)),
+          );
+        }
+      }
+      return result;
+    } catch (e) {
+      debugPrint('列出文件信息失败: $prefix - $e');
+      return [];
+    }
+  }
+
   /// 清除所有以指定前缀开头的数据
   @override
   Future<void> clearWithPrefix(String prefix) async {

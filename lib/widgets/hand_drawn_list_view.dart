@@ -3,6 +3,7 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
+import 'package:aboutme/core/services/hand_drawn_style_controller.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
@@ -113,6 +114,14 @@ class HandDrawnListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 监听全局开关：贴条关闭时顶部出血边距同步取消
+    return ListenableBuilder(
+      listenable: HandDrawnStyleController(),
+      builder: (context, _) => _buildList(context),
+    );
+  }
+
+  Widget _buildList(BuildContext context) {
     Widget wrappedItemBuilder(BuildContext context, int index) {
       final tiltKey = tiltKeyOf?.call(index);
       return HandDrawnStickyItem(
@@ -155,7 +164,8 @@ class HandDrawnListView extends StatelessWidget {
 
   /// 贴条上半露出卡片外,顶部自动预留出血边距,避免首条贴条被视口裁剪
   EdgeInsetsGeometry get _effectivePadding {
-    final bleed = tapeHeight / 2 + 4;
+    final bleed =
+        HandDrawnStyleController().tapeEnabled ? tapeHeight / 2 + 4 : 0.0;
     final p = padding;
     if (p == null) return EdgeInsets.only(top: bleed);
     if (p is EdgeInsets) return p.copyWith(top: p.top + bleed);
@@ -238,44 +248,57 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
     );
   }
 
-  StickyPose get _pose =>
-      widget.pose ?? _poseFromKey(widget.tiltKey ?? '');
+  StickyPose get _pose {
+    // 全局倾斜关闭:姿态归零,只保留悬浮拿起动效
+    if (!HandDrawnStyleController().tiltEnabled) {
+      return const StickyPose(0, 0);
+    }
+    return widget.pose ?? _poseFromKey(widget.tiltKey ?? '');
+  }
 
   int get _seed =>
       widget.seed ?? widget.tiltKey.hashCode & 0x7fffffff;
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovering = true),
-      onExit: (_) => setState(() => _hovering = false),
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(end: _hovering ? 1.0 : 0.0),
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        child: _buildStack(),
-        builder: (context, t, child) {
-          // t: 0 = 静置姿态,t: 1 = 悬浮拿起(角度归零、放大 1.04、上移 4px)
-          final angle = lerpDouble(_pose.angleDegrees * math.pi / 180, 0, t)!;
-          final scale = lerpDouble(1.0, 1.04, t)!;
-          final dy = lerpDouble(0.0, -4.0, t)!;
-          return Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..translate(_pose.offsetX, dy)
-              ..rotateZ(angle)
-              ..scale(scale),
-            child: child,
-          );
-        },
+    // 监听全局开关:贴条/倾斜状态变化时本 item 即时重建
+    return ListenableBuilder(
+      listenable: HandDrawnStyleController(),
+      builder: (context, _) => MouseRegion(
+        onEnter: (_) => setState(() => _hovering = true),
+        onExit: (_) => setState(() => _hovering = false),
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(end: _hovering ? 1.0 : 0.0),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          child: _buildStack(),
+          builder: (context, t, child) {
+            // t: 0 = 静置姿态,t: 1 = 悬浮拿起(角度归零、放大 1.04、上移 4px)
+            final angle =
+                lerpDouble(_pose.angleDegrees * math.pi / 180, 0, t)!;
+            final scale = lerpDouble(1.0, 1.04, t)!;
+            final dy = lerpDouble(0.0, -4.0, t)!;
+            return Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()
+                ..translate(_pose.offsetX, dy)
+                ..rotateZ(angle)
+                ..scale(scale),
+              child: child,
+            );
+          },
+        ),
       ),
     );
   }
 
   /// 按贴条样式组装 卡体+贴条 的层级结构
   Widget _buildStack() {
+    // 全局贴条开关关闭时视为 showTape=false
+    final showTape =
+        widget.showTape && HandDrawnStyleController().tapeEnabled;
     final folderTab =
-        widget.showTape && widget.tapeStyle == HandDrawnTapeStyle.folderTab;
+        showTape && widget.tapeStyle == HandDrawnTapeStyle.folderTab;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -286,7 +309,7 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
                 child: widget.child,
               )
             : widget.child,
-        if (widget.showTape)
+        if (showTape)
           switch (widget.tapeStyle) {
             // 顶部胶带:横跨卡片顶边,一半露出卡片外
             HandDrawnTapeStyle.centerTape => Positioned(
