@@ -5,6 +5,7 @@ import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';
+import 'package:aboutme/core/widgets/app_background.dart';
 
 import 'open_container_route.dart';
 export 'open_container_route.dart';
@@ -521,9 +522,13 @@ class NavigationHelper {
     }
 
     // 降级：没有 sourceKey 时使用普通路由
+    // BackSwipePageRoute 为 opaque=false（全滑返回需透出下层），全局
+    // 背景生效时页面透明会透出下层旧页面；在路由内垫一层 AppBackground
+    // （完整全局背景：底色+网格+背景图）替代根层背景。无全局背景时
+    // AppBackground 原样透传，行为不变
     final result = await Navigator.of(context).push<T>(
       BackSwipePageRoute<T>(
-        builder: (_) => builder(context),
+        builder: (_) => AppBackground(child: builder(context)),
         transitionDuration: transitionDuration,
         pushCurve: pushCurve,
         popCurve: popCurve,

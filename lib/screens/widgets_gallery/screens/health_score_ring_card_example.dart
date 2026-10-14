@@ -6,48 +6,48 @@ import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 class HealthScoreRingCardExample extends StatelessWidget {
   const HealthScoreRingCardExample({super.key});
 
-  static const _items = [
+  static final _items = [
     HealthRingItemData(
       label: 'Endocrine system',
       icon: Icons.science_outlined,
       color: Color(0xFFF2CE5F),
       score: 8.3,
-      value: 1,
+      value: 8.3,
     ),
     HealthRingItemData(
       label: 'Immune system',
       icon: Icons.shield_outlined,
       color: Color(0xFFA9BC69),
-      score: 7.5,
-      value: 1,
+      score: 6.5,
+      value: 6.5,
     ),
     HealthRingItemData(
       label: 'Cardiovascular',
       icon: Icons.favorite_border,
       color: Color(0xFFEFA9D9),
-      score: 9.1,
-      value: 1,
+      score: 9.4,
+      value: 9.4,
     ),
     HealthRingItemData(
       label: 'Nervous system',
       icon: Icons.psychology_outlined,
       color: Color(0xFF9FB6E8),
       score: 8.8,
-      value: 1,
+      value: 8.8,
     ),
     HealthRingItemData(
       label: 'Musculoskeletal',
       icon: Icons.directions_run,
       color: Color(0xFFC0C96A),
-      score: 7.9,
-      value: 1,
+      score: 5.2,
+      value: 5.2,
     ),
     HealthRingItemData(
       label: 'Digestive system',
       icon: Icons.restaurant,
       color: Color(0xFFF5D98B),
-      score: 8.5,
-      value: 1,
+      score: 7.1,
+      value: 7.1,
     ),
   ];
 
@@ -81,7 +81,7 @@ class HealthScoreRingCardExample extends StatelessWidget {
                 const SizedBox(height: 24),
                 _buildSectionTitle('中尺寸（横排）'),
                 const SizedBox(height: 8),
-                const Center(
+                Center(
                   child: SizedBox(
                     width: 384,
                     height: 170,
@@ -101,9 +101,8 @@ class HealthScoreRingCardExample extends StatelessWidget {
                   child: SizedBox(
                     width: 384,
                     height: 430,
-                    child: const HealthScoreRingCardWidget(
+                    child: HealthScoreRingCardWidget(
                       score: 8.8,
-                      scoreLabel: 'your health score',
                       title: 'Health systems',
                       filterLabel: 'All',
                       items: _items,
@@ -112,15 +111,14 @@ class HealthScoreRingCardExample extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                _buildSectionTitle('大宽尺寸（横排）'),
+                _buildSectionTitle('大宽尺寸（上图下文）'),
                 const SizedBox(height: 8),
-                const Center(
+                Center(
                   child: SizedBox(
                     width: 384,
                     height: 330,
                     child: HealthScoreRingCardWidget(
                       score: 8.8,
-                      scoreLabel: 'your health score',
                       title: 'Health systems',
                       filterLabel: 'All',
                       items: _items,

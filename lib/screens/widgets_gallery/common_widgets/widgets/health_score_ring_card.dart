@@ -12,9 +12,6 @@ class HealthScoreRingCardWidget extends StatefulWidget {
   /// 中心总分数（如 8.8）
   final double score;
 
-  /// 中心分数下方的标签（如 'your health score'）
-  final String scoreLabel;
-
   /// 列表标题（如 'Health systems'），为 null 时不显示
   final String? title;
 
@@ -33,7 +30,6 @@ class HealthScoreRingCardWidget extends StatefulWidget {
   const HealthScoreRingCardWidget({
     super.key,
     required this.score,
-    this.scoreLabel = 'your health score',
     this.title,
     this.filterLabel,
     required this.items,
@@ -104,7 +100,6 @@ class HealthScoreRingCardWidget extends StatefulWidget {
 
     return HealthScoreRingCardWidget(
       score: (props['score'] as num?)?.toDouble() ?? 0.0,
-      scoreLabel: props['scoreLabel'] as String? ?? 'your health score',
       title: props['title'] as String?,
       filterLabel: props['filterLabel'] as String?,
       items: parseItems(props['items']),
@@ -202,7 +197,6 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
       return Center(
         child: _RingChart(
           score: widget.score,
-          scoreLabel: widget.scoreLabel,
           items: widget.items,
           progress: _animation.value,
           size: widget.size,
@@ -211,35 +205,16 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
       );
     }
 
-    // 宽型尺寸：圆环在左，列表在右
-    if (widget.size.width > widget.size.height) {
-      return Row(
-        children: [
-          _RingChart(
-            score: widget.score,
-            scoreLabel: widget.size is MediumSize ? null : widget.scoreLabel,
-            items: widget.items,
-            progress: _animation.value,
-            size: widget.size,
-            isDark: isDark,
-          ),
-          SizedBox(width: widget.size.getTitleSpacing() * 0.6),
-          Expanded(
-            child: _buildItemList(isDark),
-          ),
-        ],
-      );
-    }
-
-    // 高型尺寸：圆环在上，列表在下
+    // 其余尺寸：圆环在上（宽型居左上），列表在下
+    final isWide = widget.size.width > widget.size.height;
     return Column(
       children: [
         Expanded(
           flex: 55,
-          child: Center(
+          child: Align(
+            alignment: isWide ? Alignment.centerLeft : Alignment.center,
             child: _RingChart(
               score: widget.score,
-              scoreLabel: widget.scoreLabel,
               items: widget.items,
               progress: _animation.value,
               size: widget.size,
@@ -377,7 +352,6 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
 /// 分段圆环统计图（中心显示总分数，每段带图标）
 class _RingChart extends StatelessWidget {
   final double score;
-  final String? scoreLabel;
   final List<HealthRingItemData> items;
   final double progress;
   final HomeWidgetSize size;
@@ -385,7 +359,6 @@ class _RingChart extends StatelessWidget {
 
   const _RingChart({
     required this.score,
-    this.scoreLabel,
     required this.items,
     required this.progress,
     required this.size,
@@ -444,51 +417,15 @@ class _RingChart extends StatelessWidget {
                 ),
               // 中心分数
               Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedFlipCounter(
-                      value: score * progress,
-                      fractionDigits: 1,
-                      textStyle: TextStyle(
-                        color: isDark ? Colors.white : const Color(0xFF211D15),
-                        fontSize: ringRadius * 0.62,
-                        fontWeight: FontWeight.w800,
-                        height: 1.0,
-                      ),
-                    ),
-                    if (scoreLabel != null) ...[
-                      SizedBox(height: size.getSmallSpacing()),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              scoreLabel!,
-                              style: TextStyle(
-                                color: isDark
-                                    ? const Color(0xFFCBD5E1)
-                                    : const Color(0xFF8A8474),
-                                fontSize: ringRadius * 0.2,
-                                fontWeight: FontWeight.w500,
-                                height: 1.0,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                          SizedBox(width: 2 * size.scale),
-                          Icon(
-                            Icons.info_outline,
-                            size: ringRadius * 0.18,
-                            color: isDark
-                                ? const Color(0xFFCBD5E1)
-                                : const Color(0xFF8A8474),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
+                child: AnimatedFlipCounter(
+                  value: score * progress,
+                  fractionDigits: 1,
+                  textStyle: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF211D15),
+                    fontSize: ringRadius * 0.62,
+                    fontWeight: FontWeight.w800,
+                    height: 1.0,
+                  ),
                 ),
               ),
             ],
@@ -514,31 +451,35 @@ class _RingSegment {
   });
 }
 
+/// 圆环分段之间的间隙占比（总间隙 = 2π × 该值 × 段数）
+const _ringGapFraction = 0.025;
+
 /// 计算每段的起止角度（顶部开始，顺时针，段之间留间隙）
 List<_RingSegment> _computeSegments(List<HealthRingItemData> items) {
   if (items.isEmpty) return [];
 
-  const gapFraction = 0.028;
-  final gapAngle = 2 * math.pi * gapFraction;
+  final gapAngle = 2 * math.pi * _ringGapFraction;
   final totalValue = items.fold<double>(0, (sum, item) => sum + item.value);
   final available = 2 * math.pi - gapAngle * items.length;
 
   final segments = <_RingSegment>[];
-  var startAngle = -math.pi / 2;
+  // 从顶部开始逆时针排列：角度递减
+  var endAngle = -math.pi / 2;
 
   for (final item in items) {
     final ratio = totalValue > 0 ? item.value / totalValue : 0;
     final sweepAngle = available * ratio;
-    startAngle += gapAngle / 2;
+    final a2 = endAngle - gapAngle / 2;
+    final a1 = a2 - sweepAngle;
     segments.add(
       _RingSegment(
         item: item,
-        startAngle: startAngle,
+        startAngle: a1,
         sweepAngle: sweepAngle,
-        midAngle: startAngle + sweepAngle / 2,
+        midAngle: a1 + sweepAngle / 2,
       ),
     );
-    startAngle += sweepAngle + gapAngle / 2;
+    endAngle = a1 - gapAngle / 2;
   }
 
   return segments;
@@ -560,14 +501,12 @@ class _RingChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - strokeWidth / 2;
+    // 圆头线帽会从弧端点沿切线延伸 strokeWidth/2，绘制时两端内缩该角度，
+    // 使线帽末端正好落在段边界，保证段间间隙可见
+    final capInset = (strokeWidth / 2) / radius;
 
-    var drawnAngle = 0.0;
-    final totalAngle = 2 * math.pi - 2 * math.pi * 0.028 * segments.length;
-
+    // 所有段同步生长：每段扫角 = 满幅 × progress
     for (final segment in segments) {
-      final remaining = totalAngle * progress - drawnAngle;
-      if (remaining <= 0) break;
-
       final paint =
           Paint()
             ..color = segment.item.color
@@ -575,17 +514,16 @@ class _RingChartPainter extends CustomPainter {
             ..strokeWidth = strokeWidth
             ..strokeCap = StrokeCap.round;
 
-      final sweep = math.min(segment.sweepAngle, remaining);
-      if (sweep > 0) {
+      final sweep = segment.sweepAngle * progress;
+      if (sweep > 2 * capInset) {
         canvas.drawArc(
           Rect.fromCircle(center: center, radius: radius),
-          segment.startAngle,
-          sweep,
+          segment.startAngle + capInset,
+          sweep - 2 * capInset,
           false,
           paint,
         );
       }
-      drawnAngle += segment.sweepAngle;
     }
   }
 

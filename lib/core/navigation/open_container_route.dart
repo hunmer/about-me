@@ -2,6 +2,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:universal_platform/universal_platform.dart';
 
+import 'package:aboutme/core/widgets/app_background.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+
 /// OpenContainer 风格的页面过渡路由
 ///
 /// 实现从源 widget 位置放大展开到全屏的动画效果，类似 animations 包的 OpenContainer。
@@ -254,6 +257,15 @@ class _OpenContainerPageState<T> extends State<_OpenContainerPage<T>>
     );
   }
 
+  /// 本路由 opaque=false，页面透明只能透出下层旧页面。全局背景生效时
+  /// 在路由内垫一层 AppBackground（完整全局背景：底色+网格+背景图）
+  /// 替代根层背景；展开动画中容器尺寸渐变，网格防抖渲染、动画稳定后
+  /// 显示。无全局背景时原样返回
+  Widget _withGlobalBackdrop(BuildContext context, Widget child) {
+    if (Theme.of(context).scaffoldBackgroundColor.alpha != 0) return child;
+    return AppBackground(child: child);
+  }
+
   @override
   Widget build(BuildContext context) {
     final route = widget.route;
@@ -263,7 +275,12 @@ class _OpenContainerPageState<T> extends State<_OpenContainerPage<T>>
     // 获取主题颜色
     final theme = Theme.of(context);
     final closedColor = route.closedColor ?? theme.cardColor;
-    final openColor = route.openColor ?? theme.scaffoldBackgroundColor;
+    // 展开后的容器底色：全局背景生效时 scaffold 色已被透明化，直接用会
+    // 透出下层旧页面（本路由 opaque=false），回退全局背景底色兜底
+    final openColor = route.openColor ??
+        (theme.scaffoldBackgroundColor.alpha == 0
+            ? dsNonOpaqueRouteBackdrop(context)
+            : theme.scaffoldBackgroundColor);
 
     return AnimatedBuilder(
       animation: Listenable.merge([_containerAnimation, _closingMaskAnimation]),
@@ -299,7 +316,10 @@ class _OpenContainerPageState<T> extends State<_OpenContainerPage<T>>
         Widget? openContent;
         if (_contentFadeAnimation.value > 0) {
           // 展开动画进行中或完成，显示实际内容
-          _cachedOpenContent ??= route.openBuilder(context);
+          _cachedOpenContent ??= _withGlobalBackdrop(
+            context,
+            route.openBuilder(context),
+          );
           // 收缩时内容透明度随遮罩反向变化（遮罩越不透明，内容越透明）
           final contentOpacity = _isClosing
               ? (1.0 - maskOpacity) * _contentFadeAnimation.value

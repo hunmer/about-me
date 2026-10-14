@@ -19,6 +19,25 @@ Color dsTransparentWhenGlobalBackground(Color fallback) =>
 Color dsScaffoldBackground(AppThemeData theme) =>
     dsTransparentWhenGlobalBackground(theme.background);
 
+/// 全局背景的底色（与 AppBackground 底色层一致）：
+/// 纯色背景与深浅色默认背景色合成；未设纯色时为深浅色默认背景色
+Color globalBackdropColor(BuildContext context) {
+  final scaffoldBg = ThemeData(
+    brightness: Theme.of(context).brightness,
+  ).scaffoldBackgroundColor;
+  final color = AppBackgroundController().backgroundColor;
+  return color != null ? Color.alphaBlend(color, scaffoldBg) : scaffoldBg;
+}
+
+/// 非 opaque 路由（容器展开/全滑返回等透出下层的装饰性转场）的
+/// 页面垫底色：全局背景生效（Material scaffold 色被透明化）时垫
+/// 全局背景底色，防止透明页面透出下层旧页面造成两界面叠加；
+/// 否则用 Material scaffold 色（此时页面自身不透明，垫层不可见）
+Color dsNonOpaqueRouteBackdrop(BuildContext context) {
+  final c = Theme.of(context).scaffoldBackgroundColor;
+  return c.alpha == 0 ? globalBackdropColor(context) : c;
+}
+
 /// Material → 设计系统主题桥
 ///
 /// 设计系统组件依赖 `AppTheme.of(context)`，而普通 Material 页面没有
