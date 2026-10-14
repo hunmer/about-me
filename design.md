@@ -323,6 +323,56 @@ RoughDrawing(d, paint, paint).paint(canvas, progress: progress?.value ?? 1, pres
 - 自动遵守 `WiredMotion(enabled: false)` 边界与系统"减弱动态效果"，无需额外处理
 - 弹层（`showDSDialog`/`showDSBottomSheet`/`DSPopover`）如需描画，应在其**组件内部**统一包 `WiredDraw`，一处生效全 app 复用
 
+## 11. 手绘便签列表/网格（随机倾斜 + 贴条）
+
+页面主体的内容浏览列表/网格（数据条目列表、卡片墙、瀑布流）一律用便签组件：每个 item 以确定性随机角度轻微倾斜（±1.2°~2.6° + ±6px 水平偏移），顶部带 skribble 贴条，鼠标悬浮"拿起"（角度归零 + 放大 1.04 + 上移）。统一从 `package:aboutme/widgets/hand_drawn_list_view.dart` 取，禁止自行实现 Transform.rotate + 随机数。
+
+### 11.1 组件选型
+
+| 场景 | 用法 |
+|---|---|
+| 纵向内容列表 | `HandDrawnListView`（替代 ListView.builder/separated，参数同名） |
+| 网格 / 瀑布流（GridView、MasonryGridView、SliverMasonryGrid、StaggeredGrid） | cell 的 itemBuilder 返回值外包 `HandDrawnStickyItem` |
+| 自带贴条样式的卡片（如 notes） | `HandDrawnStickyItem(showTape: false)` 只保留倾斜与悬浮 |
+
+```dart
+// 列表：tiltKeyOf 必须传数据稳定 id（禁止传 index）
+HandDrawnListView(
+  itemCount: items.length,
+  separatorBuilder: (c, i) => const SizedBox(height: 16),
+  tiltKeyOf: (i) => items[i].id,
+  itemBuilder: (c, i) => ItemCard(item: items[i]),
+);
+
+// 网格 cell：
+HandDrawnStickyItem(tiltKey: item.id, child: ItemCard(item: item))
+```
+
+### 11.2 硬规则
+
+- **倾斜取样**：`tiltKey`/`tiltKeyOf` 传数据模型稳定字符串 id——角度由 `handDrawnUnitRandom`（字符串哈希）确定性生成，过滤/排序重排后同 id 角度不变；禁止用 index（重排即跳变）
+- **间距 ≥ 16**：贴条顶部出血 12px，item 纵向间距（separator / mainAxisSpacing）不足 16 的必须补足，否则贴条压盖上一个卡片；横向间距无此要求
+- **顶部出血**：`HandDrawnListView` 自动在 padding 顶部追加出血边距，勿手动加；自行包 `HandDrawnStickyItem` 的滚动容器需手动保证顶部 ≥ 12px
+- **层级顺序**：`HandDrawnStickyItem` > `WiredDraw` > 卡片；滑删（Dismissible/SwipeActionWrapper）等手势组件放 StickyItem 内、卡片外
+- **拖拽排序**（ReorderableListView/ReorderableGridView）：cell 的 `key` 必须上移到 `HandDrawnStickyItem` 上（列表要求 key 在直接子级）
+- **窄卡片**（≤ 120px 宽，如 4 列主页小卡）：传小号贴条 `tapeWidth: 56, tapeHeight: 18`，或 `showTape: false` 只倾斜
+
+### 11.3 贴条样式（`HandDrawnTapeStyle`，可扩展）
+
+| 样式 | 视觉 | 参数 |
+|---|---|---|
+| `centerTape`（默认） | 顶部居中胶带：墨线 + 不透明纸底 + 三个圆孔 | `tapeColor`（默认米白；可按索引回调传数据色）、`holeColor` |
+| `folderTab` | 左上角文件夹标签页：墨线纸底 + 标题文字，叠在卡体上沿 | `tapeTitle`（标题）、`tapeColor: theme.primary` + `tapeLabelColor: theme.onPrimary`（选中态） |
+
+新增样式 = 加枚举值 + `_build` 分支，勿在页面里自绘贴条。
+
+### 11.4 不适用（禁止套用便签化）
+
+- ❌ 时间对齐型视图：日程格子（拖选时间段）、时间轴刻度列表——倾斜破坏时刻对齐
+- ❌ 聊天消息流、下拉建议列表、横向滚动条
+- ❌ 对话框/弹层内的列表、设置/表单页的滚动容器
+- ❌ 卡片内部的紧凑小列表（属卡片内容，不是页面主体）
+
 ## 新建页面检查清单
 
 1. 页面根组件用 `SuperCupertinoNavigationWrapper`（title + body 必填）
@@ -336,3 +386,4 @@ RoughDrawing(d, paint, paint).paint(canvas, progress: progress?.value ?? 1, pres
 9. 列表筛选/排序走多条件过滤栏（`enableMultiFilter`），排序入口用过滤栏尾部圆形按钮；导航栏 `title` 传纯文本 `Text`
 10. 手绘风格统一：容器用 DS 组件或 `dsSketchDecoration`/`DsSketchPanel`（小控件纯色实底、大容器纸底排线）；无 boxShadow/渐变；图标走 `DsIcon`；颜色走 `theme.ink/paper/hatch`，不硬编码
 11. 展开/折叠、新增列表项等**新内容挂载**场景用 `WiredDraw` 包裹子树做墨线描画入场（见第 10 节）；静态常驻内容不加动画
+12. 页面主体的内容浏览列表/网格用 `HandDrawnListView` / `HandDrawnStickyItem` 便签化（倾斜 + 贴条 + 悬浮，见第 11 节）：`tiltKey` 传数据稳定 id、纵向间距 ≥ 16；时间对齐视图/聊天流/弹层列表/设置表单不套用

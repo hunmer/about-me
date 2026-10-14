@@ -52,6 +52,9 @@ class StackedFolderCardWidget extends StatefulWidget {
   /// 箭头按钮点击回调，null 时点击切换扇出状态
   final VoidCallback? onOpen;
 
+  /// 卡片整体点击回调，null 时点击切换扇出状态
+  final VoidCallback? onCardTap;
+
   /// 是否为内联模式（内联模式使用 double.maxFinite，非内联模式使用固定尺寸）
   final bool inline;
 
@@ -70,6 +73,7 @@ class StackedFolderCardWidget extends StatefulWidget {
     this.docMetaLines = const [],
     this.docBodyParagraphs = const [],
     this.onOpen,
+    this.onCardTap,
     this.inline = false,
     this.size = const Large3Size(),
   });
@@ -202,19 +206,25 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
           child: MouseRegion(
             onEnter: (_) => setState(() => _hover = true),
             onExit: (_) => setState(() => _hover = false),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => _active = !_active),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  ..._buildLayers(isDark),
-                  if (widget.variant == StackedFolderVariant.gallery)
-                    _galleryRing(),
-                  _pocket(isDark),
-                ],
-              ),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              if (widget.onCardTap != null) {
+                widget.onCardTap!();
+              } else {
+                setState(() => _active = !_active);
+              }
+            },
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ..._buildLayers(isDark),
+                if (widget.variant == StackedFolderVariant.gallery)
+                  _galleryRing(),
+                _pocket(isDark),
+              ],
             ),
+          ),
           ),
         ),
       ),
@@ -227,7 +237,13 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
     return Center(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => setState(() => _active = !_active),
+        onTap: () {
+          if (widget.onCardTap != null) {
+            widget.onCardTap!();
+          } else {
+            setState(() => _active = !_active);
+          }
+        },
         child: Container(
           width: 170 * scale,
           height: 96 * scale,

@@ -1,8 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
@@ -167,17 +169,28 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(8),
+      // 顶部留贴条出血(自包滚动容器需手动保证,见 design.md §11)
+      padding: const EdgeInsets.fromLTRB(8, 20, 8, 8),
       child: StaggeredGrid.count(
         crossAxisCount: widget.crossAxisCount,
-        mainAxisSpacing: 8,
+        // ≥ 贴条出血,避免上一行贴条压盖
+        mainAxisSpacing: 16,
         crossAxisSpacing: 8,
         children:
             visible.map((widgetDef) {
               return StaggeredGridTile.count(
                 crossAxisCellCount: _clampCells(widgetDef.defaultSize.width, 2),
                 mainAxisCellCount: _clampCells(widgetDef.defaultSize.height, 2),
-                child: _buildCard(context, theme, widgetDef),
+                // 手绘便签:随机倾斜 + 小号贴条(4 列窄卡片,§11.2);
+                // 挂载即播墨线描画入场(§10)
+                child: HandDrawnStickyItem(
+                  tiltKey: widgetDef.id,
+                  tapeWidth: 56,
+                  tapeHeight: 18,
+                  child: WiredDraw(
+                    child: _buildCard(context, theme, widgetDef),
+                  ),
+                ),
               );
             }).toList(),
       ),
@@ -211,19 +224,24 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     return cells;
   }
 
-  /// 构建单个日期卡片（带与主页卡片一致的圆角外观）
+  /// 构建单个日期卡片(手绘墨线底,见 design.md §9)
   Widget _buildCard(
     BuildContext context,
     AppThemeData theme,
     HomeWidget widgetDef,
   ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surfaceAlt,
-        borderRadius: theme.radii.md,
+    return ClipRRect(
+      borderRadius: theme.radii.md,
+      child: Container(
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surfaceAlt,
+          radius: theme.radii.md,
+          // 列表项传唯一 seed 让墨迹有变化(§9.4)
+          seed: widgetDef.id.hashCode & 0x7fffffff,
+        ),
+        child: widgetDef.build(context, const {}, widgetDef.defaultSize),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: widgetDef.build(context, const {}, widgetDef.defaultSize),
     );
   }
 }

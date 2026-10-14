@@ -37,7 +37,8 @@ class TimelineController extends BaseTimelineController
         PaginationControllerMixin,
         SearchControllerMixin,
         ScrollControllerMixin,
-        ChannelControllerMixin {
+        ChannelControllerMixin
+    implements MessageActionsController {
   // 存储路径
   static const String _storagePath = 'chat/timeline';
 

@@ -55,6 +55,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, TickerProvider
         );
         _tabController!.addListener(() => _onTabChanged());
       }
+      // TabController 创建后需要刷新 UI，否则 TabBar 不显示
+      setState(() {});
     });
   }
 

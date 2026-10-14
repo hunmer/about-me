@@ -227,6 +227,8 @@ class HomeScreenController extends ChangeNotifier {
       debugPrint('初始化布局失败: $e');
     } finally {
       _isLoading = false;
+      // 初始化结束后通知 UI 刷新，否则 loading 状态不会被消费
+      _stateChangedCallback?.call();
     }
   }
 

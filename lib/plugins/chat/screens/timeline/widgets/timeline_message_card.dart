@@ -14,7 +14,7 @@ import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
 import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
 import 'package:aboutme/plugins/chat/services/chat_config_service.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/utils/text_highlight.dart';
-import 'package:aboutme/plugins/chat/screens/timeline/controllers/timeline_controller.dart';
+import 'package:aboutme/plugins/chat/screens/timeline/controllers/timeline_controller/base_controller.dart';
 import 'package:aboutme/plugins/chat/utils/message_options_handler.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/chat_screen.dart';
@@ -23,7 +23,7 @@ import 'package:aboutme/plugins/chat/screens/chat_screen/chat_screen.dart';
 class TimelineMessageCard extends StatelessWidget {
   final Message message;
   final Channel channel;
-  final TimelineController controller;
+  final MessageActionsController controller;
   final bool isGridView;
   final ChatConfigService? settingsService;
 

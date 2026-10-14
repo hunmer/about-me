@@ -1,13 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:get/get.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
-import 'package:aboutme/plugins/chat/screens/chat_screen/chat_screen.dart';
+import 'package:aboutme/plugins/chat/screens/timeline/controllers/timeline_controller/base_controller.dart';
+import 'package:aboutme/plugins/chat/screens/timeline/controllers/timeline_controller/message_handler.dart';
+import 'package:aboutme/plugins/chat/screens/timeline/models/timeline_filter.dart';
+import 'package:aboutme/plugins/chat/screens/timeline/widgets/timeline_message_card.dart';
+import 'package:aboutme/plugins/chat/utils/message_operations.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+
+/// 标签消息页的轻量控制器：
+/// 只驱动当前标签的消息列表，不加载全量消息、不持久化时间线状态
+class _TagMessagesController extends BaseTimelineController
+    with MessageHandlerMixin
+    implements MessageActionsController {
+  _TagMessagesController(
+    ChatPlugin chatPlugin, {
+    super.onMessageEdit,
+    super.onMessageDelete,
+    super.onMessageCopy,
+    super.onSetFixedSymbol,
+    super.onSetBubbleColor,
+    super.onToggleFavorite,
+  }) : super(
+         chatPlugin: chatPlugin,
+         searchController: TextEditingController(),
+         scrollController: ScrollController(),
+         filter: TimelineFilter(
+           type: TimelineFilterType.all,
+           title: 'All Messages',
+           icon: Icons.all_inbox,
+         ),
+       );
+
+  @override
+  Future<void> saveTimelineState() async {}
+
+  @override
+  Future<void> refreshTimeline() async {}
+}
 
 /// 标签消息列表页面
-/// 显示某个标签的所有关联消息
+/// 以瀑布流卡片展示某个标签的所有关联消息，复用时间线卡片
 class TagMessagesScreen extends StatefulWidget {
   final String tagName;
   final List<Message> messages;
@@ -25,278 +64,192 @@ class TagMessagesScreen extends StatefulWidget {
 }
 
 class _TagMessagesScreenState extends State<TagMessagesScreen> {
-  String _searchQuery = '';
-  bool _isSearching = false;
-  final TextEditingController _searchController = TextEditingController();
+  late final _TagMessagesController _controller;
+  late final MessageOperations _messageOperations;
+
+  @override
+  void initState() {
+    super.initState();
+    _messageOperations = MessageOperations(context);
+    _controller = _TagMessagesController(
+      widget.chatPlugin,
+      onMessageEdit: (message) async {
+        // 导航到消息所在的频道并开始编辑
+        final channel = _controller.getMessageChannel(message);
+        if (channel != null) {
+          final result = await Navigator.pushNamed(
+            context,
+            '/channel/${channel.id}',
+            arguments: {
+              'channel': channel,
+              'initialMessage': message,
+              'startEditing': true,
+            },
+          );
+
+          // 如果消息被编辑，刷新标签消息
+          if (result == true) {
+            await _reloadTagMessages();
+          }
+        }
+      },
+      onMessageDelete: (message) async {
+        await _messageOperations.deleteMessage(message);
+        // 删除消息后直接从列表中移除
+        _controller.removeMessage(message);
+      },
+      onMessageCopy: (message) {
+        _messageOperations.copyMessage(message);
+      },
+      onSetFixedSymbol: (message, symbol) async {
+        await _messageOperations.setFixedSymbol(message, symbol);
+        _controller.updateMessage(message);
+      },
+      onSetBubbleColor: (message, color) async {
+        await _messageOperations.setBubbleColor(message, color);
+        _controller.updateMessage(message);
+      },
+      onToggleFavorite: (message) async {
+        await _messageOperations.toggleFavorite(message);
+        _controller.updateMessage(message);
+      },
+    );
+
+    _controller.allMessages = widget.messages;
+    _controller.filterMessages();
+
+    // 聊天数据变化时刷新标签消息
+    widget.chatPlugin.addListener(_onChatDataChanged);
+  }
+
+  void _onChatDataChanged() {
+    _reloadTagMessages();
+  }
+
+  /// 重新加载当前标签的消息
+  Future<void> _reloadTagMessages() async {
+    final messages = await widget.chatPlugin.tagService.getMessagesByTag(
+      widget.tagName,
+    );
+    if (!mounted) return;
+    _controller.allMessages = messages;
+    _controller.filterMessages();
+  }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    widget.chatPlugin.removeListener(_onChatDataChanged);
+    _controller.dispose();
     super.dispose();
   }
 
-  /// 获取过滤后的消息列表
-  List<Message> get _filteredMessages {
-    if (_searchQuery.isEmpty) return widget.messages;
-    return widget.messages.where((m) {
-      return m.content.toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
-  }
+  /// 构建瀑布流视图（复用时间线卡片列表）
+  Widget _buildGridView() {
+    const padding = 8.0;
+    // 行间距 ≥ 贴条出血(12px),避免上一行贴条压盖
+    const spacing = 16.0;
 
-  /// 切换搜索状态
-  void _toggleSearch() {
-    setState(() {
-      _isSearching = !_isSearching;
-      if (!_isSearching) {
-        _searchQuery = '';
-        _searchController.clear();
-      }
-    });
-  }
-
-  /// 导航到原始消息所在的频道
-  void _navigateToOriginalMessage(Message message) {
-    if (message.channelId == null) {
-      Get.snackbar(
-        'chat_error'.tr,
-        'chat_messageNoChannel'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    // 查找频道
-    try {
-      final channel = widget.chatPlugin.channelService.channels.firstWhere(
-        (c) => c.id == message.channelId,
-      );
-
-      // 设置当前活跃频道，这是关键步骤！
-      widget.chatPlugin.channelService.setCurrentChannel(channel);
-
-      // 导航到聊天页面并高亮消息
-      // 使用 initialMessage 和 autoScroll 来定位到消息
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder:
-              (_) => ChatScreen(
-                channel: channel,
-                initialMessage: message,
-                highlightMessage: message,
-                autoScroll: true,
-              ),
-        ),
-      );
-    } catch (e) {
-      Get.snackbar(
-        'chat_error'.tr,
-        'chat_channelNotFound'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  /// 获取频道名称
-  String _getChannelName(String channelId) {
-    try {
-      final channel = widget.chatPlugin.channelService.channels.firstWhere(
-        (c) => c.id == channelId,
-      );
-      return channel.title;
-    } catch (_) {
-      return 'chat_unknownChannel'.tr;
-    }
-  }
-
-  /// 格式化日期
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-
-    if (diff.inDays == 0) {
-      // 今天：显示时间
-      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-    } else if (diff.inDays < 7) {
-      // 一周内：显示"N天前"
-      return 'chat_daysAgo'.trParams({'days': diff.inDays.toString()});
-    } else {
-      // 更早：显示日期
-      return '${date.month}/${date.day}';
-    }
-  }
-
-  /// 构建消息项
-  Widget _buildMessageItem(Message message) {
-    final theme = DSThemeBridge.resolve(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Pressable(
-        onPressed: () => _navigateToOriginalMessage(message),
-        builder: (context, states) {
-          final pressed = states.contains(WidgetState.pressed);
-          return JellyBox(
-            radius: theme.radii.lg,
-            raised: false,
-            color: pressed ? theme.surfaceAlt : theme.surface,
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 用户信息和时间
-                Row(
-                  children: [
-                    JellyBox(
-                      width: 32,
-                      height: 32,
-                      radius: theme.radii.circle,
-                      color: theme.primary.mixWhite(0.85),
-                      alignment: Alignment.center,
-                      child: Text(
-                        message.user.username.isNotEmpty
-                            ? message.user.username[0].toUpperCase()
-                            : '?',
-                        style: DsTypography.caption.copyWith(
-                          color: theme.text,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            message.user.username,
-                            style: DsTypography.body.copyWith(
-                              color: theme.text,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            _formatDate(message.date),
-                            style: DsTypography.caption.copyWith(
-                              color: theme.textSub,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // 频道标识
-                    if (message.channelId != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.secondary.mixWhite(0.85),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _getChannelName(message.channelId!),
-                          style: DsTypography.label.copyWith(color: theme.text),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // 消息内容
-                Text(
-                  message.content,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: DsTypography.body.copyWith(color: theme.text),
-                ),
-              ],
+    return CustomScrollView(
+      controller: _controller.scrollController,
+      slivers: [
+        SliverPadding(
+          // 顶部加出血量,避免首行贴条被视口裁剪
+          padding: EdgeInsets.fromLTRB(
+            padding,
+            padding + 12,
+            padding,
+            padding + MediaQuery.paddingOf(context).bottom,
+          ),
+          sliver: SliverMasonryGrid(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildGridCard(index),
+              childCount: _controller.displayMessages.length,
             ),
-          );
-        },
+            gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+            ),
+            mainAxisSpacing: spacing,
+            crossAxisSpacing: spacing,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建瀑布流卡片：手绘便签 + 时间线卡片
+  Widget _buildGridCard(int index) {
+    final message = _controller.displayMessages[index];
+    final channel = _controller.getMessageChannel(message);
+    if (channel == null) return const SizedBox.shrink();
+
+    // 限制动画延迟，避免列表过长时延迟过大（最多延迟 500ms）
+    final animationDelay = ((index * 50).clamp(0, 500)).ms;
+
+    return HandDrawnStickyItem(
+      tiltKey: message.id,
+      child: Animate(
+        key: ValueKey(message.id),
+        effects: [
+          FadeEffect(duration: 300.ms, delay: animationDelay),
+          SlideEffect(
+            begin: const Offset(0, 0.3),
+            end: Offset.zero,
+            duration: 400.ms,
+            delay: animationDelay,
+            curve: Curves.easeOut,
+          ),
+        ],
+        child: TimelineMessageCard(
+          message: message,
+          channel: channel,
+          controller: _controller,
+          isGridView: true,
+          settingsService: widget.chatPlugin.settingsService,
+        ),
       ),
     );
   }
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    return Center(child: DSThemeBridge(child: _EmptyStateBody()));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-
-    return Scaffold(
-      appBar: AppBar(
+    return Center(
+      child: DSEmptyState(
+        emoji: _controller.searchQuery.isEmpty ? '🏷️' : '🔍',
         title:
-            _isSearching
-                ? TextField(
-                  controller: _searchController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: 'chat_searchMessages'.tr,
-                    border: InputBorder.none,
-                  ),
-                  style: const TextStyle(fontSize: 16),
-                  onChanged: (value) {
-                    setState(() => _searchQuery = value);
-                  },
-                )
-                : Text('#${widget.tagName}'),
-        actions: [
-          DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return DSIconButton(
-                  icon: _isSearching ? DsIconKind.close : DsIconKind.search,
-                  size: 40,
-                  color: theme.surfaceAlt,
-                  iconColor: theme.textSub,
-                  onPressed: _toggleSearch,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 消息统计
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'chat_totalMessages'.trParams({
-                'count': _filteredMessages.length.toString(),
-              }),
-              style: DsTypography.caption.copyWith(color: theme.textSub),
-            ),
-          ),
-
-          // 消息列表
-          Expanded(
-            child:
-                _filteredMessages.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.builder(
-                      itemCount: _filteredMessages.length,
-                      itemBuilder: (context, index) {
-                        return _buildMessageItem(_filteredMessages[index]);
-                      },
-                    ),
-          ),
-        ],
+            _controller.searchQuery.isEmpty
+                ? 'chat_noMessagesYet'.tr
+                : 'chat_noMatchingMessages'.tr,
       ),
     );
   }
-}
-
-/// 空状态主体（需在主题桥内构建）
-class _EmptyStateBody extends StatelessWidget {
-  const _EmptyStateBody();
 
   @override
   Widget build(BuildContext context) {
-    return DSEmptyState(emoji: '🔍', title: 'chat_noMatchingMessages'.tr);
+    return DSThemeBridge(
+      child: SuperCupertinoNavigationWrapper(
+        title: Text('#${widget.tagName}'),
+        enableSearchBar: true,
+        searchPlaceholder: 'chat_searchMessages'.tr,
+        onSearchChanged: _onSearchChanged,
+        onSearchSubmitted: _onSearchChanged,
+        body: ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) {
+            if (_controller.displayMessages.isEmpty) {
+              return _buildEmptyState();
+            }
+            return RefreshIndicator(
+              onRefresh: _reloadTagMessages,
+              child: _buildGridView(),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _onSearchChanged(String query) {
+    _controller.searchQuery = query;
+    _controller.filterMessages();
   }
 }

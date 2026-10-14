@@ -52,3 +52,26 @@ abstract class BaseTimelineController extends ChangeNotifier {
     super.dispose();
   }
 }
+
+/// 消息卡片（TimelineMessageCard）依赖的控制器能力：
+/// 搜索高亮词 + 消息操作入口。
+/// 完整时间线控制器（TimelineController）与页面级轻量控制器均实现该接口
+abstract class MessageActionsController implements BaseTimelineController {
+  /// 处理消息编辑
+  void handleMessageEdit(Message message);
+
+  /// 处理消息删除
+  Future<void> handleMessageDelete(Message message);
+
+  /// 处理消息复制
+  void handleMessageCopy(Message message);
+
+  /// 处理设置固定标记
+  void handleSetFixedSymbol(Message message, String? symbol);
+
+  /// 处理设置气泡颜色
+  void handleSetBubbleColor(Message message, Color? color);
+
+  /// 处理消息收藏
+  void handleToggleFavorite(Message message);
+}
