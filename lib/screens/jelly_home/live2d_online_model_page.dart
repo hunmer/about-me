@@ -131,26 +131,18 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
                 ),
                 if (_categories.isNotEmpty) ...[
                   SizedBox(height: theme.spacing.md),
-                  SizedBox(
-                    height: 38,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        DSChip(
-                          label: 'screens_jellyLive2dOnlineAll'.tr,
-                          selected: _category == null,
-                          onSelected: (_) => setState(() => _category = null),
+                  DSChipBar(
+                    labels: [
+                      'screens_jellyLive2dOnlineAll'.tr,
+                      ..._categories,
+                    ],
+                    selected:
+                        (_categories.indexOf(_category ?? '') + 1).clamp(
+                          0,
+                          _categories.length,
                         ),
-                        for (final category in _categories) ...[
-                          SizedBox(width: theme.spacing.sm),
-                          DSChip(
-                            label: category,
-                            selected: _category == category,
-                            onSelected:
-                                (_) => setState(() => _category = category),
-                          ),
-                        ],
-                      ],
+                    onChanged: (index) => setState(
+                      () => _category = index == 0 ? null : _categories[index - 1],
                     ),
                   ),
                 ],

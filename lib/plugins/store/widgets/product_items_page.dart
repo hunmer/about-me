@@ -386,36 +386,14 @@ class _ProductItemsPageState extends State<ProductItemsPage> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildStatusChip(0, 'store_all'.tr),
-                  const SizedBox(width: 8),
-                  _buildStatusChip(1, 'store_usable'.tr),
-                  const SizedBox(width: 8),
-                  _buildStatusChip(2, 'store_expired'.tr),
-                ],
-              ),
+            child: DSChipBar(
+              labels: ['store_all'.tr, 'store_usable'.tr, 'store_expired'.tr],
+              selected: _statusIndex.clamp(0, 2),
+              onChanged: (index) => setState(() => _statusIndex = index),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatusChip(int index, String label) {
-    final isSelected = _statusIndex == index;
-    return DSChip(
-      label: label,
-      selected: isSelected,
-      onSelected: (selected) {
-        if (selected) {
-          setState(() {
-            _statusIndex = index;
-          });
-        }
-      },
     );
   }
 }

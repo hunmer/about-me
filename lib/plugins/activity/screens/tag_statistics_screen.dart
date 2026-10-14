@@ -301,25 +301,15 @@ class _TagStatisticsScreenState extends State<TagStatisticsScreen> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        // DSChip 内部取 AppTheme，需包桥
-        child: DSThemeBridge(
-          child: Row(
-            children:
-                _timeRanges.map((range) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: DSChip(
-                      label: getRangeText(range),
-                      selected: _selectedRange == range,
-                      onSelected: (selected) {
-                        if (selected) _updateDateRange(range);
-                      },
-                    ),
-                  );
-                }).toList(),
+      // DSChipBar 内部取 AppTheme，需包桥
+      child: DSThemeBridge(
+        child: DSChipBar(
+          labels: [for (final range in _timeRanges) getRangeText(range)],
+          selected: _timeRanges.indexOf(_selectedRange).clamp(
+            0,
+            _timeRanges.length - 1,
           ),
+          onChanged: (index) => _updateDateRange(_timeRanges[index]),
         ),
       ),
     );

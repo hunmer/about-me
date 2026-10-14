@@ -149,13 +149,14 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
           return DSThemeBridge(
             child: Builder(
               builder:
-                  (context) => Row(
-                    children: [
-                      _buildTagChip('全部', '', value, onChanged),
-                      ...allTags.map(
-                        (tag) => _buildTagChip(tag, tag, value, onChanged),
-                      ),
-                    ],
+                  (context) => DSChipBar(
+                    labels: ['全部', ...allTags],
+                    selected: (allTags.indexOf(value ?? '') + 1).clamp(
+                      0,
+                      allTags.length,
+                    ),
+                    onChanged: (index) =>
+                        onChanged(index == 0 ? '' : allTags[index - 1]),
                   ),
             ),
           );
@@ -200,24 +201,6 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
         },
       ),
     ];
-  }
-
-  /// 构建标签芯片
-  Widget _buildTagChip(
-    String label,
-    String value,
-    String? selectedValue,
-    ValueChanged<dynamic> onChanged,
-  ) {
-    final isSelected = value == selectedValue;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: DSChip(
-        label: label,
-        selected: isSelected,
-        onSelected: (_) => onChanged(value),
-      ),
-    );
   }
 
   /// 构建应用列表

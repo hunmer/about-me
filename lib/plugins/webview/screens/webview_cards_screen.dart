@@ -58,30 +58,26 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
       builder: (context, value, onChanged) {
         return DSThemeBridge(
           child: Builder(
-            builder: (context) => Row(
-              children: [
-                _buildTypeChip(
-                  label: 'webview_all_cards'.tr,
-                  value: null,
-                  selectedValue: value,
-                  onChanged: onChanged,
+            builder:
+                (context) => DSChipBar(
+                  labels: [
+                    'webview_all_cards'.tr,
+                    'webview_online_urls'.tr,
+                    'webview_local_files'.tr,
+                  ],
+                  selected: value == CardType.url.name
+                      ? 1
+                      : value == CardType.localFile.name
+                      ? 2
+                      : 0,
+                  onChanged: (index) => onChanged(
+                    index == 1
+                        ? CardType.url.name
+                        : index == 2
+                        ? CardType.localFile.name
+                        : null,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                _buildTypeChip(
-                  label: 'webview_online_urls'.tr,
-                  value: CardType.url.name,
-                  selectedValue: value,
-                  onChanged: onChanged,
-                ),
-                const SizedBox(width: 8),
-                _buildTypeChip(
-                  label: 'webview_local_files'.tr,
-                  value: CardType.localFile.name,
-                  selectedValue: value,
-                  onChanged: onChanged,
-                ),
-              ],
-            ),
           ),
         );
       },
@@ -106,22 +102,13 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
       builder: (context, value, onChanged) {
         return DSThemeBridge(
           child: Builder(
-            builder: (context) => Row(
-              children: [
-                _buildTypeChip(
-                  label: 'webview_sort_by_open_time'.tr,
-                  value: SortType.openTime.name,
-                  selectedValue: value,
-                  onChanged: onChanged,
-                ),
-                const SizedBox(width: 8),
-                _buildTypeChip(
-                  label: 'webview_sort_by_add_time'.tr,
-                  value: SortType.addTime.name,
-                  selectedValue: value,
-                  onChanged: onChanged,
-                ),
+            builder: (context) => DSChipBar(
+              labels: [
+                'webview_sort_by_open_time'.tr,
+                'webview_sort_by_add_time'.tr,
               ],
+              selected: value == SortType.addTime.name ? 1 : 0,
+              onChanged: onChanged,
             ),
           ),
         );
@@ -137,21 +124,6 @@ class _WebViewCardsScreenState extends State<WebViewCardsScreen> {
       },
     ),
   ];
-
-  /// 构建类型选择芯片
-  Widget _buildTypeChip({
-    required String label,
-    required String? value,
-    required String? selectedValue,
-    required ValueChanged<dynamic> onChanged,
-  }) {
-    final isSelected = value == selectedValue;
-    return DSChip(
-      label: label,
-      selected: isSelected,
-      onSelected: (_) => onChanged(value),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

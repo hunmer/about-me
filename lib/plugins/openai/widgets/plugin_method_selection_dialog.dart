@@ -132,40 +132,19 @@ class _PluginMethodSelectionDialogState
                 const SizedBox(height: 12),
 
                 // 插件过滤按钮
-                SizedBox(
-                  height: 40,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      // "全部" 按钮
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: DSChip(
-                          label: 'openai_all'.tr,
-                          selected: _selectedPluginId == null,
-                          onSelected: (selected) {
-                            setState(() {
-                              _selectedPluginId = null;
-                            });
-                          },
-                        ),
-                      ),
-                      // 各插件按钮
-                      for (final pluginId in _allPluginIds)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: DSChip(
-                            label: _pluginDisplayNames[pluginId] ?? pluginId,
-                            selected: _selectedPluginId == pluginId,
-                            onSelected: (selected) {
-                              setState(() {
-                                _selectedPluginId = selected ? pluginId : null;
-                              });
-                            },
-                          ),
-                        ),
-                    ],
-                  ),
+                DSChipBar(
+                  labels: [
+                    'openai_all'.tr,
+                    for (final pluginId in _allPluginIds)
+                      _pluginDisplayNames[pluginId] ?? pluginId,
+                  ],
+                  selected:
+                      (_allPluginIds.indexOf(_selectedPluginId ?? '') + 1)
+                          .clamp(0, _allPluginIds.length),
+                  onChanged: (index) => setState(() {
+                    _selectedPluginId =
+                        index == 0 ? null : _allPluginIds[index - 1];
+                  }),
                 ),
                 const SizedBox(height: 12),
 

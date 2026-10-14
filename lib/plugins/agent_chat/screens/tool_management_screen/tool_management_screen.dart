@@ -354,8 +354,8 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
   Widget _buildPluginFilterBar() {
     final pluginIds = _allPluginTools.keys.toList()..sort();
 
-    return SizedBox(
-      height: 50,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(
           dragDevices: {
@@ -365,51 +365,27 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
           },
           scrollbars: false,
         ),
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          children: [
-            // "全部" 按钮
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Center(
-                child: DSChip(
-                  label: 'agent_chat_all'.tr,
-                  selected: _selectedPluginFilter == null,
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedPluginFilter = null;
-                    });
-                  },
-                ),
-              ),
-            ),
-            // 各个插件按钮
-            ...pluginIds.map((pluginId) {
-              final toolSet = _allPluginTools[pluginId];
-              final enabledCount = toolSet?.enabledToolCount ?? 0;
-              final totalCount = toolSet?.toolCount ?? 0;
-
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Center(
-                  child: DSChip(
-                    label: 'agent_chat_pluginInfo'.trParams({
-                      'pluginId': pluginId,
-                      'enabledCount': enabledCount.toString(),
-                      'totalCount': totalCount.toString(),
-                    }),
-                    selected: _selectedPluginFilter == pluginId,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedPluginFilter = selected ? pluginId : null;
-                      });
-                    },
-                  ),
-                ),
-              );
-            }),
+        child: DSChipBar(
+          labels: [
+            'agent_chat_all'.tr,
+            for (final pluginId in pluginIds)
+              'agent_chat_pluginInfo'.trParams({
+                'pluginId': pluginId,
+                'enabledCount':
+                    (_allPluginTools[pluginId]?.enabledToolCount ?? 0)
+                        .toString(),
+                'totalCount':
+                    (_allPluginTools[pluginId]?.toolCount ?? 0).toString(),
+              }),
           ],
+          selected:
+              (pluginIds.indexOf(_selectedPluginFilter ?? '') + 1).clamp(
+                0,
+                pluginIds.length,
+              ),
+          onChanged: (index) => setState(() {
+            _selectedPluginFilter = index == 0 ? null : pluginIds[index - 1];
+          }),
         ),
       ),
     );

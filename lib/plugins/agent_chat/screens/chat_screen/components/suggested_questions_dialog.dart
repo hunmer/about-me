@@ -166,6 +166,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
   /// 构建分类标签栏
   Widget _buildCategoryTabs() {
     final theme = DSThemeBridge.resolve(context);
+    final categoryKeys = _questions!.keys.toList();
     return Container(
       height: 50,
       margin: const EdgeInsets.only(top: 8),
@@ -178,32 +179,23 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
           ),
         ),
       ),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        itemCount: _questions!.length,
-        itemBuilder: (context, index) {
-          final categoryKey = _questions!.keys.elementAt(index);
-          final categoryName = _service.getCategoryName(categoryKey);
-          final isSelected = _selectedCategory == categoryKey;
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            child: Center(
-              child: DSChip(
-                label: categoryName,
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedCategory = categoryKey;
-                  });
-                  // 保存选中的分类
-                  _saveSelectedCategory(categoryKey);
-                },
-              ),
-            ),
-          );
-        },
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: DSChipBar(
+            labels: [
+              for (final key in categoryKeys) _service.getCategoryName(key),
+            ],
+            selected: categoryKeys
+                .indexOf(_selectedCategory ?? '')
+                .clamp(0, categoryKeys.length - 1),
+            onChanged: (index) {
+              setState(() => _selectedCategory = categoryKeys[index]);
+              // 保存选中的分类
+              _saveSelectedCategory(categoryKeys[index]);
+            },
+          ),
+        ),
       ),
     );
   }
