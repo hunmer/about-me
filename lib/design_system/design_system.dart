@@ -29,6 +29,7 @@ export 'components/bottom_sheet.dart';
 export 'components/button.dart';
 export 'components/card.dart';
 export 'components/checkbox.dart';
+export 'components/chip_bar.dart';
 export 'components/chips.dart';
 export 'components/combobox.dart';
 export 'components/date_picker.dart';

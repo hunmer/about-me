@@ -36,22 +36,13 @@ class ChannelGroupSelector extends StatelessWidget {
               horizontal: 16.0,
               vertical: 8.0,
             ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children:
-                    availableGroups.map((group) {
-                      final isSelected = group == selectedGroup;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: DSChip(
-                          selected: isSelected,
-                          label: getGroupName(group, context),
-                          onSelected: (_) => onGroupSelected(group),
-                        ),
-                      );
-                    }).toList(),
-              ),
+            child: DSChipBar(
+              labels: [
+                for (final group in availableGroups)
+                  getGroupName(group, context),
+              ],
+              selected: availableGroups.indexOf(selectedGroup),
+              onChanged: (index) => onGroupSelected(availableGroups[index]),
             ),
           );
         },
