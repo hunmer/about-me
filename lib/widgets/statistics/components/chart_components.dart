@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -539,7 +540,9 @@ class HourlyDistributionBar extends StatelessWidget {
                   flex: max(flex, 1), // 最小宽度
                   child: Container(
                     height: double.infinity,
-                    color: value > 0 ? color : Theme.of(context).scaffoldBackgroundColor,
+                    color: value > 0
+                        ? color
+                        : dsNonOpaqueRouteBackdrop(context),
                     alignment: Alignment.center,
                     child: value > 0 && flex > 10
                         ? Text(

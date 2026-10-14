@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
 import 'package:aboutme/plugins/habits/widgets/habits_list/habit_card.dart';
 import 'package:aboutme/plugins/habits/controllers/timer_controller.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:aboutme/plugins/habits/widgets/habit_action_sheet.dart';
 import 'package:aboutme/plugins/habits/screens/habit_monthly_list_screen.dart';
@@ -48,7 +49,8 @@ class HabitSearchResultsWidget extends StatelessWidget {
         8 + MediaQuery.paddingOf(context).bottom,
       ),
       crossAxisCount: 2,
-      mainAxisSpacing: 8,
+      // ≥ 贴条出血,避免上一行贴条压盖
+      mainAxisSpacing: 16,
       crossAxisSpacing: 8,
       itemCount: habits.length,
       itemBuilder: (context, index) {
@@ -58,13 +60,17 @@ class HabitSearchResultsWidget extends StatelessWidget {
                 ? skillController?.getSkillById(habit.skillId!)
                 : null;
 
-        return HabitCard(
-          key: ValueKey('${habit.id}_search'),
-          habit: habit,
-          skill: skill,
-          controller: controller,
-          onTap: () => onHabitTap?.call(habit),
-          onLongPress: () => onHabitLongPress?.call(habit),
+        // 手绘便签:随机倾斜 + 贴条(角度由 habit.id 哈希确定)
+        return HandDrawnStickyItem(
+          tiltKey: habit.id,
+          child: HabitCard(
+            key: ValueKey('${habit.id}_search'),
+            habit: habit,
+            skill: skill,
+            controller: controller,
+            onTap: () => onHabitTap?.call(habit),
+            onLongPress: () => onHabitLongPress?.call(habit),
+          ),
         );
       },
     );
@@ -346,7 +352,8 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
         8 + MediaQuery.paddingOf(context).bottom,
       ),
       crossAxisCount: 2,
-      mainAxisSpacing: 8,
+      // ≥ 贴条出血,避免上一行贴条压盖
+      mainAxisSpacing: 16,
       crossAxisSpacing: 8,
       itemCount: habits.length,
       itemBuilder: (context, index) {
@@ -356,13 +363,17 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
                 ? skillController?.getSkillById(habit.skillId!)
                 : null;
 
-        return HabitCard(
-          key: ValueKey('${habit.id}_$_refreshKey'),
-          habit: habit,
-          skill: skill,
-          controller: widget.controller,
-          onTap: () => _onHabitTap(habit),
-          onLongPress: () => _onHabitLongPress(habit),
+        // 手绘便签:随机倾斜 + 贴条(角度由 habit.id 哈希确定)
+        return HandDrawnStickyItem(
+          tiltKey: habit.id,
+          child: HabitCard(
+            key: ValueKey('${habit.id}_$_refreshKey'),
+            habit: habit,
+            skill: skill,
+            controller: widget.controller,
+            onTap: () => _onHabitTap(habit),
+            onLongPress: () => _onHabitLongPress(habit),
+          ),
         );
       },
     );

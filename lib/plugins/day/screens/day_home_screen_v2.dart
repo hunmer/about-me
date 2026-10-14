@@ -13,6 +13,7 @@ import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 /// 纪念日主页（v2 · Warm Paper Sketch 手绘里程碑网格）
 ///
@@ -305,7 +306,8 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
   ) {
     final delegate = SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: 2,
-      mainAxisSpacing: 14,
+      // ≥ 贴条出血,避免上一行贴条压盖
+      mainAxisSpacing: 16,
       crossAxisSpacing: 14,
       mainAxisExtent: 192,
     );
@@ -318,13 +320,18 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
     );
 
     Widget cardBuilder(BuildContext context, int index) {
-      return SketchMilestoneCard(
+      // 手绘便签:随机倾斜 + 贴条(角度由 id 哈希确定);
+      // key 上移供 ReorderableGridView 拖拽排序
+      return HandDrawnStickyItem(
         key: ValueKey(days[index].id),
-        memorialDay: days[index],
-        index: index,
-        isDraggable: allowReorder,
-        onTap: () => _openDetail(context, days[index]),
-        onLongPress: () => _showCardMenu(days[index]),
+        tiltKey: days[index].id,
+        child: SketchMilestoneCard(
+          memorialDay: days[index],
+          index: index,
+          isDraggable: allowReorder,
+          onTap: () => _openDetail(context, days[index]),
+          onLongPress: () => _showCardMenu(days[index]),
+        ),
       );
     }
 

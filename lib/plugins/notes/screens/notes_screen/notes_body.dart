@@ -5,6 +5,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/folder_breadcrumbs.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'folder_card.dart';
 import 'folder_operations.dart';
 import 'note_card.dart';
@@ -58,34 +59,43 @@ mixin NotesBody
                       crossAxisSpacing: 16,
                       childCount: subFolders.length + notes.length,
                       itemBuilder: (context, index) {
-                        // 列表项挂载时墨线描画入场
+                        // 手绘便签倾斜(卡片自带贴条,关掉组件贴条);
+                        // 挂载时墨线描画入场
                         if (index < subFolders.length) {
                           final folder = subFolders[index];
-                          return WiredDraw(
-                            child: FolderCard(
-                              folder: folder,
-                              noteCount:
-                                  plugin.controller
-                                      .getFolderNotes(folder.id)
-                                      .length,
-                              onTap: () => navigateToFolder(folder),
-                              onEdit: () => renameFolder(folder),
-                              onDelete: () => deleteFolder(folder),
+                          return HandDrawnStickyItem(
+                            tiltKey: 'folder_${folder.id}',
+                            showTape: false,
+                            child: WiredDraw(
+                              child: FolderCard(
+                                folder: folder,
+                                noteCount:
+                                    plugin.controller
+                                        .getFolderNotes(folder.id)
+                                        .length,
+                                onTap: () => navigateToFolder(folder),
+                                onEdit: () => renameFolder(folder),
+                                onDelete: () => deleteFolder(folder),
+                              ),
                             ),
                           );
                         }
                         final note = notes[index - subFolders.length];
-                        return WiredDraw(
-                          child: NoteCard(
-                            note: note,
-                            onTap: () => editNote(note),
-                            onDelete: () => deleteNote(note),
-                            onToggle:
-                                note.isTodo
-                                    ? (i) => toggleTodoItem(note, i)
-                                    : null,
-                            onEditStyle:
-                                (style) => updateNoteStyle(note, style),
+                        return HandDrawnStickyItem(
+                          tiltKey: 'note_${note.id}',
+                          showTape: false,
+                          child: WiredDraw(
+                            child: NoteCard(
+                              note: note,
+                              onTap: () => editNote(note),
+                              onDelete: () => deleteNote(note),
+                              onToggle:
+                                  note.isTodo
+                                      ? (i) => toggleTodoItem(note, i)
+                                      : null,
+                              onEditStyle:
+                                  (style) => updateNoteStyle(note, style),
+                            ),
                           ),
                         );
                       },

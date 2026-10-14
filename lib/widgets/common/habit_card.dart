@@ -4,6 +4,7 @@
 /// 根据 HomeWidgetSize 自动调整所有元素的大小。
 library;
 
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/plugins/habits/home_widgets/widgets/habit_card_widget.dart';
@@ -267,7 +268,7 @@ class HabitCardWidget extends StatelessWidget {
                   color: themeColor,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Theme.of(context).scaffoldBackgroundColor,
+                    color: dsNonOpaqueRouteBackdrop(context),
                     width: size.getStrokeWidth() * 0.5,
                   ),
                 ),

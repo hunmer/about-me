@@ -1,3 +1,4 @@
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/index.dart';
 import 'components/selector_header.dart';
@@ -251,7 +252,7 @@ class _DataSelectorSheetState extends State<DataSelectorSheet> {
         maxHeight: MediaQuery.of(context).size.height * widget.config.maxHeightRatio,
       ),
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
+        color: dsNonOpaqueRouteBackdrop(context),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -465,7 +466,7 @@ class _DataSelectorSheetState extends State<DataSelectorSheet> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
+        color: dsNonOpaqueRouteBackdrop(context),
         border: Border(
           top: BorderSide(
             color: theme.dividerColor,

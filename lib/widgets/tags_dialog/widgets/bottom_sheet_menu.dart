@@ -1,3 +1,4 @@
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 
@@ -27,7 +28,7 @@ class BottomSheetMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: dsNonOpaqueRouteBackdrop(context),
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: SafeArea(

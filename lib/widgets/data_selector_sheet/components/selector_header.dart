@@ -1,3 +1,4 @@
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:flutter/material.dart';
 
 /// 选择器顶栏组件
@@ -47,7 +48,7 @@ class SelectorHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
+        color: dsNonOpaqueRouteBackdrop(context),
         border: Border(
           bottom: BorderSide(color: theme.dividerColor, width: 0.5),
         ),

@@ -1,3 +1,4 @@
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/contact/models/contact_model.dart';
 
@@ -31,7 +32,7 @@ class GenderSelectorField extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
+        color: dsNonOpaqueRouteBackdrop(context),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: theme.dividerColor),
       ),

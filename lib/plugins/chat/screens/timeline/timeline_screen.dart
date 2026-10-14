@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
@@ -145,14 +146,16 @@ class _TimelineScreenState extends State<TimelineScreen> {
   // 构建瀑布流视图
   Widget _buildGridView() {
     final padding = 8.0;
-    final spacing = 8.0;
+    // 行间距 ≥ 贴条出血(12px),避免上一行贴条压盖
+    final spacing = 16.0;
 
     return CustomScrollView(
       controller: _controller.scrollController,
       slivers: [
         SliverPadding(
+          // 顶部加出血量,避免首行贴条被视口裁剪
           padding: EdgeInsets.fromLTRB(
-            padding, padding, padding,
+            padding, padding + 12, padding,
             padding + MediaQuery.paddingOf(context).bottom,
           ),
           sliver: SliverMasonryGrid(
@@ -208,24 +211,28 @@ class _TimelineScreenState extends State<TimelineScreen> {
     // 限制动画延迟，避免列表过长时延迟过大（最多延迟 500ms）
     final animationDelay = ((index * 50).clamp(0, 500)).ms;
 
-    return Animate(
-      key: ValueKey(message.id),
-      effects: [
-        FadeEffect(duration: 300.ms, delay: animationDelay),
-        SlideEffect(
-          begin: const Offset(0, 0.3),
-          end: Offset.zero,
-          duration: 400.ms,
-          delay: animationDelay,
-          curve: Curves.easeOut,
+    // 手绘便签:随机倾斜 + 贴条(角度由 message.id 哈希确定)
+    return HandDrawnStickyItem(
+      tiltKey: message.id,
+      child: Animate(
+        key: ValueKey(message.id),
+        effects: [
+          FadeEffect(duration: 300.ms, delay: animationDelay),
+          SlideEffect(
+            begin: const Offset(0, 0.3),
+            end: Offset.zero,
+            duration: 400.ms,
+            delay: animationDelay,
+            curve: Curves.easeOut,
+          ),
+        ],
+        child: TimelineMessageCard(
+          message: message,
+          channel: channel,
+          controller: _controller,
+          isGridView: true,
+          settingsService: widget.chatPlugin.settingsService,
         ),
-      ],
-      child: TimelineMessageCard(
-        message: message,
-        channel: channel,
-        controller: _controller,
-        isGridView: true,
-        settingsService: widget.chatPlugin.settingsService,
       ),
     );
   }

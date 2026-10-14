@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 
 /// 使用 smooth_sheets 实现的底部抽屉工具类
@@ -108,7 +109,10 @@ class _SheetContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bgColor = backgroundColor ?? theme.scaffoldBackgroundColor;
+    // scaffold 色在全局背景生效时被透明化，sheet 作为浮层不能透明，
+    // 回退全局背景底色保持不透明
+    final bgColor =
+        backgroundColor ?? dsNonOpaqueRouteBackdrop(context);
 
     return Material(
       color: Colors.transparent,

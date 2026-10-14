@@ -22,6 +22,16 @@ double handDrawnUnitRandom(String source) {
   return (h % 1000 - 500) / 500;
 }
 
+/// 贴条样式
+enum HandDrawnTapeStyle {
+  /// 顶部居中胶带:skribble 墨线 + 不透明纸底 + 三个圆孔
+  centerTape,
+
+  /// 左上角文件夹标签页:墨线纸底(或传入的主题色实底)叠在卡体上沿,
+  /// 可显示标题文字(源自 nodes 笔记本卡)
+  folderTab,
+}
+
 /// 手绘便签风列表:按索引循环固定姿态表(参考 nth-child(4n+k) 取样),
 /// item 顶部带半透明胶带贴条,鼠标悬浮时角度归零、放大并轻微上移,
 /// 模拟"拿起便签"的交互。
@@ -38,6 +48,9 @@ class HandDrawnListView extends StatelessWidget {
     this.tapeHeight = 24,
     this.tapeColor,
     this.holeColor,
+    this.tapeStyle = HandDrawnTapeStyle.centerTape,
+    this.tapeTitleOf,
+    this.tapeLabelColorOf,
     this.controller,
     this.physics,
     this.shrinkWrap = false,
@@ -78,11 +91,20 @@ class HandDrawnListView extends StatelessWidget {
   final double tapeHeight;
 
   /// 按索引返回贴条底色(不透明),如传入仓库/数据自身颜色;
-  /// 不传时使用 [defaultTapeColor]
+  /// 不传时由贴条样式决定默认色(centerTape 米白、folderTab 主题纸底)
   final Color? Function(int index)? tapeColor;
 
   /// 圆孔颜色,默认深色半透明;传页面背景色可获得"真打孔"效果
   final Color? holeColor;
+
+  /// 贴条样式,默认顶部居中胶带
+  final HandDrawnTapeStyle tapeStyle;
+
+  /// 按索引返回贴条标题文字(folderTab 标签页显示)
+  final String? Function(int index)? tapeTitleOf;
+
+  /// 按索引返回贴条文字颜色(如选中态配 onPrimary)
+  final Color? Function(int index)? tapeLabelColorOf;
 
   final ScrollController? controller;
   final ScrollPhysics? physics;
@@ -98,8 +120,11 @@ class HandDrawnListView extends StatelessWidget {
         tiltKey: tiltKey,
         tapeWidth: tapeWidth,
         tapeHeight: tapeHeight,
-        tapeColor: tapeColor?.call(index) ?? defaultTapeColor,
+        tapeColor: tapeColor?.call(index),
         holeColor: holeColor,
+        tapeStyle: tapeStyle,
+        tapeTitle: tapeTitleOf?.call(index),
+        tapeLabelColor: tapeLabelColorOf?.call(index),
         seed: index,
         child: itemBuilder(context, index),
       );
@@ -151,8 +176,12 @@ class HandDrawnStickyItem extends StatefulWidget {
     this.tiltKey,
     this.tapeWidth = 90,
     this.tapeHeight = 24,
-    this.tapeColor = HandDrawnListView.defaultTapeColor,
+    this.tapeColor,
     this.holeColor,
+    this.showTape = true,
+    this.tapeStyle = HandDrawnTapeStyle.centerTape,
+    this.tapeTitle,
+    this.tapeLabelColor,
     this.seed,
     required this.child,
   }) : assert(
@@ -169,11 +198,23 @@ class HandDrawnStickyItem extends StatefulWidget {
   final double tapeWidth;
   final double tapeHeight;
 
-  /// 贴条底色(不透明纸胶带色)
-  final Color tapeColor;
+  /// 贴条底色;不传时由样式决定(centerTape 米白、folderTab 主题纸底)
+  final Color? tapeColor;
 
   /// 圆孔颜色,默认深色半透明;传页面背景色可获得"真打孔"效果
   final Color? holeColor;
+
+  /// 是否绘制顶部贴条;卡片自带贴条样式时置 false 只保留倾斜与悬浮
+  final bool showTape;
+
+  /// 贴条样式
+  final HandDrawnTapeStyle tapeStyle;
+
+  /// 贴条标题文字(folderTab 标签页显示)
+  final String? tapeTitle;
+
+  /// 贴条文字颜色(如选中态配 onPrimary),默认主题文字色
+  final Color? tapeLabelColor;
 
   /// skribble 墨迹种子;不传时随机模式由 tiltKey 派生
   final int? seed;
@@ -212,21 +253,7 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
         tween: Tween(end: _hovering ? 1.0 : 0.0),
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            widget.child,
-            // 顶部胶带:横跨卡片顶边,一半露出卡片外
-            Positioned(
-              top: -widget.tapeHeight / 2,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: _buildTape(),
-              ),
-            ),
-          ],
-        ),
+        child: _buildStack(),
         builder: (context, t, child) {
           // t: 0 = 静置姿态,t: 1 = 悬浮拿起(角度归零、放大 1.04、上移 4px)
           final angle = lerpDouble(_pose.angleDegrees * math.pi / 180, 0, t)!;
@@ -245,6 +272,40 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
     );
   }
 
+  /// 按贴条样式组装 卡体+贴条 的层级结构
+  Widget _buildStack() {
+    final folderTab =
+        widget.showTape && widget.tapeStyle == HandDrawnTapeStyle.folderTab;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // folderTab:卡体下移,标签叠在卡体上沿形成文件夹标签效果
+        folderTab
+            ? Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: widget.child,
+              )
+            : widget.child,
+        if (widget.showTape)
+          switch (widget.tapeStyle) {
+            // 顶部胶带:横跨卡片顶边,一半露出卡片外
+            HandDrawnTapeStyle.centerTape => Positioned(
+              top: -widget.tapeHeight / 2,
+              left: 0,
+              right: 0,
+              child: Center(child: _buildTape()),
+            ),
+            // 左上角标签页,叠在卡体上沿
+            HandDrawnTapeStyle.folderTab => Positioned(
+              left: 4,
+              top: 0,
+              child: _buildFolderTab(),
+            ),
+          },
+      ],
+    );
+  }
+
   Widget _buildTape() {
     final theme = DSThemeBridge.resolve(context);
     // 胶带自身带轻微反向角度,避免与卡片倾斜方向完全一致显得死板
@@ -257,7 +318,8 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
         height: widget.tapeHeight,
         decoration: dsSketchDecoration(
           theme: theme,
-          fillColor: widget.tapeColor,
+          fillColor:
+              widget.tapeColor ?? HandDrawnListView.defaultTapeColor,
           radius: BorderRadius.circular(2),
           strokeWidth: 1.4,
           seed: _seed + 1,
@@ -280,6 +342,37 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
               ),
             );
           }),
+        ),
+      ),
+    );
+  }
+
+  /// 左上角文件夹标签页贴条:墨线纸底(或传入色实底)+ 标题文字
+  Widget _buildFolderTab() {
+    final theme = DSThemeBridge.resolve(context);
+    return ConstrainedBox(
+      // Positioned 无右约束,长标题需限宽避免溢出屏幕
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width - 32,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: widget.tapeColor ?? theme.surface,
+          // 传入选中色时描边同色融为一体,默认跟墨线
+          stroke: widget.tapeColor ?? theme.ink,
+          strokeWidth: 1.8,
+          radius: const BorderRadius.vertical(top: Radius.circular(10)),
+          seed: _seed + 1,
+        ),
+        child: Text(
+          widget.tapeTitle ?? '',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: DsTypography.body.copyWith(
+            color: widget.tapeLabelColor ?? theme.text,
+          ),
         ),
       ),
     );

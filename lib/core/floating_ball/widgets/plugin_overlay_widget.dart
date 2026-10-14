@@ -1,3 +1,4 @@
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/gestures.dart';
@@ -194,7 +195,7 @@ class _PluginOverlayWidgetState extends State<PluginOverlayWidget>
                     width: _currentWindowWidth,
                     height: _currentWindowHeight,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
+                      color: dsNonOpaqueRouteBackdrop(context),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(

@@ -13,6 +13,7 @@ import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart
 import 'package:aboutme/plugins/checkin/widgets/checkin_record_dialog.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'components/empty_state.dart';
 import 'components/checkin_item_card.dart';
 
@@ -114,13 +115,14 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
                     ? const EmptyState()
                     : SingleChildScrollView(
                       padding: EdgeInsets.only(
+                        top: 12, // 贴条顶部出血
                         bottom: MediaQuery.paddingOf(context).bottom,
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: StaggeredGrid.count(
                           crossAxisCount: 2,
-                          mainAxisSpacing: 0,
+                          mainAxisSpacing: 16, // ≥ 贴条出血,避免压盖
                           crossAxisSpacing: 0,
                           children:
                               filteredItems.asMap().entries.map((entry) {
@@ -131,14 +133,18 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
                                       item.cardStyle == CheckinCardStyle.small
                                           ? 1
                                           : 2,
+                                  // 手绘便签:随机倾斜 + 贴条(角度由 item.id 哈希确定);
                                   // 挂载即描画入场
-                                  child: WiredDraw(
-                                    child: CheckinItemCard(
-                                      item: item,
-                                      index: index,
-                                      itemIndex: index,
-                                      controller: controller,
-                                      onStateChanged: _handleStateChanged,
+                                  child: HandDrawnStickyItem(
+                                    tiltKey: item.id,
+                                    child: WiredDraw(
+                                      child: CheckinItemCard(
+                                        item: item,
+                                        index: index,
+                                        itemIndex: index,
+                                        controller: controller,
+                                        onStateChanged: _handleStateChanged,
+                                      ),
                                     ),
                                   ),
                                 );
@@ -198,6 +204,7 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.only(
+                top: 12, // 贴条顶部出血
                 bottom: MediaQuery.paddingOf(context).bottom,
               ),
               child: Padding(
@@ -205,7 +212,7 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
                 child: StaggeredGrid.count(
                   crossAxisCount: 2,
                   crossAxisSpacing: 0,
-                  mainAxisSpacing: 0,
+                  mainAxisSpacing: 16, // ≥ 贴条出血,避免压盖
                   children:
                       searchResults.asMap().entries.map((entry) {
                         final index = entry.key;
@@ -213,14 +220,17 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
                         return StaggeredGridTile.fit(
                           crossAxisCellCount:
                               item.cardStyle == CheckinCardStyle.small ? 1 : 2,
-                          // 挂载即描画入场
-                          child: WiredDraw(
-                            child: CheckinItemCard(
-                              item: item,
-                              index: index,
-                              itemIndex: index,
-                              controller: controller,
-                              onStateChanged: _handleStateChanged,
+                          // 手绘便签:随机倾斜 + 贴条;挂载即描画入场
+                          child: HandDrawnStickyItem(
+                            tiltKey: item.id,
+                            child: WiredDraw(
+                              child: CheckinItemCard(
+                                item: item,
+                                index: index,
+                                itemIndex: index,
+                                controller: controller,
+                                onStateChanged: _handleStateChanged,
+                              ),
                             ),
                           ),
                         );

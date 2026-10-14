@@ -11,6 +11,7 @@ import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'live2d_archive_form_screen.dart';
 
 /// Live2D 主界面：存档卡片列表，点击卡片进入存档设置
@@ -177,16 +178,21 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
             ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisSpacing: 12,
+              // ≥ 贴条出血,避免上一行贴条压盖
+              mainAxisSpacing: 16,
               crossAxisSpacing: 12,
               childAspectRatio: 0.82,
             ),
             itemCount: archives.length,
-            itemBuilder: (context, index) => WiredDraw(
-              child: _Live2DArchiveCard(
-                archive: archives[index],
-                agentName: agentNames[archives[index].agentId],
-                onTap: () => _openSettings(archives[index]),
+            // 手绘便签:随机倾斜 + 贴条(角度由 archive.id 哈希确定)
+            itemBuilder: (context, index) => HandDrawnStickyItem(
+              tiltKey: archives[index].id,
+              child: WiredDraw(
+                child: _Live2DArchiveCard(
+                  archive: archives[index],
+                  agentName: agentNames[archives[index].agentId],
+                  onTap: () => _openSettings(archives[index]),
+                ),
               ),
             ),
           );

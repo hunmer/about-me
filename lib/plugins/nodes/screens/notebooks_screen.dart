@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
 import 'package:aboutme/plugins/nodes/models/notebook.dart';
@@ -89,12 +90,22 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
                 itemCount: filteredNotebooks.length,
                 itemBuilder: (context, index) {
                   final notebook = filteredNotebooks[index];
-                  // key 必须在列表直接子级（WiredDraw）上；挂载即描画入场
-                  return WiredDraw(
+                  final selected =
+                      notebook.id == controller.selectedNotebook?.id;
+                  // 手绘便签:随机倾斜 + 文件夹标签页贴条(标题/选中态);
+                  // key 必须在列表直接子级上;挂载即描画入场
+                  return HandDrawnStickyItem(
                     key: Key(notebook.id),
-                    child: ReorderableDelayedDragStartListener(
-                      index: index,
-                      child: _buildNotebookItem(context, controller, notebook),
+                    tiltKey: notebook.id,
+                    tapeStyle: HandDrawnTapeStyle.folderTab,
+                    tapeTitle: notebook.title,
+                    tapeColor: selected ? theme.primary : null,
+                    tapeLabelColor: selected ? theme.onPrimary : null,
+                    child: WiredDraw(
+                      child: ReorderableDelayedDragStartListener(
+                        index: index,
+                        child: _buildNotebookItem(context, controller, notebook),
+                      ),
                     ),
                   );
                 },
@@ -144,7 +155,6 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
       ),
       child: _NotebookCard(
         notebook: notebook,
-        selected: notebook.id == controller.selectedNotebook?.id,
         onTap: () => _openNotebook(context, controller, notebook),
         onMore: () => _showNotebookActions(context, notebook),
       ),
@@ -162,7 +172,9 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
     if (notebooks.isEmpty) {
       return _buildEmptyState(searching: true);
     }
-    return ListView.builder(
+    final theme = DSThemeBridge.resolve(context);
+    // 手绘便签:随机倾斜 + 文件夹标签页贴条(标题/选中态)
+    return HandDrawnListView(
       padding: EdgeInsets.only(
         left: 12,
         right: 12,
@@ -170,6 +182,17 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
         bottom: MediaQuery.paddingOf(context).bottom + 24,
       ),
       itemCount: notebooks.length,
+      tiltKeyOf: (index) => notebooks[index].id,
+      tapeStyle: HandDrawnTapeStyle.folderTab,
+      tapeTitleOf: (index) => notebooks[index].title,
+      tapeColor: (index) =>
+          notebooks[index].id == controller.selectedNotebook?.id
+          ? theme.primary
+          : null,
+      tapeLabelColorOf: (index) =>
+          notebooks[index].id == controller.selectedNotebook?.id
+          ? theme.onPrimary
+          : null,
       itemBuilder: (context, index) => WiredDraw(
         child: _buildNotebookItem(context, controller, notebooks[index]),
       ),
@@ -343,13 +366,11 @@ DsIconKind _statusIcon(NodeStatus status) => switch (status) {
 class _NotebookCard extends StatelessWidget {
   const _NotebookCard({
     required this.notebook,
-    required this.selected,
     this.onTap,
     this.onMore,
   });
 
   final Notebook notebook;
-  final bool selected;
   final VoidCallback? onTap;
   final VoidCallback? onMore;
 
@@ -361,28 +382,6 @@ class _NotebookCard extends StatelessWidget {
     final progress = WiredDrawTransition.progressOf(context);
 
     final nodes = notebook.nodes;
-
-    // 标签页：纸底墨线（选中态换主题色实底）
-    final tab = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      decoration: dsSketchDecoration(
-        theme: theme,
-        fillColor: selected ? theme.primary : theme.surface,
-        stroke: selected ? theme.primary : theme.ink,
-        strokeWidth: selected ? 2 : 1.8,
-        radius: const BorderRadius.vertical(top: Radius.circular(10)),
-        seed: seed,
-        progress: progress,
-      ),
-      child: Text(
-        notebook.title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: DsTypography.body.copyWith(
-          color: selected ? theme.onPrimary : theme.text,
-        ),
-      ),
-    );
 
     final panel = DsSketchPanel(
       theme: theme,
@@ -463,18 +462,14 @@ class _NotebookCard extends StatelessWidget {
       ),
     );
 
+    // 标签页贴条由外层 HandDrawnStickyItem(folderTab) 绘制,
+    // 卡体保持左上小圆角为标签让位
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Stack(
-          children: [
-            // 卡体下移，让标签页叠在卡体上沿，形成文件夹标签效果
-            Padding(padding: const EdgeInsets.only(top: 16), child: panel),
-            Positioned(left: 4, top: 0, child: tab),
-          ],
-        ),
+        child: panel,
       ),
     );
   }

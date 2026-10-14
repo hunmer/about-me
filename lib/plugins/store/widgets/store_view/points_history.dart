@@ -18,8 +18,8 @@ enum SortOrder { newestFirst, oldestFirst }
 /// 图例中"其他"（非事件奖励）分组的筛选键
 const String _kOtherFilterKey = '__other__';
 
-/// 奖励事件的图例配色（环分段 + 进度条共用，循环取色）
-const List<Color> _kEventPalette = [
+/// 插件分组的图例配色（环分段 + 进度条共用，循环取色）
+const List<Color> _kCategoryPalette = [
   Color(0xFF6C8EF5),
   Color(0xFF5ABF8A),
   Color(0xFFE8A33D),
@@ -31,17 +31,17 @@ const List<Color> _kEventPalette = [
   Color(0xFF5E7CC9),
 ];
 
-/// 奖励事件的图例图标
-const Map<String, IconData> _kEventIcons = {
-  'activity_added': Icons.celebration,
-  'checkin_completed': Icons.check_circle_outline,
-  'task_completed': Icons.task_alt,
-  'note_added': Icons.edit_note,
-  'goods_added': Icons.inventory_2,
-  'chat_message_sent': Icons.chat_bubble_outline,
-  'onRecordAdded': Icons.monitor_heart,
-  'diary_entry_created': Icons.menu_book,
-  'bill_added': Icons.receipt_long,
+/// 插件分组的图例图标（键为 EventOption.category，即插件名）
+const Map<String, IconData> _kCategoryIcons = {
+  'Activity': Icons.celebration,
+  'Checkin': Icons.check_circle_outline,
+  'Todo': Icons.task_alt,
+  'Notes': Icons.edit_note,
+  'Goods': Icons.inventory_2,
+  'Chat': Icons.chat_bubble_outline,
+  'Tracker': Icons.monitor_heart,
+  'Calendar Album': Icons.menu_book,
+  'Bill': Icons.receipt_long,
 };
 
 class PointsHistory extends StatefulWidget {
@@ -66,7 +66,7 @@ class _PointsHistoryState extends State<PointsHistory> {
   SortOrder _sortOrder = SortOrder.newestFirst;
   List<PointsLog> _filteredLogs = []; // 完整的过滤后数据
 
-  // 统计区状态：当前查看日期 + 图例筛选的事件键（null = 全部）
+  // 统计区状态：当前查看日期 + 图例筛选的插件名（null = 全部）
   DateTime _selectedDate = DateTime.now();
   String? _eventFilter;
 
@@ -145,16 +145,19 @@ class _PointsHistoryState extends State<PointsHistory> {
               .toList();
     }
 
-    // 事件（图例）过滤：按奖励事件的 reason 文案匹配
+    // 插件（图例）过滤：匹配该插件下所有奖励事件的 reason
     if (_eventFilter != null) {
       if (_eventFilter == _kOtherFilterKey) {
         final knownReasons = PointAwardEvent.eventReasons.values.toSet();
         filtered =
             filtered.where((log) => !knownReasons.contains(log.reason)).toList();
       } else {
-        final reason = PointAwardEvent.eventReasons[_eventFilter];
-        if (reason != null) {
-          filtered = filtered.where((log) => log.reason == reason).toList();
+        final reasons = PointAwardEvent.eventReasons.entries
+            .where((entry) => _categoryOfEvent(entry.key) == _eventFilter)
+            .map((entry) => entry.value)
+            .toSet();
+        if (reasons.isNotEmpty) {
+          filtered = filtered.where((log) => reasons.contains(log.reason)).toList();
         }
       }
     }
@@ -243,17 +246,6 @@ class _PointsHistoryState extends State<PointsHistory> {
     return (target != null && target > 0 ? target : 50).toDouble();
   }
 
-  /// 插件设置中启用（积分值 > 0）且实际会发奖的事件（有 reason 映射）
-  List<String> _enabledAwardEvents() {
-    final awards =
-        widget.controller.plugin.settings['point_awards']
-            as Map<String, dynamic>? ??
-        {};
-    return PointAwardEvent.eventReasons.keys
-        .where((key) => awards[key] is int && awards[key] as int > 0)
-        .toList();
-  }
-
   /// 积分记录的 reason 对应的奖励事件键（null = 非事件奖励）
   String? _eventKeyOfReason(String reason) {
     for (final entry in PointAwardEvent.eventReasons.entries) {
@@ -262,12 +254,12 @@ class _PointsHistoryState extends State<PointsHistory> {
     return null;
   }
 
-  /// 奖励事件的显示名称（取自 kDefaultAvailableEvents 的描述）
-  String _eventLabel(String eventKey) {
+  /// 奖励事件所属插件名（取自 kDefaultAvailableEvents 的 category）
+  String? _categoryOfEvent(String eventKey) {
     final option = kDefaultAvailableEvents.firstWhereOrNull(
       (e) => e.eventName == eventKey,
     );
-    return option?.description ?? eventKey;
+    return option?.category;
   }
 
   /// 指定日期当天的记录
@@ -282,47 +274,48 @@ class _PointsHistoryState extends State<PointsHistory> {
   }
 
   /// 构建环形统计项与对应的筛选键（平行数组）
+  /// 分组按插件名聚合；当日得分为 0 的插件不显示
   (List<HealthRingItemData>, List<String>) _buildRingItems(
     List<PointsLog> dayEarnedLogs,
   ) {
     final maxScore = _dailyTarget;
-    final dayScores = <String, int>{};
+    final categoryScores = <String, int>{};
     for (final log in dayEarnedLogs) {
-      final key = _eventKeyOfReason(log.reason);
-      if (key != null) {
-        dayScores[key] = (dayScores[key] ?? 0) + log.value;
-      }
+      final eventKey = _eventKeyOfReason(log.reason);
+      if (eventKey == null) continue;
+      final category = _categoryOfEvent(eventKey);
+      if (category == null) continue;
+      categoryScores[category] = (categoryScores[category] ?? 0) + log.value;
     }
     final otherScore = dayEarnedLogs
         .where((log) => _eventKeyOfReason(log.reason) == null)
         .fold<int>(0, (sum, log) => sum + log.value);
 
-    // 只展示当天有得分的事件；全部为 0 时展示所有启用事件
-    final enabled = _enabledAwardEvents();
-    var shown = enabled.where((key) => (dayScores[key] ?? 0) > 0).toList();
-    final showOther = otherScore > 0;
-    if (shown.isEmpty && !showOther) {
-      shown = enabled;
-    }
+    // 只展示当日有得分（> 0）的插件分组，按得分降序排列
+    final shown =
+        categoryScores.entries
+            .where((entry) => entry.value > 0)
+            .toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
 
     final items = <HealthRingItemData>[];
     final filterKeys = <String>[];
     for (var i = 0; i < shown.length; i++) {
-      final key = shown[i];
-      final score = (dayScores[key] ?? 0).toDouble();
+      final category = shown[i].key;
+      final score = shown[i].value.toDouble();
       items.add(
         HealthRingItemData(
-          label: _eventLabel(key),
-          icon: _kEventIcons[key] ?? Icons.stars,
-          color: _kEventPalette[i % _kEventPalette.length],
+          label: category,
+          icon: _kCategoryIcons[category] ?? Icons.extension,
+          color: _kCategoryPalette[i % _kCategoryPalette.length],
           score: score,
           maxScore: maxScore,
           value: score,
         ),
       );
-      filterKeys.add(key);
+      filterKeys.add(category);
     }
-    if (showOther) {
+    if (otherScore > 0) {
       items.add(
         HealthRingItemData(
           label: 'store_otherCategory'.tr,
@@ -338,7 +331,7 @@ class _PointsHistoryState extends State<PointsHistory> {
     return (items, filterKeys);
   }
 
-  /// 点击图例：筛选/取消筛选对应事件的记录
+  /// 点击图例：筛选/取消筛选对应插件的记录
   void _onLegendTapped(String filterKey) {
     setState(() {
       _eventFilter = _eventFilter == filterKey ? null : filterKey;
@@ -678,7 +671,7 @@ class _PointsHistoryState extends State<PointsHistory> {
     );
   }
 
-  /// 统计区：日期切换行 + 健康得分环卡（按事件分段，图例可点击筛选）
+  /// 统计区：日期切换行 + 健康得分环卡（按插件分段，图例可点击筛选）
   Widget _buildStatsSection(BuildContext context, AppThemeData theme) {
     final dayLogs = _logsOfDay(_selectedDate);
     final dayEarned = dayLogs.where((log) => log.type == '获得').toList();
@@ -689,7 +682,7 @@ class _PointsHistoryState extends State<PointsHistory> {
         ? 'store_all'.tr
         : (_eventFilter == _kOtherFilterKey
               ? 'store_otherCategory'.tr
-              : _eventLabel(_eventFilter!));
+              : _eventFilter!);
     // 今日显示"今日得分"，其他日期显示月/日
     final dayTitle = _isToday
         ? 'store_dailyScoreTitle'.tr

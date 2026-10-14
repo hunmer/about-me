@@ -3,6 +3,7 @@ import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:share_plus/share_plus.dart';
@@ -242,7 +243,7 @@ class _FilePreviewScreenState extends State<FilePreviewScreen> {
         minScale: PhotoViewComputedScale.contained,
         maxScale: PhotoViewComputedScale.covered * 2,
         backgroundDecoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color: dsNonOpaqueRouteBackdrop(context),
         ),
         loadingBuilder:
             (context, event) => Center(

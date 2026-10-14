@@ -1,3 +1,4 @@
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:get/get.dart';
@@ -336,7 +337,7 @@ class _SuperCupertinoNavigationWrapperState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: dsNonOpaqueRouteBackdrop(context),
         border: Border(
           bottom: BorderSide(
             color: Theme.of(context).dividerColor.withOpacity(0.12),

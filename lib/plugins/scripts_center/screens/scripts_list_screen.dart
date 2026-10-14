@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_executor.dart';
@@ -406,20 +407,24 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
               gridDelegate:
                   const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 240,
-                    mainAxisSpacing: 12,
+                    mainAxisSpacing: 16, // ≥ 贴条出血,避免压盖
                     crossAxisSpacing: 12,
                     childAspectRatio: 0.95,
                   ),
               itemCount: scripts.length,
               itemBuilder: (context, index) {
                 final script = scripts[index];
+                // 手绘便签:随机倾斜 + 贴条(角度由 script.id 哈希确定);
                 // 挂载即播墨线描画入场（design.md §10）
-                return WiredDraw(
-                  child: ScriptCard(
-                    script: script,
-                    onTap: () => _showScriptDialog(script: script),
-                    onLongPress: () => _showActionSheet(script),
-                    onRun: () => _runScript(script),
+                return HandDrawnStickyItem(
+                  tiltKey: script.id,
+                  child: WiredDraw(
+                    child: ScriptCard(
+                      script: script,
+                      onTap: () => _showScriptDialog(script: script),
+                      onLongPress: () => _showActionSheet(script),
+                      onRun: () => _runScript(script),
+                    ),
                   ),
                 );
               },
