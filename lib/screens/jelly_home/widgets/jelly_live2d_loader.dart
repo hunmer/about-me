@@ -133,6 +133,10 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     // 立即刷新选中态：档案指向同一模型时 _selectModel 会跳过重载，
     // 不先 setState 的话资源条看起来毫无反应
     setState(() => plugin.selectedId = archive.id);
+    eventManager.broadcast(
+      Live2DPlugin.archiveSelectedEvent,
+      EventArgs(Live2DPlugin.archiveSelectedEvent),
+    );
     final model = modelDefinitionForArchive(archive);
     if (model != null) await _selectModel(model);
     // 落盘放在切换之后：持久化失败不应阻断本次模型切换

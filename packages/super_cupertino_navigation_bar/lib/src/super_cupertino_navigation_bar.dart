@@ -234,6 +234,8 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                 ? (widget.appBar.searchBar!.animationBehavior ==
                                         SearchBarAnimationBehavior.top
                                     ? topPadding +
+                                        widget.measures
+                                            .focusedSearchBarTopPadding +
                                         widget.measures.searchContainerHeight +
                                         widget.measures.bottomToolbarHeight
                                             .toDouble()
@@ -263,6 +265,8 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                             CupertinoTheme.of(context).scaffoldBackgroundColor,
                         padding: EdgeInsets.only(
                           top: topPadding +
+                              widget.measures
+                                  .focusedSearchBarTopPadding +
                               widget.measures.searchContainerHeight.toDouble() +
                               widget.measures.bottomToolbarHeight.toDouble(),
                         ),
@@ -362,6 +366,7 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                             : 1));
 
                 double focussedToolbar = topPadding +
+                    widget.measures.focusedSearchBarTopPadding +
                     widget.measures.searchContainerHeight +
                     widget.appBar.bottom!.height;
 
@@ -413,7 +418,9 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                       ? (widget.appBar.searchBar!
                                                   .animationBehavior ==
                                               SearchBarAnimationBehavior.top
-                                          ? MediaQuery.paddingOf(context).top
+                                          ? MediaQuery.paddingOf(context).top +
+                                              widget.measures
+                                                  .focusedSearchBarTopPadding
                                           : widget.measures
                                                   .primaryToolbarHeight +
                                               MediaQuery.paddingOf(context).top)

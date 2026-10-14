@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:flutter/foundation.dart';

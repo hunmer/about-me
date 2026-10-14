@@ -24,6 +24,9 @@ class Live2DPlugin extends BasePlugin {
   static const defaultBackgroundBlur = 0.0;
   static const defaultBackgroundOpacity = 1.0;
 
+  /// 选中档案变化时广播的事件名（状态面板等据此同步头像）
+  static const archiveSelectedEvent = 'live2d_archive_selected';
+
   Duration get bubbleTypingInterval => Duration(
     milliseconds:
         settings['typingIntervalMs'] as int? ?? defaultTypingIntervalMs,
@@ -222,6 +225,7 @@ class Live2DPlugin extends BasePlugin {
     }
     selectedId = archive.id;
     await save();
+    _notifyArchiveSelected();
   }
 
   Future<void> deleteArchive(String id) async {
@@ -236,6 +240,14 @@ class Live2DPlugin extends BasePlugin {
       await controller!.conversationService.deleteConversation(conversation.id);
     }
     await save();
+    _notifyArchiveSelected();
+  }
+
+  void _notifyArchiveSelected() {
+    EventManager.instance.broadcast(
+      archiveSelectedEvent,
+      EventArgs(archiveSelectedEvent),
+    );
   }
 
   Future<String> sendMessage(String text) async {

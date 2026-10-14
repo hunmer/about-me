@@ -166,12 +166,18 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
   }
 
   /// 以 smooth_sheets 底部弹层打开新建任务表单
-  void _openTaskFormSheet(BuildContext context) {
+  void _openTaskFormSheet(
+    BuildContext context, {
+    TaskPriority? priority,
+    DateTime? startDate,
+  }) {
     SmoothBottomSheet.show(
       context: context,
       builder: (context) => TaskForm(
         taskController: _plugin.taskController,
         reminderController: _plugin.reminderController,
+        initialPriority: priority,
+        initialStartDate: startDate,
         inSheet: true,
       ),
     );
@@ -499,15 +505,7 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
                     _plugin.taskController.updateTaskStatus(task.id, status);
                   },
                   onAddTask: (priority) {
-                    NavigationHelper.openContainerWithHero(
-                      context,
-                      (context) => TaskForm(
-                        taskController: _plugin.taskController,
-                        reminderController: _plugin.reminderController,
-                        initialPriority: priority,
-                      ),
-                      transitionDuration: const Duration(milliseconds: 300),
-                    );
+                    _openTaskFormSheet(context, priority: priority);
                   },
                 )
               : TodoWeekView(
@@ -517,15 +515,7 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
                     _plugin.taskController.updateTaskStatus(task.id, status);
                   },
                   onAddTask: (date) {
-                    NavigationHelper.openContainerWithHero(
-                      context,
-                      (context) => TaskForm(
-                        taskController: _plugin.taskController,
-                        reminderController: _plugin.reminderController,
-                        initialStartDate: date,
-                      ),
-                      transitionDuration: const Duration(milliseconds: 300),
-                    );
+                    _openTaskFormSheet(context, startDate: date);
                   },
                 );
         },

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
 
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import '../plugins/openai/models/prompt_preset.dart';
 import '../plugins/openai/models/ai_agent.dart';
 import 'form_fields/index.dart';
@@ -42,16 +45,18 @@ class PresetEditForm extends StatelessWidget {
   }
 
   /// 处理表单提交
-  Future<void> _handleSubmit(BuildContext context, Map<String, dynamic> values) async {
+  Future<void> _handleSubmit(
+    BuildContext context,
+    Map<String, dynamic> values,
+  ) async {
     final name = values['name'] as String;
     final description = values['description'] as String?;
     final promptsRaw = values['prompts'];
-    final prompts =
-        (promptsRaw is List<Prompt>
-                ? promptsRaw
-                : promptsRaw is List<Map<String, dynamic>>
-                ? promptsRaw.map((e) => Prompt.fromJson(e)).toList()
-            : <Prompt>[]);
+    final prompts = (promptsRaw is List<Prompt>
+        ? promptsRaw
+        : promptsRaw is List<Map<String, dynamic>>
+        ? promptsRaw.map((e) => Prompt.fromJson(e)).toList()
+        : <Prompt>[]);
     final tags = values['tags'] as List<String>? ?? [];
 
     // 验证至少有一个 prompt
@@ -92,77 +97,95 @@ class PresetEditForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isEditing = preset != null;
     final formKey = GlobalKey<FormBuilderState>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          preset != null ? 'openai_editPreset'.tr : 'openai_addPreset'.tr,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              final state = formKey.currentState;
-              if (state != null && state.saveAndValidate()) {
-                _handleSubmit(context, state.value);
-              }
-            },
-            child: Text(isEditing ? 'openai_update'.tr : 'openai_save'.tr),
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: FormBuilderWrapper(
-          formKey: formKey,
-          config: FormConfig(
-            showSubmitButton: false,
-            showResetButton: false,
-            fieldSpacing: 16,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            fields: [
-              // 名称字段
-              FormFieldConfig(
-                name: 'name',
-                type: FormFieldType.text,
-                labelText: 'openai_presetTitle'.tr,
-                hintText: 'openai_pleaseEnterTitle'.tr,
-                initialValue: preset?.name ?? '',
-                required: true,
-                validationMessage: 'openai_pleaseEnterTitle'.tr,
-              ),
+    // design.md §2.1：表单页用轻量手绘顶栏（DSLightHeader），不手写 Material AppBar
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Scaffold(
+            backgroundColor: dsScaffoldBackground(theme),
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  DSLightHeader(
+                    title: preset != null
+                        ? 'openai_editPreset'.tr
+                        : 'openai_addPreset'.tr,
+                    trailing: DSIconButton(
+                      icon: DsIconKind.check,
+                      size: 38,
+                      color: theme.surface,
+                      iconColor: theme.text,
+                      onPressed: () {
+                        final state = formKey.currentState;
+                        if (state != null && state.saveAndValidate()) {
+                          _handleSubmit(context, state.value);
+                        }
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: FormBuilderWrapper(
+                        formKey: formKey,
+                        config: FormConfig(
+                          showSubmitButton: false,
+                          showResetButton: false,
+                          fieldSpacing: 16,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          fields: [
+                            // 名称字段
+                            FormFieldConfig(
+                              name: 'name',
+                              type: FormFieldType.text,
+                              labelText: 'openai_presetTitle'.tr,
+                              hintText: 'openai_pleaseEnterTitle'.tr,
+                              initialValue: preset?.name ?? '',
+                              required: true,
+                              validationMessage: 'openai_pleaseEnterTitle'.tr,
+                            ),
 
-              // 描述字段
-              FormFieldConfig(
-                name: 'description',
-                type: FormFieldType.textArea,
-                labelText: 'openai_presetDescription'.tr,
-                hintText: 'openai_enterDescription'.tr,
-                initialValue: preset?.description ?? '',
-                extra: {'minLines': 2, 'maxLines': 4},
-              ),
+                            // 描述字段
+                            FormFieldConfig(
+                              name: 'description',
+                              type: FormFieldType.textArea,
+                              labelText: 'openai_presetDescription'.tr,
+                              hintText: 'openai_enterDescription'.tr,
+                              initialValue: preset?.description ?? '',
+                              extra: {'minLines': 2, 'maxLines': 4},
+                            ),
 
-              // Prompt 编辑器
-              FormFieldConfig(
-                name: 'prompts',
-                type: FormFieldType.promptEditor,
-                initialValue: _getInitialPrompts(),
-              ),
+                            // Prompt 编辑器
+                            FormFieldConfig(
+                              name: 'prompts',
+                              type: FormFieldType.promptEditor,
+                              initialValue: _getInitialPrompts(),
+                            ),
 
-              // 标签字段
-              FormFieldConfig(
-                name: 'tags',
-                type: FormFieldType.tags,
-                initialValue: preset?.tags ?? [],
-                initialTags: preset?.tags ?? [],
-                extra: {'addButtonText': 'openai_addTag'.tr},
+                            // 标签字段
+                            FormFieldConfig(
+                              name: 'tags',
+                              type: FormFieldType.tags,
+                              initialValue: preset?.tags ?? [],
+                              initialTags: preset?.tags ?? [],
+                              extra: {'addButtonText': 'openai_addTag'.tr},
+                            ),
+                          ],
+                          onSubmit: (values) => _handleSubmit(context, values),
+                        ),
+                        buttonBuilder: null,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-            onSubmit: (values) => _handleSubmit(context, values),
-          ),
-          buttonBuilder: null,
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -174,16 +197,16 @@ class PresetEditForm extends StatelessWidget {
 Future<PromptPreset?> showPresetEditPage({
   required BuildContext context,
   PromptPreset? preset,
-  required Future<void> Function(PromptPreset preset, List<Prompt> prompts) onSave,
+  required Future<void> Function(PromptPreset preset, List<Prompt> prompts)
+  onSave,
 }) async {
-  return await Navigator.of(context).push<PromptPreset>(
-    MaterialPageRoute(
-      builder:
-          (context) => PresetEditForm(
-            preset: preset,
-            onSave: onSave,
-            onCancel: () => Navigator.of(context).pop(),
-          ),
+  // design.md §5：子页面统一走 NavigationHelper，平台转场（iOS 侧滑返回）
+  return await NavigationHelper.push<PromptPreset>(
+    context,
+    PresetEditForm(
+      preset: preset,
+      onSave: onSave,
+      onCancel: () => Navigator.of(context).pop(),
     ),
   );
 }

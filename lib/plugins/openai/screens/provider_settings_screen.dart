@@ -5,6 +5,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
+import 'package:aboutme/plugins/openai/widgets/provider_logo.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'provider_edit_screen.dart';
@@ -129,6 +130,44 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
     }
   }
 
+  /// 长按提供商卡片弹出的操作抽屉
+  Future<void> _showProviderActions(ServiceProvider provider) {
+    return showDSBottomSheet(
+      context: context,
+      title: provider.label,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DSSheetAction(
+            icon: DsIconKind.edit,
+            label: 'openai_editProvider'.tr,
+            onTap: () {
+              Navigator.pop(context);
+              _editProvider(provider);
+            },
+          ),
+          DSSheetAction(
+            icon: DsIconKind.copy,
+            label: 'openai_cloneProvider'.tr,
+            onTap: () {
+              Navigator.pop(context);
+              _cloneProvider(provider);
+            },
+          ),
+          DSSheetAction(
+            icon: DsIconKind.trash,
+            label: 'app_delete'.tr,
+            destructive: true,
+            onTap: () {
+              Navigator.pop(context);
+              _deleteProvider(provider);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _cloneProvider(ServiceProvider provider) async {
     try {
       final clonedProvider = provider.copyWith(
@@ -203,61 +242,45 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
             final provider = _providers[index];
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: DSCard(
-                padding: EdgeInsets.symmetric(
-                  horizontal: theme.spacing.md,
-                  vertical: theme.spacing.sm,
-                ),
-                onTap: () => _editProvider(provider),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            provider.label,
-                            style: DsTypography.body.copyWith(
-                              color: theme.text,
+              // 长按弹出操作抽屉（编辑/克隆/删除）
+              child: GestureDetector(
+                onLongPress: () => _showProviderActions(provider),
+                child: DSCard(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: theme.spacing.md,
+                    vertical: theme.spacing.sm,
+                  ),
+                  onTap: () => _editProvider(provider),
+                  child: Row(
+                    children: [
+                      if (ProviderLogo.hasLogo(provider.id)) ...[
+                        ProviderLogo(id: provider.id, size: 22),
+                        SizedBox(width: theme.spacing.sm),
+                      ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              provider.label,
+                              style: DsTypography.body.copyWith(
+                                color: theme.text,
+                              ),
                             ),
-                          ),
-                          Text(
-                            provider.baseUrl,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: DsTypography.caption.copyWith(
-                              color: theme.textSub,
+                            Text(
+                              provider.baseUrl,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    DSIconButton(
-                      icon: DsIconKind.copy,
-                      size: 36,
-                      color: theme.surfaceAlt,
-                      iconColor: theme.textSub,
-                      onPressed: () => _cloneProvider(provider),
-                      tooltip: 'openai_cloneProvider'.tr,
-                    ),
-                    DSIconButton(
-                      icon: DsIconKind.edit,
-                      size: 36,
-                      color: theme.surfaceAlt,
-                      iconColor: theme.textSub,
-                      onPressed: () => _editProvider(provider),
-                      tooltip: 'openai_editProvider'.tr,
-                    ),
-                    DSIconButton(
-                      icon: DsIconKind.trash,
-                      size: 36,
-                      color: theme.danger,
-                      iconColor: theme.onDanger,
-                      onPressed: () => _deleteProvider(provider),
-                      tooltip: 'app_delete'.tr,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );

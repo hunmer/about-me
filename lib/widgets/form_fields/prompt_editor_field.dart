@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/widgets/prompt_editor.dart';
 import 'form_field_wrapper.dart';
+import 'sketch_field_shell.dart';
 
 /// PromptEditor 字段包装器
 ///
@@ -75,7 +77,8 @@ class _PromptEditorFieldState extends State<PromptEditorField> {
   void didUpdateWidget(covariant PromptEditorField oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 外部改值（patchValue）时同步内部编辑状态
-    if (_encodeValue(widget.initialValue) != _encodeValue(oldWidget.initialValue)) {
+    if (_encodeValue(widget.initialValue) !=
+        _encodeValue(oldWidget.initialValue)) {
       reset();
     }
   }
@@ -111,6 +114,25 @@ class _PromptEditorFieldState extends State<PromptEditorField> {
 
   @override
   Widget build(BuildContext context) {
+    // 手绘模式：有 DS 主题祖先时用墨线描边外壳（对齐其他表单字段，design.md §9.1）
+    final dsTheme = AppTheme.maybeOf(context);
+    if (dsTheme != null) {
+      return SketchFieldShell(
+        theme: dsTheme,
+        label: widget.labelText,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 500),
+          child: PromptEditor(
+            prompts: _prompts,
+            onPromptsChanged: widget.enabled ? _onPromptsChanged : (_) {},
+            separateSystemPrompt: true,
+            systemPromptController: _systemPromptController,
+          ),
+        ),
+      );
+    }
+
+    // Material 回退：无 DS 主题祖先的旧调用点
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,

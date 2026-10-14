@@ -27,15 +27,30 @@ class PromptEditor extends StatefulWidget {
 class _PromptEditorState extends State<PromptEditor> {
   late List<Prompt> _prompts;
 
+  /// 与 [_prompts] 逐位对应的内容输入控制器（DSInput 无 initialValue）
+  final List<TextEditingController> _contentControllers = [];
+
   @override
   void initState() {
     super.initState();
     _prompts = List.from(widget.prompts);
+    _contentControllers.addAll(
+      _prompts.map((p) => TextEditingController(text: p.content)),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _contentControllers) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   void _addPrompt() {
     setState(() {
       _prompts.add(Prompt(type: 'user', content: ''));
+      _contentControllers.add(TextEditingController());
       widget.onPromptsChanged(_prompts);
       // 通知外部添加了新消息
       widget.onAddMessage?.call();
@@ -45,6 +60,7 @@ class _PromptEditorState extends State<PromptEditor> {
   void _removePrompt(int index) {
     setState(() {
       _prompts.removeAt(index);
+      _contentControllers.removeAt(index).dispose();
       widget.onPromptsChanged(_prompts);
     });
   }
@@ -73,11 +89,10 @@ class _PromptEditorState extends State<PromptEditor> {
     return Pressable(
       onPressed: onPressed,
       semanticLabel: '删除消息',
-      builder:
-          (context, states) => Padding(
-            padding: const EdgeInsets.all(8),
-            child: DsIcon(DsIconKind.trash, size: 20, color: theme.danger),
-          ),
+      builder: (context, states) => Padding(
+        padding: const EdgeInsets.all(8),
+        child: DsIcon(DsIconKind.trash, size: 20, color: theme.danger),
+      ),
     );
   }
 
@@ -97,11 +112,9 @@ class _PromptEditorState extends State<PromptEditor> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // System Prompt 单独显示
-                  TextFormField(
+                  DSInput(
                     controller: widget.systemPromptController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                    ),
+                    label: 'openai_systemPrompt'.tr,
                     minLines: 4,
                     maxLines: 4,
                     onChanged: (value) {
@@ -116,6 +129,10 @@ class _PromptEditorState extends State<PromptEditor> {
                           _prompts.insert(
                             0,
                             Prompt(type: 'system', content: value),
+                          );
+                          _contentControllers.insert(
+                            0,
+                            TextEditingController(text: value),
                           );
                           widget.onPromptsChanged(_prompts);
                         });
@@ -147,7 +164,7 @@ class _PromptEditorState extends State<PromptEditor> {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: DSCard(
-                          color: Colors.transparent,
+                          color: DsColors.transparent,
                           padding: const EdgeInsets.all(8),
                           child: Column(
                             children: [
@@ -189,18 +206,14 @@ class _PromptEditorState extends State<PromptEditor> {
                                   minHeight: 80,
                                   maxHeight: 160,
                                 ),
-                                child: TextFormField(
-                                  initialValue: prompt.content,
-                                  decoration: const InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    alignLabelWithHint: true,
-                                  ),
+                                child: DSInput(
+                                  controller:
+                                      _contentControllers[originalIndex],
                                   maxLines: null,
-                                  onChanged:
-                                      (value) => _updatePromptContent(
-                                        originalIndex,
-                                        value,
-                                      ),
+                                  onChanged: (value) => _updatePromptContent(
+                                    originalIndex,
+                                    value,
+                                  ),
                                 ),
                               ),
                             ],
@@ -225,7 +238,7 @@ class _PromptEditorState extends State<PromptEditor> {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: DSCard(
-                      color: Colors.transparent,
+                      color: DsColors.transparent,
                       padding: const EdgeInsets.all(8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,16 +282,12 @@ class _PromptEditorState extends State<PromptEditor> {
                               minHeight: 120,
                               maxHeight: 200,
                             ),
-                            child: TextFormField(
-                              initialValue: prompt.content,
-                              decoration: InputDecoration(
-                                labelText: 'openai_contentLabel'.tr,
-                                border: const OutlineInputBorder(),
-                                alignLabelWithHint: true,
-                              ),
+                            child: DSInput(
+                              controller: _contentControllers[index],
+                              label: 'openai_contentLabel'.tr,
                               maxLines: null,
-                              onChanged:
-                                  (value) => _updatePromptContent(index, value),
+                              onChanged: (value) =>
+                                  _updatePromptContent(index, value),
                             ),
                           ),
                         ],

@@ -41,157 +41,151 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
-    // Scaffold/AppBar 属结构性组件,刻意保留 Material;列表项已换 DSListItem
+    // Scaffold 属结构性组件,刻意保留 Material;顶栏用 DSLightHeader,列表项用 DSListItem
     return DSThemeBridge(
       child: Builder(
         builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
           return Scaffold(
-            appBar: AppBar(
-              leading: DSIconButton(
-                icon: DsIconKind.chevronLeft,
-                size: 40,
-                color: theme.surfaceAlt,
-                iconColor: theme.textSub,
-                onPressed: () => Navigator.maybePop(context),
-              ),
-              title: Text('openai_pluginSettingsTitle'.tr),
-            ),
             body: Builder(
               builder: (context) {
                 final theme = DSThemeBridge.resolve(context);
-                return ListView(
-                  padding: EdgeInsets.all(theme.spacing.lg),
+                return Column(
                   children: [
-                    DSListItem(
-                      leading: DsIcon(
-                        DsIconKind.layers,
-                        size: 22,
-                        color: theme.primary,
-                      ),
-                      title: 'Skills',
-                      subtitle:
-                          '${AgentLibResourceService.globalSlots.skills.length} 个资源',
-                      showChevron: true,
-                      onTap:
-                          () => NavigationHelper.push(
-                            context,
-                            AgentResourceListScreen(
-                              type: AgentResourceType.skills,
-                              resources:
-                                  AgentLibResourceService.globalSlots.skills,
-                              onChanged: (items) {
-                                _saveSlots(
-                                  AgentResourceSlots(
-                                    skills: items,
-                                    mcpServers:
-                                        AgentLibResourceService
-                                            .globalSlots
-                                            .mcpServers,
-                                  ),
-                                );
-                                setState(() {});
-                              },
+                    DSLightHeader(title: 'openai_pluginSettingsTitle'.tr),
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.all(theme.spacing.lg),
+                        children: [
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.layers,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: 'Skills',
+                            subtitle:
+                                '${AgentLibResourceService.globalSlots.skills.length} 个资源',
+                            showChevron: true,
+                            onTap: () => NavigationHelper.push(
+                              context,
+                              AgentResourceListScreen(
+                                type: AgentResourceType.skills,
+                                resources:
+                                    AgentLibResourceService.globalSlots.skills,
+                                onChanged: (items) {
+                                  _saveSlots(
+                                    AgentResourceSlots(
+                                      skills: items,
+                                      mcpServers: AgentLibResourceService
+                                          .globalSlots
+                                          .mcpServers,
+                                    ),
+                                  );
+                                  setState(() {});
+                                },
+                              ),
                             ),
                           ),
-                    ),
-                    SizedBox(height: theme.spacing.sm),
-                    DSListItem(
-                      leading: DsIcon(
-                        DsIconKind.block,
-                        size: 22,
-                        color: theme.primary,
-                      ),
-                      title: 'MCP Servers',
-                      subtitle:
-                          '${AgentLibResourceService.globalSlots.mcpServers.length} 个资源',
-                      showChevron: true,
-                      onTap:
-                          () => NavigationHelper.push(
-                            context,
-                            AgentResourceListScreen(
-                              type: AgentResourceType.mcpServers,
-                              resources:
-                                  AgentLibResourceService
-                                      .globalSlots
-                                      .mcpServers,
-                              onChanged: (items) {
-                                _saveSlots(
-                                  AgentResourceSlots(
-                                    skills:
-                                        AgentLibResourceService
-                                            .globalSlots
-                                            .skills,
-                                    mcpServers: items,
-                                  ),
-                                );
-                                setState(() {});
-                              },
+                          SizedBox(height: theme.spacing.sm),
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.block,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: 'MCP Servers',
+                            subtitle:
+                                '${AgentLibResourceService.globalSlots.mcpServers.length} 个资源',
+                            showChevron: true,
+                            onTap: () => NavigationHelper.push(
+                              context,
+                              AgentResourceListScreen(
+                                type: AgentResourceType.mcpServers,
+                                resources: AgentLibResourceService
+                                    .globalSlots
+                                    .mcpServers,
+                                onChanged: (items) {
+                                  _saveSlots(
+                                    AgentResourceSlots(
+                                      skills: AgentLibResourceService
+                                          .globalSlots
+                                          .skills,
+                                      mcpServers: items,
+                                    ),
+                                  );
+                                  setState(() {});
+                                },
+                              ),
                             ),
                           ),
-                    ),
-                    SizedBox(height: theme.spacing.sm),
-                    DSListItem(
-                      leading: DsIcon(
-                        DsIconKind.moon,
-                        size: 22,
-                        color: theme.primary,
+                          SizedBox(height: theme.spacing.sm),
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.moon,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: '活人感决策模型（Jev）',
+                            subtitle: '活人感增强的快决策层，未配置时使用本地规则',
+                            showChevron: true,
+                            onTap: () => showJevSettingsDialog(context),
+                          ),
+                          SizedBox(height: theme.spacing.sm),
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.gear,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: 'openai_providerSettingsTitle'.tr,
+                            subtitle: 'openai_pluginDescription'.tr,
+                            showChevron: true,
+                            onTap: () {
+                              NavigationHelper.push(
+                                context,
+                                const ProviderSettingsScreen(),
+                              );
+                            },
+                          ),
+                          SizedBox(height: theme.spacing.sm),
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.bot,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: 'openai_modelManagement'.tr,
+                            subtitle: 'openai_modelManagementDescription'.tr,
+                            showChevron: true,
+                            onTap: () {
+                              NavigationHelper.push(
+                                context,
+                                const ModelListScreen(),
+                              );
+                            },
+                          ),
+                          SizedBox(height: theme.spacing.sm),
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.book,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: 'openai_promptPresetManagement'.tr,
+                            subtitle:
+                                'openai_promptPresetManagementDescription'.tr,
+                            showChevron: true,
+                            onTap: () {
+                              NavigationHelper.push(
+                                context,
+                                const PromptPresetScreen(),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                      title: '活人感决策模型（Jev）',
-                      subtitle: '活人感增强的快决策层，未配置时使用本地规则',
-                      showChevron: true,
-                      onTap: () => showJevSettingsDialog(context),
-                    ),
-                    SizedBox(height: theme.spacing.sm),
-                    DSListItem(
-                      leading: DsIcon(
-                        DsIconKind.gear,
-                        size: 22,
-                        color: theme.primary,
-                      ),
-                      title: 'openai_providerSettingsTitle'.tr,
-                      subtitle: 'openai_pluginDescription'.tr,
-                      showChevron: true,
-                      onTap: () {
-                        NavigationHelper.push(
-                          context,
-                          const ProviderSettingsScreen(),
-                        );
-                      },
-                    ),
-                    SizedBox(height: theme.spacing.sm),
-                    DSListItem(
-                      leading: DsIcon(
-                        DsIconKind.bot,
-                        size: 22,
-                        color: theme.primary,
-                      ),
-                      title: 'openai_modelManagement'.tr,
-                      subtitle: 'openai_modelManagementDescription'.tr,
-                      showChevron: true,
-                      onTap: () {
-                        NavigationHelper.push(context, const ModelListScreen());
-                      },
-                    ),
-                    SizedBox(height: theme.spacing.sm),
-                    DSListItem(
-                      leading: DsIcon(
-                        DsIconKind.book,
-                        size: 22,
-                        color: theme.primary,
-                      ),
-                      title: 'openai_promptPresetManagement'.tr,
-                      subtitle: 'openai_promptPresetManagementDescription'.tr,
-                      showChevron: true,
-                      onTap: () {
-                        NavigationHelper.push(
-                          context,
-                          const PromptPresetScreen(),
-                        );
-                      },
                     ),
                   ],
                 );

@@ -1,3 +1,5 @@
+import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/screens/jelly_home/companion_controller.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +28,24 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
   void initState() {
     super.initState();
     _settings.load();
+    eventManager.subscribe(
+      Live2DPlugin.archiveSelectedEvent,
+      _onArchiveSelected,
+    );
+  }
+
+  @override
+  void dispose() {
+    eventManager.unsubscribe(
+      Live2DPlugin.archiveSelectedEvent,
+      _onArchiveSelected,
+    );
+    super.dispose();
+  }
+
+  /// 选中档案变化后重建，头像同步为新档案的封面
+  void _onArchiveSelected(EventArgs args) {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -54,17 +74,7 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
                       _positioned(
                         _mapRegion(_settings.config.avatarRegion),
                         constraints.biggest,
-                        ClipOval(
-                          child: _settings.avatarPath == null
-                              ? Image.asset(
-                                  'assets/images/default_avatar.jpg',
-                                  fit: BoxFit.cover,
-                                )
-                              : AdaptiveImage(
-                                  imagePath: _settings.avatarPath,
-                                  fit: BoxFit.cover,
-                                ),
-                        ),
+                        ClipOval(child: _buildAvatar()),
                       ),
                       _positioned(
                         _mapRegion(_settings.config.experienceRegion),
@@ -121,6 +131,22 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
   }
 
   Rect _mapRegion(Rect source) => _settings.selectedStyle.mapToVisible(source);
+
+  /// 头像优先取选中 Live2D 档案的封面，无封面时回退用户头像
+  Widget _buildAvatar() {
+    final cover = Live2DPlugin.instance.selected?.coverPath;
+    if (cover != null && cover.isNotEmpty) {
+      return JellyConfigurableImage(path: cover, fit: BoxFit.cover);
+    }
+    final avatarPath = _settings.avatarPath;
+    if (avatarPath == null) {
+      return Image.asset(
+        'assets/images/default_avatar.jpg',
+        fit: BoxFit.cover,
+      );
+    }
+    return AdaptiveImage(imagePath: avatarPath, fit: BoxFit.cover);
+  }
 
   Widget _positioned(Rect rect, Size size, Widget child) {
     return Positioned.fromRect(

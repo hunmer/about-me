@@ -49,6 +49,9 @@ class Measures {
       searchContainerHeight + largeTitleContainerHeight + bottomToolbarHeight;
 
   double get searchBarBottomPadding => 14;
+
+  /// 聚焦收缩（header 隐藏）后，搜索框与状态栏安全区下沿的间距
+  double get focusedSearchBarTopPadding => 8;
   double get searchContainerHeight => searchTextFieldHeight == 0
       ? 0
       : searchTextFieldHeight + searchBarBottomPadding;

@@ -529,6 +529,7 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                     JellyBox(
                       radius: theme.radii.xl,
                       padding: const EdgeInsets.all(16),
+                      strokeColor: theme.ink,
                       child: Column(
                         children: [
                           Row(
@@ -677,6 +678,7 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                         child: JellyBox(
                           radius: theme.radii.xl,
                           padding: const EdgeInsets.all(16),
+                          strokeColor: theme.ink,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

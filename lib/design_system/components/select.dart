@@ -257,15 +257,20 @@ class _SelectRow extends StatelessWidget {
             ),
           );
         }
-        // 悬停/按压：淡紫实底高亮（无描边，保持行内轻量）
+        // 悬停/按压：淡紫实底高亮 + 主题墨线描边；静止态全透明保持行内轻量
+        final active = pressed || hovered;
         return Container(
           padding: EdgeInsets.symmetric(
             horizontal: theme.spacing.md,
             vertical: theme.spacing.sm + 2,
           ),
-          decoration: BoxDecoration(
-            color: pressed || hovered ? theme.surfaceAlt : DsColors.transparent,
-            borderRadius: theme.radii.md,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: active ? theme.surfaceAlt : DsColors.transparent,
+            stroke: active
+                ? theme.ink.withValues(alpha: 0.55)
+                : DsColors.transparent,
+            radius: theme.radii.md,
           ),
           child: Text(
             item.label,
