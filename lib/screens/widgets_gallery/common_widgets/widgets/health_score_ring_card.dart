@@ -24,6 +24,9 @@ class HealthScoreRingCardWidget extends StatefulWidget {
   /// 是否为内联模式（内联模式使用 double.maxFinite，非内联模式使用固定尺寸）
   final bool inline;
 
+  /// 统计项点击回调（如点击图例筛选对应记录），null 时不可点击
+  final void Function(int index)? onItemTap;
+
   /// 组件尺寸
   final HomeWidgetSize size;
 
@@ -34,6 +37,7 @@ class HealthScoreRingCardWidget extends StatefulWidget {
     this.filterLabel,
     required this.items,
     this.inline = false,
+    this.onItemTap,
     this.size = const Large3Size(),
   });
 
@@ -335,17 +339,30 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
               ),
             );
           },
-          child: _StatItemRow(
-            item: item,
-            size: widget.size,
-            isDark: isDark,
-            animatedScore: item.score * itemAnimation.value,
+          child: _wrapTap(
+            _StatItemRow(
+              item: item,
+              size: widget.size,
+              isDark: isDark,
+              animatedScore: item.score * itemAnimation.value,
+            ),
+            i,
           ),
         ),
       );
     }
 
     return items;
+  }
+
+  /// 统计项点击包装（onItemTap 为 null 时原样返回）
+  Widget _wrapTap(Widget child, int index) {
+    if (widget.onItemTap == null) return child;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => widget.onItemTap!.call(index),
+      child: child,
+    );
   }
 }
 

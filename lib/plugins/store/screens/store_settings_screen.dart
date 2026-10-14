@@ -1,5 +1,7 @@
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/store/screens/store_event_switches_screen.dart';
 import 'package:aboutme/plugins/store/store_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -30,6 +32,11 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   // 各事件输入框的校验错误文案（DSInput 经 errorText 展示）
   final Map<String, String?> _inputErrors = {};
 
+  // 今日目标积分
+  int _dailyTarget = 50;
+  late final TextEditingController _dailyTargetController =
+      TextEditingController();
+
   // 其他设置
   bool _enablePointsNotification = true; // 积分变动通知
   bool _enableExpiringReminder = true; // 到期提醒
@@ -45,6 +52,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   @override
   void dispose() {
     // 释放所有控制器
+    _dailyTargetController.dispose();
     for (var controller in _controllers.values) {
       controller.dispose();
     }
@@ -63,6 +71,15 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     });
 
     try {
+      // 释放旧控制器并清空旧状态（子页面开关事件后重载时避免泄漏）
+      for (var controller in _controllers.values) {
+        controller.dispose();
+      }
+      _controllers.clear();
+      _pointAwards.clear();
+      _selectedEvents = [];
+      _inputErrors.clear();
+
       final settings = widget.plugin.settings;
       final pointAwards = settings['point_awards'] as Map<String, dynamic>?;
 
@@ -80,6 +97,10 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         });
       }
 
+      // 今日目标积分
+      _dailyTarget = settings['dailyPointsTarget'] as int? ?? 50;
+      _dailyTargetController.text = _dailyTarget.toString();
+
       // 加载其他设置
       _enablePointsNotification =
           settings['enablePointsNotification'] as bool? ?? true;
@@ -91,6 +112,28 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  /// 保存今日目标积分
+  Future<void> _saveDailyTarget(int target) async {
+    if (_dailyTarget == target) return;
+    _dailyTarget = target;
+    try {
+      await widget.plugin.updateSettings({'dailyPointsTarget': target});
+    } catch (e) {
+      debugPrint('❌ [Store设置页面] 保存今日目标失败: $e');
+    }
+  }
+
+  /// 跳转事件开关页，返回后重载设置
+  Future<void> _openEventSwitches() async {
+    await NavigationHelper.push(
+      context,
+      StoreEventSwitchesScreen(plugin: widget.plugin),
+    );
+    if (mounted) {
+      _loadSettings();
     }
   }
 
@@ -141,34 +184,6 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
           ),
     );
     return eventOption.description;
-  }
-
-  /// 处理事件选择变化 - 实时保存
-  void _onSelectedEventsChanged(List<String> events) {
-    setState(() {
-      // 添加新选择的事件
-      for (final eventKey in events) {
-        if (!_pointAwards.containsKey(eventKey)) {
-          _pointAwards[eventKey] = getDefaultPointsForEvent(eventKey);
-          _controllers[eventKey] = TextEditingController(
-            text: _pointAwards[eventKey].toString(),
-          );
-          _controllers[eventKey]?.addListener(() => _onTextChanged(eventKey));
-        }
-      }
-
-      // 移除未选择的事件（保留控制器以备重新选择）
-      for (final eventKey in _pointAwards.keys.toList()) {
-        if (!events.contains(eventKey)) {
-          _pointAwards.remove(eventKey);
-        }
-      }
-
-      _selectedEvents = events;
-    });
-
-    // 实时保存
-    _savePointAwards();
   }
 
   /// 保存开关设置（不需要表单验证）
@@ -376,34 +391,103 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Text(
-                      '积分奖励设置',
+                      'store_pointsAwardSection'.tr,
                       style: DsTypography.title.copyWith(color: theme.text),
                     ),
                   ),
 
-                  // 说明文本
+                  // 事件开关入口菜单：跳转到新页面直接展示所有事件 + switch
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(
-                      '选择要启用积分奖励的事件，并配置各项行为的积分奖励值。',
-                      style: DsTypography.body.copyWith(color: theme.textSub),
+                    child: DSCard(
+                      onTap: _openEventSwitches,
+                      child: Row(
+                        children: [
+                          DsIcon(DsIconKind.tune, color: theme.text),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'store_eventSwitchesEntry'.tr,
+                                  style: DsTypography.body.copyWith(
+                                    color: theme.text,
+                                  ),
+                                ),
+                                Text(
+                                  'store_eventSwitchesEntryDesc'.tr,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          DsIcon(
+                            DsIconKind.chevronRight,
+                            color: theme.textSub,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
 
-                  // 事件选择器（prefixIcon 为共享表单字段的 IconData 配置，保留 Material Icons）
-                  EventMultiSelectField(
-                    name: 'selected_events',
-                    availableEvents: kDefaultAvailableEvents,
-                    dialogTitle: '选择启用积分奖励的事件',
-                    initialValue: _selectedEvents,
-                    prefixIcon: Icons.event_available,
-                    onChanged: (events) {
-                      if (events is List<String>) {
-                        _onSelectedEventsChanged(events);
-                      }
-                    },
+                  // 今日目标积分
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: DSCard(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'store_dailyTargetLabel'.tr,
+                                  style: DsTypography.body.copyWith(
+                                    color: theme.text,
+                                  ),
+                                ),
+                                Text(
+                                  'store_dailyTargetDesc'.tr,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 96,
+                            child: DSInput(
+                              controller: _dailyTargetController,
+                              keyboardType: TextInputType.number,
+                              hint: _dailyTarget.toString(),
+                              suffix: Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Text(
+                                  'store_points'.tr,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
+                                  ),
+                                ),
+                              ),
+                              onChanged: (value) {
+                                final target = int.tryParse(value);
+                                if (target != null && target > 0) {
+                                  _saveDailyTarget(target);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 16),
@@ -421,7 +505,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                       padding: const EdgeInsets.all(32.0),
                       child: Center(
                         child: Text(
-                          '未选择任何事件\n请点击上方选择需要启用积分奖励的事件',
+                          'store_noEventsEnabled'.tr,
                           textAlign: TextAlign.center,
                           style: DsTypography.body.copyWith(
                             color: theme.textSub,

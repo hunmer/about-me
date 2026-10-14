@@ -220,4 +220,21 @@ const Map<String, String> storeTranslationsEn = {
   'store_noSearchResults': 'No matching items',
   'store_tryOtherKeywords': 'Try different keywords',
   'store_noMatchingProducts': 'No matching products',
+
+  // Reward events & daily target settings
+  'store_pointsAwardSection': 'Points Rewards',
+  'store_eventSwitchesEntry': 'Reward Event Switches',
+  'store_eventSwitchesEntryDesc': 'View all supported events and toggle rewards',
+  'store_eventSwitchesTitle': 'Reward Events',
+  'store_eventSwitchesSubtitle': 'Turn on events that award points; off means no rewards',
+  'store_noEventsEnabled':
+      'No events enabled\nEnable them in the Reward Events page',
+  'store_dailyTargetLabel': 'Daily Target',
+  'store_dailyTargetDesc': 'Set your daily points goal',
+
+  // Daily score stats
+  'store_dailyScoreTitle': "Today's Score",
+  'store_otherCategory': 'Other',
+  'store_prevDay': 'Previous Day',
+  'store_nextDay': 'Next Day',
 };

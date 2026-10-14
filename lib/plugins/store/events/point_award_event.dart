@@ -3,6 +3,20 @@ import 'package:aboutme/plugins/store/store_plugin.dart';
 
 /// 积分奖励事件处理器
 class PointAwardEvent {
+  /// 各奖励事件写入积分记录的 reason 文案
+  /// （积分历史按 reason 反查事件分组，修改需同步两端）
+  static const Map<String, String> eventReasons = {
+    'activity_added': '添加活动奖励',
+    'checkin_completed': '签到完成奖励',
+    'task_completed': '完成任务奖励',
+    'note_added': '添加笔记奖励',
+    'goods_added': '添加物品奖励',
+    'chat_message_sent': '发送消息奖励',
+    'onRecordAdded': '添加记录奖励',
+    'diary_entry_created': '添加日记奖励',
+    'bill_added': '添加账单奖励',
+  };
+
   final StorePlugin _storePlugin;
 
   PointAwardEvent(this._storePlugin) {
@@ -47,46 +61,51 @@ class PointAwardEvent {
 
   /// 处理活动添加事件
   Future<void> _handleActivityAdded(EventArgs args) async {
-    await _awardPoints(_getPointsForEvent('activity_added'), '添加活动奖励');
+    await _award('activity_added');
   }
 
   /// 处理签到完成事件
   Future<void> _handleCheckinCompleted(EventArgs args) async {
-    await _awardPoints(_getPointsForEvent('checkin_completed'), '签到完成奖励');
+    await _award('checkin_completed');
   }
 
   /// 处理任务完成事件
   Future<void> _handleTaskCompleted(EventArgs args) async {
-    await _awardPoints(_getPointsForEvent('task_completed'), '完成任务奖励');
+    await _award('task_completed');
   }
 
   /// 处理笔记添加事件
   Future<void> _handleNoteAdded(EventArgs args) async {
-    await _awardPoints(_getPointsForEvent('note_added'), '添加笔记奖励');
+    await _award('note_added');
   }
 
   /// 处理物品添加事件
   Future<void> _handleGoodsAdded(EventArgs args) async {
-    await _awardPoints(_getPointsForEvent('goods_added'), '添加物品奖励');
+    await _award('goods_added');
   }
 
   /// 处理消息发送事件
   Future<void> _handleMessageSent(EventArgs args) async {
-    await _awardPoints(_getPointsForEvent('chat_message_sent'), '发送消息奖励');
+    await _award('chat_message_sent');
   }
 
   /// 处理记录添加事件
   Future<void> _handleRecordAdded(EventArgs args) async {
-    await _awardPoints(_getPointsForEvent('onRecordAdded'), '添加记录奖励');
+    await _award('onRecordAdded');
   }
 
   /// 处理日记添加事件
   Future<void> _handleDiaryAdded(EventArgs args) async {
-    await _awardPoints(_getPointsForEvent('diary_entry_created'), '添加日记奖励');
+    await _award('diary_entry_created');
   }
 
   Future<void> _handleBillAdded(EventArgs args) async {
-    await _awardPoints(_getPointsForEvent('bill_added'), '添加账单奖励');
+    await _award('bill_added');
+  }
+
+  /// 按事件名发放积分（reason 取 [eventReasons] 统一文案）
+  Future<void> _award(String eventName) async {
+    await _awardPoints(_getPointsForEvent(eventName), eventReasons[eventName]!);
   }
 
   /// 添加积分

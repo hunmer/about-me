@@ -3,13 +3,45 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/controllers/store_controller.dart';
+import 'package:aboutme/plugins/store/events/point_award_event.dart';
 import 'package:aboutme/plugins/store/models/points_log.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/health_score_ring_card.dart';
+import 'package:aboutme/widgets/form_fields/event_multi_select_field.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 
 /// 排序顺序枚举
 enum SortOrder { newestFirst, oldestFirst }
+
+/// 图例中"其他"（非事件奖励）分组的筛选键
+const String _kOtherFilterKey = '__other__';
+
+/// 奖励事件的图例配色（环分段 + 进度条共用，循环取色）
+const List<Color> _kEventPalette = [
+  Color(0xFF6C8EF5),
+  Color(0xFF5ABF8A),
+  Color(0xFFE8A33D),
+  Color(0xFF9B7EDE),
+  Color(0xFF4FB3BF),
+  Color(0xFFE07A9B),
+  Color(0xFF7C9A5E),
+  Color(0xFFC97B4A),
+  Color(0xFF5E7CC9),
+];
+
+/// 奖励事件的图例图标
+const Map<String, IconData> _kEventIcons = {
+  'activity_added': Icons.celebration,
+  'checkin_completed': Icons.check_circle_outline,
+  'task_completed': Icons.task_alt,
+  'note_added': Icons.edit_note,
+  'goods_added': Icons.inventory_2,
+  'chat_message_sent': Icons.chat_bubble_outline,
+  'onRecordAdded': Icons.monitor_heart,
+  'diary_entry_created': Icons.menu_book,
+  'bill_added': Icons.receipt_long,
+};
 
 class PointsHistory extends StatefulWidget {
   final StoreController controller;
@@ -32,6 +64,10 @@ class _PointsHistoryState extends State<PointsHistory> {
   Map<String, dynamic> _filters = {};
   SortOrder _sortOrder = SortOrder.newestFirst;
   List<PointsLog> _filteredLogs = []; // 完整的过滤后数据
+
+  // 统计区状态：当前查看日期 + 图例筛选的事件键（null = 全部）
+  DateTime _selectedDate = DateTime.now();
+  String? _eventFilter;
 
   @override
   void initState() {
@@ -108,6 +144,20 @@ class _PointsHistoryState extends State<PointsHistory> {
               .toList();
     }
 
+    // 事件（图例）过滤：按奖励事件的 reason 文案匹配
+    if (_eventFilter != null) {
+      if (_eventFilter == _kOtherFilterKey) {
+        final knownReasons = PointAwardEvent.eventReasons.values.toSet();
+        filtered =
+            filtered.where((log) => !knownReasons.contains(log.reason)).toList();
+      } else {
+        final reason = PointAwardEvent.eventReasons[_eventFilter];
+        if (reason != null) {
+          filtered = filtered.where((log) => log.reason == reason).toList();
+        }
+      }
+    }
+
     // 排序
     switch (_sortOrder) {
       case SortOrder.newestFirst:
@@ -181,6 +231,148 @@ class _PointsHistoryState extends State<PointsHistory> {
       _filteredLogs = _applyFilters(widget.controller.pointsLogs);
     });
     _loadMoreData();
+  }
+
+  // ========== 今日得分统计 ==========
+
+  /// 今日目标积分（设置页可配）
+  double get _dailyTarget {
+    final target =
+        widget.controller.plugin.settings['dailyPointsTarget'] as int?;
+    return (target != null && target > 0 ? target : 50).toDouble();
+  }
+
+  /// 插件设置中启用（积分值 > 0）且实际会发奖的事件（有 reason 映射）
+  List<String> _enabledAwardEvents() {
+    final awards =
+        widget.controller.plugin.settings['point_awards']
+            as Map<String, dynamic>? ??
+        {};
+    return PointAwardEvent.eventReasons.keys
+        .where((key) => awards[key] is int && awards[key] as int > 0)
+        .toList();
+  }
+
+  /// 积分记录的 reason 对应的奖励事件键（null = 非事件奖励）
+  String? _eventKeyOfReason(String reason) {
+    for (final entry in PointAwardEvent.eventReasons.entries) {
+      if (entry.value == reason) return entry.key;
+    }
+    return null;
+  }
+
+  /// 奖励事件的显示名称（取自 kDefaultAvailableEvents 的描述）
+  String _eventLabel(String eventKey) {
+    final option = kDefaultAvailableEvents.firstWhereOrNull(
+      (e) => e.eventName == eventKey,
+    );
+    return option?.description ?? eventKey;
+  }
+
+  /// 指定日期当天的记录
+  List<PointsLog> _logsOfDay(DateTime day) {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return widget.controller.pointsLogs
+        .where(
+          (log) => !log.timestamp.isBefore(start) && log.timestamp.isBefore(end),
+        )
+        .toList();
+  }
+
+  /// 构建环形统计项与对应的筛选键（平行数组）
+  (List<HealthRingItemData>, List<String>) _buildRingItems(
+    List<PointsLog> dayEarnedLogs,
+  ) {
+    final maxScore = _dailyTarget;
+    final dayScores = <String, int>{};
+    for (final log in dayEarnedLogs) {
+      final key = _eventKeyOfReason(log.reason);
+      if (key != null) {
+        dayScores[key] = (dayScores[key] ?? 0) + log.value;
+      }
+    }
+    final otherScore = dayEarnedLogs
+        .where((log) => _eventKeyOfReason(log.reason) == null)
+        .fold<int>(0, (sum, log) => sum + log.value);
+
+    // 只展示当天有得分的事件；全部为 0 时展示所有启用事件
+    final enabled = _enabledAwardEvents();
+    var shown = enabled.where((key) => (dayScores[key] ?? 0) > 0).toList();
+    final showOther = otherScore > 0;
+    if (shown.isEmpty && !showOther) {
+      shown = enabled;
+    }
+
+    final items = <HealthRingItemData>[];
+    final filterKeys = <String>[];
+    for (var i = 0; i < shown.length; i++) {
+      final key = shown[i];
+      final score = (dayScores[key] ?? 0).toDouble();
+      items.add(
+        HealthRingItemData(
+          label: _eventLabel(key),
+          icon: _kEventIcons[key] ?? Icons.stars,
+          color: _kEventPalette[i % _kEventPalette.length],
+          score: score,
+          maxScore: maxScore,
+          value: score,
+        ),
+      );
+      filterKeys.add(key);
+    }
+    if (showOther) {
+      items.add(
+        HealthRingItemData(
+          label: 'store_otherCategory'.tr,
+          icon: Icons.more_horiz,
+          color: const Color(0xFF8A93A6),
+          score: otherScore.toDouble(),
+          maxScore: maxScore,
+          value: otherScore.toDouble(),
+        ),
+      );
+      filterKeys.add(_kOtherFilterKey);
+    }
+    return (items, filterKeys);
+  }
+
+  /// 点击图例：筛选/取消筛选对应事件的记录
+  void _onLegendTapped(String filterKey) {
+    setState(() {
+      _eventFilter = _eventFilter == filterKey ? null : filterKey;
+      _currentPage = 0;
+      _displayedLogs.clear();
+      _filteredLogs = _applyFilters(widget.controller.pointsLogs);
+    });
+    _loadMoreData();
+  }
+
+  void _changeDate(int days) {
+    setState(() {
+      _selectedDate = _selectedDate.add(Duration(days: days));
+    });
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  bool get _isToday {
+    final now = DateTime.now();
+    return _selectedDate.year == now.year &&
+        _selectedDate.month == now.month &&
+        _selectedDate.day == now.day;
   }
 
   /// 构建多条件过滤项
@@ -341,13 +533,6 @@ class _PointsHistoryState extends State<PointsHistory> {
   }
 
   Widget _buildHistoryView() {
-    final totalEarned = widget.controller.pointsLogs
-        .where((log) => log.type == '获得')
-        .fold<int>(0, (sum, log) => sum + log.value);
-    final totalSpent = widget.controller.pointsLogs
-        .where((log) => log.type == '消耗')
-        .fold<int>(0, (sum, log) => sum + log.value);
-
     return SuperCupertinoNavigationWrapper(
       title: Text('store_pointsHistory'.tr),
       largeTitle: 'store_pointsHistory'.tr,
@@ -357,50 +542,8 @@ class _PointsHistoryState extends State<PointsHistory> {
             final theme = DSThemeBridge.resolve(context);
             return Column(
               children: [
-                // 统计信息
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              context,
-                              '当前积分',
-                              widget.controller.currentPoints.toString(),
-                              theme.primary,
-                              DsIconKind.piggy,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildStatCard(
-                              context,
-                              '总获得',
-                              '+$totalEarned',
-                              theme.success,
-                              DsIconKind.plus,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildStatCard(
-                              context,
-                              '总消耗',
-                              '-$totalSpent',
-                              theme.danger,
-                              DsIconKind.minus,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                // 今日得分统计（日期切换 + 分段环 + 图例）
+                _buildStatsSection(context, theme),
                 // 积分历史列表
                 Expanded(
                   child: ListView.builder(
@@ -518,7 +661,7 @@ class _PointsHistoryState extends State<PointsHistory> {
           child: Builder(
             builder:
                 (context) => DSButton(
-                  label: '清空',
+                  label: 'store_clear'.tr,
                   variant: DSButtonVariant.destructive,
                   size: DSButtonSize.sm,
                   onPressed: () {
@@ -531,40 +674,73 @@ class _PointsHistoryState extends State<PointsHistory> {
     );
   }
 
-  Widget _buildStatCard(
-    BuildContext context,
-    String title,
-    String value,
-    Color color,
-    DsIconKind icon,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
+  /// 统计区：日期切换行 + 健康得分环卡（按事件分段，图例可点击筛选）
+  Widget _buildStatsSection(BuildContext context, AppThemeData theme) {
+    final dayLogs = _logsOfDay(_selectedDate);
+    final dayEarned = dayLogs.where((log) => log.type == '获得').toList();
+    final dayTotal = dayEarned.fold<int>(0, (sum, log) => sum + log.value);
+    final (ringItems, ringKeys) = _buildRingItems(dayEarned);
+
+    final filterLabel = _eventFilter == null
+        ? 'store_all'.tr
+        : (_eventFilter == _kOtherFilterKey
+              ? 'store_otherCategory'.tr
+              : _eventLabel(_eventFilter!));
+    // 今日显示"今日得分"，其他日期显示月/日
+    final dayTitle = _isToday
+        ? 'store_dailyScoreTitle'.tr
+        : '${_selectedDate.month}/${_selectedDate.day}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 日期切换
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              DsIcon(icon, color: color, size: 16),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  title,
-                  style: DsTypography.caption.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+              DSIconButton(
+                icon: DsIconKind.chevronLeft,
+                size: 34,
+                color: theme.surface,
+                iconColor: theme.text,
+                tooltip: 'store_prevDay'.tr,
+                onPressed: () => _changeDate(-1),
+              ),
+              const SizedBox(width: 8),
+              DSButton(
+                label: dayTitle,
+                icon: DsIconKind.calendar,
+                variant: DSButtonVariant.outline,
+                size: DSButtonSize.sm,
+                onPressed: _pickDate,
+              ),
+              const SizedBox(width: 8),
+              DSIconButton(
+                icon: DsIconKind.chevronRight,
+                size: 34,
+                color: theme.surface,
+                iconColor: theme.text,
+                tooltip: 'store_nextDay'.tr,
+                onPressed: _isToday ? null : () => _changeDate(1),
               ),
             ],
           ),
-          const SizedBox(height: 2),
-          Text(value, style: DsTypography.title.copyWith(color: color)),
+          const SizedBox(height: 8),
+          // 得分环卡（inline 模式需外层固定高度）
+          SizedBox(
+            height: 320,
+            child: HealthScoreRingCardWidget(
+              inline: true,
+              score: dayTotal.toDouble(),
+              title: dayTitle,
+              filterLabel: filterLabel,
+              items: ringItems,
+              onItemTap: ringKeys.isEmpty
+                  ? null
+                  : (index) => _onLegendTapped(ringKeys[index]),
+            ),
+          ),
         ],
       ),
     );

@@ -135,6 +135,8 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
 
   /// 默认积分配置
   static const Map<String, dynamic> defaultPointSettings = {
+    // 今日目标积分（积分历史页环形统计的满分基准）
+    'dailyPointsTarget': 50,
     'point_awards': {
       'activity_added': 3, // 添加活动奖励
       'checkin_completed': 10, // 签到完成奖励

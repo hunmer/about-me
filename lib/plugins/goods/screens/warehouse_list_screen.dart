@@ -6,6 +6,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'warehouse_detail_screen.dart';
 import 'package:aboutme/plugins/goods/widgets/warehouse_card.dart';
@@ -75,7 +76,7 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
       body:
           filteredWarehouses.isEmpty && _searchQuery.isNotEmpty
               ? _buildEmptySearchView()
-              : ListView.separated(
+              : HandDrawnListView(
                 padding: EdgeInsets.fromLTRB(
                   16,
                   8,
@@ -85,6 +86,8 @@ class _WarehouseListScreenState extends State<WarehouseListScreen> {
                 itemCount: filteredWarehouses.length,
                 separatorBuilder:
                     (context, index) => const SizedBox(height: 16),
+                tapeColor:
+                    (index) => filteredWarehouses[index].iconColor as Color,
                 itemBuilder: (context, index) {
                   final warehouse = filteredWarehouses[index];
                   return WarehouseCard(

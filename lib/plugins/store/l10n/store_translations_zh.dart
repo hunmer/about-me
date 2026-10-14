@@ -210,4 +210,20 @@ const Map<String, String> storeTranslationsZh = {
   'store_noSearchResults': '未找到相关物品',
   'store_tryOtherKeywords': '尝试使用其他关键词',
   'store_noMatchingProducts': '未找到匹配的商品',
+
+  // 积分奖励事件与目标设置
+  'store_pointsAwardSection': '积分奖励设置',
+  'store_eventSwitchesEntry': '奖励事件开关',
+  'store_eventSwitchesEntryDesc': '查看所有支持的事件并设置奖励开关',
+  'store_eventSwitchesTitle': '奖励事件开关',
+  'store_eventSwitchesSubtitle': '开启需要积分奖励的事件，关闭后不再发奖',
+  'store_noEventsEnabled': '未启用任何事件\n请进入"奖励事件开关"页面启用',
+  'store_dailyTargetLabel': '今日目标',
+  'store_dailyTargetDesc': '设置每日希望获得的积分目标',
+
+  // 积分得分统计
+  'store_dailyScoreTitle': '今日得分',
+  'store_otherCategory': '其他',
+  'store_prevDay': '前一天',
+  'store_nextDay': '后一天',
 };

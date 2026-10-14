@@ -6,6 +6,7 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
@@ -783,31 +784,40 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
                           final item = allItems[index]['item'] as GoodsItem;
                           final warehouse =
                               allItems[index]['warehouse'] as Warehouse;
-                          // 挂载即播墨线描画入场（design.md §10）
-                          return WiredDraw(
-                            child: GoodsItemCard(
-                              item: item,
-                              warehouseTitle: warehouse.title,
-                              warehouseId: warehouse.id,
-                              onTap:
-                                  () => NavigationHelper.push(
-                                    context,
-                                    GoodsItemDetailScreen(
-                                      itemId: item.id,
-                                      warehouseId: warehouse.id,
+                          // 手绘便签倾斜 + 默认贴条(角度由 item id 哈希确定)
+                          // 挂载即播墨线描画入场(design.md §10)
+                          return HandDrawnStickyItem(
+                            tiltKey: item.id,
+                            child: WiredDraw(
+                              child: GoodsItemCard(
+                                item: item,
+                                warehouseTitle: warehouse.title,
+                                warehouseId: warehouse.id,
+                                onTap:
+                                    () => NavigationHelper.push(
+                                      context,
+                                      GoodsItemDetailScreen(
+                                        itemId: item.id,
+                                        warehouseId: warehouse.id,
+                                      ),
                                     ),
-                                  ),
+                              ),
                             ),
                           );
                         },
                       );
                     },
                   )
-                : ListView.builder(
+                : HandDrawnListView(
                     padding: EdgeInsets.only(
                       bottom: MediaQuery.paddingOf(context).bottom,
                     ),
                     itemCount: allItems.length,
+                    separatorBuilder:
+                        (context, index) => const SizedBox(height: 16),
+                    // 随机倾斜模式:角度由 item id 哈希确定,贴条用默认色
+                    tiltKeyOf: (index) =>
+                        (allItems[index]['item'] as GoodsItem).id,
                     itemBuilder: (context, index) {
                       final item = allItems[index]['item'] as GoodsItem;
                       final warehouse =

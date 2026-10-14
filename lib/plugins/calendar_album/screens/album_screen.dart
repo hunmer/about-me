@@ -7,6 +7,7 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/arc_context_menu.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:provider/provider.dart';
@@ -619,16 +620,11 @@ class _PhotoCellState extends State<_PhotoCell>
     super.dispose();
   }
 
-  /// 图片 url 哈希 → ±1 确定性随机值：过滤/排序重排后同图角度不变
-  static double _unitRandom(String source) {
-    final h = source.hashCode & 0x7fffffff;
-    return (h % 1000 - 500) / 500;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    final angle = _unitRandom(widget.imageUrl) * 0.045; // ±2.6° 微旋转
+    // 图片 url 哈希 → ±2.6° 确定性随机微旋转(取样函数与手绘便签列表共用)
+    final angle = handDrawnUnitRandom(widget.imageUrl) * 0.045;
     final seed = widget.imageUrl.hashCode & 0x7fffffff;
 
     // WiredDraw 让纸框墨线在挂载时描画出来，与放大入场同步
