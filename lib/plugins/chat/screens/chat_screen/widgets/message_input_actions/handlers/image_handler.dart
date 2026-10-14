@@ -18,14 +18,11 @@ Future<void> handleImageSelection({
 
   try {
     // 使用 ImagePickerDialog 并启用压缩
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder:
-          (context) => ImagePickerDialog(
-            saveDirectory: 'chat/chat_files',
-            enableCompression: true,
-            compressionQuality: 85,
-          ),
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      saveDirectory: 'chat/chat_files',
+      enableCompression: true,
+      compressionQuality: 85,
     );
 
     if (result != null && result['url'] != null) {

@@ -27,6 +27,11 @@ const Map<String, String> imagePickerTranslationsZh = {
   'image_picker_selectImageFailed': '选择图片失败',
   'image_picker_takePhotoFailed': '拍照失败',
 
+  // 底部弹窗
+  'image_picker_onlineUrl': '在线图片',
+  'image_picker_noImages': '暂无图片，可从相册选择或拍照',
+  'image_picker_selected': '已选 @n 张',
+
   // 裁剪相关
   'image_picker_cropImage': '裁剪图片',
   'image_picker_saveCroppedImageFailed': '保存裁剪图片失败',

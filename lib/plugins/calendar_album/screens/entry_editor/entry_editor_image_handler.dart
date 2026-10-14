@@ -129,15 +129,12 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
       padding: const EdgeInsets.only(right: 12),
       child: GestureDetector(
         onTap: () async {
-          final results = await showDialog<List<Map<String, dynamic>>>(
-            context: context,
-            builder:
-                (context) => ImagePickerDialog(
-                  saveDirectory: 'calendar_album/images',
-                  multiple: true,
-                  enableCompression: true,
-                  compressionQuality: 85,
-                ),
+          final results = await ImagePickerDialog.show<List<Map<String, dynamic>>>(
+            context,
+            saveDirectory: 'calendar_album/images',
+            multiple: true,
+            enableCompression: true,
+            compressionQuality: 85,
           );
           if (results != null && results.isNotEmpty) {
             setState(() {

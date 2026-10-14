@@ -303,15 +303,12 @@ class _ImagePickerWidget extends StatelessWidget {
     final theme = DSThemeBridge.resolve(context);
     return GestureDetector(
       onTap: () async {
-        final result = await showDialog<Map<String, dynamic>>(
-          context: context,
-          builder:
-              (context) => ImagePickerDialog(
-                initialUrl: initialImage,
-                saveDirectory: 'habits/habit_images',
-                enableCrop: true,
-                cropAspectRatio: 1.0,
-              ),
+        final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+          context,
+          initialUrl: initialImage,
+          saveDirectory: 'habits/habit_images',
+          enableCrop: true,
+          cropAspectRatio: 1.0,
         );
         if (result != null && result['url'] != null) {
           onImageChanged(result['url'] as String?);

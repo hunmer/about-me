@@ -139,16 +139,12 @@ class _ProfileEditDialogState extends State<ProfileEditDialog>
                       BuildContext context,
                       String? initialPath,
                     ) async {
-                      return showDialog<Map<String, dynamic>>(
-                        context: context,
-                        barrierDismissible: true,
-                        builder:
-                            (BuildContext dialogContext) => ImagePickerDialog(
-                              initialUrl: initialPath,
-                              saveDirectory: 'chat/avatars',
-                              enableCrop: true,
-                              cropAspectRatio: 1.0,
-                            ),
+                      return ImagePickerDialog.show<Map<String, dynamic>>(
+                        context,
+                        initialUrl: initialPath,
+                        saveDirectory: 'chat/avatars',
+                        enableCrop: true,
+                        cropAspectRatio: 1.0,
                       );
                     },
                   ),

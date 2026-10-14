@@ -162,10 +162,9 @@ class JellyStatusPanelSettings extends ChangeNotifier {
   }
 
   Future<void> upload(BuildContext context) async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (_) =>
-          const ImagePickerDialog(saveDirectory: 'live2d/status_panels'),
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      saveDirectory: 'live2d/status_panels',
     );
     final path = result?['url'] as String?;
     if (path == null || path.isEmpty) return;

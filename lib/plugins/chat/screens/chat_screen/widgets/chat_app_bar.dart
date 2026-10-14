@@ -144,14 +144,11 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               theme: popoverTheme,
               onTap: () async {
                 close();
-                final result = await showDialog(
-                  context: context,
-                  builder:
-                      (context) => ImagePickerDialog(
-                        saveDirectory: path.join('chat', 'backgrounds'),
-                        enableCrop: true,
-                        cropAspectRatio: 9 / 16, // 竖屏比例
-                      ),
+                final result = await ImagePickerDialog.show(
+                  context,
+                  saveDirectory: path.join('chat', 'backgrounds'),
+                  enableCrop: true,
+                  cropAspectRatio: 9 / 16, // 竖屏比例
                 );
                 if (result != null && result is Map<String, dynamic>) {
                   // 直接使用result中返回的url路径

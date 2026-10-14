@@ -117,16 +117,14 @@ class _IconAvatarRowFieldState extends State<IconAvatarRowField> {
             onTap:
                 widget.enabled
                     ? () async {
-                      final result = await showDialog<Map<String, dynamic>>(
-                        context: context,
-                        builder:
-                            (context) => ImagePickerDialog(
-                              initialUrl: _avatarUrl,
-                              saveDirectory: widget.avatarSaveDirectory,
-                              enableCrop: true,
-                              cropAspectRatio: 1.0,
-                            ),
-                      );
+                      final result =
+                          await ImagePickerDialog.show<Map<String, dynamic>>(
+                            context,
+                            initialUrl: _avatarUrl,
+                            saveDirectory: widget.avatarSaveDirectory,
+                            enableCrop: true,
+                            cropAspectRatio: 1.0,
+                          );
                       if (result != null && result['url'] != null) {
                         setState(() {
                           _avatarUrl = result['url'] as String;

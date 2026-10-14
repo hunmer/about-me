@@ -33,10 +33,9 @@ extension _JellyLive2DBackground on _JellyLive2DState {
 
   /// 上传自定义背景图：保存到应用目录、加入自定义列表并立即选用
   Future<void> _uploadCustomBackground(BuildContext context) async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (_) =>
-          const ImagePickerDialog(saveDirectory: 'live2d/backgrounds'),
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      saveDirectory: 'live2d/backgrounds',
     );
     final asset = result?['url'] as String?;
     if (asset == null || asset.isEmpty) return;

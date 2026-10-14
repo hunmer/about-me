@@ -67,15 +67,12 @@ class _AvatarPickerState extends State<AvatarPicker> {
     final result =
         widget.showPickerDialog != null
             ? await widget.showPickerDialog!(context, _avatarPath)
-            : await showDialog<Map<String, dynamic>>(
-              context: context,
-              builder:
-                  (context) => ImagePickerDialog(
-                    initialUrl: _avatarPath,
-                    saveDirectory: widget.saveDirectory,
-                    enableCrop: true,
-                    cropAspectRatio: 1.0, // 强制使用1:1的裁剪比例
-                  ),
+            : await ImagePickerDialog.show<Map<String, dynamic>>(
+              context,
+              initialUrl: _avatarPath,
+              saveDirectory: widget.saveDirectory,
+              enableCrop: true,
+              cropAspectRatio: 1.0, // 强制使用1:1的裁剪比例
             );
 
     if (result != null) {

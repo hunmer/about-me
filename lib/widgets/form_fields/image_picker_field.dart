@@ -207,17 +207,14 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
             ? _selectedImage['url'] as String?
             : _selectedImage as String?;
 
-    final result = await showDialog<dynamic>(
-      context: context,
-      builder:
-          (ctx) => ImagePickerDialog(
-            initialUrl: initialUrl,
-            saveDirectory: widget.saveDirectory,
-            enableCrop: widget.enableCrop,
-            cropAspectRatio: widget.cropAspectRatio,
-            multiple: widget.multiple,
-            enableCompression: widget.enableCompression,
-          ),
+    final result = await ImagePickerDialog.show<dynamic>(
+      context,
+      initialUrl: initialUrl,
+      saveDirectory: widget.saveDirectory,
+      enableCrop: widget.enableCrop,
+      cropAspectRatio: widget.cropAspectRatio,
+      multiple: widget.multiple,
+      enableCompression: widget.enableCompression,
     );
 
     if (result != null) {

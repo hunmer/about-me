@@ -146,15 +146,13 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
 
   /// 选择图片
   Future<void> _pickImage() async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => const ImagePickerDialog(
-        saveDirectory: 'floating_buttons',
-        enableCrop: true,
-        cropAspectRatio: 1.0,
-        enableCompression: true,
-        compressionQuality: 80,
-      ),
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      saveDirectory: 'floating_buttons',
+      enableCrop: true,
+      cropAspectRatio: 1.0,
+      enableCompression: true,
+      compressionQuality: 80,
     );
 
     if (result != null && result['bytes'] != null) {

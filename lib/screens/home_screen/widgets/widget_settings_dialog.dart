@@ -135,15 +135,13 @@ class _WidgetSettingsDialogState extends State<WidgetSettingsDialog> {
                             )
                             : null,
                     onTap: () async {
-                      final result = await showDialog<Map<String, dynamic>>(
-                        context: context,
-                        builder:
-                            (context) => const ImagePickerDialog(
-                              saveDirectory: 'widget_backgrounds',
-                              enableCrop: true,
-                              cropAspectRatio: 16 / 9, // 卡片比例
-                            ),
-                      );
+                      final result =
+                          await ImagePickerDialog.show<Map<String, dynamic>>(
+                            context,
+                            saveDirectory: 'widget_backgrounds',
+                            enableCrop: true,
+                            cropAspectRatio: 16 / 9, // 卡片比例
+                          );
 
                       if (result != null && mounted) {
                         setState(() {

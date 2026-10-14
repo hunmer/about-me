@@ -206,13 +206,11 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
   }
 
   Future<void> _pickAndUpload() async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => ImagePickerDialog(
-        saveDirectory: _archiveDir,
-        enableCompression: true,
-        compressionQuality: 88,
-      ),
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      saveDirectory: _archiveDir,
+      enableCompression: true,
+      compressionQuality: 88,
     );
     if (result == null || result['url'] == null) return;
     final name = await _promptText(title: '命名照片', hint: '如：三视图、房间照片');

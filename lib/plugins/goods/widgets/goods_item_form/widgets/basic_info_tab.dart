@@ -347,17 +347,14 @@ class BasicInfoTab extends StatelessWidget {
 
   Future<void> _pickAndCropImage(BuildContext context) async {
     try {
-      final result = await showDialog<Map<String, dynamic>>(
-        context: context,
-        builder:
-            (context) => ImagePickerDialog(
-              initialUrl: controller.imagePath,
-              saveDirectory: 'goods/goods_images',
-              enableCrop: true,
-              cropAspectRatio: 1,
-              enableCompression: true,
-              compressionQuality: 85,
-            ),
+      final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+        context,
+        initialUrl: controller.imagePath,
+        saveDirectory: 'goods/goods_images',
+        enableCrop: true,
+        cropAspectRatio: 1,
+        enableCompression: true,
+        compressionQuality: 85,
       );
 
       if (result != null && result['url'] != null) {

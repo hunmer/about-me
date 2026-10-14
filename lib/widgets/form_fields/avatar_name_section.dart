@@ -146,14 +146,11 @@ class AvatarNameSection extends StatelessWidget {
     final context = WidgetsBinding.instance.focusManager.primaryFocus?.context;
     if (context == null) return;
 
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder:
-          (context) => const ImagePickerDialog(
-            saveDirectory: 'app_images',
-            enableCrop: true,
-            cropAspectRatio: 1 / 1,
-          ),
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      saveDirectory: 'app_images',
+      enableCrop: true,
+      cropAspectRatio: 1 / 1,
     );
 
     if (result != null && result['url'] != null) {

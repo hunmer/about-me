@@ -28,6 +28,11 @@ const Map<String, String> imagePickerTranslationsEn = {
   'image_picker_selectImageFailed': 'Failed to select image',
   'image_picker_takePhotoFailed': 'Failed to take photo',
 
+  // Bottom sheet
+  'image_picker_onlineUrl': 'Online Image',
+  'image_picker_noImages': 'No images yet. Pick from gallery or take a photo',
+  'image_picker_selected': 'Selected @n',
+
   // Crop related
   'image_picker_cropImage': 'Crop Image',
   'image_picker_saveCroppedImageFailed': 'Failed to save cropped image',

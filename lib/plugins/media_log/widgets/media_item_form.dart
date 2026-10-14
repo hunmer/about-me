@@ -90,15 +90,13 @@ class _MediaItemFormState extends State<MediaItemForm> {
 
   /// 上传封面图片（相册/拍照/URL，可选裁剪）
   Future<void> _pickCoverImage() async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => const ImagePickerDialog(
-        saveDirectory: 'media_log/covers',
-        enableCrop: true,
-        cropAspectRatio: 0.7,
-        enableCompression: true,
-        compressionQuality: 85,
-      ),
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      saveDirectory: 'media_log/covers',
+      enableCrop: true,
+      cropAspectRatio: 0.7,
+      enableCompression: true,
+      compressionQuality: 85,
     );
     if (result != null && result['url'] != null) {
       setState(() => _coverImage = result['url'] as String);

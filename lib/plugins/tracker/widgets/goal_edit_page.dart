@@ -264,17 +264,15 @@ class _GoalEditPageState extends State<GoalEditPage> {
                   Expanded(
                     child: GestureDetector(
                       onTap: () async {
-                        final result = await showDialog<Map<String, dynamic>>(
-                          context: context,
-                          builder:
-                              (context) => ImagePickerDialog(
-                                initialUrl:
-                                    imagePath.isNotEmpty ? imagePath : null,
-                                saveDirectory: 'tracker/goal_images',
-                                enableCrop: true,
-                                cropAspectRatio: 9 / 16,
-                              ),
-                        );
+                        final result =
+                            await ImagePickerDialog.show<Map<String, dynamic>>(
+                              context,
+                              initialUrl:
+                                  imagePath.isNotEmpty ? imagePath : null,
+                              saveDirectory: 'tracker/goal_images',
+                              enableCrop: true,
+                              cropAspectRatio: 9 / 16,
+                            );
                         if (result != null && result['url'] != null) {
                           _updateFormValue(
                             'imagePath',

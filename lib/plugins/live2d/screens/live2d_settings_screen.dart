@@ -123,14 +123,12 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
 
   /// 上传/更换档案头像（复用 coverPath，1:1 裁剪保存到 live2d_covers）
   Future<void> _uploadAvatar(Live2DArchive item) async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (_) => ImagePickerDialog(
-        initialUrl: item.coverPath,
-        saveDirectory: 'live2d_covers',
-        enableCrop: true,
-        cropAspectRatio: 1,
-      ),
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      initialUrl: item.coverPath,
+      saveDirectory: 'live2d_covers',
+      enableCrop: true,
+      cropAspectRatio: 1,
     );
     final url = result?['url'] as String?;
     if (url == null || url.isEmpty) return;
