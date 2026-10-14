@@ -97,11 +97,6 @@ class _PromptEditorState extends State<PromptEditor> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // System Prompt 单独显示
-                  Text(
-                    'System Prompt',
-                    style: DsTypography.heading.copyWith(color: theme.text),
-                  ),
-                  const SizedBox(height: 8),
                   TextFormField(
                     controller: widget.systemPromptController,
                     decoration: const InputDecoration(
@@ -131,10 +126,6 @@ class _PromptEditorState extends State<PromptEditor> {
                   // 预设消息
                   Row(
                     children: [
-                      Text(
-                        '预设消息',
-                        style: DsTypography.heading.copyWith(color: theme.text),
-                      ),
                       const Spacer(),
                       DSButton(
                         label: '添加',
@@ -156,6 +147,7 @@ class _PromptEditorState extends State<PromptEditor> {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: DSCard(
+                          color: Colors.transparent,
                           padding: const EdgeInsets.all(8),
                           child: Column(
                             children: [
@@ -233,6 +225,7 @@ class _PromptEditorState extends State<PromptEditor> {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: DSCard(
+                      color: Colors.transparent,
                       padding: const EdgeInsets.all(8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

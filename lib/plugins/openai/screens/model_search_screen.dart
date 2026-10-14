@@ -4,6 +4,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/models/llm_models.dart';
 import 'package:aboutme/plugins/openai/controllers/model_controller.dart';
+import 'package:aboutme/plugins/openai/widgets/provider_logo.dart';
 import '../../../../core/services/toast_service.dart';
 
 class ModelSearchScreen extends StatefulWidget {
@@ -152,9 +153,23 @@ class _ModelSearchScreenState extends State<ModelSearchScreen>
                       TabBar(
                         controller: _tabController,
                         isScrollable: true,
+                        tabAlignment: TabAlignment.start,
                         tabs:
                             _modelGroups
-                                .map((group) => Tab(text: group.name))
+                                .map(
+                                  (group) => Tab(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (ProviderLogo.hasLogo(group.id)) ...[
+                                          ProviderLogo(id: group.id, size: 15),
+                                          const SizedBox(width: 5),
+                                        ],
+                                        Text(group.name),
+                                      ],
+                                    ),
+                                  ),
+                                )
                                 .toList(),
                       ),
                     ],

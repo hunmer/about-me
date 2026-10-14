@@ -5,6 +5,8 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'provider_edit_screen.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 
@@ -131,7 +133,7 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
     try {
       final clonedProvider = provider.copyWith(
         id: '${provider.id}_clone_${DateTime.now().millisecondsSinceEpoch}',
-        label: '${provider.label} (副本)',
+        label: '${provider.label}${'openai_cloneSuffix'.tr}',
       );
       await _controller.addProvider(clonedProvider);
       await _loadProviders();
@@ -144,40 +146,32 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold/AppBar 属结构性组件,刻意保留 Material
-    return DSThemeBridge(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('openai_providerSettingsTitle'.tr),
-          actions: [
-            // DS 按钮自带 DSThemeBridge 提供 AppTheme
-            DSThemeBridge(
-              child: Builder(
-                builder: (context) {
-                  final theme = DSThemeBridge.resolve(context);
-                  return DSIconButton(
-                    icon: DsIconKind.plus,
-                    size: 40,
-                    color: theme.surfaceAlt,
-                    iconColor: theme.textSub,
-                    onPressed: _addProvider,
-                    tooltip: 'openai_addProviderTooltip'.tr,
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        body: Builder(
-          builder:
-              (context) =>
-                  _isLoading
-                      ? const Center(child: DSLoadingDots())
-                      : _providers.isEmpty
-                      ? _buildEmptyState()
-                      : _buildProviderList(),
-        ),
-      ),
+    return SuperCupertinoNavigationWrapper(
+      title: Text('openai_providerSettingsTitle'.tr),
+      enableLargeTitle: false,
+      actions: [_buildAddButton()],
+      body:
+          _isLoading
+              ? const Center(child: DSLoadingDots())
+              : _providers.isEmpty
+              ? _buildEmptyState()
+              : _buildProviderList(),
+    );
+  }
+
+  Widget _buildAddButton() {
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return DSIconButton(
+          icon: DsIconKind.plus,
+          size: 36,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
+          onPressed: _addProvider,
+          tooltip: 'openai_addProviderTooltip'.tr,
+        );
+      },
     );
   }
 
@@ -197,12 +191,18 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
     return Builder(
       builder: (context) {
         final theme = DSThemeBridge.resolve(context);
-        return ListView.builder(
+        // 手绘便签列表:倾斜姿态由 provider.id 确定性生成
+        return HandDrawnListView(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.paddingOf(context).bottom,
+          ),
+          separatorBuilder: (context, index) => const SizedBox(height: 16),
+          tiltKeyOf: (index) => _providers[index].id,
           itemCount: _providers.length,
           itemBuilder: (context, index) {
             final provider = _providers[index];
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: DSCard(
                 padding: EdgeInsets.symmetric(
                   horizontal: theme.spacing.md,
@@ -239,7 +239,7 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
                       color: theme.surfaceAlt,
                       iconColor: theme.textSub,
                       onPressed: () => _cloneProvider(provider),
-                      tooltip: 'openai_cloneAgent'.tr,
+                      tooltip: 'openai_cloneProvider'.tr,
                     ),
                     DSIconButton(
                       icon: DsIconKind.edit,
@@ -247,7 +247,7 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
                       color: theme.surfaceAlt,
                       iconColor: theme.textSub,
                       onPressed: () => _editProvider(provider),
-                      tooltip: 'openai_editAgent'.tr,
+                      tooltip: 'openai_editProvider'.tr,
                     ),
                     DSIconButton(
                       icon: DsIconKind.trash,
@@ -255,7 +255,7 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
                       color: theme.danger,
                       iconColor: theme.onDanger,
                       onPressed: () => _deleteProvider(provider),
-                      tooltip: 'openai_deleteAgent'.tr,
+                      tooltip: 'app_delete'.tr,
                     ),
                   ],
                 ),

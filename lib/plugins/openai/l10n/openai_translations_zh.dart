@@ -121,6 +121,11 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_syncResult': '新增 @groups 个分组、@models 个模型',
   'openai_modelManagementDescription': '管理大语言模型列表',
   'openai_modelUrlLabel': 'URL',
+  'openai_setDefaultModelTooltip': '设为默认模型',
+  'openai_defaultModelSet': '已设置默认模型: @model',
+  'openai_setDefaultModelFailed': '设置默认模型失败',
+  'openai_groupFilterTitle': '分组',
+  'openai_allGroups': '全部分组',
 
   // Test Service
   'openai_lastInputLoadFailed': '加载上次输入失败',
@@ -191,6 +196,8 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_addProviderTooltip': '添加新的AI提供商',
   'openai_noProvidersConfigured': '未配置任何提供商',
   'openai_addProviderButton': '添加提供商',
+  'openai_cloneProvider': '克隆服务商',
+  'openai_cloneSuffix': '（副本）',
 
   // Provider Edit Screen
   'openai_addProvider': '添加服务商',
@@ -207,6 +214,16 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_unsavedChangesTitle': '未保存的更改',
   'openai_unsavedHeaderWarning': 'Header 输入框中有未添加的内容,确定要放弃这些更改吗?',
   'openai_discard': '放弃',
+
+  // Provider Edit Screen - 模式
+  'openai_modeRegular': '常规',
+  'openai_modeAdvanced': '高级',
+  'openai_regularModeDesc': '选择服务商并填入 API Key，Base URL、API 格式与 Headers 将自动填充',
+  'openai_apiKey': 'API Key',
+  'openai_apiKeyHint': '粘贴服务商的 API Key',
+  'openai_apiKeyRequired': '请输入 API Key',
+  'openai_presetRequired': '请选择服务商',
+  'openai_autoFilled': '自动填充',
 
   // Prompt Preset
   'openai_promptPresetManagement': 'Prompt 预设管理',

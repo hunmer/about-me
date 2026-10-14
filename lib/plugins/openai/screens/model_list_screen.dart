@@ -5,6 +5,9 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/models/llm_models.dart';
 import 'package:aboutme/plugins/openai/controllers/model_controller.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 
 class ModelListScreen extends StatefulWidget {
   const ModelListScreen({super.key});
@@ -13,12 +16,11 @@ class ModelListScreen extends StatefulWidget {
   State<ModelListScreen> createState() => _ModelListScreenState();
 }
 
-class _ModelListScreenState extends State<ModelListScreen>
-    with TickerProviderStateMixin {
-  TabController? _tabController;
-  late List<LLMModelGroup> _modelGroups;
+class _ModelListScreenState extends State<ModelListScreen> {
+  List<LLMModelGroup> _modelGroups = [];
   late ModelController _modelController;
   final Map<String, String> _defaultModels = {};
+  final Map<String, dynamic> _multiFilters = {};
   String _searchQuery = '';
   bool _isLoading = true;
   bool _isFetching = false;
@@ -47,11 +49,6 @@ class _ModelListScreenState extends State<ModelListScreen>
       if (mounted) {
         setState(() {
           _modelGroups = models;
-          _tabController?.dispose(); // 在创建新的之前释放旧的
-          _tabController = TabController(
-            length: _modelGroups.length,
-            vsync: this,
-          );
           _isLoading = false;
         });
       }
@@ -60,8 +57,6 @@ class _ModelListScreenState extends State<ModelListScreen>
         toastService.showToast('${'openai_loadModelsFailed'.tr}: $e');
         setState(() {
           _modelGroups = [];
-          _tabController?.dispose(); // 在创建新的之前释放旧的
-          _tabController = TabController(length: 1, vsync: this);
           _isLoading = false;
         });
       }
@@ -79,198 +74,187 @@ class _ModelListScreenState extends State<ModelListScreen>
         _defaultModels[groupId] = modelId;
       });
       if (mounted) {
-        toastService.showToast('已设置默认模型: $modelId');
+        toastService.showToast(
+          'openai_defaultModelSet'.trParams({'model': modelId}),
+        );
       }
     } catch (e) {
       if (mounted) {
-        toastService.showToast('设置默认模型失败: $e');
+        toastService.showToast('${'openai_setDefaultModelFailed'.tr}: $e');
       }
     }
   }
 
-  List<LLMModel> _getFilteredModels(List<LLMModel> models) {
-    if (_searchQuery.isEmpty) {
-      return models;
-    }
+  /// 当前选中分组下的可见模型：分组过滤 → 搜索过滤
+  List<LLMModel> get _visibleModels {
+    final selectedGroup = _multiFilters['group'] as String?;
+    final models = switch (selectedGroup) {
+      null || 'all' => [for (final g in _modelGroups) ...g.models],
+      final id => [
+        for (final g in _modelGroups)
+          if (g.id == id) ...g.models,
+      ],
+    };
+    if (_searchQuery.isEmpty) return models;
+    final query = _searchQuery.toLowerCase();
     return models
-        .where(
-          (model) =>
-              model.name.toLowerCase().contains(_searchQuery.toLowerCase()),
-        )
+        .where((model) => model.name.toLowerCase().contains(query))
         .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold/AppBar/TabBar/TabBarView/TabController 属结构性组件,刻意保留 Material
-    return DSThemeBridge(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('openai_modelManagement'.tr),
-          actions: [
-            // DS 按钮自带 DSThemeBridge 提供 AppTheme
-            DSThemeBridge(
-              child: Builder(
-                builder: (context) {
-                  final theme = DSThemeBridge.resolve(context);
-                  return DSIconButton(
-                    icon: DsIconKind.refresh,
-                    size: 40,
-                    color: theme.surfaceAlt,
-                    iconColor: theme.textSub,
-                    onPressed: _isFetching ? null : _fetchAndImportModels,
-                    tooltip: 'openai_fetchLatestModels'.tr,
-                  );
-                },
-              ),
-            ),
-            DSThemeBridge(
-              child: Builder(
-                builder: (context) {
-                  final theme = DSThemeBridge.resolve(context);
-                  return DSIconButton(
-                    icon: DsIconKind.plus,
-                    size: 40,
-                    color: theme.surfaceAlt,
-                    iconColor: theme.textSub,
-                    onPressed: _addNewModel,
-                  );
-                },
-              ),
-            ),
-          ],
-          bottom:
-              _isLoading
-                  ? null
-                  : PreferredSize(
-                    preferredSize: const Size.fromHeight(
-                      104.0,
-                    ), // 增加高度，为搜索框和TabBar提供足够空间
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 8.0,
-                          ),
-                          child: DSInput.search(
-                            hint: 'openai_searchModel'.tr,
-                            onChanged: (value) {
-                              setState(() {
-                                _searchQuery = value;
-                              });
-                            },
-                          ),
-                        ),
-                        if (_tabController != null)
-                          TabBar(
-                            controller: _tabController,
-                            isScrollable: true,
-                            tabs:
-                                _modelGroups
-                                    .map((group) => Tab(text: group.name))
-                                    .toList(),
-                          ),
-                      ],
-                    ),
-                  ),
-        ),
-        body: Builder(
-          builder:
-              (context) =>
-                  _isLoading
-                      ? const Center(child: DSLoadingDots())
-                      : _tabController == null
-                      ? Center(child: Text('openai_cannotLoadModels'.tr))
-                      : TabBarView(
-                        controller: _tabController,
-                        children:
-                            _modelGroups.map((group) {
-                              final filteredModels = _getFilteredModels(
-                                group.models,
-                              );
-                              return filteredModels.isEmpty
-                                  ? Center(
-                                    child: Text('openai_noModelsFound'.tr),
-                                  )
-                                  : Builder(
-                                    builder: (context) {
-                                      final theme = DSThemeBridge.resolve(
-                                        context,
-                                      );
-                                      return ListView.builder(
-                                        itemCount: filteredModels.length,
-                                        itemBuilder: (context, index) {
-                                          final model = filteredModels[index];
-                                          final isDefault =
-                                              _getDefaultModelForGroup(
-                                                group.id,
-                                              ) ==
-                                              model.id;
-                                          return Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 4,
-                                            ),
-                                            child: DSCard(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: theme.spacing.md,
-                                                vertical: theme.spacing.xs,
-                                              ),
-                                              onTap: () => _editModel(model),
-                                              child: Row(
-                                                children: [
-                                                  DSIconButton(
-                                                    icon: DsIconKind.star,
-                                                    size: 38,
-                                                    color:
-                                                        isDefault
-                                                            ? theme.warning
-                                                            : theme.surfaceAlt,
-                                                    iconColor:
-                                                        isDefault
-                                                            ? theme.onWarning
-                                                            : theme.textSub,
-                                                    onPressed:
-                                                        () => _setDefaultModel(
-                                                          group.id,
-                                                          model.id,
-                                                        ),
-                                                    tooltip: '设为默认模型',
-                                                  ),
-                                                  SizedBox(
-                                                    width: theme.spacing.sm,
-                                                  ),
-                                                  Expanded(
-                                                    child: Text(
-                                                      model.name,
-                                                      style: DsTypography.body
-                                                          .copyWith(
-                                                            color: theme.text,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  DSIconButton(
-                                                    icon: DsIconKind.trash,
-                                                    size: 38,
-                                                    color: theme.danger,
-                                                    iconColor: theme.onDanger,
-                                                    onPressed:
-                                                        () =>
-                                                            _deleteModel(model),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                  );
-                            }).toList(),
-                      ),
-        ),
+    return SuperCupertinoNavigationWrapper(
+      title: Text('openai_modelManagement'.tr),
+      enableLargeTitle: false,
+      actions: [_buildRefreshButton(), _buildAddButton()],
+      // ===== 搜索 =====
+      enableSearchBar: true,
+      searchPlaceholder: 'openai_searchModel'.tr,
+      onSearchChanged: (query) => setState(() => _searchQuery = query),
+      // ===== 分组过滤栏（替代原 TabBar）=====
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(),
+      onMultiFilterChanged: _handleFilterChanged,
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildRefreshButton() {
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return DSIconButton(
+          icon: DsIconKind.refresh,
+          size: 36,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
+          onPressed: _isFetching ? null : _fetchAndImportModels,
+          tooltip: 'openai_fetchLatestModels'.tr,
+        );
+      },
+    );
+  }
+
+  Widget _buildAddButton() {
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return DSIconButton(
+          icon: DsIconKind.plus,
+          size: 36,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
+          onPressed: _addNewModel,
+        );
+      },
+    );
+  }
+
+  /// 多条件过滤项：分组切换（单选）
+  List<FilterItem> _buildFilterItems() {
+    final groupOptions = {for (final g in _modelGroups) g.id: g.name};
+    return [
+      FilterItem(
+        id: 'group',
+        title: 'openai_groupFilterTitle'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, currentValue, onChanged) {
+          return FilterBuilders.buildSingleChoiceFilter(
+            context: context,
+            currentValue: currentValue,
+            // 单选完成即返回第一层
+            onChanged: (value) => onChanged(value, done: true),
+            options: groupOptions,
+            allItemsKey: 'all',
+            allItemsLabel: 'openai_allGroups'.tr,
+          );
+        },
+        getBadge:
+            (value) => FilterBuilders.singleChoiceBadge(value, groupOptions),
       ),
+    ];
+  }
+
+  void _handleFilterChanged(Map<String, dynamic> values) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _multiFilters
+            ..clear()
+            ..addAll(values);
+        });
+      }
+    });
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) return const Center(child: DSLoadingDots());
+    if (_modelGroups.isEmpty) {
+      return Center(child: Text('openai_cannotLoadModels'.tr));
+    }
+    final models = _visibleModels;
+    if (models.isEmpty) {
+      return Center(child: Text('openai_noModelsFound'.tr));
+    }
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        // 模型 → 所属分组（"全部"视图下星标仍按组判断默认模型）
+        final groupOf = {
+          for (final g in _modelGroups) for (final m in g.models) m.id: g.id,
+        };
+        // 手绘便签列表：倾斜姿态由 model.id 确定性生成
+        return HandDrawnListView(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.paddingOf(context).bottom,
+          ),
+          separatorBuilder: (context, index) => const SizedBox(height: 16),
+          tiltKeyOf: (index) => models[index].id,
+          itemCount: models.length,
+          itemBuilder: (context, index) {
+            final model = models[index];
+            final groupId = groupOf[model.id] ?? '';
+            final isDefault = _getDefaultModelForGroup(groupId) == model.id;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: DSCard(
+                padding: EdgeInsets.symmetric(
+                  horizontal: theme.spacing.md,
+                  vertical: theme.spacing.xs,
+                ),
+                onTap: () => _editModel(model),
+                child: Row(
+                  children: [
+                    DSIconButton(
+                      icon: DsIconKind.star,
+                      size: 38,
+                      color: isDefault ? theme.warning : theme.surfaceAlt,
+                      iconColor: isDefault ? theme.onWarning : theme.textSub,
+                      onPressed: () => _setDefaultModel(groupId, model.id),
+                      tooltip: 'openai_setDefaultModelTooltip'.tr,
+                    ),
+                    SizedBox(width: theme.spacing.sm),
+                    Expanded(
+                      child: Text(
+                        model.name,
+                        style: DsTypography.body.copyWith(color: theme.text),
+                      ),
+                    ),
+                    DSIconButton(
+                      icon: DsIconKind.trash,
+                      size: 38,
+                      color: theme.danger,
+                      iconColor: theme.onDanger,
+                      onPressed: () => _deleteModel(model),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -410,11 +394,6 @@ class _ModelListScreenState extends State<ModelListScreen>
     }
   }
 
-  @override
-  void dispose() {
-    _tabController?.dispose();
-    super.dispose();
-  }
 }
 
 class _ModelEditDialog extends StatefulWidget {

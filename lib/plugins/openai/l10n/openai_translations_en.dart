@@ -121,6 +121,11 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_syncResult': 'Added @groups groups, @models models',
   'openai_modelManagementDescription': 'Manage large language models',
   'openai_modelUrlLabel': 'URL',
+  'openai_setDefaultModelTooltip': 'Set as default model',
+  'openai_defaultModelSet': 'Default model set: @model',
+  'openai_setDefaultModelFailed': 'Failed to set default model',
+  'openai_groupFilterTitle': 'Group',
+  'openai_allGroups': 'All groups',
 
   // Test Service
   'openai_lastInputLoadFailed': 'Failed to load last input',
@@ -191,6 +196,8 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_addProviderTooltip': 'Add new AI provider',
   'openai_noProvidersConfigured': 'No providers configured',
   'openai_addProviderButton': 'Add Provider',
+  'openai_cloneProvider': 'Clone Provider',
+  'openai_cloneSuffix': ' (copy)',
 
   // Provider Edit Screen
   'openai_addProvider': 'Add Provider',
@@ -207,6 +214,16 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_unsavedChangesTitle': 'Unsaved Changes',
   'openai_unsavedHeaderWarning': 'There are unsaved changes in the header input fields. Do you want to discard these changes?',
   'openai_discard': 'Discard',
+
+  // Provider Edit Screen - modes
+  'openai_modeRegular': 'Regular',
+  'openai_modeAdvanced': 'Advanced',
+  'openai_regularModeDesc': 'Pick a provider and paste your API key. Base URL, API format and headers are filled automatically',
+  'openai_apiKey': 'API Key',
+  'openai_apiKeyHint': 'Paste your API key',
+  'openai_apiKeyRequired': 'Please enter the API key',
+  'openai_presetRequired': 'Please select a provider',
+  'openai_autoFilled': 'Auto-filled',
 
   // Prompt Preset
   'openai_promptPresetManagement': 'Prompt Preset Management',

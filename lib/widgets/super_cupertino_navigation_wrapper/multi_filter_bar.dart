@@ -102,12 +102,9 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
+    return Container(
       height: widget.height,
       decoration: BoxDecoration(
-        color: AppTheme.of(context).background,
         border: Border(
           bottom: BorderSide(
             color: Theme.of(context).dividerColor.withOpacity(0.12),
@@ -115,7 +112,36 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
           ),
         ),
       ),
-      child: _isDetailView ? _buildDetailView() : _buildListView(),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: _layerTransition,
+        child: _isDetailView
+            ? KeyedSubtree(
+                key: const ValueKey('detail'),
+                child: _buildDetailView(),
+              )
+            : KeyedSubtree(
+                key: const ValueKey('list'),
+                child: _buildListView(),
+              ),
+      ),
+    );
+  }
+
+  /// 两层切换过渡：进入层沿前进方向滑入，退出层反向滑出，均带淡入淡出
+  Widget _layerTransition(Widget child, Animation<double> animation) {
+    final isDetail = child.key == const ValueKey('detail');
+    final entering = isDetail == _isDetailView;
+    final dx = _isDetailView ? 1.0 : -1.0;
+    final slide =
+        entering
+            ? Tween(begin: Offset(dx, 0), end: Offset.zero)
+            : Tween(begin: Offset.zero, end: Offset(-dx, 0));
+    return SlideTransition(
+      position: slide.animate(animation),
+      child: FadeTransition(opacity: animation, child: child),
     );
   }
 
