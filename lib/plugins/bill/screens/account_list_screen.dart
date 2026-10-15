@@ -1,4 +1,3 @@
-import 'package:universal_platform/universal_platform.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -54,53 +53,37 @@ class _AccountListScreenState extends State<AccountListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-    return Scaffold(
-      backgroundColor: dsScaffoldBackground(theme),
-      appBar: AppBar(
-        backgroundColor: theme.surface,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'bill_accountManagement'.tr,
-          style: DsTypography.title.copyWith(
-            color: theme.text,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading:
-            (UniversalPlatform.isAndroid || UniversalPlatform.isIOS)
-                ? null
-                : DSThemeBridge(
-                  child: Builder(
-                    builder: (context) {
-                      final theme = DSThemeBridge.resolve(context);
-                      return DSIconButton(
-                        icon: DsIconKind.chevronLeft,
-                        size: 40,
-                        color: theme.surface,
-                        iconColor: theme.text,
-                        onPressed: () => Navigator.of(context).pop(),
-                      );
-                    },
-                  ),
-                ),
-      ),
-      body: _buildAccountList(),
-      floatingActionButton: DSThemeBridge(
-        child: DSFab(
-          size: 64,
-          icon: DsIconKind.plus,
-          onPressed:
-              () => SmoothBottomSheet.show(
-                context: context,
-                isScrollControlled: true,
-                builder:
-                    (context) =>
-                        AccountEditScreen(billPlugin: widget.billPlugin),
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Scaffold(
+            backgroundColor: dsScaffoldBackground(theme),
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  DSLightHeader(title: 'bill_accountManagement'.tr),
+                  Expanded(child: _buildAccountList()),
+                ],
               ),
-        ),
+            ),
+            floatingActionButton: DSThemeBridge(
+              child: DSFab(
+                size: 64,
+                icon: DsIconKind.plus,
+                onPressed:
+                    () => SmoothBottomSheet.show(
+                      context: context,
+                      isScrollControlled: true,
+                      builder:
+                          (context) =>
+                              AccountEditScreen(billPlugin: widget.billPlugin),
+                    ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

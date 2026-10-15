@@ -119,6 +119,10 @@ class _MessageBubbleState extends State<MessageBubble>
     if (DateTime.now().difference(widget.message.createdAt) <=
         const Duration(seconds: 5)) {
       _entranceController.forward();
+    } else {
+      // 历史消息不播入场动画，直接停在完成态；
+      // 控制器默认值为 0，若不推进 ScaleTransition 将停留在 scale=0，气泡不绘制
+      _entranceController.value = 1.0;
     }
     _loadReplyMessage();
     _messageUpdateSubscriptionId = aboutme_event.EventManager.instance

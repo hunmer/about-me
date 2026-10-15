@@ -116,6 +116,8 @@ Future<void> initializeApp() async {
 
   // 配置日志输出（轻量级，不阻塞）
   Logger.root.level = Level.ALL;
+  // dartantic 流式日志过于高频（每个 stream chunk 都输出），静音其 FINE 级日志
+  Logger('dartantic').level = Level.WARNING;
   Logger.root.onRecord.listen((record) {
     debugPrint(
       '[${record.level.name}] ${record.loggerName}: ${record.message}',

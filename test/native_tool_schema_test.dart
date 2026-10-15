@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dartantic_ai/dartantic_ai.dart';
 
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
@@ -58,6 +59,16 @@ void main() {
   });
 
   group('ToolSchemaBuilder', () {
+    test('空参数 schema 可以构造并执行原生 Tool', () async {
+      final tool = Tool<Map<String, dynamic>>(
+        name: 'no_parameters',
+        description: '无参数工具',
+        inputSchema: Schema.fromMap(ToolSchemaBuilder.buildSchemaMap([])),
+        onCall: (args) async => {'ok': true},
+      );
+      expect(tool.name, 'no_parameters');
+    });
+
     test('脏 type 规范化', () {
       final schema = ToolSchemaBuilder.buildSchemaMap([
         ToolParameter(name: 'a', type: 'String', description: '大小写变体'),

@@ -22,15 +22,19 @@ class ToolSchemaBuilder {
   }
 
   /// 参数列表 → JSON Schema properties + required
-  static Map<String, dynamic> buildSchemaMap(List<ToolParameter> params) {
+  static Map<String, Object?> buildSchemaMap(List<ToolParameter> params) {
     if (params.isEmpty) {
-      return {'type': 'object', 'properties': {}, 'required': []};
+      return <String, Object?>{
+        'type': 'object',
+        'properties': <String, Object?>{},
+        'required': <String>[],
+      };
     }
-    final properties = <String, dynamic>{};
+    final properties = <String, Object?>{};
     final required = <String>[];
     for (final p in params) {
       final type = _normalizeType(p.type);
-      final prop = <String, dynamic>{
+      final prop = <String, Object?>{
         'type': type,
         'description': p.description,
       };
@@ -41,17 +45,17 @@ class ToolSchemaBuilder {
       properties[p.name] = prop;
       if (!p.optional) required.add(p.name);
     }
-    return {
+    return <String, Object?>{
       'type': 'object',
       'properties': properties,
       'required': required,
     };
   }
 
-  static Map<String, dynamic> _propsMap(List<ToolParameter> params) {
-    final map = <String, dynamic>{};
+  static Map<String, Object?> _propsMap(List<ToolParameter> params) {
+    final map = <String, Object?>{};
     for (final p in params) {
-      final prop = <String, dynamic>{
+      final prop = <String, Object?>{
         'type': _normalizeType(p.type),
         'description': p.description,
       };
@@ -82,8 +86,7 @@ class ToolSchemaBuilder {
     if (config.examples.isNotEmpty) {
       final code = config.examples.first.code.trim();
       if (code.isNotEmpty) {
-        final clipped =
-            code.length > 400 ? '${code.substring(0, 400)}…' : code;
+        final clipped = code.length > 400 ? '${code.substring(0, 400)}…' : code;
         buffer
           ..write('\n参考调用：')
           ..write(clipped);

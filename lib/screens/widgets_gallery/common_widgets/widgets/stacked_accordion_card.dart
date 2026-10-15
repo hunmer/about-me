@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// CSS var(--spring-easing): cubic-bezier(0.22, 1, 0.36, 1)
@@ -319,9 +320,8 @@ class _StackedAccordionCardWidgetState
 
     return SizedBox(
       width: widget.inline ? double.maxFinite : 348 * metrics.scale,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: _ShiftedColumn(
+        overlap: metrics.overlap,
         children: [
           for (int i = 0; i < widget.items.length; i++)
             _entranceWrapped(
@@ -329,7 +329,6 @@ class _StackedAccordionCardWidgetState
               _AccordionCard(
                 data: widget.items[i],
                 expanded: _expandedIndex == i,
-                isFirst: i == 0,
                 isLast: i == widget.items.length - 1,
                 metrics: metrics,
                 onTap: () => _handleTap(i),
@@ -381,14 +380,14 @@ class _AccordionMetrics {
   double get radius => (compact ? 18 : 28) * scale;
 
   /// 后一张卡片覆盖前一张底部的距离
-  double get overlap => (compact ? 18 : 30) * scale;
+  double get overlap => (compact ? 28 : 46) * scale;
 
   double get paddingH => (compact ? 15 : 22) * scale;
   double get paddingV => (compact ? 15 : 22) * scale;
 
   /// 被下一张覆盖时预留的底部内边距（展开时略增以保持呼吸感）
-  double get bottomPadCovered => (compact ? 34 : 50) * scale;
-  double get bottomPadExpanded => (compact ? 38 : 54) * scale;
+  double get bottomPadCovered => (compact ? 48 : 66) * scale;
+  double get bottomPadExpanded => (compact ? 52 : 70) * scale;
   double get bottomPadLast => (compact ? 16 : 24) * scale;
 
   double get titleSize => (compact ? 17 : 26) * scale;
@@ -408,7 +407,6 @@ class _AccordionMetrics {
 class _AccordionCard extends StatefulWidget {
   final StackedAccordionCardData data;
   final bool expanded;
-  final bool isFirst;
   final bool isLast;
   final _AccordionMetrics metrics;
   final VoidCallback? onTap;
@@ -417,7 +415,6 @@ class _AccordionCard extends StatefulWidget {
   const _AccordionCard({
     required this.data,
     required this.expanded,
-    required this.isFirst,
     required this.isLast,
     required this.metrics,
     this.onTap,
@@ -584,13 +581,7 @@ class _AccordionCardState extends State<_AccordionCard>
       ),
     );
 
-    // 后一张卡片向上层叠覆盖前一张底部（Column 不支持负 margin，用平移实现）
-    return widget.isFirst
-        ? wrapped
-        : Transform.translate(
-            offset: Offset(0, -m.overlap),
-            child: wrapped,
-          );
+    return wrapped;
   }
 
   /// 圆形箭头按钮（展开时旋转 90°）
@@ -810,5 +801,80 @@ class _AccordionCardState extends State<_AccordionCard>
       },
       child: child,
     );
+  }
+}
+
+/// 层叠列布局：后一张卡片在布局上上移 [overlap]，覆盖前一张卡片底部。
+/// 与 Transform 平移不同，布局高度天然紧凑（不残留尾部空白），
+/// 绘制顺序为 children 顺序（后者覆盖前者），命中测试随之正确。
+class _ShiftedColumn extends MultiChildRenderObjectWidget {
+  /// 相邻卡片间的层叠覆盖距离
+  final double overlap;
+
+  const _ShiftedColumn({required this.overlap, required super.children});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    return _RenderShiftedColumn(overlap: overlap);
+  }
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    covariant _RenderShiftedColumn renderObject,
+  ) {
+    renderObject.overlap = overlap;
+  }
+}
+
+class _RenderShiftedColumn extends RenderBox
+    with
+        ContainerRenderObjectMixin<RenderBox, StackParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, StackParentData> {
+  _RenderShiftedColumn({required double overlap}) : _overlap = overlap;
+
+  double _overlap;
+
+  set overlap(double value) {
+    if (_overlap != value) {
+      _overlap = value;
+      markNeedsLayout();
+    }
+  }
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! StackParentData) {
+      child.parentData = StackParentData();
+    }
+  }
+
+  @override
+  void performLayout() {
+    final children = getChildrenAsList();
+    var y = 0.0;
+    var width = 0.0;
+    for (int i = 0; i < children.length; i++) {
+      final child = children[i];
+      child.layout(constraints.loosen(), parentUsesSize: true);
+      (child.parentData as StackParentData).offset = Offset(0, y);
+      width = math.max(width, child.size.width);
+      y += child.size.height;
+      // 非最后一张卡片：下一张向上层叠覆盖其底部
+      if (i < children.length - 1) {
+        y -= _overlap;
+      }
+    }
+    size = constraints.constrain(Size(width, y));
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    defaultPaint(context, offset);
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    return defaultHitTestChildren(result, position: position);
   }
 }
