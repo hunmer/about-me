@@ -62,6 +62,8 @@ mixin NoteOperations on NotesMainViewState {
             createdAt: note.createdAt,
             updatedAt: DateTime.now(),
             tags: tags,
+            // 编辑保存不改变归档状态
+            isArchived: note.isArchived,
           );
           await plugin.controller.updateNote(updatedNote);
         },
@@ -101,6 +103,12 @@ mixin NoteOperations on NotesMainViewState {
         updatedAt: DateTime.now(),
       ),
     );
+    loadCurrentFolder();
+  }
+
+  /// 切换笔记归档状态并持久化（长按菜单入口，笔记与待办共用）
+  Future<void> toggleNoteArchive(Note note) async {
+    await plugin.controller.toggleNoteArchive(note);
     loadCurrentFolder();
   }
 

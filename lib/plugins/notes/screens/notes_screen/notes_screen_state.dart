@@ -6,10 +6,10 @@ import 'package:aboutme/plugins/notes/models/folder.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
 import 'package:aboutme/plugins/notes/screens/notes_screen.dart';
 
-class NotesMainViewState extends State<NotesMainView> {
-  /// "已归档"虚拟目录 ID（根目录入口卡片进入，展示所有归档的文件夹/笔记/待办）
-  static const String archivedFolderId = 'archived';
+/// "已归档"虚拟目录 ID（根目录入口卡片进入，展示所有归档的文件夹/笔记/待办）
+const String kArchivedFolderId = 'archived';
 
+class NotesMainViewState extends State<NotesMainView> {
   late final EventManager _eventManager;
   @protected
   String currentFolderId = 'root';
@@ -49,7 +49,7 @@ class NotesMainViewState extends State<NotesMainView> {
 
   /// 当前是否处于"已归档"视图
   @protected
-  bool get isArchivedView => currentFolderId == archivedFolderId;
+  bool get isArchivedView => currentFolderId == kArchivedFolderId;
 
   @protected
   void loadCurrentFolder() {
@@ -57,7 +57,7 @@ class NotesMainViewState extends State<NotesMainView> {
       if (isArchivedView) {
         // 已归档视图：平铺展示所有归档的文件夹与笔记
         currentFolder = Folder(
-          id: archivedFolderId,
+          id: kArchivedFolderId,
           name: 'notes_archived'.tr,
           parentId: 'root',
           createdAt: DateTime.now(),

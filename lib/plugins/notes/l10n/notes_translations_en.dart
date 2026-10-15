@@ -60,6 +60,9 @@ final Map<String, String> notesTranslationsEn = {
   'notes_titleHint': 'Enter title...',
   'notes_contentHint': 'Enter content...',
   'notes_untitled': 'Untitled',
+  'notes_archived': 'Archived',
+  'notes_archive': 'Archive',
+  'notes_unarchive': 'Unarchive',
   'notes_emptyContent': 'No content yet. Tap edit below to start writing',
 
   // Folder related

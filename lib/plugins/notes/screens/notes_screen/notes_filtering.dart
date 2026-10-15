@@ -192,6 +192,10 @@ mixin NotesFiltering on NotesMainViewState, NotesRouteContext {
         // 否则使用当前文件夹的笔记
         baseNotes = plugin.controller.getFolderNotes(currentFolderId);
       }
+      // 与主列表一致：普通视图排除已归档笔记，已归档视图只看归档
+      baseNotes = baseNotes
+          .where((note) => note.isArchived == isArchivedView)
+          .toList();
 
       // 应用标签和日期过滤
       if (searchController.text.isNotEmpty ||

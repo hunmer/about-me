@@ -37,9 +37,10 @@ class _SaveToolDialogState extends State<SaveToolDialog>
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _tagController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _nameFocus = FocusNode();
   bool _isSaving = false;
   String? _errorMessage;
+  String? _nameError;
   final List<String> _tags = [];
   final List<ToolCallStep> _steps = [];
   late TabController _tabController;
@@ -48,6 +49,9 @@ class _SaveToolDialogState extends State<SaveToolDialog>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _nameFocus.requestFocus();
+    });
 
     // 如果是编辑模式，回显数据
     if (widget.isEditMode) {
@@ -87,6 +91,7 @@ class _SaveToolDialogState extends State<SaveToolDialog>
     _nameController.dispose();
     _descriptionController.dispose();
     _tagController.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
@@ -110,7 +115,9 @@ class _SaveToolDialogState extends State<SaveToolDialog>
               ),
               const SizedBox(width: 8),
               Text(
-                widget.isEditMode ? '编辑工具模板' : '保存工具',
+                widget.isEditMode
+                    ? 'agent_chat_editToolTemplate'.tr
+                    : 'agent_chat_saveTool'.tr,
                 style: DsTypography.title.copyWith(color: theme.text),
               ),
             ],
@@ -129,26 +136,29 @@ class _SaveToolDialogState extends State<SaveToolDialog>
                 color: theme.surface,
                 borderRadius: theme.radii.sm,
               ),
-              tabs: const [
-                Tab(icon: Icon(Icons.info_outline), text: '基础信息'),
-                Tab(icon: Icon(Icons.list), text: '执行步骤'),
+              tabs: [
+                Tab(
+                  icon: DsIcon(DsIconKind.info, size: 18, color: theme.textSub),
+                  text: 'agent_chat_basicInfo'.tr,
+                ),
+                Tab(
+                  icon: DsIcon(DsIconKind.list, size: 18, color: theme.textSub),
+                  text: 'agent_chat_executionSteps'.tr,
+                ),
               ],
             ),
           ),
           SizedBox(
             width: 500,
             height: 500, // 固定高度以适应 TabBarView
-            child: Form(
-              key: _formKey,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // 第一个 Tab: 基础信息
-                  _buildBasicInfoTab(),
-                  // 第二个 Tab: 执行步骤
-                  _buildStepsTab(),
-                ],
-              ),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // 第一个 Tab: 基础信息
+                _buildBasicInfoTab(),
+                // 第二个 Tab: 执行步骤
+                _buildStepsTab(),
+              ],
             ),
           ),
           const SizedBox(height: 8),
@@ -184,77 +194,46 @@ class _SaveToolDialogState extends State<SaveToolDialog>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 名称输入
-          TextFormField(
+          // 名称输入（手绘输入框，design.md §9.1）
+          DSInput(
             controller: _nameController,
-            autofocus: true,
-            decoration: InputDecoration(
-              labelText: '工具名称 *',
-              hintText: '例如:导出数据',
-              border: const OutlineInputBorder(),
-              prefixIcon: DsIcon(
-                DsIconKind.tag,
-                size: 20,
-                color: theme.textSub,
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return '请输入工具名称';
+            focusNode: _nameFocus,
+            label: 'agent_chat_toolNameLabel'.tr,
+            hint: 'agent_chat_toolNameHint'.tr,
+            errorText: _nameError,
+            maxLength: 50,
+            prefix: DsIcon(DsIconKind.tag, size: 20, color: theme.textSub),
+            onChanged: (_) {
+              if (_nameError != null) {
+                setState(() {
+                  _nameError = null;
+                });
               }
-              if (value.trim().length > 50) {
-                return '名称不能超过50个字符';
-              }
-              // 编辑模式下,允许保留原名称
-              if (widget.isEditMode) {
-                final originalName = widget.editingTemplate!.name;
-                if (value.trim() == originalName) {
-                  return null;
-                }
-              }
-              // 检查名称是否已存在
-              final exists = widget.templateService.templates.any(
-                (t) => t.name == value.trim(),
-              );
-              if (exists) {
-                return '该名称已存在';
-              }
-              return null;
             },
           ),
 
           const SizedBox(height: 16),
 
           // 描述输入
-          TextFormField(
+          DSInput(
             controller: _descriptionController,
+            label: 'agent_chat_descriptionOptional'.tr,
+            hint: 'agent_chat_descriptionHint'.tr,
+            maxLength: 200,
             maxLines: 3,
-            decoration: InputDecoration(
-              labelText: '描述(可选)',
-              hintText: '描述这个工具的用途...',
-              border: const OutlineInputBorder(),
-              prefixIcon: DsIcon(
-                DsIconKind.book,
-                size: 20,
-                color: theme.textSub,
-              ),
-            ),
-            validator: (value) {
-              if (value != null && value.trim().length > 200) {
-                return '描述不能超过200个字符';
-              }
-              return null;
-            },
+            prefix: DsIcon(DsIconKind.book, size: 20, color: theme.textSub),
           ),
 
           // 声明的工具(如果有)
           if (_getDeclaredTools().isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
-              '声明使用的工具 (${_getDeclaredTools().length})',
+              'agent_chat_declaredToolsCount'.trParams({
+                'count': '${_getDeclaredTools().length}',
+              }),
               style: DsTypography.body.copyWith(
                 fontWeight: FontWeight.bold,
-                color: DSThemeBridge.resolve(context).text,
+                color: theme.text,
               ),
             ),
             const SizedBox(height: 8),
@@ -283,106 +262,75 @@ class _SaveToolDialogState extends State<SaveToolDialog>
           const SizedBox(height: 16),
 
           // 标签输入
-          Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '标签(可选)',
-                    style: DsTypography.body.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.text,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _tagController,
-                          decoration: InputDecoration(
-                            hintText: '输入标签后按回车添加',
-                            border: const OutlineInputBorder(),
-                            prefixIcon: DsIcon(
-                              DsIconKind.tag,
-                              size: 20,
-                              color: theme.textSub,
-                            ),
-                            suffixIcon: Pressable(
-                              onPressed: _addTag,
-                              semanticLabel: '添加标签',
-                              builder:
-                                  (context, states) => Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: DsIcon(
-                                      DsIconKind.plus,
-                                      size: 20,
-                                      color: theme.primaryText,
-                                    ),
-                                  ),
-                            ),
-                          ),
-                          onSubmitted: (_) => _addTag(),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_tags.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children:
-                          _tags.map((tag) {
-                            return DSChip(
-                              label: tag,
-                              onDeleted: () {
-                                setState(() {
-                                  _tags.remove(tag);
-                                });
-                              },
-                            );
-                          }).toList(),
-                    ),
-                  ],
-                ],
-              );
-            },
+          Text(
+            'agent_chat_tagsOptional'.tr,
+            style: DsTypography.body.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.text,
+            ),
           ),
+          const SizedBox(height: 8),
+          DSInput(
+            controller: _tagController,
+            hint: 'agent_chat_tagInputHint'.tr,
+            prefix: DsIcon(DsIconKind.tag, size: 20, color: theme.textSub),
+            suffix: Pressable(
+              onPressed: _addTag,
+              semanticLabel: 'agent_chat_addTag'.tr,
+              builder:
+                  (context, states) => Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: DsIcon(
+                      DsIconKind.plus,
+                      size: 20,
+                      color: theme.primaryText,
+                    ),
+                  ),
+            ),
+            onSubmitted: (_) => _addTag(),
+          ),
+          if (_tags.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children:
+                  _tags.map((tag) {
+                    return DSChip(
+                      label: tag,
+                      onDeleted: () {
+                        setState(() {
+                          _tags.remove(tag);
+                        });
+                      },
+                    );
+                  }).toList(),
+            ),
+          ],
 
-          // 错误信息
+          // 错误信息（危险态手绘容器，design.md §9.1）
           if (_errorMessage != null) ...[
             const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.danger.mixWhite(0.92),
-                    borderRadius: theme.radii.sm,
-                    border: Border.all(
-                      color: theme.danger.withValues(alpha: 0.5),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                fillColor: theme.danger.mixWhite(0.92),
+                stroke: theme.danger.withValues(alpha: 0.5),
+                radius: theme.radii.sm,
+              ),
+              child: Row(
+                children: [
+                  DsIcon(DsIconKind.close, size: 16, color: theme.danger),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _errorMessage!,
+                      style: DsTypography.caption.copyWith(color: theme.text),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      DsIcon(DsIconKind.close, size: 16, color: theme.danger),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.text,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                ],
+              ),
             ),
           ],
         ],
@@ -402,7 +350,9 @@ class _SaveToolDialogState extends State<SaveToolDialog>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '执行步骤 (${_steps.length})',
+                'agent_chat_stepCountLabel'.trParams({
+                  'count': '${_steps.length}',
+                }),
                 style: DsTypography.body.copyWith(
                   fontWeight: FontWeight.bold,
                   color: theme.text,
@@ -410,7 +360,7 @@ class _SaveToolDialogState extends State<SaveToolDialog>
               ),
               Pressable(
                 onPressed: _addStep,
-                semanticLabel: '添加步骤',
+                semanticLabel: 'agent_chat_addStep'.tr,
                 builder:
                     (context, states) => DsIcon(
                       DsIconKind.plus,
@@ -428,16 +378,15 @@ class _SaveToolDialogState extends State<SaveToolDialog>
               _steps.isEmpty
                   ? Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.surfaceAlt.withValues(alpha: 0.6),
-                      borderRadius: theme.radii.sm,
-                      border: Border.all(
-                        color: theme.textSub.withValues(alpha: 0.3),
-                      ),
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      fillColor: theme.surfaceAlt,
+                      stroke: theme.textSub.withValues(alpha: 0.3),
+                      radius: theme.radii.sm,
                     ),
                     child: Center(
                       child: Text(
-                        '暂无步骤,点击上方按钮添加',
+                        'agent_chat_noStepsHint'.tr,
                         style: DsTypography.body.copyWith(color: theme.textSub),
                       ),
                     ),
@@ -517,10 +466,11 @@ class _SaveToolDialogState extends State<SaveToolDialog>
     return Container(
       key: ValueKey(index),
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: theme.radii.md,
-        border: Border.all(color: theme.textSub.withValues(alpha: 0.3)),
+      // 手绘卡片容器（design.md §9.1）
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        radius: theme.radii.md,
       ),
       child: ExpansionTile(
         leading: ReorderableDragStartListener(
@@ -528,7 +478,9 @@ class _SaveToolDialogState extends State<SaveToolDialog>
           child: DsIcon(DsIconKind.drag, color: theme.textSub),
         ),
         title: Text(
-          step.title.isNotEmpty ? step.title : '步骤 ${index + 1}',
+          step.title.isNotEmpty
+              ? step.title
+              : 'agent_chat_stepIndex'.trParams({'index': '${index + 1}'}),
           style: DsTypography.body.copyWith(color: theme.text),
         ),
         subtitle:
@@ -542,7 +494,7 @@ class _SaveToolDialogState extends State<SaveToolDialog>
                 : null,
         trailing: Pressable(
           onPressed: () => _deleteStep(index),
-          semanticLabel: '删除步骤',
+          semanticLabel: 'agent_chat_deleteStep'.tr,
           builder:
               (context, states) =>
                   DsIcon(DsIconKind.trash, size: 20, color: theme.danger),
@@ -554,40 +506,27 @@ class _SaveToolDialogState extends State<SaveToolDialog>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 标题输入
-                TextField(
-                  decoration: const InputDecoration(
-                    labelText: '步骤标题',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
+                DSInput(
                   controller: TextEditingController(text: step.title),
+                  label: 'agent_chat_stepTitle'.tr,
                   onChanged: (value) => _updateStep(index, title: value),
                 ),
                 const SizedBox(height: 12),
 
                 // 描述输入
-                TextField(
-                  decoration: const InputDecoration(
-                    labelText: '步骤描述',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
+                DSInput(
                   controller: TextEditingController(text: step.desc),
+                  label: 'agent_chat_stepDesc'.tr,
                   onChanged: (value) => _updateStep(index, desc: value),
                 ),
                 const SizedBox(height: 12),
 
                 // 代码输入
-                TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'JavaScript 代码',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                    hintText: 'const result = await Aboutme.plugins...',
-                  ),
+                DSInput(
                   controller: TextEditingController(text: step.data),
+                  label: 'agent_chat_stepCode'.tr,
+                  hint: 'agent_chat_stepCodeHint'.tr,
                   maxLines: 8,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
                   onChanged: (value) => _updateStep(index, data: value),
                 ),
               ],
@@ -600,29 +539,53 @@ class _SaveToolDialogState extends State<SaveToolDialog>
 
   /// 保存或更新工具
   Future<void> _saveTool() async {
-    if (!_formKey.currentState!.validate()) return;
-
     setState(() {
-      _isSaving = true;
       _errorMessage = null;
     });
 
+    final name = _nameController.text.trim();
+    final description = _descriptionController.text.trim();
+
+    // 名称校验（编辑模式下允许保留原名称）
+    if (name.isEmpty) {
+      setState(() {
+        _nameError = 'agent_chat_toolNameRequired'.tr;
+      });
+      return;
+    }
+    final keepOriginalName =
+        widget.isEditMode && name == widget.editingTemplate!.name;
+    if (!keepOriginalName &&
+        widget.templateService.templates.any((t) => t.name == name)) {
+      setState(() {
+        _nameError = 'agent_chat_toolNameExists'.tr;
+      });
+      return;
+    }
+
+    // 步骤校验
+    if (_steps.isEmpty) {
+      setState(() {
+        _errorMessage = 'agent_chat_needOneStep'.tr;
+      });
+      return;
+    }
+    for (var i = 0; i < _steps.length; i++) {
+      if (_steps[i].data.trim().isEmpty) {
+        setState(() {
+          _errorMessage = 'agent_chat_stepCodeRequired'.trParams({
+            'index': '${i + 1}',
+          });
+        });
+        return;
+      }
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
     try {
-      final name = _nameController.text.trim();
-      final description = _descriptionController.text.trim();
-
-      // 验证步骤
-      if (_steps.isEmpty) {
-        throw Exception('至少需要一个步骤');
-      }
-
-      // 验证每个步骤都有代码
-      for (var i = 0; i < _steps.length; i++) {
-        if (_steps[i].data.trim().isEmpty) {
-          throw Exception('步骤 ${i + 1} 的代码不能为空');
-        }
-      }
-
       if (widget.isEditMode) {
         // 编辑模式：更新现有模板
         final template = widget.editingTemplate!;
@@ -637,7 +600,9 @@ class _SaveToolDialogState extends State<SaveToolDialog>
 
         if (mounted) {
           Navigator.pop(context, true);
-          toastService.showToast('工具模板 "$name" 更新成功');
+          toastService.showToast(
+            'agent_chat_templateUpdated'.trParams({'name': name}),
+          );
         }
       } else {
         // 创建模式：新建模板
@@ -651,7 +616,9 @@ class _SaveToolDialogState extends State<SaveToolDialog>
 
         if (mounted) {
           Navigator.pop(context, true);
-          toastService.showToast('工具 "$name" 保存成功');
+          toastService.showToast(
+            'agent_chat_toolSaved'.trParams({'name': name}),
+          );
         }
       }
     } catch (e) {

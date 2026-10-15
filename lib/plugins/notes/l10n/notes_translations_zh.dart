@@ -60,6 +60,9 @@ final Map<String, String> notesTranslationsZh = {
   'notes_titleHint': '输入标题...',
   'notes_contentHint': '输入内容...',
   'notes_untitled': '无标题',
+  'notes_archived': '已归档',
+  'notes_archive': '归档',
+  'notes_unarchive': '取消归档',
   'notes_emptyContent': '还没有内容，点击下方编辑开始记录',
 
   // 文件夹相关

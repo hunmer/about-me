@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart'
-    show cupertinoTextSelectionHandleControls;
+    show CupertinoAdaptiveTextSelectionToolbar,
+        cupertinoTextSelectionHandleControls;
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
@@ -291,8 +292,11 @@ class _DSInputState extends State<DSInput>
     BuildContext context,
     EditableTextState editableTextState,
   ) {
-    if (SystemContextMenu.isSupportedByField(editableTextState)) {
-      return SystemContextMenu.editableText(
+    // The native iOS menu can be unavailable for a custom EditableText even
+    // when the field itself is editable. Use Flutter's Cupertino menu so the
+    // paste action is always exposed and routed through EditableTextState.
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return CupertinoAdaptiveTextSelectionToolbar.editableText(
         editableTextState: editableTextState,
       );
     }

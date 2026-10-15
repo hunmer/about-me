@@ -1,6 +1,7 @@
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/cupertino.dart'
-    show cupertinoTextSelectionHandleControls;
+    show CupertinoAdaptiveTextSelectionToolbar,
+        cupertinoTextSelectionHandleControls;
 import 'package:flutter/foundation.dart'
     show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/gestures.dart';
@@ -77,6 +78,15 @@ void main() {
         editableText.selectionControls,
         same(cupertinoTextSelectionHandleControls),
       );
+
+      final state = tester.state<EditableTextState>(
+        find.byType(EditableText),
+      );
+      final menu = state.widget.contextMenuBuilder!(
+        state.context,
+        state,
+      );
+      expect(menu, isA<CupertinoAdaptiveTextSelectionToolbar>());
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }

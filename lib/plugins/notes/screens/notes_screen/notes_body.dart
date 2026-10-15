@@ -6,6 +6,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/folder_breadcrumbs.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/plugins/notes/models/folder.dart';
 import 'folder_card.dart';
 import 'folder_operations.dart';
 import 'note_card.dart';
@@ -17,11 +18,18 @@ mixin NotesBody
     on NotesMainViewState, NoteOperations, NotesFab, FolderOperations {
   /// 构建面包屑导航项
   List<FolderBreadcrumbItem> _buildBreadcrumbItems() {
+    // 已归档视图是虚拟目录，不在文件夹树内，单独渲染面包屑
+    if (isArchivedView) {
+      return [FolderBreadcrumbItem(id: kArchivedFolderId, name: 'notes_archived'.tr)];
+    }
     final path = plugin.controller.getFolderPath(currentFolderId);
     return path.map((folder) {
       return FolderBreadcrumbItem(id: folder.id, name: folder.name);
     }).toList();
   }
+
+  /// 根目录是否插入"已归档"固定入口卡片
+  bool get _showArchivedEntry => currentFolderId == 'root' && !isSearching;
 
   Widget buildBody() {
     return Builder(
@@ -50,37 +58,76 @@ mixin NotesBody
                 ),
 
                 // Folders & Notes Grid（子文件夹卡片插在网格最前，笔记随后）
-                if (subFolders.isNotEmpty || notes.isNotEmpty)
+                if (subFolders.isNotEmpty ||
+                    notes.isNotEmpty ||
+                    _showArchivedEntry)
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverMasonryGrid.count(
                       crossAxisCount: 2,
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
-                      childCount: subFolders.length + notes.length,
+                      childCount:
+                          subFolders.length +
+                          notes.length +
+                          (_showArchivedEntry ? 1 : 0),
                       itemBuilder: (context, index) {
                         // 手绘便签倾斜(卡片自带贴条,关掉组件贴条);
                         // 挂载时墨线描画入场
-                        if (index < subFolders.length) {
-                          final folder = subFolders[index];
+                        if (_showArchivedEntry && index == 0) {
+                          // "已归档"固定入口：展示归档的文件夹与笔记总数
+                          final archivedCount =
+                              plugin.controller.getArchivedFolders().length +
+                              plugin.controller.getArchivedNotes().length;
+                          return HandDrawnStickyItem(
+                            tiltKey: 'folder_$kArchivedFolderId',
+                            showTape: false,
+                            child: WiredDraw(
+                              child: FolderCard(
+                                folder: Folder(
+                                  id: kArchivedFolderId,
+                                  name: 'notes_archived'.tr,
+                                  parentId: 'root',
+                                  createdAt: DateTime.now(),
+                                  updatedAt: DateTime.now(),
+                                  color: Colors.blueGrey,
+                                ),
+                                noteCount: archivedCount,
+                                onTap: () {
+                                  setState(() {
+                                    currentFolderId = kArchivedFolderId;
+                                    loadCurrentFolder();
+                                  });
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                        final folderIndex =
+                            index - (_showArchivedEntry ? 1 : 0);
+                        if (folderIndex < subFolders.length) {
+                          final folder = subFolders[folderIndex];
                           return HandDrawnStickyItem(
                             tiltKey: 'folder_${folder.id}',
                             showTape: false,
                             child: WiredDraw(
                               child: FolderCard(
                                 folder: folder,
-                                noteCount:
-                                    plugin.controller
-                                        .getFolderNotes(folder.id)
-                                        .length,
+                                // 文件夹计数不含已归档笔记
+                                noteCount: plugin.controller
+                                    .getFolderNotes(folder.id)
+                                    .where((note) => !note.isArchived)
+                                    .length,
                                 onTap: () => navigateToFolder(folder),
                                 onEdit: () => renameFolder(folder),
                                 onDelete: () => deleteFolder(folder),
+                                onToggleArchive: () =>
+                                    toggleFolderArchive(folder),
                               ),
                             ),
                           );
                         }
-                        final note = notes[index - subFolders.length];
+                        final note = notes[folderIndex - subFolders.length];
                         return HandDrawnStickyItem(
                           tiltKey: 'note_${note.id}',
                           showTape: false,
@@ -95,6 +142,7 @@ mixin NotesBody
                                       : null,
                               onEditStyle:
                                   (style) => updateNoteStyle(note, style),
+                              onToggleArchive: () => toggleNoteArchive(note),
                             ),
                           ),
                         );
@@ -132,8 +180,9 @@ mixin NotesBody
                 const SliverToBoxAdapter(child: SizedBox(height: 80)),
               ],
             ),
-            // FAB
-            Positioned(bottom: 16, right: 16, child: buildExpandableFab()),
+            // FAB（已归档视图为虚拟目录，禁止新建）
+            if (!isArchivedView)
+              Positioned(bottom: 16, right: 16, child: buildExpandableFab()),
           ],
         );
       },

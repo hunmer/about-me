@@ -40,6 +40,12 @@ mixin FolderOperations on NotesMainViewState {
     }
   }
 
+  /// 切换文件夹归档状态并持久化（长按菜单入口）
+  Future<void> toggleFolderArchive(Folder folder) async {
+    await plugin.controller.toggleFolderArchive(folder);
+    loadCurrentFolder();
+  }
+
   Future<void> deleteFolder(Folder folder) async {
     final confirmed = await showDSDialog<bool>(
       context: context,

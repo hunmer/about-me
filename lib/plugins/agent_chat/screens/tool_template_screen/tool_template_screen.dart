@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
@@ -8,7 +9,9 @@ import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/save_t
 import 'components/template_execution_dialog.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 
 /// 工具模板管理界面
 class ToolTemplateScreen extends StatefulWidget {
@@ -27,8 +30,9 @@ class ToolTemplateScreen extends StatefulWidget {
 
 class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
   String _searchQuery = '';
-  Set<String> _selectedTags = {};
-  final ScrollController _tagsScrollController = ScrollController();
+
+  // 多条件过滤参数
+  Map<String, dynamic> _multiFilters = {};
 
   @override
   void initState() {
@@ -38,7 +42,6 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
 
   @override
   void dispose() {
-    _tagsScrollController.dispose();
     widget.templateService.removeListener(_onTemplatesChanged);
     super.dispose();
   }
@@ -49,25 +52,58 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
     }
   }
 
+  /// 构建多条件过滤项（design.md §8）
+  List<FilterItem> _buildFilterItems(List<String> allTags) {
+    return [
+      if (allTags.isNotEmpty)
+        FilterItem(
+          id: 'tags',
+          title: 'agent_chat_tag'.tr,
+          type: FilterType.tagsMultiple,
+          builder: (context, currentValue, onChanged) {
+            return FilterBuilders.buildTagsFilter(
+              context: context,
+              currentValue: currentValue,
+              onChanged: onChanged,
+              availableTags: allTags,
+            );
+          },
+          getBadge: FilterBuilders.tagsBadge,
+        ),
+    ];
+  }
+
+  void _applyMultiFilters(Map<String, dynamic> filters) {
+    // 使用 addPostFrameCallback 避免在 build 阶段调用 setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _multiFilters = filters;
+        });
+      }
+    });
+  }
+
+  /// 检查模板是否通过多条件过滤
+  bool _passesMultiFilters(SavedToolTemplate template) {
+    final selectedTags = (_multiFilters['tags'] as List?)?.cast<String>();
+    if (selectedTags == null || selectedTags.isEmpty) return true;
+    return template.tags.any((tag) => selectedTags.contains(tag));
+  }
+
   @override
   Widget build(BuildContext context) {
-    // 应用搜索和标签过滤
+    // 应用搜索过滤
     var templates = widget.templateService.templates;
 
     if (_searchQuery.isNotEmpty) {
       templates = widget.templateService.searchTemplates(_searchQuery);
     }
 
-    // 多标签过滤:只要模板包含任一选中标签就显示
-    if (_selectedTags.isNotEmpty) {
-      templates =
-          templates
-              .where((t) => t.tags.any((tag) => _selectedTags.contains(tag)))
-              .toList();
-    }
+    // 应用多条件过滤:只要模板包含任一选中标签就显示
+    templates = templates.where(_passesMultiFilters).toList();
 
     final allTags = widget.templateService.getAllTags();
-    final theme = DSThemeBridge.resolve(context);
 
     return SuperCupertinoNavigationWrapper(
       title: Text('agent_chat_toolTemplate'.tr),
@@ -85,128 +121,47 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
           _searchQuery = query;
         });
       },
+      // 标签筛选收敛到多条件过滤栏（design.md §8）
+      enableMultiFilter: true,
+      multiFilterItems: _buildFilterItems(allTags),
+      onMultiFilterChanged: _applyMultiFilters,
       // 第三方导航栏 actions 回调内构建 DS 组件需包 DSThemeBridge
       actions: [
         DSThemeBridge(
           child: Builder(
             builder: (context) {
               final theme = DSThemeBridge.resolve(context);
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 标签过滤按钮
-                  if (allTags.isNotEmpty)
-                    Pressable(
-                      onPressed: () => _showTagFilterDialog(allTags),
-                      semanticLabel: '按标签过滤',
-                      builder:
-                          (context, states) => Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: DSIconBadge(
-                              icon: DsIconKind.sort,
-                              count: _selectedTags.length,
-                              size: 22,
-                              iconColor:
-                                  _selectedTags.isNotEmpty
-                                      ? theme.primaryText
-                                      : theme.textSub,
-                            ),
-                          ),
-                    ),
-                  // 重置默认模板按钮
-                  DSIconButton(
-                    icon: DsIconKind.refresh,
-                    size: 40,
-                    color: theme.surfaceAlt,
-                    iconColor: theme.textSub,
-                    onPressed: _resetToDefaultTemplates,
-                    tooltip: '重置默认模板',
-                  ),
-                ],
+              return DSIconButton(
+                icon: DsIconKind.refresh,
+                size: 40,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                onPressed: _resetToDefaultTemplates,
+                tooltip: 'agent_chat_resetDefaultTemplates'.tr,
               );
             },
           ),
         ),
       ],
-      body: Column(
-        children: [
-          // 当前选中的标签
-          if (_selectedTags.isNotEmpty)
-            Container(
-              color: theme.background,
-              padding: const EdgeInsets.only(
-                left: 8,
-                right: 8,
-                top: 8,
-                bottom: 8,
+      body:
+          templates.isEmpty
+              ? _buildEmptyState()
+              : HandDrawnListView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.paddingOf(context).bottom,
+                ),
+                itemCount: templates.length,
+                separatorBuilder:
+                    (context, index) => const SizedBox(height: 16),
+                // 便签倾斜角度由模板 id 哈希确定,重排后不变（design.md §11）
+                tiltKeyOf: (index) => templates[index].id,
+                itemBuilder: (context, index) {
+                  // 挂载即播墨线描画入场（design.md §10）
+                  return WiredDraw(
+                    child: _buildTemplateCard(templates[index]),
+                  );
+                },
               ),
-              child: Row(
-                children: [
-                  Text(
-                    '当前过滤：',
-                    style: DsTypography.caption.copyWith(color: theme.textSub),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Scrollbar(
-                      controller: _tagsScrollController,
-                      thumbVisibility: true,
-                      child: SingleChildScrollView(
-                        controller: _tagsScrollController,
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children:
-                              _selectedTags.map((tag) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: Center(
-                                    child: DSChip(
-                                      icon: DsIconKind.tag,
-                                      label: tag,
-                                      onDeleted: () {
-                                        setState(() {
-                                          _selectedTags.remove(tag);
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (_selectedTags.length > 1)
-                    DSButton(
-                      label: 'agent_chat_clear'.tr,
-                      icon: DsIconKind.close,
-                      size: DSButtonSize.sm,
-                      variant: DSButtonVariant.ghost,
-                      onPressed: () {
-                        setState(() {
-                          _selectedTags.clear();
-                        });
-                      },
-                    ),
-                ],
-              ),
-            ),
-          // 模板列表
-          Expanded(
-            child:
-                templates.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: templates.length,
-                      itemBuilder: (context, index) {
-                        final template = templates[index];
-                        return _buildTemplateCard(template);
-                      },
-                    ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -220,13 +175,15 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
           DsIcon(DsIconKind.clipboard, size: 64, color: theme.textSub),
           const SizedBox(height: 16),
           Text(
-            _searchQuery.isEmpty ? '暂无保存的工具模板' : '未找到匹配的模板',
+            _searchQuery.isEmpty
+                ? 'agent_chat_emptyTemplates'.tr
+                : 'agent_chat_noMatchTemplates'.tr,
             style: DsTypography.heading.copyWith(color: theme.textSub),
           ),
           if (_searchQuery.isEmpty) ...[
             const SizedBox(height: 8),
             Text(
-              '在AI工具调用消息中点击"保存工具"即可保存',
+              'agent_chat_emptyTemplatesHint'.tr,
               style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
@@ -239,11 +196,11 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
   Widget _buildTemplateCard(SavedToolTemplate template) {
     final theme = DSThemeBridge.resolve(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: theme.radii.lg,
-        border: Border.all(color: theme.textSub.withValues(alpha: 0.25)),
+      // 手绘卡片容器:纯色实底 + 墨线描边（design.md §9.1）
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        radius: theme.radii.lg,
       ),
       child: Pressable(
         onPressed: () => _editTemplate(template),
@@ -269,7 +226,7 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
                       // 执行按钮
                       Pressable(
                         onPressed: () => _executeTemplate(template),
-                        semanticLabel: '执行测试',
+                        semanticLabel: 'agent_chat_executeTest'.tr,
                         builder:
                             (context, states) => Padding(
                               padding: const EdgeInsets.all(6),
@@ -355,7 +312,9 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
                     children: [
                       _buildInfoChip(
                         DsIconKind.gear,
-                        '${template.steps.length} 个步骤',
+                        'agent_chat_stepCount'.trParams({
+                          'count': '${template.steps.length}',
+                        }),
                         theme.primaryText,
                       ),
                       _buildInfoChip(
@@ -366,13 +325,17 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
                       if (template.usageCount > 0)
                         _buildInfoChip(
                           DsIconKind.star,
-                          '使用 ${template.usageCount} 次',
+                          'agent_chat_usedCount'.trParams({
+                            'count': '${template.usageCount}',
+                          }),
                           theme.success,
                         ),
                       if (template.declaredTools.isNotEmpty)
                         _buildInfoChip(
                           DsIconKind.gear,
-                          '${template.declaredTools.length} 个工具',
+                          'agent_chat_toolCount'.trParams({
+                            'count': '${template.declaredTools.length}',
+                          }),
                           theme.warning,
                         ),
                     ],
@@ -385,38 +348,14 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
                       spacing: 6,
                       runSpacing: 6,
                       children:
-                          template.tags.map((tag) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.primary.mixWhite(0.92),
-                                borderRadius: theme.radii.pill,
-                                border: Border.all(
-                                  color: theme.primary.withValues(alpha: 0.4),
+                          template.tags
+                              .map(
+                                (tag) => DSChip(
+                                  icon: DsIconKind.tag,
+                                  label: tag,
                                 ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  DsIcon(
-                                    DsIconKind.tag,
-                                    size: 12,
-                                    color: theme.primaryText,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    tag,
-                                    style: DsTypography.caption.copyWith(
-                                      color: theme.primaryText,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
+                              )
+                              .toList(),
                     ),
                   ],
                 ],
@@ -446,7 +385,9 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
     if (difference.inHours < 24) {
       return timeago.format(dateTime, locale: 'zh');
     } else if (difference.inDays < 7) {
-      return '${difference.inDays} 天前';
+      return 'agent_chat_daysAgo'.trParams({
+        'count': '${difference.inDays}',
+      });
     } else {
       return '${dateTime.month}/${dateTime.day}';
     }
@@ -494,11 +435,13 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
       try {
         await widget.templateService.deleteTemplate(template.id);
         if (mounted) {
-          toastService.showToast('删除成功');
+          toastService.showToast('agent_chat_deleteSuccess'.tr);
         }
       } catch (e) {
         if (mounted) {
-          toastService.showToast('删除失败: $e');
+          toastService.showToast(
+            'agent_chat_deleteFailed'.trParams({'error': '$e'}),
+          );
         }
       }
     }
@@ -526,31 +469,6 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
     );
   }
 
-  /// 显示标签过滤对话框
-  Future<void> _showTagFilterDialog(List<String> allTags) async {
-    final result = await showDSDialog<Set<String>>(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (context) => _TagFilterDialog(
-                    allTags: allTags,
-                    selectedTags: Set.from(_selectedTags),
-                    templateService: widget.templateService,
-                  ),
-            ),
-          ),
-    );
-
-    if (result != null) {
-      setState(() {
-        _selectedTags = result;
-      });
-    }
-  }
-
   /// 重置为默认模板
   Future<void> _resetToDefaultTemplates() async {
     final confirmed = await showDSDialog<bool>(
@@ -562,10 +480,7 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
               builder:
                   (ctx) => DSDialog(
                     title: 'agent_chat_resetConfirmation'.tr,
-                    message:
-                        '此操作将强制恢复所有默认工具模板到初始状态。\n\n'
-                        '⚠️ 注意：如果您修改过默认模板，这些修改将会被覆盖！\n\n'
-                        '自定义模板不会受到影响。',
+                    message: 'agent_chat_resetDefaultHint'.tr,
                     cancelText: 'agent_chat_cancel'.tr,
                     confirmText: 'agent_chat_reset'.tr,
                     onConfirm: () => Navigator.pop(dialogContext, true),
@@ -606,7 +521,7 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
         Navigator.pop(context);
 
         // 显示成功提示
-        toastService.showToast('默认模板已成功重置');
+        toastService.showToast('agent_chat_resetSuccess'.tr);
 
         // 刷新界面
         setState(() {});
@@ -617,129 +532,11 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
         Navigator.pop(context);
 
         // 显示错误提示
-        toastService.showToast('重置失败: $e');
+        toastService.showToast(
+          'agent_chat_resetFailed'.trParams({'error': '$e'}),
+        );
       }
     }
-  }
-}
-
-/// 标签过滤对话框
-class _TagFilterDialog extends StatefulWidget {
-  final List<String> allTags;
-  final Set<String> selectedTags;
-  final ToolTemplateService templateService;
-
-  const _TagFilterDialog({
-    required this.allTags,
-    required this.selectedTags,
-    required this.templateService,
-  });
-
-  @override
-  State<_TagFilterDialog> createState() => _TagFilterDialogState();
-}
-
-class _TagFilterDialogState extends State<_TagFilterDialog> {
-  late Set<String> _selectedTags;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedTags = Set.from(widget.selectedTags);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-    return JellyBox(
-      radius: theme.radii.xxl,
-      padding: EdgeInsets.all(theme.spacing.xl),
-      constraints: const BoxConstraints(maxWidth: 460, maxHeight: 520),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              DsIcon(DsIconKind.sort, size: 24, color: theme.primaryText),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'agent_chat_selectTagFilter'.tr,
-                  style: DsTypography.title.copyWith(color: theme.text),
-                ),
-              ),
-              if (_selectedTags.isNotEmpty)
-                DSButton(
-                  label: 'agent_chat_clear'.tr,
-                  size: DSButtonSize.sm,
-                  variant: DSButtonVariant.ghost,
-                  onPressed: () {
-                    setState(() {
-                      _selectedTags.clear();
-                    });
-                  },
-                ),
-            ],
-          ),
-          SizedBox(height: theme.spacing.md),
-          Flexible(
-            child: SingleChildScrollView(
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    widget.allTags.map((tag) {
-                      final count =
-                          widget.templateService.templates
-                              .where((t) => t.tags.contains(tag))
-                              .length;
-                      final isSelected = _selectedTags.contains(tag);
-
-                      return Center(
-                        child: DSChip(
-                          icon: DsIconKind.tag,
-                          label: '$tag ($count)',
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedTags.add(tag);
-                              } else {
-                                _selectedTags.remove(tag);
-                              }
-                            });
-                          },
-                        ),
-                      );
-                    }).toList(),
-              ),
-            ),
-          ),
-          SizedBox(height: theme.spacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: DSButton(
-                  label: 'agent_chat_cancel'.tr,
-                  variant: DSButtonVariant.outline,
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-              SizedBox(width: theme.spacing.md),
-              Expanded(
-                child: DSButton(
-                  label:
-                      '${'agent_chat_confirm'.tr}'
-                      '${_selectedTags.isEmpty ? '' : ' (${_selectedTags.length})'}',
-                  onPressed: () => Navigator.pop(context, _selectedTags),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
   }
 }
 
