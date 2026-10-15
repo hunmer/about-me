@@ -318,35 +318,6 @@ class _MessageInputState extends State<MessageInput> {
 
             // 输入框区域
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  const Spacer(),
-                  Semantics(
-                    toggled: widget.controller.useJsTools,
-                    child: DSIconButton(
-                      icon: DsIconKind.code,
-                      size: 36,
-                      color: widget.controller.useJsTools
-                          ? theme.primary
-                          : theme.surfaceAlt,
-                      iconColor: widget.controller.useJsTools
-                          ? theme.onPrimary
-                          : theme.textSub,
-                      tooltip: widget.controller.useJsTools
-                          ? '仅使用 JS：已开启'
-                          : '仅使用 JS：已关闭（插件 Tools 与 JS 均可用）',
-                      onPressed: widget.controller.isSending
-                          ? null
-                          : () => widget.controller.setUseJsTools(
-                              !widget.controller.useJsTools,
-                            ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
               padding: const EdgeInsets.all(12),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),

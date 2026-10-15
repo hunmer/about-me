@@ -34,6 +34,37 @@ const double _kBodyFontSize = 15.2;
 /// 手账手写字体（851 手写杂书体）
 const String _kHandFont = 'TegakiZatsu';
 
+/// 捕获便签卡片当前画面为 PNG 字节
+///
+/// [boundaryKey] 需是传入 [CuteNotepadCardWidget.repaintBoundaryKey] 的 key，
+/// 且卡片已完成入场动画（编辑场景下通常早已完成）。
+Future<Uint8List?> captureCuteNotepadPng(
+  GlobalKey boundaryKey, {
+  double pixelRatio = 3,
+}) async {
+  await WidgetsBinding.instance.endOfFrame;
+  final boundary =
+      boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+  if (boundary == null) return null;
+
+  final image = await boundary.toImage(pixelRatio: pixelRatio);
+  try {
+    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (data == null) return null;
+    // 纯 Dart PNG 编码（避免部分平台 toByteData(png) 编码挂起）
+    final pngImage = img.Image.fromBytes(
+      width: image.width,
+      height: image.height,
+      bytes: data.buffer,
+      order: img.ChannelOrder.rgba,
+      numChannels: 4,
+    );
+    return img.encodePng(pngImage);
+  } finally {
+    image.dispose();
+  }
+}
+
 /// 可爱手账便签卡片
 ///
 /// 移植自 Cute Template Notepad：手绘便签底图（方格/格纹/波浪框/撕边/活页孔等
@@ -43,6 +74,10 @@ const String _kHandFont = 'TegakiZatsu';
 /// 开启 [editable] 后右上角显示编辑按钮；进入编辑模式后按钮切换为「导出 PNG」，
 /// 此时点选贴纸可拖动改变位置、双指/Shift+滚轮旋转缩放（选中后底部有工具条），
 /// 点击导出按钮将当前便签渲染为高清 PNG 保存到临时目录并退出编辑。
+///
+/// 贴图编辑器场景可传 [stickers] 完全接管贴纸列表（添加/删除由外部驱动，
+/// 已有贴纸的拖动/旋转/缩放状态在列表变化时按贴纸资产自动保留），
+/// 传入 [repaintBoundaryKey] 配合 [captureCuteNotepadPng] 自行导出。
 class CuteNotepadCardWidget extends StatefulWidget {
   /// 风格预设
   final CuteNotepadVariant variant;
@@ -56,8 +91,23 @@ class CuteNotepadCardWidget extends StatefulWidget {
   /// 待办/横线行（null 使用预设空白行）
   final List<CuteNotepadTodoItem>? items;
 
+  /// 覆盖贴纸列表（null 使用预设贴纸；非 null 时完全由外部管理）
+  final List<CuteNotepadSticker>? stickers;
+
+  /// 编辑模式下贴纸被工具条删除时回调（下标针对当前贴纸列表）
+  final void Function(int index)? onStickerRemoved;
+
+  /// 外部传入的绘制边界 key（配合 captureCuteNotepadPng 导出）
+  final GlobalKey? repaintBoundaryKey;
+
   /// 是否展示编辑入口（编辑模式下可变换贴纸并导出 PNG）
   final bool editable;
+
+  /// editable 时初始即处于编辑模式（贴图编辑器场景）
+  final bool initialEditing;
+
+  /// editable 时是否显示右上角编辑/导出按钮（编辑器自行提供保存/分享时隐藏）
+  final bool showModeButton;
 
   /// 是否为内联模式
   final bool inline;
@@ -71,7 +121,12 @@ class CuteNotepadCardWidget extends StatefulWidget {
     this.title,
     this.text,
     this.items,
+    this.stickers,
+    this.onStickerRemoved,
+    this.repaintBoundaryKey,
     this.editable = false,
+    this.initialEditing = false,
+    this.showModeButton = true,
     this.inline = false,
     this.size = const Large3Size(),
   });
@@ -110,10 +165,36 @@ class CuteNotepadCardWidget extends StatefulWidget {
       title: props['title'] as String?,
       text: props['text'] as String?,
       items: items,
+      stickers: _parseStickers(props['stickers']),
       editable: props['editable'] as bool? ?? false,
       inline: props['inline'] as bool? ?? false,
       size: size,
     );
+  }
+
+  static List<CuteNotepadSticker>? _parseStickers(dynamic data) {
+    if (data is! List) return null;
+    final result = <CuteNotepadSticker>[];
+    for (final e in data) {
+      if (e is Map) {
+        final anchorName = e['anchor'] as String?;
+        CuteNotepadStickerAnchor? anchor;
+        for (final a in CuteNotepadStickerAnchor.values) {
+          if (a.name == anchorName) anchor = a;
+        }
+        result.add(
+          CuteNotepadSticker(
+            asset: e['asset'] as String? ?? '',
+            anchor: anchor ?? CuteNotepadStickerAnchor.center,
+            w: (e['w'] as num?)?.toDouble() ?? 60,
+            h: (e['h'] as num?)?.toDouble() ?? 60,
+            dx: (e['dx'] as num?)?.toDouble() ?? 0,
+            dy: (e['dy'] as num?)?.toDouble() ?? 0,
+          ),
+        );
+      }
+    }
+    return result;
   }
 
   @override
@@ -147,6 +228,7 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
   @override
   void initState() {
     super.initState();
+    _editing = widget.initialEditing;
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -162,6 +244,19 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
   @override
   void didUpdateWidget(covariant CuteNotepadCardWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.stickers != null) {
+      // 编辑器接管贴纸列表：列表变化时按贴纸资产合并，保留已有变换
+      final oldSpecs = oldWidget.stickers ?? oldWidget.variant.stickers;
+      final newSpecs = widget.stickers!;
+      if (!identical(oldSpecs, newSpecs)) {
+        _mergeStickerStates(newSpecs);
+        if (_selectedSticker != null &&
+            _selectedSticker! >= _stickerStates.length) {
+          _selectedSticker = null;
+        }
+      }
+      return;
+    }
     if (oldWidget.variant != widget.variant ||
         oldWidget.text != widget.text ||
         oldWidget.items != widget.items ||
@@ -184,10 +279,29 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
       widget.text ?? '',
       widget.items ?? widget.variant.items,
     ).height;
+    final specs = widget.stickers ?? widget.variant.stickers;
     return [
-      for (final s in widget.variant.stickers)
-        _EditableSticker.fromPreset(s, canvasHeight),
+      for (final s in specs) _EditableSticker.fromPreset(s, canvasHeight),
     ];
+  }
+
+  /// 按 asset 匹配合并贴纸状态：外部列表增删/重排后，已有贴纸的
+  /// 位置/旋转/缩放保留，新增贴纸按预设锚点初始化
+  void _mergeStickerStates(List<CuteNotepadSticker> specs) {
+    final canvasHeight = _stickerStates.isNotEmpty
+        ? _stickerStates.first.canvasHeight
+        : _kMinViewBoxHeight;
+    final pool = List<_EditableSticker>.from(_stickerStates);
+    final merged = <_EditableSticker>[];
+    for (final spec in specs) {
+      final idx = pool.indexWhere((s) => s.asset == spec.asset);
+      if (idx >= 0) {
+        merged.add(pool.removeAt(idx));
+      } else {
+        merged.add(_EditableSticker.fromPreset(spec, canvasHeight));
+      }
+    }
+    _stickerStates = merged;
   }
 
   @override
@@ -218,7 +332,7 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
             AspectRatio(
               aspectRatio: _kViewBoxWidth / layout.height,
               child: RepaintBoundary(
-                key: _exportBoundaryKey,
+                key: widget.repaintBoundaryKey ?? _exportBoundaryKey,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final unit = constraints.maxWidth / _kViewBoxWidth;
@@ -254,7 +368,7 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
             ),
 
             // 右上角：编辑按钮 ↔ 导出 PNG 按钮
-            if (widget.editable)
+            if (widget.editable && widget.showModeButton)
               Positioned(top: -12, right: 2, child: _buildModeButton()),
 
             // 编辑模式选中贴纸时的变换工具条
@@ -365,6 +479,13 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
           const SizedBox(width: 2),
           toolButton(Icons.remove, '缩小', () => _nudgeSelected(scaleRatio: 0.9)),
           toolButton(Icons.add, '放大', () => _nudgeSelected(scaleRatio: 1.1)),
+          // 贴图编辑器场景：删除当前贴纸（由外部更新贴纸列表）
+          if (widget.onStickerRemoved != null && _selectedSticker != null) ...[
+            const SizedBox(width: 2),
+            toolButton(Icons.delete_outline, '删除贴纸', () {
+              widget.onStickerRemoved!.call(_selectedSticker!);
+            }),
+          ],
         ],
       ),
     );
@@ -535,35 +656,12 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
       if (_animationController.isAnimating) {
         await _animationController.forward();
       }
-      await WidgetsBinding.instance.endOfFrame;
-
-      final boundary =
-          _exportBoundaryKey.currentContext?.findRenderObject()
-              as RenderRepaintBoundary?;
-      if (boundary == null) {
+      final pngBytes = await captureCuteNotepadPng(
+        widget.repaintBoundaryKey ?? _exportBoundaryKey,
+      );
+      if (pngBytes == null) {
         throw StateError('无法获取便签绘制边界');
       }
-
-      final image = await boundary.toImage(pixelRatio: 3);
-      final ByteData? data;
-      try {
-        data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-      } finally {
-        image.dispose();
-      }
-      if (data == null) {
-        throw StateError('读取像素失败');
-      }
-
-      // 纯 Dart PNG 编码（避免部分平台 toByteData(png) 编码挂起）
-      final pngImage = img.Image.fromBytes(
-        width: image.width,
-        height: image.height,
-        bytes: data.buffer,
-        order: img.ChannelOrder.rgba,
-        numChannels: 4,
-      );
-      final pngBytes = img.encodePng(pngImage);
 
       final dir = await getTemporaryDirectory();
       final file = File(

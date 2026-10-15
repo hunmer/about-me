@@ -145,6 +145,18 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
 
     return [
       DSIconButton(
+        icon: DsIconKind.code,
+        size: 36,
+        color: _controller.useJsTools ? theme.primary : theme.surfaceAlt,
+        iconColor: _controller.useJsTools ? theme.onPrimary : theme.textSub,
+        onPressed: _controller.isSending
+            ? null
+            : () => _controller.setUseJsTools(!_controller.useJsTools),
+        tooltip: _controller.useJsTools
+            ? '仅使用 JS：已开启'
+            : '仅使用 JS：已关闭（插件 Tools 与 JS 均可用）',
+      ),
+      DSIconButton(
         icon: DsIconKind.clipboard,
         size: 36,
         color: theme.surfaceAlt,
@@ -219,6 +231,15 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
               onTap: () {
                 close();
                 _showTokenStats();
+              },
+            ),
+            _AppBarMenuAction(
+              icon: DsIconKind.trash,
+              label: 'agent_chat_confirmClear'.tr,
+              theme: popoverTheme,
+              onTap: () {
+                close();
+                _showClearMessagesConfirm();
               },
             ),
           ],

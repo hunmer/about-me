@@ -5,6 +5,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/utils/message_options_handler.dart';
+import 'package:aboutme/widgets/common/cute_notepad_editor.dart';
 
 /// 消息选项对话框组件
 class MessageOptionsDialog extends StatelessWidget {
@@ -143,6 +144,17 @@ class MessageOptionsDialog extends StatelessWidget {
           onTap: () {
             Navigator.pop(context);
             MessageOptionsHandler.shareMessage(context, message);
+          },
+        ),
+        DSSheetAction(
+          icon: DsIconKind.palette,
+          label: 'chat_makeSticker'.tr,
+          onTap: () {
+            Navigator.pop(context);
+            CuteNotepadEditorPage.show(
+              context,
+              initialText: message.content,
+            );
           },
         ),
         if (onReply != null)

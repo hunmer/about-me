@@ -148,7 +148,10 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
               ? _buildEmptyState()
               : HandDrawnListView(
                 padding: EdgeInsets.only(
-                  bottom: MediaQuery.paddingOf(context).bottom,
+                  left: 12,
+                  right: 12,
+                  top: 8,
+                  bottom: MediaQuery.paddingOf(context).bottom + 24,
                 ),
                 itemCount: templates.length,
                 separatorBuilder:

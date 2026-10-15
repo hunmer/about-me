@@ -346,7 +346,7 @@ const Map<String, String> cuteNotepadStickerBodies = {
 };
 
 /// 贴纸 viewBox 完整尺寸（宽, 高）
-const Map<String, List<int>> _stickerViewBoxes = {
+const Map<String, List<int>> cuteNotepadStickerViewBoxes = {
   'redBow': [100, 100],
   'pinkDoubleHearts': [100, 90],
   'peekingBunny': [125, 112],
@@ -383,7 +383,7 @@ const Map<String, List<int>> _stickerViewBoxes = {
 /// 获取贴纸的完整 SVG 文档字符串（供 SvgPicture.string 使用）
 String cuteNotepadStickerSvg(String id) {
   final body = cuteNotepadStickerBodies[id];
-  final box = _stickerViewBoxes[id];
+  final box = cuteNotepadStickerViewBoxes[id];
   if (body == null || box == null) return '';
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${box[0]} ${box[1]}" '
       'width="${box[0]}" height="${box[1]}">$body</svg>';

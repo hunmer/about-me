@@ -2,6 +2,47 @@ part of 'chat_screen.dart';
 
 /// 消息级对话框与工具处理 / 管理页跳转
 extension _ChatScreenDialogsExt on _ChatScreenState {
+  /// 显示清空聊天记录确认对话框
+  Future<void> _showClearMessagesConfirm() async {
+    if (_controller.messages.isEmpty) {
+      toastService.showToast('当前没有消息记录');
+      return;
+    }
+
+    final confirm = await showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (ctx) => DSDialog(
+            title: 'agent_chat_confirmClear'.tr,
+            message:
+                '确定要清空当前会话的所有消息吗？\n\n'
+                '当前共有 ${_controller.messages.length} 条消息，此操作不可恢复。',
+            cancelText: 'agent_chat_cancel'.tr,
+            confirmText: 'agent_chat_clear'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () => Navigator.pop(dialogContext, true),
+            onCancel: () => Navigator.pop(dialogContext, false),
+          ),
+        ),
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _controller.clearAllMessages();
+        if (mounted) {
+          toastService.showToast('聊天记录已清空');
+        }
+      } catch (e) {
+        if (mounted) {
+          toastService.showToast('清空失败: $e');
+        }
+      }
+    }
+  }
+
   /// 显示消息编辑对话框
   void _showEditMessageDialog(ChatMessage source) {
     final textController = TextEditingController(text: source.content);

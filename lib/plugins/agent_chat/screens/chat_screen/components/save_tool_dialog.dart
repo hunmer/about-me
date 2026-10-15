@@ -32,8 +32,7 @@ class SaveToolDialog extends StatefulWidget {
   State<SaveToolDialog> createState() => _SaveToolDialogState();
 }
 
-class _SaveToolDialogState extends State<SaveToolDialog>
-    with SingleTickerProviderStateMixin {
+class _SaveToolDialogState extends State<SaveToolDialog> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _tagController = TextEditingController();
@@ -43,12 +42,11 @@ class _SaveToolDialogState extends State<SaveToolDialog>
   String? _nameError;
   final List<String> _tags = [];
   final List<ToolCallStep> _steps = [];
-  late TabController _tabController;
+  int _selectedTab = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _nameFocus.requestFocus();
     });
@@ -87,7 +85,6 @@ class _SaveToolDialogState extends State<SaveToolDialog>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
     _tagController.dispose();
@@ -106,7 +103,7 @@ class _SaveToolDialogState extends State<SaveToolDialog>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 标题 + TabBar（TabBar 结构性组件刻意保留 Material，配色令牌化）
+          // 标题 + DSTabs（design_system/components/tabs.dart）
           Row(
             children: [
               DsIcon(
@@ -123,43 +120,16 @@ class _SaveToolDialogState extends State<SaveToolDialog>
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: theme.surfaceAlt,
-              borderRadius: theme.radii.sm,
-            ),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: theme.primaryText,
-              unselectedLabelColor: theme.textSub,
-              indicator: BoxDecoration(
-                color: theme.surface,
-                borderRadius: theme.radii.sm,
-              ),
-              tabs: [
-                Tab(
-                  icon: DsIcon(DsIconKind.info, size: 18, color: theme.textSub),
-                  text: 'agent_chat_basicInfo'.tr,
-                ),
-                Tab(
-                  icon: DsIcon(DsIconKind.list, size: 18, color: theme.textSub),
-                  text: 'agent_chat_executionSteps'.tr,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 500,
-            height: 500, // 固定高度以适应 TabBarView
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // 第一个 Tab: 基础信息
-                _buildBasicInfoTab(),
-                // 第二个 Tab: 执行步骤
-                _buildStepsTab(),
-              ],
-            ),
+          // DSTabs 挂内容页后支持左右滑动切换（design_system/components/tabs.dart）
+          DSTabs(
+            labels: [
+              'agent_chat_basicInfo'.tr,
+              'agent_chat_executionSteps'.tr,
+            ],
+            selected: _selectedTab,
+            onChanged: (index) => setState(() => _selectedTab = index),
+            contentHeight: 500,
+            children: [_buildBasicInfoTab(), _buildStepsTab()],
           ),
           const SizedBox(height: 8),
           Row(

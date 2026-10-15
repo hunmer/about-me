@@ -14,6 +14,7 @@ class ExtendedSection extends StatefulWidget {
 
 class _ExtendedSectionState extends State<ExtendedSection> {
   int _tabIndex = 0;
+  int _swipeTabIndex = 0;
   String? _comboValue;
 
   static const _comboOptions = ['布丁', '软糖', '果冻', '奶昔', '雪糕', '冰沙'];
@@ -30,6 +31,19 @@ class _ExtendedSectionState extends State<ExtendedSection> {
           labels: const ['动态', '日记', '相册'],
           selected: _tabIndex,
           onChanged: (i) => setState(() => _tabIndex = i),
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('标签页 · 可滑动内容（Tabs + Swipe）'),
+        DSTabs(
+          labels: const ['动态', '日记', '相册'],
+          selected: _swipeTabIndex,
+          onChanged: (i) => setState(() => _swipeTabIndex = i),
+          contentHeight: 120,
+          children: [
+            _buildSwipeTabDemoPage('左右滑动或点击标签切换'),
+            _buildSwipeTabDemoPage('指示条随拖动实时跟手'),
+            _buildSwipeTabDemoPage('最后一页，滑回去吧'),
+          ],
         ),
         SizedBox(height: theme.spacing.lg),
         const DemoSubHeader('手风琴（Accordion）'),
@@ -157,6 +171,27 @@ class _ExtendedSectionState extends State<ExtendedSection> {
         const DemoSubHeader('骨架屏（Skeleton）'),
         const DSSkeletonListItem(),
       ],
+    );
+  }
+
+  Widget _buildSwipeTabDemoPage(String text) {
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Container(
+          margin: const EdgeInsets.only(top: 12),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: theme.surfaceAlt,
+            radius: theme.radii.md,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            text,
+            style: DsTypography.body.copyWith(color: theme.textSub),
+          ),
+        );
+      },
     );
   }
 }

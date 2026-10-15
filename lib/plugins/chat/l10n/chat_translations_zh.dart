@@ -66,6 +66,7 @@ class ChatTranslationsZh {
     'chat_addEmoji': '添加表情',
     'chat_settings': '设置',
     'chat_share': '分享',
+    'chat_makeSticker': '制作贴图',
     'chat_reply': '回复',
     'chat_favorite': '收藏',
     'chat_unfavorite': '取消收藏',

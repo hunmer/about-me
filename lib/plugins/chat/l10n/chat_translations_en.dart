@@ -66,6 +66,7 @@ class ChatTranslationsEn {
     'chat_addEmoji': 'Add Emoji',
     'chat_settings': 'Settings',
     'chat_share': 'Share',
+    'chat_makeSticker': 'Make Sticker',
     'chat_reply': 'Reply',
     'chat_favorite': 'Favorite',
     'chat_unfavorite': 'Unfavorite',

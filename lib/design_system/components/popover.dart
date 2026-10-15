@@ -28,6 +28,7 @@ class _DSPopoverState extends State<DSPopover> {
   OverlayEntry? _entry;
   double _availableHeight = 360;
   bool _openUpward = false;
+  double _dx = 0;
 
   bool get _open => _entry != null;
 
@@ -51,12 +52,27 @@ class _DSPopoverState extends State<DSPopover> {
   void _insertEntry() {
     final box = context.findRenderObject() as RenderBox;
     final size = box.size;
-    final top = box.localToGlobal(Offset.zero).dy;
-    final viewportHeight = MediaQuery.sizeOf(context).height;
-    final below = viewportHeight - top - size.height;
-    final above = top;
+    final topLeft = box.localToGlobal(Offset.zero);
+    final viewport = MediaQuery.sizeOf(context);
+    final viewportHeight = viewport.height;
+    final below = viewportHeight - topLeft.dy - size.height;
+    final above = topLeft.dy;
     _openUpward = below < 280 && above > below;
     _availableHeight = (_openUpward ? above : below) - 16;
+    // 水平钳制：气泡以锚点居中，超出屏幕时平移回屏内（气泡比屏还宽则居中）
+    const hMargin = 8.0;
+    final anchorCenterX = topLeft.dx + size.width / 2;
+    final overflowLeft = hMargin - (anchorCenterX - widget.width / 2);
+    final overflowRight = anchorCenterX + widget.width / 2 - (viewport.width - hMargin);
+    if (overflowLeft > 0 && overflowRight > 0) {
+      _dx = (viewport.width - widget.width) / 2 - (anchorCenterX - widget.width / 2);
+    } else if (overflowLeft > 0) {
+      _dx = overflowLeft;
+    } else if (overflowRight > 0) {
+      _dx = -overflowRight;
+    } else {
+      _dx = 0;
+    }
 
     final theme = AppTheme.of(context);
     _entry = OverlayEntry(
@@ -77,7 +93,7 @@ class _DSPopoverState extends State<DSPopover> {
             followerAnchor: _openUpward
                 ? Alignment.bottomCenter
                 : Alignment.topCenter,
-            offset: Offset(0, _openUpward ? -10 : 10),
+            offset: Offset(_dx, _openUpward ? -10 : 10),
             child: AppTheme(
               data: theme,
               child: TweenAnimationBuilder<double>(
@@ -98,6 +114,7 @@ class _DSPopoverState extends State<DSPopover> {
                     width: widget.width,
                     maxHeight: _availableHeight.clamp(120, viewportHeight),
                     openUpward: _openUpward,
+                    arrowOffsetX: -_dx,
                     contentBuilder: widget.contentBuilder,
                     close: _close,
                   ),
@@ -130,6 +147,7 @@ class _PopoverCard extends StatelessWidget {
     required this.width,
     required this.maxHeight,
     required this.openUpward,
+    this.arrowOffsetX = 0,
     required this.contentBuilder,
     required this.close,
   });
@@ -137,6 +155,9 @@ class _PopoverCard extends StatelessWidget {
   final double width;
   final double maxHeight;
   final bool openUpward;
+
+  /// 气泡被水平平移后，三角相对卡片中心的反向偏移，保持指向锚点
+  final double arrowOffsetX;
   final Widget Function(BuildContext context, VoidCallback close)
   contentBuilder;
   final VoidCallback close;
@@ -158,9 +179,12 @@ class _PopoverCard extends StatelessWidget {
         child: contentBuilder(context, close),
       ),
     );
-    // 小三角（纯色 + 淡墨描边）
+    // 小三角（纯色 + 淡墨描边）；钳制在卡片内避免贴边溢出
     final triangle = Transform.translate(
-      offset: Offset(0, openUpward ? 6 : -6),
+      offset: Offset(
+        arrowOffsetX.clamp(-width / 2 + 14, width / 2 - 14),
+        openUpward ? 6 : -6,
+      ),
       child: Transform.rotate(
         angle: 0.785398,
         child: Container(
