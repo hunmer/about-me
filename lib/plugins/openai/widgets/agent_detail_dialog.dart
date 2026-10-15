@@ -6,6 +6,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
+import 'package:aboutme/plugins/moments/screens/moments_profile_screen.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 
@@ -61,7 +62,16 @@ class AgentDetailDialog {
       builder:
           (dialogContext) => DSDialog(
             title: '角色卡',
-            content: _AgentDetailContent(agent: agent),
+            content: _AgentDetailContent(
+              agent: agent,
+              onViewMoments: () {
+                Navigator.of(dialogContext).pop();
+                NavigationHelper.push(
+                  context,
+                  MomentsProfileScreen(agentId: agent.id),
+                );
+              },
+            ),
             confirmText: '开始聊天',
             onConfirm: () {
               Navigator.of(dialogContext).pop();
@@ -152,7 +162,10 @@ class AgentDetailDialog {
 class _AgentDetailContent extends StatelessWidget {
   final AIAgent agent;
 
-  const _AgentDetailContent({required this.agent});
+  /// 「查看朋友圈」入口（仅开启活人感的 agent 显示）
+  final VoidCallback? onViewMoments;
+
+  const _AgentDetailContent({required this.agent, this.onViewMoments});
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +252,21 @@ class _AgentDetailContent extends StatelessWidget {
                 child: Text(
                   agent.effectiveSystemPrompt,
                   style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+              ),
+            ],
+            // 开启活人感的 agent：底部占满宽度的朋友圈入口
+            if (agent.alivenessConfig?.enabled == true &&
+                onViewMoments != null) ...[
+              SizedBox(height: theme.spacing.md),
+              SizedBox(
+                width: double.infinity,
+                child: DSButton(
+                  label: '查看朋友圈',
+                  icon: DsIconKind.camera,
+                  expand: true,
+                  variant: DSButtonVariant.secondary,
+                  onPressed: onViewMoments,
                 ),
               ),
             ],

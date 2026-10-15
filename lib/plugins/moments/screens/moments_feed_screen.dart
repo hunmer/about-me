@@ -3,11 +3,16 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
+import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
+import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
+import 'package:aboutme/plugins/openai/moments/services/image_gen_service.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
@@ -46,9 +51,8 @@ class MomentsFeedScreen extends StatefulWidget {
 class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
   final _moments = MomentsService.instance;
   final _scrollController = ScrollController();
+  final _navBarKeys = NavigationBarStaticComponentsKeys();
   final Map<String, AIAgent> _agents = {};
-  final Set<String> _seenAuthors = {};
-  final Set<String> _savedPostIds = {};
   String? _filter; // null = 全部
 
   @override
@@ -149,7 +153,7 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
       _openCompose();
       return;
     }
-    setState(() => _seenAuthors.add(author.id));
+    unawaited(_moments.markAuthorSeen(author.id));
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
@@ -196,150 +200,67 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
     }
   }
 
+  /// 底部圆盘 dock 的 tab 动作（首页 / 投稿 / 回忆 / 我的主页）
+  void _onDockTab(int index) {
+    switch (index) {
+      case 0:
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      case 1:
+        unawaited(_openCompose());
+      case 2:
+        ToastService.instance.showToast('⚡ 动态将自动归档至回忆合集');
+      case 3:
+        _openProfile(
+          const MomentsAuthorInfo(id: MomentPost.userAuthorId),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final posts =
         _filter == null
             ? _moments.posts
             : _moments.posts.where((p) => p.tag == _filter).toList();
-    final topInset = MediaQuery.of(context).padding.top;
-
-    return Scaffold(
-      backgroundColor: MomentsPalette.pageBg,
-      body: Stack(
-        children: [
-          MomentsSkyHeader(height: 255),
-          Positioned.fill(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: topInset + 6),
-                _buildTopBar(),
-                _buildStories(),
-                _buildFilters(),
-                Expanded(
-                  child:
-                      posts.isEmpty
-                          ? _buildEmpty()
-                          : ListView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.only(top: 4, bottom: 120),
-                            itemCount: posts.length,
-                            itemBuilder: (context, index) {
-                              final post = posts[index];
-                              return MomentFeedCard(
-                                key: ValueKey(post.id),
-                                post: post,
-                                author: _authorOf(post),
-                                saved: _savedPostIds.contains(post.id),
-                                onToggleSave:
-                                    () => setState(
-                                      () =>
-                                          _savedPostIds.contains(post.id)
-                                              ? _savedPostIds.remove(post.id)
-                                              : _savedPostIds.add(post.id),
-                                    ),
-                                onOpenProfile:
-                                    () => _openProfile(_authorOf(post)),
-                                onDelete: () => _confirmDelete(post),
-                              );
-                            },
-                          ),
-                ),
-              ],
-            ),
-          ),
-          // 底部白色薄雾 + 玻璃 dock
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 96,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      MomentsPalette.pageBg.withValues(alpha: 0),
-                      MomentsPalette.pageBg.withValues(alpha: 0.9),
-                      MomentsPalette.pageBg,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 22,
-            child: Center(
-              child: GlassDock(
-                items: [
-                  GlassDockItem(
-                    icon: Icons.home_rounded,
-                    active: true,
-                    onTap: () {
-                      _scrollController.animateTo(
-                        0,
-                        duration: const Duration(milliseconds: 320),
-                        curve: Curves.easeOutCubic,
-                      );
-                    },
-                  ),
-                  GlassDockItem(
-                    icon: Icons.add_photo_alternate_outlined,
-                    onTap: _openCompose,
-                  ),
-                  GlassDockItem(
-                    icon: Icons.history_rounded,
-                    onTap:
-                        () => ToastService.instance.showToast(
-                          '⚡ 动态将自动归档至回忆合集',
-                        ),
-                  ),
-                  GlassDockItem(
-                    icon: Icons.person_outline_rounded,
-                    onTap:
-                        () => _openProfile(
-                          const MomentsAuthorInfo(
-                            id: MomentPost.userAuthorId,
-                          ),
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopBar() {
     final unread = _todayAgentPostCount;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          CircleIconButton(
-            icon: Icons.add,
-            onTap: _openCompose,
-          ),
-          const Expanded(
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
+
+    return DSThemeBridge(
+      child: Scaffold(
+        backgroundColor: MomentsPalette.pageBg,
+        extendBody: true,
+        body: Column(
+          children: [
+            // Super Cupertino 固定头部：＋投稿 / 标题 / 互动铃铛
+            // （透明导航栏，底色铺天空蓝与下方天空头部衔接）
+            ColoredBox(
+              color: MomentsPalette.skyTop,
+              child: PersistentNavigationBar(
+                components: NavigationBarStaticComponents(
+                  keys: _navBarKeys,
+                  route: null,
+                  // NavigationToolbar 的紧高度约束会把圆钮拉变形，Align 转宽松
+                  userLeading: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: CircleIconButton(
+                      icon: Icons.add,
+                      onTap: _openCompose,
+                    ),
+                  ),
+                  automaticallyImplyLeading: false,
+                  automaticallyImplyTitle: false,
+                  previousPageTitle: null,
+                  userMiddle: const Text(
                     '朋友圈',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
-                      letterSpacing: -0.3,
                       shadows: [
                         Shadow(
                           color: Color(0x47005FB4),
@@ -349,46 +270,108 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(width: 6),
-                  _SkyBadge(label: 'Feed'),
+                  userTrailing: Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        CircleIconButton(
+                          icon: Icons.favorite_border_rounded,
+                          onTap:
+                              () => ToastService.instance.showToast(
+                                unread > 0
+                                    ? '☁️ TA 们最近更新了 $unread 条动态'
+                                    : '暂无新的互动',
+                              ),
+                        ),
+                        if (unread > 0)
+                          Positioned(
+                            top: -2,
+                            right: -2,
+                            child: Container(
+                              padding: const EdgeInsets.all(3.5),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF43F5E),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '$unread',
+                                style: const TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  userLargeTitle: null,
+                  largeTitleActions: null,
+                  appbarBottom: null,
+                  padding: null,
+                  large: false,
+                ),
+              ),
+            ),
+            Expanded(
+              // 全部内容进滚动区（天空头部/故事栏/筛选/帖子卡），
+              // 窗口再小也不会再出现固定区块溢出
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  const SliverToBoxAdapter(
+                    child: MomentsSkyHeader(height: 230),
+                  ),
+                  SliverToBoxAdapter(child: _buildStories()),
+                  SliverToBoxAdapter(child: _buildFilters()),
+                  if (posts.isEmpty)
+                    SliverToBoxAdapter(
+                      child: SizedBox(height: 320, child: _buildEmpty()),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.only(top: 4, bottom: 150),
+                      sliver: SliverList.builder(
+                        itemCount: posts.length,
+                        itemBuilder: (context, index) {
+                          final post = posts[index];
+                          return MomentFeedCard(
+                            key: ValueKey(post.id),
+                            post: post,
+                            author: _authorOf(post),
+                            saved: _moments.isPostSaved(post.id),
+                            onToggleSave:
+                                () => _moments.togglePostSaved(post.id),
+                            onOpenProfile:
+                                () => _openProfile(_authorOf(post)),
+                            onDelete: () => _confirmDelete(post),
+                          );
+                        },
+                      ),
+                    ),
                 ],
               ),
             ),
-          ),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleIconButton(
-                icon: Icons.favorite_border_rounded,
-                onTap:
-                    () => ToastService.instance.showToast(
-                      unread > 0 ? '☁️ TA 们最近更新了 $unread 条动态' : '暂无新的互动',
-                    ),
-              ),
-              if (unread > 0)
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: Container(
-                    padding: const EdgeInsets.all(3.5),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF43F5E),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '$unread',
-                      style: const TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1,
-                      ),
-                    ),
-                  ),
-                ),
+          ],
+        ),
+        // 弧形圆盘 dock（radial_disc_bottom_bar 的设计系统封装）
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
+          child: DSBottomNavigation(
+            items: const [
+              DSNavItem(icon: DsIconKind.home, label: '首页'),
+              DSNavItem(icon: DsIconKind.plus, label: '投稿'),
+              DSNavItem(icon: DsIconKind.clock, label: '回忆'),
+              DSNavItem(icon: DsIconKind.user, label: '我的主页'),
             ],
+            currentIndex: 0,
+            onTap: _onDockTab,
+            frosted: true,
           ),
-        ],
+        ),
       ),
     );
   }
@@ -404,7 +387,7 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
         separatorBuilder: (_, __) => const SizedBox(width: 14),
         itemBuilder: (context, index) {
           final author = authors[index];
-          final seen = _seenAuthors.contains(author.id);
+          final seen = _moments.isAuthorSeen(author.id);
           final posts = _moments.posts;
           return _StoryAvatar(
             author: author,
@@ -464,44 +447,10 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
           ),
           const SizedBox(height: 6),
           const Text(
-            '点左上角 + 投稿，或对 TA 说「发一条朋友圈」',
+            '点左上角 ＋ 投稿，或对 TA 说「发一条朋友圈」',
             style: TextStyle(fontSize: 12, color: MomentsPalette.inkFaint),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// 标题旁的白色小徽章
-class _SkyBadge extends StatelessWidget {
-  final String label;
-
-  const _SkyBadge({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(999),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          color: Color(0xFF0284C7),
-          height: 1,
-        ),
       ),
     );
   }
@@ -1274,13 +1223,16 @@ class _ComposeSheet extends StatefulWidget {
 
 class _ComposeSheetState extends State<_ComposeSheet> {
   final _textController = TextEditingController();
+  final _imagePromptController = TextEditingController();
   final List<File> _images = [];
   String _tag = MomentTags.defaultKey;
+  bool _aiImage = false;
   bool _submitting = false;
 
   @override
   void dispose() {
     _textController.dispose();
+    _imagePromptController.dispose();
     super.dispose();
   }
 
@@ -1315,6 +1267,22 @@ class _ComposeSheetState extends State<_ComposeSheet> {
             extension: ext.isEmpty ? '.png' : ext,
           ),
         );
+      }
+      // AI 配图（可选）：留空用文案生图，失败降级为无图发布
+      if (_aiImage) {
+        try {
+          ToastService.instance.showToast('正在生成 AI 配图…');
+          final prompt =
+              _imagePromptController.text.trim().isEmpty
+                  ? text
+                  : _imagePromptController.text.trim();
+          relPaths.addAll(
+            await ImageGenService.instance.generate(prompt: prompt),
+          );
+        } catch (e) {
+          ToastService.instance.showToast('AI 配图失败，将按无图发布');
+          debugPrint('[Moments] 用户投稿 AI 配图失败: $e');
+        }
       }
       await MomentsService.instance.addPost(
         agentId: MomentPost.userAuthorId,
@@ -1417,6 +1385,59 @@ class _ComposeSheetState extends State<_ComposeSheet> {
               ],
             ),
             const SizedBox(height: 12),
+            // AI 配图开关（可选，失败自动降级为无图发布）
+            Row(
+              children: [
+                const Text(
+                  'AI 配图',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: MomentsPalette.inkFaint,
+                  ),
+                ),
+                const Spacer(),
+                SizedBox(
+                  height: 24,
+                  child: Switch(
+                    value: _aiImage,
+                    onChanged: (v) => setState(() => _aiImage = v),
+                  ),
+                ),
+              ],
+            ),
+            if (_aiImage) ...[
+              const SizedBox(height: 6),
+              TextField(
+                controller: _imagePromptController,
+                maxLines: 2,
+                minLines: 1,
+                style: const TextStyle(fontSize: 12),
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: '配图描述（留空用文案生图）',
+                  hintStyle: const TextStyle(
+                    fontSize: 12,
+                    color: MomentsPalette.inkFaint,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 9,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: MomentsPalette.skyChip),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+            ],
             SizedBox(
               height: 72,
               child: ListView(

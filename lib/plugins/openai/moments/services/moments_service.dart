@@ -25,6 +25,7 @@ class MomentsService extends ChangeNotifier {
   static final MomentsService instance = MomentsService._();
 
   static const _postsPath = 'openai/moments/posts.json';
+  static const _uiStatePath = 'openai/moments/ui_state.json';
   static const _maxPosts = 500;
 
   /// 单帖图片数上限（多图网格 3 列展示）
@@ -46,7 +47,60 @@ class MomentsService extends ChangeNotifier {
   List<MomentPost> _posts = [];
   bool _loaded = false;
 
+  /// 朋友圈 UI 偏好（故事已读作者 / 收藏的帖子），持久化到 ui_state.json
+  final Set<String> _seenAuthorIds = {};
+  final Set<String> _savedPostIds = {};
+
   List<MomentPost> get posts => List.unmodifiable(_posts);
+
+  bool isAuthorSeen(String authorId) => _seenAuthorIds.contains(authorId);
+
+  bool isPostSaved(String postId) => _savedPostIds.contains(postId);
+
+  Future<void> markAuthorSeen(String authorId) async {
+    if (!_seenAuthorIds.add(authorId)) return;
+    await _saveUiState();
+    notifyListeners();
+  }
+
+  Future<void> togglePostSaved(String postId) async {
+    if (!_savedPostIds.contains(postId)) {
+      _savedPostIds.add(postId);
+    } else {
+      _savedPostIds.remove(postId);
+    }
+    await _saveUiState();
+    notifyListeners();
+  }
+
+  Future<void> _saveUiState() async {
+    try {
+      await AboutmeDataService.instance.writePath(_uiStatePath, {
+        'seenAuthors': _seenAuthorIds.toList(),
+        'savedPosts': _savedPostIds.toList(),
+      });
+    } catch (e) {
+      debugPrint('[Moments] 保存 UI 状态失败: $e');
+    }
+  }
+
+  Future<void> _loadUiState() async {
+    try {
+      final data = await AboutmeDataService.instance.readPath(_uiStatePath);
+      final seen =
+          (data is Map ? data['seenAuthors'] : null) as List<dynamic>? ?? [];
+      final saved =
+          (data is Map ? data['savedPosts'] : null) as List<dynamic>? ?? [];
+      _seenAuthorIds
+        ..clear()
+        ..addAll(seen.map((e) => e.toString()));
+      _savedPostIds
+        ..clear()
+        ..addAll(saved.map((e) => e.toString()));
+    } catch (_) {
+      // 状态文件不存在或损坏时保持空集合即可
+    }
+  }
 
   Future<void> loadPosts({bool force = false}) async {
     if (_loaded && !force) return;
@@ -64,6 +118,7 @@ class MomentsService extends ChangeNotifier {
       debugPrint('[Moments] 读取帖子失败: $e');
       _posts = [];
     }
+    await _loadUiState();
     _loaded = true;
     notifyListeners();
   }

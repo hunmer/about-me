@@ -2,8 +2,12 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
+import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
@@ -39,6 +43,7 @@ const _masonryHeights = [118.0, 92.0, 132.0, 100.0, 126.0, 96.0, 116.0, 106.0];
 
 class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
   final _moments = MomentsService.instance;
+  final _navBarKeys = NavigationBarStaticComponentsKeys();
   AIAgent? _agent;
   String? _activeTag; // null = 合集卡片视图
 
@@ -105,6 +110,20 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
     }
   }
 
+  /// 底部圆盘 dock 的 tab 动作（回动态流 / 合集 / 回忆 / 主页-当前）
+  void _onDockTab(int index) {
+    switch (index) {
+      case 0:
+        _backToFeed();
+      case 1:
+        setState(() => _activeTag = null);
+      case 2:
+        ToastService.instance.showToast('🕒 已归档 ${_posts.length} 条回忆');
+      case 3:
+        ToastService.instance.showToast('👤 正在查看 ${isUser ? '我' : (_agent?.name ?? 'TA')} 的主页');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final posts = _posts;
@@ -113,121 +132,91 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
       0,
       (sum, p) => sum + p.comments.length,
     );
-    final topInset = MediaQuery.of(context).padding.top;
     final name = isUser ? '我' : (_agent?.name ?? '未知助手');
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
-      body: Stack(
-        children: [
-          MomentsSkyHeader(height: 328, profileVariant: true),
-          Positioned.fill(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: topInset + 6),
-                _buildTopBar(name),
-                _buildAvatarArea(),
-                _buildIdentity(name, posts.length, liked, commentCount),
-                _buildPills(posts),
-                Expanded(child: _buildCollections()),
-              ],
-            ),
-          ),
-          // 底部薄雾 + dock
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 110,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      const Color(0xFFF6F8FC).withValues(alpha: 0),
-                      const Color(0xFFF6F8FC).withValues(alpha: 0.9),
-                      const Color(0xFFF6F8FC),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 22,
-            child: Center(
-              child: GlassDock(
-                items: [
-                  GlassDockItem(
-                    icon: Icons.home_rounded,
-                    onTap: _backToFeed,
-                  ),
-                  GlassDockItem(
-                    icon: Icons.photo_library_outlined,
-                    onTap: () {
-                      setState(() => _activeTag = null);
-                    },
-                  ),
-                  GlassDockItem(
-                    icon: Icons.history_rounded,
-                    onTap:
-                        () => ToastService.instance.showToast(
-                          '🕒 已归档 ${posts.length} 条回忆',
+    return DSThemeBridge(
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF6F8FC),
+        // 内容延伸到 dock 后面（合集区自身有底部留白），避免短窗口再次溢出
+        extendBody: true,
+        body: Stack(
+          children: [
+            // 天空作为背景幕布（透明导航栏浮在天空上，还原参考稿）
+            MomentsSkyHeader(height: 328, profileVariant: true),
+            Positioned.fill(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  PersistentNavigationBar(
+                    components: NavigationBarStaticComponents(
+                      keys: _navBarKeys,
+                      route: ModalRoute.of(context),
+                      userLeading: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: CircleIconButton(
+                          icon: Icons.arrow_back_ios_new_rounded,
+                          onTap: () => Navigator.of(context).maybePop(),
                         ),
+                      ),
+                      automaticallyImplyLeading: false,
+                      automaticallyImplyTitle: false,
+                      previousPageTitle: null,
+                      userMiddle: const Text(
+                        'Profile',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              color: Color(0x47005FB4),
+                              blurRadius: 2,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                      userTrailing: Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: CircleIconButton(
+                          icon: Icons.more_horiz_rounded,
+                          onTap:
+                              () => ToastService.instance.showToast(
+                                '✨ 已复制 $name 的主页链接',
+                              ),
+                        ),
+                      ),
+                      userLargeTitle: null,
+                      largeTitleActions: null,
+                      appbarBottom: null,
+                      padding: null,
+                      large: false,
+                    ),
                   ),
-                  const GlassDockItem(
-                    icon: Icons.person_rounded,
-                    active: true,
-                  ),
+                  _buildAvatarArea(),
+                  _buildIdentity(name, posts.length, liked, commentCount),
+                  _buildPills(posts),
+                  Expanded(child: _buildCollections()),
                 ],
               ),
             ),
+          ],
+        ),
+        // 弧形圆盘 dock（radial_disc_bottom_bar 的设计系统封装）
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
+          child: DSBottomNavigation(
+            items: const [
+              DSNavItem(icon: DsIconKind.home, label: '首页'),
+              DSNavItem(icon: DsIconKind.photoLibrary, label: '合集'),
+              DSNavItem(icon: DsIconKind.clock, label: '回忆'),
+              DSNavItem(icon: DsIconKind.user, label: '主页'),
+            ],
+            currentIndex: 3,
+            onTap: _onDockTab,
+            frosted: true,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopBar(String name) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          CircleIconButton(
-            icon: Icons.arrow_back_ios_new_rounded,
-            iconColor: const Color(0xFF1E293B),
-            onTap: () => Navigator.of(context).maybePop(),
-          ),
-          const Expanded(
-            child: Center(
-              child: Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      color: Color(0x47005FB4),
-                      blurRadius: 2,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          CircleIconButton(
-            icon: Icons.more_horiz_rounded,
-            onTap:
-                () => ToastService.instance.showToast('✨ 已复制 $name 的主页链接'),
-          ),
-        ],
+        ),
       ),
     );
   }
