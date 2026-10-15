@@ -605,32 +605,4 @@ final userDataProvider = FutureProvider<UserData>((ref) async {
       },
     };
   }
-
-  /// 生成单个会话的示例消息
-  /// 用于创建新会话时的欢迎消息
-  static List<ChatMessage> getWelcomeMessages(String conversationId) {
-    final now = DateTime.now();
-
-    return [
-      ChatMessage.ai(
-        conversationId: conversationId,
-        content: '''👋 欢迎使用 Agent Chat！
-
-我是你的AI助手，可以帮助你：
-- 💬 回答问题
-- 💡 提供建议
-- 📚 协助学习
-- 🎯 解决问题
-
-请告诉我你想要聊什么，我会尽力帮助你！''',
-        tokenCount: 80,
-        isGenerating: false,
-        metadata: {
-          'type': 'welcome',
-          'style': 'friendly',
-          'timestamp': now.toIso8601String(),
-        },
-      ),
-    ];
-  }
 }

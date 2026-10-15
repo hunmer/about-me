@@ -1,4 +1,3 @@
-import 'package:aboutme/plugins/agent_chat/data/sample_data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
@@ -140,16 +139,6 @@ class ConversationController extends ChangeNotifier {
       groups: groups,
       contextMessageCount: contextMessageCount,
     );
-
-    // 为新会话添加欢迎消息（仅开发环境，生产环境不注入）
-    if (kDebugMode) {
-      final welcomeMessages = AgentChatSampleData.getWelcomeMessages(
-        conversation.id,
-      );
-      for (var message in welcomeMessages) {
-        await messageService.addMessage(message);
-      }
-    }
 
     // 触发会话创建事件
     _notifyConversationEvent('added', conversation);
