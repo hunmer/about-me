@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
 import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
@@ -18,6 +19,7 @@ import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 import '../widgets/moments_shared.dart';
 import 'moments_profile_screen.dart';
@@ -31,7 +33,8 @@ class MomentsAuthorInfo {
 
   bool get isUser => id == MomentPost.userAuthorId;
 
-  String get name => isUser ? '我' : (agent?.name ?? '未知助手');
+  String get name =>
+      isUser ? 'moments_me'.tr : (agent?.name ?? 'moments_unknownAgent'.tr);
 
   Widget avatar({double size = 40}) {
     if (isUser) return UserAvatar(size: size);
@@ -39,8 +42,7 @@ class MomentsAuthorInfo {
   }
 }
 
-/// 朋友圈 · 动态流（复刻参考稿 Instagram Feed 界面：
-/// 天空头部 + 头像故事栏 + 标签筛选 + 投稿卡片 + 玻璃 dock）
+/// 朋友圈 · 动态流（手绘纸墨风：墨线卡片便签化 + 弧形圆盘 dock）
 class MomentsFeedScreen extends StatefulWidget {
   const MomentsFeedScreen({super.key});
 
@@ -142,15 +144,13 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
         posts
             .where(
               (p) =>
-                  (p.isUserPost
-                      ? MomentPost.userAuthorId
-                      : p.agentId) ==
+                  (p.isUserPost ? MomentPost.userAuthorId : p.agentId) ==
                   author.id,
             )
             .take(8)
             .toList();
     if (items.isEmpty) {
-      _openCompose();
+      unawaited(_openCompose());
       return;
     }
     unawaited(_moments.markAuthorSeen(author.id));
@@ -167,36 +167,36 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
   }
 
   Future<void> _openCompose() async {
-    await showModalBottomSheet<void>(
+    await showDSBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      title: 'moments_composeTitle'.tr,
       builder: (_) => const _ComposeSheet(),
     );
   }
 
   void _confirmDelete(MomentPost post) async {
-    final ok = await showDialog<bool>(
+    final ok = await showDSDialog<bool>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (ctx) => AlertDialog(
-            title: const Text('删除这条动态？'),
-            content: const Text('删除后不可恢复'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('取消'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('删除'),
-              ),
-            ],
+          (dialogContext) => DSThemeBridge(
+            child: Builder(
+              builder:
+                  (ctx) => DSDialog(
+                    title: 'moments_deleteTitle'.tr,
+                    message: 'moments_deleteMessage'.tr,
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'app_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
+                    onConfirm: () => Navigator.pop(dialogContext, true),
+                    onCancel: () => Navigator.pop(dialogContext, false),
+                  ),
+            ),
           ),
     );
     if (ok == true) {
       await _moments.deletePost(post.id);
-      if (mounted) ToastService.instance.showToast('已删除');
+      if (mounted) ToastService.instance.showToast('moments_deleted'.tr);
     }
   }
 
@@ -214,7 +214,7 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
       case 1:
         unawaited(_openCompose());
       case 2:
-        ToastService.instance.showToast('⚡ 动态将自动归档至回忆合集');
+        ToastService.instance.showToast('moments_archiveHint'.tr);
       case 3:
         _openProfile(
           const MomentsAuthorInfo(id: MomentPost.userAuthorId),
@@ -224,162 +224,157 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final posts =
         _filter == null
             ? _moments.posts
             : _moments.posts.where((p) => p.tag == _filter).toList();
     final unread = _todayAgentPostCount;
 
-    return DSThemeBridge(
-      child: Scaffold(
-        backgroundColor: MomentsPalette.pageBg,
-        extendBody: true,
-        body: Column(
-          children: [
-            // Super Cupertino 固定头部：＋投稿 / 标题 / 互动铃铛
-            // （透明导航栏，底色铺天空蓝与下方天空头部衔接）
-            ColoredBox(
-              color: MomentsPalette.skyTop,
-              child: PersistentNavigationBar(
-                components: NavigationBarStaticComponents(
-                  keys: _navBarKeys,
-                  route: null,
-                  // NavigationToolbar 的紧高度约束会把圆钮拉变形，Align 转宽松
-                  userLeading: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: CircleIconButton(
-                      icon: Icons.add,
-                      onTap: _openCompose,
-                    ),
-                  ),
-                  automaticallyImplyLeading: false,
-                  automaticallyImplyTitle: false,
-                  previousPageTitle: null,
-                  userMiddle: const Text(
-                    '朋友圈',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          color: Color(0x47005FB4),
-                          blurRadius: 2,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                  ),
-                  userTrailing: Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        CircleIconButton(
-                          icon: Icons.favorite_border_rounded,
-                          onTap:
-                              () => ToastService.instance.showToast(
-                                unread > 0
-                                    ? '☁️ TA 们最近更新了 $unread 条动态'
-                                    : '暂无新的互动',
-                              ),
-                        ),
-                        if (unread > 0)
-                          Positioned(
-                            top: -2,
-                            right: -2,
-                            child: Container(
-                              padding: const EdgeInsets.all(3.5),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFF43F5E),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                '$unread',
-                                style: const TextStyle(
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  height: 1,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  userLargeTitle: null,
-                  largeTitleActions: null,
-                  appbarBottom: null,
-                  padding: null,
-                  large: false,
+    return Scaffold(
+      backgroundColor: theme.background,
+      extendBody: true,
+      body: Column(
+        children: [
+          // Super Cupertino 固定头部：＋投稿 / 标题 / 互动铃铛
+          PersistentNavigationBar(
+            components: NavigationBarStaticComponents(
+              keys: _navBarKeys,
+              route: null,
+              userLeading: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: DSIconButton(
+                  icon: DsIconKind.plus,
+                  size: 38,
+                  onPressed: _openCompose,
                 ),
               ),
-            ),
-            Expanded(
-              // 全部内容进滚动区（天空头部/故事栏/筛选/帖子卡），
-              // 窗口再小也不会再出现固定区块溢出
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  const SliverToBoxAdapter(
-                    child: MomentsSkyHeader(height: 230),
-                  ),
-                  SliverToBoxAdapter(child: _buildStories()),
-                  SliverToBoxAdapter(child: _buildFilters()),
-                  if (posts.isEmpty)
-                    SliverToBoxAdapter(
-                      child: SizedBox(height: 320, child: _buildEmpty()),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.only(top: 4, bottom: 150),
-                      sliver: SliverList.builder(
-                        itemCount: posts.length,
-                        itemBuilder: (context, index) {
-                          final post = posts[index];
-                          return MomentFeedCard(
-                            key: ValueKey(post.id),
-                            post: post,
-                            author: _authorOf(post),
-                            saved: _moments.isPostSaved(post.id),
-                            onToggleSave:
-                                () => _moments.togglePostSaved(post.id),
-                            onOpenProfile:
-                                () => _openProfile(_authorOf(post)),
-                            onDelete: () => _confirmDelete(post),
-                          );
-                        },
-                      ),
-                    ),
-                ],
+              automaticallyImplyLeading: false,
+              automaticallyImplyTitle: false,
+              previousPageTitle: null,
+              userMiddle: Text(
+                'moments_name'.tr,
+                style: DsTypography.title.copyWith(color: theme.text),
               ),
+              userTrailing: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    DSIconButton(
+                      icon: DsIconKind.heart,
+                      size: 38,
+                      onPressed:
+                          () => ToastService.instance.showToast(
+                            unread > 0
+                                ? 'moments_interactNew'
+                                      .trParams({'n': '$unread'})
+                                : 'moments_interactNone'.tr,
+                          ),
+                    ),
+                    if (unread > 0)
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: theme.danger,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '$unread',
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                              color: theme.onDanger,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              userLargeTitle: null,
+              largeTitleActions: null,
+              appbarBottom: null,
+              padding: null,
+              large: false,
             ),
-          ],
-        ),
-        // 弧形圆盘 dock（radial_disc_bottom_bar 的设计系统封装）
-        bottomNavigationBar: Padding(
-          padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
-          child: DSBottomNavigation(
-            items: const [
-              DSNavItem(icon: DsIconKind.home, label: '首页'),
-              DSNavItem(icon: DsIconKind.plus, label: '投稿'),
-              DSNavItem(icon: DsIconKind.clock, label: '回忆'),
-              DSNavItem(icon: DsIconKind.user, label: '我的主页'),
-            ],
-            currentIndex: 0,
-            onTap: _onDockTab,
-            frosted: true,
           ),
+          Expanded(
+            // 全部内容进滚动区，任意窗口高度都不会溢出
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: MomentsSkyHeader(height: 150),
+                ),
+                SliverToBoxAdapter(child: _buildStories(theme)),
+                SliverToBoxAdapter(child: _buildFilters()),
+                if (posts.isEmpty)
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: 320, child: _buildEmpty(theme)),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
+                    sliver: SliverList.builder(
+                      itemCount: posts.length,
+                      itemBuilder: (context, index) {
+                        final post = posts[index];
+                        // 便签化：贴条 + 倾斜 + 悬浮（design.md §11）
+                        return HandDrawnStickyItem(
+                          tiltKey: post.id,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: MomentFeedCard(
+                              post: post,
+                              author: _authorOf(post),
+                              saved: _moments.isPostSaved(post.id),
+                              onToggleSave:
+                                  () => _moments.togglePostSaved(post.id),
+                              onOpenProfile:
+                                  () => _openProfile(_authorOf(post)),
+                              onDelete: () => _confirmDelete(post),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      // 弧形圆盘 dock（radial_disc_bottom_bar 的设计系统封装）
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
+        child: DSBottomNavigation(
+          items: [
+            DSNavItem(icon: DsIconKind.home, label: 'moments_tabHome'.tr),
+            DSNavItem(icon: DsIconKind.plus, label: 'moments_tabCompose'.tr),
+            DSNavItem(
+              icon: DsIconKind.clock,
+              label: 'moments_tabMemories'.tr,
+            ),
+            DSNavItem(icon: DsIconKind.user, label: 'moments_tabMe'.tr),
+          ],
+          currentIndex: 0,
+          onTap: _onDockTab,
+          frosted: true,
         ),
       ),
     );
   }
 
-  Widget _buildStories() {
+  Widget _buildStories(AppThemeData theme) {
     final authors = _storyAuthors(_moments.posts);
     return SizedBox(
-      height: 88,
+      // 上下内边距 12+4 + 头像 66 + 间距 5 + 名字 ~16
+      height: 104,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
@@ -407,8 +402,7 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
         padding: const EdgeInsets.fromLTRB(20, 2, 20, 6),
         children: [
           InterestPill(
-            label: '✨ 全部',
-            style: MomentPillStyle.blue,
+            label: 'moments_filterAll'.tr,
             selected: _filter == null,
             onTap: () => setState(() => _filter = null),
           ),
@@ -426,29 +420,25 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(AppThemeData theme) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.wb_cloudy_outlined,
-            size: 56,
-            color: MomentsPalette.skyMid.withValues(alpha: 0.7),
+          DsIcon(
+            DsIconKind.image,
+            size: 54,
+            color: theme.textSub.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 14),
-          const Text(
-            '还没有动态',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: MomentsPalette.inkSoft,
-            ),
+          Text(
+            'moments_emptyTitle'.tr,
+            style: DsTypography.heading.copyWith(color: theme.textSub),
           ),
           const SizedBox(height: 6),
-          const Text(
-            '点左上角 ＋ 投稿，或对 TA 说「发一条朋友圈」',
-            style: TextStyle(fontSize: 12, color: MomentsPalette.inkFaint),
+          Text(
+            'moments_emptyHint'.tr,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
         ],
       ),
@@ -456,7 +446,7 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
   }
 }
 
-/// 故事栏头像（渐变彩环 + 角标贴纸 + 名字）
+/// 故事栏头像（墨线圆环 + 角标贴纸 + 名字）
 class _StoryAvatar extends StatelessWidget {
   final MomentsAuthorInfo author;
   final bool seen;
@@ -470,6 +460,7 @@ class _StoryAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -481,63 +472,33 @@ class _StoryAvatar extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(2.5),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient:
-                        seen
-                            ? const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [Color(0xFFCBD5E1), Color(0xFFE2E8F0)],
-                            )
-                            : const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Color(0xFF0088FF),
-                                Color(0xFF38BDF8),
-                                Color(0xFFF472B6),
-                              ],
-                            ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0E74D6).withValues(alpha: 0.18),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                  padding: const EdgeInsets.all(3),
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    fillColor: theme.surface,
+                    stroke: seen
+                        ? theme.stroke
+                        : theme.primaryText.withValues(alpha: 0.9),
+                    strokeWidth: 2.2,
+                    circle: true,
+                    seed: author.id.hashCode & 0x7fffffff,
                   ),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(2),
-                    child: ClipOval(child: author.avatar(size: 54)),
-                  ),
+                  child: ClipOval(child: author.avatar(size: 54)),
                 ),
-                // 角标贴纸：我为 ➕，agent 用其最常用标签 emoji
+                // 角标贴纸：我为 ＋，agent 用云朵
                 Positioned(
                   bottom: 0,
                   right: 0,
                   child: Container(
                     width: 20,
                     height: 20,
-                    decoration: BoxDecoration(
-                      color:
-                          author.isUser
-                              ? MomentsPalette.activeBlue
-                              : Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      fillColor:
+                          author.isUser ? theme.primary : theme.surface,
+                      stroke: theme.ink.withValues(alpha: 0.6),
+                      circle: true,
+                      seed: 7,
                     ),
                     child: Center(
                       child: Text(
@@ -546,9 +507,7 @@ class _StoryAvatar extends StatelessWidget {
                           fontSize: author.isUser ? 11 : 10,
                           fontWeight: FontWeight.bold,
                           color:
-                              author.isUser
-                                  ? Colors.white
-                                  : MomentsPalette.inkSoft,
+                              author.isUser ? theme.onPrimary : theme.textSub,
                           height: 1,
                         ),
                       ),
@@ -562,14 +521,13 @@ class _StoryAvatar extends StatelessWidget {
           SizedBox(
             width: 64,
             child: Text(
-              author.isUser ? '我' : author.name,
+              author.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: DsTypography.label.copyWith(
                 fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: MomentsPalette.inkSoft,
+                color: theme.textSub,
               ),
             ),
           ),
@@ -579,7 +537,7 @@ class _StoryAvatar extends StatelessWidget {
   }
 }
 
-/// 投稿卡片（参考稿 .feed-card）
+/// 投稿卡片（手绘墨线卡片：头像行 / 图片墨线相框 / 软糖操作行 / 评论）
 class MomentFeedCard extends StatefulWidget {
   final MomentPost post;
   final MomentsAuthorInfo author;
@@ -628,53 +586,47 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
     if (text.isEmpty) return;
     _commentController.clear();
     await MomentsService.instance.addComment(widget.post.id, text);
-    ToastService.instance.showToast('💬 评论已发布');
+    ToastService.instance.showToast('moments_commentDone'.tr);
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final post = widget.post;
     final tag = MomentTags.byKey(post.tag);
     final sourceLabel = switch (post.source) {
-      'user' => '我的投稿',
-      'manual' => '代 TA 发布',
-      _ => 'TA 的动态',
+      'user' => 'moments_sourceUser'.tr,
+      'manual' => 'moments_sourceManual'.tr,
+      _ => 'moments_sourceAgent'.tr,
     };
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 6, 16, 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.07),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
-            spreadRadius: -6,
-          ),
-        ],
+      padding: const EdgeInsets.all(12),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        radius: theme.radii.lg,
+        seed: post.id.hashCode & 0x7fffffff,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(tag, sourceLabel),
+          _buildHeader(theme, tag, sourceLabel),
           if (post.images.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _buildPhotoFrame(),
+            _buildPhotoFrame(theme),
           ] else if (post.text.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _buildTextCard(),
+            _buildTextCard(theme),
           ],
           const SizedBox(height: 12),
-          _buildActions(),
+          _buildActions(theme),
           const SizedBox(height: 10),
-          if (post.text.isNotEmpty && post.images.isNotEmpty) _buildCaption(),
+          if (post.text.isNotEmpty && post.images.isNotEmpty)
+            _buildCaption(theme),
           if (post.comments.isNotEmpty) ...[
             const SizedBox(height: 8),
-            _buildComments(),
+            _buildComments(theme),
           ],
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
@@ -685,60 +637,18 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
                       child: Row(
                         children: [
                           Expanded(
-                            child: TextField(
+                            child: DSInput(
                               controller: _commentController,
                               focusNode: _commentFocus,
-                              style: const TextStyle(fontSize: 12),
-                              decoration: InputDecoration(
-                                isDense: true,
-                                hintText: '写下你的评论…',
-                                hintStyle: const TextStyle(
-                                  fontSize: 12,
-                                  color: MomentsPalette.inkFaint,
-                                ),
-                                filled: true,
-                                fillColor: const Color(0xFFF8FAFC),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 9,
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(999),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE2E8F0),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(999),
-                                  borderSide: const BorderSide(
-                                    color: MomentsPalette.skyChip,
-                                  ),
-                                ),
-                              ),
+                              hint: 'moments_commentHint'.tr,
                               onSubmitted: (_) => _submitComment(),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: _submitComment,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0EA5E9),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: const Text(
-                                '发送',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+                          InterestPill(
+                            label: 'moments_send'.tr,
+                            selected: true,
+                            onTap: () => unawaited(_submitComment()),
                           ),
                         ],
                       ),
@@ -750,25 +660,22 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
     );
   }
 
-  Widget _buildHeader(MomentTag tag, String sourceLabel) {
+  Widget _buildHeader(AppThemeData theme, MomentTag tag, String sourceLabel) {
     final post = widget.post;
     return Row(
       children: [
         GestureDetector(
           onTap: widget.onOpenProfile,
           child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
+            padding: const EdgeInsets.all(2),
+            decoration: dsSketchDecoration(
+              theme: theme,
+              fillColor: theme.surface,
+              stroke: theme.ink.withValues(alpha: 0.5),
+              circle: true,
+              seed: 11,
             ),
-            child: widget.author.avatar(size: 40),
+            child: widget.author.avatar(size: 38),
           ),
         ),
         const SizedBox(width: 10),
@@ -785,10 +692,9 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
                         widget.author.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: DsTypography.heading.copyWith(
                           fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                          color: MomentsPalette.ink,
+                          color: theme.text,
                         ),
                       ),
                     ),
@@ -807,10 +713,9 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
               const SizedBox(height: 2),
               Text(
                 '$sourceLabel · ${formatRelativeTime(post.createdAt)}',
-                style: const TextStyle(
+                style: DsTypography.caption.copyWith(
                   fontSize: 10.5,
-                  fontWeight: FontWeight.w500,
-                  color: MomentsPalette.inkFaint,
+                  color: theme.textSub,
                 ),
               ),
             ],
@@ -818,53 +723,37 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
         ),
         GestureDetector(
           onTap: widget.onDelete,
-          child: Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.more_horiz_rounded,
-              size: 16,
-              color: MomentsPalette.inkFaint,
-            ),
-          ),
+          child: DsIcon(DsIconKind.more, size: 18, color: theme.textSub),
         ),
       ],
     );
   }
 
-  Widget _buildPhotoFrame() {
+  Widget _buildPhotoFrame(AppThemeData theme) {
     final post = widget.post;
     return GestureDetector(
       onTap: _openViewer,
       onDoubleTap: _doubleTapLike,
       child: Container(
         height: 225,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white, width: 3),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.14),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-              spreadRadius: -4,
-            ),
-          ],
+        padding: const EdgeInsets.all(4),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surfaceAlt,
+          radius: theme.radii.md,
+          seed: 21,
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(21),
+          borderRadius: theme.radii.sm,
           child: Stack(
             fit: StackFit.expand,
             children: [
               MomentImage(path: post.images[_activeImage]),
-              // 双击爱心迸发
               if (_burstKey > 0)
                 Positioned.fill(
-                  child: IgnorePointer(child: _HeartBurst(key: ValueKey(_burstKey))),
+                  child: IgnorePointer(
+                    child: _HeartBurst(key: ValueKey(_burstKey)),
+                  ),
                 ),
               if (post.images.length > 1) ...[
                 Positioned(
@@ -875,16 +764,17 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
                       horizontal: 8,
                       vertical: 3,
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(999),
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      fillColor: theme.ink.withValues(alpha: 0.5),
+                      radius: theme.radii.pill,
+                      seed: 3,
                     ),
                     child: Text(
                       '${_activeImage + 1}/${post.images.length}',
-                      style: const TextStyle(
+                      style: DsTypography.label.copyWith(
                         fontSize: 9.5,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: theme.paper,
                       ),
                     ),
                   ),
@@ -899,9 +789,11 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
                         horizontal: 10,
                         vertical: 6,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.45),
-                        borderRadius: BorderRadius.circular(999),
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        fillColor: theme.ink.withValues(alpha: 0.45),
+                        radius: theme.radii.pill,
+                        seed: 4,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -920,8 +812,8 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
                                 decoration: BoxDecoration(
                                   color:
                                       i == _activeImage
-                                          ? Colors.white
-                                          : Colors.white.withValues(
+                                          ? theme.paper
+                                          : theme.paper.withValues(
                                             alpha: 0.45,
                                           ),
                                   borderRadius: BorderRadius.circular(999),
@@ -934,10 +826,28 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
                   ),
                 ),
               ] else
-                const Positioned(
+                Positioned(
                   bottom: 10,
                   right: 12,
-                  child: _DoubleTapHint(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 3,
+                    ),
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      fillColor: theme.ink.withValues(alpha: 0.4),
+                      radius: theme.radii.pill,
+                      seed: 5,
+                    ),
+                    child: Text(
+                      'moments_doubleTapLike'.tr,
+                      style: DsTypography.label.copyWith(
+                        fontSize: 9.5,
+                        color: theme.paper,
+                      ),
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -958,38 +868,23 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
     );
   }
 
-  /// 纯文字动态：柔和蓝灰卡片（保留白描边+阴影的视觉语言）
-  Widget _buildTextCard() {
+  /// 纯文字动态：次级表面墨线卡片
+  Widget _buildTextCard(AppThemeData theme) {
     return GestureDetector(
       onDoubleTap: _doubleTapLike,
       child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFF1F5F9), Color(0xFFE8F1FB)],
-          ),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white, width: 3),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.1),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-              spreadRadius: -4,
-            ),
-          ],
+        padding: const EdgeInsets.all(14),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surfaceAlt,
+          radius: theme.radii.md,
+          seed: 31,
         ),
         child: Stack(
           children: [
             Text(
               widget.post.text,
-              style: const TextStyle(
-                fontSize: 14.5,
-                height: 1.6,
-                color: MomentsPalette.ink,
-              ),
+              style: DsTypography.body.copyWith(height: 1.6),
             ),
             if (_burstKey > 0)
               Positioned.fill(child: _HeartBurst(key: ValueKey(_burstKey))),
@@ -999,30 +894,20 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
     );
   }
 
-  Widget _buildActions() {
+  Widget _buildActions(AppThemeData theme) {
     final post = widget.post;
     return Row(
       children: [
         InterestPill(
-          label: post.liked ? '已赞' : '赞',
-          leading: Icon(
-            post.liked ? Icons.favorite : Icons.favorite_border,
-            size: 13,
-            color: post.liked ? const Color(0xFFE11D48) : MomentsPalette.inkSoft,
-          ),
-          style: post.liked ? MomentPillStyle.pink : MomentPillStyle.blue,
+          label: post.liked ? 'moments_liked'.tr : 'moments_like'.tr,
+          leading: DsIcon(DsIconKind.heart, size: 13),
           selected: post.liked,
           onTap: () => MomentsService.instance.toggleLike(post.id),
         ),
         const SizedBox(width: 6),
         InterestPill(
           label: '${post.comments.length}',
-          leading: const Icon(
-            Icons.chat_bubble_outline_rounded,
-            size: 12,
-            color: Color(0xFF0284C7),
-          ),
-          style: MomentPillStyle.blue,
+          leading: DsIcon(DsIconKind.chat, size: 12),
           onTap: () {
             setState(() => _commentBoxOpen = !_commentBoxOpen);
             if (_commentBoxOpen) _commentFocus.requestFocus();
@@ -1030,71 +915,56 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
         ),
         const SizedBox(width: 6),
         InterestPill(
-          label: '分享',
-          leading: const Icon(
-            Icons.send_outlined,
-            size: 12,
-            color: Color(0xFF7E22CE),
-          ),
-          style: MomentPillStyle.purple,
-          onTap: () => ToastService.instance.showToast('🚀 已分享给密友圈'),
+          label: 'moments_share'.tr,
+          leading: DsIcon(DsIconKind.send, size: 12),
+          onTap:
+              () => ToastService.instance.showToast('moments_shareDone'.tr),
         ),
         const Spacer(),
         GestureDetector(
-          onTap: widget.onToggleSave,
-          child: Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color:
-                  widget.saved
-                      ? const Color(0xFFFFFBEB)
-                      : const Color(0xFFF1F5F9),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              widget.saved ? Icons.bookmark_rounded : Icons.bookmark_border,
-              size: 15,
-              color:
-                  widget.saved
-                      ? const Color(0xFFF59E0B)
-                      : MomentsPalette.inkFaint,
-            ),
+          onTap: () {
+            widget.onToggleSave?.call();
+            ToastService.instance.showToast(
+              widget.saved ? 'moments_saved'.tr : 'moments_unsaved'.tr,
+            );
+          },
+          child: DsIcon(
+            widget.saved ? DsIconKind.star : DsIconKind.star,
+            size: 18,
+            color:
+                widget.saved ? theme.warning : theme.textSub.withValues(
+                  alpha: 0.7,
+                ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCaption() {
+  Widget _buildCaption(AppThemeData theme) {
     return Text.rich(
       TextSpan(
         children: [
           TextSpan(
             text: widget.author.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
-              color: MomentsPalette.ink,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w700, color: theme.text),
           ),
           const TextSpan(text: '  '),
           TextSpan(text: widget.post.text),
         ],
       ),
-      style: const TextStyle(
-        fontSize: 11.5,
-        height: 1.5,
-        color: Color(0xFF334155),
-      ),
+      style: DsTypography.caption.copyWith(height: 1.5, color: theme.textSub),
     );
   }
 
-  Widget _buildComments() {
+  Widget _buildComments(AppThemeData theme) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(top: 8),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: theme.stroke.withValues(alpha: 0.6)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1106,19 +976,18 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: c.isAgent ? widget.author.name : '我',
-                      style: const TextStyle(
+                      text: c.isAgent ? widget.author.name : 'moments_me'.tr,
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: MomentsPalette.ink,
+                        color: theme.text,
                       ),
                     ),
                     TextSpan(text: '：${c.text}'),
                   ],
                 ),
-                style: const TextStyle(
-                  fontSize: 11,
+                style: DsTypography.caption.copyWith(
                   height: 1.4,
-                  color: Color(0xFF475569),
+                  color: theme.textSub,
                 ),
               ),
             ),
@@ -1128,31 +997,7 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
   }
 }
 
-/// 双击点赞提示角标
-class _DoubleTapHint extends StatelessWidget {
-  const _DoubleTapHint();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: const Text(
-        '双击图片点赞 ❤️',
-        style: TextStyle(
-          fontSize: 9.5,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-}
-
-/// 双击触发的爱心迸发动画（参考稿 .heart-burst）
+/// 双击触发的爱心迸发动画
 class _HeartBurst extends StatefulWidget {
   const _HeartBurst({super.key});
 
@@ -1181,6 +1026,7 @@ class _HeartBurstState extends State<_HeartBurst>
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
@@ -1193,16 +1039,10 @@ class _HeartBurstState extends State<_HeartBurst>
               angle: (t - 0.5) * 0.5,
               child: Opacity(
                 opacity: fade.clamp(0, 1),
-                child: Icon(
-                  Icons.favorite_rounded,
-                  size: 74,
-                  color: const Color(0xFFF43F5E),
-                  shadows: [
-                    Shadow(
-                      color: const Color(0xFFF43F5E).withValues(alpha: 0.45),
-                      blurRadius: 18,
-                    ),
-                  ],
+                child: DsIcon(
+                  DsIconKind.heart,
+                  size: 72,
+                  color: theme.danger,
                 ),
               ),
             ),
@@ -1213,7 +1053,7 @@ class _HeartBurstState extends State<_HeartBurst>
   }
 }
 
-/// 发布投稿底部面板（参考稿 compose modal：文案 + 标签 + 配图）
+/// 发布投稿面板内容（由 showDSBottomSheet 提供标题/把手/关闭）
 class _ComposeSheet extends StatefulWidget {
   const _ComposeSheet();
 
@@ -1239,7 +1079,11 @@ class _ComposeSheetState extends State<_ComposeSheet> {
   Future<void> _pickImages() async {
     final remain = MomentsService.maxImagesPerPost - _images.length;
     if (remain <= 0) {
-      ToastService.instance.showToast('最多 ${MomentsService.maxImagesPerPost} 张图片');
+      ToastService.instance.showToast(
+        'moments_imageLimit'.trParams({
+          'n': '${MomentsService.maxImagesPerPost}',
+        }),
+      );
       return;
     }
     final files = await FilePickerHelper.pickImages(multiple: true);
@@ -1251,7 +1095,7 @@ class _ComposeSheetState extends State<_ComposeSheet> {
     if (_submitting) return;
     final text = _textController.text.trim();
     if (text.isEmpty && _images.isEmpty) {
-      ToastService.instance.showToast('写点什么或添加一张图片吧');
+      ToastService.instance.showToast('moments_composeEmptyHint'.tr);
       return;
     }
     setState(() => _submitting = true);
@@ -1271,7 +1115,7 @@ class _ComposeSheetState extends State<_ComposeSheet> {
       // AI 配图（可选）：留空用文案生图，失败降级为无图发布
       if (_aiImage) {
         try {
-          ToastService.instance.showToast('正在生成 AI 配图…');
+          ToastService.instance.showToast('moments_aiImageGenerating'.tr);
           final prompt =
               _imagePromptController.text.trim().isEmpty
                   ? text
@@ -1280,7 +1124,7 @@ class _ComposeSheetState extends State<_ComposeSheet> {
             await ImageGenService.instance.generate(prompt: prompt),
           );
         } catch (e) {
-          ToastService.instance.showToast('AI 配图失败，将按无图发布');
+          ToastService.instance.showToast('moments_aiImageFailed'.tr);
           debugPrint('[Moments] 用户投稿 AI 配图失败: $e');
         }
       }
@@ -1293,280 +1137,153 @@ class _ComposeSheetState extends State<_ComposeSheet> {
       );
       if (mounted) {
         Navigator.pop(context);
-        ToastService.instance.showToast('🎉 新投稿已发布至顶部！');
+        ToastService.instance.showToast('moments_publishDone'.tr);
       }
     } catch (e) {
       if (mounted) {
         setState(() => _submitting = false);
-        ToastService.instance.showToast('发布失败: $e');
+        ToastService.instance.showToast(
+          'moments_publishFailed'.trParams({'error': '$e'}),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final theme = AppTheme.of(context);
     return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(999),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DSInput(
+            controller: _textController,
+            hint: 'moments_composeHint'.tr,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'moments_composeTagLabel'.tr,
+            style: DsTypography.label.copyWith(color: theme.textSub),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final tag in MomentTags.all)
+                TagPill(
+                  tag: tag,
+                  selected: _tag == tag.key,
+                  onTap: () => setState(() => _tag = tag.key),
                 ),
-              ),
-            ),
-            const Text(
-              '✨ 发布新投稿',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: MomentsPalette.ink,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _textController,
-              maxLines: 3,
-              minLines: 2,
-              style: const TextStyle(fontSize: 12.5),
-              decoration: InputDecoration(
-                hintText: '分享此刻的生活、心情或见闻…',
-                hintStyle: const TextStyle(
-                  fontSize: 12,
-                  color: MomentsPalette.inkFaint,
-                ),
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
-                contentPadding: const EdgeInsets.all(12),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: MomentsPalette.skyChip),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '选择标签：',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: MomentsPalette.inkFaint,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final tag in MomentTags.all)
-                  TagPill(
-                    tag: tag,
-                    selected: _tag == tag.key,
-                    onTap: () => setState(() => _tag = tag.key),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // AI 配图开关（可选，失败自动降级为无图发布）
-            Row(
-              children: [
-                const Text(
-                  'AI 配图',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: MomentsPalette.inkFaint,
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  height: 24,
-                  child: Switch(
-                    value: _aiImage,
-                    onChanged: (v) => setState(() => _aiImage = v),
-                  ),
-                ),
-              ],
-            ),
-            if (_aiImage) ...[
-              const SizedBox(height: 6),
-              TextField(
-                controller: _imagePromptController,
-                maxLines: 2,
-                minLines: 1,
-                style: const TextStyle(fontSize: 12),
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: '配图描述（留空用文案生图）',
-                  hintStyle: const TextStyle(
-                    fontSize: 12,
-                    color: MomentsPalette.inkFaint,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 9,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: MomentsPalette.skyChip),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
             ],
-            SizedBox(
-              height: 72,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  for (var i = 0; i < _images.length; i++)
-                    Container(
-                      width: 72,
-                      height: 72,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
+          ),
+          const SizedBox(height: 10),
+          InterestPill(
+            label: 'moments_aiImage'.tr,
+            leading: DsIcon(DsIconKind.palette, size: 12),
+            selected: _aiImage,
+            onTap: () => setState(() => _aiImage = !_aiImage),
+          ),
+          if (_aiImage) ...[
+            const SizedBox(height: 8),
+            DSInput(
+              controller: _imagePromptController,
+              hint: 'moments_aiImageHint'.tr,
+              maxLines: 2,
+            ),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 72,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                for (var i = 0; i < _images.length; i++)
+                  Container(
+                    width: 72,
+                    height: 72,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      fillColor: theme.surfaceAlt,
+                      radius: theme.radii.md,
+                      seed: i + 40,
+                    ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ClipRRect(
+                          borderRadius: theme.radii.sm,
+                          child: Image.file(_images[i], fit: BoxFit.cover),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: Image.file(
-                              _images[i],
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: GestureDetector(
-                              onTap:
-                                  () => setState(() => _images.removeAt(i)),
-                              child: Container(
-                                width: 20,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.55),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 12,
-                                  color: Colors.white,
-                                ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => setState(() => _images.removeAt(i)),
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: dsSketchDecoration(
+                                theme: theme,
+                                fillColor: theme.ink.withValues(alpha: 0.55),
+                                circle: true,
+                                seed: 6,
+                              ),
+                              child: DsIcon(
+                                DsIconKind.close,
+                                size: 12,
+                                color: theme.paper,
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  GestureDetector(
-                    onTap: _pickImages,
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFFE2E8F0),
-                          width: 1.5,
                         ),
-                      ),
-                      child: const Icon(
-                        Icons.add_photo_alternate_outlined,
+                      ],
+                    ),
+                  ),
+                GestureDetector(
+                  onTap: _pickImages,
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      fillColor: theme.surfaceAlt,
+                      radius: theme.radii.md,
+                      seed: 9,
+                    ),
+                    child: Center(
+                      child: DsIcon(
+                        DsIconKind.image,
                         size: 26,
-                        color: MomentsPalette.inkFaint,
+                        color: theme.textSub,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: _submit,
-              child: Container(
-                width: double.infinity,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0088FF), Color(0xFF38BDF8)],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0EA5E9).withValues(alpha: 0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
-                child:
-                    _submitting
-                        ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                        : const Text(
-                          '立即发布至朋友圈',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: DSButton(
+              label: 'moments_publish'.tr,
+              expand: true,
+              onPressed: _submitting ? null : () => unawaited(_submit()),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// 故事查看器（复刻参考稿 story viewer：分段进度 + 左右点按切换 + 贴纸回应）
+/// 故事查看器（分段进度 + 左右点按切换 + 贴纸回应）
 class StoryViewerScreen extends StatefulWidget {
   final MomentsAuthorInfo author;
   final List<MomentPost> posts;
@@ -1622,11 +1339,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final post = widget.posts[_index];
     final tag = MomentTags.byKey(post.tag);
 
     return Scaffold(
-      backgroundColor: const Color(0xF20B1220),
+      // 沉浸式查看器：墨色底 + 纸色前景（主题 token）
+      backgroundColor: theme.ink,
       body: SafeArea(
         child: Column(
           children: [
@@ -1634,7 +1353,6 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
               child: Column(
                 children: [
-                  // 分段进度条
                   Row(
                     children: [
                       for (var i = 0; i < widget.posts.length; i++)
@@ -1643,7 +1361,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                             height: 3,
                             margin: const EdgeInsets.symmetric(horizontal: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.25),
+                              color: theme.paper.withValues(alpha: 0.25),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: _SegmentFill(
@@ -1658,9 +1376,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      ClipOval(
-                        child: widget.author.avatar(size: 36),
-                      ),
+                      ClipOval(child: widget.author.avatar(size: 36)),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
@@ -1673,10 +1389,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                                     widget.author.name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style: DsTypography.heading.copyWith(
                                       fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: theme.paper,
                                     ),
                                   ),
                                 ),
@@ -1686,26 +1401,33 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                                     horizontal: 8,
                                     vertical: 2,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(999),
+                                  decoration: dsSketchDecoration(
+                                    theme: theme,
+                                    fillColor: theme.paper.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                    radius: theme.radii.pill,
+                                    seed: 8,
                                   ),
                                   child: Text(
                                     '${tag.emoji} ${tag.label}',
-                                    style: const TextStyle(
+                                    style: DsTypography.label.copyWith(
                                       fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
+                                      color: theme.paper,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                             Text(
-                              '${formatRelativeTime(post.createdAt)} · 第 ${_index + 1}/${widget.posts.length} 条',
-                              style: TextStyle(
+                              '${formatRelativeTime(post.createdAt)} · '
+                              'moments_storySeq'.trParams({
+                                'i': '${_index + 1}',
+                                'n': '${widget.posts.length}',
+                              }),
+                              style: DsTypography.caption.copyWith(
                                 fontSize: 10,
-                                color: Colors.white.withValues(alpha: 0.7),
+                                color: theme.paper.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -1716,14 +1438,16 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                         child: Container(
                           width: 32,
                           height: 32,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
+                          decoration: dsSketchDecoration(
+                            theme: theme,
+                            fillColor: theme.paper.withValues(alpha: 0.15),
+                            circle: true,
+                            seed: 12,
                           ),
-                          child: const Icon(
-                            Icons.close,
+                          child: DsIcon(
+                            DsIconKind.close,
                             size: 16,
-                            color: Colors.white,
+                            color: theme.paper,
                           ),
                         ),
                       ),
@@ -1740,7 +1464,6 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTapUp: (details) {
-                      // 左 1/3 上一条，右 1/3 下一条
                       final w = context.size?.width ?? 1;
                       final x = details.localPosition.dx;
                       if (x < w / 3) {
@@ -1750,49 +1473,31 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                       }
                     },
                     child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            blurRadius: 30,
-                            offset: const Offset(0, 12),
-                          ),
-                        ],
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        fillColor: theme.paper.withValues(alpha: 0.06),
+                        stroke: theme.paper.withValues(alpha: 0.5),
+                        radius: theme.radii.lg,
+                        seed: 13,
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: theme.radii.lg,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
                             if (post.images.isNotEmpty)
                               MomentImage(path: post.images.first)
                             else
-                              DecoratedBox(
-                                decoration: const BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Color(0xFF169AFF),
-                                      Color(0xFF3CB2FF),
-                                      Color(0xFF7DCDFF),
-                                    ],
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Center(
-                                    child: Text(
-                                      post.text,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        height: 1.7,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
+                              Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Center(
+                                  child: Text(
+                                    post.text,
+                                    textAlign: TextAlign.center,
+                                    style: DsTypography.heading.copyWith(
+                                      fontSize: 16,
+                                      height: 1.7,
+                                      color: theme.paper,
                                     ),
                                   ),
                                 ),
@@ -1804,23 +1509,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                                 bottom: 0,
                                 child: Container(
                                   padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.bottomCenter,
-                                      end: Alignment.topCenter,
-                                      colors: [
-                                        Colors.black.withValues(alpha: 0.75),
-                                        Colors.transparent,
-                                      ],
-                                    ),
-                                  ),
+                                  color: theme.ink.withValues(alpha: 0.55),
                                   child: Text(
                                     post.text,
                                     maxLines: 3,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white,
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.paper,
                                       height: 1.4,
                                     ),
                                   ),
@@ -1834,7 +1529,6 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                 ),
               ),
             ),
-            // 贴纸回应 + 下一条
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
               child: Row(
@@ -1845,9 +1539,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                         horizontal: 12,
                         vertical: 8,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(999),
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        fillColor: theme.paper.withValues(alpha: 0.12),
+                        radius: theme.radii.pill,
+                        seed: 14,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1856,44 +1552,24 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                             GestureDetector(
                               onTap:
                                   () => ToastService.instance.showToast(
-                                    '已发送贴纸回应 $emoji',
+                                    'moments_storyReaction'.trParams({
+                                      'emoji': emoji,
+                                    }),
                                   ),
-                              child: Text(emoji, style: const TextStyle(fontSize: 16)),
+                              child: Text(
+                                emoji,
+                                style: const TextStyle(fontSize: 16),
+                              ),
                             ),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  GestureDetector(
+                  InterestPill(
+                    label: 'moments_storyNext'.tr,
+                    selected: true,
                     onTap: _next,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 11,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0EA5E9),
-                        borderRadius: BorderRadius.circular(999),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF0EA5E9).withValues(
-                              alpha: 0.4,
-                            ),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Text(
-                        '下一条 →',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -1939,17 +1615,16 @@ class _SegmentFillState extends State<_SegmentFill>
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     if (widget.filled || (!widget.active && _controller.value >= 1)) {
       return Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.paper,
           borderRadius: BorderRadius.circular(999),
         ),
       );
     }
-    if (!widget.active) {
-      return const SizedBox.shrink();
-    }
+    if (!widget.active) return const SizedBox.shrink();
     return AnimatedBuilder(
       animation: _controller,
       builder:
@@ -1958,7 +1633,7 @@ class _SegmentFillState extends State<_SegmentFill>
             widthFactor: _controller.value,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.paper,
                 borderRadius: BorderRadius.circular(999),
               ),
             ),

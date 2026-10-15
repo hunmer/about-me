@@ -1,39 +1,17 @@
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart'
+    show DrawConfig, waverPath, waveredPolygons;
 
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
-/// 朋友圈两块界面共用的视觉语言（复刻自 skygram 参考稿：
-/// 天空渐变 + 云朵 + 果冻感软糖标签 + 玻璃拟态 dock）
-class MomentsPalette {
-  static const skyTop = Color(0xFF169AFF);
-  static const skyMid = Color(0xFF3CB2FF);
-  static const skyLight = Color(0xFF7DCDFF);
-  static const activeBlue = Color(0xFF0088FF);
-  static const skyChip = Color(0xFF38BDF8);
-
-  static const pageBg = Color(0xFFF9FAFC);
-  static const ink = Color(0xFF0F172A);
-  static const inkSoft = Color(0xFF64748B);
-  static const inkFaint = Color(0xFF94A3B8);
-  static const mistBlue = Color(0xFFF1F5F9);
-}
-
-const _pillColors = {
-  MomentPillStyle.purple: (bg: Color(0xFFF3EFFB), border: Color(0xFFE7DFF8), fg: Color(0xFF3B2854)),
-  MomentPillStyle.orange: (bg: Color(0xFFFFF4ED), border: Color(0xFFFDE4D2), fg: Color(0xFF4A2C18)),
-  MomentPillStyle.blue: (bg: Color(0xFFEAF4FF), border: Color(0xFFD5E8FF), fg: Color(0xFF1E3A5F)),
-  MomentPillStyle.pink: (bg: Color(0xFFFFF0F4), border: Color(0xFFFFDBE4), fg: Color(0xFF592234)),
-};
-
-/// 果冻感兴趣标签（参考稿 .interest-pill）
+/// 手绘软糖标签（design.md §9.1：dsSketchDecoration 实底 + 墨线抖动描边）
 class InterestPill extends StatelessWidget {
   final String label;
   final Widget? leading;
-  final MomentPillStyle style;
   final bool selected;
   final VoidCallback? onTap;
   final double fontSize;
@@ -42,49 +20,46 @@ class InterestPill extends StatelessWidget {
   const InterestPill({
     super.key,
     required this.label,
-    required this.style,
     this.leading,
     this.selected = false,
     this.onTap,
     this.fontSize = 11,
-    this.padding = const EdgeInsets.symmetric(horizontal: 10.5, vertical: 4.5),
+    this.padding = const EdgeInsets.symmetric(horizontal: 11, vertical: 4.5),
   });
 
   @override
   Widget build(BuildContext context) {
-    final c = _pillColors[style]!;
+    final theme = AppTheme.of(context);
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+      child: Container(
         padding: padding,
-        decoration: BoxDecoration(
-          color: c.bg,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: selected ? MomentsPalette.skyChip : c.border,
-            width: selected ? 2 : 1,
-          ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: MomentsPalette.skyChip.withValues(alpha: 0.35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: selected ? theme.primary : theme.surfaceAlt,
+          stroke: theme.ink.withValues(alpha: selected ? 0.75 : 0.45),
+          radius: BorderRadius.circular(999),
+          seed: label.hashCode & 0x7fffffff,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (leading != null) ...[leading!, const SizedBox(width: 4.5)],
+            if (leading != null) ...[
+              IconTheme.merge(
+                data: IconThemeData(
+                  size: fontSize + 2,
+                  color: selected ? theme.onPrimary : theme.textSub,
+                ),
+                child: leading!,
+              ),
+              const SizedBox(width: 4.5),
+            ],
             Text(
               label,
               style: TextStyle(
                 fontSize: fontSize,
-                fontWeight: FontWeight.w600,
-                color: c.fg,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                color: selected ? theme.onPrimary : theme.textSub,
                 height: 1,
               ),
             ),
@@ -109,14 +84,13 @@ class TagPill extends StatelessWidget {
     this.selected = false,
     this.onTap,
     this.fontSize = 11,
-    this.padding = const EdgeInsets.symmetric(horizontal: 10.5, vertical: 4.5),
+    this.padding = const EdgeInsets.symmetric(horizontal: 11, vertical: 4.5),
   });
 
   @override
   Widget build(BuildContext context) {
     return InterestPill(
       label: '${tag.emoji} ${tag.label}',
-      style: tag.style,
       selected: selected,
       onTap: onTap,
       fontSize: fontSize,
@@ -125,49 +99,7 @@ class TagPill extends StatelessWidget {
   }
 }
 
-/// 顶部圆形白色操作按钮（参考稿 .circle-icon-btn）
-class CircleIconButton extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final VoidCallback? onTap;
-  final double size;
-  final Widget? child;
-
-  const CircleIconButton({
-    super.key,
-    required this.icon,
-    this.iconColor = const Color(0xFF1E293B),
-    this.onTap,
-    this.size = 36,
-    this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0C4A8A).withValues(alpha: 0.14),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: child ??
-            Icon(icon, size: size * 0.46, color: iconColor),
-      ),
-    );
-  }
-}
-
-/// 用户「我」头像：天空蓝渐变圆 + 白色人像
+/// 用户「我」头像：主题色实底墨线圆 + 白色人像
 class UserAvatar extends StatelessWidget {
   final double size;
 
@@ -175,147 +107,150 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF0088FF), Color(0xFF6EC6FF)],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.primary,
+        stroke: theme.ink.withValues(alpha: 0.6),
+        circle: true,
+      ),
+      child: Center(
+        child: DsIcon(
+          DsIconKind.user,
+          size: size * 0.55,
+          color: theme.onPrimary,
         ),
       ),
-      child: Icon(Icons.person_rounded, size: size * 0.58, color: Colors.white),
     );
   }
 }
 
-/// 天空 + 体积感云朵头部背景（参考稿 .sky-canvas）
+/// 手绘云朵头部背景（design.md §9：无渐变/柔影，墨线云 + 纸底）
 ///
-/// 云朵坐标按 375 宽的参考稿换算成横向比例，纵向保持像素值
+/// 云朵用 skribble waver 轮廓绘制：纸底填充 + 墨线描边，
+/// 坐标按 375 宽参考稿换算成横向比例
 class MomentsSkyHeader extends StatelessWidget {
   final double height;
   final bool profileVariant;
 
   const MomentsSkyHeader({
     super.key,
-    this.height = 255,
+    this.height = 180,
     this.profileVariant = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return SizedBox(
       height: height,
       width: double.infinity,
       child: CustomPaint(
-        painter: _SkyPainter(profileVariant: profileVariant),
+        painter: _CloudsPainter(
+          profileVariant: profileVariant,
+          config: theme.wired.drawConfig,
+          paper: theme.paper,
+          ink: theme.ink,
+          wash: theme.hatch.withValues(alpha: theme.isDark ? 0.10 : 0.16),
+        ),
         child: const SizedBox.expand(),
       ),
     );
   }
 }
 
-class _Blob {
-  final double dx; // 距左/右边缘的比例（基于 375 宽）
-  final bool fromRight;
+class _CloudSpec {
+  final double dx; // 距左边缘比例（基于 375 宽）
   final double top;
-  final double w;
-  final double h;
+  final double scale;
   final double opacity;
-  final bool sharp;
 
-  const _Blob(this.dx, this.fromRight, this.top, this.w, this.h, this.opacity, {this.sharp = false});
+  const _CloudSpec(this.dx, this.top, this.scale, this.opacity);
 }
 
-class _SkyPainter extends CustomPainter {
+const _profileClouds = [
+  _CloudSpec(0.62, 6, 1.25, 0.9),
+  _CloudSpec(0.02, 48, 1.0, 0.8),
+  _CloudSpec(0.05, 128, 1.15, 0.85),
+  _CloudSpec(0.66, 120, 1.2, 0.85),
+  _CloudSpec(0.25, 178, 1.5, 0.9),
+];
+
+const _feedClouds = [
+  _CloudSpec(0.55, 10, 1.1, 0.85),
+  _CloudSpec(0.03, 34, 0.95, 0.8),
+  _CloudSpec(0.16, 76, 1.35, 0.85),
+];
+
+class _CloudsPainter extends CustomPainter {
+  _CloudsPainter({
+    required this.profileVariant,
+    required this.config,
+    required this.paper,
+    required this.ink,
+    required this.wash,
+  });
+
   final bool profileVariant;
+  final DrawConfig config;
+  final Color paper;
+  final Color ink;
+  final Color wash;
 
-  _SkyPainter({required this.profileVariant});
-
-  static const _profileBlobs = [
-    _Blob(0.053, true, -18, 145, 85, 0.88),
-    _Blob(0.048, true, -8, 120, 75, 0.78, sharp: true),
-    _Blob(0.096, false, 42, 130, 90, 0.72),
-    _Blob(0.032, false, 82, 110, 80, 0.82, sharp: true),
-    _Blob(0.08, false, 155, 180, 110, 0.94),
-    _Blob(0.067, false, 162, 140, 95, 0.88, sharp: true),
-    _Blob(0.093, true, 142, 185, 115, 0.94),
-    _Blob(0.04, true, 158, 145, 95, 0.88, sharp: true),
-    _Blob(0.181, false, 205, 240, 95, 0.96),
-  ];
-
-  static const _feedBlobs = [
-    _Blob(0.04, true, -12, 150, 85, 0.86),
-    _Blob(0.075, false, 58, 140, 85, 0.8),
-    _Blob(0.213, false, 120, 220, 90, 0.9, sharp: true),
-  ];
+  /// 单朵云的基础轮廓（几个相接的圆拱，viewBox 160×70）
+  static Path _cloudBase(Size size) {
+    final s = size.shortestSide;
+    return Path()
+      ..addOval(Rect.fromCircle(center: Offset(s * 0.30, s * 0.62), radius: s * 0.30))
+      ..addOval(Rect.fromCircle(center: Offset(s * 0.55, s * 0.42), radius: s * 0.38))
+      ..addOval(Rect.fromCircle(center: Offset(s * 0.85, s * 0.66), radius: s * 0.26));
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    // 天空渐变（末端融入白色，参考稿 #169aff → #3cb2ff → #7dcdff → #ffffff）
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            MomentsPalette.skyTop,
-            MomentsPalette.skyMid,
-            MomentsPalette.skyLight,
-            Colors.white,
-          ],
-          stops: [0.0, 0.45, 0.76, 1.0],
-        ).createShader(rect),
-    );
+    // 顶部主色淡水洗（实底色，非渐变装饰）
+    final washRect = Rect.fromLTWH(0, 0, size.width, size.height * 0.72);
+    canvas.drawRect(washRect, Paint()..color = wash);
 
-    // 云朵
-    for (final b in profileVariant ? _profileBlobs : _feedBlobs) {
-      final x = b.fromRight ? size.width - b.dx * 375 - b.w : b.dx * 375;
-      final center = Offset(x + b.w / 2, b.top + b.h / 2);
-      final radius = b.w / 2;
-      if (b.sharp) {
-        final paint = Paint()
-          ..shader = RadialGradient(
-            colors: [
-              Colors.white.withValues(alpha: 0.98 * b.opacity),
-              Colors.white.withValues(alpha: 0.82 * b.opacity),
-              Colors.white.withValues(alpha: 0),
-            ],
-            stops: const [0.0, 0.55, 0.75],
-          ).createShader(Rect.fromCircle(center: center, radius: radius));
-        canvas.drawCircle(center, radius, paint);
-      } else {
-        final paint = Paint()
-          ..color = Colors.white.withValues(alpha: b.opacity)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-        canvas.drawCircle(center, radius * math.max(1, b.h / b.w * 0.9), paint);
-      }
+    for (final c in profileVariant ? _profileClouds : _feedClouds) {
+      final w = 150.0 * c.scale;
+      final h = 66.0 * c.scale;
+      final x = c.dx * 375;
+      if (x > size.width) continue;
+      final rect = Rect.fromLTWH(x, c.top, w, h);
+      final path = _cloudBase(Size(w, h)).shift(rect.topLeft);
+
+      final wavered = waveredPolygons(waverPath(path, config, amplitude: 1.0));
+      _drawCloud(canvas, wavered, c.opacity);
     }
+  }
 
-    // 底部白色薄雾过渡
-    final fadeH = math.min(95.0, size.height * 0.32);
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height - fadeH, size.width, fadeH),
+  void _drawCloud(Canvas canvas, Path wavered, double opacity) {
+    canvas.drawPath(
+      wavered,
+      Paint()..color = paper.withValues(alpha: 0.96 * opacity),
+    );
+    canvas.drawPath(
+      wavered,
       Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white.withValues(alpha: 0),
-            Colors.white.withValues(alpha: 0.82),
-            Colors.white,
-          ],
-        ).createShader(Rect.fromLTWH(0, size.height - fadeH, size.width, fadeH)),
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round
+        ..color = ink.withValues(alpha: 0.55 * opacity),
     );
   }
 
   @override
-  bool shouldRepaint(covariant _SkyPainter oldDelegate) =>
-      oldDelegate.profileVariant != profileVariant;
+  bool shouldRepaint(covariant _CloudsPainter oldDelegate) =>
+      oldDelegate.profileVariant != profileVariant ||
+      oldDelegate.config != config ||
+      oldDelegate.paper != paper ||
+      oldDelegate.ink != ink ||
+      oldDelegate.wash != wash;
 }
 
 /// 朋友圈本地相对路径图片（等比裁切填充，失败显示占位）
@@ -324,22 +259,32 @@ class MomentImage extends StatelessWidget {
   final double? height;
   final BoxFit fit;
 
-  const MomentImage({super.key, required this.path, this.height, this.fit = BoxFit.cover});
+  const MomentImage({
+    super.key,
+    required this.path,
+    this.height,
+    this.fit = BoxFit.cover,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return FutureBuilder<String>(
       future: ImageUtils.getAbsolutePath(path),
       builder: (context, snapshot) {
         Widget child = Container(
-          color: const Color(0xFFE2E8F0),
+          color: theme.surfaceAlt,
           alignment: Alignment.center,
-          child: const Icon(Icons.image_outlined, color: Colors.white24, size: 28),
+          child: DsIcon(DsIconKind.image, size: 26, color: theme.textSub),
         );
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
           final file = File(snapshot.data!);
           if (file.existsSync()) {
-            child = Image.file(file, fit: fit, errorBuilder: (_, __, ___) => child);
+            child = Image.file(
+              file,
+              fit: fit,
+              errorBuilder: (_, __, ___) => child,
+            );
           }
         }
         return SizedBox(width: double.infinity, height: height, child: child);

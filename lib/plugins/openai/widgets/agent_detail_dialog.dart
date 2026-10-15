@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -262,7 +263,7 @@ class _AgentDetailContent extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: DSButton(
-                  label: '查看朋友圈',
+                  label: 'moments_viewMoments'.tr,
                   icon: DsIconKind.camera,
                   expand: true,
                   variant: DSButtonVariant.secondary,

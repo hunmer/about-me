@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
@@ -23,7 +24,7 @@ class MomentsPlugin extends BasePlugin {
   }
 
   @override
-  String? getPluginName(context) => '朋友圈';
+  String? getPluginName(context) => 'moments_name'.tr;
 
   @override
   Widget buildMainView(BuildContext context) {
