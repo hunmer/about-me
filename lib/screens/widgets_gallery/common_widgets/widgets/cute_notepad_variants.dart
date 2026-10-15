@@ -71,6 +71,9 @@ class CuteNotepadTodoItem {
 }
 
 /// 贴纸摆放配置（asset 为 cute_notepad_stickers.dart 中的贴纸 id）
+///
+/// 提供两种定位方式：锚点 + 偏移（预设方式），或绝对布局 [x]/[y]/
+/// [rotation]/[scale]（贴图编辑器受控方式，非 null 时优先）。
 class CuteNotepadSticker {
   final String asset;
   final CuteNotepadStickerAnchor anchor;
@@ -79,13 +82,27 @@ class CuteNotepadSticker {
   final double dx;
   final double dy;
 
+  /// 绝对布局（viewBox 坐标），非 null 时优先于 anchor/dx/dy
+  final double? x;
+  final double? y;
+  final double? rotation; // 角度
+  final double? scale;
+
+  /// 水平翻转
+  final bool flipX;
+
   const CuteNotepadSticker({
     required this.asset,
-    required this.anchor,
+    this.anchor = CuteNotepadStickerAnchor.center,
     required this.w,
     required this.h,
     this.dx = 0,
     this.dy = 0,
+    this.x,
+    this.y,
+    this.rotation,
+    this.scale,
+    this.flipX = false,
   });
 }
 

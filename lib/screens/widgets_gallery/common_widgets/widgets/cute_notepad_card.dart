@@ -4,7 +4,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
+import 'package:flutter/rendering.dart'
+    show RenderProxyBox, RenderRepaintBoundary;
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image/image.dart' as img;
@@ -33,6 +34,39 @@ const double _kBodyFontSize = 15.2;
 
 /// 手账手写字体（851 手写杂书体）
 const String _kHandFont = 'TegakiZatsu';
+
+/// 将样式预设的贴纸解析为绝对坐标布局（贴图编辑器初始 / 重置用）
+List<CuteNotepadSticker> resolveCuteNotepadStickerLayouts({
+  required CuteNotepadVariant variant,
+  String? title,
+  String? text,
+  List<CuteNotepadTodoItem>? items,
+}) {
+  final canvasHeight = _NoteLayoutEngine.compute(
+    variant,
+    title ?? variant.title ?? '',
+    text ?? '',
+    items ?? variant.items,
+  ).height;
+  return [
+    for (final s in variant.stickers)
+      () {
+        final pos = _anchorOffset(s.anchor, s.w, s.h, canvasHeight);
+        return CuteNotepadSticker(
+          asset: s.asset,
+          anchor: s.anchor,
+          w: s.w,
+          h: s.h,
+          dx: s.dx,
+          dy: s.dy,
+          x: pos.dx + s.dx,
+          y: pos.dy + s.dy,
+          rotation: s.rotation,
+          scale: s.scale,
+        );
+      }(),
+  ];
+}
 
 /// 捕获便签卡片当前画面为 PNG 字节
 ///
@@ -88,6 +122,11 @@ class CuteNotepadCardWidget extends StatefulWidget {
   /// 自由文本内容（freeform 类型）
   final String? text;
 
+  /// 正文自定义渲染（freeform 类型，覆盖 [text] 的手绘文字，
+  /// 如传入 MarkdownContent 渲染 markdown 消息）；
+  /// 画布高度随其测量高度自动撑开
+  final Widget? contentWidget;
+
   /// 待办/横线行（null 使用预设空白行）
   final List<CuteNotepadTodoItem>? items;
 
@@ -96,6 +135,10 @@ class CuteNotepadCardWidget extends StatefulWidget {
 
   /// 编辑模式下贴纸被工具条删除时回调（下标针对当前贴纸列表）
   final void Function(int index)? onStickerRemoved;
+
+  /// 贴纸布局变化回传（受控模式）：拖拽/旋转/缩放结束后给出完整布局快照，
+  /// 配合外部撤销栈使用；同一帧内多次操作合并为一次回传
+  final void Function(List<CuteNotepadSticker> layouts)? onStickersLayoutChanged;
 
   /// 外部传入的绘制边界 key（配合 captureCuteNotepadPng 导出）
   final GlobalKey? repaintBoundaryKey;
@@ -120,9 +163,11 @@ class CuteNotepadCardWidget extends StatefulWidget {
     required this.variant,
     this.title,
     this.text,
+    this.contentWidget,
     this.items,
     this.stickers,
     this.onStickerRemoved,
+    this.onStickersLayoutChanged,
     this.repaintBoundaryKey,
     this.editable = false,
     this.initialEditing = false,
@@ -225,6 +270,20 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
   double _gestureScale = 1;
   double _gestureRotation = 0;
 
+  /// contentWidget 测量高度换算的行数（null = 未测量）
+  double? _contentWidgetLines;
+
+  void _onContentMeasured(Size logicalSize) {
+    if (logicalSize.height <= 0) return;
+    final lines = (logicalSize.height / _kFreeformLineHeight).ceilToDouble();
+    if (lines == _contentWidgetLines) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && lines != _contentWidgetLines) {
+        setState(() => _contentWidgetLines = lines);
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -286,7 +345,8 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
   }
 
   /// 按 asset 匹配合并贴纸状态：外部列表增删/重排后，已有贴纸的
-  /// 位置/旋转/缩放保留，新增贴纸按预设锚点初始化
+  /// 位置/旋转/缩放保留，新增贴纸按预设锚点初始化。
+  /// 携带绝对布局（x/y/rotation/scale）的 spec 视为受控，直接按值重建。
   void _mergeStickerStates(List<CuteNotepadSticker> specs) {
     final canvasHeight = _stickerStates.isNotEmpty
         ? _stickerStates.first.canvasHeight
@@ -294,6 +354,10 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
     final pool = List<_EditableSticker>.from(_stickerStates);
     final merged = <_EditableSticker>[];
     for (final spec in specs) {
+      if (spec.x != null || spec.y != null) {
+        merged.add(_EditableSticker.fromPreset(spec, canvasHeight));
+        continue;
+      }
       final idx = pool.indexWhere((s) => s.asset == spec.asset);
       if (idx >= 0) {
         merged.add(pool.removeAt(idx));
@@ -304,13 +368,53 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
     _stickerStates = merged;
   }
 
+  /// 当前贴纸布局快照（受控回传）
+  List<CuteNotepadSticker> _currentStickerLayouts() {
+    return [
+      for (final s in _stickerStates)
+        CuteNotepadSticker(
+          asset: s.asset,
+          w: s.w,
+          h: s.h,
+          x: s.x,
+          y: s.y,
+          rotation: s.rotation,
+          scale: s.scale,
+          flipX: s.flipX,
+        ),
+    ];
+  }
+
+  /// 帧末合并回传贴纸布局（同一帧多次操作只回传一次）
+  bool _layoutSyncScheduled = false;
+  void _scheduleLayoutSync() {
+    final callback = widget.onStickersLayoutChanged;
+    if (callback == null || _layoutSyncScheduled) return;
+    _layoutSyncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _layoutSyncScheduled = false;
+      if (!mounted) return;
+      widget.onStickersLayoutChanged?.call(_currentStickerLayouts());
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final variant = widget.variant;
     final title = widget.title ?? variant.title ?? '';
     final text = widget.text ?? '';
     final items = widget.items ?? variant.items;
-    final layout = _NoteLayoutEngine.compute(variant, title, text, items);
+    final useContentWidget =
+        widget.contentWidget != null &&
+        variant.type == CuteNotepadNoteType.freeform;
+    final layout = _NoteLayoutEngine.compute(
+      variant,
+      title,
+      text,
+      items,
+      contentWidgetLines: useContentWidget ? _contentWidgetLines : null,
+      contentWidgetMode: useContentWidget,
+    );
 
     return AnimatedBuilder(
       animation: _animation,
@@ -354,6 +458,25 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
                             ),
                           ),
                         ),
+                        // 正文自定义渲染层（如 Markdown），位于贴纸之下
+                        if (useContentWidget && layout.freeformRect != null)
+                          Positioned(
+                            left: layout.freeformRect!.left * unit,
+                            top: layout.freeformRect!.top * unit,
+                            width: (layout.freeformRect!.width - 4) * unit,
+                            child: FittedBox(
+                              fit: BoxFit.fitWidth,
+                              alignment: Alignment.topLeft,
+                              clipBehavior: Clip.none,
+                              child: _SizeReporter(
+                                onSizeChanged: _onContentMeasured,
+                                child: SizedBox(
+                                  width: layout.freeformRect!.width - 4,
+                                  child: widget.contentWidget,
+                                ),
+                              ),
+                            ),
+                          ),
                         for (int i = 0; i < _stickerStates.length; i++)
                           _buildSticker(
                             i,
@@ -479,6 +602,8 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
           const SizedBox(width: 2),
           toolButton(Icons.remove, '缩小', () => _nudgeSelected(scaleRatio: 0.9)),
           toolButton(Icons.add, '放大', () => _nudgeSelected(scaleRatio: 1.1)),
+          const SizedBox(width: 2),
+          toolButton(Icons.flip, '水平翻转', _toggleFlipSelected),
           // 贴图编辑器场景：删除当前贴纸（由外部更新贴纸列表）
           if (widget.onStickerRemoved != null && _selectedSticker != null) ...[
             const SizedBox(width: 2),
@@ -505,6 +630,16 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
       rotation: st.rotation + rotation,
       scale: st.scale * scaleRatio,
     );
+    _scheduleLayoutSync();
+  }
+
+  /// 水平翻转当前选中贴纸
+  void _toggleFlipSelected() {
+    final index = _selectedSticker;
+    if (index == null || index >= _stickerStates.length) return;
+    final st = _stickerStates[index];
+    setState(() => st.flipX = !st.flipX);
+    _scheduleLayoutSync();
   }
 
   /// 更新贴纸并刷新（clamp 到画布附近，允许少量出界）
@@ -542,7 +677,9 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
 
     Widget content = Transform(
       alignment: Alignment.center,
-      transform: Matrix4.rotationZ(st.rotation * math.pi / 180)..scale(st.scale),
+      transform:
+          Matrix4.rotationZ(st.rotation * math.pi / 180)
+            ..scale(st.flipX ? -st.scale : st.scale, st.scale, 1),
       child: Stack(
         fit: StackFit.passthrough,
         children: [
@@ -590,6 +727,7 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
                   scale: cur.scale * (down ? 0.94 : 1.06),
                 );
               }
+              _scheduleLayoutSync();
             }
           },
           child: GestureDetector(
@@ -617,6 +755,7 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
               _gestureScale = details.scale;
               _gestureRotation = details.rotation;
             },
+            onScaleEnd: (_) => _scheduleLayoutSync(),
             child: content,
           ),
         ),
@@ -702,6 +841,7 @@ class _EditableSticker {
   double y;
   double rotation = 0; // 角度
   double scale = 1;
+  bool flipX = false;
 
   /// 底部锚定贴纸需要感知画布高度（允许随内容撑高微调）
   double canvasHeight;
@@ -712,6 +852,9 @@ class _EditableSticker {
     required this.y,
     required this.w,
     required this.h,
+    this.rotation = 0,
+    this.scale = 1,
+    this.flipX = false,
     required this.canvasHeight,
   });
 
@@ -722,10 +865,14 @@ class _EditableSticker {
     final pos = _anchorOffset(preset.anchor, preset.w, preset.h, canvasHeight);
     return _EditableSticker(
       asset: preset.asset,
-      x: pos.dx + preset.dx,
-      y: pos.dy + preset.dy,
+      // 绝对布局（编辑器受控）优先于锚点 + 偏移
+      x: preset.x ?? pos.dx + preset.dx,
+      y: preset.y ?? pos.dy + preset.dy,
       w: preset.w,
       h: preset.h,
+      rotation: preset.rotation ?? 0,
+      scale: preset.scale ?? 1,
+      flipX: preset.flipX,
       canvasHeight: canvasHeight,
     );
   }
@@ -795,6 +942,9 @@ class _NoteLayout {
   final TextPainter? freeformPainter;
   final Offset freeformOffset;
 
+  /// 自由文本区（viewBox 坐标；contentWidget 叠放位置）
+  final Rect? freeformRect;
+
   final List<_NoteItemLayout> itemLayouts;
   final bool hasCheck;
 
@@ -806,6 +956,7 @@ class _NoteLayout {
     this.titleRotateOrigin = Offset.zero,
     this.freeformPainter,
     this.freeformOffset = Offset.zero,
+    this.freeformRect,
     required this.itemLayouts,
     required this.hasCheck,
   });
@@ -816,8 +967,10 @@ class _NoteLayoutEngine {
     CuteNotepadVariant variant,
     String title,
     String text,
-    List<CuteNotepadTodoItem> items,
-  ) {
+    List<CuteNotepadTodoItem> items, {
+    double? contentWidgetLines,
+    bool contentWidgetMode = false,
+  }) {
     var curY = variant.contentStartY;
     final spacing = variant.lineSpacing;
 
@@ -857,19 +1010,33 @@ class _NoteLayoutEngine {
     // 2. 自由文本区
     TextPainter? freeformPainter;
     Offset freeformOffset = Offset.zero;
+    Rect? freeformRect;
     if (variant.type == CuteNotepadNoteType.freeform) {
       final minLines = items.isEmpty ? variant.minFreeformLines : 2;
       var lines = minLines;
-      if (text.isNotEmpty) {
-        freeformPainter = _textPainter(
+      if (contentWidgetLines != null) {
+        // contentWidget 模式：按测量高度换算行数
+        lines = math.max(minLines, contentWidgetLines.ceil());
+      } else if (text.isNotEmpty) {
+        // 未测量时按纯文本估算（contentWidget 模式只估行数，不画手绘文字）
+        final estimate = _textPainter(
           text,
           fontSize: 15.5,
           lineHeight: _kFreeformLineHeight,
           maxWidth: variant.freeformWidth - 4,
           color: variant.textColor,
         );
-        lines = math.max(minLines, freeformPainter.computeLineMetrics().length);
+        lines = math.max(minLines, estimate.computeLineMetrics().length);
+        if (!contentWidgetMode) {
+          freeformPainter = estimate;
+        }
       }
+      freeformRect = Rect.fromLTWH(
+        variant.freeformLeft,
+        curY,
+        variant.freeformWidth,
+        lines * _kFreeformLineHeight,
+      );
       freeformOffset = Offset(variant.freeformLeft + 2, curY + 1);
       curY += lines * _kFreeformLineHeight + (items.isNotEmpty ? 6 : 0);
     }
@@ -926,6 +1093,7 @@ class _NoteLayoutEngine {
       titleRotateOrigin: titleRotateOrigin,
       freeformPainter: freeformPainter,
       freeformOffset: freeformOffset,
+      freeformRect: freeformRect,
       itemLayouts: itemLayouts,
       hasCheck: hasCheck,
     );
@@ -1556,4 +1724,32 @@ Path _rightWaveEdgePath(double h) {
   path.lineTo(6, 14);
   path.quadraticBezierTo(6, 10, 10, 10);
   return path..close();
+}
+
+/// 上报子树尺寸变化（contentWidget 高度测量，用于撑开画布）
+class _SizeReporter extends SingleChildRenderObjectWidget {
+  final void Function(Size size) onSizeChanged;
+
+  const _SizeReporter({required this.onSizeChanged, super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    return _RenderSizeReporter(onSizeChanged);
+  }
+}
+
+class _RenderSizeReporter extends RenderProxyBox {
+  final void Function(Size size) onSizeChanged;
+  Size? _lastReported;
+
+  _RenderSizeReporter(this.onSizeChanged);
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    if (_lastReported == size) return;
+    _lastReported = size;
+    // 布局期间不可 setState，延迟到帧末上报
+    WidgetsBinding.instance.addPostFrameCallback((_) => onSizeChanged(size));
+  }
 }

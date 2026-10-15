@@ -92,10 +92,12 @@ enum DsIconKind {
   flag,
   dots,
   archive,
+  flip,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.check: Icons.check,
+  DsIconKind.flip: Icons.flip,
   DsIconKind.minus: Icons.remove,
   DsIconKind.plus: Icons.add,
   DsIconKind.close: Icons.close,
