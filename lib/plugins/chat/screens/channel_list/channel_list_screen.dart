@@ -11,6 +11,7 @@ import 'controllers/channel_list_controller.dart';
 import 'widgets/channel_tile.dart';
 import 'widgets/empty_channel_view.dart';
 import 'widgets/channel_group_selector.dart';
+import 'widgets/channel_action_sheet.dart';
 import 'widgets/channel_dialogs/channel_dialog.dart';
 
 class ChannelListScreen extends StatefulWidget {
@@ -123,6 +124,8 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
                                 widget.chatPlugin.channelService
                                     .setCurrentChannel(channel);
                               },
+                              onLongPress: () =>
+                                  _showChannelActionSheet(channel),
                               onEdit: (channel) =>
                                   _showEditChannelDialog(channel),
                               // 滑动删除已带嵌套二次确认，直接执行删除
@@ -152,6 +155,18 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
         channel: channel,
         onUpdateChannel: _controller.updateChannel,
       ),
+    );
+  }
+
+  /// 长按频道弹出操作菜单（编辑/固定/封存/删除）
+  void _showChannelActionSheet(Channel channel) {
+    ChannelActionSheet.show(
+      context: context,
+      channel: channel,
+      onEdit: () => _showEditChannelDialog(channel),
+      onTogglePin: () => _controller.togglePin(channel),
+      onToggleArchive: () => _controller.toggleArchive(channel),
+      onDelete: () => _controller.deleteChannel(channel.id),
     );
   }
 }

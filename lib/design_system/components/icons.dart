@@ -91,6 +91,7 @@ enum DsIconKind {
   cloud,
   flag,
   dots,
+  archive,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -151,6 +152,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.bot: Icons.smart_toy_outlined,
   DsIconKind.camera: Icons.photo_camera_outlined,
   DsIconKind.pin: Icons.push_pin,
+  DsIconKind.archive: Icons.archive_outlined,
   DsIconKind.reply: Icons.reply,
   DsIconKind.stop: Icons.stop,
   DsIconKind.play: Icons.play_arrow,

@@ -12,12 +12,20 @@ class RecordEditWidget extends StatefulWidget {
   final Map<String, dynamic>? initialFields;
   final record_model.Record? record;
 
+  /// 以底部弹层形式嵌入（不渲染 Scaffold/AppBar，由外壳提供保存）
+  final bool embedInSheet;
+
+  /// 弹层模式下回传保存动作（外壳"保存"按钮触发）
+  final void Function(VoidCallback submit)? onReady;
+
   const RecordEditWidget({
     super.key,
     required this.controller,
     required this.database,
     this.initialFields,
     this.record,
+    this.embedInSheet = false,
+    this.onReady,
   });
 
   @override
@@ -51,6 +59,7 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
         }
       });
     }
+    widget.onReady?.call(_saveRecord);
   }
 
   /// 将 DatabaseField 类型映射到 FormFieldType
@@ -175,6 +184,30 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
   Widget build(BuildContext context) {
     final formConfigs = _buildFormConfigs();
 
+    final form = Padding(
+      padding: const EdgeInsets.all(16),
+      child: FormBuilderWrapper(
+        onStateReady: (state) {
+          _formState = state;
+        },
+        config: FormConfig(
+          fields: formConfigs,
+          showSubmitButton: false,
+          showResetButton: false,
+          fieldSpacing: 16,
+          emptyStateMessage: 'database_no_fields_hint'.tr,
+          onSubmit: (values) {
+            // 表单提交在 _saveRecord 中处理
+          },
+        ),
+      ),
+    );
+
+    if (widget.embedInSheet) {
+      // 表单本身无滚动，弹层内需要包一层
+      return SingleChildScrollView(child: form);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('database_edit_record_title'.tr),
@@ -182,24 +215,7 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
           IconButton(icon: const Icon(Icons.save), onPressed: _saveRecord),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: FormBuilderWrapper(
-          onStateReady: (state) {
-            _formState = state;
-          },
-          config: FormConfig(
-            fields: formConfigs,
-            showSubmitButton: false,
-            showResetButton: false,
-            fieldSpacing: 16,
-            emptyStateMessage: 'database_no_fields_hint'.tr,
-            onSubmit: (values) {
-              // 表单提交在 _saveRecord 中处理
-            },
-          ),
-        ),
-      ),
+      body: form,
     );
   }
 

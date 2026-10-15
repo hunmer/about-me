@@ -58,11 +58,11 @@ class FloatingBallManager {
     '打开上次插件':
         (context) => () {
           if (context.mounted) {
-            final String? currentPluginId =
-                PluginManager.instance.getCurrentPluginId();
-            if (currentPluginId == null) return;
-
-            // 调用getLastOpenedPlugin时传递当前插件ID作为排除项
+            // 当前插件以实际路由为准做排除：getCurrentPluginId() 在普通
+            // 返回手势后不清空，会把真正最近使用的插件误排除；
+            // 不在插件页时不排除，直接打开最近使用的插件
+            final currentPluginId = PluginManager.instance
+                .getCurrentRoutePluginId();
             final lastPlugin = PluginManager.instance.getLastOpenedPlugin(
               excludePluginId: currentPluginId,
             );

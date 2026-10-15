@@ -22,11 +22,15 @@ class ContactForm extends StatefulWidget {
   final Function(Contact) onSave;
   final Function()? onDelete;
 
+  /// 以底部弹层形式嵌入（不渲染 Scaffold，保留自带标题头）
+  final bool embedInSheet;
+
   const ContactForm({
     super.key,
     this.contact,
     required this.onSave,
     this.onDelete,
+    this.embedInSheet = false,
   });
 
   @override
@@ -62,8 +66,9 @@ class ContactFormState extends State<ContactForm> {
     if (contact != null) {
       final names = contact.name.split(' ');
       _firstNameController.text = names.first;
-      _lastNameController.text =
-          names.length > 1 ? names.sublist(1).join(' ') : '';
+      _lastNameController.text = names.length > 1
+          ? names.sublist(1).join(' ')
+          : '';
       _phoneController.text = contact.phone;
       _notesController.text = contact.notes ?? '';
       _addressController.text = contact.address ?? '';
@@ -79,12 +84,12 @@ class ContactFormState extends State<ContactForm> {
   }
 
   List<TextEditingController> get _textControllers => [
-        _firstNameController,
-        _lastNameController,
-        _phoneController,
-        _notesController,
-        _addressController,
-      ];
+    _firstNameController,
+    _lastNameController,
+    _phoneController,
+    _notesController,
+    _addressController,
+  ];
 
   @override
   void dispose() {
@@ -109,8 +114,8 @@ class ContactFormState extends State<ContactForm> {
 
   void _saveNow() {
     // 姓名为空的中间态静默跳过，保留脏标记等下次触发
-    final name =
-        '${_firstNameController.text} ${_lastNameController.text}'.trim();
+    final name = '${_firstNameController.text} ${_lastNameController.text}'
+        .trim();
     if (name.isEmpty) return;
 
     _dirty = false;
@@ -177,38 +182,49 @@ class ContactFormState extends State<ContactForm> {
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
 
+          final header = DSLightHeader(
+            title: isEditing
+                ? 'contact_editContact'.tr
+                : 'contact_addContact'.tr,
+            trailing: isEditing
+                ? DSIconButton(
+                    icon: DsIconKind.trash,
+                    size: 38,
+                    color: theme.surface,
+                    iconColor: theme.danger,
+                    tooltip: 'contact_deleteContact'.tr,
+                    onPressed: _showDeleteConfirm,
+                  )
+                : null,
+          );
+          final fields = SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 8,
+              bottom: MediaQuery.paddingOf(context).bottom + 24,
+            ),
+            child: _buildFields(),
+          );
+
+          if (widget.embedInSheet) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                header,
+                Flexible(child: fields),
+              ],
+            );
+          }
+
           return Scaffold(
             backgroundColor: dsScaffoldBackground(theme),
             body: SafeArea(
               bottom: false,
               child: Column(
                 children: [
-                  DSLightHeader(
-                    title: isEditing
-                        ? 'contact_editContact'.tr
-                        : 'contact_addContact'.tr,
-                    trailing: isEditing
-                        ? DSIconButton(
-                            icon: DsIconKind.trash,
-                            size: 38,
-                            color: theme.surface,
-                            iconColor: theme.danger,
-                            tooltip: 'contact_deleteContact'.tr,
-                            onPressed: _showDeleteConfirm,
-                          )
-                        : null,
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        top: 8,
-                        bottom: MediaQuery.paddingOf(context).bottom + 24,
-                      ),
-                      child: _buildFields(),
-                    ),
-                  ),
+                  header,
+                  Expanded(child: fields),
                 ],
               ),
             ),

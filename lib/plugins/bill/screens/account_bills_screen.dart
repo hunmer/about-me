@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/bill/models/bill.dart';
 import 'bill_edit_screen.dart' as bill_edit;
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
@@ -298,30 +298,49 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
   }
 
   void _createBill(BuildContext context) {
-    NavigationHelper.push(
-      context,
-      bill_edit.BillEditScreen(
-        billPlugin: widget.billPlugin,
-        accountId: _currentAccount.id,
-        onSaved: () {
-          // 强制更新列表
-          _refreshAccountData();
-        },
-      ),
-    );
+    _showBillEditor(context);
   }
 
   void _editBill(BuildContext context, Bill bill) {
-    NavigationHelper.push(
-      context,
-      bill_edit.BillEditScreen(
-        billPlugin: widget.billPlugin,
-        accountId: _currentAccount.id,
-        bill: bill,
-        onSaved: () {
-          // 强制更新列表
-          _refreshAccountData();
-        },
+    _showBillEditor(context, bill: bill);
+  }
+
+  /// 账单新建/编辑：smooth_sheets 底部弹层（与主界面 FAB 同款）
+  void _showBillEditor(BuildContext context, {Bill? bill}) {
+    final theme = DSThemeBridge.resolve(context);
+    SmoothBottomSheet.show(
+      context: context,
+      backgroundColor: theme.surface,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: Text(
+              bill == null ? 'bill_addBill'.tr : 'bill_editBill'.tr,
+              style: DsTypography.title.copyWith(
+                color: theme.text,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
+            ),
+          ),
+          // 固定高度：BillEditScreen 内部 Expanded 布局需要
+          // 有界高度约束
+          SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.82,
+            child: bill_edit.BillEditScreen(
+              billPlugin: widget.billPlugin,
+              accountId: _currentAccount.id,
+              bill: bill,
+              embeddedInSheet: true,
+              onSaved: () {
+                // 强制更新列表
+                _refreshAccountData();
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

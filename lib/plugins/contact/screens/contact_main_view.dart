@@ -16,6 +16,7 @@ import 'package:aboutme/plugins/contact/models/contact_model.dart';
 import 'package:aboutme/plugins/contact/models/filter_sort_config.dart';
 import 'package:aboutme/plugins/contact/screens/contact_detail_screen.dart';
 import 'package:aboutme/plugins/contact/widgets/contact_form.dart';
+import 'package:aboutme/widgets/form_modal_sheet.dart';
 import 'package:aboutme/plugins/contact/widgets/contact_list_tile.dart';
 
 class ContactMainView extends StatefulWidget {
@@ -51,8 +52,33 @@ class ContactMainViewState extends State<ContactMainView> {
 
   static const double _headerHeight = 44;
   static const List<String> _indexLetters = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '#',
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M',
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z',
+    '#',
   ];
 
   @override
@@ -133,49 +159,46 @@ class ContactMainViewState extends State<ContactMainView> {
       final allContacts = await _controller.getAllContacts();
       final normalizedQuery = query.toLowerCase();
 
-      final results =
-          allContacts.where((contact) {
-            // 搜索姓名
-            final nameMatch = contact.name.toLowerCase().contains(
-              normalizedQuery,
-            );
+      final results = allContacts.where((contact) {
+        // 搜索姓名
+        final nameMatch = contact.name.toLowerCase().contains(normalizedQuery);
 
-            // 搜索备注
-            final notesMatch =
-                contact.notes != null &&
-                contact.notes!.toLowerCase().contains(normalizedQuery);
+        // 搜索备注
+        final notesMatch =
+            contact.notes != null &&
+            contact.notes!.toLowerCase().contains(normalizedQuery);
 
-            // 搜索电话（精确匹配和模糊匹配）
-            final phoneMatch = contact.phone.contains(query);
+        // 搜索电话（精确匹配和模糊匹配）
+        final phoneMatch = contact.phone.contains(query);
 
-            // 搜索组织/公司
-            final orgMatch =
-                contact.organization != null &&
-                contact.organization!.toLowerCase().contains(normalizedQuery);
+        // 搜索组织/公司
+        final orgMatch =
+            contact.organization != null &&
+            contact.organization!.toLowerCase().contains(normalizedQuery);
 
-            // 搜索邮箱
-            final emailMatch =
-                contact.email != null &&
-                contact.email!.toLowerCase().contains(normalizedQuery);
+        // 搜索邮箱
+        final emailMatch =
+            contact.email != null &&
+            contact.email!.toLowerCase().contains(normalizedQuery);
 
-            // 搜索地址
-            final addressMatch =
-                contact.address != null &&
-                contact.address!.toLowerCase().contains(normalizedQuery);
+        // 搜索地址
+        final addressMatch =
+            contact.address != null &&
+            contact.address!.toLowerCase().contains(normalizedQuery);
 
-            // 搜索标签
-            final tagsMatch = contact.tags.any(
-              (tag) => tag.toLowerCase().contains(normalizedQuery),
-            );
+        // 搜索标签
+        final tagsMatch = contact.tags.any(
+          (tag) => tag.toLowerCase().contains(normalizedQuery),
+        );
 
-            return nameMatch ||
-                notesMatch ||
-                phoneMatch ||
-                orgMatch ||
-                emailMatch ||
-                addressMatch ||
-                tagsMatch;
-          }).toList();
+        return nameMatch ||
+            notesMatch ||
+            phoneMatch ||
+            orgMatch ||
+            emailMatch ||
+            addressMatch ||
+            tagsMatch;
+      }).toList();
 
       if (mounted && _currentSearchQuery == query) {
         setState(() {
@@ -270,12 +293,15 @@ class ContactMainViewState extends State<ContactMainView> {
     }
   }
 
-  /// FAB 新建联系人（整页表单走 push 路由：
-  /// OpenContainer 浮层会打乱 wrapper actions 的 Overlay 定位，导致导航栏错乱）
+  /// FAB 新建联系人（smooth_sheets 底部弹层，表单防抖自动保存，
+  /// 弹层关闭即 dispose flush 未落盘变更）
   void _addContact() {
-    NavigationHelper.push(
-      context,
-      ContactForm(
+    FormModalSheet.show(
+      context: context,
+      title: 'contact_addContact'.tr,
+      showTitleBar: false, // 表单自带 DSLightHeader 标题
+      child: ContactForm(
+        embedInSheet: true,
         // 表单为防抖自动保存，onSave 会被多次调用：已落库则改为更新
         onSave: (savedContact) async {
           final existing = await _controller.getContact(savedContact.id);
@@ -303,10 +329,7 @@ class ContactMainViewState extends State<ContactMainView> {
         Positioned(
           right: 16,
           bottom: MediaQuery.paddingOf(context).bottom + 16,
-          child: DSFab(
-            key: _addButtonKey,
-            onPressed: _addContact,
-          ),
+          child: DSFab(key: _addButtonKey, onPressed: _addContact),
         ),
       ],
     );
@@ -393,8 +416,7 @@ class ContactMainViewState extends State<ContactMainView> {
             );
           },
           getBadge: FilterBuilders.tagsBadge,
-          initialValue:
-              (_multiFilters['tag'] as List<String>?)?.toList(),
+          initialValue: (_multiFilters['tag'] as List<String>?)?.toList(),
         ),
     ];
   }
@@ -425,8 +447,9 @@ class ContactMainViewState extends State<ContactMainView> {
         nameKeyword: (keyword == null || keyword.isEmpty) ? null : keyword,
         startDate: range?.start,
         endDate: range?.end,
-        uncontactedDays:
-            (days == null || days.isEmpty) ? null : int.tryParse(days),
+        uncontactedDays: (days == null || days.isEmpty)
+            ? null
+            : int.tryParse(days),
         selectedTags: tags,
       ),
     );
@@ -481,7 +504,10 @@ class ContactMainViewState extends State<ContactMainView> {
     }
 
     final entries = groups.entries.toList();
-    final totalItems = entries.fold<int>(0, (sum, g) => sum + 1 + g.value.length);
+    final totalItems = entries.fold<int>(
+      0,
+      (sum, g) => sum + 1 + g.value.length,
+    );
 
     return Stack(
       children: [
@@ -549,7 +575,10 @@ class ContactMainViewState extends State<ContactMainView> {
       builder: (context, constraints) {
         final slot = constraints.maxHeight / _indexLetters.length;
         void jump(Offset localPosition) {
-          final i = (localPosition.dy / slot).floor().clamp(0, _indexLetters.length - 1);
+          final i = (localPosition.dy / slot).floor().clamp(
+            0,
+            _indexLetters.length - 1,
+          );
           _jumpToLetter(_indexLetters[i]);
         }
 
@@ -572,8 +601,8 @@ class ContactMainViewState extends State<ContactMainView> {
                       color: active
                           ? theme.primary
                           : available
-                              ? theme.textSub
-                              : theme.textSub.withValues(alpha: 0.35),
+                          ? theme.textSub
+                          : theme.textSub.withValues(alpha: 0.35),
                       fontWeight: active ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
@@ -668,58 +697,62 @@ class ContactMainViewState extends State<ContactMainView> {
     return KeyedSubtree(
       key: ValueKey(_filterConfigLoaded),
       child: SuperCupertinoNavigationWrapper(
-      title: Text('contact_contacts'.tr),
-      largeTitle: 'contact_contactListTitle'.tr,
+        title: Text('contact_contacts'.tr),
+        largeTitle: 'contact_contactListTitle'.tr,
 
-      // ========== 搜索相关配置 ==========
-      enableSearchBar: true,
-      searchPlaceholder: 'contact_searchPlaceholder'.tr,
-      onSearchChanged: (query) {
-        _searchContacts(query);
-      },
-      searchBody: _buildFabStack(_buildSearchResults()),
-      // ========== 多条件过滤配置 ==========
-      enableMultiFilter: true,
-      multiFilterItems: _buildFilterItems(),
-      onMultiFilterChanged: _applyMultiFilters,
-      body: _buildFabStack(FutureBuilder<List<Contact>>(
-        future: _getFilteredContacts(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('contact_errorMessage'.tr));
-          }
-
-          final contacts = snapshot.data ?? [];
-
-          if (contacts.isEmpty) {
-            final theme = DSThemeBridge.resolve(context);
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  DsIcon(
-                    DsIconKind.search,
-                    size: 64,
-                    color: theme.textSub.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'contact_noContacts'.tr,
-                    style: DsTypography.title.copyWith(color: theme.textSub),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return _buildGroupedContactList(contacts);
+        // ========== 搜索相关配置 ==========
+        enableSearchBar: true,
+        searchPlaceholder: 'contact_searchPlaceholder'.tr,
+        onSearchChanged: (query) {
+          _searchContacts(query);
         },
-      )),
-      enableLargeTitle: true,
+        searchBody: _buildFabStack(_buildSearchResults()),
+        // ========== 多条件过滤配置 ==========
+        enableMultiFilter: true,
+        multiFilterItems: _buildFilterItems(),
+        onMultiFilterChanged: _applyMultiFilters,
+        body: _buildFabStack(
+          FutureBuilder<List<Contact>>(
+            future: _getFilteredContacts(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(child: Text('contact_errorMessage'.tr));
+              }
+
+              final contacts = snapshot.data ?? [];
+
+              if (contacts.isEmpty) {
+                final theme = DSThemeBridge.resolve(context);
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      DsIcon(
+                        DsIconKind.search,
+                        size: 64,
+                        color: theme.textSub.withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'contact_noContacts'.tr,
+                        style: DsTypography.title.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return _buildGroupedContactList(contacts);
+            },
+          ),
+        ),
+        enableLargeTitle: true,
       ),
     );
   }

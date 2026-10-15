@@ -13,6 +13,7 @@ import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/form_modal_sheet.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 /// 纪念日主页（v2 · Warm Paper Sketch 手绘里程碑网格）
@@ -78,11 +79,19 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
   ]) async {
     if (!mounted) return;
 
-    final result = await Navigator.push<DialogResult>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditMemorialDayPage(memorialDay: memorialDay),
+    // 新建/编辑：smooth_sheets 底部弹层（保存/删除经 DialogResult 返回）
+    VoidCallback? saveMemorialDay;
+    final result = await FormModalSheet.show<DialogResult>(
+      context: context,
+      title: memorialDay == null
+          ? 'day_addMemorialDay'.tr
+          : 'day_editMemorialDay'.tr,
+      child: EditMemorialDayPage(
+        memorialDay: memorialDay,
+        embedInSheet: true,
+        onReady: (save) => saveMemorialDay = save,
       ),
+      onSave: () => saveMemorialDay?.call(),
     );
 
     if (result == null) return; // 页面被异常关闭
@@ -112,7 +121,10 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
   }
 
   /// 点击卡片进入详情页（笔记列表 + 新增笔记）
-  Future<void> _openDetail(BuildContext context, MemorialDay memorialDay) async {
+  Future<void> _openDetail(
+    BuildContext context,
+    MemorialDay memorialDay,
+  ) async {
     await NavigationHelper.push(
       context,
       MemorialDayDetailScreen(
@@ -270,11 +282,7 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
               radius: theme.radii.circle,
               color: theme.surfaceAlt,
               child: Center(
-                child: DsIcon(
-                  DsIconKind.sort,
-                  size: 18,
-                  color: theme.textSub,
-                ),
+                child: DsIcon(DsIconKind.sort, size: 18, color: theme.textSub),
               ),
             ),
           );
@@ -374,14 +382,13 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
     }
 
     final query = _searchQuery.toLowerCase();
-    final filteredDays =
-        controller.memorialDays.where((memorialDay) {
-          final titleMatch = memorialDay.title.toLowerCase().contains(query);
-          final notesMatch = memorialDay.notes.any(
-            (note) => note.toLowerCase().contains(query),
-          );
-          return titleMatch || notesMatch;
-        }).toList();
+    final filteredDays = controller.memorialDays.where((memorialDay) {
+      final titleMatch = memorialDay.title.toLowerCase().contains(query);
+      final notesMatch = memorialDay.notes.any(
+        (note) => note.toLowerCase().contains(query),
+      );
+      return titleMatch || notesMatch;
+    }).toList();
 
     if (filteredDays.isEmpty) {
       return _searchHint(
@@ -415,9 +422,7 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
                 const SizedBox(height: 16),
                 Text(
                   title,
-                  style: DsTypography.heading.copyWith(
-                    color: theme.textSub,
-                  ),
+                  style: DsTypography.heading.copyWith(color: theme.textSub),
                 ),
                 const SizedBox(height: 8),
                 Text(

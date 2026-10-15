@@ -314,10 +314,9 @@ class BuiltInActionExecutor implements ActionExecutor {
     BuildContext context,
     Map<String, dynamic>? data,
   ) async {
-    final currentPluginId = globalPluginManager.getCurrentPluginId();
-    if (currentPluginId == null) {
-      return ExecutionResult.failure(error: 'No current plugin');
-    }
+    // 当前插件以实际路由为准做排除（getCurrentPluginId 在普通返回手势后
+    // 不清空，会误排除）；不在插件页时不排除，直接打开最近使用的插件
+    final currentPluginId = globalPluginManager.getCurrentRoutePluginId();
 
     final lastPlugin = globalPluginManager.getLastOpenedPlugin(
       excludePluginId: currentPluginId,

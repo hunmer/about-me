@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:flutter/material.dart';
 import 'plugin_base.dart';
 import 'storage/storage_manager.dart';
@@ -179,6 +180,17 @@ class PluginManager {
   /// 获取当前打开的插件ID
   String? getCurrentPluginId() => _currentPlugin?.id;
 
+  /// 从全局路由记录取当前页面所属的插件ID（当前路由为 `/plugin/<id>` 时），
+  /// 比 [_currentPlugin] 可靠：后者只在 toHomeScreen 清空，普通返回手势
+  /// 后仍保留旧值，用它做排除会把真正最近使用的插件误排除掉
+  String? getCurrentRoutePluginId() {
+    final routeName = RouteHistoryManager.getCurrentContext()?.pageId;
+    if (routeName == null || !routeName.startsWith('/plugin/')) return null;
+    final rest = routeName.substring('/plugin/'.length);
+    final slash = rest.indexOf('/');
+    return slash == -1 ? rest : rest.substring(0, slash);
+  }
+
   /// 获取是否自动打开最后使用的插件
   bool get autoOpenLastPlugin =>
       _settings['autoOpenLastPlugin'] as bool? ?? true;
@@ -209,10 +221,13 @@ class PluginManager {
     bool replaceCurrent = false,
   }) {
     // 检查当前路由是否已经是该插件主界面（openPlugin 推入的路由名），
-    // 防止悬浮球等入口把同一插件叠加多层
-    final isPluginAlreadyOpen =
-        ModalRoute.of(context)?.settings.name == '/plugin/${plugin.id}';
-    if (isPluginAlreadyOpen) {
+    // 防止悬浮球等入口把同一插件叠加多层。
+    // context 可能来自悬浮球根上下文（ModalRoute.of 为 null），统一
+    // 回退到 RouteHistoryManager 的全局路由记录判断
+    final currentRouteName =
+        ModalRoute.of(context)?.settings.name ??
+        RouteHistoryManager.getCurrentContext()?.pageId;
+    if (currentRouteName == '/plugin/${plugin.id}') {
       return;
     }
     // 记录打开历史

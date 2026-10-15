@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/screens/settings_screen/settings_screen.dart';
@@ -12,7 +13,16 @@ bool _isDialogShowing = false;
 class PluginListDialog extends StatelessWidget {
   final bool sortByRecentlyOpened;
 
-  const PluginListDialog({super.key, this.sortByRecentlyOpened = true});
+  /// 对话框弹出时的当前路由名（须在 showDialog 前捕获：
+  /// 无名的 DialogRoute 会把 RouteHistoryManager 的当前路由覆盖为 unknown），
+  /// 用于点击插件时判断目标路由是否等于当前路由
+  final String? currentRouteName;
+
+  const PluginListDialog({
+    super.key,
+    this.sortByRecentlyOpened = true,
+    this.currentRouteName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +113,11 @@ class PluginListDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         onTap: () {
           Navigator.of(context).pop();
+          // 目标路由等于当前路由时无需跳转（openPlugin 内的防重复判断
+          // 拿到的是对话框自己的 DialogRoute，此处无法生效），只关对话框
+          if (currentRouteName == '/plugin/${plugin.id}') {
+            return;
+          }
           PluginManager.instance.openPlugin(context, plugin);
         },
         child: Stack(
@@ -186,12 +201,17 @@ void showPluginListDialog(
 
   _isDialogShowing = true;
 
+  // showDialog 前捕获当前路由名，见 PluginListDialog.currentRouteName 注释
+  final currentRouteName = RouteHistoryManager.getCurrentContext()?.pageId;
+
   showDialog(
     context: context,
     barrierDismissible: true,
     builder:
-        (context) =>
-            PluginListDialog(sortByRecentlyOpened: sortByRecentlyOpened),
+        (context) => PluginListDialog(
+          sortByRecentlyOpened: sortByRecentlyOpened,
+          currentRouteName: currentRouteName,
+        ),
   ).then((_) {
     // 对话框关闭时重置标志位
     _isDialogShowing = false;

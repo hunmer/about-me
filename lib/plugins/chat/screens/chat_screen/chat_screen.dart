@@ -926,10 +926,11 @@ class _ChatScreenState extends State<ChatScreen> {
             showAvatar: ChatPlugin.instance.settingsService.showAvatarInChat,
           ),
         ),
-        MessageInput(
-          controller: _controller.draftController,
-          onSendMessage:
-              (content, {metadata, String type = 'text', replyTo}) async {
+        // 已封存频道禁止发送消息，用提示条替换输入框
+        _isChannelArchived() ? _buildArchivedBanner() : MessageInput(
+              controller: _controller.draftController,
+              onSendMessage:
+                  (content, {metadata, String type = 'text', replyTo}) async {
                 final sent = await _controller.sendMessage(
                   content,
                   metadata: metadata,
@@ -950,11 +951,55 @@ class _ChatScreenState extends State<ChatScreen> {
                   });
                 }
               },
-          onSaveDraft: _controller.saveDraft,
-          replyTo: _replyToMessage,
-          focusNode: _controller.focusNode,
-        ),
+              onSaveDraft: _controller.saveDraft,
+              replyTo: _replyToMessage,
+              focusNode: _controller.focusNode,
+            ),
       ],
+    );
+  }
+
+  /// 频道是否处于封存状态（取服务端最新数据，widget.channel 可能是旧快照）
+  bool _isChannelArchived() {
+    final liveChannel = ChatPlugin.instance.channelService.channels.firstWhere(
+      (c) => c.id == widget.channel.id,
+      orElse: () => widget.channel,
+    );
+    return liveChannel.isArchived;
+  }
+
+  /// 已封存频道的底部提示条
+  Widget _buildArchivedBanner() {
+    final theme = Theme.of(context);
+    return Container(
+      margin: EdgeInsets.only(
+        left: 8,
+        right: 8,
+        bottom: 8 + MediaQuery.of(context).padding.bottom,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.archive_outlined,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'chat_archivedNoSend'.tr,
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

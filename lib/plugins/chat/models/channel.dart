@@ -12,6 +12,8 @@ class Channel {
   int priority;
   final DateTime lastMessageTime;
   List<String> groups; // 频道所属的组，可以属于多个组
+  bool isPinned; // 固定到列表顶部
+  bool isArchived; // 已封存，封存频道不出现在普通分组且禁止发送消息
   String? fixedSymbol; // 频道的固定符号
   String? draft; // 频道的草稿内容
   String? backgroundPath; // 频道背景图片路径
@@ -26,6 +28,8 @@ class Channel {
     required this.messages,
     this.priority = 0,
     this.groups = const [], // 默认为空列表，表示不属于任何组
+    this.isPinned = false,
+    this.isArchived = false,
     this.fixedSymbol,
     this.draft,
     this.backgroundPath,
@@ -45,6 +49,10 @@ class Channel {
 
   // 用于排序的比较器
   static int compare(Channel a, Channel b) {
+    // 固定的频道始终在最前
+    if (a.isPinned != b.isPinned) {
+      return a.isPinned ? -1 : 1;
+    }
     // 首先按优先级排序
     if (a.priority != b.priority) {
       return b.priority.compareTo(a.priority);
@@ -61,6 +69,8 @@ class Channel {
     List<Message>? messages,
     int? priority,
     List<String>? groups,
+    bool? isPinned,
+    bool? isArchived,
     String? fixedSymbol,
     String? draft,
     String? backgroundPath,
@@ -75,6 +85,8 @@ class Channel {
       messages: messages ?? this.messages,
       priority: priority ?? this.priority,
       groups: groups ?? this.groups,
+      isPinned: isPinned ?? this.isPinned,
+      isArchived: isArchived ?? this.isArchived,
       fixedSymbol: fixedSymbol ?? this.fixedSymbol,
       draft: draft ?? this.draft,
       backgroundPath: backgroundPath ?? this.backgroundPath,
@@ -95,6 +107,8 @@ class Channel {
       'backgroundColor': backgroundColor.toHex(),
       'priority': priority,
       'groups': groups,
+      'isPinned': isPinned,
+      'isArchived': isArchived,
       'fixedSymbol': fixedSymbol,
       'backgroundPath': backgroundPath,
       'lastMessageTime': lastMessageTime.toIso8601String(),
@@ -133,6 +147,8 @@ class Channel {
           json['groups'] != null
               ? List<String>.from(json['groups'] as List<dynamic>)
               : const [],
+      isPinned: json['isPinned'] as bool? ?? false,
+      isArchived: json['isArchived'] as bool? ?? false,
       fixedSymbol: json['fixedSymbol'] as String?,
       backgroundPath: json['backgroundPath'] as String?,
       metadata: json['metadata'] as Map<String, dynamic>?,

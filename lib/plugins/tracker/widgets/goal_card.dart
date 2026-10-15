@@ -106,10 +106,14 @@ class GoalCard extends StatelessWidget {
                                     ),
                                   ],
                                   // 液体波浪进度填充
-                                  _WaveFill(
-                                    progress: progress,
-                                    color: base,
-                                    drawProgress: drawProgress,
+                                  // CustomPaint 无 child 时尺寸收缩为 0，
+                                  // 必须定位撑满才可见
+                                  Positioned.fill(
+                                    child: _WaveFill(
+                                      progress: progress,
+                                      color: base,
+                                      drawProgress: drawProgress,
+                                    ),
                                   ),
                                 ],
                               ),

@@ -12,6 +12,7 @@ class ChannelTile extends StatelessWidget {
   final Channel channel;
   final VoidCallback? onTap; // 改为可选，因为 OpenContainer 会处理导航
   final VoidCallback? onBeforeOpen; // 在打开页面之前的回调（如设置当前频道）
+  final VoidCallback? onLongPress; // 长按弹出操作菜单
   final Function(Channel) onEdit;
   final Function(Channel) onDelete;
   final Key? itemKey;
@@ -21,6 +22,7 @@ class ChannelTile extends StatelessWidget {
     required this.channel,
     this.onTap, // 改为可选
     this.onBeforeOpen, // 新增回调
+    this.onLongPress,
     required this.onEdit,
     required this.onDelete,
     this.itemKey,
@@ -51,17 +53,21 @@ class ChannelTile extends StatelessWidget {
   /// 卡片视图：彩色底卡片，左上角大图标作背景水印
   Widget _buildCard(BuildContext context) {
     final lastMessage = channel.lastMessage;
-    return DSListItemCard(
-      key: itemKey,
-      title: channel.title,
-      subtitle: _subtitle,
-      iconColor: channel.backgroundColor,
-      leading: Icon(channel.icon, size: 22),
-      trailingText: _draft == null && lastMessage != null
-          ? DateFormatter.formatDateTime(lastMessage.date, context)
-          : null,
-      trailing: _buildDraftBadge(context),
-      onTap: () => _openChat(context),
+    return GestureDetector(
+      // 只接管长按，点击仍由卡片内部处理
+      onLongPress: onLongPress,
+      child: DSListItemCard(
+        key: itemKey,
+        title: channel.title,
+        subtitle: _subtitle,
+        iconColor: channel.backgroundColor,
+        leading: Icon(channel.icon, size: 22),
+        trailingText: _draft == null && lastMessage != null
+            ? DateFormatter.formatDateTime(lastMessage.date, context)
+            : null,
+        trailing: _buildDraftBadge(context),
+        onTap: () => _openChat(context),
+      ),
     );
   }
 

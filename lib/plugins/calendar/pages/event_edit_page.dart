@@ -15,11 +15,19 @@ class EventEditPage extends StatefulWidget {
   final DateTime initialDate;
   final Function(CalendarEvent) onSave;
 
+  /// 以底部弹层形式嵌入（不渲染导航栏，由外壳提供标题与保存）
+  final bool embedInSheet;
+
+  /// 弹层模式下回传保存动作（外壳"保存"按钮触发）
+  final void Function(VoidCallback submit)? onReady;
+
   const EventEditPage({
     super.key,
     this.event,
     required this.initialDate,
     required this.onSave,
+    this.embedInSheet = false,
+    this.onReady,
   });
 
   @override
@@ -35,6 +43,7 @@ class _EventEditPageState extends State<EventEditPage> {
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormBuilderWrapperState>();
+    widget.onReady?.call(() => _formKey.currentState?.submitForm());
     final event = widget.event;
     _startTime = TimeOfDay.fromDateTime(event?.startTime ?? widget.initialDate);
     if (event != null && event.endTime != null) {
@@ -88,7 +97,8 @@ class _EventEditPageState extends State<EventEditPage> {
 
     // 日期范围处理
     final dateRange = values['dateRange'] as Map<String, dynamic>?;
-    final startDate = dateRange?['startDate'] as DateTime? ?? widget.initialDate;
+    final startDate =
+        dateRange?['startDate'] as DateTime? ?? widget.initialDate;
     final endDate = dateRange?['endDate'] as DateTime?;
 
     // 使用状态变量中的时间
@@ -146,179 +156,16 @@ class _EventEditPageState extends State<EventEditPage> {
   Widget build(BuildContext context) {
     final event = widget.event;
 
+    if (widget.embedInSheet) {
+      return _buildFormBody(event);
+    }
+
     return SuperCupertinoNavigationWrapper(
       title: Text(
         event == null ? 'calendar_addEvent'.tr : 'calendar_editEvent'.tr,
       ),
       enableLargeTitle: false,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: FormBuilderWrapper(
-          key: _formKey,
-          config: FormConfig(
-            showSubmitButton: false,
-            showResetButton: false,
-            fieldSpacing: 16,
-            fields: [
-              // 图标和颜色选择器
-              FormFieldConfig(
-                name: 'iconColor',
-                type: FormFieldType.circleIconPicker,
-                initialValue: event != null
-                    ? {
-                        'icon': event.icon,
-                        'color': event.color,
-                      }
-                    : {
-                        'icon': Icons.event,
-                        'color': Colors.blue,
-                      },
-              ),
-
-              // 事件标题
-              FormFieldConfig(
-                name: 'title',
-                type: FormFieldType.text,
-                labelText: 'calendar_eventTitle'.tr,
-                hintText: 'calendar_eventTitleHint'.tr,
-                initialValue: event?.title ?? '',
-                required: true,
-                validationMessage: 'calendar_enterEventTitle'.tr,
-              ),
-
-              // 事件描述
-              FormFieldConfig(
-                name: 'description',
-                type: FormFieldType.textArea,
-                labelText: 'calendar_eventDescription'.tr,
-                hintText: 'calendar_eventDescriptionHint'.tr,
-                initialValue: event?.description ?? '',
-                extra: {
-                  'minLines': 3,
-                  'maxLines': 5,
-                },
-              ),
-
-              // 日期范围选择器
-              FormFieldConfig(
-                name: 'dateRange',
-                type: FormFieldType.dateRange,
-                initialValue: event?.endTime != null
-                    ? {
-                        'startDate': event!.startTime,
-                        'endDate': event.endTime,
-                      }
-                    : {
-                        'startDate': event?.startTime ?? widget.initialDate,
-                        'endDate': null,
-                      },
-                extra: {
-                  'rangeLabelText': 'calendar_dateRange'.tr,
-                  'firstDate': DateTime(2000),
-                  'lastDate': DateTime(2100),
-                },
-              ),
-
-              // 提醒设置
-              FormFieldConfig(
-                name: 'reminder',
-                type: FormFieldType.select,
-                labelText: 'calendar_reminderSettings'.tr,
-                initialValue: event?.reminderMinutes,
-                items: [
-                  DropdownMenuItem(value: null, child: Text('calendar_noReminder'.tr)),
-                  DropdownMenuItem(
-                    value: 5,
-                    child: Text('calendar_reminderAheadMinutes'.trParams({'minutes': '5'})),
-                  ),
-                  DropdownMenuItem(
-                    value: 15,
-                    child: Text('calendar_reminderAheadMinutes'.trParams({'minutes': '15'})),
-                  ),
-                  DropdownMenuItem(
-                    value: 30,
-                    child: Text('calendar_reminderAheadMinutes'.trParams({'minutes': '30'})),
-                  ),
-                  DropdownMenuItem(
-                    value: 60,
-                    child: Text('calendar_reminderAheadHours'.trParams({'hours': '1'})),
-                  ),
-                  DropdownMenuItem(
-                    value: 120,
-                    child: Text('calendar_reminderAheadHours'.trParams({'hours': '2'})),
-                  ),
-                  DropdownMenuItem(
-                    value: 1440,
-                    child: Text('calendar_reminderAheadDays'.trParams({'days': '1'})),
-                  ),
-                  DropdownMenuItem(
-                    value: 2880,
-                    child: Text('calendar_reminderAheadDays'.trParams({'days': '2'})),
-                  ),
-                ],
-              ),
-            ],
-            onSubmit: _saveEvent,
-          ),
-          // 使用 contentBuilder 来添加时间选择器（并排显示）
-          contentBuilder: (context, fields) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 图标和颜色
-                fields[0],
-                SizedBox(height: 8),
-                // 标题
-                fields[1],
-                SizedBox(height: 8),
-                // 时间选择器（并排显示）
-                Row(
-                  children: [
-                    Expanded(
-                      child: TimePickerField(
-                        label: 'calendar_startTime'.tr,
-                        time: _startTime,
-                        onTimeChanged: (time) {
-                          setState(() {
-                            _startTime = time;
-                            // 如果结束时间未设置，默认设置为开始时间后1小时
-                            _endTime ??= TimeOfDay(
-                              hour: (time.hour + 1) % 24,
-                              minute: time.minute,
-                            );
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TimePickerField(
-                        label: 'calendar_endTime'.tr,
-                        time: _endTime ?? const TimeOfDay(hour: 0, minute: 0),
-                        onTimeChanged: (time) {
-                          setState(() {
-                            _endTime = time;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                // 日期范围
-                fields[3],
-                SizedBox(height: 8),
-                // 描述
-                fields[2],
-                SizedBox(height: 8),
-                // 提醒设置
-                fields[4],
-                
-              ],
-            );
-          },
-        ),
-      ),
+      body: _buildFormBody(event),
       // SuperAppBar 的 actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge
       actions: [
         // 保存按钮
@@ -340,6 +187,181 @@ class _EventEditPageState extends State<EventEditPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFormBody(CalendarEvent? event) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: FormBuilderWrapper(
+        key: _formKey,
+        config: FormConfig(
+          showSubmitButton: false,
+          showResetButton: false,
+          fieldSpacing: 16,
+          fields: [
+            // 图标和颜色选择器
+            FormFieldConfig(
+              name: 'iconColor',
+              type: FormFieldType.circleIconPicker,
+              initialValue: event != null
+                  ? {'icon': event.icon, 'color': event.color}
+                  : {'icon': Icons.event, 'color': Colors.blue},
+            ),
+
+            // 事件标题
+            FormFieldConfig(
+              name: 'title',
+              type: FormFieldType.text,
+              labelText: 'calendar_eventTitle'.tr,
+              hintText: 'calendar_eventTitleHint'.tr,
+              initialValue: event?.title ?? '',
+              required: true,
+              validationMessage: 'calendar_enterEventTitle'.tr,
+            ),
+
+            // 事件描述
+            FormFieldConfig(
+              name: 'description',
+              type: FormFieldType.textArea,
+              labelText: 'calendar_eventDescription'.tr,
+              hintText: 'calendar_eventDescriptionHint'.tr,
+              initialValue: event?.description ?? '',
+              extra: {'minLines': 3, 'maxLines': 5},
+            ),
+
+            // 日期范围选择器
+            FormFieldConfig(
+              name: 'dateRange',
+              type: FormFieldType.dateRange,
+              initialValue: event?.endTime != null
+                  ? {'startDate': event!.startTime, 'endDate': event.endTime}
+                  : {
+                      'startDate': event?.startTime ?? widget.initialDate,
+                      'endDate': null,
+                    },
+              extra: {
+                'rangeLabelText': 'calendar_dateRange'.tr,
+                'firstDate': DateTime(2000),
+                'lastDate': DateTime(2100),
+              },
+            ),
+
+            // 提醒设置
+            FormFieldConfig(
+              name: 'reminder',
+              type: FormFieldType.select,
+              labelText: 'calendar_reminderSettings'.tr,
+              initialValue: event?.reminderMinutes,
+              items: [
+                DropdownMenuItem(
+                  value: null,
+                  child: Text('calendar_noReminder'.tr),
+                ),
+                DropdownMenuItem(
+                  value: 5,
+                  child: Text(
+                    'calendar_reminderAheadMinutes'.trParams({'minutes': '5'}),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 15,
+                  child: Text(
+                    'calendar_reminderAheadMinutes'.trParams({'minutes': '15'}),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 30,
+                  child: Text(
+                    'calendar_reminderAheadMinutes'.trParams({'minutes': '30'}),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 60,
+                  child: Text(
+                    'calendar_reminderAheadHours'.trParams({'hours': '1'}),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 120,
+                  child: Text(
+                    'calendar_reminderAheadHours'.trParams({'hours': '2'}),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 1440,
+                  child: Text(
+                    'calendar_reminderAheadDays'.trParams({'days': '1'}),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 2880,
+                  child: Text(
+                    'calendar_reminderAheadDays'.trParams({'days': '2'}),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          onSubmit: _saveEvent,
+        ),
+        // 使用 contentBuilder 来添加时间选择器（并排显示）
+        contentBuilder: (context, fields) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 图标和颜色
+              fields[0],
+              SizedBox(height: 8),
+              // 标题
+              fields[1],
+              SizedBox(height: 8),
+              // 时间选择器（并排显示）
+              Row(
+                children: [
+                  Expanded(
+                    child: TimePickerField(
+                      label: 'calendar_startTime'.tr,
+                      time: _startTime,
+                      onTimeChanged: (time) {
+                        setState(() {
+                          _startTime = time;
+                          // 如果结束时间未设置，默认设置为开始时间后1小时
+                          _endTime ??= TimeOfDay(
+                            hour: (time.hour + 1) % 24,
+                            minute: time.minute,
+                          );
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TimePickerField(
+                      label: 'calendar_endTime'.tr,
+                      time: _endTime ?? const TimeOfDay(hour: 0, minute: 0),
+                      onTimeChanged: (time) {
+                        setState(() {
+                          _endTime = time;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              // 日期范围
+              fields[3],
+              SizedBox(height: 8),
+              // 描述
+              fields[2],
+              SizedBox(height: 8),
+              // 提醒设置
+              fields[4],
+            ],
+          );
+        },
+      ),
     );
   }
 }

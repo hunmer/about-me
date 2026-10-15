@@ -11,6 +11,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/form_modal_sheet.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
@@ -250,16 +251,7 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
                 title: Text('app_edit'.tr),
                 onTap: () async {
                   Navigator.pop(context);
-                  final result = await NavigationHelper.push<bool>(
-                    context,
-                    DatabaseEditWidget(
-                      controller: DatabaseController(widget.service),
-                      database: database,
-                    ),
-                  );
-                  if (result == true && mounted) {
-                    _loadDatabases();
-                  }
+                  await _showDatabaseEditor(context, database);
                 },
               ),
               ListTile(
@@ -393,12 +385,25 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
       updatedAt: now,
     );
 
-    final result = await NavigationHelper.push<bool>(
-      context,
-      DatabaseEditWidget(
+    await _showDatabaseEditor(context, newDatabase);
+  }
+
+  /// 数据库新建/编辑：smooth_sheets 底部弹层
+  Future<void> _showDatabaseEditor(
+    BuildContext context,
+    DatabaseModel database,
+  ) async {
+    VoidCallback? submitDatabase;
+    final result = await FormModalSheet.show<bool>(
+      context: context,
+      title: 'database_edit_database_title'.tr,
+      child: DatabaseEditWidget(
         controller: DatabaseController(widget.service),
-        database: newDatabase,
+        database: database,
+        embedInSheet: true,
+        onReady: (submit) => submitDatabase = submit,
       ),
+      onSave: () => submitDatabase?.call(),
     );
 
     if (result == true && mounted) {

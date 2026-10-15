@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:aboutme/utils/platform_utils.dart';
 import 'package:skribble/skribble.dart';
@@ -22,6 +21,7 @@ import './pages/event_list_page.dart';
 import './widgets/event_detail_card.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/form_modal_sheet.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -338,31 +338,35 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
     showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => EventDetailCard(
-            event: event,
-            onEdit: () {
-              Navigator.pop(context);
-              showEventEditPage(context, event);
-            },
-            onComplete: () {
-              Navigator.pop(context);
-              controller.completeEvent(event);
-            },
-            onDelete: () {
-              Navigator.pop(context);
-              controller.deleteEvent(event);
-            },
-          ),
+      builder: (context) => EventDetailCard(
+        event: event,
+        onEdit: () {
+          Navigator.pop(context);
+          showEventEditPage(context, event);
+        },
+        onComplete: () {
+          Navigator.pop(context);
+          controller.completeEvent(event);
+        },
+        onDelete: () {
+          Navigator.pop(context);
+          controller.deleteEvent(event);
+        },
+      ),
     );
   }
 
   void showEventEditPage(BuildContext context, [CalendarEvent? event]) {
-    NavigationHelper.push(
-      context,
-      EventEditPage(
+    // 新建/编辑：smooth_sheets 底部弹层
+    VoidCallback? submitEvent;
+    FormModalSheet.show(
+      context: context,
+      title: event == null ? 'calendar_addEvent'.tr : 'calendar_editEvent'.tr,
+      child: EventEditPage(
         event: event,
         initialDate: event?.startTime ?? controller.selectedDate,
+        embedInSheet: true,
+        onReady: (submit) => submitEvent = submit,
         onSave: (updatedEvent) {
           if (event != null) {
             controller.updateEvent(updatedEvent);
@@ -373,6 +377,7 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
           controller.refresh();
         },
       ),
+      onSave: () => submitEvent?.call(),
     );
   }
 
@@ -789,9 +794,7 @@ class _CalendarMainViewState extends State<CalendarMainView>
                       children: [
                         Text(
                           event.title,
-                          style: DsTypography.title.copyWith(
-                            color: theme.text,
-                          ),
+                          style: DsTypography.title.copyWith(color: theme.text),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -815,7 +818,11 @@ class _CalendarMainViewState extends State<CalendarMainView>
                       ],
                     ),
                   ),
-                  DsIcon(DsIconKind.chevronRight, size: 20, color: theme.textSub),
+                  DsIcon(
+                    DsIconKind.chevronRight,
+                    size: 20,
+                    color: theme.textSub,
+                  ),
                 ],
               ),
             ),
@@ -879,17 +886,7 @@ class _CalendarMainViewState extends State<CalendarMainView>
       // DSFab 内部取 AppTheme，需包桥
       child: DSFab(
         key: _fabKey,
-        onPressed: () {
-          NavigationHelper.openContainer<bool>(
-            context,
-            (context) => EventEditPage(
-              initialDate: plugin.controller.selectedDate,
-              onSave: (event) {
-                plugin.controller.addEvent(event);
-              },
-            ),
-          );
-        },
+        onPressed: () => plugin.showEventEditPage(context),
       ),
     );
   }
@@ -912,31 +909,26 @@ class _CalendarMainViewState extends State<CalendarMainView>
         children: [
           Expanded(
             child: AboutmeSfCalendar(
-              view:
-                  plugin.sfController.view ?? syncfusion.CalendarView.month,
+              view: plugin.sfController.view ?? syncfusion.CalendarView.month,
               controller: plugin.sfController,
               allowedViews: plugin.allowedViews,
               allowViewNavigation: true,
-              dataSource: _AppointmentDataSource(
-                plugin.getUserAppointments(),
-              ),
+              dataSource: _AppointmentDataSource(plugin.getUserAppointments()),
               initialDisplayDate: plugin.controller.focusedMonth,
               onViewChanged: (details) =>
                   plugin.onViewChanged(details, _updateRouteContext),
-              onTap: (details) =>
-                  plugin.handleCalendarTap(context, details),
+              onTap: (details) => plugin.handleCalendarTap(context, details),
               monthViewSettings: const syncfusion.MonthViewSettings(
                 showAgenda: true,
                 agendaViewHeight: 200,
                 appointmentDisplayMode:
                     syncfusion.MonthAppointmentDisplayMode.appointment,
               ),
-              timeSlotViewSettings:
-                  const syncfusion.TimeSlotViewSettings(
-                    startHour: 6,
-                    endHour: 23,
-                    timeInterval: Duration(minutes: 30),
-                  ),
+              timeSlotViewSettings: const syncfusion.TimeSlotViewSettings(
+                startHour: 6,
+                endHour: 23,
+                timeInterval: Duration(minutes: 30),
+              ),
               todayHighlightColor: Theme.of(context).primaryColor,
               selectionDecoration: BoxDecoration(
                 border: Border.all(

@@ -4,16 +4,17 @@ import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
 import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
 import 'package:aboutme/plugins/habits/widgets/habits_list/habits_view.dart';
 import 'package:aboutme/plugins/habits/widgets/skills_list.dart';
-import 'package:aboutme/plugins/habits/widgets/habit_form.dart';
+import 'package:aboutme/plugins/habits/widgets/habit_form_sheet.dart';
 import 'package:aboutme/plugins/habits/widgets/skill_form.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/core/widgets/keep_alive_wrapper.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
+import 'package:aboutme/widgets/form_modal_sheet.dart';
 
 /// Habits 插件的底部栏组件
 /// 提供习惯列表和技能列表两个 Tab 的切换功能
@@ -77,46 +78,28 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
         icon: _currentPage == 0 ? DsIconKind.clipboard : DsIconKind.heart,
         onPressed: () {
           if (_currentPage == 0) {
-            NavigationHelper.openContainerWithHero(
+            // 新建习惯：smooth_sheets 底部弹层
+            HabitFormSheet.show(
               context,
-              (context) => Scaffold(
-                appBar: AppBar(
-                  title: Text('habits_newHabit'.tr),
-                  backgroundColor: Theme.of(
-                    context,
-                  ).appBarTheme.backgroundColor,
-                ),
-                backgroundColor: DSThemeBridge.resolve(context).background,
-                body: HabitForm(
-                  onSave: (habit) async {
-                    await _habitController.saveHabit(habit);
-                  },
-                ),
-              ),
-              sourceKey: _fabKey,
-              heroTag: 'habits_fab_add_habit',
-              closedShape: const CircleBorder(),
+              onSave: (habit) async {
+                await _habitController.saveHabit(habit);
+              },
             );
           } else {
-            NavigationHelper.openContainerWithHero(
-              context,
-              (context) => Scaffold(
-                appBar: AppBar(
-                  title: Text('habits_createSkill'.tr),
-                  backgroundColor: Theme.of(
-                    context,
-                  ).appBarTheme.backgroundColor,
-                ),
-                backgroundColor: DSThemeBridge.resolve(context).background,
-                body: SkillForm(
-                  onSave: (skill) async {
-                    await _skillController.saveSkill(skill);
-                  },
-                ),
+            // 新建技能：smooth_sheets 底部弹层
+            FormBuilderWrapperState? skillFormState;
+            FormModalSheet.show(
+              context: context,
+              title: 'habits_createSkill'.tr,
+              child: SkillForm(
+                showSubmitButton: false,
+                onStateReady: (state) => skillFormState = state,
+                onSave: (skill) async {
+                  await _skillController.saveSkill(skill);
+                  if (context.mounted) Navigator.of(context).pop();
+                },
               ),
-              sourceKey: _fabKey,
-              heroTag: 'habits_fab_add_skill',
-              closedShape: const CircleBorder(),
+              onSave: () => skillFormState?.submitForm(),
             );
           }
         },

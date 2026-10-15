@@ -19,7 +19,19 @@ class GoalEditPage extends StatefulWidget {
   final TrackerController controller;
   final Goal? goal;
 
-  const GoalEditPage({super.key, required this.controller, this.goal});
+  /// 以底部弹层形式嵌入（不渲染 Scaffold/AppBar，由外壳提供标题与保存）
+  final bool embedInSheet;
+
+  /// 弹层模式下回传保存动作（外壳"保存"按钮触发）
+  final void Function(VoidCallback submit)? onReady;
+
+  const GoalEditPage({
+    super.key,
+    required this.controller,
+    this.goal,
+    this.embedInSheet = false,
+    this.onReady,
+  });
 
   @override
   State<GoalEditPage> createState() => _GoalEditPageState();
@@ -47,6 +59,7 @@ class _GoalEditPageState extends State<GoalEditPage> {
   void initState() {
     super.initState();
     _initializeData();
+    widget.onReady?.call(_saveGoal);
   }
 
   void _initializeData() {
@@ -64,32 +77,29 @@ class _GoalEditPageState extends State<GoalEditPage> {
         _groups.add(_initialGroup);
       }
       _initialImagePath = widget.goal!.imagePath ?? '';
-      _initialIconColor =
-          widget.goal!.iconColor != null
-              ? Color(widget.goal!.iconColor!)
-              : Colors.blue;
-      _initialProgressColor =
-          widget.goal!.progressColor != null
-              ? Color(widget.goal!.progressColor!)
-              : Colors.blue;
+      _initialIconColor = widget.goal!.iconColor != null
+          ? Color(widget.goal!.iconColor!)
+          : Colors.blue;
+      _initialProgressColor = widget.goal!.progressColor != null
+          ? Color(widget.goal!.progressColor!)
+          : Colors.blue;
       _initialUnitType = widget.goal!.unitType;
       _initialTargetValue = widget.goal!.targetValue;
       _initialName = widget.goal!.name;
       _initialDateType =
           [
-                'daily',
-                'weekly',
-                'monthly',
-                'custom',
-              ].contains(widget.goal!.dateSettings.type)
-              ? widget.goal!.dateSettings.type
-              : 'daily';
-      _initialReminderTime =
-          widget.goal!.reminderTime != null
-              ? TimeOfDay.fromDateTime(
-                DateTime.parse('1970-01-01 ${widget.goal!.reminderTime!}'),
-              )
-              : null;
+            'daily',
+            'weekly',
+            'monthly',
+            'custom',
+          ].contains(widget.goal!.dateSettings.type)
+          ? widget.goal!.dateSettings.type
+          : 'daily';
+      _initialReminderTime = widget.goal!.reminderTime != null
+          ? TimeOfDay.fromDateTime(
+              DateTime.parse('1970-01-01 ${widget.goal!.reminderTime!}'),
+            )
+          : null;
     } else {
       _initialIcon = '0';
       _initialGroup = '默认';
@@ -108,12 +118,12 @@ class _GoalEditPageState extends State<GoalEditPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final primaryColor = DSThemeBridge.resolve(context).primary;
-    _initialIconColor =
-        _initialIconColor == Colors.blue ? primaryColor : _initialIconColor;
-    _initialProgressColor =
-        _initialProgressColor == Colors.blue
-            ? primaryColor
-            : _initialProgressColor;
+    _initialIconColor = _initialIconColor == Colors.blue
+        ? primaryColor
+        : _initialIconColor;
+    _initialProgressColor = _initialProgressColor == Colors.blue
+        ? primaryColor
+        : _initialProgressColor;
   }
 
   @override
@@ -140,65 +150,64 @@ class _GoalEditPageState extends State<GoalEditPage> {
     final newGroup = await showDSDialog<String>(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (_) => DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return JellyBox(
-                  radius: theme.radii.xxl,
-                  padding: EdgeInsets.all(theme.spacing.xl),
-                  constraints: const BoxConstraints(maxWidth: 320),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+      builder: (_) => DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return JellyBox(
+              radius: theme.radii.xxl,
+              padding: EdgeInsets.all(theme.spacing.xl),
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'tracker_createGroup'.tr,
+                    textAlign: TextAlign.center,
+                    style: DsTypography.title.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.lg),
+                  DSInput(
+                    controller: newGroupController,
+                    focusNode: focusNode,
+                    hint: 'tracker_createGroup'.tr,
+                    onSubmitted: (value) {
+                      if (value.trim().isNotEmpty) {
+                        Navigator.pop(context, value.trim());
+                      }
+                    },
+                  ),
+                  SizedBox(height: theme.spacing.lg),
+                  Row(
                     children: [
-                      Text(
-                        'tracker_createGroup'.tr,
-                        textAlign: TextAlign.center,
-                        style: DsTypography.title.copyWith(color: theme.text),
+                      Expanded(
+                        child: DSButton(
+                          label: 'app_cancel'.tr,
+                          variant: DSButtonVariant.outline,
+                          onPressed: () => Navigator.pop(context),
+                        ),
                       ),
-                      SizedBox(height: theme.spacing.lg),
-                      DSInput(
-                        controller: newGroupController,
-                        focusNode: focusNode,
-                        hint: 'tracker_createGroup'.tr,
-                        onSubmitted: (value) {
-                          if (value.trim().isNotEmpty) {
-                            Navigator.pop(context, value.trim());
-                          }
-                        },
-                      ),
-                      SizedBox(height: theme.spacing.lg),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DSButton(
-                              label: 'app_cancel'.tr,
-                              variant: DSButtonVariant.outline,
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                          ),
-                          SizedBox(width: theme.spacing.md),
-                          Expanded(
-                            child: DSButton(
-                              label: 'app_ok'.tr,
-                              onPressed: () {
-                                final value = newGroupController.text.trim();
-                                if (value.isNotEmpty) {
-                                  Navigator.pop(context, value);
-                                }
-                              },
-                            ),
-                          ),
-                        ],
+                      SizedBox(width: theme.spacing.md),
+                      Expanded(
+                        child: DSButton(
+                          label: 'app_ok'.tr,
+                          onPressed: () {
+                            final value = newGroupController.text.trim();
+                            if (value.isNotEmpty) {
+                              Navigator.pop(context, value);
+                            }
+                          },
+                        ),
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-          ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
     focusNode.dispose();
     newGroupController.dispose();
@@ -267,8 +276,9 @@ class _GoalEditPageState extends State<GoalEditPage> {
                         final result =
                             await ImagePickerDialog.show<Map<String, dynamic>>(
                               context,
-                              initialUrl:
-                                  imagePath.isNotEmpty ? imagePath : null,
+                              initialUrl: imagePath.isNotEmpty
+                                  ? imagePath
+                                  : null,
                               saveDirectory: 'tracker/goal_images',
                               enableCrop: true,
                               cropAspectRatio: 9 / 16,
@@ -291,58 +301,54 @@ class _GoalEditPageState extends State<GoalEditPage> {
                               width: 2,
                             ),
                           ),
-                          child:
-                              imagePath.isNotEmpty
-                                  ? FutureBuilder<String>(
-                                    future: ImageUtils.getAbsolutePath(
-                                      imagePath,
-                                    ),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.hasData &&
-                                          snapshot.data!.isNotEmpty) {
-                                        return ClipOval(
-                                          child: Image.file(
-                                            File(snapshot.data!),
-                                            width: 64,
-                                            height: 64,
-                                            fit: BoxFit.contain,
-                                            errorBuilder:
-                                                (context, error, stackTrace) =>
-                                                    DsIcon(
-                                                      DsIconKind.image,
-                                                      size: 24,
-                                                      color: theme.textSub,
-                                                    ),
-                                          ),
-                                        );
-                                      }
-                                      return DsIcon(
-                                        DsIconKind.image,
+                          child: imagePath.isNotEmpty
+                              ? FutureBuilder<String>(
+                                  future: ImageUtils.getAbsolutePath(imagePath),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasData &&
+                                        snapshot.data!.isNotEmpty) {
+                                      return ClipOval(
+                                        child: Image.file(
+                                          File(snapshot.data!),
+                                          width: 64,
+                                          height: 64,
+                                          fit: BoxFit.contain,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  DsIcon(
+                                                    DsIconKind.image,
+                                                    size: 24,
+                                                    color: theme.textSub,
+                                                  ),
+                                        ),
+                                      );
+                                    }
+                                    return DsIcon(
+                                      DsIconKind.image,
+                                      size: 24,
+                                      color: theme.textSub,
+                                    );
+                                  },
+                                )
+                              : Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      DsIcon(
+                                        DsIconKind.camera,
                                         size: 24,
                                         color: theme.textSub,
-                                      );
-                                    },
-                                  )
-                                  : Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        DsIcon(
-                                          DsIconKind.camera,
-                                          size: 24,
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        '图片',
+                                        style: DsTypography.caption.copyWith(
                                           color: theme.textSub,
                                         ),
-                                        SizedBox(height: 2),
-                                        Text(
-                                          '图片',
-                                          style: DsTypography.caption.copyWith(
-                                            color: theme.textSub,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
+                                ),
                         ),
                       ),
                     ),
@@ -366,6 +372,14 @@ class _GoalEditPageState extends State<GoalEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedInSheet) {
+      // 表单本身无滚动，弹层内需要包一层
+      return SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: _buildFormBody(),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.goal != null ? '编辑目标' : '添加新目标'),
@@ -387,142 +401,146 @@ class _GoalEditPageState extends State<GoalEditPage> {
           ),
         ],
       ),
-      body: FormBuilderWrapper(
-        formKey: _formKey,
-        config: FormConfig(
-          showSubmitButton: false,
-          showResetButton: false,
-          fieldSpacing: 16,
-          fields: [
-            // 分组选择器
-            FormFieldConfig(
-              name: 'group',
-              type: FormFieldType.select,
-              initialValue: _initialGroup,
-              items: [
-                ..._groups.map(
-                  (group) => DropdownMenuItem(value: group, child: Text(group)),
-                ),
-                DropdownMenuItem(
-                  value: '__create_new__',
-                  child: Row(
-                    children: [
-                      DsIcon(
-                        DsIconKind.plus,
-                        size: 16,
-                        color: DSThemeBridge.resolve(context).textSub,
-                      ),
-                      const SizedBox(width: 8),
-                      Text('tracker_createGroup'.tr),
-                    ],
-                  ),
-                ),
-              ],
-              onChanged: (value) {
-                if (value == '__create_new__') {
-                  _addNewGroup();
-                }
-              },
-            ),
+      body: _buildFormBody(),
+    );
+  }
 
-            // 目标名称
-            FormFieldConfig(
-              name: 'name',
-              type: FormFieldType.text,
-              labelText: 'tracker_goalName'.tr,
-              initialValue: _initialName,
-              required: true,
-              validationMessage: '请输入目标名称',
-            ),
-
-            // 单位
-            FormFieldConfig(
-              name: 'unitType',
-              type: FormFieldType.text,
-              labelText: 'tracker_unitType'.tr,
-              initialValue: _initialUnitType,
-              required: true,
-              validationMessage: '请输入单位',
-            ),
-
-            // 目标值
-            FormFieldConfig(
-              name: 'targetValue',
-              type: FormFieldType.text,
-              labelText: 'tracker_targetValue'.tr,
-              initialValue:
-                  _initialTargetValue > 0 ? _initialTargetValue.toString() : '',
-              required: true,
-              validationMessage: '请输入目标值',
-            ),
-
-            // 提醒日期选择器
-            FormFieldConfig(
-              name: 'reminderDate',
-              type: FormFieldType.reminderDate,
-              initialValue:
-                  _initialReminderTime != null
-                      ? ReminderDateData(
-                        type: ReminderDateType.daily,
-                        selectedDays: [1, 2, 3, 4, 5, 6, 7],
-                        time: _initialReminderTime,
-                      )
-                      : const ReminderDateData(type: ReminderDateType.none),
-            ),
-          ],
-          onSubmit: (values) => _handleSubmit(values),
-        ),
-        // 使用 contentBuilder 添加顶部自定义区域和自定义布局
-        contentBuilder: (context, allFields) {
-          return ValueListenableBuilder(
-            valueListenable: _formChangeNotifier,
-            builder: (context, _, __) {
-              final formValues = _currentValues;
-
-              // 字段顺序：0: group, 1: name, 2: unitType, 3: targetValue, 4: reminderDate
-              final groupField = allFields[0];
-              final nameField = allFields[1];
-              final unitTypeField = allFields[2];
-              final targetValueField = allFields[3];
-              final reminderDateField = allFields[4];
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildFormBody() {
+    return FormBuilderWrapper(
+      formKey: _formKey,
+      config: FormConfig(
+        showSubmitButton: false,
+        showResetButton: false,
+        fieldSpacing: 16,
+        fields: [
+          // 分组选择器
+          FormFieldConfig(
+            name: 'group',
+            type: FormFieldType.select,
+            initialValue: _initialGroup,
+            items: [
+              ..._groups.map(
+                (group) => DropdownMenuItem(value: group, child: Text(group)),
+              ),
+              DropdownMenuItem(
+                value: '__create_new__',
+                child: Row(
                   children: [
-                    _buildTopSection(formValues),
-                    const SizedBox(height: 24),
-
-                    // 第一行：名称和分组平分宽度
-                    Row(
-                      children: [
-                        Expanded(child: nameField),
-                        const SizedBox(width: 12),
-                        Expanded(child: groupField),
-                      ],
+                    DsIcon(
+                      DsIconKind.plus,
+                      size: 16,
+                      color: DSThemeBridge.resolve(context).textSub,
                     ),
-                    const SizedBox(height: 16),
-
-                    // 第二行：目标值和单位平分宽度
-                    Row(
-                      children: [
-                        Expanded(child: targetValueField),
-                        const SizedBox(width: 12),
-                        Expanded(child: unitTypeField),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // 提醒日期选择器
-                    reminderDateField,
+                    const SizedBox(width: 8),
+                    Text('tracker_createGroup'.tr),
                   ],
                 ),
-              );
+              ),
+            ],
+            onChanged: (value) {
+              if (value == '__create_new__') {
+                _addNewGroup();
+              }
             },
-          );
-        },
+          ),
+
+          // 目标名称
+          FormFieldConfig(
+            name: 'name',
+            type: FormFieldType.text,
+            labelText: 'tracker_goalName'.tr,
+            initialValue: _initialName,
+            required: true,
+            validationMessage: '请输入目标名称',
+          ),
+
+          // 单位
+          FormFieldConfig(
+            name: 'unitType',
+            type: FormFieldType.text,
+            labelText: 'tracker_unitType'.tr,
+            initialValue: _initialUnitType,
+            required: true,
+            validationMessage: '请输入单位',
+          ),
+
+          // 目标值
+          FormFieldConfig(
+            name: 'targetValue',
+            type: FormFieldType.text,
+            labelText: 'tracker_targetValue'.tr,
+            initialValue: _initialTargetValue > 0
+                ? _initialTargetValue.toString()
+                : '',
+            required: true,
+            validationMessage: '请输入目标值',
+          ),
+
+          // 提醒日期选择器
+          FormFieldConfig(
+            name: 'reminderDate',
+            type: FormFieldType.reminderDate,
+            initialValue: _initialReminderTime != null
+                ? ReminderDateData(
+                    type: ReminderDateType.daily,
+                    selectedDays: [1, 2, 3, 4, 5, 6, 7],
+                    time: _initialReminderTime,
+                  )
+                : const ReminderDateData(type: ReminderDateType.none),
+          ),
+        ],
+        onSubmit: (values) => _handleSubmit(values),
       ),
+      // 使用 contentBuilder 添加顶部自定义区域和自定义布局
+      contentBuilder: (context, allFields) {
+        return ValueListenableBuilder(
+          valueListenable: _formChangeNotifier,
+          builder: (context, _, __) {
+            final formValues = _currentValues;
+
+            // 字段顺序：0: group, 1: name, 2: unitType, 3: targetValue, 4: reminderDate
+            final groupField = allFields[0];
+            final nameField = allFields[1];
+            final unitTypeField = allFields[2];
+            final targetValueField = allFields[3];
+            final reminderDateField = allFields[4];
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTopSection(formValues),
+                  const SizedBox(height: 24),
+
+                  // 第一行：名称和分组平分宽度
+                  Row(
+                    children: [
+                      Expanded(child: nameField),
+                      const SizedBox(width: 12),
+                      Expanded(child: groupField),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 第二行：目标值和单位平分宽度
+                  Row(
+                    children: [
+                      Expanded(child: targetValueField),
+                      const SizedBox(width: 12),
+                      Expanded(child: unitTypeField),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 提醒日期选择器
+                  reminderDateField,
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

@@ -20,10 +20,18 @@ class DatabaseEditWidget extends StatefulWidget {
   final DatabaseController controller;
   final DatabaseModel database;
 
+  /// 以底部弹层形式嵌入（不渲染 Scaffold/AppBar，由外壳提供保存）
+  final bool embedInSheet;
+
+  /// 弹层模式下回传保存动作（外壳"保存"按钮触发）
+  final void Function(VoidCallback submit)? onReady;
+
   const DatabaseEditWidget({
     super.key,
     required this.controller,
     required this.database,
+    this.embedInSheet = false,
+    this.onReady,
   });
 
   @override
@@ -57,10 +65,37 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
           ),
         )
         .toList();
+    widget.onReady?.call(_saveChanges);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedInSheet) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TabBar(
+            controller: _tabController,
+            tabs: [
+              Tab(text: 'database_information_tab_title'.tr),
+              Tab(text: 'database_fields_tab_title'.tr),
+            ],
+          ),
+          Flexible(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Information Tab
+                _buildInfoTab(),
+                // Fields Tab
+                _buildFieldsTab(),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('database_edit_database_title'.tr),

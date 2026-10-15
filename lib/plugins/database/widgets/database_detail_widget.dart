@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/database/widgets/record_edit_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/form_modal_sheet.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/database/controllers/database_controller.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
@@ -347,15 +347,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
       actions: [
         IconButton(
           icon: const Icon(Icons.edit),
-          onPressed: () {
-            NavigationHelper.push(
-              context,
-              DatabaseEditWidget(
-                controller: widget.controller,
-                database: database,
-              ),
-            ).then((_) => setState(() {}));
-          },
+          onPressed: () => _showDatabaseEditor(database),
         ),
       ],
 
@@ -385,21 +377,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
             child: DSThemeBridge(
               // DSFab 内部取 AppTheme，需包桥
               child: DSFab(
-                onPressed: () async {
-                  final result = await NavigationHelper.push(
-                    context,
-                    RecordEditWidget(
-                      controller: widget.controller,
-                      database: database,
-                      record: null,
-                    ),
-                  );
-                  if (result != null) {
-                    setState(() {
-                      _needsReload = true;
-                    });
-                  }
-                },
+                onPressed: () => _showRecordEditor(database, null),
               ),
             ),
           ),
@@ -474,20 +452,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () {
-          NavigationHelper.push(
-            context,
-            RecordEditWidget(
-              controller: widget.controller,
-              database: database,
-              record: record,
-            ),
-          ).then(
-            (_) => setState(() {
-              _needsReload = true;
-            }),
-          );
-        },
+        onTap: () => _showRecordEditor(database, record),
         onLongPress: () {
           _showRecordMenu(context, record);
         },
@@ -658,17 +623,48 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
   }
 
   void _editRecord(BuildContext context, record_model.Record record) {
-    NavigationHelper.push(
-      context,
-      RecordEditWidget(
+    _showRecordEditor(widget.controller.currentDatabase!, record);
+  }
+
+  /// 记录新建/编辑：smooth_sheets 底部弹层
+  Future<void> _showRecordEditor(
+    DatabaseModel database,
+    record_model.Record? record,
+  ) async {
+    VoidCallback? submitRecord;
+    await FormModalSheet.show(
+      context: context,
+      title: 'database_edit_record_title'.tr,
+      child: RecordEditWidget(
         controller: widget.controller,
-        database: widget.controller.currentDatabase!,
+        database: database,
         record: record,
+        embedInSheet: true,
+        onReady: (submit) => submitRecord = submit,
       ),
-    ).then(
-      (_) => setState(() {
-        _needsReload = true;
-      }),
+      onSave: () => submitRecord?.call(),
     );
+    if (mounted) {
+      setState(() {
+        _needsReload = true;
+      });
+    }
+  }
+
+  /// 数据库编辑：smooth_sheets 底部弹层
+  Future<void> _showDatabaseEditor(DatabaseModel database) async {
+    VoidCallback? submitDatabase;
+    await FormModalSheet.show<bool>(
+      context: context,
+      title: 'database_edit_database_title'.tr,
+      child: DatabaseEditWidget(
+        controller: widget.controller,
+        database: database,
+        embedInSheet: true,
+        onReady: (submit) => submitDatabase = submit,
+      ),
+      onSave: () => submitDatabase?.call(),
+    );
+    if (mounted) setState(() {});
   }
 }

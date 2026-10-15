@@ -62,13 +62,21 @@ class ChannelListController extends ChangeNotifier {
 
   void _updateSortedChannels() {
     List<Channel> tempChannels;
-    if (selectedGroup == "all") {
-      tempChannels = List<Channel>.from(channels);
-    } else if (selectedGroup == "ungrouped") {
-      tempChannels = channels.where((channel) => channel.groups.isEmpty).toList();
-    } else {
+    // 已封存的频道只在"archived"分类下显示，其他分类一律排除
+    if (selectedGroup == "archived") {
+      tempChannels = channels.where((channel) => channel.isArchived).toList();
+    } else if (selectedGroup == "all") {
       tempChannels =
-          channels.where((channel) => channel.groups.contains(selectedGroup)).toList();
+          channels.where((channel) => !channel.isArchived).toList();
+    } else if (selectedGroup == "ungrouped") {
+      tempChannels = channels
+          .where((channel) => channel.groups.isEmpty && !channel.isArchived)
+          .toList();
+    } else {
+      tempChannels = channels
+          .where((channel) =>
+              channel.groups.contains(selectedGroup) && !channel.isArchived)
+          .toList();
     }
 
     // 去重：确保每个 ID 只出现一次（保留第一个出现的）
@@ -83,7 +91,8 @@ class ChannelListController extends ChangeNotifier {
   }
 
   void _updateAvailableGroups() {
-    Set<String> groups = {"all", "ungrouped"};
+    // all/ungrouped/archived 为固定分类
+    Set<String> groups = {"all", "ungrouped", "archived"};
     for (var channel in channels) {
       groups.addAll(channel.groups);
     }
@@ -112,6 +121,26 @@ class ChannelListController extends ChangeNotifier {
   void deleteChannel(String channelId) {
     ChatPlugin.instance.channelService.deleteChannel(channelId);
     _updateSortedChannels();
+    notifyListeners();
+  }
+
+  /// 切换频道固定状态（固定频道始终排在列表最前）
+  void togglePin(Channel channel) {
+    channel.isPinned = !channel.isPinned;
+    _updateSortedChannels();
+    ChatPlugin.instance.channelService.saveChannels();
+    notifyListeners();
+  }
+
+  /// 切换频道封存状态（封存频道归入"已封存"分类并禁止发送消息）
+  void toggleArchive(Channel channel) {
+    channel.isArchived = !channel.isArchived;
+    // 封存时取消固定，避免状态叠加
+    if (channel.isArchived) {
+      channel.isPinned = false;
+    }
+    _updateSortedChannels();
+    ChatPlugin.instance.channelService.saveChannels();
     notifyListeners();
   }
 

@@ -21,6 +21,8 @@ class ChannelGroupSelector extends StatelessWidget {
         return 'chat_all'.tr;
       case "ungrouped":
         return 'chat_ungrouped'.tr;
+      case "archived":
+        return 'chat_archived'.tr;
       default:
         return group;
     }

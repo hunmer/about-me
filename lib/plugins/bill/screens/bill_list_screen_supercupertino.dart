@@ -6,7 +6,6 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/plugins/bill/models/bill_model.dart';
 import 'package:aboutme/plugins/bill/models/bill.dart';
@@ -612,40 +611,7 @@ class _BillListScreenSupercupertinoState
                           key: ValueKey(bill.id),
                           leadingActions: [
                             SwipeActionPresets.edit(
-                              onTap: () {
-                                final billObject = Bill(
-                                  id: bill.id,
-                                  title: bill.title,
-                                  amount:
-                                      bill.isExpense
-                                          ? -bill.amount
-                                          : bill.amount,
-                                  accountId: widget.accountId,
-                                  category: bill.category,
-                                  date: bill.date,
-                                  tag: bill.category,
-                                  note: bill.note ?? '',
-                                  createdAt: bill.date,
-                                  icon: bill.icon,
-                                  iconColor: bill.color,
-                                );
-                                NavigationHelper.openContainer<bool>(
-                                  context,
-                                  (BuildContext context) {
-                                    return BillEditScreen(
-                                      billPlugin: widget.billPlugin,
-                                      accountId: widget.accountId,
-                                      bill: billObject,
-                                      onSaved: () {
-                                        _loadMonthBills();
-                                      },
-                                    );
-                                  },
-                                  closedColor: Colors.transparent,
-                                  closedElevation: 0.0,
-                                  closedShape: const RoundedRectangleBorder(),
-                                );
-                              },
+                              onTap: () => _editBillSheet(context, bill),
                             ),
                           ],
                           trailingActions: [
@@ -703,40 +669,7 @@ class _BillListScreenSupercupertinoState
                             context,
                             bill,
                             showNote: false,
-                            onTap: () {
-                              NavigationHelper.openContainer<bool>(
-                                context,
-                                (BuildContext context) {
-                                  final billObject = Bill(
-                                    id: bill.id,
-                                    title: bill.title,
-                                    amount:
-                                        bill.isExpense
-                                            ? -bill.amount
-                                            : bill.amount,
-                                    accountId: widget.accountId,
-                                    category: bill.category,
-                                    date: bill.date,
-                                    tag: bill.category,
-                                    note: bill.note ?? '',
-                                    createdAt: bill.date,
-                                    icon: bill.icon,
-                                    iconColor: bill.color,
-                                  );
-                                  return BillEditScreen(
-                                    billPlugin: widget.billPlugin,
-                                    accountId: widget.accountId,
-                                    bill: billObject,
-                                    onSaved: () {
-                                      _loadMonthBills();
-                                    },
-                                  );
-                                },
-                                closedColor: Colors.transparent,
-                                closedElevation: 0.0,
-                                closedShape: const RoundedRectangleBorder(),
-                              );
-                            },
+                            onTap: () => _editBillSheet(context, bill),
                           ),
                         ),
                       ),
@@ -809,42 +742,61 @@ class _BillListScreenSupercupertinoState
                 context,
                 bill,
                 showNote: true,
-                onTap: () {
-                  NavigationHelper.openContainer<bool>(
-                    context,
-                    (BuildContext context) {
-                      final billObject = Bill(
-                        id: bill.id,
-                        title: bill.title,
-                        amount: bill.isExpense ? -bill.amount : bill.amount,
-                        accountId: widget.accountId,
-                        category: bill.category,
-                        date: bill.date,
-                        tag: bill.category,
-                        note: bill.note ?? '',
-                        createdAt: bill.date,
-                        icon: bill.icon,
-                        iconColor: bill.color,
-                      );
-                      return BillEditScreen(
-                        billPlugin: widget.billPlugin,
-                        accountId: widget.accountId,
-                        bill: billObject,
-                        onSaved: () {
-                          _loadMonthBills();
-                        },
-                      );
-                    },
-                    closedColor: Colors.transparent,
-                    closedElevation: 0.0,
-                    closedShape: const RoundedRectangleBorder(),
-                  );
-                },
+                onTap: () => _editBillSheet(context, bill),
               ),
             ),
           ),
         );
       },
+    );
+  }
+
+  /// 打开账单编辑底部弹层（smooth_sheets，与主界面 FAB 同款）
+  void _editBillSheet(BuildContext context, BillModel bill) {
+    final billObject = Bill(
+      id: bill.id,
+      title: bill.title,
+      amount: bill.isExpense ? -bill.amount : bill.amount,
+      accountId: widget.accountId,
+      category: bill.category,
+      date: bill.date,
+      tag: bill.category,
+      note: bill.note ?? '',
+      createdAt: bill.date,
+      icon: bill.icon,
+      iconColor: bill.color,
+    );
+    final theme = DSThemeBridge.resolve(context);
+    SmoothBottomSheet.show(
+      context: context,
+      backgroundColor: theme.surface,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: Text(
+              'bill_editBill'.tr,
+              style: DsTypography.title.copyWith(
+                color: theme.text,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
+            ),
+          ),
+          // 固定高度：BillEditScreen 内部 Expanded 布局需要有界高度约束
+          SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.82,
+            child: BillEditScreen(
+              billPlugin: widget.billPlugin,
+              accountId: widget.accountId,
+              bill: billObject,
+              embeddedInSheet: true,
+              onSaved: _loadMonthBills,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -12,7 +12,18 @@ import '../services/reminder_service.dart';
 class ReminderFormScreen extends StatefulWidget {
   final Reminder? existingReminder;
 
-  const ReminderFormScreen({super.key, this.existingReminder});
+  /// 以底部弹层形式嵌入（不渲染导航栏，由外壳提供标题与保存）
+  final bool embedInSheet;
+
+  /// 弹层模式下回传提交动作（外壳"保存"按钮触发）
+  final void Function(VoidCallback submit)? onReady;
+
+  const ReminderFormScreen({
+    super.key,
+    this.existingReminder,
+    this.embedInSheet = false,
+    this.onReady,
+  });
 
   @override
   State<ReminderFormScreen> createState() => _ReminderFormScreenState();
@@ -21,21 +32,23 @@ class ReminderFormScreen extends StatefulWidget {
 class _ReminderFormScreenState extends State<ReminderFormScreen> {
   final ReminderService _service = ReminderService();
   bool _isSubmitting = false;
+  FormBuilderWrapperState? _wrapperState;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.onReady?.call(() => _wrapperState?.submitForm());
+  }
 
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.existingReminder != null;
 
-    return SuperCupertinoNavigationWrapper(
-      title: Text(
-        isEditing ? 'reminder_editReminder'.tr : 'reminder_createReminder'.tr,
-      ),
-      largeTitle:
-          isEditing ? 'reminder_editReminder'.tr : 'reminder_createReminder'.tr,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: FormBuilderWrapper(
-          config: FormConfig(
+    final form = SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: FormBuilderWrapper(
+        onStateReady: (state) => _wrapperState = state,
+        config: FormConfig(
             fields: [
               // 标题
               FormFieldConfig(
@@ -136,9 +149,22 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
             ],
             onSubmit: _handleSubmit,
             submitButtonText: isEditing ? 'app_save'.tr : 'app_create'.tr,
+            showSubmitButton: !widget.embedInSheet,
           ),
         ),
+      );
+
+    if (widget.embedInSheet) {
+      return form;
+    }
+
+    return SuperCupertinoNavigationWrapper(
+      title: Text(
+        isEditing ? 'reminder_editReminder'.tr : 'reminder_createReminder'.tr,
       ),
+      largeTitle:
+          isEditing ? 'reminder_editReminder'.tr : 'reminder_createReminder'.tr,
+      body: form,
     );
   }
 

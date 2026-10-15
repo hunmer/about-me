@@ -14,7 +14,18 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 class EditMemorialDayPage extends StatefulWidget {
   final MemorialDay? memorialDay;
 
-  const EditMemorialDayPage({super.key, this.memorialDay});
+  /// 以底部弹层形式嵌入（不渲染导航栏，由外壳提供标题与保存）
+  final bool embedInSheet;
+
+  /// 弹层模式下回传保存动作（外壳"保存"按钮触发）
+  final void Function(VoidCallback save)? onReady;
+
+  const EditMemorialDayPage({
+    super.key,
+    this.memorialDay,
+    this.embedInSheet = false,
+    this.onReady,
+  });
 
   @override
   State<EditMemorialDayPage> createState() => _EditMemorialDayPageState();
@@ -37,6 +48,7 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
     _backgroundImageUrl = widget.memorialDay?.backgroundImageUrl;
     _selectedIcon = widget.memorialDay?.icon;
     _selectedIconColor = widget.memorialDay?.iconColor;
+    widget.onReady?.call(() => _save(context));
     _updateRouteContext();
   }
 
@@ -138,6 +150,10 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedInSheet) {
+      return _buildFormBody();
+    }
+
     final isEditing = widget.memorialDay != null;
 
     return SuperCupertinoNavigationWrapper(
@@ -157,70 +173,74 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
           ),
         ),
       ],
-      body: DSThemeBridge(
-        child: Builder(
-          builder: (context) {
-            return SingleChildScrollView(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: MediaQuery.paddingOf(context).bottom + 24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  IconAvatarRowField(
-                    name: 'memorial_icon',
-                    initialIcon: _selectedIcon,
-                    initialIconColor: _selectedIconColor,
-                    initialAvatarUrl: _backgroundImageUrl,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedIcon = value['icon'] as IconData?;
-                        _selectedIconColor = value['iconColor'] as Color?;
-                        _backgroundImageUrl = value['avatarUrl'] as String?;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 24),
+      body: _buildFormBody(),
+    );
+  }
 
-                  TextInputField(
-                    controller: _titleController,
-                    labelText: 'day_title'.tr,
-                    hintText: 'day_enterTitle'.tr,
-                    autofocus: !isEditing,
-                  ),
-                  const SizedBox(height: 24),
+  Widget _buildFormBody() {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          return SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.paddingOf(context).bottom + 24,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                IconAvatarRowField(
+                  name: 'memorial_icon',
+                  initialIcon: _selectedIcon,
+                  initialIconColor: _selectedIconColor,
+                  initialAvatarUrl: _backgroundImageUrl,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedIcon = value['icon'] as IconData?;
+                      _selectedIconColor = value['iconColor'] as Color?;
+                      _backgroundImageUrl = value['avatarUrl'] as String?;
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
 
-                  // 目标日期
-                  DatePickerField(
-                    date: _selectedDate,
-                    onTap: _selectDate,
-                    formattedDate: _formatDate(_selectedDate),
-                    placeholder: 'day_selectDate'.tr,
-                    labelText: 'day_targetDate'.tr,
-                  ),
-                  const SizedBox(height: 32),
+                TextInputField(
+                  controller: _titleController,
+                  labelText: 'day_title'.tr,
+                  hintText: 'day_enterTitle'.tr,
+                  autofocus: !widget.embedInSheet && widget.memorialDay == null,
+                ),
+                const SizedBox(height: 24),
 
-                  // 删除按钮（仅编辑模式显示）
-                  if (isEditing)
-                    DSThemeBridge(
-                      child: Builder(
-                        builder: (context) => DSButton(
-                          label: 'day_delete'.tr,
-                          variant: DSButtonVariant.destructive,
-                          icon: DsIconKind.trash,
-                          expand: true,
-                          onPressed: _showDeleteConfirm,
-                        ),
+                // 目标日期
+                DatePickerField(
+                  date: _selectedDate,
+                  onTap: _selectDate,
+                  formattedDate: _formatDate(_selectedDate),
+                  placeholder: 'day_selectDate'.tr,
+                  labelText: 'day_targetDate'.tr,
+                ),
+                const SizedBox(height: 32),
+
+                // 删除按钮（仅编辑模式显示）
+                if (widget.memorialDay != null)
+                  DSThemeBridge(
+                    child: Builder(
+                      builder: (context) => DSButton(
+                        label: 'day_delete'.tr,
+                        variant: DSButtonVariant.destructive,
+                        icon: DsIconKind.trash,
+                        expand: true,
+                        onPressed: _showDeleteConfirm,
                       ),
                     ),
-                ],
-              ),
-            );
-          },
-        ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

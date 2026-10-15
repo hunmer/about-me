@@ -7,10 +7,8 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
-import 'package:aboutme/plugins/habits/widgets/habit_form.dart';
-import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
+import 'package:aboutme/plugins/habits/widgets/habit_form_sheet.dart';
 import 'package:flutter/material.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
 import 'package:aboutme/plugins/habits/widgets/habits_list/habit_card.dart';
 import 'package:aboutme/plugins/habits/controllers/timer_controller.dart';
@@ -257,43 +255,17 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
   }
 
   Future<void> _showHabitForm(BuildContext context, [Habit? habit]) async {
-    FormBuilderWrapperState? wrapperState;
-
-    await NavigationHelper.push(
+    await HabitFormSheet.show(
       context,
-      Scaffold(
-        appBar: AppBar(
-          title: Text(
-            habit == null ? 'habits_createHabit'.tr : 'habits_editHabit'.tr,
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.check),
-              onPressed: () => wrapperState?.submitForm(),
-            ),
-            if (habit != null)
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () async {
-                  await widget.controller.deleteHabit(habit.id);
-                  Navigator.pop(context);
-                  _loadHabits();
-                },
-              ),
-          ],
-        ),
-        backgroundColor: DSThemeBridge.resolve(context).background,
-        body: HabitForm(
-          initialHabit: habit,
-          showSubmitButton: false,
-          onSave: (habit) async {
-            await widget.controller.saveHabit(habit);
-            Navigator.pop(context);
-            _loadHabits();
-          },
-          onStateReady: (state) => wrapperState = state,
-        ),
-      ),
+      habit: habit,
+      onSave: (updated) async {
+        await widget.controller.saveHabit(updated);
+        _loadHabits();
+      },
+      onDelete: (habit) async {
+        await widget.controller.deleteHabit(habit.id);
+        _loadHabits();
+      },
     );
   }
 

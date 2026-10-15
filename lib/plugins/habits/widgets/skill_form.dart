@@ -11,8 +11,16 @@ import 'package:aboutme/core/utils/icon_utils.dart';
 class SkillForm extends StatefulWidget {
   final Skill? initialSkill;
   final Function(Skill) onSave;
+  final bool showSubmitButton;
+  final void Function(FormBuilderWrapperState)? onStateReady;
 
-  const SkillForm({super.key, this.initialSkill, required this.onSave});
+  const SkillForm({
+    super.key,
+    this.initialSkill,
+    required this.onSave,
+    this.showSubmitButton = true,
+    this.onStateReady,
+  });
 
   @override
   State<SkillForm> createState() => _SkillFormState();
@@ -36,7 +44,10 @@ class _SkillFormState extends State<SkillForm> {
     IconData? initialIcon;
     if (skill?.icon != null) {
       try {
-        initialIcon = dynamicIconData(int.parse(skill!.icon!), fontFamily: 'MaterialIcons');
+        initialIcon = dynamicIconData(
+          int.parse(skill!.icon!),
+          fontFamily: 'MaterialIcons',
+        );
       } catch (_) {
         initialIcon = Icons.check_rounded;
       }
@@ -46,6 +57,7 @@ class _SkillFormState extends State<SkillForm> {
       padding: const EdgeInsets.all(16),
       child: FormBuilderWrapper(
         formKey: _formKey,
+        onStateReady: (state) => widget.onStateReady?.call(state),
         config: FormConfig(
           fields: [
             // 图标和图片选择器（并排显示）
@@ -57,9 +69,7 @@ class _SkillFormState extends State<SkillForm> {
                 'iconColor': Colors.blue,
                 'avatarUrl': skill?.image,
               },
-              extra: {
-                'avatarSaveDirectory': 'habits/skill_images',
-              },
+              extra: {'avatarSaveDirectory': 'habits/skill_images'},
             ),
 
             // 技能名称
@@ -101,6 +111,7 @@ class _SkillFormState extends State<SkillForm> {
             ),
           ],
           submitButtonText: 'habits_save'.tr,
+          showSubmitButton: widget.showSubmitButton,
           fieldSpacing: 16,
           showResetButton: false,
           onSubmit: _handleSave,
@@ -126,7 +137,8 @@ class _SkillFormState extends State<SkillForm> {
           : values['group'] as String?,
       icon: iconData.codePoint.toString(),
       image: imageUrl?.isEmpty ?? true ? null : imageUrl,
-      maxDurationMinutes: int.tryParse(values['maxDurationMinutes']?.toString() ?? '0') ?? 0,
+      maxDurationMinutes:
+          int.tryParse(values['maxDurationMinutes']?.toString() ?? '0') ?? 0,
     );
 
     widget.onSave(skill);

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import '../models/reminder.dart';
 import '../controllers/reminder_list_controller.dart';
@@ -8,6 +7,7 @@ import 'components/empty_state.dart';
 import 'reminder_form_screen.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/form_modal_sheet.dart';
 
 import 'package:get/get.dart';
 /// 提醒列表界面
@@ -71,25 +71,35 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
   }
 
   Future<void> _addReminder() async {
-    final result = await NavigationHelper.push<bool>(
-      context,
-      const ReminderFormScreen(),
-      routeName: '/reminder/form',
-    );
+    // 新建提醒：smooth_sheets 底部弹层
+    final result = await _showReminderForm();
     if (result == true) {
       await _controller.refresh();
     }
   }
 
   Future<void> _editReminder(Reminder reminder) async {
-    final result = await NavigationHelper.push<bool>(
-      context,
-      ReminderFormScreen(existingReminder: reminder),
-      routeName: '/reminder/form',
-    );
+    final result = await _showReminderForm(reminder);
     if (result == true) {
       await _controller.refresh();
     }
+  }
+
+  Future<bool?> _showReminderForm([Reminder? reminder]) {
+    VoidCallback? submitReminder;
+    return FormModalSheet.show<bool>(
+      context: context,
+      title:
+          reminder == null
+              ? 'reminder_createReminder'.tr
+              : 'reminder_editReminder'.tr,
+      child: ReminderFormScreen(
+        existingReminder: reminder,
+        embedInSheet: true,
+        onReady: (submit) => submitReminder = submit,
+      ),
+      onSave: () => submitReminder?.call(),
+    );
   }
 
   Future<void> _deleteReminder(Reminder reminder) async {
