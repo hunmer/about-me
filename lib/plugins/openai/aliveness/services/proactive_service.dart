@@ -19,6 +19,7 @@ import 'package:aboutme/plugins/openai/aliveness/services/keepalive_service.dart
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/state_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/moments/services/agent_assets_service.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
@@ -189,20 +190,40 @@ class ProactiveService {
     await _store.saveStats(agentId, stats);
   }
 
-  /// 闲置思念分流：自主发一条朋友圈（零成本配图=随机引用已有资产图）
+  /// 闲置思念分流：自主发一条朋友圈（纯文字即可，零成本配图=随机引用已有资产图）
   Future<void> _postProactiveMoment(AIAgent agent, AgentState state) async {
     final basePrompt = await RequestService.getEffectiveSystemPrompt(agent);
+    final tagKeys = MomentTags.all.map((t) => t.key).join('/');
     final system = '$basePrompt\n\n【你的当前状态】${state.describe()}。\n'
         '【任务】你现在想发一条朋友圈动态，分享此刻的心情、见闻或生活琐事。\n'
-        '只输出动态文案本身（1~2句话），像真人发朋友圈的语气，不要引号、不要解释。\n';
+        '输出两行：\n'
+        '第一行：动态文案（1~2句话，像真人发朋友圈的语气，不要引号）\n'
+        '第二行：标签，必须是 $tagKeys 之一（生活/美食/设计/萌宠/心情/旅行，按内容选最贴切的）\n'
+        '不要输出其他任何内容。';
 
     final content = await RequestService.chat(
       '（朋友圈）',
       agent,
       contextMessages: [ChatCompletionMessage.system(content: system)],
     );
-    final text = content.trim();
-    if (text.isEmpty || text.startsWith('Error:')) return;
+    if (content.trim().isEmpty || content.trim().startsWith('Error:')) return;
+
+    // 宽松解析：末行命中标签枚举则视为标签，否则整段都当文案（纯文本）
+    var text = content.trim();
+    var tag = MomentTags.defaultKey;
+    final lines = text
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+    if (lines.length >= 2) {
+      final matched = MomentTags.matchKey(lines.last);
+      if (matched != null) {
+        tag = matched;
+        text = lines.sublist(0, lines.length - 1).join('\n');
+      }
+    }
+    if (text.isEmpty) return;
 
     // 零成本配图：若已有生成好的资产图，一半概率随机引用一张
     var images = const <String>[];
@@ -221,10 +242,11 @@ class ProactiveService {
       text: text,
       images: images,
       source: 'agent',
+      tag: tag,
     );
     final preview = text.length > 30 ? '${text.substring(0, 30)}…' : text;
     debugPrint('[Aliveness][主动] 已发朋友圈 | agent=${agent.name} '
-        '配图=${images.isEmpty ? "无" : "资产图"} 内容="$preview"');
+        '配图=${images.isEmpty ? "无" : "资产图"} 标签=$tag 内容="$preview"');
   }
 
   /// 免打扰：支持跨午夜区间（如 [23, 8]）

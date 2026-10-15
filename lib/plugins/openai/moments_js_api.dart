@@ -85,11 +85,18 @@ Future<String> _jsGenerateImage(Map<String, dynamic> params) async {
 
 /// 发朋友圈工具：发布一条动态，可选自动生图配图
 ///
-/// params: text(必填), imagePrompt(可选,生图配图), refAssetNames(可选), sendToChat(可选,配图同时发到聊天)
+/// params: text(必填), tag(必填,标签分类), imagePrompt(可选,生图配图), refAssetNames(可选), sendToChat(可选,配图同时发到聊天)
 Future<String> _jsPostMoment(Map<String, dynamic> params) async {
   final text = (params['text'] as String?)?.trim() ?? '';
   if (text.isEmpty && params['imagePrompt'] == null) {
     return jsonEncode({'error': '缺少必需参数: text（或至少提供 imagePrompt）'});
+  }
+  // AI 发帖必须带标签分类（宽松解析：'foodie' / '标签：Foodie' 都能命中）
+  final tag = MomentTags.matchKey(params['tag'] as String?);
+  if (tag == null) {
+    return jsonEncode({
+      'error': '缺少必需参数: tag（标签分类），必须是 ${MomentTags.all.map((t) => t.key).join('/')} 之一',
+    });
   }
   final agentId = _resolveAgentId(params);
   if (agentId == null) {
@@ -137,6 +144,7 @@ Future<String> _jsPostMoment(Map<String, dynamic> params) async {
       agentId: agentId,
       text: text,
       images: images,
+      tag: tag,
     );
     return jsonEncode({
       'success': true,

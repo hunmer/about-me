@@ -53,7 +53,7 @@
   },
   "post_moment": {
     "title": "发朋友圈",
-    "description": "以自己的身份发布一条朋友圈动态（用户可在朋友圈页面查看）。分享日常、心情、见闻时使用；可提供 imagePrompt 自动生成配图",
+    "description": "以自己的身份发布一条朋友圈动态（用户可在朋友圈页面查看）。分享日常、心情、见闻时使用。纯文字动态完全没问题（不传 imagePrompt 即可），不必每条都配图；想配图时可提供 imagePrompt 自动生成",
     "parameters": [
       {
         "name": "text",
@@ -62,10 +62,16 @@
         "description": "动态文案，口语化、有个人风格，一两句话即可"
       },
       {
+        "name": "tag",
+        "type": "string",
+        "required": true,
+        "description": "标签分类（必填），必须是以下之一：life(生活日常)/foodie(美食)/design(设计)/pets(萌宠)/mood(心情)/travel(旅行)，按动态内容选最贴切的"
+      },
+      {
         "name": "imagePrompt",
         "type": "string",
         "required": false,
-        "description": "配图生图提示词；不传则发纯文字动态"
+        "description": "配图生图提示词；不传则发纯文字动态（完全允许）"
       },
       {
         "name": "refAssetNames",
@@ -86,15 +92,15 @@
     },
     "examples": [
       {
-        "title": "发一条带配图的朋友圈",
-        "code": "const r = await Aboutme.plugins.openai.post_moment({\n  text: '今天整理了一下房间，阳光正好~',\n  imagePrompt: '整洁温馨的卧室一角，阳光洒进来',\n  refAssetNames: ['房间照片']\n});\nsetResult(r.message);"
+        "title": "发纯文字动态（最常用）",
+        "code": "const r = await Aboutme.plugins.openai.post_moment({\n  text: '刚看完一部老电影，结局意难平',\n  tag: 'mood'\n});\nsetResult(r.message);"
       },
       {
-        "title": "发纯文字动态",
-        "code": "const r = await Aboutme.plugins.openai.post_moment({text: '刚看完一部老电影，结局意难平'});\nsetResult(r.message);"
+        "title": "发一条带配图的朋友圈",
+        "code": "const r = await Aboutme.plugins.openai.post_moment({\n  text: '今天整理了一下房间，阳光正好~',\n  tag: 'life',\n  imagePrompt: '整洁温馨的卧室一角，阳光洒进来',\n  refAssetNames: ['房间照片']\n});\nsetResult(r.message);"
       }
     ],
-    "notes": "不要频繁发布，内容要有生活气息，避免广告腔。发含自己形象的配图时优先引用资产图",
+    "notes": "tag 为必填参数，缺失会报错。不要频繁发布，内容要有生活气息，避免广告腔。发含自己形象的配图时优先引用资产图",
     "enabled": true
   },
   "list_agent_assets": {

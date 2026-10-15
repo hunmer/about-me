@@ -351,7 +351,7 @@ extension _ChatScreenDialogsExt on _ChatScreenState {
 
   /// 打开 agent 朋友圈
   void _openMoments() {
-    NavigationHelper.push(context, const MomentsScreen());
+    NavigationHelper.push(context, const MomentsFeedScreen());
   }
 
   /// 显示删除确认对话框

@@ -27,6 +27,7 @@ import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/plugins/webview/webview_plugin.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/media_log/media_log_plugin.dart';
+import 'package:aboutme/plugins/moments/moments_plugin.dart';
 
 typedef PluginBuilder = PluginBase Function();
 
@@ -59,6 +60,7 @@ class BuiltinPlugins {
     () => ReminderPlugin(),
     () => Live2DPlugin(),
     () => MediaLogPlugin(),
+    () => MomentsPlugin(),
     () => AchievementPlugin(),
   ];
 

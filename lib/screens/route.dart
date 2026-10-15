@@ -34,6 +34,7 @@ import 'package:aboutme/plugins/goods/goods_route_handler.dart';
 import 'package:aboutme/plugins/habits/habits_route_handler.dart';
 import 'package:aboutme/plugins/tracker/tracker_route_handler.dart';
 import 'package:aboutme/plugins/media_log/media_log_route_handler.dart';
+import 'package:aboutme/plugins/moments/moments_route_handler.dart';
 
 // 导入页面组件（用于 routes Map）
 import 'package:aboutme/screens/home_screen/home_screen.dart';
@@ -78,6 +79,7 @@ class AppRoutes extends NavigatorObserver {
     HabitsRouteHandler(),
     TrackerRouteHandler(),
     MediaLogRouteHandler(),
+    MomentsRouteHandler(),
   ];
 
   // 初始化所有路由

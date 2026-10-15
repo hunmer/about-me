@@ -69,11 +69,14 @@ class MomentsService extends ChangeNotifier {
   }
 
   /// 发布动态（新帖插到最前；图片数超过上限时截断）
+  ///
+  /// [agentId] 传 [MomentPost.userAuthorId] 表示用户自己投稿（source='user'）
   Future<MomentPost> addPost({
     required String agentId,
     required String text,
     List<String> images = const [],
     String source = 'agent',
+    String? tag,
   }) async {
     await loadPosts();
     final post = MomentPost(
@@ -83,6 +86,7 @@ class MomentsService extends ChangeNotifier {
       images: List.of(images.take(maxImagesPerPost)),
       createdAt: DateTime.now(),
       source: source,
+      tag: tag ?? MomentTags.defaultKey,
     );
     _posts.insert(0, post);
     if (_posts.length > _maxPosts) {
@@ -115,6 +119,7 @@ class MomentsService extends ChangeNotifier {
       images: old.images,
       createdAt: old.createdAt,
       source: old.source,
+      tag: old.tag,
       liked: !old.liked,
       comments: old.comments,
     );
@@ -144,6 +149,7 @@ class MomentsService extends ChangeNotifier {
       images: old.images,
       createdAt: old.createdAt,
       source: old.source,
+      tag: old.tag,
       liked: old.liked,
       comments: [...old.comments, comment],
     );
