@@ -46,7 +46,7 @@ abstract class PluginBase {
     final value = _storage;
     if (value == null) {
       throw StateError(
-        '插件($id#${hashCode}) 在 setStorageManager 之前访问了 storage',
+        '插件($id#$hashCode) 在 setStorageManager 之前访问了 storage',
       );
     }
     return value;

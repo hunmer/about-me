@@ -217,7 +217,7 @@ class StickerService {
       // PNG 尝试 APNG→GIF（LINE 动态贴图等），成功则以 GIF 存储（表情面板可播放动画）
       if (path.extension(fileName).toLowerCase() == '.png') {
         try {
-          final gif = await compute(apngToGif, bytes!);
+          final gif = await compute(apngToGif, bytes);
           if (gif != null) {
             bytes = gif;
             fileName = '${path.basenameWithoutExtension(fileName)}.gif';

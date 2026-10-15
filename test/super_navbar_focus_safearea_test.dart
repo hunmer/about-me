@@ -65,7 +65,8 @@ void main() {
 
     final top = await searchFieldTop(tester);
     expect(top, closeTo(topInset + 8, 1.0),
-        reason: '聚焦收缩后搜索框顶部应为 ${topInset}+8,实际 $top');
+      reason: '聚焦收缩后搜索框顶部应为 $topInset+8,实际 $top',
+    );
   });
 
   testWidgets('Scaffold+pinned:聚焦后键盘弹出仍保持安全边距', (tester) async {
@@ -84,7 +85,8 @@ void main() {
 
     final top = await searchFieldTop(tester);
     expect(top, closeTo(topInset + 8, 1.0),
-        reason: '键盘弹出后搜索框顶部应为 ${topInset}+8,实际 $top');
+      reason: '键盘弹出后搜索框顶部应为 $topInset+8,实际 $top',
+    );
   });
 
   testWidgets('Scaffold+pinned+无大标题:聚焦收缩后仍在安全边距下',
@@ -100,6 +102,7 @@ void main() {
 
     final top = await searchFieldTop(tester);
     expect(top, closeTo(topInset + 8, 1.0),
-        reason: '聚焦收缩后搜索框顶部应为 ${topInset}+8,实际 $top');
+      reason: '聚焦收缩后搜索框顶部应为 $topInset+8,实际 $top',
+    );
   });
 }

@@ -8,7 +8,6 @@ import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart' show showDialog;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
