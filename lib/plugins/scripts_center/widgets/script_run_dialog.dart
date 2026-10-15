@@ -305,10 +305,18 @@ class _ScriptRunDialogState extends State<ScriptRunDialog> {
           .map(
             (p) => DropdownMenuItem(
               value: p.id,
+              // DropdownMenuItem 内部对 child 传递无限宽约束，
+              // 必须 shrink-wrap，否则 Row 里的 Flexible 会触发
+              // "non-zero flex but unbounded width" 断言
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Flexible(
-                    child: Text(p.name, overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      p.name,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
                   if (p.id == widget.defaultProfileId) ...[
                     const SizedBox(width: 4),

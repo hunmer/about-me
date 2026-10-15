@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
@@ -25,7 +27,11 @@ import '../widgets/moments_shared.dart';
 class MomentsProfileScreen extends StatefulWidget {
   final String? agentId;
 
-  const MomentsProfileScreen({super.key, this.agentId});
+  /// true = 作为宿主页 tab 内嵌（无返回按钮）；
+  /// false/默认 = push 的子页面（agent 主页，带返回按钮）
+  final bool embedded;
+
+  const MomentsProfileScreen({super.key, this.agentId, this.embedded = false});
 
   @override
   State<MomentsProfileScreen> createState() => _MomentsProfileScreenState();
@@ -122,14 +128,17 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
       components: NavigationBarStaticComponents(
         keys: _navBarKeys,
         route: ModalRoute.of(context),
-        userLeading: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: DSIconButton(
-            icon: DsIconKind.chevronLeft,
-            size: 38,
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
-        ),
+        userLeading:
+            widget.embedded
+                ? const SizedBox(width: 38)
+                : Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: DSIconButton(
+                    icon: DsIconKind.chevronLeft,
+                    size: 38,
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                ),
         automaticallyImplyLeading: false,
         automaticallyImplyTitle: false,
         previousPageTitle: null,
@@ -245,33 +254,6 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
     );
   }
 
-  void _backToFeed() {
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) {
-      navigator.pop();
-    } else {
-      navigator.pushReplacementNamed('/moments');
-    }
-  }
-
-  /// 底部圆盘 dock 的 tab 动作（回动态流 / 合集 / 回忆 / 主页-当前）
-  void _onDockTab(int index) {
-    switch (index) {
-      case 0:
-        _backToFeed();
-      case 1:
-        setState(() => _activeTag = null);
-      case 2:
-        ToastService.instance.showToast(
-          'moments_archiveToast'.trParams({'n': '${_posts.length}'}),
-        );
-      case 3:
-        ToastService.instance.showToast(
-          'moments_viewingProfile'.trParams({'name': _displayName}),
-        );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
@@ -330,27 +312,7 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
                   Expanded(child: CustomScrollView(slivers: slivers)),
                 ],
               ),
-      // 弧形圆盘 dock
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
-        child: DSBottomNavigation(
-          items: [
-            DSNavItem(icon: DsIconKind.home, label: 'moments_tabHome'.tr),
-            DSNavItem(
-              icon: DsIconKind.photoLibrary,
-              label: 'moments_tabAlbums'.tr,
-            ),
-            DSNavItem(
-              icon: DsIconKind.clock,
-              label: 'moments_tabMemories'.tr,
-            ),
-            DSNavItem(icon: DsIconKind.user, label: 'moments_tabMe'.tr),
-          ],
-          currentIndex: 3,
-          onTap: _onDockTab,
-          frosted: true,
-        ),
-      ),
+
     );
   }
 

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/utils/image_utils.dart';
@@ -201,6 +202,55 @@ class MomentImage extends StatelessWidget {
         }
         return SizedBox(width: double.infinity, height: height, child: child);
       },
+    );
+  }
+}
+
+/// 朋友圈两屏共用的弧形圆盘底部导航
+/// （3 tab：首页 / 回忆 / 我的主页 ＋ subbar 右侧 ＋ 投稿圆钮；
+/// Feed 传 activeIndex 0，Profile 传 2）
+class MomentsDock extends StatelessWidget {
+  /// 0 = 首页（动态流），2 = 我的主页
+  final int activeIndex;
+  final VoidCallback? onHome;
+  final VoidCallback? onMemories;
+  final VoidCallback? onMe;
+  final VoidCallback? onCompose;
+
+  const MomentsDock({
+    super.key,
+    required this.activeIndex,
+    this.onHome,
+    this.onMemories,
+    this.onMe,
+    this.onCompose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
+      child: DSBottomNavigation(
+        items: [
+          DSNavItem(icon: DsIconKind.home, label: 'moments_tabHome'.tr),
+          DSNavItem(icon: DsIconKind.clock, label: 'moments_tabMemories'.tr),
+          DSNavItem(icon: DsIconKind.user, label: 'moments_tabMe'.tr),
+        ],
+        currentIndex: activeIndex,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              onHome?.call();
+            case 1:
+              onMemories?.call();
+            case 2:
+              onMe?.call();
+          }
+        },
+        trailingAction: const DsIcon(DsIconKind.plus, size: 16),
+        onTrailingTap: onCompose,
+        frosted: true,
+      ),
     );
   }
 }

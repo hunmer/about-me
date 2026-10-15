@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 
-import 'screens/moments_feed_screen.dart';
+import 'screens/moments_home_screen.dart';
 
 /// 朋友圈插件：复刻 skygram 参考稿的两块 UI（动态流 + 个人主页），
 /// 数据与 agent 朋友圈（活人感/MomentsService）完全打通
@@ -28,6 +28,6 @@ class MomentsPlugin extends BasePlugin {
 
   @override
   Widget buildMainView(BuildContext context) {
-    return const MomentsFeedScreen();
+    return const MomentsHomeScreen();
   }
 }
