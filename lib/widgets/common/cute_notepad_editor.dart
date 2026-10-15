@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -16,6 +17,60 @@ import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/markdo
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cute_notepad_card.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cute_notepad_stickers.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cute_notepad_variants.dart';
+
+/// 尝试把 Quill Delta JSON（flutter_quill 文档格式）解析为便签文本
+///
+/// 输入兼容 JSON 字符串或已解码的 ops 列表；行尾 `attributes.list`
+/// 为 checked/unchecked 的行转成 `- [x]` / `- [ ]` 待办语法，
+/// 其余行为普通文本。非 Delta 内容返回 null（调用方按普通文本处理）。
+String? tryParseQuillDeltaToText(dynamic source) {
+  List<dynamic>? ops;
+  if (source is List) {
+    ops = source;
+  } else if (source is String) {
+    final trimmed = source.trim();
+    if (!trimmed.startsWith('[')) return null;
+    try {
+      final decoded = jsonDecode(trimmed);
+      if (decoded is List) ops = decoded;
+    } catch (_) {
+      return null;
+    }
+  }
+  if (ops == null || ops.isEmpty) return null;
+  if (!ops.any((e) => e is Map && e.containsKey('insert'))) return null;
+
+  // 逐行累积：换行符所在 op 的 attributes 决定该行的待办状态
+  final lines = <String>[];
+  var buffer = '';
+  String? pendingList; // 当前行已挂起、尚未消费的 list 属性
+  for (final op in ops) {
+    if (op is! Map) continue;
+    final insert = op['insert'];
+    final attrs = op['attributes'];
+    final list = attrs is Map ? attrs['list'] : null;
+    if (insert is! String) continue;
+    if (list is String) pendingList = list;
+    final parts = insert.split('\n');
+    for (var i = 0; i < parts.length; i++) {
+      buffer += parts[i];
+      if (i == parts.length - 1) break;
+      // 遇到换行：list 属性优先取本 op（无则沿用挂起值），消费后清空
+      final lineList = list is String ? list : pendingList;
+      pendingList = null;
+      if (lineList == 'checked') {
+        lines.add('- [x] $buffer');
+      } else if (lineList == 'unchecked') {
+        lines.add('- [ ] $buffer');
+      } else {
+        lines.add(buffer);
+      }
+      buffer = '';
+    }
+  }
+  if (buffer.isNotEmpty) lines.add(buffer);
+  return lines.isEmpty ? null : lines.join('\n');
+}
 
 /// 可爱手账贴图编辑器（共用组件，DS 手绘风格）
 ///
@@ -69,6 +124,10 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
   /// 正文用 MarkdownContent 渲染
   bool _useMarkdown = true;
 
+  /// 待办模式（传入待办项目或纯待办文本时为 true）：
+  /// 样式列表只展示清单型便签，内容以待办行编辑
+  late final bool _todoMode;
+
   /// 贴纸布局撤销栈（添加/删除/变换/重置前压栈）
   final List<List<CuteNotepadSticker>> _undoStack = [];
 
@@ -83,10 +142,25 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
   @override
   void initState() {
     super.initState();
-    _variantId = widget.initialVariantId ?? cuteNotepadPresets.first.id;
-    _textController = TextEditingController(text: widget.initialText ?? '');
+    // 聊天消息可能传 Quill Delta JSON：解析为文本 + 待办语法
+    final deltaText = tryParseQuillDeltaToText(widget.initialText);
+    final initialText = deltaText ?? widget.initialText ?? '';
+
+    // 待办模式：明确传入待办项目，或非空行全部是待办语法行
+    final todoLines = _parseTodoLines(initialText);
+    final explicitItems = widget.initialItems;
+    _todoMode =
+        (explicitItems?.isNotEmpty ?? false) || (todoLines?.isNotEmpty ?? false);
+
+    // 待办模式默认清单型样式（02），文本模式默认 01
+    _variantId =
+        widget.initialVariantId ??
+        (_todoMode ? 'yellowTodoFlower' : cuteNotepadPresets.first.id);
+
     final initialItems =
-        widget.initialItems ?? resolveCuteNotepadVariant(_variantId).items;
+        (explicitItems?.isNotEmpty ?? false)
+            ? explicitItems!
+            : todoLines ?? resolveCuteNotepadVariant(_variantId).items;
     _todoRows = [
       for (final item in initialItems)
         _EditorTodoRow(
@@ -94,8 +168,29 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
           controller: TextEditingController(text: item.text),
         ),
     ];
-    // 初始贴纸 = 当前样式预设的绝对布局，之后完全由编辑器管理
+    // 待办模式下待办已转入行编辑，自由文本清空（清单样式不渲染自由文本）
+    _textController = TextEditingController(
+      text: _todoMode && todoLines != null ? '' : initialText,
+    );
     _stickers = _presetStickerLayouts();
+  }
+
+  /// 文本非空行全部为待办语法时解析为待办列表，否则返回 null
+  static List<CuteNotepadTodoItem>? _parseTodoLines(String text) {
+    if (text.trim().isEmpty) return null;
+    final items = <CuteNotepadTodoItem>[];
+    for (final line in text.split('\n')) {
+      if (line.trim().isEmpty) continue;
+      final match = markdownTodoPattern.firstMatch(line);
+      if (match == null) return null;
+      items.add(
+        CuteNotepadTodoItem(
+          checked: (match.group(1) ?? ' ').toLowerCase() == 'x',
+          text: match.group(2)?.trim() ?? '',
+        ),
+      );
+    }
+    return items.isEmpty ? null : items;
   }
 
   @override
@@ -108,6 +203,16 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
   }
 
   CuteNotepadVariant get _variant => resolveCuteNotepadVariant(_variantId);
+
+  /// 按内容类型过滤的样式候选：
+  /// 待办模式 → 清单/横线型便签；文本模式 → 自由文本型便签
+  List<CuteNotepadVariant> get _styleChoices => _todoMode
+      ? cuteNotepadPresets
+            .where((v) => v.type != CuteNotepadNoteType.freeform)
+            .toList()
+      : cuteNotepadPresets
+            .where((v) => v.type == CuteNotepadNoteType.freeform)
+            .toList();
 
   List<CuteNotepadTodoItem> get _currentItems => [
     for (final row in _todoRows)
@@ -441,22 +546,26 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
     );
   }
 
-  /// 便签样式选择（16 种预设，切换时贴纸与内容保留）
+  /// 便签样式选择（按内容类型过滤的迷你真实便签预览，切换时贴纸与内容保留）
   Widget _buildStylePicker(AppThemeData theme) {
+    final choices = _styleChoices;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionTitle(theme, 'app_notepadStyle'.tr),
         SizedBox(height: theme.spacing.sm),
         SizedBox(
-          height: 58,
+          height: 76,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: cuteNotepadPresets.length,
+            itemCount: choices.length,
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
-              final preset = cuteNotepadPresets[index];
+              final preset = choices[index];
               final selected = preset.id == _variantId;
+              // 保留在 16 个预设中的原始编号
+              final number =
+                  '${cuteNotepadPresets.indexOf(preset) + 1}'.padLeft(2, '0');
               return GestureDetector(
                 onTap: () => setState(() => _variantId = preset.id),
                 child: Tooltip(
@@ -465,20 +574,38 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 46,
-                        height: 32,
+                        width: 56,
+                        height: 56,
+                        padding: const EdgeInsets.all(3),
                         decoration: dsSketchDecoration(
                           theme: theme,
-                          fillColor: preset.paperColor,
+                          fillColor: theme.surface,
                           stroke: selected ? theme.primary : null,
-                          strokeWidth: selected ? 2.6 : 1.8,
+                          strokeWidth: selected ? 2.4 : 1.6,
                           radius: theme.radii.sm,
                           seed: index + 1,
+                        ),
+                        // 迷你 demo 便签：空白预设展示底图 + 贴纸 + 空待办行
+                        child: ClipRect(
+                          child: OverflowBox(
+                            alignment: Alignment.topCenter,
+                            maxWidth: double.infinity,
+                            maxHeight: double.infinity,
+                            child: FittedBox(
+                              fit: BoxFit.contain,
+                              child: IgnorePointer(
+                                child: CuteNotepadCardWidget(
+                                  variant: preset,
+                                  cardWidth: 150,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${index + 1}'.padLeft(2, '0'),
+                        number,
                         style: DsTypography.caption.copyWith(
                           color: selected ? theme.primary : theme.textSub,
                           fontSize: 10,

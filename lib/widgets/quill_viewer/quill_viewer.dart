@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -8,7 +9,7 @@ import 'package:aboutme/design_system/design_system.dart';
 
 /// Quill 内容查看器（只读模式）
 /// 用于显示 Quill Delta 格式的内容
-class QuillViewer extends StatelessWidget {
+class QuillViewer extends StatefulWidget {
   /// 内容数据，支持 JSON Delta 格式或纯文本
   final String data;
 
@@ -18,39 +19,111 @@ class QuillViewer extends StatelessWidget {
   /// 自定义样式
   final quill.DefaultStyles? customStyles;
 
+  /// 复选框勾选变化回调，参数为勾选后最新的 Delta JSON；
+  /// 非 null 时复选框可点击切换（其余内容仍只读）
+  final void Function(String data)? onCheckboxToggle;
+
   const QuillViewer({
     super.key,
     required this.data,
     this.selectable = true,
     this.customStyles,
+    this.onCheckboxToggle,
   });
 
-  quill.Document _parseDocument() {
-    if (data.isEmpty) {
-      return quill.Document();
-    }
+  @override
+  State<QuillViewer> createState() => _QuillViewerState();
+}
 
+class _QuillViewerState extends State<QuillViewer> {
+  quill.QuillController? _controller;
+  StreamSubscription? _checkboxToggleSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = _buildController(widget.data);
+    _listenCheckboxToggle();
+  }
+
+  @override
+  void didUpdateWidget(covariant QuillViewer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onCheckboxToggle != oldWidget.onCheckboxToggle) {
+      _listenCheckboxToggle();
+    }
+    if (widget.data != oldWidget.data) {
+      _replaceDocument(widget.data);
+    }
+  }
+
+  @override
+  void dispose() {
+    _checkboxToggleSub?.cancel();
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  quill.QuillController _buildController(String data) {
     try {
-      // 尝试解析 JSON Delta 格式
-      final json = jsonDecode(data);
-      return quill.Document.fromJson(json);
+      final document = data.isEmpty
+          ? quill.Document()
+          : quill.Document.fromJson(jsonDecode(data));
+      return quill.QuillController(
+        document: document,
+        selection: const TextSelection.collapsed(offset: 0),
+        readOnly: true,
+      );
     } catch (e) {
       // 如果不是 JSON，作为纯文本处理
-      final document = quill.Document();
-      document.insert(0, data);
-      return document;
+      final document = quill.Document()..insert(0, data);
+      return quill.QuillController(
+        document: document,
+        selection: const TextSelection.collapsed(offset: 0),
+        readOnly: true,
+      );
+    }
+  }
+
+  /// 勾选回写：只读编辑器里文档变更只可能来自复选框切换
+  void _listenCheckboxToggle() {
+    _checkboxToggleSub?.cancel();
+    _checkboxToggleSub = null;
+    final onToggle = widget.onCheckboxToggle;
+    final controller = _controller;
+    if (onToggle == null || controller == null) return;
+    _checkboxToggleSub = controller.document.changes.listen((_) {
+      onToggle(jsonEncode(controller.document.toDelta().toJson()));
+    });
+  }
+
+  /// 外部数据更新时替换文档；内容未变化（如勾选回写后的同值重建）则跳过，
+  /// 避免不必要的光标/滚动重置
+  void _replaceDocument(String data) {
+    final controller = _controller;
+    if (controller == null) return;
+    try {
+      final document = quill.Document.fromJson(jsonDecode(data));
+      final unchanged = jsonEncode(document.toDelta().toJson()) ==
+          jsonEncode(controller.document.toDelta().toJson());
+      if (!unchanged) {
+        controller.document = document;
+        // 变更流挂在 Document 实例上，换文档后需重新订阅勾选回写
+        _listenCheckboxToggle();
+      }
+    } catch (e) {
+      controller.document = quill.Document()..insert(0, data);
+      _listenCheckboxToggle();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     try {
-      final document = _parseDocument();
-      final controller = quill.QuillController(
-        document: document,
-        selection: const TextSelection.collapsed(offset: 0),
-        readOnly: true,
-      );
+      final controller = _controller;
+      if (controller == null) {
+        throw StateError('QuillViewer controller is not ready');
+      }
 
       // Quill 的默认文本样式（paragraph/标题/列表等）派生自环境
       // DefaultTextStyle——这里强制合并手写字体，宿主树无论怎么覆盖
@@ -65,7 +138,11 @@ class QuillViewer extends StatelessWidget {
             controller: controller,
             config: quill.QuillEditorConfig(
               padding: EdgeInsets.zero,
-              customStyles: customStyles,
+              customStyles: widget.customStyles,
+              // 只读查看器不显示输入光标
+              showCursor: false,
+              // 提供勾选回调时允许点击复选框（其余内容仍只读）
+              checkBoxReadOnly: widget.onCheckboxToggle == null ? null : false,
               embedBuilders: kIsWeb
                   ? FlutterQuillEmbeds.editorWebBuilders()
                   : FlutterQuillEmbeds.editorBuilders(),
@@ -79,11 +156,11 @@ class QuillViewer extends StatelessWidget {
         fontSize: 14,
         fontFamily: DsTypography.sketchFamily,
       );
-      if (selectable) {
-        return SelectableText(data, style: fallbackStyle);
+      if (widget.selectable) {
+        return SelectableText(widget.data, style: fallbackStyle);
       } else {
         return Text(
-          data,
+          widget.data,
           style: fallbackStyle,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,

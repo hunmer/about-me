@@ -155,6 +155,9 @@ class CuteNotepadCardWidget extends StatefulWidget {
   /// 是否为内联模式
   final bool inline;
 
+  /// 覆盖卡片宽度（默认 384 × size.scale；样式迷你预览等场景使用）
+  final double? cardWidth;
+
   /// 组件尺寸
   final HomeWidgetSize size;
 
@@ -173,6 +176,7 @@ class CuteNotepadCardWidget extends StatefulWidget {
     this.initialEditing = false,
     this.showModeButton = true,
     this.inline = false,
+    this.cardWidth,
     this.size = const Large3Size(),
   });
 
@@ -428,7 +432,10 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
         );
       },
       child: SizedBox(
-        width: widget.inline ? double.maxFinite : 384 * widget.size.scale,
+        width:
+            widget.inline
+                ? double.maxFinite
+                : widget.cardWidth ?? 384 * widget.size.scale,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -954,8 +961,8 @@ class _FreeformLine {
   });
 }
 
-/// markdown 任务列表语法（- [ ] / * [x] 等）
-final RegExp _markdownTodoPattern = RegExp(
+/// markdown 任务列表语法（- [ ] / * [x] 等），供编辑器侧复用
+final RegExp markdownTodoPattern = RegExp(
   r'^\s*[-*+]\s+\[( |x|X)\]\s*(.*)$',
 );
 
@@ -1052,7 +1059,7 @@ class _NoteLayoutEngine {
       final hasTodoLines =
           text.isNotEmpty &&
           !contentWidgetMode &&
-          text.split('\n').any((l) => _markdownTodoPattern.hasMatch(l));
+          text.split('\n').any((l) => markdownTodoPattern.hasMatch(l));
 
       var lines = minLines;
       if (hasTodoLines) {
@@ -1063,7 +1070,7 @@ class _NoteLayoutEngine {
         final todoLineX2 = variant.freeformLeft + variant.freeformWidth - 2;
         final todoTextWidth = todoLineX2 - todoTextLeft - 2;
         for (final rawLine in text.split('\n')) {
-          final match = _markdownTodoPattern.firstMatch(rawLine);
+          final match = markdownTodoPattern.firstMatch(rawLine);
           if (match != null) {
             final checked = (match.group(1) ?? ' ').toLowerCase() == 'x';
             final todoText = match.group(2)?.trim() ?? '';

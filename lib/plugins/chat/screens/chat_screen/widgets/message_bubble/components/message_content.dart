@@ -8,6 +8,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/quill_viewer/index.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
 import 'package:aboutme/widgets/file_preview/index.dart';
@@ -121,6 +122,14 @@ class MessageContent extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  /// 复选框勾选持久化：用最新 Delta 内容更新消息（不改 editedAt，
+  /// 勾选不算编辑痕迹）
+  Future<void> _onCheckboxToggled(String updatedContent) async {
+    if (message.channelId == null) return;
+    final updated = await message.copyWith(content: updatedContent);
+    await ChatPlugin.instance.channelService.updateMessage(updated);
   }
 
   /// 常见 Markdown 语法的正则表达式（只编译一次）
@@ -482,6 +491,8 @@ class MessageContent extends StatelessWidget {
         return QuillViewer(
           data: message.content,
           selectable: false,
+          // 复选框勾选后把最新 Delta 写回消息（广播刷新气泡并持久化）
+          onCheckboxToggle: _onCheckboxToggled,
           customStyles: quill.DefaultStyles(
             paragraph: quill.DefaultTextBlockStyle(
               TextStyle(color: textColor),
