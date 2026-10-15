@@ -16,7 +16,7 @@ class MobileJSEngine implements JSEngine {
   final Map<String, Function> _registeredFunctions = {};
 
   /// 日志截断：超长内容（如 MB 级 base64）只保留前缀，避免刷屏与终端 IO 开销
-  static String _clipForLog(Object? value, {int max = 300}) {
+  static String _clipForLog(Object? value, {int max = 3000}) {
     final s = value == null ? 'null' : value.toString();
     if (s.length <= max) return s;
     return '${s.substring(0, max ~/ 2)}…[已截断,共${s.length}字符]';

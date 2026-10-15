@@ -285,6 +285,13 @@ class NativeToolAgentService {
     final system = cleanSystemExtras.isEmpty
         ? cleanSystemPrompt
         : '$cleanSystemPrompt\n\n$cleanSystemExtras';
+    final effectiveSystem = alivenessOnlyTools
+        ? '$system\n\n[生图工具规则]\n'
+              '当用户要求看你的照片、自拍、合照或某个场景的图片时，必须调用 moments.generate_image 并发送图片。'
+              '用户提到的具体照片不在资产列表中，也不能因此拒绝：可以把用户描述写入 prompt，'
+              '并按角色需要引用已有的「三视图」或其他资产做图生图；没有合适参考图时直接文生图。'
+              '不要只回复“没有这张图”“无法生成”或解释自己是 AI。'
+        : system;
 
     final isAnthropic = agent.apiFormat.toLowerCase() == 'anthropic';
     final Agent dartAgent;
@@ -328,7 +335,7 @@ class NativeToolAgentService {
       );
     }
 
-    final history = _convertHistory(contextMessages, system);
+    final history = _convertHistory(contextMessages, effectiveSystem);
     // 图片作为多模态附件（随 prompt 一起发送）
     final attachments = <DataPart>[];
     for (final f in files) {

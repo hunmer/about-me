@@ -75,8 +75,6 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
   FormBuilderWrapperState? _advancedWrapperState;
 
   // 配置 Tab 的状态
-  final GlobalKey<FormBuilderState> _configFormKey =
-      GlobalKey<FormBuilderState>();
   FormBuilderWrapperState? _configWrapperState;
 
   // 配置文件列表（profile）：同一配置表单的多组值
@@ -1443,10 +1441,11 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
             // 配置文件管理栏
             _buildProfileBar(),
             const SizedBox(height: 16),
-            // key 绑定当前配置文件 id：切换时表单重建，initialValue 换为新配置文件的值
+            // key 绑定当前配置文件 id：切换时表单整体重建，initialValue 换为新配置文件的值。
+            // 注意不可传外部共享的 formKey：GlobalKey 会跨 ValueKey 复活 FormBuilderState，
+            // 其缓存的旧字段值会经 registerField 反向写入新字段，导致切换后表单值不变
             FormBuilderWrapper(
               key: ValueKey('config_profile_$_currentProfileId'),
-              formKey: _configFormKey,
               onStateReady: (state) => _configWrapperState = state,
               config: FormConfig(
                 fields: _getConfigFormFields(),
