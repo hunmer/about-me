@@ -42,7 +42,7 @@ const Map<String, String> appTranslationsZh = {
   'app_share': '分享',
   'app_makeSticker': '制作贴图',
   'app_notepadText': '便签文字',
-  'app_notepadTextHint': '输入要写在便签上的内容...',
+  'app_notepadTextHint': '输入内容...；「- [ ]」开头的行会渲染成待办清单',
   'app_notepadMarkdown': 'Markdown 渲染',
   'app_todoRowLabel': '待办 @n',
   'app_addRow': '添加一行',

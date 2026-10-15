@@ -930,6 +930,35 @@ class _NoteItemLayout {
   });
 }
 
+/// 自由文本区的一行（markdown 复选框语法解析结果）：
+/// 待办行（手绘复选框 + 底线）或普通文本行，交错排列
+class _FreeformLine {
+  final bool isTodo;
+  final bool checked;
+
+  /// 普通文本行
+  final TextPainter? painter;
+
+  /// 待办行文本与底线
+  final TextPainter? todoPainter;
+  final double top;
+  final List<double> underlineYs;
+
+  const _FreeformLine({
+    required this.isTodo,
+    this.checked = false,
+    this.painter,
+    this.todoPainter,
+    required this.top,
+    this.underlineYs = const [],
+  });
+}
+
+/// markdown 任务列表语法（- [ ] / * [x] 等）
+final RegExp _markdownTodoPattern = RegExp(
+  r'^\s*[-*+]\s+\[( |x|X)\]\s*(.*)$',
+);
+
 /// 整张便签的布局结果
 class _NoteLayout {
   final double height;
@@ -945,6 +974,10 @@ class _NoteLayout {
   /// 自由文本区（viewBox 坐标；contentWidget 叠放位置）
   final Rect? freeformRect;
 
+  /// markdown 复选框解析后的行序列（非 null 时按行渲染，
+  /// 覆盖整块 freeformPainter 文字）
+  final List<_FreeformLine>? freeformLines;
+
   final List<_NoteItemLayout> itemLayouts;
   final bool hasCheck;
 
@@ -957,6 +990,7 @@ class _NoteLayout {
     this.freeformPainter,
     this.freeformOffset = Offset.zero,
     this.freeformRect,
+    this.freeformLines,
     required this.itemLayouts,
     required this.hasCheck,
   });
@@ -1011,34 +1045,106 @@ class _NoteLayoutEngine {
     TextPainter? freeformPainter;
     Offset freeformOffset = Offset.zero;
     Rect? freeformRect;
+    List<_FreeformLine>? freeformLines;
     if (variant.type == CuteNotepadNoteType.freeform) {
+      final freeformTop = curY;
       final minLines = items.isEmpty ? variant.minFreeformLines : 2;
+      final hasTodoLines =
+          text.isNotEmpty &&
+          !contentWidgetMode &&
+          text.split('\n').any((l) => _markdownTodoPattern.hasMatch(l));
+
       var lines = minLines;
-      if (contentWidgetLines != null) {
-        // contentWidget 模式：按测量高度换算行数
-        lines = math.max(minLines, contentWidgetLines.ceil());
-      } else if (text.isNotEmpty) {
-        // 未测量时按纯文本估算（contentWidget 模式只估行数，不画手绘文字）
-        final estimate = _textPainter(
-          text,
-          fontSize: 15.5,
-          lineHeight: _kFreeformLineHeight,
-          maxWidth: variant.freeformWidth - 4,
-          color: variant.textColor,
-        );
-        lines = math.max(minLines, estimate.computeLineMetrics().length);
-        if (!contentWidgetMode) {
-          freeformPainter = estimate;
+      if (hasTodoLines) {
+        // markdown 复选框语法 → 手绘待办行 + 文本行交错布局
+        freeformLines = [];
+        var y = freeformTop;
+        final todoTextLeft = 63.0;
+        final todoLineX2 = variant.freeformLeft + variant.freeformWidth - 2;
+        final todoTextWidth = todoLineX2 - todoTextLeft - 2;
+        for (final rawLine in text.split('\n')) {
+          final match = _markdownTodoPattern.firstMatch(rawLine);
+          if (match != null) {
+            final checked = (match.group(1) ?? ' ').toLowerCase() == 'x';
+            final todoText = match.group(2)?.trim() ?? '';
+            TextPainter? tp;
+            var lineCount = 1;
+            if (todoText.isNotEmpty) {
+              tp = _textPainter(
+                todoText,
+                fontSize: _kBodyFontSize,
+                lineHeight: variant.lineSpacing,
+                maxWidth: todoTextWidth,
+                color: checked
+                    ? variant.textColor.withOpacity(0.6)
+                    : variant.textColor,
+                lineThrough: checked,
+              );
+              lineCount = math.max(1, tp.computeLineMetrics().length);
+            }
+            freeformLines.add(
+              _FreeformLine(
+                isTodo: true,
+                checked: checked,
+                todoPainter: tp,
+                top: y,
+                underlineYs: List<double>.generate(
+                  lineCount,
+                  (l) => y + (l + 1) * variant.lineSpacing - 8,
+                ),
+              ),
+            );
+            y += lineCount * variant.lineSpacing;
+          } else {
+            TextPainter? tp;
+            var lineCount = 1;
+            if (rawLine.trim().isNotEmpty) {
+              tp = _textPainter(
+                rawLine,
+                fontSize: 15.5,
+                lineHeight: _kFreeformLineHeight,
+                maxWidth: variant.freeformWidth - 4,
+                color: variant.textColor,
+              );
+              lineCount = math.max(1, tp.computeLineMetrics().length);
+            }
+            freeformLines.add(
+              _FreeformLine(isTodo: false, painter: tp, top: y),
+            );
+            y += lineCount * _kFreeformLineHeight;
+          }
         }
+        final contentHeight = y - curY;
+        lines = (contentHeight / _kFreeformLineHeight).ceil();
+        curY += math.max(contentHeight, minLines * _kFreeformLineHeight) +
+            (items.isNotEmpty ? 6 : 0);
+      } else {
+        if (contentWidgetLines != null) {
+          // contentWidget 模式：按测量高度换算行数
+          lines = math.max(minLines, contentWidgetLines.ceil());
+        } else if (text.isNotEmpty) {
+          // 未测量时按纯文本估算（contentWidget 模式只估行数，不画手绘文字）
+          final estimate = _textPainter(
+            text,
+            fontSize: 15.5,
+            lineHeight: _kFreeformLineHeight,
+            maxWidth: variant.freeformWidth - 4,
+            color: variant.textColor,
+          );
+          lines = math.max(minLines, estimate.computeLineMetrics().length);
+          if (!contentWidgetMode) {
+            freeformPainter = estimate;
+          }
+        }
+        freeformOffset = Offset(variant.freeformLeft + 2, curY + 1);
+        curY += lines * _kFreeformLineHeight + (items.isNotEmpty ? 6 : 0);
       }
       freeformRect = Rect.fromLTWH(
         variant.freeformLeft,
-        curY,
+        freeformTop,
         variant.freeformWidth,
-        lines * _kFreeformLineHeight,
+        math.max(0, lines * _kFreeformLineHeight),
       );
-      freeformOffset = Offset(variant.freeformLeft + 2, curY + 1);
-      curY += lines * _kFreeformLineHeight + (items.isNotEmpty ? 6 : 0);
     }
 
     // 3. 待办/横线行
@@ -1094,6 +1200,7 @@ class _NoteLayoutEngine {
       freeformPainter: freeformPainter,
       freeformOffset: freeformOffset,
       freeformRect: freeformRect,
+      freeformLines: freeformLines,
       itemLayouts: itemLayouts,
       hasCheck: hasCheck,
     );
@@ -1556,7 +1663,39 @@ class _CuteNotepadPainter extends CustomPainter {
     }
 
     // 自由文本
-    layout.freeformPainter?.paint(canvas, layout.freeformOffset);
+    final freeformLines = layout.freeformLines;
+    if (freeformLines != null) {
+      // markdown 复选框 → 手绘待办行（与整块文本互斥）
+      final todoLineX2 =
+          variant.freeformLeft + variant.freeformWidth - 2;
+      final linePaint = Paint()
+        ..color = variant.lineColor
+        ..strokeWidth = 1.7
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
+      for (final line in freeformLines) {
+        if (line.isTodo) {
+          for (final uy in line.underlineYs) {
+            canvas.drawLine(
+              Offset(62, uy),
+              Offset(todoLineX2, uy),
+              linePaint,
+            );
+          }
+          if (layout.hasCheck) {
+            _drawCheckbox(canvas, line.checked, line.underlineYs.first);
+          }
+          line.todoPainter?.paint(canvas, Offset(64, line.top + 3));
+        } else {
+          line.painter?.paint(
+            canvas,
+            Offset(variant.freeformLeft + 2, line.top),
+          );
+        }
+      }
+    } else {
+      layout.freeformPainter?.paint(canvas, layout.freeformOffset);
+    }
 
     // 待办/横线行文本
     for (final il in layout.itemLayouts) {

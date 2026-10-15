@@ -42,7 +42,7 @@ const Map<String, String> appTranslationsEn = {
   'app_share': 'Share',
   'app_makeSticker': 'Make Sticker',
   'app_notepadText': 'Notepad text',
-  'app_notepadTextHint': 'Enter the text to write on the notepad...',
+  'app_notepadTextHint': 'Enter content; lines starting with "- [ ]" render as a todo list',
   'app_notepadMarkdown': 'Render as Markdown',
   'app_todoRowLabel': 'Todo @n',
   'app_addRow': 'Add row',
