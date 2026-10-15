@@ -17,10 +17,14 @@ class MessageService extends ChangeNotifier {
   final AIMessageStatusManager _statusManager = AIMessageStatusManager();
 
   /// 会话ID -> 消息列表的缓存
-  final Map<String, List<ChatMessage>> _messageCache = {};
+  ///
+  /// 必须全进程共享：ChatScreen 自建实例与插件级单例双写同一消息文件，
+  /// 缓存不共享时，持有旧缓存的实例会把已清空的数据写回磁盘
+  static final Map<String, List<ChatMessage>> _messageCache = {};
 
   /// 每个会话独立的保存任务队列，避免并发写入破坏JSON结构
-  final Map<String, Future<void>> _messageSaveChains = {};
+  /// 同样全进程共享，保证跨实例的写入顺序
+  static final Map<String, Future<void>> _messageSaveChains = {};
 
   /// 当前正在查看的会话ID
   String? _currentConversationId;

@@ -86,11 +86,10 @@ class DeepSeekCompatClient extends http.BaseClient {
       final body = jsonDecode(request.body) as Map<String, dynamic>;
       if (!body.containsKey('thinking') && !body.containsKey('reasoning')) {
         body['thinking'] = {'type': 'disabled'};
-        final patched =
-            http.Request(request.method, request.url)
-              ..headers.addAll(request.headers)
-              ..body = jsonEncode(body);
-        return _inner.send(patched);
+        final patched = http.Request(request.method, request.url)
+          ..headers.addAll(request.headers)
+          ..body = jsonEncode(body);
+        return await _inner.send(patched);
       }
     } catch (_) {}
     return _inner.send(request);
@@ -223,10 +222,9 @@ class NativeToolAgentService {
     final candidates = matchPluginCandidates(userInput);
     var tools = allTools;
     if (candidates != null && allTools.length > 30) {
-      tools =
-          allTools
-              .where((t) => candidates.contains(allMeta[t.name]!.pluginId))
-              .toList();
+      tools = allTools
+          .where((t) => candidates.contains(allMeta[t.name]!.pluginId))
+          .toList();
       debugPrint(
         '[NativeTool] 预筛：${allTools.length} → ${tools.length} 个工具 '
         '（候选插件：${candidates.join(',')}）',
@@ -239,8 +237,19 @@ class NativeToolAgentService {
         .map((m) => m.content is String ? m.content as String : '')
         .where((s) => s.trim().isNotEmpty)
         .join('\n\n');
-    final system =
-        systemExtras.isEmpty ? systemPrompt : '$systemPrompt\n\n$systemExtras';
+    // 原生 tools 已由 Agent 构造函数注入；旧 prompt 占位符不能泄漏到模型。
+    String withoutLegacyToolPlaceholders(String value) => value
+        .replaceAll('{agent_prompt}', '')
+        .replaceAll('{tool_templates}', '')
+        .replaceAll('{tool_brief}', '')
+        .replaceAll('{tool_detail}', '')
+        .trim();
+
+    final cleanSystemPrompt = withoutLegacyToolPlaceholders(systemPrompt);
+    final cleanSystemExtras = withoutLegacyToolPlaceholders(systemExtras);
+    final system = cleanSystemExtras.isEmpty
+        ? cleanSystemPrompt
+        : '$cleanSystemPrompt\n\n$cleanSystemExtras';
 
     final isAnthropic = agent.apiFormat.toLowerCase() == 'anthropic';
     final Agent dartAgent;
@@ -265,18 +274,17 @@ class NativeToolAgentService {
       final configuredBaseUrl = _normalizeBaseUrl(agent.baseUrl);
       final baseUrl =
           configuredBaseUrl ?? Uri.parse('https://api.openai.com/v1');
-      final provider =
-          baseUrl.host.contains('deepseek')
-              ? AppOpenAIProvider(
-                apiKey: _extractApiKey(agent),
-                baseUrl: baseUrl,
-                headers: agent.headers,
-              )
-              : OpenAIProvider(
-                apiKey: _extractApiKey(agent),
-                baseUrl: baseUrl,
-                headers: agent.headers,
-              );
+      final provider = baseUrl.host.contains('deepseek')
+          ? AppOpenAIProvider(
+              apiKey: _extractApiKey(agent),
+              baseUrl: baseUrl,
+              headers: agent.headers,
+            )
+          : OpenAIProvider(
+              apiKey: _extractApiKey(agent),
+              baseUrl: baseUrl,
+              headers: agent.headers,
+            );
       dartAgent = Agent.forProvider(
         provider,
         chatModelName: agent.model,
@@ -291,8 +299,9 @@ class NativeToolAgentService {
     for (final f in files) {
       if (!f.existsSync()) continue;
       final bytes = f.readAsBytesSync();
-      final mime =
-          f.path.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+      final mime = f.path.toLowerCase().endsWith('.png')
+          ? 'image/png'
+          : 'image/jpeg';
       attachments.add(
         DataPart(bytes, mimeType: mime, name: f.path.split('/').last),
       );
@@ -344,10 +353,9 @@ class NativeToolAgentService {
       for (final (toolId, pluginId, config)
           in ToolConfigManager.instance.getEnabledToolsWithPlugin()) {
         if (toolId.startsWith('system_')) continue;
-        final methodName =
-            toolId.startsWith('${pluginId}_')
-                ? toolId.substring(pluginId.length + 1)
-                : toolId;
+        final methodName = toolId.startsWith('${pluginId}_')
+            ? toolId.substring(pluginId.length + 1)
+            : toolId;
         configs.add((toolId, config));
         meta[toolId] = NativeToolMeta(pluginId, methodName, config.title);
       }

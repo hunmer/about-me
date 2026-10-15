@@ -527,6 +527,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'StackedFolderCard - 照片/便签/文档层叠扇出与口袋卡片',
         route: '/widgets_gallery/stacked_folder_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.layers,
+        title: '堆叠手风琴卡片',
+        subtitle: 'StackedAccordionCard - 层叠互斥展开的进度与条目列表卡片',
+        route: '/widgets_gallery/stacked_accordion_card',
+      ),
     ];
   }
 

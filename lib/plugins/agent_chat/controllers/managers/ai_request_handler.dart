@@ -54,15 +54,15 @@ class AIRequestHandler {
     _toolOrchestrator = ToolOrchestrator(
       context: context,
       conversation: conversation,
-      getToolAgent:
-          (config, {enableFunctionCalling = false}) => getToolAgent(config),
+      getToolAgent: (config, {enableFunctionCalling = false}) =>
+          getToolAgent(config),
       isCancelling: isCancelling,
     );
   }
 
   // ========== 核心方法 ==========
 
-  /// 请求 AI 回复（标准 function calling 优先，回退旧两阶段 run_js 编排）
+  /// 请求 AI 回复，工具调用由 dartantic_ai Agent 自动编排。
   Future<void> request({
     required String aiMessageId,
     required String userInput,
@@ -211,25 +211,22 @@ class AIRequestHandler {
                     if (message != null) {
                       // 构建元数据，包含替换规则
                       final metadata = <String, dynamic>{
-                        'templateMatches':
-                            validMatches.map((m) {
-                              final matchData = <String, dynamic>{'id': m.id};
-                              if (m.replacements != null &&
-                                  m.replacements!.isNotEmpty) {
-                                matchData['replacements'] =
-                                    m.replacements!
-                                        .map(
-                                          (r) => {'from': r.from, 'to': r.to},
-                                        )
-                                        .toList();
-                              }
-                              return matchData;
-                            }).toList(),
+                        'templateMatches': validMatches.map((m) {
+                          final matchData = <String, dynamic>{'id': m.id};
+                          if (m.replacements != null &&
+                              m.replacements!.isNotEmpty) {
+                            matchData['replacements'] = m.replacements!
+                                .map((r) => {'from': r.from, 'to': r.to})
+                                .toList();
+                          }
+                          return matchData;
+                        }).toList(),
                       };
 
                       final updatedMessage = message.copyWith(
-                        matchedTemplateIds:
-                            validMatches.map((m) => m.id).toList(),
+                        matchedTemplateIds: validMatches
+                            .map((m) => m.id)
+                            .toList(),
                         content:
                             '我找到了 ${validMatches.length} 个相关的工具模板，请选择要执行的模板：',
                         isGenerating: false,
@@ -293,11 +290,12 @@ class AIRequestHandler {
       _contextMessagesCache[aiMessageId] = List.from(contextMessages);
 
       // 处理文件（仅支持图片 vision 模式）
-      final imageFiles =
-          files.where((f) => FilePickerHelper.isImageFile(f)).toList();
+      final imageFiles = files
+          .where((f) => FilePickerHelper.isImageFile(f))
+          .toList();
 
       // 使用公共的工具调用编排器处理第一阶段和第二阶段
-      final needsToolCall = await _toolOrchestrator.processTwoPhaseToolCall(
+      final needsToolCall = await _toolOrchestrator.processToolCall(
         agent: currentAgent,
         aiMessageId: aiMessageId,
         contextMessages: contextMessages,
@@ -330,8 +328,9 @@ class AIRequestHandler {
           debugPrint('🧠 [思考内容] 已更新，当前总长度: ${thinkingBuffer.length}');
         },
         onError: (error) {
-          final errorMessage =
-              error == '已取消发送' ? '用户已取消操作' : '抱歉，生成回复时出现错误：$error';
+          final errorMessage = error == '已取消发送'
+              ? '用户已取消操作'
+              : '抱歉，生成回复时出现错误：$error';
           context.messageService.updateAIMessageContent(
             context.conversationId,
             aiMessageId,
@@ -478,8 +477,9 @@ class AIRequestHandler {
 
     // 获取历史消息（排除正在生成的消息，保留子消息以避免丢失工具结果）
     final allMessages = context.messageService.currentMessages;
-    final historyMessages =
-        allMessages.where((msg) => !msg.isGenerating).toList();
+    final historyMessages = allMessages
+        .where((msg) => !msg.isGenerating)
+        .toList();
 
     // 找到最后一个会话分隔符的索引
     int lastDividerIndex = -1;
@@ -491,19 +491,17 @@ class AIRequestHandler {
     }
 
     // 如果找到分隔符，只获取分隔符之后的消息
-    final messagesAfterDivider =
-        lastDividerIndex >= 0
-            ? historyMessages.sublist(lastDividerIndex + 1)
-            : historyMessages;
+    final messagesAfterDivider = lastDividerIndex >= 0
+        ? historyMessages.sublist(lastDividerIndex + 1)
+        : historyMessages;
 
     // 获取最后 N 条消息（从分隔符之后的消息中选取）
     final contextMessageCount = conversation.contextMessageCount ?? 10;
-    final contextMessages =
-        messagesAfterDivider.length > contextMessageCount
-            ? messagesAfterDivider.sublist(
-              messagesAfterDivider.length - contextMessageCount,
-            )
-            : messagesAfterDivider;
+    final contextMessages = messagesAfterDivider.length > contextMessageCount
+        ? messagesAfterDivider.sublist(
+            messagesAfterDivider.length - contextMessageCount,
+          )
+        : messagesAfterDivider;
 
     // 转换历史消息为 API 格式（排除会话分隔符）
     for (var msg in contextMessages) {
@@ -511,8 +509,9 @@ class AIRequestHandler {
 
       if (msg.isUser) {
         // 检查消息是否包含图片附件
-        final imageAttachments =
-            msg.attachments.where((a) => a.isImage).toList();
+        final imageAttachments = msg.attachments
+            .where((a) => a.isImage)
+            .toList();
 
         if (imageAttachments.isNotEmpty) {
           // 包含图片：使用 parts 格式

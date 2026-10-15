@@ -391,7 +391,7 @@ class AgentChainExecutor {
           .toList();
 
       // 使用公共的工具调用编排器处理第一阶段和第二阶段
-      final needsToolCall = await _toolOrchestrator.processTwoPhaseToolCall(
+      final needsToolCall = await _toolOrchestrator.processToolCall(
         agent: agent,
         aiMessageId: aiMessageId,
         contextMessages: contextMessages,

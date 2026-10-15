@@ -8,9 +8,8 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/account.dart';
-import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/stacked_accordion_card.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
-import 'package:aboutme/widgets/swipe_action/index.dart';
 import 'account_edit_screen.dart';
 
 class AccountListScreen extends StatefulWidget {
@@ -121,137 +120,121 @@ class _AccountListScreenState extends State<AccountListScreen> {
       );
     }
 
-    return HandDrawnListView(
+    final accounts = widget.billPlugin.accounts;
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      itemCount: widget.billPlugin.accounts.length,
-      tiltKeyOf: (index) => widget.billPlugin.accounts[index].id,
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
-      itemBuilder: (context, index) {
-        final account = widget.billPlugin.accounts[index];
-        return SwipeActionWrapper(
-          key: ValueKey(account.id),
-          leadingActions: [
-            SwipeActionPresets.edit(
-              onTap: () => _editAccount(context, account),
-            ),
-          ],
-          trailingActions: [
-            SwipeActionPresets.delete(
-              onTap: () async {
-                final confirmed = await showDSDialog<bool>(
-                  context: context,
-                  theme: DSThemeBridge.resolve(context),
-                  builder:
-                      (BuildContext context) => DSThemeBridge(
-                        child: Builder(
-                          builder:
-                              (context) => DSDialog(
-                                title: 'bill_confirmDelete'.tr,
-                                message:
-                                    '确定要删除账户"${account.title}"吗？\n删除后该账户下的所有账单记录都将被删除！',
-                                cancelText: 'bill_cancel'.tr,
-                                confirmText: '删除',
-                                confirmVariant: DSButtonVariant.destructive,
-                                onCancel:
-                                    () => Navigator.of(context).pop(false),
-                                onConfirm:
-                                    () => Navigator.of(context).pop(true),
-                              ),
-                        ),
-                      ),
-                );
-
-                if (confirmed == true) {
-                  widget.billPlugin.controller.deleteAccount(account.id);
-                  Toast.success(
-                    '${'bill_accountDeleted'.tr} "${account.title}"',
-                  );
-                }
-              },
-            ),
-          ],
-          child: _buildAccountCard(context, account),
-        );
-      },
+      child: StackedAccordionCardWidget(
+        inline: true,
+        items: [
+          for (final account in accounts) _buildAccountCardData(account),
+        ],
+        onCardLongPress: (index) => _showAccountActions(context, accounts[index]),
+      ),
     );
   }
 
-  Widget _buildAccountCard(BuildContext context, Account account) {
-    final theme = DSThemeBridge.resolve(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.stroke.withValues(alpha: 0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            offset: const Offset(0, 2),
-            blurRadius: 4,
+  /// 将账户映射为堆叠手风琴卡片数据
+  StackedAccordionCardData _buildAccountCardData(Account account) {
+    final expense = account.bills
+        .where((b) => b.isExpense)
+        .fold(0.0, (sum, b) => sum + b.absoluteAmount);
+    final income = account.bills
+        .where((b) => !b.isExpense)
+        .fold(0.0, (sum, b) => sum + b.amount);
+    final ratio = (expense + income) > 0 ? expense / (expense + income) : 0.0;
+
+    final recent = [...account.bills]..sort((a, b) => b.date.compareTo(a.date));
+
+    return StackedAccordionCardData(
+      title: account.title,
+      percentage: '¥${account.totalAmount.toStringAsFixed(2)}',
+      tags: ['${account.bills.length} 笔账单'],
+      progress: ratio,
+      progressLabel: '支出占比',
+      progressValue: '支出 ¥${expense.toStringAsFixed(0)} · 收入 ¥${income.toStringAsFixed(0)}',
+      entries: [
+        for (final bill in recent.take(4))
+          StackedAccordionEntryData(
+            term: bill.subscriptionTitle,
+            subtitle:
+                '${bill.date.month}/${bill.date.day} · ${bill.isExpense ? '-' : '+'}¥${bill.absoluteAmount.toStringAsFixed(2)}',
           ),
-        ],
+      ],
+      backgroundColor: account.backgroundColor,
+    );
+  }
+
+  /// 长按卡片弹出账户操作菜单（查看账单 / 编辑 / 删除）
+  void _showAccountActions(BuildContext context, Account account) {
+    SmoothBottomSheet.show(
+      context: context,
+      builder: (context) => DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.receipt_long),
+                    title: const Text('查看账单'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _openAccountBills(context, account);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.edit),
+                    title: const Text('编辑账户'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _editAccount(context, account);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.delete, color: theme.danger),
+                    title: Text(
+                      '删除账户',
+                      style: TextStyle(color: theme.danger),
+                    ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _confirmDelete(context, account);
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _openAccountBills(context, account),
-          onLongPress: () => _editAccount(context, account),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: account.backgroundColor.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    account.icon,
-                    color: account.backgroundColor,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        account.title,
-                        style: DsTypography.heading.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.text,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${account.bills.length} 笔账单',
-                        style: DsTypography.body.copyWith(color: theme.textSub),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  '¥${account.totalAmount.toStringAsFixed(2)}',
-                  style: DsTypography.heading.copyWith(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: account.totalAmount < 0 ? theme.danger : theme.text,
-                  ),
-                ),
-              ],
-            ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, Account account) async {
+    final confirmed = await showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (BuildContext context) => DSThemeBridge(
+        child: Builder(
+          builder: (context) => DSDialog(
+            title: 'bill_confirmDelete'.tr,
+            message: '确定要删除账户"${account.title}"吗？\n删除后该账户下的所有账单记录都将被删除！',
+            cancelText: 'bill_cancel'.tr,
+            confirmText: '删除',
+            confirmVariant: DSButtonVariant.destructive,
+            onCancel: () => Navigator.of(context).pop(false),
+            onConfirm: () => Navigator.of(context).pop(true),
           ),
         ),
       ),
     );
+
+    if (confirmed == true) {
+      widget.billPlugin.controller.deleteAccount(account.id);
+      Toast.success('${'bill_accountDeleted'.tr} "${account.title}"');
+    }
   }
 
   void _openAccountBills(BuildContext context, Account account) {

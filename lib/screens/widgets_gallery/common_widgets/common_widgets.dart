@@ -88,6 +88,7 @@ import 'package:aboutme/widgets/common/memorial_day_card.dart';
 import 'widgets/health_score_ring_card.dart';
 import 'widgets/petal_radial_chart_card.dart';
 import 'widgets/stacked_folder_card.dart';
+import 'widgets/stacked_accordion_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -177,6 +178,7 @@ enum CommonWidgetId {
   healthScoreRingCard,
   petalRadialChartCard,
   stackedFolderCard,
+  stackedAccordionCard,
 }
 
 /// 公共小组件元数据
@@ -875,6 +877,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize(), Large3Size()],
     ),
+    CommonWidgetId.stackedAccordionCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.stackedAccordionCard,
+      name: '堆叠手风琴卡片',
+      description: '卡片层叠覆盖，点击互斥展开手风琴面板：进度条生长 + 条目交错渐入 + 箭头旋转',
+      icon: Icons.layers,
+      defaultSize: Large3Size(),
+      supportedSizes: [Large3Size(), Wide3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1110,6 +1120,8 @@ class CommonWidgetBuilder {
         return PetalRadialChartCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.stackedFolderCard:
         return StackedFolderCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.stackedAccordionCard:
+        return StackedAccordionCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }
