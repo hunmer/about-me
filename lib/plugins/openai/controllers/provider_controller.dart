@@ -122,7 +122,7 @@ class ProviderController {
         id: 'azure',
         label: 'Azure OpenAI',
         baseUrl: 'https://YOUR_RESOURCE_NAME.openai.azure.com',
-        headers: {'api-key': 'YOUR_API_KEY', 'api-version': '2023-05-15'},
+        headers: {'api-key': 'YOUR_API_KEY', 'api-version': '2024-10-21'},
         apiFormat: 'openai',
       ),
       ServiceProvider(
@@ -138,8 +138,8 @@ class ProviderController {
       ServiceProvider(
         id: 'google',
         label: 'Google (Gemini)',
-        baseUrl: 'https://generativelanguage.googleapis.com/v1',
-        headers: {'x-goog-api-key': 'YOUR_API_KEY'},
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+        headers: {'Authorization': 'Bearer YOUR_API_KEY'},
         apiFormat: 'openai',
       ),
       ServiceProvider(
@@ -194,7 +194,7 @@ class ProviderController {
       ServiceProvider(
         id: 'cohere',
         label: 'Cohere',
-        baseUrl: 'https://api.cohere.ai/v1',
+        baseUrl: 'https://api.cohere.com/compatibility/v1',
         headers: {'Authorization': 'Bearer YOUR_API_KEY'},
         apiFormat: 'openai',
       ),
@@ -222,22 +222,22 @@ class ProviderController {
       ServiceProvider(
         id: 'minimax',
         label: 'MiniMax',
-        baseUrl: 'https://api.minimax.chat/v1',
+        baseUrl: 'https://api.minimax.cn/anthropic/v1',
         headers: {'Authorization': 'Bearer YOUR_API_KEY'},
-        defaultModel: 'MiniMax-M2.5',
-        apiFormat: 'openai',
+        defaultModel: 'MiniMax-M3',
+        apiFormat: 'anthropic',
       ),
       ServiceProvider(
         id: 'glm-codingplan',
         label: 'GLM CodingPlan',
-        baseUrl: 'https://open.bigmodel.cn/api/anthropic',
+        baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
         headers: {'Authorization': 'Bearer YOUR_API_KEY'},
-        apiFormat: 'anthropic',
+        apiFormat: 'openai',
       ),
       ServiceProvider(
         id: 'minimax-codingplan',
         label: 'MiniMax CodingPlan',
-        baseUrl: 'https://api.minimaxi.com/anthropic',
+        baseUrl: 'https://api.minimax.cn/anthropic/v1',
         headers: {'Authorization': 'Bearer YOUR_API_KEY'},
         apiFormat: 'anthropic',
       ),

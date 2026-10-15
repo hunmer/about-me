@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'dart:async';
 import 'dart:io';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:flutter/material.dart';
@@ -54,7 +55,7 @@ class TestService {
     final result = await showDSDialog<Map<String, dynamic>>(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      barrierDismissible: false, // 防止点击外部关闭对话框导致控制器过早处置
+      barrierDismissible: true, // 关闭按钮已移除，通过点击外部关闭；状态均有 _isDisposed 守卫
       builder: (BuildContext dialogContext) {
         return _TextInputDialog(
           title: title ?? 'openai_testInput'.tr,
@@ -76,11 +77,15 @@ class TestService {
   }
 
   /// 发送请求并获取响应
-  static Future<String> processTestRequest(
+  ///
+  /// [shouldCancel] 返回 true 时中断流式请求并返回 null（取消）。
+  /// 仅 /image 生成分支不支持中断，由调用方放弃等待。
+  static Future<String?> processTestRequest(
     String input,
     AIAgent agent, {
     File? imageFile,
     Map<String, dynamic>? formValues,
+    bool Function()? shouldCancel,
   }) async {
     // 如果有表单值，创建一个新的agent并合并表单值
     if (formValues != null && formValues.isNotEmpty) {
@@ -105,14 +110,7 @@ class TestService {
     await saveLastInput(input);
     try {
       String response;
-      // 如果提供了图片文件，使用vision模型处理
-      if (imageFile != null) {
-        response = await RequestService.chat(
-          input,
-          agent,
-          imageFile: imageFile,
-        );
-      } else if (input.toLowerCase().startsWith("/image")) {
+      if (input.toLowerCase().startsWith("/image")) {
         // 处理图片生成请求
         final prompt = input.substring(6).trim(); // 移除 "/image "
         if (prompt.isEmpty) {
@@ -127,8 +125,36 @@ ${imageUrls.map((url) => "- $url").join('\n')}
 提示词: $prompt
 ''';
       } else {
-        // 处理聊天请求
-        response = await RequestService.chat(input, agent);
+        // 处理聊天请求（流式，支持取消）
+        final buffer = StringBuffer();
+        String? errorMessage;
+        await RequestService.streamResponse(
+          agent: agent,
+          prompt: input,
+          filePath: imageFile?.path,
+          shouldCancel: shouldCancel,
+          onToken: (token) => buffer.write(token),
+          onError: (error) => errorMessage = error,
+          onComplete: () {},
+        );
+
+        // 已取消
+        if (shouldCancel?.call() == true) {
+          return null;
+        }
+        if (errorMessage != null) {
+          return '''
+错误: 请求处理失败
+${'openai_errorDetails'.tr}: $errorMessage
+
+${'openai_checkItems'.tr}:
+1. ${'openai_apiKeyConfig'.tr}
+2. ${'openai_networkConnection'.tr}
+3. ${'openai_serviceEndpoint'.tr}
+''';
+        }
+        response =
+            buffer.isEmpty ? 'No response content' : buffer.toString();
       }
 
       return '''
@@ -364,6 +390,8 @@ class _TextInputDialogState extends State<_TextInputDialog> {
   File? _selectedImage;
   String? _testResult; // 测试结果
   bool _isTesting = false; // 是否正在测试
+  Completer<void>? _cancelCompleter; // 取消测试信号（/image 等不支持中断时的放弃等待）
+  bool _cancelRequested = false; // 取消标志（传给底层流式请求以真正中断）
 
   @override
   void initState() {
@@ -437,37 +465,43 @@ class _TextInputDialogState extends State<_TextInputDialog> {
       _isTesting = true;
       _testResult = null;
     });
+    _cancelRequested = false;
+    _cancelCompleter = Completer<void>();
 
+    String? response;
     try {
       // 保存输入
       await TestService.saveLastInput(input);
 
-      // 执行测试
-      final response = await TestService.processTestRequest(
-        input,
-        widget.testAgent!,
-        imageFile: _selectedImage,
-        formValues: widget.formValues,
-      );
-
-      if (!_isDisposed) {
-        setState(() {
-          _testResult = response;
-        });
-      }
+      // 聊天请求通过 shouldCancel 真正中断；
+      // Future.any 兜底放弃等待（覆盖 /image 生成分支）
+      response = await Future.any<String?>([
+        TestService.processTestRequest(
+          input,
+          widget.testAgent!,
+          imageFile: _selectedImage,
+          formValues: widget.formValues,
+          shouldCancel: () => _cancelRequested,
+        ),
+        _cancelCompleter!.future.then((_) => null),
+      ]);
     } catch (e) {
-      if (!_isDisposed) {
-        setState(() {
-          _testResult = '测试失败: $e';
-        });
-      }
-    } finally {
-      if (!_isDisposed) {
-        setState(() {
-          _isTesting = false;
-        });
-      }
+      response = '测试失败: $e';
     }
+
+    if (_isDisposed) return;
+    setState(() {
+      _isTesting = false;
+      _cancelCompleter = null;
+      _testResult = response ?? 'openai_testCancelled'.tr;
+    });
+  }
+
+  /// 取消测试
+  void _cancelTest() {
+    if (_isDisposed || !_isTesting) return;
+    _cancelRequested = true;
+    _cancelCompleter?.complete();
   }
 
   @override
@@ -614,31 +648,22 @@ class _TextInputDialogState extends State<_TextInputDialog> {
                     SizedBox(height: theme.spacing.lg),
                     Row(
                       children: [
-                        Expanded(
-                          child: DSButton(
-                            label: 'openai_close'.tr,
-                            variant: DSButtonVariant.outline,
-                            onPressed:
-                                _isTesting
-                                    ? null
-                                    : () {
-                                      if (!_isDisposed) {
-                                        Navigator.of(context).pop();
-                                      }
-                                    },
-                          ),
-                        ),
-                        // 如果提供了测试agent，显示测试按钮；否则显示保存按钮
+                        // 测试中合并为取消按钮，空闲时为测试按钮；保存模式显示保存按钮
                         if (widget.testAgent != null) ...[
-                          SizedBox(width: theme.spacing.md),
                           Expanded(
                             child: DSButton(
-                              label: 'openai_testAgent'.tr,
-                              onPressed: _isTesting ? null : _runTest,
+                              label:
+                                  _isTesting
+                                      ? 'openai_cancelTest'.tr
+                                      : 'openai_testAgent'.tr,
+                              variant:
+                                  _isTesting
+                                      ? DSButtonVariant.outline
+                                      : DSButtonVariant.primary,
+                              onPressed: _isTesting ? _cancelTest : _runTest,
                             ),
                           ),
                         ] else ...[
-                          SizedBox(width: theme.spacing.md),
                           Expanded(
                             child: DSButton(
                               label: 'openai_save'.tr,

@@ -146,6 +146,8 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_networkConnection': 'If the network connection is normal',
   'openai_serviceEndpoint': 'If the service endpoint is accessible',
   'openai_testing': 'Testing...',
+  'openai_cancelTest': 'Cancel Test',
+  'openai_testCancelled': 'Test cancelled',
 
   // Plugin Analysis Form
   'openai_pluginAnalysis': 'Plugin Analysis',

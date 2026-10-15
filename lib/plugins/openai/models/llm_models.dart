@@ -49,136 +49,86 @@ class LLMModelGroup {
   );
 }
 
-// 预定义的大模型列表
+// 预定义的大模型列表（数据来源: https://models.dev）
 final llmModelGroups = [
   LLMModelGroup(
     id: 'deepseek',
     name: 'DeepSeek',
     models: [
       LLMModel(
-        id: 'deepseek-v4',
-        name: 'DeepSeek-V4',
+        id: 'deepseek-v4-pro',
+        name: 'DeepSeek V4 Pro',
         group: 'deepseek',
       ),
       LLMModel(
-        id: 'deepseek-v3.2',
-        name: 'DeepSeek-V3.2',
+        id: 'deepseek-v4-flash',
+        name: 'DeepSeek V4 Flash',
         group: 'deepseek',
       ),
       LLMModel(
-        id: 'deepseek-v3',
-        name: 'DeepSeek-V3',
+        id: 'deepseek-flash',
+        name: 'DeepSeek V4.1 Flash',
         group: 'deepseek',
       ),
       LLMModel(
-        id: 'deepseek-v3.1',
-        name: 'DeepSeek-V3.1',
-        group: 'deepseek',
-      ),
-      LLMModel(
-        id: 'deepseek-v3.2-exp',
-        name: 'DeepSeek-V3.2-Exp',
-        group: 'deepseek',
-      ),
-      LLMModel(
-        id: 'deepseek-r1',
-        name: 'DeepSeek-R1',
-        group: 'deepseek',
-      ),
-      LLMModel(
-        id: 'deepseek-math-7b',
-        name: 'DeepSeek-Math-7B',
-        group: 'deepseek',
-      ),
-      LLMModel(
-        id: 'deepseek-coder-1.3b',
-        name: 'DeepSeek-Coder-1.3B',
-        group: 'deepseek',
-      ),
-      LLMModel(
-        id: 'deepseek-coder-6.7b',
-        name: 'DeepSeek-Coder-6.7B',
-        group: 'deepseek',
-      ),
-      LLMModel(
-        id: 'deepseek-coder-7b',
-        name: 'DeepSeek-Coder-7B',
-        group: 'deepseek',
-      ),
-      LLMModel(
-        id: 'deepseek-coder-33b',
-        name: 'DeepSeek-Coder-33B',
-        group: 'deepseek',
-      ),
-      LLMModel(
-        id: 'deepseek-vl-1.3b',
-        name: 'DeepSeek-VL-1.3B',
-        group: 'deepseek',
-      ),
-      LLMModel(
-        id: 'deepseek-vl-7b',
-        name: 'DeepSeek-VL-7B',
-        group: 'deepseek',
-      ),
-      LLMModel(
-        id: 'deepseek-moe-16b',
-        name: 'DeepSeek-MoE-16B',
+        id: 'deepseek-v4-flash-vision-exp',
+        name: 'DeepSeek V4 Flash Vision Exp',
         group: 'deepseek',
       ),
     ],
   ),
   LLMModelGroup(
     id: 'qwen',
-    name: 'Qwen',
+    name: 'Qwen 开源模型',
     models: [
       LLMModel(
-        id: 'qwen3.5-235b',
-        name: 'Qwen3.5-235B',
+        id: 'qwen3.5-397b-a17b',
+        name: 'Qwen3.5 397B-A17B',
         group: 'qwen',
       ),
       LLMModel(
-        id: 'qwen3.5-122b',
-        name: 'Qwen3.5-122B',
-        group: 'qwen',
-      ),
-      LLMModel(
-        id: 'qwen3.5-72b',
-        name: 'Qwen3.5-72B',
-        group: 'qwen',
-      ),
-      LLMModel(
-        id: 'qwen3.5-32b',
-        name: 'Qwen3.5-32B',
-        group: 'qwen',
-      ),
-      LLMModel(
-        id: 'qwen3-max',
-        name: 'Qwen3 Max',
+        id: 'qwen3-coder-480b-a35b-instruct',
+        name: 'Qwen3 Coder 480B-A35B',
         group: 'qwen',
       ),
       LLMModel(
         id: 'qwen3-235b-a22b',
-        name: 'Qwen3-235B-A22B',
+        name: 'Qwen3 235B-A22B',
         group: 'qwen',
       ),
       LLMModel(
-        id: 'qwen-1.8b',
-        name: 'Qwen-1.8B',
+        id: 'qwen3-vl-235b-a22b',
+        name: 'Qwen3-VL 235B-A22B',
         group: 'qwen',
       ),
       LLMModel(
-        id: 'qwen-7b',
-        name: 'Qwen-7B',
+        id: 'qwen3-next-80b-a3b-instruct',
+        name: 'Qwen3-Next 80B-A3B',
         group: 'qwen',
       ),
       LLMModel(
-        id: 'qwen-14b',
-        name: 'Qwen-14B',
+        id: 'qwen3-32b',
+        name: 'Qwen3 32B',
         group: 'qwen',
       ),
       LLMModel(
-        id: 'qwen-72b',
-        name: 'Qwen-72B',
+        id: 'qwen3-14b',
+        name: 'Qwen3 14B',
+        group: 'qwen',
+      ),
+      LLMModel(
+        id: 'qwen3-8b',
+        name: 'Qwen3 8B',
+        group: 'qwen',
+      ),
+      LLMModel(
+        id: 'qwen2-5-72b-instruct',
+        name: 'Qwen2.5 72B',
+        group: 'qwen',
+      ),
+      LLMModel(
+        id: 'qwen2-5-coder-32b-instruct',
+        name: 'Qwen2.5 Coder 32B',
         group: 'qwen',
       ),
     ],
@@ -188,63 +138,38 @@ final llmModelGroups = [
     name: 'Meta',
     models: [
       LLMModel(
-        id: 'llama-4-405b',
-        name: 'Llama 4 405B',
+        id: 'muse-wonder-1.0',
+        name: 'Muse Wonder',
         group: 'meta',
       ),
       LLMModel(
-        id: 'llama-4-70b',
-        name: 'Llama 4 70B',
+        id: 'muse-spark-1.3',
+        name: 'Muse Spark 1.3',
         group: 'meta',
       ),
       LLMModel(
-        id: 'llama-4-family',
-        name: 'Llama 4 Family',
+        id: 'muse-spark-1.2',
+        name: 'Muse Spark 1.2',
         group: 'meta',
       ),
       LLMModel(
-        id: 'llama-4-scout',
-        name: 'Llama 4 Scout',
-        group: 'meta',
-      ),
-      LLMModel(
-        id: 'llama-4-maverick',
+        id: 'llama-4-maverick-17b-128e-instruct-fp8',
         name: 'Llama 4 Maverick',
         group: 'meta',
       ),
       LLMModel(
-        id: 'llama-4-behemoth',
-        name: 'Llama 4 Behemoth',
+        id: 'llama-4-scout-17b-16e-instruct-fp8',
+        name: 'Llama 4 Scout',
         group: 'meta',
       ),
       LLMModel(
-        id: 'llama-3.2-1b',
-        name: 'Llama 3.2-1B',
+        id: 'llama-3.3-70b-instruct',
+        name: 'Llama 3.3 70B',
         group: 'meta',
       ),
       LLMModel(
-        id: 'llama-3.2-3b',
-        name: 'Llama 3.2-3B',
-        group: 'meta',
-      ),
-      LLMModel(
-        id: 'llama-3.2-11b',
-        name: 'Llama 3.2-11B',
-        group: 'meta',
-      ),
-      LLMModel(
-        id: 'llama-3.2-90b',
-        name: 'Llama 3.2-90B',
-        group: 'meta',
-      ),
-      LLMModel(
-        id: 'llama-3-8b',
-        name: 'Llama 3-8B',
-        group: 'meta',
-      ),
-      LLMModel(
-        id: 'llama-3-70b',
-        name: 'Llama 3-70B',
+        id: 'llama-3.3-8b-instruct',
+        name: 'Llama 3.3 8B',
         group: 'meta',
       ),
     ],
@@ -254,58 +179,48 @@ final llmModelGroups = [
     name: 'Mistral AI',
     models: [
       LLMModel(
-        id: 'mistral-large-3',
-        name: 'Mistral Large 3',
+        id: 'mistral-large-4',
+        name: 'Mistral Large 4',
         group: 'mistral',
       ),
       LLMModel(
-        id: 'mistral-small-4',
-        name: 'Mistral Small 4',
+        id: 'mistral-large-latest',
+        name: 'Mistral Large (latest)',
         group: 'mistral',
       ),
       LLMModel(
-        id: 'mistral-large-2',
-        name: 'Mistral Large 2',
+        id: 'mistral-medium-latest',
+        name: 'Mistral Medium (latest)',
         group: 'mistral',
       ),
       LLMModel(
-        id: 'mistral-medium-3',
-        name: 'Mistral Medium 3',
+        id: 'mistral-small-latest',
+        name: 'Mistral Small (latest)',
         group: 'mistral',
       ),
       LLMModel(
-        id: 'codestral-22b',
-        name: 'Codestral-22B',
+        id: 'devstral-latest',
+        name: 'Devstral 2',
         group: 'mistral',
       ),
       LLMModel(
-        id: 'codestral-7b',
-        name: 'Codestral-7B',
+        id: 'codestral-2508',
+        name: 'Codestral 25.08',
         group: 'mistral',
       ),
       LLMModel(
-        id: 'minstral-3b',
-        name: 'Ministral 3B',
+        id: 'ministral-14b-2512',
+        name: 'Ministral 3 14B',
         group: 'mistral',
       ),
       LLMModel(
-        id: 'minstral-8b',
-        name: 'Ministral 8B',
+        id: 'ministral-8b-2512',
+        name: 'Ministral 3 8B',
         group: 'mistral',
       ),
       LLMModel(
-        id: 'mistral-7b',
-        name: 'Mistral-7B',
-        group: 'mistral',
-      ),
-      LLMModel(
-        id: 'mixtral-8x7b',
-        name: 'Mixtral-8x7B',
-        group: 'mistral',
-      ),
-      LLMModel(
-        id: 'mixtral-8x22b',
-        name: 'Mixtral-8x22B',
+        id: 'ministral-3b-2512',
+        name: 'Ministral 3 3B',
         group: 'mistral',
       ),
     ],
@@ -315,13 +230,48 @@ final llmModelGroups = [
     name: 'OpenAI',
     models: [
       LLMModel(
+        id: 'gpt-6.1-sol',
+        name: 'GPT-6.1 Sol',
+        group: 'openai',
+      ),
+      LLMModel(
+        id: 'gpt-6-sol',
+        name: 'GPT-6 Sol',
+        group: 'openai',
+      ),
+      LLMModel(
+        id: 'gpt-6-luna',
+        name: 'GPT-6 Luna',
+        group: 'openai',
+      ),
+      LLMModel(
+        id: 'gpt-6-astra',
+        name: 'GPT-6 Astra',
+        group: 'openai',
+      ),
+      LLMModel(
+        id: 'gpt-5.6',
+        name: 'GPT-5.6',
+        group: 'openai',
+      ),
+      LLMModel(
+        id: 'gpt-5.5-pro',
+        name: 'GPT-5.5 Pro',
+        group: 'openai',
+      ),
+      LLMModel(
+        id: 'gpt-5.5',
+        name: 'GPT-5.5',
+        group: 'openai',
+      ),
+      LLMModel(
         id: 'gpt-5.4',
         name: 'GPT-5.4',
         group: 'openai',
       ),
       LLMModel(
-        id: 'gpt-5.3',
-        name: 'GPT-5.3',
+        id: 'gpt-5.4-mini',
+        name: 'GPT-5.4 Mini',
         group: 'openai',
       ),
       LLMModel(
@@ -340,11 +290,6 @@ final llmModelGroups = [
         group: 'openai',
       ),
       LLMModel(
-        id: 'o4-mini',
-        name: 'O4-Mini',
-        group: 'openai',
-      ),
-      LLMModel(
         id: 'gpt-5',
         name: 'GPT-5',
         group: 'openai',
@@ -359,11 +304,6 @@ final llmModelGroups = [
         name: 'GPT-4o Mini',
         group: 'openai',
       ),
-      LLMModel(
-        id: 'gpt-4-turbo',
-        name: 'GPT-4 Turbo',
-        group: 'openai',
-      ),
     ],
   ),
   LLMModelGroup(
@@ -371,58 +311,68 @@ final llmModelGroups = [
     name: 'Anthropic',
     models: [
       LLMModel(
-        id: 'claude-4.6-opus',
-        name: 'Claude 4.6 Opus',
+        id: 'claude-opus-5-5',
+        name: 'Claude Opus 5.5',
         group: 'anthropic',
       ),
       LLMModel(
-        id: 'claude-4.6-sonnet',
-        name: 'Claude 4.6 Sonnet',
+        id: 'claude-sonnet-5-5',
+        name: 'Claude Sonnet 5.5',
         group: 'anthropic',
       ),
       LLMModel(
-        id: 'claude-4.5-sonnet',
-        name: 'Claude 4.5 Sonnet',
+        id: 'claude-haiku-5-5',
+        name: 'Claude Haiku 5.5',
         group: 'anthropic',
       ),
       LLMModel(
-        id: 'claude-4.5-haiku',
-        name: 'Claude 4.5 Haiku',
+        id: 'claude-fable-5-1',
+        name: 'Claude Fable 5.1',
         group: 'anthropic',
       ),
       LLMModel(
-        id: 'claude-4-opus',
-        name: 'Claude 4 Opus',
+        id: 'claude-opus-5',
+        name: 'Claude Opus 5',
         group: 'anthropic',
       ),
       LLMModel(
-        id: 'claude-sonnet-4.5',
+        id: 'claude-sonnet-5',
+        name: 'Claude Sonnet 5',
+        group: 'anthropic',
+      ),
+      LLMModel(
+        id: 'claude-fable-5',
+        name: 'Claude Fable 5',
+        group: 'anthropic',
+      ),
+      LLMModel(
+        id: 'claude-opus-4-8',
+        name: 'Claude Opus 4.8',
+        group: 'anthropic',
+      ),
+      LLMModel(
+        id: 'claude-opus-4-6',
+        name: 'Claude Opus 4.6',
+        group: 'anthropic',
+      ),
+      LLMModel(
+        id: 'claude-sonnet-4-6',
+        name: 'Claude Sonnet 4.6',
+        group: 'anthropic',
+      ),
+      LLMModel(
+        id: 'claude-opus-4-5',
+        name: 'Claude Opus 4.5',
+        group: 'anthropic',
+      ),
+      LLMModel(
+        id: 'claude-sonnet-4-5',
         name: 'Claude Sonnet 4.5',
         group: 'anthropic',
       ),
       LLMModel(
-        id: 'claude-opus-4.1',
-        name: 'Claude Opus 4.1',
-        group: 'anthropic',
-      ),
-      LLMModel(
-        id: 'claude-3.5-sonnet',
-        name: 'Claude 3.5 Sonnet',
-        group: 'anthropic',
-      ),
-      LLMModel(
-        id: 'claude-3-opus',
-        name: 'Claude 3 Opus',
-        group: 'anthropic',
-      ),
-      LLMModel(
-        id: 'claude-3-sonnet',
-        name: 'Claude 3 Sonnet',
-        group: 'anthropic',
-      ),
-      LLMModel(
-        id: 'claude-3-haiku',
-        name: 'Claude 3 Haiku',
+        id: 'claude-haiku-4-5',
+        name: 'Claude Haiku 4.5',
         group: 'anthropic',
       ),
     ],
@@ -432,23 +382,53 @@ final llmModelGroups = [
     name: 'Google',
     models: [
       LLMModel(
-        id: 'gemini-3.1-pro',
-        name: 'Gemini 3.1 Pro',
+        id: 'gemini-4-argon',
+        name: 'Gemini 4 Argon',
         group: 'google',
       ),
       LLMModel(
-        id: 'gemini-3.1-flash',
-        name: 'Gemini 3.1 Flash',
+        id: 'gemini-3.8-flash',
+        name: 'Gemini 3.8 Flash',
         group: 'google',
       ),
       LLMModel(
-        id: 'gemini-3-family',
-        name: 'Gemini 3 Family',
+        id: 'gemini-flash-latest',
+        name: 'Gemini Flash (latest)',
         group: 'google',
       ),
       LLMModel(
-        id: 'gemini-3-pro',
-        name: 'Gemini 3 Pro',
+        id: 'gemini-3.7-flash',
+        name: 'Gemini 3.7 Flash',
+        group: 'google',
+      ),
+      LLMModel(
+        id: 'gemini-3.6-flash',
+        name: 'Gemini 3.6 Flash',
+        group: 'google',
+      ),
+      LLMModel(
+        id: 'gemini-3.5-flash',
+        name: 'Gemini 3.5 Flash',
+        group: 'google',
+      ),
+      LLMModel(
+        id: 'gemini-3.5-flash-lite',
+        name: 'Gemini 3.5 Flash Lite',
+        group: 'google',
+      ),
+      LLMModel(
+        id: 'gemini-3.1-flash-lite',
+        name: 'Gemini 3.1 Flash Lite',
+        group: 'google',
+      ),
+      LLMModel(
+        id: 'gemini-3.1-pro-preview',
+        name: 'Gemini 3.1 Pro Preview',
+        group: 'google',
+      ),
+      LLMModel(
+        id: 'gemini-flash-lite-latest',
+        name: 'Gemini Flash-Lite (latest)',
         group: 'google',
       ),
       LLMModel(
@@ -461,11 +441,6 @@ final llmModelGroups = [
         name: 'Gemini 2.5 Flash',
         group: 'google',
       ),
-      LLMModel(
-        id: 'gemini-2.5-flash-lite',
-        name: 'Gemini 2.5 Flash-Lite',
-        group: 'google',
-      ),
     ],
   ),
   LLMModelGroup(
@@ -473,18 +448,43 @@ final llmModelGroups = [
     name: '智谱 AI',
     models: [
       LLMModel(
+        id: 'glm-5.3',
+        name: 'GLM-5.3',
+        group: 'zhipu',
+      ),
+      LLMModel(
+        id: 'glm-5.3-flash',
+        name: 'GLM-5.3 Flash',
+        group: 'zhipu',
+      ),
+      LLMModel(
+        id: 'glm-5.3-flashx',
+        name: 'GLM-5.3 FlashX',
+        group: 'zhipu',
+      ),
+      LLMModel(
+        id: 'glm-5.2',
+        name: 'GLM-5.2',
+        group: 'zhipu',
+      ),
+      LLMModel(
+        id: 'glm-5.1',
+        name: 'GLM-5.1',
+        group: 'zhipu',
+      ),
+      LLMModel(
         id: 'glm-5',
         name: 'GLM-5',
         group: 'zhipu',
       ),
       LLMModel(
-        id: 'glm-5-turbo',
-        name: 'GLM-5 Turbo',
+        id: 'glm-4.7',
+        name: 'GLM-4.7',
         group: 'zhipu',
       ),
       LLMModel(
-        id: 'glm-4.7',
-        name: 'GLM-4.7',
+        id: 'glm-4.7-flash',
+        name: 'GLM-4.7 Flash',
         group: 'zhipu',
       ),
       LLMModel(
@@ -503,18 +503,8 @@ final llmModelGroups = [
         group: 'zhipu',
       ),
       LLMModel(
-        id: 'glm-4',
-        name: 'GLM-4',
-        group: 'zhipu',
-      ),
-      LLMModel(
-        id: 'glm-4-flash',
-        name: 'GLM-4 Flash',
-        group: 'zhipu',
-      ),
-      LLMModel(
-        id: 'codegeex-4',
-        name: 'CodeGeeX-4',
+        id: 'glm-4.5-flash',
+        name: 'GLM-4.5 Flash',
         group: 'zhipu',
       ),
     ],
@@ -524,18 +514,28 @@ final llmModelGroups = [
     name: '月之暗面',
     models: [
       LLMModel(
+        id: 'kimi-k3',
+        name: 'Kimi K3',
+        group: 'moonshot',
+      ),
+      LLMModel(
+        id: 'kimi-k2.7-code',
+        name: 'Kimi K2.7 Code',
+        group: 'moonshot',
+      ),
+      LLMModel(
+        id: 'kimi-k2.7-code-highspeed',
+        name: 'Kimi K2.7 Code HighSpeed',
+        group: 'moonshot',
+      ),
+      LLMModel(
+        id: 'kimi-k2.6',
+        name: 'Kimi K2.6',
+        group: 'moonshot',
+      ),
+      LLMModel(
         id: 'kimi-k2.5',
         name: 'Kimi K2.5',
-        group: 'moonshot',
-      ),
-      LLMModel(
-        id: 'kimi-k2',
-        name: 'Kimi K2',
-        group: 'moonshot',
-      ),
-      LLMModel(
-        id: 'kimi-pro',
-        name: 'Kimi Pro',
         group: 'moonshot',
       ),
       LLMModel(
@@ -544,18 +544,8 @@ final llmModelGroups = [
         group: 'moonshot',
       ),
       LLMModel(
-        id: 'moonshot-v1-8k',
-        name: 'Moonshot v1 8K',
-        group: 'moonshot',
-      ),
-      LLMModel(
-        id: 'moonshot-v1-32k',
-        name: 'Moonshot v1 32K',
-        group: 'moonshot',
-      ),
-      LLMModel(
-        id: 'moonshot-v1-128k',
-        name: 'Moonshot v1 128K',
+        id: 'kimi-k2',
+        name: 'Kimi K2',
         group: 'moonshot',
       ),
     ],
@@ -596,6 +586,31 @@ final llmModelGroups = [
     name: 'Cohere',
     models: [
       LLMModel(
+        id: 'command-a-plus-05-2026',
+        name: 'Command A Plus (05-2026)',
+        group: 'cohere',
+      ),
+      LLMModel(
+        id: 'north-mini-code-1-0',
+        name: 'North Mini Code',
+        group: 'cohere',
+      ),
+      LLMModel(
+        id: 'command-a-reasoning-08-2025',
+        name: 'Command A Reasoning (08-2025)',
+        group: 'cohere',
+      ),
+      LLMModel(
+        id: 'command-a-translate-08-2025',
+        name: 'Command A Translate (08-2025)',
+        group: 'cohere',
+      ),
+      LLMModel(
+        id: 'command-a-vision-07-2025',
+        name: 'Command A Vision (07-2025)',
+        group: 'cohere',
+      ),
+      LLMModel(
         id: 'command-a-03-2025',
         name: 'Command A (03-2025)',
         group: 'cohere',
@@ -605,21 +620,6 @@ final llmModelGroups = [
         name: 'Command R7B (12-2024)',
         group: 'cohere',
       ),
-      LLMModel(
-        id: 'command-a-translate-08-2025',
-        name: 'Command A Translate (08-2025)',
-        group: 'cohere',
-      ),
-      LLMModel(
-        id: 'command-a-reasoning-08-2025',
-        name: 'Command A Reasoning (08-2025)',
-        group: 'cohere',
-      ),
-      LLMModel(
-        id: 'command-a-vision-07-2025',
-        name: 'Command A Vision (07-2025)',
-        group: 'cohere',
-      ),
     ],
   ),
   LLMModelGroup(
@@ -627,23 +627,63 @@ final llmModelGroups = [
     name: '阿里云通义千问',
     models: [
       LLMModel(
-        id: 'qwen-max',
-        name: 'Qwen Max',
+        id: 'qwen3.8-max',
+        name: 'Qwen3.8 Max',
         group: 'alibaba-qwen',
       ),
       LLMModel(
-        id: 'qwen-max-longcontext',
-        name: 'Qwen Max LongContext',
+        id: 'qwen3.8-flash',
+        name: 'Qwen3.8 Flash',
         group: 'alibaba-qwen',
       ),
       LLMModel(
-        id: 'qwen-turbo',
-        name: 'Qwen Turbo',
+        id: 'qwen3.7-max',
+        name: 'Qwen3.7 Max',
         group: 'alibaba-qwen',
       ),
       LLMModel(
-        id: 'qwen-plus',
-        name: 'Qwen Plus',
+        id: 'qwen3.7-plus',
+        name: 'Qwen3.7 Plus',
+        group: 'alibaba-qwen',
+      ),
+      LLMModel(
+        id: 'qwen3.7-flash',
+        name: 'Qwen3.7 Flash',
+        group: 'alibaba-qwen',
+      ),
+      LLMModel(
+        id: 'qwen3.6-max',
+        name: 'Qwen3.6 Max',
+        group: 'alibaba-qwen',
+      ),
+      LLMModel(
+        id: 'qwen3.6-plus',
+        name: 'Qwen3.6 Plus',
+        group: 'alibaba-qwen',
+      ),
+      LLMModel(
+        id: 'qwen3.6-flash',
+        name: 'Qwen3.6 Flash',
+        group: 'alibaba-qwen',
+      ),
+      LLMModel(
+        id: 'qwen3.5-plus',
+        name: 'Qwen3.5 Plus',
+        group: 'alibaba-qwen',
+      ),
+      LLMModel(
+        id: 'qwen3.5-flash',
+        name: 'Qwen3.5 Flash',
+        group: 'alibaba-qwen',
+      ),
+      LLMModel(
+        id: 'qwen3-max',
+        name: 'Qwen3 Max',
+        group: 'alibaba-qwen',
+      ),
+      LLMModel(
+        id: 'qwen3-coder-plus',
+        name: 'Qwen3 Coder Plus',
         group: 'alibaba-qwen',
       ),
     ],
@@ -653,18 +693,23 @@ final llmModelGroups = [
     name: 'Perplexity',
     models: [
       LLMModel(
+        id: 'sonar-reasoning-pro',
+        name: 'Sonar Reasoning Pro',
+        group: 'perplexity',
+      ),
+      LLMModel(
         id: 'sonar-pro',
         name: 'Sonar Pro',
         group: 'perplexity',
       ),
       LLMModel(
-        id: 'sonar',
-        name: 'Sonar',
+        id: 'sonar-deep-research',
+        name: 'Sonar Deep Research',
         group: 'perplexity',
       ),
       LLMModel(
-        id: 'pplx-70b-online',
-        name: 'PPLX 70B Online',
+        id: 'sonar',
+        name: 'Sonar',
         group: 'perplexity',
       ),
     ],
@@ -674,18 +719,28 @@ final llmModelGroups = [
     name: 'xAI',
     models: [
       LLMModel(
-        id: 'grok-4.20',
-        name: 'Grok 4.20',
+        id: 'grok-4.7',
+        name: 'Grok 4.7',
         group: 'xai',
       ),
       LLMModel(
-        id: 'grok-4.1',
-        name: 'Grok 4.1',
+        id: 'grok-4.6',
+        name: 'Grok 4.6',
         group: 'xai',
       ),
       LLMModel(
-        id: 'grok-4',
-        name: 'Grok 4',
+        id: 'grok-4.5',
+        name: 'Grok 4.5',
+        group: 'xai',
+      ),
+      LLMModel(
+        id: 'grok-4.3',
+        name: 'Grok 4.3',
+        group: 'xai',
+      ),
+      LLMModel(
+        id: 'grok-4.20-multi-agent-0309',
+        name: 'Grok 4.20 Multi-Agent',
         group: 'xai',
       ),
     ],
@@ -694,6 +749,16 @@ final llmModelGroups = [
     id: 'other',
     name: '其他模型',
     models: [
+      LLMModel(
+        id: 'gemma-4-31b-it',
+        name: 'Gemma 4 31B',
+        group: 'other',
+      ),
+      LLMModel(
+        id: 'gemma-4-26b-a4b-it',
+        name: 'Gemma 4 26B A4B',
+        group: 'other',
+      ),
       LLMModel(
         id: 'yi-34b',
         name: 'Yi-34B',
@@ -714,11 +779,6 @@ final llmModelGroups = [
         name: 'Phi-3',
         group: 'other',
       ),
-      LLMModel(
-        id: 'gemma-7b',
-        name: 'Gemma-7B',
-        group: 'other',
-      ),
     ],
   ),
   LLMModelGroup(
@@ -726,18 +786,23 @@ final llmModelGroups = [
     name: 'MiniMax',
     models: [
       LLMModel(
+        id: 'MiniMax-M3',
+        name: 'MiniMax-M3',
+        group: 'minimax',
+      ),
+      LLMModel(
+        id: 'MiniMax-M3.1-Flash-Preview',
+        name: 'MiniMax-M3.1 Flash Preview',
+        group: 'minimax',
+      ),
+      LLMModel(
         id: 'MiniMax-M2.7',
         name: 'MiniMax-M2.7',
         group: 'minimax',
       ),
       LLMModel(
-        id: 'MiniMax-M2-her',
-        name: 'MiniMax-M2-HER',
-        group: 'minimax',
-      ),
-      LLMModel(
-        id: 'MiniMax-M1-80k',
-        name: 'MiniMax-M1-80K',
+        id: 'MiniMax-M2.7-highspeed',
+        name: 'MiniMax-M2.7-highspeed',
         group: 'minimax',
       ),
       LLMModel(
@@ -756,33 +821,8 @@ final llmModelGroups = [
         group: 'minimax',
       ),
       LLMModel(
-        id: 'MiniMax-M2.1-highspeed',
-        name: 'MiniMax-M2.1-highspeed',
-        group: 'minimax',
-      ),
-      LLMModel(
         id: 'MiniMax-M2',
         name: 'MiniMax-M2',
-        group: 'minimax',
-      ),
-      LLMModel(
-        id: 'abab6.5s-chat',
-        name: 'abab6.5s-chat',
-        group: 'minimax',
-      ),
-      LLMModel(
-        id: 'abab6.5-chat',
-        name: 'abab6.5-chat',
-        group: 'minimax',
-      ),
-      LLMModel(
-        id: 'abab5.5-chat',
-        name: 'abab5.5-chat',
-        group: 'minimax',
-      ),
-      LLMModel(
-        id: 'abab5.5s-chat',
-        name: 'abab5.5s-chat',
         group: 'minimax',
       ),
     ],

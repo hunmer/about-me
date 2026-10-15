@@ -146,6 +146,8 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_networkConnection': '网络连接是否正常',
   'openai_serviceEndpoint': '服务端点是否可访问',
   'openai_testing': '测试中...',
+  'openai_cancelTest': '取消测试',
+  'openai_testCancelled': '测试已取消',
 
   // Plugin Analysis Form
   'openai_pluginAnalysis': '插件分析',
