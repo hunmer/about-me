@@ -62,6 +62,17 @@ class _NativeToolRunContext {
   }
 }
 
+/// 剥离模型重复输出的上一轮文本：多轮工具调用时部分模型（如 DeepSeek）
+/// 每轮会把上一轮正文重新输出一遍（A → A+B → B+C），
+/// 当前轮以上一轮文本开头时剥掉前缀，得到该轮新增内容。
+String stripRepeatedPrefix(String current, String? previous) {
+  final prev = previous?.trim();
+  if (prev == null || prev.isEmpty || current.length <= prev.length) {
+    return current;
+  }
+  return current.startsWith(prev) ? current.substring(prev.length).trim() : current;
+}
+
 /// DeepSeek thinking 模型兼容：请求体注入 `thinking: {"type": "disabled"}`。
 ///
 /// DeepSeek 思考模型的多轮工具调用要求把 reasoning_content 传回，
@@ -202,6 +213,7 @@ class NativeToolAgentService {
     required Function(String content, int count) onUpdateMessage,
     Future<void> Function(List<ToolCallStep> steps)? onToolSteps,
     Function(String thinking)? onThinking,
+    void Function(List<String> texts)? onTurnTexts,
     bool Function()? isCancelling,
     String? conversationId,
   }) async {
@@ -307,6 +319,9 @@ class NativeToolAgentService {
     }
 
     final output = StringBuffer();
+    // 已完成轮的正文（剥除模型重复的前缀后）；content 只反映当前轮流式文本，
+    // 避免多轮拼接成脏数据
+    final turnTexts = <String>[];
 
     try {
       await for (final chunk in dartAgent.sendStream(
@@ -324,6 +339,39 @@ class NativeToolAgentService {
           output.write(chunk.output);
           onUpdateMessage(output.toString(), output.length);
         }
+        // messages 事件 = 一轮结束（assistant/工具结果消息落地）；
+        // 冻结当前轮正文，下一轮 output 重新累计
+        if (chunk.messages.isNotEmpty && output.isNotEmpty) {
+          final turnText = stripRepeatedPrefix(
+            output.toString(),
+            turnTexts.isEmpty ? null : turnTexts.last,
+          );
+          if (turnText.isNotEmpty) {
+            turnTexts.add(turnText);
+          }
+          output.clear();
+          onTurnTexts?.call(List.unmodifiable(turnTexts));
+        }
+      }
+
+      // 流结束：剩余未冻结文本（末轮无 messages 收尾的兜底）也计入
+      if (output.isNotEmpty) {
+        final turnText = stripRepeatedPrefix(
+          output.toString(),
+          turnTexts.isEmpty ? null : turnTexts.last,
+        );
+        if (turnText.isNotEmpty) turnTexts.add(turnText);
+      }
+      // 最终回复 = 末轮正文（已剥重复前缀），覆盖写入 content
+      if (turnTexts.isNotEmpty) {
+        final finalReply = turnTexts.last;
+        onUpdateMessage(finalReply, finalReply.length);
+        onTurnTexts?.call(List.unmodifiable(turnTexts));
+        debugPrint(
+          '[NativeTool] ✅ 循环完成 | 最终回复=${finalReply.length}字 '
+          '过程轮次=${turnTexts.length} 工具调用=${run.toolCallCount}次',
+        );
+        return finalReply;
       }
       debugPrint(
         '[NativeTool] ✅ 循环完成 | 输出=${output.length}字 '

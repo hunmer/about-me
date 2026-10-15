@@ -9,7 +9,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
 import 'markdown_content.dart';
-import 'tool_call_steps.dart';
+import 'tool_process_view.dart';
 import 'chain_message_container.dart';
 import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
 
@@ -117,35 +117,29 @@ class AgentMessageContent extends StatelessWidget {
   Widget _buildToolCallContent() {
     // 如果有工具调用,显示steps组件
     if (message.toolCall != null && message.toolCall!.steps.isNotEmpty) {
-      return Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
-          // 智能解析content，提取思考内容和AI回复
-          final parsedContent = _parseToolCallContent(message.content);
-          // 流式生成中的实时预览正文（剥离内联 think 标签）
-          final generatingBody = ChatMessage.splitThink(message.content).$2;
+      final onRerun = onRerunStep != null
+          ? (int stepIndex) => onRerunStep!(message.id, stepIndex)
+          : null;
 
-          // 检查工具调用是否已经被解析（有steps）
-          final toolCallParsed = message.toolCall?.steps.isNotEmpty ?? false;
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 显示AI最终回复（优先显示）
-              if (parsedContent['finalReply']?.isNotEmpty ?? false) ...[
-                MarkdownContent(content: parsedContent['finalReply']!, textColor: textColor),
-                const SizedBox(height: 12),
-              ]
-              // 只有当工具调用还未解析时，才显示正在生成的 markdown
-              else if (!toolCallParsed &&
-                  message.isGenerating &&
-                  generatingBody.isNotEmpty) ...[
-                // 实时显示正在生成的 Markdown 内容
-                MarkdownContent(content: generatingBody, textColor: textColor),
-                const SizedBox(height: 12),
-              ]
-              // 如果正在生成但没有内容，显示加载占位符
-              else if (message.isGenerating) ...[
+      // 生成中：过程视图全展开（思考流 + 工具步骤状态 + 流式正文）
+      if (message.isGenerating) {
+        return Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            final streaming = _visibleStreamingText();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LiveProcessView(
+                  message: message,
+                  isGenerating: true,
+                  onRerunStep: onRerun,
+                ),
+                if (streaming.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  MarkdownContent(content: streaming, textColor: textColor),
+                ],
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     DSLoadingDots(size: 8, color: theme.primary),
@@ -160,35 +154,38 @@ class AgentMessageContent extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
               ],
+            );
+          },
+        );
+      }
 
-              // 显示工具调用步骤
-              ToolCallSteps(
-                steps: message.toolCall!.steps,
-                isGenerating: message.isGenerating,
-                onRerunStep: onRerunStep != null
-                    ? (stepIndex) => onRerunStep!(message.id, stepIndex)
-                    : null,
-              ),
-
-              // 只有在工具调用未解析时，才显示思考内容（原始markdown）
-              // 工具调用解析成功后，隐藏原始内容以避免重复显示
-              if (!toolCallParsed &&
-                  (parsedContent['thinking']?.isNotEmpty ?? false)) ...[
-                const SizedBox(height: 8),
-                const Divider(),
-                const SizedBox(height: 8),
-                MarkdownContent(content: parsedContent['thinking']!, textColor: textColor),
-              ],
-            ],
-          );
-        },
+      // 已完成：只显示最终回复 + 可展开的执行过程
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MarkdownContent(
+            content: _extractFinalReply(),
+            textColor: textColor,
+          ),
+          CollapsibleProcessSection(message: message, onRerunStep: onRerun),
+        ],
       );
     }
 
     // 降级到普通文本显示
     return MarkdownContent(content: message.content, textColor: textColor);
+  }
+
+  /// 生成中可见的流式正文：剥内联 think 标签，截掉结构化展示过的工具结果段
+  String _visibleStreamingText() => ChatMessage.stripToolResult(message.content);
+
+  /// 已完成消息的最终回复：优先 [AI最终回复] 标记，无标记时兜底显示
+  /// 剥离 think 后、工具结果段之前的全部正文
+  String _extractFinalReply() {
+    final marked = _parseToolCallContent(message.content)['finalReply'];
+    if (marked != null && marked.isNotEmpty) return marked;
+    return ChatMessage.stripToolResult(message.content);
   }
 
   /// 解析工具调用消息的content

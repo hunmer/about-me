@@ -123,6 +123,15 @@ class ChatMessage {
     return (thinking, body);
   }
 
+  /// 工具调用消息的可见正文：剥内联 think 标签，并截掉
+  /// `[工具执行结果]` 起的段落（该段已由工具步骤卡片结构化展示）
+  static String stripToolResult(String content) {
+    var text = splitThink(content).$2;
+    final cut = text.indexOf('[工具执行结果]');
+    if (cut >= 0) text = text.substring(0, cut).trim();
+    return text;
+  }
+
   /// 合并的思考内容：独立存储的 thinkingContent + content 内联 think 部分
   String? get resolvedThinkingContent {
     final inline = splitThinkContent().$1;
@@ -130,6 +139,15 @@ class ChatMessage {
       return inline.isEmpty ? null : inline;
     }
     return inline.isEmpty ? thinkingContent : '$thinkingContent\n\n$inline';
+  }
+
+  /// 工具调用消息的各轮正文（metadata['processTexts']，已剥除模型重复前缀）
+  List<String> get processTexts {
+    final raw = metadata?['processTexts'];
+    if (raw is List) {
+      return raw.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
+    }
+    return const [];
   }
   /// 创建AI消息
   factory ChatMessage.ai({

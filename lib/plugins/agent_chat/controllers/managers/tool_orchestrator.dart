@@ -74,6 +74,21 @@ class ToolOrchestrator {
           }
         },
         onThinking: onThinking,
+        // 已完成的轮次正文存入 metadata，供「查看执行过程」展开显示
+        onTurnTexts: (texts) {
+          final message = context.messageService.getMessage(
+            context.conversationId,
+            aiMessageId,
+          );
+          if (message != null) {
+            context.messageService.updateMessage(
+              message.copyWith(metadata: {
+                ...?message.metadata,
+                'processTexts': texts,
+              }),
+            );
+          }
+        },
         isCancelling: isCancelling,
       );
     } catch (e, stack) {

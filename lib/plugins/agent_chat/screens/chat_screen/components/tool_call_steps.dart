@@ -302,7 +302,8 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
         return SizedBox(
           width: 20,
           height: 20,
-          child: Center(child: DSLoadingDots(size: 6)),
+          // DSLoadingDots 内部画布为 size*4，取 5 才能放进 20x20
+          child: Center(child: DSLoadingDots(size: 5)),
         );
       case ToolCallStatus.success:
         return DsIcon(DsIconKind.check, size: 20, color: theme.success);

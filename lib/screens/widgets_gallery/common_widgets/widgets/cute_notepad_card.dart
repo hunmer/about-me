@@ -1,8 +1,16 @@
+import 'dart:io' show File;
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 import 'cute_notepad_stickers.dart';
@@ -31,6 +39,10 @@ const String _kHandFont = 'TegakiZatsu';
 /// 移植自 Cute Template Notepad：手绘便签底图（方格/格纹/波浪框/撕边/活页孔等
 /// 16 种风格预设）+ 可爱贴纸（flutter_svg 渲染）+ 手写标题/正文/待办内容。
 /// 高度随内容自动撑开（viewBox 300×H），单一组件入口，通过 [variant] 切换风格。
+///
+/// 开启 [editable] 后右上角显示编辑按钮；进入编辑模式后按钮切换为「导出 PNG」，
+/// 此时点选贴纸可拖动改变位置、双指/Shift+滚轮旋转缩放（选中后底部有工具条），
+/// 点击导出按钮将当前便签渲染为高清 PNG 保存到临时目录并退出编辑。
 class CuteNotepadCardWidget extends StatefulWidget {
   /// 风格预设
   final CuteNotepadVariant variant;
@@ -44,6 +56,9 @@ class CuteNotepadCardWidget extends StatefulWidget {
   /// 待办/横线行（null 使用预设空白行）
   final List<CuteNotepadTodoItem>? items;
 
+  /// 是否展示编辑入口（编辑模式下可变换贴纸并导出 PNG）
+  final bool editable;
+
   /// 是否为内联模式
   final bool inline;
 
@@ -56,6 +71,7 @@ class CuteNotepadCardWidget extends StatefulWidget {
     this.title,
     this.text,
     this.items,
+    this.editable = false,
     this.inline = false,
     this.size = const Large3Size(),
   });
@@ -64,6 +80,7 @@ class CuteNotepadCardWidget extends StatefulWidget {
   ///
   /// - style: 风格 id（如 'pinkGridBunny'）或序号 0~15，缺省用第一种
   /// - title / text / items: 覆盖预设内容
+  /// - editable: 开启编辑入口
   factory CuteNotepadCardWidget.fromProps(
     Map<String, dynamic> props,
     HomeWidgetSize size,
@@ -93,6 +110,7 @@ class CuteNotepadCardWidget extends StatefulWidget {
       title: props['title'] as String?,
       text: props['text'] as String?,
       items: items,
+      editable: props['editable'] as bool? ?? false,
       inline: props['inline'] as bool? ?? false,
       size: size,
     );
@@ -107,6 +125,25 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
   late final AnimationController _animationController;
   late final Animation<double> _animation;
 
+  /// 编辑模式（可变换贴纸）
+  bool _editing = false;
+
+  /// 正在导出 PNG
+  bool _exporting = false;
+
+  /// 当前选中的贴纸下标（null 未选中）
+  int? _selectedSticker;
+
+  /// 贴纸可编辑状态（位置/旋转/缩放，viewBox 坐标）
+  late List<_EditableSticker> _stickerStates;
+
+  /// 导出用绘制边界
+  final GlobalKey _exportBoundaryKey = GlobalKey();
+
+  // 缩放手势过程中的增量基准
+  double _gestureScale = 1;
+  double _gestureRotation = 0;
+
   @override
   void initState() {
     super.initState();
@@ -119,12 +156,38 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
       curve: Curves.easeOutCubic,
     );
     _animationController.forward();
+    _stickerStates = _buildStickerStates();
+  }
+
+  @override
+  void didUpdateWidget(covariant CuteNotepadCardWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.variant != widget.variant ||
+        oldWidget.text != widget.text ||
+        oldWidget.items != widget.items ||
+        oldWidget.title != widget.title) {
+      _stickerStates = _buildStickerStates();
+      _selectedSticker = null;
+    }
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  List<_EditableSticker> _buildStickerStates() {
+    final canvasHeight = _NoteLayoutEngine.compute(
+      widget.variant,
+      widget.title ?? widget.variant.title ?? '',
+      widget.text ?? '',
+      widget.items ?? widget.variant.items,
+    ).height;
+    return [
+      for (final s in widget.variant.stickers)
+        _EditableSticker.fromPreset(s, canvasHeight),
+    ];
   }
 
   @override
@@ -148,68 +211,205 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
       },
       child: SizedBox(
         width: widget.inline ? double.maxFinite : 384 * widget.size.scale,
-        child: AspectRatio(
-          aspectRatio: _kViewBoxWidth / layout.height,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final unit = constraints.maxWidth / _kViewBoxWidth;
-              return Stack(
-                children: [
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _CuteNotepadPainter(
-                        variant: variant,
-                        layout: layout,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // 便签本体（导出边界，不包含右上角按钮与工具条）
+            AspectRatio(
+              aspectRatio: _kViewBoxWidth / layout.height,
+              child: RepaintBoundary(
+                key: _exportBoundaryKey,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final unit = constraints.maxWidth / _kViewBoxWidth;
+                    return Stack(
+                      children: [
+                        Positioned.fill(
+                          child: GestureDetector(
+                            // 编辑模式下点击空白处取消贴纸选中
+                            behavior: HitTestBehavior.opaque,
+                            onTap:
+                                _editing && _selectedSticker != null
+                                    ? () => setState(() => _selectedSticker = null)
+                                    : null,
+                            child: CustomPaint(
+                              painter: _CuteNotepadPainter(
+                                variant: variant,
+                                layout: layout,
+                              ),
+                            ),
+                          ),
+                        ),
+                        for (int i = 0; i < _stickerStates.length; i++)
+                          _buildSticker(
+                            i,
+                            unit,
+                            layout.height,
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            // 右上角：编辑按钮 ↔ 导出 PNG 按钮
+            if (widget.editable)
+              Positioned(top: -12, right: 2, child: _buildModeButton()),
+
+            // 编辑模式选中贴纸时的变换工具条
+            if (widget.editable &&
+                _editing &&
+                _selectedSticker != null)
+              Positioned(
+                bottom: 10,
+                left: 0,
+                right: 0,
+                child: Center(child: _buildStickerToolbar()),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---- 编辑模式 UI ----
+
+  /// 右上角模式按钮：未编辑 → 编辑；编辑中 → 导出 PNG
+  Widget _buildModeButton() {
+    final editing = _editing;
+    return Tooltip(
+      message: editing ? '导出 PNG' : '编辑便签',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: _exporting ? null : (editing ? _exportPng : _enterEditing),
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: editing ? const Color(0xFFFFDCE2) : Colors.white,
+              border: Border.all(color: const Color(0xFF6B4C3B), width: 1.5),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child:
+                _exporting
+                    ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF5A3B2E),
                       ),
+                    )
+                    : Icon(
+                      editing ? Icons.download : Icons.edit,
+                      size: 16,
+                      color: const Color(0xFF5A3B2E),
                     ),
-                  ),
-                  for (int i = 0; i < variant.stickers.length; i++)
-                    _buildSticker(variant.stickers[i], layout.height, unit, i),
-                ],
-              );
-            },
           ),
         ),
       ),
     );
   }
 
-  /// 按锚点方位计算贴纸在 viewBox 坐标系中的位置
-  Offset _stickerOffset(CuteNotepadSticker st, double canvasHeight) {
-    const margin = 10.0;
-    late double baseX;
-    late double baseY;
-    switch (st.anchor) {
-      case CuteNotepadStickerAnchor.topLeft:
-        baseX = margin;
-        baseY = margin;
-      case CuteNotepadStickerAnchor.topCenter:
-        baseX = (_kViewBoxWidth - st.w) / 2;
-        baseY = 4;
-      case CuteNotepadStickerAnchor.topRight:
-        baseX = _kViewBoxWidth - st.w - margin;
-        baseY = margin;
-      case CuteNotepadStickerAnchor.bottomLeft:
-        baseX = margin;
-        baseY = canvasHeight - st.h - margin;
-      case CuteNotepadStickerAnchor.bottomRight:
-        baseX = _kViewBoxWidth - st.w - margin;
-        baseY = canvasHeight - st.h - margin;
-      case CuteNotepadStickerAnchor.center:
-        baseX = (_kViewBoxWidth - st.w) / 2;
-        baseY = (canvasHeight - st.h) / 2;
+  /// 贴纸变换工具条（旋转 / 缩放）
+  Widget _buildStickerToolbar() {
+    Widget toolButton(IconData icon, String label, VoidCallback onTap) {
+      return Tooltip(
+        message: label,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(5),
+              child: Icon(icon, size: 15, color: const Color(0xFF5A4235)),
+            ),
+          ),
+        ),
+      );
     }
-    return Offset(baseX + st.dx, baseY + st.dy);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.92),
+        border: Border.all(color: const Color(0xFFCBB7A6)),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          toolButton(Icons.rotate_left, '左转 15°', () => _nudgeSelected(
+            rotation: -15,
+          )),
+          toolButton(Icons.rotate_right, '右转 15°', () => _nudgeSelected(
+            rotation: 15,
+          )),
+          const SizedBox(width: 2),
+          toolButton(Icons.remove, '缩小', () => _nudgeSelected(scaleRatio: 0.9)),
+          toolButton(Icons.add, '放大', () => _nudgeSelected(scaleRatio: 1.1)),
+        ],
+      ),
+    );
   }
 
-  Widget _buildSticker(
-    CuteNotepadSticker sticker,
-    double canvasHeight,
-    double unit,
-    int index,
-  ) {
-    final pos = _stickerOffset(sticker, canvasHeight);
-    // 贴纸依次弹性弹出
+  void _enterEditing() {
+    setState(() => _editing = true);
+  }
+
+  /// 工具条微调当前选中贴纸
+  void _nudgeSelected({double rotation = 0, double scaleRatio = 1}) {
+    final index = _selectedSticker;
+    if (index == null || index >= _stickerStates.length) return;
+    final st = _stickerStates[index];
+    _applySticker(
+      index,
+      rotation: st.rotation + rotation,
+      scale: st.scale * scaleRatio,
+    );
+  }
+
+  /// 更新贴纸并刷新（clamp 到画布附近，允许少量出界）
+  void _applySticker(
+    int index, {
+    double? x,
+    double? y,
+    double? rotation,
+    double? scale,
+  }) {
+    final st = _stickerStates[index];
+    setState(() {
+      if (x != null) st.x = x.clamp(-st.w * 0.5, _kViewBoxWidth - st.w * 0.5);
+      if (y != null) st.y = y.clamp(-st.h * 0.3, st.canvasHeight - st.h * 0.6);
+      if (rotation != null) st.rotation = rotation.clamp(-360, 360);
+      if (scale != null) st.scale = scale.clamp(0.3, 3.0);
+    });
+  }
+
+  // ---- 贴纸 ----
+
+  Widget _buildSticker(int index, double unit, double canvasHeight) {
+    final st = _stickerStates[index];
+    if (st.canvasHeight != canvasHeight) st.canvasHeight = canvasHeight;
+
+    // 贴纸依次弹性弹出（编辑结束后仍保留入场效果）
     final begin = math.min(0.35 + index * 0.07, 0.85);
     final pop = CurvedAnimation(
       parent: _animationController,
@@ -217,22 +417,246 @@ class _CuteNotepadCardWidgetState extends State<CuteNotepadCardWidget>
           curve: Curves.easeOutBack),
     );
 
+    final selected = _editing && _selectedSticker == index;
+
+    Widget content = Transform(
+      alignment: Alignment.center,
+      transform: Matrix4.rotationZ(st.rotation * math.pi / 180)..scale(st.scale),
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          SvgPicture.string(
+            cuteNotepadStickerSvg(st.asset),
+            fit: BoxFit.contain,
+          ),
+          // 选中框（随贴纸一起旋转缩放）
+          if (selected)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFFE11D48).withOpacity(0.85),
+                      width: 1.5,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+
+    if (_editing) {
+      content = MouseRegion(
+        cursor: SystemMouseCursors.grab,
+        child: Listener(
+          // 滚轮缩放；Shift+滚轮旋转（桌面端）
+          onPointerSignal: (event) {
+            // 滚轮缩放；Shift+滚轮旋转（桌面端）
+            if (event is PointerScrollEvent && _selectedSticker == index) {
+              final down = event.scrollDelta.dy > 0;
+              final cur = _stickerStates[index];
+              if (HardwareKeyboard.instance.isShiftPressed) {
+                _applySticker(
+                  index,
+                  rotation: cur.rotation + (down ? 5 : -5),
+                );
+              } else {
+                _applySticker(
+                  index,
+                  scale: cur.scale * (down ? 0.94 : 1.06),
+                );
+              }
+            }
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(
+              () => _selectedSticker = _selectedSticker == index ? null : index,
+            ),
+            // 单指拖动 / 双指旋转缩放共用 scale 手势
+            onScaleStart: (details) {
+              _gestureScale = 1;
+              _gestureRotation = 0;
+              setState(() => _selectedSticker = index);
+            },
+            onScaleUpdate: (details) {
+              final st = _stickerStates[index];
+              _applySticker(
+                index,
+                x: st.x + details.focalPointDelta.dx / unit,
+                y: st.y + details.focalPointDelta.dy / unit,
+                scale: st.scale * details.scale / _gestureScale,
+                rotation:
+                    st.rotation + (details.rotation - _gestureRotation) * 180 /
+                    math.pi,
+              );
+              _gestureScale = details.scale;
+              _gestureRotation = details.rotation;
+            },
+            child: content,
+          ),
+        ),
+      );
+    }
+
     return Positioned(
-      left: pos.dx * unit,
-      top: pos.dy * unit,
-      width: sticker.w * unit,
-      height: sticker.h * unit,
+      left: st.x * unit,
+      top: st.y * unit,
+      width: st.w * unit,
+      height: st.h * unit,
       child: AnimatedBuilder(
         animation: pop,
         builder: (context, child) {
-          return Transform.scale(scale: pop.value.clamp(0.0, 1.2), child: child);
+          return Transform.scale(
+            scale: pop.value.clamp(0.0, 1.2),
+            child: child,
+          );
         },
-        child: SvgPicture.string(
-          cuteNotepadStickerSvg(sticker.asset),
-          fit: BoxFit.contain,
-        ),
+        child: content,
       ),
     );
+  }
+
+  // ---- 导出 PNG ----
+
+  Future<void> _exportPng() async {
+    if (_exporting) return;
+    setState(() {
+      _exporting = true;
+      // 先隐藏选中框，避免拍进图里
+      _selectedSticker = null;
+    });
+
+    try {
+      // 确保入场动画与选中框消失后的帧都已绘制
+      if (_animationController.isAnimating) {
+        await _animationController.forward();
+      }
+      await WidgetsBinding.instance.endOfFrame;
+
+      final boundary =
+          _exportBoundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null) {
+        throw StateError('无法获取便签绘制边界');
+      }
+
+      final image = await boundary.toImage(pixelRatio: 3);
+      final ByteData? data;
+      try {
+        data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      } finally {
+        image.dispose();
+      }
+      if (data == null) {
+        throw StateError('读取像素失败');
+      }
+
+      // 纯 Dart PNG 编码（避免部分平台 toByteData(png) 编码挂起）
+      final pngImage = img.Image.fromBytes(
+        width: image.width,
+        height: image.height,
+        bytes: data.buffer,
+        order: img.ChannelOrder.rgba,
+        numChannels: 4,
+      );
+      final pngBytes = img.encodePng(pngImage);
+
+      final dir = await getTemporaryDirectory();
+      final file = File(
+        '${dir.path}/cute-notepad-${widget.variant.id}-'
+        '${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await file.writeAsBytes(pngBytes);
+
+      if (!mounted) return;
+      ToastService.instance.showToast(
+        '已导出 PNG：${file.path}',
+        type: ToastType.success,
+      );
+      // 导出完成，退出编辑模式
+      setState(() => _editing = false);
+    } catch (e) {
+      if (mounted) {
+        ToastService.instance.showToast(
+          '导出失败：$e',
+          type: ToastType.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _exporting = false);
+      }
+    }
+  }
+}
+
+/// 贴纸的可编辑运行时状态（viewBox 坐标系）
+class _EditableSticker {
+  final String asset;
+  final double w;
+  final double h;
+
+  double x;
+  double y;
+  double rotation = 0; // 角度
+  double scale = 1;
+
+  /// 底部锚定贴纸需要感知画布高度（允许随内容撑高微调）
+  double canvasHeight;
+
+  _EditableSticker({
+    required this.asset,
+    required this.x,
+    required this.y,
+    required this.w,
+    required this.h,
+    required this.canvasHeight,
+  });
+
+  factory _EditableSticker.fromPreset(
+    CuteNotepadSticker preset,
+    double canvasHeight,
+  ) {
+    final pos = _anchorOffset(preset.anchor, preset.w, preset.h, canvasHeight);
+    return _EditableSticker(
+      asset: preset.asset,
+      x: pos.dx + preset.dx,
+      y: pos.dy + preset.dy,
+      w: preset.w,
+      h: preset.h,
+      canvasHeight: canvasHeight,
+    );
+  }
+}
+
+/// 按锚点方位计算贴纸在 viewBox 坐标系中的基准位置
+Offset _anchorOffset(
+  CuteNotepadStickerAnchor anchor,
+  double w,
+  double h,
+  double canvasHeight,
+) {
+  const margin = 10.0;
+  switch (anchor) {
+    case CuteNotepadStickerAnchor.topLeft:
+      return const Offset(margin, margin);
+    case CuteNotepadStickerAnchor.topCenter:
+      return Offset((_kViewBoxWidth - w) / 2, 4);
+    case CuteNotepadStickerAnchor.topRight:
+      return Offset(_kViewBoxWidth - w - margin, margin);
+    case CuteNotepadStickerAnchor.bottomLeft:
+      return Offset(margin, canvasHeight - h - margin);
+    case CuteNotepadStickerAnchor.bottomRight:
+      return Offset(_kViewBoxWidth - w - margin, canvasHeight - h - margin);
+    case CuteNotepadStickerAnchor.center:
+      return Offset(
+        (_kViewBoxWidth - w) / 2,
+        (canvasHeight - h) / 2,
+      );
   }
 }
 
@@ -426,6 +850,9 @@ class _NoteLayoutEngine {
           fontFamily: _kHandFont,
           fontSize: fontSize,
           height: lineHeight / fontSize,
+          // 与浏览器 line-height 的 half-leading 模型一致：行距上下均分，
+          // 否则字形沉底、手绘下划线（行底 -8）会穿过文字中部
+          leadingDistribution: TextLeadingDistribution.even,
           color: color,
           fontWeight: weight,
           decoration: lineThrough ? TextDecoration.lineThrough : null,

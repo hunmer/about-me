@@ -8,7 +8,7 @@ import 'package:aboutme/core/event/event_args.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'markdown_content.dart';
-import 'tool_call_steps.dart';
+import 'tool_process_view.dart';
 
 /// 链式消息容器组件
 ///
@@ -412,56 +412,112 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
     final theme = DSThemeBridge.resolve(context);
     // 从状态管理器获取实时生成状态
     final status = _statusMap[message.id];
-    final isGenerating = status?.isActive ?? false;
+    final isGenerating = status?.isActive ?? message.isGenerating;
     final currentContent = status?.currentContent ?? message.content;
 
     // 检查是否有工具调用
     final hasToolCall =
         message.toolCall != null && message.toolCall!.steps.isNotEmpty;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 如果有工具调用
-        if (hasToolCall) ...[
-          // ⚠️ 优先显示 ToolCallSteps
-          ToolCallSteps(
-            steps: message.toolCall!.steps,
-            isGenerating: isGenerating,
-            onRerunStep:
-                widget.onRerunStep != null
-                    ? (stepIndex) => widget.onRerunStep!(message.id, stepIndex)
-                    : null,
-          ),
-        ]
-        // 总是显示消息内容（包括正在生成中的内容）
-        else if (currentContent.isNotEmpty)
-          MarkdownContent(content: _stripMarkdownCodeBlocks(currentContent))
-        // 如果正在生成但没有内容，显示加载指示器
-        else if (isGenerating)
-          Row(
-            children: [
-              DSLoadingDots(size: 8, color: theme.primary),
-              const SizedBox(width: 8),
-              Text(
-                '正在生成...',
-                style: DsTypography.body.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: theme.textSub,
-                ),
+    // 工具调用消息：生成中显示过程视图，完成后只显示最终回复+可展开过程
+    if (hasToolCall) {
+      final onRerun = widget.onRerunStep != null
+          ? (int stepIndex) => widget.onRerunStep!(message.id, stepIndex)
+          : null;
+
+      if (isGenerating) {
+        final streaming = ChatMessage.stripToolResult(currentContent);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LiveProcessView(
+              message: message,
+              isGenerating: true,
+              onRerunStep: onRerun,
+            ),
+            if (streaming.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              MarkdownContent(
+                content: _stripMarkdownCodeBlocks(streaming),
               ),
             ],
-          )
-        else
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                DSLoadingDots(size: 8, color: theme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  '正在生成...',
+                  style: DsTypography.body.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: theme.textSub,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      }
+
+      final marked = _extractMarkedReply(currentContent);
+      final finalText = marked.isNotEmpty
+          ? marked
+          : ChatMessage.stripToolResult(currentContent);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (finalText.isNotEmpty)
+            MarkdownContent(content: _stripMarkdownCodeBlocks(finalText))
+          else
+            Text(
+              '(空消息)',
+              style: DsTypography.body.copyWith(
+                fontStyle: FontStyle.italic,
+                color: theme.textSub,
+              ),
+            ),
+          CollapsibleProcessSection(message: message, onRerunStep: onRerun),
+        ],
+      );
+    }
+
+    // 非工具消息：流式正文 / 生成中占位
+    if (currentContent.isNotEmpty) {
+      return MarkdownContent(
+        content: _stripMarkdownCodeBlocks(currentContent),
+      );
+    }
+    if (isGenerating) {
+      return Row(
+        children: [
+          DSLoadingDots(size: 8, color: theme.primary),
+          const SizedBox(width: 8),
           Text(
-            '(空消息)',
+            '正在生成...',
             style: DsTypography.body.copyWith(
               fontStyle: FontStyle.italic,
               color: theme.textSub,
             ),
           ),
-      ],
+        ],
+      );
+    }
+    return Text(
+      '(空消息)',
+      style: DsTypography.body.copyWith(
+        fontStyle: FontStyle.italic,
+        color: theme.textSub,
+      ),
     );
+  }
+
+  /// 提取 [AI最终回复] 标记后的文本（无标记返回空串）
+  String _extractMarkedReply(String content) {
+    final index = content.indexOf('[AI最终回复]');
+    if (index == -1) return '';
+    return ChatMessage.splitThink(content.substring(index + '[AI最终回复]'.length))
+        .$2
+        .trim();
   }
 
   /// 移除 Markdown 代码块的开头和结尾标记（如 ```json 或 ```）

@@ -7,8 +7,16 @@ import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 ///
 /// 同一个组件入口 [CuteNotepadCardWidget]，通过 16 种风格预设切换外观；
 /// 示例内容移植自网页版 fillDemoContent。
-class CuteNotepadCardExample extends StatelessWidget {
+class CuteNotepadCardExample extends StatefulWidget {
   const CuteNotepadCardExample({super.key});
+
+  @override
+  State<CuteNotepadCardExample> createState() => _CuteNotepadCardExampleState();
+}
+
+class _CuteNotepadCardExampleState extends State<CuteNotepadCardExample> {
+  /// 可编辑演示开关
+  bool _editable = false;
 
   /// 各风格的示例内容（static final，避免热重载不生效）
   static final Map<String, (String?, String?, List<CuteNotepadTodoItem>?)>
@@ -153,6 +161,37 @@ class CuteNotepadCardExample extends StatelessWidget {
               _buildSectionTitle('16 种风格预设（示例内容）'),
               const SizedBox(height: 8),
               _buildDemoGrid(),
+              const SizedBox(height: 24),
+              _buildSectionTitle('可编辑模式（贴纸拖拽/旋转/缩放 · 导出 PNG）'),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('开启 editable 可选项'),
+                subtitle: const Text(
+                  '开启后卡片右上角出现编辑按钮；编辑模式下点选贴纸后可拖动、'
+                  '双指或 Shift+滚轮旋转缩放（底部有工具条），右上角按钮切换为导出 PNG',
+                ),
+                value: _editable,
+                onChanged: (v) => setState(() => _editable = v),
+              ),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 20,
+                runSpacing: 20,
+                crossAxisAlignment: WrapCrossAlignment.start,
+                children: [
+                  CuteNotepadCardWidget(
+                    variant: resolveCuteNotepadVariant('pinkGridBunny'),
+                    text: _demos['pinkGridBunny']!.$2,
+                    items: _demos['pinkGridBunny']!.$3,
+                    editable: _editable,
+                  ),
+                  CuteNotepadCardWidget(
+                    variant: resolveCuteNotepadVariant('yellowPolkaBear'),
+                    items: _demos['yellowPolkaBear']!.$3,
+                    editable: _editable,
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
               _buildSectionTitle('初始空白状态（同一组件入口，不传内容）'),
               const SizedBox(height: 8),
