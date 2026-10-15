@@ -848,6 +848,8 @@ class ChatController extends ChangeNotifier {
     debugPrint('🧹 清除所有消息');
 
     try {
+      // 先丢弃活人感缓冲，避免清空前的输入并入下一条消息发给模型
+      AgentChatAlivenessHook.instance.discardBuffer(conversation.id);
       await messageService.clearAllMessages(conversation.id);
       notifyListeners();
     } catch (e) {

@@ -481,6 +481,17 @@ class AlivenessOrchestrator {
     } catch (_) {}
   }
 
+  /// 丢弃指定目标的缓冲会话（清空聊天记录时调用），
+  /// 避免清空前的输入并入后续合并文本重新发给模型
+  void discardBuffer(String targetId) {
+    _sessions.removeWhere((key, session) {
+      if (!key.endsWith('_$targetId')) return false;
+      session.timer?.cancel();
+      debugPrint('[Aliveness][缓冲] $targetId 缓冲已随聊天记录清空而丢弃');
+      return true;
+    });
+  }
+
   /// 应用退出/插件 dispose 时清理所有计时器
   void dispose() {
     for (final session in _sessions.values) {

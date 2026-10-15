@@ -14,13 +14,17 @@ class ConversationService extends ChangeNotifier {
   final StorageManager storage;
 
   /// 所有会话列表
-  List<Conversation> _conversations = [];
+  ///
+  /// 必须全进程共享：ChatScreen 自建实例与插件级单例双写同一会话文件，
+  /// 缓存不共享时，持有旧缓存的实例会把已删除/更新的会话写回磁盘
+  static final List<Conversation> _conversations = [];
 
   /// 是否正在加载
   bool _isLoading = false;
 
   /// 持久化会话列表时的串行任务链，避免并发写导致文件损坏
-  Future<void> _conversationsSaveChain = Future.value();
+  /// 同样全进程共享，保证跨实例的写入顺序
+  static Future<void> _conversationsSaveChain = Future.value();
 
   ConversationService({required this.storage});
 
@@ -50,12 +54,17 @@ class ConversationService extends ChangeNotifier {
       );
       if (data is List && data.isNotEmpty) {
         // 有数据，正常加载
-        _conversations =
+        _conversations
+          ..clear()
+          ..addAll(
             data
                 .map(
-                  (json) => Conversation.fromJson(json as Map<String, dynamic>),
+                  (json) => Conversation.fromJson(
+                    json as Map<String, dynamic>,
+                  ),
                 )
-                .toList();
+                .toList(),
+          );
         _conversations.sort(Conversation.compare);
       } else {
         // 没有数据，首次使用，加载示例数据
@@ -106,19 +115,22 @@ class ConversationService extends ChangeNotifier {
       );
 
       // 直接加载数据到内存，避免递归调用
-      _conversations =
+      _conversations
+        ..clear()
+        ..addAll(
           conversationsJson
               .map(
                 (json) => Conversation.fromJson(json as Map<String, dynamic>),
               )
-              .toList();
+              .toList(),
+        );
       _conversations.sort(Conversation.compare);
 
       notifyListeners();
     } catch (e) {
       debugPrint('AgentChat插件: 加载示例数据失败: $e');
       // 如果加载示例数据失败，创建空数据
-      _conversations = [];
+      _conversations.clear();
       await AboutmeDataService.instance.writePath(
         'agent_chat/conversations.json',
         [],

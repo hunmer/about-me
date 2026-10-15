@@ -77,4 +77,10 @@ class AgentChatAlivenessHook {
       await _store.saveStats(agentId, stats);
     } catch (_) {}
   }
+
+  /// 清空聊天记录时丢弃该会话的活人感缓冲，
+  /// 避免清空前的输入并入下一条消息的合并文本发给模型
+  void discardBuffer(String conversationId) {
+    AlivenessOrchestrator.instance.discardBuffer(conversationId);
+  }
 }
