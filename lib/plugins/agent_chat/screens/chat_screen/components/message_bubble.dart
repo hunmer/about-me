@@ -802,9 +802,14 @@ class AgentMessageContent extends StatelessWidget {
     final visibleContent = message.splitThinkContent().$2;
     final hasContent = visibleContent.isNotEmpty;
 
-    // 无正文无模板：有思考内容（纯思考中）不渲染正文区，否则显示空消息提示
+    // 无正文无模板：生成中的纯思考阶段显示可展开的"思考中"入口；
+    // 完成后思考经时间戳行入口查看
     if (!hasContent && !hasToolTemplate) {
-      if (message.resolvedThinkingContent != null) {
+      final thinking = message.resolvedThinkingContent;
+      if (thinking != null) {
+        if (message.isGenerating) {
+          return ThinkingLiveView(thinking: thinking);
+        }
         return const SizedBox.shrink();
       }
       return Builder(

@@ -53,9 +53,12 @@ class _ModelSearchScreenState extends State<ModelSearchScreen>
         _isLoading = false;
       });
 
-      if (widget.initialModelId != null) {
+      // 优先按模型定位（模型所在分组即其服务器）；
+      // 模型为空或列表中找不到时，回退到按服务器分组定位
+      if (widget.initialModelId != null && widget.initialModelId!.isNotEmpty) {
         _findInitialModel();
-      } else if (widget.initialProvider != null) {
+      }
+      if (_selectedModel == null && widget.initialProvider != null) {
         _findInitialProvider();
       }
     } catch (e) {

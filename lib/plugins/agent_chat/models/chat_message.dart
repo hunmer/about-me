@@ -160,6 +160,7 @@ class ChatMessage {
     int? chainStepIndex,
     String? chainExecutionId,
     bool isFinalSummary = false,
+    String? thinkingContent,
   }) {
     return ChatMessage(
       id: _uuid.v4(),
@@ -174,6 +175,7 @@ class ChatMessage {
       chainStepIndex: chainStepIndex,
       chainExecutionId: chainExecutionId,
       isFinalSummary: isFinalSummary,
+      thinkingContent: thinkingContent,
     );
   }
 

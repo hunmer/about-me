@@ -47,6 +47,9 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
 
   AgentChatGenerationResult? _generated;
 
+  /// generate 阶段剥离的内联思考内容，sendBubbles 时挂到首条气泡
+  String? _pendingThinking;
+
   @override
   String get scope => 'agent_chat';
 
@@ -69,7 +72,12 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
   Future<String?> generate(AlivenessGenerationInput input) async {
     final result = await onFlushGenerate(input.mergedText, input.systemSuffix);
     _generated = result;
-    return result?.content;
+    if (result == null) return null;
+    // 内联 <think> 思考内容不参与分条，否则会被拆成多条消息；
+    // 暂存后由 sendBubbles 挂到首条气泡的 thinkingContent
+    final (thinking, body) = ChatMessage.splitThink(result.content);
+    _pendingThinking = thinking.isEmpty ? null : thinking;
+    return body;
   }
 
   @override
@@ -93,16 +101,19 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
   @override
   Future<void> sendBubbles(List<String> bubbles) async {
     await _deleteGenerated();
-    for (final bubble in bubbles) {
+    for (var i = 0; i < bubbles.length; i++) {
       await messageService.addMessage(
         ChatMessage.ai(
           conversationId: conversation.id,
-          content: bubble,
+          content: bubbles[i],
           isGenerating: false,
           generatedByAgentId: agent.id,
+          // 思考内容挂首条，渲染端经"查看思考过程"入口展示
+          thinkingContent: i == 0 ? _pendingThinking : null,
         ),
       );
     }
+    _pendingThinking = null;
     debugPrint('[Aliveness][分条] agent_chat 一次性写入 ${bubbles.length} 条');
   }
 

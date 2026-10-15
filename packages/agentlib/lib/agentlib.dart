@@ -104,10 +104,14 @@ class AgentLibClient {
           });
     final response = await _httpClient.send(request);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw AgentLibException(
-        'HTTP ${response.statusCode}',
-        await response.stream.bytesToString(),
-      );
+      final rawBody = await response.stream.bytesToString();
+      dynamic body;
+      try {
+        body = jsonDecode(rawBody);
+      } catch (_) {
+        body = rawBody;
+      }
+      throw AgentLibException('HTTP ${response.statusCode}', body);
     }
     final lines = response.stream
         .transform(utf8.decoder)

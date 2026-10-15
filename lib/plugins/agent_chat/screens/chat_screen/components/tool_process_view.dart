@@ -4,12 +4,19 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'tool_call_steps.dart';
 
-/// 生成中思考内容的实时预览窗（限高滚动，自动跟随最新内容）
+/// 生成中思考内容的折叠入口：默认收起为"思考中..."一行，
+/// 点击展开 muted 小字号正文（限高滚动，自动跟随最新内容）
 class ThinkingLiveView extends StatefulWidget {
   final String thinking;
   final bool autoScroll;
+  final bool initiallyExpanded;
 
-  const ThinkingLiveView({super.key, required this.thinking, this.autoScroll = true});
+  const ThinkingLiveView({
+    super.key,
+    required this.thinking,
+    this.autoScroll = true,
+    this.initiallyExpanded = false,
+  });
 
   @override
   State<ThinkingLiveView> createState() => _ThinkingLiveViewState();
@@ -17,11 +24,13 @@ class ThinkingLiveView extends StatefulWidget {
 
 class _ThinkingLiveViewState extends State<ThinkingLiveView> {
   final ScrollController _scrollController = ScrollController();
+  late bool _expanded = widget.initiallyExpanded;
 
   @override
   void didUpdateWidget(ThinkingLiveView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.autoScroll &&
+        _expanded &&
         widget.thinking != oldWidget.thinking &&
         _scrollController.hasClients) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -43,44 +52,65 @@ class _ThinkingLiveViewState extends State<ThinkingLiveView> {
     final theme = DSThemeBridge.resolve(context);
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(maxHeight: 160),
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: theme.surfaceAlt.withValues(alpha: 0.6),
         borderRadius: theme.radii.sm,
-        border: Border(left: BorderSide(color: theme.primary.withValues(alpha: 0.5), width: 3)),
+        border: Border(
+          left: BorderSide(
+            color: theme.primary.withValues(alpha: 0.5),
+            width: 3,
+          ),
+        ),
       ),
-      child: SingleChildScrollView(
-        controller: _scrollController,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DSLoadingDots(size: 4, color: theme.primaryText),
-                const SizedBox(width: 6),
-                Text(
-                  '思考中...',
-                  style: DsTypography.caption.copyWith(
-                    fontStyle: FontStyle.italic,
-                    color: theme.textSub,
-                    fontWeight: FontWeight.w500,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 入口行：思考中 / 收起，点击切换展开
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Row(
+                children: [
+                  DSLoadingDots(size: 4, color: theme.primaryText),
+                  const SizedBox(width: 6),
+                  Text(
+                    _expanded ? '收起思考' : '思考中...',
+                    style: DsTypography.caption.copyWith(
+                      fontStyle: FontStyle.italic,
+                      color: theme.textSub,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              widget.thinking,
-              style: DsTypography.caption.copyWith(
-                color: theme.textSub,
-                height: 1.4,
+                  const Spacer(),
+                  DsIcon(
+                    _expanded ? DsIconKind.chevronUp : DsIconKind.chevronDown,
+                    size: 14,
+                    color: theme.textSub,
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          // 展开内容：muted 小字号流式全文
+          if (_expanded)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 160),
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                padding: const EdgeInsets.only(left: 10, right: 10, bottom: 8),
+                child: Text(
+                  widget.thinking,
+                  style: DsTypography.caption.copyWith(
+                    color: theme.textSub,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -55,7 +55,10 @@ void main() {
     await pumpContent(tester, _toolMessage(generating: true, thinking: '正在分析用户的请求'));
 
     expect(find.text('思考中...'), findsOneWidget);
-    // thinking 与内联 think 标签合并显示，用包含匹配
+    // 思考默认折叠，点击入口展开后可见（muted 小字）
+    expect(find.textContaining('正在分析用户的请求'), findsNothing);
+    await tester.tap(find.text('思考中...'));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.textContaining('正在分析用户的请求'), findsOneWidget);
     expect(find.textContaining('工具调用 (1 个步骤)'), findsOneWidget);
     // 内联 think 已剥离，流式正文可见

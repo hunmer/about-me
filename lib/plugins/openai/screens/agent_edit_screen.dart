@@ -940,7 +940,11 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     final currentModel = _formKey.currentState?.value['model'] as String? ?? '';
     final selectedModel = await NavigationHelper.push<LLMModel>(
       context,
-      ModelSearchScreen(initialModelId: currentModel),
+      ModelSearchScreen(
+        initialModelId: currentModel,
+        initialProvider:
+            _selectedProviderId.isEmpty ? null : _selectedProviderId,
+      ),
     );
     if (selectedModel != null && _formKey.currentState != null) {
       _formKey.currentState!.patchValue({'model': selectedModel.id});

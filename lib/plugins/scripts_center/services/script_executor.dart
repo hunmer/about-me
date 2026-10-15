@@ -29,7 +29,8 @@ class ScriptExecutor {
   /// 是否已初始化
   bool _isInitialized = false;
 
-  /// 正在执行的脚本栈（用于检测循环调用）
+  /// 正在执行的脚本集合（仅用于脚本互调嵌套链的循环检测；
+  /// 并发运行同一脚本时 Set 自动去重，不阻塞）
   final Set<String> _executingScripts = {};
 
   /// 正在执行脚本所使用的配置文件 id（scriptId -> profileId）
@@ -328,14 +329,8 @@ class ScriptExecutor {
       return {'success': false, 'error': 'scriptId 参数缺失'};
     }
 
-    // 检测循环调用
-    if (_executingScripts.contains(scriptId)) {
-      print('❌ 检测到循环调用: $scriptId');
-      return {
-        'success': false,
-        'error': '检测到循环调用: $scriptId',
-      };
-    }
+    // 循环调用检测统一在 execute() 内按嵌套调用链判定，这里不做扁平检查，
+    // 避免并发运行同一脚本时误报
 
     try {
       print('📞 脚本互调: $scriptId');
@@ -403,8 +398,10 @@ class ScriptExecutor {
         throw Exception('脚本代码为空: $scriptId');
       }
 
-      // 检测循环调用
-      if (_executingScripts.contains(scriptId)) {
+      // 检测循环调用（仅针对脚本互调的嵌套调用链，
+      // 两个独立入口并发运行同一脚本不算循环）
+      if (args?['calledFrom'] == 'runScript' &&
+          _executingScripts.contains(scriptId)) {
         throw Exception('检测到循环调用: $scriptId');
       }
 
