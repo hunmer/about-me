@@ -1,9 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:skribble/skribble.dart'
-    show DrawConfig, waverPath, waveredPolygons;
-
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/utils/image_utils.dart';
@@ -128,129 +125,44 @@ class UserAvatar extends StatelessWidget {
   }
 }
 
-/// 手绘云朵头部背景（design.md §9：无渐变/柔影，墨线云 + 纸底）
-///
-/// 云朵用 skribble waver 轮廓绘制：纸底填充 + 墨线描边，
-/// 坐标按 375 宽参考稿换算成横向比例
-class MomentsSkyHeader extends StatelessWidget {
+/// 主页背景封面图（无路径时返回空组件）
+class MomentsCover extends StatelessWidget {
+  final String? path;
   final double height;
-  final bool profileVariant;
+  final VoidCallback? onLongPress;
+  final Widget? overlay;
 
-  const MomentsSkyHeader({
+  const MomentsCover({
     super.key,
-    this.height = 180,
-    this.profileVariant = false,
+    required this.path,
+    this.height = 230,
+    this.onLongPress,
+    this.overlay,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: CustomPaint(
-        painter: _CloudsPainter(
-          profileVariant: profileVariant,
-          config: theme.wired.drawConfig,
-          paper: theme.paper,
-          ink: theme.ink,
-          wash: theme.hatch.withValues(alpha: theme.isDark ? 0.10 : 0.16),
+    if (path == null || path!.isEmpty) return const SizedBox.shrink();
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            MomentImage(path: path!),
+            if (overlay != null)
+              Positioned(
+                bottom: 12,
+                right: 16,
+                child: overlay!,
+              ),
+          ],
         ),
-        child: const SizedBox.expand(),
       ),
     );
   }
-}
-
-class _CloudSpec {
-  final double dx; // 距左边缘比例（基于 375 宽）
-  final double top;
-  final double scale;
-  final double opacity;
-
-  const _CloudSpec(this.dx, this.top, this.scale, this.opacity);
-}
-
-const _profileClouds = [
-  _CloudSpec(0.62, 6, 1.25, 0.9),
-  _CloudSpec(0.02, 48, 1.0, 0.8),
-  _CloudSpec(0.05, 128, 1.15, 0.85),
-  _CloudSpec(0.66, 120, 1.2, 0.85),
-  _CloudSpec(0.25, 178, 1.5, 0.9),
-];
-
-const _feedClouds = [
-  _CloudSpec(0.55, 10, 1.1, 0.85),
-  _CloudSpec(0.03, 34, 0.95, 0.8),
-  _CloudSpec(0.16, 76, 1.35, 0.85),
-];
-
-class _CloudsPainter extends CustomPainter {
-  _CloudsPainter({
-    required this.profileVariant,
-    required this.config,
-    required this.paper,
-    required this.ink,
-    required this.wash,
-  });
-
-  final bool profileVariant;
-  final DrawConfig config;
-  final Color paper;
-  final Color ink;
-  final Color wash;
-
-  /// 单朵云的基础轮廓（几个相接的圆拱，viewBox 160×70）
-  static Path _cloudBase(Size size) {
-    final s = size.shortestSide;
-    return Path()
-      ..addOval(Rect.fromCircle(center: Offset(s * 0.30, s * 0.62), radius: s * 0.30))
-      ..addOval(Rect.fromCircle(center: Offset(s * 0.55, s * 0.42), radius: s * 0.38))
-      ..addOval(Rect.fromCircle(center: Offset(s * 0.85, s * 0.66), radius: s * 0.26));
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 顶部主色淡水洗（实底色，非渐变装饰）
-    final washRect = Rect.fromLTWH(0, 0, size.width, size.height * 0.72);
-    canvas.drawRect(washRect, Paint()..color = wash);
-
-    for (final c in profileVariant ? _profileClouds : _feedClouds) {
-      final w = 150.0 * c.scale;
-      final h = 66.0 * c.scale;
-      final x = c.dx * 375;
-      if (x > size.width) continue;
-      final rect = Rect.fromLTWH(x, c.top, w, h);
-      final path = _cloudBase(Size(w, h)).shift(rect.topLeft);
-
-      final wavered = waveredPolygons(waverPath(path, config, amplitude: 1.0));
-      _drawCloud(canvas, wavered, c.opacity);
-    }
-  }
-
-  void _drawCloud(Canvas canvas, Path wavered, double opacity) {
-    canvas.drawPath(
-      wavered,
-      Paint()..color = paper.withValues(alpha: 0.96 * opacity),
-    );
-    canvas.drawPath(
-      wavered,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.8
-        ..strokeJoin = StrokeJoin.round
-        ..strokeCap = StrokeCap.round
-        ..color = ink.withValues(alpha: 0.55 * opacity),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _CloudsPainter oldDelegate) =>
-      oldDelegate.profileVariant != profileVariant ||
-      oldDelegate.config != config ||
-      oldDelegate.paper != paper ||
-      oldDelegate.ink != ink ||
-      oldDelegate.wash != wash;
 }
 
 /// 朋友圈本地相对路径图片（等比裁切填充，失败显示占位）

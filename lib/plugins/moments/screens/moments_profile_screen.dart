@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
 import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 
+import 'package:path/path.dart' as p;
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
@@ -11,6 +12,8 @@ import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
+import 'package:aboutme/utils/file_picker_helper.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 import '../widgets/moment_stickers.dart';
@@ -102,6 +105,97 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
     return list;
   }
 
+  String get _authorKey =>
+      isUser ? MomentPost.userAuthorId : widget.agentId!;
+
+  /// 顶部封面：显式背景 > agent 头像 > （用户）上传占位
+  Widget _buildCover(AppThemeData theme) {
+    final explicit = _moments.profileBgOf(_authorKey);
+    final hasExplicit = explicit != null && explicit.isNotEmpty;
+    final path = hasExplicit ? explicit : (!isUser ? _agent?.avatarUrl : null);
+    if (path == null || path.isEmpty) {
+      if (!isUser) return const SizedBox.shrink();
+      // 用户未设置背景：上传占位
+      return GestureDetector(
+        onTap: _uploadBg,
+        child: Container(
+          height: 110,
+          margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: theme.surfaceAlt,
+            radius: theme.radii.lg,
+            hachure: true,
+            seed: 22,
+          ),
+          child: Center(
+            child: InterestPill(
+              label: 'moments_changeBg'.tr,
+              leading: DsIcon(DsIconKind.image, size: 12),
+              selected: true,
+              onTap: _uploadBg,
+            ),
+          ),
+        ),
+      );
+    }
+    return MomentsCover(
+      path: path,
+      height: 230,
+      // 长按封面：有自定义背景时可恢复默认
+      onLongPress: hasExplicit ? _showBgOptions : null,
+      overlay:
+          isUser
+              ? InterestPill(
+                label: 'moments_changeBg'.tr,
+                leading: DsIcon(DsIconKind.image, size: 12),
+                onTap: _uploadBg,
+              )
+              : null,
+    );
+  }
+
+  Future<void> _uploadBg() async {
+    try {
+      final files = await FilePickerHelper.pickImages(multiple: false);
+      if (files.isEmpty) return;
+      final file = files.first;
+      final ext = p.extension(file.path);
+      final rel = await ImageUtils.saveBytesToAppDirectory(
+        await file.readAsBytes(),
+        MomentsService.imagesDir,
+        extension: ext.isEmpty ? '.png' : ext,
+      );
+      await _moments.setProfileBg(_authorKey, rel);
+      if (mounted) ToastService.instance.showToast('moments_bgSet'.tr);
+    } catch (e) {
+      if (mounted) {
+        ToastService.instance.showToast(
+          'moments_publishFailed'.trParams({'error': '$e'}),
+        );
+      }
+    }
+  }
+
+  void _showBgOptions() {
+    showDSBottomSheet<void>(
+      context: context,
+      title: 'moments_imageActions'.tr,
+      builder:
+          (_) => DSSheetAction(
+            icon: DsIconKind.refresh,
+            label: 'moments_bgReset'.tr,
+            onTap: () async {
+              Navigator.pop(context);
+              await _moments.clearProfileBg(_authorKey);
+              if (mounted) {
+                ToastService.instance.showToast('moments_bgResetDone'.tr);
+              }
+            },
+          ),
+    );
+  }
+
   void _backToFeed() {
     final navigator = Navigator.of(context);
     if (navigator.canPop()) {
@@ -143,12 +237,9 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
       backgroundColor: theme.background,
       // 内容延伸到 dock 后面，矮窗口下整页可滚
       extendBody: true,
-      body: Stack(
-        children: [
-          // 手绘云朵作为背景幕布
-          MomentsSkyHeader(height: 240, profileVariant: true),
-          Positioned.fill(
-            child: Column(
+      body: Builder(
+        builder:
+            (context) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 PersistentNavigationBar(
@@ -198,6 +289,7 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            _buildCover(theme),
                             _buildAvatarArea(theme),
                             _buildIdentity(
                               theme,
@@ -210,16 +302,20 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
                         ),
                       ),
                       SliverToBoxAdapter(child: _buildCollections(theme)),
-                      const SliverToBoxAdapter(
-                        child: SizedBox(height: 130),
+                      // 占满剩余视口：内容少时页面也不留大片空白，
+                      // 底部同时为磨砂 dock 预留透出空间
+                      const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 130),
+                          child: SizedBox.expand(),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
       ),
       // 弧形圆盘 dock
       bottomNavigationBar: Padding(

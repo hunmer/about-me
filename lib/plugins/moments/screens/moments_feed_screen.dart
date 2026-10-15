@@ -309,7 +309,10 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
               controller: _scrollController,
               slivers: [
                 SliverToBoxAdapter(
-                  child: MomentsSkyHeader(height: 150),
+                  child: MomentsCover(
+                    path: _moments.profileBgOf(MomentPost.userAuthorId),
+                    height: 140,
+                  ),
                 ),
                 SliverToBoxAdapter(child: _buildStories(theme)),
                 SliverToBoxAdapter(child: _buildFilters()),
@@ -734,6 +737,7 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
     return GestureDetector(
       onTap: _openViewer,
       onDoubleTap: _doubleTapLike,
+      onLongPress: _showImageActions,
       child: Container(
         height: 225,
         padding: const EdgeInsets.all(4),
@@ -853,6 +857,29 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
           ),
         ),
       ),
+    );
+  }
+
+  /// 长按帖子图片：设为该作者的主页背景（拷贝归档，帖子删除不受影响）
+  void _showImageActions() {
+    final post = widget.post;
+    showDSBottomSheet<void>(
+      context: context,
+      title: 'moments_imageActions'.tr,
+      builder:
+          (_) => DSSheetAction(
+            icon: DsIconKind.image,
+            label: 'moments_setBg'.trParams({'name': widget.author.name}),
+            onTap: () async {
+              Navigator.pop(context);
+              await MomentsService.instance.setProfileBg(
+                post.isUserPost ? MomentPost.userAuthorId : post.agentId,
+                post.images[_activeImage],
+                copy: true,
+              );
+              ToastService.instance.showToast('moments_bgSet'.tr);
+            },
+          ),
     );
   }
 

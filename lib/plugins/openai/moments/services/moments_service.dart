@@ -5,8 +5,10 @@ import 'dart:math';
 import 'package:agentlib/openai_compat.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:path/path.dart' as p;
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
@@ -26,6 +28,7 @@ class MomentsService extends ChangeNotifier {
 
   static const _postsPath = 'openai/moments/posts.json';
   static const _uiStatePath = 'openai/moments/ui_state.json';
+  static const _profileBgPath = 'openai/moments/profile_bg.json';
   static const _maxPosts = 500;
 
   /// 单帖图片数上限（多图网格 3 列展示）
@@ -51,7 +54,69 @@ class MomentsService extends ChangeNotifier {
   final Set<String> _seenAuthorIds = {};
   final Set<String> _savedPostIds = {};
 
+  /// 个人主页背景图（authorId → 图片相对路径），持久化到 profile_bg.json；
+  /// agent 无显式背景时由 UI 回退为其头像
+  final Map<String, String> _profileBg = {};
+
   List<MomentPost> get posts => List.unmodifiable(_posts);
+
+  String? profileBgOf(String authorId) => _profileBg[authorId];
+
+  /// 设置主页背景图；[copy] 为 true 时把源图拷贝归档到朋友圈图片目录
+  /// （长按帖子图片设置时使用，避免帖子被删后背景失效）
+  Future<void> setProfileBg(
+    String authorId,
+    String imageRelPath, {
+    bool copy = false,
+  }) async {
+    await loadPosts();
+    final stored = copy ? await _copyToImages(imageRelPath) : imageRelPath;
+    _profileBg[authorId] = stored;
+    await _saveProfileBg();
+    notifyListeners();
+  }
+
+  /// 清除显式背景（agent 回退为头像）
+  Future<void> clearProfileBg(String authorId) async {
+    await loadPosts();
+    if (_profileBg.remove(authorId) == null) return;
+    await _saveProfileBg();
+    notifyListeners();
+  }
+
+  Future<String> _copyToImages(String relPath) async {
+    final abs = await ImageUtils.getAbsolutePath(relPath);
+    final bytes = await File(abs).readAsBytes();
+    final ext = p.extension(abs);
+    return ImageUtils.saveBytesToAppDirectory(
+      bytes,
+      imagesDir,
+      extension: ext.isEmpty ? '.png' : ext,
+    );
+  }
+
+  Future<void> _saveProfileBg() async {
+    try {
+      await AboutmeDataService.instance.writePath(_profileBgPath, _profileBg);
+    } catch (e) {
+      debugPrint('[Moments] 保存主页背景失败: $e');
+    }
+  }
+
+  Future<void> _loadProfileBg() async {
+    try {
+      final data = await AboutmeDataService.instance.readPath(_profileBgPath);
+      _profileBg
+        ..clear()
+        ..addAll(
+          data is Map
+              ? data.map((k, v) => MapEntry(k.toString(), v.toString()))
+              : <String, String>{},
+        );
+    } catch (_) {
+      // 背景文件不存在或损坏时保持空
+    }
+  }
 
   bool isAuthorSeen(String authorId) => _seenAuthorIds.contains(authorId);
 
@@ -119,6 +184,7 @@ class MomentsService extends ChangeNotifier {
       _posts = [];
     }
     await _loadUiState();
+    await _loadProfileBg();
     _loaded = true;
     notifyListeners();
   }

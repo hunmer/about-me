@@ -63,4 +63,10 @@ const Map<String, String> momentsTranslationsZh = {
   'moments_albums': '📁 @n',
   'moments_unknownAgent': '未知助手',
   'moments_viewMoments': '查看朋友圈',
+  'moments_imageActions': '图片操作',
+  'moments_changeBg': '更换背景',
+  'moments_setBg': '设为 @name 的主页背景',
+  'moments_bgSet': '已更新主页背景',
+  'moments_bgReset': '恢复默认背景',
+  'moments_bgResetDone': '已恢复默认背景',
 };

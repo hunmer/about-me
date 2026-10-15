@@ -65,4 +65,10 @@ const Map<String, String> momentsTranslationsEn = {
   'moments_albums': '📁 @n',
   'moments_unknownAgent': 'Unknown agent',
   'moments_viewMoments': 'View Moments',
+  'moments_imageActions': 'Image actions',
+  'moments_changeBg': 'Change cover',
+  'moments_setBg': "Set as @name's cover",
+  'moments_bgSet': 'Cover updated',
+  'moments_bgReset': 'Reset cover',
+  'moments_bgResetDone': 'Cover reset',
 };
