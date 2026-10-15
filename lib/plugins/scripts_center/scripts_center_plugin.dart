@@ -285,6 +285,7 @@ class ScriptsCenterPlugin extends BasePlugin {
           final result = await _scriptExecutor.execute(
             script.id,
             args: const {'trigger': 'auto'},
+            instanceId: 'auto_run',
           );
 
           if (!result.success) {
@@ -334,6 +335,9 @@ class ScriptsCenterPlugin extends BasePlugin {
                 final result = await _scriptExecutor.execute(
                   script.id,
                   args: {'event': trigger.event, 'eventData': eventData},
+                  // 事件风暴下单实例：同一事件重复触发时，
+                  // 脚本未跑完的重复执行会被拒绝
+                  instanceId: 'event:${trigger.event}',
                 );
 
                 if (!result.success) {

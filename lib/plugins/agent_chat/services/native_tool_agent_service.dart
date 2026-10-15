@@ -170,11 +170,14 @@ class NativeToolAgentService {
 
   bool supports(AIAgent agent, bool enableToolCalling) {
     if (!enableToolCalling || !agent.enableFunctionCalling) return false;
-    return true;
+    return const {'openai', 'anthropic'}.contains(
+      agent.apiFormat.trim().toLowerCase(),
+    );
   }
 
   Map<String, Map<String, ToolConfig>>? _toolConfigCache;
   Map<String, NativeToolMeta>? _toolMetaCache;
+  bool _hasImageGenerationTool = false;
 
   /// 单次循环工具调用上限：防止模型陷入无限调用
   static const maxToolCallsPerLoop = 12;
@@ -249,6 +252,12 @@ class NativeToolAgentService {
       pluginTools: tools,
       onRunJs: (args) => _dispatchJs(run, args),
       useJsTools: useJsTools,
+    );
+    debugPrint(
+      '[NativeTool] 请求配置：agent=${agent.id} format=${agent.apiFormat} '
+      'functionCalling=${agent.enableFunctionCalling} '
+      'imageTool=${_hasImageGenerationTool ? 'available' : 'missing'} '
+      'tools=${tools.map((tool) => tool.name).join(',')}',
     );
 
     // contextMessages 中的 system 消息（活人感后缀等）拼接到 system prompt
@@ -455,6 +464,8 @@ class NativeToolAgentService {
       }
       _toolConfigCache = configs;
       _toolMetaCache = meta;
+      _hasImageGenerationTool =
+          configs['moments']?.containsKey('generate_image') ?? false;
     }
     run.toolMeta = Map.unmodifiable(_toolMetaCache!);
 
@@ -526,6 +537,7 @@ class NativeToolAgentService {
   void invalidateCache() {
     _toolConfigCache = null;
     _toolMetaCache = null;
+    _hasImageGenerationTool = false;
   }
 
   // ---------- 执行分发 ----------

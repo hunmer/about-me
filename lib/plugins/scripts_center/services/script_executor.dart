@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
@@ -10,6 +11,8 @@ import 'package:aboutme/plugins/scripts_center/models/script_execution_result.da
 import 'package:aboutme/plugins/scripts_center/models/script_profile.dart';
 import 'script_execution_logger.dart';
 import 'script_manager.dart';
+
+const _uuid = Uuid();
 
 /// 脚本执行器服务
 ///
@@ -29,9 +32,12 @@ class ScriptExecutor {
   /// 是否已初始化
   bool _isInitialized = false;
 
-  /// 正在执行的脚本集合（仅用于脚本互调嵌套链的循环检测；
-  /// 并发运行同一脚本时 Set 自动去重，不阻塞）
-  final Set<String> _executingScripts = {};
+  /// 正在执行的脚本实例表（scriptId -> 运行中的实例 id 集合）
+  ///
+  /// 实例 id 由调用方指定（单实例语义，通常是来源名称，如 'auto_run'、
+  /// 'event:xxx'）；不传则每次生成随机 id，即允许并发运行。
+  /// 脚本互调（runScript）的嵌套链仍按 scriptId 检测循环调用
+  final Map<String, Set<String>> _executingScripts = {};
 
   /// 正在执行脚本所使用的配置文件 id（scriptId -> profileId）
   ///
@@ -366,9 +372,14 @@ class ScriptExecutor {
   }
 
   /// 执行脚本
+  ///
+  /// [instanceId] 执行实例 id：单实例语义的调用方传固定值（通常是来源名称，
+  /// 如 'auto_run'、'event:xxx'），同实例仍在运行时会拒绝重复触发；
+  /// 不传则生成随机 id，每次执行都是独立实例，允许并发
   Future<ScriptExecutionResult> execute(
     String scriptId, {
     Map<String, dynamic>? args,
+    String? instanceId,
   }) async {
     if (!_isInitialized) {
       return ScriptExecutionResult.failure(
@@ -398,15 +409,24 @@ class ScriptExecutor {
         throw Exception('脚本代码为空: $scriptId');
       }
 
-      // 检测循环调用（仅针对脚本互调的嵌套调用链，
-      // 两个独立入口并发运行同一脚本不算循环）
-      if (args?['calledFrom'] == 'runScript' &&
-          _executingScripts.contains(scriptId)) {
-        throw Exception('检测到循环调用: $scriptId');
+      // 运行判重：
+      // - 脚本互调（calledFrom == 'runScript'）的嵌套链：检测循环调用
+      // - 固定 instanceId 的调用方（单实例语义）：同来源实例仍在运行则拒绝
+      // - 未传 instanceId（如手动运行）：随机 id，每次独立放行
+      final effectiveInstanceId = instanceId ?? _uuid.v4();
+      if (args?['calledFrom'] == 'runScript') {
+        if (_executingScripts.containsKey(scriptId)) {
+          throw Exception('检测到循环调用: $scriptId');
+        }
+      } else if (instanceId != null &&
+          _executingScripts[scriptId]?.contains(instanceId) == true) {
+        throw Exception('脚本正在运行（来源: $instanceId），已忽略重复触发: $scriptId');
       }
 
       // 标记为正在执行
-      _executingScripts.add(scriptId);
+      _executingScripts
+          .putIfAbsent(scriptId, () => <String>{})
+          .add(effectiveInstanceId);
 
       // 记录本次执行使用的配置文件（脚本内 getConfig 未显式指定时使用）
       final profileId = args?['profileId'] as String?;
@@ -472,8 +492,12 @@ class ScriptExecutor {
           scriptId: scriptId,
         );
       } finally {
-        // 移除执行标记
-        _executingScripts.remove(scriptId);
+        // 移除执行标记（该脚本无运行中实例时移除整个条目）
+        final instances = _executingScripts[scriptId];
+        instances?.remove(effectiveInstanceId);
+        if (instances != null && instances.isEmpty) {
+          _executingScripts.remove(scriptId);
+        }
         _activeProfileIds.remove(scriptId);
         executionLogger.endRun(scriptId);
       }
@@ -536,7 +560,11 @@ class ScriptExecutor {
   /// 注意：JS 引擎全局共享，会终止所有正在执行的脚本；
   /// 正在同步执行的密集计算段无法立即打断（QuickJS 限制）
   void terminateRunning() {
-    print('⛔ 请求终止脚本执行（当前运行中: ${_executingScripts.toList()}）');
+    final running = [
+      for (final e in _executingScripts.entries)
+        if (e.value.isNotEmpty) '${e.key} ×${e.value.length}',
+    ];
+    print('⛔ 请求终止脚本执行（当前运行中: $running）');
     _jsBridge.requestAbort();
   }
 

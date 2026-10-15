@@ -171,109 +171,118 @@ class _AgentDetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 420),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 详情信息区（可滚动；高度收紧给底部入口留出空间）
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 340),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AgentDetailDialog.buildAgentIcon(agent, size: 56),
-                SizedBox(width: theme.spacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        agent.name,
-                        style: DsTypography.title.copyWith(
-                          color: theme.text,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (agent.description.isNotEmpty)
-                        Text(
-                          agent.description,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AgentDetailDialog.buildAgentIcon(agent, size: 56),
+                    SizedBox(width: theme.spacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            agent.name,
+                            style: DsTypography.title.copyWith(
+                              color: theme.text,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (agent.tags.isNotEmpty) ...[
-              SizedBox(height: theme.spacing.sm),
-              Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children:
-                    agent.tags
-                        .map(
-                          (tag) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.surfaceAlt,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              tag,
-                              style: DsTypography.label.copyWith(
-                                fontSize: 10,
+                          if (agent.description.isNotEmpty)
+                            Text(
+                              agent.description,
+                              style: DsTypography.caption.copyWith(
                                 color: theme.textSub,
                               ),
                             ),
-                          ),
-                        )
-                        .toList(),
-              ),
-            ],
-            SizedBox(height: theme.spacing.md),
-            _buildInfoRow(theme, '服务商', agent.serviceProviderId),
-            SizedBox(height: theme.spacing.sm),
-            _buildInfoRow(theme, '模型', agent.model),
-            SizedBox(height: theme.spacing.sm),
-            if (agent.effectiveSystemPrompt.isNotEmpty) ...[
-              _buildInfoRow(theme, '角色设定', null),
-              SizedBox(height: theme.spacing.xs),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(theme.spacing.sm),
-                decoration: BoxDecoration(
-                  color: theme.surfaceAlt,
-                  borderRadius: theme.radii.md,
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  agent.effectiveSystemPrompt,
-                  style: DsTypography.caption.copyWith(color: theme.textSub),
-                ),
-              ),
-            ],
-            // 开启活人感的 agent：底部占满宽度的朋友圈入口
-            if (agent.alivenessConfig?.enabled == true &&
-                onViewMoments != null) ...[
-              SizedBox(height: theme.spacing.md),
-              SizedBox(
-                width: double.infinity,
-                child: DSButton(
-                  label: 'moments_viewMoments'.tr,
-                  icon: DsIconKind.camera,
-                  expand: true,
-                  variant: DSButtonVariant.secondary,
-                  onPressed: onViewMoments,
-                ),
-              ),
-            ],
-          ],
+                if (agent.tags.isNotEmpty) ...[
+                  SizedBox(height: theme.spacing.sm),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children:
+                        agent.tags
+                            .map(
+                              (tag) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.surfaceAlt,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  tag,
+                                  style: DsTypography.label.copyWith(
+                                    fontSize: 10,
+                                    color: theme.textSub,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                  ),
+                ],
+                SizedBox(height: theme.spacing.md),
+                _buildInfoRow(theme, '服务商', agent.serviceProviderId),
+                SizedBox(height: theme.spacing.sm),
+                _buildInfoRow(theme, '模型', agent.model),
+                SizedBox(height: theme.spacing.sm),
+                if (agent.effectiveSystemPrompt.isNotEmpty) ...[
+                  _buildInfoRow(theme, '角色设定', null),
+                  SizedBox(height: theme.spacing.xs),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(theme.spacing.sm),
+                    decoration: BoxDecoration(
+                      color: theme.surfaceAlt,
+                      borderRadius: theme.radii.md,
+                    ),
+                    child: Text(
+                      agent.effectiveSystemPrompt,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
-      ),
+        // 开启活人感的 agent：底部占满宽度的朋友圈入口（钉在滚动区外，
+        // 角色设定再长也始终可见）
+        if (agent.alivenessConfig?.enabled == true &&
+            onViewMoments != null) ...[
+          SizedBox(height: theme.spacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: DSButton(
+              label: 'moments_viewMoments'.tr,
+              icon: DsIconKind.camera,
+              expand: true,
+              variant: DSButtonVariant.secondary,
+              onPressed: onViewMoments,
+            ),
+          ),
+        ],
+      ],
     );
   }
 

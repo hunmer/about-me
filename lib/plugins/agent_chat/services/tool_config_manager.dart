@@ -115,6 +115,10 @@ class ToolConfigManager {
         await _syncMissingToolFiles();
       }
 
+      // 老安装可能已经有 moments.json，但内容来自尚未包含生图工具的旧版本。
+      // 只补缺失方法并重建索引，保留用户自定义的描述和启用状态。
+      await _syncMissingMomentTools();
+
       // 加载工具索引和配置
       await _loadAllConfigs();
 
@@ -144,6 +148,39 @@ class ToolConfigManager {
     }
     if (copied) {
       await _regenerateToolIndex();
+    }
+  }
+
+  Future<void> _syncMissingMomentTools() async {
+    const pluginId = 'moments';
+    final path = '$_toolsPrefix/$pluginId.json';
+    try {
+      final bundledJson = await rootBundle.loadString(
+        'lib/plugins/agent_chat/tools/$pluginId.json',
+      );
+      final bundled = jsonDecode(bundledJson);
+      if (bundled is! Map<String, dynamic>) return;
+
+      final storedData = await AboutmeDataService.instance.readPath(path, null);
+      final stored = storedData is Map<String, dynamic>
+          ? Map<String, dynamic>.from(storedData)
+          : <String, dynamic>{};
+      var changed = false;
+      for (final entry in bundled.entries) {
+        if (stored.containsKey(entry.key)) continue;
+        stored[entry.key] = entry.value;
+        changed = true;
+      }
+      if (!changed) return;
+
+      await AboutmeDataService.instance.writePath(
+        path,
+        const JsonEncoder.withIndent('  ').convert(stored),
+      );
+      await _regenerateToolIndex();
+      print('✅ 增量补拷 moments 缺失工具');
+    } catch (e) {
+      print('⚠️ moments 工具增量同步失败: $e');
     }
   }
 

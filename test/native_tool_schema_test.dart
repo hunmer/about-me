@@ -279,5 +279,24 @@ void main() {
         isTrue,
       );
     });
+
+    test('未识别的 API 格式不进入原生工具调用路径', () {
+      final agent = AIAgent(
+        id: 'unknown-format-agent',
+        name: 'Unknown format',
+        description: '',
+        tags: const [],
+        serviceProviderId: 'custom',
+        baseUrl: 'https://example.com/v1',
+        headers: const {'Authorization': 'Bearer test-key'},
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+        model: 'model',
+        enableFunctionCalling: true,
+        apiFormat: 'unknown',
+      );
+
+      expect(NativeToolAgentService.instance.supports(agent, true), isFalse);
+    });
   });
 }
