@@ -534,6 +534,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'StackedAccordionCard - 层叠互斥展开的进度与条目列表卡片',
         route: '/widgets_gallery/stacked_accordion_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.sticky_note_2,
+        title: '可爱手账便签卡片',
+        subtitle: 'CuteNotepadCard - 16 种风格手账便签（单一组件入口）',
+        route: '/widgets_gallery/cute_notepad_card',
+      ),
     ];
   }
 

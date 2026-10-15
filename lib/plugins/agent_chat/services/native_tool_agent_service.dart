@@ -17,10 +17,9 @@ import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 
 /// 工具调用元数据（dispatcher 用）
 class NativeToolMeta {
-  const NativeToolMeta(this.pluginId, this.methodName, this.title);
+  const NativeToolMeta(this.pluginId, this.methods);
   final String pluginId;
-  final String methodName;
-  final String title;
+  final Map<String, ToolConfig> methods;
 }
 
 /// 标准工具调用发起后发生错误，调用方不得再回退重放旧流程。
@@ -161,7 +160,7 @@ class NativeToolAgentService {
     return true;
   }
 
-  List<(String, ToolConfig)>? _toolConfigCache;
+  Map<String, Map<String, ToolConfig>>? _toolConfigCache;
   Map<String, NativeToolMeta>? _toolMetaCache;
 
   /// 单次循环工具调用上限：防止模型陷入无限调用
@@ -348,7 +347,7 @@ class NativeToolAgentService {
     _NativeToolRunContext run,
   ) {
     if (_toolConfigCache == null || _toolMetaCache == null) {
-      final configs = <(String, ToolConfig)>[];
+      final configs = <String, Map<String, ToolConfig>>{};
       final meta = <String, NativeToolMeta>{};
       for (final (toolId, pluginId, config)
           in ToolConfigManager.instance.getEnabledToolsWithPlugin()) {
@@ -356,8 +355,13 @@ class NativeToolAgentService {
         final methodName = toolId.startsWith('${pluginId}_')
             ? toolId.substring(pluginId.length + 1)
             : toolId;
-        configs.add((toolId, config));
-        meta[toolId] = NativeToolMeta(pluginId, methodName, config.title);
+        (configs[pluginId] ??= {})[methodName] = config;
+      }
+      for (final entry in configs.entries) {
+        meta[entry.key] = NativeToolMeta(
+          entry.key,
+          Map.unmodifiable(entry.value),
+        );
       }
       _toolConfigCache = configs;
       _toolMetaCache = meta;
@@ -365,15 +369,62 @@ class NativeToolAgentService {
     run.toolMeta = Map.unmodifiable(_toolMetaCache!);
 
     final tools = <Tool<Map<String, dynamic>>>[];
-    for (final (toolId, config) in _toolConfigCache!) {
+    for (final entry in _toolConfigCache!.entries) {
+      final pluginId = entry.key;
+      final methods = entry.value;
+      final methodNames = methods.keys.toList()..sort();
+      final argsProperties = <String, Object?>{};
+      final description = methods.entries
+          .map((e) {
+            final parameters = e.value.parameters
+                .map((p) => '${p.name}${p.optional ? '?' : ''}: ${p.type}')
+                .join(', ');
+            final schema = ToolSchemaBuilder.buildSchemaMap(e.value.parameters);
+            final properties = schema['properties'];
+            if (properties is Map) {
+              for (final property in properties.entries) {
+                final name = property.key.toString();
+                final value = property.value is Map
+                    ? Map<String, Object?>.from(property.value as Map)
+                    : <String, Object?>{};
+                final existing = argsProperties[name];
+                if (existing is Map) {
+                  final existingDescription = existing['description'] ?? '';
+                  final methodDescription = value['description'] ?? '';
+                  existing['description'] =
+                      existingDescription == methodDescription
+                      ? existingDescription
+                      : '$existingDescription ($methodDescription)';
+                } else {
+                  argsProperties[name] = value;
+                }
+              }
+            }
+            return '${e.key}($parameters): '
+                '${ToolSchemaBuilder.buildDescription(e.value)}';
+          })
+          .join('\n');
       tools.add(
         Tool<Map<String, dynamic>>(
-          name: toolId,
-          description: ToolSchemaBuilder.buildDescription(config),
-          inputSchema: Schema.fromMap(
-            ToolSchemaBuilder.buildSchemaMap(config.parameters),
-          ),
-          onCall: (args) => _dispatch(run, toolId, args),
+          name: pluginId,
+          description: '插件 $pluginId 可用方法：\n$description',
+          inputSchema: Schema.fromMap(<String, Object?>{
+            'type': 'object',
+            'properties': <String, Object?>{
+              'method': <String, Object?>{
+                'type': 'string',
+                'enum': methodNames,
+                'description': '要调用的插件方法名',
+              },
+              'args': <String, Object?>{
+                'type': 'object',
+                'description': '该方法的参数对象；无参数时传空对象',
+                'properties': argsProperties,
+              },
+            },
+            'required': <String>['method', 'args'],
+          }),
+          onCall: (args) => _dispatch(run, pluginId, args),
         ),
       );
     }
@@ -392,7 +443,7 @@ class NativeToolAgentService {
   /// 工具调用回调：生成 JS 调用代码 → QuickJS 执行 → 结果回传 LLM
   Future<Map<String, dynamic>> _dispatch(
     _NativeToolRunContext run,
-    String toolId,
+    String pluginId,
     Map<String, dynamic> args,
   ) async {
     // 轮数上限保护：超限后向模型返回错误提示，促使其收敛直接作答
@@ -406,15 +457,30 @@ class NativeToolAgentService {
       };
     }
 
-    final meta = run.toolMeta[toolId];
-    if (meta == null) return {'error': 'Tool $toolId not found'};
+    final meta = run.toolMeta[pluginId];
+    if (meta == null) return {'error': 'Plugin $pluginId not found'};
+    final methodName = args['method'];
+    if (methodName is! String || methodName.isEmpty) {
+      return {'error': '参数 method 必须是非空字符串'};
+    }
+    final config = meta.methods[methodName];
+    if (config == null) {
+      return {
+        'error': '插件 $pluginId 不支持方法 $methodName',
+        'availableMethods': meta.methods.keys.toList(),
+      };
+    }
+    final rawArgs = args['args'];
+    final methodArgs = rawArgs is Map
+        ? Map<String, dynamic>.from(rawArgs)
+        : <String, dynamic>{};
 
-    final argsJson = jsonEncode(args);
+    final argsJson = jsonEncode(methodArgs);
 
     // 工具描述文件的 pluginId 可能与 JS API 实际注册插件不一致
     // （moments/memory 的方法挂在 openai 命名空间），运行时解析真实路由；
     // 解析异常（如热重载后注册表为 null）降级回原插件，不中断 FC 循环
-    final resolved = _resolveRoute(meta);
+    final resolved = _resolveRoute(meta, methodName);
 
     final js =
         'const r = await Aboutme.plugins.${resolved.$1}.'
@@ -422,7 +488,7 @@ class NativeToolAgentService {
 
     final step = ToolCallStep(
       method: 'run_js',
-      title: meta.title,
+      title: config.title,
       desc: '参数：$argsJson',
       data: js,
       status: ToolCallStatus.running,
@@ -430,7 +496,7 @@ class NativeToolAgentService {
     run.steps.add(step);
     await run.notifySteps();
     debugPrint(
-      '[NativeTool] ▶ #${run.toolCallCount} ${meta.title} | $argsJson',
+      '[NativeTool] ▶ #${run.toolCallCount} ${config.title} | $argsJson',
     );
 
     try {
@@ -449,7 +515,7 @@ class NativeToolAgentService {
         ..status = ToolCallStatus.failed
         ..error = e.toString();
       await run.notifySteps();
-      debugPrint('[NativeTool] ✗ ${meta.title} 失败: $e');
+      debugPrint('[NativeTool] ✗ ${config.title} 失败: $e');
       // 异常以 error 形式回传，模型可自行调整参数重试
       return {'error': e.toString()};
     }
@@ -458,16 +524,16 @@ class NativeToolAgentService {
   // ---------- 转换工具 ----------
 
   /// 解析工具的 JS 调用路由（异常时回退原插件）
-  (String, String) _resolveRoute(NativeToolMeta meta) {
+  (String, String) _resolveRoute(NativeToolMeta meta, String methodName) {
     try {
       return JSBridgeManager.instance.resolvePluginApi(
             meta.pluginId,
-            meta.methodName,
+            methodName,
           ) ??
-          (meta.pluginId, meta.methodName);
+          (meta.pluginId, methodName);
     } catch (e) {
       debugPrint('[NativeTool] 路由解析失败，回退原插件: $e');
-      return (meta.pluginId, meta.methodName);
+      return (meta.pluginId, methodName);
     }
   }
 

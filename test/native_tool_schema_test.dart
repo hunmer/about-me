@@ -59,6 +59,26 @@ void main() {
   });
 
   group('ToolSchemaBuilder', () {
+    test('插件聚合 schema 可以构造原生 Tool', () {
+      final tool = Tool<Map<String, dynamic>>(
+        name: 'bill',
+        description: '插件 bill 可用方法：create: 创建账单',
+        inputSchema: Schema.fromMap(<String, Object?>{
+          'type': 'object',
+          'properties': <String, Object?>{
+            'method': <String, Object?>{
+              'type': 'string',
+              'enum': <String>['create'],
+            },
+            'args': <String, Object?>{'type': 'object'},
+          },
+          'required': <String>['method', 'args'],
+        }),
+        onCall: (args) async => {'ok': true},
+      );
+      expect(tool.name, 'bill');
+    });
+
     test('空参数 schema 可以构造并执行原生 Tool', () async {
       final tool = Tool<Map<String, dynamic>>(
         name: 'no_parameters',

@@ -86,6 +86,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/health_score_ring_card_e
 import 'package:aboutme/screens/widgets_gallery/screens/petal_radial_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_folder_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_accordion_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/cute_notepad_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/inbox_message_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
@@ -566,6 +567,11 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/stacked_accordion_card',
           handler: (settings) => RouteHelpers.createRoute(const StackedAccordionCardExample(), settings: settings),
           description: '堆叠手风琴卡片',
+        ),
+        RouteDefinition(
+          path: '/widgets_gallery/cute_notepad_card',
+          handler: (settings) => RouteHelpers.createRoute(const CuteNotepadCardExample(), settings: settings),
+          description: '可爱手账便签卡片',
         ),
         RouteDefinition(
           path: '/widgets_gallery/inbox_message_card',
@@ -1057,6 +1063,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '堆叠手风琴卡片',
     subtitle: 'StackedAccordionCard',
     route: '/widgets_gallery/stacked_accordion_card',
+  ),
+  WidgetPreviewItem(
+    category: '内容类',
+    icon: Icons.sticky_note_2,
+    title: '可爱手账便签卡片',
+    subtitle: 'CuteNotepadCard - 16 种风格手账便签',
+    route: '/widgets_gallery/cute_notepad_card',
   ),
   // 财务类
   WidgetPreviewItem(

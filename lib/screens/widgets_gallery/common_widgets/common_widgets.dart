@@ -89,6 +89,7 @@ import 'widgets/health_score_ring_card.dart';
 import 'widgets/petal_radial_chart_card.dart';
 import 'widgets/stacked_folder_card.dart';
 import 'widgets/stacked_accordion_card.dart';
+import 'widgets/cute_notepad_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -179,6 +180,7 @@ enum CommonWidgetId {
   petalRadialChartCard,
   stackedFolderCard,
   stackedAccordionCard,
+  cuteNotepadCard,
 }
 
 /// 公共小组件元数据
@@ -885,6 +887,15 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [Large3Size(), Wide3Size()],
     ),
+    CommonWidgetId.cuteNotepadCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.cuteNotepadCard,
+      name: '可爱手账便签卡片',
+      description:
+          '手绘便签纸（16 种风格预设：方格/格纹/波浪框/撕边/活页孔等）+ 可爱贴纸与手写内容，高度随内容自适应',
+      icon: Icons.sticky_note_2,
+      defaultSize: Large3Size(),
+      supportedSizes: [LargeSize(), Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1122,6 +1133,8 @@ class CommonWidgetBuilder {
         return StackedFolderCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.stackedAccordionCard:
         return StackedAccordionCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.cuteNotepadCard:
+        return CuteNotepadCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }
