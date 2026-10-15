@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
-import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
@@ -21,7 +19,7 @@ import 'package:get/get.dart';
 
 /// 脚本编辑屏幕
 ///
-/// 完整的脚本编辑界面（DS 风格：PersistentNavigationBar 头部 +
+/// 完整的脚本编辑界面（DS 风格：DSLightHeader 头部 +
 /// 底部弧形导航切换分区），包含：
 /// - 基本信息编辑
 /// - 代码编辑器
@@ -65,10 +63,6 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
   /// 不一次挂载全部分区：配置分区的表单带 ValueKey+GlobalKey，
   /// 打开瞬间与异步加载同时做子树迁移会触发框架断言
   final List<int> _visitedTabs = [0];
-
-  /// PersistentNavigationBar 组件 key（GlobalKey 需跨帧稳定，不能每次 build 新建）
-  final NavigationBarStaticComponentsKeys _navBarKeys =
-      NavigationBarStaticComponentsKeys();
 
   // 基本信息 Tab 的表单状态
   final GlobalKey<FormBuilderState> _basicInfoFormKey =
@@ -724,51 +718,21 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
             backgroundColor: dsScaffoldBackground(theme),
             body: Column(
               children: [
-                // Super Cupertino 风格的固定 header（super_cupertino_navigation_bar
-                // 包内 PersistentNavigationBar，与 SuperAppBar 展开态同源；
-                // 自带默认工具栏高度，无需再给定高父级）
-                PersistentNavigationBar(
-                  components: NavigationBarStaticComponents(
-                    keys: _navBarKeys,
-                    route: null,
-                    // NavigationToolbar 对 leading 施加紧高度约束会把按钮
-                    // 拉变形，用 Align 转成宽松约束保持正圆（包内返回键同款）
-                    userLeading: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: DSIconButton(
-                        icon: DsIconKind.chevronLeft,
-                        size: 36,
-                        color: theme.surfaceAlt,
-                        iconColor: theme.textSub,
-                        tooltip: 'core_back'.tr,
-                        onPressed: () => Navigator.of(context).maybePop(),
-                      ),
-                    ),
-                    automaticallyImplyLeading: false,
-                    automaticallyImplyTitle: false,
-                    previousPageTitle: null,
-                    userMiddle: Text(
-                      isEditMode
-                          ? 'scripts_center_editScript'.tr
-                          : 'scripts_center_createNewScript'.tr,
-                      style: DsTypography.title.copyWith(color: theme.text),
-                    ),
-                    userTrailing: DSIconButton(
-                      icon: DsIconKind.check,
-                      size: 36,
-                      color: theme.primary,
-                      iconColor: theme.onPrimary,
-                      tooltip:
-                          isEditMode
-                              ? 'scripts_center_save'.tr
-                              : 'scripts_center_create'.tr,
-                      onPressed: _saveScript,
-                    ),
-                    userLargeTitle: null,
-                    largeTitleActions: null,
-                    appbarBottom: null,
-                    padding: null,
-                    large: false,
+                // 轻量手绘顶栏：返回圆钮 + 居中标题 + 保存按钮
+                DSLightHeader(
+                  title: isEditMode
+                      ? 'scripts_center_editScript'.tr
+                      : 'scripts_center_createNewScript'.tr,
+                  trailing: DSIconButton(
+                    icon: DsIconKind.check,
+                    size: 38,
+                    color: theme.primary,
+                    iconColor: theme.onPrimary,
+                    tooltip:
+                        isEditMode
+                            ? 'scripts_center_save'.tr
+                            : 'scripts_center_create'.tr,
+                    onPressed: _saveScript,
                   ),
                 ),
 

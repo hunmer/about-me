@@ -200,7 +200,7 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
     }
   }
 
-  /// 底部圆盘 dock 的 tab 动作（首页 / 投稿 / 回忆 / 我的主页）
+  /// 底部圆盘 dock 的 tab 动作（首页 / 回忆 / 我的主页；投稿在右侧圆钮）
   void _onDockTab(int index) {
     switch (index) {
       case 0:
@@ -212,10 +212,8 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
           );
         }
       case 1:
-        unawaited(_openCompose());
-      case 2:
         ToastService.instance.showToast('moments_archiveHint'.tr);
-      case 3:
+      case 2:
         _openProfile(
           const MomentsAuthorInfo(id: MomentPost.userAuthorId),
         );
@@ -230,135 +228,91 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
             ? _moments.posts
             : _moments.posts.where((p) => p.tag == _filter).toList();
     final unread = _todayAgentPostCount;
+    final coverPath = _moments.profileBgOf(MomentPost.userAuthorId);
+    final hasCover = coverPath != null && coverPath.isNotEmpty;
+
+    final navBar = _buildNavBar(theme, unread);
+    final slivers = <Widget>[
+      SliverToBoxAdapter(
+        child:
+            hasCover
+                ? MomentsCover(path: coverPath, height: 210)
+                : _buildFeedBanner(theme),
+      ),
+      SliverToBoxAdapter(child: _buildStories(theme)),
+      SliverToBoxAdapter(child: _buildFilters()),
+      if (posts.isEmpty)
+        SliverToBoxAdapter(
+          child: SizedBox(height: 320, child: _buildEmpty(theme)),
+        )
+      else
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
+          sliver: SliverList.builder(
+            itemCount: posts.length,
+            itemBuilder: (context, index) {
+              final post = posts[index];
+              // 便签化：贴条 + 倾斜 + 悬浮（design.md §11）
+              return HandDrawnStickyItem(
+                tiltKey: post.id,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: MomentFeedCard(
+                    post: post,
+                    author: _authorOf(post),
+                    saved: _moments.isPostSaved(post.id),
+                    onToggleSave: () => _moments.togglePostSaved(post.id),
+                    onOpenProfile: () => _openProfile(_authorOf(post)),
+                    onDelete: () => _confirmDelete(post),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+    ];
 
     return Scaffold(
       backgroundColor: theme.background,
       extendBody: true,
-      body: Column(
-        children: [
-          // Super Cupertino 固定头部：＋投稿 / 标题 / 互动铃铛
-          PersistentNavigationBar(
-            components: NavigationBarStaticComponents(
-              keys: _navBarKeys,
-              route: null,
-              userLeading: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: DSIconButton(
-                  icon: DsIconKind.plus,
-                  size: 38,
-                  onPressed: _openCompose,
-                ),
-              ),
-              automaticallyImplyLeading: false,
-              automaticallyImplyTitle: false,
-              previousPageTitle: null,
-              userMiddle: Text(
-                'moments_name'.tr,
-                style: DsTypography.title.copyWith(color: theme.text),
-              ),
-              userTrailing: Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    DSIconButton(
-                      icon: DsIconKind.heart,
-                      size: 38,
-                      onPressed:
-                          () => ToastService.instance.showToast(
-                            unread > 0
-                                ? 'moments_interactNew'
-                                      .trParams({'n': '$unread'})
-                                : 'moments_interactNone'.tr,
-                          ),
-                    ),
-                    if (unread > 0)
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            color: theme.danger,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            '$unread',
-                            style: TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                              color: theme.onDanger,
-                              height: 1,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              userLargeTitle: null,
-              largeTitleActions: null,
-              appbarBottom: null,
-              padding: null,
-              large: false,
-            ),
-          ),
-          Expanded(
-            // 全部内容进滚动区，任意窗口高度都不会溢出
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                SliverToBoxAdapter(
-                  child: MomentsCover(
-                    path: _moments.profileBgOf(MomentPost.userAuthorId),
-                    height: 140,
-                  ),
-                ),
-                SliverToBoxAdapter(child: _buildStories(theme)),
-                SliverToBoxAdapter(child: _buildFilters()),
-                if (posts.isEmpty)
-                  SliverToBoxAdapter(
-                    child: SizedBox(height: 320, child: _buildEmpty(theme)),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
-                    sliver: SliverList.builder(
-                      itemCount: posts.length,
-                      itemBuilder: (context, index) {
-                        final post = posts[index];
-                        // 便签化：贴条 + 倾斜 + 悬浮（design.md §11）
-                        return HandDrawnStickyItem(
-                          tiltKey: post.id,
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: MomentFeedCard(
-                              post: post,
-                              author: _authorOf(post),
-                              saved: _moments.isPostSaved(post.id),
-                              onToggleSave:
-                                  () => _moments.togglePostSaved(post.id),
-                              onOpenProfile:
-                                  () => _openProfile(_authorOf(post)),
-                              onDelete: () => _confirmDelete(post),
-                            ),
-                          ),
-                        );
-                      },
+      // 设置了背景图：头部透明浮在封面上（封面延伸到状态栏后）；
+      // 未设置：常规固定头部 + 签名统计横幅
+      body:
+          hasCover
+              ? Stack(
+                children: [
+                  Positioned.fill(
+                    child: CustomScrollView(
+                      controller: _scrollController,
+                      slivers: slivers,
                     ),
                   ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      // 弧形圆盘 dock（radial_disc_bottom_bar 的设计系统封装）
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: navBar,
+                  ),
+                ],
+              )
+              : Column(
+                children: [
+                  navBar,
+                  Expanded(
+                    // 全部内容进滚动区，任意窗口高度都不会溢出
+                    child: CustomScrollView(
+                      controller: _scrollController,
+                      slivers: slivers,
+                    ),
+                  ),
+                ],
+              ),
+      // 弧形圆盘 dock：投稿入口在 subbar 右侧圆钮
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
         child: DSBottomNavigation(
           items: [
             DSNavItem(icon: DsIconKind.home, label: 'moments_tabHome'.tr),
-            DSNavItem(icon: DsIconKind.plus, label: 'moments_tabCompose'.tr),
             DSNavItem(
               icon: DsIconKind.clock,
               label: 'moments_tabMemories'.tr,
@@ -367,8 +321,133 @@ class _MomentsFeedScreenState extends State<MomentsFeedScreen> {
           ],
           currentIndex: 0,
           onTap: _onDockTab,
+          trailingAction: const DsIcon(DsIconKind.plus, size: 16),
+          onTrailingTap: () => unawaited(_openCompose()),
           frosted: true,
         ),
+      ),
+    );
+  }
+
+  /// 固定头部：标题 + 互动铃铛（投稿入口已移至底部 dock 右侧圆钮）
+  Widget _buildNavBar(AppThemeData theme, int unread) {
+    return PersistentNavigationBar(
+      components: NavigationBarStaticComponents(
+        keys: _navBarKeys,
+        route: null,
+        userLeading: null,
+        automaticallyImplyLeading: false,
+        automaticallyImplyTitle: false,
+        previousPageTitle: null,
+        userMiddle: Text(
+          'moments_name'.tr,
+          style: DsTypography.title.copyWith(color: theme.text),
+        ),
+        userTrailing: Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              DSIconButton(
+                icon: DsIconKind.heart,
+                size: 38,
+                onPressed:
+                    () => ToastService.instance.showToast(
+                      unread > 0
+                          ? 'moments_interactNew'.trParams({'n': '$unread'})
+                          : 'moments_interactNone'.tr,
+                    ),
+              ),
+              if (unread > 0)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: theme.danger,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$unread',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                        color: theme.onDanger,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        userLargeTitle: null,
+        largeTitleActions: null,
+        appbarBottom: null,
+        padding: null,
+        large: false,
+      ),
+    );
+  }
+
+  /// 未设背景图时的顶部手写签名 + 统计横幅
+  Widget _buildFeedBanner(AppThemeData theme) {
+    final now = DateTime.now();
+    final today =
+        _moments.posts
+            .where((p) => now.difference(p.createdAt).inHours < 24)
+            .length;
+    final buddies =
+        _moments.posts
+            .where((p) => !p.isUserPost)
+            .map((p) => p.agentId)
+            .toSet()
+            .length;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        radius: theme.radii.lg,
+        hachure: true,
+        hachureColor: theme.hatch,
+        seed: 33,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'moments_feedTagline'.tr,
+                  style: DsTypography.heading.copyWith(
+                    fontSize: 14,
+                    color: theme.text,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'moments_feedSubline'.tr,
+                  style: DsTypography.caption.copyWith(
+                    color: theme.textSub,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          InterestPill(
+            label: 'moments_feedToday'.trParams({'n': '$today'}),
+            leading: DsIcon(DsIconKind.clock, size: 12),
+          ),
+          const SizedBox(width: 6),
+          InterestPill(
+            label: 'moments_feedBuddies'.trParams({'n': '$buddies'}),
+            leading: DsIcon(DsIconKind.user, size: 12),
+          ),
+        ],
       ),
     );
   }

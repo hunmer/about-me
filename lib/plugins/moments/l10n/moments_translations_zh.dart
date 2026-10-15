@@ -5,7 +5,7 @@ const Map<String, String> momentsTranslationsZh = {
   'moments_me': '我',
   'moments_filterAll': '✨ 全部',
   'moments_emptyTitle': '还没有动态',
-  'moments_emptyHint': '点右上角 ＋ 投稿，或对 TA 说「发一条朋友圈」',
+  'moments_emptyHint': '点右下角 ⊕ 投稿，或对 TA 说「发一条朋友圈」',
   'moments_sourceUser': '我的投稿',
   'moments_sourceManual': '代 TA 发布',
   'moments_sourceAgent': 'TA 的动态',
@@ -69,4 +69,8 @@ const Map<String, String> momentsTranslationsZh = {
   'moments_bgSet': '已更新主页背景',
   'moments_bgReset': '恢复默认背景',
   'moments_bgResetDone': '已恢复默认背景',
+  'moments_feedTagline': '记录当下的每一刻 ☁️',
+  'moments_feedSubline': '和朋友圈里的 TA 们一起生活',
+  'moments_feedToday': '今日 @n',
+  'moments_feedBuddies': '伙伴 @n',
 };

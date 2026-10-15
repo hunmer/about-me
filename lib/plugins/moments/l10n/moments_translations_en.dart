@@ -6,7 +6,7 @@ const Map<String, String> momentsTranslationsEn = {
   'moments_filterAll': '✨ All',
   'moments_emptyTitle': 'No posts yet',
   'moments_emptyHint':
-      "Tap the + button to post, or ask your agent to share a moment",
+      'Tap the + disc at the bottom to post, or ask your agent to share a moment',
   'moments_sourceUser': 'My post',
   'moments_sourceManual': 'Posted for them',
   'moments_sourceAgent': 'Their moment',
@@ -71,4 +71,8 @@ const Map<String, String> momentsTranslationsEn = {
   'moments_bgSet': 'Cover updated',
   'moments_bgReset': 'Reset cover',
   'moments_bgResetDone': 'Cover reset',
+  'moments_feedTagline': 'Capture every moment ☁️',
+  'moments_feedSubline': 'Living with your moments circle',
+  'moments_feedToday': 'Today @n',
+  'moments_feedBuddies': 'Buddies @n',
 };

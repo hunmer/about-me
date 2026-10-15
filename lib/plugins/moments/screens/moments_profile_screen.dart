@@ -108,11 +108,60 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
   String get _authorKey =>
       isUser ? MomentPost.userAuthorId : widget.agentId!;
 
+  /// 封面解析：显式背景 > agent 头像 >（用户）null
+  String? _resolveCoverPath() {
+    final explicit = _moments.profileBgOf(_authorKey);
+    if (explicit != null && explicit.isNotEmpty) return explicit;
+    if (!isUser) return _agent?.avatarUrl;
+    return null;
+  }
+
+  /// 固定头部：返回 / 标题 / 更多
+  Widget _buildNavBar(AppThemeData theme) {
+    return PersistentNavigationBar(
+      components: NavigationBarStaticComponents(
+        keys: _navBarKeys,
+        route: ModalRoute.of(context),
+        userLeading: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: DSIconButton(
+            icon: DsIconKind.chevronLeft,
+            size: 38,
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+        ),
+        automaticallyImplyLeading: false,
+        automaticallyImplyTitle: false,
+        previousPageTitle: null,
+        userMiddle: Text(
+          'moments_profileTitle'.tr,
+          style: DsTypography.title.copyWith(color: theme.text),
+        ),
+        userTrailing: Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: DSIconButton(
+            icon: DsIconKind.more,
+            size: 38,
+            onPressed:
+                () => ToastService.instance.showToast(
+                  'moments_linkCopied'.trParams({'name': _displayName}),
+                ),
+          ),
+        ),
+        userLargeTitle: null,
+        largeTitleActions: null,
+        appbarBottom: null,
+        padding: null,
+        large: false,
+      ),
+    );
+  }
+
   /// 顶部封面：显式背景 > agent 头像 > （用户）上传占位
   Widget _buildCover(AppThemeData theme) {
     final explicit = _moments.profileBgOf(_authorKey);
     final hasExplicit = explicit != null && explicit.isNotEmpty;
-    final path = hasExplicit ? explicit : (!isUser ? _agent?.avatarUrl : null);
+    final path = _resolveCoverPath();
     if (path == null || path.isEmpty) {
       if (!isUser) return const SizedBox.shrink();
       // 用户未设置背景：上传占位
@@ -232,91 +281,55 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
       0,
       (sum, p) => sum + p.comments.length,
     );
+    // 有封面图（显式背景或 agent 头像）时头部透明浮在封面上
+    final coverPath = _resolveCoverPath();
+    final hasCover = coverPath != null && coverPath.isNotEmpty;
+
+    final slivers = <Widget>[
+      SliverToBoxAdapter(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildCover(theme),
+            _buildAvatarArea(theme),
+            _buildIdentity(theme, posts.length, liked, commentCount),
+            _buildPills(theme, posts),
+          ],
+        ),
+      ),
+      SliverToBoxAdapter(child: _buildCollections(theme)),
+      // 占满剩余视口：内容少时页面也不留大片空白，
+      // 底部同时为磨砂 dock 预留透出空间
+      const SliverFillRemaining(
+        hasScrollBody: false,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: 130),
+          child: SizedBox.expand(),
+        ),
+      ),
+    ];
 
     return Scaffold(
       backgroundColor: theme.background,
       // 内容延伸到 dock 后面，矮窗口下整页可滚
       extendBody: true,
-      body: Builder(
-        builder:
-            (context) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                PersistentNavigationBar(
-                  components: NavigationBarStaticComponents(
-                    keys: _navBarKeys,
-                    route: ModalRoute.of(context),
-                    userLeading: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: DSIconButton(
-                        icon: DsIconKind.chevronLeft,
-                        size: 38,
-                        onPressed: () => Navigator.of(context).maybePop(),
-                      ),
-                    ),
-                    automaticallyImplyLeading: false,
-                    automaticallyImplyTitle: false,
-                    previousPageTitle: null,
-                    userMiddle: Text(
-                      'moments_profileTitle'.tr,
-                      style: DsTypography.title.copyWith(color: theme.text),
-                    ),
-                    userTrailing: Align(
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: DSIconButton(
-                        icon: DsIconKind.more,
-                        size: 38,
-                        onPressed:
-                            () => ToastService.instance.showToast(
-                              'moments_linkCopied'.trParams({
-                                'name': _displayName,
-                              }),
-                            ),
-                      ),
-                    ),
-                    userLargeTitle: null,
-                    largeTitleActions: null,
-                    appbarBottom: null,
-                    padding: null,
-                    large: false,
+      body:
+          hasCover
+              ? Stack(
+                children: [
+                  Positioned.fill(
+                    child: CustomScrollView(slivers: slivers),
                   ),
-                ),
-                // 主页内容整体进滚动区
-                Expanded(
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildCover(theme),
-                            _buildAvatarArea(theme),
-                            _buildIdentity(
-                              theme,
-                              posts.length,
-                              liked,
-                              commentCount,
-                            ),
-                            _buildPills(theme, posts),
-                          ],
-                        ),
-                      ),
-                      SliverToBoxAdapter(child: _buildCollections(theme)),
-                      // 占满剩余视口：内容少时页面也不留大片空白，
-                      // 底部同时为磨砂 dock 预留透出空间
-                      const SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: 130),
-                          child: SizedBox.expand(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-      ),
+                  Positioned(top: 0, left: 0, right: 0, child: _buildNavBar(theme)),
+                ],
+              )
+              : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildNavBar(theme),
+                  Expanded(child: CustomScrollView(slivers: slivers)),
+                ],
+              ),
       // 弧形圆盘 dock
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
