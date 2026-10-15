@@ -16,6 +16,7 @@ import 'platform/js_engine_factory.dart';
 import 'platform/mobile_js_engine_stub.dart'
     if (dart.library.io) 'platform/mobile_js_engine.dart';
 import 'js_ui_handlers.dart';
+import 'plugin_tool_registry.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/core/data_filter/field_filter_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -359,6 +360,7 @@ class JSBridgeManager {
     PluginBase plugin,
     Map<String, Function> apis,
   ) async {
+    pluginTools.register(plugin.id, apis);
     // 如果尚未初始化，先加入延迟注册队列
     if (!_initialized || _engine == null) {
       _pendingRegistrations.add(
@@ -1418,6 +1420,8 @@ class JSBridgeManager {
   /// 获取已注册的插件
   PluginBase? getPlugin(String id) => _registeredPlugins[id];
 
+  final PluginToolRegistry pluginTools = PluginToolRegistry();
+
   /// 获取所有已注册的插件 ID
   List<String> get registeredPluginIds => _registeredPlugins.keys.toList();
 
@@ -1565,6 +1569,7 @@ class JSBridgeManager {
 
   /// 释放资源
   Future<void> dispose() async {
+    pluginTools.clear();
     if (_initialized && _engine != null) {
       await _engine!.dispose();
       _registeredPlugins.clear();

@@ -453,6 +453,14 @@ class ToolService {
   /// 执行单个工具步骤
   static Future<String> executeToolStep(ToolCallStep step) async {
     switch (step.method) {
+      case 'plugin_tool':
+        final call = jsonDecode(step.data) as Map<String, dynamic>;
+        final result = await JSBridgeManager.instance.pluginTools.invoke(
+          call['pluginId'] as String,
+          call['method'] as String,
+          Map<String, dynamic>.from(call['args'] as Map),
+        );
+        return result is String ? result : jsonEncode(result);
       case 'run_js':
         return await executeJsCode(step.data);
       default:

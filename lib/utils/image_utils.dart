@@ -120,13 +120,10 @@ class ImageUtils {
     }
 
     if (!relativePath.startsWith('./')) {
-      // 不是相对路径格式，可能是旧数据，尝试处理
-      final appDir = await StorageManager.getApplicationDocumentsDirectory();
-      // 缓存应用目录路径
-      _appDocumentDirectoryPath = appDir.path;
-      // 确保使用正确的路径分隔符
-      final normalizedPath = relativePath.replaceAll('/', path.separator);
-      return path.join(appDir.path, normalizedPath);
+      // 旧数据格式（无 './' 前缀），统一补前缀后按标准相对路径解析到 app_data 下，
+      // 避免拼到 Documents 根目录导致文件不存在
+      debugPrint('ImageUtils: 旧格式相对路径 "$relativePath"，建议迁移为 "./" 前缀');
+      return getAbsolutePath('./$relativePath');
     }
 
     final appDir = await StorageManager.getApplicationDocumentsDirectory();
@@ -259,9 +256,8 @@ class ImageUtils {
 
     // 处理相对路径
     if (!relativePath.startsWith('./')) {
-      // 不是相对路径格式，可能是旧数据
-      final normalizedPath = relativePath.replaceAll('/', path.separator);
-      return path.join(_appDocumentDirectoryPath!, normalizedPath);
+      // 旧数据格式（无 './' 前缀），与异步版本一致，统一解析到 app_data 下
+      return getAbsolutePathSync('./$relativePath');
     }
 
     // 移除 './' 前缀并规范化路径分隔符
@@ -383,8 +379,7 @@ class ImageUtils {
             assetPath = 'assets/plugins/$pluginName/$relativePath';
           }
         } else if (assetPath.startsWith('assets/')) {
-          // 已经是正确的 asset 格式
-          assetPath = assetPath.substring(7); // 移除 'assets/' 前缀
+          // 已经是正确的 asset 格式（pubspec 声明的完整 key），无需处理
         }
         return AssetImage(assetPath);
       case ImageType.file:

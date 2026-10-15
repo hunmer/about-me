@@ -61,6 +61,7 @@ class ToolOrchestrator {
         contextMessages: contextMessages,
         files: files,
         conversationId: context.conversationId,
+        useJsTools: context.useJsTools?.call() ?? false,
         onUpdateMessage: onUpdateMessage,
         onToolSteps: (steps) async {
           final message = context.messageService.getMessage(

@@ -86,12 +86,12 @@ class ToolExecutor {
           context.notify();
 
           // 执行工具调用
-          if (step.method == 'run_js') {
+          if (step.method == 'run_js' || step.method == 'plugin_tool') {
             try {
               // 设置当前执行上下文（供 JavaScript 中的 setResult/getResult 使用）
               jsBridge.setCurrentExecution(messageId, i);
 
-              final result = await ToolService.executeJsCode(step.data);
+              final result = await ToolService.executeToolStep(step);
               debugPrint('  ✅ 步骤 ${i + 1} 执行成功');
 
               // 自动将步骤结果保存到上下文（供后续步骤通过索引获取）

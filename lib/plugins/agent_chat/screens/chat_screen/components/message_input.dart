@@ -67,7 +67,9 @@ class _MessageInputState extends State<MessageInput> {
     _textController.text = widget.controller.inputText;
     _textController.addListener(_onTextChanged);
     widget.controller.addListener(_onControllerChanged);
-    debugPrint('[ChatClear] initState controller=#${identityHashCode(widget.controller)}');
+    debugPrint(
+      '[ChatClear] initState controller=#${identityHashCode(widget.controller)}',
+    );
     _initializeVoiceRecognition();
   }
 
@@ -87,7 +89,9 @@ class _MessageInputState extends State<MessageInput> {
 
   @override
   void dispose() {
-    debugPrint('[ChatClear] dispose controller=#${identityHashCode(widget.controller)}');
+    debugPrint(
+      '[ChatClear] dispose controller=#${identityHashCode(widget.controller)}',
+    );
     _textController.removeListener(_onTextChanged);
     widget.controller.removeListener(_onControllerChanged);
     _textController.dispose();
@@ -313,6 +317,24 @@ class _MessageInputState extends State<MessageInput> {
               ),
 
             // 输入框区域
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text(
+                    widget.controller.useJsTools ? 'JS API 模式' : '插件 Tool 模式',
+                  ),
+                  const Spacer(),
+                  const Text('使用 JS'),
+                  Switch.adaptive(
+                    value: widget.controller.useJsTools,
+                    onChanged: widget.controller.isSending
+                        ? null
+                        : widget.controller.setUseJsTools,
+                  ),
+                ],
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Padding(

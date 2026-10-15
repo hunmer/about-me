@@ -70,7 +70,9 @@ String stripRepeatedPrefix(String current, String? previous) {
   if (prev == null || prev.isEmpty || current.length <= prev.length) {
     return current;
   }
-  return current.startsWith(prev) ? current.substring(prev.length).trim() : current;
+  return current.startsWith(prev)
+      ? current.substring(prev.length).trim()
+      : current;
 }
 
 /// DeepSeek thinking 模型兼容：请求体注入 `thinking: {"type": "disabled"}`。
@@ -216,6 +218,7 @@ class NativeToolAgentService {
     void Function(List<String> texts)? onTurnTexts,
     bool Function()? isCancelling,
     String? conversationId,
+    bool useJsTools = false,
   }) async {
     final run = _NativeToolRunContext(onToolSteps);
     final (allTools, allMeta) = _buildTools(run);
@@ -240,6 +243,33 @@ class NativeToolAgentService {
         '[NativeTool] 预筛：${allTools.length} → ${tools.length} 个工具 '
         '（候选插件：${candidates.join(',')}）',
       );
+    }
+
+    if (useJsTools) {
+      final apiDocs = tools
+          .map(
+            (tool) =>
+                '${tool.name}: ${tool.description}\n参数定义：${tool.inputSchema.toJson()}',
+          )
+          .join('\n\n');
+      tools = [
+        Tool<Map<String, dynamic>>(
+          name: 'run_js',
+          description:
+              '执行 JavaScript，可用 await Aboutme.plugins.<插件>.<方法>(参数对象) 调用 API。'
+              '用 setResult(value); return value; 返回结果。\n$apiDocs',
+          inputSchema: Schema.fromMap(
+            ToolSchemaBuilder.buildSchemaMap([
+              ToolParameter(
+                name: 'code',
+                type: 'string',
+                description: '要执行的 JavaScript 代码',
+              ),
+            ]),
+          ),
+          onCall: (args) => _dispatchJs(run, args),
+        ),
+      ];
     }
 
     // contextMessages 中的 system 消息（活人感后缀等）拼接到 system prompt
@@ -488,7 +518,7 @@ class NativeToolAgentService {
 
   // ---------- 执行分发 ----------
 
-  /// 工具调用回调：生成 JS 调用代码 → QuickJS 执行 → 结果回传 LLM
+  /// 插件 Tool 直接调用注册的 Dart 接口，结果回传 LLM。
   Future<Map<String, dynamic>> _dispatch(
     _NativeToolRunContext run,
     String pluginId,
@@ -519,26 +549,27 @@ class NativeToolAgentService {
       };
     }
     final rawArgs = args['args'];
-    final methodArgs = rawArgs is Map
-        ? Map<String, dynamic>.from(rawArgs)
-        : <String, dynamic>{};
+    if (rawArgs is! Map<String, dynamic>) {
+      return {'error': 'args 必须是对象，无参数时传 {}'};
+    }
+    final methodArgs = rawArgs;
+    final missing = config.parameters
+        .where((p) => !p.optional && !methodArgs.containsKey(p.name))
+        .map((p) => p.name)
+        .toList();
+    if (missing.isNotEmpty) return {'error': '缺少必填参数：${missing.join(', ')}'};
 
     final argsJson = jsonEncode(methodArgs);
 
-    // 工具描述文件的 pluginId 可能与 JS API 实际注册插件不一致
-    // （moments/memory 的方法挂在 openai 命名空间），运行时解析真实路由；
-    // 解析异常（如热重载后注册表为 null）降级回原插件，不中断 FC 循环
-    final resolved = _resolveRoute(meta, methodName);
-
-    final js =
-        'const r = await Aboutme.plugins.${resolved.$1}.'
-        '${resolved.$2}($argsJson);\nsetResult(r);\nreturn r;';
-
     final step = ToolCallStep(
-      method: 'run_js',
+      method: 'plugin_tool',
       title: config.title,
       desc: '参数：$argsJson',
-      data: js,
+      data: jsonEncode({
+        'pluginId': pluginId,
+        'method': methodName,
+        'args': methodArgs,
+      }),
       status: ToolCallStatus.running,
     );
     run.steps.add(step);
@@ -548,7 +579,12 @@ class NativeToolAgentService {
     );
 
     try {
-      final result = await ToolService.executeJsCode(js);
+      final rawResult = await JSBridgeManager.instance.pluginTools.invoke(
+        pluginId,
+        methodName,
+        methodArgs,
+      );
+      final result = rawResult is String ? rawResult : jsonEncode(rawResult);
       step
         ..status = ToolCallStatus.success
         ..result = result;
@@ -571,17 +607,42 @@ class NativeToolAgentService {
 
   // ---------- 转换工具 ----------
 
-  /// 解析工具的 JS 调用路由（异常时回退原插件）
-  (String, String) _resolveRoute(NativeToolMeta meta, String methodName) {
+  Future<Map<String, dynamic>> _dispatchJs(
+    _NativeToolRunContext run,
+    Map<String, dynamic> args,
+  ) async {
+    if (++run.toolCallCount > maxToolCallsPerLoop) {
+      return {'error': '工具调用次数已达上限，请直接回答'};
+    }
+    final code = args['code'];
+    if (code is! String || code.trim().isEmpty) {
+      return {'error': 'code 必须是非空字符串'};
+    }
+    final step = ToolCallStep(
+      method: 'run_js',
+      title: '执行 JS API',
+      desc: '执行 JavaScript',
+      data: code,
+      status: ToolCallStatus.running,
+    );
+    run.steps.add(step);
+    await run.notifySteps();
     try {
-      return JSBridgeManager.instance.resolvePluginApi(
-            meta.pluginId,
-            methodName,
-          ) ??
-          (meta.pluginId, methodName);
+      final result = await ToolService.executeJsCode(code);
+      step
+        ..status = ToolCallStatus.success
+        ..result = result;
+      await run.notifySteps();
+      final decoded = _tryDecodeJson(result);
+      return decoded is Map<String, dynamic>
+          ? decoded
+          : {'result': decoded ?? result};
     } catch (e) {
-      debugPrint('[NativeTool] 路由解析失败，回退原插件: $e');
-      return (meta.pluginId, methodName);
+      step
+        ..status = ToolCallStatus.failed
+        ..error = e.toString();
+      await run.notifySteps();
+      return {'error': e.toString()};
     }
   }
 

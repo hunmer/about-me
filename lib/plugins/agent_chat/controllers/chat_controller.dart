@@ -101,6 +101,15 @@ class ChatController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isSending => _isSending;
 
+  bool _useJsTools = false;
+  bool get useJsTools => _useJsTools;
+
+  void setUseJsTools(bool value) {
+    if (_isSending || _useJsTools == value) return;
+    _useJsTools = value;
+    notifyListeners();
+  }
+
   /// 活人感缓冲思考中（标题显示"正在输入中"，无消息占位）
   bool _isThinking = false;
   bool get isThinking => _isThinking;
@@ -250,6 +259,7 @@ class ChatController extends ChangeNotifier {
         messageDetailService: messageDetailService,
         templateService: templateService,
         getSettings: getSettings,
+        useJsTools: () => _useJsTools,
         notifyListeners: notifyListeners,
         onTypingStatus: setTypingStatus,
       );

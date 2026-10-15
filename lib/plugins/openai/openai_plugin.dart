@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -255,11 +256,25 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> initializeDefaultData() async {
+    // 旧数据迁移：assets/agents/ 内置头像复制到 app_data 并改写引用
+    await _migrateBundledAgentAvatars();
+
     // 确保 agents.json 文件存在并初始化默认智能体
     final agentData = await AboutmeDataService.instance.readPath('$storageDir/agents.json');
     if (agentData.isEmpty && kDebugMode) {
       // 如果文件为空，使用示例数据中的默认智能体（仅开发环境）
       final defaultAgents = OpenAISampleData.defaultAgents;
+      final avatarMap = await _copyBundledAgentAvatars(
+        defaultAgents
+            .map((agent) => agent['avatarUrl'])
+            .whereType<String>(),
+      );
+      for (final agent in defaultAgents) {
+        final url = agent['avatarUrl'];
+        if (url is String && avatarMap.containsKey(url)) {
+          agent['avatarUrl'] = avatarMap[url];
+        }
+      }
 
       await AboutmeDataService.instance.writePath('$storageDir/agents.json', {'agents': defaultAgents});
       debugPrint('已初始化 ${defaultAgents.length} 个默认智能体');
@@ -267,6 +282,77 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
     // 初始化提示词预设数据
     await _initializePromptPresets();
+  }
+
+  /// 把打包在应用内的默认头像（assets/agents/）复制到 app_data 的
+  /// `$storageDir/agents/` 下，返回 旧 asset 路径 -> './openai/agents/...' 映射。
+  /// 幂等：目标已存在则跳过复制。
+  Future<Map<String, String>> _copyBundledAgentAvatars(
+    Iterable<String> assetPaths,
+  ) async {
+    final migrated = <String, String>{};
+    for (final assetPath in assetPaths.toSet()) {
+      if (!assetPath.startsWith('assets/agents/')) continue;
+      final fileName = assetPath.substring('assets/agents/'.length);
+      final targetPath = '$storageDir/agents/$fileName';
+      try {
+        if (!await storage.exists(targetPath)) {
+          final byteData = await rootBundle.load(assetPath);
+          await storage.writeBytes(
+            targetPath,
+            byteData.buffer.asUint8List(
+              byteData.offsetInBytes,
+              byteData.lengthInBytes,
+            ),
+          );
+        }
+        migrated[assetPath] = './$targetPath';
+      } catch (e) {
+        debugPrint('[OpenAIPlugin] 复制默认头像失败: $assetPath, $e');
+      }
+    }
+    return migrated;
+  }
+
+  /// 已写入 agents.json 的旧数据里 avatarUrl 仍是 'assets/agents/...'，
+  /// 会被当作本地相对路径解析到 Documents 根下导致加载失败，
+  /// 这里统一迁移为 app_data 下的 './openai/agents/...' 相对路径。
+  Future<void> _migrateBundledAgentAvatars() async {
+    try {
+      final agentData = await AboutmeDataService.instance.readPath(
+        '$storageDir/agents.json',
+      ) as Map<String, dynamic>?;
+      final agents = agentData?['agents'] as List?;
+      if (agents == null || agents.isEmpty) return;
+
+      final assetUrls = agents
+          .map((agent) => (agent as Map)['avatarUrl'])
+          .whereType<String>()
+          .where((url) => url.startsWith('assets/agents/'))
+          .toSet();
+      if (assetUrls.isEmpty) return;
+
+      final avatarMap = await _copyBundledAgentAvatars(assetUrls);
+      if (avatarMap.isEmpty) return;
+
+      var changed = false;
+      for (final agent in agents.cast<Map<String, dynamic>>()) {
+        final url = agent['avatarUrl'];
+        if (url is String && avatarMap.containsKey(url)) {
+          agent['avatarUrl'] = avatarMap[url];
+          changed = true;
+        }
+      }
+      if (changed) {
+        await AboutmeDataService.instance.writePath(
+          '$storageDir/agents.json',
+          agentData,
+        );
+        debugPrint('[OpenAIPlugin] 已迁移 ${avatarMap.length} 个默认头像到 app_data');
+      }
+    } catch (e) {
+      debugPrint('[OpenAIPlugin] 默认头像迁移失败: $e');
+    }
   }
 
   /// 初始化提示词预设数据

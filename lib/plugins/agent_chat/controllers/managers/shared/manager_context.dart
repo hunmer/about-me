@@ -18,6 +18,7 @@ class ManagerContext {
 
   /// 获取插件设置的回调
   final Map<String, dynamic> Function()? getSettings;
+  final bool Function()? useJsTools;
 
   /// 状态通知回调 - 用于触发 UI 更新
   final VoidCallback? notifyListeners;
@@ -32,6 +33,7 @@ class ManagerContext {
     required this.messageDetailService,
     this.templateService,
     this.getSettings,
+    this.useJsTools,
     this.notifyListeners,
     this.onTypingStatus,
   });
