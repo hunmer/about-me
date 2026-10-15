@@ -169,10 +169,12 @@ class NativeToolAgentService {
   static final NativeToolAgentService instance = NativeToolAgentService._();
 
   bool supports(AIAgent agent, bool enableToolCalling) {
-    if (!enableToolCalling || !agent.enableFunctionCalling) return false;
-    return const {'openai', 'anthropic'}.contains(
+    final hasNativeApiFormat = const {'openai', 'anthropic'}.contains(
       agent.apiFormat.trim().toLowerCase(),
     );
+    if (!hasNativeApiFormat) return false;
+    return (enableToolCalling && agent.enableFunctionCalling) ||
+        agent.alivenessConfig?.enabled == true;
   }
 
   Map<String, Map<String, ToolConfig>>? _toolConfigCache;
@@ -222,6 +224,7 @@ class NativeToolAgentService {
     bool Function()? isCancelling,
     String? conversationId,
     bool useJsTools = false,
+    bool alivenessOnlyTools = false,
   }) async {
     final run = _NativeToolRunContext(onToolSteps);
     final (allTools, allMeta) = _buildTools(run);
@@ -238,6 +241,9 @@ class NativeToolAgentService {
     final userInput = _extractLastUserText(contextMessages);
     final candidates = matchPluginCandidates(userInput);
     var tools = allTools;
+    if (alivenessOnlyTools) {
+      tools = tools.where((tool) => tool.name == 'moments').toList();
+    }
     if (candidates != null && allTools.length > 30) {
       tools = allTools
           .where((t) => candidates.contains(allMeta[t.name]!.pluginId))
@@ -251,7 +257,7 @@ class NativeToolAgentService {
     tools = buildToolSet(
       pluginTools: tools,
       onRunJs: (args) => _dispatchJs(run, args),
-      useJsTools: useJsTools,
+      useJsTools: alivenessOnlyTools ? false : useJsTools,
     );
     debugPrint(
       '[NativeTool] 请求配置：agent=${agent.id} format=${agent.apiFormat} '

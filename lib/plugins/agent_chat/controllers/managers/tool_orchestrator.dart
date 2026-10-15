@@ -62,6 +62,9 @@ class ToolOrchestrator {
         files: files,
         conversationId: context.conversationId,
         useJsTools: context.useJsTools?.call() ?? false,
+        alivenessOnlyTools:
+            agent.alivenessConfig?.enabled == true &&
+            !(enableToolCalling && agent.enableFunctionCalling),
         onUpdateMessage: onUpdateMessage,
         onToolSteps: (steps) async {
           final message = context.messageService.getMessage(

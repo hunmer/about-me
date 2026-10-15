@@ -5,6 +5,7 @@ import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/plugins/agent_chat/services/native_tool_agent_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
+import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 
 void main() {
   group('工具执行模式', () {
@@ -297,6 +298,33 @@ void main() {
       );
 
       expect(NativeToolAgentService.instance.supports(agent, true), isFalse);
+    });
+
+    test('活人感开启时不依赖通用工具调用开关', () {
+      final agent = AIAgent(
+        id: 'aliveness-agent',
+        name: 'Aliveness',
+        description: '',
+        tags: const [],
+        serviceProviderId: 'custom',
+        baseUrl: 'https://example.com/v1',
+        headers: const {'Authorization': 'Bearer test-key'},
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+        model: 'model',
+        enableFunctionCalling: false,
+        alivenessConfig: const AlivenessConfig(enabled: true),
+      );
+
+      expect(NativeToolAgentService.instance.supports(agent, true), isTrue);
+      expect(NativeToolAgentService.instance.supports(agent, false), isTrue);
+      expect(
+        NativeToolAgentService.instance.supports(
+          agent.copyWith(alivenessConfig: const AlivenessConfig(enabled: false)),
+          true,
+        ),
+        isFalse,
+      );
     });
   });
 }
