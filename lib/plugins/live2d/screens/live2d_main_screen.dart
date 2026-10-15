@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -13,6 +12,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'live2d_archive_form_screen.dart';
+import 'package:aboutme/widgets/form_modal_sheet.dart';
 
 /// Live2D 主界面：存档卡片列表，点击卡片进入存档设置
 class Live2DMainScreen extends StatefulWidget {
@@ -87,14 +87,29 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
   Future<void> _openSettings(Live2DArchive archive) async {
     plugin.selectedId = archive.id;
     await plugin.save();
-    await NavigationHelper.push(
-      context,
-      Live2DArchiveFormScreen(archiveId: archive.id),
-    );
+    await _showArchiveForm(archive.id);
     if (mounted) {
       setState(() {});
       _loadAgents();
     }
+  }
+
+  /// 档案编辑：smooth_sheets 底部弹层
+  Future<void> _showArchiveForm(String archiveId) async {
+    VoidCallback? saveArchive;
+    VoidCallback? deleteArchive;
+    await FormModalSheet.show(
+      context: context,
+      title: 'live2d_editArchiveTitle'.tr,
+      child: Live2DArchiveFormScreen(
+        archiveId: archiveId,
+        embedInSheet: true,
+        onReady: (save) => saveArchive = save,
+        onDeleteReady: (delete) => deleteArchive = delete,
+      ),
+      onSave: () => saveArchive?.call(),
+      onDelete: () => deleteArchive?.call(),
+    );
   }
 
   Future<void> _createArchive() async {
@@ -118,8 +133,8 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
       searchBody: _buildBody(),
       enableMultiFilter: true,
       multiFilterItems: _buildFilterItems(),
-      onMultiFilterChanged:
-          (filters) => WidgetsBinding.instance.addPostFrameCallback((_) {
+      onMultiFilterChanged: (filters) =>
+          WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) setState(() => _multiFilters = filters);
           }),
       body: _buildBody(),
@@ -254,9 +269,7 @@ class _Live2DArchiveCard extends StatelessWidget {
                     archive.modelLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: DsTypography.caption.copyWith(
-                      color: theme.primary,
-                    ),
+                    style: DsTypography.caption.copyWith(color: theme.primary),
                   ),
                   const Spacer(),
                   Row(
@@ -285,8 +298,8 @@ class _Live2DArchiveCard extends StatelessWidget {
   }
 
   Widget _buildCoverPlaceholder(AppThemeData theme) => Container(
-        color: theme.hatch,
-        alignment: Alignment.center,
-        child: DsIcon(DsIconKind.mood, size: 40, color: theme.primary),
-      );
+    color: theme.hatch,
+    alignment: Alignment.center,
+    child: DsIcon(DsIconKind.mood, size: 40, color: theme.primary),
+  );
 }

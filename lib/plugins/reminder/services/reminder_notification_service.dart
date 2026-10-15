@@ -40,10 +40,7 @@ class ReminderNotificationService {
         scheduledDate: reminder.nextTriggerAt!,
         channelKey: 'custom_channel',
         bigPicture: bigPicture,
-        payload: {
-          'type': 'reminder',
-          'reminderId': reminder.id,
-        },
+        payload: {'type': 'reminder', 'reminderId': reminder.id},
         preciseAlarm: true,
         allowWhileIdle: true,
       );

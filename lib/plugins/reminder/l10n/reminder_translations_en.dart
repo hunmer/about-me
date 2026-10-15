@@ -2,7 +2,8 @@ const Map<String, String> reminderTranslationsEn = {
   'reminder_scheduledReminders': 'Scheduled Reminders',
   'reminder_deleteReminder': 'Delete Reminder',
   'reminder_enabledReminders': 'Enabled',
-  'reminder_deleteConfirm': 'Are you sure you want to delete reminder "@title"?',
+  'reminder_deleteConfirm':
+      'Are you sure you want to delete reminder "@title"?',
   'reminder_editReminder': 'Edit Reminder',
   'reminder_createReminder': 'New Reminder',
   'reminder_titleLabel': 'Reminder Title',

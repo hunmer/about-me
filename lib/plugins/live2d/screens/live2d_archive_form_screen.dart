@@ -15,9 +15,24 @@ import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// Live2D 存档编辑表单：封面、名称、模型、Agent
 class Live2DArchiveFormScreen extends StatefulWidget {
-  const Live2DArchiveFormScreen({super.key, required this.archiveId});
+  const Live2DArchiveFormScreen({
+    super.key,
+    required this.archiveId,
+    this.embedInSheet = false,
+    this.onReady,
+    this.onDeleteReady,
+  });
 
   final String archiveId;
+
+  /// 以底部弹层形式嵌入（不渲染 Scaffold/顶栏，由外壳提供标题与保存）
+  final bool embedInSheet;
+
+  /// 弹层模式下回传保存动作（外壳"保存"按钮触发）
+  final void Function(VoidCallback save)? onReady;
+
+  /// 弹层模式下回传删除动作（外壳标题栏删除按钮触发）
+  final void Function(VoidCallback delete)? onDeleteReady;
 
   @override
   State<Live2DArchiveFormScreen> createState() =>
@@ -39,6 +54,8 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         .firstOrNull;
     nameController.text = archive?.name ?? '';
     _coverPath = archive?.coverPath;
+    widget.onReady?.call(_save);
+    widget.onDeleteReady?.call(_delete);
     AgentController().loadAgents().then((value) {
       if (mounted) setState(() => agents = value);
     });
@@ -102,8 +119,11 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
             {
               'id': current.agentId!,
               'name':
-                  agents.where((a) => a.id == current.agentId).firstOrNull?.name ??
-                      '',
+                  agents
+                      .where((a) => a.id == current.agentId)
+                      .firstOrNull
+                      ?.name ??
+                  '',
             },
           ];
     final result = await SmoothBottomSheet.show<List<Map<String, String>>>(
@@ -193,109 +213,108 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
     final theme = DSThemeBridge.resolve(context);
     final current = archive;
 
+    if (current == null) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(child: Text('live2d_noMatchArchives'.tr)),
+      );
+    }
+
+    final scrollForm = SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: _buildFields(theme, current),
+    );
+
+    // 弹层模式：外壳提供标题/保存/删除，去掉自带顶栏与保存按钮
+    if (widget.embedInSheet) {
+      return scrollForm;
+    }
+
     return Scaffold(
       body: DSThemeBridge(
         child: SafeArea(
-          child: current == null
-              ? Center(child: Text('live2d_noMatchArchives'.tr))
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: DSTopBar(
-                        title: 'live2d_editArchiveTitle'.tr,
-                        onMenu: _showMenu,
-                      ),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            ImagePickerField(
-                              currentImage: _coverPath,
-                              labelText: 'live2d_coverLabel'.tr,
-                              hintText: 'live2d_chooseCoverHint'.tr,
-                              saveDirectory: 'live2d_covers',
-                              enableCrop: true,
-                              cropAspectRatio: 16 / 9,
-                              defaultImage: _buildCoverPlaceholder(theme),
-                              onImageChanged: (image) {
-                                setState(() {
-                                  _coverPath = image is Map
-                                      ? image['url'] as String?
-                                      : image as String?;
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 20),
-                            DSInput(
-                              controller: nameController,
-                              label: 'live2d_nameLabel'.tr,
-                            ),
-                            const SizedBox(height: 20),
-                            DSListItem(
-                              title: 'live2d_modelSection'.tr,
-                              subtitle: current.modelLabel,
-                              showChevron: true,
-                              onTap: _chooseModel,
-                            ),
-                            const SizedBox(height: 12),
-                            DSListItem(
-                              title: 'live2d_chooseOnlineModel'.tr,
-                              leading: DsIcon(
-                                DsIconKind.download,
-                                color: theme.primary,
-                              ),
-                              showChevron: true,
-                              onTap: _chooseOnlineModel,
-                            ),
-                            const SizedBox(height: 12),
-                            DSListItem(
-                              title: 'live2d_agentSection'.tr,
-                              subtitle:
-                                  _selectedAgentName ??
-                                  'live2d_noAgentSelected'.tr,
-                              leading: DsIcon(
-                                DsIconKind.bot,
-                                color: theme.primary,
-                              ),
-                              showChevron: true,
-                              onTap: _chooseAgent,
-                            ),
-                            const SizedBox(height: 32),
-                            SizedBox(
-                              width: double.infinity,
-                              child: DSButton(
-                                label: 'live2d_saveButton'.tr,
-                                onPressed: _save,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: DSTopBar(
+                  title: 'live2d_editArchiveTitle'.tr,
+                  onMenu: _showMenu,
                 ),
+              ),
+              Expanded(child: scrollForm),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  /// 表单字段（全屏模式在末尾追加保存按钮）
+  Widget _buildFields(AppThemeData theme, Live2DArchive current) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ImagePickerField(
+          currentImage: _coverPath,
+          labelText: 'live2d_coverLabel'.tr,
+          hintText: 'live2d_chooseCoverHint'.tr,
+          saveDirectory: 'live2d_covers',
+          enableCrop: true,
+          cropAspectRatio: 16 / 9,
+          defaultImage: _buildCoverPlaceholder(theme),
+          onImageChanged: (image) {
+            setState(() {
+              _coverPath = image is Map
+                  ? image['url'] as String?
+                  : image as String?;
+            });
+          },
+        ),
+        const SizedBox(height: 20),
+        DSInput(controller: nameController, label: 'live2d_nameLabel'.tr),
+        const SizedBox(height: 20),
+        DSListItem(
+          title: 'live2d_modelSection'.tr,
+          subtitle: current.modelLabel,
+          showChevron: true,
+          onTap: _chooseModel,
+        ),
+        const SizedBox(height: 12),
+        DSListItem(
+          title: 'live2d_chooseOnlineModel'.tr,
+          leading: DsIcon(DsIconKind.download, color: theme.primary),
+          showChevron: true,
+          onTap: _chooseOnlineModel,
+        ),
+        const SizedBox(height: 12),
+        DSListItem(
+          title: 'live2d_agentSection'.tr,
+          subtitle: _selectedAgentName ?? 'live2d_noAgentSelected'.tr,
+          leading: DsIcon(DsIconKind.bot, color: theme.primary),
+          showChevron: true,
+          onTap: _chooseAgent,
+        ),
+        if (!widget.embedInSheet) ...[
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: DSButton(label: 'live2d_saveButton'.tr, onPressed: _save),
+          ),
+        ],
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
   Widget _buildCoverPlaceholder(AppThemeData theme) => Container(
-        height: 160,
-        decoration: BoxDecoration(
-          color: theme.primary.mixWhite(0.92),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        alignment: Alignment.center,
-        child: DsIcon(
-          DsIconKind.image,
-          size: 36,
-          color: theme.primary,
-        ),
-      );
+    height: 160,
+    decoration: BoxDecoration(
+      color: theme.primary.mixWhite(0.92),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    alignment: Alignment.center,
+    child: DsIcon(DsIconKind.image, size: 36, color: theme.primary),
+  );
 }

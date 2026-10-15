@@ -35,7 +35,8 @@ class ReminderCard extends StatelessWidget {
               Row(
                 children: [
                   // 图片缩略图
-                  if (reminder.imageUrl != null && reminder.imageUrl!.isNotEmpty)
+                  if (reminder.imageUrl != null &&
+                      reminder.imageUrl!.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: ClipRRect(
@@ -45,15 +46,12 @@ class ReminderCard extends StatelessWidget {
                           width: 48,
                           height: 48,
                           fit: BoxFit.cover,
-                          errorBuilder:
-                              (context, error, stackTrace) => Container(
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
                                 width: 48,
                                 height: 48,
                                 color: Colors.grey[200],
-                                child: const Icon(
-                                  Icons.broken_image,
-                                  size: 24,
-                                ),
+                                child: const Icon(Icons.broken_image, size: 24),
                               ),
                         ),
                       ),
@@ -69,10 +67,9 @@ class ReminderCard extends StatelessWidget {
                                 reminder.title,
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  decoration:
-                                      reminder.isEnabled
-                                          ? null
-                                          : TextDecoration.lineThrough,
+                                  decoration: reminder.isEnabled
+                                      ? null
+                                      : TextDecoration.lineThrough,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

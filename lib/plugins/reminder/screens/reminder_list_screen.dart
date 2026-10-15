@@ -10,6 +10,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_modal_sheet.dart';
 
 import 'package:get/get.dart';
+
 /// 提醒列表界面
 class ReminderListScreen extends StatefulWidget {
   const ReminderListScreen({super.key});
@@ -89,10 +90,9 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
     VoidCallback? submitReminder;
     return FormModalSheet.show<bool>(
       context: context,
-      title:
-          reminder == null
-              ? 'reminder_createReminder'.tr
-              : 'reminder_editReminder'.tr,
+      title: reminder == null
+          ? 'reminder_createReminder'.tr
+          : 'reminder_editReminder'.tr,
       child: ReminderFormScreen(
         existingReminder: reminder,
         embedInSheet: true,

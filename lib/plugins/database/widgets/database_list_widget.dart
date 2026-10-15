@@ -123,7 +123,9 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
           final databases = _searchQuery.isEmpty
               ? _allDatabases
               : _allDatabases.where((db) {
-                  return db.name.toLowerCase().contains(_searchQuery.toLowerCase());
+                  return db.name.toLowerCase().contains(
+                    _searchQuery.toLowerCase(),
+                  );
                 }).toList();
 
           if (databases.isEmpty) {
@@ -179,9 +181,7 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
                           controller: DatabaseController(widget.service),
                           databaseId: database.id,
                         ),
-                      ).then(
-                        (_) => _loadDatabases(),
-                      );
+                      ).then((_) => _loadDatabases());
                     },
                     onLongPress: () {
                       _showBottomSheet(context, database);
@@ -190,30 +190,29 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Expanded(
-                          child:
-                              database.coverImage != null
-                                  ? FutureBuilder<String>(
-                                    future: ImageUtils.getAbsolutePath(
-                                      database.coverImage!,
-                                    ),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.connectionState ==
-                                          ConnectionState.waiting) {
-                                        return const Center(
-                                          child: CircularProgressIndicator(),
-                                        );
-                                      }
-                                      if (snapshot.hasError ||
-                                          !snapshot.hasData) {
-                                        return _buildIcon();
-                                      }
-                                      return _buildImageWidget(snapshot.data!);
-                                    },
-                                  )
-                                  : Container(
-                                    color: Colors.grey[200],
-                                    child: const Icon(Icons.cloud, size: 48),
+                          child: database.coverImage != null
+                              ? FutureBuilder<String>(
+                                  future: ImageUtils.getAbsolutePath(
+                                    database.coverImage!,
                                   ),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    }
+                                    if (snapshot.hasError ||
+                                        !snapshot.hasData) {
+                                      return _buildIcon();
+                                    }
+                                    return _buildImageWidget(snapshot.data!);
+                                  },
+                                )
+                              : Container(
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.cloud, size: 48),
+                                ),
                         ),
                         Padding(
                           padding: const EdgeInsets.all(12),
@@ -242,85 +241,83 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
   ) async {
     await SmoothBottomSheet.show(
       context: context,
-      builder:
-          (context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: Text('app_edit'.tr),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _showDatabaseEditor(context, database);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.copy),
-                title: Text('app_copy'.tr),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final newDatabase = database.copyWith(id: Uuid().v4());
-                  await widget.service.createDatabase(newDatabase);
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: Text('app_edit'.tr),
+            onTap: () async {
+              Navigator.pop(context);
+              await _showDatabaseEditor(context, database);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.copy),
+            title: Text('app_copy'.tr),
+            onTap: () async {
+              Navigator.pop(context);
+              final newDatabase = database.copyWith(id: Uuid().v4());
+              await widget.service.createDatabase(newDatabase);
+              if (mounted) {
+                Toast.success('database_copy_success'.tr);
+                _loadDatabases();
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: Text(
+              'database_delete_action'.tr,
+              style: const TextStyle(color: Colors.red),
+            ),
+            onTap: () async {
+              Navigator.pop(context);
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('database_confirm_delete_title'.tr),
+                  content: Text(
+                    'database_confirm_delete_message'.trParams({
+                      'name': database.name,
+                    }),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('app_cancel'.tr),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text(
+                        'database_delete'.tr,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                try {
+                  await widget.service.deleteDatabase(database.id);
                   if (mounted) {
-                    Toast.success('database_copy_success'.tr);
+                    Toast.success('database_delete_success_message'.tr);
                     _loadDatabases();
                   }
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: Text(
-                  'database_delete_action'.tr,
-                  style: const TextStyle(color: Colors.red),
-                ),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder:
-                        (context) => AlertDialog(
-                          title: Text('database_confirm_delete_title'.tr),
-                          content: Text(
-                            'database_confirm_delete_message'.trParams({
-                              'name': database.name,
-                            }),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: Text('app_cancel'.tr),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: Text(
-                                'database_delete'.tr,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          ],
-                        ),
-                  );
-                  if (confirm == true) {
-                    try {
-                      await widget.service.deleteDatabase(database.id);
-                      if (mounted) {
-                        Toast.success('database_delete_success_message'.tr);
-                        _loadDatabases();
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        Toast.error(
-                          'database_delete_failed_message'.trParams({
-                            'error': e.toString(),
-                          }),
-                        );
-                      }
-                    }
+                } catch (e) {
+                  if (mounted) {
+                    Toast.error(
+                      'database_delete_failed_message'.trParams({
+                        'error': e.toString(),
+                      }),
+                    );
                   }
-                },
-              ),
-            ],
+                }
+              }
+            },
           ),
+        ],
+      ),
     );
   }
 
@@ -338,11 +335,10 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
           if (loadingProgress == null) return child;
           return Center(
             child: CircularProgressIndicator(
-              value:
-                  loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                      : null,
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                  : null,
             ),
           );
         },
@@ -378,7 +374,7 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
     // 创建一个空的新数据库模型（ID 为空，保存时才会生成）
     final now = DateTime.now();
     final newDatabase = DatabaseModel(
-      id: '',  // 新建时 ID 为空，在 DatabaseEditWidget 保存时生成
+      id: '', // 新建时 ID 为空，在 DatabaseEditWidget 保存时生成
       name: '',
       fields: [],
       createdAt: now,

@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:aboutme/plugins/notes/notes_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -6,6 +7,9 @@ import 'package:aboutme/plugins/notes/models/note.dart';
 import 'package:aboutme/plugins/notes/screens/notes_screen.dart';
 
 class NotesMainViewState extends State<NotesMainView> {
+  /// "已归档"虚拟目录 ID（根目录入口卡片进入，展示所有归档的文件夹/笔记/待办）
+  static const String archivedFolderId = 'archived';
+
   late final EventManager _eventManager;
   @protected
   String currentFolderId = 'root';
@@ -43,12 +47,36 @@ class NotesMainViewState extends State<NotesMainView> {
     loadCurrentFolder();
   }
 
+  /// 当前是否处于"已归档"视图
+  @protected
+  bool get isArchivedView => currentFolderId == archivedFolderId;
+
   @protected
   void loadCurrentFolder() {
     setState(() {
-      currentFolder = plugin.controller.getFolder(currentFolderId);
-      subFolders = plugin.controller.getFolderChildren(currentFolderId);
-      notes = plugin.controller.getFolderNotes(currentFolderId);
+      if (isArchivedView) {
+        // 已归档视图：平铺展示所有归档的文件夹与笔记
+        currentFolder = Folder(
+          id: archivedFolderId,
+          name: 'notes_archived'.tr,
+          parentId: 'root',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        subFolders = plugin.controller.getArchivedFolders();
+        notes = plugin.controller.getArchivedNotes();
+      } else {
+        currentFolder = plugin.controller.getFolder(currentFolderId);
+        // 普通视图隐藏已归档的子文件夹与笔记
+        subFolders = plugin.controller
+            .getFolderChildren(currentFolderId)
+            .where((folder) => !folder.isArchived)
+            .toList();
+        notes = plugin.controller
+            .getFolderNotes(currentFolderId)
+            .where((note) => !note.isArchived)
+            .toList();
+      }
     });
   }
 
@@ -77,7 +105,10 @@ class NotesMainViewState extends State<NotesMainView> {
     } else {
       final searchResults = plugin.controller.searchNotes(query: query);
       setState(() {
-        notes = searchResults;
+        // 普通搜索不搜出已归档笔记；已归档视图内只搜已归档
+        notes = searchResults
+            .where((note) => note.isArchived == isArchivedView)
+            .toList();
         subFolders = [];
       });
     }

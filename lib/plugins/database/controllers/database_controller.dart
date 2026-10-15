@@ -39,7 +39,8 @@ class DatabaseController {
   Future<List<Record>> getRecords(String databaseId) async {
     try {
       final records =
-          await AboutmeDataService.instance.readPath('records_$databaseId') ?? [];
+          await AboutmeDataService.instance.readPath('records_$databaseId') ??
+          [];
       if (records is List) {
         return records.map((r) => Record.fromMap(r)).toList();
       }

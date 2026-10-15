@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
@@ -11,6 +10,7 @@ import 'package:aboutme/screens/jelly_home/widgets/jelly_configurable_image.dart
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'live2d_archive_form_screen.dart';
+import 'package:aboutme/widgets/form_modal_sheet.dart';
 
 /// Live2D 全局设置：选中存档切换、语音播报、打字速度、模型预览。
 /// 存档内容编辑（名称/模型/Agent/封面）在 [Live2DArchiveFormScreen]。
@@ -43,7 +43,8 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   @override
   void initState() {
     super.initState();
-    archive = plugin.archives
+    archive =
+        plugin.archives
             .where((a) => a.id == widget.initialArchiveId)
             .firstOrNull ??
         plugin.selected ??
@@ -54,10 +55,9 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   Future<void> _loadSelectedTTSService() async {
     try {
       final manager = TTSPlugin.instance.managerService;
-      final service =
-          _selectedTTSServiceId == null
-              ? await manager.getDefaultService()
-              : await manager.getServiceById(_selectedTTSServiceId!);
+      final service = _selectedTTSServiceId == null
+          ? await manager.getDefaultService()
+          : await manager.getServiceById(_selectedTTSServiceId!);
       if (mounted) setState(() => _selectedTTSService = service);
     } catch (error) {
       debugPrint('加载 Live2D 播报语音失败: $error');
@@ -109,9 +109,19 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   Future<void> _editCurrentArchive() async {
     final id = plugin.selectedId;
     if (id == null) return;
-    await NavigationHelper.push(
-      context,
-      Live2DArchiveFormScreen(archiveId: id),
+    VoidCallback? saveArchive;
+    VoidCallback? deleteArchive;
+    await FormModalSheet.show(
+      context: context,
+      title: 'live2d_editArchiveTitle'.tr,
+      child: Live2DArchiveFormScreen(
+        archiveId: id,
+        embedInSheet: true,
+        onReady: (save) => saveArchive = save,
+        onDeleteReady: (delete) => deleteArchive = delete,
+      ),
+      onSave: () => saveArchive?.call(),
+      onDelete: () => deleteArchive?.call(),
     );
     if (mounted) {
       setState(() {
@@ -226,10 +236,8 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
               divisions: 18,
               label: '${_typingIntervalMs.round()} ms',
               onChanged: (value) => setState(() => _typingIntervalMs = value),
-              onChangeEnd:
-                  (value) => plugin.updateSettings({
-                    'typingIntervalMs': value.round(),
-                  }),
+              onChangeEnd: (value) =>
+                  plugin.updateSettings({'typingIntervalMs': value.round()}),
             ),
             const SizedBox(height: 16),
             Text('live2d_modelLabel'.trParams({'model': current.modelLabel})),
@@ -335,10 +343,7 @@ class _ArchiveAvatarTile extends StatelessWidget {
                           size: 26,
                           color: theme.hintColor,
                         )
-                      : JellyConfigurableImage(
-                          path: cover,
-                          fit: BoxFit.cover,
-                        ),
+                      : JellyConfigurableImage(path: cover, fit: BoxFit.cover),
                 ),
               ),
               Positioned(

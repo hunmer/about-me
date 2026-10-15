@@ -28,6 +28,9 @@ class Note {
   /// 右上角水印图标（DsIconKind 枚举名），null = 无
   String? icon;
 
+  /// 已归档（普通视图隐藏，归入"已归档"分组）
+  bool isArchived;
+
   Note({
     required this.id,
     required this.title,
@@ -41,6 +44,7 @@ class Note {
     this.color,
     this.bgStyle = 0,
     this.icon,
+    this.isArchived = false,
   });
 
   bool get isTodo => type == typeTodo;
@@ -69,6 +73,7 @@ class Note {
       'color': color?.value,
       'bgStyle': bgStyle,
       'icon': icon,
+      'isArchived': isArchived,
     };
   }
 
@@ -86,6 +91,7 @@ class Note {
       color: json['color'] == null ? null : Color(json['color'] as int),
       bgStyle: json['bgStyle'] as int? ?? 0,
       icon: json['icon'] as String?,
+      isArchived: json['isArchived'] as bool? ?? false,
     );
   }
 
@@ -101,6 +107,7 @@ class Note {
     Color? color,
     int? bgStyle,
     String? icon,
+    bool? isArchived,
   }) {
     return Note(
       id: id,
@@ -115,6 +122,7 @@ class Note {
       color: color ?? this.color,
       bgStyle: bgStyle ?? this.bgStyle,
       icon: icon ?? this.icon,
+      isArchived: isArchived ?? this.isArchived,
     );
   }
 }

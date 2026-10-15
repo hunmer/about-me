@@ -10,6 +10,9 @@ class Folder {
   Color color;
   IconData icon;
 
+  /// 已归档（普通视图隐藏，归入"已归档"分组）
+  bool isArchived;
+
   Folder({
     required this.id,
     required this.name,
@@ -18,6 +21,7 @@ class Folder {
     required this.updatedAt,
     this.color = Colors.blue,
     this.icon = Icons.folder,
+    this.isArchived = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -29,6 +33,7 @@ class Folder {
       'updatedAt': updatedAt.toIso8601String(),
       'color': color.value,
       'icon': icon.codePoint,
+      'isArchived': isArchived,
     };
   }
 
@@ -41,6 +46,7 @@ class Folder {
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       color: Color(json['color'] as int? ?? Colors.blue.value),
       icon: dynamicIconData(json['icon'] as int? ?? Icons.folder.codePoint, fontFamily: 'MaterialIcons'),
+      isArchived: json['isArchived'] as bool? ?? false,
     );
   }
 }

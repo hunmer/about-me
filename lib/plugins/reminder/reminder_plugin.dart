@@ -13,7 +13,8 @@ class ReminderPlugin extends BasePlugin {
 
   static ReminderPlugin get instance {
     if (_instance == null) {
-      _instance = PluginManager.instance.getPlugin('reminder') as ReminderPlugin?;
+      _instance =
+          PluginManager.instance.getPlugin('reminder') as ReminderPlugin?;
       if (_instance == null) {
         throw StateError('ReminderPlugin has not been initialized');
       }
@@ -86,9 +87,9 @@ class ReminderPlugin extends BasePlugin {
               const SizedBox(width: 12),
               Text(
                 'reminder_scheduledReminders'.tr,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),

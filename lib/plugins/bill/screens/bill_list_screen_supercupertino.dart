@@ -127,22 +127,21 @@ class _BillListScreenSupercupertinoState
             bill.date.isBefore(monthEnd.add(const Duration(seconds: 1))),
       );
 
-      final bills =
-          filteredBills
-              .map(
-                (bill) => BillModel(
-                  id: bill.id,
-                  title: bill.title,
-                  amount: bill.absoluteAmount,
-                  date: bill.date,
-                  icon: bill.icon,
-                  color: bill.iconColor,
-                  category: bill.tag ?? '未分类',
-                  note: bill.note,
-                  isExpense: bill.isExpense,
-                ),
-              )
-              .toList();
+      final bills = filteredBills
+          .map(
+            (bill) => BillModel(
+              id: bill.id,
+              title: bill.title,
+              amount: bill.absoluteAmount,
+              date: bill.date,
+              icon: bill.icon,
+              color: bill.iconColor,
+              category: bill.tag ?? '未分类',
+              note: bill.note,
+              isExpense: bill.isExpense,
+            ),
+          )
+          .toList();
 
       // Sort by date descending
       bills.sort((a, b) => b.date.compareTo(a.date));
@@ -281,29 +280,27 @@ class _BillListScreenSupercupertinoState
               // 始终显示收入位置（有数据显示badge，无数据显示空占位）
               SizedBox(
                 height: 14,
-                child:
-                    isIncomePositive
-                        ? _buildStatBadge(
-                          stats!.income,
-                          _incomeColor,
-                          DsIconKind.chevronDown,
-                          // 绿底对比度低，文字用墨色
-                          textColor: theme.ink,
-                        )
-                        : const SizedBox.shrink(),
+                child: isIncomePositive
+                    ? _buildStatBadge(
+                        stats!.income,
+                        _incomeColor,
+                        DsIconKind.chevronDown,
+                        // 绿底对比度低，文字用墨色
+                        textColor: theme.ink,
+                      )
+                    : const SizedBox.shrink(),
               ),
               const SizedBox(height: 3),
               // 始终显示支出位置（有数据显示badge，无数据显示空占位）
               SizedBox(
                 height: 14,
-                child:
-                    isExpensePositive
-                        ? _buildStatBadge(
-                          stats!.expense,
-                          _expenseColor,
-                          DsIconKind.chevronUp,
-                        )
-                        : const SizedBox.shrink(),
+                child: isExpensePositive
+                    ? _buildStatBadge(
+                        stats!.expense,
+                        _expenseColor,
+                        DsIconKind.chevronUp,
+                      )
+                    : const SizedBox.shrink(),
               ),
             ],
           ),
@@ -409,9 +406,8 @@ class _BillListScreenSupercupertinoState
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder:
-                          (context) =>
-                              AccountListScreen(billPlugin: widget.billPlugin),
+                      builder: (context) =>
+                          AccountListScreen(billPlugin: widget.billPlugin),
                     ),
                   );
                 },
@@ -515,12 +511,13 @@ class _BillListScreenSupercupertinoState
               ),
               cellBorderColor: Colors.transparent,
               selectionDecoration: const BoxDecoration(),
-              monthCellBuilder: (BuildContext context, MonthCellDetails details) {
-                final day = details.date;
-                final isSelected =
-                    _selectedDay != null && _isSameDay(day, _selectedDay!);
-                return _buildCalendarCell(day, isSelected);
-              },
+              monthCellBuilder:
+                  (BuildContext context, MonthCellDetails details) {
+                    final day = details.date;
+                    final isSelected =
+                        _selectedDay != null && _isSameDay(day, _selectedDay!);
+                    return _buildCalendarCell(day, isSelected);
+                  },
               onTap: (CalendarTapDetails details) {
                 if (details.date != null) {
                   setState(() {
@@ -588,7 +585,9 @@ class _BillListScreenSupercupertinoState
               },
             ),
             if (_selectedDayBills.isEmpty)
-              DSThemeBridge(child: DSEmptyState(emoji: '📭', title: '这一天没有账单'))
+              DSThemeBridge(
+                child: DSEmptyState(emoji: '📭', title: '这一天没有账单'),
+              )
             else
               ListView.builder(
                 shrinkWrap: true,
@@ -620,28 +619,23 @@ class _BillListScreenSupercupertinoState
                                 final confirmed = await showDSDialog<bool>(
                                   context: context,
                                   theme: DSThemeBridge.resolve(context),
-                                  builder:
-                                      (BuildContext context) => DSThemeBridge(
+                                  builder: (BuildContext context) =>
+                                      DSThemeBridge(
                                         child: Builder(
-                                          builder:
-                                              (context) => DSDialog(
-                                                title: 'bill_confirmDelete'.tr,
-                                                message:
-                                                    'bill_confirmDeleteThisBill'
-                                                        .tr,
-                                                cancelText: 'bill_cancel'.tr,
-                                                confirmText: 'bill_delete'.tr,
-                                                confirmVariant:
-                                                    DSButtonVariant.destructive,
-                                                onCancel:
-                                                    () => Navigator.of(
-                                                      context,
-                                                    ).pop(false),
-                                                onConfirm:
-                                                    () => Navigator.of(
-                                                      context,
-                                                    ).pop(true),
-                                              ),
+                                          builder: (context) => DSDialog(
+                                            title: 'bill_confirmDelete'.tr,
+                                            message:
+                                                'bill_confirmDeleteThisBill'.tr,
+                                            cancelText: 'bill_cancel'.tr,
+                                            confirmText: 'bill_delete'.tr,
+                                            confirmVariant:
+                                                DSButtonVariant.destructive,
+                                            onCancel: () => Navigator.of(
+                                              context,
+                                            ).pop(false),
+                                            onConfirm: () =>
+                                                Navigator.of(context).pop(true),
+                                          ),
                                         ),
                                       ),
                                 );
@@ -693,26 +687,25 @@ class _BillListScreenSupercupertinoState
     List<BillModel> filteredBills = _allMonthBills;
 
     if (_searchQuery.isNotEmpty) {
-      filteredBills =
-          filteredBills.where((bill) {
-            final query = _searchQuery.toLowerCase();
+      filteredBills = filteredBills.where((bill) {
+        final query = _searchQuery.toLowerCase();
 
-            // 按名称搜索
-            final matchTitle = bill.title.toLowerCase().contains(query);
+        // 按名称搜索
+        final matchTitle = bill.title.toLowerCase().contains(query);
 
-            // 按分类搜索（如果启用）
-            final matchCategory =
-                (_searchFilters['category'] ?? true) &&
-                bill.category.toLowerCase().contains(query);
+        // 按分类搜索（如果启用）
+        final matchCategory =
+            (_searchFilters['category'] ?? true) &&
+            bill.category.toLowerCase().contains(query);
 
-            // 按笔记搜索（如果启用）
-            final matchNote =
-                (_searchFilters['note'] ?? true) &&
-                (bill.note?.toLowerCase().contains(query) ?? false);
+        // 按笔记搜索（如果启用）
+        final matchNote =
+            (_searchFilters['note'] ?? true) &&
+            (bill.note?.toLowerCase().contains(query) ?? false);
 
-            // 满足任一条件即匹配
-            return matchTitle || matchCategory || matchNote;
-          }).toList();
+        // 满足任一条件即匹配
+        return matchTitle || matchCategory || matchNote;
+      }).toList();
     }
 
     if (_searchQuery.isNotEmpty && filteredBills.isEmpty) {

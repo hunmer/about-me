@@ -19,6 +19,9 @@ class FolderCard extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
+  /// 归档/取消归档回调（null 时不显示菜单项）
+  final VoidCallback? onToggleArchive;
+
   const FolderCard({
     super.key,
     required this.folder,
@@ -26,11 +29,12 @@ class FolderCard extends StatelessWidget {
     required this.onTap,
     this.onEdit,
     this.onDelete,
+    this.onToggleArchive,
   });
 
-  /// 底部抽屉菜单（重命名 / 删除）
+  /// 底部抽屉菜单（重命名 / 归档 / 删除）
   void _showBottomSheet(BuildContext context) {
-    if (onEdit == null && onDelete == null) return;
+    if (onEdit == null && onDelete == null && onToggleArchive == null) return;
     SmoothBottomSheet.show(
       context: context,
       builder:
@@ -45,6 +49,17 @@ class FolderCard extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       onEdit!();
+                    },
+                  ),
+                if (onToggleArchive != null)
+                  DSSheetAction(
+                    icon: DsIconKind.archive,
+                    label: folder.isArchived
+                        ? 'notes_unarchive'.tr
+                        : 'notes_archive'.tr,
+                    onTap: () {
+                      Navigator.pop(context);
+                      onToggleArchive!();
                     },
                   ),
                 if (onDelete != null)

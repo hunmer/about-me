@@ -125,35 +125,55 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
       switch (field.type) {
         case 'Long Text':
           if (metadata.containsKey('maxLines')) {
-            extra['maxLines'] = int.tryParse(metadata['maxLines']?.toString() ?? '') ?? 3;
+            extra['maxLines'] =
+                int.tryParse(metadata['maxLines']?.toString() ?? '') ?? 3;
           }
           break;
         case 'Integer':
           if (metadata.containsKey('minValue')) {
-            extra['min'] = double.tryParse(metadata['minValue']?.toString() ?? '')?.toDouble() ?? 0.0;
+            extra['min'] =
+                double.tryParse(
+                  metadata['minValue']?.toString() ?? '',
+                )?.toDouble() ??
+                0.0;
           }
           if (metadata.containsKey('maxValue')) {
-            extra['max'] = double.tryParse(metadata['maxValue']?.toString() ?? '')?.toDouble() ?? 100.0;
+            extra['max'] =
+                double.tryParse(
+                  metadata['maxValue']?.toString() ?? '',
+                )?.toDouble() ??
+                100.0;
           }
           break;
         case 'Rating':
           if (metadata.containsKey('minValue')) {
-            extra['min'] = double.tryParse(metadata['minValue']?.toString() ?? '')?.toDouble() ?? 0.0;
+            extra['min'] =
+                double.tryParse(
+                  metadata['minValue']?.toString() ?? '',
+                )?.toDouble() ??
+                0.0;
           }
           if (metadata.containsKey('maxValue')) {
-            extra['max'] = double.tryParse(metadata['maxValue']?.toString() ?? '')?.toDouble() ?? 5.0;
+            extra['max'] =
+                double.tryParse(
+                  metadata['maxValue']?.toString() ?? '',
+                )?.toDouble() ??
+                5.0;
           }
-          extra['divisions'] = int.tryParse(metadata['maxValue']?.toString() ?? '') ?? 5;
+          extra['divisions'] =
+              int.tryParse(metadata['maxValue']?.toString() ?? '') ?? 5;
           break;
         case 'Dropdown':
           // 解析选项列表
           if (metadata.containsKey('options')) {
             final optionsStr = metadata['options']?.toString() ?? '';
-            final optionsList = optionsStr.split('\n').where((s) => s.trim().isNotEmpty).toList();
-            extra['items'] = optionsList.map((opt) => DropdownMenuItem(
-              value: opt,
-              child: Text(opt),
-            )).toList();
+            final optionsList = optionsStr
+                .split('\n')
+                .where((s) => s.trim().isNotEmpty)
+                .toList();
+            extra['items'] = optionsList
+                .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
+                .toList();
           }
           break;
         case 'Date':

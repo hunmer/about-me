@@ -16,43 +16,48 @@ class DatabaseHomeWidgets {
     final registry = HomeWidgetRegistry();
 
     // 1x1 简单图标组件 - 快速访问
-    registry.register(HomeWidget(
-      id: 'database_icon',
-      pluginId: 'database',
-      name: 'database_widgetName'.tr,
-      description: 'database_widgetDescription'.tr,
-      icon: Icons.storage,
-      color: Colors.deepPurple,
-      defaultSize: const SmallSize(),
-      supportedSizes: [const SmallSize()],
-      category: 'home_categoryTools'.tr,
-      builder: (context, config) => GenericIconWidget(
+    registry.register(
+      HomeWidget(
+        id: 'database_icon',
+        pluginId: 'database',
+        name: 'database_widgetName'.tr,
+        description: 'database_widgetDescription'.tr,
         icon: Icons.storage,
         color: Colors.deepPurple,
-        name: 'database_name'.tr,
+        defaultSize: const SmallSize(),
+        supportedSizes: [const SmallSize()],
+        category: 'home_categoryTools'.tr,
+        builder: (context, config) => GenericIconWidget(
+          icon: Icons.storage,
+          color: Colors.deepPurple,
+          name: 'database_name'.tr,
+        ),
       ),
-    ));
+    );
 
     // 2x2 详细卡片 - 显示统计信息
-    registry.register(HomeWidget(
-      id: 'database_overview',
-      pluginId: 'database',
-      name: 'database_overviewName'.tr,
-      description: 'database_overviewDescription'.tr,
-      icon: Icons.storage_outlined,
-      color: Colors.deepPurple,
-      defaultSize: const LargeSize(),
-      supportedSizes: [const LargeSize()],
-      category: 'home_categoryTools'.tr,
-      builder: (context, config) => _buildOverviewWidget(context, config),
-      availableStatsProvider: _getAvailableStats,
-    ));
+    registry.register(
+      HomeWidget(
+        id: 'database_overview',
+        pluginId: 'database',
+        name: 'database_overviewName'.tr,
+        description: 'database_overviewDescription'.tr,
+        icon: Icons.storage_outlined,
+        color: Colors.deepPurple,
+        defaultSize: const LargeSize(),
+        supportedSizes: [const LargeSize()],
+        category: 'home_categoryTools'.tr,
+        builder: (context, config) => _buildOverviewWidget(context, config),
+        availableStatsProvider: _getAvailableStats,
+      ),
+    );
   }
 
   /// 获取可用的统计项
   static List<StatItemData> _getAvailableStats(BuildContext context) {
     try {
-      final plugin = PluginManager.instance.getPlugin('database') as DatabasePlugin?;
+      final plugin =
+          PluginManager.instance.getPlugin('database') as DatabasePlugin?;
       if (plugin == null) return [];
 
       // 同步获取数据库计数（使用 Future.wait 的同步版本）
@@ -75,7 +80,10 @@ class DatabaseHomeWidgets {
   }
 
   /// 构建 2x2 详细卡片组件
-  static Widget _buildOverviewWidget(BuildContext context, Map<String, dynamic> config) {
+  static Widget _buildOverviewWidget(
+    BuildContext context,
+    Map<String, dynamic> config,
+  ) {
     // 使用 StatefulBuilder 和 EventListenerContainer 实现动态更新
     return StatefulBuilder(
       builder: (context, setState) {
@@ -96,7 +104,10 @@ class DatabaseHomeWidgets {
   }
 
   /// 构建概览小组件内容（获取最新数据）
-  static Widget _buildOverviewContent(BuildContext context, Map<String, dynamic> config) {
+  static Widget _buildOverviewContent(
+    BuildContext context,
+    Map<String, dynamic> config,
+  ) {
     try {
       // 解析插件配置
       PluginWidgetConfig widgetConfig;

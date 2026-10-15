@@ -33,10 +33,9 @@ class ReminderService {
       final pluginPath = 'reminder/$_storageKey';
       final data = await AboutmeDataService.instance.readPath(pluginPath);
       if (data != null && data.containsKey('reminders')) {
-        _reminders =
-            (data['reminders'] as List)
-                .map((json) => Reminder.fromJson(json as Map<String, dynamic>))
-                .toList();
+        _reminders = (data['reminders'] as List)
+            .map((json) => Reminder.fromJson(json as Map<String, dynamic>))
+            .toList();
       }
     } catch (e) {
       debugPrint('[ReminderService] 加载提醒失败: $e');
@@ -100,7 +99,10 @@ class ReminderService {
     await _saveReminders();
 
     // 成就系统计数（A40 不再遗忘）
-    EventManager.instance.broadcast('reminder_added', EventArgs('reminder_added'));
+    EventManager.instance.broadcast(
+      'reminder_added',
+      EventArgs('reminder_added'),
+    );
 
     // 调度通知
     if (reminder.isEnabled) {
@@ -146,8 +148,11 @@ class ReminderService {
 
       // 更新调度
       if (newEnabled) {
-        _reminders[index].nextTriggerAt = _reminders[index].calculateNextTriggerTime();
-        await _notificationService.scheduleReminderNotification(_reminders[index]);
+        _reminders[index].nextTriggerAt = _reminders[index]
+            .calculateNextTriggerTime();
+        await _notificationService.scheduleReminderNotification(
+          _reminders[index],
+        );
       } else {
         await _notificationService.cancelScheduledNotification(id);
       }
@@ -173,7 +178,9 @@ class ReminderService {
 
       // 调度下一次通知
       if (_reminders[index].isEnabled) {
-        await _notificationService.scheduleReminderNotification(_reminders[index]);
+        await _notificationService.scheduleReminderNotification(
+          _reminders[index],
+        );
       }
     }
   }

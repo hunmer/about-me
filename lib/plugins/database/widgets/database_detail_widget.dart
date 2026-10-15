@@ -132,7 +132,10 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('database_sortMethod'.tr, style: TextStyle(fontWeight: FontWeight.w500)),
+        Text(
+          'database_sortMethod'.tr,
+          style: TextStyle(fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 12),
         SegmentedButton<RecordSortOption>(
           segments: const [
@@ -376,9 +379,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
             bottom: 16,
             child: DSThemeBridge(
               // DSFab 内部取 AppTheme，需包桥
-              child: DSFab(
-                onPressed: () => _showRecordEditor(database, null),
-              ),
+              child: DSFab(onPressed: () => _showRecordEditor(database, null)),
             ),
           ),
         ],

@@ -29,8 +29,9 @@ class DatabaseModel {
       name: map['name'],
       description: map['description'],
       coverImage: map['coverImage'],
-      fields:
-          (map['fields'] as List).map((e) => DatabaseField.fromMap(e)).toList(),
+      fields: (map['fields'] as List)
+          .map((e) => DatabaseField.fromMap(e))
+          .toList(),
       createdAt: DateTime.parse(map['createdAt']),
       updatedAt: DateTime.parse(map['updatedAt']),
     );

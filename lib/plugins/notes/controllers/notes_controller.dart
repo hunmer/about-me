@@ -204,6 +204,41 @@ class NotesController {
     return _notes[folderId] ?? [];
   }
 
+  // 获取所有已归档文件夹
+  List<Folder> getArchivedFolders() {
+    return _folders.values.where((folder) => folder.isArchived).toList();
+  }
+
+  // 获取所有已归档笔记（平铺展示；位于已归档文件夹内的笔记不重复列出，进入文件夹查看）
+  List<Note> getArchivedNotes() {
+    final archivedFolderIds = _folders.values
+        .where((folder) => folder.isArchived)
+        .map((folder) => folder.id)
+        .toSet();
+    return _notes.values
+        .expand((notes) => notes)
+        .where(
+          (note) =>
+              note.isArchived &&
+              !archivedFolderIds.contains(note.folderId ?? 'root'),
+        )
+        .toList();
+  }
+
+  /// 切换笔记归档状态
+  Future<void> toggleNoteArchive(Note note) async {
+    note.isArchived = !note.isArchived;
+    note.updatedAt = DateTime.now();
+    await updateNote(note);
+  }
+
+  /// 切换文件夹归档状态
+  Future<void> toggleFolderArchive(Folder folder) async {
+    folder.isArchived = !folder.isArchived;
+    folder.updatedAt = DateTime.now();
+    await _saveFolders();
+  }
+
   /// 通过 ID 获取笔记
   Note? getNoteById(String noteId) {
     for (var noteList in _notes.values) {
@@ -360,7 +395,7 @@ class NotesController {
 
     // 如果找到笔记，将其添加到目标文件夹
     if (noteToMove != null && sourceFolderId != null) {
-      // 创建一个新的笔记对象，更新文件夹ID
+      // 创建一个新的笔记对象，更新文件夹ID（保留类型与归档标记）
       final movedNote = Note(
         id: noteToMove.id,
         title: noteToMove.title,
@@ -369,6 +404,8 @@ class NotesController {
         createdAt: noteToMove.createdAt,
         updatedAt: DateTime.now(), // 更新时间戳
         tags: noteToMove.tags,
+        type: noteToMove.type,
+        isArchived: noteToMove.isArchived,
       );
 
       // 添加到新文件夹

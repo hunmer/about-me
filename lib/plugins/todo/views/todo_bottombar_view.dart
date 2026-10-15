@@ -83,7 +83,7 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
       // 检查是否有 action: create 参数，用于从小组件打开新建任务表单
       final args = ModalRoute.of(context)?.settings.arguments as Map?;
       if (args != null && args['action'] == 'create') {
-        _openTaskForm();
+        _openTaskFormSheet(context);
       }
     });
   }
@@ -129,18 +129,6 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
       pageId: pageId,
       title: title,
       params: params,
-    );
-  }
-
-  /// 打开新建任务表单
-  void _openTaskForm() {
-    NavigationHelper.openContainerWithHero(
-      context,
-      (context) => TaskForm(
-        taskController: _plugin.taskController,
-        reminderController: _plugin.reminderController,
-      ),
-      transitionDuration: const Duration(milliseconds: 300),
     );
   }
 
@@ -701,131 +689,120 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
 
     return Pressable(
       onPressed: () => _showTaskDetailDialog(context, task),
-      builder:
-          (context, states) => Opacity(
-            opacity:
-                isDone
-                    ? 0.6
-                    : states.contains(WidgetState.pressed)
-                    ? 0.85
-                    : 1.0,
-            // 大容器走手绘面板：纸底 + 优先级色排线 + 墨线框，
-            // 完成态不画排线弱化；seed 取任务 id 让墨迹逐卡不同
-            child: DsSketchPanel(
-              theme: theme,
-              radius: theme.radii.xl,
-              hachureColor:
-                  isDone
-                      ? DsColors.transparent
-                      : borderColor.withValues(
-                        alpha: theme.isDark ? 0.18 : 0.08,
-                      ),
-              seed: task.id.hashCode & 0x7fffffff,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Icon Box：小控件走实底 + 墨线描边
-                    JellyBox(
-                      width: 48,
-                      height: 48,
-                      radius: theme.radii.md,
-                      color: theme.surfaceAlt,
-                      alignment: Alignment.center,
-                      // task.icon 为持久化 IconData，保留 Material 图标
-                      child: Icon(
-                        task.icon ?? Icons.assignment,
-                        color: theme.text,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    // Main Content
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            task.title,
-                            style: DsTypography.body.copyWith(
-                              fontSize: 16,
-                              color: theme.text,
-                              decoration: isDone
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              ...task.tags.map((tag) => _buildSimpleTag(tag)),
-                              if (task.priority == TaskPriority.q1)
-                                _buildSimpleTag(
-                                  'todo_q1'.tr,
-                                  isHighPriority: true,
-                                ),
-                              if (isOverdue)
-                                _buildSimpleTag(
-                                  'todo_overdue'.tr,
-                                  isOverdue: true,
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          if (task.dueDate != null)
-                            Text(
-                              DateFormat('MMM d').format(task.dueDate!),
-                              style: DsTypography.caption.copyWith(
-                                color: theme.textSub,
-                                decoration: isDone
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    // Checkbox
-                    SizedBox(
-                      width: 48,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              final newStatus = isDone
-                                  ? TaskStatus.todo
-                                  : TaskStatus.done;
-                              _plugin.taskController.updateTaskStatus(
-                                task.id,
-                                newStatus,
-                              );
-                            },
-                            child: DSCheckbox(
-                              value: isDone,
-                              onChanged: (value) {
-                                final newStatus = value == true
-                                    ? TaskStatus.done
-                                    : TaskStatus.todo;
-                                _plugin.taskController.updateTaskStatus(
-                                  task.id,
-                                  newStatus,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+      builder: (context, states) => Opacity(
+        opacity: isDone
+            ? 0.6
+            : states.contains(WidgetState.pressed)
+            ? 0.85
+            : 1.0,
+        // 大容器走手绘面板：纸底 + 优先级色排线 + 墨线框，
+        // 完成态不画排线弱化；seed 取任务 id 让墨迹逐卡不同
+        child: DsSketchPanel(
+          theme: theme,
+          radius: theme.radii.xl,
+          hachureColor: isDone
+              ? DsColors.transparent
+              : borderColor.withValues(alpha: theme.isDark ? 0.18 : 0.08),
+          seed: task.id.hashCode & 0x7fffffff,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon Box：小控件走实底 + 墨线描边
+                JellyBox(
+                  width: 48,
+                  height: 48,
+                  radius: theme.radii.md,
+                  color: theme.surfaceAlt,
+                  alignment: Alignment.center,
+                  // task.icon 为持久化 IconData，保留 Material 图标
+                  child: Icon(
+                    task.icon ?? Icons.assignment,
+                    color: theme.text,
+                    size: 24,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                // Main Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        task.title,
+                        style: DsTypography.body.copyWith(
+                          fontSize: 16,
+                          color: theme.text,
+                          decoration: isDone
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          ...task.tags.map((tag) => _buildSimpleTag(tag)),
+                          if (task.priority == TaskPriority.q1)
+                            _buildSimpleTag('todo_q1'.tr, isHighPriority: true),
+                          if (isOverdue)
+                            _buildSimpleTag('todo_overdue'.tr, isOverdue: true),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (task.dueDate != null)
+                        Text(
+                          DateFormat('MMM d').format(task.dueDate!),
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                            decoration: isDone
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                // Checkbox
+                SizedBox(
+                  width: 48,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          final newStatus = isDone
+                              ? TaskStatus.todo
+                              : TaskStatus.done;
+                          _plugin.taskController.updateTaskStatus(
+                            task.id,
+                            newStatus,
+                          );
+                        },
+                        child: DSCheckbox(
+                          value: isDone,
+                          onChanged: (value) {
+                            final newStatus = value == true
+                                ? TaskStatus.done
+                                : TaskStatus.todo;
+                            _plugin.taskController.updateTaskStatus(
+                              task.id,
+                              newStatus,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-        );
+        ),
+      ),
+    );
   }
 
   // 构建简单的标签

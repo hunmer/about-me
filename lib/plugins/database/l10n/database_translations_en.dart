@@ -7,7 +7,8 @@ class DatabaseTranslationsEn {
 
     // Record related
     'database_delete_record_title': 'Delete Record',
-    'database_delete_record_message': 'Are you sure you want to delete "@name"?',
+    'database_delete_record_message':
+        'Are you sure you want to delete "@name"?',
     'database_untitled_record': 'Untitled',
 
     // Common operations
@@ -34,8 +35,10 @@ class DatabaseTranslationsEn {
     'database_new_field_title': 'New @type Field',
     'database_save_failed_message': 'Save failed: @error',
     'database_delete_field_title': 'Delete Field',
-    'database_delete_field_confirm': 'Are you sure you want to delete field "@name"?',
-    'database_no_fields_hint': 'No fields yet, please add fields in database settings first',
+    'database_delete_field_confirm':
+        'Are you sure you want to delete field "@name"?',
+    'database_no_fields_hint':
+        'No fields yet, please add fields in database settings first',
 
     // Database list
     'database_database_list_title': 'Database List',
@@ -67,8 +70,8 @@ class DatabaseTranslationsEn {
     'database_widgetDescription': 'Quick access to Database',
     'database_overviewName': 'Database Overview',
     'database_overviewDescription': 'Display database statistics',
-  
-  // const Text 硬编码迁移(en)
-  'database_sortMethod': 'Sort Method',
-};
+
+    // const Text 硬编码迁移(en)
+    'database_sortMethod': 'Sort Method',
+  };
 }

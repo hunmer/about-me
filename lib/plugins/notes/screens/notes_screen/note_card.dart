@@ -25,6 +25,9 @@ class NoteCard extends StatelessWidget {
   /// 长按菜单「颜色」入口回调（改样式后由外部持久化刷新）
   final ValueChanged<NoteStyleSelection>? onEditStyle;
 
+  /// 归档/取消归档回调（null 时不显示菜单项）
+  final VoidCallback? onToggleArchive;
+
   const NoteCard({
     super.key,
     required this.note,
@@ -33,6 +36,7 @@ class NoteCard extends StatelessWidget {
     this.onDelete,
     this.onToggle,
     this.onEditStyle,
+    this.onToggleArchive,
   });
 
   /// 显示底部抽屉菜单
@@ -70,6 +74,17 @@ class NoteCard extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   _showStyleEditor(context);
+                },
+              ),
+            if (onToggleArchive != null)
+              DSSheetAction(
+                icon: DsIconKind.archive,
+                label: note.isArchived
+                    ? 'notes_unarchive'.tr
+                    : 'notes_archive'.tr,
+                onTap: () {
+                  Navigator.pop(context);
+                  onToggleArchive!();
                 },
               ),
             DSSheetAction(

@@ -99,14 +99,12 @@ class Reminder {
       pushMethod: ReminderPushMethod.values[json['pushMethod'] as int? ?? 0],
       isEnabled: json['isEnabled'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
-      lastTriggeredAt:
-          json['lastTriggeredAt'] != null
-              ? DateTime.parse(json['lastTriggeredAt'] as String)
-              : null,
-      nextTriggerAt:
-          json['nextTriggerAt'] != null
-              ? DateTime.parse(json['nextTriggerAt'] as String)
-              : null,
+      lastTriggeredAt: json['lastTriggeredAt'] != null
+          ? DateTime.parse(json['lastTriggeredAt'] as String)
+          : null,
+      nextTriggerAt: json['nextTriggerAt'] != null
+          ? DateTime.parse(json['nextTriggerAt'] as String)
+          : null,
       groupId: json['groupId'] as String?,
       priority: json['priority'] as int? ?? 0,
     );

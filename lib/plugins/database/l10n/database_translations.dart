@@ -6,7 +6,7 @@ import 'database_translations_en.dart';
 class DatabaseTranslations extends Translations {
   @override
   Map<String, Map<String, String>> get keys => {
-        'zh_CN': DatabaseTranslationsZh.translations,
-        'en_US': DatabaseTranslationsEn.translations,
-      };
+    'zh_CN': DatabaseTranslationsZh.translations,
+    'en_US': DatabaseTranslationsEn.translations,
+  };
 }

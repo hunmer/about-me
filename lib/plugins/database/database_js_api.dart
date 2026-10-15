@@ -151,7 +151,9 @@ Future<int> _jsGetCount(Map<String, dynamic> params) async {
   if (type == 'databases') {
     return await DatabasePlugin.instance.service.getDatabaseCount();
   } else if (type == 'records' && databaseId != null) {
-    final records = await DatabasePlugin.instance.controller.getRecords(databaseId);
+    final records = await DatabasePlugin.instance.controller.getRecords(
+      databaseId,
+    );
     return records.length;
   }
   return 0;
@@ -181,7 +183,9 @@ Future<String> _jsFindDatabaseBy(Map<String, dynamic> params) async {
       searchParams['nameKeyword'] = value.toString();
     }
 
-    final result = await DatabasePlugin.instance.useCase.searchDatabases(searchParams);
+    final result = await DatabasePlugin.instance.useCase.searchDatabases(
+      searchParams,
+    );
 
     if (result.isFailure) {
       return jsonEncode({'error': result.errorOrNull?.message});
@@ -197,9 +201,7 @@ Future<String> _jsFindDatabaseBy(Map<String, dynamic> params) async {
     if (findAll) {
       return jsonEncode(databases);
     } else {
-      return databases.isEmpty
-          ? jsonEncode(null)
-          : jsonEncode(databases.first);
+      return databases.isEmpty ? jsonEncode(null) : jsonEncode(databases.first);
     }
   } catch (e) {
     return jsonEncode({'error': '查找数据库失败: $e'});
@@ -232,7 +234,9 @@ Future<String> _jsFindDatabaseByName(Map<String, dynamic> params) async {
     // 使用 UseCase 搜索数据库
     final searchParams = <String, dynamic>{'nameKeyword': name};
 
-    final result = await DatabasePlugin.instance.useCase.searchDatabases(searchParams);
+    final result = await DatabasePlugin.instance.useCase.searchDatabases(
+      searchParams,
+    );
 
     if (result.isFailure) {
       return jsonEncode({'error': result.errorOrNull?.message});
@@ -250,9 +254,7 @@ Future<String> _jsFindDatabaseByName(Map<String, dynamic> params) async {
     if (findAll) {
       return jsonEncode(databases);
     } else {
-      return databases.isEmpty
-          ? jsonEncode(null)
-          : jsonEncode(databases.first);
+      return databases.isEmpty ? jsonEncode(null) : jsonEncode(databases.first);
     }
   } catch (e) {
     return jsonEncode({'error': '查找数据库失败: $e'});
@@ -288,7 +290,9 @@ Future<String> _jsFindRecordBy(Map<String, dynamic> params) async {
       'fieldKeyword': value.toString(),
     };
 
-    final result = await DatabasePlugin.instance.useCase.searchRecords(searchParams);
+    final result = await DatabasePlugin.instance.useCase.searchRecords(
+      searchParams,
+    );
 
     if (result.isFailure) {
       return jsonEncode({'error': result.errorOrNull?.message});
@@ -310,9 +314,7 @@ Future<String> _jsFindRecordBy(Map<String, dynamic> params) async {
     if (findAll) {
       return jsonEncode(records);
     } else {
-      return records.isEmpty
-          ? jsonEncode(null)
-          : jsonEncode(records.first);
+      return records.isEmpty ? jsonEncode(null) : jsonEncode(records.first);
     }
   } catch (e) {
     return jsonEncode({'error': '查找记录失败: $e'});

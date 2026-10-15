@@ -86,7 +86,6 @@ class DatabasePlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> registerToApp(
-    
     PluginManager pluginManager,
     ConfigManager configManager,
   ) async {

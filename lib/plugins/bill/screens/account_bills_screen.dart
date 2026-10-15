@@ -239,21 +239,19 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
         final confirmed = await showDSDialog<bool>(
           context: context,
           theme: DSThemeBridge.resolve(context),
-          builder:
-              (context) => DSThemeBridge(
-                child: Builder(
-                  builder:
-                      (context) => DSDialog(
-                        title: 'bill_confirmDelete'.tr,
-                        message: 'bill_deleteBillConfirmation'.tr,
-                        cancelText: 'bill_cancel'.tr,
-                        confirmText: 'bill_delete'.tr,
-                        confirmVariant: DSButtonVariant.destructive,
-                        onCancel: () => Navigator.pop(context, false),
-                        onConfirm: () => Navigator.pop(context, true),
-                      ),
-                ),
+          builder: (context) => DSThemeBridge(
+            child: Builder(
+              builder: (context) => DSDialog(
+                title: 'bill_confirmDelete'.tr,
+                message: 'bill_deleteBillConfirmation'.tr,
+                cancelText: 'bill_cancel'.tr,
+                confirmText: 'bill_delete'.tr,
+                confirmVariant: DSButtonVariant.destructive,
+                onCancel: () => Navigator.pop(context, false),
+                onConfirm: () => Navigator.pop(context, true),
               ),
+            ),
+          ),
         );
         if (confirmed == true) {
           await widget.billPlugin.controller.deleteBill(
@@ -278,13 +276,12 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
           bill.title,
           style: DsTypography.body.copyWith(color: theme.text),
         ),
-        subtitle:
-            bill.tag != null
-                ? Text(
-                  bill.tag!,
-                  style: DsTypography.caption.copyWith(color: theme.textSub),
-                )
-                : null,
+        subtitle: bill.tag != null
+            ? Text(
+                bill.tag!,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              )
+            : null,
         trailing: Text(
           '${isExpense ? '-' : '+'}¥${bill.absoluteAmount.toStringAsFixed(2)}',
           style: DsTypography.body.copyWith(
@@ -350,10 +347,9 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
       context: context,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
-      initialDateRange:
-          _customStartDate != null && _customEndDate != null
-              ? DateTimeRange(start: _customStartDate!, end: _customEndDate!)
-              : null,
+      initialDateRange: _customStartDate != null && _customEndDate != null
+          ? DateTimeRange(start: _customStartDate!, end: _customEndDate!)
+          : null,
     );
 
     if (picked != null && mounted) {
