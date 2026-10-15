@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'app_color_picker.dart';
 import 'icon_picker_dialog.dart';
 
 class CircleIconPicker extends StatelessWidget {
@@ -19,7 +19,7 @@ class CircleIconPicker extends StatelessWidget {
     required this.onColorSelected,
   });
 
-  /// 弹出背景色选择（flutter_colorpicker 的 ColorPicker 为第三方保留项）
+  /// 弹出背景色选择（AppColorPicker：预设色 + 常规取色器）
   Future<void> _pickBackgroundColor(BuildContext context) async {
     final theme = DSThemeBridge.resolve(context);
     await showDSDialog<void>(
@@ -29,11 +29,9 @@ class CircleIconPicker extends StatelessWidget {
           (dialogContext) => DSDialog(
             title: 'app_selectBackgroundColor'.tr,
             content: SingleChildScrollView(
-              child: ColorPicker(
-                pickerColor: backgroundColor,
+              child: AppColorPicker(
+                selectedColor: backgroundColor,
                 onColorChanged: onColorSelected,
-                showLabel: true,
-                pickerAreaHeightPercent: 0.8,
               ),
             ),
             confirmText: 'app_ok'.tr,

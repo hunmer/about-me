@@ -4,9 +4,9 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/account.dart';
+import 'package:aboutme/widgets/picker/app_color_picker.dart';
 import 'package:aboutme/widgets/picker/icon_picker_dialog.dart';
 import 'package:aboutme/widgets/form_fields/text_input_field.dart';
 
@@ -56,11 +56,10 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
         return AlertDialog(
           title: Text('app_selectBackgroundColor'.tr),
           content: SingleChildScrollView(
-            child: ColorPicker(
-              pickerColor: _selectedColor,
+            child: AppColorPicker(
+              selectedColor: _selectedColor,
               onColorChanged: (color) => newColor = color,
-              showLabel: true,
-              pickerAreaHeightPercent: 0.8,
+              showLabels: true,
             ),
           ),
           actions: <Widget>[

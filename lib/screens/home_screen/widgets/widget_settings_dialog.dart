@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/picker/app_color_picker.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
 
@@ -452,68 +452,18 @@ class _WidgetSettingsDialogState extends State<WidgetSettingsDialog> {
                             ),
                             SizedBox(height: theme.spacing.lg),
 
-                            // 快速应用预设颜色
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'homeScreen_quickSelectPresetColors'.tr,
-                                style: DsTypography.caption.copyWith(
-                                  color: theme.textSub,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: theme.spacing.sm),
-                            SizedBox(
-                              height: 40,
-                              width: double.infinity,
-                              child: ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: _predefinedColors.length,
-                                separatorBuilder:
-                                    (_, __) =>
-                                        SizedBox(width: theme.spacing.sm),
-                                itemBuilder: (context, index) {
-                                  final color = _predefinedColors[index];
-                                  return GestureDetector(
-                                    onTap: () {
-                                      // 应用预设颜色到选择器
-                                      setState(() {
-                                        pickerColor = color;
-                                      });
-                                    },
-                                    child: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: color,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: theme.stroke),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
                             SizedBox(height: theme.spacing.lg),
 
-                            // 颜色选择器（支持透明通道）
-                            SizedBox(
-                              width: double.infinity,
-                              child: ColorPicker(
-                                pickerColor: pickerColor,
-                                onColorChanged: (Color color) {
-                                  setState(() {
-                                    pickerColor = color;
-                                  });
-                                },
-                                enableAlpha: true, // 启用透明通道
-                                displayThumbColor: true,
-                                labelTypes: const [
-                                  ColorLabelType.rgb,
-                                  ColorLabelType.hsv,
-                                ],
-                                pickerAreaHeightPercent: 0.7,
-                              ),
+                            // 颜色选择器：预设颜色 + 常规取色器（支持透明通道）
+                            AppColorPicker(
+                              selectedColor: pickerColor,
+                              onColorChanged: (Color color) {
+                                setState(() {
+                                  pickerColor = color;
+                                });
+                              },
+                              presets: _predefinedColors,
+                              enableAlpha: true,
                             ),
                             SizedBox(height: theme.spacing.md),
 

@@ -231,7 +231,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
           channel: channel,
           controller: _controller,
           isGridView: true,
-          settingsService: widget.chatPlugin.settingsService,
         ),
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:aboutme/widgets/picker/app_color_picker.dart';
 import 'models/widget_config.dart';
 import 'models/widget_size.dart';
 import 'models/color_config.dart';
@@ -291,15 +291,11 @@ class _ColorPickerWithLabel extends StatelessWidget {
         return AlertDialog(
           title: Text('widget_selectColor'.tr),
           content: SingleChildScrollView(
-            child: ColorPicker(
-              pickerColor: pickerColor,
+            child: AppColorPicker(
+              selectedColor: pickerColor,
               onColorChanged: (Color color) {
                 pickerColor = color;
               },
-              pickerAreaHeightPercent: 0.8,
-              enableAlpha: false,
-              displayThumbColor: true,
-              labelTypes: const [],
             ),
           ),
           actions: <Widget>[

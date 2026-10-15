@@ -2,7 +2,27 @@ part of 'chat_screen.dart';
 
 /// 顶栏：标题 / 操作按钮 / 更多菜单
 extension _ChatScreenTopBarExt on _ChatScreenState {
-  /// 顶栏标题：会话名 + Agent/输入中状态，点击打开 Agent 选择器
+  /// 获取 Agent 显示文本
+  String _getAgentDisplayText() {
+    if (_isChainMode) {
+      final chainLength = _agentChain?.length ?? 0;
+      if (chainLength == 0) return '配置 Agent 链';
+      return '$chainLength 个 Agent 链';
+    } else {
+      return _currentAgent?.name ?? 'agent_chat_selectAgent'.tr;
+    }
+  }
+
+  /// 检查是否有有效的 Agent
+  bool _hasValidAgent() {
+    if (_isChainMode) {
+      return _agentChain != null && _agentChain!.isNotEmpty;
+    } else {
+      return _currentAgent != null;
+    }
+  }
+
+  /// 顶栏标题：会话名 + Agent/输入中状态
   Widget _buildAgentTitle() {
     final isTyping =
         _controller.isSending ||
@@ -13,84 +33,74 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _showAgentSelector,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 240),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.conversation.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: DsTypography.body.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.text,
-                    ),
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 240),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.conversation.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTypography.body.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.text,
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 正在输入状态（替代 agent 信息显示）
-                      if (isTyping) ...[
-                        SizedBox(
-                          width: 6,
-                          height: 6,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: theme.primary,
-                              shape: BoxShape.circle,
-                            ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 正在输入状态（替代 agent 信息显示）
+                    if (isTyping) ...[
+                      SizedBox(
+                        width: 6,
+                        height: 6,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: theme.primary,
+                            shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            _controller.typingStatusText ?? '正在输入中…',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: DsTypography.caption.copyWith(
-                              color: theme.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ] else ...[
-                        DsIcon(
-                          _isChainMode ? DsIconKind.layers : DsIconKind.bot,
-                          size: 12,
-                          color: theme.textSub,
-                        ),
-                        const SizedBox(width: 4),
-                        // 显示 agent 信息
-                        Flexible(
-                          child: Text(
-                            _getAgentDisplayText(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: DsTypography.caption.copyWith(
-                              color: _hasValidAgent()
-                                  ? theme.textSub
-                                  : theme.warning,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                       const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          _controller.typingStatusText ?? '正在输入中…',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ] else ...[
                       DsIcon(
-                        DsIconKind.chevronDown,
-                        size: 14,
+                        _isChainMode ? DsIconKind.layers : DsIconKind.bot,
+                        size: 12,
                         color: theme.textSub,
                       ),
+                      const SizedBox(width: 4),
+                      // 显示 agent 信息
+                      Flexible(
+                        child: Text(
+                          _getAgentDisplayText(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DsTypography.caption.copyWith(
+                            color: _hasValidAgent()
+                                ? theme.textSub
+                                : theme.warning,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ],
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           );
         },
@@ -98,7 +108,7 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
     );
   }
 
-  /// 顶栏操作按钮：工具Agent配置/工具模板/TTS/语音通话/更多菜单
+  /// 顶栏操作按钮：工具模板/TTS/语音通话/更多菜单
   List<Widget> _buildAgentActions() {
     // 颜色在构建期解析（按钮挂到导航壳的 actions 槽位，不依赖渲染处主题祖树）
     final theme = DSThemeBridge.resolve(context);
@@ -134,14 +144,6 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
     }
 
     return [
-      DSIconButton(
-        icon: DsIconKind.gear,
-        size: 36,
-        color: theme.surfaceAlt,
-        iconColor: theme.textSub,
-        onPressed: _showToolAgentsConfig,
-        tooltip: '工具调用 Agent',
-      ),
       DSIconButton(
         icon: DsIconKind.clipboard,
         size: 36,
@@ -219,25 +221,6 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
                 _showTokenStats();
               },
             ),
-            _AppBarMenuAction(
-              icon: DsIconKind.trash,
-              label: 'agent_chat_confirmClear'.tr,
-              theme: popoverTheme,
-              danger: true,
-              onTap: () {
-                close();
-                _showClearMessagesConfirm();
-              },
-            ),
-            _AppBarMenuAction(
-              icon: DsIconKind.gear,
-              label: 'agent_chat_conversationSettings'.tr,
-              theme: popoverTheme,
-              onTap: () {
-                close();
-                _showSettings();
-              },
-            ),
           ],
         );
       },
@@ -260,18 +243,16 @@ class _AppBarMenuAction extends StatelessWidget {
     required this.label,
     required this.theme,
     required this.onTap,
-    this.danger = false,
   });
 
   final DsIconKind icon;
   final String label;
   final AppThemeData theme;
   final VoidCallback onTap;
-  final bool danger;
 
   @override
   Widget build(BuildContext context) {
-    final accent = danger ? theme.danger : theme.text;
+    final accent = theme.text;
     return Pressable(
       onPressed: onTap,
       builder: (context, states) {
@@ -293,70 +274,6 @@ class _AppBarMenuAction extends StatelessWidget {
                 child: Text(
                   label,
                   style: DsTypography.caption.copyWith(color: accent),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// 配置模式选择行（单 Agent / Agent 链）
-class _ModeOption extends StatelessWidget {
-  const _ModeOption({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.accent,
-  });
-
-  final DsIconKind icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final Color? accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-    final effective = accent ?? theme.text;
-    return Pressable(
-      onPressed: onTap,
-      builder: (context, states) {
-        final pressed = states.contains(WidgetState.pressed);
-        return Container(
-          padding: EdgeInsets.all(theme.spacing.md),
-          decoration: BoxDecoration(
-            color: pressed ? theme.surfaceAlt : null,
-            borderRadius: theme.radii.lg,
-            border: Border.all(color: theme.textSub.withValues(alpha: 0.35)),
-          ),
-          child: Row(
-            children: [
-              DsIcon(icon, size: 24, color: effective),
-              SizedBox(width: theme.spacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: DsTypography.body.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.text,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: DsTypography.caption.copyWith(
-                        color: theme.textSub,
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ],

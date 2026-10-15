@@ -122,15 +122,20 @@ mixin MessageHandlerMixin on BaseTimelineController {
   /// [saveState] - 是否保存过滤后的状态，默认为 true
   void filterMessages({bool saveState = true}) {
     debugPrint('Timeline: 开始过滤消息...');
-    
+
+    // 只显示当前用户自己的消息
+    final currentUserId = chatPlugin.configService.currentUser.id;
+    final ownMessages = allMessages
+        .where((message) => message.user.id == currentUserId)
+        .toList();
+
     // 先应用搜索过滤
     if (searchQuery.isEmpty) {
-      filteredMessages = List.from(allMessages);
+      filteredMessages = List.from(ownMessages);
     } else {
       final query = searchQuery.toLowerCase();
-      filteredMessages = allMessages.where((message) {
-        return message.content.toLowerCase().contains(query) ||
-            message.user.username.toLowerCase().contains(query);
+      filteredMessages = ownMessages.where((message) {
+        return message.content.toLowerCase().contains(query);
       }).toList();
     }
 

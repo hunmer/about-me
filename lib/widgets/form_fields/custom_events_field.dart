@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/contact/models/custom_activity_event_model.dart';
+import 'package:aboutme/widgets/picker/app_color_picker.dart';
 
 /// 自定义活动事件字段
 ///
@@ -182,8 +182,8 @@ class _CustomEventsFieldState extends State<CustomEventsField> {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         content: SingleChildScrollView(
-                          child: ColorPicker(
-                            pickerColor: color,
+                          child: AppColorPicker(
+                            selectedColor: color,
                             onColorChanged: (newColor) {
                               setState(() {
                                 _events[index] = CustomActivityEvent(
@@ -194,7 +194,6 @@ class _CustomEventsFieldState extends State<CustomEventsField> {
                               });
                               widget.onEventsChanged(_events);
                             },
-                            pickerAreaHeightPercent: 0.8,
                           ),
                         ),
                         actions: [

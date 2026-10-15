@@ -204,7 +204,6 @@ class _TagMessagesScreenState extends State<TagMessagesScreen> {
           channel: channel,
           controller: _controller,
           isGridView: true,
-          settingsService: widget.chatPlugin.settingsService,
         ),
       ),
     );

@@ -379,16 +379,6 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
             Text(
               '当前Agent: ${_currentAgent!.name}',
               style: DsTypography.body.copyWith(color: theme.textSub),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: DSButton(
-                label: 'agent_chat_selectAgent'.tr,
-                icon: DsIconKind.bot,
-                variant: DSButtonVariant.outline,
-                onPressed: _showAgentSelector,
-              ),
             ),
         ],
       ),

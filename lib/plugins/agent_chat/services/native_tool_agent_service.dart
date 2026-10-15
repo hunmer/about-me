@@ -245,32 +245,11 @@ class NativeToolAgentService {
       );
     }
 
-    if (useJsTools) {
-      final apiDocs = tools
-          .map(
-            (tool) =>
-                '${tool.name}: ${tool.description}\n参数定义：${tool.inputSchema.toJson()}',
-          )
-          .join('\n\n');
-      tools = [
-        Tool<Map<String, dynamic>>(
-          name: 'run_js',
-          description:
-              '执行 JavaScript，可用 await Aboutme.plugins.<插件>.<方法>(参数对象) 调用 API。'
-              '用 setResult(value); return value; 返回结果。\n$apiDocs',
-          inputSchema: Schema.fromMap(
-            ToolSchemaBuilder.buildSchemaMap([
-              ToolParameter(
-                name: 'code',
-                type: 'string',
-                description: '要执行的 JavaScript 代码',
-              ),
-            ]),
-          ),
-          onCall: (args) => _dispatchJs(run, args),
-        ),
-      ];
-    }
+    tools = buildToolSet(
+      pluginTools: tools,
+      onRunJs: (args) => _dispatchJs(run, args),
+      useJsTools: useJsTools,
+    );
 
     // contextMessages 中的 system 消息（活人感后缀等）拼接到 system prompt
     final systemExtras = contextMessages
@@ -420,6 +399,39 @@ class NativeToolAgentService {
   }
 
   // ---------- 工具集构建 ----------
+
+  /// 普通模式保留 JS 作为补充；JS 模式只注册 run_js。
+  static List<Tool<Map<String, dynamic>>> buildToolSet({
+    required List<Tool<Map<String, dynamic>>> pluginTools,
+    required Future<Map<String, dynamic>> Function(Map<String, dynamic>)
+    onRunJs,
+    bool useJsTools = false,
+  }) {
+    final apiDocs = pluginTools
+        .map(
+          (tool) =>
+              '${tool.name}: ${tool.description}\n参数定义：${tool.inputSchema.toJson()}',
+        )
+        .join('\n\n');
+    final jsTool = Tool<Map<String, dynamic>>(
+      name: 'run_js',
+      description:
+          '${useJsTools ? '' : '优先使用插件工具；仅在需要脚本组合或插件工具无法满足时使用。'}'
+          '执行 JavaScript，可用 await Aboutme.plugins.<插件>.<方法>(参数对象) 调用 API。'
+          '用 setResult(value); return value; 返回结果。\n$apiDocs',
+      inputSchema: Schema.fromMap(
+        ToolSchemaBuilder.buildSchemaMap([
+          ToolParameter(
+            name: 'code',
+            type: 'string',
+            description: '要执行的 JavaScript 代码',
+          ),
+        ]),
+      ),
+      onCall: onRunJs,
+    );
+    return [if (!useJsTools) ...pluginTools, jsTool];
+  }
 
   (List<Tool<Map<String, dynamic>>>, Map<String, NativeToolMeta>) _buildTools(
     _NativeToolRunContext run,

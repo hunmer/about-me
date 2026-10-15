@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/plugins/tts/widgets/tts_settings_dialog.dart';
-import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
@@ -30,17 +29,12 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/core/services/toast_service.dart';
-import 'package:aboutme/core/plugin_manager.dart';
-import 'package:aboutme/plugins/openai/openai_plugin.dart';
-import 'package:aboutme/plugins/openai/models/llm_models.dart';
-import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
 import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'components/message_bubble.dart';
 import 'components/message_input.dart';
 import 'components/save_tool_dialog.dart';
-import 'components/agent_chain_config_dialog.dart';
 import 'components/markdown_content.dart';
 import 'components/tool_detail_dialog.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
@@ -62,7 +56,6 @@ part 'chat_screen_suggestions.dart';
 part 'chat_screen_topbar.dart';
 part 'chat_screen_message_list.dart';
 part 'chat_screen_dialogs.dart';
-part 'chat_screen_agent_config.dart';
 part 'chat_screen_search_filter.dart';
 
 /// 聊天界面
@@ -360,7 +353,6 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
     debugPrint('[ChatScreen] dispose 完成');
   }
-
 }
 
 /// 顶栏气泡菜单行

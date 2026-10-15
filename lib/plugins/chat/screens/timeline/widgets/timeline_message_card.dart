@@ -1,10 +1,7 @@
-import 'dart:io';
-import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
-import 'package:path/path.dart' as path;
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/models/file_message.dart';
@@ -12,7 +9,6 @@ import 'package:aboutme/plugins/chat/utils/date_formatter.dart';
 import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
 import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
 import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
-import 'package:aboutme/plugins/chat/services/chat_config_service.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/utils/text_highlight.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/controllers/timeline_controller/base_controller.dart';
 import 'package:aboutme/plugins/chat/utils/message_options_handler.dart';
@@ -25,7 +21,6 @@ class TimelineMessageCard extends StatelessWidget {
   final Channel channel;
   final MessageActionsController controller;
   final bool isGridView;
-  final ChatConfigService? settingsService;
 
   const TimelineMessageCard({
     super.key,
@@ -33,7 +28,6 @@ class TimelineMessageCard extends StatelessWidget {
     required this.channel,
     required this.controller,
     this.isGridView = false,
-    this.settingsService,
   });
 
   @override
@@ -97,66 +91,13 @@ class TimelineMessageCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 头像和用户名
-              Row(
-                children: [
-                  // 根据设置决定是否显示头像
-                  if (settingsService?.showAvatarInTimeline ?? true) ...[
-                    Container(
-                      width: isGridView ? 28 : 40,
-                      height: isGridView ? 28 : 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: theme.primary,
-                      ),
-                      child:
-                          message.user.iconPath != null
-                              ? FutureBuilder<String>(
-                                future: _getAbsolutePath(
-                                  message.user.iconPath!,
-                                ),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasData &&
-                                      snapshot.data != null) {
-                                    return ClipOval(
-                                      child: Image.file(
-                                        File(snapshot.data!),
-                                        width: isGridView ? 28 : 40,
-                                        height: isGridView ? 28 : 40,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    );
-                                  }
-                                  return _buildDefaultAvatar(theme, isGridView);
-                                },
-                              )
-                              : _buildDefaultAvatar(theme, isGridView),
-                    ),
-                    SizedBox(width: isGridView ? 8 : 12),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          message.user.username,
-                          style:
-                              isGridView
-                                  ? DsTypography.heading
-                                  : DsTypography.title,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          DateFormatter.formatDateTime(message.date, context),
-                          style:
-                              isGridView
-                                  ? DsTypography.caption.copyWith(fontSize: 10)
-                                  : DsTypography.caption,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              // 时间
+              Text(
+                DateFormatter.formatDateTime(message.date, context),
+                style:
+                    isGridView
+                        ? DsTypography.caption.copyWith(fontSize: 10)
+                        : DsTypography.caption,
               ),
 
               SizedBox(height: isGridView ? 8 : 12),
@@ -413,30 +354,6 @@ class TimelineMessageCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDefaultAvatar(AppThemeData theme, bool isGridView) {
-    return Center(
-      child: Text(
-        message.user.username.isNotEmpty
-            ? message.user.username[0].toUpperCase()
-            : '?',
-        style: TextStyle(
-          color: theme.onPrimary,
-          fontSize: isGridView ? 12 : 16,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Future<String> _getAbsolutePath(String relativePath) async {
-    final appDir = await StorageManager.getApplicationDocumentsDirectory();
-    return path.join(
-      appDir.path,
-      'app_data',
-      relativePath.replaceFirst('./', ''),
     );
   }
 }

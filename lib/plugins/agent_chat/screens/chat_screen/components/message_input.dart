@@ -321,16 +321,27 @@ class _MessageInputState extends State<MessageInput> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Text(
-                    widget.controller.useJsTools ? 'JS API 模式' : '插件 Tool 模式',
-                  ),
                   const Spacer(),
-                  const Text('使用 JS'),
-                  Switch.adaptive(
-                    value: widget.controller.useJsTools,
-                    onChanged: widget.controller.isSending
-                        ? null
-                        : widget.controller.setUseJsTools,
+                  Semantics(
+                    toggled: widget.controller.useJsTools,
+                    child: DSIconButton(
+                      icon: DsIconKind.code,
+                      size: 36,
+                      color: widget.controller.useJsTools
+                          ? theme.primary
+                          : theme.surfaceAlt,
+                      iconColor: widget.controller.useJsTools
+                          ? theme.onPrimary
+                          : theme.textSub,
+                      tooltip: widget.controller.useJsTools
+                          ? '仅使用 JS：已开启'
+                          : '仅使用 JS：已关闭（插件 Tools 与 JS 均可用）',
+                      onPressed: widget.controller.isSending
+                          ? null
+                          : () => widget.controller.setUseJsTools(
+                              !widget.controller.useJsTools,
+                            ),
+                    ),
                   ),
                 ],
               ),

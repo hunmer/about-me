@@ -7,6 +7,39 @@ import 'package:aboutme/plugins/agent_chat/services/native_tool_agent_service.da
 import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
 
 void main() {
+  group('工具执行模式', () {
+    late Tool<Map<String, dynamic>> pluginTool;
+    setUp(() {
+      pluginTool = Tool<Map<String, dynamic>>(
+        name: 'bill',
+        description: '账单插件',
+        inputSchema: Schema.fromMap(ToolSchemaBuilder.buildSchemaMap([])),
+        onCall: (args) async => {'ok': true},
+      );
+    });
+
+    test('默认同时提供插件工具与 run_js', () {
+      final tools = NativeToolAgentService.buildToolSet(
+        pluginTools: [pluginTool],
+        onRunJs: (args) async => {'result': args['code']},
+      );
+      expect(tools.map((t) => t.name), ['bill', 'run_js']);
+      expect(tools.first, same(pluginTool));
+      expect(tools.last.description, contains('优先使用插件工具'));
+    });
+
+    test('开启 JS 模式时只提供 run_js', () {
+      final tools = NativeToolAgentService.buildToolSet(
+        pluginTools: [pluginTool],
+        onRunJs: (args) async => {'result': args['code']},
+        useJsTools: true,
+      );
+      expect(tools.map((t) => t.name), ['run_js']);
+      expect(tools.single.description, contains('账单插件'));
+      expect(tools.single.description, isNot(contains('优先使用插件工具')));
+    });
+  });
+
   group('ToolParameter 嵌套 properties 解析', () {
     test('object 参数解析嵌套属性', () {
       final param = ToolParameter.fromJson({
