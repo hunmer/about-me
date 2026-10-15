@@ -168,13 +168,12 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
   }
 
   void _listenWordCount() {
-    _contentController!.document.changes.listen((_) {
+    final controller = _contentController!;
+    controller.document.changes.listen((change) {
+      _tryConvertCheckboxMarkdown(change, controller);
       if (mounted) {
         setState(() {
-          _wordCount = _contentController!.document
-              .toPlainText()
-              .trim()
-              .length;
+          _wordCount = controller.document.toPlainText().trim().length;
         });
       }
     });
@@ -635,6 +634,10 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
                   controller: _contentController!,
                   attribute: quill.Attribute.ol,
                 ),
+                // Check list
+                quill.QuillToolbarToggleCheckListButton(
+                  controller: _contentController!,
+                ),
                 // Media
                 QuillToolbarImageButton(controller: _contentController!),
               ],
@@ -688,6 +691,60 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
         ),
       ],
     );
+  }
+}
+
+/// 行首的 markdown 复选框短语（含结尾空格）与勾选状态
+const List<(String, bool)> _checkboxMarkdownPhrases = [
+  ('- [x] ', true),
+  ('- [X] ', true),
+  ('- [ ] ', false),
+];
+
+/// 输入空格时识别行首 `- [ ] ` / `- [x] `，把该行转为复选框列表项。
+/// 走文档变更流而非按键事件，软键盘同样生效；撤销重插入的不是
+/// 单个空格，因此撤销后不会被立刻再次转换。
+void _tryConvertCheckboxMarkdown(
+    quill.DocChange change, quill.QuillController controller) {
+  if (change.source != quill.ChangeSource.local) return;
+  var insertPos = 0;
+  String? inserted;
+  for (final op in change.change.operations) {
+    if (op.isDelete) return;
+    if (op.isInsert) {
+      inserted = op.data is String ? op.data as String : null;
+      break;
+    }
+    insertPos += op.data is int ? op.data as int : 0;
+  }
+  if (inserted != ' ') return;
+
+  final text = controller.document.toPlainText();
+  if (insertPos < 0 || insertPos > text.length) return;
+  var lineStart = insertPos;
+  while (lineStart > 0 && text[lineStart - 1] != '\n') {
+    lineStart--;
+  }
+  var lineEnd = insertPos;
+  while (lineEnd < text.length && text[lineEnd] != '\n') {
+    lineEnd++;
+  }
+  final line = text.substring(lineStart, lineEnd);
+  for (final (phrase, checked) in _checkboxMarkdownPhrases) {
+    if (!line.startsWith(phrase)) continue;
+    controller.replaceText(lineStart, phrase.length, '', null);
+    controller.updateSelection(
+      TextSelection.collapsed(
+        offset: insertPos - phrase.length > lineStart
+            ? insertPos - phrase.length
+            : lineStart,
+      ),
+      quill.ChangeSource.local,
+    );
+    controller.formatSelection(
+      checked ? quill.Attribute.checked : quill.Attribute.unchecked,
+    );
+    return;
   }
 }
 
