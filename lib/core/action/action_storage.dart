@@ -9,11 +9,8 @@ import 'package:flutter/material.dart';
 import 'models/action_instance.dart';
 import 'models/action_group.dart';
 
-/// 存储配置版本
-const String STORAGE_VERSION = '1.0';
-
 /// 动作存储配置文件名（globalStorage 存储 key，位于 app_data 根目录）
-const String CONFIG_FILE_NAME = 'floating_ball_config_v1.json';
+const String CONFIG_FILE_NAME = 'action_config.json';
 
 /// 备份文件所在目录（app_data 下的子目录）
 const String _backupDir = 'action_config_backups';
@@ -71,7 +68,6 @@ class ActionStorage {
       }
 
       return ActionStorageData(
-        version: json['version'] as String? ?? STORAGE_VERSION,
         lastModified:
             DateTime.tryParse(json['lastModified'] as String? ?? '') ??
             DateTime.now(),
@@ -88,7 +84,6 @@ class ActionStorage {
   }
 
   ActionStorageData _emptyConfig() => ActionStorageData(
-        version: STORAGE_VERSION,
         lastModified: DateTime.now(),
         gestureActions: {},
         customActions: {},
@@ -109,8 +104,7 @@ class ActionStorage {
     }
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final backupKey =
-        '$_backupDir/floating_ball_config_v1_backup_$timestamp.json';
+    final backupKey = '$_backupDir/action_config_backup_$timestamp.json';
     await globalStorage.writeFile(backupKey, content);
 
     return backupKey;
@@ -200,16 +194,8 @@ class ActionStorage {
       final errors = <String>[];
       final warnings = <String>[];
 
-      // 检查版本
-      final version = json['version'] as String?;
-      if (version == null) {
-        errors.add('Missing version field');
-      } else if (version != STORAGE_VERSION) {
-        warnings.add('Version mismatch: expected $STORAGE_VERSION, got $version');
-      }
-
       // 检查必需字段
-      final requiredFields = ['version', 'lastModified'];
+      final requiredFields = ['lastModified'];
       for (final field in requiredFields) {
         if (!json.containsKey(field)) {
           errors.add('Missing required field: $field');
@@ -301,7 +287,6 @@ class ActionStorage {
     final data = await loadConfig();
 
     final exportData = {
-      'exportVersion': STORAGE_VERSION,
       'exportTime': DateTime.now().toIso8601String(),
       'data': data.toJson(),
     };
@@ -352,7 +337,6 @@ class ActionStorage {
       }
 
       final data = ActionStorageData(
-        version: dataJson['version'] as String? ?? STORAGE_VERSION,
         lastModified: DateTime.now(),
         gestureActions: gestureActions,
         customActions: customActions,
@@ -380,7 +364,6 @@ class ActionStorage {
 
 /// 存储数据类
 class ActionStorageData {
-  final String version;
   final DateTime lastModified;
   final Map<FloatingBallGesture, GestureActionConfig> gestureActions;
   final Map<String, ActionInstance> customActions;
@@ -388,7 +371,6 @@ class ActionStorageData {
   final Map<String, dynamic> settings;
 
   ActionStorageData({
-    required this.version,
     required this.lastModified,
     required this.gestureActions,
     required this.customActions,
@@ -398,7 +380,6 @@ class ActionStorageData {
 
   Map<String, dynamic> toJson() {
     return {
-      'version': version,
       'lastModified': lastModified.toIso8601String(),
       'gestureActions': gestureActions.map(
         (gesture, config) => MapEntry(gesture.name, config.toJson()),
