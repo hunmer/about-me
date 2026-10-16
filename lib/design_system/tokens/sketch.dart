@@ -550,12 +550,23 @@ class DsSketchSticker {
   final Color? color;
 }
 
-/// 单枚贴纸的渲染层：锚定 → 平移 → 旋转，IgnorePointer 不挡内容交互
+/// 单枚贴纸的渲染层：锚定 → 平移 → 旋转，IgnorePointer 不挡内容交互。
+/// 有描画动画时在进度后段（描完排线时）缩放弹入 + 淡入
 class _DsSketchStickerLayer extends StatelessWidget {
-  const _DsSketchStickerLayer({required this.sticker, this.color});
+  const _DsSketchStickerLayer({
+    required this.sticker,
+    this.color,
+    this.progress,
+  });
 
   final DsSketchSticker sticker;
   final Color? color;
+
+  /// 环境描画动画（null = 已画完，贴纸直接显示）
+  final Animation<double>? progress;
+
+  /// 贴纸入场占描画进度的后段比例
+  static const double _enterWindow = 0.28;
 
   @override
   Widget build(BuildContext context) {
@@ -567,11 +578,32 @@ class _DsSketchStickerLayer extends StatelessWidget {
             offset: sticker.offset,
             child: Transform.rotate(
               angle: sticker.rotation,
-              child: _buildContent(),
+              child: _buildAnimated(_buildContent()),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAnimated(Widget content) {
+    final animation = progress;
+    if (animation == null) return content;
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) {
+        final t = ((animation.value - (1 - _enterWindow)) / _enterWindow)
+            .clamp(0.0, 1.0);
+        if (t >= 1) return content;
+        // easeOutBack 让 scale 越过 1 再回落，模拟「啪地贴上」
+        return Opacity(
+          opacity: Curves.easeOut.transform(t),
+          child: Transform.scale(
+            scale: Curves.easeOutBack.transform(t),
+            child: content,
+          ),
+        );
+      },
     );
   }
 
@@ -699,6 +731,7 @@ class DsSketchPanel extends StatelessWidget {
           _DsSketchStickerLayer(
             sticker: s,
             color: s.color ?? (s.text != null ? theme.ink : null),
+            progress: progress,
           ),
       ],
     );

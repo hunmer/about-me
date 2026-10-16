@@ -733,23 +733,29 @@ class _ScrapbookCanvasSectionState extends State<_ScrapbookCanvasSection> {
       final seed = record.url.hashCode & 0x7fffffff;
       final rng = math.Random(seed);
       final portrait = seed.isOdd;
-      final width = portrait ? 104.0 : 132.0;
-      final height = portrait ? 138.0 : 100.0;
+      final width = portrait ? 92.0 : 116.0;
+      final height = portrait ? 122.0 : 88.0;
       final col = i % 3;
       final row = i ~/ 3;
       final mood = record.entry.mood;
+      final title = record.entry.title.trim();
+      // 照片下方的日记标题 caption（过长截断避免多行撑高重叠）
+      final caption =
+          title.length > 12 ? '${title.substring(0, 12)}…' : title;
 
       items.add(
         ScrapItemData(
           id: 'scrap_$i',
           kind: ScrapItemKind.photo,
           imageUrl: url,
-          x: 18 + col * 124 + (rng.nextDouble() - 0.5) * 18,
-          y: 46 + row * 158 + (rng.nextDouble() - 0.5) * 26,
+          // 三列铺排：列距 130 / 行距 178，留足照片+caption+气泡的空隙
+          x: 14 + col * 130 + (rng.nextDouble() - 0.5) * 10,
+          y: 46 + row * 178 + (rng.nextDouble() - 0.5) * 16,
           width: width,
           height: height,
           rotation: (rng.nextDouble() - 0.5) * 14,
           zIndex: 20 + i,
+          captions: caption.isEmpty ? const [] : [caption],
           // 心情气泡：绘制在照片右上角（见 _buildPhotoItem 的 bubbleText 定位）
           bubbleText:
               mood != null && mood.isNotEmpty

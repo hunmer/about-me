@@ -809,56 +809,68 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
     final theme = DSThemeBridge.resolve(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
-      child: DsSketchPanel(
-        theme: theme,
-        radius: theme.radii.xl,
-        padding: const EdgeInsets.all(8),
-        seed: month.year * 12 + month.month,
-        // 相机贴纸：压在边框右上角外侧，小倾斜增加手账感
-        stickers: const [
-          DsSketchSticker(
-            alignment: Alignment.topRight,
-            offset: Offset(6, -20),
-            size: 34,
-            rotation: 0.18,
-            svg: 'assets/icons/svg/camera.svg',
-          ),
-        ],
-        child: Column(
-          children: [
-            // 简化的月份标题 - 只显示文本
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(
-                DateFormat('yyyy年MM月').format(month),
-                style: DsTypography.heading.copyWith(color: theme.text),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            // 日历内容 - 使用 GestureDetector 包装，确保滚动事件透传给外层 ListView
-            ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxHeight: 400, // 限制最大高度，防止内部滚动
-              ),
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                // 为每个月份的日历添加独立 key，确保它们完全独立管理自己的状态
-                child: SyncfusionCalendarWidget(
-                  key: ValueKey(
-                    'syncfusion_calendar_${month.year}_${month.month}',
-                  ),
-                  dayData: _getCalendarDayData(month),
-                  focusedMonth: month,
-                  selectedDate: widget.selectedDate,
-                  onDaySelected: widget.onDateSelected,
-                  onHeaderTapped: widget.onHeaderTapped,
-                  enableNavigation: false, // 禁用内置导航，使用外部控制
-                  locale: 'zh_CN',
+      // 挂载即描画入场：墨线 + 贴纸一起动画
+      child: WiredDraw(
+        child: Builder(
+          builder: (context) {
+            final progress = WiredDrawTransition.progressOf(context);
+            // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
+            return DsSketchPanel(
+              theme: theme,
+              radius: theme.radii.xl,
+              padding: const EdgeInsets.all(8),
+              seed: month.year * 12 + month.month,
+              progress: progress,
+              // 相机贴纸：压在边框右上角外侧，小倾斜增加手账感
+              stickers: const [
+                DsSketchSticker(
+                  alignment: Alignment.topRight,
+                  offset: Offset(10, -30),
+                  size: 52,
+                  rotation: 0.18,
+                  svg: 'assets/icons/svg/camera.svg',
                 ),
+              ],
+              child: Column(
+                children: [
+                  // 简化的月份标题 - 只显示文本
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      DateFormat('yyyy年MM月').format(month),
+                      style: DsTypography.heading.copyWith(color: theme.text),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  // 日历内容 - 使用 GestureDetector 包装，确保滚动事件透传给外层 ListView
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight: 400, // 限制最大高度，防止内部滚动
+                    ),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      // 为每个月份的日历添加独立 key，确保它们完全独立管理自己的状态
+                      child: SyncfusionCalendarWidget(
+                        key: ValueKey(
+                          'syncfusion_calendar_${month.year}_${month.month}',
+                        ),
+                        dayData: _getCalendarDayData(month),
+                        focusedMonth: month,
+                        selectedDate: widget.selectedDate,
+                        onDaySelected: widget.onDateSelected,
+                        onHeaderTapped: widget.onHeaderTapped,
+                        enableNavigation: false, // 禁用内置导航，使用外部控制
+                        locale: 'zh_CN',
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -1231,70 +1243,84 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      // 大容器走手绘面板：纸底 + 淡排线 + 墨线框（与垂直视图一致）
-      child: DsSketchPanel(
-        theme: theme,
-        radius: theme.radii.xl,
-        padding: const EdgeInsets.all(8),
-        seed: month.year * 12 + month.month,
-        // 相机贴纸：压在边框右上角外侧，小倾斜增加手账感
-        stickers: const [
-          DsSketchSticker(
-            alignment: Alignment.topRight,
-            offset: Offset(6, -20),
-            size: 34,
-            rotation: 0.18,
-            svg: 'assets/icons/svg/camera.svg',
-          ),
-        ],
-        child: Column(
-          children: [
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => widget.onHeaderTapped(month),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Text(
-                    DateFormat('yyyy年MM月').format(month),
-                    style: DsTypography.heading.copyWith(color: theme.text),
-                    textAlign: TextAlign.center,
-                  ),
+      // 挂载即描画入场：墨线 + 贴纸一起动画（与垂直视图一致）
+      child: WiredDraw(
+        child: Builder(
+          builder: (context) {
+            final progress = WiredDrawTransition.progressOf(context);
+            // 大容器走手绘面板：纸底 + 淡排线 + 墨线框（与垂直视图一致）
+            return DsSketchPanel(
+              theme: theme,
+              radius: theme.radii.xl,
+              padding: const EdgeInsets.all(8),
+              seed: month.year * 12 + month.month,
+              progress: progress,
+              // 相机贴纸：压在边框右上角外侧，小倾斜增加手账感
+              stickers: const [
+                DsSketchSticker(
+                  alignment: Alignment.topRight,
+                  offset: Offset(10, -30),
+                  size: 52,
+                  rotation: 0.18,
+                  svg: 'assets/icons/svg/camera.svg',
                 ),
-              ),
-            ),
-            Row(
-              children:
-                  ['日', '一', '二', '三', '四', '五', '六']
-                      .map(
-                        (label) => Expanded(
-                          child: Center(
-                            child: Text(
-                              label,
-                              style: DsTypography.caption.copyWith(
-                                color: theme.textSub,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-            ),
-            const SizedBox(height: 4),
-            for (final row in rows)
-              Row(
+              ],
+              child: Column(
                 children: [
-                  for (final day in row)
-                    Expanded(
-                      child:
-                          day == null
-                              ? const SizedBox(height: _photoRowHeight)
-                              : buildDayCell(day, dayData[day]),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => widget.onHeaderTapped(month),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Text(
+                          DateFormat('yyyy年MM月').format(month),
+                          style: DsTypography.heading.copyWith(
+                            color: theme.text,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children:
+                        ['日', '一', '二', '三', '四', '五', '六']
+                            .map(
+                              (label) => Expanded(
+                                child: Center(
+                                  child: Text(
+                                    label,
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.textSub,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                  ),
+                  const SizedBox(height: 4),
+                  for (final row in rows)
+                    Row(
+                      children: [
+                        for (final day in row)
+                          Expanded(
+                            child:
+                                day == null
+                                    ? const SizedBox(height: _photoRowHeight)
+                                    : buildDayCell(day, dayData[day]),
+                          ),
+                      ],
                     ),
                 ],
               ),
-          ],
+            );
+          },
         ),
       ),
     );
