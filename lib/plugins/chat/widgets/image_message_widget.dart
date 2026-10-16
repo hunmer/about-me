@@ -30,25 +30,34 @@ class ImageMessageWidget extends StatefulWidget {
 }
 
 class _ImageMessageWidgetState extends State<ImageMessageWidget> {
-  /// 路径解析 future（缓存，避免父级重建时重跑导致图片闪 loading）
-  late Future<Widget> _future;
-
   Map<String, dynamic>? get fileInfo =>
       widget.message.metadata?[Message.metadataKeyFileInfo]
           as Map<String, dynamic>?;
 
+  /// 路径解析 future（缓存，避免父级重建时重跑导致图片闪 loading）
+  late Future<Widget> _future;
+  bool _resolved = false;
+
+  /// 在 didChangeDependencies 中初始化：
+  /// _buildImageWidget 同步段访问 InheritedWidget（MediaQuery/DSThemeBridge），
+  /// initState 阶段不允许，首次依赖可用时再创建；
+  /// 仅首次（依赖变化如键盘弹出不重跑，避免闪 loading）
   @override
-  void initState() {
-    super.initState();
-    _future = _buildImageWidget();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_resolved) {
+      _resolved = true;
+      _future = _buildImageWidget();
+    }
   }
 
   @override
   void didUpdateWidget(ImageMessageWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 仅图片源变化时重新解析（切卡等纯重建不触发重载）
-    if (widget.imagePath != oldWidget.imagePath ||
-        widget.message != oldWidget.message) {
+    if (_resolved &&
+        (widget.imagePath != oldWidget.imagePath ||
+            widget.message != oldWidget.message)) {
       _future = _buildImageWidget();
     }
   }

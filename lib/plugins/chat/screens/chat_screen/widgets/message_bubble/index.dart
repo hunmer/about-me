@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter/material.dart' show Colors, Icons, Theme;
+import 'package:flutter/material.dart' show Colors, Theme;
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/event/event.dart' as aboutme_event;
@@ -7,7 +7,6 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
-import 'package:aboutme/widgets/swipe_action/index.dart';
 import 'components/avatar.dart';
 import 'components/favorite_icon.dart';
 import 'components/fixed_symbol.dart';
@@ -280,173 +279,156 @@ class _MessageBubbleState extends State<MessageBubble>
     final backgroundColor = _getBackgroundColor(context);
     final textColor = _getTextColor(context);
 
-    // 从右向左滑露出快捷操作（编辑/复制/分享/删除）；
-    // 不设 leadingActions，从左向右滑留给系统侧滑返回；多选模式禁用避免与点选冲突
-    return SwipeActionWrapper(
-      key: ValueKey('msg_swipe_${widget.message.id}'),
-      isEditMode: widget.isMultiSelectMode,
-      trailingActions: [
-        SwipeActionPresets.edit(onTap: widget.onEdit),
-        SwipeActionOption(
-          label: 'app_copy'.tr,
-          icon: Icons.copy,
-          backgroundColor: Colors.blueGrey,
-          textColor: Colors.white,
-          onTap: widget.onCopy,
-        ),
-        if (widget.onShare != null)
-          SwipeActionPresets.share(onTap: widget.onShare!),
-        SwipeActionPresets.delete(onTap: widget.onDelete),
-      ],
-      child: DSThemeBridge(
-        child: GestureDetector(
-          onLongPress: widget.isMultiSelectMode ? null : widget.onLongPress,
-          onTap: widget.onTap,
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
-            child: ScaleTransition(
-              scale: _entranceScale,
-              // 自己的消息自右上角、他人消息自左上角放大复原
-              alignment: _isCurrentUser
-                  ? Alignment.topRight
-                  : Alignment.topLeft,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: _isCurrentUser
-                    ? MainAxisAlignment.end
-                    : MainAxisAlignment.start,
-                children: [
-                  // 左侧复选框（当前用户的消息在多选模式下显示）
-                  if (_isCurrentUser && widget.isMultiSelectMode)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0, top: 12.0),
-                      child: _buildCheckbox(context),
-                    ),
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: _isCurrentUser
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start,
-                      children: [
-                        // 自己的消息：头像与光标按钮同一栏（镜像他人消息），光标贴整行左缘、头像贴右
-                        if (_isCurrentUser && widget.showActionsOnOwnMessage)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
-                              children: [
-                                _buildActionsToggle(theme, mirror: true),
-                                AnimatedSize(
-                                  duration: const Duration(milliseconds: 200),
-                                  curve: Curves.easeOutCubic,
-                                  alignment: Alignment.centerLeft,
-                                  child: _showActions
-                                      ? _buildActions(theme)
-                                      : const SizedBox.shrink(),
-                                ),
-                                const Spacer(),
-                                if (widget.showAvatar && widget.isFirstOfGroup)
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 4),
-                                    child: MessageAvatar(
-                                      user: _currentMessage.user,
-                                      onTap: widget.onAvatarTap,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          )
-                        else if (_isCurrentUser &&
-                            widget.showAvatar &&
-                            widget.isFirstOfGroup)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 6, right: 4),
-                            child: MessageAvatar(
-                              user: _currentMessage.user,
-                              onTap: widget.onAvatarTap,
-                            ),
-                          ),
-                        // 他人消息：头像与光标按钮行同一栏，按钮贴整行右缘
-                        if (!_isCurrentUser)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
-                              children: [
-                                if (widget.showAvatar && widget.isFirstOfGroup)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 4),
-                                    child: MessageAvatar(
-                                      user: _currentMessage.user,
-                                      onTap: widget.onAvatarTap,
-                                    ),
-                                  ),
-                                const Spacer(),
-                                AnimatedSize(
-                                  duration: const Duration(milliseconds: 200),
-                                  curve: Curves.easeOutCubic,
-                                  alignment: Alignment.centerRight,
-                                  child: _showActions
-                                      ? _buildActions(theme)
-                                      : const SizedBox.shrink(),
-                                ),
-                                _buildActionsToggle(theme),
-                              ],
-                            ),
-                          ),
-                        _buildBubble(theme, backgroundColor, textColor),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (_currentMessage.fixedSymbol != null)
-                              FixedSymbolWidget(
-                                symbol: _currentMessage.fixedSymbol!,
-                              ),
-                            if (widget.onToggleFavorite != null &&
-                                _currentMessage.metadata?['isFavorite'] == true)
-                              FavoriteIcon(
-                                isFavorite: true,
-                                onTap: widget.onToggleFavorite!,
-                              ),
-                            const SizedBox(width: 5),
-                            MessageTimestamp(
-                              date:
-                                  _currentMessage.updatedAt ??
-                                  _currentMessage.createdAt,
-                              isEdited: _currentMessage.updatedAt != null,
-                            ),
-                            // 自己的消息被 AI 已读时显示标记（活人感已读机制）
-                            if (_isCurrentUser &&
-                                (_currentMessage.metadata?['readBy']
-                                            as List<dynamic>?)
-                                        ?.isNotEmpty ==
-                                    true) ...[
-                              const SizedBox(width: 3),
-                              Text(
-                                'chat_read'.tr,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      fontSize: 10,
-                                      color: Colors.blueGrey,
-                                    ),
-                              ),
-                            ],
-                            // 时间戳行尾部插槽（agent 场景的思考过程入口等）
-                            if (widget.infoBarTrailing != null) ...[
-                              const SizedBox(width: 8),
-                              widget.infoBarTrailing!,
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
+    // 快捷操作（编辑/复制/分享/删除）经悬浮操作栏（_buildActions）触发，
+    // 不再用右滑手势（多选模式点选与滑动易冲突）
+    return DSThemeBridge(
+      child: GestureDetector(
+        onLongPress: widget.isMultiSelectMode ? null : widget.onLongPress,
+        onTap: widget.onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
+          child: ScaleTransition(
+            scale: _entranceScale,
+            // 自己的消息自右上角、他人消息自左上角放大复原
+            alignment: _isCurrentUser
+                ? Alignment.topRight
+                : Alignment.topLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: _isCurrentUser
+                  ? MainAxisAlignment.end
+                  : MainAxisAlignment.start,
+              children: [
+                // 左侧复选框（当前用户的消息在多选模式下显示）
+                if (_isCurrentUser && widget.isMultiSelectMode)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0, top: 12.0),
+                    child: _buildCheckbox(context),
                   ),
-                  // 右侧复选框（其他用户的消息在多选模式下显示）
-                  if (!_isCurrentUser && widget.isMultiSelectMode)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0, top: 12.0),
-                      child: _buildCheckbox(context),
-                    ),
-                ],
-              ),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: _isCurrentUser
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      // 自己的消息：头像与光标按钮同一栏（镜像他人消息），光标贴整行左缘、头像贴右
+                      if (_isCurrentUser && widget.showActionsOnOwnMessage)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
+                            children: [
+                              _buildActionsToggle(theme, mirror: true),
+                              AnimatedSize(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeOutCubic,
+                                alignment: Alignment.centerLeft,
+                                child: _showActions
+                                    ? _buildActions(theme)
+                                    : const SizedBox.shrink(),
+                              ),
+                              const Spacer(),
+                              if (widget.showAvatar && widget.isFirstOfGroup)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 4),
+                                  child: MessageAvatar(
+                                    user: _currentMessage.user,
+                                    onTap: widget.onAvatarTap,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                      else if (_isCurrentUser &&
+                          widget.showAvatar &&
+                          widget.isFirstOfGroup)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6, right: 4),
+                          child: MessageAvatar(
+                            user: _currentMessage.user,
+                            onTap: widget.onAvatarTap,
+                          ),
+                        ),
+                      // 他人消息：头像与光标按钮行同一栏，按钮贴整行右缘
+                      if (!_isCurrentUser)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
+                            children: [
+                              if (widget.showAvatar && widget.isFirstOfGroup)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 4),
+                                  child: MessageAvatar(
+                                    user: _currentMessage.user,
+                                    onTap: widget.onAvatarTap,
+                                  ),
+                                ),
+                              const Spacer(),
+                              AnimatedSize(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeOutCubic,
+                                alignment: Alignment.centerRight,
+                                child: _showActions
+                                    ? _buildActions(theme)
+                                    : const SizedBox.shrink(),
+                              ),
+                              _buildActionsToggle(theme),
+                            ],
+                          ),
+                        ),
+                      _buildBubble(theme, backgroundColor, textColor),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_currentMessage.fixedSymbol != null)
+                            FixedSymbolWidget(
+                              symbol: _currentMessage.fixedSymbol!,
+                            ),
+                          if (widget.onToggleFavorite != null &&
+                              _currentMessage.metadata?['isFavorite'] == true)
+                            FavoriteIcon(
+                              isFavorite: true,
+                              onTap: widget.onToggleFavorite!,
+                            ),
+                          const SizedBox(width: 5),
+                          MessageTimestamp(
+                            date:
+                                _currentMessage.updatedAt ??
+                                _currentMessage.createdAt,
+                            isEdited: _currentMessage.updatedAt != null,
+                          ),
+                          // 自己的消息被 AI 已读时显示标记（活人感已读机制）
+                          if (_isCurrentUser &&
+                              (_currentMessage.metadata?['readBy']
+                                          as List<dynamic>?)
+                                      ?.isNotEmpty ==
+                                  true) ...[
+                            const SizedBox(width: 3),
+                            Text(
+                              'chat_read'.tr,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontSize: 10,
+                                    color: Colors.blueGrey,
+                                  ),
+                            ),
+                          ],
+                          // 时间戳行尾部插槽（agent 场景的思考过程入口等）
+                          if (widget.infoBarTrailing != null) ...[
+                            const SizedBox(width: 8),
+                            widget.infoBarTrailing!,
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // 右侧复选框（其他用户的消息在多选模式下显示）
+                if (!_isCurrentUser && widget.isMultiSelectMode)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0, top: 12.0),
+                    child: _buildCheckbox(context),
+                  ),
+              ],
             ),
           ),
         ),

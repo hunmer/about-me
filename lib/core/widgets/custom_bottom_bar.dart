@@ -97,14 +97,16 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
   void _scheduleBottomBarHeightMeasurement() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && widget.bottomBarKey?.currentContext != null) {
-        final renderBox =
-            widget.bottomBarKey!.currentContext!.findRenderObject()
-                as RenderBox;
-        final newHeight = renderBox.size.height;
-        if (_bottomBarHeight != newHeight) {
-          setState(() {
-            _bottomBarHeight = newHeight;
-          });
+        final renderObject =
+            widget.bottomBarKey!.currentContext!.findRenderObject();
+        // 本帧布局异常被跳过的子树仍处于 needsLayout，无 size 可读
+        if (renderObject is RenderBox && renderObject.hasSize) {
+          final newHeight = renderObject.size.height;
+          if (_bottomBarHeight != newHeight) {
+            setState(() {
+              _bottomBarHeight = newHeight;
+            });
+          }
         }
       }
     });
