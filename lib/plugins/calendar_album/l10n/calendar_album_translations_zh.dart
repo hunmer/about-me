@@ -52,6 +52,7 @@ class CalendarAlbumTranslationsZh {
     'calendar_album_tag_count': '标签数量',
     'calendar_album_today_diary': '今日日记',
     'calendar_album_all_photos': '所有照片',
+    'calendar_album_scrapbook_canvas': '贴图画布',
     'calendar_album_no_photos': '无照片',
     'calendar_album_calendar_diary': '日历日记',
     'calendar_album_album': '相册',

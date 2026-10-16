@@ -27,13 +27,11 @@ class _JarMoodSpec {
   final JarMood type;
   final String nameKey;
   final String repEmoji; // 概览列代表表情
-  final List<String> quoteKeys;
 
   const _JarMoodSpec({
     required this.type,
     required this.nameKey,
     required this.repEmoji,
-    required this.quoteKeys,
   });
 }
 
@@ -42,31 +40,16 @@ const Map<JarMood, _JarMoodSpec> _jarMoodSpecs = {
     type: JarMood.perfect,
     nameKey: 'diary_stats_perfectDay',
     repEmoji: '😊',
-    quoteKeys: [
-      'diary_stats_quote_perfect_1',
-      'diary_stats_quote_perfect_2',
-      'diary_stats_quote_perfect_3',
-    ],
   ),
   JarMood.good: _JarMoodSpec(
     type: JarMood.good,
     nameKey: 'diary_stats_goodDay',
     repEmoji: '🤔',
-    quoteKeys: [
-      'diary_stats_quote_good_1',
-      'diary_stats_quote_good_2',
-      'diary_stats_quote_good_3',
-    ],
   ),
   JarMood.nice: _JarMoodSpec(
     type: JarMood.nice,
     nameKey: 'diary_stats_niceDay',
     repEmoji: '😴',
-    quoteKeys: [
-      'diary_stats_quote_nice_1',
-      'diary_stats_quote_nice_2',
-      'diary_stats_quote_nice_3',
-    ],
   ),
 };
 
@@ -563,17 +546,13 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
   }
 
   void _openMoodModal(_BadgeBody badge) {
-    showDSDialog(
+    showDSBottomSheet(
       context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder: (_) => DSThemeBridge(
-        child: Builder(
-          builder: (context) => _MoodModalCard(
-            theme: AppTheme.of(context),
-            badge: badge,
-            onBounceAgain: () => badge.bounceImpulse(),
-          ),
-        ),
+      title: 'diary_stats_moodJarMemory'.tr,
+      builder: (context) => _MoodModalCard(
+        theme: DSThemeBridge.resolve(context),
+        badge: badge,
+        onBounceAgain: () => badge.bounceImpulse(),
       ),
     );
   }
@@ -975,8 +954,6 @@ class _MoodModalCard extends StatefulWidget {
 class _MoodModalCardState extends State<_MoodModalCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _floatCtl;
-  late String _quoteKey;
-  final _rnd = math.Random();
 
   @override
   void initState() {
@@ -985,18 +962,12 @@ class _MoodModalCardState extends State<_MoodModalCard>
       vsync: this,
       duration: const Duration(milliseconds: 3200),
     )..repeat(reverse: true);
-    _quoteKey = _randomQuote();
   }
 
   @override
   void dispose() {
     _floatCtl.dispose();
     super.dispose();
-  }
-
-  String _randomQuote() {
-    final quotes = _jarMoodSpecs[widget.badge.type]!.quoteKeys;
-    return quotes[_rnd.nextInt(quotes.length)];
   }
 
   @override
@@ -1008,77 +979,58 @@ class _MoodModalCardState extends State<_MoodModalCard>
     final entry = widget.badge.entry;
     final hasContent = entry.content.trim().isNotEmpty;
 
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: 320,
-        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
-      ),
-      child: DsSketchPanel(
-        theme: theme,
-        radius: theme.radii.xxl,
-        padding: EdgeInsets.all(theme.spacing.xl),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  const Spacer(),
-                  DSIconButton(
-                    icon: DsIconKind.close,
-                    size: 32,
-                    color: theme.surfaceAlt,
-                    iconColor: theme.textSub,
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              SizedBox(height: theme.spacing.sm),
-              Center(
-                child: JellyBox(
-                  color: _jarMoodColor(theme, widget.badge.type),
-                  radius: theme.radii.circle,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
-                  child: Text(
-                    moodName,
-                    style: DsTypography.caption.copyWith(
-                      color: _jarMoodOnColor(theme, widget.badge.type),
-                      fontWeight: FontWeight.bold,
-                    ),
+    // 面板/把手/标题行由 showDSBottomSheet 提供，这里只出内容
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: JellyBox(
+                color: _jarMoodColor(theme, widget.badge.type),
+                radius: theme.radii.circle,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+                child: Text(
+                  moodName,
+                  style: DsTypography.caption.copyWith(
+                    color: _jarMoodOnColor(theme, widget.badge.type),
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              SizedBox(height: theme.spacing.md),
-              // 悬浮大徽章
-              AnimatedBuilder(
-                animation: _floatCtl,
-                builder: (context, child) {
-                  final t = _floatCtl.value * 2 - 1; // -1..1
-                  return Transform.translate(
-                    offset: Offset(0, -8 * t),
-                    child: Transform.rotate(
-                      angle: t * 0.06,
-                      child: Transform.scale(scale: 1 + 0.04 * t, child: child),
-                    ),
-                  );
-                },
-                child: Center(
-                  child: _MoodFaceBadge(
-                    theme: theme,
-                    spec: diaryMoodSpecOf(mood),
-                    size: 104,
+            ),
+            SizedBox(height: theme.spacing.md),
+            // 悬浮大徽章
+            AnimatedBuilder(
+              animation: _floatCtl,
+              builder: (context, child) {
+                final t = _floatCtl.value * 2 - 1; // -1..1
+                return Transform.translate(
+                  offset: Offset(0, -8 * t),
+                  child: Transform.rotate(
+                    angle: t * 0.06,
+                    child: Transform.scale(scale: 1 + 0.04 * t, child: child),
                   ),
+                );
+              },
+              child: Center(
+                child: _MoodFaceBadge(
+                  theme: theme,
+                  spec: diaryMoodSpecOf(mood),
+                  size: 104,
                 ),
               ),
-              SizedBox(height: theme.spacing.md),
-              Text(
-                '${DateFormat('MMMM d, yyyy').format(entry.date)}'
-                ' · ${'diary_stats_moodJarMemory'.tr}',
-                textAlign: TextAlign.center,
-                style: DsTypography.caption.copyWith(color: theme.textSub),
-              ),
+            ),
+            SizedBox(height: theme.spacing.md),
+            Text(
+              '${DateFormat('MMMM d, yyyy').format(entry.date)}'
+              ' · ${'diary_stats_moodJarMemory'.tr}',
+              textAlign: TextAlign.center,
+              style: DsTypography.caption.copyWith(color: theme.textSub),
+            ),
               // 日记正文（有内容才渲染）
               if (hasContent) ...[
                 SizedBox(height: theme.spacing.md),
@@ -1106,23 +1058,6 @@ class _MoodModalCardState extends State<_MoodModalCard>
                   ),
                 ),
               ],
-              SizedBox(height: theme.spacing.lg),
-              Container(
-                decoration: dsSketchDecoration(
-                  theme: theme,
-                  radius: theme.radii.lg,
-                  fillStyle: DsSketchFill.hachure,
-                  hachureColor: theme.hatch,
-                  hachureGap: 9,
-                ),
-                padding: const EdgeInsets.all(14),
-                child: Text(
-                  _quoteKey.tr,
-                  textAlign: TextAlign.center,
-                  style: DsTypography.body
-                      .copyWith(color: theme.text, height: 1.5),
-                ),
-              ),
               SizedBox(height: theme.spacing.xl),
               Row(
                 children: [
@@ -1130,10 +1065,7 @@ class _MoodModalCardState extends State<_MoodModalCard>
                     child: DSButton(
                       label: 'diary_stats_bounceAgain'.tr,
                       variant: DSButtonVariant.outline,
-                      onPressed: () {
-                        widget.onBounceAgain();
-                        setState(() => _quoteKey = _randomQuote());
-                      },
+                      onPressed: widget.onBounceAgain,
                     ),
                   ),
                   SizedBox(width: theme.spacing.md),
@@ -1145,8 +1077,7 @@ class _MoodModalCardState extends State<_MoodModalCard>
                   ),
                 ],
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );

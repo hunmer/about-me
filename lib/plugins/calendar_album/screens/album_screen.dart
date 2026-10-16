@@ -18,6 +18,8 @@ import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.d
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/gallery_viewer.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/scrapbook_canvas_card/scrapbook_canvas_card.dart';
+import 'dart:math' as math;
 
 /// 照片与其所属日记条目的关联记录（过滤/排序/搜索均基于条目元数据）
 class _PhotoRecord {
@@ -42,6 +44,9 @@ class _AlbumScreenState extends State<AlbumScreen> {
   Map<String, dynamic> _multiFilters = {};
   String _searchQuery = '';
   String _sortBy = 'newest'; // newest, oldest
+
+  /// 贴图画布模式：true 时用 ScrapbookCanvasCardWidget 展示照片
+  bool _scrapMode = false;
 
   @override
   void initState() {
@@ -124,7 +129,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
 
   /// 心情/天气存储值转显示文案：优先取翻译键，缺失时回退原值
   /// （历史数据可能直接存中文或 emoji）
-  String _enumLabel(String kind, String value) {
+  static String _enumLabel(String kind, String value) {
     final key = 'calendar_album_${kind}_${value.toLowerCase()}';
     final label = key.tr;
     return label == key ? value : label;
@@ -424,6 +429,19 @@ class _AlbumScreenState extends State<AlbumScreen> {
     );
   }
 
+  /// 右上角切换按钮：进入贴图画布 / 返回瀑布流
+  Widget _buildScrapToggle() {
+    final ds = AppTheme.of(context);
+    return DSIconButton(
+      icon: _scrapMode ? DsIconKind.grid : DsIconKind.spaceDashboard,
+      size: 36,
+      color: ds.surfaceAlt,
+      iconColor: _scrapMode ? ds.primary : ds.textSub,
+      tooltip: 'calendar_album_scrapbook_canvas'.tr,
+      onPressed: () => setState(() => _scrapMode = !_scrapMode),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CalendarController>(
@@ -439,6 +457,8 @@ class _AlbumScreenState extends State<AlbumScreen> {
           title: Text('${'calendar_album_all_photos'.tr} (${photos.length})'),
           largeTitle: 'calendar_album_all_photos'.tr,
           enableLargeTitle: true,
+          // 右上角：瀑布流 ⇄ 贴图画布 切换
+          actions: [_buildScrapToggle()],
           // ===== 搜索 =====
           enableSearchBar: true,
           searchPlaceholder: 'calendar_album_search_photos_placeholder'.tr,
@@ -464,7 +484,9 @@ class _AlbumScreenState extends State<AlbumScreen> {
                     ),
                   ),
                 )
-              : MasonryGridView.count(
+              : _scrapMode
+                  ? _ScrapbookCanvasSection(photos: photos)
+                  : MasonryGridView.count(
                   padding: EdgeInsets.fromLTRB(
                     16,
                     16,
@@ -655,6 +677,103 @@ class _PhotoCellState extends State<_PhotoCell>
         ),
       ),
     );
+  }
+}
+
+/// 贴图画布视图：把过滤后的相册照片铺到 ScrapbookCanvasCardWidget，
+/// 所属日记的心情以云朵气泡贴在照片右上角（ScrapItemData.bubbleText）
+class _ScrapbookCanvasSection extends StatefulWidget {
+  const _ScrapbookCanvasSection({required this.photos});
+
+  final List<_PhotoRecord> photos;
+
+  @override
+  State<_ScrapbookCanvasSection> createState() =>
+      _ScrapbookCanvasSectionState();
+}
+
+class _ScrapbookCanvasSectionState extends State<_ScrapbookCanvasSection> {
+  /// 画布最多铺贴的照片数（无限画布全量解码图片会拖垮内存）
+  static const int _maxItems = 24;
+
+  List<ScrapItemData>? _items;
+  String? _loadedKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadItems();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ScrapbookCanvasSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Consumer 每次 build 都会生成新 list，按 url 签名判断是否需要重建
+    final key = widget.photos.map((r) => r.url).join('|');
+    if (key != _loadedKey) _loadItems();
+  }
+
+  Future<void> _loadItems() async {
+    final photos = widget.photos;
+    final key = photos.map((r) => r.url).join('|');
+    _loadedKey = key;
+
+    final items = <ScrapItemData>[];
+    final visible = photos.take(_maxItems).toList();
+    for (var i = 0; i < visible.length; i++) {
+      final record = visible[i];
+      // 本地相对路径需解析为绝对路径供 Image.file 使用
+      var url = record.url;
+      if (url.isNotEmpty && !url.startsWith('http')) {
+        final abs = await ImageUtils.getAbsolutePath(url);
+        if (abs.isNotEmpty) url = abs;
+      }
+
+      // url 哈希做确定性随机：同列表重建时位置/旋转稳定不跳变
+      final seed = record.url.hashCode & 0x7fffffff;
+      final rng = math.Random(seed);
+      final portrait = seed.isOdd;
+      final width = portrait ? 104.0 : 132.0;
+      final height = portrait ? 138.0 : 100.0;
+      final col = i % 3;
+      final row = i ~/ 3;
+      final mood = record.entry.mood;
+
+      items.add(
+        ScrapItemData(
+          id: 'scrap_$i',
+          kind: ScrapItemKind.photo,
+          imageUrl: url,
+          x: 18 + col * 124 + (rng.nextDouble() - 0.5) * 18,
+          y: 46 + row * 158 + (rng.nextDouble() - 0.5) * 26,
+          width: width,
+          height: height,
+          rotation: (rng.nextDouble() - 0.5) * 14,
+          zIndex: 20 + i,
+          // 心情气泡：绘制在照片右上角（见 _buildPhotoItem 的 bubbleText 定位）
+          bubbleText:
+              mood != null && mood.isNotEmpty
+                  ? _AlbumScreenState._enumLabel('mood', mood)
+                  : null,
+          tape: ScrapTapeData(
+            dx: width * 0.24,
+            dy: -7,
+            angle: -18 + rng.nextDouble() * 36,
+          ),
+        ),
+      );
+    }
+
+    if (mounted) setState(() => _items = items);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _items;
+    if (items == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return ScrapbookCanvasCardWidget(inline: true, items: items);
   }
 }
 

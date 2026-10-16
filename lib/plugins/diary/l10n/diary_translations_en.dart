@@ -140,23 +140,5 @@ class DiaryTranslationsEn {
     'diary_stats_bounceAgain': 'Bounce Again',
     'diary_stats_closeCard': 'Close',
     'diary_stats_moodJarMemory': 'Mood Jar Memory',
-    'diary_stats_quote_perfect_1':
-        'Every little sparkle today made my heart dance with joy.',
-    'diary_stats_quote_perfect_2':
-        "Sunlight in my pocket and stardust in my eyes—what a perfect day.",
-    'diary_stats_quote_perfect_3':
-        "Bottling up today's golden laughter to brighten every tomorrow.",
-    'diary_stats_quote_good_1':
-        'Calm, clear, and gentle—like a quiet breeze across a blue lake.',
-    'diary_stats_quote_good_2':
-        'Peace in the heart and steady steps make for a truly good day.',
-    'diary_stats_quote_good_3':
-        'Pretty clouds overhead and my favorite song playing right on cue.',
-    'diary_stats_quote_nice_1':
-        'Life hides sweet little peach-colored surprises around every corner.',
-    'diary_stats_quote_nice_2':
-        'A warm drink and a gentle smile—simple joys that warm the soul.',
-    'diary_stats_quote_nice_3':
-        'Cheers to myself for showing up today; every gentle moment counts.',
   };
 }

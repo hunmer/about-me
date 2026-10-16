@@ -13,6 +13,7 @@ library;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:skribble/skribble.dart';
 
 import '../theme/app_theme.dart';
@@ -503,6 +504,103 @@ class _DsRoughBoxPainter extends BoxPainter {
   }
 }
 
+/// 手绘贴纸：贴在 [DsSketchPanel] 边框内/外侧的装饰元素
+///
+/// 三选一的内容源：[svg]（asset 路径）/ [asset]（位图 asset 路径）/ [text]。
+/// 定位方式：先按 [alignment] 锚定到面板某角（贴纸边界贴齐边框内侧），
+/// 再用 [offset] 平移（负 dy 向边框外、正 dx 向右侧边框外），
+/// 最后绕贴纸中心旋转 [rotation] 弧度。多个贴纸即可拼出贴纸堆。
+class DsSketchSticker {
+  const DsSketchSticker({
+    required this.alignment,
+    this.offset = Offset.zero,
+    this.size = 36,
+    this.rotation = 0,
+    this.svg,
+    this.asset,
+    this.text,
+    this.color,
+  }) : assert(
+         svg != null || asset != null || text != null,
+         'svg / asset / text 三者必须提供一个',
+       );
+
+  /// 锚点（如 [Alignment.topRight]）
+  final AlignmentGeometry alignment;
+
+  /// 相对锚点的平移（正值向右下；负 dy = 顶出边框外）
+  final Offset offset;
+
+  /// 贴纸边长；text 贴纸当字号用
+  final double size;
+
+  /// 绕中心的旋转角（弧度，手账感的小倾斜如 0.12）
+  final double rotation;
+
+  /// SVG asset 路径
+  final String? svg;
+
+  /// 位图 asset 路径
+  final String? asset;
+
+  /// 文字贴纸内容（默认手写字体）
+  final String? text;
+
+  /// text 贴纸颜色；svg 贴纸单色化滤镜（null = 保持 SVG 原色）
+  final Color? color;
+}
+
+/// 单枚贴纸的渲染层：锚定 → 平移 → 旋转，IgnorePointer 不挡内容交互
+class _DsSketchStickerLayer extends StatelessWidget {
+  const _DsSketchStickerLayer({required this.sticker, this.color});
+
+  final DsSketchSticker sticker;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Align(
+          alignment: sticker.alignment,
+          child: Transform.translate(
+            offset: sticker.offset,
+            child: Transform.rotate(
+              angle: sticker.rotation,
+              child: _buildContent(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    final s = sticker;
+    if (s.svg != null) {
+      return SvgPicture.asset(
+        s.svg!,
+        width: s.size,
+        height: s.size,
+        colorFilter: color == null
+            ? null
+            : ColorFilter.mode(color!, BlendMode.srcIn),
+      );
+    }
+    if (s.asset != null) {
+      return Image.asset(s.asset!, width: s.size, height: s.size);
+    }
+    return Text(
+      s.text ?? '',
+      style: TextStyle(
+        fontSize: s.size,
+        color: color,
+        fontFamily: DsTypography.sketchFamily,
+      ),
+    );
+  }
+}
+
 /// 大容器手绘面板：纸底 + 淡排线 + 墨线框（内容层在排线之上）
 ///
 /// 大面积容器（卡片/对话框/浮层面板）的标准组合。
@@ -523,6 +621,7 @@ class DsSketchPanel extends StatelessWidget {
     this.fillStyle,
     this.seed = 1,
     this.progress,
+    this.stickers = const [],
   });
 
   final Widget? child;
@@ -548,6 +647,9 @@ class DsSketchPanel extends StatelessWidget {
   /// 环境描画动画（外层 WiredDraw 注入）；null = 已画完
   final Animation<double>? progress;
 
+  /// 贴纸堆：贴在边框内/外侧的装饰（图片/SVG/文字），见 [DsSketchSticker]
+  final List<DsSketchSticker> stickers;
+
   @override
   Widget build(BuildContext context) {
     // 结构：底色铺满容器 → 描边/排线铺满容器 → padding 只包裹内容。
@@ -557,7 +659,7 @@ class DsSketchPanel extends StatelessWidget {
     if (content != null && padding != null) {
       content = Padding(padding: padding!, child: content);
     }
-    return Container(
+    Widget panel = Container(
       width: width,
       height: height,
       alignment: alignment,
@@ -585,6 +687,20 @@ class DsSketchPanel extends StatelessWidget {
         ),
         child: content,
       ),
+    );
+    if (stickers.isEmpty) return panel;
+    // 贴纸层包在 Stack 上（不裁剪），可溢出边框外显示；
+    // text 贴纸未显式给色时回落主题墨色
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        panel,
+        for (final s in stickers)
+          _DsSketchStickerLayer(
+            sticker: s,
+            color: s.color ?? (s.text != null ? theme.ink : null),
+          ),
+      ],
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/scrapbook_canvas_card.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/scrapbook_canvas_card/scrapbook_canvas_card.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 手帐无限画布卡片示例（东京 Day 1 拼贴场景）

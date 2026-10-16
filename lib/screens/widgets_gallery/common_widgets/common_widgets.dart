@@ -90,7 +90,7 @@ import 'widgets/petal_radial_chart_card.dart';
 import 'widgets/stacked_folder_card.dart';
 import 'widgets/stacked_accordion_card.dart';
 import 'widgets/cute_notepad_card.dart';
-import 'widgets/scrapbook_canvas_card.dart';
+import 'widgets/scrapbook_canvas_card/scrapbook_canvas_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {

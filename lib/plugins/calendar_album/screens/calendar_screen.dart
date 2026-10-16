@@ -815,6 +815,16 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
         radius: theme.radii.xl,
         padding: const EdgeInsets.all(8),
         seed: month.year * 12 + month.month,
+        // 相机贴纸：压在边框右上角外侧，小倾斜增加手账感
+        stickers: const [
+          DsSketchSticker(
+            alignment: Alignment.topRight,
+            offset: Offset(6, -20),
+            size: 34,
+            rotation: 0.18,
+            svg: 'assets/icons/svg/camera.svg',
+          ),
+        ],
         child: Column(
           children: [
             // 简化的月份标题 - 只显示文本
@@ -1227,6 +1237,16 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
         radius: theme.radii.xl,
         padding: const EdgeInsets.all(8),
         seed: month.year * 12 + month.month,
+        // 相机贴纸：压在边框右上角外侧，小倾斜增加手账感
+        stickers: const [
+          DsSketchSticker(
+            alignment: Alignment.topRight,
+            offset: Offset(6, -20),
+            size: 34,
+            rotation: 0.18,
+            svg: 'assets/icons/svg/camera.svg',
+          ),
+        ],
         child: Column(
           children: [
             GestureDetector(
