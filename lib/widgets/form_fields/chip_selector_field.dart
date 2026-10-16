@@ -125,6 +125,7 @@ class ChipSelectorField extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   selectorTitle ?? 'app_select'.tr,

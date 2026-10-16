@@ -343,7 +343,7 @@ class CheckinListController {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DSSheetAction(
+                    SmoothSheetAction(
                       icon: DsIconKind.layers,
                       label: 'checkin_modifyCardDisplayStyle'.tr,
                       onTap: () {
@@ -351,7 +351,7 @@ class CheckinListController {
                         _showCardStyleDialog(item);
                       },
                     ),
-                    DSSheetAction(
+                    SmoothSheetAction(
                       icon: DsIconKind.edit,
                       label: 'checkin_editCheckinItem'.tr,
                       onTap: () {
@@ -359,7 +359,7 @@ class CheckinListController {
                         _editCheckinItem(item);
                       },
                     ),
-                    DSSheetAction(
+                    SmoothSheetAction(
                       icon: DsIconKind.refresh,
                       label: 'checkin_resetCheckinRecords'.tr,
                       onTap: () {
@@ -367,7 +367,7 @@ class CheckinListController {
                         _showResetConfirmDialog(item);
                       },
                     ),
-                    DSSheetAction(
+                    SmoothSheetAction(
                       icon: DsIconKind.trash,
                       label: 'app_delete'.tr,
                       destructive: true,

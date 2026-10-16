@@ -10,6 +10,7 @@ import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/plugins/calendar_album/widgets/entry_list.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/enhanced_calendar/syncfusion_calendar.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -512,33 +513,32 @@ class _CalendarScreenState extends State<CalendarScreen>
     CalendarController calendarController,
     DateTime selectedDate,
   ) {
-    // 在 showDSBottomSheet 之前获取 TagController 实例
+    // 在 SmoothBottomSheet 之前获取 TagController 实例
     final tagController = Provider.of<TagController>(context, listen: false);
 
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title:
           '${DateFormat('yyyy年MM月dd日').format(selectedDate)}${'calendar_album_diary_for_date'.tr}',
-      builder:
-          (context) => SizedBox(
-            height: MediaQuery.of(context).size.height * 0.55,
-            child: MultiProvider(
-              providers: [
-                ChangeNotifierProvider.value(value: calendarController),
-                ChangeNotifierProvider.value(value: tagController),
-              ],
-              child: Consumer<TagController>(
-                builder: (context, tagController, child) {
-                  return _buildDrawerEntryList(
-                    context,
-                    calendarController,
-                    tagController,
-                    selectedDate,
-                  );
-                },
-              ),
-            ),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.55,
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: calendarController),
+            ChangeNotifierProvider.value(value: tagController),
+          ],
+          child: Consumer<TagController>(
+            builder: (context, tagController, child) {
+              return _buildDrawerEntryList(
+                context,
+                calendarController,
+                tagController,
+                selectedDate,
+              );
+            },
           ),
+        ),
+      ),
     );
   }
 

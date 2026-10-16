@@ -641,32 +641,34 @@ class ContactMainViewState extends State<ContactMainView> {
   Future<void> _showItemActions(Contact contact) async {
     final theme = DSThemeBridge.resolve(context);
 
-    await showDSBottomSheet(
+    await SmoothBottomSheet.showWithTitle(
       context: context,
       title: contact.name,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DSSheetAction(
-            icon: DsIconKind.star,
-            label: contact.isFavorite
-                ? 'contact_removeFromFavorites'.tr
-                : 'contact_addToFavorites'.tr,
-            onTap: () {
-              Navigator.pop(context);
-              _toggleFavorite(contact);
-            },
-          ),
-          DSSheetAction(
-            icon: DsIconKind.trash,
-            label: 'contact_deleteContact'.tr,
-            destructive: true,
-            onTap: () {
-              Navigator.pop(context);
-              _confirmDelete(contact, theme: theme);
-            },
-          ),
-        ],
+      child: Builder(
+        builder: (context) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SmoothSheetAction(
+              icon: DsIconKind.star,
+              label: contact.isFavorite
+                  ? 'contact_removeFromFavorites'.tr
+                  : 'contact_addToFavorites'.tr,
+              onTap: () {
+                Navigator.pop(context);
+                _toggleFavorite(contact);
+              },
+            ),
+            SmoothSheetAction(
+              icon: DsIconKind.trash,
+              label: 'contact_deleteContact'.tr,
+              destructive: true,
+              onTap: () {
+                Navigator.pop(context);
+                _confirmDelete(contact, theme: theme);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

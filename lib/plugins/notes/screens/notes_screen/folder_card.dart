@@ -43,7 +43,7 @@ class FolderCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (onEdit != null)
-                  DSSheetAction(
+                  SmoothSheetAction(
                     icon: DsIconKind.edit,
                     label: 'notes_renameFolder'.tr,
                     onTap: () {
@@ -52,7 +52,7 @@ class FolderCard extends StatelessWidget {
                     },
                   ),
                 if (onToggleArchive != null)
-                  DSSheetAction(
+                  SmoothSheetAction(
                     icon: DsIconKind.archive,
                     label: folder.isArchived
                         ? 'notes_unarchive'.tr
@@ -63,7 +63,7 @@ class FolderCard extends StatelessWidget {
                     },
                   ),
                 if (onDelete != null)
-                  DSSheetAction(
+                  SmoothSheetAction(
                     icon: DsIconKind.trash,
                     label: 'app_delete'.tr,
                     destructive: true,

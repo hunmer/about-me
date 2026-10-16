@@ -660,6 +660,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'StorageBreakdownWidget - 设备存储分段统计展示组件',
         route: '/widgets_gallery/storage_breakdown_widget',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.album,
+        title: '弧形圆盘选择卡片',
+        subtitle: 'ArcRotaryWheelCard - 手绘弧形转轮选择器（仅一个默认尺寸）',
+        route: '/widgets_gallery/arc_rotary_wheel_card',
+      ),
     ];
   }
 

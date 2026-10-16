@@ -14,6 +14,7 @@ import 'package:get/get.dart';
 import 'package:live2d_flutter/live2d_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import '../live2d_online_models.dart';
 import 'bubble_region_editor.dart';

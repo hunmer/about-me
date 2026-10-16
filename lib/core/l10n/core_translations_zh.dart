@@ -121,6 +121,7 @@ const Map<String, String> coreTranslationsZh = {
   'core_unpinPlugin': '取消固定',
   'core_openInOverlay': '小窗打开',
   'core_noMatchingPlugins': '无匹配插件',
+  'core_rotaryPluginHint': '拖动转轮浏览，点击图标打开插件',
 
   // 空状态占位
   'core_noButtons': '暂无按钮',

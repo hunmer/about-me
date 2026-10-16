@@ -4,6 +4,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_executor.dart';
@@ -297,13 +298,13 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
 
   /// 显示底部操作菜单（手绘 sheet）
   void _showActionSheet(ScriptInfo script) {
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: script.name,
-      builder: (context) => Column(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DSSheetAction(
+          SmoothSheetAction(
             icon: script.enabled ? DsIconKind.block : DsIconKind.check,
             label: script.enabled
                 ? 'scripts_center_disableScript'.tr
@@ -314,7 +315,7 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
               _toggleScript(script);
             },
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.edit,
             label: 'app_edit'.tr,
             onTap: () {
@@ -322,7 +323,7 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
               _showScriptDialog(script: script);
             },
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.clock,
             label: 'scripts_center_executionLogs'.tr,
             onTap: () {
@@ -339,7 +340,7 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
               );
             },
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.share,
             label: 'scripts_center_exportScript'.tr,
             onTap: () {
@@ -348,7 +349,7 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
             },
           ),
           if (!script.isBuiltIn)
-            DSSheetAction(
+            SmoothSheetAction(
               icon: DsIconKind.trash,
               label: 'app_delete'.tr,
               destructive: true,

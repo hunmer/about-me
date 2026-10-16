@@ -12,6 +12,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/plugins/timer/services/white_noise_service.dart';
 import 'package:aboutme/plugins/timer/timer_plugin.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 专注详情页（手绘纸墨风）：
 /// 纸底 + 任务色主卡片（墨线框 / 阶段行 / 进度环 / 目标 pill）+ 手绘三圆控制 + 呼吸提示。
@@ -441,41 +442,46 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   /// 白噪音选择弹窗（手绘 sheet，分本地/在线两组）
   void _openSoundscapeSheet() {
     final theme = _dsTheme;
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'timer_soundscapes'.tr,
-      builder: (sheetContext) => ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(sheetContext).size.height * 0.72,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildVolumeRow(theme),
-              Flexible(
-                child: AnimatedBuilder(
-                  animation: Listenable.merge([
-                    WhiteNoiseService.instance.currentId,
-                    WhiteNoiseService.instance.loadingId,
-                  ]),
-                  builder: (context, _) => SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSectionLabel(theme, 'timer_noise_local'.tr),
-                        _buildNoiseGrid(theme, WhiteNoiseService.localPresets),
-                        const SizedBox(height: 14),
-                        _buildSectionLabel(theme, 'timer_noise_online'.tr),
-                        _buildNoiseGrid(theme, WhiteNoiseService.onlinePresets),
-                      ],
+      child: Builder(
+        builder: (sheetContext) => ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.72,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildVolumeRow(theme),
+                Flexible(
+                  child: AnimatedBuilder(
+                    animation: Listenable.merge([
+                      WhiteNoiseService.instance.currentId,
+                      WhiteNoiseService.instance.loadingId,
+                    ]),
+                    builder: (context, _) => SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionLabel(theme, 'timer_noise_local'.tr),
+                          _buildNoiseGrid(theme, WhiteNoiseService.localPresets),
+                          const SizedBox(height: 14),
+                          _buildSectionLabel(theme, 'timer_noise_online'.tr),
+                          _buildNoiseGrid(
+                            theme,
+                            WhiteNoiseService.onlinePresets,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

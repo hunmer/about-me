@@ -7,6 +7,7 @@ import 'package:aboutme/core/services/hand_drawn_style_controller.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/settings_screen/screens/theme_background_settings_screen.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import '../controllers/settings_screen_controller.dart';
 import '../widgets/settings_group.dart';
 import '../widgets/settings_tile.dart';
@@ -59,8 +60,10 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return Scaffold(
-      appBar: AppBar(title: Text('settings_screen_interfaceSettings'.tr)),
+    return SuperCupertinoNavigationWrapper(
+      title: Text('settings_screen_interfaceSettings'.tr),
+      largeTitle: 'settings_screen_interfaceSettings'.tr,
+      enableLargeTitle: false,
       body: DSThemeBridge(
         child: ListView(
           padding: EdgeInsets.fromLTRB(
@@ -73,14 +76,14 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
             SettingsGroup(
               children: [
                 SettingsTile(
-                  icon: Icons.language,
+                  icon: DsIconKind.language,
                   iconColor: DsAccentColors.blue,
                   title: 'settings_screen_languageTitle'.tr,
                   subtitle: 'settings_screen_languageSubtitle'.tr,
                   onTap: () => _controller.toggleLanguage(context),
                 ),
                 SettingsTile(
-                  icon: Icons.brightness_4,
+                  icon: DsIconKind.moon,
                   iconColor: DsAccentColors.indigo,
                   title: 'settings_screen_darkModeTitle'.tr,
                   subtitle: 'settings_screen_darkModeSubtitle'.tr,
@@ -95,7 +98,7 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                   listenable: AppBackgroundController(),
                   builder: (context, _) {
                     return SettingsTile(
-                      icon: Icons.image,
+                      icon: DsIconKind.image,
                       iconColor: DsAccentColors.emerald,
                       title: 'screens_themeSettings'.tr,
                       subtitle:
@@ -125,7 +128,7 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                   title: 'settings_screen_handDrawnGroupTitle'.tr,
                   children: [
                     SettingsTile(
-                      icon: Icons.sticky_note_2,
+                      icon: DsIconKind.stickyNote,
                       iconColor: DsAccentColors.amber,
                       title: 'settings_screen_handDrawnTapeTitle'.tr,
                       subtitle: 'settings_screen_handDrawnTapeSubtitle'.tr,
@@ -136,7 +139,7 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                       ),
                     ),
                     SettingsTile(
-                      icon: Icons.rotate_right,
+                      icon: DsIconKind.rotateRight,
                       iconColor: DsAccentColors.pink,
                       title: 'settings_screen_handDrawnTiltTitle'.tr,
                       subtitle: 'settings_screen_handDrawnTiltSubtitle'.tr,
@@ -147,7 +150,7 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                       ),
                     ),
                     SettingsTile(
-                      icon: Icons.animation,
+                      icon: DsIconKind.animation,
                       iconColor: DsAccentColors.sky,
                       title: 'settings_screen_handDrawnEntranceTitle'.tr,
                       subtitle: 'settings_screen_handDrawnEntranceSubtitle'.tr,

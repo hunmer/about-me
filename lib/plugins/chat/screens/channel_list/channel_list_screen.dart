@@ -1,10 +1,10 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:skribble/skribble.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'controllers/channel_list_controller.dart';
@@ -153,14 +153,15 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
   }
 
   void _showEditChannelDialog(Channel channel) {
-    showDSDialog(
+    SmoothBottomSheet.show(
       context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder: (context) => ChannelDialog(
-        isEditMode: true,
-        channel: channel,
-        onUpdateChannel: _controller.updateChannel,
-      ),
+      builder:
+          (context) => ChannelDialog(
+            isEditMode: true,
+            asSheet: true,
+            channel: channel,
+            onUpdateChannel: _controller.updateChannel,
+          ),
     );
   }
 

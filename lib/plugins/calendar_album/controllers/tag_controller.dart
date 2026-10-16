@@ -227,9 +227,13 @@ class TagController extends ChangeNotifier {
       groups: legacyGroups,
       selectedTags: List.from(selectedTags),
       tagItemBuilder: tagItemBuilder,
-      config: const TagsDialogConfig(
+      config: TagsDialogConfig(
         title: '标签管理',
-        selectionMode: TagsSelectionMode.multiple,
+        // 默认单选：选中即返回（调用方可据此打开标签文件夹）；
+        // 传入 tagItemBuilder 的场景（如添加日记选标签）为多选
+        selectionMode: tagItemBuilder != null
+            ? TagsSelectionMode.multiple
+            : TagsSelectionMode.single,
         enableEditing: true,
         enableBatchEdit: true,
       ),

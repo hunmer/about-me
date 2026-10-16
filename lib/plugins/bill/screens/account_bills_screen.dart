@@ -286,6 +286,7 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
       backgroundColor: theme.surface,
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),

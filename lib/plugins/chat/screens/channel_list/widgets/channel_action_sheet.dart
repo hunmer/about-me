@@ -4,6 +4,7 @@ import 'package:smooth_sheets/smooth_sheets.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 频道操作抽屉
 ///
@@ -94,7 +95,7 @@ class ChannelActionSheet extends StatelessWidget {
                   ),
 
                   // 编辑选项
-                  DSSheetAction(
+                  SmoothSheetAction(
                     icon: DsIconKind.edit,
                     label: 'chat_editChannel'.tr,
                     onTap: () {
@@ -104,7 +105,7 @@ class ChannelActionSheet extends StatelessWidget {
                   ),
 
                   // 固定/取消固定
-                  DSSheetAction(
+                  SmoothSheetAction(
                     icon: DsIconKind.pin,
                     label: channel.isPinned
                         ? 'chat_unpinChannel'.tr
@@ -116,7 +117,7 @@ class ChannelActionSheet extends StatelessWidget {
                   ),
 
                   // 封存/取消封存
-                  DSSheetAction(
+                  SmoothSheetAction(
                     icon: DsIconKind.archive,
                     label: channel.isArchived
                         ? 'chat_unarchiveChannel'.tr
@@ -128,7 +129,7 @@ class ChannelActionSheet extends StatelessWidget {
                   ),
 
                   // 删除选项
-                  DSSheetAction(
+                  SmoothSheetAction(
                     icon: DsIconKind.trash,
                     label: 'chat_deleteChannel'.tr,
                     destructive: true,

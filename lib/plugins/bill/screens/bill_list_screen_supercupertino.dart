@@ -416,6 +416,7 @@ class _BillListScreenSupercupertinoState
                     backgroundColor: sheetTheme.surface,
                     builder: (context) => Column(
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
                           padding: const EdgeInsets.only(top: 4, bottom: 8),
@@ -722,6 +723,7 @@ class _BillListScreenSupercupertinoState
       backgroundColor: theme.surface,
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),

@@ -101,7 +101,6 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
                   Expanded(
                     child: Text(
                       isEdit ? '编辑账户' : '新建账户',
-                      textAlign: TextAlign.center,
                       style: DsTypography.title.copyWith(
                         color: theme.text,
                         fontWeight: FontWeight.bold,

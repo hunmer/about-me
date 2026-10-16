@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import 'gallery_section.dart';
 
@@ -91,14 +92,14 @@ class FeedbackSection extends StatelessWidget {
   }
 
   void _showDemoSheet(BuildContext context) {
-    showDSBottomSheet<void>(
+    SmoothBottomSheet.showWithTitle<void>(
       context: context,
       title: '记录操作',
-      builder:
-          (context) => Column(
+      child:
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DSSheetAction(
+              SmoothSheetAction(
                 icon: DsIconKind.share,
                 label: '分享给好友',
                 trailing: DsIcon(
@@ -108,12 +109,12 @@ class FeedbackSection extends StatelessWidget {
                 ),
                 onTap: () => Navigator.of(context).pop(),
               ),
-              DSSheetAction(
+              SmoothSheetAction(
                 icon: DsIconKind.download,
                 label: '导出记录',
                 onTap: () => Navigator.of(context).pop(),
               ),
-              DSSheetAction(
+              SmoothSheetAction(
                 icon: DsIconKind.trash,
                 label: '删除记录',
                 destructive: true,

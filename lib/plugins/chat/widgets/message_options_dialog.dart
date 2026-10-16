@@ -6,6 +6,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/utils/message_options_handler.dart';
 import 'package:aboutme/widgets/common/cute_notepad_editor.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 消息选项对话框组件
 class MessageOptionsDialog extends StatelessWidget {
@@ -60,22 +61,21 @@ class MessageOptionsDialog extends StatelessWidget {
     bool useRecentSymbols = true,
     bool initiallyShowFixedSymbolDialog = false,
   }) {
-    return showDSBottomSheet(
+    return SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'chat_messageOptions'.tr,
-      builder:
-          (context) => MessageOptionsDialog(
-            message: message,
-            onMessageEdit: onMessageEdit,
-            onMessageDelete: onMessageDelete,
-            onMessageCopy: onMessageCopy,
-            onSetFixedSymbol: onSetFixedSymbol,
-            onSetBubbleColor: onSetBubbleColor,
-            onReply: onReply,
-            onToggleFavorite: onToggleFavorite,
-            useRecentSymbols: useRecentSymbols,
-            initiallyShowFixedSymbolDialog: initiallyShowFixedSymbolDialog,
-          ),
+      child: MessageOptionsDialog(
+        message: message,
+        onMessageEdit: onMessageEdit,
+        onMessageDelete: onMessageDelete,
+        onMessageCopy: onMessageCopy,
+        onSetFixedSymbol: onSetFixedSymbol,
+        onSetBubbleColor: onSetBubbleColor,
+        onReply: onReply,
+        onToggleFavorite: onToggleFavorite,
+        useRecentSymbols: useRecentSymbols,
+        initiallyShowFixedSymbolDialog: initiallyShowFixedSymbolDialog,
+      ),
     );
   }
 
@@ -114,7 +114,7 @@ class MessageOptionsDialog extends StatelessWidget {
         SizedBox(height: theme.spacing.md),
 
         // 操作行
-        DSSheetAction(
+        SmoothSheetAction(
           icon: DsIconKind.pin,
           label: 'chat_pin'.tr,
           onTap: () {
@@ -122,7 +122,7 @@ class MessageOptionsDialog extends StatelessWidget {
             _showFixedSymbolDialog(context);
           },
         ),
-        DSSheetAction(
+        SmoothSheetAction(
           icon: DsIconKind.edit,
           label: 'chat_edit'.tr,
           onTap: () {
@@ -130,7 +130,7 @@ class MessageOptionsDialog extends StatelessWidget {
             onMessageEdit(message);
           },
         ),
-        DSSheetAction(
+        SmoothSheetAction(
           icon: DsIconKind.copy,
           label: 'chat_copy'.tr,
           onTap: () {
@@ -138,7 +138,7 @@ class MessageOptionsDialog extends StatelessWidget {
             onMessageCopy(message);
           },
         ),
-        DSSheetAction(
+        SmoothSheetAction(
           icon: DsIconKind.share,
           label: 'chat_share'.tr,
           onTap: () {
@@ -146,7 +146,7 @@ class MessageOptionsDialog extends StatelessWidget {
             MessageOptionsHandler.shareMessage(context, message);
           },
         ),
-        DSSheetAction(
+        SmoothSheetAction(
           icon: DsIconKind.palette,
           label: 'chat_makeSticker'.tr,
           onTap: () {
@@ -158,7 +158,7 @@ class MessageOptionsDialog extends StatelessWidget {
           },
         ),
         if (onReply != null)
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.reply,
             label: 'chat_reply'.tr,
             onTap: () {
@@ -167,7 +167,7 @@ class MessageOptionsDialog extends StatelessWidget {
             },
           ),
         if (onToggleFavorite != null)
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.star,
             // 根据消息是否已收藏切换文案
             label: (isFavorite ? 'chat_unfavorite' : 'chat_favorite').tr,
@@ -177,7 +177,7 @@ class MessageOptionsDialog extends StatelessWidget {
             },
           ),
         // 危险操作放最后
-        DSSheetAction(
+        SmoothSheetAction(
           icon: DsIconKind.trash,
           label: 'chat_delete'.tr,
           destructive: true,
@@ -248,88 +248,90 @@ class MessageOptionsDialog extends StatelessWidget {
     final TextEditingController symbolController = TextEditingController();
     final List<String> recentSymbols = await _getRecentSymbols();
 
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'chat_addEmoji'.tr,
-      builder: (context) {
-        final theme = DSThemeBridge.resolve(context);
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
-              child: DSInput(
-                controller: symbolController,
-                label: 'chat_tag'.tr,
-                hint: 'chat_tagHint'.tr,
-                maxLength: 1, // 限制只能输入一个字符
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+                child: DSInput(
+                  controller: symbolController,
+                  label: 'chat_tag'.tr,
+                  hint: 'chat_tagHint'.tr,
+                  maxLength: 1, // 限制只能输入一个字符
+                ),
               ),
-            ),
-            if (useRecentSymbols && recentSymbols.isNotEmpty) ...[
+              if (useRecentSymbols && recentSymbols.isNotEmpty) ...[
+                SizedBox(height: theme.spacing.md),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+                  child: Text(
+                    'chat_recentSymbols'.tr,
+                    style: DsTypography.caption.copyWith(
+                      color: theme.textSub,
+                    ),
+                  ),
+                ),
+                SizedBox(height: theme.spacing.sm),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+                  child: Wrap(
+                    spacing: theme.spacing.sm,
+                    runSpacing: theme.spacing.sm,
+                    children: recentSymbols
+                        .map(
+                          (symbol) => DSChip(
+                            label: symbol,
+                            onSelected:
+                                (_) => symbolController.text = symbol,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ],
+              SizedBox(height: theme.spacing.lg),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: DSButton(
+                        label: 'app_cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    SizedBox(width: theme.spacing.md),
+                    Expanded(
+                      child: DSButton(
+                        label: 'app_confirm'.tr,
+                        onPressed: () async {
+                          final symbol = symbolController.text.isEmpty
+                              ? null
+                              : symbolController.text;
+                          if (symbol != null) {
+                            await _addRecentSymbol(symbol);
+                          }
+                          onSetFixedSymbol(message, symbol);
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               SizedBox(height: theme.spacing.md),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
-                child: Text(
-                  'chat_recentSymbols'.tr,
-                  style: DsTypography.caption.copyWith(
-                    color: theme.textSub,
-                  ),
-                ),
-              ),
-              SizedBox(height: theme.spacing.sm),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
-                child: Wrap(
-                  spacing: theme.spacing.sm,
-                  runSpacing: theme.spacing.sm,
-                  children: recentSymbols
-                      .map(
-                        (symbol) => DSChip(
-                          label: symbol,
-                          onSelected:
-                              (_) => symbolController.text = symbol,
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
             ],
-            SizedBox(height: theme.spacing.lg),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: DSButton(
-                      label: 'app_cancel'.tr,
-                      variant: DSButtonVariant.outline,
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  SizedBox(width: theme.spacing.md),
-                  Expanded(
-                    child: DSButton(
-                      label: 'app_confirm'.tr,
-                      onPressed: () async {
-                        final symbol = symbolController.text.isEmpty
-                            ? null
-                            : symbolController.text;
-                        if (symbol != null) {
-                          await _addRecentSymbol(symbol);
-                        }
-                        onSetFixedSymbol(message, symbol);
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: theme.spacing.md),
-          ],
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

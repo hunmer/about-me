@@ -88,10 +88,18 @@ class _TagScreenState extends State<TagScreen> {
     );
   }
 
-  /// 打开标签管理对话框
+  /// 打开标签管理对话框（单选：选中标签后打开对应文件夹）
   Future<void> _manageTags(TagController tagController) async {
-    await tagController.showTagManagerDialog(context);
-    if (mounted) setState(() {});
+    final result = await tagController.showTagManagerDialog(context);
+    if (!mounted) return;
+    setState(() {});
+    if (result != null && result.isNotEmpty) {
+      _openFolder(
+        result.first,
+        context.read<CalendarController>(),
+        tagController,
+      );
+    }
   }
 
   @override

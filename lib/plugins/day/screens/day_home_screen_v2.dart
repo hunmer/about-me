@@ -136,30 +136,32 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
 
   /// 长按卡片弹出操作菜单（编辑/删除）
   void _showCardMenu(MemorialDay memorialDay) {
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: memorialDay.title,
-      builder: (sheetContext) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DSSheetAction(
-            icon: DsIconKind.edit,
-            label: 'day_editMemorialDay'.tr,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _showEditDialog(context, memorialDay);
-            },
-          ),
-          DSSheetAction(
-            icon: DsIconKind.trash,
-            label: 'day_deleteMemorialDay'.tr,
-            destructive: true,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _controller.deleteMemorialDay(memorialDay.id);
-            },
-          ),
-        ],
+      child: Builder(
+        builder: (sheetContext) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SmoothSheetAction(
+              icon: DsIconKind.edit,
+              label: 'day_editMemorialDay'.tr,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _showEditDialog(context, memorialDay);
+              },
+            ),
+            SmoothSheetAction(
+              icon: DsIconKind.trash,
+              label: 'day_deleteMemorialDay'.tr,
+              destructive: true,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _controller.deleteMemorialDay(memorialDay.id);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

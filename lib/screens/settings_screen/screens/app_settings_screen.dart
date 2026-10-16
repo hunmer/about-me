@@ -2,6 +2,7 @@ import 'package:aboutme/core/services/speech_recognition_config_service.dart';
 
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/settings_screen/widgets/speech_recognition_settings_dialog.dart';
@@ -13,6 +14,7 @@ import 'package:aboutme/screens/about_screen/about_screen.dart';
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/widgets/route_viewer_dialog.dart';
 import 'package:aboutme/plugins/reminder/screens/reminder_list_screen.dart';
@@ -99,48 +101,45 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       text: _controller.locationApiKey,
     );
 
-    final result = await showDialog<String>(
+    final result = await showDSDialog<String>(
       context: context,
+      theme: DSThemeBridge.resolve(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('screens_setLocationApiKey'.tr),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'screens_locationApiKeyHint'.tr,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+          (context) => Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSDialog(
+                title: 'screens_setLocationApiKey'.tr,
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'screens_locationApiKeyHint'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    DSInput(
+                      controller: apiKeyController,
+                      hint: 'screens_apiKeyInputHint'.tr,
+                    ),
+                    SizedBox(height: theme.spacing.sm),
+                    Text(
+                      'screens_locationApiKeyGuide'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: apiKeyController,
-                  decoration: InputDecoration(
-                    labelText: 'screens_apiKeyLabel'.tr,
-                    hintText: 'screens_apiKeyInputHint'.tr,
-                    border: const OutlineInputBorder(),
-                  ),
-                  maxLines: 1,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'screens_locationApiKeyGuide'.tr,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('screens_cancel'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(apiKeyController.text);
-                },
-                child: Text('app_save'.tr),
-              ),
-            ],
+                confirmText: 'app_save'.tr,
+                cancelText: 'screens_cancel'.tr,
+                onConfirm: () =>
+                    Navigator.pop(context, apiKeyController.text),
+              );
+            },
           ),
     );
 
@@ -163,6 +162,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           height: sheetHeight,
           child: StatefulBuilder(
             builder: (context, setModalState) {
+              final theme = DSThemeBridge.resolve(context);
               final List<PluginBase> plugins = List<PluginBase>.from(
                 _controller.availablePlugins,
               )..sort(
@@ -177,13 +177,15 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: Text(
                       'settings_screen_pluginManagementTip'.tr,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: DsTypography.body.copyWith(color: theme.textSub),
                     ),
                   ),
                   Expanded(
                     child: ListView.separated(
                       itemCount: plugins.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder:
+                          (_, __) => SizedBox(height: theme.spacing.sm),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       itemBuilder: (context, index) {
                         final plugin = plugins[index];
                         final pluginName =
@@ -191,17 +193,39 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                         final isEnabled = _controller.isPluginEnabled(
                           plugin.id,
                         );
-                        return SwitchListTile(
-                          title: Text(pluginName),
-                          subtitle: Text(plugin.id),
-                          value: isEnabled,
-                          onChanged: (value) async {
-                            await _controller.setPluginEnabled(
-                              plugin.id,
-                              value,
-                            );
-                            setModalState(() {});
-                          },
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    pluginName,
+                                    style: DsTypography.heading.copyWith(
+                                      color: theme.text,
+                                    ),
+                                  ),
+                                  Text(
+                                    plugin.id,
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.textSub,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            DSSwitch(
+                              value: isEnabled,
+                              onChanged: (value) async {
+                                await _controller.setPluginEnabled(
+                                  plugin.id,
+                                  value,
+                                );
+                                setModalState(() {});
+                              },
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -223,289 +247,297 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return Scaffold(
-      appBar: AppBar(title: Text('settings_screen_appSettings'.tr)),
+    return SuperCupertinoNavigationWrapper(
+      title: Text('settings_screen_appSettings'.tr),
+      largeTitle: 'settings_screen_appSettings'.tr,
+      enableLargeTitle: false,
       body: DSThemeBridge(
-        child: ListView(
-        // 底部叠加系统安全区高度，避免最后几项被遮挡
-        padding: EdgeInsets.fromLTRB(
-          16.0,
-          16.0,
-          16.0,
-          16.0 + MediaQuery.paddingOf(context).bottom,
-        ),
-        children: [
-          // 通用
-          SettingsGroup(
-            title: '通用',
-            children: [
-              FutureBuilder<bool>(
-                future: FloatingBallManager().isEnabled(),
-                builder: (context, snapshot) {
-                  final bool isEnabled = snapshot.data ?? true;
-                  return SettingsTile(
-                    icon: Icons.touch_app,
-                    iconColor: DsAccentColors.pink,
-                    title: 'settings_screen_floatingBallTitle'.tr,
-                    subtitle: isEnabled
-                        ? 'settings_screen_floatingBallEnabled'.tr
-                        : 'settings_screen_floatingBallDisabled'.tr,
-                    onTap: () {
-                      NavigationHelper.push(
-                        context,
-                        const FloatingBallSettingsScreen(),
-                        routeName: '/settings/floating_ball_settings',
-                      );
-                    },
-                  );
-                },
+        child: Builder(
+          builder: (context) {
+            final ds = DSThemeBridge.resolve(context);
+            return ListView(
+              // 底部叠加系统安全区高度，避免最后几项被遮挡
+              padding: EdgeInsets.fromLTRB(
+                16.0,
+                16.0,
+                16.0,
+                16.0 + MediaQuery.paddingOf(context).bottom,
               ),
-              if (UniversalPlatform.isAndroid)
-                SettingsTile(
-                  icon: Icons.radio_button_checked,
-                  iconColor: DsAccentColors.orange,
-                  title: 'screens_floatingBallSettings'.tr,
-                  subtitle: 'screens_manageSystemFloatingBall'.tr,
-                  onTap: () {
-                    Navigator.pushNamed(context, '/floating_ball');
-                  },
-                ),
-              SettingsTile(
-                icon: Icons.alarm,
-                iconColor: DsAccentColors.red,
-                title: '定时提醒',
-                subtitle: '管理定时提醒任务',
-                onTap: () {
-                  NavigationHelper.push(
-                    context,
-                    const ReminderListScreen(),
-                    routeName: '/settings/reminder',
-                  );
-                },
-              ),
-              SettingsTile(
-                icon: Icons.extension,
-                iconColor: DsAccentColors.indigo,
-                title: 'settings_screen_pluginManagementTitle'.tr,
-                subtitle: 'settings_screen_pluginManagementSubtitle'.tr,
-                onTap: _showPluginManagementSheet,
-              ),
-              SettingsTile(
-                icon: Icons.play_circle,
-                iconColor: DsAccentColors.emerald,
-                title: 'settings_screen_autoOpenLastPluginTitle'.tr,
-                subtitle: 'settings_screen_autoOpenLastPluginSubtitle'.tr,
-                showChevron: false,
-                trailing: DSSwitch(
-                  value: _controller.autoOpenLastPlugin,
-                  onChanged:
-                      (value) => setState(() {
-                        _controller.autoOpenLastPlugin = value;
-                      }),
-                ),
-              ),
-              SettingsTile(
-                icon: Icons.location_on,
-                iconColor: DsAccentColors.amber,
-                title: 'screens_locationApiKey'.tr,
-                subtitle: _controller.locationApiKey.isEmpty
-                    ? 'screens_locationApiKeyNotSet'.tr
-                    : 'screens_locationApiKeyPartial'.trParams({
-                      'key': _controller.locationApiKey.substring(0, 8),
-                    }),
-                onTap: () => _showLocationApiKeyDialog(),
-              ),
-              SettingsTile(
-                icon: Icons.mic,
-                iconColor: DsAccentColors.teal,
-                title: '语音识别设置',
-                subtitle: _isSpeechRecognitionConfigured
-                    ? '已配置腾讯云语音识别'
-                    : '配置语音识别服务',
-                showChevron: !_isSpeechRecognitionConfigured,
-                trailing: _isSpeechRecognitionConfigured
-                    ? const Icon(Icons.check_circle, color: Colors.green)
-                    : null,
-                onTap: _showSpeechRecognitionSettings,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // 剪切板设置
-          SettingsGroup(
-            title: '剪切板设置',
-            children: [
-              SettingsTile(
-                icon: Icons.content_paste,
-                iconColor: DsAccentColors.blue,
-                title: '自动读取剪切板',
-                subtitle: '启用后将自动识别剪切板中的数据',
-                showChevron: false,
-                trailing: DSSwitch(
-                  value: _controller.clipboardAutoRead,
-                  onChanged:
-                      (value) => setState(() {
-                        _controller.clipboardAutoRead = value;
-                      }),
-                ),
-              ),
-              SettingsTile(
-                icon: Icons.content_paste_go,
-                iconColor: DsAccentColors.cyan,
-                title: '读取并识别剪切板',
-                subtitle: '手动读取剪切板中的数据并识别处理',
-                onTap: () async {
-                  final result = await _controller.readAndProcessClipboard();
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(result ? '剪切板识别成功' : '剪切板中没有可识别的数据'),
-                        duration: const Duration(seconds: 2),
+              children: [
+                // 通用
+                SettingsGroup(
+                  title: 'settings_screen_generalGroup'.tr,
+                  children: [
+                    FutureBuilder<bool>(
+                      future: FloatingBallManager().isEnabled(),
+                      builder: (context, snapshot) {
+                        final bool isEnabled = snapshot.data ?? true;
+                        return SettingsTile(
+                          icon: DsIconKind.touchApp,
+                          iconColor: DsAccentColors.pink,
+                          title: 'settings_screen_floatingBallTitle'.tr,
+                          subtitle: isEnabled
+                              ? 'settings_screen_floatingBallEnabled'.tr
+                              : 'settings_screen_floatingBallDisabled'.tr,
+                          onTap: () {
+                            NavigationHelper.push(
+                              context,
+                              const FloatingBallSettingsScreen(),
+                              routeName: '/settings/floating_ball_settings',
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    if (UniversalPlatform.isAndroid)
+                      SettingsTile(
+                        icon: DsIconKind.radioButton,
+                        iconColor: DsAccentColors.orange,
+                        title: 'screens_floatingBallSettings'.tr,
+                        subtitle: 'screens_manageSystemFloatingBall'.tr,
+                        onTap: () {
+                          NavigationHelper.pushNamed(context, '/floating_ball');
+                        },
                       ),
-                    );
-                  }
-                },
-              ),
-              if (showPermissionEntry)
-                SettingsTile(
-                  icon: Icons.privacy_tip,
-                  iconColor: DsAccentColors.violet,
-                  title: 'app_permissionsTitle'.tr,
-                  subtitle: 'app_permissionsManageDescription'.tr,
-                  onTap: () async {
-                    await showPermissionRequestDialog(
-                      context: context,
-                      controller: PermissionController(),
-                      barrierDismissible: true,
-                      showSkipButton: false,
-                    );
-                  },
+                    SettingsTile(
+                      icon: DsIconKind.alarm,
+                      iconColor: DsAccentColors.red,
+                      title: 'settings_screen_reminderTitle'.tr,
+                      subtitle: 'settings_screen_reminderSubtitle'.tr,
+                      onTap: () {
+                        NavigationHelper.push(
+                          context,
+                          const ReminderListScreen(),
+                          routeName: '/settings/reminder',
+                        );
+                      },
+                    ),
+                    SettingsTile(
+                      icon: DsIconKind.extension,
+                      iconColor: DsAccentColors.indigo,
+                      title: 'settings_screen_pluginManagementTitle'.tr,
+                      subtitle: 'settings_screen_pluginManagementSubtitle'.tr,
+                      onTap: _showPluginManagementSheet,
+                    ),
+                    SettingsTile(
+                      icon: DsIconKind.video,
+                      iconColor: DsAccentColors.emerald,
+                      title: 'settings_screen_autoOpenLastPluginTitle'.tr,
+                      subtitle: 'settings_screen_autoOpenLastPluginSubtitle'.tr,
+                      showChevron: false,
+                      trailing: DSSwitch(
+                        value: _controller.autoOpenLastPlugin,
+                        onChanged:
+                            (value) => setState(() {
+                              _controller.autoOpenLastPlugin = value;
+                            }),
+                      ),
+                    ),
+                    SettingsTile(
+                      icon: DsIconKind.locationOn,
+                      iconColor: DsAccentColors.amber,
+                      title: 'screens_locationApiKey'.tr,
+                      subtitle: _controller.locationApiKey.isEmpty
+                          ? 'screens_locationApiKeyNotSet'.tr
+                          : 'screens_locationApiKeyPartial'.trParams({
+                              'key': _controller.locationApiKey.substring(0, 8),
+                            }),
+                      onTap: () => _showLocationApiKeyDialog(),
+                    ),
+                    SettingsTile(
+                      icon: DsIconKind.mic,
+                      iconColor: DsAccentColors.teal,
+                      title: 'settings_screen_speechSettingsTitle'.tr,
+                      subtitle: _isSpeechRecognitionConfigured
+                          ? 'settings_screen_speechConfigured'.tr
+                          : 'settings_screen_speechNotConfigured'.tr,
+                      showChevron: !_isSpeechRecognitionConfigured,
+                      trailing: _isSpeechRecognitionConfigured
+                          ? DsIcon(
+                              DsIconKind.check,
+                              size: 20,
+                              color: ds.primary,
+                            )
+                          : null,
+                      onTap: _showSpeechRecognitionSettings,
+                    ),
+                  ],
                 ),
-            ],
-          ),
-          const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-          // 更新
-          SettingsGroup(
-            title: '更新',
-            children: [
-              SettingsTile(
-                icon: Icons.system_update,
-                iconColor: DsAccentColors.emerald,
-                title: 'settings_screen_autoCheckUpdateTitle'.tr,
-                subtitle: 'settings_screen_autoCheckUpdateSubtitle'.tr,
-                showChevron: false,
-                trailing: DSSwitch(
-                  value: _controller.autoCheckUpdate,
-                  onChanged:
-                      (value) => setState(() {
-                        _controller.autoCheckUpdate = value;
-                      }),
+                // 剪切板设置
+                SettingsGroup(
+                  title: 'settings_screen_clipboardGroup'.tr,
+                  children: [
+                    SettingsTile(
+                      icon: DsIconKind.clipboard,
+                      iconColor: DsAccentColors.blue,
+                      title: 'settings_screen_clipboardAutoReadTitle'.tr,
+                      subtitle: 'settings_screen_clipboardAutoReadSubtitle'.tr,
+                      showChevron: false,
+                      trailing: DSSwitch(
+                        value: _controller.clipboardAutoRead,
+                        onChanged:
+                            (value) => setState(() {
+                              _controller.clipboardAutoRead = value;
+                            }),
+                      ),
+                    ),
+                    SettingsTile(
+                      icon: DsIconKind.contentPasteGo,
+                      iconColor: DsAccentColors.cyan,
+                      title: 'settings_screen_clipboardReadTitle'.tr,
+                      subtitle: 'settings_screen_clipboardReadSubtitle'.tr,
+                      onTap: () async {
+                        final result = await _controller.readAndProcessClipboard();
+                        if (mounted) {
+                          Toast.show(
+                            result
+                                ? 'settings_screen_clipboardReadSuccess'.tr
+                                : 'settings_screen_clipboardReadEmpty'.tr,
+                          );
+                        }
+                      },
+                    ),
+                    if (showPermissionEntry)
+                      SettingsTile(
+                        icon: DsIconKind.privacyTip,
+                        iconColor: DsAccentColors.violet,
+                        title: 'app_permissionsTitle'.tr,
+                        subtitle: 'app_permissionsManageDescription'.tr,
+                        onTap: () async {
+                          await showPermissionRequestDialog(
+                            context: context,
+                            controller: PermissionController(),
+                            barrierDismissible: true,
+                            showSkipButton: false,
+                          );
+                        },
+                      ),
+                  ],
                 ),
-              ),
-              SettingsTile(
-                icon: Icons.update,
-                iconColor: DsAccentColors.blue,
-                title: 'settings_screen_checkUpdateTitle'.tr,
-                subtitle: 'settings_screen_checkUpdateSubtitle'.tr,
-                onTap: _controller.checkForUpdates,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-          // 开发者测试
-          SettingsGroup(
-            title: '开发者测试',
-            children: [
-              SettingsTile(
-                icon: Icons.notifications_active,
-                iconColor: DsAccentColors.slate,
-                title: 'Toast 测试',
-                subtitle: '测试 Toast 显示、动画和自定义 Widget',
-                onTap: () {
-                  Navigator.pushNamed(context, '/toast_test');
-                },
-              ),
-              SettingsTile(
-                icon: Icons.route,
-                iconColor: DsAccentColors.slate,
-                title: '路由查看器',
-                subtitle: '查看所有可用路由',
-                onTap: () {
-                  RouteViewerDialog.show(context);
-                },
-              ),
-              SettingsTile(
-                icon: Icons.widgets,
-                iconColor: DsAccentColors.slate,
-                title: 'screens_jsonDynamicWidgetTest'.tr,
-                subtitle: 'screens_testAndPreviewDynamicUI'.tr,
-                onTap: () {
-                  Navigator.pushNamed(context, '/json_dynamic_test');
-                },
-              ),
-              SettingsTile(
-                icon: Icons.link,
-                iconColor: DsAccentColors.slate,
-                title: 'screens_intentTest'.tr,
-                subtitle: 'screens_testDynamicIntentAndDeepLink'.tr,
-                onTap: () {
-                  Navigator.pushNamed(context, '/intent_test');
-                },
-              ),
-              if (UniversalPlatform.isIOS)
-                SettingsTile(
-                  icon: Icons.notifications_active,
-                  iconColor: DsAccentColors.slate,
-                  title: 'Live Activities 测试',
-                  subtitle: '测试实时活动通知',
-                  onTap: () {
-                    Navigator.pushNamed(context, '/live_activities_test');
-                  },
+                // 更新
+                SettingsGroup(
+                  title: 'settings_screen_updateGroup'.tr,
+                  children: [
+                    SettingsTile(
+                      icon: DsIconKind.systemUpdate,
+                      iconColor: DsAccentColors.emerald,
+                      title: 'settings_screen_autoCheckUpdateTitle'.tr,
+                      subtitle: 'settings_screen_autoCheckUpdateSubtitle'.tr,
+                      showChevron: false,
+                      trailing: DSSwitch(
+                        value: _controller.autoCheckUpdate,
+                        onChanged:
+                            (value) => setState(() {
+                              _controller.autoCheckUpdate = value;
+                            }),
+                      ),
+                    ),
+                    SettingsTile(
+                      icon: DsIconKind.update,
+                      iconColor: DsAccentColors.blue,
+                      title: 'settings_screen_checkUpdateTitle'.tr,
+                      subtitle: 'settings_screen_checkUpdateSubtitle'.tr,
+                      onTap: _controller.checkForUpdates,
+                    ),
+                  ],
                 ),
-              SettingsTile(
-                icon: Icons.category,
-                iconColor: DsAccentColors.slate,
-                title: '通用组件示例',
-                subtitle: '查看 widgets 目录下的通用组件示例',
-                onTap: () {
-                  Navigator.pushNamed(context, '/widgets_gallery');
-                },
-              ),
-              SettingsTile(
-                icon: Icons.description,
-                iconColor: DsAccentColors.slate,
-                title: '日志系统',
-                subtitle: '查看和管理应用日志',
-                onTap: () {
-                  Navigator.pushNamed(context, '/log');
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-          // 关于
-          SettingsGroup(
-            title: '关于',
-            children: [
-              SettingsTile(
-                icon: Icons.info,
-                iconColor: DsAccentColors.sky,
-                title: 'app_aboutTitle'.tr,
-                onTap: () {
-                  NavigationHelper.push(
-                    context,
-                    const AboutScreen(),
-                    routeName: '/settings/about',
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
+                // 开发者测试
+                SettingsGroup(
+                  title: 'settings_screen_devTestGroup'.tr,
+                  children: [
+                    SettingsTile(
+                      icon: DsIconKind.route,
+                      iconColor: DsAccentColors.slate,
+                      title: 'settings_screen_routeViewerTitle'.tr,
+                      subtitle: 'settings_screen_routeViewerSubtitle'.tr,
+                      onTap: () {
+                        RouteViewerDialog.show(context);
+                      },
+                    ),
+                    SettingsTile(
+                      icon: DsIconKind.widgets,
+                      iconColor: DsAccentColors.slate,
+                      title: 'screens_jsonDynamicWidgetTest'.tr,
+                      subtitle: 'screens_testAndPreviewDynamicUI'.tr,
+                      onTap: () {
+                        NavigationHelper.pushNamed(
+                          context,
+                          '/json_dynamic_test',
+                        );
+                      },
+                    ),
+                    SettingsTile(
+                      icon: DsIconKind.link,
+                      iconColor: DsAccentColors.slate,
+                      title: 'screens_intentTest'.tr,
+                      subtitle: 'screens_testDynamicIntentAndDeepLink'.tr,
+                      onTap: () {
+                        NavigationHelper.pushNamed(context, '/intent_test');
+                      },
+                    ),
+                    if (UniversalPlatform.isIOS)
+                      SettingsTile(
+                        icon: DsIconKind.notificationsActive,
+                        iconColor: DsAccentColors.slate,
+                        title: 'settings_screen_liveActivitiesTestTitle'.tr,
+                        subtitle:
+                            'settings_screen_liveActivitiesTestSubtitle'.tr,
+                        onTap: () {
+                          NavigationHelper.pushNamed(
+                            context,
+                            '/live_activities_test',
+                          );
+                        },
+                      ),
+                    SettingsTile(
+                      icon: DsIconKind.category,
+                      iconColor: DsAccentColors.slate,
+                      title: 'settings_screen_widgetsGalleryTitle'.tr,
+                      subtitle: 'settings_screen_widgetsGallerySubtitle'.tr,
+                      onTap: () {
+                        NavigationHelper.pushNamed(context, '/widgets_gallery');
+                      },
+                    ),
+                    SettingsTile(
+                      icon: DsIconKind.description,
+                      iconColor: DsAccentColors.slate,
+                      title: 'settings_screen_logSystemTitle'.tr,
+                      subtitle: 'settings_screen_logSystemSubtitle'.tr,
+                      onTap: () {
+                        NavigationHelper.pushNamed(context, '/log');
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // 关于
+                SettingsGroup(
+                  title: 'settings_screen_aboutGroup'.tr,
+                  children: [
+                    SettingsTile(
+                      icon: DsIconKind.info,
+                      iconColor: DsAccentColors.sky,
+                      title: 'app_aboutTitle'.tr,
+                      onTap: () {
+                        NavigationHelper.push(
+                          context,
+                          const AboutScreen(),
+                          routeName: '/settings/about',
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

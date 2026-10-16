@@ -25,7 +25,6 @@ export 'primitives/pressable.dart';
 export 'components/accordion.dart';
 export 'components/avatar.dart';
 export 'components/badge.dart';
-export 'components/bottom_sheet.dart';
 export 'components/button.dart';
 export 'components/card.dart';
 export 'components/checkbox.dart';

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 习惯操作抽屉
 ///
@@ -77,7 +78,7 @@ class HabitActionSheet extends StatelessWidget {
                   ),
 
                   // 编辑选项
-                  DSSheetAction(
+                  SmoothSheetAction(
                     icon: DsIconKind.edit,
                     label: 'habits_editHabit'.tr,
                     onTap: () {
@@ -87,7 +88,7 @@ class HabitActionSheet extends StatelessWidget {
                   ),
 
                   // 删除选项
-                  DSSheetAction(
+                  SmoothSheetAction(
                     icon: DsIconKind.trash,
                     label: 'habits_delete'.tr,
                     destructive: true,

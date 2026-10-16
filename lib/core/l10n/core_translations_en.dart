@@ -121,6 +121,7 @@ const Map<String, String> coreTranslationsEn = {
   'core_unpinPlugin': 'Unpin',
   'core_openInOverlay': 'Open in Overlay',
   'core_noMatchingPlugins': 'No matching plugins',
+  'core_rotaryPluginHint': 'Drag the wheel to browse, tap an icon to open',
 
   // Empty state placeholders
   'core_noButtons': 'No buttons yet',

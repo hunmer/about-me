@@ -50,7 +50,7 @@ class TagsDialogConfig {
   /// 是否启用编辑功能
   final bool enableEditing;
 
-  /// 是否启用批量编辑
+  /// 是否启用批量删除（选中标签后底部显示删除图标）
   final bool enableBatchEdit;
 
   /// 是否启用长按菜单

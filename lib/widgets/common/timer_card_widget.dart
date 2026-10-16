@@ -10,6 +10,7 @@ import 'package:aboutme/plugins/timer/models/timer_item.dart';
 import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'package:aboutme/plugins/timer/views/timer_task_details_page.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 计时器任务卡片小组件（手绘纸墨风）
 ///
@@ -986,13 +987,13 @@ class _TimerCardWidgetState extends State<TimerCardWidget> {
   void _showContextMenu(BuildContext context, TimerTask task) {
     if (!widget.showActionButtons) return;
 
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: task.name,
-      builder: (context) => Column(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.edit,
             label: 'app_edit'.tr,
             onTap: () {
@@ -1002,7 +1003,7 @@ class _TimerCardWidgetState extends State<TimerCardWidget> {
               }
             },
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.refresh,
             label: 'timer_reset'.tr,
             onTap: () {
@@ -1012,7 +1013,7 @@ class _TimerCardWidgetState extends State<TimerCardWidget> {
               }
             },
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.trash,
             label: 'app_delete'.tr,
             destructive: true,

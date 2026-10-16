@@ -12,6 +12,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class ProductList extends StatefulWidget {
@@ -389,7 +390,7 @@ class _ProductListState extends State<ProductList> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   for (final (index, label) in _sortLabels.indexed)
-                    DSSheetAction(
+                    SmoothSheetAction(
                       icon: _sortIndex == index
                           ? DsIconKind.check
                           : DsIconKind.sort,

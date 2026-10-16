@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/folder.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 class NotesAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Folder? currentFolder;
@@ -68,7 +69,7 @@ class NotesAppBar extends StatelessWidget implements PreferredSizeWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      DSSheetAction(
+                      SmoothSheetAction(
                         icon: DsIconKind.book,
                         label: 'notes_newNote'.tr,
                         onTap: () {
@@ -76,7 +77,7 @@ class NotesAppBar extends StatelessWidget implements PreferredSizeWidget {
                           onCreateNewNote();
                         },
                       ),
-                      DSSheetAction(
+                      SmoothSheetAction(
                         icon: DsIconKind.layers,
                         label: 'notes_newFolder'.tr,
                         onTap: () {

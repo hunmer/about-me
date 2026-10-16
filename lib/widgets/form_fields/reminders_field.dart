@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 提醒时间管理组件（手绘纸墨风）
 ///
@@ -11,7 +12,7 @@ import 'package:aboutme/design_system/design_system.dart';
 /// - 添加新提醒（日期+时间选择器）
 /// - 删除提醒
 ///
-/// 字段行走 [JellyBox]（实底 + 墨线描边），管理面板走 [showDSBottomSheet]
+/// 字段行走 [JellyBox]（实底 + 墨线描边），管理面板走 [SmoothBottomSheet]
 /// （纸底 + 淡排线 + 墨线框 + 描画入场）。
 class RemindersField extends StatefulWidget {
   /// 提醒时间列表
@@ -134,11 +135,11 @@ class _RemindersFieldState extends State<RemindersField> {
     String locale,
     AppThemeData theme,
   ) async {
-    await showDSBottomSheet(
+    await SmoothBottomSheet.showWithTitle(
       context: context,
       title: widget.labelText ?? 'app_reminders'.tr,
-      builder:
-          (sheetContext) => StatefulBuilder(
+      child:
+          StatefulBuilder(
             builder: (sheetContext, setModalState) {
               return Column(
                 mainAxisSize: MainAxisSize.min,

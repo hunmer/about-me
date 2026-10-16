@@ -4,6 +4,7 @@ import 'package:skribble/skribble.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/form_fields/circle_icon_picker_field.dart';
@@ -134,7 +135,7 @@ class TagsDialog extends StatefulWidget {
     Future<TagItem?> Function(TagItem oldTag, TagItem newTag)? onEditTag,
     TagsItemBuilder? tagItemBuilder,
   }) {
-    return showDSBottomSheet<List<String>>(
+    return SmoothBottomSheet.show<List<String>>(
       context: context,
       builder: (context) => TagsDialog(
         jsonFilePath: jsonFilePath,
@@ -163,9 +164,6 @@ class _TagsDialogState extends State<TagsDialog> {
 
   /// 多条件过滤状态
   late MultiFilterState _filterState;
-
-  /// 是否批量编辑模式
-  bool _isBatchEditMode = false;
 
   /// JSON 存储工具
   JsonStorage? _jsonStorage;
@@ -300,16 +298,6 @@ class _TagsDialogState extends State<TagsDialog> {
     });
   }
 
-  /// 切换批量编辑模式
-  void _toggleBatchEditMode() {
-    setState(() {
-      _isBatchEditMode = !_isBatchEditMode;
-      if (!_isBatchEditMode) {
-        _selectedTags.clear();
-      }
-    });
-  }
-
   /// 选择标签
   void _selectTag(String tagName) {
     setState(() {
@@ -329,17 +317,22 @@ class _TagsDialogState extends State<TagsDialog> {
       }
       widget.onTagsSelected?.call(_selectedTags);
     });
+
+    // 单选模式：选中即确认返回，由调用方处理（如打开标签文件夹）
+    if (widget.config.selectionMode == TagsSelectionMode.single) {
+      _confirmSelection();
+    }
   }
 
   /// 显示标签底部抽屉
   void _showTagBottomSheet(TagItem tag) {
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: tag.name,
-      builder: (context) => Column(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.edit,
             label: widget.config.editButtonText,
             onTap: () {
@@ -347,7 +340,7 @@ class _TagsDialogState extends State<TagsDialog> {
               _editTag(tag);
             },
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.trash,
             label: widget.config.deleteButtonText,
             destructive: true,
@@ -462,7 +455,6 @@ class _TagsDialogState extends State<TagsDialog> {
           }
         }
         _selectedTags.clear();
-        _isBatchEditMode = false;
       });
       await _saveData();
     }
@@ -531,7 +523,6 @@ class _TagsDialogState extends State<TagsDialog> {
             child: TagsList(
               tags: _filteredTags,
               selectedTags: _selectedTags,
-              isBatchEditMode: _isBatchEditMode,
               config: widget.config,
               selectionMode: widget.config.selectionMode,
               tagItemBuilder: widget.tagItemBuilder ?? _defaultFolderTagItem,
@@ -550,11 +541,11 @@ class _TagsDialogState extends State<TagsDialog> {
     );
   }
 
-  /// 底部操作栏：批量编辑模式下为批量删除图标，选择模式下为确定按钮
+  /// 底部操作栏：选中标签后显示删除图标 + 确定按钮
   Widget _buildBottomActions() {
-    final canBatchDelete = _isBatchEditMode && _selectedTags.isNotEmpty;
+    final canBatchDelete =
+        widget.config.enableBatchEdit && _selectedTags.isNotEmpty;
     final canConfirm =
-        !_isBatchEditMode &&
         widget.config.selectionMode != TagsSelectionMode.none &&
         _selectedTags.isNotEmpty;
 
@@ -567,7 +558,7 @@ class _TagsDialogState extends State<TagsDialog> {
       padding: EdgeInsets.fromLTRB(16, 8, 16, 12 + bottomInset),
       child: Row(
         children: [
-          // 批量删除（批量编辑模式且选中了标签）
+          // 批量删除选中标签
           if (canBatchDelete) ...[
             DSIconButton(
               icon: DsIconKind.trash,
@@ -579,7 +570,7 @@ class _TagsDialogState extends State<TagsDialog> {
             ),
             const SizedBox(width: 12),
           ],
-          // 确认选择（选择模式下且非批量编辑模式）
+          // 确认选择（选择模式下）
           if (canConfirm)
             Expanded(
               child: DSButton(
@@ -627,29 +618,10 @@ class _TagsDialogState extends State<TagsDialog> {
 
   /// 构建操作按钮
   List<Widget> _buildActions() {
-    final theme = DSThemeBridge.resolve(context);
     final actions = <Widget>[];
 
-    // 批量编辑按钮
-    if (widget.config.enableBatchEdit) {
-      actions.add(
-        DSIconButton(
-          icon: _isBatchEditMode ? DsIconKind.close : DsIconKind.edit,
-          size: 34,
-          color: theme.surfaceAlt,
-          iconColor: theme.textSub,
-          tooltip: _isBatchEditMode
-              ? 'app_tags_exitBatchEdit'.tr
-              : 'app_tags_batchEdit'.tr,
-          onPressed: _toggleBatchEditMode,
-        ),
-      );
-    }
-
-    // 批量删除与确认选择按钮已移至底部操作栏（_buildBottomActions）
-
-    // 添加标签按钮（非批量编辑模式）
-    if (!_isBatchEditMode && widget.config.enableEditing) {
+    // 添加标签按钮
+    if (widget.config.enableEditing) {
       actions.add(
         DSIconButton(
           icon: DsIconKind.plus,

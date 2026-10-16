@@ -29,10 +29,10 @@ extension _JellyLive2DControls on _JellyLive2DState {
   }
 
   void _showControls() {
-    showDSBottomSheet<void>(
+    SmoothBottomSheet.showWithTitle<void>(
       context: context,
       title: 'Live2D',
-      builder: (sheetContext) {
+      child: Builder(builder: (sheetContext) {
         final theme = AppTheme.of(sheetContext);
         return SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
@@ -170,7 +170,7 @@ extension _JellyLive2DControls on _JellyLive2DState {
             ],
           ),
         );
-      },
+      }),
     );
   }
 }

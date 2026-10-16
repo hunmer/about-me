@@ -11,6 +11,7 @@ import 'package:aboutme/plugins/tracker/models/record.dart';
 import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 import 'package:aboutme/plugins/tracker/widgets/timer_dialog.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
 class GoalCard extends StatelessWidget {
@@ -320,10 +321,10 @@ void showGoalActionSheet(
   required Goal goal,
   required TrackerController controller,
 }) {
-  showDSBottomSheet(
+  SmoothBottomSheet.showWithTitle(
     context: context,
     title: goal.name,
-    builder: (sheetContext) => _GoalActionSheet(
+    child: _GoalActionSheet(
       goal: goal,
       controller: controller,
       onTimer: () => showDSDialog(
@@ -949,7 +950,7 @@ class _GoalActionSheetState extends State<_GoalActionSheet> {
               ),
               SizedBox(height: theme.spacing.md),
               // 其余操作
-              DSSheetAction(
+              SmoothSheetAction(
                 icon: DsIconKind.clock,
                 label: 'tracker_timer'.tr,
                 onTap: () {
@@ -957,7 +958,7 @@ class _GoalActionSheetState extends State<_GoalActionSheet> {
                   widget.onTimer();
                 },
               ),
-              DSSheetAction(
+              SmoothSheetAction(
                 icon: DsIconKind.check,
                 label: _isCompleted
                     ? 'tracker_cancelComplete'.tr

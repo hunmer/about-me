@@ -192,6 +192,19 @@ class ActionManager {
       ),
     );
 
+    // 圆盘选择插件
+    registerAction(
+      ActionDefinition(
+        id: BuiltInActions.rotaryPluginLauncher,
+        title: '圆盘选择插件',
+        description: '以手绘圆盘转轮选择并打开插件',
+        icon: Icons.album,
+        category: ActionCategory.navigation,
+        executor: BuiltInActionExecutor(BuiltInActions.rotaryPluginLauncher),
+        isBuiltIn: true,
+      ),
+    );
+
     // 询问当前上下文
     registerAction(
       ActionDefinition(

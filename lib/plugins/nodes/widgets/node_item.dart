@@ -10,6 +10,7 @@ import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
 import 'package:aboutme/plugins/nodes/widgets/node_card.dart';
 import 'package:aboutme/plugins/nodes/screens/node_edit_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 树内单个节点：卡片 + 父子连线 + 子节点递归 + 长按操作
 class NodeItem extends StatelessWidget {
@@ -177,127 +178,129 @@ class NodeItem extends StatelessWidget {
       Colors.pink,
     ];
 
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: node.title.isEmpty ? 'nodes_unnamedNode'.tr : node.title,
-      builder: (sheetContext) {
-        final theme = AppTheme.of(sheetContext);
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'nodes_status'.tr,
-                    style: DsTypography.label.copyWith(color: theme.textSub),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final status in [
-                        NodeStatus.todo,
-                        NodeStatus.doing,
-                        NodeStatus.done,
-                      ])
-                        DSChip(
-                          label: nodeStatusLabel(status),
-                          selected: node.status == status,
-                          onSelected: (selected) {
-                            if (selected) {
-                              _updateNode(
-                                controller,
-                                sheetContext,
-                                _copyWith(node, status: status),
-                              );
-                            }
-                          },
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'nodes_nodeColor'.tr,
-                    style: DsTypography.label.copyWith(color: theme.textSub),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 34,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: commonColors.length,
-                      itemBuilder: (context, index) {
-                        final color = commonColors[index];
-                        final selected = node.color.value == color.value;
-                        return GestureDetector(
-                          onTap: () => _updateNode(
-                            controller,
-                            sheetContext,
-                            _copyWith(node, color: color),
-                          ),
-                          child: Container(
-                            width: 30,
-                            height: 30,
-                            decoration: dsSketchDecoration(
-                              theme: theme,
-                              circle: true,
-                              fillColor: color,
-                              stroke: selected ? theme.text : theme.ink,
-                              strokeWidth: selected ? 2.6 : 1.4,
-                              seed: index + 1,
-                            ),
-                          ),
-                        );
-                      },
-                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+      child: Builder(
+        builder: (sheetContext) {
+          final theme = AppTheme.of(sheetContext);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'nodes_status'.tr,
+                      style: DsTypography.label.copyWith(color: theme.textSub),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final status in [
+                          NodeStatus.todo,
+                          NodeStatus.doing,
+                          NodeStatus.done,
+                        ])
+                          DSChip(
+                            label: nodeStatusLabel(status),
+                            selected: node.status == status,
+                            onSelected: (selected) {
+                              if (selected) {
+                                _updateNode(
+                                  controller,
+                                  sheetContext,
+                                  _copyWith(node, status: status),
+                                );
+                              }
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'nodes_nodeColor'.tr,
+                      style: DsTypography.label.copyWith(color: theme.textSub),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 34,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: commonColors.length,
+                        itemBuilder: (context, index) {
+                          final color = commonColors[index];
+                          final selected = node.color.value == color.value;
+                          return GestureDetector(
+                            onTap: () => _updateNode(
+                              controller,
+                              sheetContext,
+                              _copyWith(node, color: color),
+                            ),
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: dsSketchDecoration(
+                                theme: theme,
+                                circle: true,
+                                fillColor: color,
+                                stroke: selected ? theme.text : theme.ink,
+                                strokeWidth: selected ? 2.6 : 1.4,
+                                seed: index + 1,
+                              ),
+                            ),
+                          );
+                        },
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 14),
-            DSSheetAction(
-              icon: DsIconKind.edit,
-              label: 'nodes_editNode'.tr,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _openEditor(context, controller, node);
-              },
-            ),
-            DSSheetAction(
-              icon: DsIconKind.plus,
-              label: 'nodes_addChildNode'.tr,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _addNode(context, controller, parentOf: node);
-              },
-            ),
-            DSSheetAction(
-              icon: DsIconKind.reply,
-              label: 'nodes_addSiblingNode'.tr,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _addNode(context, controller, parentId: node.parentId);
-              },
-            ),
-            DSSheetAction(
-              icon: DsIconKind.trash,
-              label: 'nodes_deleteNode'.tr,
-              destructive: true,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _showDeleteConfirmation(context, controller);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        );
-      },
+              const SizedBox(height: 14),
+              SmoothSheetAction(
+                icon: DsIconKind.edit,
+                label: 'nodes_editNode'.tr,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _openEditor(context, controller, node);
+                },
+              ),
+              SmoothSheetAction(
+                icon: DsIconKind.plus,
+                label: 'nodes_addChildNode'.tr,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _addNode(context, controller, parentOf: node);
+                },
+              ),
+              SmoothSheetAction(
+                icon: DsIconKind.reply,
+                label: 'nodes_addSiblingNode'.tr,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _addNode(context, controller, parentId: node.parentId);
+                },
+              ),
+              SmoothSheetAction(
+                icon: DsIconKind.trash,
+                label: 'nodes_deleteNode'.tr,
+                destructive: true,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showDeleteConfirmation(context, controller);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          );
+        },
+      ),
     );
   }
 

@@ -47,7 +47,7 @@ class NoteListTile extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            DSSheetAction(
+                            SmoothSheetAction(
                               icon: DsIconKind.edit,
                               label: 'app_edit'.tr,
                               onTap: () {
@@ -55,7 +55,7 @@ class NoteListTile extends StatelessWidget {
                                 editNote(context, controller, note, onReload);
                               },
                             ),
-                            DSSheetAction(
+                            SmoothSheetAction(
                               icon: DsIconKind.layers,
                               label: 'notes_moveTo'.tr,
                               onTap: () async {
@@ -69,7 +69,7 @@ class NoteListTile extends StatelessWidget {
                                 );
                               },
                             ),
-                            DSSheetAction(
+                            SmoothSheetAction(
                               icon: DsIconKind.trash,
                               label: '删除',
                               destructive: true,

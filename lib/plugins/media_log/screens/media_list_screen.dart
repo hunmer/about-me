@@ -5,6 +5,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
@@ -287,18 +288,18 @@ class _MediaListScreenState extends State<MediaListScreen> {
 
   /// 新建入口：先弹类型选择 sheet，再进表单
   Future<void> _addItem() async {
-    final MediaKind? kind = await showDSBottomSheet<MediaKind>(
+    final MediaKind? kind = await SmoothBottomSheet.showWithTitle<MediaKind>(
       context: context,
       title: 'media_add'.tr,
-      builder: (context) => Column(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.book,
             label: 'media_addReading'.tr,
             onTap: () => Navigator.pop(context, MediaKind.reading),
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.video,
             label: 'media_addWatching'.tr,
             onTap: () => Navigator.pop(context, MediaKind.watching),
@@ -311,10 +312,10 @@ class _MediaListScreenState extends State<MediaListScreen> {
   }
 
   Future<void> _openItemForm({MediaKind? kind, MediaItem? initial}) async {
-    final result = await showDSBottomSheet<MediaItem>(
+    final result = await SmoothBottomSheet.showWithTitle<MediaItem>(
       context: context,
       title: initial == null ? 'media_newItem'.tr : 'media_editItem'.tr,
-      builder: (context) => MediaItemForm(
+      child: MediaItemForm(
         kind: kind ?? MediaKind.reading,
         initial: initial,
         availableTags: _getAllTags(),
@@ -332,13 +333,13 @@ class _MediaListScreenState extends State<MediaListScreen> {
 
   /// 长按卡片：编辑 / 删除
   Future<void> _showItemActions(MediaItem item) async {
-    await showDSBottomSheet(
+    await SmoothBottomSheet.showWithTitle(
       context: context,
       title: item.title,
-      builder: (context) => Column(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.edit,
             label: 'media_edit'.tr,
             onTap: () {
@@ -346,7 +347,7 @@ class _MediaListScreenState extends State<MediaListScreen> {
               _openItemForm(initial: item);
             },
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.trash,
             label: 'media_delete'.tr,
             destructive: true,

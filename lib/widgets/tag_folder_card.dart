@@ -132,12 +132,16 @@ class TagFolderCard extends StatelessWidget {
                     ),
                   ),
 
-                  // 右下角贴纸
+                  // 右下角贴纸（直径约前盖板宽的一半）
                   if (sticker != null)
                     Positioned(
                       right: 10,
                       bottom: 10,
-                      child: _FolderSticker(sticker: sticker!, theme: theme),
+                      child: _FolderSticker(
+                        sticker: sticker!,
+                        theme: theme,
+                        size: w * 0.5,
+                      ),
                     ),
                 ],
               );
@@ -222,10 +226,17 @@ class TagFolderCard extends StatelessWidget {
 
 /// 文件夹右下角圆形贴纸：emoji / 图片 / 图标三种形态
 class _FolderSticker extends StatelessWidget {
-  const _FolderSticker({required this.sticker, required this.theme});
+  const _FolderSticker({
+    required this.sticker,
+    required this.theme,
+    required this.size,
+  });
 
   final String sticker;
   final AppThemeData theme;
+
+  /// 贴纸直径（内容字号/图标与白边按此比例缩放）
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -234,16 +245,19 @@ class _FolderSticker extends StatelessWidget {
     // 基于贴纸内容的伪随机角度（约 ±6°），同一贴纸角度稳定
     final angle = (sticker.hashCode % 21 - 10) * 0.01;
     final emoji = sticker.substring('emoji:'.length);
+    // 内容/白边随直径等比缩放（以 44 为基准）
+    final contentSize = size * 26 / 44;
+    final stickerEdge = size * 2.5 / 44;
 
     return Transform.rotate(
       angle: angle,
       child: Container(
-        width: 44,
-        height: 44,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: theme.paper,
           shape: BoxShape.circle,
-          border: Border.all(color: theme.paper, width: 2.5),
+          border: Border.all(color: theme.paper, width: stickerEdge),
         ),
         clipBehavior: Clip.antiAlias,
         child: Center(
@@ -255,22 +269,25 @@ class _FolderSticker extends StatelessWidget {
                       Text(
                         emoji,
                         style: TextStyle(
-                          fontSize: 26,
+                          fontSize: contentSize,
                           foreground:
                               Paint()
                                 ..style = PaintingStyle.stroke
-                                ..strokeWidth = 2.5
+                                ..strokeWidth = stickerEdge
                                 ..color = theme.paper,
                         ),
                       ),
-                      Text(emoji, style: const TextStyle(fontSize: 26)),
+                      Text(
+                        emoji,
+                        style: TextStyle(fontSize: contentSize),
+                      ),
                     ],
                   )
                   : isImage
                   ? _FolderThumb(url: sticker.substring('img:'.length), theme: theme)
                   : Icon(
                     AppIcons.predefinedIcons[sticker] ?? Icons.label_outline,
-                    size: 26,
+                    size: contentSize,
                     color: theme.primaryText,
                   ),
         ),

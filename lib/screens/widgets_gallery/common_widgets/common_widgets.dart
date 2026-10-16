@@ -91,6 +91,7 @@ import 'widgets/stacked_folder_card.dart';
 import 'widgets/stacked_accordion_card.dart';
 import 'widgets/cute_notepad_card.dart';
 import 'widgets/scrapbook_canvas_card/scrapbook_canvas_card.dart';
+import 'widgets/arc_rotary_wheel_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -183,6 +184,7 @@ enum CommonWidgetId {
   stackedAccordionCard,
   cuteNotepadCard,
   scrapbookCanvasCard,
+  arcRotaryWheelCard,
 }
 
 /// 公共小组件元数据
@@ -906,6 +908,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [Large3Size()],
     ),
+    CommonWidgetId.arcRotaryWheelCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.arcRotaryWheelCard,
+      name: '弧形圆盘选择卡片',
+      description: '选项沿右侧大圆弧排布的手绘转轮：拖拽/甩动/点击选择，弹簧吸附 + 指针回弹（仅一个默认尺寸）',
+      icon: Icons.album,
+      defaultSize: Large3Size(),
+      supportedSizes: [Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1147,6 +1157,8 @@ class CommonWidgetBuilder {
         return CuteNotepadCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.scrapbookCanvasCard:
         return ScrapbookCanvasCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.arcRotaryWheelCard:
+        return ArcRotaryWheelCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 
 import '../media_log_plugin.dart';
@@ -49,10 +50,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   /// 编辑条目（表单 sheet 内含删除入口）
   Future<void> _editItem(MediaItem item) async {
-    final result = await showDSBottomSheet<dynamic>(
+    final result = await SmoothBottomSheet.showWithTitle<dynamic>(
       context: context,
       title: 'media_editItem'.tr,
-      builder: (context) => MediaItemForm(
+      child: MediaItemForm(
         kind: item.kind,
         initial: item,
         availableTags: MediaLogPlugin.instance.getAllTags(),
@@ -70,10 +71,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   /// 新增点评
   Future<void> _addReview(MediaItem item) async {
-    final result = await showDSBottomSheet<MediaReview>(
+    final result = await SmoothBottomSheet.showWithTitle<MediaReview>(
       context: context,
       title: 'media_addReview'.tr,
-      builder: (context) => MediaReviewForm(),
+      child: MediaReviewForm(),
     );
     if (result == null || !mounted) return;
     await MediaLogPlugin.instance.saveReview(
@@ -84,40 +85,43 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   /// 点评操作：编辑 / 删除
   Future<void> _showReviewActions(MediaItem item, MediaReview review) async {
-    await showDSBottomSheet(
+    await SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'media_reviewSection'.tr,
-      builder: (sheetContext) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DSSheetAction(
-            icon: DsIconKind.edit,
-            label: 'media_editReview'.tr,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _editReview(item, review);
-            },
-          ),
-          DSSheetAction(
-            icon: DsIconKind.trash,
-            label: 'media_deleteReview'.tr,
-            destructive: true,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              MediaLogPlugin.instance.deleteReview(item.id, review.id);
-            },
-          ),
-        ],
+      // 保留 lambda：闭包内引用 sheetContext 弹出 sheet
+      child: Builder(
+        builder: (sheetContext) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SmoothSheetAction(
+              icon: DsIconKind.edit,
+              label: 'media_editReview'.tr,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _editReview(item, review);
+              },
+            ),
+            SmoothSheetAction(
+              icon: DsIconKind.trash,
+              label: 'media_deleteReview'.tr,
+              destructive: true,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                MediaLogPlugin.instance.deleteReview(item.id, review.id);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
   /// 编辑点评
   Future<void> _editReview(MediaItem item, MediaReview review) async {
-    final result = await showDSBottomSheet<MediaReview>(
+    final result = await SmoothBottomSheet.showWithTitle<MediaReview>(
       context: context,
       title: 'media_editReview'.tr,
-      builder: (context) => MediaReviewForm(initial: review),
+      child: MediaReviewForm(initial: review),
     );
     if (result == null || !mounted) return;
     await MediaLogPlugin.instance.saveReview(

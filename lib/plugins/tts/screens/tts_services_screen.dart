@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/plugins/tts/widgets/service_editor_sheet.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// TTS服务列表界面
@@ -183,62 +184,64 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
 
   /// 服务操作菜单（底部 sheet）
   ///
-  /// [themedContext] 需位于 DSThemeBridge 内，供 showDSBottomSheet 捕获主题
+  /// [themedContext] 需位于 DSThemeBridge 内，供 SmoothBottomSheet 捕获主题
   Future<void> _showServiceActions(
     BuildContext themedContext,
     TTSServiceConfig service,
   ) {
-    return showDSBottomSheet(
+    return SmoothBottomSheet.showWithTitle(
       context: themedContext,
       title: 'tts_serviceActions'.tr,
-      builder: (sheetContext) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DSSheetAction(
-            icon: DsIconKind.edit,
-            label: 'tts_editService'.tr,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _editService(service);
-            },
-          ),
-          DSSheetAction(
-            icon: DsIconKind.play,
-            label: 'tts_test'.tr,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _testService(service);
-            },
-          ),
-          DSSheetAction(
-            icon: service.isEnabled ? DsIconKind.pause : DsIconKind.play,
-            label: service.isEnabled
-                ? 'tts_disableThisService'.tr
-                : 'tts_enableThisService'.tr,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _toggleService(service);
-            },
-          ),
-          if (!service.isDefault)
-            DSSheetAction(
-              icon: DsIconKind.star,
-              label: 'tts_setAsDefault'.tr,
+      child: Builder(
+        builder: (sheetContext) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SmoothSheetAction(
+              icon: DsIconKind.edit,
+              label: 'tts_editService'.tr,
               onTap: () {
                 Navigator.pop(sheetContext);
-                _setDefaultService(service);
+                _editService(service);
               },
             ),
-          DSSheetAction(
-            icon: DsIconKind.trash,
-            label: 'tts_deleteService'.tr,
-            destructive: true,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _deleteService(service);
-            },
-          ),
-        ],
+            SmoothSheetAction(
+              icon: DsIconKind.play,
+              label: 'tts_test'.tr,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _testService(service);
+              },
+            ),
+            SmoothSheetAction(
+              icon: service.isEnabled ? DsIconKind.pause : DsIconKind.play,
+              label: service.isEnabled
+                  ? 'tts_disableThisService'.tr
+                  : 'tts_enableThisService'.tr,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _toggleService(service);
+              },
+            ),
+            if (!service.isDefault)
+              SmoothSheetAction(
+                icon: DsIconKind.star,
+                label: 'tts_setAsDefault'.tr,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _setDefaultService(service);
+                },
+              ),
+            SmoothSheetAction(
+              icon: DsIconKind.trash,
+              label: 'tts_deleteService'.tr,
+              destructive: true,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _deleteService(service);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

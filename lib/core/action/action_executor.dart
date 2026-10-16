@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/dialogs/plugin_list_dialog.dart';
+import 'package:aboutme/dialogs/rotary_plugin_launcher_dialog.dart';
 import 'package:aboutme/widgets/route_history_dialog/route_history_dialog.dart';
 import 'package:aboutme/screens/settings_screen/settings_screen.dart';
 import 'package:aboutme/screens/route.dart';
@@ -138,6 +139,9 @@ class BuiltInActionExecutor implements ActionExecutor {
 
         case BuiltInActions.selectPlugin:
           return await _executeSelectPlugin(context, data);
+
+        case BuiltInActions.rotaryPluginLauncher:
+          return await _executeRotaryPluginLauncher(context, data);
 
         case BuiltInActions.routeViewer:
           return await _executeRouteViewer(context, data);
@@ -350,6 +354,20 @@ class BuiltInActionExecutor implements ActionExecutor {
     showPluginListDialog(context);
 
     return ExecutionResult.success(data: {'action': 'selectPlugin'});
+  }
+
+  /// 执行圆盘选择插件
+  Future<ExecutionResult> _executeRotaryPluginLauncher(
+    BuildContext context,
+    Map<String, dynamic>? data,
+  ) async {
+    if (!context.mounted) {
+      return ExecutionResult.failure(error: 'Context not mounted');
+    }
+
+    await showRotaryPluginLauncherDialog(context);
+
+    return ExecutionResult.success(data: {'action': 'rotaryPluginLauncher'});
   }
 
   /// 执行路由查看器

@@ -19,7 +19,7 @@ class SettingsTile extends StatelessWidget {
     this.onTap,
   });
 
-  final IconData icon;
+  final DsIconKind icon;
 
   /// 图标主色（圆形底色按此派生）
   final Color iconColor;
@@ -59,7 +59,7 @@ class SettingsTile extends StatelessWidget {
                     alpha: theme.isDark ? 0.25 : 0.15,
                   ),
                 ),
-                child: Icon(
+                child: DsIcon(
                   icon,
                   size: 20,
                   color: theme.isDark ? iconColor.mixWhite(0.3) : iconColor,

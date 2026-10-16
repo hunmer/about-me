@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import '../widgets/moments_compose_sheet.dart';
 import '../widgets/moments_shared.dart';
@@ -33,10 +34,10 @@ class _MomentsHomeScreenState extends State<MomentsHomeScreen> {
   }
 
   Future<void> _openCompose() async {
-    await showDSBottomSheet<void>(
+    await SmoothBottomSheet.showWithTitle<void>(
       context: context,
       title: 'moments_composeTitle'.tr,
-      builder: (_) => const MomentsComposeSheet(),
+      child: const MomentsComposeSheet(),
     );
   }
 

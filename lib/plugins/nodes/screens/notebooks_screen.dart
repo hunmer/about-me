@@ -5,6 +5,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
 import 'package:aboutme/plugins/nodes/models/notebook.dart';
@@ -229,100 +230,104 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
     IconData selectedIcon = notebook?.icon ?? Icons.book;
     Color selectedColor = notebook?.color ?? Colors.blue;
 
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title:
           (notebook == null
                   ? 'nodes_addNotebook'
                   : 'nodes_editNotebook')
               .tr,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleIconPicker(
-                    currentIcon: selectedIcon,
-                    backgroundColor: selectedColor,
-                    onIconSelected: (icon) =>
-                        setSheetState(() => selectedIcon = icon),
-                    onColorSelected: (color) =>
-                        setSheetState(() => selectedColor = color),
-                  ),
-                  const SizedBox(height: 16),
-                  DSInput(
-                    controller: titleController,
-                    label: 'nodes_notebookTitle'.tr,
-                  ),
-                  const SizedBox(height: 16),
-                  DSButton(
-                    label: 'nodes_save'.tr,
-                    expand: true,
-                    onPressed: () {
-                      final title = titleController.text.trim();
-                      if (title.isEmpty) return;
-                      if (notebook == null) {
-                        controller.addNotebook(
-                          title,
-                          selectedIcon,
-                          color: selectedColor,
-                        );
-                      } else {
-                        controller.updateNotebook(
-                          Notebook(
-                            id: notebook.id,
-                            title: title,
-                            icon: selectedIcon,
+      child: Builder(
+        builder: (sheetContext) {
+          return StatefulBuilder(
+            builder: (context, setSheetState) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleIconPicker(
+                      currentIcon: selectedIcon,
+                      backgroundColor: selectedColor,
+                      onIconSelected: (icon) =>
+                          setSheetState(() => selectedIcon = icon),
+                      onColorSelected: (color) =>
+                          setSheetState(() => selectedColor = color),
+                    ),
+                    const SizedBox(height: 16),
+                    DSInput(
+                      controller: titleController,
+                      label: 'nodes_notebookTitle'.tr,
+                    ),
+                    const SizedBox(height: 16),
+                    DSButton(
+                      label: 'nodes_save'.tr,
+                      expand: true,
+                      onPressed: () {
+                        final title = titleController.text.trim();
+                        if (title.isEmpty) return;
+                        if (notebook == null) {
+                          controller.addNotebook(
+                            title,
+                            selectedIcon,
                             color: selectedColor,
-                            nodes: notebook.nodes,
-                          ),
-                        );
-                      }
-                      Navigator.pop(sheetContext);
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            );
-          },
-        );
-      },
+                          );
+                        } else {
+                          controller.updateNotebook(
+                            Notebook(
+                              id: notebook.id,
+                              title: title,
+                              icon: selectedIcon,
+                              color: selectedColor,
+                              nodes: notebook.nodes,
+                            ),
+                          );
+                        }
+                        Navigator.pop(sheetContext);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 
   /// 卡片操作：编辑 / 删除
   void _showNotebookActions(BuildContext context, Notebook notebook) {
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: notebook.title,
-      builder: (sheetContext) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DSSheetAction(
-              icon: DsIconKind.edit,
-              label: 'nodes_editNotebook'.tr,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _showNotebookFormSheet(context, notebook: notebook);
-              },
-            ),
-            DSSheetAction(
-              icon: DsIconKind.trash,
-              label: 'nodes_deleteNotebook'.tr,
-              destructive: true,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _confirmDeleteNotebook(context, notebook);
-              },
-            ),
-          ],
-        );
-      },
+      child: Builder(
+        builder: (sheetContext) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SmoothSheetAction(
+                icon: DsIconKind.edit,
+                label: 'nodes_editNotebook'.tr,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showNotebookFormSheet(context, notebook: notebook);
+                },
+              ),
+              SmoothSheetAction(
+                icon: DsIconKind.trash,
+                label: 'nodes_deleteNotebook'.tr,
+                destructive: true,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _confirmDeleteNotebook(context, notebook);
+                },
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 

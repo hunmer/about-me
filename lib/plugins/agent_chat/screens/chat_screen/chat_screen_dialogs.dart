@@ -135,10 +135,10 @@ extension _ChatScreenDialogsExt on _ChatScreenState {
 
   /// 底部 sheet 显示思考过程（独立 thinkingContent + 内联 think 合并展示）
   void _showThinkingSheet(ChatMessage source) {
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: '思考过程',
-      builder: (sheetContext) => DSThemeBridge(
+      child: DSThemeBridge(
         child: Builder(
           builder: (ctx) {
             final theme = DSThemeBridge.resolve(ctx);

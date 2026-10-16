@@ -88,6 +88,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/stacked_folder_card_exam
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_accordion_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/cute_notepad_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/scrapbook_canvas_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/arc_rotary_wheel_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/inbox_message_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
@@ -578,6 +579,11 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/scrapbook_canvas_card',
           handler: (settings) => RouteHelpers.createRoute(const ScrapbookCanvasCardExample(), settings: settings),
           description: '手帐无限画布卡片',
+        ),
+        RouteDefinition(
+          path: '/widgets_gallery/arc_rotary_wheel_card',
+          handler: (settings) => RouteHelpers.createRoute(const ArcRotaryWheelCardExample(), settings: settings),
+          description: '弧形圆盘选择卡片',
         ),
         RouteDefinition(
           path: '/widgets_gallery/inbox_message_card',
@@ -1177,5 +1183,12 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '存储分段小组件',
     subtitle: 'StorageBreakdownWidget',
     route: '/widgets_gallery/storage_breakdown_widget',
+  ),
+  WidgetPreviewItem(
+    category: '工具类',
+    icon: Icons.album,
+    title: '弧形圆盘选择卡片',
+    subtitle: 'ArcRotaryWheelCard - 手绘弧形转轮选择器',
+    route: '/widgets_gallery/arc_rotary_wheel_card',
   ),
 ];

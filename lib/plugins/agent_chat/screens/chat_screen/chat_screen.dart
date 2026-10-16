@@ -48,6 +48,7 @@ import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/chat_screen_sca
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_list.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_bubble/index.dart'
     as chat_bubble;
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 

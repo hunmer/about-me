@@ -201,7 +201,7 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DSSheetAction(
+                SmoothSheetAction(
                   icon: DsIconKind.sort,
                   label: 'habits_sortByName'.tr,
                   onTap: () {
@@ -211,7 +211,7 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
                     Navigator.pop(context);
                   },
                 ),
-                DSSheetAction(
+                SmoothSheetAction(
                   icon: DsIconKind.hash,
                   label: 'habits_sortByCompletions'.tr,
                   onTap: () async {
@@ -233,7 +233,7 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
                     Navigator.pop(context);
                   },
                 ),
-                DSSheetAction(
+                SmoothSheetAction(
                   icon: DsIconKind.clock,
                   label: 'habits_sortByDuration'.tr,
                   onTap: () async {

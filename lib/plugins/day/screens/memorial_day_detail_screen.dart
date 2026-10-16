@@ -5,6 +5,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 import 'package:aboutme/plugins/day/controllers/day_controller.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
@@ -162,22 +163,24 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
   }
 
   void _showNoteMenu(DayController controller, int index) {
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'day_note'.tr,
-      builder: (sheetContext) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DSSheetAction(
-            icon: DsIconKind.trash,
-            label: 'day_deleteMemorialDay'.tr,
-            destructive: true,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _deleteNote(controller, index);
-            },
-          ),
-        ],
+      child: Builder(
+        builder: (sheetContext) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SmoothSheetAction(
+              icon: DsIconKind.trash,
+              label: 'day_deleteMemorialDay'.tr,
+              destructive: true,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _deleteNote(controller, index);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

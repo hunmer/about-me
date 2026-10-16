@@ -234,10 +234,10 @@ extension _JellyLive2DBubble on _JellyLive2DState {
   Future<void> _openBubblePositionSettings() async {
     setState(() => _bubblePositionPreview = true);
     try {
-      await showDSBottomSheet<void>(
+      await SmoothBottomSheet.showWithTitle<void>(
         context: context,
         title: '气泡位置',
-        builder: (sheetContext) {
+        child: Builder(builder: (sheetContext) {
           final theme = AppTheme.of(sheetContext);
           return StatefulBuilder(
             builder: (context, setSheetState) => Padding(
@@ -291,7 +291,7 @@ extension _JellyLive2DBubble on _JellyLive2DState {
               ),
             ),
           );
-        },
+        }),
       );
     } finally {
       if (mounted) setState(() => _bubblePositionPreview = false);

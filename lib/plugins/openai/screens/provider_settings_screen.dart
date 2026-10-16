@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'package:aboutme/plugins/openai/widgets/provider_logo.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'provider_edit_screen.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -132,13 +133,13 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
 
   /// 长按提供商卡片弹出的操作抽屉
   Future<void> _showProviderActions(ServiceProvider provider) {
-    return showDSBottomSheet(
+    return SmoothBottomSheet.showWithTitle(
       context: context,
       title: provider.label,
-      builder: (context) => Column(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.edit,
             label: 'openai_editProvider'.tr,
             onTap: () {
@@ -146,7 +147,7 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
               _editProvider(provider);
             },
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.copy,
             label: 'openai_cloneProvider'.tr,
             onTap: () {
@@ -154,7 +155,7 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
               _cloneProvider(provider);
             },
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.trash,
             label: 'app_delete'.tr,
             destructive: true,

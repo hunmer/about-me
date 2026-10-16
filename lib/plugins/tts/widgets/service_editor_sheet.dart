@@ -315,7 +315,7 @@ class _ServiceEditorSheetState extends State<ServiceEditorSheet> {
     );
   }
 
-  /// 拖拽把手（与 showDSBottomSheet 同款手绘样式）
+  /// 拖拽把手（与 SmoothBottomSheet 同款手绘样式）
   Widget _buildDragHandle(AppThemeData theme) {
     return Center(
       child: Container(

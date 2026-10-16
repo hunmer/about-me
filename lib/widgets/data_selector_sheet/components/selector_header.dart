@@ -55,11 +55,12 @@ class SelectorHeader extends StatelessWidget {
       ),
       child: SizedBox(
         height: stepTitle != null ? 72 : 56,
-        child: Stack(
+        child: Row(
           children: [
-            // 标题居中
-            Center(
+            // 标题靠左
+            Expanded(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
@@ -67,7 +68,6 @@ class SelectorHeader extends StatelessWidget {
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   if (stepTitle != null) ...[
                     const SizedBox(height: 2),
@@ -76,42 +76,25 @@ class SelectorHeader extends StatelessWidget {
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: effectiveColor,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ],
               ),
             ),
-            // 左侧和右侧按钮
-            Row(
-              children: [
-                if (showBackButton && onBack != null)
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: onBack,
-                    tooltip: '返回',
-                  )
-                else if (showCloseButton && onClose != null)
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: onClose,
-                    tooltip: '关闭',
-                  )
-                else
-                  const SizedBox(width: 48),
-                const Spacer(),
-                if (actions != null) ...actions!,
-                if (showCloseButton &&
-                    onClose != null &&
-                    showBackButton &&
-                    onBack != null)
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: onClose,
-                    tooltip: '关闭',
-                  ),
-              ],
-            ),
+            // 操作按钮集中在右侧
+            if (showBackButton && onBack != null)
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: onBack,
+                tooltip: '返回',
+              ),
+            if (actions != null) ...actions!,
+            if (showCloseButton && onClose != null)
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: onClose,
+                tooltip: '关闭',
+              ),
           ],
         ),
       ),

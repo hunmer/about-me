@@ -419,6 +419,12 @@ final Map<String, String> screensTranslationsZh = {
   'screens_expBarPosition': 'Exp Bar Position',
   'screens_iconPosition': 'Icon Position',
   'screens_valuePosition': 'Value Position',
-  'screens_logSystem': 'Log System',
-  'screens_confirmDeleteLogs': 'Delete all log files? This cannot be undone.',
+  'screens_logSystem': '日志系统',
+  'screens_confirmDeleteLogs': '删除所有日志文件？此操作不可撤销。',
+
+  // theme_background_settings_screen
+  'screens_pickImageFailed': '选择图片失败：@error',
+  'screens_themeSettingsSaved': '主题设置已保存',
+  'screens_saveFailedWithReason': '保存失败：@error',
+  'screens_restoredDefaultBackground': '已恢复默认背景',
 };

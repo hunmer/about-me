@@ -4,10 +4,13 @@ import 'package:aboutme/core/storage/storage_backend_config.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/storage/storage_migration_service.dart';
 import 'package:aboutme/core/storage/storage_websocket_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
+
 class StorageBackendSettingsDialog extends StatefulWidget {
   const StorageBackendSettingsDialog({super.key});
 
@@ -18,14 +21,12 @@ class StorageBackendSettingsDialog extends StatefulWidget {
 
 class _StorageBackendSettingsDialogState
     extends State<StorageBackendSettingsDialog> {
-  final _formKey = GlobalKey<FormState>();
   final _serverController = TextEditingController();
   final _credentialController = TextEditingController();
   final _userIdController = TextEditingController();
   final _store = LocalStorageBackendConfigStore();
   StorageBackendType _type = StorageBackendType.local;
   StorageBackendType _originalType = StorageBackendType.local;
-  StorageAuthType _authType = StorageAuthType.apiKey;
   bool _loading = true;
   String? _status;
 
@@ -41,7 +42,6 @@ class _StorageBackendSettingsDialogState
     setState(() {
       _type = config.type;
       _originalType = config.type;
-      _authType = config.authType;
       _serverController.text = config.serverUrl;
       _credentialController.text = config.credential;
       _userIdController.text = config.userId;
@@ -52,13 +52,26 @@ class _StorageBackendSettingsDialogState
   StorageBackendConfig _config() => StorageBackendConfig(
     type: _type,
     serverUrl: _serverController.text,
-    authType: _authType,
+    authType: StorageAuthType.apiKey,
     credential: _credentialController.text,
     userId: _userIdController.text,
   );
 
+  /// HTTP 模式必填项校验，缺失时 toast 提示
+  bool _validate() {
+    if (_serverController.text.trim().isEmpty) {
+      Toast.show('settings_screen_storageServerUrlRequired'.tr);
+      return false;
+    }
+    if (_credentialController.text.trim().isEmpty) {
+      Toast.show('settings_screen_storageCredentialRequired'.tr);
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _test() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!_validate()) return;
     setState(() {
       _loading = true;
       _status = null;
@@ -67,38 +80,36 @@ class _StorageBackendSettingsDialogState
       await HttpStorage.fromConfig(_config()).testConnection();
       await StorageWebSocketService.instance.connect(_config());
       if (mounted) {
-        setState(() => _status = '连接成功');
+        setState(() => _status = 'settings_screen_storageConnectionSuccess'.tr);
       }
     } catch (error) {
-      if (mounted) setState(() => _status = '连接失败：$error');
+      if (mounted) {
+        setState(
+          () => _status = 'settings_screen_storageConnectionFailed'.trParams({
+            'error': error.toString(),
+          }),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _save() async {
-    if (_type == StorageBackendType.http &&
-        !(_formKey.currentState?.validate() ?? false)) {
+    if (_loading) return;
+    if (_type == StorageBackendType.http && !_validate()) {
       return;
     }
     if (_type != _originalType) {
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showDSDialog<bool>(
         context: context,
+        theme: DSThemeBridge.resolve(context),
         builder:
-            (context) => AlertDialog(
-              title: Text('settings_screen_switchStorageBackend'.tr),
-              content: Text('settings_screen_switchStorageBackendDesc'.tr,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text('app_cancel'.tr),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text('app_stillContinue'.tr),
-                ),
-              ],
+            (context) => DSDialog(
+              title: 'settings_screen_switchStorageBackend'.tr,
+              message: 'settings_screen_switchStorageBackendDesc'.tr,
+              confirmText: 'app_stillContinue'.tr,
+              cancelText: 'app_cancel'.tr,
             ),
       );
       if (confirmed != true) return;
@@ -116,17 +127,19 @@ class _StorageBackendSettingsDialogState
       if (mounted) {
         setState(() {
           _loading = false;
-          _status = '保存失败：$error';
+          _status = 'settings_screen_storageSaveFailed'.trParams({
+            'error': error.toString(),
+          });
         });
       }
     }
   }
 
   Future<void> _migrate() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!_validate()) return;
     setState(() {
       _loading = true;
-      _status = '正在迁移…';
+      _status = 'settings_screen_storageMigrating'.tr;
     });
     try {
       final destination = HttpStorage.fromConfig(_config());
@@ -135,29 +148,42 @@ class _StorageBackendSettingsDialogState
         source: StorageManager.localBackend,
         destination: destination,
         onProgress: (completed, total) {
-          if (mounted) setState(() => _status = '正在迁移 $completed/$total');
+          if (mounted) {
+            setState(() {
+              _status = 'settings_screen_storageMigrateProgress'.trParams({
+                'completed': '$completed',
+                'total': '$total',
+              });
+            });
+          }
         },
       );
       if (mounted) {
         setState(
-          () => _status = '迁移完成：${result.migrated} 个文件，跳过 ${result.skipped} 个',
+          () => _status = 'settings_screen_storageMigrateDone'.trParams({
+            'migrated': '${result.migrated}',
+            'skipped': '${result.skipped}',
+          }),
         );
       }
     } catch (error) {
-      if (mounted) setState(() => _status = '迁移失败：$error');
+      if (mounted) {
+        setState(() {
+          _status = 'settings_screen_storageMigrateFailed'.trParams({
+            'error': error.toString(),
+          });
+        });
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _copyField(
-    TextEditingController controller,
-    String label,
-  ) async {
-    final value = controller.text.trim();
+  Future<void> _copyCredential() async {
+    final value = _credentialController.text.trim();
     if (value.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: value));
-    Toast.success('已复制$label');
+    Toast.show('settings_screen_storageCopied'.tr);
   }
 
   @override
@@ -170,123 +196,99 @@ class _StorageBackendSettingsDialogState
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('settings_screen_storageBackend'.tr),
-      content: SizedBox(
-        width: 480,
-        child:
-            _loading && _serverController.text.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : Form(
-                  key: _formKey,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SegmentedButton<StorageBackendType>(
-                          segments: const [
-                            ButtonSegment(
-                              value: StorageBackendType.local,
-                              icon: Icon(Icons.folder),
-                              label: Text('本地文件'),
-                            ),
-                            ButtonSegment(
-                              value: StorageBackendType.http,
-                              icon: Icon(Icons.cloud),
-                              label: Text('HTTP 服务器'),
-                            ),
-                          ],
-                          selected: {_type},
-                          onSelectionChanged:
-                              _loading
-                                  ? null
-                                  : (value) =>
-                                      setState(() => _type = value.first),
-                        ),
-                        if (_type == StorageBackendType.http) ...[
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _serverController,
-                            decoration: const InputDecoration(
-                              labelText: '服务器地址',
-                              hintText: 'https://example.com',
-                            ),
-                            validator:
-                                (value) =>
-                                    value == null || value.trim().isEmpty
-                                        ? '请输入服务器地址'
-                                        : null,
-                          ),
-                          const SizedBox(height: 12),
-                          const InputDecorator(
-                            decoration: InputDecoration(labelText: '认证方式'),
-                            child: Text('API Key'),
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _credentialController,
-                            obscureText: true,
-                            decoration: InputDecoration(
-                              labelText: 'API Key',
-                              suffixIcon: IconButton(
-                                tooltip: '复制 API Key',
-                                icon: const Icon(Icons.copy),
-                                onPressed:
-                                    () => _copyField(
-                                      _credentialController,
-                                      'API Key',
-                                    ),
-                              ),
-                            ),
-                            validator:
-                                (value) =>
-                                    value == null || value.trim().isEmpty
-                                        ? '请输入认证凭据'
-                                        : null,
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _userIdController,
-                            decoration: const InputDecoration(
-                              labelText: '用户标识（可选）',
-                            ),
-                          ),
-                        ],
-                        if (_status != null) ...[
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(_status!),
-                          ),
-                        ],
-                      ],
+    final theme = DSThemeBridge.resolve(context);
+    final isHttp = _type == StorageBackendType.http;
+
+    return DSDialog(
+      title: 'settings_screen_storageBackend'.tr,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DSSegmentedControl(
+            options: [
+              'settings_screen_storageLocalFile'.tr,
+              'settings_screen_storageHttpServer'.tr,
+            ],
+            selected: isHttp ? 1 : 0,
+            onChanged:
+                _loading
+                    ? null
+                    : (index) => setState(
+                      () => _type =
+                          index == 1
+                              ? StorageBackendType.http
+                              : StorageBackendType.local,
                     ),
+          ),
+          if (isHttp) ...[
+            SizedBox(height: theme.spacing.md),
+            DSInput(
+              controller: _serverController,
+              label: 'settings_screen_storageServerUrl'.tr,
+              hint: 'https://example.com',
+              keyboardType: TextInputType.url,
+            ),
+            SizedBox(height: theme.spacing.sm),
+            DSInput(
+              controller: _credentialController,
+              label: 'API Key',
+              obscureText: true,
+              suffix: DSIconButton(
+                icon: DsIconKind.copy,
+                size: 34,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'settings_screen_storageCopyApiKey'.tr,
+                onPressed: _copyCredential,
+              ),
+            ),
+            SizedBox(height: theme.spacing.sm),
+            DSInput(
+              controller: _userIdController,
+              label: 'settings_screen_storageUserId'.tr,
+            ),
+          ],
+          if (_status != null) ...[
+            SizedBox(height: theme.spacing.sm),
+            Text(
+              _status!,
+              style: DsTypography.caption.copyWith(color: theme.textSub),
+            ),
+          ],
+          if (isHttp) ...[
+            SizedBox(height: theme.spacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: DSButton(
+                    label: 'settings_screen_testConnection'.tr,
+                    icon: DsIconKind.wifi,
+                    variant: DSButtonVariant.outline,
+                    onPressed: _loading ? null : _test,
                   ),
                 ),
+                SizedBox(width: theme.spacing.sm),
+                Expanded(
+                  child: DSButton(
+                    label: 'settings_screen_migrateLocalData'.tr,
+                    icon: DsIconKind.upload,
+                    variant: DSButtonVariant.outline,
+                    onPressed: _loading ? null : _migrate,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (_loading && _serverController.text.isEmpty) ...[
+            SizedBox(height: theme.spacing.md),
+            Center(child: DSLoadingDots(color: theme.textSub)),
+          ],
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _loading ? null : () => Navigator.pop(context),
-          child: Text('app_cancel'.tr),
-        ),
-        if (_type == StorageBackendType.http)
-          OutlinedButton.icon(
-            onPressed: _loading ? null : _test,
-            icon: const Icon(Icons.wifi_tethering),
-            label: Text('settings_screen_testConnection'.tr),
-          ),
-        if (_type == StorageBackendType.http)
-          OutlinedButton.icon(
-            onPressed: _loading ? null : _migrate,
-            icon: const Icon(Icons.upload),
-            label: Text('settings_screen_migrateLocalData'.tr),
-          ),
-        FilledButton.icon(
-          onPressed: _loading ? null : _save,
-          icon: const Icon(Icons.save),
-          label: Text('app_save'.tr),
-        ),
-      ],
+      confirmText: 'app_save'.tr,
+      cancelText: 'app_cancel'.tr,
+      onConfirm: _save,
     );
   }
 }

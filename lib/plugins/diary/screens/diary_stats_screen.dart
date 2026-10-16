@@ -18,6 +18,7 @@ import 'package:aboutme/plugins/diary/models/diary_entry.dart';
 import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_mood_face.dart';
 import 'package:aboutme/widgets/quill_viewer/index.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// 心情罐分类（开心系 / 平静系 / 低能量系）
@@ -546,13 +547,15 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
   }
 
   void _openMoodModal(_BadgeBody badge) {
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'diary_stats_moodJarMemory'.tr,
-      builder: (context) => _MoodModalCard(
-        theme: DSThemeBridge.resolve(context),
-        badge: badge,
-        onBounceAgain: () => badge.bounceImpulse(),
+      child: Builder(
+        builder: (context) => _MoodModalCard(
+          theme: DSThemeBridge.resolve(context),
+          badge: badge,
+          onBounceAgain: () => badge.bounceImpulse(),
+        ),
       ),
     );
   }
@@ -628,62 +631,64 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
 
   void _showMonthSheet() {
     final months = _monthsWithBadges();
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'diary_stats_selectMonth'.tr,
-      builder: (context) {
-        final theme = AppTheme.of(context);
-        if (months.isEmpty) {
-          return Padding(
-            padding: EdgeInsets.all(theme.spacing.lg),
-            child: Text(
-              'diary_stats_noMoodRecords'.tr,
-              style: DsTypography.caption.copyWith(color: theme.textSub),
+      child: Builder(
+        builder: (context) {
+          final theme = AppTheme.of(context);
+          if (months.isEmpty) {
+            return Padding(
+              padding: EdgeInsets.all(theme.spacing.lg),
+              child: Text(
+                'diary_stats_noMoodRecords'.tr,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+            );
+          }
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 380),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: months.length,
+              itemBuilder: (context, i) {
+                final m = months[i];
+                final selected = m.year == _selectedMonth.year &&
+                    m.month == _selectedMonth.month;
+                return SmoothSheetAction(
+                  icon: DsIconKind.calendar,
+                  label: '${m.year}/${m.month}',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    if (!selected) {
+                      setState(() {
+                        _selectedMonth = m;
+                        _spawnBadges();
+                      });
+                      _shakeJar();
+                    }
+                  },
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'x${_monthBadgeCount(m)}',
+                        style: DsTypography.caption
+                            .copyWith(color: theme.textSub),
+                      ),
+                      if (selected) ...[
+                        const SizedBox(width: 6),
+                        DsIcon(DsIconKind.check,
+                            size: 16, color: theme.primary),
+                      ],
+                    ],
+                  ),
+                );
+              },
             ),
           );
-        }
-        return ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 380),
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: months.length,
-            itemBuilder: (context, i) {
-              final m = months[i];
-              final selected = m.year == _selectedMonth.year &&
-                  m.month == _selectedMonth.month;
-              return DSSheetAction(
-                icon: DsIconKind.calendar,
-                label: '${m.year}/${m.month}',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  if (!selected) {
-                    setState(() {
-                      _selectedMonth = m;
-                      _spawnBadges();
-                    });
-                    _shakeJar();
-                  }
-                },
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'x${_monthBadgeCount(m)}',
-                      style: DsTypography.caption
-                          .copyWith(color: theme.textSub),
-                    ),
-                    if (selected) ...[
-                      const SizedBox(width: 6),
-                      DsIcon(DsIconKind.check,
-                          size: 16, color: theme.primary),
-                    ],
-                  ],
-                ),
-              );
-            },
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 
@@ -979,7 +984,7 @@ class _MoodModalCardState extends State<_MoodModalCard>
     final entry = widget.badge.entry;
     final hasContent = entry.content.trim().isNotEmpty;
 
-    // 面板/把手/标题行由 showDSBottomSheet 提供，这里只出内容
+    // 面板/把手/标题行由 SmoothBottomSheet 提供，这里只出内容
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
       child: SingleChildScrollView(

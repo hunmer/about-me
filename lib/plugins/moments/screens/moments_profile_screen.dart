@@ -17,6 +17,7 @@ import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart'
 import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import '../widgets/moment_stickers.dart';
 import '../widgets/moments_shared.dart';
@@ -236,21 +237,20 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
   }
 
   void _showBgOptions() {
-    showDSBottomSheet<void>(
+    SmoothBottomSheet.showWithTitle<void>(
       context: context,
       title: 'moments_imageActions'.tr,
-      builder:
-          (_) => DSSheetAction(
-            icon: DsIconKind.refresh,
-            label: 'moments_bgReset'.tr,
-            onTap: () async {
-              Navigator.pop(context);
-              await _moments.clearProfileBg(_authorKey);
-              if (mounted) {
-                ToastService.instance.showToast('moments_bgResetDone'.tr);
-              }
-            },
-          ),
+      child: SmoothSheetAction(
+        icon: DsIconKind.refresh,
+        label: 'moments_bgReset'.tr,
+        onTap: () async {
+          Navigator.pop(context);
+          await _moments.clearProfileBg(_authorKey);
+          if (mounted) {
+            ToastService.instance.showToast('moments_bgResetDone'.tr);
+          }
+        },
+      ),
     );
   }
 

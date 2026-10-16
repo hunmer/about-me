@@ -446,4 +446,10 @@ final Map<String, String> screensTranslationsEn = {
   'screens_valuePosition': 'Value Position',
   'screens_logSystem': 'Log System',
   'screens_confirmDeleteLogs': 'Delete all log files? This cannot be undone.',
+
+  // theme_background_settings_screen
+  'screens_pickImageFailed': 'Failed to pick image: @error',
+  'screens_themeSettingsSaved': 'Theme settings saved',
+  'screens_saveFailedWithReason': 'Save failed: @error',
+  'screens_restoredDefaultBackground': 'Default background restored',
 };

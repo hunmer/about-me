@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import '../widgets/moments_compose_sheet.dart';
 import '../widgets/moments_shared.dart';
@@ -174,10 +175,10 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
   }
 
   Future<void> _openCompose() async {
-    await showDSBottomSheet(
+    await SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'moments_composeTitle'.tr,
-      builder: (_) => const MomentsComposeSheet(),
+      child: const MomentsComposeSheet(),
     );
   }
 
@@ -910,23 +911,22 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
   /// 长按帖子图片：设为该作者的主页背景（拷贝归档，帖子删除不受影响）
   void _showImageActions() {
     final post = widget.post;
-    showDSBottomSheet<void>(
+    SmoothBottomSheet.showWithTitle<void>(
       context: context,
       title: 'moments_imageActions'.tr,
-      builder:
-          (_) => DSSheetAction(
-            icon: DsIconKind.image,
-            label: 'moments_setBg'.trParams({'name': widget.author.name}),
-            onTap: () async {
-              Navigator.pop(context);
-              await MomentsService.instance.setProfileBg(
-                post.isUserPost ? MomentPost.userAuthorId : post.agentId,
-                post.images[_activeImage],
-                copy: true,
-              );
-              ToastService.instance.showToast('moments_bgSet'.tr);
-            },
-          ),
+      child: SmoothSheetAction(
+        icon: DsIconKind.image,
+        label: 'moments_setBg'.trParams({'name': widget.author.name}),
+        onTap: () async {
+          Navigator.pop(context);
+          await MomentsService.instance.setProfileBg(
+            post.isUserPost ? MomentPost.userAuthorId : post.agentId,
+            post.images[_activeImage],
+            copy: true,
+          );
+          ToastService.instance.showToast('moments_bgSet'.tr);
+        },
+      ),
     );
   }
 

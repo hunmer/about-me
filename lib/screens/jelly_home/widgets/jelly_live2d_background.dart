@@ -157,55 +157,58 @@ extension _JellyLive2DBackground on _JellyLive2DState {
 
   /// 背景调节弹出层：滑杆拖动实时预览，松手持久化
   Future<void> _openBackgroundSettings() {
-    return showDSBottomSheet<void>(
+    return SmoothBottomSheet.showWithTitle<void>(
       context: context,
       title: '背景设置',
-      builder: (sheetContext) {
-        final theme = AppTheme.of(sheetContext);
-        return SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            theme.spacing.xl,
-            0,
-            theme.spacing.xl,
-            theme.spacing.md,
-          ),
-          child: StatefulBuilder(
-            builder: (context, setSheetState) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '背景模糊',
-                  style: DsTypography.label.copyWith(color: theme.text),
-                ),
-                DSSlider(
-                  value: (_backgroundBlur / _backgroundBlurMax).clamp(0.0, 1.0),
-                  onChanged: (ratio) => _previewBackground(
-                    () => _backgroundBlur = ratio * _backgroundBlurMax,
-                    setSheetState,
-                  ),
-                  onChangeEnd: (ratio) => Live2DPlugin.instance
-                      .setBackgroundBlur(ratio * _backgroundBlurMax),
-                ),
-                SizedBox(height: theme.spacing.sm),
-                Text(
-                  '背景不透明度',
-                  style: DsTypography.label.copyWith(color: theme.text),
-                ),
-                DSSlider(
-                  value: _backgroundOpacity.clamp(0.0, 1.0),
-                  onChanged: (ratio) => _previewBackground(
-                    () => _backgroundOpacity = ratio,
-                    setSheetState,
-                  ),
-                  onChangeEnd: (ratio) =>
-                      Live2DPlugin.instance.setBackgroundOpacity(ratio),
-                ),
-              ],
+      child: Builder(
+        builder: (sheetContext) {
+          final theme = AppTheme.of(sheetContext);
+          return SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              theme.spacing.xl,
+              0,
+              theme.spacing.xl,
+              theme.spacing.md,
             ),
-          ),
-        );
-      },
+            child: StatefulBuilder(
+              builder: (context, setSheetState) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '背景模糊',
+                    style: DsTypography.label.copyWith(color: theme.text),
+                  ),
+                  DSSlider(
+                    value:
+                        (_backgroundBlur / _backgroundBlurMax).clamp(0.0, 1.0),
+                    onChanged: (ratio) => _previewBackground(
+                      () => _backgroundBlur = ratio * _backgroundBlurMax,
+                      setSheetState,
+                    ),
+                    onChangeEnd: (ratio) => Live2DPlugin.instance
+                        .setBackgroundBlur(ratio * _backgroundBlurMax),
+                  ),
+                  SizedBox(height: theme.spacing.sm),
+                  Text(
+                    '背景不透明度',
+                    style: DsTypography.label.copyWith(color: theme.text),
+                  ),
+                  DSSlider(
+                    value: _backgroundOpacity.clamp(0.0, 1.0),
+                    onChanged: (ratio) => _previewBackground(
+                      () => _backgroundOpacity = ratio,
+                      setSheetState,
+                    ),
+                    onChangeEnd: (ratio) =>
+                        Live2DPlugin.instance.setBackgroundOpacity(ratio),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

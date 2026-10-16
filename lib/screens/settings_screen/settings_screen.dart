@@ -101,7 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // 主页菜单入口
   Widget _buildNavTile(
     BuildContext context, {
-    required IconData icon,
+    required DsIconKind icon,
     required Color iconColor,
     required String title,
     required Widget screen,
@@ -307,7 +307,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   _buildNavTile(
                     context,
-                    icon: Icons.palette_outlined,
+                    icon: DsIconKind.palette,
                     iconColor: DsAccentColors.pink,
                     title: 'settings_screen_interfaceSettings'.tr,
                     screen: const InterfaceSettingsScreen(),
@@ -315,7 +315,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   _buildNavTile(
                     context,
-                    icon: Icons.storage_outlined,
+                    icon: DsIconKind.storage,
                     iconColor: DsAccentColors.blue,
                     title: 'settings_screen_dataSettings'.tr,
                     screen: const DataSettingsScreen(),
@@ -329,7 +329,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   _buildNavTile(
                     context,
-                    icon: Icons.tune,
+                    icon: DsIconKind.tune,
                     iconColor: DsAccentColors.violet,
                     title: 'settings_screen_appSettings'.tr,
                     screen: const AppSettingsScreen(),

@@ -11,6 +11,7 @@ import 'package:aboutme/core/services/ds_ink_style_controller.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/picker/app_color_picker.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import '../widgets/settings_group.dart';
 import '../widgets/settings_tile.dart';
 
@@ -94,7 +95,9 @@ class _ThemeBackgroundSettingsScreenState
     } catch (e) {
       debugPrint('选择图片失败: $e');
       if (mounted) {
-        toastService.showToast('选择图片失败：$e');
+        toastService.showToast(
+          'screens_pickImageFailed'.trParams({'error': e.toString()}),
+        );
       }
     }
     return null;
@@ -110,11 +113,13 @@ class _ThemeBackgroundSettingsScreenState
       );
 
       if (mounted) {
-        toastService.showToast('主题设置已保存');
+        toastService.showToast('screens_themeSettingsSaved'.tr);
       }
     } catch (e) {
       if (mounted) {
-        toastService.showToast('保存失败：$e');
+        toastService.showToast(
+          'screens_saveFailedWithReason'.trParams({'error': e.toString()}),
+        );
       }
     }
   }
@@ -125,11 +130,17 @@ class _ThemeBackgroundSettingsScreenState
       await _controller.saveBackgroundColor(color);
 
       if (mounted) {
-        toastService.showToast(color != null ? '主题设置已保存' : '已恢复默认背景');
+        toastService.showToast(
+          color != null
+              ? 'screens_themeSettingsSaved'.tr
+              : 'screens_restoredDefaultBackground'.tr,
+        );
       }
     } catch (e) {
       if (mounted) {
-        toastService.showToast('保存失败：$e');
+        toastService.showToast(
+          'screens_saveFailedWithReason'.trParams({'error': e.toString()}),
+        );
       }
     }
   }
@@ -151,11 +162,17 @@ class _ThemeBackgroundSettingsScreenState
     try {
       await _controller.saveBackgroundGrid(index, gap);
       if (mounted) {
-        toastService.showToast(index != null ? '主题设置已保存' : '已恢复默认背景');
+        toastService.showToast(
+          index != null
+              ? 'screens_themeSettingsSaved'.tr
+              : 'screens_restoredDefaultBackground'.tr,
+        );
       }
     } catch (e) {
       if (mounted) {
-        toastService.showToast('保存失败：$e');
+        toastService.showToast(
+          'screens_saveFailedWithReason'.trParams({'error': e.toString()}),
+        );
       }
     }
   }
@@ -557,11 +574,16 @@ class _ThemeBackgroundSettingsScreenState
                                     ),
                                     child:
                                         isSelected
-                                            ? const Center(
+                                            ? Center(
                                               child: DsIcon(
                                                 DsIconKind.check,
                                                 size: 20,
-                                                color: Colors.white,
+                                                // 对勾为底色对比色（浅底黑/深底白）
+                                                color:
+                                                    color.computeLuminance() >
+                                                        0.5
+                                                    ? DsColors.black
+                                                    : DsColors.white,
                                               ),
                                             )
                                             : null,
@@ -577,12 +599,12 @@ class _ThemeBackgroundSettingsScreenState
                           icon: DsIconKind.palette,
                           variant: DSButtonVariant.outline,
                           expand: true,
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _showAdvancedColorPicker(
-                              _backgroundColor ?? Colors.blue,
-                            );
-                          },
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _showAdvancedColorPicker(
+                            _backgroundColor ?? theme.primary,
+                          );
+                        },
                         ),
 
                         // 恢复默认背景（清除纯色设置）
@@ -663,8 +685,8 @@ class _ThemeBackgroundSettingsScreenState
                                 style: TextStyle(
                                   color:
                                       pickerColor.computeLuminance() > 0.5
-                                          ? Colors.black
-                                          : Colors.white,
+                                          ? DsColors.black
+                                          : DsColors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -825,13 +847,13 @@ class _ThemeBackgroundSettingsScreenState
                               shape: BoxShape.circle,
                               color: preset.palette.background,
                             ),
-                            child: selected
-                                ? Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color: preset.palette.primary,
-                                  )
-                                : null,
+                          child: selected
+                              ? DsIcon(
+                                  DsIconKind.check,
+                                  size: 16,
+                                  color: preset.palette.primary,
+                                )
+                              : null,
                           ),
                         ),
                       ),
@@ -949,8 +971,10 @@ class _ThemeBackgroundSettingsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('screens_themeSettings'.tr)),
+    return SuperCupertinoNavigationWrapper(
+      title: Text('screens_themeSettings'.tr),
+      largeTitle: 'screens_themeSettings'.tr,
+      enableLargeTitle: false,
       body: DSThemeBridge(
         child: Builder(
           builder: (context) {
@@ -978,7 +1002,7 @@ class _ThemeBackgroundSettingsScreenState
 
                     // 全局背景设置卡片
                     SettingsTile(
-                      icon: Icons.image,
+                      icon: DsIconKind.image,
                       iconColor: DsAccentColors.emerald,
                       title: 'screens_globalBackgroundImage'.tr,
                       subtitle:
@@ -992,7 +1016,7 @@ class _ThemeBackgroundSettingsScreenState
 
                     // 纯色背景设置卡片
                     SettingsTile(
-                      icon: Icons.palette,
+                      icon: DsIconKind.palette,
                       iconColor: DsAccentColors.violet,
                       title: 'screens_solidBackgroundColor'.tr,
                       subtitle:
@@ -1006,7 +1030,7 @@ class _ThemeBackgroundSettingsScreenState
 
                     // 网格背景设置卡片
                     SettingsTile(
-                      icon: Icons.grid_on,
+                      icon: DsIconKind.grid,
                       iconColor: DsAccentColors.amber,
                       title: 'screens_gridBackground'.tr,
                       subtitle:

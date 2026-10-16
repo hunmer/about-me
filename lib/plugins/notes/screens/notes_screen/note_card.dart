@@ -47,7 +47,7 @@ class NoteCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DSSheetAction(
+            SmoothSheetAction(
               icon: DsIconKind.copy,
               label: 'app_copy'.tr,
               onTap: () {
@@ -55,7 +55,7 @@ class NoteCard extends StatelessWidget {
                 _copyNoteContent();
               },
             ),
-            DSSheetAction(
+            SmoothSheetAction(
               icon: DsIconKind.edit,
               label: 'app_edit'.tr,
               onTap: () {
@@ -68,7 +68,7 @@ class NoteCard extends StatelessWidget {
               },
             ),
             if (onEditStyle != null)
-              DSSheetAction(
+              SmoothSheetAction(
                 icon: DsIconKind.palette,
                 label: 'notes_color'.tr,
                 onTap: () {
@@ -77,7 +77,7 @@ class NoteCard extends StatelessWidget {
                 },
               ),
             if (onToggleArchive != null)
-              DSSheetAction(
+              SmoothSheetAction(
                 icon: DsIconKind.archive,
                 label: note.isArchived
                     ? 'notes_unarchive'.tr
@@ -87,7 +87,7 @@ class NoteCard extends StatelessWidget {
                   onToggleArchive!();
                 },
               ),
-            DSSheetAction(
+            SmoothSheetAction(
               icon: DsIconKind.trash,
               label: 'app_delete'.tr,
               destructive: true,

@@ -9,6 +9,7 @@ import 'package:aboutme/core/floating_ball/plugin_overlay_manager.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/screens/settings_screen/settings_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// 防重复弹窗标志位
@@ -242,13 +243,13 @@ class _PluginListDialogState extends State<PluginListDialog> {
   /// 长按卡片弹出快捷操作面板：固定/取消固定、小窗打开
   Future<void> _showPluginMenu(BuildContext cardContext, PluginBase plugin) {
     final isPinned = PluginManager.instance.isPluginPinned(plugin.id);
-    return showDSBottomSheet(
+    return SmoothBottomSheet.showWithTitle(
       context: cardContext,
       title: plugin.getPluginName(cardContext) ?? plugin.id,
-      builder: (sheetContext) => Column(
+      child: Builder(builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.pin,
             label: isPinned ? 'core_unpinPlugin'.tr : 'core_pinPlugin'.tr,
             onTap: () {
@@ -258,7 +259,7 @@ class _PluginListDialogState extends State<PluginListDialog> {
               setState(() {});
             },
           ),
-          DSSheetAction(
+          SmoothSheetAction(
             icon: DsIconKind.pictureInPicture,
             label: 'core_openInOverlay'.tr,
             onTap: () {
@@ -268,7 +269,7 @@ class _PluginListDialogState extends State<PluginListDialog> {
             },
           ),
         ],
-      ),
+      )),
     );
   }
 }

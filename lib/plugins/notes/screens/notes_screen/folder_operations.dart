@@ -158,7 +158,6 @@ class _FolderNameSheetState extends State<_FolderNameSheet> {
               children: [
                 Text(
                   widget.titleText ?? 'notes_newFolder'.tr,
-                  textAlign: TextAlign.center,
                   style: DsTypography.title.copyWith(color: theme.text),
                 ),
                 if (!_isRename) ...[
@@ -166,7 +165,6 @@ class _FolderNameSheetState extends State<_FolderNameSheet> {
                   // 显示将在哪个文件夹下创建
                   Text(
                     '${'notes_createIn'.tr}: ${widget.parentFolderName}',
-                    textAlign: TextAlign.center,
                     style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                 ],

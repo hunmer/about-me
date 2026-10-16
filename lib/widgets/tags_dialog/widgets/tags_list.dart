@@ -11,7 +11,7 @@ class TagsList extends StatelessWidget {
   /// 已选择的标签
   final List<String> selectedTags;
 
-  /// 是否批量编辑模式
+  /// 是否批量编辑模式（显示条目编辑/删除小按钮）
   final bool isBatchEditMode;
 
   /// 配置
@@ -42,7 +42,7 @@ class TagsList extends StatelessWidget {
     super.key,
     required this.tags,
     required this.selectedTags,
-    required this.isBatchEditMode,
+    this.isBatchEditMode = false,
     required this.config,
     required this.selectionMode,
     required this.onSelectTag,

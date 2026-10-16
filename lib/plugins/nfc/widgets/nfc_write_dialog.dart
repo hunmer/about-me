@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:get/get.dart';
 import '../models/nfc_record_item.dart';
 import '../models/nfc_record_type.dart';
@@ -17,10 +18,10 @@ class NfcWriteDialog extends StatefulWidget {
     BuildContext context, {
     required Function(List<Map<String, String>>) onWrite,
   }) {
-    return showDSBottomSheet(
+    return SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'nfc_writeNFCData'.tr,
-      builder: (context) => NfcWriteDialog(onWrite: onWrite),
+      child: NfcWriteDialog(onWrite: onWrite),
     );
   }
 

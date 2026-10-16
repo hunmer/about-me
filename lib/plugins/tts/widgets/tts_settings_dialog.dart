@@ -85,7 +85,7 @@ class _TTSSettingsDialogState extends State<TTSSettingsDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 拖拽把手：纯色小条 + 淡墨描边（与 showDSBottomSheet 同款）
+          // 拖拽把手：纯色小条 + 淡墨描边（与 SmoothBottomSheet 同款）
           Center(
             child: Container(
               margin: const EdgeInsets.only(top: 12, bottom: 8),

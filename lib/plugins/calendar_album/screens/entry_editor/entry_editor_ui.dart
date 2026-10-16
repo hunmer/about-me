@@ -9,6 +9,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/chip_selector_field.dart';
 import 'package:aboutme/widgets/picker/location_picker.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'entry_editor_controller.dart';
 import 'entry_editor_image_handler.dart';
 import 'entry_editor_tag_handler.dart';
@@ -384,30 +385,29 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
 
   /// 显示天气选择器（手绘底部面板 + DSChip 选项）
   void _showWeatherPicker(List<ChipOption> weatherOptions) {
-    showDSBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'calendar_album_select_weather'.tr,
-      builder:
-          (context) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final opt in weatherOptions)
-                  DSChip(
-                    label: opt.label,
-                    selected: controller.weather == opt.id,
-                    onSelected: (_) {
-                      setState(() {
-                        controller.weather = opt.id;
-                      });
-                      Navigator.pop(context);
-                    },
-                  ),
-              ],
-            ),
-          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final opt in weatherOptions)
+              DSChip(
+                label: opt.label,
+                selected: controller.weather == opt.id,
+                onSelected: (_) {
+                  setState(() {
+                    controller.weather = opt.id;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

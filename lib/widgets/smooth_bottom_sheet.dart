@@ -301,23 +301,26 @@ class _FormSheetContent extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (onDelete != null)
+          // 标题靠左
+          Expanded(
+            child: Text(
+              title,
+              textAlign: TextAlign.start,
+              style: DsTypography.title.copyWith(color: theme.text),
+            ),
+          ),
+          // 操作按钮统一靠右
+          if (onDelete != null) ...[
+            SizedBox(width: theme.spacing.sm),
             DSIconButton(
               icon: DsIconKind.trash,
               size: 36,
               color: theme.surfaceAlt,
               iconColor: theme.textSub,
               onPressed: onDelete,
-            )
-          else
-            const SizedBox(width: 36),
-          Expanded(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: DsTypography.title.copyWith(color: theme.text),
             ),
-          ),
+          ],
+          SizedBox(width: theme.spacing.sm),
           if (onSave != null)
             DSButton(
               label: 'app_save'.tr,
@@ -335,6 +338,66 @@ class _FormSheetContent extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// 底部面板操作行：图标 + 文字 + 尾部控件（配合 [SmoothBottomSheet]）
+class SmoothSheetAction extends StatelessWidget {
+  const SmoothSheetAction({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.trailing,
+    this.destructive = false,
+  });
+
+  final DsIconKind icon;
+  final String label;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+
+  /// 危险操作（红色调）
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    final tint = destructive ? theme.danger : theme.primary;
+
+    return Pressable(
+      onPressed: onTap,
+      builder: (context, states) {
+        final hovered = states.contains(WidgetState.hovered);
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spacing.xl,
+            vertical: theme.spacing.md + 2,
+          ),
+          color: pressed
+              ? theme.surfaceAlt
+              : hovered
+              ? theme.surfaceAlt.withValues(alpha: 0.55)
+              : DsColors.transparent,
+          child: Row(
+            children: [
+              DsIcon(icon, size: 20, color: tint),
+              SizedBox(width: theme.spacing.md),
+              Expanded(
+                child: Text(
+                  label,
+                  style: DsTypography.body.copyWith(
+                    color: destructive ? theme.danger : theme.text,
+                  ),
+                ),
+              ),
+              if (trailing != null) trailing!,
+            ],
+          ),
+        );
+      },
     );
   }
 }
