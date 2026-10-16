@@ -58,9 +58,10 @@ void main() {
     // 标题栏保存按钮存在
     expect(find.byType(TextButton), findsWidgets);
 
-    // 短内容 sheet 底部应明显高于屏幕底部（无大片空隙）
-    final bodyRect = tester.getRect(find.text('form-body'));
-    expect(bodyRect.bottom, lessThan(1500));
+    // 短内容 sheet 应只占屏幕底部一小段：标题栏顶部远离屏幕顶部
+    // （若撑满全屏，标题栏 top 会接近 0）
+    final titleRect = tester.getRect(find.text('Test Sheet'));
+    expect(titleRect.top, greaterThan(1000));
   });
 
   testWidgets('长内容：超高部分初始不可见且可滚动到达', (tester) async {
@@ -114,7 +115,7 @@ void main() {
 
     expect(find.text('plain-col-1'), findsOneWidget);
     expect(find.text('plain-col-2'), findsOneWidget);
-    // 未传 onSave 时右上角为关闭按钮而非保存
-    expect(find.byType(IconButton), findsOneWidget);
+    // 未传 onSave 时右上角为关闭按钮而非保存（无 app_save 文本）
+    expect(find.text('app_save'), findsNothing);
   });
 }

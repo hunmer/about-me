@@ -126,5 +126,25 @@ class DiaryTranslationsZh {
     'diary_dayCardDesc': '显示所选日期的日记，点击查看/编辑',
     'diary_quickCreateEntry': '写日记',
     'diary_dayCardEmpty': '暂无日记',
+
+    // 统计页（心情罐）
+    'diary_stats': '统计',
+    'diary_stats_perfectDay': '完美的一天',
+    'diary_stats_goodDay': '平静的一天',
+    'diary_stats_niceDay': '温柔的一天',
+    'diary_stats_monthlyFrequency': '本月心情频率',
+    'diary_stats_noMoodRecords': '暂无心情记录',
+    'diary_stats_bounceAgain': '再弹一下',
+    'diary_stats_closeCard': '收起卡片',
+    'diary_stats_moodJarMemory': '心情罐回忆',
+    'diary_stats_quote_perfect_1': '今天所有的美好都如约而至，连微风都带着甜味。',
+    'diary_stats_quote_perfect_2': '眼里有星辰，心中有暖阳，今天是满分闪耀的一天！',
+    'diary_stats_quote_perfect_3': '把今天积攒的灿烂笑脸装进玻璃罐，留给未来的自己发光。',
+    'diary_stats_quote_good_1': '平静而充实的时光，像冰川蓝的湖面一样温柔清澈。',
+    'diary_stats_quote_good_2': '不必事事完美，步履不停且内心安宁就是最好的日子。',
+    'diary_stats_quote_good_3': '抬头看见好看的云朵，耳机里恰好播放着最喜欢的歌。',
+    'diary_stats_quote_nice_1': '生活藏着许多蜜桃味的小确幸，慢下来就能撞个满怀。',
+    'diary_stats_quote_nice_2': '一杯热饮，一个微笑，平凡日子里的温暖最抚凡人心。',
+    'diary_stats_quote_nice_3': '给努力生活的自己比个耶，每一个温柔的瞬间都算数。',
   };
 }
