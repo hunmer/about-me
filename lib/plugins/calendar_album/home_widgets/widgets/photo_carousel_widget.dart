@@ -6,10 +6,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:infinite_carousel/infinite_carousel.dart';
-import 'package:provider/provider.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/utils/image_utils.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import '../data.dart';
 
@@ -145,19 +143,13 @@ class PhotoCarouselWidgetState extends State<PhotoCarouselWidget>
     );
   }
 
-  /// 打开图片对应的日记编辑器
+  /// 打开图片对应的日记编辑弹层
   void _openPhotoDetail(PhotoItem photo) {
-    NavigationHelper.push(
+    EntryEditorSheet.show(
       context,
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(
-            value: widget.plugin.calendarController!,
-          ),
-          ChangeNotifierProvider.value(value: widget.plugin.tagController!),
-        ],
-        child: EntryEditorScreen(entry: photo.entry, isEditing: true),
-      ),
+      entry: photo.entry,
+      calendarController: widget.plugin.calendarController,
+      tagController: widget.plugin.tagController,
     );
   }
 }

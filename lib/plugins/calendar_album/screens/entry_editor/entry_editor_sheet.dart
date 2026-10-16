@@ -2,52 +2,98 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
+import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'entry_editor_controller.dart';
 import 'entry_editor_ui.dart';
 
-/// 日记新建底部弹层（基于通用 [SmoothBottomSheet.showForm]）
+/// 日记编辑底部弹层（基于通用 [SmoothBottomSheet.showForm]，支持新建与编辑）
 class EntryEditorSheet {
-  /// 以底部弹层打开新建日记表单，保存成功后自动关闭
+  /// 以底部弹层打开日记表单，保存成功后自动关闭
   ///
+  /// [entry] 非空为编辑模式（标题栏提供删除，带确认）；否则为新建模式
   /// [calendarController] / [tagController] 缺省时从 [context] 的 Provider 查询；
   /// 调用处 context 不在 Provider 树内（如 FAB、小组件）时需显式传入
   static Future<void> show(
     BuildContext context, {
+    CalendarEntry? entry,
     DateTime? initialDate,
     CalendarController? calendarController,
     TagController? tagController,
   }) {
-    calendarController ??= Provider.of<CalendarController>(
-      context,
-      listen: false,
-    );
-    tagController ??= Provider.of<TagController>(context, listen: false);
+    // 参数被 onDelete 闭包捕获时空安全不提升，收敛为局部非空变量
+    final resolvedCalendarController =
+        calendarController ??
+        Provider.of<CalendarController>(context, listen: false);
+    final resolvedTagController =
+        tagController ?? Provider.of<TagController>(context, listen: false);
 
     _EntryEditorSheetBodyState? bodyState;
     return SmoothBottomSheet.showForm(
       context: context,
-      title: 'calendar_album_new_post'.tr,
+      title:
+          entry == null
+              ? 'calendar_album_new_post'.tr
+              : 'calendar_album_edit_post'.tr,
       child: _EntryEditorSheetBody(
+        entry: entry,
         initialDate: initialDate,
-        calendarController: calendarController,
-        tagController: tagController,
+        calendarController: resolvedCalendarController,
+        tagController: resolvedTagController,
         onStateReady: (state) => bodyState = state,
       ),
       onSave: () => bodyState?.save(),
+      onDelete:
+          entry == null
+              ? null
+              : () => _confirmDelete(
+                context,
+                entry,
+                resolvedCalendarController,
+              ),
     );
+  }
+
+  /// 删除确认（与日历抽屉删除一致的双步确认）
+  static Future<void> _confirmDelete(
+    BuildContext context,
+    CalendarEntry entry,
+    CalendarController calendarController,
+  ) async {
+    final confirmed = await showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => DSDialog(
+        title: 'common_delete'.tr,
+        message: '${'common_confirmDelete'.tr} "${entry.title}"?',
+        cancelText: 'calendar_album_cancel'.tr,
+        confirmText: 'common_delete'.tr,
+        confirmVariant: DSButtonVariant.destructive,
+        onCancel: () => Navigator.pop(context),
+        onConfirm: () => Navigator.pop(context, true),
+      ),
+    );
+
+    if (confirmed == true) {
+      calendarController.deleteEntry(entry);
+      if (context.mounted) Navigator.of(context).pop();
+    }
   }
 }
 
 class _EntryEditorSheetBody extends StatefulWidget {
+  final CalendarEntry? entry;
   final DateTime? initialDate;
   final CalendarController calendarController;
   final TagController tagController;
   final ValueChanged<_EntryEditorSheetBodyState> onStateReady;
 
   const _EntryEditorSheetBody({
+    required this.entry,
     required this.initialDate,
     required this.calendarController,
     required this.tagController,
@@ -65,7 +111,8 @@ class _EntryEditorSheetBodyState extends State<_EntryEditorSheetBody> {
   void initState() {
     super.initState();
     _controller = EntryEditorController(
-      isEditing: false,
+      entry: widget.entry,
+      isEditing: widget.entry != null,
       initialDate: widget.initialDate,
     );
     widget.onStateReady(this);

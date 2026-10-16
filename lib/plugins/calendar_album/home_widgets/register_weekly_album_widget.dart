@@ -11,11 +11,10 @@ import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
-import 'package:provider/provider.dart';
 import 'utils.dart';
 
 /// 注册 4x1 宽屏卡片 - 本周相册（占满宽度）
@@ -299,16 +298,12 @@ Future<void> _openDateAlbum(
   CalendarAlbumPlugin plugin,
 ) async {
   if (entry != null) {
-    // 有日记，打开日记编辑器
-    NavigationHelper.push(
+    // 有日记，打开日记编辑弹层
+    EntryEditorSheet.show(
       context,
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: plugin.calendarController!),
-          ChangeNotifierProvider.value(value: plugin.tagController!),
-        ],
-        child: EntryEditorScreen(entry: entry, isEditing: true),
-      ),
+      entry: entry,
+      calendarController: plugin.calendarController,
+      tagController: plugin.tagController,
     );
   } else {
     // 没有日记，打开日历视图并选择该日期

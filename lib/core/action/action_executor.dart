@@ -366,11 +366,12 @@ class BuiltInActionExecutor implements ActionExecutor {
       return ExecutionResult.failure(error: 'Context not mounted');
     }
 
-    // 动作配置表单的「显示方向」（right / left）
+    // 动作配置表单的「显示方向」（right / left）与「放手后自动打开」
     final direction =
         data?['direction'] == 'left'
             ? ArcWheelDirection.left
             : ArcWheelDirection.right;
+    final autoOpen = data?['autoOpen'] == true;
     // push 前捕获当前路由名，供启动器页判断是否重复打开
     final currentRouteName = RouteHistoryManager.getCurrentContext()?.pageId;
 
@@ -378,6 +379,7 @@ class BuiltInActionExecutor implements ActionExecutor {
       context,
       RotaryPluginLauncherScreen(
         direction: direction,
+        autoOpen: autoOpen,
         currentRouteName: currentRouteName,
       ),
       routeName: '/rotary_plugin_launcher',
@@ -386,6 +388,7 @@ class BuiltInActionExecutor implements ActionExecutor {
     return ExecutionResult.success(data: {
       'action': 'rotaryPluginLauncher',
       'direction': direction.name,
+      'autoOpen': autoOpen,
     });
   }
 

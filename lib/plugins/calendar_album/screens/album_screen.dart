@@ -1,5 +1,5 @@
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -86,20 +86,15 @@ class _AlbumScreenState extends State<AlbumScreen> {
             )
             .toList(),
         initialIndex: index,
-        // 点击信息区跳转照片所属日记编辑器（补齐编辑器保存所需的 Provider 祖先）
-        onInfoTap: (i) => NavigationHelper.push<void>(
+        // 点击信息区打开照片所属日记编辑弹层
+        onInfoTap: (i) => EntryEditorSheet.show(
           context,
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(
-                value: Provider.of<CalendarController>(context, listen: false),
-              ),
-              ChangeNotifierProvider.value(
-                value: Provider.of<TagController>(context, listen: false),
-              ),
-            ],
-            child: EntryEditorScreen(entry: photos[i].entry, isEditing: true),
+          entry: photos[i].entry,
+          calendarController: Provider.of<CalendarController>(
+            context,
+            listen: false,
           ),
+          tagController: Provider.of<TagController>(context, listen: false),
         ),
       ),
     );
@@ -513,22 +508,11 @@ class _AlbumScreenState extends State<AlbumScreen> {
                     void openViewer() => _openGallery(photos, index);
 
                     void editEntry() {
-                      NavigationHelper.push<void>(
+                      EntryEditorSheet.show(
                         context,
-                        MultiProvider(
-                          providers: [
-                            ChangeNotifierProvider<CalendarController>.value(
-                              value: calendarController,
-                            ),
-                            ChangeNotifierProvider<TagController>.value(
-                              value: context.read<TagController>(),
-                            ),
-                          ],
-                          child: EntryEditorScreen(
-                            entry: record.entry,
-                            isEditing: true,
-                          ),
-                        ),
+                        entry: record.entry,
+                        calendarController: calendarController,
+                        tagController: context.read<TagController>(),
                       );
                     }
 

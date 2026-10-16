@@ -8,12 +8,9 @@ import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
-import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/calendar_album/widgets/album_day_card.dart';
 
 /// 获取指定日期的相册条目（存储按日分片，同步读取）
@@ -73,31 +70,15 @@ class _AlbumDayCardHomeWidgetState extends State<_AlbumDayCardHomeWidget> {
     if (mounted) setState(() {});
   }
 
-  /// 打开日记编辑器（编辑走全屏页，新建走底部弹层）
+  /// 打开日记编辑弹层（编辑器保存依赖 CalendarController Provider 祖先）
   void _openEditor({CalendarEntry? entry, DateTime? initialDate, required bool isEditing}) {
     final plugin = CalendarAlbumPlugin.instance;
-    if (entry == null) {
-      EntryEditorSheet.show(
-        context,
-        initialDate: initialDate,
-        calendarController: plugin.calendarController,
-        tagController: plugin.tagController,
-      );
-      return;
-    }
-    NavigationHelper.push(
+    EntryEditorSheet.show(
       context,
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: plugin.calendarController!),
-          ChangeNotifierProvider.value(value: plugin.tagController!),
-        ],
-        child: EntryEditorScreen(
-          entry: entry,
-          initialDate: initialDate,
-          isEditing: isEditing,
-        ),
-      ),
+      entry: entry,
+      initialDate: initialDate,
+      calendarController: plugin.calendarController,
+      tagController: plugin.tagController,
     );
   }
 

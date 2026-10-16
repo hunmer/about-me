@@ -10,7 +10,7 @@ class AlivenessStore {
   static final AlivenessStore instance = AlivenessStore._();
 
   static const String _defaultJevApiKey =
-      'apikey_278601a56a42a0a4d298d52e2fb5000158c_a1817949613f48c69a84066214f77c352fadf41f0e332a2f0fcfd1a900392409';
+      'apikey_xxxxx';
 
   String _dir(String agentId) =>
       '${OpenAIPlugin.instance.storageDir}/aliveness/$agentId';

@@ -216,6 +216,13 @@ class ActionManager {
               ],
               order: 0,
             ),
+            'autoOpen': FormFieldConfig(
+              type: FormFieldType.switchField,
+              label: '放手后自动打开',
+              hint: '松手后转轮停在哪个插件即自动打开',
+              defaultValue: false,
+              order: 1,
+            ),
           },
         ),
       ),

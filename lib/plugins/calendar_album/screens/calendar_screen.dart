@@ -1,6 +1,5 @@
 import 'dart:io' show File;
 
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -20,7 +19,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skribble/skribble.dart';
 
 import 'entry_editor/entry_editor_sheet.dart';
-import 'entry_editor_screen.dart';
 
 final DateTime _calendarMinMonth = DateTime(2010, 1, 1);
 const int _calendarLoadBatchSize = 3;
@@ -254,36 +252,27 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  /// 打开日记编辑器（编辑已有条目走全屏页，新建走底部弹层）
+  /// 打开日记编辑器（底部弹层，新建/编辑统一入口）
   Future<void> _openEntryEditor({
     CalendarEntry? entry,
     DateTime? initialDate,
     CalendarController? calendarController,
   }) {
-    if (entry != null && calendarController != null) {
-      // 编辑已有条目后恢复选中日期
-      final selectedDate = calendarController.selectedDate;
-      return NavigationHelper.push(
-        context,
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider.value(value: calendarController),
-            ChangeNotifierProvider.value(
-              value: Provider.of<TagController>(context, listen: false),
-            ),
-          ],
-          child: EntryEditorScreen(entry: entry, isEditing: true),
-        ),
-      ).then((_) {
-        if (mounted) {
-          calendarController.selectDate(selectedDate);
-          setState(() {});
-        }
-      });
-    }
-    // 新建走底部弹层（smooth_sheets），编辑仍走全屏页
-    return EntryEditorSheet.show(context, initialDate: initialDate).then((_) {
-      if (mounted) setState(() {});
+    final controller =
+        calendarController ??
+        Provider.of<CalendarController>(context, listen: false);
+    // 关闭后恢复选中日期并刷新
+    final selectedDate = controller.selectedDate;
+    return EntryEditorSheet.show(
+      context,
+      entry: entry,
+      initialDate: initialDate,
+      calendarController: controller,
+    ).then((_) {
+      if (mounted) {
+        controller.selectDate(selectedDate);
+        setState(() {});
+      }
     });
   }
 

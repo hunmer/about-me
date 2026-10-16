@@ -63,6 +63,7 @@ class ArcRotaryWheelSelector extends StatefulWidget {
     this.direction = ArcWheelDirection.right,
     this.onSelect,
     this.onItemTap,
+    this.onUserSettled,
   });
 
   /// 选项列表（至少 2 项才有交互意义）
@@ -82,6 +83,10 @@ class ArcRotaryWheelSelector extends StatefulWidget {
 
   /// 点击选项回调（转轮同时旋转到该选项）
   final ValueChanged<int>? onItemTap;
+
+  /// 用户拖动/滚轮松手后转轮停稳的档位回调（自动打开场景；
+  /// 点击选项不触发，避免与 [onItemTap] 双重回调）
+  final ValueChanged<int>? onUserSettled;
 
   @override
   State<ArcRotaryWheelSelector> createState() =>
@@ -107,6 +112,9 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
   int _lastSnapped = -1;
   Duration? _lastElapsed;
   Timer? _scrollSettleTimer;
+
+  /// 用户拖动/滚轮后等待转轮停稳，停稳时触发一次 onUserSettled
+  bool _pendingUserSettle = false;
 
   _WheelGeometry? _geo;
 
@@ -184,6 +192,14 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
     if (!_animating) {
       _ticker.stop();
       _lastElapsed = null;
+      // 转轮完全停稳（弹簧到位 + 指针回弹衰减完）后通知一次
+      if (_pendingUserSettle) {
+        _pendingUserSettle = false;
+        final nearest = _current.round();
+        if (nearest >= 0 && nearest <= _maxIndex) {
+          widget.onUserSettled?.call(nearest);
+        }
+      }
     }
     if (mounted) setState(() {});
   }
@@ -214,6 +230,9 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
 
   void _onItemTap(int index) {
     if (widget.items.isEmpty) return;
+    debugPrint('[圆盘选择器] 点击选项 #$index');
+    // 点击路径不置 _pendingUserSettle：onItemTap 已直接回调，
+    // 避免停稳后 onUserSettled 再次触发（自动打开场景双重打开）
     _selectIndex(index);
     widget.onItemTap?.call(index.clamp(0, _maxIndex));
   }
@@ -257,12 +276,14 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
     _target = projected.round().clamp(0, math.max(0, _maxIndex)).toDouble();
     _velocity = _trackVelocity * 0.45;
     _trackVelocity = 0;
+    _pendingUserSettle = true;
     _startTicker();
   }
 
   void _onScroll(double scrollDelta) {
     if (widget.items.isEmpty) return;
     _hasInteracted = true;
+    _pendingUserSettle = true;
     final deltaSteps = scrollDelta / 120 * 0.65;
     _target = (_target + deltaSteps).clamp(0.0, _maxIndex.toDouble());
     // 停止滚动 140ms 后吸附到整数档

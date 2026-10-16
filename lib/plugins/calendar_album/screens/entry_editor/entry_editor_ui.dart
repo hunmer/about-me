@@ -2,8 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
-import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
-import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -14,134 +12,14 @@ import 'entry_editor_controller.dart';
 import 'entry_editor_image_handler.dart';
 import 'entry_editor_tag_handler.dart';
 
-class EntryEditorUI extends StatefulWidget {
-  final EntryEditorController controller;
-  final bool isEditing;
-
-  /// 只读模式（纯查看，禁用编辑与保存）
-  final bool readOnly;
-  final BuildContext parentContext;
-
-  const EntryEditorUI({
-    super.key,
-    required this.controller,
-    required this.isEditing,
-    this.readOnly = false,
-    required this.parentContext,
-  });
-
-  @override
-  State<EntryEditorUI> createState() => _EntryEditorUIState();
-}
-
-class _EntryEditorUIState extends State<EntryEditorUI> {
-  late EntryEditorController controller;
-  late bool isEditing;
-  late bool readOnly;
-
-  // PersistentNavigationBar 组件 key（GlobalKey 需跨帧稳定，不能每次 build 新建）
-  final NavigationBarStaticComponentsKeys _navBarKeys =
-      NavigationBarStaticComponentsKeys();
-
-  @override
-  void initState() {
-    super.initState();
-    controller = widget.controller;
-    isEditing = widget.isEditing;
-    readOnly = widget.readOnly;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-    return Scaffold(
-      backgroundColor: dsTransparentWhenGlobalBackground(theme.paper),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _buildHeader(context, theme),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: EntryEditorForm(
-                  controller: controller,
-                  readOnly: readOnly,
-                  parentContext: widget.parentContext,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 顶部导航：嵌入式 PersistentNavigationBar（编辑页标准，与全局导航同源）
-  Widget _buildHeader(BuildContext context, AppThemeData theme) {
-    return PersistentNavigationBar(
-      components: NavigationBarStaticComponents(
-        keys: _navBarKeys,
-        route: null,
-        // NavigationToolbar 对 leading 施加紧高度约束会把按钮拉变形，
-        // 用 Align 转成宽松约束保持正圆
-        userLeading: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: DSIconButton(
-            icon: DsIconKind.chevronLeft,
-            size: 36,
-            color: theme.surfaceAlt,
-            iconColor: theme.textSub,
-            tooltip: 'calendar_album_cancel'.tr,
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
-        ),
-        automaticallyImplyLeading: false,
-        automaticallyImplyTitle: false,
-        previousPageTitle: null,
-        userMiddle: Text(
-          readOnly
-              ? 'calendar_album_view_post'.tr
-              : isEditing
-              ? 'calendar_album_edit_post'.tr
-              : 'calendar_album_new_post'.tr,
-          style: DsTypography.title.copyWith(color: theme.text),
-        ),
-        // 只读模式无保存按钮，用等宽占位保持标题居中
-        userTrailing: readOnly
-            ? const SizedBox(width: 36)
-            : DSIconButton(
-                icon: DsIconKind.check,
-                size: 36,
-                color: theme.primary,
-                iconColor: theme.onPrimary,
-                tooltip: 'calendar_album_save'.tr,
-                onPressed: () {
-                  final result = controller.saveEntry(context);
-                  if (result != null && mounted) {
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-        userLargeTitle: null,
-        largeTitleActions: null,
-        appbarBottom: null,
-        padding: null,
-        // 嵌入式小导航（编辑页），非大标题模式
-        large: false,
-      ),
-    );
-  }
-}
-
-/// 日记编辑表单正文（图片、内容、标签、元数据），供全屏编辑页与底部弹层复用
+/// 日记编辑表单正文（图片、内容、标签、元数据），由底部弹层 [EntryEditorSheet] 使用
 class EntryEditorForm extends StatefulWidget {
   final EntryEditorController controller;
 
   /// 只读模式（纯查看，禁用编辑与保存）
   final bool readOnly;
 
-  /// 用于弹出位置选择器的上下文（全屏页为页面 context，弹层为弹层 context）
+  /// 用于弹出位置选择器的上下文（弹层 context）
   final BuildContext parentContext;
 
   const EntryEditorForm({
