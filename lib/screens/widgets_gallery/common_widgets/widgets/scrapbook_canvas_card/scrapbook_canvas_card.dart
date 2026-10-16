@@ -22,6 +22,16 @@ class ScrapbookCanvasCardWidget extends StatefulWidget {
   /// 是否为内联模式（内联模式填满父容器，否则固定宽高）
   final bool inline;
 
+  /// 只读模式：隐藏导航 pill 与 FAB，禁止拖拽/选中/添加条目
+  final bool readOnly;
+
+  /// 条目双击回调（只读模式下浏览照片等场景使用）
+  final void Function(ScrapItemData item)? onItemDoubleTap;
+
+  /// 条目 Hero tag：返回非 null 的条目挂 Hero，
+  /// 与目标页同 tag 图片形成转场飞行（如打开图库大图）
+  final String? Function(ScrapItemData item)? heroTagOf;
+
   /// 组件尺寸
   final HomeWidgetSize size;
 
@@ -29,6 +39,9 @@ class ScrapbookCanvasCardWidget extends StatefulWidget {
     super.key,
     this.items = const [],
     this.inline = false,
+    this.readOnly = false,
+    this.onItemDoubleTap,
+    this.heroTagOf,
     this.size = const Large3Size(),
   });
 
@@ -107,8 +120,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   @override
   void initState() {
     super.initState();
-    _items =
-        widget.items.map((e) => e).toList(); // 拷贝，交互中可增删
+    _items = widget.items.map((e) => e).toList(); // 拷贝，交互中可增删
     for (final item in _items) {
       if (item.zIndex > _highestZ) _highestZ = item.zIndex;
     }
@@ -160,8 +172,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     if (event is! PointerScrollEvent) return;
     final factor = event.scrollDelta.dy < 0 ? 1.08 : 0.92;
     final nextZoom = (_zoom * factor).clamp(_minZoom, _maxZoom);
-    final canvasPoint =
-        (event.localPosition - Offset(_panX, _panY)) / _zoom;
+    final canvasPoint = (event.localPosition - Offset(_panX, _panY)) / _zoom;
     setState(() {
       _zoom = nextZoom;
       _panX = event.localPosition.dx - canvasPoint.dx * nextZoom;
@@ -297,10 +308,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   }
 
   void _addCustomNote() {
-    final text =
-        _noteController.text.trim().isEmpty
-            ? 'tokyo memories ✨'
-            : _noteController.text.trim();
+    final text = _noteController.text.trim().isEmpty
+        ? 'tokyo memories ✨'
+        : _noteController.text.trim();
     final center = _canvasCenter();
     _spawnItem(
       ScrapItemData(
@@ -345,8 +355,12 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scale = widget.size.scale;
-    final paperColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFFAF8F2);
-    final gridColor = isDark ? const Color(0xFF2C3A4F) : const Color(0xFFEFECE4);
+    final paperColor = isDark
+        ? const Color(0xFF1E293B)
+        : const Color(0xFFFAF8F2);
+    final gridColor = isDark
+        ? const Color(0xFF2C3A4F)
+        : const Color(0xFFEFECE4);
 
     return Container(
       width: widget.inline ? double.maxFinite : 384 * scale,
@@ -370,92 +384,102 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
             Positioned.fill(
               child: Listener(
                 onPointerSignal: _onPointerSignal,
-                child:
-                    _doodleMode
-                        ? GestureDetector(
-                          onPanStart: _onDoodleStart,
-                          onPanUpdate: _onDoodleUpdate,
-                          child: _buildCanvasLayers(gridColor, isDark),
-                        )
-                        : GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedId = null;
-                              _menuOpen = false;
-                            });
-                          },
-                          onScaleStart: _onScaleStart,
-                          onScaleUpdate: _onScaleUpdate,
-                          child: _buildCanvasLayers(gridColor, isDark),
-                        ),
+                child: _doodleMode
+                    ? GestureDetector(
+                        onPanStart: _onDoodleStart,
+                        onPanUpdate: _onDoodleUpdate,
+                        child: _buildCanvasLayers(gridColor, isDark),
+                      )
+                    : GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedId = null;
+                            _menuOpen = false;
+                          });
+                        },
+                        onScaleStart: _onScaleStart,
+                        onScaleUpdate: _onScaleUpdate,
+                        child: _buildCanvasLayers(gridColor, isDark),
+                      ),
               ),
             ),
-            // 顶部导航 pill
-            Positioned(
-              top: 12,
-              left: 14,
-              right: 14,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavPill('Back', isDark, () {
-                    setState(() {
-                      _panX = 0;
-                      _panY = 0;
-                      _zoom = 1;
-                    });
-                    _showToast('🇯🇵 Viewing Tokyo Trip • Day 1 of 5');
-                  }),
-                  _buildNavPill('Save', isDark, () {
-                    setState(() => _selectedId = null);
-                    _showToast('✨ Saved "Tokyo DAY 1" to Memories!');
-                  }),
-                ],
+            // 顶部导航 pill（只读模式下隐藏）
+            if (!widget.readOnly)
+              Positioned(
+                top: 12,
+                left: 14,
+                right: 14,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildNavPill('Back', isDark, () {
+                      setState(() {
+                        _panX = 0;
+                        _panY = 0;
+                        _zoom = 1;
+                      });
+                      _showToast('🇯🇵 Viewing Tokyo Trip • Day 1 of 5');
+                    }),
+                    _buildNavPill('Save', isDark, () {
+                      setState(() => _selectedId = null);
+                      _showToast('✨ Saved "Tokyo DAY 1" to Memories!');
+                    }),
+                  ],
+                ),
               ),
-            ),
             // 涂鸦模式横幅
             if (_doodleMode)
-              Positioned(top: 48, left: 0, right: 0, child: Center(child: _buildDoodleBanner())),
-            // FAB
-            Positioned(
-              right: 16,
-              bottom: 18,
-              child: GestureDetector(
-                onTap: () {
-                  if (_doodleMode) {
-                    _setDoodleMode(false);
-                    return;
-                  }
-                  setState(() => _menuOpen = !_menuOpen);
-                },
-                child: AnimatedRotation(
-                  turns: _menuOpen ? 0.125 : 0,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOutBack,
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF001AFF),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0x59001AFF),
-                          blurRadius: 20,
-                          offset: Offset(0, 8),
-                        ),
-                        BoxShadow(
-                          color: Color(0x26000000),
-                          blurRadius: 6,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
+              Positioned(
+                top: 48,
+                left: 0,
+                right: 0,
+                child: Center(child: _buildDoodleBanner()),
+              ),
+            // FAB（只读模式下隐藏，无入口则创建抽屉也不会弹出）
+            if (!widget.readOnly)
+              Positioned(
+                right: 16,
+                bottom: 18,
+                child: GestureDetector(
+                  onTap: () {
+                    if (_doodleMode) {
+                      _setDoodleMode(false);
+                      return;
+                    }
+                    setState(() => _menuOpen = !_menuOpen);
+                  },
+                  child: AnimatedRotation(
+                    turns: _menuOpen ? 0.125 : 0,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutBack,
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF001AFF),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x59001AFF),
+                            blurRadius: 20,
+                            offset: Offset(0, 8),
+                          ),
+                          BoxShadow(
+                            color: Color(0x26000000),
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 26,
+                      ),
                     ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 26),
                   ),
                 ),
               ),
-            ),
             // 创建抽屉
             if (_menuOpen)
               Positioned(
@@ -473,34 +497,33 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                 child: AnimatedOpacity(
                   opacity: _toastMessage != null ? 1 : 0,
                   duration: const Duration(milliseconds: 300),
-                  child:
-                      _toastMessage == null
-                          ? const SizedBox.shrink()
-                          : Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xE6111111),
-                              borderRadius: BorderRadius.circular(999),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x33000000),
-                                  blurRadius: 12,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              _toastMessage!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                  child: _toastMessage == null
+                      ? const SizedBox.shrink()
+                      : Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xE6111111),
+                            borderRadius: BorderRadius.circular(999),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x33000000),
+                                blurRadius: 12,
+                                offset: Offset(0, 4),
                               ),
+                            ],
+                          ),
+                          child: Text(
+                            _toastMessage!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
+                        ),
                 ),
               ),
             ),
@@ -528,10 +551,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
         // 变换平面：涂鸦装饰 + 用户笔画 + 条目
         Transform(
           alignment: Alignment.topLeft,
-          transform:
-              Matrix4.identity()
-                ..translate(_panX, _panY)
-                ..scale(_zoom),
+          transform: Matrix4.identity()
+            ..translate(_panX, _panY)
+            ..scale(_zoom),
           child: SizedBox(
             width: 390,
             height: 900,
@@ -543,14 +565,12 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                   child: IgnorePointer(
                     child: CustomPaint(
                       painter: ScrapDoodleDecorPainter(
-                        railColor:
-                            isDark
-                                ? const Color(0xFFE8E4DB)
-                                : const Color(0xFF181818),
-                        railFillColor:
-                            isDark
-                                ? const Color(0xE61E293B)
-                                : const Color(0xEAFFFFFF),
+                        railColor: isDark
+                            ? const Color(0xFFE8E4DB)
+                            : const Color(0xFF181818),
+                        railFillColor: isDark
+                            ? const Color(0xE61E293B)
+                            : const Color(0xEAFFFFFF),
                       ),
                     ),
                   ),
@@ -559,7 +579,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                 if (_strokes.isNotEmpty)
                   Positioned.fill(
                     child: IgnorePointer(
-                      child: CustomPaint(painter: ScrapStrokesPainter(_strokes)),
+                      child: CustomPaint(
+                        painter: ScrapStrokesPainter(_strokes),
+                      ),
                     ),
                   ),
                 // 手帐条目（z 序升序，大的在上）
@@ -573,8 +595,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   }
 
   List<ScrapItemData> _sortedItems() {
-    final sorted = [..._items]
-      ..sort((a, b) => a.zIndex.compareTo(b.zIndex));
+    final sorted = [..._items]..sort((a, b) => a.zIndex.compareTo(b.zIndex));
     return sorted;
   }
 
@@ -584,7 +605,11 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     final start = (index * 0.05).clamp(0.0, 0.55);
     final anim = CurvedAnimation(
       parent: _entryController,
-      curve: Interval(start, (start + 0.4).clamp(0.0, 1.0), curve: Curves.easeOutBack),
+      curve: Interval(
+        start,
+        (start + 0.4).clamp(0.0, 1.0),
+        curve: Curves.easeOutBack,
+      ),
     );
 
     return Positioned(
@@ -601,56 +626,68 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
         },
         child: Transform.rotate(
           angle: item.rotation * math.pi / 180,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _doodleMode ? null : () => _selectItem(item),
-            onPanStart:
-                _doodleMode
-                    ? null
-                    : (_) {
+          child: _heroWrap(
+            item,
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              // 只读模式下条目不可交互（禁选中即禁旋转/删除入口），双击回调独立可用
+              onTap: _doodleMode || widget.readOnly
+                  ? null
+                  : () => _selectItem(item),
+              onDoubleTap: widget.onItemDoubleTap == null
+                  ? null
+                  : () => widget.onItemDoubleTap!(item),
+              onPanStart: _doodleMode || widget.readOnly
+                  ? null
+                  : (_) {
                       _selectItem(item);
                     },
-            onPanUpdate:
-                _doodleMode
-                    ? null
-                    : (details) {
+              onPanUpdate: _doodleMode || widget.readOnly
+                  ? null
+                  : (details) {
                       setState(() {
                         item.x += details.delta.dx / _zoom;
                         item.y += details.delta.dy / _zoom;
                       });
                     },
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                CustomPaint(
-                  painter:
-                      selected
-                          ? ScrapDashedRectPainter(
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CustomPaint(
+                    painter: selected
+                        ? ScrapDashedRectPainter(
                             color: const Color(0x8C001AFF),
                             inset: -6,
                           )
-                          : null,
-                  child: buildScrapItemContent(item, isDark, _showToast),
-                ),
-                if (selected)
-                  Positioned(
-                    top: -30,
-                    right: -10,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildControlChip('↻', () => _rotateItem(item)),
-                        const SizedBox(width: 4),
-                        _buildControlChip('×', () => _deleteItem(item)),
-                      ],
-                    ),
+                        : null,
+                    child: buildScrapItemContent(item, isDark, _showToast),
                   ),
-              ],
+                  if (selected)
+                    Positioned(
+                      top: -30,
+                      right: -10,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildControlChip('↻', () => _rotateItem(item)),
+                          const SizedBox(width: 4),
+                          _buildControlChip('×', () => _deleteItem(item)),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  /// heroTagOf 返回非 null 时给条目挂 Hero（tag 需与目标页一致才能飞行）
+  Widget _heroWrap(ScrapItemData item, Widget child) {
+    final tag = widget.heroTagOf?.call(item);
+    return tag == null ? child : Hero(tag: tag, child: child);
   }
 
   Widget _buildControlChip(String label, VoidCallback onTap) {
@@ -690,10 +727,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          color:
-              isDark
-                  ? const Color(0xD92A3648)
-                  : const Color(0xD9FBF9F4),
+          color: isDark ? const Color(0xD92A3648) : const Color(0xD9FBF9F4),
           border: Border.all(
             color: isDark ? const Color(0xFF3B4A61) : const Color(0xFFE5E0D4),
           ),
@@ -733,7 +767,11 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
         color: const Color(0xE6212121),
         borderRadius: BorderRadius.circular(999),
         boxShadow: const [
-          BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, 4)),
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
@@ -807,7 +845,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       const Color(0xFF111111),
     ];
     final cardColor = isDark ? const Color(0xFF2A3648) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF3B4A61) : const Color(0xFFE5E0D5);
+    final borderColor = isDark
+        ? const Color(0xFF3B4A61)
+        : const Color(0xFFE5E0D5);
     final textColor = isDark ? Colors.white : const Color(0xFF333333);
 
     return Container(
@@ -866,7 +906,10 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                 cardColor,
                 borderColor,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFDF0F6),
                     border: Border.all(color: const Color(0xFFF3C6DD)),
@@ -889,7 +932,10 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                 cardColor,
                 borderColor,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF3D5B5),
                     borderRadius: BorderRadius.circular(999),
@@ -944,7 +990,12 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
           const SizedBox(height: 8),
           // 自定义文字 + 颜色点 + Add
           Container(
-            padding: const EdgeInsets.only(left: 12, right: 4, top: 4, bottom: 4),
+            padding: const EdgeInsets.only(
+              left: 12,
+              right: 4,
+              top: 4,
+              bottom: 4,
+            ),
             decoration: BoxDecoration(
               color: cardColor,
               border: Border.all(color: borderColor),
@@ -980,21 +1031,27 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                         color: c,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color:
-                              _noteColor == c ? c : Colors.transparent,
+                          color: _noteColor == c ? c : Colors.transparent,
                           width: 2,
                         ),
-                        boxShadow:
-                            _noteColor == c
-                                ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 4)]
-                                : null,
+                        boxShadow: _noteColor == c
+                            ? [
+                                BoxShadow(
+                                  color: c.withOpacity(0.5),
+                                  blurRadius: 4,
+                                ),
+                              ]
+                            : null,
                       ),
                     ),
                   ),
                 GestureDetector(
                   onTap: _addCustomNote,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF111111),
                       borderRadius: BorderRadius.circular(999),

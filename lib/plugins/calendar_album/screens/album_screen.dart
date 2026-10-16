@@ -485,7 +485,10 @@ class _AlbumScreenState extends State<AlbumScreen> {
                   ),
                 )
               : _scrapMode
-                  ? _ScrapbookCanvasSection(photos: photos)
+                  ? _ScrapbookCanvasSection(
+                    photos: photos,
+                    onOpenGallery: (index) => _openGallery(photos, index),
+                  )
                   : MasonryGridView.count(
                   padding: EdgeInsets.fromLTRB(
                     16,
@@ -683,9 +686,12 @@ class _PhotoCellState extends State<_PhotoCell>
 /// 贴图画布视图：把过滤后的相册照片铺到 ScrapbookCanvasCardWidget，
 /// 所属日记的心情以云朵气泡贴在照片右上角（ScrapItemData.bubbleText）
 class _ScrapbookCanvasSection extends StatefulWidget {
-  const _ScrapbookCanvasSection({required this.photos});
+  const _ScrapbookCanvasSection({required this.photos, this.onOpenGallery});
 
   final List<_PhotoRecord> photos;
+
+  /// 双击照片打开图库（index 为照片在完整列表中的位置）
+  final void Function(int index)? onOpenGallery;
 
   @override
   State<_ScrapbookCanvasSection> createState() =>
@@ -779,7 +785,28 @@ class _ScrapbookCanvasSectionState extends State<_ScrapbookCanvasSection> {
     if (items == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    return ScrapbookCanvasCardWidget(inline: true, items: items);
+
+    // 条目 id（scrap_$i）映射回照片列表索引
+    int? indexFromId(String id) {
+      final index = int.tryParse(id.replaceFirst('scrap_', ''));
+      return index != null && index < widget.photos.length ? index : null;
+    }
+
+    return ScrapbookCanvasCardWidget(
+      inline: true,
+      readOnly: true,
+      items: items,
+      // 双击照片 → 打开图库（Hero tag 用原始 url 与 GalleryViewer 对齐，
+      // 解析后的绝对路径仅用于画布内 Image.file 加载）
+      onItemDoubleTap: (item) {
+        final index = indexFromId(item.id);
+        if (index != null) widget.onOpenGallery?.call(index);
+      },
+      heroTagOf: (item) {
+        final index = indexFromId(item.id);
+        return index == null ? null : widget.photos[index].url;
+      },
+    );
   }
 }
 
