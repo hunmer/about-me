@@ -28,6 +28,7 @@ const Map<String, String> appTranslationsEn = {
   'app_yes': 'Yes',
   'app_cancel': 'Cancel',
   'app_save': 'Save',
+  'app_searchEmoji': 'Search emoji',
   'app_close': 'Close',
   'app_delete': 'Delete',
   'app_reset': 'Reset',

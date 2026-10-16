@@ -149,9 +149,6 @@ dependencies:
   dartantic_ai:
     path: packages/dartantic_ai
   json_schema: ^5.2.2
-  # 表情选择器（本地 vendor 版：https://git.federated.nexus/Henry-Hiles/material_emoji_picker @ 1.2.0）
-  material_emoji_picker:
-    path: packages/material_emoji_picker
   flutter_riverpod: ^3.4.3
   fast_immutable_collections: ^11.2.0
   # 桌面端窗口位置/大小记忆
@@ -230,6 +227,7 @@ flutter:
     - assets/scripts/image_search/  # 内置脚本（聚合图片搜索：Unsplash/Pixabay/Google Lens）
     - assets/emojis/  # 内置表情包
     - assets/emoji_faces/  # 方块表情（透明 WebP，切分脚本 docs/emoji_sheet/）
+    - assets/emoji/emoji.json  # Unicode 表情数据（表情选择器）
     - assets/achievements/  # 成就系统图标（A01~A74，透明 WebP）
     - assets/bubbles/  # Live2D 气泡皮肤（透明 WebP）
     - assets/live2d_backgrounds/  # Live2D 小屋背景图（JPG）

@@ -1108,14 +1108,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  hooks_riverpod:
-    dependency: transitive
-    description:
-      name: hooks_riverpod
-      sha256: d58e1e14aa112ca9c56d54effb7d0d717b2d3f96dad3cdd1fce16f8740450700
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.4.3"
   html:
     dependency: transitive
     description:
@@ -1620,13 +1612,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
-  material_emoji_picker:
-    dependency: "direct main"
-    description:
-      path: "packages/material_emoji_picker"
-      relative: true
-    source: path
-    version: "1.2.0"
   maybe_just_nothing:
     dependency: transitive
     description:

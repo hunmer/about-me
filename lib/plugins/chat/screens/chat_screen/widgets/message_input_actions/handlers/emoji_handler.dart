@@ -13,8 +13,8 @@ import 'package:aboutme/plugins/chat/screens/sticker_manager_screen.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/plugins/chat/services/sticker_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/emoji_picker/index.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
-import 'package:material_emoji_picker/material_emoji_picker.dart';
 import '../types.dart';
 
 import 'package:get/get.dart';

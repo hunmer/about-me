@@ -63,7 +63,6 @@
 | `packages/dartantic_ai` | 上游 dartantic_ai 3.4.2 vendor 镜像（3 处本地定制：Anthropic baseUrl 等），agent_chat 原生工具调用消费（[文档](../packages/dartantic_ai/CLAUDE.md)） |
 | `packages/super_cupertino_navigation_bar` | 本地 Dart 包：iOS 风格大标题导航栏 UI 库（+sketchFont） |
 | `packages/radial_disc_bottom_bar` | 本地 Dart 包：弧形圆盘浮动底部导航栏 |
-| `packages/material_emoji_picker` | vendor 表情选择器（emoji.json 数据源） |
 | `packages/floating_ball_plugin` | 系统级悬浮球原生插件 |
 | `packages/aboutme_foreground_service` | 前台服务（封装 flutter_foreground_task） |
 | `packages/aboutme_notifications` | 通知管理（封装 awesome_notifications） |

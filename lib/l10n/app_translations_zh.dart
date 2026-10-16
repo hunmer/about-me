@@ -28,6 +28,7 @@ const Map<String, String> appTranslationsZh = {
   'app_yes': '是',
   'app_cancel': '取消',
   'app_save': '保存',
+  'app_searchEmoji': '搜索表情',
   'app_close': '关闭',
   'app_delete': '删除',
   'app_reset': '重置',

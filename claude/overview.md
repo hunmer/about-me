@@ -7,7 +7,7 @@
 Aboutme 是一个**单仓多模块（monorepo）**项目，由四类角色组成：
 
 1. **Flutter 客户端**（`lib/`，约 1880 个 Dart 文件）：跨平台个人助手应用本体，插件化架构，28 个内置功能插件，默认首页为果冻小屋（`/jelly_home`，首启先经 `/onboarding` → `/startup` 启动闸门）。
-2. **本地/自建子包**（`packages/`，13 个子包）：同步服务器链路（`aboutme_data_sdk` 纯数据 SDK + `aboutme_server` Dart 薄壳服务器，取代已删除的 `server-nodejs`）、4 个 Dart UI/传输库（agentlib、dartantic_ai vendor 镜像、super_cupertino_navigation_bar、radial_disc_bottom_bar）、material_emoji_picker vendor 库、6 个原生插件（悬浮球、前台服务、通知、Intent、NFC、桌面小组件）。
+2. **本地/自建子包**（`packages/`，12 个子包）：同步服务器链路（`aboutme_data_sdk` 纯数据 SDK + `aboutme_server` Dart 薄壳服务器，取代已删除的 `server-nodejs`）、4 个 Dart UI/传输库（agentlib、dartantic_ai vendor 镜像、super_cupertino_navigation_bar、radial_disc_bottom_bar）与 6 个原生插件（悬浮球、前台服务、通知、Intent、NFC、桌面小组件）。
 3. **共享模型**（`shared_models/`）：客户端与服务端共用的 Dart 包（Repository 接口、UseCase、DTO、同步协议模型）。
 4. **周边资源**：`docs/`（70 篇专题文档）、`online/`（WebView 小程序仓库）、`scripts/`（构建发布脚本）、`plan/`（PRD 与执行方案）、`tool_templates/`（插件工具模板）、`handoff/`（会话交接底稿）、`.github/workflows/`（5 个平台构建 CI）。
 

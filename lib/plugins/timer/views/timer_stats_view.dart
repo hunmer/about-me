@@ -6,6 +6,8 @@ import 'package:aboutme/core/services/timer/storage/timer_storage.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/timer/models/timer_task.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/smooth_line_chart_card.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/wave_fill.dart';
 
@@ -151,6 +153,8 @@ class _TimerStatsViewState extends State<TimerStatsView> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
           children: [
             _buildHeroCard(theme),
+            const SizedBox(height: 16),
+            _buildTodayLineChartCard(theme),
             const SizedBox(height: 16),
             _buildBarChartCard(theme),
             const SizedBox(height: 24),
@@ -354,6 +358,46 @@ class _TimerStatsViewState extends State<TimerStatsView> {
       ),
     ),
   );
+
+  // ===== 今日专注时段曲线（SmoothLineChartCard） =====
+
+  Widget _buildTodayLineChartCard(ThemeData theme) {
+    final now = DateTime.now();
+    final today = _recordsOf(_dayOf(now));
+
+    // 每 2 小时聚合一档专注分钟数（0–22 点共 12 档）
+    final buckets = List.filled(12, 0.0);
+    for (final r in today) {
+      final ts = DateTime.tryParse(r['timestamp'] as String? ?? '');
+      if (ts == null) continue;
+      buckets[ts.hour ~/ 2] += (r['duration'] as int? ?? 0) / 60000.0;
+    }
+
+    final dataPoints = [
+      for (var i = 0; i < buckets.length; i++)
+        DataPoint(x: i.toDouble(), y: buckets[i]),
+    ];
+    final timeLabels = [
+      for (var i = 0; i < buckets.length; i++) '${i * 2}:00',
+    ];
+    // 全天无记录时保底 10 分钟，避免 maxValue 为 0 画不出线
+    final maxBucket = buckets.fold(0.0, (a, b) => a > b ? a : b);
+
+    return SizedBox(
+      height: 280,
+      child: SmoothLineChartCardWidget(
+        title: '今日专注',
+        subtitle: '分布',
+        date: '${now.month}月${now.day}日 · ${today.length} 次专注',
+        dataPoints: dataPoints,
+        maxValue: maxBucket < 10 ? 10 : maxBucket,
+        timeLabels: timeLabels,
+        primaryColor: theme.colorScheme.primary,
+        inline: true,
+        size: const WideSize(),
+      ),
+    );
+  }
 
   // ===== 每日专注分布柱状图 =====
 

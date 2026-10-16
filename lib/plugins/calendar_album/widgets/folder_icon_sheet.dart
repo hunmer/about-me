@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
-import 'package:material_emoji_picker/material_emoji_picker.dart';
 import 'package:aboutme/constants/app_icons.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/emoji_picker/index.dart';
 
 /// 文件夹贴纸选择 Sheet 内容（配合 SmoothBottomSheet 使用）
 ///

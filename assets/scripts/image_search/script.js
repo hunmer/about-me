@@ -262,6 +262,12 @@ async function searchPixabay(perPage) {
   return { success: true, images, total: totalHits, page, perPage };
 }
 
+// 提取 URL 中的域名（各引擎 source 字段格式不一：yandex 是站点名，bing/yahoo 是 URL）
+function hostnameOf(u) {
+  if (!u || !/^https?:\/\//i.test(u)) return '';
+  return u.replace(/^https?:\/\//i, '').split('/')[0];
+}
+
 // ── 搜索：SerpAPI 引擎（google/bing/yahoo/yandex 图片）────
 // 各引擎响应统一为 images_results[]（thumbnail 缓存缩略图 / original 原图直链）
 async function searchSerpImages(perPage) {
@@ -301,7 +307,7 @@ async function searchSerpImages(perPage) {
     images.push({
       url: r.original || r.thumbnail,       // 原图直链（可能失效/较大），展示用 thumb
       thumb: r.thumbnail,                   // 引擎缓存缩略图，加载稳定
-      user: r.source || '',                 // 来源站点名
+      user: (provider === 'bing' && r.domain) || hostnameOf(r.source) || r.source || '', // 站点名
       profileUrl: '',
       pageUrl: r.link || '',                // 结果落地页
       description: r.title || '',
