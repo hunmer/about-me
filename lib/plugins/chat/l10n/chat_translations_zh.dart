@@ -223,5 +223,9 @@ class ChatTranslationsZh {
   'chat_confirmDeleteSticker': '删除这个贴纸？',
   'chat_back': '返回',
   'chat_read': '已读',
+  'chat_randomWalk': '随机漫步',
+  'chat_randomWalkEmpty': '当前过滤条件下没有可漫步的消息',
+  'chat_randomWalkReshuffle': '重新洗牌',
+  'chat_randomWalkCount': '已漫步 @seen 张 / 共 @total 张',
 };
 }

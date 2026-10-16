@@ -4,6 +4,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
+import 'package:aboutme/plugins/chat/utils/message_content_utils.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/chat_screen.dart';
 import 'package:aboutme/plugins/chat/utils/date_formatter.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
@@ -32,8 +33,16 @@ class ChannelTile extends StatelessWidget {
       ? channel.draft
       : null;
 
-  String get _subtitle =>
-      _draft ?? channel.lastMessage?.content ?? 'chat_enterMessage'.tr;
+  String get _subtitle {
+    final draft = _draft;
+    if (draft != null) return draft;
+    final lastMessage = channel.lastMessage;
+    if (lastMessage != null) {
+      // 文件消息按类型占位（[图片]/[音频]/[视频]），Markdown 前置标记
+      return MessageContentUtils.previewText(lastMessage);
+    }
+    return 'chat_enterMessage'.tr;
+  }
 
   @override
   Widget build(BuildContext context) {

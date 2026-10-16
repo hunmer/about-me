@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -6,6 +8,7 @@ import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/models/file_message.dart';
 import 'package:aboutme/plugins/chat/utils/date_formatter.dart';
+import 'package:aboutme/plugins/chat/utils/message_content_utils.dart';
 import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
 import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
 import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
@@ -295,13 +298,20 @@ class TimelineMessageCard extends StatelessWidget {
                               );
                           }
                         }
+                        final (_, text, hasMarkdown) =
+                            MessageContentUtils.resolveContent(message.content);
+                        // Markdown 内容用 MarkdownBody 渲染；
+                        // 搜索时退回纯文本以保留关键词高亮
+                        if (hasMarkdown && controller.searchQuery.isEmpty) {
+                          return _buildMarkdownBody(context, text);
+                        }
                         return RichText(
                           maxLines:
                               isGridView ? 12 : null, // 增加最大行数，但仍保持一定限制以避免过长
                           overflow: TextOverflow.ellipsis,
                           text: TextSpan(
                             children: TextHighlight.highlightText(
-                              text: message.content,
+                              text: text,
                               query: controller.searchQuery,
                               style:
                                   isGridView
@@ -355,5 +365,77 @@ class TimelineMessageCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Markdown 消息渲染，样式对齐聊天气泡的 MarkdownBody
+  Widget _buildMarkdownBody(BuildContext context, String data) {
+    final theme = DSThemeBridge.resolve(context);
+    // 手写字体参数（markdown 显式样式不走 DefaultTextStyle 继承，需显式指定）
+    final base = TextStyle(
+      fontFamily: DsTypography.sketchFamily,
+      fontFamilyFallback: const ['PingFang SC', 'Microsoft YaHei'],
+      color: theme.text,
+      fontSize: isGridView ? 13.0 : 15.0,
+      height: 1.4,
+    );
+    return MarkdownBody(
+      data: data,
+      selectable: false,
+      styleSheet: MarkdownStyleSheet(
+        p: base,
+        code: base.copyWith(
+          backgroundColor: theme.surfaceAlt,
+          fontSize: (isGridView ? 13.0 : 15.0) - 1,
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: theme.surfaceAlt,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        codeblockPadding: const EdgeInsets.all(12),
+        blockquote: base.copyWith(
+          color: theme.text.withValues(alpha: 0.8),
+          fontStyle: FontStyle.italic,
+        ),
+        blockquoteDecoration: BoxDecoration(
+          border: Border(left: BorderSide(color: theme.primary, width: 4)),
+        ),
+        blockquotePadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 8,
+        ),
+        h1: base.copyWith(
+          fontSize: (isGridView ? 13.0 : 15.0) + 8,
+          fontWeight: FontWeight.bold,
+        ),
+        h2: base.copyWith(
+          fontSize: (isGridView ? 13.0 : 15.0) + 6,
+          fontWeight: FontWeight.bold,
+        ),
+        h3: base.copyWith(
+          fontSize: (isGridView ? 13.0 : 15.0) + 4,
+          fontWeight: FontWeight.bold,
+        ),
+        listBullet: base,
+        a: base.copyWith(
+          color: theme.primary,
+          decoration: TextDecoration.underline,
+        ),
+        strong: base.copyWith(fontWeight: FontWeight.bold),
+        em: base.copyWith(fontStyle: FontStyle.italic),
+      ),
+      onTapLink: (text, href, title) {
+        if (href != null) {
+          _launchURL(href);
+        }
+      },
+    );
+  }
+
+  /// 打开链接
+  Future<void> _launchURL(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }

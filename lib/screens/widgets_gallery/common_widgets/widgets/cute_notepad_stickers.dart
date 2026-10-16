@@ -2,6 +2,8 @@
 ///
 /// 移植自 Cute Template Notepad 手绘贴纸库（STICKER_ASSETS），
 /// 路径数据逐字保留原 SVG，经 flutter_svg 渲染以保证与网页版视觉一致。
+/// 扩展贴纸（pinkRibbonBow 起 12 款）移植自手账贴纸合集 SVG 设计稿，
+/// 同样逐字保留原路径，仅包一层平移组适配独立 viewBox。
 const Map<String, String> cuteNotepadStickerBodies = {
   'redBow': '''
 <g stroke="#9e3b42" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -343,6 +345,129 @@ const Map<String, String> cuteNotepadStickerBodies = {
   <line x1="20" y1="68" x2="27" y2="65"/>
 </g>
 ''',
+  'pinkRibbonBow': '''
+<g stroke="#7d3746" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(48,48) rotate(-18)">
+  <path d="M-4 4 L-16 32 L-7 28 L-1 35 L2 6 Z" fill="#f59eb0"/>
+  <path d="M4 4 L18 30 L10 27 L5 34 L-1 6 Z" fill="#f59eb0"/>
+  <path d="M-4 -3 C-18 -18 -34 -12 -32 4 C-30 18 -14 15 -4 4 Z" fill="#f8b2c1"/>
+  <path d="M4 -3 C18 -18 34 -12 32 4 C30 18 14 15 4 4 Z" fill="#f8b2c1"/>
+  <path d="M-7 -1 L-16 -3 M-7 2 L-15 5 M7 -1 L16 -3 M7 2 L15 5" fill="none" stroke-width="1.6"/>
+  <rect x="-6" y="-6" width="12" height="13" rx="4" fill="#f59eb0"/>
+</g>
+''',
+  'peekingBear': '''
+<g stroke="#593a25" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(36,26)">
+  <circle cx="-24" cy="-14" r="10" fill="#c69063"/>
+  <circle cx="-24" cy="-14" r="5" fill="#e6c39f" stroke="none"/>
+  <circle cx="24" cy="-14" r="10" fill="#c69063"/>
+  <circle cx="24" cy="-14" r="5" fill="#e6c39f" stroke="none"/>
+  <path d="M-26 8 C-30 -8 -20 -22 0 -22 C20 -22 30 -8 26 8 Z" fill="#c69063"/>
+  <ellipse cx="0" cy="0" rx="9" ry="7" fill="#f2dec4" stroke="none"/>
+  <circle cx="-10" cy="-5" r="2.3" fill="#422918" stroke="none"/>
+  <circle cx="10" cy="-5" r="2.3" fill="#422918" stroke="none"/>
+  <ellipse cx="0" cy="-2" rx="3" ry="2" fill="#422918" stroke="none"/>
+  <path d="M0 0 L-3 3 M0 0 L3 3" fill="none" stroke="#422918" stroke-width="1.8"/>
+  <ellipse cx="-22" cy="9" rx="9" ry="6" fill="#c69063"/>
+  <ellipse cx="22" cy="9" rx="9" ry="6" fill="#c69063"/>
+</g>
+''',
+  'purpleStemFlower': '''
+<g stroke="#4d415d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(25,24)">
+  <path d="M0 10 L0 28" fill="none"/>
+  <path d="M0 24 C-10 22 -14 14 -4 14 C0 14 0 20 0 24 Z" fill="#8bb574" stroke-width="2"/>
+  <path d="M0 24 C10 22 14 14 4 14 C0 14 0 20 0 24 Z" fill="#8bb574" stroke-width="2"/>
+  <path d="M0 -6 C-8 -22 8 -22 0 -6 C15 -18 22 -4 5 1 C18 12 6 24 -1 7 C-8 24 -20 12 -5 1 C-22 -4 -15 -18 0 -6 Z" fill="#c4b2e3"/>
+  <circle cx="0" cy="0" r="5.5" fill="#fae282" stroke-width="2"/>
+</g>
+''',
+  'brownStemFlower': '''
+<g stroke="#593a25" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(25,24)">
+  <path d="M0 8 L0 32" fill="none"/>
+  <path d="M0 28 C-10 26 -14 18 -4 18 C0 18 0 24 0 28 Z" fill="#88a25e" stroke-width="2"/>
+  <path d="M0 28 C10 26 14 18 4 18 C0 18 0 24 0 28 Z" fill="#88a25e" stroke-width="2"/>
+  <path d="M0 -5 C-7 -19 7 -19 0 -5 C13 -16 19 -3 4 1 C16 10 5 21 -1 6 C-7 21 -18 10 -4 1 C-19 -3 -13 -16 0 -5 Z" fill="#c69063"/>
+  <circle cx="0" cy="0" r="4.8" fill="#fae084" stroke-width="2"/>
+</g>
+''',
+  'bluePlaidTape': '''
+<g transform="rotate(-4 65 25)">
+  <path d="M10 8 L120 8 L117 17 L121 25 L117 33 L120 42 L10 42 L13 33 L9 25 L13 17 Z" fill="#d9eaf7" stroke="#82a6c4" stroke-width="1.5"/>
+  <g fill="#99c0df" opacity="0.55">
+    <rect x="12" y="13" width="106" height="6"/>
+    <rect x="12" y="25" width="106" height="6"/>
+    <rect x="22" y="8" width="7" height="34"/>
+    <rect x="44" y="8" width="7" height="34"/>
+    <rect x="66" y="8" width="7" height="34"/>
+    <rect x="88" y="8" width="7" height="34"/>
+    <rect x="108" y="8" width="6" height="34"/>
+  </g>
+</g>
+''',
+  'yellowSparkle': '''
+<path d="M15 3 Q15 15 25 15 Q15 15 15 27 Q15 15 5 15 Q15 15 15 3 Z" fill="#fce07c" stroke="#b89030" stroke-width="1.8" stroke-linejoin="round"/>
+''',
+  'leafBranch': '''
+<g stroke="#536b40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(34,78)">
+  <path d="M0 0 Q-14 -28 -16 -62" fill="none" stroke-width="2.2"/>
+  <path d="M-16 -62 C-22 -74 -10 -76 -12 -62 Z" fill="#95be74" stroke-width="1.8"/>
+  <path d="M-14 -50 C-28 -54 -26 -42 -13 -44 Z" fill="#95be74" stroke-width="1.8"/>
+  <path d="M-13 -48 C-2 -58 2 -46 -12 -42 Z" fill="#95be74" stroke-width="1.8"/>
+  <path d="M-11 -32 C-26 -36 -24 -22 -9 -26 Z" fill="#95be74" stroke-width="1.8"/>
+  <path d="M-10 -30 C2 -40 6 -26 -8 -24 Z" fill="#95be74" stroke-width="1.8"/>
+  <path d="M-6 -14 C-20 -18 -18 -6 -4 -10 Z" fill="#95be74" stroke-width="1.8"/>
+  <path d="M-5 -14 C8 -22 10 -10 -3 -8 Z" fill="#95be74" stroke-width="1.8"/>
+</g>
+''',
+  'strawberry': '''
+<g transform="translate(27,30) rotate(14)">
+  <path d="M0 -18 C-16 -18 -20 0 -14 14 C-9 24 -4 28 0 28 C4 28 9 24 14 14 C20 0 16 -18 0 -18 Z" fill="#f37c8d" stroke="#733942" stroke-width="2.2" stroke-linejoin="round"/>
+  <g fill="#fde2e6">
+    <ellipse cx="-7" cy="-4" rx="1.2" ry="2"/>
+    <ellipse cx="0" cy="-2" rx="1.2" ry="2"/>
+    <ellipse cx="7" cy="-4" rx="1.2" ry="2"/>
+    <ellipse cx="-9" cy="6" rx="1.2" ry="2"/>
+    <ellipse cx="-3" cy="8" rx="1.2" ry="2"/>
+    <ellipse cx="4" cy="7" rx="1.2" ry="2"/>
+    <ellipse cx="9" cy="5" rx="1.2" ry="2"/>
+    <ellipse cx="-4" cy="17" rx="1.2" ry="2"/>
+    <ellipse cx="3" cy="17" rx="1.2" ry="2"/>
+  </g>
+  <path d="M0 -14 C-6 -22 -14 -18 -12 -12 C-6 -12 -2 -10 0 -10 C-4 -18 4 -18 0 -10 C2 -10 6 -12 12 -12 C14 -18 6 -22 0 -14 Z" fill="#88b866" stroke="#4d5e3e" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M0 -16 L0 -23" fill="none" stroke="#4d5e3e" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+''',
+  'pottedSucculent': '''
+<g transform="translate(23,31)">
+  <g stroke="#4a5d3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-12 -6 C-22 -16 -14 -26 -4 -14 Z" fill="#8bb868"/>
+    <path d="M12 -6 C22 -16 14 -26 4 -14 Z" fill="#8bb868"/>
+    <path d="M-6 -8 C-14 -24 -2 -30 0 -14 Z" fill="#9bc678"/>
+    <path d="M6 -8 C14 -24 2 -30 0 -14 Z" fill="#9bc678"/>
+    <path d="M0 -8 C-7 -28 7 -28 0 -8 Z" fill="#8bb868"/>
+  </g>
+  <path d="M-15 -2 L15 -2 L11 22 C11 24 9 25 6 25 L-6 25 C-9 25 -11 24 -11 22 Z" fill="#e6c39c" stroke="#694d38" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="-18" y="-7" width="36" height="6" rx="2.5" fill="#edd0ae" stroke="#694d38" stroke-width="2"/>
+  <path d="M0 8.5 C-1.5 6.2 -4.6 7.7 -4.6 10.4 C-4.6 12.7 0 14.2 0 15.7 C0 14.2 4.6 12.7 4.6 10.4 C4.6 7.7 1.5 6.2 0 8.5 Z" fill="#d69e72" stroke="#694d38" stroke-width="1.3" stroke-linecap="round"/>
+</g>
+''',
+  'yellowStar': '''
+<g transform="translate(25,25) rotate(8)">
+  <path d="M0 -18 C3 -18 5 -8 7 -6 C9 -5 19 -5 19 -2 C19 1 11 6 10 8 C9 11 13 20 10 22 C8 23 1 16 -1 16 C-3 16 -10 23 -12 22 C-15 20 -11 11 -12 8 C-13 6 -21 1 -21 -2 C-21 -5 -11 -5 -9 -6 C-7 -8 -3 -18 0 -18 Z" fill="#fce07c" stroke="#9e7f43" stroke-width="2.2" stroke-linejoin="round"/>
+</g>
+''',
+  'heartPaperclip': '''
+<g transform="translate(22,25) rotate(-14)">
+  <path d="M-5 2 L-5 26 C-5 33 7 33 7 24 L7 -2 C7 -8 -2 -8 -2 0 L-2 20 C-2 24 3 24 3 19 L3 6" fill="none" stroke="#7d3746" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M0 -11 C-5 -18.5 -15 -13.5 -15 -7.5 C-15 2.75 -6.25 7.75 0 12.75 C6.25 7.75 15 2.75 15 -7.5 C15 -13.5 5 -18.5 0 -11 Z" fill="#f498ad" stroke="#7d3746" stroke-width="1.8" stroke-linejoin="round"/>
+</g>
+''',
+  'crescentMoon': '''
+<g stroke="#6b5235" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(25,26)">
+  <path d="M-6 -22 C14 -22 24 -4 18 14 C12 28 -8 32 -22 20 C-8 20 2 12 2 0 C2 -10 -4 -16 -6 -22 Z" fill="#fce07c"/>
+  <path d="M6 -2 Q9 1 12 -2" fill="none" stroke-width="1.8"/>
+  <path d="M3 6 Q6 9 9 7" fill="none" stroke-width="1.8"/>
+</g>
+''',
 };
 
 /// 贴纸 viewBox 完整尺寸（宽, 高）
@@ -378,6 +503,18 @@ const Map<String, List<int>> cuteNotepadStickerViewBoxes = {
   'coralSparkleLines': [60, 65],
   'blueTopTape': [100, 40],
   'shiningBlueHeart': [95, 92],
+  'pinkRibbonBow': [96, 96],
+  'peekingBear': [72, 46],
+  'purpleStemFlower': [50, 56],
+  'brownStemFlower': [50, 56],
+  'bluePlaidTape': [130, 52],
+  'yellowSparkle': [30, 30],
+  'leafBranch': [46, 84],
+  'strawberry': [54, 64],
+  'pottedSucculent': [46, 62],
+  'yellowStar': [50, 50],
+  'heartPaperclip': [44, 60],
+  'crescentMoon': [50, 58],
 };
 
 /// 获取贴纸的完整 SVG 文档字符串（供 SvgPicture.string 使用）

@@ -215,7 +215,8 @@ class CuteNotepadVariant {
   });
 }
 
-/// 16 种风格预设（与网页版 INITIAL_NOTES_CONFIG 一一对应）
+/// 22 种风格预设（01~16 与网页版 INITIAL_NOTES_CONFIG 一一对应，
+/// 17~22 为按贴纸合集设计稿追加的扩展样式）
 const List<CuteNotepadVariant> cuteNotepadPresets = [
   // 01 粉色方格小兔便签
   CuteNotepadVariant(
@@ -637,6 +638,171 @@ const List<CuteNotepadVariant> cuteNotepadPresets = [
     stickers: [
       CuteNotepadSticker(asset: 'blueTopTape', anchor: CuteNotepadStickerAnchor.topCenter, w: 92, h: 36, dy: -2),
       CuteNotepadSticker(asset: 'shiningBlueHeart', anchor: CuteNotepadStickerAnchor.bottomRight, w: 78, h: 76, dx: -8, dy: -4),
+    ],
+  ),
+
+  // 17 奶油小熊清单便签
+  CuteNotepadVariant(
+    id: 'creamBearChecklist',
+    name: '17 · 奶油小熊清单便签',
+    type: CuteNotepadNoteType.checklist,
+    checkStyle: CuteNotepadCheckStyle.box,
+    background: CuteNotepadBackground.innerRoundFrame,
+    shadowColor: Color(0x80E0D2BC),
+    paperColor: Color(0xFFFDF5E6),
+    innerFillColor: Color(0xFFFFFBF2),
+    innerStrokeColor: Color(0xFF78553D),
+    lineColor: Color(0xFFB99B7A),
+    textColor: Color(0xFF593A25),
+    contentStartY: 42,
+    lineSpacing: 37,
+    items: [
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+    ],
+    stickers: [
+      CuteNotepadSticker(asset: 'peekingBear', anchor: CuteNotepadStickerAnchor.topCenter, w: 84, h: 54, dy: -6),
+      CuteNotepadSticker(asset: 'brownStemFlower', anchor: CuteNotepadStickerAnchor.bottomRight, w: 44, h: 49, dx: -8, dy: -6),
+    ],
+  ),
+
+  // 18 粉色草莓便签
+  CuteNotepadVariant(
+    id: 'pinkStrawberry',
+    name: '18 · 粉色草莓便签',
+    type: CuteNotepadNoteType.freeform,
+    checkStyle: CuteNotepadCheckStyle.heart,
+    background: CuteNotepadBackground.wavyFrame,
+    shadowColor: Color(0x80E5B8C2),
+    paperColor: Color(0xFFFDECEF),
+    paperStroke: Color(0xFFF4C2CE),
+    innerStrokeColor: Color(0xFFE0889B),
+    lineColor: Color(0xFFF0A9B8),
+    textColor: Color(0xFF733942),
+    placeholder: '记录甜甜的小心情...',
+    contentStartY: 56,
+    minFreeformLines: 4,
+    stickers: [
+      CuteNotepadSticker(asset: 'pinkRibbonBow', anchor: CuteNotepadStickerAnchor.topLeft, w: 70, h: 70, dx: 4, dy: 6),
+      CuteNotepadSticker(asset: 'yellowSparkle', anchor: CuteNotepadStickerAnchor.topRight, w: 34, h: 34, dx: -12, dy: 12),
+      CuteNotepadSticker(asset: 'strawberry', anchor: CuteNotepadStickerAnchor.bottomRight, w: 48, h: 57, dx: -8, dy: -4),
+    ],
+  ),
+
+  // 19 蓝格胶带备忘便签
+  CuteNotepadVariant(
+    id: 'blueTapeMemo',
+    name: '19 · 蓝格胶带备忘便签',
+    type: CuteNotepadNoteType.lined,
+    checkStyle: CuteNotepadCheckStyle.circle,
+    background: CuteNotepadBackground.plain,
+    shadowColor: Color(0x8CB8CEE2),
+    paperColor: Color(0xFFEAF2F9),
+    paperStroke: Color(0xFFCDE0F0),
+    lineColor: Color(0xFFA5C4DC),
+    textColor: Color(0xFF415A70),
+    contentStartY: 48,
+    lineSpacing: 36,
+    lineX1: 44,
+    lineX2: 260,
+    items: [
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+    ],
+    stickers: [
+      CuteNotepadSticker(asset: 'bluePlaidTape', anchor: CuteNotepadStickerAnchor.topCenter, w: 120, h: 48, dy: -2),
+      CuteNotepadSticker(asset: 'blueCloud', anchor: CuteNotepadStickerAnchor.bottomRight, w: 88, h: 70, dx: -8, dy: -6),
+      CuteNotepadSticker(asset: 'blueDoubleHearts', anchor: CuteNotepadStickerAnchor.bottomLeft, w: 60, h: 53, dx: 10, dy: -8),
+    ],
+  ),
+
+  // 20 紫花绽放便签
+  CuteNotepadVariant(
+    id: 'purpleBloomNote',
+    name: '20 · 紫花绽放便签',
+    type: CuteNotepadNoteType.freeform,
+    checkStyle: CuteNotepadCheckStyle.heart,
+    background: CuteNotepadBackground.wavyInner,
+    shadowColor: Color(0x80C9BCE0),
+    paperColor: Color(0xFFF2ECF8),
+    paperStroke: Color(0xFFD8CBE8),
+    innerFillColor: Color(0xFFFAF7FE),
+    lineColor: Color(0xFFB9A5DC),
+    title: 'Bloom\ndaily ♡',
+    titlePos: CuteNotepadTitlePos(top: 22, left: 30, width: 140, fontSize: 16, rotate: -5),
+    textColor: Color(0xFF4D415D),
+    placeholder: '像花儿一样慢慢绽放...',
+    contentStartY: 86,
+    minFreeformLines: 4,
+    stickers: [
+      CuteNotepadSticker(asset: 'purpleTinyHeart', anchor: CuteNotepadStickerAnchor.topRight, w: 38, h: 38, dx: -12, dy: 12),
+      CuteNotepadSticker(asset: 'purpleStemFlower', anchor: CuteNotepadStickerAnchor.bottomLeft, w: 46, h: 52, dx: 6, dy: -6),
+      CuteNotepadSticker(asset: 'purpleDoubleHearts', anchor: CuteNotepadStickerAnchor.bottomRight, w: 62, h: 62, dx: -12, dy: -8),
+    ],
+  ),
+
+  // 21 黄色星月许愿便签
+  CuteNotepadVariant(
+    id: 'yellowStarWish',
+    name: '21 · 黄色星月许愿便签',
+    type: CuteNotepadNoteType.freeform,
+    checkStyle: CuteNotepadCheckStyle.star,
+    background: CuteNotepadBackground.gridBanner,
+    shadowColor: Color(0x80D9CC96),
+    paperColor: Color(0xFFFEF8DD),
+    paperStroke: Color(0xFFE4C056),
+    gridColor: Color(0xFFF3E7B0),
+    gridStep: 22,
+    bannerFillColor: Color(0xFFFFF6D6),
+    bannerStrokeColor: Color(0xFFB89030),
+    lineColor: Color(0xFFE4C056),
+    title: 'Make a wish ♡',
+    titlePos: CuteNotepadTitlePos(top: 22, left: 58, width: 180, fontSize: 15.5, center: true),
+    textColor: Color(0xFF6B5235),
+    placeholder: '许个愿，记下此刻的心情...',
+    contentStartY: 64,
+    minFreeformLines: 4,
+    stickers: [
+      CuteNotepadSticker(asset: 'yellowSparkle', anchor: CuteNotepadStickerAnchor.topLeft, w: 36, h: 36, dx: 6, dy: 8),
+      CuteNotepadSticker(asset: 'yellowStar', anchor: CuteNotepadStickerAnchor.topRight, w: 56, h: 56, dx: -12, dy: 8),
+      CuteNotepadSticker(asset: 'crescentMoon', anchor: CuteNotepadStickerAnchor.bottomRight, w: 52, h: 60, dx: -10, dy: -6),
+    ],
+  ),
+
+  // 22 绿格盆栽清单便签
+  CuteNotepadVariant(
+    id: 'greenPlaidPlant',
+    name: '22 · 绿格盆栽清单便签',
+    type: CuteNotepadNoteType.checklist,
+    checkStyle: CuteNotepadCheckStyle.heart,
+    background: CuteNotepadBackground.plaidInnerRound,
+    shadowColor: Color(0x80BFCFB0),
+    paperColor: Color(0xFFEFF5EA),
+    paperStroke: Color(0xFFCFE2BE),
+    plaidBandColor: Color(0xFFD8E7CB),
+    plaidStep: 26,
+    innerFillColor: Color(0xFFF8FBF4),
+    lineColor: Color(0xFF9CBE7E),
+    textColor: Color(0xFF4A5D3B),
+    contentStartY: 66,
+    lineSpacing: 34,
+    items: [
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+      CuteNotepadTodoItem(),
+    ],
+    stickers: [
+      CuteNotepadSticker(asset: 'greenPlaidTape', anchor: CuteNotepadStickerAnchor.topCenter, w: 118, h: 47, dy: 0),
+      CuteNotepadSticker(asset: 'pottedSucculent', anchor: CuteNotepadStickerAnchor.bottomRight, w: 44, h: 59, dx: -8, dy: -4),
+      CuteNotepadSticker(asset: 'leafBranch', anchor: CuteNotepadStickerAnchor.bottomLeft, w: 36, h: 66, dx: 8, dy: -6),
     ],
   ),
 ];

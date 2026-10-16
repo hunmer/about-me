@@ -13,6 +13,8 @@ import './widgets/settings_tile.dart';
 import './screens/interface_settings_screen.dart';
 import './screens/data_settings_screen.dart';
 import './screens/app_settings_screen.dart';
+import 'package:aboutme/core/floating_ball/settings_screen.dart';
+import 'package:aboutme/core/floating_ball/floating_ball_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -334,6 +336,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: 'settings_screen_appSettings'.tr,
                     screen: const AppSettingsScreen(),
                     routeName: '/settings/app',
+                  ),
+                  FutureBuilder<bool>(
+                    future: FloatingBallManager().isEnabled(),
+                    builder: (context, snapshot) {
+                      final bool isEnabled = snapshot.data ?? true;
+                      return SettingsTile(
+                        icon: DsIconKind.touchApp,
+                        iconColor: DsAccentColors.pink,
+                        title: 'settings_screen_floatingBallTitle'.tr,
+                        subtitle: isEnabled
+                            ? 'settings_screen_floatingBallEnabled'.tr
+                            : 'settings_screen_floatingBallDisabled'.tr,
+                        onTap: () {
+                          NavigationHelper.push(
+                            context,
+                            const FloatingBallSettingsScreen(),
+                            routeName: '/settings/floating_ball_settings',
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  SettingsTile(
+                    icon: DsIconKind.update,
+                    iconColor: DsAccentColors.blue,
+                    title: 'settings_screen_checkUpdateTitle'.tr,
+                    subtitle: 'settings_screen_checkUpdateSubtitle'.tr,
+                    onTap: _controller.checkForUpdates,
                   ),
                 ],
               ),

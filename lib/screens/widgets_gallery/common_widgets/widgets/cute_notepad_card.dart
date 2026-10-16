@@ -114,7 +114,7 @@ Future<Uint8List?> captureCuteNotepadPng(
 /// 可爱手账便签卡片
 ///
 /// 移植自 Cute Template Notepad：手绘便签底图（方格/格纹/波浪框/撕边/活页孔等
-/// 16 种风格预设）+ 可爱贴纸（flutter_svg 渲染）+ 手写标题/正文/待办内容。
+/// 22 种风格预设）+ 可爱贴纸（flutter_svg 渲染）+ 手写标题/正文/待办内容。
 /// 高度随内容自动撑开（viewBox 300×H），单一组件入口，通过 [variant] 切换风格。
 ///
 /// 开启 [editable] 后右上角显示编辑按钮；进入编辑模式后按钮切换为「导出 PNG」，

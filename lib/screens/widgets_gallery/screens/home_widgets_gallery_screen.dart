@@ -667,6 +667,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'ArcRotaryWheelCard - 手绘弧形转轮选择器（仅一个默认尺寸）',
         route: '/widgets_gallery/arc_rotary_wheel_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.style,
+        title: '随机漫步卡片堆叠',
+        subtitle: 'WalkStackCard - 手绘书摘卡堆叠，拖拽切卡与随机漫步',
+        route: '/widgets_gallery/walk_stack_card',
+      ),
     ];
   }
 

@@ -6,8 +6,6 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/settings_screen/widgets/speech_recognition_settings_dialog.dart';
-import 'package:aboutme/core/floating_ball/settings_screen.dart';
-import 'package:aboutme/core/floating_ball/floating_ball_manager.dart';
 import 'package:aboutme/screens/settings_screen/controllers/permission_controller.dart';
 import 'package:aboutme/screens/settings_screen/widgets/permission_request_dialog.dart';
 import 'package:aboutme/screens/about_screen/about_screen.dart';
@@ -22,7 +20,7 @@ import '../controllers/settings_screen_controller.dart';
 import '../widgets/settings_group.dart';
 import '../widgets/settings_tile.dart';
 
-/// 应用设置：悬浮球、插件、剪切板、权限、更新、开发者测试、关于
+/// 应用设置：插件、剪切板、权限、更新、开发者测试、关于
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
 
@@ -268,27 +266,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 SettingsGroup(
                   title: 'settings_screen_generalGroup'.tr,
                   children: [
-                    FutureBuilder<bool>(
-                      future: FloatingBallManager().isEnabled(),
-                      builder: (context, snapshot) {
-                        final bool isEnabled = snapshot.data ?? true;
-                        return SettingsTile(
-                          icon: DsIconKind.touchApp,
-                          iconColor: DsAccentColors.pink,
-                          title: 'settings_screen_floatingBallTitle'.tr,
-                          subtitle: isEnabled
-                              ? 'settings_screen_floatingBallEnabled'.tr
-                              : 'settings_screen_floatingBallDisabled'.tr,
-                          onTap: () {
-                            NavigationHelper.push(
-                              context,
-                              const FloatingBallSettingsScreen(),
-                              routeName: '/settings/floating_ball_settings',
-                            );
-                          },
-                        );
-                      },
-                    ),
                     if (UniversalPlatform.isAndroid)
                       SettingsTile(
                         icon: DsIconKind.radioButton,
@@ -435,13 +412,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                               _controller.autoCheckUpdate = value;
                             }),
                       ),
-                    ),
-                    SettingsTile(
-                      icon: DsIconKind.update,
-                      iconColor: DsAccentColors.blue,
-                      title: 'settings_screen_checkUpdateTitle'.tr,
-                      subtitle: 'settings_screen_checkUpdateSubtitle'.tr,
-                      onTap: _controller.checkForUpdates,
                     ),
                   ],
                 ),

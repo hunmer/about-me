@@ -128,6 +128,7 @@ enum DsIconKind {
   save,
   wifi,
   gesture,
+  shuffle,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -254,6 +255,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.save: Icons.save_outlined,
   DsIconKind.wifi: Icons.wifi_tethering,
   DsIconKind.gesture: Icons.gesture,
+  DsIconKind.shuffle: Icons.shuffle,
 };
 
 /// 图标组件：基于系统 Material Icons

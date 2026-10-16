@@ -379,14 +379,6 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
     final tilt = geo.tilt(offset);
     final scale = _lerp(1.0, 0.93, math.min(1.0, absOffset / 4));
 
-    // 以图标胶囊中心（行内锚点）为变换原点：平移到圆弧位置 → 旋转 → 缩放
-    final transform =
-        Matrix4.identity()
-          ..translate(iconCenter.dx, iconCenter.dy)
-          ..rotateZ(tilt)
-          ..scale(scale)
-          ..translate(-geo.anchor.dx, -geo.anchor.dy);
-
     // 标签：激活后套手绘纸签，远处淡出只留图标
     final labelFade =
         absOffset > 3.1
@@ -421,25 +413,30 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
       ),
     );
 
-    // 图标胶囊：普通态次级表面 + 淡墨描边，激活态选项色实底 + 选项色描边
-    final pill = Container(
-      width: _lerp(geo.pillW0, geo.pillW1, smooth),
-      height: _lerp(geo.pillH0, geo.pillH1, smooth),
-      decoration: dsSketchDecoration(
-        theme: theme,
-        fillColor: Color.lerp(theme.surfaceAlt, itemColor, smooth),
-        stroke: Color.lerp(
-          theme.ink.withValues(alpha: 0.3),
-          itemColor,
-          smooth,
+    // 图标胶囊：普通态次级表面 + 淡墨描边，激活态选项色实底 + 选项色描边；
+    // 点击胶囊即触发本选项
+    final pill = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _onItemTap(index),
+      child: Container(
+        width: _lerp(geo.pillW0, geo.pillW1, smooth),
+        height: _lerp(geo.pillH0, geo.pillH1, smooth),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: Color.lerp(theme.surfaceAlt, itemColor, smooth),
+          stroke: Color.lerp(
+            theme.ink.withValues(alpha: 0.3),
+            itemColor,
+            smooth,
+          ),
+          radius: theme.radii.pill,
+          seed: index * 7 + 3,
         ),
-        radius: theme.radii.pill,
-        seed: index * 7 + 3,
-      ),
-      child: Icon(
-        item.icon ?? Icons.extension,
-        size: _lerp(22, 26, smooth) * geo.unit,
-        color: Color.lerp(theme.textSub, theme.onPrimary, smooth),
+        child: Icon(
+          item.icon ?? Icons.extension,
+          size: _lerp(22, 26, smooth) * geo.unit,
+          color: Color.lerp(theme.textSub, theme.onPrimary, smooth),
+        ),
       ),
     );
 
@@ -459,15 +456,27 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
       ),
     );
 
+    // 命中区域必须跟随视觉位置：Transform 无法搬动外层盒子的命中盒
+    // （盒子仍在 Stack 左上角），平移量必须放进 Positioned 的布局位置，
+    // Transform 只负责绕锚点（图标胶囊中心）的径向旋转与缩放
+    final left = iconCenter.dx - geo.anchor.dx;
+    final top = iconCenter.dy - geo.anchor.dy;
+    final rotateScale =
+        Matrix4.identity()
+          ..rotateZ(tilt)
+          ..scale(scale);
+
     return Positioned(
-      left: 0,
-      top: 0,
+      left: left,
+      top: top,
+      width: geo.rowW,
+      height: geo.rowH,
       child: Opacity(
         opacity: _rowOpacity(offset),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => _onItemTap(index),
-          child: Transform(transform: transform, child: row),
+        child: Transform(
+          origin: geo.anchor,
+          transform: rotateScale,
+          child: row,
         ),
       ),
     );

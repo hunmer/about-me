@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
@@ -10,6 +11,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/utils/message_operations.dart';
 import 'controllers/timeline_controller.dart';
+import 'timeline_walk_screen.dart';
 import 'widgets/timeline_message_card.dart';
 
 /// Timeline 主屏幕，显示所有频道的消息时间线
@@ -113,6 +115,28 @@ class _TimelineScreenState extends State<TimelineScreen> {
         enableMultiFilter: true,
         multiFilterItems: _buildFilterItems(),
         onMultiFilterChanged: _applyMultiFilters,
+        actions: [
+          // actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge
+          DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                final t = DSThemeBridge.resolve(context);
+                return DSIconButton(
+                  icon: DsIconKind.shuffle,
+                  size: 36,
+                  color: t.surface,
+                  iconColor: t.text,
+                  tooltip: 'chat_randomWalk'.tr,
+                  onPressed: () => NavigationHelper.push(
+                    context,
+                    TimelineWalkScreen(controller: _controller),
+                    routeName: '/chat/timeline_walk',
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
         body: ListenableBuilder(
           listenable: _controller,
           builder: (context, _) {

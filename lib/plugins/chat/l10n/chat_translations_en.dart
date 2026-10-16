@@ -228,5 +228,9 @@ class ChatTranslationsEn {
   'chat_confirmDeleteSticker': 'Delete this sticker?',
   'chat_back': 'Back',
   'chat_read': 'Read',
+  'chat_randomWalk': 'Random Walk',
+  'chat_randomWalkEmpty': 'No messages to walk through under current filters',
+  'chat_randomWalkReshuffle': 'Reshuffle',
+  'chat_randomWalkCount': '@seen of @total cards seen',
 };
 }

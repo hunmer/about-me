@@ -92,6 +92,7 @@ import 'widgets/stacked_accordion_card.dart';
 import 'widgets/cute_notepad_card.dart';
 import 'widgets/scrapbook_canvas_card/scrapbook_canvas_card.dart';
 import 'widgets/arc_rotary_wheel_card.dart';
+import 'widgets/walk_stack_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -185,6 +186,7 @@ enum CommonWidgetId {
   cuteNotepadCard,
   scrapbookCanvasCard,
   arcRotaryWheelCard,
+  walkStackCard,
 }
 
 /// 公共小组件元数据
@@ -916,6 +918,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [Large3Size()],
     ),
+    CommonWidgetId.walkStackCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.walkStackCard,
+      name: '随机漫步卡片堆叠',
+      description: '手绘书摘卡堆叠：拖拽顶层卡片飞出切卡、后层弹性补位，支持顺序循环与随机漫步两种取卡模式',
+      icon: Icons.style,
+      defaultSize: Large3Size(),
+      supportedSizes: [Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1159,6 +1169,8 @@ class CommonWidgetBuilder {
         return ScrapbookCanvasCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.arcRotaryWheelCard:
         return ArcRotaryWheelCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.walkStackCard:
+        return WalkStackCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }
