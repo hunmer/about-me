@@ -129,6 +129,7 @@ class DiaryTranslationsZh {
 
     // 统计页（心情罐）
     'diary_stats': '统计',
+    'diary_stats_selectMonth': '选择月份',
     'diary_stats_perfectDay': '完美的一天',
     'diary_stats_goodDay': '平静的一天',
     'diary_stats_niceDay': '温柔的一天',

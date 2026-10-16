@@ -131,6 +131,7 @@ class DiaryTranslationsEn {
 
     // Stats screen (mood jar)
     'diary_stats': 'Stats',
+    'diary_stats_selectMonth': 'Select Month',
     'diary_stats_perfectDay': 'Perfect Day',
     'diary_stats_goodDay': 'Calm Day',
     'diary_stats_niceDay': 'Tender Day',
