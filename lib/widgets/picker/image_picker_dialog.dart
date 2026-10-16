@@ -18,6 +18,7 @@ import 'package:aboutme/core/services/image_compression_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/scripts_center/scripts_center_plugin.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/utils/platform_utils.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
@@ -453,6 +454,15 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             DSIconButton(
+              icon: DsIconKind.search,
+              size: 36,
+              color: theme.surfaceAlt,
+              iconColor: theme.textSub,
+              tooltip: 'image_picker_searchImage'.tr,
+              onPressed: () => _showSearchSheet(),
+            ),
+            const SizedBox(width: 4),
+            DSIconButton(
               icon: DsIconKind.camera,
               size: 36,
               color: theme.surfaceAlt,
@@ -488,6 +498,20 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         swipeDismissible: true,
         builder:
             (context) => _UrlInputSheet(initialUrl: widget.initialUrl),
+      ),
+    );
+    if (result != null && mounted) {
+      Navigator.of(context).pop(result);
+    }
+  }
+
+  /// 弹出图片搜索的二级底部弹窗（调用 scripts_center 的 image_search 脚本），
+  /// 选中后连同主弹窗一起返回结果（与在线 URL 入口同构：{'url', 'bytes': null}）
+  Future<void> _showSearchSheet() async {
+    final result = await Navigator.of(context).push<dynamic>(
+      ModalSheetRoute<dynamic>(
+        swipeDismissible: true,
+        builder: (context) => _ImageSearchSheet(multiple: widget.multiple),
       ),
     );
     if (result != null && mounted) {
@@ -1143,6 +1167,356 @@ class _UrlInputSheetState extends State<_UrlInputSheet> {
             SafeArea(top: false, child: SizedBox(height: theme.spacing.md)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 图片搜索的二级底部弹窗
+///
+/// 调用 scripts_center 的 image_search 内置脚本按关键词搜网络图片（图源可选），
+/// 选中单张 pop `{'url', 'bytes': null}`（与在线 URL 入口同构）；
+/// multiple 时多选，确认后 pop 同结构列表。
+/// 缩略图直连各引擎 CDN（无代理），加载失败时显示占位图标。
+class _ImageSearchSheet extends StatefulWidget {
+  final bool multiple;
+
+  const _ImageSearchSheet({this.multiple = false});
+
+  @override
+  State<_ImageSearchSheet> createState() => _ImageSearchSheetState();
+}
+
+class _ImageSearchSheetState extends State<_ImageSearchSheet> {
+  /// 图源选项（与 image_search 脚本的 provider 选项保持一致）
+  static const _providers = [
+    'unsplash',
+    'pixabay',
+    'google',
+    'bing',
+    'yahoo',
+    'yandex',
+  ];
+
+  static const _scriptId = 'image_search';
+
+  late final TextEditingController _controller;
+  String _provider = 'unsplash';
+  bool _searching = false;
+  bool _searched = false;
+  String? _error;
+  List<Map> _images = [];
+
+  /// 多选模式下已选中的图片下标
+  final List<int> _selected = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search() async {
+    final query = _controller.text.trim();
+    if (query.isEmpty || _searching) return;
+
+    setState(() {
+      _searching = true;
+      _error = null;
+    });
+    try {
+      final result = await ScriptsCenterPlugin
+          .instance
+          .scriptExecutor
+          .execute(
+            _scriptId,
+            args: {
+              'query': query,
+              'provider': _provider,
+              'perPage': 30,
+              // 内嵌场景不弹脚本自带的结果页，仅取返回数据
+              'showUi': false,
+            },
+          );
+      if (!mounted) return;
+      if (!result.success) {
+        setState(() {
+          _images = [];
+          _selected.clear();
+          _searched = true;
+          _error = result.error ?? 'image_picker_searchFailed'.tr;
+        });
+        return;
+      }
+      // 脚本返回值：{success, message, data: {images: [{url, thumb, ...}]}}
+      final data = result.result is Map ? (result.result as Map)['data'] : null;
+      final images =
+          (data is Map && data['images'] is List)
+              ? (data['images'] as List).whereType<Map>().toList()
+              : <Map>[];
+      setState(() {
+        _images = images;
+        _selected.clear();
+        _searched = true;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _images = [];
+          _selected.clear();
+          _searched = true;
+          _error = e.toString();
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  void _onTapImage(int index) {
+    final url = _images[index]['url'] as String? ?? '';
+    if (url.isEmpty) return;
+    if (!widget.multiple) {
+      Navigator.of(context).pop(<String, dynamic>{'url': url, 'bytes': null});
+      return;
+    }
+    setState(() {
+      _selected.contains(index)
+          ? _selected.remove(index)
+          : _selected.add(index);
+    });
+  }
+
+  void _confirmMultiple() {
+    final results = <Map<String, dynamic>>[
+      for (final i in _selected)
+        if ((_images[i]['url'] as String? ?? '').isNotEmpty)
+          {'url': _images[i]['url'], 'bytes': null},
+    ];
+    if (results.isNotEmpty) Navigator.of(context).pop(results);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    final screenHeight = MediaQuery.sizeOf(context).height;
+
+    return Sheet(
+      // 网格滚到顶后再向下拖才会收起弹窗
+      scrollConfiguration: const SheetScrollConfiguration(),
+      decoration: MaterialSheetDecoration(
+        size: SheetSize.fit,
+        color: theme.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: screenHeight * 0.85),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(height: theme.spacing.lg),
+            Text(
+              'image_picker_searchImage'.tr,
+              textAlign: TextAlign.center,
+              style: DsTypography.title.copyWith(color: theme.text),
+            ),
+            SizedBox(height: theme.spacing.md),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DSInput(
+                      controller: _controller,
+                      hint: 'image_picker_searchHint'.tr,
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: (_) => _search(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  DSButton(
+                    label: 'image_picker_search'.tr,
+                    size: DSButtonSize.sm,
+                    onPressed: _searching ? null : _search,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: theme.spacing.sm),
+            // 图源横滑选择
+            SizedBox(
+              height: 36,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+                children: [
+                  for (final p in _providers)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: DSChip(
+                        label: p,
+                        selected: _provider == p,
+                        onSelected:
+                            (_) => setState(() => _provider = p),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(height: theme.spacing.sm),
+            SizedBox(height: screenHeight * 0.5, child: _buildBody(theme)),
+            if (widget.multiple) _buildConfirmBar(theme),
+            SafeArea(top: false, child: SizedBox(height: theme.spacing.sm)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(AppThemeData theme) {
+    if (_searching) {
+      return Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+          child: Text(
+            '${'image_picker_searchFailed'.tr}\n$_error',
+            textAlign: TextAlign.center,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+        ),
+      );
+    }
+    if (_images.isEmpty) {
+      return Center(
+        child: Text(
+          _searched
+              ? 'image_picker_searchEmpty'.tr
+              : 'image_picker_searchHint'.tr,
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 110,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+      ),
+      itemCount: _images.length,
+      itemBuilder: (context, index) => _buildResultTile(theme, index),
+    );
+  }
+
+  Widget _buildResultTile(AppThemeData theme, int index) {
+    final img = _images[index];
+    final thumb = (img['thumb'] as String? ?? '').isNotEmpty
+        ? img['thumb'] as String
+        : img['url'] as String? ?? '';
+    final isSelected = _selected.contains(index);
+    final selectedIndex = _selected.indexOf(index) + 1;
+
+    return GestureDetector(
+      onTap: () => _onTapImage(index),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: theme.radii.md,
+          border:
+              isSelected ? Border.all(color: theme.primary, width: 2) : null,
+        ),
+        child: ClipRRect(
+          borderRadius: theme.radii.md,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                thumb,
+                fit: BoxFit.cover,
+                errorBuilder:
+                    (_, _, _) => Container(
+                      color: theme.stroke,
+                      child: Center(
+                        child: DsIcon(
+                          DsIconKind.image,
+                          size: 22,
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ),
+              ),
+              if (widget.multiple)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color:
+                          isSelected
+                              ? theme.primary
+                              : Colors.black.withValues(alpha: 0.25),
+                      border:
+                          isSelected
+                              ? null
+                              : Border.all(color: Colors.white70),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$selectedIndex',
+                        style: DsTypography.caption.copyWith(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConfirmBar(AppThemeData theme) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+      child: Row(
+        children: [
+          Text(
+            _selected.isEmpty
+                ? ''
+                : 'image_picker_selected'.trParams({
+                  'n': '${_selected.length}',
+                }),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+          const Spacer(),
+          DSButton(
+            label: 'app_confirm'.tr,
+            size: DSButtonSize.sm,
+            onPressed: _selected.isEmpty ? null : _confirmMultiple,
+          ),
+        ],
       ),
     );
   }

@@ -49,4 +49,11 @@ const Map<String, String> imagePickerTranslationsEn = {
   'image_picker_cropImage': 'Crop Image',
   'image_picker_saveCroppedImageFailed': 'Failed to save cropped image',
   'image_picker_cropFailed': 'Image cropping failed',
+
+  // Image search (via image_search script)
+  'image_picker_searchImage': 'Search Images',
+  'image_picker_search': 'Search',
+  'image_picker_searchHint': 'Enter a keyword to search web images',
+  'image_picker_searchEmpty': 'No results found',
+  'image_picker_searchFailed': 'Search failed',
 };

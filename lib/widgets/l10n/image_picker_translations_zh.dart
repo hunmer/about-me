@@ -48,4 +48,11 @@ const Map<String, String> imagePickerTranslationsZh = {
   'image_picker_cropImage': '裁剪图片',
   'image_picker_saveCroppedImageFailed': '保存裁剪图片失败',
   'image_picker_cropFailed': '图片裁剪失败',
+
+  // 图片搜索（调用 image_search 脚本）
+  'image_picker_searchImage': '搜索图片',
+  'image_picker_search': '搜索',
+  'image_picker_searchHint': '输入关键词搜索网络图片',
+  'image_picker_searchEmpty': '没有搜索结果',
+  'image_picker_searchFailed': '搜索失败',
 };

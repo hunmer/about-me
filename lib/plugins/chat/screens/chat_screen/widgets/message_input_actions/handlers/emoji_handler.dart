@@ -7,7 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/sticker_collection.dart';
 import 'package:aboutme/plugins/chat/screens/sticker_manager_screen.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
@@ -60,16 +62,16 @@ Future<void> handleEmojiSelection({
                 // 顶部工具条：贴图管理入口
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton.icon(
+                  child: DSButton(
+                    label: 'chat_stickerManager'.tr,
+                    variant: DSButtonVariant.outline,
+                    size: DSButtonSize.sm,
+                    icon: DsIconKind.gear,
                     onPressed:
-                        () => Navigator.push(
+                        () => NavigationHelper.push(
                           sheetContext,
-                          MaterialPageRoute(
-                            builder: (_) => const StickerManagerScreen(),
-                          ),
+                          const StickerManagerScreen(),
                         ),
-                    icon: const Icon(Icons.settings_outlined, size: 18),
-                    label: Text('chat_stickerManager'.tr),
                   ),
                 ),
                 Expanded(

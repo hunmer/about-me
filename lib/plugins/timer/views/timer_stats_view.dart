@@ -6,8 +6,6 @@ import 'package:aboutme/core/services/timer/storage/timer_storage.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/timer/models/timer_task.dart';
-import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
-import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/smooth_line_chart_card.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/wave_fill.dart';
 
@@ -359,7 +357,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
     ),
   );
 
-  // ===== 今日专注时段曲线（SmoothLineChartCard） =====
+  // ===== 今日专注时段曲线（手绘墨线） =====
 
   Widget _buildTodayLineChartCard(ThemeData theme) {
     final now = DateTime.now();
@@ -372,29 +370,78 @@ class _TimerStatsViewState extends State<TimerStatsView> {
       if (ts == null) continue;
       buckets[ts.hour ~/ 2] += (r['duration'] as int? ?? 0) / 60000.0;
     }
-
-    final dataPoints = [
-      for (var i = 0; i < buckets.length; i++)
-        DataPoint(x: i.toDouble(), y: buckets[i]),
-    ];
-    final timeLabels = [
-      for (var i = 0; i < buckets.length; i++) '${i * 2}:00',
-    ];
     // 全天无记录时保底 10 分钟，避免 maxValue 为 0 画不出线
     final maxBucket = buckets.fold(0.0, (a, b) => a > b ? a : b);
 
-    return SizedBox(
-      height: 280,
-      child: SmoothLineChartCardWidget(
-        title: '今日专注',
-        subtitle: '分布',
-        date: '${now.month}月${now.day}日 · ${today.length} 次专注',
-        dataPoints: dataPoints,
-        maxValue: maxBucket < 10 ? 10 : maxBucket,
-        timeLabels: timeLabels,
-        primaryColor: theme.colorScheme.primary,
-        inline: true,
-        size: const WideSize(),
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.show_chart,
+                size: 20,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '今日专注分布',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Text(
+                '${now.month}月${now.day}日 · ${today.length} 次',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // 手绘墨线曲线（CustomPaint 无 child，需 tight 约束撑满）
+          SizedBox(
+            width: double.infinity,
+            height: 170,
+            child: Builder(
+              builder: (context) {
+                final dsTheme = DSThemeBridge.resolve(context);
+                return _SketchLineChart(
+                  values: buckets,
+                  maxValue: maxBucket < 10 ? 10.0 : maxBucket,
+                  color: theme.colorScheme.primary,
+                  drawConfig: dsTheme.wired.drawConfig,
+                  drawProgress: WiredDrawTransition.progressOf(context),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              for (var i = 0; i < buckets.length; i++) ...[
+                if (i > 0) const SizedBox(width: 2),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '${i * 2}点',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -780,6 +827,188 @@ class _TimerStatsViewState extends State<TimerStatsView> {
       ),
     );
   }
+}
+
+/// 手绘墨线曲线图：skribble rough 曲线（与全局墨线风格同源）
+/// + 主色淡渐变填充体 + 实底数据点，接 WiredDraw 描画入场。
+/// CustomPaint 无 child，须置于 tight 约束下（SizedBox 宽高有界）
+class _SketchLineChart extends StatelessWidget {
+  const _SketchLineChart({
+    required this.values,
+    required this.maxValue,
+    required this.color,
+    required this.drawConfig,
+    this.drawProgress,
+  });
+
+  final List<double> values;
+  final double maxValue;
+  final Color color;
+
+  /// 主题墨线绘制配置（AppThemeData.wired.drawConfig）
+  final DrawConfig drawConfig;
+
+  /// 外层 WiredDraw 描画进度；null = 已画完
+  final Animation<double>? drawProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _SketchLineChartPainter(
+        values: values,
+        maxValue: maxValue,
+        color: color,
+        drawConfig: drawConfig,
+        drawProgress: drawProgress,
+      ),
+    );
+  }
+}
+
+class _SketchLineChartPainter extends CustomPainter {
+  _SketchLineChartPainter({
+    required this.values,
+    required this.maxValue,
+    required this.color,
+    required this.drawConfig,
+    this.drawProgress,
+  }) : super(repaint: drawProgress);
+
+  final List<double> values;
+  final double maxValue;
+  final Color color;
+  final DrawConfig drawConfig;
+  final Animation<double>? drawProgress;
+
+  /// rough 生成缓存：尺寸不变时描画动画帧复用，不重算墨线
+  Size? _builtFor;
+  Path? _fillPath;
+  RoughDrawing? _curve;
+  List<Offset> _points = const [];
+
+  /// 墨线先描，填充体与数据点在 30%–100% 阶段浮现（同 WaveFill 节奏）
+  double get _phase => (((drawProgress?.value ?? 1) - 0.3) / 0.7).clamp(
+    0.0,
+    1.0,
+  );
+
+  void _build(Size size) {
+    final top = 14.0; // 顶部留空给最高点数据点
+    final bottom = size.height - 3;
+    final chartHeight = bottom - top;
+    final n = values.length;
+    _points = [
+      for (var i = 0; i < n; i++)
+        Offset(
+          i / (n - 1) * size.width,
+          bottom - (values[i] / maxValue).clamp(0.0, 1.0) * chartHeight,
+        ),
+    ];
+
+    // 主色淡渐变填充体（Catmull-Rom 平滑 + 闭合到底边）
+    final fill = _smoothPath(_points);
+    fill
+      ..lineTo(_points.last.dx, bottom)
+      ..lineTo(_points.first.dx, bottom)
+      ..close();
+    _fillPath = fill;
+
+    // 手绘墨线曲线；reset 保证同尺寸下墨迹稳定不抖变
+    drawConfig.randomizer.reset();
+    final generator = Generator(drawConfig, NoFiller());
+    final drawable = generator.curvePath([
+      for (final p in _points) PointD(p.dx, p.dy),
+    ]);
+    _curve = RoughDrawing(
+      drawable,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..isAntiAlias = true
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = 1.8
+        ..color = color,
+      Paint()..color = color, // NoFiller 下填充笔不参与绘制
+    );
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2 || maxValue <= 0 || size.isEmpty) return;
+    if (_builtFor != size) {
+      _build(size);
+      _builtFor = size;
+    }
+    final drawValue = drawProgress?.value ?? 1;
+    final phase = _phase;
+    final n = values.length;
+
+    if (phase > 0 && _fillPath != null) {
+      canvas.drawPath(
+        _fillPath!,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              color.withValues(alpha: 0.20 * phase),
+              color.withValues(alpha: 0.02 * phase),
+            ],
+          ).createShader(Offset.zero & size),
+      );
+    }
+
+    _curve?.paint(canvas, progress: drawValue, pressure: 0);
+
+    // 数据点：描画推进到该点后浮现（值为 0 的贴底点不画）
+    for (var i = 0; i < n; i++) {
+      if (values[i] <= 0) continue;
+      final appear = (drawValue * (n - 1) - i).clamp(0.0, 1.0);
+      if (appear <= 0) continue;
+      canvas.drawCircle(
+        _points[i],
+        i == n - 1 ? 5 : 3.2,
+        Paint()..color = color.withValues(alpha: phase * appear),
+      );
+    }
+  }
+
+  /// Catmull-Rom 样条平滑路径（填充体轮廓，非手绘）
+  static Path _smoothPath(List<Offset> pts) {
+    final path = Path()..moveTo(pts.first.dx, pts.first.dy);
+    for (var i = 0; i < pts.length - 1; i++) {
+      final p0 = pts[i > 0 ? i - 1 : i];
+      final p1 = pts[i];
+      final p2 = pts[i + 1];
+      final p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+      const segments = 16;
+      for (var j = 1; j <= segments; j++) {
+        final t = j / segments;
+        final t2 = t * t;
+        final t3 = t2 * t;
+        path.lineTo(
+          0.5 *
+              ((2 * p1.dx) +
+                  (-p0.dx + p2.dx) * t +
+                  (2 * p0.dx - 5 * p1.dx + 4 * p2.dx - p3.dx) * t2 +
+                  (-p0.dx + 3 * p1.dx - 3 * p2.dx + p3.dx) * t3),
+          0.5 *
+              ((2 * p1.dy) +
+                  (-p0.dy + p2.dy) * t +
+                  (2 * p0.dy - 5 * p1.dy + 4 * p2.dy - p3.dy) * t2 +
+                  (-p0.dy + 3 * p1.dy - 3 * p2.dy + p3.dy) * t3),
+        );
+      }
+    }
+    return path;
+  }
+
+  @override
+  bool shouldRepaint(covariant _SketchLineChartPainter oldDelegate) =>
+      oldDelegate.values != values ||
+      oldDelegate.maxValue != maxValue ||
+      oldDelegate.color != color ||
+      oldDelegate.drawConfig != drawConfig;
 }
 
 /// 统计页通用卡：手绘纸面板（纸底 + 淡排线 + 墨线框）
