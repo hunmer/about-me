@@ -90,6 +90,7 @@ import 'widgets/petal_radial_chart_card.dart';
 import 'widgets/stacked_folder_card.dart';
 import 'widgets/stacked_accordion_card.dart';
 import 'widgets/cute_notepad_card.dart';
+import 'widgets/scrapbook_canvas_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -181,6 +182,7 @@ enum CommonWidgetId {
   stackedFolderCard,
   stackedAccordionCard,
   cuteNotepadCard,
+  scrapbookCanvasCard,
 }
 
 /// 公共小组件元数据
@@ -896,6 +898,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize(), Large3Size()],
     ),
+    CommonWidgetId.scrapbookCanvasCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.scrapbookCanvasCard,
+      name: '手帐无限画布卡片',
+      description: '可平移缩放的网格画布 + 可拖拽/旋转/删除的手帐拼贴元素 + 手绘涂鸦与创建抽屉',
+      icon: Icons.dashboard_customize,
+      defaultSize: Large3Size(),
+      supportedSizes: [Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1135,6 +1145,8 @@ class CommonWidgetBuilder {
         return StackedAccordionCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.cuteNotepadCard:
         return CuteNotepadCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.scrapbookCanvasCard:
+        return ScrapbookCanvasCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

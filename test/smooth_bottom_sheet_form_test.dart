@@ -75,35 +75,35 @@ void main() {
       onSave: () {},
     );
 
-    // 弹层正常打开，首行可见、末行在视口外
+    // 弹层正常打开，首行可见
     expect(find.text('row-0'), findsOneWidget);
-    expect(find.text('row-79'), findsNothing);
 
     // 存在可滚动范围：内容真实高于视口
-    final scrollables = tester
-        .widgetList<Scrollable>(
-          find.descendant(
-            of: find.byType(SingleChildScrollView),
-            matching: find.byType(Scrollable),
-          ),
-        )
-        .toList();
-    expect(scrollables, isNotEmpty);
-    final states = tester.stateList<ScrollableState>(
-      find.descendant(
-        of: find.byType(SingleChildScrollView),
-        matching: find.byType(Scrollable),
-      ),
+    // （表单内层 ScrollView 在外层 ListView 中被 hug，滚动由外层持有）
+    final allScrollables = tester.stateList<ScrollableState>(
+      find.byType(Scrollable),
     );
-    final maxExtent = states.any((s) => s.position.maxScrollExtent > 0);
-    expect(maxExtent, isTrue, reason: '长表单应有可滚动范围');
+    expect(
+      allScrollables.any((s) => s.position.maxScrollExtent > 0),
+      isTrue,
+      reason: '长表单应有可滚动范围',
+    );
 
-    // 滚动后末行可达
+    // 末行初始位于视口下方（可视边界为外层 ListView）
+    final viewportBottom = tester.getRect(find.byType(ListView)).bottom;
+    expect(
+      tester.getRect(find.text('row-79')).top,
+      greaterThan(viewportBottom),
+    );
+
+    // 滚动后末行进入视口
     await tester.drag(find.text('row-0'), const Offset(0, -6000));
     await tester.pumpAndSettle();
-    expect(find.text('row-79'), findsOneWidget);
+    expect(
+      tester.getRect(find.text('row-79')).bottom,
+      lessThan(viewportBottom + 1),
+    );
   });
-
   testWidgets('无滚动 child（Column）也能正常展示', (tester) async {
     await openSheet(
       tester,

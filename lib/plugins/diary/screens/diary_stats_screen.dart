@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -16,6 +17,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/diary/models/diary_entry.dart';
 import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_mood_face.dart';
+import 'package:aboutme/widgets/quill_viewer/index.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// 心情罐分类（开心系 / 平静系 / 低能量系）
@@ -159,6 +161,29 @@ class _Ripple {
   double x, y, r, alpha;
   final Color color;
   _Ripple(this.x, this.y, this.r, this.alpha, this.color);
+}
+
+/// 心情罐音效器：池化 AudioPlayer 避免重叠截断，42ms 限流防抖，
+/// 音量随碰撞强度变化（对应 HTML 版 SoundEngine）
+class _JarSound {
+  static final _pool = List.generate(4, (_) => AudioPlayer());
+  static var _idx = 0;
+  static var _lastPlay = 0;
+
+  static Future<void> _play(String asset, double volume) async {
+    final p = _pool[_idx++ % _pool.length];
+    await p.setVolume(volume.clamp(0.05, 0.3));
+    await p.play(AssetSource(asset));
+  }
+
+  static Future<void> clink(double intensity) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastPlay < 42) return; // 限流，同 HTML
+    _lastPlay = now;
+    await _play('audio/glass_clink.mp3', intensity);
+  }
+
+  static Future<void> pop() => _play('audio/pop.mp3', 0.3);
 }
 
 /// 心情表情绘制缓存：底色 + 表情位图 + 墨线圆环（RoughDrawing 可跨帧复用）
@@ -396,12 +421,14 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
     if (b.x < minX) {
       b.x = minX;
       if (b.vx < 0) {
+        if (b.vx.abs() > 2.2) _JarSound.clink(b.vx.abs() / 14);
         b.vx = -b.vx * e;
         b.va += b.vy * 0.004;
       }
     } else if (b.x > maxX) {
       b.x = maxX;
       if (b.vx > 0) {
+        if (b.vx > 2.2) _JarSound.clink(b.vx / 14);
         b.vx = -b.vx * e;
         b.va -= b.vy * 0.004;
       }
@@ -410,13 +437,17 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
     if (b.y > maxY) {
       b.y = maxY;
       if (b.vy > 0) {
+        if (b.vy > 2.2) _JarSound.clink(b.vy / 14);
         b.vy = -b.vy * e;
         b.vx *= 0.94;
         b.va += b.vx * 0.006;
       }
     } else if (b.y < _kTopCeiling + r) {
       b.y = _kTopCeiling + r;
-      if (b.vy < 0) b.vy = -b.vy * e;
+      if (b.vy < 0) {
+        if (b.vy.abs() > 2.2) _JarSound.clink(b.vy.abs() / 14);
+        b.vy = -b.vy * e;
+      }
     }
   }
 
@@ -432,6 +463,7 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
       b.y = cy + ny * maxDist;
       final vn = b.vx * nx + b.vy * ny;
       if (vn > 0) {
+        if (vn > 2.2) _JarSound.clink(vn / 14);
         b.vx -= (1 + e) * vn * nx;
         b.vy -= (1 + e) * vn * ny;
         b.va += (b.vx * ny - b.vy * nx) * 0.003;
@@ -460,6 +492,7 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
       final rvy = b2.vy - b1.vy;
       final velN = rvx * nx + rvy * ny;
       if (velN < 0) {
+        if (velN.abs() > 2.3) _JarSound.clink(velN.abs() / 14);
         final j = -(1 + _kRestitution) * velN * 0.5;
         b1.vx -= j * nx;
         b1.vy -= j * ny;
@@ -489,6 +522,7 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
     if (hit == null) return;
 
     hit.bounceImpulse();
+    unawaited(_JarSound.pop());
     final rnd = math.Random();
     for (final other in _badges) {
       if (identical(other, hit)) continue;
@@ -589,28 +623,9 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
   }
 
   Widget _buildMonthPicker(AppThemeData theme) {
-    final months = _monthsWithBadges();
-    return DSPopover(
-      width: 170,
-      contentBuilder: (popoverContext, close) {
-        final pTheme = DSThemeBridge.resolve(popoverContext);
-        if (months.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.all(14),
-            child: Text(
-              'diary_stats_noMoodRecords'.tr,
-              style: DsTypography.caption.copyWith(color: pTheme.textSub),
-            ),
-          );
-        }
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final m in months) _buildMonthOption(pTheme, m, close),
-          ],
-        );
-      },
-      child: JellyBox(
+    return Pressable(
+      onPressed: _showMonthSheet,
+      builder: (context, states) => JellyBox(
         color: theme.surface,
         radius: theme.radii.circle,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -632,50 +647,64 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
     );
   }
 
-  Widget _buildMonthOption(
-      AppThemeData theme, DateTime m, VoidCallback close) {
-    final selected =
-        m.year == _selectedMonth.year && m.month == _selectedMonth.month;
-    return Pressable(
-      onPressed: () {
-        close();
-        if (!selected) {
-          setState(() {
-            _selectedMonth = m;
-            _spawnBadges();
-          });
-          _shakeJar();
-        }
-      },
-      builder: (context, states) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        color: selected ? theme.surfaceAlt : null,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (selected) ...[
-                  DsIcon(DsIconKind.check, size: 14, color: theme.primary),
-                  const SizedBox(width: 4),
-                ],
-                Text(
-                  '${m.year}/${m.month}',
-                  style: DsTypography.body.copyWith(
-                    color: selected ? theme.primaryText : theme.text,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-            Text(
-              'x${_monthBadgeCount(m)}',
+  void _showMonthSheet() {
+    final months = _monthsWithBadges();
+    showDSBottomSheet(
+      context: context,
+      title: 'diary_stats_selectMonth'.tr,
+      builder: (context) {
+        final theme = AppTheme.of(context);
+        if (months.isEmpty) {
+          return Padding(
+            padding: EdgeInsets.all(theme.spacing.lg),
+            child: Text(
+              'diary_stats_noMoodRecords'.tr,
               style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+        return ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 380),
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: months.length,
+            itemBuilder: (context, i) {
+              final m = months[i];
+              final selected = m.year == _selectedMonth.year &&
+                  m.month == _selectedMonth.month;
+              return DSSheetAction(
+                icon: DsIconKind.calendar,
+                label: '${m.year}/${m.month}',
+                onTap: () {
+                  Navigator.of(context).pop();
+                  if (!selected) {
+                    setState(() {
+                      _selectedMonth = m;
+                      _spawnBadges();
+                    });
+                    _shakeJar();
+                  }
+                },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'x${_monthBadgeCount(m)}',
+                      style: DsTypography.caption
+                          .copyWith(color: theme.textSub),
+                    ),
+                    if (selected) ...[
+                      const SizedBox(width: 6),
+                      DsIcon(DsIconKind.check,
+                          size: 16, color: theme.primary),
+                    ],
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -726,7 +755,7 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
                 ),
                 // 左上角：随机挑一枚回忆
                 Positioned(
-                  left: 0,
+                  left: 12,
                   top: 20 * scale,
                   child: DSIconButton(
                     icon: DsIconKind.sparkle,
@@ -738,7 +767,7 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
                 ),
                 // 右上角：摇晃罐子
                 Positioned(
-                  right: 0,
+                  right: 12,
                   top: 20 * scale,
                   child: DSIconButton(
                     icon: DsIconKind.refresh,
@@ -976,114 +1005,148 @@ class _MoodModalCardState extends State<_MoodModalCard>
     final mood = widget.badge.entry.mood!;
     final moodNameKey = diaryMoodNameKeys[mood];
     final moodName = moodNameKey != null ? moodNameKey.tr : mood;
+    final entry = widget.badge.entry;
+    final hasContent = entry.content.trim().isNotEmpty;
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 320),
+      constraints: BoxConstraints(
+        maxWidth: 320,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      ),
       child: DsSketchPanel(
         theme: theme,
         radius: theme.radii.xxl,
         padding: EdgeInsets.all(theme.spacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Spacer(),
-                DSIconButton(
-                  icon: DsIconKind.close,
-                  size: 32,
-                  color: theme.surfaceAlt,
-                  iconColor: theme.textSub,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            SizedBox(height: theme.spacing.sm),
-            Center(
-              child: JellyBox(
-                color: _jarMoodColor(theme, widget.badge.type),
-                radius: theme.radii.circle,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
-                child: Text(
-                  moodName,
-                  style: DsTypography.caption.copyWith(
-                    color: _jarMoodOnColor(theme, widget.badge.type),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: theme.spacing.md),
-            // 悬浮大徽章
-            AnimatedBuilder(
-              animation: _floatCtl,
-              builder: (context, child) {
-                final t = _floatCtl.value * 2 - 1; // -1..1
-                return Transform.translate(
-                  offset: Offset(0, -8 * t),
-                  child: Transform.rotate(
-                    angle: t * 0.06,
-                    child: Transform.scale(scale: 1 + 0.04 * t, child: child),
-                  ),
-                );
-              },
-              child: Center(
-                child: _MoodFaceBadge(
-                  theme: theme,
-                  spec: diaryMoodSpecOf(mood),
-                  size: 104,
-                ),
-              ),
-            ),
-            SizedBox(height: theme.spacing.md),
-            Text(
-              '${DateFormat('MMMM d, yyyy').format(widget.badge.entry.date)}'
-              ' · ${'diary_stats_moodJarMemory'.tr}',
-              textAlign: TextAlign.center,
-              style: DsTypography.caption.copyWith(color: theme.textSub),
-            ),
-            SizedBox(height: theme.spacing.lg),
-            Container(
-              decoration: dsSketchDecoration(
-                theme: theme,
-                radius: theme.radii.lg,
-                fillStyle: DsSketchFill.hachure,
-                hachureColor: theme.hatch,
-                hachureGap: 9,
-              ),
-              padding: const EdgeInsets.all(14),
-              child: Text(
-                _quoteKey.tr,
-                textAlign: TextAlign.center,
-                style: DsTypography.body
-                    .copyWith(color: theme.text, height: 1.5),
-              ),
-            ),
-            SizedBox(height: theme.spacing.xl),
-            Row(
-              children: [
-                Expanded(
-                  child: DSButton(
-                    label: 'diary_stats_bounceAgain'.tr,
-                    variant: DSButtonVariant.outline,
-                    onPressed: () {
-                      widget.onBounceAgain();
-                      setState(() => _quoteKey = _randomQuote());
-                    },
-                  ),
-                ),
-                SizedBox(width: theme.spacing.md),
-                Expanded(
-                  child: DSButton(
-                    label: 'diary_stats_closeCard'.tr,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Spacer(),
+                  DSIconButton(
+                    icon: DsIconKind.close,
+                    size: 32,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
+                ],
+              ),
+              SizedBox(height: theme.spacing.sm),
+              Center(
+                child: JellyBox(
+                  color: _jarMoodColor(theme, widget.badge.type),
+                  radius: theme.radii.circle,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+                  child: Text(
+                    moodName,
+                    style: DsTypography.caption.copyWith(
+                      color: _jarMoodOnColor(theme, widget.badge.type),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: theme.spacing.md),
+              // 悬浮大徽章
+              AnimatedBuilder(
+                animation: _floatCtl,
+                builder: (context, child) {
+                  final t = _floatCtl.value * 2 - 1; // -1..1
+                  return Transform.translate(
+                    offset: Offset(0, -8 * t),
+                    child: Transform.rotate(
+                      angle: t * 0.06,
+                      child: Transform.scale(scale: 1 + 0.04 * t, child: child),
+                    ),
+                  );
+                },
+                child: Center(
+                  child: _MoodFaceBadge(
+                    theme: theme,
+                    spec: diaryMoodSpecOf(mood),
+                    size: 104,
+                  ),
+                ),
+              ),
+              SizedBox(height: theme.spacing.md),
+              Text(
+                '${DateFormat('MMMM d, yyyy').format(entry.date)}'
+                ' · ${'diary_stats_moodJarMemory'.tr}',
+                textAlign: TextAlign.center,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+              // 日记正文（有内容才渲染）
+              if (hasContent) ...[
+                SizedBox(height: theme.spacing.md),
+                Container(
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: theme.radii.lg,
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (entry.title.trim().isNotEmpty) ...[
+                        Text(
+                          entry.title,
+                          style: DsTypography.body.copyWith(
+                            color: theme.text,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: theme.spacing.sm),
+                      ],
+                      QuillViewer(data: entry.content, selectable: true),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ],
+              SizedBox(height: theme.spacing.lg),
+              Container(
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: theme.radii.lg,
+                  fillStyle: DsSketchFill.hachure,
+                  hachureColor: theme.hatch,
+                  hachureGap: 9,
+                ),
+                padding: const EdgeInsets.all(14),
+                child: Text(
+                  _quoteKey.tr,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.body
+                      .copyWith(color: theme.text, height: 1.5),
+                ),
+              ),
+              SizedBox(height: theme.spacing.xl),
+              Row(
+                children: [
+                  Expanded(
+                    child: DSButton(
+                      label: 'diary_stats_bounceAgain'.tr,
+                      variant: DSButtonVariant.outline,
+                      onPressed: () {
+                        widget.onBounceAgain();
+                        setState(() => _quoteKey = _randomQuote());
+                      },
+                    ),
+                  ),
+                  SizedBox(width: theme.spacing.md),
+                  Expanded(
+                    child: DSButton(
+                      label: 'diary_stats_closeCard'.tr,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

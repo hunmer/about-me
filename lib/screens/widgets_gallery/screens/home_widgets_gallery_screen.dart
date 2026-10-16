@@ -541,6 +541,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'CuteNotepadCard - 16 种风格手账便签（单一组件入口）',
         route: '/widgets_gallery/cute_notepad_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.dashboard_customize,
+        title: '手帐无限画布卡片',
+        subtitle: 'ScrapbookCanvasCard - 可平移缩放的手帐拼贴画布',
+        route: '/widgets_gallery/scrapbook_canvas_card',
+      ),
     ];
   }
 
