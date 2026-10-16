@@ -4,7 +4,7 @@ import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/plugins/calendar_album/screens/calendar_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/tag_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/album_screen.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/gestures.dart';
@@ -76,24 +76,20 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
                 ? DsIconKind.gear
                 : DsIconKind.image,
             onPressed: () {
+              if (_currentPage == 0) {
+                // Tab0: 新建日记（底部弹层）
+                EntryEditorSheet.show(
+                  context,
+                  initialDate: _calendarController.selectedDate,
+                  calendarController: _calendarController,
+                  tagController: _tagController,
+                );
+                return;
+              }
               NavigationHelper.openContainerWithHero(
                 context,
                 (context) {
-                  if (_currentPage == 0) {
-                    // Tab0: 新建日记
-                    return MultiProvider(
-                      providers: [
-                        ChangeNotifierProvider.value(
-                          value: _calendarController,
-                        ),
-                        ChangeNotifierProvider.value(value: _tagController),
-                      ],
-                      child: EntryEditorScreen(
-                        initialDate: _calendarController.selectedDate,
-                        isEditing: false,
-                      ),
-                    );
-                  } else if (_currentPage == 1) {
+                  if (_currentPage == 1) {
                     // Tab1: 标签管理
                     return Scaffold(
                       appBar: AppBar(

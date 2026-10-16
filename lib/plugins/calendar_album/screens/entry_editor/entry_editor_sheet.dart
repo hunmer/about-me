@@ -11,15 +11,20 @@ import 'entry_editor_ui.dart';
 /// 日记新建底部弹层（基于通用 [SmoothBottomSheet.showForm]）
 class EntryEditorSheet {
   /// 以底部弹层打开新建日记表单，保存成功后自动关闭
+  ///
+  /// [calendarController] / [tagController] 缺省时从 [context] 的 Provider 查询；
+  /// 调用处 context 不在 Provider 树内（如 FAB、小组件）时需显式传入
   static Future<void> show(
     BuildContext context, {
     DateTime? initialDate,
+    CalendarController? calendarController,
+    TagController? tagController,
   }) {
-    final calendarController = Provider.of<CalendarController>(
+    calendarController ??= Provider.of<CalendarController>(
       context,
       listen: false,
     );
-    final tagController = Provider.of<TagController>(context, listen: false);
+    tagController ??= Provider.of<TagController>(context, listen: false);
 
     _EntryEditorSheetBodyState? bodyState;
     return SmoothBottomSheet.showForm(
@@ -88,9 +93,12 @@ class _EntryEditorSheetBodyState extends State<_EntryEditorSheetBody> {
         ChangeNotifierProvider.value(value: widget.calendarController),
         ChangeNotifierProvider.value(value: widget.tagController),
       ],
-      child: EntryEditorForm(
-        controller: _controller,
-        parentContext: context,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        child: EntryEditorForm(
+          controller: _controller,
+          parentContext: context,
+        ),
       ),
     );
   }
