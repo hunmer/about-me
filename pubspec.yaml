@@ -158,6 +158,7 @@ dependencies:
   liquid_glass_easy: ^4.3.4
   skribble: ^0.3.1
   skribble_icons_material: ^0.3.1
+  video_thumbnail: ^0.5.6
 dev_dependencies:
   flutter_test:
     sdk: flutter

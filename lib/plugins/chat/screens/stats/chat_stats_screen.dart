@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/chat_screen.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/wave_fill.dart';
 
@@ -97,14 +99,33 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
     (i) => _dayOf(DateTime.now()).subtract(Duration(days: 6 - i)),
   );
 
-  static const _typeLabels = {
-    MessageType.sent: '发出',
-    MessageType.received: '收到',
-    MessageType.file: '文件',
-    MessageType.image: '图片',
-    MessageType.video: '视频',
-    MessageType.audio: '语音',
+  static const _typeKeys = {
+    MessageType.sent: 'chat_typeSent',
+    MessageType.received: 'chat_typeReceived',
+    MessageType.file: 'chat_file',
+    MessageType.image: 'chat_photo',
+    MessageType.video: 'chat_video',
+    MessageType.audio: 'chat_typeAudio',
   };
+
+  // ===== 本地化文案辅助 =====
+
+  bool get _isZh => Get.locale?.languageCode == 'zh';
+
+  static const _weekdaysZh = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  static const _weekdaysEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const _weekdayShortsZh = ['一', '二', '三', '四', '五', '六', '日'];
+  static const _weekdayShortsEn = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+  String _weekdayLabel(int weekday) =>
+      (_isZh ? _weekdaysZh : _weekdaysEn)[weekday - 1];
+
+  String _weekdayShort(int weekday) =>
+      (_isZh ? _weekdayShortsZh : _weekdayShortsEn)[weekday - 1];
+
+  String _dateLabel(DateTime d) => _isZh ? '${d.month}月${d.day}日' : '${d.month}/${d.day}';
+
+  String _hourLabel(int hour) => _isZh ? '$hour点' : '$hour';
 
   /// 各类型消息数（仅统计非零项用于徽章行）
   Map<MessageType, int> get _typeCounts {
@@ -199,7 +220,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                         Padding(
                           padding: const EdgeInsets.only(left: 4),
                           child: Text(
-                            '条',
+                            'chat_statsUnit'.tr,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
@@ -228,7 +249,9 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                     ),
                     const SizedBox(width: 3),
                     Text(
-                      '${diff >= 0 ? '+' : ''}$diff 较昨日',
+                      'chat_statsVsYesterday'.trParams({
+                        'diff': '${diff >= 0 ? '+' : ''}$diff',
+                      }),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -256,7 +279,10 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '共 ${_messages.length} 条 · ${_channels.length} 个频道',
+                  'chat_statsTotalSummary'.trParams({
+                    'messages': '${_messages.length}',
+                    'channels': '${_channels.length}',
+                  }),
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.colorScheme.onSurfaceVariant,
@@ -264,7 +290,9 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                 ),
               ),
               Text(
-                _streakDays > 0 ? '连续记录 $_streakDays 天' : '尚未开始记录',
+                _streakDays > 0
+                    ? 'chat_statsStreak'.trParams({'count': '$_streakDays'})
+                    : 'chat_statsNotStarted'.tr,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
@@ -306,7 +334,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '今日消息分布',
+                  'chat_statsTodayChart'.tr,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
@@ -315,7 +343,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                 ),
               ),
               Text(
-                '${now.month}月${now.day}日 · ${today.length} 条',
+                '${_dateLabel(now)} · ${today.length} ${'chat_statsUnit'.tr}',
                 style: TextStyle(
                   fontSize: 12,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -349,7 +377,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                 Expanded(
                   child: Center(
                     child: Text(
-                      '${i * 2}点',
+                      _hourLabel(i * 2),
                       style: TextStyle(
                         fontSize: 10,
                         color: theme.colorScheme.onSurfaceVariant,
@@ -372,7 +400,8 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
     final counts = days.map((d) => _messagesOf(d).length).toList();
     final avg = counts.fold<int>(0, (a, b) => a + b) / 7;
 
-    final dayNames = ['一', '二', '三', '四', '五', '六', '日'];
+    // 按 weekday 索引（周一 = 0）
+    final dayNames = List.generate(7, (i) => _weekdayShort(i + 1));
 
     return _Card(
       child: Column(
@@ -384,7 +413,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '每日消息分布',
+                  'chat_statsDailyChart'.tr,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
@@ -393,7 +422,9 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                 ),
               ),
               Text(
-                '日均 ${avg.toStringAsFixed(1)} 条',
+                'chat_statsDailyAvg'.trParams({
+                  'count': avg.toStringAsFixed(1),
+                }),
                 style: TextStyle(
                   fontSize: 12,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -422,7 +453,9 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                   ),
                 ),
                 Text(
-                  '${counts[_selectedDay]} 条消息',
+                  'chat_messageCount'.trParams({
+                    'count': '${counts[_selectedDay]}',
+                  }),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -453,8 +486,8 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
 
   String _tooltipDayLabel(DateTime day) {
     final isToday = day == _dayOf(DateTime.now());
-    final weekday = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][day.weekday - 1];
-    return isToday ? '$weekday (今日)' : weekday;
+    final label = _weekdayLabel(day.weekday);
+    return isToday ? '$label (${'chat_today'.tr})' : label;
   }
 
   Widget _buildChartColumn(ThemeData theme, int i, List<String> dayNames) {
@@ -540,7 +573,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
   Widget _buildTypeCard(ThemeData theme) {
     final counts = _typeCounts;
     // 按固定顺序展示非零类型
-    final entries = _typeLabels.entries
+    final entries = _typeKeys.entries
         .where((e) => counts[e.key] != null && counts[e.key]! > 0)
         .toList();
 
@@ -560,7 +593,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '消息类型分布',
+                  'chat_statsTypeChart'.tr,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
@@ -586,7 +619,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                     color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   ),
                   child: Text(
-                    '${e.value} ${counts[e.key]}',
+                    '${e.value.tr} ${counts[e.key]}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -621,7 +654,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '频道活跃排行',
+                  'chat_statsRanking'.tr,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
@@ -684,71 +717,80 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
         : count / _messages.length * 100;
 
     return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 时间线：圆点 + 连接线
-          SizedBox(
-            width: 20,
-            child: Column(
-              children: [
-                const SizedBox(height: 5),
-                // 手绘圆点：频道色实底 + 墨线描边
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: dsSketchDecoration(
-                    theme: DSThemeBridge.resolve(context),
-                    circle: true,
-                    fillColor: channel.backgroundColor,
-                    strokeWidth: 1.4,
-                  ),
-                ),
-                if (showLine)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: const EdgeInsets.only(top: 4),
-                      color: theme.colorScheme.surfaceContainerHigh,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        // 点击进入对应频道聊天页（与频道列表入口一致）
+        onTap: () => NavigationHelper.openContainerWithHero(
+          context,
+          (context) => ChatScreen(channel: channel),
+          transitionDuration: const Duration(milliseconds: 400),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 时间线：圆点 + 连接线
+            SizedBox(
+              width: 20,
+              child: Column(
+                children: [
+                  const SizedBox(height: 5),
+                  // 手绘圆点：频道色实底 + 墨线描边
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: dsSketchDecoration(
+                      theme: DSThemeBridge.resolve(context),
+                      circle: true,
+                      fillColor: channel.backgroundColor,
+                      strokeWidth: 1.4,
                     ),
                   ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: showLine ? 16 : 0),
-              child: Text(
-                channel.title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                  if (showLine)
+                    Expanded(
+                      child: Container(
+                        width: 2,
+                        margin: const EdgeInsets.only(top: 4),
+                        color: theme.colorScheme.surfaceContainerHigh,
+                      ),
+                    ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '${percent.toStringAsFixed(0)}%',
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: showLine ? 16 : 0),
+                child: Text(
+                  channel.title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$count 条',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+            const SizedBox(width: 8),
+            Text(
+              '${percent.toStringAsFixed(0)}%',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(
+              '$count ${'chat_statsUnit'.tr}',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

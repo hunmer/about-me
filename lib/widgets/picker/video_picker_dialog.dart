@@ -19,6 +19,7 @@ import 'package:aboutme/utils/platform_utils.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/multi_filter_bar.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 /// 视频选择器底部弹窗（结构与 ImagePickerDialog 一致的视频版）
 ///
@@ -77,6 +78,12 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
   /// 应用存储内的视频元信息（相对 app_data），按修改时间倒序，最多 300 条
   List<StorageFileInfo> _allInfos = [];
 
+  /// 全量文件 key（含 .thumb.jpg 伴生缩略图），用于推断视频缩略图
+  Set<String> _allKeys = {};
+
+  /// 缩略图生成中的视频 key（防重复请求）
+  final Set<String> _thumbGenerating = {};
+
   bool _loading = true;
 
   /// 多选模式下已选中的视频 key
@@ -132,9 +139,11 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
     try {
       final infos = await globalStorage.listFileInfos('');
 
+      final allKeys = <String>{};
       final videos = <StorageFileInfo>[];
       for (final info in infos) {
         final key = info.path.replaceAll(r'\', '/');
+        allKeys.add(key);
         if (!_isVideoExtension(key)) continue;
         videos.add(
           StorageFileInfo(
@@ -155,12 +164,52 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
       final limited = videos.length > 300 ? videos.sublist(0, 300) : videos;
 
       if (mounted) {
-        setState(() => _allInfos = limited);
+        setState(() {
+          _allInfos = limited;
+          _allKeys = allKeys;
+        });
       }
     } catch (e) {
       debugPrint('加载视频列表失败: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  /// 视频的伴生缩略图 key（沿用图片 `<name>.thumb` 命名约定，视频统一 jpg）
+  String _thumbKeyFor(String key) {
+    final dir = path.dirname(key);
+    final name = path.basenameWithoutExtension(key);
+    return '$dir/$name.thumb.jpg';
+  }
+
+  /// 移动端为无缩略图的视频懒生成首帧缩略图
+  /// （video_thumbnail 仅支持 iOS/Android，桌面端跳过由占位图标兜底）
+  Future<void> _ensureThumb(String key) async {
+    if (!PlatformUtils.isMobile || _thumbGenerating.contains(key)) return;
+    final thumbKey = _thumbKeyFor(key);
+    if (_allKeys.contains(thumbKey)) return;
+    _thumbGenerating.add(key);
+    try {
+      final videoAbs = await ImageUtils.getAbsolutePath('./$key');
+      final tmp = await VideoThumbnail.thumbnailFile(
+        video: videoAbs,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 220,
+        quality: 60,
+      );
+      if (tmp == null) return;
+      final thumbAbs = await ImageUtils.getAbsolutePath('./$thumbKey');
+      final thumbFile = File(thumbAbs);
+      await thumbFile.parent.create(recursive: true);
+      await thumbFile.writeAsBytes(await File(tmp).readAsBytes());
+      if (mounted) {
+        setState(() => _allKeys.add(thumbKey));
+      }
+    } catch (e) {
+      debugPrint('生成视频缩略图失败 $key: $e');
+    } finally {
+      _thumbGenerating.remove(key);
     }
   }
 
@@ -520,6 +569,8 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
             : info.size! >= _mb
             ? '${(info.size! / _mb).toStringAsFixed(1)}MB'
             : '${(info.size! / _kb).toStringAsFixed(0)}KB';
+    final thumbKey = _thumbKeyFor(key);
+    final hasThumb = _allKeys.contains(thumbKey);
 
     return GestureDetector(
       onTap: () => _selectVideo(key),
@@ -534,36 +585,9 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Container(
-                color: theme.primary.mixWhite(0.85),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    DsIcon(DsIconKind.video, size: 26, color: theme.primary),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        path.basename(key),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: DsTypography.caption.copyWith(
-                          color: theme.primary,
-                          fontSize: 9,
-                        ),
-                      ),
-                    ),
-                    if (sizeText.isNotEmpty)
-                      Text(
-                        sizeText,
-                        style: DsTypography.caption.copyWith(
-                          color: theme.primary.withValues(alpha: 0.7),
-                          fontSize: 9,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+              hasThumb
+                  ? _buildThumbContent(theme, thumbKey, sizeText)
+                  : _buildVideoPlaceholder(theme, info, sizeText),
               if (widget.multiple)
                 Positioned(
                   top: 4,
@@ -595,6 +619,112 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
           ),
         ),
       ),
+    );
+  }
+
+  /// 缩略图内容：首帧铺满 + 半透明播放角标 + 右下大小角标
+  Widget _buildThumbContent(
+    AppThemeData theme,
+    String thumbKey,
+    String sizeText,
+  ) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image(
+          image: ImageUtils.createImageProvider('./$thumbKey'),
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _videoFallback(theme),
+        ),
+        Center(
+          child: Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black.withValues(alpha: 0.35),
+            ),
+            child: const Center(
+              child: DsIcon(DsIconKind.play, size: 20, color: Colors.white),
+            ),
+          ),
+        ),
+        if (sizeText.isNotEmpty)
+          Positioned(
+            right: 4,
+            bottom: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                sizeText,
+                style: DsTypography.caption.copyWith(
+                  color: Colors.white,
+                  fontSize: 9,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// 无缩略图占位：图标 + 文件名 + 大小，并触发移动端懒生成
+  Widget _buildVideoPlaceholder(
+    AppThemeData theme,
+    StorageFileInfo info,
+    String sizeText,
+  ) {
+    // 幂等：已有/生成中直接跳过，成功后 setState 刷新为缩略图
+    _ensureThumb(info.path);
+    return _videoFallbackBody(theme, info.path, sizeText);
+  }
+
+  Widget _videoFallbackBody(
+    AppThemeData theme,
+    String key,
+    String sizeText,
+  ) {
+    return Container(
+      color: theme.primary.mixWhite(0.85),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          DsIcon(DsIconKind.video, size: 26, color: theme.primary),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              path.basename(key),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: DsTypography.caption.copyWith(
+                color: theme.primary,
+                fontSize: 9,
+              ),
+            ),
+          ),
+          if (sizeText.isNotEmpty)
+            Text(
+              sizeText,
+              style: DsTypography.caption.copyWith(
+                color: theme.primary.withValues(alpha: 0.7),
+                fontSize: 9,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 缩略图解码失败时回退占位（不重复触发懒生成，避免解码失败循环）
+  Widget _videoFallback(AppThemeData theme) {
+    return Container(
+      color: theme.primary.mixWhite(0.85),
+      child: Center(child: DsIcon(DsIconKind.video, size: 26, color: theme.primary)),
     );
   }
 

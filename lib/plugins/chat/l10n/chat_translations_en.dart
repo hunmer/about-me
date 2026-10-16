@@ -203,6 +203,21 @@ class ChatTranslationsEn {
     // Tags feature
     'chat_tagsTab': 'Tags',
     'chat_statsTab': 'Stats',
+
+    // Message stats
+    'chat_statsUnit': 'msgs',
+    'chat_statsVsYesterday': '@diff vs yesterday',
+    'chat_statsTotalSummary': '@messages msgs · @channels channels',
+    'chat_statsStreak': '@count-day streak',
+    'chat_statsNotStarted': 'No messages yet',
+    'chat_statsTodayChart': 'Today',
+    'chat_statsDailyChart': 'Last 7 Days',
+    'chat_statsDailyAvg': 'Avg @count / day',
+    'chat_statsTypeChart': 'Message Types',
+    'chat_statsRanking': 'Top Channels',
+    'chat_typeSent': 'Sent',
+    'chat_typeReceived': 'Received',
+    'chat_typeAudio': 'Audio',
     'chat_tagList': 'Tag List',
     'chat_messageCount': '@count messages',
     'chat_searchTags': 'Search tags',

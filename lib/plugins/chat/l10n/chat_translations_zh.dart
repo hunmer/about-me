@@ -198,6 +198,21 @@ class ChatTranslationsZh {
     // 标签功能
     'chat_tagsTab': '标签',
     'chat_statsTab': '统计',
+
+    // 消息统计
+    'chat_statsUnit': '条',
+    'chat_statsVsYesterday': '@diff 较昨日',
+    'chat_statsTotalSummary': '共 @messages 条 · @channels 个频道',
+    'chat_statsStreak': '连续记录 @count 天',
+    'chat_statsNotStarted': '尚未开始记录',
+    'chat_statsTodayChart': '今日消息分布',
+    'chat_statsDailyChart': '每日消息分布',
+    'chat_statsDailyAvg': '日均 @count 条',
+    'chat_statsTypeChart': '消息类型分布',
+    'chat_statsRanking': '频道活跃排行',
+    'chat_typeSent': '发出',
+    'chat_typeReceived': '收到',
+    'chat_typeAudio': '语音',
     'chat_tagList': '标签列表',
     'chat_messageCount': '@count 条消息',
     'chat_searchTags': '搜索标签',
