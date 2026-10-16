@@ -10,7 +10,6 @@ import 'package:aboutme/widgets/form_fields/event_multi_select_field.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
-import 'package:aboutme/core/services/toast_service.dart';
 
 /// 排序顺序枚举
 enum SortOrder { newestFirst, oldestFirst }
@@ -652,22 +651,6 @@ class _PointsHistoryState extends State<PointsHistory> {
       searchPlaceholder: 'store_searchReason'.tr,
       onSearchChanged: _onSearchChanged,
       onMultiFilterChanged: _onMultiFilterChanged,
-      actions: [
-        // 第三方导航栏回调：DS 组件需包 DSThemeBridge
-        DSThemeBridge(
-          child: Builder(
-            builder:
-                (context) => DSButton(
-                  label: 'store_clear'.tr,
-                  variant: DSButtonVariant.destructive,
-                  size: DSButtonSize.sm,
-                  onPressed: () {
-                    _showClearLogsDialog(context);
-                  },
-                ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -743,31 +726,4 @@ class _PointsHistoryState extends State<PointsHistory> {
     );
   }
 
-  void _showClearLogsDialog(BuildContext context) {
-    showDSDialog(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (_) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (context) => DSDialog(
-                    title: 'store_clearPointsHistory'.tr,
-                    message: 'store_confirmClearPointsHistory'.tr,
-                    cancelText: 'store_cancel'.tr,
-                    confirmText: '确定',
-                    confirmVariant: DSButtonVariant.destructive,
-                    onConfirm: () async {
-                      Navigator.pop(context);
-                      await widget.controller.clearPointsLogs();
-                      _loadInitialData();
-                      if (mounted) {
-                        Toast.success('积分记录已清空');
-                      }
-                    },
-                  ),
-            ),
-          ),
-    );
-  }
 }

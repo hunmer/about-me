@@ -15,7 +15,11 @@ class ScriptLoader {
   final StorageManager storage;
 
   /// 内置脚本 ID 列表（assets/scripts/{id}/ 下的脚本）
-  static const List<String> builtInScriptIds = ['ai_image', 'line_sticker'];
+  static const List<String> builtInScriptIds = [
+    'ai_image',
+    'line_sticker',
+    'unsplash_search',
+  ];
 
   ScriptLoader(this.storage);
 

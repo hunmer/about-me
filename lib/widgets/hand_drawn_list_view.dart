@@ -272,32 +272,34 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
 
   @override
   Widget build(BuildContext context) {
-    // 监听全局开关:贴条/倾斜状态变化时本 item 即时重建
+    // 监听全局开关:贴条/倾斜/入场动画状态变化时本 item 即时重建
     return ListenableBuilder(
       listenable: HandDrawnStyleController(),
-      builder: (context, _) => MouseRegion(
-        onEnter: (_) => setState(() => _hovering = true),
-        onExit: (_) => setState(() => _hovering = false),
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(end: _hovering ? 1.0 : 0.0),
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-          child: _buildStack(),
-          builder: (context, t, child) {
-            // t: 0 = 静置姿态,t: 1 = 悬浮拿起(角度归零、放大 1.04、上移 4px)
-            final angle =
-                lerpDouble(_pose.angleDegrees * math.pi / 180, 0, t)!;
-            final scale = lerpDouble(1.0, 1.04, t)!;
-            final dy = lerpDouble(0.0, -4.0, t)!;
-            return Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.identity()
-                ..translate(_pose.offsetX, dy)
-                ..rotateZ(angle)
-                ..scale(scale),
-              child: child,
-            );
-          },
+      builder: (context, _) => _wrapEntrance(
+        MouseRegion(
+          onEnter: (_) => setState(() => _hovering = true),
+          onExit: (_) => setState(() => _hovering = false),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(end: _hovering ? 1.0 : 0.0),
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            child: _buildStack(),
+            builder: (context, t, child) {
+              // t: 0 = 静置姿态,t: 1 = 悬浮拿起(角度归零、放大 1.04、上移 4px)
+              final angle =
+                  lerpDouble(_pose.angleDegrees * math.pi / 180, 0, t)!;
+              final scale = lerpDouble(1.0, 1.04, t)!;
+              final dy = lerpDouble(0.0, -4.0, t)!;
+              return Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.identity()
+                  ..translate(_pose.offsetX, dy)
+                  ..rotateZ(angle)
+                  ..scale(scale),
+                child: child,
+              );
+            },
+          ),
         ),
       ),
     );
@@ -310,7 +312,6 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
         widget.showTape && HandDrawnStyleController().tapeEnabled;
     final folderTab =
         showTape && widget.tapeStyle == HandDrawnTapeStyle.folderTab;
-    final content = _wrapEntrance(widget.child);
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -318,9 +319,9 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
         folderTab
             ? Padding(
                 padding: const EdgeInsets.only(top: 16),
-                child: content,
+                child: widget.child,
               )
-            : content,
+            : widget.child,
         if (showTape)
           switch (widget.tapeStyle) {
             // 顶部胶带:横跨卡片顶边,一半露出卡片外
@@ -341,8 +342,9 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
     );
   }
 
-  /// 入场动画(源自 timeline 卡片效果):延迟后淡入并向上滑入,
-  /// 延迟随列表索引递增形成瀑布感;全局开关或 entranceDelay 关闭时直出
+  /// 入场动画:整个便签(卡体+贴条+倾斜姿态)作为一个整体延迟后淡入并向上滑入,
+  /// 避免贴条与卡体动画不一致;延迟随列表索引递增形成瀑布感,
+  /// 全局开关或 entranceDelay 关闭时直出
   Widget _wrapEntrance(Widget child) {
     final delay = widget.entranceDelay;
     if (delay == null || !HandDrawnStyleController().entranceEnabled) {
