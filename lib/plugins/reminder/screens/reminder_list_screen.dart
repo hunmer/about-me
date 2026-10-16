@@ -6,7 +6,7 @@ import 'components/reminder_card.dart';
 import 'reminder_form_screen.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import 'package:get/get.dart';
 
@@ -93,7 +93,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
 
   Future<bool?> _showReminderForm([Reminder? reminder]) {
     VoidCallback? submitReminder;
-    return FormModalSheet.show<bool>(
+    return SmoothBottomSheet.showForm<bool>(
       context: context,
       title: reminder == null
           ? 'reminder_createReminder'.tr

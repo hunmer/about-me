@@ -10,7 +10,7 @@ import 'package:aboutme/screens/jelly_home/widgets/jelly_configurable_image.dart
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'live2d_archive_form_screen.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// Live2D 全局设置：选中存档切换、语音播报、打字速度、模型预览。
 /// 存档内容编辑（名称/模型/Agent/封面）在 [Live2DArchiveFormScreen]。
@@ -111,7 +111,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
     if (id == null) return;
     VoidCallback? saveArchive;
     VoidCallback? deleteArchive;
-    await FormModalSheet.show(
+    await SmoothBottomSheet.showForm(
       context: context,
       title: 'live2d_editArchiveTitle'.tr,
       child: Live2DArchiveFormScreen(

@@ -5,9 +5,9 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:aboutme/plugins/habits/widgets/habit_form.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
-/// 习惯表单底部弹层（基于通用 [FormModalSheet]，支持新建和编辑）
+/// 习惯表单底部弹层（基于通用 [SmoothBottomSheet.showForm]，支持新建和编辑）
 class HabitFormSheet {
   /// 以 smooth_sheets 模态底部弹层打开
   ///
@@ -20,7 +20,7 @@ class HabitFormSheet {
   }) {
     FormBuilderWrapperState? wrapperState;
 
-    return FormModalSheet.show(
+    return SmoothBottomSheet.showForm(
       context: context,
       title: habit == null ? 'habits_createHabit'.tr : 'habits_editHabit'.tr,
       child: HabitForm(

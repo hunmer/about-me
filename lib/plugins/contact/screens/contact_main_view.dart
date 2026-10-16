@@ -16,7 +16,7 @@ import 'package:aboutme/plugins/contact/models/contact_model.dart';
 import 'package:aboutme/plugins/contact/models/filter_sort_config.dart';
 import 'package:aboutme/plugins/contact/screens/contact_detail_screen.dart';
 import 'package:aboutme/plugins/contact/widgets/contact_form.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/contact/widgets/contact_list_tile.dart';
 
 class ContactMainView extends StatefulWidget {
@@ -296,7 +296,7 @@ class ContactMainViewState extends State<ContactMainView> {
   /// FAB 新建联系人（smooth_sheets 底部弹层，表单防抖自动保存，
   /// 弹层关闭即 dispose flush 未落盘变更）
   void _addContact() {
-    FormModalSheet.show(
+    SmoothBottomSheet.showForm(
       context: context,
       title: 'contact_addContact'.tr,
       showTitleBar: false, // 表单自带 DSLightHeader 标题

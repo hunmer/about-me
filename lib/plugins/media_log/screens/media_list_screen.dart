@@ -486,7 +486,9 @@ class _MediaListScreenState extends State<MediaListScreen> {
                       trailingActions: [
                         SwipeActionPresets.delete(
                           label: 'media_delete'.tr,
-                          onTap: () => _confirmDelete(item),
+                          // 滑动已有嵌套二次确认，直接删除；菜单入口走 _confirmDelete
+                          onTap: () =>
+                              MediaLogPlugin.instance.deleteItem(item.id),
                         ),
                       ],
                       child: MediaItemListTile(

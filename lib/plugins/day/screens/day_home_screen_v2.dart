@@ -79,58 +79,19 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
   ]) async {
     if (!mounted) return;
 
-    // 新建/编辑：SmoothBottomSheet 弹层，高度贴合内容（保存/删除经 DialogResult 返回）
+    // 新建/编辑：表单底部弹层（保存/删除经 DialogResult 返回）
     VoidCallback? saveMemorialDay;
-    final result = await SmoothBottomSheet.show<DialogResult>(
+    final result = await SmoothBottomSheet.showForm<DialogResult>(
       context: context,
-      builder: (sheetContext) => DSThemeBridge(
-        child: Builder(
-          builder: (context) {
-            final theme = DSThemeBridge.resolve(context);
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    theme.spacing.md,
-                    theme.spacing.sm,
-                    theme.spacing.md,
-                    0,
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 36),
-                      Expanded(
-                        child: Text(
-                          memorialDay == null
-                              ? 'day_addMemorialDay'.tr
-                              : 'day_editMemorialDay'.tr,
-                          textAlign: TextAlign.center,
-                          style: DsTypography.title.copyWith(
-                            color: theme.text,
-                          ),
-                        ),
-                      ),
-                      DSButton(
-                        label: 'app_save'.tr,
-                        size: DSButtonSize.sm,
-                        icon: DsIconKind.check,
-                        onPressed: () => saveMemorialDay?.call(),
-                      ),
-                    ],
-                  ),
-                ),
-                EditMemorialDayPage(
-                  memorialDay: memorialDay,
-                  embedInSheet: true,
-                  onReady: (save) => saveMemorialDay = save,
-                ),
-              ],
-            );
-          },
-        ),
+      title: memorialDay == null
+          ? 'day_addMemorialDay'.tr
+          : 'day_editMemorialDay'.tr,
+      child: EditMemorialDayPage(
+        memorialDay: memorialDay,
+        embedInSheet: true,
+        onReady: (save) => saveMemorialDay = save,
       ),
+      onSave: () => saveMemorialDay?.call(),
     );
 
     if (result == null) return; // 页面被异常关闭

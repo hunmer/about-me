@@ -20,7 +20,6 @@ class BillTranslationsZh {
     'bill_save': '保存',
     'bill_cancel': '取消',
     'bill_confirmDelete': '确认删除',
-    'bill_deleteBillConfirmation': '确定要删除这条账单吗?',
     'bill_selectCategory': '选择分类',
     'bill_selectDate': '选择日期',
     'bill_addNote': '添加备注',
@@ -89,7 +88,6 @@ class BillTranslationsZh {
     'bill_time': '时间',
 
     // 快捷记账配置
-    'bill_confirmDeleteThisBill': '确定要删除这条账单吗?',
     'bill_shortcutsAccountingConfig': '快捷记账配置',
     'bill_configDailyWidget': '配置日视图小组件',
     'bill_configWeeklyWidget': '配置周视图小组件',

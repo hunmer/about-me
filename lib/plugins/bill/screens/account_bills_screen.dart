@@ -235,35 +235,11 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
         padding: const EdgeInsets.only(right: 16),
         child: DsIcon(DsIconKind.trash, color: Colors.white),
       ),
-      confirmDismiss: (direction) async {
-        final confirmed = await showDSDialog<bool>(
-          context: context,
-          theme: DSThemeBridge.resolve(context),
-          builder: (context) => DSThemeBridge(
-            child: Builder(
-              builder: (context) => DSDialog(
-                title: 'bill_confirmDelete'.tr,
-                message: 'bill_deleteBillConfirmation'.tr,
-                cancelText: 'bill_cancel'.tr,
-                confirmText: 'bill_delete'.tr,
-                confirmVariant: DSButtonVariant.destructive,
-                onCancel: () => Navigator.pop(context, false),
-                onConfirm: () => Navigator.pop(context, true),
-              ),
-            ),
-          ),
-        );
-        if (confirmed == true) {
-          await widget.billPlugin.controller.deleteBill(
-            widget.account.id,
-            bill.id,
-          );
-          return true;
-        }
-        return false;
-      },
       onDismissed: (direction) {
-        // 空实现，因为删除操作已在confirmDismiss中完成
+        widget.billPlugin.controller.deleteBill(
+          widget.account.id,
+          bill.id,
+        );
       },
       child: ListTile(
         leading: CircleAvatar(

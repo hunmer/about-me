@@ -14,7 +14,7 @@ import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// Habits 插件的底部栏组件
 /// 提供习惯列表和技能列表两个 Tab 的切换功能
@@ -88,7 +88,7 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
           } else {
             // 新建技能：smooth_sheets 底部弹层
             FormBuilderWrapperState? skillFormState;
-            FormModalSheet.show(
+            SmoothBottomSheet.showForm(
               context: context,
               title: 'habits_createSkill'.tr,
               child: SkillForm(

@@ -21,7 +21,7 @@ import './pages/event_list_page.dart';
 import './widgets/event_detail_card.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -359,7 +359,7 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
   void showEventEditPage(BuildContext context, [CalendarEvent? event]) {
     // 新建/编辑：smooth_sheets 底部弹层
     VoidCallback? submitEvent;
-    FormModalSheet.show(
+    SmoothBottomSheet.showForm(
       context: context,
       title: event == null ? 'calendar_addEvent'.tr : 'calendar_editEvent'.tr,
       child: EventEditPage(

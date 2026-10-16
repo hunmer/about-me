@@ -20,7 +20,6 @@ class BillTranslationsEn {
     'bill_save': 'Save',
     'bill_cancel': 'Cancel',
     'bill_confirmDelete': 'Confirm Delete',
-    'bill_deleteBillConfirmation': 'Are you sure you want to delete this bill?',
     'bill_selectCategory': 'Select Category',
     'bill_selectDate': 'Select Date',
     'bill_addNote': 'Add Note',
@@ -90,7 +89,6 @@ class BillTranslationsEn {
     'bill_time': 'Time',
 
     // Quick bookkeeping config
-    'bill_confirmDeleteThisBill': 'Are you sure you want to delete this bill?',
     'bill_shortcutsAccountingConfig': 'Shortcuts Accounting Config',
     'bill_configDailyWidget': 'Configure Daily Widget',
     'bill_configWeeklyWidget': 'Configure Weekly Widget',

@@ -3,7 +3,6 @@ import 'package:aboutme/plugins/database/widgets/record_edit_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/database/controllers/database_controller.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
@@ -633,7 +632,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
     record_model.Record? record,
   ) async {
     VoidCallback? submitRecord;
-    await FormModalSheet.show(
+    await SmoothBottomSheet.showForm(
       context: context,
       title: 'database_edit_record_title'.tr,
       child: RecordEditWidget(
@@ -655,7 +654,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
   /// 数据库编辑：smooth_sheets 底部弹层
   Future<void> _showDatabaseEditor(DatabaseModel database) async {
     VoidCallback? submitDatabase;
-    await FormModalSheet.show<bool>(
+    await SmoothBottomSheet.showForm<bool>(
       context: context,
       title: 'database_edit_database_title'.tr,
       child: DatabaseEditWidget(

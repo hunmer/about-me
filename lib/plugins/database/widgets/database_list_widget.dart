@@ -11,7 +11,6 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
@@ -375,7 +374,7 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
     DatabaseModel database,
   ) async {
     VoidCallback? submitDatabase;
-    final result = await FormModalSheet.show<bool>(
+    final result = await SmoothBottomSheet.showForm<bool>(
       context: context,
       title: 'database_edit_database_title'.tr,
       child: DatabaseEditWidget(

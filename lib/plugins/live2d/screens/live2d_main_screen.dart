@@ -12,7 +12,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'live2d_archive_form_screen.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// Live2D 主界面：存档卡片列表，点击卡片进入存档设置
 class Live2DMainScreen extends StatefulWidget {
@@ -98,7 +98,7 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
   Future<void> _showArchiveForm(String archiveId) async {
     VoidCallback? saveArchive;
     VoidCallback? deleteArchive;
-    await FormModalSheet.show(
+    await SmoothBottomSheet.showForm(
       context: context,
       title: 'live2d_editArchiveTitle'.tr,
       child: Live2DArchiveFormScreen(

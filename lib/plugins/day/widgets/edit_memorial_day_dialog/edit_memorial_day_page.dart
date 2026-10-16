@@ -196,8 +196,10 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
               left: 16,
               right: 16,
               top: 16,
-              // SmoothBottomSheet 外壳不补底部安全区，由表单自带
-              bottom: MediaQuery.paddingOf(context).bottom + 24,
+              // sheet 模式由外壳统一追加底部安全区，避免双重留白
+              bottom: widget.embedInSheet
+                  ? 24
+                  : MediaQuery.paddingOf(context).bottom + 24,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

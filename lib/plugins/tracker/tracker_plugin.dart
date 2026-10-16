@@ -16,7 +16,7 @@ import 'package:aboutme/plugins/tracker/screens/search_results_screen.dart';
 import 'package:aboutme/plugins/tracker/widgets/goal_edit_page.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:shared_models/shared_models.dart';
 import 'controllers/tracker_controller.dart';
@@ -140,7 +140,7 @@ class _TrackerMainViewState extends State<TrackerMainView> {
                 onPressed: () {
                   // 新建目标：smooth_sheets 底部弹层
                   VoidCallback? submitGoal;
-                  FormModalSheet.show(
+                  SmoothBottomSheet.showForm(
                     context: context,
                     title: '添加新目标',
                     child: GoalEditPage(

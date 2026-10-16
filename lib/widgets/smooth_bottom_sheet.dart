@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 
 /// 使用 smooth_sheets 实现的底部抽屉工具类
@@ -80,6 +82,35 @@ class SmoothBottomSheet {
         title: title,
         showCloseButton: showCloseButton,
         actions: actions,
+        child: child,
+      ),
+    );
+  }
+
+  /// 表单底部弹层：高度贴合内容，超高可滚动
+  ///
+  /// 标题栏左侧可选删除按钮；右上角为提交按钮（[onSave]）或关闭按钮。
+  /// [onSave] 为 null 表示表单自动保存，右上角仅提供关闭。
+  /// 表单自带标题头时可通过 [showTitleBar] 关闭外壳标题栏避免重复。
+  static Future<T?> showForm<T>({
+    required BuildContext context,
+    required String title,
+    required Widget child,
+    VoidCallback? onSave,
+    VoidCallback? onDelete,
+    bool showTitleBar = true,
+    bool swipeDismissible = true,
+    bool barrierDismissible = true,
+  }) {
+    return show<T>(
+      context: context,
+      swipeDismissible: swipeDismissible,
+      barrierDismissible: barrierDismissible,
+      builder: (context) => _FormSheetContent(
+        title: title,
+        onSave: onSave,
+        onDelete: onDelete,
+        showTitleBar: showTitleBar,
         child: child,
       ),
     );
@@ -212,6 +243,98 @@ class _SheetWithTitle extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// 表单弹层内容：固定标题栏 + 可滚动内容 + 底部安全区
+///
+/// 内容用 shrinkWrap ListView 包裹：短表单贴合内容高度，
+/// 超出可用高度时恰好撑满并内部滚动。
+class _FormSheetContent extends StatelessWidget {
+  final String title;
+  final VoidCallback? onSave;
+  final VoidCallback? onDelete;
+  final bool showTitleBar;
+  final Widget child;
+
+  const _FormSheetContent({
+    required this.title,
+    this.onSave,
+    this.onDelete,
+    required this.showTitleBar,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showTitleBar) _buildTitleBar(context, theme),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  children: [child],
+                ),
+              ),
+              SizedBox(height: MediaQuery.paddingOf(context).bottom),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTitleBar(BuildContext context, AppThemeData theme) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        theme.spacing.md,
+        theme.spacing.sm,
+        theme.spacing.md,
+        theme.spacing.sm,
+      ),
+      child: Row(
+        children: [
+          if (onDelete != null)
+            DSIconButton(
+              icon: DsIconKind.trash,
+              size: 36,
+              color: theme.surfaceAlt,
+              iconColor: theme.textSub,
+              onPressed: onDelete,
+            )
+          else
+            const SizedBox(width: 36),
+          Expanded(
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: DsTypography.title.copyWith(color: theme.text),
+            ),
+          ),
+          if (onSave != null)
+            DSButton(
+              label: 'app_save'.tr,
+              size: DSButtonSize.sm,
+              icon: DsIconKind.check,
+              onPressed: onSave,
+            )
+          else
+            DSIconButton(
+              icon: DsIconKind.close,
+              size: 36,
+              color: theme.surfaceAlt,
+              iconColor: theme.textSub,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+        ],
+      ),
     );
   }
 }

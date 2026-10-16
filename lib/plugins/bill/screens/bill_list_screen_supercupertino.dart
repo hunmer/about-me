@@ -599,45 +599,19 @@ class _BillListScreenSupercupertinoState
                           trailingActions: [
                             SwipeActionPresets.delete(
                               onTap: () async {
-                                final confirmed = await showDSDialog<bool>(
-                                  context: context,
-                                  theme: DSThemeBridge.resolve(context),
-                                  builder: (BuildContext context) =>
-                                      DSThemeBridge(
-                                        child: Builder(
-                                          builder: (context) => DSDialog(
-                                            title: 'bill_confirmDelete'.tr,
-                                            message:
-                                                'bill_confirmDeleteThisBill'.tr,
-                                            cancelText: 'bill_cancel'.tr,
-                                            confirmText: 'bill_delete'.tr,
-                                            confirmVariant:
-                                                DSButtonVariant.destructive,
-                                            onCancel: () => Navigator.of(
-                                              context,
-                                            ).pop(false),
-                                            onConfirm: () =>
-                                                Navigator.of(context).pop(true),
-                                          ),
-                                        ),
-                                      ),
-                                );
-
-                                if (confirmed == true) {
-                                  try {
-                                    final currentAccount = widget
-                                        .billPlugin
-                                        .accounts
-                                        .firstWhere(
-                                          (account) =>
-                                              account.id == widget.accountId,
-                                        );
-                                    await widget.billPlugin.controller
-                                        .deleteBill(currentAccount.id, bill.id);
-                                    _loadMonthBills();
-                                  } catch (e) {
-                                    Toast.error('删除失败: $e');
-                                  }
+                                try {
+                                  final currentAccount = widget
+                                      .billPlugin
+                                      .accounts
+                                      .firstWhere(
+                                        (account) =>
+                                            account.id == widget.accountId,
+                                      );
+                                  await widget.billPlugin.controller
+                                      .deleteBill(currentAccount.id, bill.id);
+                                  _loadMonthBills();
+                                } catch (e) {
+                                  Toast.error('删除失败: $e');
                                 }
                               },
                             ),

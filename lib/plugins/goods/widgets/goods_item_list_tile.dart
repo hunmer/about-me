@@ -56,42 +56,20 @@ class _GoodsItemListTileState extends State<GoodsItemListTile> {
     }
   }
 
-  /// 删除物品
+  /// 删除物品（滑动操作的嵌套二次确认已覆盖确认环节）
   Future<void> _deleteItem() async {
     if (widget.warehouseId == null) return;
 
-    final confirm = await showDSDialog<bool>(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (context) => DSDialog(
-                    title: 'goods_confirmDelete'.tr,
-                    message: 'goods_confirmDeleteItem'.tr,
-                    cancelText: 'goods_cancel'.tr,
-                    confirmText: 'goods_delete'.tr,
-                    confirmVariant: DSButtonVariant.destructive,
-                    onCancel: () => Navigator.pop(context, false),
-                    onConfirm: () => Navigator.pop(context, true),
-                  ),
-            ),
-          ),
+    await GoodsPlugin.instance.deleteGoodsItem(
+      widget.warehouseId!,
+      widget.item.id,
     );
-
-    if (confirm == true) {
-      await GoodsPlugin.instance.deleteGoodsItem(
-        widget.warehouseId!,
-        widget.item.id,
+    if (mounted) {
+      Get.snackbar(
+        'goods_delete'.tr,
+        '${widget.item.title} 已被删除',
+        snackPosition: SnackPosition.BOTTOM,
       );
-      if (mounted) {
-        Get.snackbar(
-          'goods_delete'.tr,
-          '${widget.item.title} 已被删除',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
     }
   }
 
