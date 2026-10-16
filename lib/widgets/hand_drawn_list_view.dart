@@ -24,6 +24,12 @@ double handDrawnUnitRandom(String source) {
   return (h % 1000 - 500) / 500;
 }
 
+/// 便签顶部出血量:贴条上半露出卡片外(全局贴条关闭时为 0)。
+/// 列表与直接使用 [HandDrawnStickyItem] 的网格都需在滚动内容顶部
+/// 预留该边距,否则首行贴条会超出屏幕被视口裁剪
+double stickyTapeBleed([double tapeHeight = 24]) =>
+    HandDrawnStyleController().tapeEnabled ? tapeHeight / 2 + 4 : 0.0;
+
 /// 贴条样式
 enum HandDrawnTapeStyle {
   /// 顶部居中胶带:skribble 墨线 + 不透明纸底 + 三个圆孔
@@ -170,8 +176,7 @@ class HandDrawnListView extends StatelessWidget {
 
   /// 贴条上半露出卡片外,顶部自动预留出血边距,避免首条贴条被视口裁剪
   EdgeInsetsGeometry get _effectivePadding {
-    final bleed =
-        HandDrawnStyleController().tapeEnabled ? tapeHeight / 2 + 4 : 0.0;
+    final bleed = stickyTapeBleed(tapeHeight);
     final p = padding;
     if (p == null) return EdgeInsets.only(top: bleed);
     if (p is EdgeInsets) return p.copyWith(top: p.top + bleed);

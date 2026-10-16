@@ -42,7 +42,9 @@ class _MessageInputState extends State<MessageInput> {
   late FocusNode _keyboardListenerFocusNode;
   List<Map<String, String>> selectedAgents = [];
   bool showAgentList = false;
-  Map<String, dynamic>? selectedFile;
+
+  /// 待发送文件列表（多选图片/视频等逐个追加）
+  final List<Map<String, dynamic>> selectedFiles = [];
   int contextRange = 10; // 默认上下文范围为10
 
   late MessageInputState _messageInputState;
@@ -176,7 +178,7 @@ class _MessageInputState extends State<MessageInput> {
 
   void _handleFileSelected(Map<String, dynamic> file) {
     setState(() {
-      selectedFile = file;
+      selectedFiles.add(file);
       _updateMessageInputState();
     });
   }
@@ -187,17 +189,16 @@ class _MessageInputState extends State<MessageInput> {
       focusNode: _focusNode,
       keyboardListenerFocusNode: _keyboardListenerFocusNode,
       selectedAgents: selectedAgents,
-      selectedFile: selectedFile,
+      selectedFiles: selectedFiles,
       showAgentList: showAgentList,
       replyTo: widget.replyTo,
       metadata: {
         if (selectedAgents.isNotEmpty) 'contextCount': contextRange,
         if (selectedAgents.isNotEmpty) 'agents': selectedAgents,
-        if (selectedFile != null) 'file': selectedFile,
       },
       onSaveDraft: widget.onSaveDraft,
       onSendMessage: widget.onSendMessage,
-      onClearFile: _removeFile,
+      onClearFile: _removeAllFiles,
     );
   }
 
@@ -226,9 +227,19 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  void _removeFile() {
+  /// 移除指定下标的待发送文件
+  void _removeFileAt(int index) {
     setState(() {
-      selectedFile = null;
+      if (index >= 0 && index < selectedFiles.length) {
+        selectedFiles.removeAt(index);
+      }
+      _updateMessageInputState();
+    });
+  }
+
+  void _removeAllFiles() {
+    setState(() {
+      selectedFiles.clear();
       _updateMessageInputState();
     });
   }
@@ -239,9 +250,9 @@ class _MessageInputState extends State<MessageInput> {
     _messageInputState.sendMessage();
 
     // 发送后更新UI状态
-    if (selectedFile != null) {
+    if (selectedFiles.isNotEmpty) {
       setState(() {
-        selectedFile = null;
+        selectedFiles.clear();
         _updateMessageInputState();
       });
     }
@@ -297,10 +308,10 @@ class _MessageInputState extends State<MessageInput> {
               children: [
                 // 元数据显示区域
                 MetadataDisplay(
-                  selectedFile: selectedFile,
+                  selectedFiles: selectedFiles,
                   selectedAgents: selectedAgents,
                   onShowAgentListDrawer: _showAgentListDrawer,
-                  onFileRemove: _removeFile,
+                  onFileRemoveAt: _removeFileAt,
                   onAgentRemove: _removeAgent,
                   contextRange: contextRange,
                   onContextRangeChange: _handleContextRangeChange,

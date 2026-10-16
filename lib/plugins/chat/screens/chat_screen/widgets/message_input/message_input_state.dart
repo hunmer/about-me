@@ -8,7 +8,9 @@ class MessageInputState {
   final FocusNode focusNode;
   final FocusNode keyboardListenerFocusNode;
   final List<Map<String, String>> selectedAgents;
-  final Map<String, dynamic>? selectedFile;
+
+  /// 待发送文件列表（每个文件独立成一条消息）
+  final List<Map<String, dynamic>> selectedFiles;
   final bool showAgentList;
   final Message? replyTo;
   final Map<String, dynamic>? metadata;
@@ -29,7 +31,7 @@ class MessageInputState {
     required this.focusNode,
     required this.keyboardListenerFocusNode,
     required this.selectedAgents,
-    required this.selectedFile,
+    required this.selectedFiles,
     required this.showAgentList,
     required this.replyTo,
     required this.onSaveDraft,
@@ -40,7 +42,7 @@ class MessageInputState {
 
   void sendMessage() {
     final messageText = controller.text.trim();
-    final hasFile = selectedFile != null;
+    final hasFiles = selectedFiles.isNotEmpty;
     final hasMessage = messageText.isNotEmpty;
     final currentChannel = ChatPlugin.instance.channelService.currentChannel;
 
@@ -50,21 +52,23 @@ class MessageInputState {
       return;
     }
 
-    if (hasFile || hasMessage) {
+    if (hasFiles || hasMessage) {
       Map<String, dynamic>? metadata = {};
 
-      // 如果有文件，先发送文件
-      if (hasFile) {
-        final fileInfo = selectedFile!['fileInfo'] as Map<String, dynamic>?;
-        if (fileInfo != null) {
-          metadata['file'] = fileInfo;
+      // 文件逐条发送：每个文件一条独立消息
+      if (hasFiles) {
+        for (final selectedFile in selectedFiles) {
+          final fileInfo =
+              selectedFile['fileInfo'] as Map<String, dynamic>?;
+          if (fileInfo == null) {
+            debugPrint('文件信息无效，跳过该文件');
+            continue;
+          }
           onSendMessage(
             fileInfo['path'] as String,
             type: fileInfo['type'] as String,
             metadata: selectedFile,
           );
-        } else {
-          debugPrint('文件路径或类型为空，无法发送文件');
         }
       }
 
@@ -100,11 +104,11 @@ class MessageInputState {
         // 清空输入框并保持焦点
         controller.clear();
         focusNode.requestFocus();
+      }
 
-        // 清空文件选择
-        if (onClearFile != null) {
-          onClearFile!();
-        }
+      // 清空文件选择（纯文件发送时也需清空）
+      if (hasFiles && onClearFile != null) {
+        onClearFile!();
       }
     }
   }

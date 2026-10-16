@@ -1,15 +1,24 @@
-import 'package:flutter/widgets.dart';
-import 'package:get/get.dart';
 import 'dart:io' show Process;
+
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
+
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
+/// 输入框上方的待发送内容预览
+///
+/// 文件区：横向缩略图条（图片显示缩略图，其余类型显示图标卡），
+/// 右上 × 逐个移除，点击缩略图用系统程序打开；
+/// 智能体区：上下文范围 chip + 智能体 chips（点击打开列表抽屉）。
 class MetadataDisplay extends StatelessWidget {
-  final Map<String, dynamic>? selectedFile;
+  /// 待发送文件列表（元素为 {fileInfo, senderInfo}，支持多个）
+  final List<Map<String, dynamic>> selectedFiles;
   final List<Map<String, String>> selectedAgents;
   final Function() onShowAgentListDrawer;
-  final Function() onFileRemove;
+  final Function(int) onFileRemoveAt;
   final Function(String) onAgentRemove;
   final int contextRange;
   final Function(int) onContextRangeChange;
@@ -20,10 +29,10 @@ class MetadataDisplay extends StatelessWidget {
 
   const MetadataDisplay({
     super.key,
-    this.selectedFile,
+    required this.selectedFiles,
     required this.selectedAgents,
     required this.onShowAgentListDrawer,
-    required this.onFileRemove,
+    required this.onFileRemoveAt,
     required this.onAgentRemove,
     this.contextRange = defaultRange,
     required this.onContextRangeChange,
@@ -31,7 +40,7 @@ class MetadataDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (selectedFile == null && selectedAgents.isEmpty) {
+    if (selectedFiles.isEmpty && selectedAgents.isEmpty) {
       // 没有文件和智能体时不显示任何内容
       return const SizedBox();
     }
@@ -42,66 +51,38 @@ class MetadataDisplay extends StatelessWidget {
           final theme = DSThemeBridge.resolve(context);
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 文件状态展示
-                if (selectedFile != null)
-                  Expanded(
-                    flex: 1,
-                    child: Container(
-                      padding: EdgeInsets.zero,
-                      child: GestureDetector(
-                        onTap: () async {
-                          // 预览文件
-                          if (selectedFile != null) {
-                            final fileInfo =
-                                selectedFile!['fileInfo']
-                                    as Map<String, dynamic>?;
-                            if (fileInfo != null && fileInfo['path'] != null) {
-                              final filePath = fileInfo['path'] as String;
-                              if (UniversalPlatform.isWindows) {
-                                Process.run('explorer', [filePath]);
-                              } else if (UniversalPlatform.isMacOS) {
-                                Process.run('open', [filePath]);
-                              } else if (UniversalPlatform.isLinux) {
-                                Process.run('xdg-open', [filePath]);
-                              }
-                            }
-                          }
-                        },
-                        child: DSChip(
-                          icon:
-                              (selectedFile!['fileInfo']?['type'] as String?) ==
-                                      'image'
-                                  ? DsIconKind.image
-                                  : DsIconKind.copy,
-                          label: 'chat_singleFile'.tr,
-                          onDeleted: onFileRemove,
-                        ),
-                      ),
+                // 文件缩略图条（横滑）
+                if (selectedFiles.isNotEmpty)
+                  SizedBox(
+                    height: 60,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: selectedFiles.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) =>
+                          _buildFileThumb(context, theme, index),
                     ),
                   ),
-                // 如果两者都存在，添加一个间隔
-                if (selectedFile != null && selectedAgents.isNotEmpty)
-                  const SizedBox(width: 8),
+                if (selectedFiles.isNotEmpty && selectedAgents.isNotEmpty)
+                  const SizedBox(height: 8),
 
-                // 只有在选择了智能体时才显示上下文范围
-                if (selectedAgents.isNotEmpty) ...[
-                  _buildContextRangeChip(context, theme),
-                  const SizedBox(width: 8),
-                ],
-
-                // 智能体状态展示
+                // 智能体区：上下文范围 + 智能体 chips
                 if (selectedAgents.isNotEmpty)
-                  Expanded(
-                    flex: 2,
-                    child: GestureDetector(
-                      onTap: onShowAgentListDrawer,
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children:
-                            selectedAgents.map((agent) {
+                  Row(
+                    children: [
+                      _buildContextRangeChip(context, theme),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: onShowAgentListDrawer,
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: selectedAgents.map((agent) {
                               return DSChip(
                                 icon: DsIconKind.bot,
                                 label: agent['name'] ?? '',
@@ -109,8 +90,10 @@ class MetadataDisplay extends StatelessWidget {
                                     () => onAgentRemove(agent['id'] ?? ''),
                               );
                             }).toList(),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
               ],
             ),
@@ -118,6 +101,96 @@ class MetadataDisplay extends StatelessWidget {
         },
       ),
     );
+  }
+
+  /// 单个待发送文件的缩略图：图片显示预览，其余类型显示图标卡；
+  /// 点击主体用系统程序打开，右上 × 移除
+  Widget _buildFileThumb(
+    BuildContext context,
+    AppThemeData theme,
+    int index,
+  ) {
+    final fileInfo =
+        selectedFiles[index]['fileInfo'] as Map<String, dynamic>? ?? {};
+    final path = fileInfo['path'] as String? ?? '';
+    final type = fileInfo['type'] as String? ?? '';
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        GestureDetector(
+          onTap: () => _openFile(path),
+          child: ClipRRect(
+            borderRadius: theme.radii.sm,
+            child: SizedBox(
+              width: 52,
+              height: 52,
+              child: _buildFilePreview(theme, path, type),
+            ),
+          ),
+        ),
+        // 右上取消图标
+        Positioned(
+          top: -6,
+          right: -6,
+          child: GestureDetector(
+            onTap: () => onFileRemoveAt(index),
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.text,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: Center(
+                child: DsIcon(DsIconKind.close, size: 10, color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 文件预览内容：图片用缩略图（支持 './' 相对路径与 http URL），其余按类型图标
+  Widget _buildFilePreview(AppThemeData theme, String path, String type) {
+    if (type == 'image' && path.isNotEmpty) {
+      return Image(
+        image: ImageUtils.createImageProvider(path),
+        fit: BoxFit.cover,
+        errorBuilder:
+            (_, _, _) => _typeFallback(theme, DsIconKind.image),
+      );
+    }
+    final icon = switch (type) {
+      'video' => DsIconKind.video,
+      'audio' => DsIconKind.mic,
+      'image' => DsIconKind.image,
+      _ => DsIconKind.copy,
+    };
+    return _typeFallback(theme, icon);
+  }
+
+  Widget _typeFallback(AppThemeData theme, DsIconKind icon) {
+    return Container(
+      color: theme.primary.mixWhite(0.85),
+      child: Center(
+        child: DsIcon(icon, size: 20, color: theme.primary),
+      ),
+    );
+  }
+
+  /// 用系统程序打开文件（桌面端）
+  void _openFile(String path) {
+    if (path.isEmpty) return;
+    if (UniversalPlatform.isWindows) {
+      Process.run('explorer', [path]);
+    } else if (UniversalPlatform.isMacOS) {
+      Process.run('open', [path]);
+    } else if (UniversalPlatform.isLinux) {
+      Process.run('xdg-open', [path]);
+    }
   }
 
   Widget _buildContextRangeChip(BuildContext context, AppThemeData theme) {
