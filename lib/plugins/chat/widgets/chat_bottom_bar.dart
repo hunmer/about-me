@@ -1,5 +1,6 @@
 import 'package:aboutme/plugins/chat/screens/channel_list/channel_list_screen.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/plugins/chat/screens/stats/chat_stats_screen.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/timeline_screen.dart';
 import 'package:aboutme/plugins/chat/screens/tags/tags_screen.dart';
 import 'package:flutter/gestures.dart';
@@ -31,11 +32,14 @@ class _ChatBottomBarState extends State<ChatBottomBar>
   final GlobalKey _bottomBarKey = GlobalKey();
   late ChannelListController _channelListController;
 
+  // 统计页刷新令牌：每次切到统计 tab 递增，触发重新统计
+  int _statsRefreshToken = 0;
+
   @override
   void initState() {
     super.initState();
     _currentPage = 0;
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _channelListController = ChannelListController(
       channels: widget.plugin.channelService.channels,
       chatPlugin: widget.plugin,
@@ -45,6 +49,7 @@ class _ChatBottomBarState extends State<ChatBottomBar>
       if (value != _currentPage && mounted) {
         setState(() {
           _currentPage = value;
+          if (value == 3) _statsRefreshToken++;
         });
         // 更新路由上下文
         _updateRouteContext(value);
@@ -81,6 +86,10 @@ class _ChatBottomBarState extends State<ChatBottomBar>
       case 2:
         pageId = '/chat/tags';
         title = 'chat_tagsTab'.tr;
+        break;
+      case 3:
+        pageId = '/chat/stats';
+        title = 'chat_statsTab'.tr;
         break;
       default:
         pageId = '/chat';
@@ -159,6 +168,11 @@ class _ChatBottomBarState extends State<ChatBottomBar>
                       TimelineScreen(chatPlugin: widget.plugin),
                       // Tab2: 标签
                       TagsScreen(chatPlugin: widget.plugin),
+                      // Tab3: 消息统计
+                      ChatStatsScreen(
+                        chatPlugin: widget.plugin,
+                        refreshToken: _statsRefreshToken,
+                      ),
                     ],
                   ),
               fab: _buildFab(),
@@ -166,6 +180,7 @@ class _ChatBottomBarState extends State<ChatBottomBar>
                 DSNavItem(icon: DsIconKind.chat, label: 'chat_channelsTab'.tr),
                 DSNavItem(icon: DsIconKind.clock, label: 'chat_timelineTab'.tr),
                 DSNavItem(icon: DsIconKind.tag, label: 'chat_tagsTab'.tr),
+                DSNavItem(icon: DsIconKind.chart, label: 'chat_statsTab'.tr),
               ],
             ),
       ),

@@ -119,6 +119,13 @@ class ImageUtils {
       return relativePath;
     }
 
+    // 网络 URL 不是本地相对路径，原样返回（调用方按 URL 自行处理，
+    // 不允许走下方旧格式补前缀逻辑拼成本地路径）
+    if (relativePath.startsWith('http://') ||
+        relativePath.startsWith('https://')) {
+      return relativePath;
+    }
+
     if (!relativePath.startsWith('./')) {
       // 旧数据格式（无 './' 前缀），统一补前缀后按标准相对路径解析到 app_data 下，
       // 避免拼到 Documents 根目录导致文件不存在

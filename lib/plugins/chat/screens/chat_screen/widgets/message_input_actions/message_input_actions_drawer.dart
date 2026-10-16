@@ -60,6 +60,13 @@ class MessageInputActionsDrawer extends StatelessWidget {
         Navigator.pop(context); // 关闭抽屉
         action.onTap();
       },
+      onLongPress:
+          action.onLongPress != null
+              ? () {
+                Navigator.pop(context); // 关闭抽屉
+                action.onLongPress!();
+              }
+              : null,
       builder: (context, states) {
         final pressed = states.contains(WidgetState.pressed);
         return Column(

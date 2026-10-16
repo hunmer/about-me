@@ -197,6 +197,7 @@ class ChatTranslationsZh {
 
     // 标签功能
     'chat_tagsTab': '标签',
+    'chat_statsTab': '统计',
     'chat_tagList': '标签列表',
     'chat_messageCount': '@count 条消息',
     'chat_searchTags': '搜索标签',

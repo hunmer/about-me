@@ -50,6 +50,23 @@ class ImageMessageWidget extends StatelessWidget {
       return _buildErrorWidget(context, fileName);
     }
 
+    final theme = _resolveTheme(context);
+
+    // 网络图片直接 URL 引用（图片搜索/在线图片入口），Image.file 只支持本地文件
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return _buildFrame(
+        context,
+        theme,
+        Image.network(
+          filePath,
+          fit: BoxFit.cover,
+          errorBuilder:
+              (context, error, stackTrace) =>
+                  _buildErrorWidget(context, fileName),
+        ),
+      );
+    }
+
     String absolutePath;
     try {
       absolutePath = await ImageUtils.getAbsolutePath(filePath);
@@ -63,7 +80,20 @@ class ImageMessageWidget extends StatelessWidget {
       return _buildErrorWidget(context, fileName);
     }
 
-    final theme = _resolveTheme(context);
+    return _buildFrame(
+      context,
+      theme,
+      Image.file(
+        file,
+        fit: BoxFit.cover,
+        errorBuilder:
+            (context, error, stackTrace) => _buildErrorWidget(context, fileName),
+      ),
+    );
+  }
+
+  /// 图片消息外框（网络图与本地图共用）
+  Widget _buildFrame(BuildContext context, AppThemeData theme, Widget image) {
     return Container(
       constraints: BoxConstraints(
         maxWidth: MediaQuery.of(context).size.width * 0.7,
@@ -77,13 +107,7 @@ class ImageMessageWidget extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.file(
-          file,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildErrorWidget(context, fileName);
-          },
-        ),
+        child: image,
       ),
     );
   }

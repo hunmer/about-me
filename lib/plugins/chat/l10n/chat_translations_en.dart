@@ -202,6 +202,7 @@ class ChatTranslationsEn {
 
     // Tags feature
     'chat_tagsTab': 'Tags',
+    'chat_statsTab': 'Stats',
     'chat_tagList': 'Tag List',
     'chat_messageCount': '@count messages',
     'chat_searchTags': 'Search tags',

@@ -55,4 +55,11 @@ const Map<String, String> imagePickerTranslationsZh = {
   'image_picker_searchHint': '输入关键词搜索网络图片',
   'image_picker_searchEmpty': '没有搜索结果',
   'image_picker_searchFailed': '搜索失败',
+
+  // 视频选择器（结构与图片选择器一致的视频版）
+  'video_picker_selectVideo': '选择视频',
+  'video_picker_selectMultipleVideos': '选择多个视频',
+  'video_picker_noVideos': '暂无视频，可从相册选择或录制',
+  'video_picker_takeVideo': '录制视频',
+  'video_picker_onlineVideo': '在线视频',
 };

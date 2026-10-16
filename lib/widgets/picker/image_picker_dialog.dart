@@ -6,6 +6,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:smooth_sheets/smooth_sheets.dart';
@@ -16,6 +17,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/services/image_compression_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/utils/network.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/scripts_center/scripts_center_plugin.dart';
@@ -1188,8 +1190,13 @@ class _ImageSearchSheet extends StatefulWidget {
 }
 
 class _ImageSearchSheetState extends State<_ImageSearchSheet> {
-  /// 图源选项（与 image_search 脚本的 provider 选项保持一致）
-  static const _providers = [
+  static const _scriptId = 'image_search';
+
+  /// 图源选项的进程内缓存（从脚本 metadata 读取，脚本升级后重启生效）
+  static List<String>? _cachedProviders;
+
+  /// 兜底图源列表（脚本元数据不可用时）
+  static const _fallbackProviders = [
     'unsplash',
     'pixabay',
     'google',
@@ -1198,9 +1205,8 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
     'yandex',
   ];
 
-  static const _scriptId = 'image_search';
-
   late final TextEditingController _controller;
+  List<String> _providers = _fallbackProviders;
   String _provider = 'unsplash';
   bool _searching = false;
   bool _searched = false;
@@ -1210,16 +1216,86 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
   /// 多选模式下已选中的图片下标
   final List<int> _selected = [];
 
+  /// 缩略图字节缓存（key=缩略图 URL），走系统代理下载，
+  /// google/bing 等被墙图源的缓存缩略图才能显示（Image.network 不走代理）
+  final Map<String, Uint8List> _thumbBytes = {};
+  final Set<String> _thumbLoading = {};
+  http.Client? _thumbClient;
+
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController();
+    _loadProviderOptions();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _thumbClient?.close();
     super.dispose();
+  }
+
+  /// 从 image_search 脚本元数据读取 provider 选项与默认值，
+  /// 脚本侧增删图源时 Dart 端自动跟随（读取失败回退内置列表）
+  Future<void> _loadProviderOptions() async {
+    if (_cachedProviders == null) {
+      var providers = _fallbackProviders.toList();
+      var defaultProvider = 'unsplash';
+      try {
+        final scripts = await ScriptsCenterPlugin
+            .instance
+            .scriptManager
+            .loadAllScripts();
+        for (final script in scripts) {
+          if (script.id != _scriptId) continue;
+          for (final input in script.inputs) {
+            if (input.key != 'provider') continue;
+            final options = input.options;
+            if (options != null && options.isNotEmpty) {
+              providers = options;
+              final def = input.defaultValue;
+              if (def is String && options.contains(def)) {
+                defaultProvider = def;
+              }
+            }
+          }
+        }
+      } catch (_) {/* 脚本中心不可用等情况，回退默认列表 */}
+      _cachedProviders = providers;
+      _cachedProviderDefault = defaultProvider;
+    }
+    if (!mounted) return;
+    setState(() {
+      _providers = _cachedProviders!;
+      if (!_providers.contains(_provider)) {
+        _provider = _cachedProviderDefault;
+      }
+    });
+  }
+
+  static String _cachedProviderDefault = 'unsplash';
+
+  /// 下载缩略图字节（带系统代理，成功后 setState 刷新对应格子）
+  Future<void> _loadThumb(String url) async {
+    if (url.isEmpty ||
+        _thumbBytes.containsKey(url) ||
+        _thumbLoading.contains(url)) {
+      return;
+    }
+    _thumbLoading.add(url);
+    try {
+      _thumbClient ??= await createClientWithSystemProxy();
+      final resp = await _thumbClient!
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 20));
+      if (resp.statusCode == 200 && resp.bodyBytes.isNotEmpty) {
+        _thumbBytes[url] = resp.bodyBytes;
+        if (mounted) setState(() {});
+      }
+    } catch (_) {/* 下载失败保持占位图标 */} finally {
+      _thumbLoading.remove(url);
+    }
   }
 
   Future<void> _search() async {
@@ -1425,6 +1501,30 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
     );
   }
 
+  /// 缩略图格子内容：已下载则 Image.memory，否则触发代理下载并显示占位
+  Widget _buildThumb(AppThemeData theme, String url) {
+    final bytes = _thumbBytes[url];
+    if (bytes != null) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _thumbPlaceholder(theme),
+      );
+    }
+    // 幂等：已在缓存/请求中的 URL 直接跳过，下载成功后 setState 刷新
+    _loadThumb(url);
+    return _thumbPlaceholder(theme);
+  }
+
+  Widget _thumbPlaceholder(AppThemeData theme) {
+    return Container(
+      color: theme.stroke,
+      child: Center(
+        child: DsIcon(DsIconKind.image, size: 22, color: theme.textSub),
+      ),
+    );
+  }
+
   Widget _buildResultTile(AppThemeData theme, int index) {
     final img = _images[index];
     final thumb = (img['thumb'] as String? ?? '').isNotEmpty
@@ -1446,21 +1546,7 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(
-                thumb,
-                fit: BoxFit.cover,
-                errorBuilder:
-                    (_, _, _) => Container(
-                      color: theme.stroke,
-                      child: Center(
-                        child: DsIcon(
-                          DsIconKind.image,
-                          size: 22,
-                          color: theme.textSub,
-                        ),
-                      ),
-                    ),
-              ),
+              _buildThumb(theme, thumb),
               if (widget.multiple)
                 Positioned(
                   top: 4,

@@ -56,4 +56,11 @@ const Map<String, String> imagePickerTranslationsEn = {
   'image_picker_searchHint': 'Enter a keyword to search web images',
   'image_picker_searchEmpty': 'No results found',
   'image_picker_searchFailed': 'Search failed',
+
+  // Video picker (video counterpart of the image picker)
+  'video_picker_selectVideo': 'Select Video',
+  'video_picker_selectMultipleVideos': 'Select Multiple Videos',
+  'video_picker_noVideos': 'No videos yet. Pick from gallery or record one',
+  'video_picker_takeVideo': 'Record Video',
+  'video_picker_onlineVideo': 'Online Video',
 };

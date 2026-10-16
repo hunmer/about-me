@@ -59,7 +59,7 @@ class MessageInputActionsBuilder {
       ),
     );
 
-    // 添加图片选择动作
+    // 添加图片选择动作（长按进入多选）
     actions.add(
       MessageInputAction(
         title: 'chat_photo'.tr,
@@ -70,6 +70,14 @@ class MessageInputActionsBuilder {
               fileService: fileService,
               onFileSelected: onFileSelected,
               fromCamera: false,
+            ),
+        onLongPress:
+            () => handleImageSelection(
+              context: context,
+              fileService: fileService,
+              onFileSelected: onFileSelected,
+              fromCamera: false,
+              multiple: true,
             ),
       ),
     );
@@ -104,7 +112,7 @@ class MessageInputActionsBuilder {
       ),
     );
 
-    // 添加视频选择动作
+    // 添加视频选择动作（长按进入多选）
     actions.add(
       MessageInputAction(
         title: 'chat_video'.tr,
@@ -114,6 +122,13 @@ class MessageInputActionsBuilder {
               context: context,
               fileService: fileService,
               onFileSelected: onFileSelected,
+            ),
+        onLongPress:
+            () => handleLocalVideoSelection(
+              context: context,
+              fileService: fileService,
+              onFileSelected: onFileSelected,
+              multiple: true,
             ),
       ),
     );

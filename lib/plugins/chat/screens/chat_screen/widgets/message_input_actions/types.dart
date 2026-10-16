@@ -8,10 +8,14 @@ class MessageInputAction {
   final DsIconKind icon;
   final VoidCallback onTap;
 
+  /// 长按动作（可选，如图片按钮长按进入多选）
+  final VoidCallback? onLongPress;
+
   MessageInputAction({
     required this.title,
     required this.icon,
     required this.onTap,
+    this.onLongPress,
   });
 }
 
