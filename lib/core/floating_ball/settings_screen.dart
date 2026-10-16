@@ -1,9 +1,13 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:aboutme/design_system/components/switch.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/action/action_manager.dart';
 import 'package:aboutme/core/action/widgets/action_selector_dialog.dart';
+import 'package:aboutme/screens/settings_screen/widgets/settings_group.dart';
+import 'package:aboutme/screens/settings_screen/widgets/settings_tile.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'floating_ball_manager.dart';
 import 'floating_ball_service.dart';
 import 'models/floating_ball_gesture.dart';
@@ -16,8 +20,7 @@ class FloatingBallSettingsScreen extends StatefulWidget {
       _FloatingBallSettingsScreenState();
 }
 
-class _FloatingBallSettingsScreenState
-    extends State<FloatingBallSettingsScreen> {
+class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen> {
   final FloatingBallManager _manager = FloatingBallManager();
   final ActionManager _actionManager = ActionManager();
   double _sizeScale = 1.0;
@@ -62,28 +65,31 @@ class _FloatingBallSettingsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('floating_ball_floatingBallSettings'.tr)),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          // 悬浮球启用开关
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'floating_ball_floatingBallSettings'.tr,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('floating_ball_enableFloatingBall'.tr),
-                      DSSwitch(
+    return SuperCupertinoNavigationWrapper(
+      title: Text('floating_ball_floatingBallSettings'.tr),
+      largeTitle: 'floating_ball_floatingBallSettings'.tr,
+      enableLargeTitle: false,
+      body: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return ListView(
+              padding: EdgeInsets.fromLTRB(
+                16.0,
+                16.0,
+                16.0,
+                16.0 + MediaQuery.paddingOf(context).bottom,
+              ),
+              children: [
+                // 悬浮球启用开关
+                SettingsGroup(
+                  children: [
+                    SettingsTile(
+                      icon: DsIconKind.touchApp,
+                      iconColor: DsAccentColors.pink,
+                      title: 'floating_ball_enableFloatingBall'.tr,
+                      showChevron: false,
+                      trailing: DSSwitch(
                         value: _isEnabled,
                         onChanged: (value) async {
                           setState(() {
@@ -97,101 +103,91 @@ class _FloatingBallSettingsScreenState
                           }
                         },
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-          const SizedBox(height: 16),
-
-          // 悬浮球大小设置
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'floating_ball_floatingBallSettings'.tr,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('floating_ball_small'.tr),
-                      Expanded(
-                        child: Slider(
-                          value: _sizeScale,
-                          min: 0.5,
-                          max: 1.5,
-                          divisions: 10,
-                          label: '${(_sizeScale * 100).round()}%',
-                          onChanged: (value) {
-                            setState(() {
-                              _sizeScale = value;
-                            });
-                            _manager.saveSizeScale(value);
-                          },
-                        ),
+                // 悬浮球大小设置
+                SettingsGroup(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 10,
                       ),
-                      Text('floating_ball_large'.tr),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+                      child: Row(
+                        children: [
+                          Text(
+                            'floating_ball_small'.tr,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: DSSlider(
+                              // 0.5 ~ 1.5 映射到 0 ~ 1
+                              value: (_sizeScale - 0.5) / 1.0,
+                              onChanged: (value) {
+                                final scale = 0.5 + value;
+                                setState(() {
+                                  _sizeScale = scale;
+                                });
+                                _manager.saveSizeScale(scale);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'floating_ball_large'.tr,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 44,
+                            child: Text(
+                              '${(_sizeScale * 100).round()}%',
+                              textAlign: TextAlign.end,
+                              style: DsTypography.heading.copyWith(
+                                color: theme.text,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-          const SizedBox(height: 16),
+                // 悬浮球动作设置：为每种手势提供选择入口
+                SettingsGroup(
+                  children: _buildGestureActionSelectors(),
+                ),
+                const SizedBox(height: 16),
 
-          // 悬浮球动作设置
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'floating_ball_floatingBallSettings'.tr,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 为每种手势创建下拉选择框
-                  ..._buildGestureActionSelectors(),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 重置位置按钮
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'floating_ball_resetPosition'.tr,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      _manager.resetPosition();
-                      Toast.success('floating_ball_positionReset'.tr);
-                    },
-                    child: Text('floating_ball_resetPosition'.tr),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+                // 重置位置
+                SettingsGroup(
+                  children: [
+                    SettingsTile(
+                      icon: DsIconKind.pin,
+                      iconColor: DsAccentColors.violet,
+                      title: 'floating_ball_resetPosition'.tr,
+                      showChevron: false,
+                      onTap: () {
+                        _manager.resetPosition();
+                        Toast.success('floating_ball_positionReset'.tr);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -206,71 +202,57 @@ class _FloatingBallSettingsScreenState
         final displayText = _getGestureActionDisplayText(config);
 
         selectors.add(
-          Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                child: Icon(_getGestureIcon(gesture), color: Colors.white),
-              ),
-              title: Text(_getGestureName(gesture)),
-              subtitle: Text(
-                displayText,
-                style: TextStyle(
-                  color:
-                      displayText == 'floating_ball_notSet'.tr
-                          ? Colors.grey[600]
-                          : null,
-                ),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                final result = await showDialog<ActionSelectorResult>(
-                  context: context,
-                  builder:
-                      (context) => ActionSelectorDialog(
-                        gesture: gesture,
-                        initialValue:
-                            config != null
-                                ? ActionSelectorResult(
-                                  singleAction: config.singleAction,
-                                  actionGroup: config.group,
-                                )
-                                : null,
-                      ),
-                );
+          SettingsTile(
+            icon: _getGestureIcon(gesture),
+            iconColor: _getGestureColor(gesture),
+            title: _getGestureName(gesture),
+            subtitle: displayText,
+            onTap: () async {
+              final result = await showDialog<ActionSelectorResult>(
+                context: context,
+                builder:
+                    (context) => ActionSelectorDialog(
+                      gesture: gesture,
+                      initialValue:
+                          config != null
+                              ? ActionSelectorResult(
+                                singleAction: config.singleAction,
+                                actionGroup: config.group,
+                              )
+                              : null,
+                    ),
+              );
 
-                if (result != null && mounted) {
-                  setState(() {
-                    if (result.isGroup && result.actionGroup != null) {
-                      _selectedActions[gesture] = GestureActionConfig(
-                        gesture: gesture,
-                        group: result.actionGroup,
-                      );
-                    } else if (result.isSingleAction &&
-                        result.singleAction != null) {
-                      _selectedActions[gesture] = GestureActionConfig(
-                        gesture: gesture,
-                        singleAction: result.singleAction,
-                      );
-                    } else {
-                      _selectedActions[gesture] = null;
-                    }
-                  });
-
-                  // 保存到 ActionManager
-                  final actionConfig = _selectedActions[gesture];
-                  if (actionConfig != null) {
-                    await _actionManager.setGestureAction(
-                      gesture,
-                      actionConfig,
+              if (result != null && mounted) {
+                setState(() {
+                  if (result.isGroup && result.actionGroup != null) {
+                    _selectedActions[gesture] = GestureActionConfig(
+                      gesture: gesture,
+                      group: result.actionGroup,
+                    );
+                  } else if (result.isSingleAction &&
+                      result.singleAction != null) {
+                    _selectedActions[gesture] = GestureActionConfig(
+                      gesture: gesture,
+                      singleAction: result.singleAction,
                     );
                   } else {
-                    await _actionManager.clearGestureAction(gesture);
+                    _selectedActions[gesture] = null;
                   }
+                });
+
+                // 保存到 ActionManager
+                final actionConfig = _selectedActions[gesture];
+                if (actionConfig != null) {
+                  await _actionManager.setGestureAction(
+                    gesture,
+                    actionConfig,
+                  );
+                } else {
+                  await _actionManager.clearGestureAction(gesture);
                 }
-              },
-            ),
+              }
+            },
           ),
         );
       }
@@ -282,7 +264,7 @@ class _FloatingBallSettingsScreenState
   /// 获取手势动作的显示文本
   String _getGestureActionDisplayText(GestureActionConfig? config) {
     if (config == null || config.isEmpty) {
-      return '未设置';
+      return 'floating_ball_notSet'.tr;
     }
 
     if (config.singleAction != null) {
@@ -290,29 +272,52 @@ class _FloatingBallSettingsScreenState
     }
 
     if (config.group != null) {
-      return '${config.group!.title} (${config.group!.actionCount}个动作)';
+      return 'floating_ball_groupActionCount'.trParams({
+        'title': config.group!.title,
+        'count': '${config.group!.actionCount}',
+      });
     }
 
-    return '未设置';
+    return 'floating_ball_notSet'.tr;
   }
 
   /// 获取手势图标
-  IconData _getGestureIcon(FloatingBallGesture gesture) {
+  DsIconKind _getGestureIcon(FloatingBallGesture gesture) {
     switch (gesture) {
       case FloatingBallGesture.tap:
-        return Icons.touch_app;
+        return DsIconKind.touchApp;
       case FloatingBallGesture.doubleTap:
-        return Icons.gesture;
+        return DsIconKind.gesture;
       case FloatingBallGesture.longPress:
-        return Icons.timer;
+        return DsIconKind.timer;
       case FloatingBallGesture.swipeUp:
-        return Icons.keyboard_arrow_up;
+        return DsIconKind.chevronUp;
       case FloatingBallGesture.swipeDown:
-        return Icons.keyboard_arrow_down;
+        return DsIconKind.chevronDown;
       case FloatingBallGesture.swipeLeft:
-        return Icons.keyboard_arrow_left;
+        return DsIconKind.chevronLeft;
       case FloatingBallGesture.swipeRight:
-        return Icons.keyboard_arrow_right;
+        return DsIconKind.chevronRight;
+    }
+  }
+
+  /// 获取手势条目粉彩图标底色
+  Color _getGestureColor(FloatingBallGesture gesture) {
+    switch (gesture) {
+      case FloatingBallGesture.tap:
+        return DsAccentColors.blue;
+      case FloatingBallGesture.doubleTap:
+        return DsAccentColors.violet;
+      case FloatingBallGesture.longPress:
+        return DsAccentColors.slate;
+      case FloatingBallGesture.swipeUp:
+        return DsAccentColors.emerald;
+      case FloatingBallGesture.swipeDown:
+        return DsAccentColors.teal;
+      case FloatingBallGesture.swipeLeft:
+        return DsAccentColors.orange;
+      case FloatingBallGesture.swipeRight:
+        return DsAccentColors.amber;
     }
   }
 

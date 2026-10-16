@@ -127,6 +127,7 @@ enum DsIconKind {
   file,
   save,
   wifi,
+  gesture,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -252,6 +253,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.file: Icons.insert_drive_file_outlined,
   DsIconKind.save: Icons.save_outlined,
   DsIconKind.wifi: Icons.wifi_tethering,
+  DsIconKind.gesture: Icons.gesture,
 };
 
 /// 图标组件：基于系统 Material Icons

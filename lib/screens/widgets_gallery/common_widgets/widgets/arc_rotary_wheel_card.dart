@@ -46,16 +46,21 @@ class ArcWheelItemData {
   final dynamic value;
 }
 
+/// 圆盘停靠方向：right = 转轮在右半侧（默认），left = 镜像到左半侧
+enum ArcWheelDirection { left, right }
+
 /// 弧形圆盘选择器（无卡片外壳的原生交互组件）
 ///
-/// 选项沿右侧同心圆弧排布：中心选项放大高亮，远离中心的选项
-/// 沿径向倾斜、缩小并淡出。支持拖拽、惯性甩动、鼠标滚轮与点击选择。
+/// 选项沿同心圆弧排布（圆心在屏幕外侧远处）：中心选项放大高亮，
+/// 远离中心的选项沿径向倾斜、缩小并淡出。支持拖拽、惯性甩动、
+/// 鼠标滚轮与点击选择。
 class ArcRotaryWheelSelector extends StatefulWidget {
   const ArcRotaryWheelSelector({
     super.key,
     required this.items,
     this.initialIndex = 0,
     this.height = 400,
+    this.direction = ArcWheelDirection.right,
     this.onSelect,
     this.onItemTap,
   });
@@ -66,8 +71,11 @@ class ArcRotaryWheelSelector extends StatefulWidget {
   /// 初始选中下标
   final int initialIndex;
 
-  /// 组件高度（宽度由父容器决定，几何按宽度等比缩放）
-  final double height;
+  /// 组件高度（null 时撑满父级高度；宽度由父容器决定，几何按宽度等比缩放）
+  final double? height;
+
+  /// 圆盘停靠方向（右侧 / 左侧镜像）
+  final ArcWheelDirection direction;
 
   /// 吸附档位变化回调
   final ValueChanged<int>? onSelect;
@@ -273,8 +281,14 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
     return DSThemeBridge(
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final height =
+              widget.height ??
+              (constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : 400.0);
           final geo = _geo = _WheelGeometry(
-            Size(constraints.maxWidth, widget.height),
+            Size(constraints.maxWidth, height),
+            mirrored: widget.direction == ArcWheelDirection.left,
           );
           final theme = AppTheme.of(context);
 
@@ -297,7 +311,7 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
 
           return ClipRect(
             child: SizedBox(
-              height: widget.height,
+              height: height,
               child: Listener(
                 onPointerSignal: (event) {
                   if (event is PointerScrollEvent &&
@@ -408,18 +422,18 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
       ),
     );
 
+    // 镜像（左侧）时图标槽在行首、标签跟随其后，否则标签在左、槽在行尾
+    final slot = SizedBox(width: geo.pillW1, child: Center(child: pill));
+    final gap = SizedBox(width: 15 * geo.unit);
     final row = SizedBox(
       width: geo.rowW,
       height: geo.rowH,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment:
+            geo.mirrored ? MainAxisAlignment.start : MainAxisAlignment.end,
         children: [
-          Flexible(child: label),
-          SizedBox(width: 15 * geo.unit),
-          SizedBox(
-            width: geo.pillW1,
-            child: Center(child: pill),
-          ),
+          if (geo.mirrored) ...[slot, gap, Flexible(child: label)]
+          else ...[Flexible(child: label), gap, slot],
         ],
       ),
     );
@@ -453,9 +467,10 @@ class _ArcRotaryWheelSelectorState extends State<ArcRotaryWheelSelector>
   static double _lerp(double a, double b, double t) => a + (b - a) * t;
 }
 
-/// 圆弧几何：以 HTML 参考稿（375 宽设计稿）为基准按实际宽度等比缩放
+/// 圆弧几何：以 HTML 参考稿（375 宽设计稿）为基准按实际宽度等比缩放，
+/// [mirrored] 为 true 时整体水平镜像（转轮停靠左半侧）
 class _WheelGeometry {
-  _WheelGeometry(Size size)
+  _WheelGeometry(Size size, {required this.mirrored})
     : width = size.width,
       height = size.height,
       unit = size.width / 375;
@@ -464,8 +479,14 @@ class _WheelGeometry {
   final double height;
   final double unit;
 
-  /// 同心圆心（位于卡片右侧远处）
-  double get cx => 2.4133 * width;
+  /// 是否镜像到左侧
+  final bool mirrored;
+
+  /// 同心圆心（位于屏幕外侧远处：右向在右缘外，左向在左缘外）
+  double get cx => mirrored ? -1.4133 * width : 2.4133 * width;
+
+  /// 水平镜像系数（右向 +1 / 左向 -1）
+  double get mirrorSign => mirrored ? -1.0 : 1.0;
 
   double get cy => height / 2;
 
@@ -488,7 +509,8 @@ class _WheelGeometry {
   double get rowH => 60 * unit;
 
   /// 行内变换原点（图标胶囊中心）
-  Offset get anchor => Offset(241 * unit, 30 * unit);
+  Offset get anchor =>
+      Offset((mirrored ? 280 - 241 : 241) * unit, 30 * unit);
 
   double get pillW0 => 68 * unit;
   double get pillW1 => 78 * unit;
@@ -500,11 +522,18 @@ class _WheelGeometry {
 
   /// 选项在圆弧上的中心点（offset 为相对选中档的步数，正值为上方）
   Offset iconCenter(double offset) => Offset(
-    cx - iconR * math.cos(offset * stepAngle),
+    cx - mirrorSign * iconR * math.cos(offset * stepAngle),
     cy - iconR * math.sin(offset * stepAngle),
   );
 
-  double tilt(double offset) => offset * stepAngle * tiltRatio;
+  double tilt(double offset) =>
+      offset * stepAngle * tiltRatio * mirrorSign;
+
+  /// 轨道弧段的中心圆心角（右侧停靠时在大圆最左侧 π，镜像时在最右侧 0）
+  double get arcBaseAngle => mirrored ? 0.0 : math.pi;
+
+  /// 轨道线在选中档处的 x 坐标（指针中心也在此）
+  double get trackX => cx - mirrorSign * trackR;
 }
 
 /// 背景层：右侧大圆弧墨线轨道 + 跨在轨道上的左尖指针
@@ -536,28 +565,30 @@ class _WheelBackdropPainter extends CustomPainter {
           ..strokeJoin = StrokeJoin.round
           ..strokeWidth = math.max(1.4, 2.0 * geo.unit);
 
-    // 圆弧轨道：只画视口内的弧段（圆心角在 π 附近，即大圆最左侧）
+    // 圆弧轨道：只画视口内的弧段（右侧停靠在大圆最左侧 π，镜像在最右侧 0）
     final halfAngle = math.asin(
       math.min(1.0, (size.height / 2 + 30 * geo.unit) / geo.trackR),
     );
     drawConfig.randomizer.reset();
     final trackGen = Generator(drawConfig, NoFiller());
+    final baseAngle = geo.arcBaseAngle;
     RoughDrawing(
       trackGen.arc(
         geo.cx,
         geo.cy,
         geo.trackR * 2,
         geo.trackR * 2,
-        math.pi - halfAngle,
-        math.pi + halfAngle,
+        baseAngle - halfAngle,
+        baseAngle + halfAngle,
       ),
       ink..color = theme.ink.withValues(alpha: 0.35),
       ink,
     ).paint(canvas, progress: progress?.value ?? 1, pressure: 0);
 
-    // 指针：吸附时向左回弹一下
-    final nudge = -3.5 * math.sin(pulse * math.pi) * geo.unit;
-    final originX = geo.cx - geo.trackR + nudge - geo.pointerW / 2;
+    // 指针：吸附时向轮心一侧回弹一下（镜像时向右回弹）
+    final nudge =
+        -3.5 * math.sin(pulse * math.pi) * geo.unit * geo.mirrorSign;
+    final originX = geo.trackX + nudge - geo.pointerW / 2;
     final originY = geo.cy - geo.pointerH / 2;
     const local = <(double, double)>[
       (2, 9),
@@ -575,7 +606,10 @@ class _WheelBackdropPainter extends CustomPainter {
     ];
     final points = [
       for (final (x, y) in local)
-        PointD(originX + x * geo.unit, originY + y * geo.unit),
+        PointD(
+          originX + (geo.mirrored ? 44 - x : x) * geo.unit,
+          originY + y * geo.unit,
+        ),
     ];
     drawConfig.randomizer.reset();
     final pointerGen = Generator(drawConfig, NoFiller());
@@ -624,6 +658,9 @@ class ArcRotaryWheelCardWidget extends StatefulWidget {
   /// 点击选项回调
   final ValueChanged<int>? onItemTap;
 
+  /// 圆盘停靠方向（右侧 / 左侧镜像）
+  final ArcWheelDirection direction;
+
   const ArcRotaryWheelCardWidget({
     super.key,
     this.title,
@@ -633,6 +670,7 @@ class ArcRotaryWheelCardWidget extends StatefulWidget {
     this.size = const Large3Size(),
     this.onSelect,
     this.onItemTap,
+    this.direction = ArcWheelDirection.right,
   });
 
   /// 从 props 创建实例
@@ -688,6 +726,10 @@ class ArcRotaryWheelCardWidget extends StatefulWidget {
       items: parseItems(props['items']),
       initialIndex: (props['initialIndex'] as num?)?.toInt() ?? 0,
       inline: props['inline'] as bool? ?? false,
+      direction:
+          (props['direction'] as String?) == 'left'
+              ? ArcWheelDirection.left
+              : ArcWheelDirection.right,
       size: size,
     );
   }
@@ -763,6 +805,7 @@ class _ArcRotaryWheelCardWidgetState extends State<ArcRotaryWheelCardWidget> {
                       items: widget.items,
                       initialIndex: widget.initialIndex,
                       height: 400,
+                      direction: widget.direction,
                       onSelect: (index) {
                         setState(() => _selected = index);
                         widget.onSelect?.call(index);

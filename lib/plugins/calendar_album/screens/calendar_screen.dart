@@ -19,6 +19,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skribble/skribble.dart';
 
+import 'entry_editor/entry_editor_sheet.dart';
 import 'entry_editor_screen.dart';
 
 final DateTime _calendarMinMonth = DateTime(2010, 1, 1);
@@ -253,11 +254,10 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  /// 打开日记编辑器
+  /// 打开日记编辑器（编辑已有条目走全屏页，新建走底部弹层）
   Future<void> _openEntryEditor({
     CalendarEntry? entry,
     DateTime? initialDate,
-    required bool isEditing,
     CalendarController? calendarController,
   }) {
     if (entry != null && calendarController != null) {
@@ -281,25 +281,8 @@ class _CalendarScreenState extends State<CalendarScreen>
         }
       });
     }
-    return NavigationHelper.push(
-      context,
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(
-            value:
-                calendarController ??
-                Provider.of<CalendarController>(context, listen: false),
-          ),
-          ChangeNotifierProvider.value(
-            value: Provider.of<TagController>(context, listen: false),
-          ),
-        ],
-        child: EntryEditorScreen(
-          initialDate: initialDate,
-          isEditing: isEditing,
-        ),
-      ),
-    ).then((_) {
+    // 新建走底部弹层（smooth_sheets），编辑仍走全屏页
+    return EntryEditorSheet.show(context, initialDate: initialDate).then((_) {
       if (mounted) setState(() {});
     });
   }
@@ -363,7 +346,6 @@ class _CalendarScreenState extends State<CalendarScreen>
               onTap:
                   () => _openEntryEditor(
                     entry: entry,
-                    isEditing: true,
                     calendarController: calendarController,
                   ),
               child: Column(
@@ -502,7 +484,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         setState(() => _focusedDay = pressedDay);
         // 更新路由上下文
         _updateRouteContext(pressedDay);
-        _openEntryEditor(initialDate: pressedDay, isEditing: false);
+        _openEntryEditor(initialDate: pressedDay);
       },
       onHeaderTapped: onHeaderTapped,
     );
@@ -554,7 +536,6 @@ class _CalendarScreenState extends State<CalendarScreen>
         Navigator.pop(context); // 关闭抽屉
         _openEntryEditor(
           entry: entry,
-          isEditing: true,
           calendarController: calendarController,
         );
       },
@@ -562,7 +543,6 @@ class _CalendarScreenState extends State<CalendarScreen>
         Navigator.pop(context); // 关闭抽屉
         _openEntryEditor(
           entry: entry,
-          isEditing: true,
           calendarController: calendarController,
         );
       },
@@ -590,7 +570,6 @@ class _CalendarScreenState extends State<CalendarScreen>
         Navigator.pop(context); // 关闭抽屉
         _openEntryEditor(
           initialDate: selectedDate,
-          isEditing: false,
           calendarController: calendarController,
         );
       },

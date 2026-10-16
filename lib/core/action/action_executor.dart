@@ -9,7 +9,8 @@ import 'package:get/get.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/dialogs/plugin_list_dialog.dart';
-import 'package:aboutme/dialogs/rotary_plugin_launcher_dialog.dart';
+import 'package:aboutme/screens/rotary_plugin_launcher_screen.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/arc_rotary_wheel_card.dart';
 import 'package:aboutme/widgets/route_history_dialog/route_history_dialog.dart';
 import 'package:aboutme/screens/settings_screen/settings_screen.dart';
 import 'package:aboutme/screens/route.dart';
@@ -365,9 +366,27 @@ class BuiltInActionExecutor implements ActionExecutor {
       return ExecutionResult.failure(error: 'Context not mounted');
     }
 
-    await showRotaryPluginLauncherDialog(context);
+    // 动作配置表单的「显示方向」（right / left）
+    final direction =
+        data?['direction'] == 'left'
+            ? ArcWheelDirection.left
+            : ArcWheelDirection.right;
+    // push 前捕获当前路由名，供启动器页判断是否重复打开
+    final currentRouteName = RouteHistoryManager.getCurrentContext()?.pageId;
 
-    return ExecutionResult.success(data: {'action': 'rotaryPluginLauncher'});
+    NavigationHelper.push(
+      context,
+      RotaryPluginLauncherScreen(
+        direction: direction,
+        currentRouteName: currentRouteName,
+      ),
+      routeName: '/rotary_plugin_launcher',
+    );
+
+    return ExecutionResult.success(data: {
+      'action': 'rotaryPluginLauncher',
+      'direction': direction.name,
+    });
   }
 
   /// 执行路由查看器

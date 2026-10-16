@@ -11,6 +11,7 @@ const Map<String, String> floatingBallTranslationsEn = {
   'floating_ball_resetPosition': 'Reset Floating Ball Position',
   'floating_ball_notSet': 'Not set',
   'floating_ball_noAction': 'No action',
+  'floating_ball_groupActionCount': '@title (@count actions)',
 
   // Gestures
   'floating_ball_tapGesture': 'Tap',

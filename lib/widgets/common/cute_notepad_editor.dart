@@ -76,7 +76,8 @@ String? tryParseQuillDeltaToText(dynamic source) {
 ///
 /// 基于 [CuteNotepadCardWidget] 的贴图制作页：
 /// - 可传入初始文本（支持 Markdown 渲染，走 MarkdownContent）或待办项目
-/// - 横向列表切换 16 种便签样式（贴纸与内容跨样式保留）
+/// - 横向列表切换 16 种便签样式（内容跨样式保留；标题与贴纸在未手动
+///   修改时跟随新样式预设）
 /// - 横向列表点击添加 31 种手绘贴纸，预览区可拖拽/旋转/缩放/水平翻转/删除
 /// - 撤销 / 重置贴纸布局
 /// - 保存：移动端存入相册（photo_manager），桌面端弹出文件保存对话框
@@ -126,6 +127,9 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
 
   /// 用户改过标题后切换样式不再跟随预设标题
   bool _titleDirty = false;
+
+  /// 用户改过贴纸后切换样式不再跟随预设贴纸
+  bool _stickersDirty = false;
 
   /// 正文用 MarkdownContent 渲染
   bool _useMarkdown = true;
@@ -278,13 +282,20 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
 
   void _undoStickers() {
     if (_undoStack.isEmpty) return;
-    setState(() => _stickers = _undoStack.removeLast());
+    setState(() {
+      _stickers = _undoStack.removeLast();
+      // 撤销可能恢复回预设布局：与当前预设一致时重新视为未修改
+      _stickersDirty = !_sameLayouts(_stickers, _presetStickerLayouts());
+    });
   }
 
   /// 重置贴纸布局为当前样式预设
   void _resetStickers() {
     _pushUndo();
-    setState(() => _stickers = _presetStickerLayouts());
+    setState(() {
+      _stickers = _presetStickerLayouts();
+      _stickersDirty = false;
+    });
   }
 
   /// 组件回传贴纸布局（拖拽/旋转/缩放/翻转结束）：与当前一致时跳过，
@@ -292,7 +303,10 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
   void _onStickersLayoutChanged(List<CuteNotepadSticker> layouts) {
     if (_sameLayouts(_stickers, layouts)) return;
     _pushUndo();
-    setState(() => _stickers = layouts);
+    setState(() {
+      _stickers = layouts;
+      _stickersDirty = true;
+    });
   }
 
   static bool _sameLayouts(
@@ -320,6 +334,7 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
     // 新贴纸落在画布中心附近，随数量轻微错开避免完全重叠
     final n = _stickers.length;
     setState(() {
+      _stickersDirty = true;
       _stickers = [
         ..._stickers,
         CuteNotepadSticker(
@@ -338,6 +353,7 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
   void _removeSticker(int index) {
     _pushUndo();
     setState(() {
+      _stickersDirty = true;
       _stickers = List.of(_stickers)..removeAt(index);
     });
   }
@@ -617,7 +633,8 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
     );
   }
 
-  /// 便签样式选择（按内容类型过滤的迷你真实便签预览，切换时贴纸与内容保留）
+  /// 便签样式选择（按内容类型过滤的迷你真实便签预览，切换时内容保留；
+  /// 标题与贴纸在未手动修改时跟随新样式预设）
   Widget _buildStylePicker(AppThemeData theme) {
     final choices = _styleChoices;
     return Column(
@@ -643,6 +660,10 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
                   // 未手动改过标题时跟随新样式预设（含清空）
                   if (!_titleDirty) {
                     _titleController.text = preset.title ?? '';
+                  }
+                  // 未手动改过贴纸时，连同应用新样式携带的贴纸
+                  if (!_stickersDirty) {
+                    _stickers = _presetStickerLayouts();
                   }
                 }),
                 child: Tooltip(

@@ -23,7 +23,7 @@
 
 | 操作 | 方式 |
 | --- | --- |
-| 新建/快捷操作 | 底部 sheet：`showDSBottomSheet` |
+| 新建/快捷操作 | 底部 sheet：`SmoothBottomSheet` |
 | 打开子页面 | `NavigationHelper.push*` 平台路由，导航栏走 hero 过渡 |
 | 弹窗 | `showDSDialog` |
 
@@ -150,25 +150,25 @@ DSBottomNavigation(
 
 ## 4. 新建/快捷操作用 sheet
 
-定义：`lib/design_system/components/bottom_sheet.dart`
+定义：`lib/widgets/smooth_bottom_sheet.dart`（基于 smooth_sheets 包，全 app 底部弹层统一入口）
 
 新建入口（如列表页"+"）不跳页面，弹出底部 sheet：
 
 ```dart
-showDSBottomSheet(
+SmoothBottomSheet.showWithTitle(
   context: context,
   title: '新建打卡',
-  builder: (context) => Column(
+  child: Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      DSSheetAction(icon: DsIconKind.add, label: '手动创建', onTap: ...),
-      DSSheetAction(icon: DsIconKind.close, label: '删除', destructive: true, onTap: ...),
+      SmoothSheetAction(icon: DsIconKind.add, label: '手动创建', onTap: ...),
+      SmoothSheetAction(icon: DsIconKind.close, label: '删除', destructive: true, onTap: ...),
     ],
   ),
 );
 ```
 
-自带：底部滑入动画（260ms easeOutCubic）、遮罩点击关闭、拖拽把手、标题行 + 关闭按钮、`DSSheetAction` 操作行（`destructive: true` 为红色危险操作）。走 rootNavigator，不占用页面路由栈。
+自带：流畅拖拽动画、下拉滑动关闭、遮罩点击关闭、拖拽把手、标题行。布局规范：**标题靠左显示，操作按钮列表在右侧**（`showWithTitle` 的 `actions` 底部右对齐；`showForm` 的删除/保存按钮在标题行右侧）。`SmoothSheetAction` 操作行（`destructive: true` 为红色危险操作）。无标题场景用 `SmoothBottomSheet.show`，表单场景用 `showForm`。
 
 ## 5. 打开子页面用 hero 过渡
 
@@ -268,7 +268,7 @@ SuperCupertinoNavigationWrapper(
 要点：
 
 - `dsSketchDecoration` 返回 `RoughBoxDecoration`（`Decoration` 子类），直接给 `Container.decoration`；描边贴容器真实边界，padding 只作用于内容（勿在外层再包 padding 压描边层）
-- 优先直接用现成 DS 组件（`DSButton`/`DSCard`/`DSInput`/`DSSelect`/`showDSDialog`/`showDSBottomSheet`/`showDSToast`…），API 与旧版完全一致，视觉已全局手绘化
+- 优先直接用现成 DS 组件（`DSButton`/`DSCard`/`DSInput`/`DSSelect`/`showDSDialog`/`showDSToast`…），API 与旧版完全一致，视觉已全局手绘化；底部 sheet 统一用 `SmoothBottomSheet`（`lib/widgets/smooth_bottom_sheet.dart`，见第 4 节）
 
 ### 9.2 颜色 / 字体 / 图标
 
@@ -321,7 +321,7 @@ RoughDrawing(d, paint, paint).paint(canvas, progress: progress?.value ?? 1, pres
 - 只做**入场**描画；收起/退出不播反向动画（直接卸载）
 - 不要用内容淡入淡出替代——skribble 的形态就是"纸面已在，笔迹画上"
 - 自动遵守 `WiredMotion(enabled: false)` 边界与系统"减弱动态效果"，无需额外处理
-- 弹层（`showDSDialog`/`showDSBottomSheet`/`DSPopover`）如需描画，应在其**组件内部**统一包 `WiredDraw`，一处生效全 app 复用
+- 弹层（`showDSDialog`/`DSPopover`）如需描画，应在其**组件内部**统一包 `WiredDraw`，一处生效全 app 复用
 
 ## 11. 手绘便签列表/网格（随机倾斜 + 贴条）
 
@@ -377,7 +377,7 @@ HandDrawnStickyItem(tiltKey: item.id, child: ItemCard(item: item))
 
 1. 页面根组件用 `SuperCupertinoNavigationWrapper`（title + body 必填）
 2. body 内容用 `Expanded` 包裹，可滚动区域底部留 `MediaQuery.paddingOf(context).bottom` 安全区
-3. "新建"类入口用 `showDSBottomSheet`，不放导航按钮跳转
+3. "新建"类入口用 `SmoothBottomSheet`，不放导航按钮跳转
 4. 子页面用 `NavigationHelper.push*`，享受平台转场 + 导航栏 hero
 5. 嵌套第二层 wrapper 时传 `transitionBetweenRoutes: false`
 6. 根级宿主页才放 `DSBottomNavigation`，子页面不放

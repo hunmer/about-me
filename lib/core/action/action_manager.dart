@@ -9,6 +9,7 @@ import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
 import 'models/action_definition.dart';
 import 'models/action_instance.dart';
 import 'models/action_group.dart';
+import 'models/action_form.dart';
 import 'action_executor.dart';
 import 'action_storage.dart';
 
@@ -202,6 +203,21 @@ class ActionManager {
         category: ActionCategory.navigation,
         executor: BuiltInActionExecutor(BuiltInActions.rotaryPluginLauncher),
         isBuiltIn: true,
+        form: ActionForm(
+          fields: {
+            'direction': FormFieldConfig(
+              type: FormFieldType.select,
+              label: '显示方向',
+              hint: '转轮停靠在屏幕的哪一侧',
+              defaultValue: 'right',
+              options: const [
+                FormFieldOption(value: 'right', label: '右侧'),
+                FormFieldOption(value: 'left', label: '左侧'),
+              ],
+              order: 0,
+            ),
+          },
+        ),
       ),
     );
 

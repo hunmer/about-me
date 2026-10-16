@@ -126,12 +126,27 @@ class _ArcRotaryWheelCardExampleState extends State<ArcRotaryWheelCardExample> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                _buildSectionTitle('左侧方向（镜像）'),
+                const SizedBox(height: 8),
+                Center(
+                  child: ArcRotaryWheelCardWidget(
+                    title: '今日运动',
+                    items: _workoutItems,
+                    initialIndex: _selected,
+                    direction: ArcWheelDirection.left,
+                    onSelect: (index) {
+                      if (mounted) setState(() => _selected = index);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 24),
                 _buildSectionTitle('说明'),
                 const SizedBox(height: 8),
                 Text(
-                  '选项沿右侧大圆弧排布，拖拽 / 甩动 / 滚轮 / 点击选择，'
+                  '选项沿同心圆弧排布，拖拽 / 甩动 / 滚轮 / 点击选择，'
                   '弹簧吸附到最近档位；圆弧轨道与指针由 skribble 手绘。'
-                  '该组件仅提供一个默认尺寸（2x3），宽度自适应等比缩放。',
+                  '该组件仅提供一个默认尺寸（2x3），宽度自适应等比缩放，'
+                  '可通过 direction 参数让转轮停靠在左侧或右侧。',
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.6,

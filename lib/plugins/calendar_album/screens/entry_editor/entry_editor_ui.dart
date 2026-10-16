@@ -64,35 +64,10 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    EntryEditorImageHandler(
-                      imageUrls: controller.imageUrls,
-                      thumbUrls: controller.thumbUrls,
-                      readOnly: readOnly,
-                      onImageAdded: (url, thumbUrl) {
-                        controller.imageUrls.add(url);
-                        controller.thumbUrls.add(thumbUrl ?? '');
-                      },
-                      onImageRemoved: (index) {
-                        controller.imageUrls.removeAt(index);
-                        if (index < controller.thumbUrls.length) {
-                          controller.thumbUrls.removeAt(index);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    _buildContentForm(),
-                    const SizedBox(height: 20),
-                    EntryEditorTagHandler(
-                      controller: controller,
-                      readOnly: readOnly,
-                    ),
-                    const SizedBox(height: 20),
-                    _buildMetadataForm(),
-                    const SizedBox(height: 40),
-                  ],
+                child: EntryEditorForm(
+                  controller: controller,
+                  readOnly: readOnly,
+                  parentContext: widget.parentContext,
                 ),
               ),
             ),
@@ -157,6 +132,66 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
       ),
     );
   }
+}
+
+/// 日记编辑表单正文（图片、内容、标签、元数据），供全屏编辑页与底部弹层复用
+class EntryEditorForm extends StatefulWidget {
+  final EntryEditorController controller;
+
+  /// 只读模式（纯查看，禁用编辑与保存）
+  final bool readOnly;
+
+  /// 用于弹出位置选择器的上下文（全屏页为页面 context，弹层为弹层 context）
+  final BuildContext parentContext;
+
+  const EntryEditorForm({
+    super.key,
+    required this.controller,
+    this.readOnly = false,
+    required this.parentContext,
+  });
+
+  @override
+  State<EntryEditorForm> createState() => _EntryEditorFormState();
+}
+
+class _EntryEditorFormState extends State<EntryEditorForm> {
+  EntryEditorController get controller => widget.controller;
+  bool get readOnly => widget.readOnly;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        EntryEditorImageHandler(
+          imageUrls: controller.imageUrls,
+          thumbUrls: controller.thumbUrls,
+          readOnly: readOnly,
+          onImageAdded: (url, thumbUrl) {
+            controller.imageUrls.add(url);
+            controller.thumbUrls.add(thumbUrl ?? '');
+          },
+          onImageRemoved: (index) {
+            controller.imageUrls.removeAt(index);
+            if (index < controller.thumbUrls.length) {
+              controller.thumbUrls.removeAt(index);
+            }
+          },
+        ),
+        const SizedBox(height: 20),
+        _buildContentForm(),
+        const SizedBox(height: 20),
+        EntryEditorTagHandler(
+          controller: controller,
+          readOnly: readOnly,
+        ),
+        const SizedBox(height: 20),
+        _buildMetadataForm(),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
 
   /// 构建内容表单（标题、内容、心情）
   Widget _buildContentForm() {
@@ -169,8 +204,8 @@ class _EntryEditorUIState extends State<EntryEditorUI> {
       'Tired',
       'Calm',
       'Anxious',
-      'Angry',
       'Content',
+      'Angry',
     ];
     final moodOptions = moods
         .map(

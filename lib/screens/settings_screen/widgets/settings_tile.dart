@@ -53,6 +53,8 @@ class SettingsTile extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
+                // Container 默认左上角布局子组件，显式居中图标
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: iconColor.withValues(
