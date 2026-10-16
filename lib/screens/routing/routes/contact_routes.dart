@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/routing/route_definition.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';
 import 'package:aboutme/plugins/contact/contact_plugin.dart';
@@ -93,13 +94,9 @@ class _ContactDetailLoader extends StatelessWidget {
             if (contact == null) {
               return Scaffold(
                 body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.person_off, size: 64, color: Colors.grey),
-                      const SizedBox(height: 16),
-                      Text('contact_notFound'.tr),
-                    ],
+                  child: DSEmptyState(
+                    icon: DsIconKind.personOff,
+                    title: 'contact_notFound'.tr,
                   ),
                 ),
               );

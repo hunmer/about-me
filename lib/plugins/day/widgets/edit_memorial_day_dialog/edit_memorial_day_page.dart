@@ -33,21 +33,27 @@ class EditMemorialDayPage extends StatefulWidget {
 
 class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
   late TextEditingController _titleController;
+  late TextEditingController _intervalController;
   late DateTime _selectedDate;
   late Color _selectedColor;
   String? _backgroundImageUrl;
   IconData? _selectedIcon;
   Color? _selectedIconColor;
+  RecurrenceUnit? _recurrenceUnit;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.memorialDay?.title);
+    _intervalController = TextEditingController(
+      text: '${widget.memorialDay?.recurrenceInterval ?? 1}',
+    );
     _selectedDate = widget.memorialDay?.targetDate ?? DateTime.now();
     _selectedColor = widget.memorialDay?.backgroundColor ?? Colors.blue[300]!;
     _backgroundImageUrl = widget.memorialDay?.backgroundImageUrl;
     _selectedIcon = widget.memorialDay?.icon;
     _selectedIconColor = widget.memorialDay?.iconColor;
+    _recurrenceUnit = widget.memorialDay?.recurrenceUnit;
     widget.onReady?.call(() => _save(context));
     _updateRouteContext();
   }
@@ -74,6 +80,7 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
   @override
   void dispose() {
     _titleController.dispose();
+    _intervalController.dispose();
     super.dispose();
   }
 
@@ -117,6 +124,9 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
       creationDate: widget.memorialDay?.creationDate ?? DateTime.now(),
       icon: _selectedIcon,
       iconColor: _selectedIconColor,
+      recurrenceUnit: _recurrenceUnit,
+      recurrenceInterval:
+          int.tryParse(_intervalController.text.trim())?.clamp(1, 9999) ?? 1,
     );
 
     Navigator.of(
@@ -186,7 +196,8 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
               left: 16,
               right: 16,
               top: 16,
-              bottom: MediaQuery.paddingOf(context).bottom + 24,
+              // sheet 模式由外壳统一追加底部安全区，避免双重留白
+              bottom: widget.embedInSheet ? 24 : MediaQuery.paddingOf(context).bottom + 24,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,6 +233,41 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
                   placeholder: 'day_selectDate'.tr,
                   labelText: 'day_targetDate'.tr,
                 ),
+                const SizedBox(height: 24),
+
+                // 循环：截止日期 = 所选日期 + 叠加量，过期自动滚到下一轮
+                OptionSelectorField(
+                  labelText: 'day_recurrence'.tr,
+                  selectedId: _recurrenceUnit?.name ?? 'off',
+                  onSelectionChanged: (id) => setState(() {
+                    _recurrenceUnit =
+                        id == 'off' ? null : RecurrenceUnit.values.byName(id);
+                  }),
+                  useHorizontalScroll: false,
+                  gridColumns: 3,
+                  options: [
+                    OptionItem(id: 'off', label: 'day_recurrenceOff'.tr),
+                    OptionItem(
+                      id: RecurrenceUnit.days.name,
+                      label: 'day_recurrenceDays'.tr,
+                    ),
+                    OptionItem(
+                      id: RecurrenceUnit.months.name,
+                      label: 'day_recurrenceMonths'.tr,
+                    ),
+                  ],
+                ),
+                if (_recurrenceUnit != null) ...[
+                  const SizedBox(height: 16),
+                  TextInputField(
+                    controller: _intervalController,
+                    labelText: _recurrenceUnit == RecurrenceUnit.days
+                        ? 'day_recurrenceEveryDays'.tr
+                        : 'day_recurrenceEveryMonths'.tr,
+                    hintText: '1',
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
                 const SizedBox(height: 32),
 
                 // 删除按钮（仅编辑模式显示）

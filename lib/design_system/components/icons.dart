@@ -93,6 +93,13 @@ enum DsIconKind {
   dots,
   archive,
   flip,
+  inbox,
+  sparkle,
+  eventBusy,
+  alarmOff,
+  target,
+  personOff,
+  touchApp,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -184,6 +191,13 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.cloud: Icons.cloud_outlined,
   DsIconKind.flag: Icons.flag,
   DsIconKind.dots: Icons.more_vert,
+  DsIconKind.inbox: Icons.inbox_outlined,
+  DsIconKind.sparkle: Icons.auto_awesome,
+  DsIconKind.eventBusy: Icons.event_busy,
+  DsIconKind.alarmOff: Icons.alarm_off,
+  DsIconKind.target: Icons.track_changes,
+  DsIconKind.personOff: Icons.person_off,
+  DsIconKind.touchApp: Icons.touch_app,
 };
 
 /// 图标组件：基于系统 Material Icons

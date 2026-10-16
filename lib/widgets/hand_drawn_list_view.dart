@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:aboutme/core/services/hand_drawn_style_controller.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -69,6 +70,10 @@ class HandDrawnListView extends StatelessWidget {
   /// 默认贴条底色(米白纸色)
   static const Color defaultTapeColor = Color(0xFFF8F3E6);
 
+  /// 入场瀑布延迟:每项递增 50ms,封顶 500ms 避免长列表尾部延迟过大
+  static Duration entranceDelayForIndex(int index) =>
+      Duration(milliseconds: (index * 50).clamp(0, 500));
+
   final int itemCount;
 
   /// 构建 item,倾斜、胶带与悬浮动效由本组件负责
@@ -135,6 +140,7 @@ class HandDrawnListView extends StatelessWidget {
         tapeTitle: tapeTitleOf?.call(index),
         tapeLabelColor: tapeLabelColorOf?.call(index),
         seed: index,
+        entranceDelay: entranceDelayForIndex(index),
         child: itemBuilder(context, index),
       );
     }
@@ -193,6 +199,7 @@ class HandDrawnStickyItem extends StatefulWidget {
     this.tapeTitle,
     this.tapeLabelColor,
     this.seed,
+    this.entranceDelay = Duration.zero,
     required this.child,
   }) : assert(
          pose != null || tiltKey != null,
@@ -228,6 +235,10 @@ class HandDrawnStickyItem extends StatefulWidget {
 
   /// skribble 墨迹种子;不传时随机模式由 tiltKey 派生
   final int? seed;
+
+  /// 入场动画延迟(淡入+上滑);null 表示该项关闭入场动画,
+  /// 全局开关 HandDrawnStyleController.entranceEnabled 关闭时同样不生效
+  final Duration? entranceDelay;
 
   final Widget child;
 
@@ -299,6 +310,7 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
         widget.showTape && HandDrawnStyleController().tapeEnabled;
     final folderTab =
         showTape && widget.tapeStyle == HandDrawnTapeStyle.folderTab;
+    final content = _wrapEntrance(widget.child);
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -306,9 +318,9 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
         folderTab
             ? Padding(
                 padding: const EdgeInsets.only(top: 16),
-                child: widget.child,
+                child: content,
               )
-            : widget.child,
+            : content,
         if (showTape)
           switch (widget.tapeStyle) {
             // 顶部胶带:横跨卡片顶边,一半露出卡片外
@@ -326,6 +338,28 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
             ),
           },
       ],
+    );
+  }
+
+  /// 入场动画(源自 timeline 卡片效果):延迟后淡入并向上滑入,
+  /// 延迟随列表索引递增形成瀑布感;全局开关或 entranceDelay 关闭时直出
+  Widget _wrapEntrance(Widget child) {
+    final delay = widget.entranceDelay;
+    if (delay == null || !HandDrawnStyleController().entranceEnabled) {
+      return child;
+    }
+    return Animate(
+      effects: [
+        FadeEffect(duration: 300.ms, delay: delay),
+        SlideEffect(
+          begin: const Offset(0, 0.3),
+          end: Offset.zero,
+          duration: 400.ms,
+          delay: delay,
+          curve: Curves.easeOut,
+        ),
+      ],
+      child: child,
     );
   }
 

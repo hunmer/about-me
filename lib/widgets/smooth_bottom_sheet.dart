@@ -21,8 +21,6 @@ class SmoothBottomSheet {
   /// [borderRadius] - 圆角半径，默认 20
   /// [showDragHandle] - 是否显示拖拽指示器，默认 true
   /// [enableDrag] - 是否启用拖拽，默认 true
-  /// [isScrollControlled] - 是否使用全屏高度，默认 false
-  /// [useSafeArea] - 是否使用安全区域，默认 false
   static Future<T?> show<T>({
     required BuildContext context,
     required Widget Function(BuildContext) builder,
@@ -32,8 +30,6 @@ class SmoothBottomSheet {
     double borderRadius = 20,
     bool showDragHandle = true,
     bool enableDrag = true,
-    bool isScrollControlled = false,
-    bool useSafeArea = false,
   }) {
     return Navigator.of(context).push<T>(
       ModalSheetRoute(
@@ -71,7 +67,6 @@ class SmoothBottomSheet {
     double borderRadius = 20,
     bool showDragHandle = true,
     bool enableDrag = true,
-    bool useSafeArea = false,
   }) {
     return show<T>(
       context: context,
@@ -81,7 +76,6 @@ class SmoothBottomSheet {
       borderRadius: borderRadius,
       showDragHandle: showDragHandle,
       enableDrag: enableDrag,
-      useSafeArea: useSafeArea,
       builder: (context) => _SheetWithTitle(
         title: title,
         showCloseButton: showCloseButton,

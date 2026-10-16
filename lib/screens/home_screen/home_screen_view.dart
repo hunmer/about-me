@@ -1402,7 +1402,6 @@ class HomeScreenView extends StatelessWidget {
   void _showOptionsMenu(BuildContext context) {
     SmoothBottomSheet.show(
       context: context,
-      isScrollControlled: true,
       builder:
           (context) => SingleChildScrollView(
             child: Column(

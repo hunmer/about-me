@@ -647,7 +647,6 @@ class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
                                     List<Map<String, String>>
                                   >(
                                     context: context,
-                                    isScrollControlled: true,
                                     builder:
                                         (context) => DSThemeBridge(
                                           child: Builder(

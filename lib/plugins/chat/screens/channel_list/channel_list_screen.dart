@@ -9,7 +9,6 @@ import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'controllers/channel_list_controller.dart';
 import 'widgets/channel_tile.dart';
-import 'widgets/empty_channel_view.dart';
 import 'widgets/channel_group_selector.dart';
 import 'widgets/channel_action_sheet.dart';
 import 'widgets/channel_dialogs/channel_dialog.dart';
@@ -96,7 +95,14 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
           ),
           Expanded(
             child: _controller.filteredChannels.isEmpty
-                ? EmptyChannelView(onAddChannel: widget.onAddChannel ?? () {})
+                ? Center(
+                  child: DSEmptyState(
+                    icon: DsIconKind.chat,
+                    title: 'chat_channelList'.tr,
+                    actionLabel: 'chat_newChannel'.tr,
+                    onAction: widget.onAddChannel ?? () {},
+                  ),
+                )
                 : ReorderableListView.builder(
                     padding: EdgeInsets.only(
                       left: 16,

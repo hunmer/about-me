@@ -22,6 +22,9 @@ class FormModalSheet extends StatelessWidget {
   /// 是否显示外壳标题栏
   final bool showTitleBar;
 
+  /// 提交按钮放标题栏右侧（替代关闭按钮），隐藏底栏按钮
+  final bool submitInTitleBar;
+
   const FormModalSheet({
     super.key,
     required this.title,
@@ -29,6 +32,7 @@ class FormModalSheet extends StatelessWidget {
     this.onSave,
     this.onDelete,
     this.showTitleBar = true,
+    this.submitInTitleBar = false,
   });
 
   /// 以 smooth_sheets 模态底部弹层打开
@@ -39,6 +43,7 @@ class FormModalSheet extends StatelessWidget {
     VoidCallback? onSave,
     VoidCallback? onDelete,
     bool showTitleBar = true,
+    bool submitInTitleBar = false,
   }) {
     return Navigator.of(context).push<T>(
       ModalSheetRoute(
@@ -48,6 +53,7 @@ class FormModalSheet extends StatelessWidget {
           onSave: onSave,
           onDelete: onDelete,
           showTitleBar: showTitleBar,
+          submitInTitleBar: submitInTitleBar,
           child: child,
         ),
       ),
@@ -78,7 +84,7 @@ class FormModalSheet extends StatelessWidget {
                   _buildDragHandle(theme),
                   if (showTitleBar) _buildTitleBar(context, theme),
                   Flexible(child: child),
-                  _buildBottomBar(context, theme),
+                  if (!submitInTitleBar) _buildBottomBar(context, theme),
                   SizedBox(height: MediaQuery.paddingOf(context).bottom),
                 ],
               ),
@@ -134,13 +140,21 @@ class FormModalSheet extends StatelessWidget {
               style: DsTypography.title.copyWith(color: theme.text),
             ),
           ),
-          DSIconButton(
-            icon: DsIconKind.close,
-            size: 36,
-            color: theme.surfaceAlt,
-            iconColor: theme.textSub,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
+          if (submitInTitleBar && onSave != null)
+            DSButton(
+              label: 'app_save'.tr,
+              size: DSButtonSize.sm,
+              icon: DsIconKind.check,
+              onPressed: onSave,
+            )
+          else
+            DSIconButton(
+              icon: DsIconKind.close,
+              size: 36,
+              color: theme.surfaceAlt,
+              iconColor: theme.textSub,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
         ],
       ),
     );

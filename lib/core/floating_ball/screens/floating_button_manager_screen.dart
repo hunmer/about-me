@@ -118,22 +118,11 @@ class _FloatingButtonManagerScreenState
       appBar: AppBar(title: Text('core_floatingButtonManager'.tr)),
       body: _buttons.isEmpty
           ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.touch_app, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    '暂无按钮',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    onPressed: _addButton,
-                    icon: const Icon(Icons.add),
-                    label: Text('core_addFirstButton'.tr),
-                  ),
-                ],
+              child: DSEmptyState(
+                icon: DsIconKind.touchApp,
+                title: 'core_noButtons'.tr,
+                actionLabel: 'core_addFirstButton'.tr,
+                onAction: _addButton,
               ),
             )
           : ReorderableListView.builder(

@@ -34,10 +34,12 @@ import 'screens/prompt_preset_screen.dart';
 import 'screens/agent_edit_screen.dart';
 import 'handlers/chat_event_handler.dart';
 import 'controllers/agent_controller.dart';
+import 'controllers/provider_controller.dart';
 import 'controllers/service_provider_controller.dart';
 import 'controllers/model_controller.dart';
 import 'services/request_service.dart';
 import 'models/ai_agent.dart';
+import 'widgets/onboarding_provider_setup.dart';
 import 'services/prompt_preset_service.dart';
 import 'sample_data.dart';
 
@@ -117,6 +119,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> initialize() async {
+    // 加载插件配置（defaultProviderId 等）
+    await loadSettings(const {});
+
     // Initialize default service providers
     await initializeDefaultData();
 
@@ -380,6 +385,84 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       context: context,
       child: const OpenAIMainView(),
     );
+  }
+
+  @override
+  List<PluginOnboardingStep> getOnboardingSteps(BuildContext context) => [
+    PluginOnboardingStep(
+      icon: Icons.smart_toy,
+      title: 'openai_onboardingWelcomeTitle'.tr,
+      description: 'openai_onboardingWelcomeDesc'.tr,
+    ),
+    PluginOnboardingStep(
+      icon: Icons.tune,
+      title: 'openai_onboardingSetupTitle'.tr,
+      description: 'openai_onboardingSetupDesc'.tr,
+      builder: (context, values) => OnboardingProviderSetup(values: values),
+    ),
+  ];
+
+  @override
+  Future<void> onOnboardingComplete(
+    BuildContext context,
+    Map<String, dynamic> values,
+  ) async {
+    await _applyOnboardingConfig(values);
+  }
+
+  /// 应用引导收集的厂商 / 模型 / API Key 配置
+  ///
+  /// 未填写 API Key 时跳过（引导仍可完成）。填写后：
+  /// 1. 更新 providers.json 中对应厂商（真实 Key 替换占位符 + 默认模型）
+  /// 2. 应用到所有仍带占位符配置的默认 Agent（含内置 Agent）
+  /// 3. 记录为新建 Agent 的默认厂商
+  Future<void> _applyOnboardingConfig(Map<String, dynamic> values) async {
+    final providerId = values['providerId'] as String?;
+    final apiKey = (values['apiKey'] as String?)?.trim() ?? '';
+    final model = (values['model'] as String?)?.trim() ?? '';
+    if (providerId == null || providerId.isEmpty || apiKey.isEmpty) return;
+
+    try {
+      final providerController = ProviderController();
+      final providers = await providerController.getProviders();
+      final index = providers.indexWhere((p) => p.id == providerId);
+      if (index == -1) return;
+      final preset = providers[index];
+      final updated = preset.copyWith(
+        headers: preset.headers.map(
+          (key, value) => MapEntry(key, value.replaceAll('YOUR_API_KEY', apiKey)),
+        ),
+        defaultModel: model.isNotEmpty ? model : preset.defaultModel,
+      );
+      await providerController.updateProvider(updated);
+
+      final agentController = AgentController();
+      final agents = await agentController.loadAgents();
+      final updatedAgents = <AIAgent>[];
+      for (final agent in agents) {
+        // 仅覆盖仍带占位符 Key 的默认 Agent，不动用户已配置的
+        final hasPlaceholder = agent.headers.values.any(
+          (v) => v.contains('YOUR_API_KEY'),
+        );
+        if (!hasPlaceholder) continue;
+        updatedAgents.add(
+          agent.copyWith(
+            serviceProviderId: updated.id,
+            baseUrl: updated.baseUrl,
+            headers: Map<String, String>.from(updated.headers),
+            model: model.isNotEmpty ? model : agent.model,
+            apiFormat: updated.apiFormat,
+            updatedAt: DateTime.now(),
+          ),
+        );
+      }
+      await agentController.bulkSaveAgents(updatedAgents);
+
+      await updateSettings({'defaultProviderId': updated.id});
+      debugPrint('[OpenAIPlugin] 已应用引导配置: ${updated.label}');
+    } catch (e) {
+      debugPrint('[OpenAIPlugin] 应用引导配置失败: $e');
+    }
   }
 
   @override

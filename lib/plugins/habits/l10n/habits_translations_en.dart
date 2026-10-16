@@ -188,5 +188,11 @@ class HabitsTranslationsEn {
   
   // const Text 硬编码迁移(en)
   'habits_nfcStartTimer': 'Start Timer via NFC',
+
+  // Empty state placeholders
+  'habits_emptyTitle': 'No habits yet',
+  'habits_emptyHint': 'Create habits in the Habits plugin first',
+  'habits_noMatchingSkills': 'No matching skills',
+  'habits_searchKeyword': 'Search: @query',
 };
 }

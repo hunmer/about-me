@@ -4,13 +4,18 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'button.dart';
+import 'icons.dart';
 import 'jelly_box.dart';
 
-/// 手绘空状态：大表情/SVG 图标 + 标题 + 说明 + 可选操作按钮
+/// 手绘空状态：大图标（手绘 DsIcon）/表情/SVG + 标题 + 说明 + 可选操作按钮
 /// （对应设计稿「还没有记录哦」）
+///
+/// 全应用的空内容占位统一走这里，不要在页面里手写
+/// `Center + Icon(64) + Text` 的散装占位。
 class DSEmptyState extends StatelessWidget {
   const DSEmptyState({
     super.key,
+    this.icon,
     this.emoji,
     this.svgAsset,
     required this.title,
@@ -18,9 +23,12 @@ class DSEmptyState extends StatelessWidget {
     this.actionLabel,
     this.onAction,
   }) : assert(
-         emoji != null || svgAsset != null,
-         'emoji 与 svgAsset 至少提供一个',
+         icon != null || emoji != null || svgAsset != null,
+         'icon 与 emoji、svgAsset 至少提供一个',
        );
+
+  /// 主视觉手绘图标（如 inbox），优先于 emoji / svgAsset
+  final DsIconKind? icon;
 
   /// 主视觉表情（如 🐰）
   final String? emoji;
@@ -48,7 +56,9 @@ class DSEmptyState extends StatelessWidget {
           raised: true,
           alignment: Alignment.center,
           child:
-              svgAsset != null
+              icon != null
+                  ? DsIcon(icon!, size: 44, color: theme.textSub)
+                  : svgAsset != null
                   ? SvgPicture.asset(
                     svgAsset!,
                     width: 44,

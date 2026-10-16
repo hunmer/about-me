@@ -279,7 +279,6 @@ Future<String?> showSuggestedQuestionsDialog(
 ) {
   return SmoothBottomSheet.show<String>(
     context: context,
-    isScrollControlled: true,
     builder:
         (context) => DSThemeBridge(
           child: Builder(

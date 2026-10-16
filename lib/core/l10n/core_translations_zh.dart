@@ -114,4 +114,14 @@ const Map<String, String> coreTranslationsZh = {
   // const Text 硬编码迁移(zh)
   'core_selectPluginOverlay': '选择插件悬浮窗',
   'core_selectPluginOverlayDesc': '选择要在悬浮窗中打开的插件： ',
+
+  // Plugin List Dialog
+  'core_pluginList': '插件列表',
+  'core_pinPlugin': '固定',
+  'core_unpinPlugin': '取消固定',
+  'core_openInOverlay': '小窗打开',
+  'core_noMatchingPlugins': '无匹配插件',
+
+  // 空状态占位
+  'core_noButtons': '暂无按钮',
 };

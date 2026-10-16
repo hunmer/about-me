@@ -117,7 +117,15 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
 
       if (_providers.isNotEmpty) {
         if (_selectedProviderId.isEmpty) {
-          _selectedProviderId = _providers.first.id;
+          // 新建智能体：优先用引导配置的默认厂商，并预填连接配置
+          final defaultId =
+              OpenAIPlugin.instance.settings['defaultProviderId'] as String?;
+          final provider = _providers.firstWhere(
+            (p) => p.id == defaultId,
+            orElse: () => _providers.first,
+          );
+          _selectedProviderId = provider.id;
+          _patchFormWithProvider(provider);
         }
       }
       setState(() {});
@@ -127,6 +135,18 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
           '${'openai_loadProvidersError'.tr}: $e',
         );
       }
+    }
+  }
+
+  /// 表单尚未构建时延迟到首帧后填充
+  void _patchFormWithProvider(ServiceProvider provider) {
+    void apply() => _updateFormWithProvider(provider, silent: true);
+    if (_formKey.currentState != null) {
+      apply();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) apply();
+      });
     }
   }
 
@@ -919,11 +939,12 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
   }
 
   // 使用服务商配置更新表单
-  void _updateFormWithProvider(ServiceProvider provider) {
+  void _updateFormWithProvider(ServiceProvider provider, {bool silent = false}) {
     if (_formKey.currentState != null) {
       final currentValues = Map<String, dynamic>.from(
         _formKey.currentState!.value,
       );
+      currentValues['serviceProvider'] = provider.id;
       currentValues['baseUrl'] = provider.baseUrl;
       currentValues['headers'] = _formatHeaders(provider.headers);
       currentValues['apiFormat'] = provider.apiFormat;
@@ -932,7 +953,9 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       }
       _formKey.currentState!.patchValue(currentValues);
     }
-    ToastService.instance.showToast('openai_configUpdated'.tr);
+    if (!silent) {
+      ToastService.instance.showToast('openai_configUpdated'.tr);
+    }
   }
 
   // 模型选择

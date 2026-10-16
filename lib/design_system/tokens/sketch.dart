@@ -18,7 +18,129 @@ import 'package:skribble/skribble.dart';
 import '../theme/app_theme.dart';
 import 'typography.dart';
 
-/// 全局墨线风格（skribble 三档粗糙度 + 笔宽）
+/// 描边线风格：粗糙度档位 × 笔宽 × 可选笔型覆盖的命名组合
+///
+/// 供主题设置页独立选择；应用后写入 [DsInkStyle] 全局生效。
+class DsStrokeStyle {
+  const DsStrokeStyle({
+    required this.id,
+    required this.labelKey,
+    required this.level,
+    required this.strokeWidth,
+    this.pen,
+  });
+
+  /// 稳定标识（持久化用）
+  final String id;
+
+  /// 展示文案的翻译键
+  final String labelKey;
+
+  /// 粗糙度档位
+  final WiredRoughness level;
+
+  /// 笔宽
+  final double strokeWidth;
+
+  /// 笔型覆盖（null = 用档位自带笔型）
+  final RoughPen? pen;
+
+  /// 本风格的绘制配置（主题设置页的预览块用）
+  DrawConfig get drawConfig => DrawConfig.build(
+        roughness: level.roughness,
+        maxRandomnessOffset: level.maxRandomnessOffset,
+        lineWobble: level.lineWobble,
+        pen: pen ?? level.pen,
+      );
+}
+
+/// 描边线风格集合
+///
+/// 前 3 项与各主题预设的默认墨线一一对应（档位 + 笔宽完全一致），
+/// 供「跟随主题」回落取值；其后为可选的自定义风格。
+abstract final class DsStrokeStyles {
+  /// 柔和（细笔）
+  static const DsStrokeStyle gentle = DsStrokeStyle(
+    id: 'gentle',
+    labelKey: 'screens_inkStyleGentle',
+    level: WiredRoughness.gentle,
+    strokeWidth: 1.8,
+  );
+
+  /// 俏皮（标准墨线，默认）
+  static const DsStrokeStyle playful = DsStrokeStyle(
+    id: 'playful',
+    labelKey: 'screens_inkStylePlayful',
+    level: WiredRoughness.playful,
+    strokeWidth: 2.2,
+  );
+
+  /// 狂放（粗笔）
+  static const DsStrokeStyle expressive = DsStrokeStyle(
+    id: 'expressive',
+    labelKey: 'screens_inkStyleExpressive',
+    level: WiredRoughness.expressive,
+    strokeWidth: 2.6,
+  );
+
+  /// 针笔：柔和几何 + 细腻针管笔
+  static const DsStrokeStyle needle = DsStrokeStyle(
+    id: 'needle',
+    labelKey: 'screens_strokeNeedle',
+    level: WiredRoughness.gentle,
+    strokeWidth: 1.2,
+    pen: RoughPen.fineliner,
+  );
+
+  /// 马克笔：恒宽粗线
+  static const DsStrokeStyle marker = DsStrokeStyle(
+    id: 'marker',
+    labelKey: 'screens_strokeMarker',
+    level: WiredRoughness.playful,
+    strokeWidth: 3.2,
+    pen: RoughPen.uniform,
+  );
+
+  /// 秀丽笔：狂放几何 + 钢笔笔锋
+  static const DsStrokeStyle fountain = DsStrokeStyle(
+    id: 'fountain',
+    labelKey: 'screens_strokeFountain',
+    level: WiredRoughness.expressive,
+    strokeWidth: 2.0,
+    pen: RoughPen.ink,
+  );
+
+  /// 基础三档（下标与 WiredRoughness 档位对应，主题预设默认值）
+  static const List<DsStrokeStyle> base = [gentle, playful, expressive];
+
+  static const List<DsStrokeStyle> all = [
+    gentle,
+    playful,
+    expressive,
+    needle,
+    marker,
+    fountain,
+  ];
+
+  /// 按 id 查找，未知 id 返回 null
+  static DsStrokeStyle? byId(String? id) {
+    if (id == null) return null;
+    for (final s in all) {
+      if (s.id == id) return s;
+    }
+    return null;
+  }
+
+  /// 按档位 + 笔宽精确匹配（旧配置迁移用），未命中回落该档位基础风格
+  static DsStrokeStyle match(WiredRoughness level, double strokeWidth) {
+    for (final s in all) {
+      if (s.level == level && s.strokeWidth == strokeWidth) return s;
+    }
+    return base[level.index];
+  }
+}
+
+/// 全局墨线风格（skribble 三档粗糙度 + 笔宽 + 可选笔型覆盖）
 ///
 /// 由 `core/services/ds_ink_style_controller.dart` 在加载/切换时写入；
 /// 切换后经 DSThemeBridge 重建主题树全局生效。
@@ -28,8 +150,11 @@ class DsInkStyle {
 
   static WiredRoughness level = WiredRoughness.playful;
 
-  /// 墨线笔宽（Wired* 组件描边粗细，随主题预设变化）
+  /// 墨线笔宽（Wired* 组件描边粗细）
   static double strokeWidth = 2.2;
+
+  /// 笔型覆盖（null = 用档位自带笔型；自定义描边风格会写入）
+  static RoughPen? pen;
 
   /// 档位标签（设置页与持久化用，顺序与 WiredRoughness.values 一致）
   static const List<String> labels = ['Gentle', 'Playful', 'Expressive'];
@@ -38,13 +163,20 @@ class DsInkStyle {
 
   /// 当前档位下标（与 labels 对应）
   static int get index => level.index;
+
+  /// 应用一套命名描边风格（全局生效）
+  static void apply(DsStrokeStyle style) {
+    level = style.level;
+    strokeWidth = style.strokeWidth;
+    pen = style.pen;
+  }
+
+  /// 当前生效的命名风格（按档位+笔宽+笔型匹配，未命中回落俏皮档）
+  static DsStrokeStyle get current => DsStrokeStyles.match(level, strokeWidth);
 }
 
 /// 手绘主题派生：从语义主题取墨/纸/笔参数
 extension DsSketchTheme on AppThemeData {
-  /// 墨线色：手绘描边与手绘图标的主色
-  Color get ink => isDark ? text : DsColors.text;
-
   /// 纸色：手绘件填充底色
   Color get paper => surface;
 
@@ -54,13 +186,15 @@ extension DsSketchTheme on AppThemeData {
   /// 对应的 skribble 主题：Wired* 组件经 WiredTheme.of 取色的数据源
   WiredThemeData get wired =>
       _wiredCache[_wiredCacheKey(this)] ??= WiredThemeData(
-        borderColor: isDark ? text : DsColors.text,
+        borderColor: ink,
         textColor: text,
         disabledTextColor: textSub,
         fillColor: surface,
         markerColor: primary,
         strokeWidth: DsInkStyle.strokeWidth,
         roughnessLevel: DsInkStyle.level,
+        // null = 用档位自带笔型（自定义描边风格会覆盖）
+        pen: DsInkStyle.pen,
         // Wired* 组件文字与 DsTypography 同字体（851 手写杂书体，
         // app 内注册，覆盖中/英/日；覆盖默认的 skribble bundled 字体，
         // 且不随粗糙度档位切换字体）
@@ -68,15 +202,16 @@ extension DsSketchTheme on AppThemeData {
       );
 }
 
-/// [AppThemeData] 实例 × 墨线风格（档位 + 笔宽）→ WiredThemeData 缓存
+/// [AppThemeData] 实例 × 墨线风格（档位 + 笔宽 + 笔型）→ WiredThemeData 缓存
 /// （AppThemeData 是 const 构造，实例在主题切换间稳定；
-/// 档位或笔宽变化换 key 取新缓存，避免旧数据残留）
+/// 档位/笔宽/笔型变化换 key 取新缓存，避免旧数据残留）
 final Map<int, WiredThemeData> _wiredCache = {};
 
 int _wiredCacheKey(AppThemeData theme) =>
-    identityHashCode(theme) * 1000 +
-    DsInkStyle.index * 100 +
-    (DsInkStyle.strokeWidth * 10).round();
+    identityHashCode(theme) * 100000 +
+    DsInkStyle.index * 1000 +
+    (DsInkStyle.strokeWidth * 10).round() * 10 +
+    (DsInkStyle.pen?.hashCode ?? 0) % 997;
 
 /// 手绘填充预设（卡片/面板背景风格切换）
 enum DsSketchFill {
@@ -107,6 +242,8 @@ enum DsSketchFill {
 /// - [stroke] 默认墨线；pill 圆角（999）会被 rough 引擎自动钳制成胶囊
 /// - [fillStyle] 显式填充预设，优先于 [hachure]；排线类风格下
 ///   [fillColor] 为 null/透明时取 [hachureColor]
+/// - [drawConfig] 覆盖绘制配置（默认取当前墨线风格；风格预览块
+///   传入目标风格的配置以演示其笔触）
 /// - [seed] 保持稳定默认值即可；列表项可传唯一值增加墨迹变化
 RoughBoxDecoration dsSketchDecoration({
   required AppThemeData theme,
@@ -121,7 +258,9 @@ RoughBoxDecoration dsSketchDecoration({
   double hachureGap = 8,
   int seed = 1,
   Animation<double>? progress,
+  DrawConfig? drawConfig,
 }) {
+  final dc = drawConfig ?? theme.wired.drawConfig;
   final DsSketchFill? style =
       fillStyle ??
       (fillColor == null
@@ -142,14 +281,14 @@ RoughBoxDecoration dsSketchDecoration({
       filler = switch (style) {
         DsSketchFill.crossHatch => HatchFiller(
           FillerConfig.build(
-            drawConfig: theme.wired.drawConfig,
+            drawConfig: dc,
             hachureGap: hachureGap,
             fillWeight: 1.4,
           ),
         ),
         DsSketchFill.dots => DotFiller(
           FillerConfig.build(
-            drawConfig: theme.wired.drawConfig,
+            drawConfig: dc,
             // 点画间距跟随调用方（小控件默认更密，全屏背景传大间距，
             // 避免整屏生成数万个点导致卡顿）
             hachureGap: hachureGap,
@@ -158,14 +297,14 @@ RoughBoxDecoration dsSketchDecoration({
         ),
         DsSketchFill.zigzag => ZigZagFiller(
           FillerConfig.build(
-            drawConfig: theme.wired.drawConfig,
+            drawConfig: dc,
             hachureGap: hachureGap,
             fillWeight: 1.4,
           ),
         ),
         DsSketchFill.ruled => HachureFiller(
           FillerConfig.build(
-            drawConfig: theme.wired.drawConfig,
+            drawConfig: dc,
             // buildFillLines 以 hachureAngle+90 旋转后画水平扫描线再转回，
             // 故 -90 才是水平线；行距模拟笔记本行高
             hachureAngle: -90,
@@ -175,7 +314,7 @@ RoughBoxDecoration dsSketchDecoration({
         ),
         _ => HachureFiller(
           FillerConfig.build(
-            drawConfig: theme.wired.drawConfig,
+            drawConfig: dc,
             hachureGap: hachureGap,
             fillWeight: 1.4,
           ),
@@ -202,7 +341,7 @@ RoughBoxDecoration dsSketchDecoration({
         ? null
         : RoughDrawingStyle(color: resolvedFillColor),
     filler: filler,
-    drawConfig: theme.wired.drawConfig,
+    drawConfig: dc,
     seed: seed,
     progress: progress,
   );

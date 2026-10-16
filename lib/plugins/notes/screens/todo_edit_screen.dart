@@ -33,7 +33,6 @@ class TodoEditSheet extends StatefulWidget {
   }) {
     return SmoothBottomSheet.show(
       context: context,
-      isScrollControlled: true,
       builder: (context) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: TodoEditSheet(note: note, onSave: onSave),

@@ -157,7 +157,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   Future<void> _showPluginManagementSheet() async {
     await SmoothBottomSheet.show(
       context: context,
-      isScrollControlled: true,
       builder: (context) {
         final double sheetHeight = MediaQuery.of(context).size.height * 0.75;
         return SizedBox(

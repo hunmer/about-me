@@ -135,7 +135,6 @@ class _MessageInputState extends State<MessageInput> {
   void _showAgentListDrawer() {
     SmoothBottomSheet.show(
       context: context,
-      isScrollControlled: true,
       builder: (context) => AgentListDrawer(
         selectedAgents: selectedAgents,
         onAgentSelected: _handleAgentSelected,

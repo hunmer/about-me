@@ -3,7 +3,6 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import '../models/reminder.dart';
 import '../controllers/reminder_list_controller.dart';
 import 'components/reminder_card.dart';
-import 'components/empty_state.dart';
 import 'reminder_form_screen.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -53,7 +52,13 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
           IconButton(icon: const Icon(Icons.add), onPressed: _addReminder),
         ],
         body: reminders.isEmpty
-            ? const EmptyState()
+            ? Center(
+              child: DSEmptyState(
+                icon: DsIconKind.alarmOff,
+                title: 'reminder_emptyTitle'.tr,
+                message: 'reminder_emptyHint'.tr,
+              ),
+            )
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: reminders.length,

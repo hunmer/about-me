@@ -163,4 +163,9 @@ const Map<String, String> scriptsCenterTranslationsEn = {
   'scripts_center_noExecutionLogs': 'No execution logs',
   'scripts_center_imagesShort': '@count img',
   'scripts_center_loadFailed': 'Load failed',
+
+  // Empty state placeholders
+  'scripts_center_noMatchingScripts': 'No matching scripts',
+  'scripts_center_emptyScriptsHint':
+      'No scripts yet\nTap the bottom-right button to create one',
 };

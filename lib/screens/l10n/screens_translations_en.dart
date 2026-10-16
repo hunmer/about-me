@@ -88,6 +88,11 @@ final Map<String, String> screensTranslationsEn = {
   'screens_inkStyleGentle': 'Gentle',
   'screens_inkStylePlayful': 'Playful',
   'screens_inkStyleExpressive': 'Expressive',
+  'screens_strokeStyle': 'Stroke Style',
+  'screens_strokeFollowTheme': 'Follow Theme',
+  'screens_strokeNeedle': 'Needle',
+  'screens_strokeMarker': 'Marker',
+  'screens_strokeFountain': 'Fine Brush',
 
   // create_folder_dialog
   'screens_selectIcon': 'Select Icon',

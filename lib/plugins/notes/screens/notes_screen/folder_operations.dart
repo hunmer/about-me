@@ -97,7 +97,6 @@ class _FolderNameSheet extends StatefulWidget {
   }) {
     return SmoothBottomSheet.show<(String, Color?)>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: _FolderNameSheet(

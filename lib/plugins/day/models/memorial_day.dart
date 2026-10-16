@@ -1,7 +1,11 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
+
+/// 循环周期单位：截止日期 = 上次重置日期 + 叠加量
+enum RecurrenceUnit { days, months }
 
 class MemorialDay {
   final String id;
@@ -18,6 +22,12 @@ class MemorialDay {
   final IconData? icon;
   final Color? iconColor;
 
+  /// 循环单位；null 表示不循环（targetDate 即截止日期）
+  final RecurrenceUnit? recurrenceUnit;
+
+  /// 循环叠加量（每 N 天 / 每 N 月），仅 [recurrenceUnit] 非 null 时生效
+  final int recurrenceInterval;
+
   MemorialDay({
     String? id,
     required this.title,
@@ -30,6 +40,8 @@ class MemorialDay {
     int? sortIndex,
     this.icon,
     this.iconColor,
+    this.recurrenceUnit,
+    int? recurrenceInterval,
   }) : id = id ?? const Uuid().v4(),
        creationDate = creationDate ?? DateTime.now(),
        notes = notes ?? [],
@@ -37,7 +49,8 @@ class MemorialDay {
        // 否则新增笔记 append 的时间戳会错位到前面的行
        noteDates = _alignNoteDates(notes ?? [], noteDates),
        backgroundColor = backgroundColor ?? _getRandomColor(),
-       sortIndex = sortIndex ?? 0;
+       sortIndex = sortIndex ?? 0,
+       recurrenceInterval = recurrenceInterval ?? 1;
 
   /// 把 [dates] 对齐到 [notes] 的长度：短的补 null，长的截断
   static List<DateTime?> _alignNoteDates(
@@ -50,12 +63,75 @@ class MemorialDay {
     ];
   }
 
+  // 是否开启循环
+  bool get isRecurring => recurrenceUnit != null && recurrenceInterval > 0;
+
+  DateTime _addCycle(DateTime base) {
+    return switch (recurrenceUnit) {
+      RecurrenceUnit.days => DateTime(
+        base.year,
+        base.month,
+        base.day + recurrenceInterval,
+      ),
+      RecurrenceUnit.months => DateTime(
+        base.year,
+        base.month + recurrenceInterval,
+        base.day,
+      ),
+      null => base,
+    };
+  }
+
+  /// 上次重置循环日期：循环开启时随过期自动推进到当前一轮的起点
+  DateTime get cycleStartDate {
+    if (!isRecurring) return targetDate;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final start = DateTime(targetDate.year, targetDate.month, targetDate.day);
+    if (recurrenceUnit == RecurrenceUnit.days) {
+      // 按天可整除，直接算出让截止日不早于今天的最小倍数，避免逐轮循环
+      final diff = today.difference(start).inDays;
+      final k =
+          diff <= 0 ? 1 : (diff + recurrenceInterval - 1) ~/ recurrenceInterval;
+      return DateTime(
+        start.year,
+        start.month,
+        start.day + (k - 1) * recurrenceInterval,
+      );
+    }
+    var base = start;
+    while (_addCycle(base).isBefore(today)) {
+      base = _addCycle(base);
+    }
+    return base;
+  }
+
+  /// 实际生效的截止日期：循环时为 上次重置日期 + 叠加量，否则为所选日期
+  DateTime get effectiveTargetDate =>
+      isRecurring ? _addCycle(cycleStartDate) : targetDate;
+
+  /// 循环摘要文案（"每3天"/"每2月"）；未开启循环返回 null
+  String? get recurrenceSummary {
+    if (!isRecurring) return null;
+    return switch (recurrenceUnit) {
+      RecurrenceUnit.days => 'day_everyDays'.trParams({
+        'count': recurrenceInterval.toString(),
+      }),
+      RecurrenceUnit.months => 'day_everyMonths'.trParams({
+        'count': recurrenceInterval.toString(),
+      }),
+      null => null,
+    };
+  }
+
   // 计算剩余天数
   int get daysRemaining {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final target = DateTime(targetDate.year, targetDate.month, targetDate.day);
-    return target.difference(today).inDays;
+    final target = effectiveTargetDate;
+    return DateTime(target.year, target.month, target.day)
+        .difference(today)
+        .inDays;
   }
 
   // 判断是否已经过期
@@ -67,9 +143,10 @@ class MemorialDay {
   // 计算纪念日是否在今天
   bool get isToday => daysRemaining == 0;
 
-  // 获取格式化的日期字符串
+  // 获取格式化的日期字符串（循环时展示实际生效的截止日期）
   String get formattedTargetDate {
-    return '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}-${targetDate.day.toString().padLeft(2, '0')}';
+    final d = effectiveTargetDate;
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   }
 
   // 从JSON创建实例
@@ -94,6 +171,11 @@ class MemorialDay {
               ? dynamicIconData(json['icon'], fontFamily: 'MaterialIcons')
               : null,
       iconColor: json['iconColor'] != null ? Color(json['iconColor']) : null,
+      recurrenceUnit:
+          json['recurrenceUnit'] == null
+              ? null
+              : RecurrenceUnit.values.byName(json['recurrenceUnit']),
+      recurrenceInterval: json['recurrenceInterval'] ?? 1,
     );
   }
 
@@ -112,6 +194,8 @@ class MemorialDay {
       'sortIndex': sortIndex,
       'icon': icon?.codePoint,
       'iconColor': iconColor?.value,
+      'recurrenceUnit': recurrenceUnit?.name,
+      'recurrenceInterval': recurrenceInterval,
     };
   }
 
@@ -148,6 +232,8 @@ class MemorialDay {
     int? sortIndex,
     IconData? icon,
     Color? iconColor,
+    RecurrenceUnit? recurrenceUnit,
+    int? recurrenceInterval,
   }) {
     return MemorialDay(
       id: id ?? this.id,
@@ -161,6 +247,8 @@ class MemorialDay {
       sortIndex: sortIndex ?? this.sortIndex,
       icon: icon ?? this.icon,
       iconColor: iconColor ?? this.iconColor,
+      recurrenceUnit: recurrenceUnit ?? this.recurrenceUnit,
+      recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
     );
   }
 

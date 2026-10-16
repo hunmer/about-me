@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
-import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:aboutme/plugins/checkin/screens/checkin_record_screen.dart';
 import 'package:aboutme/plugins/checkin/widgets/checkin_record_dialog.dart';
 import 'package:aboutme/widgets/common/checkin_item_card.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 打卡项目卡片组件（插件包装器）
 ///
@@ -56,13 +55,12 @@ class CheckinItemCard extends StatelessWidget {
     );
   }
 
-  // 显示打卡对话框
+  // 显示打卡底部抽屉
   void _showCheckinDialog(BuildContext context, DateTime date) {
-    showDSDialog(
+    SmoothBottomSheet.show(
       context: context,
-      theme: DSThemeBridge.resolve(context),
       builder:
-          (dialogContext) => CheckinRecordDialog(
+          (context) => CheckinRecordDialog(
             item: item,
             controller: controller,
             onCheckinCompleted: onStateChanged,

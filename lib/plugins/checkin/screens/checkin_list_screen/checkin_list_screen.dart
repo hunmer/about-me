@@ -11,10 +11,10 @@ import 'package:aboutme/widgets/common/checkin_item_card.dart' show CheckinWeekd
 import 'package:aboutme/plugins/checkin/services/group_sort_service.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
 import 'package:aboutme/plugins/checkin/widgets/checkin_record_dialog.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
-import 'components/empty_state.dart';
 import 'components/checkin_item_card.dart';
 
 class CheckinListScreen extends StatefulWidget {
@@ -112,7 +112,13 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
           Expanded(
             child:
                 filteredItems.isEmpty
-                    ? const EmptyState()
+                    ? Center(
+                      child: DSEmptyState(
+                        icon: DsIconKind.calendarCheck,
+                        title: 'checkin_noRecords'.tr,
+                        message: 'checkin_createCheckin'.tr,
+                      ),
+                    )
                     : SingleChildScrollView(
                       padding: EdgeInsets.only(
                         top: 12, // 贴条顶部出血
@@ -381,9 +387,8 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted) return;
 
-      showDSDialog(
+      SmoothBottomSheet.show(
         context: context,
-        theme: DSThemeBridge.resolve(context),
         builder:
             (context) => CheckinRecordDialog(
               item: item,

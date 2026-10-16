@@ -376,19 +376,12 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
 
           if (scripts.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.code_off, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
+              child: DSEmptyState(
+                icon: DsIconKind.code,
+                title:
                     _searchQuery.isNotEmpty
-                        ? '未找到匹配的脚本'
-                        : '暂无脚本\n点击右下角按钮创建新脚本',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                ],
+                        ? 'scripts_center_noMatchingScripts'.tr
+                        : 'scripts_center_emptyScriptsHint'.tr,
               ),
             );
           }

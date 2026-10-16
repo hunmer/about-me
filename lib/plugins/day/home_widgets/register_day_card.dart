@@ -24,7 +24,7 @@ Future<List<MemorialDay>> _memorialsForDate(DateTime date) async {
   final controller = sharedDayController();
   await controller.reloadData();
   return controller.memorialDays
-      .where((memorial) => _isSameDay(memorial.targetDate, date))
+      .where((memorial) => _isSameDay(memorial.effectiveTargetDate, date))
       .toList();
 }
 

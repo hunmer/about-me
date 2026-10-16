@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -208,30 +207,17 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
     if (channel == null) return const SizedBox.shrink();
 
-    // 限制动画延迟，避免列表过长时延迟过大（最多延迟 500ms）
-    final animationDelay = ((index * 50).clamp(0, 500)).ms;
-
-    // 手绘便签:随机倾斜 + 贴条(角度由 message.id 哈希确定)
+    // 手绘便签:随机倾斜 + 贴条(角度由 message.id 哈希确定),
+    // 入场动画由容器负责(瀑布延迟随索引递增)
     return HandDrawnStickyItem(
+      key: ValueKey(message.id),
       tiltKey: message.id,
-      child: Animate(
-        key: ValueKey(message.id),
-        effects: [
-          FadeEffect(duration: 300.ms, delay: animationDelay),
-          SlideEffect(
-            begin: const Offset(0, 0.3),
-            end: Offset.zero,
-            duration: 400.ms,
-            delay: animationDelay,
-            curve: Curves.easeOut,
-          ),
-        ],
-        child: TimelineMessageCard(
-          message: message,
-          channel: channel,
-          controller: _controller,
-          isGridView: true,
-        ),
+      entranceDelay: HandDrawnListView.entranceDelayForIndex(index),
+      child: TimelineMessageCard(
+        message: message,
+        channel: channel,
+        controller: _controller,
+        isGridView: true,
       ),
     );
   }

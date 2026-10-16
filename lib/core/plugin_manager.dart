@@ -3,6 +3,7 @@ import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/screens/onboarding/plugin_onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'plugin_base.dart';
 import 'storage/storage_manager.dart';
@@ -12,6 +13,11 @@ class PluginManager {
   StorageManager? _storageManager;
   static const String _configStorageKey = 'configs/plugin_manager.json';
   Map<String, int> _pluginAccessTimes = {};
+  // 插件固定时间（毫秒时间戳），被固定的插件在列表中置顶，
+  // 按最后固定时间降序排列
+  Map<String, int> _pluginPinnedTimes = {};
+  // 已展示过首次引导的插件ID
+  Set<String> _onboardingShownPlugins = {};
   Map<String, dynamic> _settings = {'autoOpenLastPlugin': true};
   String? _lastOpenedPluginId; // 最后打开的插件ID
   PluginBase? _currentPlugin; // 当前打开的插件
@@ -58,6 +64,7 @@ class PluginManager {
 
   /// 获取所有已注册的插件
   /// [sortByRecentlyOpened] 是否按最近打开时间排序
+  /// 已固定的插件始终排在最前（按最后固定时间降序）
   List<PluginBase> getAllPlugins({bool sortByRecentlyOpened = false}) {
     if (!sortByRecentlyOpened) {
       return List.unmodifiable(_plugins);
@@ -66,11 +73,32 @@ class PluginManager {
     // 创建插件列表的副本并按访问时间排序
     final sortedPlugins = List<PluginBase>.from(_plugins);
     sortedPlugins.sort((a, b) {
+      // 固定的插件置顶，按最后固定时间降序（最近固定的在最前）
+      final pinnedA = _pluginPinnedTimes[a.id];
+      final pinnedB = _pluginPinnedTimes[b.id];
+      if (pinnedA != null && pinnedB == null) return -1;
+      if (pinnedA == null && pinnedB != null) return 1;
+      if (pinnedA != null && pinnedB != null) {
+        return pinnedB.compareTo(pinnedA);
+      }
       final timeA = _pluginAccessTimes[a.id] ?? 0;
       final timeB = _pluginAccessTimes[b.id] ?? 0;
       return timeB.compareTo(timeA); // 降序排列，最近的在前
     });
     return List.unmodifiable(sortedPlugins);
+  }
+
+  /// 插件是否已固定
+  bool isPluginPinned(String id) => _pluginPinnedTimes.containsKey(id);
+
+  /// 切换插件固定状态：固定时记录时间戳并置顶，取消固定则移除
+  void togglePluginPin(String id) {
+    if (_pluginPinnedTimes.containsKey(id)) {
+      _pluginPinnedTimes.remove(id);
+    } else {
+      _pluginPinnedTimes[id] = DateTime.now().millisecondsSinceEpoch;
+    }
+    _saveConfig();
   }
 
   /// 获取所有已注册的插件（向后兼容的getter）
@@ -142,6 +170,20 @@ class PluginManager {
         );
       }
 
+      // 加载固定时间
+      final pinnedTimes = config['pinnedTimes'] as Map<String, dynamic>?;
+      if (pinnedTimes != null) {
+        _pluginPinnedTimes = Map<String, int>.from(
+          pinnedTimes.map((key, value) => MapEntry(key, value as int)),
+        );
+      }
+
+      // 加载已展示引导的插件
+      final onboardingShown = config['onboardingShown'] as List<dynamic>?;
+      if (onboardingShown != null) {
+        _onboardingShownPlugins = onboardingShown.whereType<String>().toSet();
+      }
+
       // 加载设置
       final settings = config['settings'] as Map<String, dynamic>?;
       if (settings != null) {
@@ -165,6 +207,8 @@ class PluginManager {
     try {
       final config = {
         'accessTimes': _pluginAccessTimes,
+        'pinnedTimes': _pluginPinnedTimes,
+        'onboardingShown': _onboardingShownPlugins.toList(),
         'settings': _settings,
         'lastOpenedPlugin': _lastOpenedPluginId,
       };
@@ -247,6 +291,20 @@ class PluginManager {
     } else {
       NavigationHelper.push(context, page, routeName: '/plugin/${plugin.id}');
     }
+    _maybeShowOnboarding(context, plugin);
+  }
+
+  /// 首次打开插件时弹出引导页
+  ///
+  /// 弹出即记录（含跳过场景），后续不再重复弹出；
+  /// 引导完成时由引导页自行调用 plugin.onOnboardingComplete
+  void _maybeShowOnboarding(BuildContext context, PluginBase plugin) {
+    if (_onboardingShownPlugins.contains(plugin.id)) return;
+    final steps = plugin.getOnboardingSteps(context);
+    if (steps.isEmpty) return;
+    _onboardingShownPlugins.add(plugin.id);
+    _saveConfig();
+    showPluginOnboarding(context, plugin: plugin, steps: steps);
   }
 
   static toHomeScreen(BuildContext context) {

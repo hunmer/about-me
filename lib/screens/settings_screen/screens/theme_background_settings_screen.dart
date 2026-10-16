@@ -779,20 +779,25 @@ class _ThemeBackgroundSettingsScreenState
       builder: (context, _) {
         final paletteId = DsThemeColorController().paletteId;
         final inkIndex = DsInkStyle.index;
+        final customStyleId = DsInkStyleController().customStyleId;
         return Wrap(
           spacing: theme.spacing.lg,
           runSpacing: theme.spacing.md,
           children:
               DsThemePresets.all.map((preset) {
+                // 自选描边风格时不比对墨线（预设只换配色），
+                // 同色板的不同预设以 presetId 区分
                 final selected =
                     preset.palette.id == paletteId &&
-                    preset.inkIndex == inkIndex &&
-                    preset.strokeWidth == DsInkStyle.strokeWidth;
+                    (customStyleId != null
+                        ? preset.id == DsInkStyleController().presetId
+                        : (preset.inkIndex == inkIndex &&
+                              preset.strokeWidth == DsInkStyle.strokeWidth));
                 return GestureDetector(
                   onTap: () {
                     DsThemeColorController().setPalette(preset.palette.id);
-                    DsInkStyleController()
-                        .setStyle(preset.inkIndex, preset.strokeWidth);
+                    // 自选描边风格时预设不改墨线（自选优先）
+                    DsInkStyleController().applyPreset(preset);
                   },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -855,6 +860,93 @@ class _ThemeBackgroundSettingsScreenState
     );
   }
 
+  /// 描边线风格选择：自选优先于主题预设默认值
+  ///
+  /// 「跟随主题」= 套用当前主题预设自带的基础墨线（默认态）；
+  /// 点任意风格 chip 即自选，此后切主题预设只换配色不改墨线。
+  Widget _buildStrokeStylePicker() {
+    final theme = DSThemeBridge.resolve(context);
+
+    return ListenableBuilder(
+      listenable: DsInkStyleController(),
+      builder: (context, _) {
+        final controller = DsInkStyleController();
+        return Wrap(
+          spacing: theme.spacing.md,
+          runSpacing: theme.spacing.sm,
+          children: [
+            _buildFollowThemeChip(theme, controller.customStyleId == null),
+            for (var i = 0; i < DsStrokeStyles.all.length; i++)
+              _buildStrokeStyleChip(
+                theme,
+                DsStrokeStyles.all[i],
+                i,
+                controller.customStyleId == DsStrokeStyles.all[i].id,
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 「跟随主题」选项：回落主题预设默认墨线
+  Widget _buildFollowThemeChip(AppThemeData theme, bool selected) {
+    return GestureDetector(
+      onTap: () => DsInkStyleController().clearCustom(),
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        alignment: Alignment.center,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          radius: BorderRadius.circular(12),
+          stroke: selected ? theme.primary : theme.ink,
+          strokeWidth: selected ? 2.6 : 1.6,
+          seed: 80,
+        ),
+        child: Text(
+          'screens_strokeFollowTheme'.tr,
+          style: DsTypography.caption.copyWith(
+            color: selected ? theme.text : theme.textSub,
+            fontWeight: selected ? FontWeight.w600 : null,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 风格选项：chip 的墨线即用该风格绘制，点击直观预览
+  Widget _buildStrokeStyleChip(
+    AppThemeData theme,
+    DsStrokeStyle style,
+    int index,
+    bool selected,
+  ) {
+    return GestureDetector(
+      onTap: () => DsInkStyleController().setCustomStyle(style.id),
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        alignment: Alignment.center,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          radius: BorderRadius.circular(12),
+          stroke: selected ? theme.primary : theme.ink,
+          strokeWidth: style.strokeWidth,
+          drawConfig: style.drawConfig,
+          seed: 81 + index,
+        ),
+        child: Text(
+          style.labelKey.tr,
+          style: DsTypography.caption.copyWith(
+            color: selected ? theme.text : theme.textSub,
+            fontWeight: selected ? FontWeight.w600 : null,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -872,6 +964,14 @@ class _ThemeBackgroundSettingsScreenState
                     SettingsGroup(
                       title: 'screens_themeStyle'.tr,
                       children: [_buildThemePicker()],
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
+                    // 描边线风格：自选优先于主题预设默认墨线
+                    SettingsGroup(
+                      title: 'screens_strokeStyle'.tr,
+                      children: [_buildStrokeStylePicker()],
                     ),
 
                     SizedBox(height: theme.spacing.lg),

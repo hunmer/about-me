@@ -133,5 +133,10 @@ class CheckinTranslationsEn {
   
   // const Text 硬编码迁移(en)
   'checkin_nfcCheckin': 'NFC Check-in',
+
+  // Empty state placeholders
+  'checkin_noItems': 'No check-in items yet',
+  'checkin_noItemsHint': 'Create check-in items in the Check-in plugin first',
+  'checkin_startRecordingHint': 'Tap the check-in button to start recording',
 };
 }

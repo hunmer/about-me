@@ -382,7 +382,6 @@ class BuiltInActionExecutor implements ActionExecutor {
       // 显示上下文查询抽屉
       await SmoothBottomSheet.show(
         context: context,
-        isScrollControlled: true,
         builder: (context) => ContextQueryDrawer(
           routeContext: routeContext,
         ),

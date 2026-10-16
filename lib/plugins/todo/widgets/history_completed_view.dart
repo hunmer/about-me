@@ -95,7 +95,6 @@ class _HistoryCompletedViewState extends State<HistoryCompletedView> {
         onTap: () {
           SmoothBottomSheet.show(
             context: context,
-            isScrollControlled: true,
             builder:
                 (context) => TodoItemDetail(
                   task: task,

@@ -119,7 +119,6 @@ class _ContextQueryDrawerState extends State<ContextQueryDrawer> {
     // 展示聊天界面
     await SmoothBottomSheet.show<void>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => SizedBox(
         height: MediaQuery.of(context).size.height * 0.9,
         child: ChatScreen(

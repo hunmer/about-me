@@ -73,27 +73,3 @@ class JellyBox extends StatelessWidget {
     );
   }
 }
-
-/// 水晶高光装饰（已退役）：手绘风格下不再绘制，仅保类名兼容
-///
-/// switch/slider/progress 曾把它挂到 Container.foregroundDecoration 复用
-/// 果冻质感；手绘化后各组件不再需要。
-class JellyGlossDecoration extends Decoration {
-  const JellyGlossDecoration({required this.radius, required this.isDark});
-
-  final BorderRadiusGeometry radius;
-  final bool isDark;
-
-  @override
-  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      _NoopBoxPainter(this);
-}
-
-class _NoopBoxPainter extends BoxPainter {
-  _NoopBoxPainter(JellyGlossDecoration decoration);
-
-  @override
-  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
-    // 手绘风格：无玻璃高光
-  }
-}

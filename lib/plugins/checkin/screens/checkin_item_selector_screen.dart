@@ -198,21 +198,10 @@ class _CheckinItemSelectorScreenState extends State<CheckinItemSelectorScreen> {
   /// 构建空状态
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            '暂无打卡项目',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '请先在打卡插件中创建打卡项目',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-          ),
-        ],
+      child: DSEmptyState(
+        icon: DsIconKind.eventBusy,
+        title: 'checkin_noItems'.tr,
+        message: 'checkin_noItemsHint'.tr,
       ),
     );
   }

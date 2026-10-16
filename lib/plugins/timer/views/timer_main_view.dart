@@ -169,7 +169,6 @@ class _TimerMainViewState extends State<TimerMainView> {
   void _showAddTaskSheet() async {
     final newTask = await SmoothBottomSheet.show<TimerTask>(
       context: context,
-      isScrollControlled: true,
       showDragHandle: false,
       builder: (context) => SizedBox(
         height: MediaQuery.of(context).size.height * 0.85,

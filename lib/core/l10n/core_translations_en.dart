@@ -114,4 +114,14 @@ const Map<String, String> coreTranslationsEn = {
   // const Text 硬编码迁移(en)
   'core_selectPluginOverlay': 'Select Plugin Overlay',
   'core_selectPluginOverlayDesc': 'Select a plugin to open in the overlay: ',
+
+  // Plugin List Dialog
+  'core_pluginList': 'Plugin List',
+  'core_pinPlugin': 'Pin',
+  'core_unpinPlugin': 'Unpin',
+  'core_openInOverlay': 'Open in Overlay',
+  'core_noMatchingPlugins': 'No matching plugins',
+
+  // Empty state placeholders
+  'core_noButtons': 'No buttons yet',
 };

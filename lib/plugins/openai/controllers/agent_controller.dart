@@ -103,6 +103,37 @@ class AgentController extends ChangeNotifier {
     await PluginWidgetSyncHelper.instance.syncOpenai();
   }
 
+  /// 批量保存 Agents：内存更新后只写盘一次
+  ///
+  /// 与逐个 [saveAgent] 等价（事件、小组件同步都会触发），
+  /// 适合批量修改连接配置等场景，避免反复读写文件
+  Future<void> bulkSaveAgents(List<AIAgent> agents) async {
+    final plugin = PluginManager.instance.getPlugin('openai');
+    if (plugin == null) return;
+
+    await loadAgents();
+
+    for (final agent in agents) {
+      final index = _agents.indexWhere((a) => a.id == agent.id);
+      if (index >= 0) {
+        _agents[index] = agent;
+      } else {
+        _agents.add(agent);
+      }
+      _notifyAgentEvent(index >= 0 ? 'updated' : 'added', agent);
+    }
+
+    await AboutmeDataService.instance.writePath(
+      '${plugin.storageDir}/agents.json',
+      {'agents': _agents.map((a) => a.toJson()).toList()},
+    );
+
+    notifyListeners();
+
+    // 同步小组件数据
+    await PluginWidgetSyncHelper.instance.syncOpenai();
+  }
+
   Future<void> deleteAgent(String agentId) async {
     final plugin = PluginManager.instance.getPlugin('openai');
     if (plugin == null) return;

@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/scripts_center/models/script_store_models.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_store_manager.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_download_manager.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
@@ -479,16 +480,9 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.code, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'scripts_center_no_scripts_found'.tr,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
+        child: DSEmptyState(
+          icon: DsIconKind.code,
+          title: 'scripts_center_no_scripts_found'.tr,
         ),
       ),
     );

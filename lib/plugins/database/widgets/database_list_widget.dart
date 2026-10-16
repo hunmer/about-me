@@ -130,25 +130,10 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
 
           if (databases.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.inbox, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    'database_no_databases_message'.tr,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'database_add_database_hint'.tr,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                  ),
-                ],
+              child: DSEmptyState(
+                icon: DsIconKind.inbox,
+                title: 'database_no_databases_message'.tr,
+                message: 'database_add_database_hint'.tr,
               ),
             );
           }

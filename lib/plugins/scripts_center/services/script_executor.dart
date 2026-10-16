@@ -170,7 +170,6 @@ class ScriptExecutor {
 
       final configPath = 'configs/scripts_center/${scriptId}_config.json';
       final data = await AboutmeDataService.instance.readPath(configPath);
-      print('[ScriptConfigDebug] 9.脚本getConfig读取: $configPath -> profileId=$profileId');
 
       // 默认配置
       final defaultConfig = {

@@ -20,6 +20,30 @@ class PluginRefreshDataArgs {
   }) : timestamp = DateTime.now();
 }
 
+/// 插件首次打开引导的单个步骤
+///
+/// 默认渲染为「图标 + 标题 + 说明」的介绍页；
+/// 需要交互内容（如配置表单）时通过 [builder] 提供自定义视图，
+/// 并在交互时把收集到的数据写入 [values]（整个引导共享一个 Map）。
+class PluginOnboardingStep {
+  const PluginOnboardingStep({
+    this.icon,
+    required this.title,
+    required this.description,
+    this.builder,
+  });
+
+  /// 步骤图标（介绍页插图占位，为空时回退到插件图标）
+  final IconData? icon;
+
+  final String title;
+  final String description;
+
+  /// 自定义内容构建器，返回 null 的插件使用默认图标+说明布局
+  final Widget Function(BuildContext context, Map<String, dynamic> values)?
+  builder;
+}
+
 /// 插件基类，所有插件必须继承此类
 abstract class PluginBase {
   /// 插件唯一标识符
@@ -170,4 +194,19 @@ abstract class PluginBase {
   ///
   /// 子类可重写以实现更精细的文件级别刷新控制
   bool supportsFileRefresh(String filePath) => true;
+
+  /// 首次打开引导步骤（可选实现）
+  ///
+  /// 返回非空列表时，插件第一次通过 PluginManager.openPlugin 打开会弹出
+  /// 引导页；默认返回空列表表示无引导
+  List<PluginOnboardingStep> getOnboardingSteps(BuildContext context) =>
+      const [];
+
+  /// 引导完成回调（可选实现）
+  ///
+  /// [values] 为引导过程中各自定义步骤收集的数据
+  Future<void> onOnboardingComplete(
+    BuildContext context,
+    Map<String, dynamic> values,
+  ) async {}
 }

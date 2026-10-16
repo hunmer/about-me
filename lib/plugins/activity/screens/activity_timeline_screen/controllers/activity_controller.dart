@@ -66,7 +66,6 @@ class ActivityController {
   }) {
     return SmoothBottomSheet.show(
       context: context,
-      isScrollControlled: true,
       builder: (context) {
         final mediaQuery = MediaQuery.of(context);
         final screenHeight = mediaQuery.size.height;
@@ -88,7 +87,6 @@ class ActivityController {
   void editActivity(BuildContext context, ActivityRecord activity) {
     SmoothBottomSheet.show(
       context: context,
-      isScrollControlled: true,
       builder: (context) {
         final mediaQuery = MediaQuery.of(context);
         final screenHeight = mediaQuery.size.height;

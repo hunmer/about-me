@@ -75,7 +75,6 @@ class _AccountListScreenState extends State<AccountListScreen> {
                 onPressed:
                     () => SmoothBottomSheet.show(
                       context: context,
-                      isScrollControlled: true,
                       builder:
                           (context) =>
                               AccountEditScreen(billPlugin: widget.billPlugin),
@@ -233,7 +232,6 @@ class _AccountListScreenState extends State<AccountListScreen> {
   void _editAccount(BuildContext context, Account account) {
     SmoothBottomSheet.show(
       context: context,
-      isScrollControlled: true,
       builder:
           (context) => AccountEditScreen(
             billPlugin: widget.billPlugin,

@@ -374,7 +374,7 @@ class _HabitStatsConfigFormState extends State<_HabitStatsConfigForm> {
                         _habits.isEmpty
                             ? Center(
                               child: Text(
-                                '暂无习惯',
+                                'habits_emptyTitle'.tr,
                                 style: DsTypography.body.copyWith(
                                   color: theme.textSub,
                                 ),

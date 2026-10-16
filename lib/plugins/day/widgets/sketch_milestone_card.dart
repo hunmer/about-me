@@ -50,6 +50,7 @@ class SketchMilestoneCard extends StatelessWidget {
             : isUpcoming
             ? theme.primary
             : theme.text;
+    final summary = memorialDay.recurrenceSummary;
 
     return Pressable(
       onPressed: onTap,
@@ -135,7 +136,22 @@ class SketchMilestoneCard extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildTagPill(theme, accent, isDark, seed),
+                              Row(
+                                children: [
+                                  _buildTagPill(theme, accent, isDark, seed),
+                                  if (summary != null) ...[
+                                    const SizedBox(width: 6),
+                                    DSBadge(
+                                      label: '🔁 $summary',
+                                      fontSize: 10,
+                                      color: accent.withValues(
+                                        alpha: isDark ? 0.3 : 0.75,
+                                      ),
+                                      textColor: theme.text,
+                                    ),
+                                  ],
+                                ],
+                              ),
                               const SizedBox(height: 10),
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -290,9 +306,9 @@ class SketchMilestoneCard extends StatelessWidget {
           ? 'day_unitDays'.tr
           : 'day_unitDaysAfter'.tr;
 
-  /// 设计稿日期样式：2021.05.20
+  /// 设计稿日期样式：2021.05.20（循环时展示实际生效的截止日期）
   String get _dotDate {
-    final d = memorialDay.targetDate;
+    final d = memorialDay.effectiveTargetDate;
     String two(int n) => n.toString().padLeft(2, '0');
     return '${d.year}.${two(d.month)}.${two(d.day)}';
   }
@@ -309,9 +325,20 @@ class SketchMilestoneCard extends StatelessWidget {
     return n < 0 ? '-$buf' : buf.toString();
   }
 
-  /// 周期进度：未来事件按创建→目标推进；已过事件按周年循环推进
+  /// 周期进度：循环项按 上次重置日期 → 截止日期 推进；
+  /// 未来事件按创建→目标推进；已过事件按周年循环推进
   double get _cycleProgress {
     final now = DateTime.now();
+    if (memorialDay.isRecurring) {
+      final total = memorialDay.effectiveTargetDate
+          .difference(memorialDay.cycleStartDate)
+          .inDays;
+      if (total <= 0) return 0;
+      return (now.difference(memorialDay.cycleStartDate).inDays / total).clamp(
+        0.0,
+        1.0,
+      );
+    }
     if (memorialDay.targetDate.isAfter(now)) {
       final total = memorialDay.targetDate.difference(
         memorialDay.creationDate,

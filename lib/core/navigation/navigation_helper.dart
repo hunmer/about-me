@@ -331,7 +331,6 @@ class NavigationHelper {
     return SmoothBottomSheet.show<T>(
       context: context,
       builder: builder,
-      isScrollControlled: isScrollControlled,
     );
   }
 
@@ -652,7 +651,6 @@ extension NavigationExtensions on BuildContext {
     return SmoothBottomSheet.show<T>(
       context: this,
       builder: builder,
-      isScrollControlled: isScrollControlled,
     );
   }
 

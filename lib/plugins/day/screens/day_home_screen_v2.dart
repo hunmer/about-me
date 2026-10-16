@@ -92,6 +92,7 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
         onReady: (save) => saveMemorialDay = save,
       ),
       onSave: () => saveMemorialDay?.call(),
+      submitInTitleBar: true,
     );
 
     if (result == null) return; // 页面被异常关闭

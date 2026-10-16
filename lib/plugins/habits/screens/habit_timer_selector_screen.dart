@@ -205,20 +205,11 @@ class _HabitTimerSelectorScreenState extends State<HabitTimerSelectorScreen> {
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    final theme = DSThemeBridge.resolve(context);
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.auto_awesome, size: 64, color: theme.textSub),
-          const SizedBox(height: 16),
-          Text('暂无习惯', style: DsTypography.body.copyWith(color: theme.textSub)),
-          const SizedBox(height: 8),
-          Text(
-            '请先在习惯插件中创建习惯',
-            style: DsTypography.caption.copyWith(color: theme.textSub),
-          ),
-        ],
+      child: DSEmptyState(
+        icon: DsIconKind.sparkle,
+        title: 'habits_emptyTitle'.tr,
+        message: 'habits_emptyHint'.tr,
       ),
     );
   }

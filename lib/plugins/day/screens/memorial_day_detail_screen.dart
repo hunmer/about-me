@@ -320,13 +320,15 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
                 ],
               ),
               const SizedBox(height: 26),
-              // 胶囊 badges：目标日期 + 笔记数
+              // 胶囊 badges：目标日期 + 循环 + 笔记数
               Wrap(
                 spacing: 8,
                 runSpacing: 6,
                 alignment: WrapAlignment.center,
                 children: [
-                  _buildHeaderBadge(theme, _dotDate(day.targetDate)),
+                  _buildHeaderBadge(theme, _dotDate(day.effectiveTargetDate)),
+                  if (day.recurrenceSummary != null)
+                    _buildHeaderBadge(theme, '🔁 ${day.recurrenceSummary}'),
                   _buildHeaderBadge(
                     theme,
                     'day_notesCount'.trParams({

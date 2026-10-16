@@ -117,4 +117,14 @@ abstract final class DsThemePresets {
     butter,
     berryNight,
   ];
+
+  /// 按 id 查找，未知 id 回落默认预设
+  static DsThemePreset byId(String? id) {
+    if (id != null) {
+      for (final p in all) {
+        if (p.id == id) return p;
+      }
+    }
+    return sketchbook;
+  }
 }

@@ -66,7 +66,6 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
 
   @override
   void dispose() {
-    print('[ScriptConfigDebug] 表单wrapper销毁(fields=${widget.config.fields.map((f) => f.name).toList()})');
     super.dispose();
     _formChangeNotifier.dispose();
   }
@@ -182,18 +181,8 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
     }
 
     if (isValid) {
-      print('[ScriptConfigDebug] 表单验证通过(${widget.config.fields.length}字段), 提交: ${values.keys.toList()}');
       if (mounted) {
         widget.config.onSubmit(values);
-      }
-    } else {
-      // 验证失败：输出具体哪个字段、什么值（排查配置保存中断）
-      print('[ScriptConfigDebug] ⚠️ 表单验证失败! errors=$errors');
-      print('[ScriptConfigDebug] ⚠️ 当前提交值: $values');
-      for (final f in widget.config.fields) {
-        if (f.required) {
-          print('[ScriptConfigDebug]   字段${f.name}: required=${f.required}, enabled=${f.enabled}, value=${values[f.name]}, initialValue=${f.initialValue}');
-        }
       }
     }
     if (!isValid && widget.config.onValidationFailed != null) {

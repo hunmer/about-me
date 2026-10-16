@@ -182,5 +182,11 @@ class HabitsTranslationsZh {
   
   // const Text 硬编码迁移(zh)
   'habits_nfcStartTimer': '通过 NFC 开始计时',
+
+  // 空状态占位
+  'habits_emptyTitle': '暂无习惯',
+  'habits_emptyHint': '请先在习惯插件中创建习惯',
+  'habits_noMatchingSkills': '未找到匹配的技能',
+  'habits_searchKeyword': '搜索词: @query',
 };
 }

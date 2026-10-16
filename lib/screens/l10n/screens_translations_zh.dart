@@ -86,6 +86,11 @@ final Map<String, String> screensTranslationsZh = {
   'screens_inkStyleGentle': '柔和',
   'screens_inkStylePlayful': '俏皮',
   'screens_inkStyleExpressive': '狂放',
+  'screens_strokeStyle': '描边线风格',
+  'screens_strokeFollowTheme': '跟随主题',
+  'screens_strokeNeedle': '针笔',
+  'screens_strokeMarker': '马克笔',
+  'screens_strokeFountain': '秀丽笔',
 
   // create_folder_dialog
   'screens_selectIcon': '选择图标',

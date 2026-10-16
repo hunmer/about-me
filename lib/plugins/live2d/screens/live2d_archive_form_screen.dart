@@ -128,7 +128,6 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
           ];
     final result = await SmoothBottomSheet.show<List<Map<String, String>>>(
       context: context,
-      isScrollControlled: true,
       builder: (_) => AgentListDrawer(
         selectedAgents: selected,
         allowMultipleSelection: false,

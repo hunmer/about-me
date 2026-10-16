@@ -180,21 +180,10 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
 
     if (_filteredSkills.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inbox, size: 64, color: theme.textSub),
-            const SizedBox(height: 16),
-            Text(
-              '未找到匹配的技能',
-              style: DsTypography.body.copyWith(color: theme.textSub),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '搜索词: $_searchQuery',
-              style: DsTypography.caption.copyWith(color: theme.textSub),
-            ),
-          ],
+        child: DSEmptyState(
+          icon: DsIconKind.inbox,
+          title: 'habits_noMatchingSkills'.tr,
+          message: 'habits_searchKeyword'.trParams({'query': _searchQuery}),
         ),
       );
     }

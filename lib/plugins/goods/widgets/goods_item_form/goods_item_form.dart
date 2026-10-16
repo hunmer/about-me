@@ -38,8 +38,6 @@ class GoodsItemForm extends StatefulWidget {
   }) {
     return SmoothBottomSheet.show<T>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
       builder:
           (context) => GoodsItemForm(
             initialData: initialData,

@@ -138,6 +138,8 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settings_screen_handDrawnTapeSubtitle': 'Show tape strip on card top',
   'settings_screen_handDrawnTiltTitle': 'Tilt Angle',
   'settings_screen_handDrawnTiltSubtitle': 'Keep cards slightly tilted',
+  'settings_screen_handDrawnEntranceTitle': 'Entrance Animation',
+  'settings_screen_handDrawnEntranceSubtitle': 'Cards fade and slide into lists',
   'settings_screen_speechRecognitionSettings': 'Speech Recognition Settings',
   'settings_screen_confirmClear': 'Confirm Clear',
   'settings_screen_confirmClearAiCorrection': 'Clear AI correction agent settings?',

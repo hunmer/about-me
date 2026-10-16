@@ -39,7 +39,6 @@ class MessageInputActions extends StatelessWidget {
         // 显示底部抽屉
         SmoothBottomSheet.show(
           context: context,
-          isScrollControlled: true,
           builder:
               (context) => MessageInputActionsDrawer(
                 actions: actions,

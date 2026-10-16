@@ -137,7 +137,6 @@ class PluginDataSelectorService {
   ) async {
     return await SmoothBottomSheet.show<SelectorResult>(
       context: context,
-      isScrollControlled: true,
       swipeDismissible: config.swipeDismissible,
       barrierDismissible: config.swipeDismissible,
       builder: (context) => DataSelectorSheet(

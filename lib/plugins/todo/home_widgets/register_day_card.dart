@@ -125,7 +125,6 @@ class _TodoDayCardHomeWidget extends StatelessWidget {
   void _showTaskDetail(BuildContext context, Task task) {
     SmoothBottomSheet.show(
       context: context,
-      isScrollControlled: true,
       builder: (context) => TodoItemDetail(
         task: task,
         taskController: TodoPlugin.instance.taskController,

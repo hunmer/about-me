@@ -19,6 +19,7 @@ const Map<String, String> appTranslationsEn = {
   'app_onboarding_challengeDesc': 'Join 30-day challenges to set new goals for yourself. Push your limits with challenges.',
   'app_onboarding_next': 'NEXT',
   'app_onboarding_getStarted': 'GET STARTED',
+  'app_onboarding_skip': 'SKIP',
 
   // Common actions
   'app_ok': 'OK',
@@ -43,6 +44,11 @@ const Map<String, String> appTranslationsEn = {
   'app_makeSticker': 'Make Sticker',
   'app_notepadText': 'Notepad text',
   'app_notepadTextHint': 'Enter content; lines starting with "- [ ]" render as a todo list',
+  'app_notepadTitle': 'Note title',
+  'app_notepadTitleHint': 'Template heading (e.g. To Do:), leave empty to hide',
+  'app_notepadDemoText': 'Little joys today ♡\nHad a lovely coffee',
+  'app_notepadDemoTodos': 'Get a coffee\nRead 10 pages\nEvening walk',
+  'app_stickerExporting': 'Rendering sticker...',
   'app_notepadMarkdown': 'Render as Markdown',
   'app_todoRowLabel': 'Todo @n',
   'app_addRow': 'Add row',

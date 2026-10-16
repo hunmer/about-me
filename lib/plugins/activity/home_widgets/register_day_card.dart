@@ -29,7 +29,6 @@ Future<List<ActivityRecord>> _recordsForDate(DateTime date) async {
 void _editActivity(BuildContext context, ActivityRecord record) {
   SmoothBottomSheet.show(
     context: context,
-    isScrollControlled: true,
     builder: (context) {
       final screenHeight = MediaQuery.of(context).size.height;
       return SizedBox(

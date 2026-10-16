@@ -187,23 +187,11 @@ class _CheckinRecordScreenState extends State<CheckinRecordScreen> {
   }
 
   Widget _buildEmptyState() {
-    final theme = DSThemeBridge.resolve(context);
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.event_busy, size: 64, color: theme.textSub),
-          const SizedBox(height: 16),
-          Text(
-            'checkin_noRecords'.tr,
-            style: DsTypography.heading.copyWith(color: theme.text),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '点击打卡按钮开始记录',
-            style: DsTypography.body.copyWith(color: theme.textSub),
-          ),
-        ],
+      child: DSEmptyState(
+        icon: DsIconKind.eventBusy,
+        title: 'checkin_noRecords'.tr,
+        message: 'checkin_startRecordingHint'.tr,
       ),
     );
   }

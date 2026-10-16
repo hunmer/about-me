@@ -39,6 +39,7 @@ class AppThemeData {
     required this.surfaceAlt,
     required this.text,
     required this.textSub,
+    required this.ink,
     required this.stroke,
     required this.barrier,
     required this.disabled,
@@ -79,6 +80,7 @@ class AppThemeData {
         surfaceAlt: _deepShade(palette.primary, 0.39, 0.31),
         text: _deepShade(palette.primary, 0.55, 0.95),
         textSub: _deepShade(palette.primary, 0.55, 0.78),
+        ink: _deepShade(palette.primary, 0.55, 0.95),
         stroke: Color(0x33FFFFFF),
         barrier: night.withValues(alpha: 0.55),
         disabled: _deepShade(palette.primary, 0.28, 0.31),
@@ -102,6 +104,7 @@ class AppThemeData {
       surfaceAlt: palette.backgroundAlt,
       text: palette.text,
       textSub: palette.textSub,
+      ink: palette.ink ?? palette.text,
       stroke: DsColors.white,
       barrier: Color(0x594C1D95),
       disabled: Color(0xFFE5DDF2),
@@ -134,6 +137,10 @@ class AppThemeData {
   final Color surfaceAlt;
   final Color text;
   final Color textSub;
+
+  /// 墨线色：手绘描边与手绘图标的主色
+  /// （浅色取自色板、缺省跟文字同色相；深色自主色派生）
+  final Color ink;
 
   /// 白色描边（果冻件外圈）
   final Color stroke;

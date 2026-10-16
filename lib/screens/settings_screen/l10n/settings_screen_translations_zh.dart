@@ -138,6 +138,8 @@ const Map<String, String> settingsScreenTranslationsZh = {
   'settings_screen_handDrawnTapeSubtitle': '显示卡片顶部胶带贴条',
   'settings_screen_handDrawnTiltTitle': '倾斜角度',
   'settings_screen_handDrawnTiltSubtitle': '卡片保持轻微随机倾斜',
+  'settings_screen_handDrawnEntranceTitle': '入场动画',
+  'settings_screen_handDrawnEntranceSubtitle': '卡片淡入上滑进入列表',
   'settings_screen_speechRecognitionSettings': 'Speech Recognition Settings',
   'settings_screen_confirmClear': 'Confirm Clear',
   'settings_screen_confirmClearAiCorrection': 'Clear AI correction agent settings?',

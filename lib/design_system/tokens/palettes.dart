@@ -14,6 +14,7 @@ class DsThemePalette {
     required this.backgroundAlt,
     required this.text,
     required this.textSub,
+    this.ink,
   });
 
   /// 稳定标识（持久化用）
@@ -39,6 +40,10 @@ class DsThemePalette {
 
   /// 次要文字
   final Color textSub;
+
+  /// 墨线色：手绘描边与手绘图标的主色
+  /// （null = 跟随 [text] 的同色相深墨，即描边默认随主题色相）
+  final Color? ink;
 }
 
 /// 内置色板集合

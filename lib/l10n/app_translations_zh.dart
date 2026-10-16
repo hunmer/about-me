@@ -19,6 +19,7 @@ const Map<String, String> appTranslationsZh = {
   'app_onboarding_challengeDesc': '加入 30 天挑战，为自己设定新目标，突破自己的极限。',
   'app_onboarding_next': '下一步',
   'app_onboarding_getStarted': '开始使用',
+  'app_onboarding_skip': '跳过',
 
   // Common actions
   'app_ok': '确定',
@@ -43,6 +44,11 @@ const Map<String, String> appTranslationsZh = {
   'app_makeSticker': '制作贴图',
   'app_notepadText': '便签文字',
   'app_notepadTextHint': '输入内容...；「- [ ]」开头的行会渲染成待办清单',
+  'app_notepadTitle': '便签标题',
+  'app_notepadTitleHint': '模板小标题（如 To Do:），留空隐藏',
+  'app_notepadDemoText': '今天的小确幸 ♡\n喝到了好喝的咖啡',
+  'app_notepadDemoTodos': '买一杯咖啡\n读 10 页书\n晚上散步',
+  'app_stickerExporting': '正在生成贴图...',
   'app_notepadMarkdown': 'Markdown 渲染',
   'app_todoRowLabel': '待办 @n',
   'app_addRow': '添加一行',

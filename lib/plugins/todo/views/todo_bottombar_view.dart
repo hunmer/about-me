@@ -563,7 +563,6 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
   void _showTaskDetailDialog(BuildContext context, Task task) {
     SmoothBottomSheet.show(
       context: context,
-      isScrollControlled: true,
       builder: (context) =>
           TodoItemDetail(task: task, taskController: _plugin.taskController),
     );
@@ -610,24 +609,10 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
 
               if (searchTasks.isEmpty) {
                 return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // inbox 无自绘图标等价物，保留 Material 图标
-                      Icon(Icons.inbox, size: 64, color: theme.textSub),
-                      const SizedBox(height: 16),
-                      Text(
-                        'todo_noMatchingTasks'.tr,
-                        style: DsTypography.body.copyWith(color: theme.text),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'todo_tryOtherKeywords'.tr,
-                        style: DsTypography.caption.copyWith(
-                          color: theme.textSub,
-                        ),
-                      ),
-                    ],
+                  child: DSEmptyState(
+                    icon: DsIconKind.inbox,
+                    title: 'todo_noMatchingTasks'.tr,
+                    message: 'todo_tryOtherKeywords'.tr,
                   ),
                 );
               }

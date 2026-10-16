@@ -162,4 +162,8 @@ const Map<String, String> scriptsCenterTranslationsZh = {
   'scripts_center_noExecutionLogs': '暂无执行记录',
   'scripts_center_imagesShort': '@count图',
   'scripts_center_loadFailed': '加载失败',
+
+  // 空状态占位
+  'scripts_center_noMatchingScripts': '未找到匹配的脚本',
+  'scripts_center_emptyScriptsHint': '暂无脚本\n点击右下角按钮创建新脚本',
 };

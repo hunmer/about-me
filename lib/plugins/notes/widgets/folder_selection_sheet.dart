@@ -35,7 +35,6 @@ class FolderSelectionSheet extends StatefulWidget {
   }) async {
     return SmoothBottomSheet.show<Folder>(
       context: context,
-      isScrollControlled: true,
       builder:
           (context) => FolderSelectionSheet(
             rootNode: rootNode,

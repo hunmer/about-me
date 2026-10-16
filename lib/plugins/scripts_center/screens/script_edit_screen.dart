@@ -314,7 +314,6 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
       final configPath =
           'configs/scripts_center/${widget.script!.id}_config.json';
       final data = await AboutmeDataService.instance.readPath(configPath);
-      print('[ScriptConfigDebug] 8.打开编辑屏读取配置: $configPath -> $data');
       if (!mounted) return;
       // 注意：文件不存在时 read 返回空 Map（非 null），同样标记加载完成
       setState(() {
@@ -356,7 +355,6 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
 
   /// 验证并保存
   void _saveScript() {
-    print('[ScriptConfigDebug] 1.保存按钮触发, 基本信息表单state=${_basicInfoWrapperState != null ? "已初始化" : "null"}');
     _basicInfoWrapperState?.submitForm();
   }
 
@@ -364,11 +362,8 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
   void _handleBasicInfoSubmit(Map<String, dynamic> values) {
     // 检查widget是否仍然mounted
     if (!mounted) {
-      print('[ScriptConfigDebug] 2.基本信息提交: widget已unmounted, 中断!');
       return;
     }
-
-    print('[ScriptConfigDebug] 2.基本信息提交成功, values=$values');
 
     // 保存基本信息表单的值
     _basicInfoValues = values;
@@ -376,11 +371,9 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
     // 检查高级设置表单是否已初始化
     if (_advancedWrapperState != null) {
       // 如果已初始化，提交表单获取值
-      print('[ScriptConfigDebug] 3.提交高级设置表单');
       _advancedWrapperState!.submitForm();
     } else {
       // 如果未初始化，使用默认值直接保存
-      print('[ScriptConfigDebug] 3.高级设置表单未初始化(用户没切到该Tab), 用默认值');
       _handleAdvancedSubmit(_getDefaultAdvancedValues());
     }
   }
@@ -399,11 +392,8 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
   void _handleAdvancedSubmit(Map<String, dynamic> advancedValues) {
     // 检查widget是否仍然mounted
     if (!mounted) {
-      print('[ScriptConfigDebug] 4.高级设置提交: widget已unmounted, 中断!');
       return;
     }
-
-    print('[ScriptConfigDebug] 4.高级设置提交, advancedValues=$advancedValues');
 
     // 在保存前，获取配置表单的最新值（如果已初始化），写入当前配置文件
     if (_configWrapperState != null) {

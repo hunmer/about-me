@@ -121,6 +121,12 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
   late String _variantId;
   late List<CuteNotepadSticker> _stickers;
 
+  /// 模板小标题（To Do: / Notes: 等预设文字），空串隐藏
+  late final TextEditingController _titleController;
+
+  /// 用户改过标题后切换样式不再跟随预设标题
+  bool _titleDirty = false;
+
   /// 正文用 MarkdownContent 渲染
   bool _useMarkdown = true;
 
@@ -172,6 +178,7 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
     _textController = TextEditingController(
       text: _todoMode && todoLines != null ? '' : initialText,
     );
+    _titleController = TextEditingController(text: _variant.title ?? '');
     _stickers = _presetStickerLayouts();
   }
 
@@ -196,6 +203,7 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
   @override
   void dispose() {
     _textController.dispose();
+    _titleController.dispose();
     for (final row in _todoRows) {
       row.controller.dispose();
     }
@@ -218,6 +226,32 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
     for (final row in _todoRows)
       CuteNotepadTodoItem(checked: row.checked, text: row.controller.text),
   ];
+
+  /// 迷你样式预览缓存：固定演示内容（不随编辑状态变化），首次访问时
+  /// 按样式 id 构建一次；identical 实例使页面 setState 时整棵子树
+  /// 跳过 rebuild，长内容编辑时预览条不再重复布局/重绘
+  late final Map<String, Widget> _stylePreviews = {
+    for (final preset in cuteNotepadPresets)
+      preset.id: RepaintBoundary(
+        child: IgnorePointer(
+          child: CuteNotepadCardWidget(
+            variant: preset,
+            cardWidth: 150,
+            text:
+                preset.type == CuteNotepadNoteType.freeform
+                    ? 'app_notepadDemoText'.tr
+                    : null,
+            items: [
+              for (final (i, line) in 'app_notepadDemoTodos'
+                  .tr
+                  .split('\n')
+                  .indexed)
+                CuteNotepadTodoItem(checked: i == 0, text: line),
+            ],
+          ),
+        ),
+      ),
+  };
 
   void _toast(String message, {DSToastType type = DSToastType.success}) {
     if (!mounted) return;
@@ -404,50 +438,68 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
     return Scaffold(
       backgroundColor: theme.surface,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            DSLightHeader(title: 'app_makeSticker'.tr),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 便签预览（直接可编辑：拖拽/旋转/缩放/翻转/删除贴纸，
-                    // 保存/分享由编辑器底部按钮负责）
-                    Center(
-                      child: CuteNotepadCardWidget(
-                        variant: variant,
-                        text: _textController.text,
-                        contentWidget:
-                            _useMarkdown && variant.type == CuteNotepadNoteType.freeform
+            Column(
+              children: [
+                DSLightHeader(title: 'app_makeSticker'.tr),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 便签预览（直接可编辑：拖拽/旋转/缩放/翻转/删除贴纸，
+                        // 保存/分享由编辑器底部按钮负责）
+                        Center(
+                          child: CuteNotepadCardWidget(
+                            variant: variant,
+                            title: _titleController.text,
+                            text: _textController.text,
+                            contentWidget:
+                                _useMarkdown &&
+                                    variant.type == CuteNotepadNoteType.freeform
                                 ? MarkdownContent(
                                     content: _textController.text,
                                     selectable: false,
                                     textColor: variant.textColor,
                                   )
                                 : null,
-                        items: _currentItems,
-                        stickers: _stickers,
-                        onStickerRemoved: _removeSticker,
-                        onStickersLayoutChanged: _onStickersLayoutChanged,
-                        repaintBoundaryKey: _boundaryKey,
-                        editable: true,
-                        initialEditing: true,
-                        showModeButton: false,
-                      ),
+                            items: _currentItems,
+                            stickers: _stickers,
+                            onStickerRemoved: _removeSticker,
+                            onStickersLayoutChanged: _onStickersLayoutChanged,
+                            repaintBoundaryKey: _boundaryKey,
+                            editable: true,
+                            initialEditing: true,
+                            showModeButton: false,
+                          ),
+                        ),
+                        SizedBox(height: theme.spacing.xl),
+                        _buildContentEditor(theme, variant),
+                        SizedBox(height: theme.spacing.xl),
+                        _buildStylePicker(theme),
+                        SizedBox(height: theme.spacing.lg),
+                        _buildStickerPicker(theme),
+                      ],
                     ),
-                    SizedBox(height: theme.spacing.xl),
-                    _buildContentEditor(theme, variant),
-                    SizedBox(height: theme.spacing.xl),
-                    _buildStylePicker(theme),
-                    SizedBox(height: theme.spacing.lg),
-                    _buildStickerPicker(theme),
-                  ],
+                  ),
+                ),
+                _buildBottomBar(theme),
+              ],
+            ),
+            // 导出/分享进行中：遮罩 + 进度提示，避免长内容导出时界面无反馈
+            if (_busy)
+              Positioned.fill(
+                child: AbsorbPointer(
+                  child: ColoredBox(
+                    color: theme.surface.withOpacity(0.72),
+                    child: Center(
+                      child: DSLoadingDots(label: 'app_stickerExporting'.tr),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            _buildBottomBar(theme),
           ],
         ),
       ),
@@ -465,12 +517,30 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
     );
   }
 
-  /// 内容编辑：自由文本（含 Markdown 开关）或多行待办
+  /// 内容编辑：模板小标题（可选）+ 自由文本（含 Markdown 开关）或多行待办
   Widget _buildContentEditor(AppThemeData theme, CuteNotepadVariant variant) {
+    // 仅带标题定位的样式提供小标题编辑（其余样式画布本就不画标题）
+    final Widget? titleInput =
+        variant.titlePos == null
+            ? null
+            : Padding(
+              padding: EdgeInsets.only(bottom: theme.spacing.sm),
+              child: DSInput(
+                controller: _titleController,
+                label: 'app_notepadTitle'.tr,
+                hint: 'app_notepadTitleHint'.tr,
+                onChanged:
+                    (_) => setState(() {
+                      _titleDirty = true;
+                    }),
+              ),
+            );
+
     if (variant.type == CuteNotepadNoteType.freeform) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (titleInput != null) titleInput,
           DSInput(
             controller: _textController,
             label: 'app_notepadText'.tr,
@@ -503,6 +573,7 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (titleInput != null) titleInput,
         for (int i = 0; i < _todoRows.length; i++)
           Padding(
             padding: EdgeInsets.only(bottom: theme.spacing.sm),
@@ -567,7 +638,13 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
               final number =
                   '${cuteNotepadPresets.indexOf(preset) + 1}'.padLeft(2, '0');
               return GestureDetector(
-                onTap: () => setState(() => _variantId = preset.id),
+                onTap: () => setState(() {
+                  _variantId = preset.id;
+                  // 未手动改过标题时跟随新样式预设（含清空）
+                  if (!_titleDirty) {
+                    _titleController.text = preset.title ?? '';
+                  }
+                }),
                 child: Tooltip(
                   message: preset.name,
                   child: Column(
@@ -585,7 +662,8 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
                           radius: theme.radii.sm,
                           seed: index + 1,
                         ),
-                        // 迷你 demo 便签：空白预设展示底图 + 贴纸 + 空待办行
+                        // 迷你 demo 便签：固定演示内容，实例只构建一次
+                        //（identical 子树在页面 setState 时直接跳过 rebuild）
                         child: ClipRect(
                           child: OverflowBox(
                             alignment: Alignment.topCenter,
@@ -593,12 +671,7 @@ class _CuteNotepadEditorPageState extends State<CuteNotepadEditorPage> {
                             maxHeight: double.infinity,
                             child: FittedBox(
                               fit: BoxFit.contain,
-                              child: IgnorePointer(
-                                child: CuteNotepadCardWidget(
-                                  variant: preset,
-                                  cardWidth: 150,
-                                ),
-                              ),
+                              child: _stylePreviews[preset.id],
                             ),
                           ),
                         ),

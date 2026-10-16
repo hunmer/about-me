@@ -85,10 +85,13 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
     final isEdit = widget.account != null;
     final theme = DSThemeBridge.resolve(context);
 
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.85,
-      child: DSThemeBridge(
+    return DSThemeBridge(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // 标题栏
             Padding(
@@ -109,7 +112,7 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
               ),
             ),
             Divider(height: 1, color: theme.stroke),
-            Expanded(
+            Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(

@@ -36,9 +36,16 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
     _noteController = TextEditingController();
     final now = DateTime.now();
     _selectedDate = widget.selectedDate ?? now;
-    // 无论是否提供selectedDate，都使用当前时间作为默认时间
-    _startTime = now;
-    _endTime = now;
+    // 无论是否提供selectedDate，都使用当前时分作为默认时间，
+    // 且起止时间必须锚定在所选日期上，避免跨天导致校验失败
+    _startTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      now.hour,
+      now.minute,
+    );
+    _endTime = _startTime;
   }
 
   @override
@@ -117,10 +124,14 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
 
-          return JellyBox(
-            radius: theme.radii.xxl,
-            padding: EdgeInsets.all(theme.spacing.xl),
-            constraints: const BoxConstraints(maxWidth: 360),
+          // 底部抽屉样式：由 SmoothBottomSheet 提供背景与拖拽指示器
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              theme.spacing.xl,
+              theme.spacing.sm,
+              theme.spacing.xl,
+              theme.spacing.xl,
+            ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -137,7 +148,7 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
                   // 日期选择
                   _buildPickerRow(
                     context,
-                    label: 'app_save'.tr,
+                    label: 'app_date'.tr,
                     value:
                         '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}',
                     onTap: () => _selectDate(context),
@@ -167,11 +178,11 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
                     maxLines: 3,
                   ),
                   SizedBox(height: theme.spacing.md),
-                  // 打卡时间显示
-                  Text(
-                    widget.selectedDate != null
-                        ? '${'checkin_checkinDateLabel'.tr}: ${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}'
-                        : '${'checkin_checkinTimeLabel'.tr}: ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+                      // 打卡时间显示
+                      Text(
+                        widget.selectedDate != null
+                            ? '${'checkin_checkinDateLabel'.tr}: ${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}'
+                            : '${'checkin_checkinTimeLabel'.tr}: ${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
                     style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                   SizedBox(height: theme.spacing.lg),
@@ -233,7 +244,6 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
   }
 
   Future<void> _submit(BuildContext context) async {
-    final now = DateTime.now();
     // 标准化时间，保留到秒级别（忽略毫秒）
     final normalizedStartTime = DateTime(
       _startTime.year,
@@ -251,14 +261,9 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
       _endTime.minute,
       _endTime.second,
     );
-    final normalizedCheckinTime = DateTime(
-      (widget.selectedDate ?? now).year,
-      (widget.selectedDate ?? now).month,
-      (widget.selectedDate ?? now).day,
-      (widget.selectedDate ?? now).hour,
-      (widget.selectedDate ?? now).minute,
-      (widget.selectedDate ?? now).second,
-    );
+    // 打卡时间跟随所选开始时间，保证落在 [startTime, endTime] 范围内，
+    // 且记录日期与所选日期一致
+    final normalizedCheckinTime = normalizedStartTime;
 
     final record = CheckinRecord(
       startTime: normalizedStartTime,

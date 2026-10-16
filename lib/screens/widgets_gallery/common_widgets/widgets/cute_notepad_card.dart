@@ -1,4 +1,5 @@
 import 'dart:io' show File;
+import 'dart:isolate' show Isolate;
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -85,15 +86,26 @@ Future<Uint8List?> captureCuteNotepadPng(
   try {
     final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     if (data == null) return null;
-    // 纯 Dart PNG 编码（避免部分平台 toByteData(png) 编码挂起）
-    final pngImage = img.Image.fromBytes(
-      width: image.width,
-      height: image.height,
-      bytes: data.buffer,
-      order: img.ChannelOrder.rgba,
-      numChannels: 4,
+    // 纯 Dart PNG 编码（避免部分平台 toByteData(png) 编码挂起）。
+    // 编码移入后台 isolate：长内容高画布 × pixelRatio 的同步编码
+    // 会阻塞 UI 线程数秒，桌面端表现为窗口假死/白屏
+    final rgba = data.buffer.asUint8List(
+      data.offsetInBytes,
+      data.lengthInBytes,
     );
-    return img.encodePng(pngImage);
+    final width = image.width;
+    final height = image.height;
+    return await Isolate.run(() {
+      final pngImage = img.Image.fromBytes(
+        width: width,
+        height: height,
+        bytes: rgba.buffer,
+        bytesOffset: rgba.offsetInBytes,
+        order: img.ChannelOrder.rgba,
+        numChannels: 4,
+      );
+      return img.encodePng(pngImage);
+    });
   } finally {
     image.dispose();
   }

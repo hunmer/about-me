@@ -146,6 +146,17 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                         onChanged: style.setTiltEnabled,
                       ),
                     ),
+                    SettingsTile(
+                      icon: Icons.animation,
+                      iconColor: DsAccentColors.sky,
+                      title: 'settings_screen_handDrawnEntranceTitle'.tr,
+                      subtitle: 'settings_screen_handDrawnEntranceSubtitle'.tr,
+                      showChevron: false,
+                      trailing: DSSwitch(
+                        value: style.entranceEnabled,
+                        onChanged: style.setEntranceEnabled,
+                      ),
+                    ),
                   ],
                 );
               },
