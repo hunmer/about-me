@@ -225,6 +225,7 @@ const Map<String, String> appTranslationsEn = {
 
   // Media selection
   'app_selectImage': 'Select image',
+  'app_removeImage': 'Remove image',
   'app_selectFromGallery': 'Select from gallery',
   'app_takePhoto': 'Take photo',
   'app_loadingVideo': 'Loading video...',

@@ -55,12 +55,18 @@ const double _kCardHeight = 348;
 const double _kFrostSigma = 6;
 const double _kFrostAlpha = 0.72;
 
-/// 可滑动卡片堆叠（书摘感言卡）：顶层卡片可拖拽，超过阈值飞出切卡，
+/// 随机漫步卡片堆叠（书摘感言卡）：顶层卡片可拖拽，超过阈值飞出切卡，
 /// 后方叠层弹性补位；开启 [randomMode] 后每次切卡从剩余卡片随机抽取
 /// 下一张（随机漫步）。
 ///
 /// 视觉为手绘纸墨风：卡片纸底 + 淡排线 + 墨线框，星级与签名手写字体，
 /// 边角图片以拍立得相框贴纸呈现。
+///
+/// 提供 [cardBuilder] 时替换默认纸面卡（含边角挂件），
+/// 仅保留卡片几何、层叠与拖拽交互（如聊天图片卡）。
+typedef WalkStackCardBuilder =
+    Widget Function(BuildContext context, WalkStackCardData card);
+
 class WalkStackCardWidget extends StatefulWidget {
   const WalkStackCardWidget({
     super.key,
@@ -71,6 +77,7 @@ class WalkStackCardWidget extends StatefulWidget {
     this.starColor = const Color(0xFFF2CE5F),
     this.frosted = true,
     this.onCardDismissed,
+    this.cardBuilder,
   });
 
   /// 卡片队列（至少 1 张；少于 4 张时只渲染现有层数）
@@ -93,6 +100,9 @@ class WalkStackCardWidget extends StatefulWidget {
 
   /// 顶层卡片飞出后的回调
   final ValueChanged<WalkStackCardData>? onCardDismissed;
+
+  /// 自定义卡面内容：替换默认纸面卡与边角挂件（保留几何与层叠）
+  final WalkStackCardBuilder? cardBuilder;
 
   /// 从 props 创建实例（注册器统一入口）
   factory WalkStackCardWidget.fromProps(
@@ -346,21 +356,50 @@ class _WalkStackCardWidgetState extends State<WalkStackCardWidget>
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // 后层先画（层 3 → 1），顶层最后画
+        // 后层先画（层 3 → 1），顶层最后画；
+        // key 绑定卡片 id 且顶层与层结构链一致（translate>rotate>scale），
+        // 切卡换位时已构建的卡面 State（含已完成的异步内容，如图片解析）
+        // 随卡迁移复用，而不是按树位置重载
         for (var pos = layerCount - 1; pos >= 1; pos--)
           _buildLayer(theme, pos: pos, progress: p),
-        Opacity(
+        _buildTopLayer(
+          theme,
+          x: topX,
+          y: topY,
+          rot: topRot,
           opacity: topOpacity,
-          child: Transform.translate(
-            offset: Offset(topX, topY),
-            child: Transform.rotate(
-              angle: topRot * math.pi / 180,
-              child: _buildCardFace(theme, _queue.first, contentOpacity: 1,
-                  parallaxX: topX),
+        ),
+      ],
+    );
+  }
+
+  /// 顶层卡：与 [_buildLayer] 保持相同的结构链（translate>rotate>scale），
+  /// 仅姿态不同（scale 恒为 1），配合卡片 id key 实现切卡时的 State 复用
+  Widget _buildTopLayer(
+    AppThemeData theme, {
+    required double x,
+    required double y,
+    required double rot,
+    required double opacity,
+  }) {
+    return Opacity(
+      key: ValueKey<String>(_queue.first.id),
+      opacity: opacity,
+      child: Transform.translate(
+        offset: Offset(x, y),
+        child: Transform.rotate(
+          angle: rot * math.pi / 180,
+          child: Transform.scale(
+            scale: 1.0,
+            child: _buildCardFace(
+              theme,
+              _queue.first,
+              contentOpacity: 1,
+              parallaxX: x,
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -385,6 +424,7 @@ class _WalkStackCardWidgetState extends State<WalkStackCardWidget>
         pos == 1 ? ((p - 0.35) / 0.65).clamp(0.0, 1.0) : 0.0;
 
     return Opacity(
+      key: ValueKey<String>(_queue[pos].id),
       opacity: opacity,
       child: Transform.translate(
         offset: Offset(x, y),
@@ -404,7 +444,8 @@ class _WalkStackCardWidgetState extends State<WalkStackCardWidget>
     );
   }
 
-  /// 单张卡片：纸面（引言 + 星级 + 签名）+ 边角图片挂件
+  /// 单张卡片：纸面（引言 + 星级 + 签名）+ 边角图片挂件；
+  /// 提供 cardBuilder 时整面替换为自定义内容（不渲染纸面与挂件）
   Widget _buildCardFace(
     AppThemeData theme,
     WalkStackCardData data, {
@@ -414,6 +455,15 @@ class _WalkStackCardWidgetState extends State<WalkStackCardWidget>
     final s = _scale;
     final cardW = _kCardWidth * s;
     final cardH = _kCardHeight * s;
+
+    if (widget.cardBuilder != null) {
+      return SizedBox(
+        width: cardW,
+        height: cardH,
+        child: widget.cardBuilder!(context, data),
+      );
+    }
+
     final seed = data.id.hashCode & 0x7fffffff;
 
     // 纸面始终可见（透明度由外层卡片层控制），contentOpacity 只作用于

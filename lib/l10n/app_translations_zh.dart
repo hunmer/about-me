@@ -212,6 +212,7 @@ const Map<String, String> appTranslationsZh = {
 
   // Media selection
   'app_selectImage': '选择图片',
+  'app_removeImage': '移除图片',
   'app_selectFromGallery': '从相册选择',
   'app_takePhoto': '拍照',
   'app_loadingVideo': '正在加载视频...',

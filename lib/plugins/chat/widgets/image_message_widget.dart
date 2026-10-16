@@ -5,20 +5,54 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import '../../../../utils/image_utils.dart';
 
-class ImageMessageWidget extends StatelessWidget {
+/// 图片消息渲染：本地 './' 相对路径解析为绝对路径后 Image.file 展示，
+/// http(s) URL 直接 Image.network 引用。
+///
+/// 路径解析 future 在 State 内缓存：父级重建（如卡片堆切卡的层重建）
+/// 不会重跑解析导致图片闪 loading 重载；仅 imagePath / message 变化时重解析。
+class ImageMessageWidget extends StatefulWidget {
   final Message message;
   final bool isOutgoing;
+
+  /// 覆盖展示的图片路径（默认取 fileInfo['path']；
+  /// 多图卡片堆复用同一 message 时按卡指定）
+  final String? imagePath;
 
   const ImageMessageWidget({
     super.key,
     required this.message,
     this.isOutgoing = false,
+    this.imagePath,
   });
 
+  @override
+  State<ImageMessageWidget> createState() => _ImageMessageWidgetState();
+}
+
+class _ImageMessageWidgetState extends State<ImageMessageWidget> {
+  /// 路径解析 future（缓存，避免父级重建时重跑导致图片闪 loading）
+  late Future<Widget> _future;
+
   Map<String, dynamic>? get fileInfo =>
-      message.metadata?[Message.metadataKeyFileInfo] as Map<String, dynamic>?;
+      widget.message.metadata?[Message.metadataKeyFileInfo]
+          as Map<String, dynamic>?;
 
   @override
+  void initState() {
+    super.initState();
+    _future = _buildImageWidget();
+  }
+
+  @override
+  void didUpdateWidget(ImageMessageWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 仅图片源变化时重新解析（切卡等纯重建不触发重载）
+    if (widget.imagePath != oldWidget.imagePath ||
+        widget.message != oldWidget.message) {
+      _future = _buildImageWidget();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (fileInfo == null) {
@@ -26,7 +60,7 @@ class ImageMessageWidget extends StatelessWidget {
     }
 
     return FutureBuilder(
-      future: _buildImageWidget(context),
+      future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
@@ -38,12 +72,12 @@ class ImageMessageWidget extends StatelessWidget {
     );
   }
 
-  Future<Widget> _buildImageWidget(BuildContext context) async {
+  Future<Widget> _buildImageWidget() async {
     if (fileInfo == null) {
       return const SizedBox.shrink();
     }
 
-    final filePath = fileInfo!['path'] as String? ?? '';
+    final filePath = widget.imagePath ?? (fileInfo!['path'] as String? ?? '');
     final fileName = fileInfo!['name'] as String? ?? '未命名文件';
 
     if (filePath.isEmpty) {
@@ -101,7 +135,9 @@ class ImageMessageWidget extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color:
-            isOutgoing ? theme.primary.withValues(alpha: 0.1) : theme.surface,
+            widget.isOutgoing
+                ? theme.primary.withValues(alpha: 0.1)
+                : theme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: theme.stroke.withValues(alpha: 0.1)),
       ),

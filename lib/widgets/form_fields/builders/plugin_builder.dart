@@ -7,7 +7,7 @@ import 'package:aboutme/plugins/timer/models/timer_item.dart';
 import 'package:aboutme/plugins/timer/views/add_timer_item_dialog.dart';
 import 'package:aboutme/plugins/contact/models/custom_activity_event_model.dart';
 import '../prompt_editor_field.dart';
-import '../icon_avatar_row_field.dart';
+import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
 import '../expense_type_selector_field.dart';
 import '../amount_input_field.dart';
 import '../reminders_field.dart';

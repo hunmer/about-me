@@ -33,7 +33,7 @@ export 'calendar_strip_picker_field.dart';
 export 'image_picker_field.dart';
 export 'location_picker_field.dart';
 export 'prompt_editor_field.dart';
-export 'icon_avatar_row_field.dart';
+// 图标头像字段已融合进 widgets/picker/circle_icon_picker.dart
 export 'expense_type_selector_field.dart';
 export 'amount_input_field.dart';
 export 'reminders_field.dart';

@@ -11,6 +11,7 @@ import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/utils/message_content_utils.dart';
 import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
+import 'package:aboutme/plugins/chat/widgets/image_stack_message_widget.dart';
 import 'package:aboutme/widgets/file_preview/index.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/audio_message_bubble.dart';
 import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
@@ -82,6 +83,14 @@ class MessageContent extends StatelessWidget {
       final type = fileInfo['type'] as String? ?? '';
 
       if (type == 'image') {
+        // 多图消息（fileInfo.images >= 2）：折叠为 WalkStackCard 卡片堆
+        final images = fileInfo['images'] as List?;
+        if (images != null && images.length >= 2) {
+          return ImageStackMessageWidget(
+            message: message,
+            isOutgoing: message.type == MessageType.sent,
+          );
+        }
         return ImageMessageWidget(
           message: message,
           isOutgoing: message.type == MessageType.sent,

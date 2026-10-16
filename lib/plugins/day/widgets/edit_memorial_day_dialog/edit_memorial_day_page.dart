@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
+import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';

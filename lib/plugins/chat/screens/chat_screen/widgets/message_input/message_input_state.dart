@@ -55,8 +55,10 @@ class MessageInputState {
     if (hasFiles || hasMessage) {
       Map<String, dynamic>? metadata = {};
 
-      // 文件逐条发送：每个文件一条独立消息
       if (hasFiles) {
+        // 图片与其它类型分组：多张图片合并为一条「卡片堆」消息，其余逐条发送
+        final imageFiles = <Map<String, dynamic>>[];
+        final otherFiles = <Map<String, dynamic>>[];
         for (final selectedFile in selectedFiles) {
           final fileInfo =
               selectedFile['fileInfo'] as Map<String, dynamic>?;
@@ -64,6 +66,61 @@ class MessageInputState {
             debugPrint('文件信息无效，跳过该文件');
             continue;
           }
+          if (fileInfo['type'] == 'image') {
+            imageFiles.add(selectedFile);
+          } else {
+            otherFiles.add(selectedFile);
+          }
+        }
+
+        if (imageFiles.length >= 2) {
+          final images = imageFiles
+              .map(
+                (f) => ((f['fileInfo'] as Map<String, dynamic>)['path']
+                    as String?),
+              )
+              .whereType<String>()
+              .where((p) => p.isNotEmpty)
+              .toList();
+          final now = DateTime.now();
+          final merged = <String, dynamic>{
+            'fileInfo': <String, dynamic>{
+              'id': 'stack_${now.millisecondsSinceEpoch}',
+              'name': '${images.length} 张图片',
+              'originalName': '${images.length} 张图片',
+              'path': images.first,
+              'images': images,
+              'thumbPath': null,
+              'size': 0,
+              'extension': '.jpg',
+              'mimeType': 'image/jpeg',
+              'type': 'image',
+              'isImage': true,
+              'createdAt': now.toIso8601String(),
+            },
+            'senderInfo': imageFiles.first['senderInfo'],
+          };
+          onSendMessage(
+            images.first,
+            type: 'image',
+            metadata: merged,
+          );
+        } else {
+          // 单张图片照旧独立成一条
+          for (final selectedFile in imageFiles) {
+            final fileInfo =
+                selectedFile['fileInfo'] as Map<String, dynamic>;
+            onSendMessage(
+              fileInfo['path'] as String,
+              type: fileInfo['type'] as String,
+              metadata: selectedFile,
+            );
+          }
+        }
+
+        // 非图片文件（视频/音频/文档等）逐条发送
+        for (final selectedFile in otherFiles) {
+          final fileInfo = selectedFile['fileInfo'] as Map<String, dynamic>;
           onSendMessage(
             fileInfo['path'] as String,
             type: fileInfo['type'] as String,
