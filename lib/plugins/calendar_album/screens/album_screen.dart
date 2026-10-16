@@ -66,7 +66,9 @@ class _AlbumScreenState extends State<AlbumScreen> {
   }) async {
     await GalleryImageResolver.resolve(photos[index].url);
     if (!mounted) return;
-    NavigationHelper.push(
+    // pushHero：非 iOS 平台 push 为零时长路由，Hero 会瞬移失效；
+    // hero 路由进入时无视觉转场，正好由 entranceAnimation 接管入场
+    NavigationHelper.pushHero(
       context,
       GalleryViewer(
         title: 'calendar_album_gallery_title'.tr,
