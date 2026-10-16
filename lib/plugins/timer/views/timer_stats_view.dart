@@ -7,6 +7,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/timer/models/timer_task.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/wave_fill.dart';
 
 /// 计时器统计页（专注统计）
 ///
@@ -220,19 +221,6 @@ class _TimerStatsViewState extends State<TimerStatsView> {
     return _Card(
       child: Stack(
         children: [
-          // 右下角模糊光斑
-          Positioned(
-            right: -30,
-            bottom: -40,
-            child: Container(
-              width: 130,
-              height: 130,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFFFFDBCF).withValues(alpha: 0.5),
-              ),
-            ),
-          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -482,7 +470,6 @@ class _TimerStatsViewState extends State<TimerStatsView> {
         : (minutes / maxMinutes).clamp(0.06, 1.0);
 
     final accent = theme.colorScheme.primary;
-    final muted = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -501,44 +488,32 @@ class _TimerStatsViewState extends State<TimerStatsView> {
             ),
           ),
           const SizedBox(height: 6),
-          // 胶囊轨道：LayoutBuilder 拿到有界高度后再计算填充高度
-          // （FractionallySizedBox 在 Column 中收到无界约束会断言失败）
+          // 胶囊轨道：波纹按比例自下而上填充。
+          // SizedBox.expand 撑满轨道——WaveFill 的 CustomPaint 无 child，
+          // loose 约束下会收缩为 0
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                const trackPadding = 2.5;
-                final trackHeight = constraints.maxHeight - trackPadding * 2;
-                final fillHeight = (trackHeight * ratio).clamp(
-                  6.0,
-                  trackHeight,
-                );
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    color: isToday
-                        ? accent.withValues(alpha: 0.25)
-                        : theme.colorScheme.surfaceContainerHighest.withValues(
-                            alpha: 0.4,
-                          ),
-                  ),
-                  padding: const EdgeInsets.all(trackPadding),
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: SizedBox(
-                      height: fillHeight,
-                      child: FractionallySizedBox(
-                        widthFactor: 1,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: isToday ? accent : muted,
-                          ),
-                        ),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: isToday
+                    ? accent.withValues(alpha: 0.25)
+                    : theme.colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.4,
                       ),
-                    ),
+              ),
+              padding: const EdgeInsets.all(2.5),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: SizedBox.expand(
+                  child: WaveFill(
+                    progress: ratio,
+                    // 波体自带 0.24–0.6 渐变透明度，传不透明色避免叠加后过淡
+                    color: isToday ? accent : theme.colorScheme.onSurfaceVariant,
+                    // 柱体窄，收敛波幅避免波浪吞掉整根
+                    amplitude: 3,
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),

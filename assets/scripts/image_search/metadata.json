@@ -1,0 +1,177 @@
+{
+  "name": "图片搜索",
+  "id": "image_search",
+  "version": "1.2.0",
+  "description": "聚合图片搜索：关键词搜图（Unsplash 摄影图 / Pixabay 图+插画+矢量 / Google·Bing·Yahoo·Yandex 全网图片）+ 以图搜图（Google Lens 视觉匹配）；填图片 URL 走以图搜图，填关键词按图源搜索；各家 API Key 均存脚本本地配置，不硬编码",
+  "icon": "star",
+  "author": "Aboutme Team",
+  "enabled": true,
+  "type": "module",
+  "autoRun": false,
+  "inputs": [
+    {
+      "label": "搜索关键词",
+      "key": "query",
+      "type": "string",
+      "required": false,
+      "defaultValue": "",
+      "description": "关键词搜图模式；填写图片 URL 时忽略此项",
+      "placeholder": "例如：mountain sunrise"
+    },
+    {
+      "label": "图片 URL（以图搜图）",
+      "key": "imageUrl",
+      "type": "string",
+      "required": false,
+      "defaultValue": "",
+      "description": "填写则进入以图搜图（Google Lens），必须是可公开访问的图片直链，不收本地图片",
+      "placeholder": "例如：https://i.imgur.com/HBrB8p0.png"
+    },
+    {
+      "label": "图源",
+      "key": "provider",
+      "type": "select",
+      "required": false,
+      "defaultValue": "unsplash",
+      "options": [
+        "unsplash",
+        "pixabay",
+        "google",
+        "bing",
+        "yahoo",
+        "yandex"
+      ],
+      "description": "关键词搜图的图源（以图搜图时忽略）；google/bing/yahoo/yandex 为搜索引擎全网图片，共用 SerpAPI Key，不支持翻页/方向/排序"
+    },
+    {
+      "label": "数量",
+      "key": "perPage",
+      "type": "number",
+      "required": false,
+      "defaultValue": 10,
+      "description": "每次返回/展示几张：unsplash 1-30、pixabay 3-200、以图搜图为展示上限"
+    },
+    {
+      "label": "类型",
+      "key": "imageType",
+      "type": "select",
+      "required": false,
+      "defaultValue": "photo",
+      "options": [
+        "photo",
+        "illustration",
+        "vector",
+        "all"
+      ],
+      "description": "仅 Pixabay 生效（photo=摄影 / illustration=插画 / vector=矢量 / all=全部）"
+    },
+    {
+      "label": "方向",
+      "key": "orientation",
+      "type": "select",
+      "required": false,
+      "defaultValue": "any",
+      "options": [
+        "any",
+        "landscape",
+        "portrait",
+        "squarish",
+        "horizontal",
+        "vertical"
+      ],
+      "description": "any=不限；squarish 仅 Unsplash，horizontal/vertical 仅 Pixabay"
+    },
+    {
+      "label": "排序",
+      "key": "sort",
+      "type": "select",
+      "required": false,
+      "defaultValue": "relevant",
+      "options": [
+        "relevant",
+        "popular",
+        "latest"
+      ],
+      "description": "relevant=相关度(仅Unsplash，Pixabay按热门处理) / popular=热门(仅Pixabay) / latest=最新"
+    },
+    {
+      "label": "页码",
+      "key": "page",
+      "type": "number",
+      "required": false,
+      "defaultValue": 1,
+      "description": "翻页用（以图搜图不支持翻页）；Pixabay 最多可翻 500 条"
+    }
+  ],
+  "triggers": [],
+  "configFormFields": [
+    {
+      "name": "unsplashAccessKey",
+      "type": "password",
+      "labelText": "Unsplash Access Key",
+      "hintText": "unsplash.com 应用的 Access Key（注意不是 Secret Key），用 Unsplash 图源时必填",
+      "initialValue": "",
+      "required": false,
+      "validationMessage": "请填写 Unsplash Access Key"
+    },
+    {
+      "name": "pixabayKey",
+      "type": "password",
+      "labelText": "Pixabay API Key",
+      "hintText": "pixabay.com 个人中心生成的 Key，用 Pixabay 图源时必填",
+      "initialValue": "",
+      "required": false,
+      "validationMessage": "请填写 Pixabay API Key"
+    },
+    {
+      "name": "serpApiKey",
+      "type": "password",
+      "labelText": "SerpAPI Key",
+      "hintText": "serpapi.com 的 API Key，以图搜图（Google Lens）与 google/bing/yahoo/yandex 图源共用，用到时必填",
+      "initialValue": "",
+      "required": false,
+      "validationMessage": "请填写 SerpAPI Key"
+    },
+    {
+      "name": "googleHl",
+      "type": "text",
+      "labelText": "Google 界面语言",
+      "hintText": "Google 图源的 hl 参数，如 en / zh-CN（默认 en）",
+      "initialValue": "en",
+      "required": false
+    },
+    {
+      "name": "googleGl",
+      "type": "text",
+      "labelText": "Google 地区",
+      "hintText": "Google 图源的 gl 参数，如 us / cn（默认 us）",
+      "initialValue": "us",
+      "required": false
+    },
+    {
+      "name": "perPage",
+      "type": "number",
+      "labelText": "默认数量",
+      "hintText": "每次搜索返回几张（各图源范围内自动截断）",
+      "initialValue": 10,
+      "required": false
+    },
+    {
+      "name": "proxy",
+      "type": "text",
+      "labelText": "网络代理（可选）",
+      "hintText": "如 http://127.0.0.1:7890，留空自动使用系统代理",
+      "initialValue": "",
+      "required": false
+    },
+    {
+      "name": "showUi",
+      "type": "switchField",
+      "labelText": "搜索后自动展示界面",
+      "hintText": "关闭后仅返回数据，不打开结果页",
+      "initialValue": true,
+      "required": false
+    }
+  ],
+  "builtIn": true
+}

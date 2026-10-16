@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -12,6 +10,7 @@ import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 import 'package:aboutme/plugins/tracker/widgets/timer_dialog.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/wave_fill.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
 class GoalCard extends StatelessWidget {
@@ -110,7 +109,7 @@ class GoalCard extends StatelessWidget {
                                   // CustomPaint 无 child 时尺寸收缩为 0，
                                   // 必须定位撑满才可见
                                   Positioned.fill(
-                                    child: _WaveFill(
+                                    child: WaveFill(
                                       progress: progress,
                                       color: base,
                                       drawProgress: drawProgress,
@@ -421,7 +420,7 @@ class GoalListCard extends StatelessWidget {
                             child: ClipRRect(
                               borderRadius: theme.radii.xl,
                               // 液体波浪进度填充（水平风格，自左向右）
-                              child: _WaveFill(
+                              child: WaveFill(
                                 progress: progress,
                                 color: base,
                                 horizontal: true,
@@ -622,210 +621,6 @@ class GoalListCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// 卡片液体波浪填充：双层正弦波 + 渐变波体，
-/// 绘制方式参考 wave_progress_indicator 的 WavePainter。
-/// vertical 自下而上填充，horizontal（列表视图）自左向右填充；
-/// [drawProgress] 接外层 WiredDraw 描画进度，波浪在 30%–100% 阶段浮现
-class _WaveFill extends StatefulWidget {
-  const _WaveFill({
-    required this.progress,
-    required this.color,
-    this.horizontal = false,
-    this.drawProgress,
-  });
-
-  final double progress;
-  final Color color;
-  final bool horizontal;
-  final Animation<double>? drawProgress;
-
-  @override
-  State<_WaveFill> createState() => _WaveFillState();
-}
-
-class _WaveFillState extends State<_WaveFill>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 4800),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final draw = widget.drawProgress;
-    return AnimatedBuilder(
-      animation: draw == null
-          ? _controller
-          : Listenable.merge([_controller, draw]),
-      builder: (context, _) => CustomPaint(
-        painter: _WavePainter(
-          progress: widget.progress,
-          animationValue: _controller.value,
-          drawValue: draw?.value ?? 1,
-          color: widget.color,
-          horizontal: widget.horizontal,
-        ),
-      ),
-    );
-  }
-}
-
-class _WavePainter extends CustomPainter {
-  _WavePainter({
-    required this.progress,
-    required this.animationValue,
-    required this.drawValue,
-    required this.color,
-    this.horizontal = false,
-  });
-
-  final double progress;
-  final double animationValue;
-
-  /// 外层 WiredDraw 描画进度；1 = 无动画环境，立即全画
-  final double drawValue;
-  final Color color;
-  final bool horizontal;
-
-  /// 墨线描边先描（0–65%），波体随后浮现（30%–100%），见 design.md §10
-  double get fillPhase => ((drawValue - 0.3) / 0.7).clamp(0.0, 1.0);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (progress <= 0 || fillPhase <= 0) return;
-    if (horizontal) {
-      _paintHorizontal(canvas, size);
-    } else {
-      _paintVertical(canvas, size);
-    }
-  }
-
-  void _paintVertical(Canvas canvas, Size size) {
-    // 后层波：更浅、反向流动，形成前后景深
-    _drawWave(
-      canvas,
-      size,
-      level: -8,
-      amp: 9,
-      phase: -animationValue * 2 * pi,
-      horizontal: false,
-      paint: Paint()
-        ..color = color.mixWhite(0.25).withValues(alpha: 0.45 * fillPhase),
-    );
-    // 前层波 + 波体：自下而上渐弱
-    _drawWave(
-      canvas,
-      size,
-      level: 0,
-      amp: 7,
-      phase: animationValue * 2 * pi,
-      horizontal: false,
-      paint: Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [
-            color.withValues(alpha: 0.60 * fillPhase),
-            color.withValues(alpha: 0.38 * fillPhase),
-            color.withValues(alpha: 0.24 * fillPhase),
-          ],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
-    );
-  }
-
-  void _paintHorizontal(Canvas canvas, Size size) {
-    // 列表卡片较矮，波幅收敛避免波浪吞掉整行
-    _drawWave(
-      canvas,
-      size,
-      level: -5,
-      amp: 6,
-      phase: -animationValue * 2 * pi,
-      horizontal: true,
-      paint: Paint()
-        ..color = color.mixWhite(0.25).withValues(alpha: 0.45 * fillPhase),
-    );
-    // 前层波 + 波体：自左向右渐弱
-    _drawWave(
-      canvas,
-      size,
-      level: 0,
-      amp: 5,
-      phase: animationValue * 2 * pi,
-      horizontal: true,
-      paint: Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            color.withValues(alpha: 0.60 * fillPhase),
-            color.withValues(alpha: 0.38 * fillPhase),
-            color.withValues(alpha: 0.24 * fillPhase),
-          ],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
-    );
-  }
-
-  void _drawWave(
-    Canvas canvas,
-    Size size, {
-    required double level,
-    required double amp,
-    required double phase,
-    required bool horizontal,
-    required Paint paint,
-  }) {
-    final path = horizontal
-        ? _buildHorizontalPath(size, level, amp, phase)
-        : _buildVerticalPath(size, level, amp, phase);
-    canvas.drawPath(path, paint);
-  }
-
-  /// 垂直填充：波面沿 x 轴起伏，水位线 y = height * (1 - progress)
-  Path _buildVerticalPath(Size size, double level, double amp, double phase) {
-    final base = size.height * (1 - progress) + level;
-    final path = Path()..moveTo(0, base);
-    for (double x = 0; x <= size.width; x++) {
-      final y = base + sin((x / size.width * 2 * pi) + phase) * amp;
-      path.lineTo(x, y);
-    }
-    path
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    return path;
-  }
-
-  /// 水平填充：波面沿 y 轴起伏，进度线 x = width * progress
-  Path _buildHorizontalPath(Size size, double level, double amp, double phase) {
-    final base = size.width * progress + level;
-    final path = Path()..moveTo(base, 0);
-    for (double y = 0; y <= size.height; y++) {
-      final x = base + sin((y / size.height * 2 * pi) + phase) * amp;
-      path.lineTo(x, y);
-    }
-    path
-      ..lineTo(0, size.height)
-      ..lineTo(0, 0)
-      ..close();
-    return path;
-  }
-
-  @override
-  bool shouldRepaint(covariant _WavePainter old) =>
-      old.animationValue != animationValue ||
-      old.progress != progress ||
-      old.drawValue != drawValue ||
-      old.color != color ||
-      old.horizontal != horizontal;
 }
 
 /// 目标快捷操作面板：快捷/自定义添加进度 + 计时 + 完成切换

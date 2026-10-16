@@ -18,7 +18,7 @@ class ScriptLoader {
   static const List<String> builtInScriptIds = [
     'ai_image',
     'line_sticker',
-    'unsplash_search',
+    'image_search',
   ];
 
   ScriptLoader(this.storage);
