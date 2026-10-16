@@ -10,6 +10,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/screens/channel_list/controllers/channel_list_controller.dart';
 import 'package:aboutme/plugins/chat/screens/channel_list/widgets/channel_dialogs/channel_dialog.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 
 /// Chat 插件的底部栏组件
@@ -93,7 +94,7 @@ class _ChatBottomBarState extends State<ChatBottomBar>
     );
   }
 
-  /// 显示创建频道的对话框
+  /// 显示创建频道的底部弹层
   void _showAddChannelDialog() {
     // 获取当前激活的频道分类，排除"全部"和"未分组"
     String? defaultGroup = _channelListController.selectedGroup;
@@ -101,11 +102,11 @@ class _ChatBottomBarState extends State<ChatBottomBar>
       defaultGroup = null;
     }
 
-    showDSDialog(
+    SmoothBottomSheet.show(
       context: context,
-      theme: DSThemeBridge.resolve(context),
       builder:
           (context) => ChannelDialog(
+            asSheet: true,
             onAddChannel: (channel) async {
               await _channelListController.addChannel(channel);
             },

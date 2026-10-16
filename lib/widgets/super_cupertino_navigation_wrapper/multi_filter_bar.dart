@@ -185,11 +185,11 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
         if (widget.filterState.hasAnyFilter)
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: DSIconButton(
-              icon: DsIconKind.close,
-              size: 36,
-              color: ds.surfaceAlt,
-              iconColor: ds.danger,
+              child: DSIconButton(
+                icon: DsIconKind.close,
+                size: 36,
+                color: Colors.transparent,
+                iconColor: ds.danger,
               onPressed: _clearAllFilters,
               tooltip: '清空过滤',
             ),
@@ -212,11 +212,11 @@ class _MultiFilterBarState extends State<MultiFilterBar> {
       children: [
         // 返回按钮
         Padding(
-          padding: const EdgeInsets.only(left: 8),
+          padding: const EdgeInsets.only(left: 8, right: 8),
           child: DSIconButton(
             icon: DsIconKind.chevronLeft,
             size: 36,
-            color: ds.surfaceAlt,
+            color: Colors.transparent,
             iconColor: ds.textSub,
             onPressed: _backToList,
           ),

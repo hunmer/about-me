@@ -18,6 +18,8 @@ class ChannelDialog extends StatefulWidget {
   final Function(Channel)? onUpdateChannel;
   // 默认的频道分组
   final String? defaultGroup;
+  // 是否作为底部弹层内容展示（去掉对话框卡片外壳，由 sheet 提供容器）
+  final bool asSheet;
 
   const ChannelDialog({
     super.key,
@@ -26,6 +28,7 @@ class ChannelDialog extends StatefulWidget {
     this.onAddChannel,
     this.onUpdateChannel,
     this.defaultGroup,
+    this.asSheet = false,
   }) : assert(
          (isEditMode && channel != null && onUpdateChannel != null) ||
              (!isEditMode && onAddChannel != null),
@@ -159,76 +162,83 @@ class _ChannelDialogState extends State<ChannelDialog> {
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
+          final form = SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+                SizedBox(height: theme.spacing.lg),
+                CircleIconPicker(
+                  currentIcon: _selectedIcon,
+                  backgroundColor: _selectedColor,
+                  onIconSelected: (icon) {
+                    setState(() {
+                      _selectedIcon = icon;
+                    });
+                  },
+                  onColorSelected: (color) {
+                    setState(() {
+                      _selectedColor = color;
+                    });
+                  },
+                ),
+                SizedBox(height: theme.spacing.lg),
+                DSInput(
+                  controller: _titleController,
+                  label: 'chat_channelName'.tr,
+                  errorText: _titleError,
+                  onChanged: (_) {
+                    // 输入后清除错误提示
+                    if (_titleError != null) {
+                      setState(() => _titleError = null);
+                    }
+                  },
+                ),
+                SizedBox(height: theme.spacing.md),
+                DSInput(
+                  controller: _groupController,
+                  label: 'chat_channelGroupLabel'.tr,
+                  hint: 'chat_channelGroupHint'.tr,
+                ),
+                SizedBox(height: theme.spacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DSButton(
+                        label: 'chat_cancel'.tr,
+                        variant: DSButtonVariant.outline,
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                    SizedBox(width: theme.spacing.md),
+                    Expanded(
+                      child: DSButton(
+                        label: widget.isEditMode ? 'save'.tr : 'chat_create'.tr,
+                        onPressed: _submit,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+
+          if (widget.asSheet) {
+            return Padding(
+              padding: EdgeInsets.all(theme.spacing.xl),
+              child: form,
+            );
+          }
           return JellyBox(
             radius: theme.radii.xxl,
             padding: EdgeInsets.all(theme.spacing.xl),
             constraints: const BoxConstraints(maxWidth: 360),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: DsTypography.title.copyWith(color: theme.text),
-                  ),
-                  SizedBox(height: theme.spacing.lg),
-                  CircleIconPicker(
-                    currentIcon: _selectedIcon,
-                    backgroundColor: _selectedColor,
-                    onIconSelected: (icon) {
-                      setState(() {
-                        _selectedIcon = icon;
-                      });
-                    },
-                    onColorSelected: (color) {
-                      setState(() {
-                        _selectedColor = color;
-                      });
-                    },
-                  ),
-                  SizedBox(height: theme.spacing.lg),
-                  DSInput(
-                    controller: _titleController,
-                    label: 'chat_channelName'.tr,
-                    errorText: _titleError,
-                    onChanged: (_) {
-                      // 输入后清除错误提示
-                      if (_titleError != null) {
-                        setState(() => _titleError = null);
-                      }
-                    },
-                  ),
-                  SizedBox(height: theme.spacing.md),
-                  DSInput(
-                    controller: _groupController,
-                    label: 'chat_channelGroupLabel'.tr,
-                    hint: 'chat_channelGroupHint'.tr,
-                  ),
-                  SizedBox(height: theme.spacing.lg),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DSButton(
-                          label: 'chat_cancel'.tr,
-                          variant: DSButtonVariant.outline,
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ),
-                      SizedBox(width: theme.spacing.md),
-                      Expanded(
-                        child: DSButton(
-                          label:
-                              widget.isEditMode ? 'save'.tr : 'chat_create'.tr,
-                          onPressed: _submit,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            child: form,
           );
         },
       ),

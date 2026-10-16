@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/constants/app_icons.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -39,6 +40,8 @@ class TagFolderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     final previews = imageUrls.take(3).toList();
+    // 环境描画动画（外层 WiredDraw 注入）；null = 已画完
+    final progress = WiredDrawTransition.progressOf(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -66,6 +69,7 @@ class TagFolderCard extends StatelessWidget {
                       height: thumbH,
                       areaWidth: w,
                       theme: theme,
+                      progress: progress,
                     ),
 
                   // 空文件夹占位
@@ -76,9 +80,11 @@ class TagFolderCard extends StatelessWidget {
                       width: thumbW,
                       height: thumbH * 0.72,
                       child: Container(
-                        decoration: BoxDecoration(
-                          color: theme.paper,
-                          borderRadius: BorderRadius.circular(10),
+                        decoration: dsSketchDecoration(
+                          theme: theme,
+                          fillColor: theme.paper,
+                          radius: BorderRadius.circular(10),
+                          progress: progress,
                         ),
                         child: Center(
                           child: DsIcon(
@@ -104,6 +110,23 @@ class TagFolderCard extends StatelessWidget {
                           color:
                               (theme.isDark ? theme.surfaceAlt : theme.surface)
                                   .withValues(alpha: theme.isDark ? 0.55 : 0.6),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 前盖板手绘墨线描边（沿含 tab 的文件夹轮廓）
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: panelTop,
+                    bottom: 0,
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _FolderInkPainter(
+                          theme: theme,
+                          seed: tag.hashCode,
+                          progress: progress,
                         ),
                       ),
                     ),
@@ -138,11 +161,13 @@ class TagFolderCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 6),
-            Text(
-              '$count',
-              style: DsTypography.caption.copyWith(color: theme.textSub),
-            ),
+            if (count > 0) ...[
+              const SizedBox(width: 6),
+              Text(
+                '$count',
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+            ],
           ],
         ),
       ],
@@ -158,6 +183,7 @@ class TagFolderCard extends StatelessWidget {
     required double height,
     required double areaWidth,
     required AppThemeData theme,
+    Animation<double>? progress,
   }) {
     // 相对中心的偏移档位：单张居中，两张左右，三张左中右
     final slot = index - (count - 1) / 2; // -1, 0, 1
@@ -173,10 +199,15 @@ class TagFolderCard extends StatelessWidget {
       child: Transform.rotate(
         angle: angle,
         child: Container(
-          decoration: BoxDecoration(
-            color: theme.paper,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: theme.ink.withValues(alpha: 0.10)),
+          // 纸底 + 墨线抖动描边（手绘照片框）；seed 随 url 变化让墨迹有差异
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: theme.paper,
+            radius: BorderRadius.circular(10),
+            drawConfig: theme.wired.drawConfig.copyWith(
+              seed: url.hashCode & 0x7fffffff,
+            ),
+            progress: progress,
           ),
           padding: const EdgeInsets.all(3),
           child: ClipRRect(
@@ -284,6 +315,85 @@ class _FolderFrontClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+/// 前盖板手绘墨线描边：沿文件夹轮廓（含 tab 凸起）采样折线点，
+/// 交给 skribble rough 引擎画抖动墨线，随环境描画动画逐笔画出
+class _FolderInkPainter extends CustomPainter {
+  _FolderInkPainter({
+    required this.theme,
+    required this.seed,
+    this.progress,
+  }) : drawConfig = theme.wired.drawConfig.copyWith(
+         seed: seed & 0x7fffffff,
+       ),
+       super(repaint: progress);
+
+  final AppThemeData theme;
+
+  /// 墨迹种子（同一文件夹稳定不抖变，不同文件夹墨迹有差异）
+  final int seed;
+
+  /// 环境描画动画（null = 已画完）
+  final Animation<double>? progress;
+
+  final DrawConfig drawConfig;
+
+  Size? _size;
+  RoughDrawing? _drawing;
+
+  RoughDrawing _prepare(Size size) {
+    final strokeWidth = theme.wired.strokeWidth;
+    // 内缩半个线宽，墨线贴面板真实边界且不出界
+    final inset = strokeWidth / 2;
+    final outline = _FolderFrontClipper()
+        .getClip(Size(size.width - inset * 2, size.height - inset * 2))
+        .shift(Offset(inset, inset));
+
+    final points = <PointD>[];
+    for (final metric in outline.computeMetrics()) {
+      for (var pos = 0.0; pos < metric.length; pos += 6) {
+        final tangent = metric.getTangentForOffset(pos);
+        if (tangent != null) {
+          points.add(PointD(tangent.position.dx, tangent.position.dy));
+        }
+      }
+    }
+
+    drawConfig.randomizer.reset();
+    final drawable = Generator(drawConfig, NoFiller()).linearPath(points);
+
+    final inkPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..isAntiAlias = true
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = strokeWidth
+      ..color = theme.ink;
+    return RoughDrawing(drawable, inkPaint, inkPaint);
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    if (_size != size || _drawing == null) {
+      _drawing = _prepare(size);
+      _size = size;
+    }
+    canvas.save();
+    _drawing!.paint(
+      canvas,
+      progress: progress?.value ?? 1,
+      pressure: 0,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_FolderInkPainter oldDelegate) =>
+      oldDelegate.seed != seed ||
+      oldDelegate.theme != theme ||
+      !identical(oldDelegate.drawConfig, drawConfig);
 }
 
 /// 文件夹内缩略图（网络/本地路径自适应）

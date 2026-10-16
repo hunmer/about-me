@@ -7,6 +7,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/form_fields/circle_icon_picker_field.dart';
+import 'package:aboutme/widgets/tag_folder_card.dart';
 import '../models/models.dart';
 import 'tags_list.dart';
 import '../utils/json_storage.dart';
@@ -524,21 +525,103 @@ class _TagsDialogState extends State<TagsDialog> {
       onMultiFilterChanged: _onFilterChanged,
       multiFilterToggleable: true,
       actions: _buildActions(),
-      body: TagsList(
-        tags: _filteredTags,
-        selectedTags: _selectedTags,
-        isBatchEditMode: _isBatchEditMode,
-        config: widget.config,
-        selectionMode: widget.config.selectionMode,
-        tagItemBuilder: widget.tagItemBuilder,
-        onSelectTag: _selectTag,
-        onLongPress: widget.config.enableLongPressMenu
-            ? _showTagBottomSheet
-            : null,
-        onDeleteTap: widget.config.enableEditing ? _deleteTag : null,
-        onEditTap: widget.config.enableEditing ? _editTag : null,
-        onAddTag: widget.config.enableEditing ? _addTag : null,
+      body: Column(
+        children: [
+          Expanded(
+            child: TagsList(
+              tags: _filteredTags,
+              selectedTags: _selectedTags,
+              isBatchEditMode: _isBatchEditMode,
+              config: widget.config,
+              selectionMode: widget.config.selectionMode,
+              tagItemBuilder: widget.tagItemBuilder ?? _defaultFolderTagItem,
+              onSelectTag: _selectTag,
+              onLongPress: widget.config.enableLongPressMenu
+                  ? _showTagBottomSheet
+                  : null,
+              onDeleteTap: widget.config.enableEditing ? _deleteTag : null,
+              onEditTap: widget.config.enableEditing ? _editTag : null,
+              onAddTag: widget.config.enableEditing ? _addTag : null,
+            ),
+          ),
+          _buildBottomActions(),
+        ],
       ),
+    );
+  }
+
+  /// 底部操作栏：批量编辑模式下为批量删除图标，选择模式下为确定按钮
+  Widget _buildBottomActions() {
+    final canBatchDelete = _isBatchEditMode && _selectedTags.isNotEmpty;
+    final canConfirm =
+        !_isBatchEditMode &&
+        widget.config.selectionMode != TagsSelectionMode.none &&
+        _selectedTags.isNotEmpty;
+
+    if (!canBatchDelete && !canConfirm) return const SizedBox.shrink();
+
+    final theme = DSThemeBridge.resolve(context);
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 12 + bottomInset),
+      child: Row(
+        children: [
+          // 批量删除（批量编辑模式且选中了标签）
+          if (canBatchDelete) ...[
+            DSIconButton(
+              icon: DsIconKind.trash,
+              size: 44,
+              color: theme.surfaceAlt,
+              iconColor: theme.danger,
+              tooltip: 'app_delete'.tr,
+              onPressed: _batchDeleteSelected,
+            ),
+            const SizedBox(width: 12),
+          ],
+          // 确认选择（选择模式下且非批量编辑模式）
+          if (canConfirm)
+            Expanded(
+              child: DSButton(
+                label:
+                    '${widget.config.confirmButtonText}(${_selectedTags.length})',
+                onPressed: _confirmSelection,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 默认标签项渲染：手绘文件夹卡片（无图片源，空文件夹）+ 选中态角标
+  Widget _defaultFolderTagItem(
+    BuildContext context,
+    TagItem tag,
+    bool isSelected,
+  ) {
+    final theme = DSThemeBridge.resolve(context);
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // TagFolderCard 内部依赖有界高度（Expanded），用 AspectRatio 撑出格子尺寸
+        AspectRatio(
+          aspectRatio: 0.8,
+          child: TagFolderCard(tag: tag.name, imageUrls: const [], count: 0),
+        ),
+        if (isSelected)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: JellyBox(
+              width: 22,
+              height: 22,
+              radius: theme.radii.circle,
+              color: theme.primary,
+              child: DsIcon(DsIconKind.check, size: 14, color: theme.onPrimary),
+            ),
+          ),
+      ],
     );
   }
 
@@ -563,17 +646,7 @@ class _TagsDialogState extends State<TagsDialog> {
       );
     }
 
-    // 批量删除按钮（批量编辑模式下且选中了标签）
-    if (_isBatchEditMode && _selectedTags.isNotEmpty) {
-      actions.add(
-        DSButton(
-          label: '${'app_delete'.tr}(${_selectedTags.length})',
-          size: DSButtonSize.sm,
-          variant: DSButtonVariant.destructive,
-          onPressed: _batchDeleteSelected,
-        ),
-      );
-    }
+    // 批量删除与确认选择按钮已移至底部操作栏（_buildBottomActions）
 
     // 添加标签按钮（非批量编辑模式）
     if (!_isBatchEditMode && widget.config.enableEditing) {
@@ -583,19 +656,6 @@ class _TagsDialogState extends State<TagsDialog> {
           size: 34,
           tooltip: widget.config.addTagText,
           onPressed: _showAddTagUI,
-        ),
-      );
-    }
-
-    // 确认按钮（选择模式下且非批量编辑模式）
-    if (!_isBatchEditMode &&
-        widget.config.selectionMode != TagsSelectionMode.none &&
-        _selectedTags.isNotEmpty) {
-      actions.add(
-        DSButton(
-          label: '${widget.config.confirmButtonText}(${_selectedTags.length})',
-          size: DSButtonSize.sm,
-          onPressed: _confirmSelection,
         ),
       );
     }
