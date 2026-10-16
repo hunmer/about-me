@@ -251,99 +251,82 @@ class _BillListScreenSupercupertinoState
     final date = DateTime(day.year, day.month, day.day);
     final stats = _dailyStats[date];
     final isToday = _isSameDay(DateTime.now(), day);
-    final isIncomePositive = (stats?.income ?? 0) > 0;
-    final isExpensePositive = (stats?.expense ?? 0) > 0;
+    final income = stats?.income ?? 0;
+    final expense = stats?.expense ?? 0;
+    final hasData = income > 0 || expense > 0;
+
+    // 背景按收支占比双色填充：上绿（收入）下红（支出），分界线即占比
+    Gradient? background;
+    if (hasData) {
+      final total = income + expense;
+      final incomeRatio = total > 0 ? income / total : 0.0;
+      final incomeBg = _incomeColor.withValues(alpha: 0.20);
+      final expenseBg = _expenseColor.withValues(alpha: 0.20);
+      background = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [incomeBg, incomeBg, expenseBg, expenseBg],
+        stops: [0.0, incomeRatio, incomeRatio, 1.0],
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.all(2),
       decoration: BoxDecoration(
-        color: isSelected ? _primaryColor.withOpacity(0.2) : null,
-        border: isToday ? Border.all(color: _primaryColor, width: 2) : null,
+        gradient: background,
+        border: isToday
+            ? Border.all(color: _primaryColor, width: 2)
+            : (isSelected ? Border.all(color: _primaryColor, width: 1.5) : null),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
-        // 日期靠上，收支 badge 组贴单元格底部
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        // 日期居中，下方收支"圆点+数字"分两行
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             '${day.day}',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
               color: isSelected ? _primaryColor : theme.text,
             ),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 始终显示收入位置（有数据显示badge，无数据显示空占位）
-              SizedBox(
-                height: 14,
-                child: isIncomePositive
-                    ? _buildStatBadge(
-                        stats!.income,
-                        _incomeColor,
-                        DsIconKind.chevronDown,
-                        // 绿底对比度低，文字用墨色
-                        textColor: theme.ink,
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 3),
-              // 始终显示支出位置（有数据显示badge，无数据显示空占位）
-              SizedBox(
-                height: 14,
-                child: isExpensePositive
-                    ? _buildStatBadge(
-                        stats!.expense,
-                        _expenseColor,
-                        DsIconKind.chevronUp,
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ],
-          ),
+          if (income > 0) ...[
+            const SizedBox(height: 2),
+            _buildDotStat(income, _incomeColor),
+          ],
+          if (expense > 0) ...[
+            const SizedBox(height: 2),
+            _buildDotStat(expense, _expenseColor),
+          ],
         ],
       ),
     );
   }
 
-  /// 日历单元格收支 badge：占满单元格宽度的高亮胶囊底
-  /// [textColor] 不传时用 [color]（如绿色底传墨色文字提高对比）
-  Widget _buildStatBadge(
-    double amount,
-    Color color,
-    DsIconKind icon, {
-    Color? textColor,
-  }) {
-    return Container(
-      width: double.infinity,
-      height: 14,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: color.withValues(alpha: 0.55), width: 1),
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DsIcon(icon, size: 10, color: color),
-            const SizedBox(width: 2),
-            Text(
-              amount.toInt().toString(),
-              style: TextStyle(
-                fontSize: 10,
-                color: textColor ?? color,
-                fontWeight: FontWeight.w700,
-              ),
+  /// 日历单元格"圆点+金额"行，过宽时整体缩放
+  Widget _buildDotStat(double amount, Color color) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            amount.toInt().toString(),
+            style: TextStyle(
+              fontSize: 10,
+              color: color,
+              fontWeight: FontWeight.w700,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -13,7 +13,7 @@ import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
-import 'package:aboutme/widgets/form_modal_sheet.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 /// 纪念日主页（v2 · Warm Paper Sketch 手绘里程碑网格）
@@ -79,20 +79,58 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
   ]) async {
     if (!mounted) return;
 
-    // 新建/编辑：smooth_sheets 底部弹层（保存/删除经 DialogResult 返回）
+    // 新建/编辑：SmoothBottomSheet 弹层，高度贴合内容（保存/删除经 DialogResult 返回）
     VoidCallback? saveMemorialDay;
-    final result = await FormModalSheet.show<DialogResult>(
+    final result = await SmoothBottomSheet.show<DialogResult>(
       context: context,
-      title: memorialDay == null
-          ? 'day_addMemorialDay'.tr
-          : 'day_editMemorialDay'.tr,
-      child: EditMemorialDayPage(
-        memorialDay: memorialDay,
-        embedInSheet: true,
-        onReady: (save) => saveMemorialDay = save,
+      builder: (sheetContext) => DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    theme.spacing.md,
+                    theme.spacing.sm,
+                    theme.spacing.md,
+                    0,
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 36),
+                      Expanded(
+                        child: Text(
+                          memorialDay == null
+                              ? 'day_addMemorialDay'.tr
+                              : 'day_editMemorialDay'.tr,
+                          textAlign: TextAlign.center,
+                          style: DsTypography.title.copyWith(
+                            color: theme.text,
+                          ),
+                        ),
+                      ),
+                      DSButton(
+                        label: 'app_save'.tr,
+                        size: DSButtonSize.sm,
+                        icon: DsIconKind.check,
+                        onPressed: () => saveMemorialDay?.call(),
+                      ),
+                    ],
+                  ),
+                ),
+                EditMemorialDayPage(
+                  memorialDay: memorialDay,
+                  embedInSheet: true,
+                  onReady: (save) => saveMemorialDay = save,
+                ),
+              ],
+            );
+          },
+        ),
       ),
-      onSave: () => saveMemorialDay?.call(),
-      submitInTitleBar: true,
     );
 
     if (result == null) return; // 页面被异常关闭

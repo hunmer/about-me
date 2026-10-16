@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
@@ -52,6 +53,7 @@ class _PluginListDialogState extends State<PluginListDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     // 获取屏幕宽度以计算合适的网格列数
     final screenWidth = MediaQuery.of(context).size.width;
     // 根据屏幕宽度计算合适的网格列数
@@ -78,10 +80,13 @@ class _PluginListDialogState extends State<PluginListDialog> {
             transitionBetweenRoutes: false,
             stretch: false,
             // 对话框场景不透出全局自定义背景
-            backgroundColor: AppTheme.of(context).background,
+            backgroundColor: theme.background,
             actions: [
-              IconButton(
-                icon: const Icon(Icons.settings),
+              DSIconButton(
+                icon: DsIconKind.gear,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.text,
                 tooltip: 'app_settings'.tr,
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -106,11 +111,9 @@ class _PluginListDialogState extends State<PluginListDialog> {
     final filtered = _filterPlugins(_allPlugins);
     if (filtered.isEmpty) {
       return Center(
-        child: Text(
-          'core_noMatchingPlugins'.tr,
-          style: DsTypography.body.copyWith(
-            color: AppTheme.of(context).textSub,
-          ),
+        child: DSEmptyState(
+          icon: DsIconKind.search,
+          title: 'core_noMatchingPlugins'.tr,
         ),
       );
     }
@@ -137,20 +140,17 @@ class _PluginListDialogState extends State<PluginListDialog> {
     );
   }
 
-  // 构建插件卡片
+  // 构建插件卡片：手绘卡片 + 墨线圆形图标 + 挂载描画入场
   Widget _buildPluginCard(BuildContext context, PluginBase plugin) {
+    final theme = AppTheme.of(context);
     final isPinned = PluginManager.instance.isPluginPinned(plugin.id);
-    // 如果没有自定义卡片视图，使用默认卡片布局
     return GestureDetector(
-      // 移动端长按 / 桌面端右键弹出操作菜单
-      onLongPressStart: (details) =>
-          _showPluginMenu(context, plugin, details.globalPosition),
-      onSecondaryTapUp: (details) =>
-          _showPluginMenu(context, plugin, details.globalPosition),
-      child: Card(
-        elevation: 2,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(4),
+      // 移动端长按 / 桌面端右键弹出快捷操作
+      onLongPressStart: (_) => _showPluginMenu(context, plugin),
+      onSecondaryTapUp: (_) => _showPluginMenu(context, plugin),
+      child: WiredDraw(
+        child: DSCard(
+          padding: const EdgeInsets.all(6),
           onTap: () {
             Navigator.of(context).pop();
             // 目标路由等于当前路由时无需跳转（openPlugin 内的防重复判断
@@ -166,29 +166,32 @@ class _PluginListDialogState extends State<PluginListDialog> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 插件图标：图标颜色作背景，图标白色高亮
+                  // 插件图标：插件色实底圆盘 + 墨线抖动描边
                   Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: plugin.color ?? Theme.of(context).primaryColor,
-                      shape: BoxShape.circle,
+                    width: 48,
+                    height: 48,
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      fillColor: plugin.color ?? theme.primary,
+                      circle: true,
                     ),
+                    // plugin.icon 为插件自定义的 Material IconData，
+                    // 无法映射到 DsIconKind，保持 Icon 渲染
                     child: Icon(
                       plugin.icon ?? Icons.extension,
-                      size: 28,
+                      size: 24,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   // 插件名称
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 2.0),
                     child: Text(
                       plugin.getPluginName(context) ?? plugin.id,
-                      style: const TextStyle(
+                      style: DsTypography.body.copyWith(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        color: theme.text,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 2,
@@ -200,36 +203,33 @@ class _PluginListDialogState extends State<PluginListDialog> {
               // 固定标识
               if (isPinned)
                 Positioned(
-                  top: 4,
+                  top: 2,
                   left: 4,
-                  child: Icon(
-                    Icons.push_pin,
-                    size: 14,
-                    color: AppTheme.of(context).primary,
+                  child: DsIcon(
+                    DsIconKind.pin,
+                    size: 16,
+                    color: theme.primary,
                   ),
                 ),
               // 插件设置入口（仅有设置页面的插件显示）
               if (plugin.hasSettingsView)
                 Positioned(
-                  top: 0,
-                  right: 0,
-                  child: SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      iconSize: 16,
-                      icon: const Icon(Icons.settings),
-                      tooltip: 'app_settings'.tr,
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        NavigationHelper.push(
-                          context,
-                          plugin.buildSettingsView(context),
-                          routeName: '/plugin/${plugin.id}/settings',
-                        );
-                      },
-                    ),
+                  top: 2,
+                  right: 2,
+                  child: DSIconButton(
+                    icon: DsIconKind.gear,
+                    size: 30,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    tooltip: 'app_settings'.tr,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      NavigationHelper.push(
+                        context,
+                        plugin.buildSettingsView(context),
+                        routeName: '/plugin/${plugin.id}/settings',
+                      );
+                    },
                   ),
                 ),
             ],
@@ -239,62 +239,37 @@ class _PluginListDialogState extends State<PluginListDialog> {
     );
   }
 
-  /// 长按卡片弹出操作菜单：固定/取消固定、小窗打开
-  Future<void> _showPluginMenu(
-    BuildContext cardContext,
-    PluginBase plugin,
-    Offset globalPosition,
-  ) async {
-    final overlay = Overlay.of(cardContext);
-    final overlayBox = overlay.context.findRenderObject() as RenderBox;
-    final size = overlayBox.size;
-    final position = RelativeRect.fromLTRB(
-      globalPosition.dx,
-      globalPosition.dy,
-      size.width - globalPosition.dx,
-      size.height - globalPosition.dy,
-    );
-
+  /// 长按卡片弹出快捷操作面板：固定/取消固定、小窗打开
+  Future<void> _showPluginMenu(BuildContext cardContext, PluginBase plugin) {
     final isPinned = PluginManager.instance.isPluginPinned(plugin.id);
-    final result = await showMenu<String>(
+    return showDSBottomSheet(
       context: cardContext,
-      position: position,
-      items: [
-        PopupMenuItem(
-          value: 'pin',
-          child: Row(
-            children: [
-              Icon(Icons.push_pin, size: 18),
-              const SizedBox(width: 8),
-              Text(isPinned ? 'core_unpinPlugin'.tr : 'core_pinPlugin'.tr),
-            ],
+      title: plugin.getPluginName(cardContext) ?? plugin.id,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DSSheetAction(
+            icon: DsIconKind.pin,
+            label: isPinned ? 'core_unpinPlugin'.tr : 'core_pinPlugin'.tr,
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              PluginManager.instance.togglePluginPin(plugin.id);
+              // 刷新列表，固定项移动到最前
+              setState(() {});
+            },
           ),
-        ),
-        PopupMenuItem(
-          value: 'overlay',
-          child: Row(
-            children: [
-              Icon(Icons.picture_in_picture_alt, size: 18),
-              const SizedBox(width: 8),
-              Text('core_openInOverlay'.tr),
-            ],
+          DSSheetAction(
+            icon: DsIconKind.pictureInPicture,
+            label: 'core_openInOverlay'.tr,
+            onTap: () {
+              Navigator.of(sheetContext).pop(); // 关闭操作面板
+              Navigator.of(context).pop(); // 关闭插件列表对话框
+              PluginOverlayManager().showPluginOverlay(context, plugin);
+            },
           ),
-        ),
-      ],
+        ],
+      ),
     );
-    if (!mounted || result == null) return;
-
-    switch (result) {
-      case 'pin':
-        PluginManager.instance.togglePluginPin(plugin.id);
-        // 刷新列表，固定项移动到最前
-        setState(() {});
-        break;
-      case 'overlay':
-        Navigator.of(context).pop(); // 关闭插件列表对话框
-        PluginOverlayManager().showPluginOverlay(context, plugin);
-        break;
-    }
   }
 }
 

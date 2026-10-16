@@ -7,9 +7,14 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 import 'screens/diary_calendar_screen.dart';
+import 'screens/diary_editor_screen.dart';
+import 'screens/diary_stats_screen.dart';
 import 'dart:convert';
 import 'package:path/path.dart' as path;
 import 'models/diary_entry.dart';
@@ -72,17 +77,77 @@ class DiaryMainView extends StatefulWidget {
 class _DiaryMainViewState extends State<DiaryMainView> {
   late DiaryPlugin _plugin;
 
+  // 当前 tab：0 日历 / 1 统计
+  int _currentTab = 0;
+
   @override
   void initState() {
     super.initState();
     _plugin = PluginManager.instance.getPlugin('diary') as DiaryPlugin;
   }
 
+  /// subbar 右侧圆钮：新建/编辑今日日记（编辑选中日走详情 sheet 的编辑按钮）
+  Future<void> _createTodayDiary() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    DiaryEntry? entry;
+    for (final cached in _plugin.getMonthlyDiaryEntriesSync()) {
+      if (cached.$1.isAtSameMomentAs(today)) {
+        entry = cached.$2;
+        break;
+      }
+    }
+    await NavigationHelper.push(
+      context,
+      DiaryEditorScreen(
+        date: today,
+        storage: _plugin.storage,
+        initialTitle: entry?.title ?? '',
+        initialContent: entry?.content ?? '',
+      ),
+    );
+    if (mounted) {
+      // 日历 tab 订阅该事件重新加载条目（原 FAB 的 .then 刷新由这里接管）
+      EventManager.instance.broadcast('diary_refresh', EventArgs());
+    }
+  }
+
+  /// 底部弧形圆盘导航栏：日历/统计双 tab，subbar 右侧圆钮为新建入口
+  Widget _buildBottomBar() {
+    final theme = DSThemeBridge.resolve(context);
+    return SafeArea(
+      top: false,
+      child: DSBottomNavigation(
+        items: [
+          DSNavItem(icon: DsIconKind.calendar, label: '日历'),
+          DSNavItem(icon: DsIconKind.chart, label: '统计'),
+        ],
+        currentIndex: _currentTab,
+        // onTap 不能为 null：null 会触发内部 IgnorePointer 包裹整个导航栏，
+        // 连同 trailingAction 圆钮的点击一起被吞掉
+        onTap: (index) => setState(() => _currentTab = index),
+        trailingAction: DsIcon(DsIconKind.plus, size: 20, color: theme.text),
+        onTrailingTap: _createTodayDiary,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DiaryCalendarScreen(
-      storage: _plugin.storage,
-      initialDate: widget.initialDate,
+    return Stack(
+      children: [
+        IndexedStack(
+          index: _currentTab,
+          children: [
+            DiaryCalendarScreen(
+              storage: _plugin.storage,
+              initialDate: widget.initialDate,
+            ),
+            const DiaryStatsScreen(),
+          ],
+        ),
+        Positioned(left: 0, right: 0, bottom: 0, child: _buildBottomBar()),
+      ],
     );
   }
 }

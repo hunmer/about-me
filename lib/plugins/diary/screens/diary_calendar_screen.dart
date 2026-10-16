@@ -62,7 +62,6 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
 
   // GlobalKeys for OpenContainer animation
   final GlobalKey _editButtonKey = GlobalKey();
-  final GlobalKey _fabKey = GlobalKey();
 
   @override
   void initState() {
@@ -166,16 +165,6 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
   DiaryEntry? _todayEntry() {
     final now = DateTime.now();
     return _diaryEntries[DateTime(now.year, now.month, now.day)];
-  }
-
-  /// 读取 sheet 当前可见比例；sheet 未完成首帧布局前 offset 为 null
-  /// （读取会触发空断言），此时返回 null
-  double? _safeSheetOffset() {
-    try {
-      return _sheetController.value;
-    } catch (_) {
-      return null;
-    }
   }
 
   /// 关闭详情 sheet（完全隐藏）
@@ -424,9 +413,11 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
 
               const SizedBox(height: 34),
 
-              // Calendar（填满剩余可用高度）
+              // Calendar（填满剩余可用高度；底部留白避开悬浮导航栏）
               Expanded(
-                child: SfCalendar(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 100),
+                  child: SfCalendar(
                   controller: _calendarController,
                   view: CalendarView.month,
                   initialDisplayDate: _focusedDay,
@@ -496,59 +487,13 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                     }
                   },
                 ),
+                ),
               ),
             ],
           ),
         ),
         // 底部详情 sheet（smooth_sheets：拖拽吸附，选中日期时展开）
         _buildDetailSheet(theme, selectedEntry, textColor, primaryColor),
-
-        // FAB with container transform animation（sheet 展开时随偏移淡出避让）
-        Positioned(
-          bottom: 16,
-          right: 16,
-          child: AnimatedBuilder(
-            animation: _sheetController,
-            builder: (context, child) {
-              // controller.value 为 sheet 可见高度（像素），弹出后渐隐；
-              // sheet 首帧布局完成前 offset 不可读，视为隐藏态（FAB 可见）
-              final offset = _safeSheetOffset() ?? 0;
-              final progress = (offset / 120).clamp(0.0, 1.0);
-              final opacity = 1 - progress;
-              return IgnorePointer(
-                ignoring: opacity < 0.5,
-                child: Opacity(opacity: opacity, child: child),
-              );
-            },
-            child: DSFab(
-              key: _fabKey,
-              size: 56,
-              onPressed: () {
-                final targetDay = _selectedDay ?? DateTime.now();
-                final normalizedTargetDay = DateTime(
-                  targetDay.year,
-                  targetDay.month,
-                  targetDay.day,
-                );
-                // 获取当前选中日期的条目
-                final entry = _diaryEntries[normalizedTargetDay];
-                NavigationHelper.openContainerWithHero(
-                  context,
-                  (_) => DiaryEditorScreen(
-                    date: normalizedTargetDay,
-                    storage: widget.storage,
-                    initialTitle: entry?.title ?? '',
-                    initialContent: entry?.content ?? '',
-                  ),
-                  sourceKey: _fabKey,
-                  heroTag: 'diary_fab_add',
-                  closedColor: primaryColor,
-                  closedShape: const CircleBorder(),
-                ).then((_) => _loadDiaryEntries());
-              },
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -608,7 +553,8 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
               child: SizedBox(
                 height: viewportHeight,
                 child: ListView(
-                  padding: EdgeInsets.only(bottom: bottomInset + 16),
+                  // 底部留白避开悬浮导航栏
+                  padding: EdgeInsets.only(bottom: bottomInset + 120),
                   children: [
                     // 把手
                     Center(

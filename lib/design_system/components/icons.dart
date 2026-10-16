@@ -100,6 +100,7 @@ enum DsIconKind {
   target,
   personOff,
   touchApp,
+  pictureInPicture,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -198,6 +199,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.target: Icons.track_changes,
   DsIconKind.personOff: Icons.person_off,
   DsIconKind.touchApp: Icons.touch_app,
+  DsIconKind.pictureInPicture: Icons.picture_in_picture_alt,
 };
 
 /// 图标组件：基于系统 Material Icons
