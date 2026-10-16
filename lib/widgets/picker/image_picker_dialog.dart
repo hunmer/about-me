@@ -128,6 +128,10 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
   /// 多选模式下已选中的图片 key
   final List<String> _selected = [];
 
+  /// 运行时多选状态：初始取 widget.multiple，
+  /// 单选模式下长按图片可切换为多选（对齐微信交互）
+  late bool _multiple = widget.multiple;
+
   static const _imageExtensions = {
     '.jpg',
     '.jpeg',
@@ -313,7 +317,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
 
   /// 点击网格内已有图片
   Future<void> _selectImage(String key) async {
-    if (widget.multiple) {
+    if (_multiple) {
       setState(() {
         _selected.contains(key) ? _selected.remove(key) : _selected.add(key);
       });
@@ -327,6 +331,23 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         'bytes': bytes,
       });
     }
+  }
+
+  /// 长按图片：单选模式切入多选并选中该图；已是多选则忽略
+  void _longPressImage(String key) {
+    if (_multiple) return;
+    setState(() {
+      _multiple = true;
+      _selected.add(key);
+    });
+  }
+
+  /// 取消多选：退回单选模式并清空已选
+  void _cancelMultiple() {
+    setState(() {
+      _multiple = false;
+      _selected.clear();
+    });
   }
 
   Future<void> _confirmMultiple() async {
@@ -424,7 +445,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
                 onFilterChanged: (_) => setState(() {}),
               ),
             SizedBox(height: screenHeight * 0.5, child: _buildGrid(theme)),
-            if (widget.multiple) _buildConfirmBar(theme),
+            if (_multiple) _buildConfirmBar(theme),
             SafeArea(
               top: false,
               child: SizedBox(height: theme.spacing.sm),
@@ -441,13 +462,24 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
       components: NavigationBarStaticComponents(
         keys: _navBarKeys,
         route: null,
-        // 无返回钮：底部弹窗通过下滑手势或点击遮罩关闭
-        userLeading: null,
+        // 单选：无返回钮（下滑或点遮罩关闭）；多选：左侧为取消按钮
+        userLeading:
+            _multiple
+                ? TextButton(
+                    onPressed: _cancelMultiple,
+                    child: Text(
+                      'app_cancel'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  )
+                : null,
         automaticallyImplyLeading: false,
         automaticallyImplyTitle: false,
         previousPageTitle: null,
         userMiddle: Text(
-          widget.multiple
+          _multiple
               ? 'image_picker_selectMultipleImages'.tr
               : 'image_picker_selectImage'.tr,
           style: DsTypography.title.copyWith(color: theme.text),
@@ -513,7 +545,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     final result = await Navigator.of(context).push<dynamic>(
       ModalSheetRoute<dynamic>(
         swipeDismissible: true,
-        builder: (context) => _ImageSearchSheet(multiple: widget.multiple),
+        builder: (context) => _ImageSearchSheet(multiple: _multiple),
       ),
     );
     if (result != null && mounted) {
@@ -680,6 +712,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
 
     return GestureDetector(
       onTap: () => _selectImage(key),
+      onLongPress: () => _longPressImage(key),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: theme.radii.md,
@@ -706,7 +739,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
                       ),
                     ),
               ),
-              if (widget.multiple)
+              if (_multiple)
                 Positioned(
                   top: 4,
                   right: 4,
@@ -723,13 +756,17 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
                           isSelected ? null : Border.all(color: Colors.white70),
                     ),
                     child: Center(
-                      child: Text(
-                        '$selectedIndex',
-                        style: DsTypography.caption.copyWith(
-                          color: Colors.white,
-                          fontSize: 11,
-                        ),
-                      ),
+                      // 未选中时角标为空圈，不显示序号（避免 indexOf(-1)+1 显示 0）
+                      child:
+                          isSelected
+                              ? Text(
+                                '$selectedIndex',
+                                style: DsTypography.caption.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              )
+                              : const SizedBox.shrink(),
                     ),
                   ),
                 ),
@@ -740,24 +777,133 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     );
   }
 
+  /// 多选确认栏：左侧已选缩略图横滑条（右上 × 移除、长按拖拽排序）
+  /// + 右侧确认按钮
   Widget _buildConfirmBar(AppThemeData theme) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
       child: Row(
         children: [
-          Text(
-            _selected.isEmpty
-                ? ''
-                : 'image_picker_selected'.trParams({
-                  'n': '${_selected.length}',
-                }),
-            style: DsTypography.caption.copyWith(color: theme.textSub),
+          Expanded(
+            child: SizedBox(
+              height: 60,
+              child: ReorderableListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 4,
+                  horizontal: 2,
+                ),
+                itemCount: _selected.length,
+                onReorder: _onReorderSelected,
+                itemBuilder: (context, index) {
+                  final key = _selected[index];
+                  return _buildSelectedThumb(
+                    theme,
+                    key,
+                    index,
+                    keyId: ValueKey(key),
+                  );
+                },
+              ),
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           DSButton(
             label: 'app_confirm'.tr,
             size: DSButtonSize.sm,
             onPressed: _selected.isEmpty ? null : _confirmMultiple,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 拖拽排序回调：调整已选顺序
+  void _onReorderSelected(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final item = _selected.removeAt(oldIndex);
+      _selected.insert(newIndex, item);
+    });
+  }
+
+  /// 已选缩略图：右上 × 移除，左下序号（与网格勾选序号一致）
+  Widget _buildSelectedThumb(
+    AppThemeData theme,
+    String key,
+    int index, {
+    required ValueKey<String> keyId,
+  }) {
+    return Padding(
+      key: keyId,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: theme.radii.sm,
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Image(
+                image: ImageUtils.createImageProvider('./$key'),
+                fit: BoxFit.cover,
+                errorBuilder:
+                    (_, _, _) => Container(
+                      color: theme.stroke,
+                      child: Center(
+                        child: DsIcon(
+                          DsIconKind.image,
+                          size: 18,
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ),
+              ),
+            ),
+          ),
+          // 左下序号
+          Positioned(
+            left: 2,
+            bottom: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '${index + 1}',
+                style: DsTypography.caption.copyWith(
+                  color: Colors.white,
+                  fontSize: 9,
+                ),
+              ),
+            ),
+          ),
+          // 右上取消图标（点 × 移除该图）
+          Positioned(
+            top: -6,
+            right: -6,
+            child: GestureDetector(
+              onTap: () => setState(() => _selected.remove(key)),
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.text,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                child: Center(
+                  child: DsIcon(
+                    DsIconKind.close,
+                    size: 10,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -771,7 +917,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         context,
         pickerConfig: AssetPickerConfig(
           requestType: RequestType.image,
-          maxAssets: widget.multiple ? 30 : 1,
+          maxAssets: _multiple ? 30 : 1,
         ),
       );
       if (entities == null || entities.isEmpty) {
@@ -800,7 +946,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     try {
       debugPrint('开始选择图片...');
       final List<XFile> images =
-          widget.multiple
+          _multiple
               ? (await _picker.pickMultiImage())
               : [
                 await _picker.pickImage(source: ImageSource.gallery),
@@ -913,8 +1059,8 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
 
       debugPrint('所有图片处理完成，结果数量: ${results.length}');
       if (results.isNotEmpty && context.mounted) {
-        final result = widget.multiple ? results : results.first;
-        debugPrint('返回结果，类型: ${widget.multiple ? "多张" : "单张"}');
+        final result = _multiple ? results : results.first;
+        debugPrint('返回结果，类型: ${_multiple ? "多张" : "单张"}');
         Navigator.of(context).pop(result);
       } else {
         debugPrint('警告: 结果为空或上下文未挂载');
@@ -1566,13 +1712,17 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
                               : Border.all(color: Colors.white70),
                     ),
                     child: Center(
-                      child: Text(
-                        '$selectedIndex',
-                        style: DsTypography.caption.copyWith(
-                          color: Colors.white,
-                          fontSize: 11,
-                        ),
-                      ),
+                      // 未选中时角标为空圈，不显示序号（避免 indexOf(-1)+1 显示 0）
+                      child:
+                          isSelected
+                              ? Text(
+                                '$selectedIndex',
+                                style: DsTypography.caption.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              )
+                              : const SizedBox.shrink(),
                     ),
                   ),
                 ),
@@ -1583,20 +1733,102 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
     );
   }
 
+  /// 多选确认栏：左侧已选缩略图横滑条（右上 × 移除、长按拖拽排序）
+  /// + 右侧确认按钮
   Widget _buildConfirmBar(AppThemeData theme) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
       child: Row(
         children: [
-          Text(
-            _selected.isEmpty
-                ? ''
-                : 'image_picker_selected'.trParams({
-                  'n': '${_selected.length}',
-                }),
-            style: DsTypography.caption.copyWith(color: theme.textSub),
+          Expanded(
+            child: SizedBox(
+              height: 60,
+              child: ReorderableListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 4,
+                  horizontal: 2,
+                ),
+                itemCount: _selected.length,
+                onReorder: _onReorderSelected,
+                itemBuilder: (context, index) {
+                  final imgIndex = _selected[index];
+                  final img = _images[imgIndex];
+                  final thumbUrl =
+                      (img['thumb'] as String? ?? '').isNotEmpty
+                      ? img['thumb'] as String
+                      : img['url'] as String? ?? '';
+                  return Padding(
+                    key: ValueKey(imgIndex),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        ClipRRect(
+                          borderRadius: theme.radii.sm,
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: _buildThumb(theme, thumbUrl),
+                          ),
+                        ),
+                        // 左下序号
+                        Positioned(
+                          left: 2,
+                          bottom: 2,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${index + 1}',
+                              style: DsTypography.caption.copyWith(
+                                color: Colors.white,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 右上取消图标（点 × 移除该图）
+                        Positioned(
+                          top: -6,
+                          right: -6,
+                          child: GestureDetector(
+                            onTap: () => setState(() => _selected.remove(index)),
+                            child: Container(
+                              width: 18,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: theme.text,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Center(
+                                child: DsIcon(
+                                  DsIconKind.close,
+                                  size: 10,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           DSButton(
             label: 'app_confirm'.tr,
             size: DSButtonSize.sm,
@@ -1605,5 +1837,14 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
         ],
       ),
     );
+  }
+
+  /// 拖拽排序回调：调整已选顺序（元素为结果下标）
+  void _onReorderSelected(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final item = _selected.removeAt(oldIndex);
+      _selected.insert(newIndex, item);
+    });
   }
 }

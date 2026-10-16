@@ -89,6 +89,10 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
   /// 多选模式下已选中的视频 key
   final List<String> _selected = [];
 
+  /// 运行时多选状态：初始取 widget.multiple，
+  /// 单选模式下长按视频可切换为多选（与图片选择器交互一致）
+  late bool _multiple = widget.multiple;
+
   static const _videoExtensions = {
     '.mp4',
     '.mov',
@@ -294,13 +298,30 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
 
   /// 点击网格内已有视频
   void _selectVideo(String key) {
-    if (widget.multiple) {
+    if (_multiple) {
       setState(() {
         _selected.contains(key) ? _selected.remove(key) : _selected.add(key);
       });
       return;
     }
     Navigator.of(context).pop(<String, dynamic>{'url': './$key', 'bytes': null});
+  }
+
+  /// 长按视频：单选模式切入多选并选中该视频；已是多选则忽略
+  void _longPressVideo(String key) {
+    if (_multiple) return;
+    setState(() {
+      _multiple = true;
+      _selected.add(key);
+    });
+  }
+
+  /// 取消多选：退回单选模式并清空已选
+  void _cancelMultiple() {
+    setState(() {
+      _multiple = false;
+      _selected.clear();
+    });
   }
 
   Future<void> _confirmMultiple() async {
@@ -336,7 +357,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
                 onFilterChanged: (_) => setState(() {}),
               ),
             SizedBox(height: screenHeight * 0.5, child: _buildGrid(theme)),
-            if (widget.multiple) _buildConfirmBar(theme),
+            if (_multiple) _buildConfirmBar(theme),
             SafeArea(
               top: false,
               child: SizedBox(height: theme.spacing.sm),
@@ -353,13 +374,24 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
       components: NavigationBarStaticComponents(
         keys: _navBarKeys,
         route: null,
-        // 无返回钮：底部弹窗通过下滑手势或点击遮罩关闭
-        userLeading: null,
+        // 单选：无返回钮（下滑或点遮罩关闭）；多选：左侧为取消按钮
+        userLeading:
+            _multiple
+                ? TextButton(
+                    onPressed: _cancelMultiple,
+                    child: Text(
+                      'app_cancel'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  )
+                : null,
         automaticallyImplyLeading: false,
         automaticallyImplyTitle: false,
         previousPageTitle: null,
         userMiddle: Text(
-          widget.multiple
+          _multiple
               ? 'video_picker_selectMultipleVideos'.tr
               : 'video_picker_selectVideo'.tr,
           style: DsTypography.title.copyWith(color: theme.text),
@@ -574,6 +606,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
 
     return GestureDetector(
       onTap: () => _selectVideo(key),
+      onLongPress: () => _longPressVideo(key),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: theme.radii.md,
@@ -588,7 +621,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
               hasThumb
                   ? _buildThumbContent(theme, thumbKey, sizeText)
                   : _buildVideoPlaceholder(theme, info, sizeText),
-              if (widget.multiple)
+              if (_multiple)
                 Positioned(
                   top: 4,
                   right: 4,
@@ -605,13 +638,17 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
                           isSelected ? null : Border.all(color: Colors.white70),
                     ),
                     child: Center(
-                      child: Text(
-                        '$selectedIndex',
-                        style: DsTypography.caption.copyWith(
-                          color: Colors.white,
-                          fontSize: 11,
-                        ),
-                      ),
+                      // 未选中时角标为空圈，不显示序号（避免 indexOf(-1)+1 显示 0）
+                      child:
+                          isSelected
+                              ? Text(
+                                '$selectedIndex',
+                                style: DsTypography.caption.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              )
+                              : const SizedBox.shrink(),
                     ),
                   ),
                 ),
@@ -728,26 +765,140 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
     );
   }
 
+  /// 多选确认栏：左侧已选缩略图横滑条（右上 × 移除、长按拖拽排序）
+  /// + 右侧确认按钮
   Widget _buildConfirmBar(AppThemeData theme) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
       child: Row(
         children: [
-          Text(
-            _selected.isEmpty
-                ? ''
-                : 'image_picker_selected'.trParams({
-                  'n': '${_selected.length}',
-                }),
-            style: DsTypography.caption.copyWith(color: theme.textSub),
+          Expanded(
+            child: SizedBox(
+              height: 60,
+              child: ReorderableListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 4,
+                  horizontal: 2,
+                ),
+                itemCount: _selected.length,
+                onReorder: _onReorderSelected,
+                itemBuilder: (context, index) {
+                  final key = _selected[index];
+                  return _buildSelectedThumb(
+                    theme,
+                    key,
+                    index,
+                    keyId: ValueKey(key),
+                  );
+                },
+              ),
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           DSButton(
             label: 'app_confirm'.tr,
             size: DSButtonSize.sm,
             onPressed: _selected.isEmpty ? null : _confirmMultiple,
           ),
         ],
+      ),
+    );
+  }
+
+  /// 拖拽排序回调：调整已选顺序
+  void _onReorderSelected(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final item = _selected.removeAt(oldIndex);
+      _selected.insert(newIndex, item);
+    });
+  }
+
+  /// 已选视频缩略图：右上 × 移除，左下序号（无首帧缩略图时用图标占位）
+  Widget _buildSelectedThumb(
+    AppThemeData theme,
+    String key,
+    int index, {
+    required ValueKey<String> keyId,
+  }) {
+    final thumbKey = _thumbKeyFor(key);
+    final hasThumb = _allKeys.contains(thumbKey);
+    return Padding(
+      key: keyId,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: theme.radii.sm,
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child:
+                  hasThumb
+                      ? Image(
+                        image: ImageUtils.createImageProvider('./$thumbKey'),
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (_, _, _) => _selectedThumbFallback(theme),
+                      )
+                      : _selectedThumbFallback(theme),
+            ),
+          ),
+          // 左下序号
+          Positioned(
+            left: 2,
+            bottom: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '${index + 1}',
+                style: DsTypography.caption.copyWith(
+                  color: Colors.white,
+                  fontSize: 9,
+                ),
+              ),
+            ),
+          ),
+          // 右上取消图标（点 × 移除该视频）
+          Positioned(
+            top: -6,
+            right: -6,
+            child: GestureDetector(
+              onTap: () => setState(() => _selected.remove(key)),
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.text,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                child: Center(
+                  child: DsIcon(
+                    DsIconKind.close,
+                    size: 10,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _selectedThumbFallback(AppThemeData theme) {
+    return Container(
+      color: theme.primary.mixWhite(0.85),
+      child: Center(
+        child: DsIcon(DsIconKind.video, size: 18, color: theme.primary),
       ),
     );
   }
@@ -759,7 +910,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
         context,
         pickerConfig: AssetPickerConfig(
           requestType: RequestType.video,
-          maxAssets: widget.multiple ? 30 : 1,
+          maxAssets: _multiple ? 30 : 1,
         ),
       );
       if (entities == null || entities.isEmpty) {
@@ -841,7 +992,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
       }
 
       if (results.isNotEmpty && context.mounted) {
-        final result = widget.multiple ? results : results.first;
+        final result = _multiple ? results : results.first;
         Navigator.of(context).pop(result);
       }
     } catch (e) {

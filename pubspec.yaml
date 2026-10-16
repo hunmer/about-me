@@ -171,6 +171,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.6
 
 dependency_overrides:
   # Waiting for https://github.com/Lyokone/flutterlocation/issues/1031
@@ -267,6 +268,16 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_native_splash:
+  # 生成: dart run flutter_native_splash:create  还原: dart run flutter_native_splash:remove
+  # 全屏启动图（原图 webp 不受支持，已转为 PNG，源: 高清 (2).webp 1440x2560）
+  background_image: "assets/splash/splash.png"
+  android_12:
+    # Android 12+ 系统限制不支持全屏背景图，仅显示纯色 + 圆形图标（取自图片平均色）
+    color: "#5D4D65"
+    # 圆形图标（icon.png 缩放至推荐的 1152x1152）
+    image: "assets/splash/splash_android12.png"
 
 flutter_launcher_icons:
   android: "launcher_icon"
