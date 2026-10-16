@@ -25,12 +25,10 @@ class ScrapbookCanvasCardWidget extends StatefulWidget {
   /// 只读模式：隐藏导航 pill 与 FAB，禁止拖拽/选中/添加条目
   final bool readOnly;
 
-  /// 条目双击回调（只读模式下浏览照片等场景使用）
+  /// 条目双击回调（只读模式下浏览照片等场景使用）。
+  /// 经 onTap 自测双击实现——条目若注册 onDoubleTap 会被画布
+  /// 外层单击手势在竞技场中抢先淘汰，导致双击永不触发
   final void Function(ScrapItemData item)? onItemDoubleTap;
-
-  /// 条目 Hero tag：返回非 null 的条目挂 Hero，
-  /// 与目标页同 tag 图片形成转场飞行（如打开图库大图）
-  final String? Function(ScrapItemData item)? heroTagOf;
 
   /// 组件尺寸
   final HomeWidgetSize size;
@@ -41,7 +39,6 @@ class ScrapbookCanvasCardWidget extends StatefulWidget {
     this.inline = false,
     this.readOnly = false,
     this.onItemDoubleTap,
-    this.heroTagOf,
     this.size = const Large3Size(),
   });
 
@@ -626,57 +623,49 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
         },
         child: Transform.rotate(
           angle: item.rotation * math.pi / 180,
-          child: _heroWrap(
-            item,
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              // 只读模式下条目不可交互（禁选中即禁旋转/删除入口），双击回调独立可用
-              onTap: _doodleMode || widget.readOnly
-                  ? null
-                  : () => _selectItem(item),
-              onDoubleTap: widget.onItemDoubleTap == null
-                  ? null
-                  : () => widget.onItemDoubleTap!(item),
-              onPanStart: _doodleMode || widget.readOnly
-                  ? null
-                  : (_) {
-                      _selectItem(item);
-                    },
-              onPanUpdate: _doodleMode || widget.readOnly
-                  ? null
-                  : (details) {
-                      setState(() {
-                        item.x += details.delta.dx / _zoom;
-                        item.y += details.delta.dy / _zoom;
-                      });
-                    },
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  CustomPaint(
-                    painter: selected
-                        ? ScrapDashedRectPainter(
-                            color: const Color(0x8C001AFF),
-                            inset: -6,
-                          )
-                        : null,
-                    child: buildScrapItemContent(item, isDark, _showToast),
-                  ),
-                  if (selected)
-                    Positioned(
-                      top: -30,
-                      right: -10,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildControlChip('↻', () => _rotateItem(item)),
-                          const SizedBox(width: 4),
-                          _buildControlChip('×', () => _deleteItem(item)),
-                        ],
-                      ),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            // 只读模式下条目不可拖拽/选中；注册 onTap 供双击检测使用
+            onTap: () => _handleItemTap(item),
+            onPanStart: _doodleMode || widget.readOnly
+                ? null
+                : (_) {
+                    _selectItem(item);
+                  },
+            onPanUpdate: _doodleMode || widget.readOnly
+                ? null
+                : (details) {
+                    setState(() {
+                      item.x += details.delta.dx / _zoom;
+                      item.y += details.delta.dy / _zoom;
+                    });
+                  },
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CustomPaint(
+                  painter: selected
+                      ? ScrapDashedRectPainter(
+                          color: const Color(0x8C001AFF),
+                          inset: -6,
+                        )
+                      : null,
+                  child: buildScrapItemContent(item, isDark, _showToast),
+                ),
+                if (selected)
+                  Positioned(
+                    top: -30,
+                    right: -10,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildControlChip('↻', () => _rotateItem(item)),
+                        const SizedBox(width: 4),
+                        _buildControlChip('×', () => _deleteItem(item)),
+                      ],
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -684,10 +673,22 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     );
   }
 
-  /// heroTagOf 返回非 null 时给条目挂 Hero（tag 需与目标页一致才能飞行）
-  Widget _heroWrap(ScrapItemData item, Widget child) {
-    final tag = widget.heroTagOf?.call(item);
-    return tag == null ? child : Hero(tag: tag, child: child);
+  /// 条目单击：只读模式下 300ms 内两次点击视为双击触发回调，
+  /// 否则走选中逻辑（涂鸦模式忽略）
+  DateTime? _lastItemTap;
+
+  void _handleItemTap(ScrapItemData item) {
+    if (widget.readOnly) {
+      final now = DateTime.now();
+      final last = _lastItemTap;
+      _lastItemTap = now;
+      if (last != null && now.difference(last).inMilliseconds < 320) {
+        _lastItemTap = null;
+        widget.onItemDoubleTap?.call(item);
+      }
+      return;
+    }
+    if (!_doodleMode) _selectItem(item);
   }
 
   Widget _buildControlChip(String label, VoidCallback onTap) {

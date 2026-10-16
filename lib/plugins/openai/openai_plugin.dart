@@ -267,9 +267,12 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
     // 确保 agents.json 文件存在并初始化默认智能体
     final agentData = await AboutmeDataService.instance.readPath('$storageDir/agents.json');
-    if (agentData.isEmpty && kDebugMode) {
-      // 如果文件为空，使用示例数据中的默认智能体（仅开发环境）
-      final defaultAgents = OpenAISampleData.defaultAgents;
+    if (agentData.isEmpty) {
+      // 文件为空时写入默认智能体：
+      // 开发环境写入全部示例数据；正式环境仅写入内置必备的引导智能体
+      final defaultAgents = kDebugMode
+          ? OpenAISampleData.defaultAgents
+          : OpenAISampleData.builtinAgents;
       final avatarMap = await _copyBundledAgentAvatars(
         defaultAgents
             .map((agent) => agent['avatarUrl'])

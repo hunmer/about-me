@@ -59,13 +59,18 @@ class _AlbumScreenState extends State<AlbumScreen> {
 
   /// 打开 Gallery 查看器：先解析被点击照片的 provider（本地路径为毫秒级），
   /// 确保 Hero 飞行首帧即显示大图而非加载圈
-  Future<void> _openGallery(List<_PhotoRecord> photos, int index) async {
+  Future<void> _openGallery(
+    List<_PhotoRecord> photos,
+    int index, {
+    bool entranceAnimation = false,
+  }) async {
     await GalleryImageResolver.resolve(photos[index].url);
     if (!mounted) return;
     NavigationHelper.push(
       context,
       GalleryViewer(
         title: 'calendar_album_gallery_title'.tr,
+        entranceAnimation: entranceAnimation,
         photos: photos
             .map(
               (r) => GalleryPhoto(
@@ -487,7 +492,8 @@ class _AlbumScreenState extends State<AlbumScreen> {
               : _scrapMode
                   ? _ScrapbookCanvasSection(
                     photos: photos,
-                    onOpenGallery: (index) => _openGallery(photos, index),
+                    onOpenGallery: (index) =>
+                        _openGallery(photos, index, entranceAnimation: true),
                   )
                   : MasonryGridView.count(
                   padding: EdgeInsets.fromLTRB(
@@ -796,15 +802,10 @@ class _ScrapbookCanvasSectionState extends State<_ScrapbookCanvasSection> {
       inline: true,
       readOnly: true,
       items: items,
-      // 双击照片 → 打开图库（Hero tag 用原始 url 与 GalleryViewer 对齐，
-      // 解析后的绝对路径仅用于画布内 Image.file 加载）
+      // 双击照片 → 打开图库（PhotoView 可缩放查看）
       onItemDoubleTap: (item) {
         final index = indexFromId(item.id);
         if (index != null) widget.onOpenGallery?.call(index);
-      },
-      heroTagOf: (item) {
-        final index = indexFromId(item.id);
-        return index == null ? null : widget.photos[index].url;
       },
     );
   }

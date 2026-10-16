@@ -73,6 +73,7 @@ class GalleryViewer extends StatefulWidget {
     this.initialIndex = 0,
     this.title = 'Gallery',
     this.onInfoTap,
+    this.entranceAnimation = false,
   });
 
   final List<GalleryPhoto> photos;
@@ -84,11 +85,16 @@ class GalleryViewer extends StatefulWidget {
   /// 点击底部信息区（携带当前索引，可用于跳转照片来源）
   final void Function(int index)? onInfoTap;
 
+  /// 打开时大图区域缩放淡入入场（无 Hero 飞行的入口使用，
+  /// 与 Hero 转场同开会产生飞行结束后二次跳变）
+  final bool entranceAnimation;
+
   @override
   State<GalleryViewer> createState() => _GalleryViewerState();
 }
 
-class _GalleryViewerState extends State<GalleryViewer> {
+class _GalleryViewerState extends State<GalleryViewer>
+    with SingleTickerProviderStateMixin {
   /// 沉浸式近黑底色（固定深色，不随主题切换）
   static const Color _bgColor = Color(0xFF0B0B0D);
 
@@ -109,10 +115,32 @@ class _GalleryViewerState extends State<GalleryViewer> {
   /// 沉浸模式：单击大图隐藏/恢复顶部与底部区域
   bool _chromeVisible = true;
 
+  /// 入场动画（仅 entranceAnimation 时创建）：缩放 0.72→1 + 淡入
+  AnimationController? _entranceController;
+  Animation<double>? _entranceScale;
+  Animation<double>? _entranceOpacity;
+
   @override
   void initState() {
     super.initState();
     assert(widget.photos.isNotEmpty);
+    if (widget.entranceAnimation) {
+      final controller = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 360),
+      )..forward();
+      _entranceController = controller;
+      _entranceScale = Tween<double>(
+        begin: 0.72,
+        end: 1,
+      ).animate(
+        CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
+      );
+      _entranceOpacity = CurvedAnimation(
+        parent: controller,
+        curve: Curves.easeOut,
+      );
+    }
     // 初始缩略图滚动到选中项（首帧布局完成后才有 viewport）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollThumbTo(_index);
@@ -121,6 +149,7 @@ class _GalleryViewerState extends State<GalleryViewer> {
 
   @override
   void dispose() {
+    _entranceController?.dispose();
     _pageController.dispose();
     _thumbController.dispose();
     super.dispose();
@@ -182,27 +211,33 @@ class _GalleryViewerState extends State<GalleryViewer> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(28),
-                    child: PhotoViewGallery.builder(
-                      itemCount: photos.length,
-                      pageController: _pageController,
-                      onPageChanged: _onPageChanged,
-                      builder: (context, index) {
-                        final image = _GalleryImage(url: photos[index].url);
-                        return PhotoViewGalleryPageOptions.customChild(
-                          // 单击大图切换沉浸模式；opaque 让图片周围空白也可点击
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _toggleChrome,
-                            // 仅当前页挂 Hero：避免相邻页与来源页出现多重飞行
-                            child: index == _index
-                                ? Hero(tag: photos[index].url, child: image)
-                                : image,
-                          ),
-                          minScale: PhotoViewComputedScale.contained,
-                          maxScale: PhotoViewComputedScale.covered * 2,
-                          initialScale: PhotoViewComputedScale.contained,
-                        );
-                      },
+                    child: FadeTransition(
+                      opacity: _entranceOpacity ?? const AlwaysStoppedAnimation(1),
+                      child: ScaleTransition(
+                        scale: _entranceScale ?? const AlwaysStoppedAnimation(1),
+                        child: PhotoViewGallery.builder(
+                          itemCount: photos.length,
+                          pageController: _pageController,
+                          onPageChanged: _onPageChanged,
+                          builder: (context, index) {
+                            final image = _GalleryImage(url: photos[index].url);
+                            return PhotoViewGalleryPageOptions.customChild(
+                              // 单击大图切换沉浸模式；opaque 让图片周围空白也可点击
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: _toggleChrome,
+                                // 仅当前页挂 Hero：避免相邻页与来源页出现多重飞行
+                                child: index == _index
+                                    ? Hero(tag: photos[index].url, child: image)
+                                    : image,
+                              ),
+                              minScale: PhotoViewComputedScale.contained,
+                              maxScale: PhotoViewComputedScale.covered * 2,
+                              initialScale: PhotoViewComputedScale.contained,
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ),
