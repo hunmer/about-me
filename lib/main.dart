@@ -275,31 +275,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           surface: Colors.white, // 表面颜色设为纯白色
           secondaryContainer: Colors.white, // 次要容器颜色设为纯白色
         ),
-        // 使用无动画构建器以提升性能,特别是键盘弹出时
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: NoAnimationPageTransitionsBuilder(),
-            TargetPlatform.iOS: NoAnimationPageTransitionsBuilder(),
-            TargetPlatform.linux: NoAnimationPageTransitionsBuilder(),
-            TargetPlatform.macOS: NoAnimationPageTransitionsBuilder(),
-            TargetPlatform.windows: NoAnimationPageTransitionsBuilder(),
-          },
-        ),
       ),
       dark: ThemeData(
         brightness: Brightness.dark,
         useMaterial3: true,
         fontFamily: 'TegakiZatsu',
-        // 使用无动画构建器以提升性能,特别是键盘弹出时
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: NoAnimationPageTransitionsBuilder(),
-            TargetPlatform.iOS: NoAnimationPageTransitionsBuilder(),
-            TargetPlatform.linux: NoAnimationPageTransitionsBuilder(),
-            TargetPlatform.macOS: NoAnimationPageTransitionsBuilder(),
-            TargetPlatform.windows: NoAnimationPageTransitionsBuilder(),
-          },
-        ),
       ),
       initial: savedThemeMode ?? AdaptiveThemeMode.light,
       builder:
