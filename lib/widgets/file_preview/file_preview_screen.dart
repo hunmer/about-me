@@ -3,13 +3,11 @@ import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 
 import 'package:aboutme/core/services/toast_service.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:flutter/material.dart';
-import 'package:photo_view/photo_view.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:get/get.dart';
-import 'video_preview.dart';
 
 class FilePreviewScreen extends StatefulWidget {
   final String filePath;
@@ -129,6 +127,15 @@ class _FilePreviewScreenState extends State<FilePreviewScreen> {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
+  /// 视频伴生首帧缩略图路径（沿用 `<name>.thumb.jpg` 命名约定），
+  /// 供 GalleryViewer 缩略图条作封面，文件不存在时由查看器图标占位
+  String? _videoThumbPath() {
+    if (_absoluteFilePath.isEmpty) return null;
+    final dir = path.dirname(_absoluteFilePath);
+    final name = path.basenameWithoutExtension(_absoluteFilePath);
+    return '$dir${path.separator}$name.thumb.jpg';
+  }
+
   Future<void> _shareFile() async {
     try {
       final file = File(_absoluteFilePath);
@@ -238,76 +245,27 @@ class _FilePreviewScreenState extends State<FilePreviewScreen> {
     }
 
     if (_isImage) {
-      return PhotoView(
-        imageProvider: FileImage(File(_absoluteFilePath)),
-        minScale: PhotoViewComputedScale.contained,
-        maxScale: PhotoViewComputedScale.covered * 2,
-        backgroundDecoration: BoxDecoration(
-          color: dsNonOpaqueRouteBackdrop(context),
-        ),
-        loadingBuilder:
-            (context, event) => Center(
-              child: CircularProgressIndicator(
-                value:
-                    event == null
-                        ? 0
-                        : event.cumulativeBytesLoaded /
-                            (event.expectedTotalBytes ?? 1),
-              ),
-            ),
-        errorBuilder:
-            (context, error, stackTrace) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.broken_image,
-                    size: 72,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'file_preview_errorFilePreviewFailed'.tr,
-                  ),
-                ],
-              ),
-            ),
+      // 图片预览：统一走 GalleryViewer（沉浸式 + 缩放），
+      // 嵌入本屏 AppBar 之下，分享/打开位置等操作保留在 AppBar
+      return GalleryViewer(
+        photos: [GalleryPhoto(url: _absoluteFilePath, caption: widget.fileName)],
+        showHeader: false,
+        entranceAnimation: true,
       );
     } else if (_isVideo) {
-      try {
-        return VideoPreview(filePath: _absoluteFilePath);
-      } catch (e) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.videocam_off,
-                size: 72,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'file_preview_errorFilePreviewFailed'.tr,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'file_preview_previewNotAvailable'.tr,
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _shareFile,
-                child: Text(
-                  'file_preview_openWithOtherApp'.tr,
-                ),
-              ),
-            ],
+      // 视频预览：统一走 GalleryViewer（内嵌播放器 + 封面缩略图）
+      return GalleryViewer(
+        photos: [
+          GalleryPhoto(
+            url: _absoluteFilePath,
+            caption: widget.fileName,
+            isVideo: true,
+            thumbUrl: _videoThumbPath(),
           ),
-        );
-      }
+        ],
+        showHeader: false,
+        entranceAnimation: true,
+      );
     } else {
       // 普通文件预览
       return Center(

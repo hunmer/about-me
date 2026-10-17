@@ -1,22 +1,35 @@
 import 'dart:io';
 
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/utils/blob_url.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:video_player/video_player.dart';
 
-/// Gallery 查看器照片数据项：展示文案由调用方格式化，组件只负责渲染
+/// Gallery 查看器媒体数据项：展示文案由调用方格式化，组件只负责渲染
 class GalleryPhoto {
   const GalleryPhoto({
     required this.url,
     this.dateText,
     this.caption,
     this.subText,
+    this.isVideo = false,
+    this.thumbUrl,
   });
 
-  /// 图片地址（网络 URL / assets 路径 / 本地相对路径）
+  /// 媒体地址（网络 URL / assets 路径 / 本地相对路径；图片或视频）
   final String url;
+
+  /// 是否为视频（页面渲染内嵌播放器，单击播放/暂停）
+  final bool isVideo;
+
+  /// 视频缩略图地址（封面），优先于 url 解析；图片项忽略
+  final String? thumbUrl;
 
   /// 顶部标题下方日期（如 2026/09/06），随当前照片切换
   final String? dateText;
@@ -63,7 +76,8 @@ class GalleryImageResolver {
 }
 
 /// 全屏 Gallery 查看器（深色沉浸式）：
-/// 顶部标题 + 当前照片日期 + 关闭按钮，中部大图横滑（双指缩放，单击切换沉浸模式），
+/// 顶部标题 + 当前照片日期 + 关闭按钮，中部媒体横滑
+/// （图片双指缩放、单击切换沉浸模式；视频内嵌播放、单击播放/暂停），
 /// 底部信息行（可点击跳转来源）+ 缩略图联动条；
 /// 当前页大图挂 Hero（tag = url），与来源页同 tag 图片形成转场飞行
 class GalleryViewer extends StatefulWidget {
@@ -74,6 +88,7 @@ class GalleryViewer extends StatefulWidget {
     this.title = 'Gallery',
     this.onInfoTap,
     this.entranceAnimation = false,
+    this.showHeader = true,
   });
 
   final List<GalleryPhoto> photos;
@@ -88,6 +103,10 @@ class GalleryViewer extends StatefulWidget {
   /// 打开时大图区域缩放淡入入场（无 Hero 飞行的入口使用，
   /// 与 Hero 转场同开会产生飞行结束后二次跳变）
   final bool entranceAnimation;
+
+  /// 是否显示自带顶栏（嵌入已有 AppBar 的宿主屏时可关闭，
+  /// 关闭后返回依赖宿主屏的导航）
+  final bool showHeader;
 
   @override
   State<GalleryViewer> createState() => _GalleryViewerState();
@@ -198,11 +217,12 @@ class _GalleryViewerState extends State<GalleryViewer>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _ChromeSection(
-                visible: _chromeVisible,
-                hiddenOffset: const Offset(0, -1),
-                child: _buildHeader(current),
-              ),
+              if (widget.showHeader)
+                _ChromeSection(
+                  visible: _chromeVisible,
+                  hiddenOffset: const Offset(0, -1),
+                  child: _buildHeader(current),
+                ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -220,6 +240,17 @@ class _GalleryViewerState extends State<GalleryViewer>
                           pageController: _pageController,
                           onPageChanged: _onPageChanged,
                           builder: (context, index) {
+                            // 视频页：内嵌播放器（禁用缩放手势，单击播放/暂停；
+                            // 不挂 Hero，视频控件飞行转场体验差）
+                            if (photos[index].isVideo) {
+                              return PhotoViewGalleryPageOptions.customChild(
+                                child: _GalleryVideo(
+                                  url: photos[index].url,
+                                  isActive: index == _index,
+                                ),
+                                disableGestures: true,
+                              );
+                            }
                             final image = _GalleryImage(url: photos[index].url);
                             return PhotoViewGalleryPageOptions.customChild(
                               // 单击大图切换沉浸模式；opaque 让图片周围空白也可点击
@@ -406,13 +437,18 @@ class _GalleryViewerState extends State<GalleryViewer>
             const SizedBox(width: _thumbSpacing),
         itemBuilder: (context, index) {
           final selected = index == _index;
+          final photo = photos[index];
           return GestureDetector(
             onTap: () => _selectThumb(index),
             child: SizedBox.square(
               dimension: _thumbOuter,
               child: _thumbRing(
                 selected,
-                _GalleryThumbImage(url: photos[index].url),
+                _GalleryThumbImage(
+                  // 视频缩略图优先用封面，无封面时不解析视频本体（图标占位）
+                  url: photo.isVideo ? (photo.thumbUrl ?? '') : photo.url,
+                  isVideo: photo.isVideo,
+                ),
               ),
             ),
           );
@@ -539,14 +575,19 @@ class _GalleryImage extends StatelessWidget {
   }
 }
 
-/// 缩略图渲染：同一 provider 解析缓存，方形裁圆
+/// 缩略图渲染：同一 provider 解析缓存，方形裁圆；
+/// 视频无封面（url 为空）时以视频图标占位
 class _GalleryThumbImage extends StatelessWidget {
-  const _GalleryThumbImage({required this.url});
+  const _GalleryThumbImage({required this.url, this.isVideo = false});
 
   final String url;
 
+  final bool isVideo;
+
   @override
   Widget build(BuildContext context) {
+    if (url.isEmpty) return _videoIconPlaceholder();
+
     final provider = GalleryImageResolver.cached(url);
     if (provider != null) return _buildImage(provider);
 
@@ -556,8 +597,14 @@ class _GalleryThumbImage extends StatelessWidget {
         final resolved = snapshot.data;
         if (resolved != null) return _buildImage(resolved);
         // 未就绪时露出底色占位
-        return const SizedBox.shrink();
+        return isVideo ? _videoIconPlaceholder() : const SizedBox.shrink();
       },
+    );
+  }
+
+  Widget _videoIconPlaceholder() {
+    return const Center(
+      child: Icon(Icons.videocam_outlined, color: Colors.white38, size: 18),
     );
   }
 
@@ -583,6 +630,316 @@ class _GalleryFallback extends StatelessWidget {
     return Image.asset(
       'assets/images/image_not_found.png',
       fit: compact ? BoxFit.cover : BoxFit.contain,
+    );
+  }
+}
+
+/// 视频页渲染：video_player 内嵌播放器（本地走文件、Web 走 blob URL，
+/// 远端模式经 ImageUtils 物化到本地临时文件），
+/// 单击播放/暂停 + 暂停时居中播放按钮，底部深色进度条；
+/// 切走页面（isActive=false）自动暂停，页面销毁时释放控制器与 blob
+class _GalleryVideo extends StatefulWidget {
+  const _GalleryVideo({required this.url, this.isActive = true});
+
+  final String url;
+
+  /// 是否为当前可见页（非当前页暂停播放）
+  final bool isActive;
+
+  @override
+  State<_GalleryVideo> createState() => _GalleryVideoState();
+}
+
+class _GalleryVideoState extends State<_GalleryVideo> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+  String? _errorMessage;
+  String? _blobUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePlayer();
+  }
+
+  @override
+  void didUpdateWidget(_GalleryVideo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // PageView 相邻页保活时，非当前页暂停避免多路声音/后台耗电
+    if (!widget.isActive && _controller?.value.isPlaying == true) {
+      _controller?.pause();
+    }
+  }
+
+  Future<void> _initializePlayer() async {
+    try {
+      final VideoPlayerController controller;
+      if (kIsWeb) {
+        // Web 无本地文件系统：经存储读取字节(远端=HTTP解密/Web=IndexedDB)
+        // 后包装为 blob URL 交给 video 元素播放
+        final bytes = await ImageUtils.readStorageBytes(widget.url);
+        if (bytes == null || bytes.isEmpty) {
+          throw Exception('存储中不存在视频：${widget.url}');
+        }
+        _blobUrl = createBlobUrl(bytes, _guessMimeType(widget.url));
+        controller = VideoPlayerController.networkUrl(Uri.parse(_blobUrl!));
+      } else {
+        final absolutePath = await ImageUtils.getAbsolutePath(widget.url);
+        if (absolutePath.isEmpty) {
+          throw Exception('无法获取视频文件的绝对路径');
+        }
+        final videoFile = File(absolutePath);
+        if (!await videoFile.exists()) {
+          throw Exception('视频文件不存在：$absolutePath');
+        }
+        controller = VideoPlayerController.file(videoFile);
+      }
+      _controller = controller;
+      await controller.initialize();
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
+      controller.addListener(_onControllerUpdate);
+      setState(() => _isInitialized = true);
+    } catch (e) {
+      debugPrint('视频初始化错误: $e');
+      if (mounted) {
+        setState(() => _errorMessage = e.toString());
+        Toast.error('${'app_videoLoadFailed'.tr}: $e');
+      }
+    }
+  }
+
+  void _onControllerUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  /// 根据扩展名推断视频 MIME 类型（浏览器 blob 播放需要）
+  String _guessMimeType(String filePath) {
+    final ext = filePath.split('.').last.toLowerCase();
+    return switch (ext) {
+      'webm' => 'video/webm',
+      'mov' => 'video/quicktime',
+      'ogg' || 'ogv' => 'video/ogg',
+      _ => 'video/mp4',
+    };
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    if (_blobUrl != null) revokeBlobUrl(_blobUrl!);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.white38,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'file_preview_videoLoadFailed'.tr,
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (!_isInitialized || controller == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.4,
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'app_loadingVideo'.tr,
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: controller.value.aspectRatio,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  VideoPlayer(controller),
+                  _GalleryVideoTapOverlay(controller: controller),
+                ],
+              ),
+            ),
+          ),
+        ),
+        _GalleryVideoProgressBar(controller: controller),
+      ],
+    );
+  }
+}
+
+/// 视频单击交互层：暂停时半透明遮罩 + 居中播放按钮，单击切换播放/暂停
+class _GalleryVideoTapOverlay extends StatelessWidget {
+  const _GalleryVideoTapOverlay({required this.controller});
+
+  final VideoPlayerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isPlaying = controller.value.isPlaying;
+    return Stack(
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 50),
+          reverseDuration: const Duration(milliseconds: 200),
+          child:
+              isPlaying
+                  ? const SizedBox.shrink()
+                  : Container(color: Colors.black26),
+        ),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            if (isPlaying) {
+              controller.pause();
+            } else {
+              controller.play();
+            }
+          },
+          child: Container(
+            color: Colors.transparent,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+        ),
+        if (!isPlaying)
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.18),
+              border: Border.all(color: Colors.white70),
+            ),
+            child: const Icon(
+              Icons.play_arrow,
+              color: Colors.white,
+              size: 34,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// 视频底部深色进度条：滑块拖拽 seek + 播放/暂停按钮 + 时间
+class _GalleryVideoProgressBar extends StatelessWidget {
+  const _GalleryVideoProgressBar({required this.controller});
+
+  final VideoPlayerController controller;
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return duration.inHours > 0
+        ? '${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds'
+        : '$twoDigitMinutes:$twoDigitSeconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final position = controller.value.position;
+    final duration = controller.value.duration;
+    final bool isPlaying = controller.value.isPlaying;
+    final maxMs = duration.inMilliseconds.toDouble();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: Colors.white,
+              inactiveTrackColor: Colors.white24,
+              thumbColor: Colors.white,
+              overlayColor: Colors.white24,
+              trackHeight: 2.5,
+            ),
+            child: Slider(
+              value: position.inMilliseconds
+                  .toDouble()
+                  .clamp(0.0, maxMs <= 0 ? 1.0 : maxMs),
+              max: maxMs <= 0 ? 1.0 : maxMs,
+              onChanged:
+                  maxMs <= 0
+                      ? null
+                      : (value) => controller.seekTo(
+                        Duration(milliseconds: value.toInt()),
+                      ),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _formatDuration(position),
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+              IconButton(
+                icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+                color: Colors.white,
+                iconSize: 28,
+                onPressed: () {
+                  if (isPlaying) {
+                    controller.pause();
+                  } else {
+                    controller.play();
+                  }
+                },
+              ),
+              Text(
+                _formatDuration(duration),
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
