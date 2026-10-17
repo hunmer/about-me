@@ -234,21 +234,14 @@ class _MessageInputState extends State<MessageInput> {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: theme.radii.xl,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        left: false,
-        right: false,
+    // 输入面板为大容器档：纸底 + 排线 + 墨线框（design.md §9.1，去柔影）
+    return SafeArea(
+      top: false,
+      left: false,
+      right: false,
+      child: DsSketchPanel(
+        theme: theme,
+        radius: theme.radii.xl,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -459,12 +452,8 @@ class _MessageInputState extends State<MessageInput> {
     final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.surfaceAlt.withValues(alpha: 0.5),
-        border: Border(
-          bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.25)),
-        ),
-      ),
+      // 面板内分区用淡色块区分层次，不画手写描边（design.md §9）
+      color: theme.surfaceAlt.withValues(alpha: 0.5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -533,10 +522,11 @@ class _MessageInputState extends State<MessageInput> {
     final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.warning.mixWhite(0.9),
-        borderRadius: theme.radii.sm,
-        border: Border.all(color: theme.warning.withValues(alpha: 0.5)),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.warning.mixWhite(0.9),
+        stroke: theme.warning.withValues(alpha: 0.5),
+        radius: theme.radii.sm,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -568,10 +558,11 @@ class _MessageInputState extends State<MessageInput> {
             semanticLabel: '移除工具模板',
             builder: (context, states) => Container(
               padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: theme.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: theme.warning.withValues(alpha: 0.6)),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                fillColor: theme.surface,
+                stroke: theme.warning.withValues(alpha: 0.6),
+                circle: true,
               ),
               child: DsIcon(DsIconKind.close, size: 14, color: theme.warning),
             ),
@@ -589,10 +580,13 @@ class _MessageInputState extends State<MessageInput> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: theme.radii.sm,
-        border: Border.all(color: theme.textSub.withValues(alpha: 0.3)),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        stroke: theme.textSub.withValues(alpha: 0.3),
+        radius: theme.radii.sm,
+        // 文件 chip 列表项：按索引错开墨迹（design.md §9.4）
+        seed: index + 1,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -794,22 +788,10 @@ class _MessageInputState extends State<MessageInput> {
   Widget _buildToolTemplateSearchArea() {
     final theme = DSThemeBridge.resolve(context);
     if (_isLoadingToolResults) {
-      return Container(
+      return DsSketchPanel(
+        theme: theme,
+        hachure: false,
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.surface,
-          border: Border(
-            top: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
-            bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
         child: Row(
           children: [
             DSLoadingDots(size: 7),
@@ -845,21 +827,9 @@ class _MessageInputState extends State<MessageInput> {
     final theme = DSThemeBridge.resolve(context);
     final keyword = _commandToolQuery ?? '';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        border: Border(
-          top: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
-          bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+    return DsSketchPanel(
+      theme: theme,
+      hachure: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -977,21 +947,9 @@ class _MessageInputState extends State<MessageInput> {
   Widget _buildToolSearchEmptyState() {
     final theme = DSThemeBridge.resolve(context);
     final keyword = _toolSearchKeyword ?? '';
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        border: Border(
-          top: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
-          bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+    return DsSketchPanel(
+      theme: theme,
+      hachure: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

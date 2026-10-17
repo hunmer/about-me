@@ -23,21 +23,9 @@ class CommandSelector extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        border: Border(
-          top: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
-          bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+    return DsSketchPanel(
+      theme: theme,
+      hachure: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,9 +72,10 @@ class CommandSelector extends StatelessWidget {
               Container(
                 width: 36,
                 height: 36,
-                decoration: BoxDecoration(
-                  color: command.color.withValues(alpha: 0.1),
-                  borderRadius: theme.radii.sm,
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillColor: command.color.withValues(alpha: 0.1),
+                  radius: theme.radii.sm,
                 ),
                 child: Icon(command.icon, size: 20, color: command.color),
               ),

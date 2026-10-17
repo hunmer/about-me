@@ -21,21 +21,9 @@ class ToolTemplateSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        border: Border(
-          top: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
-          bottom: BorderSide(color: theme.textSub.withValues(alpha: 0.3)),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+    return DsSketchPanel(
+      theme: theme,
+      hachure: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,9 +129,10 @@ class ToolTemplateSelector extends StatelessWidget {
                     Container(
                       width: 40,
                       height: 40,
-                      decoration: BoxDecoration(
-                        color: theme.warning.mixWhite(0.9),
-                        borderRadius: theme.radii.sm,
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        fillColor: theme.warning.mixWhite(0.9),
+                        radius: theme.radii.sm,
                       ),
                       child: DsIcon(
                         DsIconKind.gear,

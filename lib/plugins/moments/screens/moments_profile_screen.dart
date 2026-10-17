@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
-import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:aboutme/core/services/toast_service.dart';
@@ -51,7 +49,6 @@ const _masonryHeights = [118.0, 92.0, 132.0, 100.0, 126.0, 96.0, 116.0, 106.0];
 
 class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
   final _moments = MomentsService.instance;
-  final _navBarKeys = NavigationBarStaticComponentsKeys();
   AIAgent? _agent;
   String? _activeTag; // null = 合集卡片视图
 
@@ -124,45 +121,18 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
   }
 
   /// 固定头部：返回 / 标题 / 更多
-  Widget _buildNavBar(AppThemeData theme) {
-    return PersistentNavigationBar(
-      components: NavigationBarStaticComponents(
-        keys: _navBarKeys,
-        route: ModalRoute.of(context),
-        userLeading:
-            widget.embedded
-                ? const SizedBox(width: 38)
-                : Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: DSIconButton(
-                    icon: DsIconKind.chevronLeft,
-                    size: 38,
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  ),
-                ),
-        automaticallyImplyLeading: false,
-        automaticallyImplyTitle: false,
-        previousPageTitle: null,
-        userMiddle: Text(
-          'moments_profileTitle'.tr,
-          style: DsTypography.title.copyWith(color: theme.text),
-        ),
-        userTrailing: Align(
-          alignment: AlignmentDirectional.centerEnd,
-          child: DSIconButton(
-            icon: DsIconKind.more,
-            size: 38,
-            onPressed:
-                () => ToastService.instance.showToast(
-                  'moments_linkCopied'.trParams({'name': _displayName}),
-                ),
-          ),
-        ),
-        userLargeTitle: null,
-        largeTitleActions: null,
-        appbarBottom: null,
-        padding: null,
-        large: false,
+  Widget _buildNavBar() {
+    return DSLightHeader(
+      title: 'moments_profileTitle'.tr,
+      // embedded = 宿主页 tab 内嵌，无返回钮
+      showBack: !widget.embedded,
+      trailing: DSIconButton(
+        icon: DsIconKind.more,
+        size: 38,
+        onPressed:
+            () => ToastService.instance.showToast(
+              'moments_linkCopied'.trParams({'name': _displayName}),
+            ),
       ),
     );
   }
@@ -302,13 +272,13 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
                   Positioned.fill(
                     child: CustomScrollView(slivers: slivers),
                   ),
-                  Positioned(top: 0, left: 0, right: 0, child: _buildNavBar(theme)),
+                  Positioned(top: 0, left: 0, right: 0, child: _buildNavBar()),
                 ],
               )
               : Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildNavBar(theme),
+                  _buildNavBar(),
                   Expanded(child: CustomScrollView(slivers: slivers)),
                 ],
               ),

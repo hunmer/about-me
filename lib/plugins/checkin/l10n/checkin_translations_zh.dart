@@ -56,6 +56,8 @@ class CheckinTranslationsZh {
     'checkin_nameExistsError': '该名称已存在',
     'checkin_groupLabel': '分组 (可选)',
     'checkin_groupHint': '请输入分组名称',
+    'checkin_penaltyLabel': '扣分项',
+    'checkin_penaltyHint': '完成签到后扣除积分',
     'checkin_reminderTypeLabel': '提醒类型',
     'checkin_noReminder': '不设置提醒',
     'checkin_weeklyReminder': '每周提醒',

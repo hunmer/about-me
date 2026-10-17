@@ -67,9 +67,10 @@ class AgentChatTextInput extends StatelessWidget {
       onKeyEvent: isDesktop ? _handleKeyEvent : null,
       child: Container(
       constraints: const BoxConstraints(minHeight: 40, maxHeight: 120),
-      decoration: BoxDecoration(
-        color: backgroundColor ?? theme.surfaceAlt,
-        borderRadius: borderRadius ?? theme.radii.pill,
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: backgroundColor ?? theme.surfaceAlt,
+        radius: borderRadius ?? theme.radii.pill,
       ),
       child: TextField(
         controller: controller,

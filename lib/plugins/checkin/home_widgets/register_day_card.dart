@@ -130,6 +130,7 @@ class _CheckinDayCardHomeWidgetState extends State<_CheckinDayCardHomeWidget> {
         itemId: item.id,
         title: item.name,
         action: action,
+        data: action == 'completed' ? {'isPenalty': item.isPenalty} : null,
       ),
     );
   }

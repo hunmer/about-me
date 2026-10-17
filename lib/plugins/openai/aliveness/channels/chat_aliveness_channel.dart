@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/voice_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
+import 'package:aboutme/plugins/openai/services/chat_media_service.dart';
 
 /// chat 频道版活人感通道：
 /// AI 回复不插入频道消息列表，而是收敛到根消息（@AI 的用户消息）的
@@ -93,11 +94,12 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
     final contextMessages = await _buildContext(input);
     final contentBuffer = StringBuffer();
     _cancelRequested = false;
-    await RequestService.streamResponseWithRetry(
+    await ChatMediaService.streamResponse(
       agent: agent,
       prompt: null,
-      vision: hasImage,
-      filePath: absoluteFilePath,
+      messages: [
+        ...input.bufferedHandles.whereType<Message>(),
+      ],
       contextMessages: contextMessages,
       onToken: (token) async {
         contentBuffer.write(token);
@@ -264,7 +266,7 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
       } else {
         messages.add(
           ChatCompletionMessage.user(
-            content: ChatCompletionUserMessageContent.string(msg.content),
+            content: ChatCompletionUserMessageContent.string(ChatMediaService.contextText(msg)),
           ),
         );
       }
@@ -292,7 +294,7 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
       if (threadMessageIds?.contains(msg.content) == true) continue;
       messages.add(
         ChatCompletionMessage.user(
-          content: ChatCompletionUserMessageContent.string(msg.content),
+          content: ChatCompletionUserMessageContent.string(ChatMediaService.contextText(msg, allowRead: true)),
         ),
       );
     }

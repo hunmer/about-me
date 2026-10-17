@@ -14,6 +14,8 @@ import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_service.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/plugins/openai/services/request_service.dart';
 
 /// 工具调用元数据（dispatcher 用）
 class NativeToolMeta {
@@ -37,13 +39,16 @@ class NativeToolExecutionException implements Exception {
 }
 
 class _NativeToolRunContext {
-  _NativeToolRunContext(this.onToolSteps);
+  _NativeToolRunContext(this.onToolSteps, this.onImageDescription);
 
   final Future<void> Function(List<ToolCallStep> steps)? onToolSteps;
+  final Future<void> Function(String path, String description)?
+  onImageDescription;
   late final Map<String, NativeToolMeta> toolMeta;
   final List<ToolCallStep> steps = [];
   Future<void> updateChain = Future<void>.value();
   int toolCallCount = 0;
+  int imageToolCallCount = 0;
 
   Future<void> notifySteps() {
     final callback = onToolSteps;
@@ -169,9 +174,10 @@ class NativeToolAgentService {
   static final NativeToolAgentService instance = NativeToolAgentService._();
 
   bool supports(AIAgent agent, bool enableToolCalling) {
-    final hasNativeApiFormat = const {'openai', 'anthropic'}.contains(
-      agent.apiFormat.trim().toLowerCase(),
-    );
+    final hasNativeApiFormat = const {
+      'openai',
+      'anthropic',
+    }.contains(agent.apiFormat.trim().toLowerCase());
     if (!hasNativeApiFormat) return false;
     return (enableToolCalling && agent.enableFunctionCalling) ||
         agent.alivenessConfig?.enabled == true;
@@ -221,13 +227,15 @@ class NativeToolAgentService {
     Future<void> Function(List<ToolCallStep> steps)? onToolSteps,
     Function(String thinking)? onThinking,
     void Function(List<String> texts)? onTurnTexts,
+    Future<void> Function(String path, String description)? onImageDescription,
     bool Function()? isCancelling,
     String? conversationId,
     bool useJsTools = false,
     bool alivenessOnlyTools = false,
+    bool imageOnlyTools = false,
   }) async {
-    final run = _NativeToolRunContext(onToolSteps);
-    final (allTools, allMeta) = _buildTools(run);
+    final run = _NativeToolRunContext(onToolSteps, onImageDescription);
+    final (allTools, allMeta) = _buildTools(run, agent);
     if (allTools.isEmpty) {
       throw StateError('标准工具集为空（ToolConfigManager 未初始化或没有启用的工具）');
     }
@@ -242,11 +250,18 @@ class NativeToolAgentService {
     final candidates = matchPluginCandidates(userInput);
     var tools = allTools;
     if (alivenessOnlyTools) {
-      tools = tools.where((tool) => tool.name == 'moments').toList();
+      tools = tools
+          .where((tool) => tool.name == 'moments' || tool.name == 'read_image')
+          .toList();
     }
     if (candidates != null && allTools.length > 30) {
       tools = allTools
-          .where((t) => candidates.contains(allMeta[t.name]!.pluginId))
+          .where(
+            (t) =>
+                t.name == 'read_image' ||
+                (allMeta[t.name] != null &&
+                    candidates.contains(allMeta[t.name]!.pluginId)),
+          )
           .toList();
       debugPrint(
         '[NativeTool] 预筛：${allTools.length} → ${tools.length} 个工具 '
@@ -259,6 +274,9 @@ class NativeToolAgentService {
       onRunJs: (args) => _dispatchJs(run, args),
       useJsTools: alivenessOnlyTools ? false : useJsTools,
     );
+    if (imageOnlyTools) {
+      tools = tools.where((tool) => tool.name == 'read_image').toList();
+    }
     debugPrint(
       '[NativeTool] 请求配置：agent=${agent.id} format=${agent.apiFormat} '
       'functionCalling=${agent.enableFunctionCalling} '
@@ -337,17 +355,15 @@ class NativeToolAgentService {
 
     final history = _convertHistory(contextMessages, effectiveSystem);
     // 图片作为多模态附件（随 prompt 一起发送）
-    final attachments = <DataPart>[];
-    for (final f in files) {
-      if (!f.existsSync()) continue;
-      final bytes = f.readAsBytesSync();
-      final mime = f.path.toLowerCase().endsWith('.png')
-          ? 'image/png'
-          : 'image/jpeg';
-      attachments.add(
-        DataPart(bytes, mimeType: mime, name: f.path.split('/').last),
-      );
-    }
+    // 图片不作为 DataPart 注入主会话，避免历史和当前请求携带 Base64。
+    // 将路径提供给 read_image 工具，工具会在独立的多模态请求中解析。
+    final imagePaths = files
+        .where((f) => f.existsSync())
+        .map((f) => f.path)
+        .toList();
+    final promptWithImages = imagePaths.isEmpty
+        ? userInput
+        : '$userInput\n[待解析图片路径]\n${imagePaths.join('\n')}';
 
     final output = StringBuffer();
     // 已完成轮的正文（剥除模型重复的前缀后）；content 只反映当前轮流式文本，
@@ -356,9 +372,8 @@ class NativeToolAgentService {
 
     try {
       await for (final chunk in dartAgent.sendStream(
-        userInput,
+        promptWithImages,
         history: history,
-        attachments: attachments,
       )) {
         if (isCancelling?.call() == true) {
           throw Exception('已取消发送');
@@ -452,11 +467,17 @@ class NativeToolAgentService {
       ),
       onCall: onRunJs,
     );
-    return [if (!useJsTools) ...pluginTools, jsTool];
+    return [
+      ...pluginTools.where((tool) => tool.name == 'read_image'),
+      if (!useJsTools)
+        ...pluginTools.where((tool) => tool.name != 'read_image'),
+      jsTool,
+    ];
   }
 
   (List<Tool<Map<String, dynamic>>>, Map<String, NativeToolMeta>) _buildTools(
     _NativeToolRunContext run,
+    AIAgent imageAgent,
   ) {
     if (_toolConfigCache == null || _toolMetaCache == null) {
       final configs = <String, Map<String, ToolConfig>>{};
@@ -542,6 +563,64 @@ class NativeToolAgentService {
         ),
       );
     }
+    tools.add(
+      Tool<Map<String, dynamic>>(
+        name: 'read_image',
+        description: '读取并描述一张或多张本地图片。传入当前消息提供的图片文件路径。',
+        inputSchema: Schema.fromMap(<String, Object?>{
+          'type': 'object',
+          'properties': <String, Object?>{
+            'paths': <String, Object?>{
+              'type': 'array',
+              'items': <String, Object?>{'type': 'string'},
+              'description': '图片文件路径列表',
+            },
+            'question': <String, Object?>{
+              'type': 'string',
+              'description': '希望重点识别的内容',
+            },
+          },
+          'required': <String>['paths'],
+        }),
+        onCall: (args) async {
+          run.imageToolCallCount++;
+          if (run.imageToolCallCount > maxToolCallsPerLoop) {
+            return '图片解析调用次数已达上限';
+          }
+          final paths = (args['paths'] as List? ?? const [])
+              .map((value) => value.toString())
+              .where((value) => value.isNotEmpty)
+              .toList();
+          if (paths.isEmpty) return '没有提供图片路径';
+          final settings = OpenAIPlugin.instance.settings;
+          final multimodalModel = settings['defaultMultimodalModel'] as String?;
+          if (multimodalModel == null || multimodalModel.trim().isEmpty) {
+            return '尚未在 OpenAI 插件设置中配置默认多模态模型';
+          }
+          final agent = imageAgent.copyWith(model: multimodalModel.trim());
+          final descriptions = <String>[];
+          for (final path in paths) {
+            final file = File(path);
+            if (!await file.exists()) {
+              descriptions.add('$path：文件不存在');
+              continue;
+            }
+            final question = args['question']?.toString();
+            final prompt = question == null || question.isEmpty
+                ? '请准确描述这张图片中的主要内容、文字和重要细节。'
+                : question;
+            final description = await RequestService.chat(
+              prompt,
+              agent,
+              imageFile: file,
+            );
+            descriptions.add('$path：$description');
+            await run.onImageDescription?.call(path, description);
+          }
+          return descriptions.join('\n');
+        },
+      ),
+    );
     debugPrint('[NativeTool] 已构建 ${tools.length} 个原生工具');
     return (tools, _toolMetaCache!);
   }
@@ -739,13 +818,7 @@ class NativeToolAgentService {
           } else if (p.kind == 'image_url') {
             final url = p.imageUrl.url;
             if (url.startsWith('data:image/')) {
-              final comma = url.indexOf(',');
-              parts.add(
-                DataPart(
-                  base64Decode(url.substring(comma + 1)),
-                  mimeType: url.substring(5, url.indexOf(';')),
-                ),
-              );
+              parts.add(TextPart('[历史图片已省略；请使用其保存的文字描述]'));
             }
           }
         }

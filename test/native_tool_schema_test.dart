@@ -39,6 +39,31 @@ void main() {
       expect(tools.single.description, contains('账单插件'));
       expect(tools.single.description, isNot(contains('优先使用插件工具')));
     });
+
+    test('开启 JS 模式时仍保留 read_image 标准工具', () {
+      final readImageTool = Tool<Map<String, dynamic>>(
+        name: 'read_image',
+        description: '读取图片',
+        inputSchema: Schema.fromMap({
+          'type': 'object',
+          'properties': {
+            'paths': {
+              'type': 'array',
+              'items': {'type': 'string'},
+            },
+          },
+          'required': ['paths'],
+        }),
+        onCall: (args) async => {'result': args['paths']},
+      );
+      final tools = NativeToolAgentService.buildToolSet(
+        pluginTools: [pluginTool, readImageTool],
+        onRunJs: (args) async => {'result': args['code']},
+        useJsTools: true,
+      );
+
+      expect(tools.map((tool) => tool.name), ['read_image', 'run_js']);
+    });
   });
 
   group('ToolParameter 嵌套 properties 解析', () {
@@ -320,7 +345,9 @@ void main() {
       expect(NativeToolAgentService.instance.supports(agent, false), isTrue);
       expect(
         NativeToolAgentService.instance.supports(
-          agent.copyWith(alivenessConfig: const AlivenessConfig(enabled: false)),
+          agent.copyWith(
+            alivenessConfig: const AlivenessConfig(enabled: false),
+          ),
           true,
         ),
         isFalse,

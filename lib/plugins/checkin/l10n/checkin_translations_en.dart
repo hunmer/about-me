@@ -56,6 +56,8 @@ class CheckinTranslationsEn {
     'checkin_nameExistsError': 'This name already exists',
     'checkin_groupLabel': 'Group (optional)',
     'checkin_groupHint': 'Enter group name',
+    'checkin_penaltyLabel': 'Penalty Item',
+    'checkin_penaltyHint': 'Deduct points on check-in',
     'checkin_reminderTypeLabel': 'Reminder Type',
     'checkin_noReminder': 'No Reminder',
     'checkin_weeklyReminder': 'Weekly Reminder',

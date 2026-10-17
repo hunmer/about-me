@@ -20,9 +20,13 @@ class PluginSettingsScreen extends StatefulWidget {
 }
 
 class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
+  late final TextEditingController _multimodalModelController;
   @override
   void initState() {
     super.initState();
+    _multimodalModelController = TextEditingController(
+      text: OpenAIPlugin.instance.settings['defaultMultimodalModel'] as String? ?? '',
+    );
     AgentResourceSlots slots;
     try {
       slots = AgentLibResourceService.fromSettings(
@@ -32,6 +36,18 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
     } catch (_) {
       slots = AgentLibResourceService.globalSlots;
     }
+  }
+
+  @override
+  void dispose() {
+    _multimodalModelController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveMultimodalModel(String value) async {
+    await OpenAIPlugin.instance.updateSettings({
+      'defaultMultimodalModel': value.trim(),
+    });
   }
 
   void _saveSlots(AgentResourceSlots slots) {
@@ -58,6 +74,29 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
                       child: ListView(
                         padding: EdgeInsets.all(theme.spacing.lg),
                         children: [
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.image,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: '默认多模态模型',
+                            subtitle: '当前模型不支持图片时，read_image 工具使用此模型解析',
+                            showChevron: false,
+                            trailing: SizedBox(
+                              width: 180,
+                              child: TextField(
+                                controller: _multimodalModelController,
+                                textInputAction: TextInputAction.done,
+                                decoration: const InputDecoration(
+                                  hintText: '如 gpt-4o',
+                                  isDense: true,
+                                ),
+                                onSubmitted: _saveMultimodalModel,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: theme.spacing.sm),
                           DSListItem(
                             leading: DsIcon(
                               DsIconKind.layers,

@@ -238,6 +238,7 @@ class CheckinListController {
       itemId: item.id,
       title: item.name,
       action: action,
+      data: action == 'completed' ? {'isPenalty': item.isPenalty} : null,
     );
     EventManager.instance.broadcast('checkin_$action', eventArgs);
   }

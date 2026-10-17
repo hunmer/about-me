@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:agentlib/openai_compat.dart';
@@ -514,37 +513,22 @@ class AIRequestHandler {
             .toList();
 
         if (imageAttachments.isNotEmpty) {
-          // 包含图片：使用 parts 格式
-          final parts = <ChatCompletionMessageContentPart>[];
-
-          // 添加文本内容
-          if (msg.content.isNotEmpty) {
-            parts.add(ChatCompletionMessageContentPart.text(text: msg.content));
-          }
-
-          // 添加图片附件
-          for (var attachment in imageAttachments) {
-            try {
-              final file = File(attachment.filePath);
-              if (file.existsSync()) {
-                final bytes = file.readAsBytesSync();
-                final base64Image = base64Encode(bytes);
-                parts.add(
-                  ChatCompletionMessageContentPart.image(
-                    imageUrl: ChatCompletionMessageImageUrl(
-                      url: 'data:image/jpeg;base64,$base64Image',
-                    ),
-                  ),
-                );
-              }
-            } catch (e) {
-              debugPrint('读取图片附件失败: ${attachment.filePath}, 错误: $e');
-            }
-          }
-
+          final descriptions = msg.metadata?['imageDescriptions'] as Map?;
+          final imageText = imageAttachments
+              .map((attachment) {
+                final description = descriptions?[attachment.filePath];
+                return description is String && description.isNotEmpty
+                    ? '[图片描述]\n$description'
+                    : '[图片附件，请调用 read_image 读取]\n${attachment.filePath}';
+              })
+              .join('\n');
+          final text = [
+            if (msg.content.isNotEmpty) msg.content,
+            imageText,
+          ].join('\n');
           messages.add(
             ChatCompletionMessage.user(
-              content: ChatCompletionUserMessageContent.parts(parts),
+              content: ChatCompletionUserMessageContent.string(text),
             ),
           );
         } else {

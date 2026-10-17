@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+
 /// Aboutme 自定义 SfCalendar 封装组件
 ///
 /// 对 Syncfusion SfCalendar 进行二次封装，提供丰富的自定义选项，
@@ -304,11 +307,15 @@ class AboutmeSfCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final effectiveTodayColor = todayHighlightColor ?? theme.primaryColor;
+    final theme = DSThemeBridge.resolve(context);
+    final effectiveTodayColor = todayHighlightColor ?? theme.primary;
+    // 手绘选中装饰：主色淡彩实底 + 墨线描边（design.md §9.1 小控件档）
     final effectiveSelectionDecoration = selectionDecoration ??
-        BoxDecoration(
-          border: Border.all(color: theme.primaryColor, width: 2),
+        dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.primary.withValues(alpha: 0.10),
+          stroke: theme.primary,
+          radius: BorderRadius.circular(6),
         );
 
     return SfCalendar(
@@ -330,19 +337,24 @@ class AboutmeSfCalendar extends StatelessWidget {
       scheduleViewSettings:
           scheduleViewSettings ?? const ScheduleViewSettings(),
       scheduleViewMonthHeaderBuilder: scheduleViewMonthHeaderBuilder,
-      // 外观
+      // 外观（未显式传入时按 DS 手绘纸墨风取默认值）
       todayHighlightColor: effectiveTodayColor,
       selectionDecoration: effectiveSelectionDecoration,
-      cellBorderColor: cellBorderColor,
+      cellBorderColor: cellBorderColor ?? theme.ink.withValues(alpha: 0.30),
       headerHeight: headerHeight,
       viewHeaderHeight: viewHeaderHeight,
-      headerStyle: headerStyle ?? const CalendarHeaderStyle(),
-      viewHeaderStyle: viewHeaderStyle ?? const ViewHeaderStyle(),
+      headerStyle: headerStyle ??
+          CalendarHeaderStyle(textStyle: TextStyle(color: theme.text)),
+      viewHeaderStyle: viewHeaderStyle ??
+          ViewHeaderStyle(
+            dayTextStyle: TextStyle(color: theme.textSub),
+            dateTextStyle: TextStyle(color: theme.text),
+          ),
       monthCellBuilder: monthCellBuilder,
       appointmentBuilder: appointmentBuilder,
       timeRegionBuilder: timeRegionBuilder,
-      backgroundColor: backgroundColor,
-      todayTextStyle: todayTextStyle,
+      backgroundColor: backgroundColor ?? theme.paper,
+      todayTextStyle: todayTextStyle ?? TextStyle(color: theme.onPrimary),
       // 回调
       onViewChanged: onViewChanged,
       onTap: onTap,
@@ -351,7 +363,8 @@ class AboutmeSfCalendar extends StatelessWidget {
       // 高级
       specialRegions: specialRegions,
       blackoutDates: blackoutDates,
-      blackoutDatesTextStyle: blackoutDatesTextStyle,
+      blackoutDatesTextStyle: blackoutDatesTextStyle ??
+          TextStyle(color: theme.textSub),
       minDate: minDate,
       maxDate: maxDate,
       showNavigationArrow: showNavigationArrow,

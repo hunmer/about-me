@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/aliveness/channels/chat_aliveness_channel.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
+import 'package:aboutme/plugins/openai/services/chat_media_service.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/utils/image_utils.dart';
@@ -186,6 +187,7 @@ class ChatEventHandler {
         ChatCompletionMessage.system(content: effectiveSystemPrompt),
       ];
 
+
       // 获取历史上下文消息
       developer.log(
         '检查 contextCount: metadata = ${originalMessage.metadata}',
@@ -222,7 +224,7 @@ class ChatEventHandler {
             } else {
               contextMessages.add(
                 ChatCompletionMessage.user(
-                  content: ChatCompletionUserMessageContent.string(msg.content),
+                  content: ChatCompletionUserMessageContent.string(ChatMediaService.contextText(msg)),
                 ),
               );
             }
@@ -240,7 +242,7 @@ class ChatEventHandler {
       contextMessages.add(
         ChatCompletionMessage.user(
           content: ChatCompletionUserMessageContent.string(
-            originalMessage.content,
+            ChatMediaService.contextText(originalMessage, allowRead: true),
           ),
         ),
       );
@@ -250,11 +252,10 @@ class ChatEventHandler {
         name: 'ChatEventHandler',
       );
 
-      await RequestService.streamResponseWithRetry(
+      await ChatMediaService.streamResponse(
         agent: agent,
         prompt: null, // 不再需要单独的prompt参数，因为已经添加到contextMessages中
-        vision: hasImage,
-        filePath: absoluteFilePath,
+        messages: [originalMessage],
         contextMessages: contextMessages,
         onToken: (token) async {
           if (!streamController.isClosed) {

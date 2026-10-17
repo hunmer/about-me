@@ -8,41 +8,45 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
-/// 打卡项目表单屏幕
+/// 打卡项目表单屏幕（全屏，编辑模式入口）
 ///
-/// 使用 FormBuilderWrapper 进行声明式表单构建
+/// 使用 FormBuilderWrapper 进行声明式表单构建；
+/// 新建模式通过 [showAsSheet] 以底部弹层打开
 class CheckinFormScreen extends StatefulWidget {
   /// 初始打卡项目（编辑模式）
   final CheckinItem? initialItem;
 
   const CheckinFormScreen({super.key, this.initialItem});
 
+  /// 以底部弹层形式打开表单（新建打卡项目）
+  static Future<CheckinItem?> showAsSheet(
+    BuildContext context, {
+    CheckinItem? initialItem,
+  }) {
+    final fieldsKey = GlobalKey<CheckinFormFieldsState>();
+    return SmoothBottomSheet.showForm<CheckinItem>(
+      context: context,
+      title: initialItem == null
+          ? 'checkin_addCheckinItem'.tr
+          : 'checkin_editCheckinItemTitle'.tr,
+      onSave: () => fieldsKey.currentState?.submit(),
+      child: CheckinFormFields(key: fieldsKey, initialItem: initialItem),
+    );
+  }
+
   @override
   State<CheckinFormScreen> createState() => _CheckinFormScreenState();
 }
 
 class _CheckinFormScreenState extends State<CheckinFormScreen> {
-  /// 表单 key（用于名称验证）
-  final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
-
-  /// FormBuilderWrapper 的状态（用于触发提交）
-  FormBuilderWrapperState? _wrapperState;
-
-  /// 现有分组集合
-  Set<String> _existingGroups = <String>{};
-
-  /// 现有名称集合
-  Set<String> _existingNames = <String>{};
-
-  /// 当前提醒类型（用于条件显示字段）
-  ReminderType? _currentReminderType;
+  final GlobalKey<CheckinFormFieldsState> _fieldsKey =
+      GlobalKey<CheckinFormFieldsState>();
 
   @override
   void initState() {
     super.initState();
-    _currentReminderType = widget.initialItem?.reminderSettings?.type;
-    _loadExistingData();
 
     // 初始化时设置路由上下文
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -68,6 +72,66 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
         params: {},
       );
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.initialItem == null
+              ? 'checkin_addCheckinItem'.tr
+              : 'checkin_editCheckinItemTitle'.tr,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => _fieldsKey.currentState?.submit(),
+            child: Text('checkin_save'.tr),
+          ),
+        ],
+      ),
+      body: CheckinFormFields(
+        key: _fieldsKey,
+        initialItem: widget.initialItem,
+      ),
+    );
+  }
+}
+
+/// 打卡项目表单内容（供全屏页面与底部弹层复用）
+///
+/// 使用 FormBuilderWrapper 进行声明式表单构建
+class CheckinFormFields extends StatefulWidget {
+  /// 初始打卡项目（编辑模式）
+  final CheckinItem? initialItem;
+
+  const CheckinFormFields({super.key, this.initialItem});
+
+  @override
+  State<CheckinFormFields> createState() => CheckinFormFieldsState();
+}
+
+class CheckinFormFieldsState extends State<CheckinFormFields> {
+  /// 表单 key（用于名称验证）
+  final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
+
+  /// FormBuilderWrapper 的状态（用于触发提交）
+  FormBuilderWrapperState? _wrapperState;
+
+  /// 现有分组集合
+  Set<String> _existingGroups = <String>{};
+
+  /// 现有名称集合
+  Set<String> _existingNames = <String>{};
+
+  /// 当前提醒类型（用于条件显示字段）
+  ReminderType? _currentReminderType;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentReminderType = widget.initialItem?.reminderSettings?.type;
+    _loadExistingData();
   }
 
   /// 加载现有分组和名称
@@ -162,6 +226,7 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
       icon: icon,
       color: color,
       group: group,
+      isPenalty: values['isPenalty'] as bool? ?? false,
       reminderSettings: reminderSettings,
       checkInRecords: widget.initialItem?.checkInRecords ?? {},
     );
@@ -179,162 +244,156 @@ class _CheckinFormScreenState extends State<CheckinFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.initialItem == null
-              ? 'checkin_addCheckinItem'.tr
-              : 'checkin_editCheckinItemTitle'.tr,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => _handleSave(),
-            child: Text('checkin_save'.tr),
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: FormBuilderWrapper(
-          formKey: _formKey,
-          onStateReady: (state) => _wrapperState = state,
-          config: FormConfig(
-            submitButtonText: 'checkin_save'.tr,
-            showSubmitButton: false,
-            showResetButton: false,
-            fieldSpacing: 16,
-            onValidationFailed: (errors) {
-              Toast.error(errors.values.join(', '));
-            },
-            onSubmit: _handleSubmit,
-            fields: [
-              // 图标和颜色选择器
-              FormFieldConfig(
-                name: 'iconColor',
-                type: FormFieldType.circleIconPicker,
-                initialValue: {
-                  'icon': widget.initialItem?.icon ?? Icons.check_circle,
-                  'color': widget.initialItem?.color ?? Colors.blue,
-                },
-              ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: FormBuilderWrapper(
+        formKey: _formKey,
+        onStateReady: (state) => _wrapperState = state,
+        config: FormConfig(
+          submitButtonText: 'checkin_save'.tr,
+          showSubmitButton: false,
+          showResetButton: false,
+          fieldSpacing: 16,
+          onValidationFailed: (errors) {
+            Toast.error(errors.values.join(', '));
+          },
+          onSubmit: _handleSubmit,
+          fields: [
+            // 图标和颜色选择器
+            FormFieldConfig(
+              name: 'iconColor',
+              type: FormFieldType.circleIconPicker,
+              initialValue: {
+                'icon': widget.initialItem?.icon ?? Icons.check_circle,
+                'color': widget.initialItem?.color ?? Colors.blue,
+              },
+            ),
 
-              // 名称输入框
-              FormFieldConfig(
-                name: 'name',
-                type: FormFieldType.text,
-                labelText: 'checkin_nameLabel'.tr,
-                hintText: 'checkin_nameHint'.tr,
-                initialValue: widget.initialItem?.name ?? '',
-                required: true,
-                validationMessage: 'checkin_nameRequiredError'.tr,
-              ),
+            // 名称输入框
+            FormFieldConfig(
+              name: 'name',
+              type: FormFieldType.text,
+              labelText: 'checkin_nameLabel'.tr,
+              hintText: 'checkin_nameHint'.tr,
+              initialValue: widget.initialItem?.name ?? '',
+              required: true,
+              validationMessage: 'checkin_nameRequiredError'.tr,
+            ),
 
-              // 分组输入框
-              FormFieldConfig(
-                name: 'group',
-                type: FormFieldType.text,
-                labelText: 'checkin_groupLabel'.tr,
-                hintText: 'checkin_groupHint'.tr,
-                initialValue: widget.initialItem?.group ?? '',
-              ),
+            // 分组输入框
+            FormFieldConfig(
+              name: 'group',
+              type: FormFieldType.text,
+              labelText: 'checkin_groupLabel'.tr,
+              hintText: 'checkin_groupHint'.tr,
+              initialValue: widget.initialItem?.group ?? '',
+            ),
 
-              // 提醒类型选择器
-              FormFieldConfig(
-                name: 'reminderType',
-                type: FormFieldType.select,
-                labelText: 'checkin_reminderTypeLabel'.tr,
-                initialValue: widget.initialItem?.reminderSettings?.type,
-                items: [
-                  DropdownMenuItem(
-                    value: null,
-                    child: Text('checkin_noReminder'.tr),
+            // 扣分项开关
+            FormFieldConfig(
+              name: 'isPenalty',
+              type: FormFieldType.switchField,
+              labelText: 'checkin_penaltyLabel'.tr,
+              hintText: 'checkin_penaltyHint'.tr,
+              prefixIcon: Icons.remove_circle_outline,
+              initialValue: widget.initialItem?.isPenalty ?? false,
+            ),
+
+            // 提醒类型选择器
+            FormFieldConfig(
+              name: 'reminderType',
+              type: FormFieldType.select,
+              labelText: 'checkin_reminderTypeLabel'.tr,
+              initialValue: widget.initialItem?.reminderSettings?.type,
+              items: [
+                DropdownMenuItem(
+                  value: null,
+                  child: Text('checkin_noReminder'.tr),
+                ),
+                ...ReminderType.values.map(
+                  (type) => DropdownMenuItem(
+                    value: type,
+                    child: Text(switch (type) {
+                      ReminderType.weekly => 'checkin_weeklyReminder'.tr,
+                      ReminderType.monthly => 'checkin_monthlyReminder'.tr,
+                      ReminderType.specific => 'checkin_specificDateReminder'.tr,
+                    }),
                   ),
-                  ...ReminderType.values.map(
-                    (type) => DropdownMenuItem(
-                      value: type,
-                      child: Text(switch (type) {
-                        ReminderType.weekly => 'checkin_weeklyReminder'.tr,
-                        ReminderType.monthly => 'checkin_monthlyReminder'.tr,
-                        ReminderType.specific =>
-                          'checkin_specificDateReminder'.tr,
-                      }),
-                    ),
-                  ),
-                ],
-                onChanged: _onReminderTypeChanged,
-              ),
-
-              // 月份日期选择器（仅当选择每月提醒时显示）
-              FormFieldConfig(
-                name: 'monthDay',
-                type: FormFieldType.select,
-                labelText: 'checkin_monthlyReminderDayLabel'.tr,
-                initialValue: widget.initialItem?.reminderSettings?.dayOfMonth,
-                visible:
-                    (values) => values['reminderType'] == ReminderType.monthly,
-                items: List.generate(31, (index) {
-                  return DropdownMenuItem(
-                    value: index + 1,
-                    child: Text('${index + 1}${'checkin_daySuffix'.tr}'),
-                  );
-                }),
-              ),
-
-              // 特定日期选择器（仅当选择特定日期提醒时显示）
-              FormFieldConfig(
-                name: 'specificDate',
-                type: FormFieldType.date,
-                labelText: 'checkin_selectDate'.tr,
-                initialValue:
-                    widget.initialItem?.reminderSettings?.specificDate,
-                visible:
-                    (values) => values['reminderType'] == ReminderType.specific,
-                extra: {
-                  'firstDate': DateTime.now(),
-                  'lastDate': DateTime.now().add(const Duration(days: 365 * 2)),
-                },
-              ),
-
-              // 提醒时间选择器（有提醒类型时显示）
-              FormFieldConfig(
-                name: 'reminderTime',
-                type: FormFieldType.time,
-                labelText: 'checkin_selectTime'.tr,
-                initialValue:
-                    widget.initialItem?.reminderSettings?.timeOfDay ??
-                    TimeOfDay.now(),
-                visible: (values) => values['reminderType'] != null,
-              ),
-            ],
-          ),
-          contentBuilder: (context, fields) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 标准字段
-                for (final field in fields) ...[
-                  field,
-                  const SizedBox(height: 16),
-                ],
-
-                // 星期选择器（条件显示）
-                if (_currentReminderType == ReminderType.weekly) ...[
-                  _buildWeekdaySelector(),
-                  const SizedBox(height: 16),
-                ],
+                ),
               ],
-            );
-          },
-          buttonBuilder: (context, onSubmit, onReset) {
-            return const SizedBox.shrink(); // 使用 AppBar 右上角的保存按钮
-          },
+              onChanged: _onReminderTypeChanged,
+            ),
+
+            // 月份日期选择器（仅当选择每月提醒时显示）
+            FormFieldConfig(
+              name: 'monthDay',
+              type: FormFieldType.select,
+              labelText: 'checkin_monthlyReminderDayLabel'.tr,
+              initialValue: widget.initialItem?.reminderSettings?.dayOfMonth,
+              visible:
+                  (values) => values['reminderType'] == ReminderType.monthly,
+              items: List.generate(31, (index) {
+                return DropdownMenuItem(
+                  value: index + 1,
+                  child: Text('${index + 1}${'checkin_daySuffix'.tr}'),
+                );
+              }),
+            ),
+
+            // 特定日期选择器（仅当选择特定日期提醒时显示）
+            FormFieldConfig(
+              name: 'specificDate',
+              type: FormFieldType.date,
+              labelText: 'checkin_selectDate'.tr,
+              initialValue:
+                  widget.initialItem?.reminderSettings?.specificDate,
+              visible:
+                  (values) => values['reminderType'] == ReminderType.specific,
+              extra: {
+                'firstDate': DateTime.now(),
+                'lastDate': DateTime.now().add(const Duration(days: 365 * 2)),
+              },
+            ),
+
+            // 提醒时间选择器（有提醒类型时显示）
+            FormFieldConfig(
+              name: 'reminderTime',
+              type: FormFieldType.time,
+              labelText: 'checkin_selectTime'.tr,
+              initialValue:
+                  widget.initialItem?.reminderSettings?.timeOfDay ??
+                  TimeOfDay.now(),
+              visible: (values) => values['reminderType'] != null,
+            ),
+          ],
         ),
+        contentBuilder: (context, fields) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标准字段
+              for (final field in fields) ...[
+                field,
+                const SizedBox(height: 16),
+              ],
+
+              // 星期选择器（条件显示）
+              if (_currentReminderType == ReminderType.weekly) ...[
+                _buildWeekdaySelector(),
+                const SizedBox(height: 16),
+              ],
+            ],
+          );
+        },
+        buttonBuilder: (context, onSubmit, onReset) {
+          return const SizedBox.shrink(); // 保存按钮由外壳提供
+        },
       ),
     );
   }
 
-  /// 保存按钮点击处理
-  void _handleSave() {
+  /// 触发表单提交（供外部保存按钮调用）
+  void submit() {
     // 先验证名称
     final nameValue = _formKey.currentState?.fields['name']?.value as String?;
     final nameError = _validateName(nameValue);

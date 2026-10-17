@@ -42,7 +42,8 @@ class ToolOrchestrator {
     required Function(String firstResponse) onFirstPhaseComplete,
     Function(String)? onThinking,
   }) async {
-    if (!NativeToolAgentService.instance.supports(agent, enableToolCalling)) {
+    if (files.isEmpty &&
+        !NativeToolAgentService.instance.supports(agent, enableToolCalling)) {
       await _executePlainResponse(
         agent: agent,
         contextMessages: contextMessages,
@@ -66,6 +67,31 @@ class ToolOrchestrator {
             agent.alivenessConfig?.enabled == true &&
             !(enableToolCalling && agent.enableFunctionCalling),
         onUpdateMessage: onUpdateMessage,
+        onImageDescription: (path, description) async {
+          // 以附件路径定位原始消息，避免重新生成或并发回复时写错消息。
+          final messages = await context.messageService.getMessages(
+            context.conversationId,
+          );
+          for (final message in messages.where((m) => m.isUser)) {
+            if (!message.attachments.any(
+              (a) => a.isImage && a.filePath == path,
+            )) {
+              continue;
+            }
+            final descriptions = Map<String, dynamic>.from(
+              message.metadata?['imageDescriptions'] as Map? ?? const {},
+            );
+            descriptions[path] = description;
+            await context.messageService.updateMessage(
+              message.copyWith(
+                metadata: {
+                  ...?message.metadata,
+                  'imageDescriptions': descriptions,
+                },
+              ),
+            );
+          }
+        },
         onToolSteps: (steps) async {
           final message = context.messageService.getMessage(
             context.conversationId,
@@ -86,10 +112,9 @@ class ToolOrchestrator {
           );
           if (message != null) {
             context.messageService.updateMessage(
-              message.copyWith(metadata: {
-                ...?message.metadata,
-                'processTexts': texts,
-              }),
+              message.copyWith(
+                metadata: {...?message.metadata, 'processTexts': texts},
+              ),
             );
           }
         },
@@ -114,15 +139,13 @@ class ToolOrchestrator {
     required Function(String error) onError,
     Function(String)? onThinking,
   }) async {
-    final imageFiles = files.where((f) => f.path.isNotEmpty).toList();
     final output = StringBuffer();
     final completer = Completer<String?>();
     await RequestService.streamResponseWithRetry(
       agent: agent,
       prompt: null,
       contextMessages: contextMessages,
-      vision: imageFiles.isNotEmpty,
-      filePath: imageFiles.isNotEmpty ? imageFiles.first.path : null,
+      vision: false,
       responseFormat: null,
       shouldCancel: isCancelling,
       onToken: (token) {

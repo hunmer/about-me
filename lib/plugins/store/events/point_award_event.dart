@@ -1,4 +1,5 @@
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/plugins/store/store_plugin.dart';
 
 /// 积分奖励事件处理器
@@ -64,9 +65,15 @@ class PointAwardEvent {
     await _award('activity_added');
   }
 
-  /// 处理签到完成事件
+  /// 处理签到完成事件（扣分项取反积分）
   Future<void> _handleCheckinCompleted(EventArgs args) async {
-    await _award('checkin_completed');
+    final isPenalty =
+        args is ItemEventArgs && args.data?['isPenalty'] == true;
+    final points = _getPointsForEvent('checkin_completed');
+    await _awardPoints(
+      isPenalty ? -points : points,
+      eventReasons['checkin_completed']!,
+    );
   }
 
   /// 处理任务完成事件
@@ -108,9 +115,9 @@ class PointAwardEvent {
     await _awardPoints(_getPointsForEvent(eventName), eventReasons[eventName]!);
   }
 
-  /// 添加积分
+  /// 添加积分（负数为扣分）
   Future<void> _awardPoints(int points, String reason) async {
-    if (points > 0) {
+    if (points != 0) {
       await _storePlugin.controller.addPoints(points, reason);
     }
   }

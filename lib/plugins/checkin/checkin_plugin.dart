@@ -7,7 +7,6 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:flutter/gestures.dart';
 import 'package:uuid/uuid.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
@@ -78,10 +77,7 @@ class _CheckinMainViewState extends State<CheckinMainView>
             ? Colors.black
             : Colors.white,
         onPressed: () async {
-          final newItem = await NavigationHelper.openContainer<CheckinItem>(
-            context,
-            (context) => const CheckinFormScreen(),
-          );
+          final newItem = await CheckinFormScreen.showAsSheet(context);
           if (newItem != null) {
             await checkinPlugin.addCheckinItem(newItem);
             if (mounted) {

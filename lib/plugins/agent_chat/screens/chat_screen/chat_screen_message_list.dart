@@ -31,8 +31,6 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
       isMultiSelectMode: _isMultiSelectMode,
       selectedMessageIds: _selectedMessageIds,
       scrollController: _scrollController,
-      // 新会话按钮固定在列表视觉底部（随内容滚动）
-      listBottomWidget: _buildNewSessionButton(),
       bubbleBuilder: (context, message) {
         final source = sourceById[message.id];
         if (source == null) return const SizedBox.shrink();
@@ -382,59 +380,6 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
             ),
         ],
       ),
-    );
-  }
-
-  /// 构建新会话按钮
-  Widget _buildNewSessionButton() {
-    return Builder(
-      builder: (context) {
-        final theme = DSThemeBridge.resolve(context);
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: _controller.isLastMessageSessionDivider
-                ? Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.success.mixWhite(0.88),
-                      borderRadius: theme.radii.sm,
-                      border: Border.all(color: theme.success),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        DsIcon(
-                          DsIconKind.check,
-                          size: 16,
-                          color: theme.success,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '已开启新会话',
-                          style: DsTypography.body.copyWith(
-                            color: theme.success,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : DSButton(
-                    label: 'agent_chat_createNewChat'.tr,
-                    icon: DsIconKind.plus,
-                    variant: DSButtonVariant.outline,
-                    onPressed: () async {
-                      // reverse 列表停留在底部，新分隔符出现后自动可见
-                      await _controller.createNewSession();
-                    },
-                  ),
-          ),
-        );
-      },
     );
   }
 }

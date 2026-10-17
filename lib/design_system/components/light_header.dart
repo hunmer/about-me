@@ -18,6 +18,7 @@ class DSLightHeader extends StatelessWidget {
     this.trailing,
     this.trailingWidth = _buttonSize,
     this.onBack,
+    this.showBack = true,
   });
 
   /// 标题文本（居中，超出省略）
@@ -33,6 +34,10 @@ class DSLightHeader extends StatelessWidget {
   /// 返回回调，默认 [Navigator.maybePop]
   final VoidCallback? onBack;
 
+  /// 是否显示返回钮；作为 tab 内嵌的页面传 false
+  /// （左侧补等宽占位保持标题居中）
+  final bool showBack;
+
   /// 与圆钮直径一致，用于标题对称
   static const double _buttonSize = 38;
 
@@ -45,20 +50,23 @@ class DSLightHeader extends StatelessWidget {
       child: Row(
         children: [
           // 尾部动作区超过默认圆钮宽度时，左侧补差保持标题居中
-          Padding(
-            padding: EdgeInsetsDirectional.only(
-              start: trailingWidth > _buttonSize
-                  ? trailingWidth - _buttonSize
-                  : 0,
-            ),
-            child: DSIconButton(
-              icon: DsIconKind.chevronLeft,
-              size: _buttonSize,
-              color: theme.surface,
-              iconColor: theme.text,
-              onPressed: onBack ?? () => Navigator.of(context).maybePop(),
-            ),
-          ),
+          if (showBack)
+            Padding(
+              padding: EdgeInsetsDirectional.only(
+                start: trailingWidth > _buttonSize
+                    ? trailingWidth - _buttonSize
+                    : 0,
+              ),
+              child: DSIconButton(
+                icon: DsIconKind.chevronLeft,
+                size: _buttonSize,
+                color: theme.surface,
+                iconColor: theme.text,
+                onPressed: onBack ?? () => Navigator.of(context).maybePop(),
+              ),
+            )
+          else
+            const SizedBox(width: _buttonSize),
           Expanded(
             child: Text(
               title,

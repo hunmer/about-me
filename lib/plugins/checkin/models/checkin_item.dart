@@ -22,6 +22,8 @@ class CheckinItem {
   ReminderSettings? reminderSettings;
   // 卡片显示风格
   CheckinCardStyle cardStyle;
+  // 扣分项：完成签到时扣除积分而非奖励
+  bool isPenalty;
   // 打卡记录，包含时间范围和备注，key为yyyy-MM-dd格式的日期字符串
   final Map<String, List<CheckinRecord>> checkInRecords;
 
@@ -35,6 +37,7 @@ class CheckinItem {
     List<bool>? frequency,
     this.reminderSettings,
     this.cardStyle = CheckinCardStyle.weekly,
+    this.isPenalty = false,
     Map<String, List<CheckinRecord>>? checkInRecords,
   }) : id = id ?? const Uuid().v4(),
        color = color ?? Colors.blue,
@@ -214,6 +217,7 @@ class CheckinItem {
       'color': color.value,
       'group': group,
       'cardStyle': cardStyle.index,
+      'isPenalty': isPenalty,
       'reminderSettings': reminderSettings?.toJson(),
       'checkInRecords': checkInRecords.map(
         (key, value) => MapEntry(key, value.map((record) => record.toJson()).toList()),
@@ -254,6 +258,7 @@ class CheckinItem {
       cardStyle: json['cardStyle'] != null
           ? CheckinCardStyle.values[json['cardStyle'] as int]
           : CheckinCardStyle.weekly,
+      isPenalty: json['isPenalty'] as bool? ?? false,
       reminderSettings: json['reminderSettings'] != null
           ? ReminderSettings.fromJson(json['reminderSettings'])
           : null,

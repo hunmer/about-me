@@ -231,7 +231,7 @@ class _MessageBubbleState extends State<MessageBubble>
     }
     final fileInfo =
         metadata[Message.metadataKeyFileInfo] as Map<String, dynamic>;
-    return fileInfo['type'] == 'image';
+    return fileInfo['type'] == 'image' || fileInfo['type'] == 'video';
   }
 
   Color _getBackgroundColor(BuildContext context) {
