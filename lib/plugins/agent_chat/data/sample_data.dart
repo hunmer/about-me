@@ -15,7 +15,6 @@ class AgentChatSampleData {
       Conversation(
         id: 'conv-work-001',
         title: '代码审查助手',
-        agentId: 'agent-code-review',
         groups: ['💼 工作助手'],
         contextMessageCount: 20,
         createdAt: now.subtract(const Duration(days: 20)),
@@ -30,7 +29,6 @@ class AgentChatSampleData {
       Conversation(
         id: 'conv-study-001',
         title: 'Flutter 进阶学习',
-        agentId: 'agent-tutor',
         groups: ['📚 学习伙伴'],
         contextMessageCount: 30,
         createdAt: now.subtract(const Duration(days: 25)),
@@ -45,7 +43,6 @@ class AgentChatSampleData {
       Conversation(
         id: 'conv-creative-001',
         title: '产品创意头脑风暴',
-        agentId: 'agent-ideator',
         groups: ['🎨 创意激发'],
         contextMessageCount: 10,
         createdAt: now.subtract(const Duration(days: 12)),

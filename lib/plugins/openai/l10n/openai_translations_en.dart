@@ -229,6 +229,11 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_apiKeyHint': 'Paste your API key',
   'openai_apiKeyRequired': 'Please enter the API key',
   'openai_presetRequired': 'Please select a provider',
+  'openai_defaultModel': 'Default Model',
+  'openai_defaultModelHint': 'Select the default model for this provider',
+  'openai_apiFormatHint': 'Select API format',
+  'openai_headerQuickSelect': 'Quick Select',
+  'openai_custom': 'Custom',
 
   // Prompt Preset
   'openai_promptPresetManagement': 'Prompt Preset Management',

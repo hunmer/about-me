@@ -175,25 +175,20 @@ Widget buildSelectField(
                       // 给弹出层留出上下边距，避免选项较多时超出视口。
                       maxHeight: MediaQuery.sizeOf(ctx).height * 0.6,
                     ),
-                    child: Scrollbar(
-                      thumbVisibility: true,
-                      child: ListView(
-                        padding: EdgeInsets.zero,
-                        shrinkWrap: true,
-                        children: [
-                          for (final item in items)
-                            _SelectOptionRow(
-                              selected: item.value == fieldState.value,
-                              onTap: () {
-                                close();
-                                fieldState.didChange(item.value);
-                                config.onChanged?.call(item.value);
-                              },
-                              child: item.child,
-                            ),
-                        ],
-                      ),
-                    ),
+                  child: _SelectScrollbar(
+                    children: [
+                      for (final item in items)
+                        _SelectOptionRow(
+                          selected: item.value == fieldState.value,
+                          onTap: () {
+                            close();
+                            fieldState.didChange(item.value);
+                            config.onChanged?.call(item.value);
+                          },
+                          child: item.child,
+                        ),
+                    ],
+                  ),
                   ),
               child: trigger,
             )
@@ -249,6 +244,43 @@ Widget buildComboBoxField(FormFieldConfig config, GlobalKey fieldKey) {
       );
     },
   );
+}
+
+/// 下拉选项滚动列表：Scrollbar 与 ListView 共享 ScrollController。
+///
+/// 弹层挂在根 Overlay 上，取不到 PrimaryScrollController，
+/// thumbVisibility 为 true 的 Scrollbar 必须显式持有 controller。
+class _SelectScrollbar extends StatefulWidget {
+  const _SelectScrollbar({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  State<_SelectScrollbar> createState() => _SelectScrollbarState();
+}
+
+class _SelectScrollbarState extends State<_SelectScrollbar> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scrollbar(
+      controller: _controller,
+      thumbVisibility: true,
+      child: ListView(
+        controller: _controller,
+        padding: EdgeInsets.zero,
+        shrinkWrap: true,
+        children: widget.children,
+      ),
+    );
+  }
 }
 
 /// 下拉气泡中的选项行：选中态主色果冻块 + 对勾

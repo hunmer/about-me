@@ -199,7 +199,11 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
   }
 
   Future<void> _selectDefaultModel() async {
-    final providerId = _matchProviderFromUrl(_baseUrlController.text.trim());
+    // 常规模式 baseUrl 未物化到表单，用选中预设的 baseUrl 匹配服务商
+    final baseUrl = _isAdvanced
+        ? _baseUrlController.text.trim()
+        : _selectedPreset?.baseUrl ?? '';
+    final providerId = _matchProviderFromUrl(baseUrl);
     final selectedModel = await NavigationHelper.push<LLMModel>(
       context,
       ModelSearchScreen(
@@ -465,8 +469,8 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                                 Expanded(
                                   child: DSInput(
                                     controller: _defaultModelController,
-                                    label: '默认模型',
-                                    hint: '选择此服务商的默认模型',
+                                    label: 'openai_defaultModel'.tr,
+                                    hint: 'openai_defaultModelHint'.tr,
                                   ),
                                 ),
                                 SizedBox(width: theme.spacing.sm),
@@ -483,7 +487,7 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                             const SizedBox(height: 16),
                             DSSelect<String>(
                               value: _apiFormat,
-                              hint: '选择 API 格式',
+                              hint: 'openai_apiFormatHint'.tr,
                               items: ApiFormat.values
                                   .map(
                                     (format) => DSSelectItem(
@@ -696,6 +700,27 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                                 }
                               },
                             ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DSInput(
+                                    controller: _defaultModelController,
+                                    label: 'openai_defaultModel'.tr,
+                                    hint: 'openai_defaultModelHint'.tr,
+                                  ),
+                                ),
+                                SizedBox(width: theme.spacing.sm),
+                                DSIconButton(
+                                  icon: DsIconKind.search,
+                                  size: 40,
+                                  color: theme.surfaceAlt,
+                                  iconColor: theme.textSub,
+                                  onPressed: _selectDefaultModel,
+                                  tooltip: 'openai_searchModel'.tr,
+                                ),
+                              ],
+                            ),
                           ],
                         ],
                       ),
@@ -740,7 +765,7 @@ class _HeaderQuickSelectState extends State<_HeaderQuickSelect> {
   Widget build(BuildContext context) {
     return DSSelect<String>(
       value: _selectedValue,
-      hint: '快捷选择',
+      hint: 'openai_headerQuickSelect'.tr,
       width: 150,
       items: _commonHeaders.entries
           .map(
@@ -786,7 +811,7 @@ class _HeaderQuickSelectState extends State<_HeaderQuickSelect> {
       case 'Bearer':
         return 'Bearer Token';
       case 'Custom':
-        return '自定义';
+        return 'openai_custom'.tr;
       default:
         return key;
     }

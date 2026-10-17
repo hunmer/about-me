@@ -229,6 +229,11 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_apiKeyHint': '粘贴服务商的 API Key',
   'openai_apiKeyRequired': '请输入 API Key',
   'openai_presetRequired': '请选择服务商',
+  'openai_defaultModel': '默认模型',
+  'openai_defaultModelHint': '选择此服务商的默认模型',
+  'openai_apiFormatHint': '选择 API 格式',
+  'openai_headerQuickSelect': '快捷选择',
+  'openai_custom': '自定义',
 
   // Prompt Preset
   'openai_promptPresetManagement': 'Prompt 预设管理',
