@@ -15,6 +15,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/plugins/todo/views/todo_four_quadrant_view.dart';
+import 'package:aboutme/plugins/todo/views/todo_stats_view.dart';
 import 'package:aboutme/plugins/todo/views/todo_week_view.dart';
 import 'package:aboutme/plugins/todo/widgets/history_completed_view.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
@@ -37,6 +38,9 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
 
   final GlobalKey _bottomBarKey = GlobalKey();
 
+  // 统计页刷新令牌：每次切到统计 tab 递增，触发重新统计
+  int _statsRefreshToken = 0;
+
   // 搜索查询变量
   String _searchQuery = '';
 
@@ -47,13 +51,14 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
   void initState() {
     super.initState();
     _plugin = TodoPlugin.instance;
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
     // 监听tab切换
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() {
           _currentPage = _tabController.index;
+          if (_tabController.index == 2) _statsRefreshToken++;
         });
         // 更新路由上下文
         _updateRouteContext();
@@ -117,11 +122,15 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
 
       params['viewMode'] = _plugin.taskController.viewMode.toString();
       params['sortBy'] = _plugin.taskController.sortBy.toString();
-    } else {
+    } else if (_currentPage == 1) {
       // 历史记录页
       pageId = '/todo_history';
       title = '待办历史记录';
       params['completedCount'] = _plugin.taskController.completedTasks.length;
+    } else {
+      // 统计页
+      pageId = '/todo_stats';
+      title = 'todo_statsTab'.tr;
     }
 
     RouteHistoryManager.updateCurrentContext(
@@ -132,7 +141,11 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
   }
 
   /// 构建 FAB
-  Widget _buildFab() {
+  Widget? _buildFab() {
+    // 统计 tab 无创建入口，不显示 FAB
+    if (_currentPage == 2) {
+      return null;
+    }
     return DSThemeBridge(
       // DSFab 内部取 AppTheme，需包桥
       child: Builder(
@@ -180,12 +193,17 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
         controller: _tabController,
         dragStartBehavior: DragStartBehavior.down,
         physics: const NeverScrollableScrollPhysics(),
-        children: [_buildTabPage(0), _buildTabPage(1)],
+        children: [
+          _buildTabPage(0),
+          _buildTabPage(1),
+          _buildTabPage(2),
+        ],
       ),
       fab: _buildFab(),
       items: [
         DSNavItem(icon: DsIconKind.check, label: 'todo_todoTab'.tr),
         DSNavItem(icon: DsIconKind.clock, label: 'todo_historyTab'.tr),
+        DSNavItem(icon: DsIconKind.chart, label: 'todo_statsTab'.tr),
       ],
     );
   }
@@ -210,6 +228,11 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
         );
       case 1:
         return _buildHistoryView();
+      case 2:
+        return TodoStatsView(
+          taskController: _plugin.taskController,
+          refreshToken: _statsRefreshToken,
+        );
       default:
         return _buildTaskListView();
     }

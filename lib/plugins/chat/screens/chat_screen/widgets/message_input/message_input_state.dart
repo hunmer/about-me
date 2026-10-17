@@ -56,8 +56,10 @@ class MessageInputState {
       Map<String, dynamic>? metadata = {};
 
       if (hasFiles) {
-        // 图片与其它类型分组：多张图片合并为一条「卡片堆」消息，其余逐条发送
+        // 图片/视频与其它类型分组：多张图片、多段视频各自合并为一条
+        // 「卡片堆」消息，其余逐条发送
         final imageFiles = <Map<String, dynamic>>[];
+        final videoFiles = <Map<String, dynamic>>[];
         final otherFiles = <Map<String, dynamic>>[];
         for (final selectedFile in selectedFiles) {
           final fileInfo =
@@ -68,20 +70,24 @@ class MessageInputState {
           }
           if (fileInfo['type'] == 'image') {
             imageFiles.add(selectedFile);
+          } else if (fileInfo['type'] == 'video') {
+            videoFiles.add(selectedFile);
           } else {
             otherFiles.add(selectedFile);
           }
         }
 
+        List<String> pathsOf(List<Map<String, dynamic>> files) => files
+            .map(
+              (f) => ((f['fileInfo'] as Map<String, dynamic>)['path']
+                  as String?),
+            )
+            .whereType<String>()
+            .where((p) => p.isNotEmpty)
+            .toList();
+
         if (imageFiles.length >= 2) {
-          final images = imageFiles
-              .map(
-                (f) => ((f['fileInfo'] as Map<String, dynamic>)['path']
-                    as String?),
-              )
-              .whereType<String>()
-              .where((p) => p.isNotEmpty)
-              .toList();
+          final images = pathsOf(imageFiles);
           final now = DateTime.now();
           final merged = <String, dynamic>{
             'fileInfo': <String, dynamic>{
@@ -118,7 +124,44 @@ class MessageInputState {
           }
         }
 
-        // 非图片文件（视频/音频/文档等）逐条发送
+        if (videoFiles.length >= 2) {
+          final videos = pathsOf(videoFiles);
+          final now = DateTime.now();
+          final merged = <String, dynamic>{
+            'fileInfo': <String, dynamic>{
+              'id': 'stack_${now.millisecondsSinceEpoch}',
+              'name': '${videos.length} 个视频',
+              'originalName': '${videos.length} 个视频',
+              'path': videos.first,
+              'videos': videos,
+              'size': 0,
+              'extension': '.mp4',
+              'mimeType': 'video/mp4',
+              'type': 'video',
+              'isImage': false,
+              'createdAt': now.toIso8601String(),
+            },
+            'senderInfo': videoFiles.first['senderInfo'],
+          };
+          onSendMessage(
+            videos.first,
+            type: 'video',
+            metadata: merged,
+          );
+        } else {
+          // 单段视频照旧独立成一条
+          for (final selectedFile in videoFiles) {
+            final fileInfo =
+                selectedFile['fileInfo'] as Map<String, dynamic>;
+            onSendMessage(
+              fileInfo['path'] as String,
+              type: fileInfo['type'] as String,
+              metadata: selectedFile,
+            );
+          }
+        }
+
+        // 其它文件（音频/文档等）逐条发送
         for (final selectedFile in otherFiles) {
           final fileInfo = selectedFile['fileInfo'] as Map<String, dynamic>;
           onSendMessage(

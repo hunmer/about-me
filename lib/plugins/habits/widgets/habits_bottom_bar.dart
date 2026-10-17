@@ -3,6 +3,7 @@ import 'package:aboutme/plugins/habits/controllers/completion_record_controller.
 import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
 import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
 import 'package:aboutme/plugins/habits/widgets/habits_list/habits_view.dart';
+import 'package:aboutme/plugins/habits/widgets/habits_stats_view.dart';
 import 'package:aboutme/plugins/habits/widgets/skills_list.dart';
 import 'package:aboutme/plugins/habits/widgets/habit_form_sheet.dart';
 import 'package:aboutme/plugins/habits/widgets/skill_form.dart';
@@ -35,6 +36,9 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
   final GlobalKey _bottomBarKey = GlobalKey();
   final GlobalKey _fabKey = GlobalKey();
 
+  // 统计页刷新令牌：每次切到统计 tab 递增，触发重新统计
+  int _statsRefreshToken = 0;
+
   late final HabitController _habitController;
   late final SkillController _skillController;
   late final CompletionRecordController _recordController;
@@ -43,12 +47,13 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
   void initState() {
     super.initState();
     _currentPage = 0;
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.animation?.addListener(() {
       final value = _tabController.animation!.value.round();
       if (value != _currentPage && mounted) {
         setState(() {
           _currentPage = value;
+          if (value == 2) _statsRefreshToken++;
         });
       }
     });
@@ -66,7 +71,11 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
   }
 
   /// 构建 FAB
-  Widget _buildFab() {
+  Widget? _buildFab() {
+    // 统计 tab 无创建入口，不显示 FAB
+    if (_currentPage == 2) {
+      return null;
+    }
     return DSThemeBridge(
       // DSFab 内部取 AppTheme，需包桥
       child: DSFab(
@@ -130,12 +139,20 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
               recordController: _recordController,
             ),
           ),
+          KeepAliveWrapper(
+            child: HabitsStatsView(
+              habitController: _habitController,
+              recordController: _recordController,
+              refreshToken: _statsRefreshToken,
+            ),
+          ),
         ],
       ),
       fab: _buildFab(),
       items: [
         DSNavItem(icon: DsIconKind.check, label: 'habits_habits'.tr),
         DSNavItem(icon: DsIconKind.star, label: 'habits_skills'.tr),
+        DSNavItem(icon: DsIconKind.chart, label: 'habits_statsTab'.tr),
       ],
     );
   }

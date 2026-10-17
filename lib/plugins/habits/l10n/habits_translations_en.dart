@@ -62,6 +62,21 @@ class HabitsTranslationsEn {
     // Common operations
     'habits_habits': 'Habits',
     'habits_skills': 'Skills',
+
+  // Habit stats
+  'habits_statsTab': 'Stats',
+  'habits_statsToday': 'Today',
+  'habits_statsTodayCheckin': 'Check-ins Today',
+  'habits_statsUnit': 'times',
+  'habits_statsVsYesterday': '@diff vs yesterday',
+  'habits_statsSummary': '@total check-ins · @habits habits',
+  'habits_statsStreak': '@count-day streak',
+  'habits_statsNotStarted': 'No check-ins yet',
+  'habits_statsTodayChart': 'Check-ins Today',
+  'habits_statsDailyChart': 'Last 7 Days',
+  'habits_statsDailyAvg': 'Avg @count / day',
+  'habits_statsCountLabel': '@count check-ins',
+  'habits_statsRanking': 'Top Habits',
     'habits_recordDeleted': 'Record deleted',
     'habits_deleteRecord': 'Delete Record',
     'habits_deleteRecordMessage':

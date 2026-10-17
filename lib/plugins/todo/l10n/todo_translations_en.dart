@@ -94,6 +94,21 @@ const Map<String, String> todoTranslationsEn = {
   'todo_todoTab': 'Todo',
   'todo_historyTab': 'History',
 
+  // Todo stats
+  'todo_statsTab': 'Stats',
+  'todo_statsToday': 'Today',
+  'todo_statsTodayCompleted': 'Done Today',
+  'todo_statsUnit': 'tasks',
+  'todo_statsVsYesterday': '@diff vs yesterday',
+  'todo_statsSummary': '@active active · @done done',
+  'todo_statsStreak': '@count-day streak',
+  'todo_statsNotStarted': 'No completions yet',
+  'todo_statsTodayChart': 'Completions Today',
+  'todo_statsDailyChart': 'Last 7 Days',
+  'todo_statsDailyAvg': 'Avg @count / day',
+  'todo_statsCountLabel': '@count completed',
+  'todo_statsPriorityChart': 'By Priority',
+
   // Search related
   'todo_searchIn': 'Search in',
   'todo_searchTasksHint': 'Search task titles, notes, tags...',

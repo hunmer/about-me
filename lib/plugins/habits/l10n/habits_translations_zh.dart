@@ -60,6 +60,21 @@ class HabitsTranslationsZh {
     // 通用操作
     'habits_habits': '习惯',
     'habits_skills': '技能',
+
+  // 习惯统计
+  'habits_statsTab': '统计',
+  'habits_statsToday': '今日',
+  'habits_statsTodayCheckin': '今日打卡',
+  'habits_statsUnit': '次',
+  'habits_statsVsYesterday': '@diff 较昨日',
+  'habits_statsSummary': '共 @total 次打卡 · @habits 个习惯',
+  'habits_statsStreak': '连续打卡 @count 天',
+  'habits_statsNotStarted': '尚未开始打卡',
+  'habits_statsTodayChart': '今日打卡分布',
+  'habits_statsDailyChart': '每日打卡分布',
+  'habits_statsDailyAvg': '日均 @count 次',
+  'habits_statsCountLabel': '@count 次打卡',
+  'habits_statsRanking': '习惯活跃排行',
     'habits_recordDeleted': '记录已删除',
     'habits_deleteRecord': '删除记录',
     'habits_deleteRecordMessage': '确定要删除此记录吗？',

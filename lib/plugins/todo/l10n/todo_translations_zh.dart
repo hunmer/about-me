@@ -94,6 +94,21 @@ const Map<String, String> todoTranslationsZh = {
   'todo_todoTab': '待办',
   'todo_historyTab': '历史',
 
+  // 待办统计
+  'todo_statsTab': '统计',
+  'todo_statsToday': '今日',
+  'todo_statsTodayCompleted': '今日完成',
+  'todo_statsUnit': '项',
+  'todo_statsVsYesterday': '@diff 较昨日',
+  'todo_statsSummary': '进行中 @active · 已完成 @done',
+  'todo_statsStreak': '连续完成 @count 天',
+  'todo_statsNotStarted': '尚未完成待办',
+  'todo_statsTodayChart': '今日完成分布',
+  'todo_statsDailyChart': '每日完成分布',
+  'todo_statsDailyAvg': '日均 @count 项',
+  'todo_statsCountLabel': '@count 项完成',
+  'todo_statsPriorityChart': '优先级分布',
+
   // 搜索相关
   'todo_searchIn': '搜索',
   'todo_searchTasksHint': '搜索任务标题、备注、标签...',
