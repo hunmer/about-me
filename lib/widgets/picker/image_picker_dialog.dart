@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:aboutme_data_sdk/aboutme_data_sdk.dart' show StorageFileInfo;
@@ -38,7 +39,8 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/multi_filter_
 /// 网格聚合展示应用存储内各插件上传的图片（chat、calendar_album 等），
 /// 首格为相册入口：移动端使用 wechat_assets_picker，桌面端走系统文件选择。
 /// 表情包 tab：EmojiPicker（svg/图片表情 + Unicode 表情内置分组），
-/// 内置资源选中后转存到 [saveDirectory] 并返回真实文件路径（svg 原样输出），
+/// 内置资源选中后转存到 [saveDirectory]：svg 返回
+/// `{'file_path', 'svg'}`（文件路径 + 源码文本），图片返回真实文件路径；
 /// Unicode 表情以 `{'url': 'emoji:<表情>', 'bytes': null}` 返回
 /// （与在线 URL 入口同构，调用方可用 `emoji:` 前缀区分）。
 class ImagePickerDialog extends StatefulWidget {
@@ -557,12 +559,14 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     );
   }
 
-  /// 选中表情：内置资源（svg/图片表情）转存到目标目录后以真实文件路径返回
-  /// （svg 原样输出 .svg 文件）；Unicode 表情以 `emoji:` 前缀标记返回，
-  /// 与在线 URL 入口同构。多选模式下同样直接返回单条结果
+  /// 选中表情：内置资源（svg/图片表情）转存到目标目录后返回——
+  /// svg 返回 `{'file_path', 'svg'}`（文件路径 + 源码文本），
+  /// 图片返回 `{'url', 'thumbUrl', 'bytes'}`；Unicode 表情以 `emoji:` 前缀
+  /// 标记返回，与在线 URL 入口同构。多选模式下同样直接返回单条结果
   Future<void> _selectEmoji(String value, bool isFreeText) async {
     if (value.startsWith(kBuiltInEmojiPrefix)) {
       final assetPath = value.substring(kBuiltInEmojiPrefix.length);
+      final ext = path.extension(assetPath).toLowerCase();
       try {
         final data = await rootBundle.load(assetPath);
         final bytes = data.buffer.asUint8List(
@@ -572,14 +576,21 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         final url = await ImageUtils.saveBytesToAppDirectory(
           bytes,
           widget.saveDirectory,
-          extension: path.extension(assetPath).toLowerCase(),
+          extension: ext,
         );
         if (mounted) {
-          Navigator.of(context).pop(<String, dynamic>{
-            'url': url,
-            'thumbUrl': null,
-            'bytes': bytes,
-          });
+          Navigator.of(context).pop(
+            ext == '.svg'
+                ? <String, dynamic>{
+                    'file_path': url,
+                    'svg': utf8.decode(bytes),
+                  }
+                : <String, dynamic>{
+                    'url': url,
+                    'thumbUrl': null,
+                    'bytes': bytes,
+                  },
+          );
         }
       } catch (e) {
         debugPrint('保存内置表情失败: $e');

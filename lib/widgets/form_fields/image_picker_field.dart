@@ -112,10 +112,13 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
   }
 
   /// 获取图片路径（从当前选择的图片中提取）
+  ///
+  /// svg 选择结果（ImagePickerDialog 表情包 SVG 贴纸）无 url 字段，
+  /// 路径在 file_path；AdaptiveImage 按 .svg 扩展名自动走矢量渲染
   String? get _imagePath {
     if (_selectedImage == null) return null;
     if (_selectedImage is Map) {
-      return _selectedImage['url'] as String?;
+      return (_selectedImage['url'] ?? _selectedImage['file_path']) as String?;
     }
     return _selectedImage as String?;
   }
@@ -204,7 +207,7 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
   Future<void> _showPicker(BuildContext context) async {
     final initialUrl =
         _selectedImage is Map
-            ? _selectedImage['url'] as String?
+            ? (_selectedImage['url'] ?? _selectedImage['file_path']) as String?
             : _selectedImage as String?;
 
     final result = await ImagePickerDialog.show<dynamic>(

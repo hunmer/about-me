@@ -220,38 +220,56 @@ class _UserItemsState extends State<UserItems> {
     return _buildGroupGrid(groupedItems);
   }
 
-  /// 物品货架视图（主视图与搜索结果共用）：每 4 组一层货架
+  /// 物品展示柜视图（主视图与搜索结果共用）：每 4 组一层，多层相连成整柜；
+  /// 层高按全部物品的层数均分（过滤/搜索结果沿用同一层高，不拉伸），
+  /// 物品过多（低于每层净高下限）时回退滚动
   Widget _buildGroupGrid(List<ItemGroup> groupedItems) {
     final theme = DSThemeBridge.resolve(context);
     const slotsPerShelf = 4;
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        16,
-        16,
-        16 + MediaQuery.paddingOf(context).bottom,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < groupedItems.length; i += slotsPerShelf) ...[
-            if (i > 0) const SizedBox(height: 28),
-            CollectionShelf(
-              theme: theme,
-              seed: i + 1,
-              children: [
-                for (final group
-                    in groupedItems.sublist(
-                      i,
-                      math.min(i + slotsPerShelf, groupedItems.length),
-                    ))
-                  _buildShelfSlot(group),
-              ],
-            ),
-          ],
-        ],
-      ),
+    final rows = <List<ItemGroup>>[
+      for (var i = 0; i < groupedItems.length; i += slotsPerShelf)
+        groupedItems.sublist(
+          i,
+          math.min(i + slotsPerShelf, groupedItems.length),
+        ),
+    ];
+
+    // 层高基准：全部物品（未过滤）的分组层数
+    final totalGroups = _groupItems(widget.controller.userItems).length;
+    final referenceRows = math.max(
+      1,
+      (totalGroups + slotsPerShelf - 1) ~/ slotsPerShelf,
+    );
+
+    final bottomPadding = 16 + MediaQuery.paddingOf(context).bottom;
+    final padding = EdgeInsets.fromLTRB(16, 16, 16, bottomPadding);
+
+    Widget buildCase() => CollectionShelfCase(
+      theme: theme,
+      seed: 1,
+      referenceRowCount: referenceRows,
+      rows: [
+        for (final row in rows) [for (final group in row) _buildShelfSlot(group)],
+      ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 按基准层高估算整柜实际高度：能塞下就静态展示，塞不下改滚动
+        final slotH = CollectionShelfCase.resolveSlotHeight(
+          constraints.maxHeight,
+          referenceRows,
+        );
+        final caseHeight = rows.length * (slotH + CollectionShelfCase.counterHeight);
+        final canFill =
+            constraints.maxHeight.isFinite &&
+            caseHeight + 32 + bottomPadding <= constraints.maxHeight;
+
+        final child = buildCase();
+        if (canFill) return Padding(padding: padding, child: child);
+        return SingleChildScrollView(padding: padding, child: child);
+      },
     );
   }
 
@@ -264,6 +282,7 @@ class _UserItemsState extends State<UserItems> {
         item: group.item,
         count: group.count,
         showCountBadge: true,
+        showNameBadge: true,
       ),
     );
   }
@@ -409,18 +428,39 @@ class ItemGroup {
 class _ItemShelfArt extends StatelessWidget {
   const _ItemShelfArt({
     required this.item,
-    this.size = 76,
+    this.size,
     this.count = 1,
     this.showCountBadge = false,
+    this.showNameBadge = false,
   });
 
   final UserItem item;
-  final double size;
+
+  /// 造型边长；null = 随所在格子自适应（取格宽/格高较小者）
+  final double? size;
   final int count;
   final bool showCountBadge;
 
+  /// 物品上方是否显示名称徽章（货架槽位用，舞台弹窗已有标题不重复）
+  final bool showNameBadge;
+
   @override
   Widget build(BuildContext context) {
+    // 名称徽章占用的纵向空间（预留后造型仍能落在格子内）
+    const nameBadgeSpace = 22.0;
+    if (size != null) return _buildArt(context, size!);
+    return LayoutBuilder(
+      builder: (context, constraints) => _buildArt(
+        context,
+        math.min(
+          constraints.maxWidth,
+          constraints.maxHeight - (showNameBadge ? nameBadgeSpace : 0),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildArt(BuildContext context, double size) {
     final theme = DSThemeBridge.resolve(context);
     final expired = DateTime.now().isAfter(item.expireDate);
 
@@ -448,43 +488,80 @@ class _ItemShelfArt extends StatelessWidget {
       );
     }
 
+    Widget artStack;
     if (!showCountBadge || count <= 1) {
-      return SizedBox(
+      artStack = SizedBox(
         width: size,
         height: size,
         child: Center(child: art),
       );
-    }
-
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(child: Center(child: art)),
-          // 右上：同类物品数量徽章
-          Positioned(
-            top: -4,
-            right: -8,
-            child: JellyBox(
-              width: 20,
-              height: 20,
-              color: theme.ink.withValues(alpha: 0.6),
-              radius: theme.radii.circle,
-              alignment: Alignment.center,
-              child: Text(
-                '$count',
-                style: DsTypography.caption.copyWith(
-                  color: theme.paper,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+    } else {
+      artStack = SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(child: Center(child: art)),
+            // 右上：同类物品数量徽章
+            Positioned(
+              top: -4,
+              right: -8,
+              child: JellyBox(
+                width: 20,
+                height: 20,
+                color: theme.ink.withValues(alpha: 0.6),
+                radius: theme.radii.circle,
+                alignment: Alignment.center,
+                child: Text(
+                  '$count',
+                  style: DsTypography.caption.copyWith(
+                    color: theme.paper,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
+          ],
+        ),
+      );
+    }
+
+    if (!showNameBadge) return artStack;
+
+    // 物品上方：名称徽章（过期物品弱化显示）
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: size),
+          child: JellyBox(
+            color: theme.paper,
+            radius: theme.radii.circle,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    item.productName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTypography.caption.copyWith(
+                      color: expired ? theme.textSub : theme.text,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 2),
+        artStack,
+      ],
     );
   }
 }

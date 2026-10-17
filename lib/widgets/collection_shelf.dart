@@ -9,6 +9,8 @@
 /// 与全局墨线档位（Gentle/Playful/Expressive）自动一致。
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:skribble/skribble.dart';
 
@@ -58,8 +60,7 @@ class _SlotPose {
 }
 
 class _SlotPoseTween extends Tween<_SlotPose> {
-  _SlotPoseTween({required _SlotPose end})
-    : super(begin: _SlotPose.rest, end: end);
+  _SlotPoseTween(_SlotPose begin, _SlotPose end) : super(begin: begin, end: end);
 
   @override
   _SlotPose lerp(double t) =>
@@ -78,34 +79,29 @@ class _CollectionShelfSlotState extends State<CollectionShelfSlot>
     curve: Curves.easeInOut,
   );
 
-  /// Q 弹关键帧（对应 clawbert 的 jellyBounce keyframes）
+  /// Q 弹关键帧（对应 clawbert 的 jellyBounce keyframes；
+  /// 必须用覆写了 lerp 的 _SlotPoseTween，基类 Tween 无法插值自定义类型）
   static final _jellySequence = TweenSequence<_SlotPose>([
     TweenSequenceItem(
-      tween: Tween(
-        begin: _SlotPose.rest,
-        end: const _SlotPose(1.14, 0.88, 2),
+      tween: _SlotPoseTween(_SlotPose.rest, const _SlotPose(1.14, 0.88, 2)),
+      weight: 25,
+    ),
+    TweenSequenceItem(
+      tween: _SlotPoseTween(
+        const _SlotPose(1.14, 0.88, 2),
+        const _SlotPose(0.92, 1.12, -10),
       ),
       weight: 25,
     ),
     TweenSequenceItem(
-      tween: Tween(
-        begin: const _SlotPose(1.14, 0.88, 2),
-        end: const _SlotPose(0.92, 1.12, -10),
+      tween: _SlotPoseTween(
+        const _SlotPose(0.92, 1.12, -10),
+        const _SlotPose(1.05, 0.96, -2),
       ),
       weight: 25,
     ),
     TweenSequenceItem(
-      tween: Tween(
-        begin: const _SlotPose(0.92, 1.12, -10),
-        end: const _SlotPose(1.05, 0.96, -2),
-      ),
-      weight: 25,
-    ),
-    TweenSequenceItem(
-      tween: Tween(
-        begin: const _SlotPose(1.05, 0.96, -2),
-        end: _SlotPose.rest,
-      ),
+      tween: _SlotPoseTween(const _SlotPose(1.05, 0.96, -2), _SlotPose.rest),
       weight: 25,
     ),
   ]);
@@ -144,7 +140,7 @@ class _CollectionShelfSlotState extends State<CollectionShelfSlot>
             : _SlotPose.rest;
 
         return TweenAnimationBuilder<_SlotPose>(
-          tween: _SlotPoseTween(end: base),
+          tween: _SlotPoseTween(_SlotPose.rest, base),
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
           builder: (context, basePose, _) {
@@ -175,94 +171,291 @@ class _CollectionShelfSlotState extends State<CollectionShelfSlot>
   }
 }
 
-/// 单层货架：背板 + 左右出檐的搁板横木，物品（槽位）底对齐站立
+/// 连体多层展示柜（clawbert 柜台结构）
 ///
-/// [children] 通常是一组 [CollectionShelfSlot]；不满一排时槽位均分整行宽度
-/// （与 clawbert 每层 4 格的网格一致）。
-class CollectionShelf extends StatelessWidget {
-  const CollectionShelf({
+/// 还原参考稿的多面透视柜台：每层 = 背板 + 左右透视侧板 + 前宽后窄的
+/// 木质台面，多层零间距相连成整柜（侧板纵贯、台面即层隔板），
+/// 物品（槽位）立于各层台面上。墨线走 skribble rough 引擎，
+/// 颜色全取主题：
+/// - 背板：主题淡彩（hatch）
+/// - 侧板：纸面（surface）
+/// - 台面：主色调淡
+class CollectionShelfCase extends StatelessWidget {
+  const CollectionShelfCase({
     super.key,
     required this.theme,
-    this.children = const [],
-    this.slotHeight = 96,
+    required this.rows,
+    this.slotHeight = 92,
+    this.slotsPerRow = 4,
+    this.referenceRowCount,
     this.backboardColor,
-    this.boardColor,
+    this.wallColor,
+    this.counterColor,
     this.seed = 1,
   });
 
   final AppThemeData theme;
 
-  /// 槽位列表
-  final List<Widget> children;
+  /// 每层的槽位列表（通常每层 4 个 [CollectionShelfSlot]）
+  final List<List<Widget>> rows;
 
-  /// 槽位高度（不含搁板横木）
+  /// 每层净高（不含木质台面）；高度约束有限时会被拉伸撑满（见 [build]）
   final double slotHeight;
 
-  /// 背板底色（默认主题次级背景）
+  /// 层高基准层数：高度均分按此数计算而非实际 [rows] 数，
+  /// 搜索/过滤后行数变少时层高保持与全量视图一致，不拉伸成巨层
+  final int? referenceRowCount;
+
+  /// 每层固定格数（末排不足时空格占位，物品仍占 1/N 格宽）
+  final int slotsPerRow;
+
+  /// 背板底色（默认主题淡彩）
   final Color? backboardColor;
 
-  /// 搁板横木底色（默认主色调淡）
-  final Color? boardColor;
+  /// 左右侧板底色（默认纸面）
+  final Color? wallColor;
 
-  /// 墨迹 seed（多层货架传不同值让墨线有变化）
+  /// 木质台面底色（默认主色调淡）
+  final Color? counterColor;
+
+  /// 墨迹 seed
   final int seed;
+
+  /// 侧板内缩宽度（透视深度）
+  static const double wallInset = 16;
+
+  /// 木质台面前缘高度
+  static const double counterHeight = 14;
+
+  /// 撑满可用高度时每层净高的下限（行数过多时不再压缩，交由外层滚动）
+  static const double minSlotHeight = 64;
+
+  /// 解析层高：可用高度按 [referenceRowCount] 层均分（有下限），
+  /// 高度无界（滚动内）用 [base] 固定层高
+  static double resolveSlotHeight(
+    double maxHeight,
+    int referenceRowCount, [
+    double base = 92,
+  ]) {
+    if (!maxHeight.isFinite || referenceRowCount <= 0) return base;
+    return math.max(
+      minSlotHeight,
+      (maxHeight - referenceRowCount * counterHeight) / referenceRowCount,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final back = backboardColor ?? theme.surfaceAlt;
-    final board = boardColor ?? theme.primary.withValues(alpha: 0.55);
+    return LayoutBuilder(builder: (context, constraints) {
+      // 高度约束有限（如页面 body 内）→ 层高按基准层数均分（默认实际层数）；
+      // 搜索/过滤结果传全量层数作基准，行数少时层高不拉伸
+      final slotH = resolveSlotHeight(
+        constraints.maxHeight,
+        referenceRowCount ?? rows.length,
+        slotHeight,
+      );
+      final rowH = slotH + counterHeight;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // 背板：物品站立其上
-        Container(
-          decoration: dsSketchDecoration(
-            theme: theme,
-            fillColor: back,
-            radius: BorderRadius.circular(14),
-            seed: seed,
-          ),
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-          child: SizedBox(
-            height: slotHeight,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (var i = 0; i < children.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 8),
-                  Expanded(child: children[i]),
-                ],
-              ],
-            ),
-          ),
-        ),
-        // 搁板横木：左右出檐（Container margin 不允许负值，用 Stack 负偏移实现）
-        Stack(
-          clipBehavior: Clip.none,
+      return SizedBox(
+        height: rows.length * rowH,
+        child: Stack(
           children: [
-            // 占位撑起 Stack 高度（宽度随外部拉伸）
-            const SizedBox(height: 12, width: double.infinity),
-            Positioned(
-              left: -6,
-              right: -6,
-              top: 0,
-              child: Container(
-                height: 12,
-                decoration: dsSketchDecoration(
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _ShelfCasePainter(
                   theme: theme,
-                  fillColor: board,
-                  radius: BorderRadius.circular(6),
-                  seed: seed + 1,
+                  rowCount: rows.length,
+                  slotHeight: slotH,
+                  backboardColor: backboardColor,
+                  wallColor: wallColor,
+                  counterColor: counterColor,
+                  seed: seed,
                 ),
               ),
             ),
+            // 各层槽位：物品站立在台面上（底部略压台面）；
+            // 不足固定格数的末排用空格占位，保持每格 1/N 宽
+            for (var i = 0; i < rows.length; i++)
+              Positioned(
+                left: wallInset + 8,
+                right: wallInset + 8,
+                top: i * rowH + 6,
+                height: rowH - 10,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (var j = 0; j < slotsPerRow; j++) ...[
+                      if (j > 0) const SizedBox(width: 8),
+                      Expanded(
+                        child: j < rows[i].length
+                            ? rows[i][j]
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
           ],
         ),
-      ],
-    );
+      );
+    });
   }
+}
+
+/// 展示柜绘制：按层画 背板 → 木质台面（梯形）→ 左右侧板（透视四边形）→ 外框
+class _ShelfCasePainter extends CustomPainter {
+  _ShelfCasePainter({
+    required this.theme,
+    required this.rowCount,
+    required this.slotHeight,
+    this.backboardColor,
+    this.wallColor,
+    this.counterColor,
+    required this.seed,
+  });
+
+  final AppThemeData theme;
+  final int rowCount;
+  final double slotHeight;
+  final Color? backboardColor;
+  final Color? wallColor;
+  final Color? counterColor;
+  final int seed;
+
+  Size? _size;
+  late final List<RoughDrawing> _drawings;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || rowCount == 0) return;
+    if (_size != size) {
+      _drawings = _prepare(size);
+      _size = size;
+    }
+    for (final d in _drawings) {
+      d.paint(canvas, progress: 1, pressure: 0);
+    }
+  }
+
+  List<RoughDrawing> _prepare(Size size) {
+    final back = backboardColor ?? theme.hatch;
+    final wall = wallColor ?? theme.paper;
+    final counter = counterColor ?? theme.primary.withValues(alpha: 0.55);
+    final ink = theme.ink;
+
+    // 与全局墨线档位一致的绘制配置（reset 保证 rebuild 墨迹稳定）
+    final dc = theme.wired.drawConfig;
+    final generator = Generator(dc, SolidFiller());
+
+    Paint borderPaint() => Paint()
+      ..style = PaintingStyle.stroke
+      ..isAntiAlias = true
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 1.8
+      ..color = ink;
+    Paint fillPaint(Color color) => borderPaint()..color = color;
+
+    // 生成一个手绘多边形（带实底填充）
+    RoughDrawing polygon(List<PointD> points, Color fill) {
+      dc.randomizer.reset();
+      return RoughDrawing(
+        generator.polygon(points),
+        borderPaint(),
+        fillPaint(fill),
+      );
+    }
+
+    // 生成一条闭合手绘描边（无填充）
+    RoughDrawing outline(List<PointD> points) {
+      dc.randomizer.reset();
+      return RoughDrawing(
+        generator.linearPath(points),
+        borderPaint(),
+        fillPaint(ink),
+      );
+    }
+
+    final w = size.width;
+    final wi = CollectionShelfCase.wallInset;
+    final ch = CollectionShelfCase.counterHeight;
+    final rowH = slotHeight + ch;
+    final drawings = <RoughDrawing>[];
+
+    for (var i = 0; i < rowCount; i++) {
+      final top = i * rowH;
+      final counterTop = top + slotHeight;
+      final bottom = top + rowH;
+
+      // 背板（整层高，延伸到台面底）
+      drawings.add(
+        polygon(
+          [
+            PointD(wi, top),
+            PointD(w - wi, top),
+            PointD(w - wi, bottom),
+            PointD(wi, bottom),
+          ],
+          back,
+        ),
+      );
+      // 木质台面：前宽后窄的梯形
+      drawings.add(
+        polygon(
+          [
+            PointD(wi, counterTop),
+            PointD(w - wi, counterTop),
+            PointD(w, bottom),
+            PointD(0, bottom),
+          ],
+          counter,
+        ),
+      );
+      // 左右侧板：透视四边形
+      drawings.add(
+        polygon(
+          [
+            PointD(0, top),
+            PointD(wi, top),
+            PointD(wi, counterTop),
+            PointD(0, bottom),
+          ],
+          wall,
+        ),
+      );
+      drawings.add(
+        polygon(
+          [
+            PointD(w, top),
+            PointD(w - wi, top),
+            PointD(w - wi, counterTop),
+            PointD(w, bottom),
+          ],
+          wall,
+        ),
+      );
+      // 本层外框（层间分隔线即台面前缘）
+      drawings.add(
+        outline([
+          PointD(0, top),
+          PointD(w, top),
+          PointD(w, bottom),
+          PointD(0, bottom),
+        ]),
+      );
+    }
+    return drawings;
+  }
+
+  @override
+  bool shouldRepaint(_ShelfCasePainter oldDelegate) =>
+      oldDelegate.rowCount != rowCount ||
+      oldDelegate.slotHeight != slotHeight ||
+      oldDelegate.seed != seed ||
+      oldDelegate.backboardColor != backboardColor ||
+      oldDelegate.wallColor != wallColor ||
+      oldDelegate.counterColor != counterColor ||
+      !identical(oldDelegate.theme, theme);
 }
 
 /// 舞台详情弹窗的次级操作（小图标行）

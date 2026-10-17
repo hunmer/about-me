@@ -97,6 +97,28 @@ class _AdaptiveImageState extends State<AdaptiveImage> {
     return _resolveFuture;
   }
 
+  /// SVG 矢量渲染：flutter_svg 的 FittedBox 要求两个有限维度，
+  /// 否则无界约束下布局失败（RenderBox was not laid out /
+  /// BoxConstraints forces an infinite height）。
+  /// 缺省维度按另一维 1:1 补齐（fit 会按矢量内容实际比例显示，
+  /// 补齐值不改变显示比例）；两维均缺省时取父级有限宽度兜底
+  Widget _buildSvg(
+    SvgPicture Function(double? width, double? height) builder,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var width = widget.width;
+        var height = widget.height;
+        width ??=
+            height ?? (constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : 240);
+        height ??= width;
+        return builder(width, height);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final imagePath = widget.imagePath;
@@ -110,12 +132,15 @@ class _AdaptiveImageState extends State<AdaptiveImage> {
     if (AdaptiveImage.isNetworkImage(imagePath)) {
       if (AdaptiveImage.isSvgImage(imagePath)) {
         return _buildImageWidget(
-          SvgPicture.network(
-            imagePath,
-            width: widget.width,
-            height: widget.height,
-            fit: widget.fit,
-            errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+          _buildSvg(
+            (width, height) => SvgPicture.network(
+              imagePath,
+              width: width,
+              height: height,
+              fit: widget.fit,
+              errorBuilder:
+                  (context, error, stackTrace) => _buildErrorImage(),
+            ),
           ),
         );
       }
@@ -126,12 +151,15 @@ class _AdaptiveImageState extends State<AdaptiveImage> {
     if (imagePath.startsWith('assets/')) {
       if (AdaptiveImage.isSvgImage(imagePath)) {
         return _buildImageWidget(
-          SvgPicture.asset(
-            imagePath,
-            width: widget.width,
-            height: widget.height,
-            fit: widget.fit,
-            errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+          _buildSvg(
+            (width, height) => SvgPicture.asset(
+              imagePath,
+              width: width,
+              height: height,
+              fit: widget.fit,
+              errorBuilder:
+                  (context, error, stackTrace) => _buildErrorImage(),
+            ),
           ),
         );
       }
@@ -155,13 +183,15 @@ class _AdaptiveImageState extends State<AdaptiveImage> {
           if (resolved != null && resolved.exists) {
             if (AdaptiveImage.isSvgImage(imagePath)) {
               return _buildImageWidget(
-                SvgPicture.file(
-                  File(resolved.absolutePath),
-                  width: widget.width,
-                  height: widget.height,
-                  fit: widget.fit,
-                  errorBuilder: (context, error, stackTrace) =>
-                      _buildErrorImage(),
+                _buildSvg(
+                  (width, height) => SvgPicture.file(
+                    File(resolved.absolutePath),
+                    width: width,
+                    height: height,
+                    fit: widget.fit,
+                    errorBuilder:
+                        (context, error, stackTrace) => _buildErrorImage(),
+                  ),
                 ),
               );
             }

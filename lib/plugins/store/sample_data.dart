@@ -189,6 +189,183 @@ List<Product> getDefaultProducts() {
       exchangeEnd: oneYearFromNow,
       useDuration: 60,
     ),
+    // ===== 更多示例商品（凑满 32 组 = 8 层货架，测试滚动/翻页）=====
+    Product(
+      id: '1705123456805',
+      name: '迷你手机挂坠',
+      description: '挂在包上的迷你手机小伙伴',
+      image: 'assets/svg/items/tech_smartphone.svg',
+      stock: 20,
+      price: 40,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 30,
+    ),
+    Product(
+      id: '1705123456806',
+      name: '拍立得相机',
+      description: '咔嚓一声留住今天的美好',
+      image: 'assets/svg/items/tech_instant-camera.svg',
+      stock: 8,
+      price: 130,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 30,
+    ),
+    Product(
+      id: '1705123456807',
+      name: '怀旧掌机',
+      description: '装满经典小游戏的老伙计',
+      image: 'assets/svg/items/tech_handheld-console.svg',
+      stock: 10,
+      price: 110,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 60,
+    ),
+    Product(
+      id: '1705123456808',
+      name: '豆豆耳机仓',
+      description: '圆滚滚的随身音乐补给站',
+      image: 'assets/svg/items/tech_earbuds-case.svg',
+      stock: 15,
+      price: 75,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 30,
+    ),
+    Product(
+      id: '1705123456809',
+      name: '复古小电视',
+      description: '循环播放雪花噪点的小电视',
+      image: 'assets/svg/items/tech_retro-tv.svg',
+      stock: 6,
+      price: 140,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 90,
+    ),
+    Product(
+      id: '1705123456810',
+      name: '元气智能手表',
+      description: '提醒你起来活动一下手腕',
+      image: 'assets/svg/items/tech_smartwatch.svg',
+      stock: 12,
+      price: 95,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 30,
+    ),
+    Product(
+      id: '1705123456811',
+      name: '云朵小沙发',
+      description: '陷进去就不想起来的软沙发',
+      image: 'assets/svg/items/furniture_cozy-sofa.svg',
+      stock: 5,
+      price: 160,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 90,
+    ),
+    Product(
+      id: '1705123456812',
+      name: '暖光台灯',
+      description: '深夜陪伴的温柔光源',
+      image: 'assets/svg/items/furniture_table-lamp.svg',
+      stock: 10,
+      price: 70,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 60,
+    ),
+    Product(
+      id: '1705123456813',
+      name: '爱心地毯',
+      description: '踩上去软绵绵的房间点缀',
+      image: 'assets/svg/items/furniture_heart-rug.svg',
+      stock: 8,
+      price: 85,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 90,
+    ),
+    Product(
+      id: '1705123456814',
+      name: '迷你书架',
+      description: '能塞下几本心爱小书的架子',
+      image: 'assets/svg/items/furniture_bookshelf.svg',
+      stock: 6,
+      price: 120,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 90,
+    ),
+    Product(
+      id: '1705123456815',
+      name: '爱心抱枕',
+      description: '抱着午睡的幸福道具',
+      image: 'assets/svg/items/furniture_heart-cushion.svg',
+      stock: 12,
+      price: 55,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 30,
+    ),
+    Product(
+      id: '1705123456816',
+      name: '安心小夜灯',
+      description: '怕黑星人的床头守护',
+      image: 'assets/svg/items/furniture_nightlight.svg',
+      stock: 12,
+      price: 50,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 60,
+    ),
+    Product(
+      id: '1705123456817',
+      name: '草莓蛋糕',
+      description: '奶油与草莓的双倍快乐',
+      image: 'assets/svg/items/easy_cake.svg',
+      stock: 20,
+      price: 35,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 1,
+    ),
+    Product(
+      id: '1705123456818',
+      name: '香浓咖啡',
+      description: '唤醒瞌睡大脑的热饮',
+      image: 'assets/svg/items/easy_coffee.svg',
+      stock: 25,
+      price: 18,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 1,
+    ),
+    Product(
+      id: '1705123456819',
+      name: '泰迪小熊',
+      description: '最忠实的小伙伴',
+      image: 'assets/svg/items/easy_teddy-bear.svg',
+      stock: 10,
+      price: 80,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 90,
+    ),
+    Product(
+      id: '1705123456820',
+      name: '垂耳兔玩偶',
+      description: '耳朵软软的治愈系玩偶',
+      image: 'assets/svg/items/easy_bunny.svg',
+      stock: 10,
+      price: 78,
+      exchangeStart: now,
+      exchangeEnd: oneYearFromNow,
+      useDuration: 90,
+    ),
   ];
 }
 
@@ -273,6 +450,24 @@ List<UserItem> getDefaultUserItems() {
     make(14, '1705130000114', expiresInDays: -3), // 文艺贝雷帽（过期剪影）
     make(15, '1705130000115', expiresInDays: 25), // 暖烘烘围巾
     make(15, '1705130000116', expiresInDays: 50), // 暖烘烘围巾（第 2 件 → ×2 徽章）
+
+    // ===== 更多示例物品（凑满 32 组 = 8 层货架，测试滚动/翻页）=====
+    make(16, '1705130000117', expiresInDays: 15), // 迷你手机挂坠
+    make(17, '1705130000118', expiresInDays: 4), // 拍立得相机（即将过期）
+    make(18, '1705130000119', expiresInDays: 70), // 怀旧掌机
+    make(19, '1705130000120', expiresInDays: -4), // 豆豆耳机仓（过期剪影）
+    make(20, '1705130000121', expiresInDays: 80), // 复古小电视
+    make(21, '1705130000122', expiresInDays: 6), // 元气智能手表（即将过期）
+    make(22, '1705130000123', expiresInDays: 85), // 云朵小沙发
+    make(23, '1705130000124', expiresInDays: 35), // 暖光台灯
+    make(24, '1705130000125', expiresInDays: -5), // 爱心地毯（过期剪影）
+    make(25, '1705130000126', expiresInDays: 55), // 迷你书架
+    make(26, '1705130000127', expiresInDays: 28), // 爱心抱枕
+    make(27, '1705130000128', expiresInDays: 65), // 安心小夜灯
+    make(28, '1705130000129', expiresInDays: 2), // 草莓蛋糕（即将过期）
+    make(29, '1705130000130', expiresInDays: -6), // 香浓咖啡（过期剪影）
+    make(30, '1705130000131', expiresInDays: 95), // 泰迪小熊
+    make(31, '1705130000132', expiresInDays: 42), // 垂耳兔玩偶
   ];
 }
 
