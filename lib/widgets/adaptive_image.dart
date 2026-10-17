@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
 /// 自适应图片组件
 ///
-/// 支持网络图片和本地图片的显示，自动处理相对路径转绝对路径。
+/// 支持网络图片、本地图片与 SVG 矢量图（按 .svg 扩展名分流到 flutter_svg））
+/// 的显示，自动处理相对路径转绝对路径。
 /// 特点：高度自适应，支持圆形裁剪，适用于列表项、图片卡片、头像等场景。
 /// 加载状态和错误状态有对应的占位显示。
 ///
@@ -57,6 +59,11 @@ class AdaptiveImage extends StatefulWidget {
     return path.startsWith('http://') || path.startsWith('https://');
   }
 
+  /// 判断是否为 SVG 矢量图（按扩展名）
+  static bool isSvgImage(String path) {
+    return path.toLowerCase().endsWith('.svg');
+  }
+
   @override
   State<AdaptiveImage> createState() => _AdaptiveImageState();
 }
@@ -99,13 +106,35 @@ class _AdaptiveImageState extends State<AdaptiveImage> {
       return _buildDefaultOrError();
     }
 
-    // 网络图片直接加载
+    // 网络图片直接加载（SVG 走矢量渲染）
     if (AdaptiveImage.isNetworkImage(imagePath)) {
+      if (AdaptiveImage.isSvgImage(imagePath)) {
+        return _buildImageWidget(
+          SvgPicture.network(
+            imagePath,
+            width: widget.width,
+            height: widget.height,
+            fit: widget.fit,
+            errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+          ),
+        );
+      }
       return _buildNetworkImage(imagePath);
     }
 
-    // 内置资源图片（assets/ 前缀）直接加载
+    // 内置资源图片（assets/ 前缀）直接加载（SVG 走矢量渲染）
     if (imagePath.startsWith('assets/')) {
+      if (AdaptiveImage.isSvgImage(imagePath)) {
+        return _buildImageWidget(
+          SvgPicture.asset(
+            imagePath,
+            width: widget.width,
+            height: widget.height,
+            fit: widget.fit,
+            errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+          ),
+        );
+      }
       return _buildImageWidget(
         Image.asset(
           imagePath,
@@ -124,6 +153,18 @@ class _AdaptiveImageState extends State<AdaptiveImage> {
         if (snapshot.connectionState == ConnectionState.done) {
           final resolved = snapshot.data;
           if (resolved != null && resolved.exists) {
+            if (AdaptiveImage.isSvgImage(imagePath)) {
+              return _buildImageWidget(
+                SvgPicture.file(
+                  File(resolved.absolutePath),
+                  width: widget.width,
+                  height: widget.height,
+                  fit: widget.fit,
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildErrorImage(),
+                ),
+              );
+            }
             return _buildLocalImage(resolved.absolutePath);
           }
           return _buildDefaultOrError();

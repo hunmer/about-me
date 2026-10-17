@@ -210,6 +210,7 @@ flutter:
     - assets/tool_templates/
     - assets/icons/material/  # Material Icons for Android widgets
     - assets/icons/svg/  # SVG 图标（空状态等）
+    - assets/svg/items/  # 默认物品封面 SVG（cute easy drawings / cozy tech / cozy furniture）
     - assets/icons/providers/  # LLM 提供商 logo（models.dev，currentColor 自动适配明暗）
     - assets/animations/  # Lottie animations
     - assets/floating_ball_icons/  # Preset images for floating ball

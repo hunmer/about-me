@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/models/user_item.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 我的物品卡片（手绘简约风，参考 goods_item_card）
@@ -288,7 +289,7 @@ class UserItemCard extends StatelessWidget {
     );
   }
 
-  /// 图片区：网络图，无图/加载失败回退占位图标
+  /// 图片区：网络图/资源图（含 SVG），无图/加载失败回退占位图标
   Widget _buildImageSection(BuildContext context, double height) {
     final theme = DSThemeBridge.resolve(context);
     Widget placeholder() => Container(
@@ -300,20 +301,14 @@ class UserItemCard extends StatelessWidget {
     );
 
     final imageUrl = item.productImage;
-    if (imageUrl.isEmpty) {
-      return SizedBox(
-        height: height,
-        width: double.infinity,
-        child: placeholder(),
-      );
-    }
     return SizedBox(
       height: height,
       width: double.infinity,
-      child: Image.network(
-        imageUrl,
+      child: AdaptiveImage(
+        imagePath: imageUrl.isEmpty ? null : imageUrl,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => placeholder(),
+        errorImage: placeholder(),
+        defaultImage: placeholder(),
       ),
     );
   }

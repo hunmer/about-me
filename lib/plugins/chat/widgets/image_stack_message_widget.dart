@@ -11,7 +11,8 @@ import 'package:aboutme/widgets/gallery_viewer.dart';
 
 /// 多图消息渲染：一次发送的多张图片折叠为 WalkStackCard 卡片堆，
 /// 一图一卡（卡面复用 [ImageMessageWidget]，继承图片加载与错误兜底），
-/// 点击卡片用 FilePreviewScreen 预览该图，左下角 "+N" 角标提示总张数，
+/// 点击卡片用 GalleryViewer 全屏预览该图（可左右切换全部图片），
+/// 左下角 "+N" 角标提示总张数，
 /// 拖拽顶层卡飞出切换下一张。
 /// fileInfo['images'] 为图片路径列表（'./' 相对路径或 http URL）。
 class ImageStackMessageWidget extends StatelessWidget {

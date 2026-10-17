@@ -3,13 +3,12 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/models/file_message.dart';
 import 'package:aboutme/plugins/chat/utils/date_formatter.dart';
 import 'package:aboutme/plugins/chat/utils/message_content_utils.dart';
-import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
 import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/utils/text_highlight.dart';
@@ -150,15 +149,13 @@ class TimelineMessageCard extends StatelessWidget {
                             case FileMessageType.image:
                               return GestureDetector(
                                 onTap: () {
-                                  NavigationHelper.push(
+                                  GalleryViewer.showFilePreview(
                                     context,
-                                    FilePreviewScreen(
-                                      filePath: fileInfo.filePath,
-                                      fileName: fileInfo.fileName,
-                                      mimeType:
-                                          fileInfo.mimeType ?? 'image/jpeg',
-                                      fileSize: fileInfo.fileSize,
-                                    ),
+                                    filePath: fileInfo.filePath,
+                                    fileName: fileInfo.fileName,
+                                    mimeType:
+                                        fileInfo.mimeType ?? 'image/jpeg',
+                                    fileSize: fileInfo.fileSize,
                                   );
                                 },
                                 child: Container(
@@ -195,15 +192,13 @@ class TimelineMessageCard extends StatelessWidget {
                             case FileMessageType.video:
                               return GestureDetector(
                                 onTap: () {
-                                  NavigationHelper.push(
+                                  GalleryViewer.showFilePreview(
                                     context,
-                                    FilePreviewScreen(
-                                      filePath: fileInfo.filePath,
-                                      fileName: fileInfo.fileName,
-                                      mimeType:
-                                          fileInfo.mimeType ?? 'video/mp4',
-                                      fileSize: fileInfo.fileSize,
-                                    ),
+                                    filePath: fileInfo.filePath,
+                                    fileName: fileInfo.fileName,
+                                    mimeType:
+                                        fileInfo.mimeType ?? 'video/mp4',
+                                    fileSize: fileInfo.fileSize,
                                   );
                                 },
                                 child: Container(
@@ -246,16 +241,14 @@ class TimelineMessageCard extends StatelessWidget {
                             default: // 文档和其他类型文件
                               return GestureDetector(
                                 onTap: () {
-                                  NavigationHelper.push(
+                                  GalleryViewer.showFilePreview(
                                     context,
-                                    FilePreviewScreen(
-                                      filePath: fileInfo.filePath,
-                                      fileName: fileInfo.fileName,
-                                      mimeType:
-                                          fileInfo.mimeType ??
-                                          'application/octet-stream',
-                                      fileSize: fileInfo.fileSize,
-                                    ),
+                                    filePath: fileInfo.filePath,
+                                    fileName: fileInfo.fileName,
+                                    mimeType:
+                                        fileInfo.mimeType ??
+                                        'application/octet-stream',
+                                    fileSize: fileInfo.fileSize,
                                   );
                                 },
                                 child: Row(

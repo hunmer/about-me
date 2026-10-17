@@ -1,8 +1,6 @@
-import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/quill_viewer/index.dart';
@@ -14,9 +12,8 @@ import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
 import 'package:aboutme/plugins/chat/widgets/image_stack_message_widget.dart';
 import 'package:aboutme/plugins/chat/widgets/video_message_widget.dart';
 import 'package:aboutme/plugins/chat/widgets/video_stack_message_widget.dart';
-import 'package:aboutme/widgets/file_preview/index.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/audio_message_bubble.dart';
-import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'thinking_indicator.dart';
 /// 手写字体参数（markdown 显式样式不走 DefaultTextStyle 继承，需显式指定）
 const TextStyle _sketchMdFont = TextStyle(
@@ -146,14 +143,12 @@ class MessageContent extends StatelessWidget {
 
         return Pressable(
           onPressed: () {
-            NavigationHelper.push(
+            GalleryViewer.showFilePreview(
               context,
-              FilePreviewScreen(
-                filePath: filePath,
-                fileName: fileName,
-                mimeType: mimeType,
-                fileSize: fileSize,
-              ),
+              filePath: filePath,
+              fileName: fileName,
+              mimeType: mimeType,
+              fileSize: fileSize,
             );
           },
           builder: (context, states) {
@@ -215,31 +210,59 @@ class MessageContent extends StatelessWidget {
           },
         );
       } else {
-        return FutureBuilder<String>(
-          future: ImageUtils.getAbsolutePath(filePath),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done &&
-                snapshot.hasData) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FilePreviewScreen(
-                    filePath: snapshot.data!,
-                    fileName: fileName,
-                    mimeType: mimeType,
-                    fileSize: fileSize,
+        // 未知文件类型：通用文件卡片 + 点击全屏预览（GalleryViewer 文件页）
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Pressable(
+              onPressed: () {
+                GalleryViewer.showFilePreview(
+                  context,
+                  filePath: filePath,
+                  fileName: fileName,
+                  mimeType: mimeType,
+                  fileSize: fileSize,
+                );
+              },
+              builder: (context, states) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8.0,
+                    horizontal: 12.0,
                   ),
-                  if (message.content.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(message.content),
-                    ),
-                ],
-              );
-            } else {
-              return Center(child: DSLoadingDots(color: theme.textSub));
-            }
-          },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DsIcon(
+                        DsIconKind.file,
+                        size: 24,
+                        color: theme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          fileName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            color: textColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            if (message.content.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(message.content),
+              ),
+          ],
         );
       }
     } else {

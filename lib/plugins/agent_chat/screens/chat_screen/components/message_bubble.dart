@@ -2,12 +2,11 @@ import 'dart:io';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/models/file_attachment.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'markdown_content.dart';
 import 'tool_process_view.dart';
 import 'chain_message_container.dart';
@@ -356,14 +355,12 @@ class AgentMessageContent extends StatelessWidget {
 
   /// 查看图片大图
   void _viewImage(BuildContext context, FileAttachment attachment) {
-    NavigationHelper.push(
+    GalleryViewer.showFilePreview(
       context,
-      FilePreviewScreen(
-        filePath: attachment.filePath,
-        fileName: attachment.fileName,
-        mimeType: 'image/${_getImageExtension(attachment.fileName)}',
-        fileSize: attachment.fileSize,
-      ),
+      filePath: attachment.filePath,
+      fileName: attachment.fileName,
+      mimeType: 'image/${_getImageExtension(attachment.fileName)}',
+      fileSize: attachment.fileSize,
     );
   }
 

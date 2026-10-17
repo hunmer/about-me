@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="140" height="140">
+<g stroke="#3D2B24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M55 46 L65 75 M70 43 L70 75 M86 46 L75 75" fill="none"/>
+<path d="M64 74 C52 63 42 54 36 49 C40 60 50 70 62 76 Z" fill="#A3B878"/>
+<path d="M76 74 C88 63 98 54 104 49 C100 60 90 70 78 76 Z" fill="#A3B878"/>
+<path d="M67 74 C63 60 62 50 64 46 C67 52 69 62 70 74 Z" fill="#A3B878"/>
+<path d="M73 74 C77 60 78 50 76 46 C73 52 71 62 70 74 Z" fill="#A3B878"/>
+<g transform="translate(36, 16) scale(0.45)">
+<path d="M30 36 C34 22 40 18 43 18 C46 18 52 22 56 36 C53 48 33 48 30 36 Z" fill="#F297A6"/>
+<path d="M20 30 C16 47 23 64 43 64 C63 64 70 47 66 30 C64 21 59 19 56 22 C51 28 47 38 43 46 C39 38 35 28 30 22 C27 19 22 21 20 30 Z" fill="#FAD2D9"/>
+</g>
+<g transform="translate(51, 13) scale(0.46)">
+<path d="M30 36 C34 22 40 18 43 18 C46 18 52 22 56 36 C53 48 33 48 30 36 Z" fill="#EC8293"/>
+<path d="M20 30 C16 47 23 64 43 64 C63 64 70 47 66 30 C64 21 59 19 56 22 C51 28 47 38 43 46 C39 38 35 28 30 22 C27 19 22 21 20 30 Z" fill="#F4A4B0"/>
+</g>
+<g transform="translate(68, 17) scale(0.45) rotate(8 43 40)">
+<path d="M30 36 C34 22 40 18 43 18 C46 18 52 22 56 36 C53 48 33 48 30 36 Z" fill="#E66A7E"/>
+<path d="M20 30 C16 47 23 64 43 64 C63 64 70 47 66 30 C64 21 59 19 56 22 C51 28 47 38 43 46 C39 38 35 28 30 22 C27 19 22 21 20 30 Z" fill="#F07B88"/>
+</g>
+<path d="M40 67 L63 102 L58 115 L82 115 L77 102 L100 67 C82 74 58 74 40 67 Z" fill="#FDF3E6"/>
+<path d="M63 102 L78 73" fill="none"/>
+<path d="M71 91 C71 91 65 86 65 82.5 C65 80 68 79 70 81.5 C70.5 82 71 82.5 71 82.5 C71 82.5 71.5 82 72 81.5 C74 79 77 80 77 82.5 C77 86 71 91 71 91 Z" fill="#FAD2D9" stroke="none"/>
+<path d="M67 103 L59 119 L65 117 L68 121 L70 106 Z" fill="#FAD2D9"/>
+<path d="M73 103 L81 119 L75 117 L72 121 L70 106 Z" fill="#FAD2D9"/>
+<path d="M67 101 C58 95 51 97 53 104 C55 110 63 107 67 104 Z" fill="#FAD2D9"/>
+<path d="M73 101 C82 95 89 97 87 104 C85 110 77 107 73 104 Z" fill="#FAD2D9"/>
+<rect x="66.5" y="99" width="7" height="7" rx="2.5" fill="#FAD2D9"/>
+</g>
+</svg>

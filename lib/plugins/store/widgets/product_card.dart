@@ -4,6 +4,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/models/product.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 商品卡片（手绘简约风，参考 goods_item_card）
@@ -258,7 +259,7 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  /// 图片区：网络图，无图/加载失败回退占位图标
+  /// 图片区：网络图/资源图（含 SVG），无图/加载失败回退占位图标
   Widget _buildImageSection(BuildContext context, double height) {
     final theme = DSThemeBridge.resolve(context);
     Widget placeholder() => Container(
@@ -270,20 +271,14 @@ class ProductCard extends StatelessWidget {
     );
 
     final url = product.image;
-    if (url == null || url.isEmpty) {
-      return SizedBox(
-        height: height,
-        width: double.infinity,
-        child: placeholder(),
-      );
-    }
     return SizedBox(
       height: height,
       width: double.infinity,
-      child: Image.network(
-        url,
+      child: AdaptiveImage(
+        imagePath: (url == null || url.isEmpty) ? null : url,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => placeholder(),
+        errorImage: placeholder(),
+        defaultImage: placeholder(),
       ),
     );
   }

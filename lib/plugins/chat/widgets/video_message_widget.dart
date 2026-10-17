@@ -8,11 +8,10 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/utils/image_utils.dart';
-import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
 import 'package:aboutme/widgets/gallery_viewer.dart';
 
 /// 视频消息渲染：以伴生首帧缩略图 `<name>.thumb.jpg` 作封面（16:9）展示，
-/// 覆盖播放角标，点击用 FilePreviewScreen 播放；
+/// 覆盖播放角标，点击用 GalleryViewer 全屏播放；
 /// 封面缺失（在线 URL / 桌面端未生成缩略图）时以图标占位兜底。
 ///
 /// 封面解析 future 在 State 内缓存（与 ImageMessageWidget 一致）：
@@ -237,17 +236,15 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
       return;
     }
 
-    NavigationHelper.push(
+    GalleryViewer.showFilePreview(
       context,
-      FilePreviewScreen(
-        filePath: filePath,
-        fileName: (info?['name'] as String?) ?? '视频',
-        mimeType: (info?['mimeType'] as String?) ?? 'video/mp4',
-        fileSize:
-            (info?['fileSize'] as int?) ??
-            (info?['size'] as int?) ??
-            0,
-      ),
+      filePath: filePath,
+      fileName: (info?['name'] as String?) ?? '视频',
+      mimeType: (info?['mimeType'] as String?) ?? 'video/mp4',
+      fileSize:
+          (info?['fileSize'] as int?) ??
+          (info?['size'] as int?) ??
+          0,
     );
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 
-/// 文件预览示例
+/// 文件预览示例（GalleryViewer.showFilePreview 统一入口）
 class FilePreviewExample extends StatelessWidget {
   const FilePreviewExample({super.key});
 
@@ -30,16 +30,12 @@ class FilePreviewExample extends StatelessWidget {
                   title: '图片预览',
                   subtitle: '支持缩放和拖动',
                   icon: Icons.image,
-                  onPressed: () => Navigator.push(
+                  onPressed: () => GalleryViewer.showFilePreview(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const FilePreviewScreen(
-                        filePath: 'app_data/images/sample.jpg',
-                        fileName: 'sample.jpg',
-                        mimeType: 'image/jpeg',
-                        fileSize: 1024000,
-                      ),
-                    ),
+                    filePath: 'app_data/images/sample.jpg',
+                    fileName: 'sample.jpg',
+                    mimeType: 'image/jpeg',
+                    fileSize: 1024000,
                   ),
                 ),
                 const Divider(height: 24),
@@ -48,17 +44,12 @@ class FilePreviewExample extends StatelessWidget {
                   title: '视频预览',
                   subtitle: '支持视频播放',
                   icon: Icons.videocam,
-                  onPressed: () => Navigator.push(
+                  onPressed: () => GalleryViewer.showFilePreview(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const FilePreviewScreen(
-                        filePath: 'app_data/videos/sample.mp4',
-                        fileName: 'sample.mp4',
-                        mimeType: 'video/mp4',
-                        fileSize: 5120000,
-                        isVideo: true,
-                      ),
-                    ),
+                    filePath: 'app_data/videos/sample.mp4',
+                    fileName: 'sample.mp4',
+                    mimeType: 'video/mp4',
+                    fileSize: 5120000,
                   ),
                 ),
                 const Divider(height: 24),
@@ -67,16 +58,12 @@ class FilePreviewExample extends StatelessWidget {
                   title: '普通文件预览',
                   subtitle: '显示文件信息',
                   icon: Icons.insert_drive_file,
-                  onPressed: () => Navigator.push(
+                  onPressed: () => GalleryViewer.showFilePreview(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const FilePreviewScreen(
-                        filePath: 'app_data/documents/report.pdf',
-                        fileName: 'report.pdf',
-                        mimeType: 'application/pdf',
-                        fileSize: 2048000,
-                      ),
-                    ),
+                    filePath: 'app_data/documents/report.pdf',
+                    fileName: 'report.pdf',
+                    mimeType: 'application/pdf',
+                    fileSize: 2048000,
                   ),
                 ),
               ],

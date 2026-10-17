@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/utils/blob_url.dart';
 import 'package:aboutme/utils/image_utils.dart';
@@ -23,6 +24,9 @@ class GalleryPhoto {
     this.subText,
     this.isVideo = false,
     this.thumbUrl,
+    this.isFile = false,
+    this.fileSize,
+    this.mimeType,
   });
 
   /// 媒体地址（网络 URL / assets 路径 / 本地相对路径；图片或视频）
@@ -33,6 +37,15 @@ class GalleryPhoto {
 
   /// 视频缩略图地址（封面），优先于 url 解析；图片项忽略
   final String? thumbUrl;
+
+  /// 是否为非媒体文件（页面渲染文件信息卡，缩略图条显示文件图标）
+  final bool isFile;
+
+  /// 文件大小（字节，文件页展示用）
+  final int? fileSize;
+
+  /// MIME 类型（文件页展示/图标用）
+  final String? mimeType;
 
   /// 顶部标题下方日期（如 2026/09/06），随当前照片切换
   final String? dateText;
@@ -110,6 +123,75 @@ class GalleryViewer extends StatefulWidget {
   /// 顶栏是否显示文件操作按钮（分享 / 定位本地文件），
   /// 操作针对当前页媒体，仅需传入媒体路径即可执行
   final bool showFileActions;
+
+  /// 单文件预览便捷入口（替代原 FilePreviewScreen）：
+  /// 按 mimeType/扩展名自动判定图片、视频（推导伴生封面 `<name>.thumb.jpg`）
+  /// 或普通文件（文件信息卡），以全屏 GalleryViewer 打开
+  static Future<T?> showFilePreview<T>(
+    BuildContext context, {
+    required String filePath,
+    String? fileName,
+    String? mimeType,
+    int fileSize = 0,
+  }) {
+    final displayName = fileName ?? path.basename(filePath);
+    final ext = path.extension(filePath).toLowerCase();
+    final mime = mimeType ?? '';
+
+    final isVideo =
+        mime.startsWith('video/') || _videoExtensions.contains(ext);
+    final isImage =
+        mime.startsWith('image/') || _imageExtensions.contains(ext);
+
+    final GalleryPhoto photo;
+    if (isVideo) {
+      photo = GalleryPhoto(
+        url: filePath,
+        caption: displayName,
+        isVideo: true,
+        thumbUrl: _companionThumbPath(filePath),
+      );
+    } else if (isImage) {
+      photo = GalleryPhoto(url: filePath, caption: displayName);
+    } else {
+      photo = GalleryPhoto(
+        url: filePath,
+        caption: displayName,
+        isFile: true,
+        fileSize: fileSize,
+        mimeType: mimeType,
+      );
+    }
+
+    return NavigationHelper.push<T>(
+      context,
+      GalleryViewer(
+        title: displayName,
+        showFileActions: true,
+        entranceAnimation: true,
+        photos: [photo],
+      ),
+    );
+  }
+
+  static const _videoExtensions = {
+    '.mp4', '.mov', '.avi', '.mkv', '.webm', '.3gp', '.m4v',
+  };
+
+  static const _imageExtensions = {
+    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.heic',
+  };
+
+  /// 本地视频的伴生首帧缩略图路径（`<name>.thumb.jpg` 命名约定），
+  /// 在线 URL 无伴生缩略图返回 null
+  static String? _companionThumbPath(String filePath) {
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return null;
+    }
+    final dir = path.dirname(filePath);
+    final name = path.basenameWithoutExtension(filePath);
+    return '$dir/$name.thumb.jpg';
+  }
 
   @override
   State<GalleryViewer> createState() => _GalleryViewerState();
@@ -242,18 +324,26 @@ class _GalleryViewerState extends State<GalleryViewer>
                           pageController: _pageController,
                           onPageChanged: _onPageChanged,
                           builder: (context, index) {
+                            final photo = photos[index];
+                            // 非媒体文件页：文件信息卡（无缩放手势）
+                            if (photo.isFile) {
+                              return PhotoViewGalleryPageOptions.customChild(
+                                child: _GalleryFilePage(photo: photo),
+                                disableGestures: true,
+                              );
+                            }
                             // 视频页：内嵌播放器（禁用缩放手势，单击播放/暂停；
                             // 不挂 Hero，视频控件飞行转场体验差）
-                            if (photos[index].isVideo) {
+                            if (photo.isVideo) {
                               return PhotoViewGalleryPageOptions.customChild(
                                 child: _GalleryVideo(
-                                  url: photos[index].url,
+                                  url: photo.url,
                                   isActive: index == _index,
                                 ),
                                 disableGestures: true,
                               );
                             }
-                            final image = _GalleryImage(url: photos[index].url);
+                            final image = _GalleryImage(url: photo.url);
                             return PhotoViewGalleryPageOptions.customChild(
                               // 单击大图切换沉浸模式；opaque 让图片周围空白也可点击
                               child: GestureDetector(
@@ -491,6 +581,7 @@ class _GalleryViewerState extends State<GalleryViewer>
                   // 视频缩略图优先用封面，无封面时不解析视频本体（图标占位）
                   url: photo.isVideo ? (photo.thumbUrl ?? '') : photo.url,
                   isVideo: photo.isVideo,
+                  isFile: photo.isFile,
                 ),
               ),
             ),
@@ -619,17 +710,25 @@ class _GalleryImage extends StatelessWidget {
 }
 
 /// 缩略图渲染：同一 provider 解析缓存，方形裁圆；
-/// 视频无封面（url 为空）时以视频图标占位
+/// 视频无封面（url 为空）时以视频图标占位，文件以文件类型图标占位
 class _GalleryThumbImage extends StatelessWidget {
-  const _GalleryThumbImage({required this.url, this.isVideo = false});
+  const _GalleryThumbImage({
+    required this.url,
+    this.isVideo = false,
+    this.isFile = false,
+  });
 
   final String url;
 
   final bool isVideo;
 
+  final bool isFile;
+
   @override
   Widget build(BuildContext context) {
-    if (url.isEmpty) return _videoIconPlaceholder();
+    if (url.isEmpty || isFile) {
+      return _iconPlaceholder(isFile ? _fileIcon(null) : Icons.videocam_outlined);
+    }
 
     final provider = GalleryImageResolver.cached(url);
     if (provider != null) return _buildImage(provider);
@@ -640,15 +739,13 @@ class _GalleryThumbImage extends StatelessWidget {
         final resolved = snapshot.data;
         if (resolved != null) return _buildImage(resolved);
         // 未就绪时露出底色占位
-        return isVideo ? _videoIconPlaceholder() : const SizedBox.shrink();
+        return isVideo ? _iconPlaceholder(Icons.videocam_outlined) : const SizedBox.shrink();
       },
     );
   }
 
-  Widget _videoIconPlaceholder() {
-    return const Center(
-      child: Icon(Icons.videocam_outlined, color: Colors.white38, size: 18),
-    );
+  Widget _iconPlaceholder(IconData icon) {
+    return Center(child: Icon(icon, color: Colors.white38, size: 18));
   }
 
   Widget _buildImage(ImageProvider provider) {
@@ -987,9 +1084,93 @@ class _GalleryVideoProgressBar extends StatelessWidget {
   }
 }
 
+/// 按扩展名推断文件图标（非媒体文件页与缩略图条共用）
+IconData _fileIcon(String? mimeType) {
+  final mime = (mimeType ?? '').toLowerCase();
+  if (mime.contains('pdf')) return Icons.picture_as_pdf;
+  if (mime.contains('word') || mime.contains('document')) {
+    return Icons.description;
+  }
+  if (mime.contains('sheet') || mime.contains('excel')) {
+    return Icons.table_chart;
+  }
+  if (mime.contains('presentation') || mime.contains('powerpoint')) {
+    return Icons.slideshow;
+  }
+  if (mime.contains('zip') || mime.contains('compressed')) {
+    return Icons.folder_zip;
+  }
+  if (mime.contains('audio')) return Icons.audiotrack;
+  if (mime.contains('text')) return Icons.article;
+  return Icons.insert_drive_file;
+}
+
+/// 非媒体文件页：深色居中卡片展示图标、文件名、大小与类型，
+/// 分享/定位等操作由顶栏按钮承载
+class _GalleryFilePage extends StatelessWidget {
+  const _GalleryFilePage({required this.photo});
+
+  final GalleryPhoto photo;
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = photo.fileSize;
+    final mime = photo.mimeType ?? path.extension(photo.url);
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _fileIcon(photo.mimeType),
+              size: 64,
+              color: Colors.white70,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              photo.caption ?? path.basename(photo.url),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            if (size != null && size > 0)
+              Text(
+                _formatFileSize(size),
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
+              ),
+            Text(
+              mime,
+              style: const TextStyle(color: Colors.white38, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// GalleryViewer 内置的文件操作（分享 / 定位本地文件），
 /// 仅需传入媒体路径（'./' 相对路径 / 绝对路径 / http URL）即可执行，
-/// 顶栏按钮与宿主屏（如 FilePreviewScreen）共用同一实现
+/// 顶栏按钮与 showFilePreview 等调用方共用同一实现
 class GalleryFileActions {
   GalleryFileActions._();
 

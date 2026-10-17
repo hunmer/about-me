@@ -132,7 +132,7 @@ class WidgetsGalleryScreen extends StatelessWidget {
             context,
             icon: Icons.preview,
             title: '文件预览',
-            subtitle: 'FilePreviewScreen',
+            subtitle: 'GalleryViewer.showFilePreview',
             route: '/widgets_gallery/file_preview',
           ),
 
