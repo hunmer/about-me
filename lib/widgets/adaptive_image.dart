@@ -107,12 +107,17 @@ class _AdaptiveImageState extends State<AdaptiveImage> {
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        var width = widget.width;
-        var height = widget.height;
+        // `double.infinity` means "fill available width" to callers, but
+        // cannot be passed to SvgPicture's FittedBox layout.
+        double? finite(double? value) =>
+            value != null && value.isFinite && value >= 0 ? value : null;
+
+        var width = finite(widget.width);
+        var height = finite(widget.height);
         width ??=
-            height ?? (constraints.maxWidth.isFinite
+            (constraints.maxWidth.isFinite
                 ? constraints.maxWidth
-                : 240);
+                : height ?? 240);
         height ??= width;
         return builder(width, height);
       },

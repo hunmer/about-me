@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/store/models/user_item.dart';
+import 'package:aboutme/plugins/store/models/category.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -62,7 +63,42 @@ class _UserItemsState extends State<UserItems> {
       'expired': 'store_expired'.tr,
     };
 
+    // 分类选项：从全部物品快照动态收集
+    final categoryOptions = <String, String>{};
+    for (final item in widget.controller.userItems) {
+      final category = item.productSnapshot['category'] as String?;
+      if (category != null && category.isNotEmpty) {
+        categoryOptions[category] = StoreCategories.labelOf(category);
+      }
+    }
+
     return [
+      // 分类
+      if (categoryOptions.isNotEmpty)
+        FilterItem(
+          id: 'category',
+          title: 'store_categoryLabel'.tr,
+          type: FilterType.tagsSingle,
+          builder: (context, currentValue, onChanged) {
+            return DSThemeBridge(
+              child: FilterBuilders.buildSingleChoiceFilter(
+                context: context,
+                currentValue: currentValue,
+                onChanged: onChanged,
+                options: categoryOptions,
+                allItemsKey: 'all',
+                allItemsLabel: 'store_all'.tr,
+              ),
+            );
+          },
+          getBadge:
+              (value) => FilterBuilders.singleChoiceBadge(
+                value,
+                categoryOptions,
+              ),
+        ),
+
+      // 状态
       FilterItem(
         id: 'status',
         title: 'store_itemStatus'.tr,
@@ -225,7 +261,7 @@ class _UserItemsState extends State<UserItems> {
   /// 物品过多（低于每层净高下限）时回退滚动
   Widget _buildGroupGrid(List<ItemGroup> groupedItems) {
     final theme = DSThemeBridge.resolve(context);
-    const slotsPerShelf = 4;
+    const slotsPerShelf = 3;
 
     final rows = <List<ItemGroup>>[
       for (var i = 0; i < groupedItems.length; i += slotsPerShelf)
@@ -384,7 +420,14 @@ class _UserItemsState extends State<UserItems> {
   List<UserItem> _getFilteredItems() {
     final now = DateTime.now();
     final status = _multiFilters['status'] as String?;
+    final category = _multiFilters['category'] as String?;
     return widget.controller.userItems.where((item) {
+      // 分类
+      if (category != null) {
+        if ((item.productSnapshot['category'] as String?) != category) {
+          return false;
+        }
+      }
       switch (status) {
         case 'usable': // 可使用
           return item.expireDate.isAfter(now);

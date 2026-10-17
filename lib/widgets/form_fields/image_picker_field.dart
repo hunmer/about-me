@@ -155,6 +155,7 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
                     child: AdaptiveImage(
                       imagePath: imagePath,
                       width: widget.previewWidth,
+                      height: widget.previewHeight,
                       borderRadius: widget.borderRadius,
                     ),
                   ),

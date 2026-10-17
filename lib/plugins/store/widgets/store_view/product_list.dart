@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/plugins/store/models/product.dart';
+import 'package:aboutme/plugins/store/models/category.dart';
 import 'package:aboutme/plugins/store/widgets/add_product_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -185,7 +186,41 @@ class _ProductListState extends State<ProductList> {
       'outOfStock': 'store_outOfStock'.tr,
     };
 
+    // 分类选项：从商品数据动态收集
+    final categoryOptions = <String, String>{};
+    for (final product in widget.controller.products) {
+      final category = product.category;
+      if (category != null && category.isNotEmpty) {
+        categoryOptions[category] = StoreCategories.labelOf(category);
+      }
+    }
+
     return [
+      // 0. 分类
+      if (categoryOptions.isNotEmpty)
+        FilterItem(
+          id: 'category',
+          title: 'store_categoryLabel'.tr,
+          type: FilterType.tagsSingle,
+          builder: (context, currentValue, onChanged) {
+            return DSThemeBridge(
+              child: FilterBuilders.buildSingleChoiceFilter(
+                context: context,
+                currentValue: currentValue,
+                onChanged: onChanged,
+                options: categoryOptions,
+                allItemsKey: 'all',
+                allItemsLabel: 'store_all'.tr,
+              ),
+            );
+          },
+          getBadge:
+              (value) => FilterBuilders.singleChoiceBadge(
+                value,
+                categoryOptions,
+              ),
+        ),
+
       // 1. 兑换状态
       FilterItem(
         id: 'exchangeStatus',
@@ -339,6 +374,10 @@ class _ProductListState extends State<ProductList> {
   /// 检查商品是否通过所有多条件过滤
   bool _passesMultiFilters(Product product) {
     if (_multiFilters.isEmpty) return true;
+
+    // 0. 分类
+    final category = _multiFilters['category'] as String?;
+    if (category != null && product.category != category) return false;
 
     // 1. 兑换状态
     final exchangeStatus = _multiFilters['exchangeStatus'] as String?;

@@ -16,6 +16,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456789',
       name: '免作业卡',
+      category: 'other',
       description: '可免除一次作业任务',
       image: 'assets/svg/items/easy_love-letter.svg',
       stock: 10,
@@ -27,6 +28,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456790',
       name: '专注力提升剂',
+      category: 'other',
       description: '提高30分钟专注力，学习效率倍增',
       image: 'assets/svg/items/tech_headphones.svg',
       stock: 20,
@@ -38,6 +40,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456791',
       name: '知识胶囊',
+      category: 'other',
       description: '快速掌握一个知识点的精华内容',
       image: 'assets/svg/items/easy_books.svg',
       stock: 15,
@@ -49,6 +52,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456792',
       name: '元气草莓',
+      category: 'food',
       description: '咬一口就恢复元气的甜草莓',
       image: 'assets/svg/items/fruits_strawberry.svg',
       stock: 30,
@@ -60,6 +64,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456793',
       name: '蜜桃气泡水',
+      category: 'food',
       description: '冰镇蜜桃味，清凉一夏',
       image: 'assets/svg/items/fruits_sweet-peach.svg',
       stock: 25,
@@ -71,6 +76,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456794',
       name: '西瓜冰沙券',
+      category: 'food',
       description: '兑换一杯现榨西瓜冰沙',
       image: 'assets/svg/items/fruits_watermelon.svg',
       stock: 20,
@@ -82,6 +88,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456795',
       name: '芒果布丁',
+      category: 'food',
       description: 'Q弹香浓的午后甜点',
       image: 'assets/svg/items/fruits_mango-pudding.svg',
       stock: 20,
@@ -93,6 +100,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456796',
       name: '精美果篮',
+      category: 'food',
       description: '装满当季水果的大礼包',
       image: 'assets/svg/items/fruits_fruit-basket.svg',
       stock: 8,
@@ -104,6 +112,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456797',
       name: '小熊连帽衫',
+      category: 'clothes',
       description: '戴上耳朵的可爱保暖神器',
       image: 'assets/svg/items/clothes_bear-hoodie.svg',
       stock: 12,
@@ -115,6 +124,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456798',
       name: '蜡笔小手套',
+      category: 'clothes',
       description: '五彩蜡笔配色的小手套',
       image: 'assets/svg/items/clothes_crayon-mittens.svg',
       stock: 15,
@@ -126,6 +136,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456799',
       name: '兔子居家拖鞋',
+      category: 'clothes',
       description: '毛绒绒的居家好伙伴',
       image: 'assets/svg/items/clothes_bunny-slippers.svg',
       stock: 15,
@@ -137,6 +148,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456800',
       name: '甜美小围裙',
+      category: 'clothes',
       description: '烘焙日专用装备',
       image: 'assets/svg/items/clothes_sweet-apron.svg',
       stock: 10,
@@ -148,6 +160,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456801',
       name: '牛角扣大衣',
+      category: 'clothes',
       description: '冬日出门的温暖选择',
       image: 'assets/svg/items/clothes_duffle-coat.svg',
       stock: 6,
@@ -159,6 +172,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456802',
       name: '星星睡衣套装',
+      category: 'clothes',
       description: '穿着入睡会有好梦',
       image: 'assets/svg/items/clothes_sleepy-pajamas.svg',
       stock: 12,
@@ -170,6 +184,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456803',
       name: '文艺贝雷帽',
+      category: 'clothes',
       description: '一秒变文艺的小道具',
       image: 'assets/svg/items/clothes_beret-hat.svg',
       stock: 14,
@@ -181,6 +196,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456804',
       name: '暖烘烘围巾',
+      category: 'clothes',
       description: '围上就不想摘的软围巾',
       image: 'assets/svg/items/clothes_warm-scarf.svg',
       stock: 10,
@@ -193,6 +209,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456805',
       name: '迷你手机挂坠',
+      category: 'tech',
       description: '挂在包上的迷你手机小伙伴',
       image: 'assets/svg/items/tech_smartphone.svg',
       stock: 20,
@@ -204,6 +221,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456806',
       name: '拍立得相机',
+      category: 'tech',
       description: '咔嚓一声留住今天的美好',
       image: 'assets/svg/items/tech_instant-camera.svg',
       stock: 8,
@@ -215,6 +233,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456807',
       name: '怀旧掌机',
+      category: 'tech',
       description: '装满经典小游戏的老伙计',
       image: 'assets/svg/items/tech_handheld-console.svg',
       stock: 10,
@@ -226,6 +245,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456808',
       name: '豆豆耳机仓',
+      category: 'tech',
       description: '圆滚滚的随身音乐补给站',
       image: 'assets/svg/items/tech_earbuds-case.svg',
       stock: 15,
@@ -237,6 +257,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456809',
       name: '复古小电视',
+      category: 'tech',
       description: '循环播放雪花噪点的小电视',
       image: 'assets/svg/items/tech_retro-tv.svg',
       stock: 6,
@@ -248,6 +269,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456810',
       name: '元气智能手表',
+      category: 'tech',
       description: '提醒你起来活动一下手腕',
       image: 'assets/svg/items/tech_smartwatch.svg',
       stock: 12,
@@ -259,6 +281,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456811',
       name: '云朵小沙发',
+      category: 'furniture',
       description: '陷进去就不想起来的软沙发',
       image: 'assets/svg/items/furniture_cozy-sofa.svg',
       stock: 5,
@@ -270,6 +293,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456812',
       name: '暖光台灯',
+      category: 'furniture',
       description: '深夜陪伴的温柔光源',
       image: 'assets/svg/items/furniture_table-lamp.svg',
       stock: 10,
@@ -281,6 +305,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456813',
       name: '爱心地毯',
+      category: 'furniture',
       description: '踩上去软绵绵的房间点缀',
       image: 'assets/svg/items/furniture_heart-rug.svg',
       stock: 8,
@@ -292,6 +317,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456814',
       name: '迷你书架',
+      category: 'furniture',
       description: '能塞下几本心爱小书的架子',
       image: 'assets/svg/items/furniture_bookshelf.svg',
       stock: 6,
@@ -303,6 +329,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456815',
       name: '爱心抱枕',
+      category: 'furniture',
       description: '抱着午睡的幸福道具',
       image: 'assets/svg/items/furniture_heart-cushion.svg',
       stock: 12,
@@ -314,6 +341,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456816',
       name: '安心小夜灯',
+      category: 'furniture',
       description: '怕黑星人的床头守护',
       image: 'assets/svg/items/furniture_nightlight.svg',
       stock: 12,
@@ -325,6 +353,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456817',
       name: '草莓蛋糕',
+      category: 'food',
       description: '奶油与草莓的双倍快乐',
       image: 'assets/svg/items/easy_cake.svg',
       stock: 20,
@@ -336,6 +365,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456818',
       name: '香浓咖啡',
+      category: 'food',
       description: '唤醒瞌睡大脑的热饮',
       image: 'assets/svg/items/easy_coffee.svg',
       stock: 25,
@@ -347,6 +377,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456819',
       name: '泰迪小熊',
+      category: 'other',
       description: '最忠实的小伙伴',
       image: 'assets/svg/items/easy_teddy-bear.svg',
       stock: 10,
@@ -358,6 +389,7 @@ List<Product> getDefaultProducts() {
     Product(
       id: '1705123456820',
       name: '垂耳兔玩偶',
+      category: 'other',
       description: '耳朵软软的治愈系玩偶',
       image: 'assets/svg/items/easy_bunny.svg',
       stock: 10,

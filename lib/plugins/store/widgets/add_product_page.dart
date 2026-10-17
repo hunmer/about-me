@@ -8,6 +8,7 @@ import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:aboutme/plugins/store/models/product.dart';
+import 'package:aboutme/plugins/store/models/category.dart';
 import 'package:aboutme/plugins/store/controllers/store_controller.dart';
 
 class AddProductPage extends StatefulWidget {
@@ -25,6 +26,9 @@ class _AddProductPageState extends State<AddProductPage> {
   final TextEditingController _pointsRatioController = TextEditingController();
   final TextEditingController _targetPriceController = TextEditingController();
   FormBuilderWrapperState? _formWrapperState;
+
+  /// 商品分类（'' = 未分类）
+  late String _category = widget.product?.category ?? '';
 
   // 获取积分比率配置
   double _getPointsRatio() {
@@ -127,6 +131,7 @@ class _AddProductPageState extends State<AddProductPage> {
               name: values['name'] as String,
               description: values['description'] as String? ?? '',
               image: imageUrl.isEmpty ? widget.product!.image : imageUrl,
+              category: _category.isEmpty ? null : _category,
               stock: int.tryParse(stockValue?.toString() ?? '0') ?? 0,
               price: int.tryParse(priceValue?.toString() ?? '0') ?? 0,
               exchangeStart: widget.product!.exchangeStart,
@@ -138,6 +143,7 @@ class _AddProductPageState extends State<AddProductPage> {
               name: values['name'] as String,
               description: values['description'] as String? ?? '',
               image: imageUrl,
+              category: _category.isEmpty ? null : _category,
               stock: int.tryParse(stockValue?.toString() ?? '0') ?? 0,
               price: int.tryParse(priceValue?.toString() ?? '0') ?? 0,
               exchangeStart: DateTime.now(),
@@ -330,7 +336,13 @@ class _AddProductPageState extends State<AddProductPage> {
               constraints: BoxConstraints(
                 minHeight: constraints.maxHeight - 32,
               ),
-              child: FormBuilderWrapper(
+              // 分类选择（可搜索下拉）：表单系统暂无 combobox 字段类型，
+              // 独立挂在表单下方由页面状态管理
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  FormBuilderWrapper(
                 key: _formKey,
                 config: FormConfig(
                   fields: [
@@ -394,10 +406,47 @@ class _AddProductPageState extends State<AddProductPage> {
                 ),
                 onStateReady: (state) => _formWrapperState = state,
               ),
+              const SizedBox(height: 16),
+            DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'store_categoryLabel'.tr,
+                        style: DsTypography.heading.copyWith(color: theme.text),
+                      ),
+                      const SizedBox(height: 8),
+                      DSCombobox<String>(
+                        items: [
+                          DSSelectItem(
+                            value: '',
+                            label: StoreCategories.uncategorizedLabel,
+                          ),
+                          for (final category in StoreCategories.preset)
+                            DSSelectItem(
+                              value: category,
+                              label: StoreCategories.labelOf(category),
+                            ),
+                        ],
+                        value: _category,
+                        hint: 'store_categoryHint'.tr,
+                        onChanged: (value) =>
+                            setState(() => _category = value),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
-  }
+  },
+),
+);
+}
 }

@@ -185,8 +185,8 @@ class CollectionShelfCase extends StatelessWidget {
     super.key,
     required this.theme,
     required this.rows,
-    this.slotHeight = 92,
-    this.slotsPerRow = 4,
+    this.slotHeight = 110,
+    this.slotsPerRow = 3,
     this.referenceRowCount,
     this.backboardColor,
     this.wallColor,
@@ -222,20 +222,20 @@ class CollectionShelfCase extends StatelessWidget {
   final int seed;
 
   /// 侧板内缩宽度（透视深度）
-  static const double wallInset = 16;
+  static const double wallInset = 12;
 
   /// 木质台面前缘高度
   static const double counterHeight = 14;
 
   /// 撑满可用高度时每层净高的下限（行数过多时不再压缩，交由外层滚动）
-  static const double minSlotHeight = 64;
+  static const double minSlotHeight = 96;
 
   /// 解析层高：可用高度按 [referenceRowCount] 层均分（有下限），
   /// 高度无界（滚动内）用 [base] 固定层高
   static double resolveSlotHeight(
     double maxHeight,
     int referenceRowCount, [
-    double base = 92,
+    double base = 110,
   ]) {
     if (!maxHeight.isFinite || referenceRowCount <= 0) return base;
     return math.max(
@@ -277,15 +277,15 @@ class CollectionShelfCase extends StatelessWidget {
             // 不足固定格数的末排用空格占位，保持每格 1/N 宽
             for (var i = 0; i < rows.length; i++)
               Positioned(
-                left: wallInset + 8,
-                right: wallInset + 8,
+                left: wallInset + 6,
+                right: wallInset + 6,
                 top: i * rowH + 6,
                 height: rowH - 10,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     for (var j = 0; j < slotsPerRow; j++) ...[
-                      if (j > 0) const SizedBox(width: 8),
+                      if (j > 0) const SizedBox(width: 6),
                       Expanded(
                         child: j < rows[i].length
                             ? rows[i][j]

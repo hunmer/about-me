@@ -270,6 +270,7 @@ class StoreController with ChangeNotifier {
       name: product.name,
       description: product.description,
       image: product.image,
+      category: product.category,
       stock: product.stock - 1,
       price: product.price,
       exchangeStart: product.exchangeStart,

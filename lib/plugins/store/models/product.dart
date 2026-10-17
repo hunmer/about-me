@@ -1,9 +1,13 @@
+import 'category.dart';
 
 class Product {
   final String id;
   final String name;
   final String description;
   final String? image;
+
+  /// 商品分类（[StoreCategories] 预设键；null/空 = 未分类）
+  final String? category;
   final int stock;
   final int price;
   final DateTime exchangeStart;
@@ -15,6 +19,7 @@ class Product {
     required this.name,
     required this.description,
     this.image,
+    this.category,
     required this.stock,
     required this.price,
     required this.exchangeStart,
@@ -29,6 +34,9 @@ class Product {
       name: json['name'],
       description: json['description'],
       image: json['image'] as String?,
+      category: (json['category'] as String?)?.isEmpty == true
+          ? null
+          : json['category'] as String?,
       stock: json['stock'],
       price: json['price'],
       exchangeStart: DateTime.parse(json['exchange_start']),
@@ -44,6 +52,7 @@ class Product {
       'name': name,
       'description': description,
       'image': image,
+      'category': category,
       'stock': stock,
       'price': price,
       'exchange_start': exchangeStart.toIso8601String(),
