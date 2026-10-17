@@ -69,11 +69,13 @@ class VideoStackMessageWidget extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 铺满卡片：父级 SizedBox 严格约束覆盖 _buildFrame 的 maxWidth
+        // 铺满卡片：父级 SizedBox 严格约束覆盖 _buildFrame 的 maxWidth；
+        // galleryPaths 传入全部视频，预览内可左右切换
         VideoMessageWidget(
           message: message,
           isOutgoing: isOutgoing,
           videoPath: videoPath,
+          galleryPaths: videos,
         ),
         // 左下角 "+N" 视频数量角标
         Positioned(

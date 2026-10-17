@@ -9,6 +9,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 
 /// 视频消息渲染：以伴生首帧缩略图 `<name>.thumb.jpg` 作封面（16:9）展示，
 /// 覆盖播放角标，点击用 FilePreviewScreen 播放；
@@ -25,11 +26,16 @@ class VideoMessageWidget extends StatefulWidget {
   /// 多视频卡片堆复用同一 message 时按卡指定）
   final String? videoPath;
 
+  /// 同消息的全部视频路径（多视频消息预览内可左右切换），
+  /// 缺省或单条时走单文件预览
+  final List<String>? galleryPaths;
+
   const VideoMessageWidget({
     super.key,
     required this.message,
     this.isOutgoing = false,
     this.videoPath,
+    this.galleryPaths,
   });
 
   @override
@@ -69,17 +75,21 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
     }
   }
 
-  /// 本地视频的伴生首帧缩略图（沿用 `<name>.thumb` 命名约定，统一 jpg），
-  /// 在线 URL / 文件不存在返回 null
-  Future<ImageProvider?> _resolveCover() async {
-    final filePath = _displayPath;
-    if (filePath.isEmpty) return null;
+  /// 本地视频的伴生首帧缩略图路径（沿用 `<name>.thumb` 命名约定，统一 jpg），
+  /// 在线 URL 无伴生缩略图返回 null
+  String? _thumbPathOf(String filePath) {
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       return null;
     }
     final dir = path.dirname(filePath);
     final name = path.basenameWithoutExtension(filePath);
-    final thumbPath = '$dir/$name.thumb.jpg';
+    return '$dir/$name.thumb.jpg';
+  }
+
+  /// 解析封面（在线 URL / 文件不存在返回 null）
+  Future<ImageProvider?> _resolveCover() async {
+    final thumbPath = _thumbPathOf(_displayPath);
+    if (thumbPath == null) return null;
     try {
       final absolutePath = await ImageUtils.getAbsolutePath(thumbPath);
       if (!await File(absolutePath).exists()) return null;
@@ -197,11 +207,36 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
     );
   }
 
-  /// 与文件消息一致的预览（播放）行为
+  /// 与文件消息一致的预览（播放）行为：
+  /// 多视频消息传入全部路径，预览内可左右切换；单视频走单文件预览
   void _preview() {
     final filePath = _displayPath;
     if (filePath.isEmpty) return;
     final info = fileInfo;
+
+    final peers = widget.galleryPaths;
+    if (peers != null && peers.length > 1) {
+      NavigationHelper.push(
+        context,
+        GalleryViewer(
+          title: (info?['name'] as String?) ?? '视频',
+          entranceAnimation: true,
+          showFileActions: true,
+          photos: [
+            for (final p in peers)
+              GalleryPhoto(
+                url: p,
+                caption: p,
+                isVideo: true,
+                thumbUrl: _thumbPathOf(p),
+              ),
+          ],
+          initialIndex: peers.indexOf(filePath).clamp(0, peers.length - 1),
+        ),
+      );
+      return;
+    }
+
     NavigationHelper.push(
       context,
       FilePreviewScreen(

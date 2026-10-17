@@ -39,4 +39,5 @@ const Map<String, String> filePreviewTranslationsZh = {
   // 状态提示
   'file_preview_preview_not_available': '预览不可用',
   'file_preview_loading_preview': '正在加载预览...',
+  'file_preview_open_file_location': '打开文件位置',
 };

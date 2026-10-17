@@ -1,11 +1,9 @@
 import 'dart:io' show File;
-import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:get/get.dart';
 
@@ -136,76 +134,21 @@ class _FilePreviewScreenState extends State<FilePreviewScreen> {
     return '$dir${path.separator}$name.thumb.jpg';
   }
 
-  Future<void> _shareFile() async {
-    try {
-      final file = File(_absoluteFilePath);
-      if (await file.exists()) {
-        // 使用绝对路径而不是相对路径来分享文件
-        await Share.shareXFiles([
-          XFile(_absoluteFilePath),
-        ], text: '分享文件：${widget.fileName}');
-      } else {
-        if (mounted) {
-          Toast.error('file_preview_fileNotExist'.tr);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        Toast.error(
-          '${'file_preview_errorFilePreviewFailed'.tr}${e.toString()}',
-        );
-      }
-    }
+  /// 分享与定位统一走 GalleryFileActions（与 GalleryViewer 顶栏同一实现）
+  Future<void> _shareFile() {
+    return GalleryFileActions.share(
+      context,
+      _absoluteFilePath,
+      text: '分享文件：${widget.fileName}',
+    );
   }
 
-  Future<void> _showInFolder() async {
-    try {
-      final file = File(_absoluteFilePath);
-      if (await file.exists()) {
-        if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
-          // 移动端显示文件信息
-          showDialog(
-            context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: Text('file_preview_name'.tr),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${'file_preview_name'.tr}: ${widget.fileName}',
-                      ),
-                      Text(_absoluteFilePath),
-                      Text(
-                        '${'file_preview_fileSize'.tr}: ${_formatFileSize(widget.fileSize)}',
-                      ),
-                      Text(
-                        '${'file_preview_fileType'.tr}: ${widget.mimeType}',
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('app_ok'.tr),
-                    ),
-                  ],
-                ),
-          );
-        } else {
-          // TODO: 桌面端打开文件所在文件夹
-        }
-      } else {
-        if (mounted) {
-          Toast.error('file_preview_fileNotExist'.tr);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        Toast.error(e.toString());
-      }
-    }
+  Future<void> _showInFolder() {
+    return GalleryFileActions.locate(
+      context,
+      _absoluteFilePath,
+      fileName: widget.fileName,
+    );
   }
 
   Widget _buildPreviewContent() {
@@ -246,15 +189,17 @@ class _FilePreviewScreenState extends State<FilePreviewScreen> {
 
     if (_isImage) {
       // 图片预览：统一走 GalleryViewer（沉浸式 + 缩放），
-      // 嵌入本屏 AppBar 之下，分享/打开位置等操作保留在 AppBar
+      // 标题/分享/定位/关闭由内置 header 承载
       return GalleryViewer(
+        title: widget.fileName,
         photos: [GalleryPhoto(url: _absoluteFilePath, caption: widget.fileName)],
-        showHeader: false,
+        showFileActions: true,
         entranceAnimation: true,
       );
     } else if (_isVideo) {
       // 视频预览：统一走 GalleryViewer（内嵌播放器 + 封面缩略图）
       return GalleryViewer(
+        title: widget.fileName,
         photos: [
           GalleryPhoto(
             url: _absoluteFilePath,
@@ -263,7 +208,7 @@ class _FilePreviewScreenState extends State<FilePreviewScreen> {
             thumbUrl: _videoThumbPath(),
           ),
         ],
-        showHeader: false,
+        showFileActions: true,
         entranceAnimation: true,
       );
     } else {
@@ -304,8 +249,11 @@ class _FilePreviewScreenState extends State<FilePreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 媒体（图片/视频）预览由 GalleryViewer 内置 header 全屏承载
+    // （标题 + 分享/定位/关闭），仅非媒体文件保留本屏 AppBar
+    final isMediaPreview = _isImage || _isVideo;
     return Scaffold(
-      appBar: AppBar(
+      appBar: isMediaPreview ? null : AppBar(
         title: Text(widget.fileName),
         actions: [
           IconButton(

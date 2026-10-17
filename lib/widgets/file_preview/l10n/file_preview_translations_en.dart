@@ -39,4 +39,5 @@ const Map<String, String> filePreviewTranslationsEn = {
   // Status messages
   'file_preview_preview_not_available': 'Preview not available',
   'file_preview_loading_preview': 'Loading preview...',
+  'file_preview_open_file_location': 'Open file location',
 };

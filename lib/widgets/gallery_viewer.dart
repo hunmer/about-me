@@ -7,8 +7,11 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:path/path.dart' as path;
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:universal_platform/universal_platform.dart';
 import 'package:video_player/video_player.dart';
 
 /// Gallery 查看器媒体数据项：展示文案由调用方格式化，组件只负责渲染
@@ -88,7 +91,7 @@ class GalleryViewer extends StatefulWidget {
     this.title = 'Gallery',
     this.onInfoTap,
     this.entranceAnimation = false,
-    this.showHeader = true,
+    this.showFileActions = false,
   });
 
   final List<GalleryPhoto> photos;
@@ -104,9 +107,9 @@ class GalleryViewer extends StatefulWidget {
   /// 与 Hero 转场同开会产生飞行结束后二次跳变）
   final bool entranceAnimation;
 
-  /// 是否显示自带顶栏（嵌入已有 AppBar 的宿主屏时可关闭，
-  /// 关闭后返回依赖宿主屏的导航）
-  final bool showHeader;
+  /// 顶栏是否显示文件操作按钮（分享 / 定位本地文件），
+  /// 操作针对当前页媒体，仅需传入媒体路径即可执行
+  final bool showFileActions;
 
   @override
   State<GalleryViewer> createState() => _GalleryViewerState();
@@ -217,12 +220,11 @@ class _GalleryViewerState extends State<GalleryViewer>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (widget.showHeader)
-                _ChromeSection(
-                  visible: _chromeVisible,
-                  hiddenOffset: const Offset(0, -1),
-                  child: _buildHeader(current),
-                ),
+              _ChromeSection(
+                visible: _chromeVisible,
+                hiddenOffset: const Offset(0, -1),
+                child: _buildHeader(current),
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -293,7 +295,7 @@ class _GalleryViewerState extends State<GalleryViewer>
     );
   }
 
-  /// 顶栏：标题 + 当前照片日期 + 关闭按钮
+  /// 顶栏：标题 + 当前照片日期 + 文件操作（分享/定位）+ 关闭按钮
   Widget _buildHeader(GalleryPhoto current) {
     final dateText = current.dateText;
     return Padding(
@@ -330,6 +332,31 @@ class _GalleryViewerState extends State<GalleryViewer>
             ),
           ),
           const SizedBox(width: 12),
+          // 文件操作：仅传媒体路径即可分享 / 定位（针对当前页）
+          if (widget.showFileActions) ...[
+            _buildHeaderIconButton(
+              Icons.ios_share,
+              'file_preview_share_file'.tr,
+              () => GalleryFileActions.share(
+                context,
+                current.url,
+                text: current.caption,
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (!kIsWeb) ...[
+              _buildHeaderIconButton(
+                Icons.folder_open,
+                'file_preview_open_file_location'.tr,
+                () => GalleryFileActions.locate(
+                  context,
+                  current.url,
+                  fileName: current.caption,
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ],
           _buildCloseButton(),
         ],
       ),
@@ -337,6 +364,19 @@ class _GalleryViewerState extends State<GalleryViewer>
   }
 
   Widget _buildCloseButton() {
+    return _buildHeaderIconButton(
+      Icons.close,
+      'app_close'.tr,
+      () => Navigator.of(context).maybePop(),
+    );
+  }
+
+  /// 顶栏圆形图标按钮（深底白字半透明，与关闭按钮同款）
+  Widget _buildHeaderIconButton(
+    IconData icon,
+    String tooltip,
+    VoidCallback onTap,
+  ) {
     return Material(
       color: Colors.white.withValues(alpha: 0.08),
       shape: CircleBorder(
@@ -344,11 +384,14 @@ class _GalleryViewerState extends State<GalleryViewer>
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => Navigator.of(context).maybePop(),
-        child: const SizedBox(
+        onTap: onTap,
+        child: SizedBox(
           width: 40,
           height: 40,
-          child: Icon(Icons.close, color: Colors.white, size: 20),
+          child: Tooltip(
+            message: tooltip,
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
         ),
       ),
     );
@@ -941,5 +984,116 @@ class _GalleryVideoProgressBar extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// GalleryViewer 内置的文件操作（分享 / 定位本地文件），
+/// 仅需传入媒体路径（'./' 相对路径 / 绝对路径 / http URL）即可执行，
+/// 顶栏按钮与宿主屏（如 FilePreviewScreen）共用同一实现
+class GalleryFileActions {
+  GalleryFileActions._();
+
+  static bool _isHttpUrl(String url) =>
+      url.startsWith('http://') || url.startsWith('https://');
+
+  /// 分享媒体：本地/相对路径（远端模式自动物化）走系统文件分享，
+  /// 在线 URL 降级分享链接文本
+  static Future<void> share(
+    BuildContext context,
+    String url, {
+    String? text,
+  }) async {
+    try {
+      String localPath = url;
+      if (!_isHttpUrl(url)) {
+        localPath = await ImageUtils.getAbsolutePath(url);
+      }
+      final file = File(localPath);
+      if (await file.exists()) {
+        await Share.shareXFiles([XFile(localPath)], text: text);
+      } else if (_isHttpUrl(url)) {
+        await Share.share(url, subject: text);
+      } else {
+        if (context.mounted) Toast.error('file_preview_fileNotExist'.tr);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Toast.error(
+          '${'file_preview_errorFilePreviewFailed'.tr}${e.toString()}',
+        );
+      }
+    }
+  }
+
+  /// 定位本地文件：桌面端打开资源管理器并选中（Win `explorer /select`、
+  /// macOS `open -R`、Linux 打开所在目录），移动端弹文件信息对话框，
+  /// 在线 URL 无本地文件仅提示
+  static Future<void> locate(
+    BuildContext context,
+    String url, {
+    String? fileName,
+  }) async {
+    try {
+      if (_isHttpUrl(url)) {
+        if (context.mounted) Toast.error('在线文件没有本地位置');
+        return;
+      }
+      final absolutePath = await ImageUtils.getAbsolutePath(url);
+      final file = File(absolutePath);
+      if (!await file.exists()) {
+        if (context.mounted) Toast.error('file_preview_fileNotExist'.tr);
+        return;
+      }
+
+      if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+        final size = await file.length();
+        if (!context.mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('file_preview_name'.tr),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${'file_preview_name'.tr}: ${fileName ?? path.basename(absolutePath)}',
+                ),
+                Text(absolutePath),
+                Text(
+                  '${'file_preview_fileSize'.tr}: ${_formatFileSize(size)}',
+                ),
+                Text(
+                  '${'file_preview_fileType'.tr}: ${path.extension(absolutePath)}',
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('app_ok'.tr),
+              ),
+            ],
+          ),
+        );
+      } else if (UniversalPlatform.isWindows) {
+        await Process.run('explorer', ['/select,', absolutePath]);
+      } else if (UniversalPlatform.isMacOS) {
+        await Process.run('open', ['-R', absolutePath]);
+      } else {
+        await Process.run('xdg-open', [path.dirname(absolutePath)]);
+      }
+    } catch (e) {
+      if (context.mounted) Toast.error(e.toString());
+    }
+  }
+
+  static String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 }

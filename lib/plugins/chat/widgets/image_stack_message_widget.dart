@@ -7,7 +7,7 @@ import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/walk_stack_card.dart';
-import 'package:aboutme/widgets/file_preview/file_preview_screen.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 
 /// 多图消息渲染：一次发送的多张图片折叠为 WalkStackCard 卡片堆，
 /// 一图一卡（卡面复用 [ImageMessageWidget]，继承图片加载与错误兜底），
@@ -71,7 +71,7 @@ class ImageStackMessageWidget extends StatelessWidget {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _preview(context, path),
+      onTap: () => _preview(context, images, path),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -125,20 +125,22 @@ class ImageStackMessageWidget extends StatelessWidget {
     );
   }
 
-  /// 与单图消息/timeline 一致的预览行为
-  void _preview(BuildContext context, String path) {
+  /// 与单图消息/timeline 一致的预览行为：
+  /// 传入同消息全部图片，预览内可左右切换
+  void _preview(BuildContext context, List<String> images, String path) {
     final fileInfo =
         message.metadata?[Message.metadataKeyFileInfo]
             as Map<String, dynamic>?;
     NavigationHelper.push(
       context,
-      FilePreviewScreen(
-        filePath: path,
-        fileName: (fileInfo?['name'] as String?) ?? '图片',
-        mimeType: (fileInfo?['mimeType'] as String?) ?? 'image/jpeg',
-        fileSize: (fileInfo?['fileSize'] as int?) ??
-            (fileInfo?['size'] as int?) ??
-            0,
+      GalleryViewer(
+        title: (fileInfo?['name'] as String?) ?? '图片',
+        entranceAnimation: true,
+        showFileActions: true,
+        photos: [
+          for (final p in images) GalleryPhoto(url: p, caption: p),
+        ],
+        initialIndex: images.indexOf(path).clamp(0, images.length - 1),
       ),
     );
   }
