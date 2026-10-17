@@ -5,6 +5,8 @@ import 'package:aboutme_data_sdk/aboutme_data_sdk.dart' show StorageFileInfo;
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -23,16 +25,22 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/scripts_center/scripts_center_plugin.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/utils/platform_utils.dart';
+import 'package:aboutme/widgets/emoji_picker/index.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/multi_filter_bar.dart';
 
 /// 图片选择器底部弹窗（smooth_sheets ModalSheet）
 ///
-/// 结构：PersistentNavigationBar 头部（右侧为 拍照 / 在线URL 入口）+
-/// MultiFilterBar 多条件过滤（插件/日期/大小）+ 图片网格。
+/// 结构：PersistentNavigationBar 头部（middle 为 相册/表情包 tabs，
+/// 右侧为 拍照 / 在线URL 入口）+ 内容区。
+/// 相册 tab：MultiFilterBar 多条件过滤（插件/日期/大小）+ 图片网格。
 /// 网格聚合展示应用存储内各插件上传的图片（chat、calendar_album 等），
 /// 首格为相册入口：移动端使用 wechat_assets_picker，桌面端走系统文件选择。
+/// 表情包 tab：EmojiPicker（svg/图片表情 + Unicode 表情内置分组），
+/// 内置资源选中后转存到 [saveDirectory] 并返回真实文件路径（svg 原样输出），
+/// Unicode 表情以 `{'url': 'emoji:<表情>', 'bytes': null}` 返回
+/// （与在线 URL 入口同构，调用方可用 `emoji:` 前缀区分）。
 class ImagePickerDialog extends StatefulWidget {
   final String? initialUrl;
 
@@ -124,6 +132,9 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
   Set<String> _imageKeySet = {};
 
   bool _loading = true;
+
+  /// 当前 tab：0 相册，1 表情包
+  int _tab = 0;
 
   /// 多选模式下已选中的图片 key
   final List<String> _selected = [];
@@ -438,14 +449,20 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildHeader(context, theme),
-            if (_allInfos.isNotEmpty)
-              MultiFilterBar(
-                filterItems: _buildFilterItems(),
-                filterState: _filterState,
-                onFilterChanged: (_) => setState(() {}),
+            if (_tab == 0) ...[
+              if (_allInfos.isNotEmpty)
+                MultiFilterBar(
+                  filterItems: _buildFilterItems(),
+                  filterState: _filterState,
+                  onFilterChanged: (_) => setState(() {}),
+                ),
+              SizedBox(height: screenHeight * 0.5, child: _buildGrid(theme)),
+              if (_multiple) _buildConfirmBar(theme),
+            ] else
+              SizedBox(
+                height: screenHeight * 0.5,
+                child: _buildEmojiPicker(),
               ),
-            SizedBox(height: screenHeight * 0.5, child: _buildGrid(theme)),
-            if (_multiple) _buildConfirmBar(theme),
             SafeArea(
               top: false,
               child: SizedBox(height: theme.spacing.sm),
@@ -456,7 +473,8 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     );
   }
 
-  /// 顶部导航：嵌入式 PersistentNavigationBar（super_cupertino_navigation_bar）
+  /// 顶部导航：嵌入式 PersistentNavigationBar（super_cupertino_navigation_bar），
+  /// middle 为 相册/表情包 分段 tabs
   Widget _buildHeader(BuildContext context, AppThemeData theme) {
     return PersistentNavigationBar(
       components: NavigationBarStaticComponents(
@@ -478,11 +496,10 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         automaticallyImplyLeading: false,
         automaticallyImplyTitle: false,
         previousPageTitle: null,
-        userMiddle: Text(
-          _multiple
-              ? 'image_picker_selectMultipleImages'.tr
-              : 'image_picker_selectImage'.tr,
-          style: DsTypography.title.copyWith(color: theme.text),
+        userMiddle: DSSegmentedControl(
+          options: ['image_picker_tab_album'.tr, 'image_picker_tab_emoji'.tr],
+          selected: _tab,
+          onChanged: (index) => setState(() => _tab = index),
         ),
         userTrailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -523,6 +540,59 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         large: false,
       ),
     );
+  }
+
+  /// 表情包 tab：EmojiPicker（需 ProviderScope 祖先，这里局部包裹），
+  /// 开启全部内置分组（SVG 贴纸 / 方块表情 / 内置表情 / Unicode 表情）
+  Widget _buildEmojiPicker() {
+    return ProviderScope(
+      child: EmojiPicker(
+        types: const [
+          kEmojiPickerTypeSvg,
+          kEmojiPickerTypeImage,
+          kEmojiPickerTypeEmoji,
+        ],
+        onSelection: _selectEmoji,
+      ),
+    );
+  }
+
+  /// 选中表情：内置资源（svg/图片表情）转存到目标目录后以真实文件路径返回
+  /// （svg 原样输出 .svg 文件）；Unicode 表情以 `emoji:` 前缀标记返回，
+  /// 与在线 URL 入口同构。多选模式下同样直接返回单条结果
+  Future<void> _selectEmoji(String value, bool isFreeText) async {
+    if (value.startsWith(kBuiltInEmojiPrefix)) {
+      final assetPath = value.substring(kBuiltInEmojiPrefix.length);
+      try {
+        final data = await rootBundle.load(assetPath);
+        final bytes = data.buffer.asUint8List(
+          data.offsetInBytes,
+          data.lengthInBytes,
+        );
+        final url = await ImageUtils.saveBytesToAppDirectory(
+          bytes,
+          widget.saveDirectory,
+          extension: path.extension(assetPath).toLowerCase(),
+        );
+        if (mounted) {
+          Navigator.of(context).pop(<String, dynamic>{
+            'url': url,
+            'thumbUrl': null,
+            'bytes': bytes,
+          });
+        }
+      } catch (e) {
+        debugPrint('保存内置表情失败: $e');
+        if (mounted) Toast.error('image_picker_selectImageFailed'.tr);
+      }
+      return;
+    }
+    if (!mounted) return;
+    Navigator.of(context).pop(<String, dynamic>{
+      'url': 'emoji:$value',
+      'thumbUrl': null,
+      'bytes': null,
+    });
   }
 
   /// 弹出在线 URL 输入的二级底部弹窗，确认后连同主弹窗一起返回结果

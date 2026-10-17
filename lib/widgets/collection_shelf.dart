@@ -238,16 +238,27 @@ class CollectionShelf extends StatelessWidget {
             ),
           ),
         ),
-        // 搁板横木：左右出檐，紧贴背板下沿
-        Container(
-          height: 12,
-          margin: const EdgeInsets.symmetric(horizontal: -6),
-          decoration: dsSketchDecoration(
-            theme: theme,
-            fillColor: board,
-            radius: BorderRadius.circular(6),
-            seed: seed + 1,
-          ),
+        // 搁板横木：左右出檐（Container margin 不允许负值，用 Stack 负偏移实现）
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // 占位撑起 Stack 高度（宽度随外部拉伸）
+            const SizedBox(height: 12, width: double.infinity),
+            Positioned(
+              left: -6,
+              right: -6,
+              top: 0,
+              child: Container(
+                height: 12,
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillColor: board,
+                  radius: BorderRadius.circular(6),
+                  seed: seed + 1,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

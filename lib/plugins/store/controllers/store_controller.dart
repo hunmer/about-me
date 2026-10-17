@@ -533,11 +533,16 @@ class StoreController with ChangeNotifier {
     _userItems.clear();
 
     // 检查是否有数据，没有则初始化默认数据
-    final hasProducts = storedProducts is Map<String, dynamic> &&
+    // 注意：readPath 对不存在的文件返回空 Map {}，需排除（否则 hasPoints
+    // 恒为 true，删除数据文件后永远不会回落默认数据）
+    final hasProducts =
+        storedProducts is Map<String, dynamic> &&
         storedProducts['products'] is List &&
         (storedProducts['products'] as List).isNotEmpty;
-    final hasPoints = storedPoints is Map<String, dynamic>;
-    final hasUserItems = storedUserItems is Map<String, dynamic> &&
+    final hasPoints =
+        storedPoints is Map<String, dynamic> && storedPoints.isNotEmpty;
+    final hasUserItems =
+        storedUserItems is Map<String, dynamic> &&
         storedUserItems['items'] is List;
 
     if (!hasProducts && !hasPoints && !hasUserItems) {

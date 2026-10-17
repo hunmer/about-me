@@ -28,6 +28,8 @@ const Map<String, String> imagePickerTranslationsZh = {
   'image_picker_takePhotoFailed': '拍照失败',
 
   // 底部弹窗
+  'image_picker_tab_album': '相册',
+  'image_picker_tab_emoji': '表情包',
   'image_picker_onlineUrl': '在线图片',
   'image_picker_noImages': '暂无图片，可从相册选择或拍照',
   'image_picker_noMatches': '没有符合过滤条件的图片',

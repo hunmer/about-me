@@ -20,14 +20,6 @@ import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import '../types.dart';
 
 import 'package:get/get.dart';
-/// 内置表情资源目录（assets/emojis 下的图片作为表情包）
-const String kBuiltInEmojiAssetDir = 'assets/emojis';
-
-/// 方块表情资源目录（assets/emoji_faces 下的透明 WebP 表情）
-const String kEmojiFaceAssetDir = 'assets/emoji_faces';
-
-/// 内置表情在 Emoji.value 中的标记前缀，用于与 Unicode 表情/贴图区分
-const String kBuiltInEmojiPrefix = 'aboutme_emoji:';
 
 /// 贴图在 Emoji.value 中的标记前缀（后接存储相对路径）
 const String kStickerPrefix = 'sticker:';
