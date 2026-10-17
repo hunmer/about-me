@@ -63,10 +63,10 @@ class _UserItemsState extends State<UserItems> {
       'expired': 'store_expired'.tr,
     };
 
-    // 分类选项：从全部物品快照动态收集
+    // 分类选项：从全部物品动态收集（快照缺分类时回落当前商品数据）
     final categoryOptions = <String, String>{};
     for (final item in widget.controller.userItems) {
-      final category = item.productSnapshot['category'] as String?;
+      final category = item.productCategory;
       if (category != null && category.isNotEmpty) {
         categoryOptions[category] = StoreCategories.labelOf(category);
       }
@@ -149,8 +149,7 @@ class _UserItemsState extends State<UserItems> {
     final query = _searchQuery.toLowerCase();
     return items.where((item) {
       final name = item.productName.toLowerCase();
-      final description =
-          (item.productSnapshot['description'] ?? '').toLowerCase();
+      final description = item.productDescription.toLowerCase();
       return name.contains(query) || description.contains(query);
     }).toList();
   }
@@ -312,7 +311,9 @@ class _UserItemsState extends State<UserItems> {
   /// 单个货架槽位：点击 Q 弹后弹出舞台详情（使用/查看商品/删除）
   Widget _buildShelfSlot(ItemGroup group) {
     return CollectionShelfSlot(
-      semanticLabel: group.item.productName,
+      semanticLabel: group.item.productName.isEmpty
+          ? 'store_productRemoved'.tr
+          : group.item.productName,
       onTap: () => _openStageDialog(group),
       child: _ItemShelfArt(
         item: group.item,
@@ -342,7 +343,7 @@ class _UserItemsState extends State<UserItems> {
         ? 'store_expiringSoon'.tr
         : 'store_daysLeft'.trParams({'days': '$daysLeft'});
 
-    final description = item.productSnapshot['description'] ?? '';
+    final description = item.productDescription;
     final meta =
         '${'store_validUntilDate'.trParams({
           'date': _formatDate(item.expireDate),
@@ -350,7 +351,9 @@ class _UserItemsState extends State<UserItems> {
 
     await showCollectionStageDialog(
       context: context,
-      title: item.productName,
+      title: item.productName.isEmpty
+          ? 'store_productRemoved'.tr
+          : item.productName,
       chipLabel: statusLabel,
       chipColor: statusColor,
       art: _ItemShelfArt(item: item, size: 116),
@@ -424,7 +427,7 @@ class _UserItemsState extends State<UserItems> {
     return widget.controller.userItems.where((item) {
       // 分类
       if (category != null) {
-        if ((item.productSnapshot['category'] as String?) != category) {
+        if (item.productCategory != category) {
           return false;
         }
       }
@@ -589,7 +592,9 @@ class _ItemShelfArt extends StatelessWidget {
               children: [
                 Flexible(
                   child: Text(
-                    item.productName,
+                    item.productName.isEmpty
+                        ? 'store_productRemoved'.tr
+                        : item.productName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: DsTypography.caption.copyWith(

@@ -244,7 +244,9 @@ class UserItemCard extends StatelessWidget {
 
                 // 标题
                 Text(
-                  item.productName,
+                  item.productName.isEmpty
+                      ? 'store_productRemoved'.tr
+                      : item.productName,
                   style: DsTypography.heading.copyWith(
                     color: theme.text,
                     fontWeight: FontWeight.w600,

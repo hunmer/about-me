@@ -75,6 +75,7 @@ const Map<String, String> storeTranslationsEn = {
   'store_categoryTech': 'Tech',
   'store_categoryFurniture': 'Home',
   'store_categoryOther': 'Other',
+  'store_productRemoved': 'Removed product',
   'store_categoryUncategorized': 'Uncategorized',
   'store_itemStatus': 'Item Status',
   'store_allItems': 'All',

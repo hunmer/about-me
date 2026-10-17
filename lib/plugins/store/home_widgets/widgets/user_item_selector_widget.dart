@@ -57,10 +57,16 @@ class _UserItemSelectorWidgetState extends State<UserItemSelectorWidget> {
       return HomeWidget.buildErrorWidget(context, '物品未找到');
     }
 
-    final productSnapshot =
-        itemData['product_snapshot'] as Map<String, dynamic>?;
-    final productName = productSnapshot?['name'] as String? ?? '';
-    final productImage = productSnapshot?['image'] as String?;
+    // 优先读缓存事件注入的顶层展示字段，旧数据回落快照键
+    final productName =
+        itemData['product_name'] as String? ??
+        (itemData['product_snapshot'] as Map<String, dynamic>?)?['name']
+            as String? ??
+        '';
+    final productImage =
+        itemData['product_image'] as String? ??
+        (itemData['product_snapshot'] as Map<String, dynamic>?)?['image']
+            as String?;
     final purchasePrice = itemData['purchase_price'] as int? ?? 0;
     final remaining = itemData['remaining'] as int? ?? 0;
     final expireDate = DateTime.parse(itemData['expire_date'] as String);

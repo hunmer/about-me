@@ -220,7 +220,9 @@ class _UserItemDetailPageState extends State<UserItemDetailPage> {
             theme: theme,
             icon: DsIconKind.cart,
             label: 'store_productNameLabel'.tr,
-            value: item.productName,
+            value: item.productName.isEmpty
+                ? 'store_productRemoved'.tr
+                : item.productName,
           ),
           _buildDetailRow(
             theme: theme,
@@ -248,7 +250,7 @@ class _UserItemDetailPageState extends State<UserItemDetailPage> {
           ),
           const SizedBox(height: 20),
           // 物品描述
-          if (item.productSnapshot['description'] != null)
+          if (item.productDescription.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -258,7 +260,7 @@ class _UserItemDetailPageState extends State<UserItemDetailPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  item.productSnapshot['description'],
+                  item.productDescription,
                   style: DsTypography.body.copyWith(color: theme.text),
                 ),
               ],

@@ -1,0 +1,13 @@
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="20" y="30" width="80" height="62" rx="14" fill="#F4A7B9" stroke="#4A342E" stroke-width="2.6"/>
+<rect x="26" y="36" width="68" height="50" rx="9" fill="#FFFDF9" stroke="#4A342E" stroke-width="2.4"/>
+<path d="M62 36 L85 36 C90 36 94 40 94 45 L94 77 C94 82 90 86 85 86 L62 86 Z" fill="#FFF3D6" stroke="#4A342E" stroke-width="2.4"/>
+<path d="M44 57 C41.5 52.5, 35.5 54, 37 59.5 C38.5 63.5, 42.5 66, 44 68 C45.5 66, 49.5 63.5, 51 59.5 C52.5 54, 46.5 52.5, 44 57 Z" fill="#F08A9D" stroke="#4A342E" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="34" cy="45" r="1.5" fill="#4A342E"/>
+<circle cx="53" cy="76" r="1.5" fill="#4A342E"/>
+<rect x="67" y="42" width="21" height="13" rx="4" fill="#FBE094" stroke="#4A342E" stroke-width="2.2"/>
+<path d="M73 48.5 L82 48.5" stroke="#4A342E" stroke-width="2" stroke-linecap="round"/>
+<circle cx="72" cy="71" r="6" fill="#B8D098" stroke="#4A342E" stroke-width="2.2"/>
+<circle cx="85" cy="70" r="5.5" fill="#F4978E" stroke="#4A342E" stroke-width="2.2"/>
+<path d="M95 20 Q99 20 99 16 Q99 20 103 20 Q99 20 99 24 Q99 20 95 20 Z" fill="#F4A7B9"/>
+</svg>

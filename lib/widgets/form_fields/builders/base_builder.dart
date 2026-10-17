@@ -4,6 +4,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import '../config.dart';
+import '../form_field_wrapper.dart';
 import '../types.dart';
 
 /// ========== 公共样式生成函数 ==========
@@ -198,6 +199,52 @@ Widget buildSelectField(
             )
           else
             trigger,
+        ],
+      );
+    },
+  );
+}
+
+/// 构建可搜索下拉（combobox）字段：DSCombobox 的表单封装
+///
+/// 选项经 [FormFieldConfig.extra] 的 `options` 传入
+/// （`List<DSSelectItem<dynamic>>`），字段值为所选 item 的 value；
+/// required 校验走表单统一的空值检查。
+Widget buildComboBoxField(FormFieldConfig config, GlobalKey fieldKey) {
+  final extra = config.extra ?? {};
+  final options =
+      (extra['options'] as List<DSSelectItem<dynamic>>?) ?? const [];
+
+  return WrappedFormField(
+    key: fieldKey,
+    name: config.name,
+    initialValue: config.initialValue,
+    enabled: config.enabled,
+    onChanged: config.onChanged,
+    onValueChanged: config.onValueChanged,
+    builder: (context, value, setValue) {
+      final theme = DSThemeBridge.resolve(context);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (config.labelText != null)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: theme.spacing.sm,
+                left: theme.spacing.xs,
+              ),
+              child: Text(
+                config.labelText!,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+            ),
+          DSCombobox<dynamic>(
+            items: options,
+            value: value,
+            hint: config.hintText ?? '请选择',
+            enabled: config.enabled,
+            onChanged: config.enabled ? (v) => setValue(v) : null,
+          ),
         ],
       );
     },

@@ -4,6 +4,7 @@ export 'base_builder.dart'
         buildTextField,
         buildTextAreaField,
         buildSelectField,
+        buildComboBoxField,
         createRoundedContainerDecoration;
 
 // 选择器类字段构建器

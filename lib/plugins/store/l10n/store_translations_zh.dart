@@ -66,6 +66,7 @@ const Map<String, String> storeTranslationsZh = {
   'store_categoryTech': '数码',
   'store_categoryFurniture': '家居',
   'store_categoryOther': '其他',
+  'store_productRemoved': '已下架商品',
   'store_categoryUncategorized': '未分类',
   'store_itemStatus': '物品状态',
   'store_allItems': '全部',

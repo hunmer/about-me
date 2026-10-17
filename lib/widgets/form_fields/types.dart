@@ -11,6 +11,7 @@ enum FormFieldType {
 
   // 选择器类
   select,
+  comboBox,
   date,
   dateRange,
   time,

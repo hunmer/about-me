@@ -58,33 +58,28 @@ Future<Map<String, Map<String, dynamic>>> _provideCommonWidgets(
   if (plugin == null) return {};
 
   final controller = plugin.controller;
-  final userItems = controller.userItems.map((i) => i.toJson()).toList();
   final now = DateTime.now();
 
-  // 过滤出未过期的物品
-  final validItems = userItems.where((item) {
-    final expireDate = DateTime.parse(item['expire_date'] as String);
-    return expireDate.isAfter(now);
-  }).toList();
+  // 默认显示前 3 个未过期物品（名称/图片走共用的商品基础数据）
+  final displayedItems = controller.userItems
+      .where((item) => item.expireDate.isAfter(now))
+      .take(3)
+      .map((item) {
+        final remainingDays = item.expireDate.difference(now).inDays;
 
-  // 默认显示前 3 个未过期物品
-  final displayedItems = validItems.take(3).map((item) {
-    final productSnapshot = item['product_snapshot'] as Map<String, dynamic>?;
-    final expireDate = DateTime.parse(item['expire_date'] as String);
-    final remainingDays = expireDate.difference(now).inDays;
-
-    return {
-      'id': item['id'] as String,
-      'productName': productSnapshot?['name'] as String? ?? '',
-      'productImage': productSnapshot?['image'] as String?,
-      'purchasePrice': item['purchase_price'] as int,
-      'remaining': item['remaining'] as int,
-      'expireDate': expireDate.toIso8601String(),
-      'remainingDays': remainingDays,
-      'isExpired': remainingDays < 0,
-      'isExpiringSoon': remainingDays >= 0 && remainingDays <= 7,
-    };
-  }).toList();
+        return {
+          'id': item.id,
+          'productName': item.productName,
+          'productImage': item.productImage,
+          'purchasePrice': item.purchasePrice,
+          'remaining': item.remaining,
+          'expireDate': item.expireDate.toIso8601String(),
+          'remainingDays': remainingDays,
+          'isExpired': remainingDays < 0,
+          'isExpiringSoon': remainingDays >= 0 && remainingDays <= 7,
+        };
+      })
+      .toList();
 
   return {
     'storeUserItemSelector': {

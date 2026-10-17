@@ -288,6 +288,9 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
       case FormFieldType.select:
         return buildSelectField(config, fieldKey, context);
 
+      case FormFieldType.comboBox:
+        return buildComboBoxField(config, fieldKey);
+
       case FormFieldType.date:
         return buildDateField(config, fieldKey, context);
 

@@ -62,6 +62,7 @@ class ClientStoreRepository implements IStoreRepository {
         name: dto.name,
         description: dto.description,
         image: dto.image,
+        category: dto.category,
         stock: dto.stock,
         price: dto.price,
         exchangeStart: dto.exchangeStart,
@@ -91,6 +92,7 @@ class ClientStoreRepository implements IStoreRepository {
         name: dto.name,
         description: dto.description,
         image: dto.image,
+        category: dto.category,
         stock: dto.stock,
         price: dto.price,
         exchangeStart: dto.exchangeStart,
@@ -485,6 +487,7 @@ class ClientStoreRepository implements IStoreRepository {
       name: product.name,
       description: product.description,
       image: product.image,
+      category: product.category,
       stock: product.stock,
       price: product.price,
       exchangeStart: product.exchangeStart,
@@ -501,7 +504,10 @@ class ClientStoreRepository implements IStoreRepository {
       expireDate: item.expireDate,
       purchaseDate: item.purchaseDate,
       purchasePrice: item.purchasePrice,
-      productSnapshot: item.productSnapshot,
+      // 基础数据已不随物品存储，服务端同步时按引用拼装快照
+      productSnapshot:
+          item.base?.toJson() ??
+          Map<String, dynamic>.from(item.legacySnapshot ?? const {}),
     );
   }
 

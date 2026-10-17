@@ -66,7 +66,7 @@ List<Product> getDefaultProducts() {
       name: '蜜桃气泡水',
       category: 'food',
       description: '冰镇蜜桃味，清凉一夏',
-      image: 'assets/svg/items/fruits_sweet-peach.svg',
+      image: 'assets/svg/items/drink_soda-can.svg',
       stock: 25,
       price: 25,
       exchangeStart: now,
@@ -78,7 +78,7 @@ List<Product> getDefaultProducts() {
       name: '西瓜冰沙券',
       category: 'food',
       description: '兑换一杯现榨西瓜冰沙',
-      image: 'assets/svg/items/fruits_watermelon.svg',
+      image: 'assets/svg/items/drink_berry-smoothie.svg',
       stock: 20,
       price: 30,
       exchangeStart: now,
@@ -352,10 +352,10 @@ List<Product> getDefaultProducts() {
     ),
     Product(
       id: '1705123456817',
-      name: '草莓蛋糕',
+      name: '草莓甜甜圈',
       category: 'food',
-      description: '奶油与草莓的双倍快乐',
-      image: 'assets/svg/items/easy_cake.svg',
+      description: '粉粉糖霜裹住松软面团',
+      image: 'assets/svg/items/food_strawberry-donut.svg',
       stock: 20,
       price: 35,
       exchangeStart: now,
@@ -427,7 +427,6 @@ List<UserItem> getDefaultUserItems() {
       expireDate: now.add(Duration(days: expiresInDays)),
       purchaseDate: now.subtract(Duration(days: purchasedDaysAgo)),
       purchasePrice: product.price,
-      productSnapshot: product.toJson(),
     );
   }
 
@@ -440,7 +439,6 @@ List<UserItem> getDefaultUserItems() {
       expireDate: yesterday,
       purchaseDate: fiveDaysAgo,
       purchasePrice: 50,
-      productSnapshot: products[0].toJson(),
     ),
 
     // 即将过期的物品
@@ -451,7 +449,6 @@ List<UserItem> getDefaultUserItems() {
       expireDate: now.add(const Duration(days: 2)),
       purchaseDate: now.subtract(const Duration(days: 5)),
       purchasePrice: 80,
-      productSnapshot: products[1].toJson(),
     ),
 
     // 正常使用中的物品
@@ -462,7 +459,6 @@ List<UserItem> getDefaultUserItems() {
       expireDate: now.add(const Duration(days: 30)),
       purchaseDate: threeDaysAgo,
       purchasePrice: 120,
-      productSnapshot: products[2].toJson(),
     ),
 
     // ===== 更多示例物品（合计 16 组，正好铺满收集册 4 层货架）=====

@@ -14,6 +14,7 @@ import 'package:aboutme/plugins/store/sample_data.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:get/get.dart';
 
 /// Store 缓存更新事件参数
 class StoreCacheUpdatedEventArgs extends EventArgs {
@@ -124,12 +125,23 @@ class StoreController with ChangeNotifier {
     EventManager.instance.broadcast('store_points_changed', eventArgs);
   }
 
-  /// 触发缓存更新事件（携带最新数据）
+  /// 触发缓存更新事件（携带最新数据）；
+  /// 物品数据附带解析出的展示字段（product_name/product_image），
+  /// 供直接消费原始 Map 的小组件使用
   void _notifyCacheUpdatedEvent() {
     final eventArgs = StoreCacheUpdatedEventArgs(
       products: productsJson,
       archivedProducts: archivedProductsJson,
-      userItems: _userItems.map((item) => item.toJson()).toList(),
+      userItems:
+          _userItems
+              .map(
+                (item) => {
+                  ...item.toJson(),
+                  'product_name': item.productName,
+                  'product_image': item.productImage,
+                },
+              )
+              .toList(),
       pointsLogs: _pointsLogs.map((log) => log.toJson()).toList(),
       userPoints: _userPoints,
       cacheDate: DateTime.now(),
@@ -139,9 +151,31 @@ class StoreController with ChangeNotifier {
 
   // 更新所有流
   void _updateStreams() {
+    _linkItemBases();
     _productsStreamController.add(_products.length);
     _userItemsStreamController.add(_userItems.length);
     _pointsStreamController.add(_userPoints);
+  }
+
+  /// 旧快照迁移：商品与归档都找不到时，用历史快照构建的临时基础数据
+  final Map<String, Product> _extraItemBases = {};
+
+  /// 为全部物品解析商品基础数据引用（商品列表 → 归档 → 旧快照临时数据）。
+  /// 商品增删/归档后调用，保证物品侧始终读到最新基础数据。
+  void _linkItemBases() {
+    for (final item in _userItems) {
+      item.base = _resolveItemBase(item);
+    }
+  }
+
+  Product? _resolveItemBase(UserItem item) {
+    final live =
+        _products.firstWhereOrNull((p) => p.id == item.productId) ??
+        _archivedProducts.firstWhereOrNull((p) => p.id == item.productId);
+    if (live != null) return live;
+    final snapshot = item.legacySnapshot;
+    if (snapshot == null) return null;
+    return _extraItemBases[item.productId] ??= Product.fromJson(snapshot);
   }
 
   // 获取商品列表
@@ -278,7 +312,7 @@ class StoreController with ChangeNotifier {
       useDuration: product.useDuration,
     );
 
-    // 添加用户物品(保存购买时的商品快照)
+    // 添加用户物品（基础数据经 base 引用商品列表，不再快照复制）
     final newItem = UserItem(
       id: const Uuid().v4(),
       productId: product.id,
@@ -286,8 +320,7 @@ class StoreController with ChangeNotifier {
       expireDate: DateTime.now().add(Duration(days: product.useDuration)),
       purchaseDate: DateTime.now(),
       purchasePrice: product.price,
-      productSnapshot: product.toJson(),
-    );
+    )..base = product;
     _userItems.add(newItem);
 
     // 添加积分记录
@@ -323,13 +356,14 @@ class StoreController with ChangeNotifier {
   Future<bool> useItem(UserItem item) async {
     if (DateTime.now().isAfter(item.expireDate)) return false;
 
-    // 记录使用历史
+    // 记录使用历史（使用记录冻结当时的基础数据快照）
     _usedItems.add(
       UsedItem(
         id: item.id,
         productId: item.productId,
         useDate: DateTime.now(),
-        productSnapshot: item.productSnapshot,
+        productSnapshot:
+            item.base?.toJson() ?? Map<String, dynamic>.from(item.legacySnapshot ?? const {}),
       ),
     );
 

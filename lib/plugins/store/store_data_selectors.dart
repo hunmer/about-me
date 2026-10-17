@@ -107,8 +107,7 @@ void _registerDataSelectors() {
           isFinalStep: true,
           dataLoader: (_) async {
             return StorePlugin.instance.controller.userItems.map((item) {
-              final productSnapshot = item.productSnapshot;
-              final productName = productSnapshot['name'] as String? ?? '未知物品';
+              final productName = item.productName.isEmpty ? '未知物品' : item.productName;
               final remaining = item.remaining;
               final expireDate = item.expireDate;
               final remainingDays =
@@ -130,7 +129,10 @@ void _registerDataSelectors() {
                 title: productName,
                 subtitle: subtitle,
                 icon: Icons.inventory_2,
-                rawData: item.toJson(),
+                rawData: {
+                  ...item.toJson(),
+                  'description': item.productDescription,
+                },
               );
             }).toList();
           },
@@ -142,10 +144,7 @@ void _registerDataSelectors() {
                 lowerQuery,
               );
               final itemData = item.rawData as Map<String, dynamic>;
-              final productSnapshot =
-                  itemData['productSnapshot'] as Map<String, dynamic>? ?? {};
-              final description =
-                  productSnapshot['description'] as String? ?? '';
+              final description = itemData['description'] as String? ?? '';
               final matchesDescription = description.toLowerCase().contains(
                 lowerQuery,
               );

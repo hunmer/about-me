@@ -1,0 +1,11 @@
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M49 23 L71 23 L71 33 C71 37 77 40 77 46 C77 51 71 53 71 57 C71 61 80 65 80 73 L80 96 C80 101 76 104 71 104 L49 104 C44 104 40 101 40 96 L40 73 C40 65 49 61 49 57 C49 53 43 51 43 46 C43 40 49 37 49 33 Z" fill="#DFF2F6" stroke="#4A342E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="46" y="16" width="28" height="8" rx="3.5" fill="#F4A7B9" stroke="#4A342E" stroke-width="2.6"/>
+<circle cx="60" cy="46" r="5.5" fill="#A6D4E2" stroke="#4A342E" stroke-width="2.3"/>
+<circle cx="58.5" cy="44.5" r="1.5" fill="#FFFDF9"/>
+<path d="M49 56 L54 56 M71 56 L66 56" stroke="#4A342E" stroke-width="2.4" stroke-linecap="round"/>
+<rect x="40" y="69" width="40" height="23" fill="#FAD2DC" stroke="#4A342E" stroke-width="2.5"/>
+<path d="M60 77.5 C57.5 73.5, 52 75, 53.5 80 C55 83, 58.5 85.5, 60 87 C61.5 85.5, 65 83, 66.5 80 C68 75, 62.5 73.5, 60 77.5 Z" fill="#FFFDF9" stroke="#4A342E" stroke-width="2.1" stroke-linejoin="round"/>
+<circle cx="53" cy="97" r="2" fill="#FFFDF9" stroke="#4A342E" stroke-width="1.8"/>
+<circle cx="66" cy="95" r="2.5" fill="#FFFDF9" stroke="#4A342E" stroke-width="1.8"/>
+</svg>

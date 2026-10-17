@@ -27,9 +27,6 @@ class _AddProductPageState extends State<AddProductPage> {
   final TextEditingController _targetPriceController = TextEditingController();
   FormBuilderWrapperState? _formWrapperState;
 
-  /// 商品分类（'' = 未分类）
-  late String _category = widget.product?.category ?? '';
-
   // 获取积分比率配置
   double _getPointsRatio() {
     final ratio = widget.controller.plugin.settings['points_to_rmb_ratio'];
@@ -123,6 +120,8 @@ class _AddProductPageState extends State<AddProductPage> {
             : (imageValue as String? ?? '');
     final priceValue = values['price'];
     final stockValue = values['stock'];
+    // 分类（'' = 未分类）
+    final category = values['category'] as String? ?? '';
 
     final product =
         widget.product != null
@@ -131,7 +130,7 @@ class _AddProductPageState extends State<AddProductPage> {
               name: values['name'] as String,
               description: values['description'] as String? ?? '',
               image: imageUrl.isEmpty ? widget.product!.image : imageUrl,
-              category: _category.isEmpty ? null : _category,
+              category: category.isEmpty ? null : category,
               stock: int.tryParse(stockValue?.toString() ?? '0') ?? 0,
               price: int.tryParse(priceValue?.toString() ?? '0') ?? 0,
               exchangeStart: widget.product!.exchangeStart,
@@ -143,7 +142,7 @@ class _AddProductPageState extends State<AddProductPage> {
               name: values['name'] as String,
               description: values['description'] as String? ?? '',
               image: imageUrl,
-              category: _category.isEmpty ? null : _category,
+              category: category.isEmpty ? null : category,
               stock: int.tryParse(stockValue?.toString() ?? '0') ?? 0,
               price: int.tryParse(priceValue?.toString() ?? '0') ?? 0,
               exchangeStart: DateTime.now(),
@@ -398,29 +397,15 @@ class _AddProductPageState extends State<AddProductPage> {
                       labelText: 'store_descriptionLabel'.tr,
                       initialValue: widget.product?.description ?? '',
                     ),
-                  ],
-                  onSubmit: _submit,
-                  fieldSpacing: 16,
-                  showSubmitButton: false,
-                  showResetButton: false,
-                ),
-                onStateReady: (state) => _formWrapperState = state,
-              ),
-              const SizedBox(height: 16),
-            DSThemeBridge(
-              child: Builder(
-                builder: (context) {
-                  final theme = DSThemeBridge.resolve(context);
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'store_categoryLabel'.tr,
-                        style: DsTypography.heading.copyWith(color: theme.text),
-                      ),
-                      const SizedBox(height: 8),
-                      DSCombobox<String>(
-                        items: [
+                    // 分类（可搜索下拉）
+                    FormFieldConfig(
+                      name: 'category',
+                      type: FormFieldType.comboBox,
+                      labelText: 'store_categoryLabel'.tr,
+                      hintText: 'store_categoryHint'.tr,
+                      initialValue: widget.product?.category ?? '',
+                      extra: {
+                        'options': [
                           DSSelectItem(
                             value: '',
                             label: StoreCategories.uncategorizedLabel,
@@ -431,22 +416,22 @@ class _AddProductPageState extends State<AddProductPage> {
                               label: StoreCategories.labelOf(category),
                             ),
                         ],
-                        value: _category,
-                        hint: 'store_categoryHint'.tr,
-                        onChanged: (value) =>
-                            setState(() => _category = value),
-                      ),
-                    ],
-                  );
-                },
+                      },
+                    ),
+                  ],
+                  onSubmit: _submit,
+                  fieldSpacing: 16,
+                  showSubmitButton: false,
+                  showResetButton: false,
+                ),
+                onStateReady: (state) => _formWrapperState = state,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  },
-),
+      );
+    },
+  ),
 );
 }
 }

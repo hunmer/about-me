@@ -12,6 +12,7 @@ class ProductDto {
   final String name;
   final String description;
   final String? image;
+  final String? category;
   final int stock;
   final int price;
   final DateTime exchangeStart;
@@ -23,6 +24,7 @@ class ProductDto {
     required this.name,
     required this.description,
     this.image,
+    this.category,
     required this.stock,
     required this.price,
     required this.exchangeStart,
@@ -37,6 +39,7 @@ class ProductDto {
       name: json['name'] as String,
       description: json['description'] as String,
       image: json['image'] as String?,
+      category: json['category'] as String?,
       stock: json['stock'] as int,
       price: json['price'] as int,
       exchangeStart: DateTime.parse(json['exchangeStart'] as String),
@@ -52,6 +55,7 @@ class ProductDto {
       'name': name,
       'description': description,
       'image': image,
+      'category': category,
       'stock': stock,
       'price': price,
       'exchangeStart': exchangeStart.toIso8601String(),
@@ -66,6 +70,7 @@ class ProductDto {
     String? name,
     String? description,
     String? image,
+    String? category,
     int? stock,
     int? price,
     DateTime? exchangeStart,
@@ -77,6 +82,7 @@ class ProductDto {
       name: name ?? this.name,
       description: description ?? this.description,
       image: image ?? this.image,
+      category: category ?? this.category,
       stock: stock ?? this.stock,
       price: price ?? this.price,
       exchangeStart: exchangeStart ?? this.exchangeStart,
