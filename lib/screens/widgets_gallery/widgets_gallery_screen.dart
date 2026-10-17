@@ -150,16 +150,6 @@ class WidgetsGalleryScreen extends StatelessWidget {
 
           const Divider(),
 
-          // 统计图表类
-          _buildSectionHeader(context, '统计图表类'),
-          _buildListItem(
-            context,
-            icon: Icons.bar_chart,
-            title: '统计图表',
-            subtitle: 'Statistics',
-            route: '/widgets_gallery/statistics',
-          ),
-
           const Divider(),
 
           // 对话框类

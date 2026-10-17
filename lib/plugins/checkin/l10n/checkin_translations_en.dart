@@ -115,6 +115,13 @@ class CheckinTranslationsEn {
     'checkin_overviewName': 'Check-in Overview',
     'checkin_overviewDescription': 'Display check-in statistics',
     'checkin_statsTitle': 'Check-in Statistics',
+
+    // Stats screen
+    'checkin_statsWeek': 'Week',
+    'checkin_statsMonth': 'Month',
+    'checkin_statsTotalCheckins': 'Total Check-ins',
+    'checkin_statsUnit': 'times',
+    'checkin_statsCompletedItems': '@completed of @total items',
     'checkin_quickAccess': 'Quick Access',
     'checkin_quickAccessDesc': 'Tap to go to check-in item',
     'checkin_multiQuickAccess': 'Multi-Item Check-in',

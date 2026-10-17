@@ -15,7 +15,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/enhanced_calendar_exampl
 import 'package:aboutme/screens/widgets_gallery/screens/group_selector_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/simple_group_selector_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/tag_manager_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/statistics_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/custom_dialog_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/persona_intro_dialog_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/smooth_bottom_sheet_example.dart';
@@ -189,11 +188,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
           path: '/widgets_gallery/tag_manager',
           handler: (settings) => RouteHelpers.createRoute(const TagManagerExample(), settings: settings),
           description: '标签管理器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/statistics',
-          handler: (settings) => RouteHelpers.createRoute(const StatisticsExample(), settings: settings),
-          description: '统计组件示例',
         ),
         RouteDefinition(
           path: '/widgets_gallery/custom_dialog',

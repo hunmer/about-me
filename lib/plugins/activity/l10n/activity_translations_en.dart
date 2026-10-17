@@ -77,6 +77,18 @@ class ActivityTranslationsEn {
     'activity_totalDuration': 'Total Duration',
     'activity_activityRecords': 'Activity Records',
     'activity_activityStatistics': 'Activity Statistics',
+
+    // Stats screen
+    'activity_statsToday': 'Today',
+    'activity_statsWeek': 'Week',
+    'activity_statsMonth': 'Month',
+    'activity_statsTodayDuration': 'Active Today',
+    'activity_statsTotalDuration': 'Total Duration',
+    'activity_statsActivities': '@count activities',
+    'activity_statsHourlyChart': 'Hourly Distribution',
+    'activity_statsMinutes': 'minutes',
+    'activity_statsTagRanking': 'Time by Tag',
+    'activity_statsTagUnit': 'tags',
     'activity_hours': 'hours',
 
     'activity_to': 'to',

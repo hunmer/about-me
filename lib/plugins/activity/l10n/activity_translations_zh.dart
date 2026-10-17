@@ -77,6 +77,18 @@ class ActivityTranslationsZh {
     'activity_totalDuration': '总时长',
     'activity_activityRecords': '活动记录',
     'activity_activityStatistics': '活动统计',
+
+    // 统计页
+    'activity_statsToday': '今日',
+    'activity_statsWeek': '本周',
+    'activity_statsMonth': '本月',
+    'activity_statsTodayDuration': '今日活动时长',
+    'activity_statsTotalDuration': '活动总时长',
+    'activity_statsActivities': '@count 个活动',
+    'activity_statsHourlyChart': '24 小时活动分布',
+    'activity_statsMinutes': '分钟',
+    'activity_statsTagRanking': '标签时长排行',
+    'activity_statsTagUnit': '个标签',
     'activity_hours': '小时',
 
     'activity_to': '至',

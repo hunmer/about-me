@@ -115,6 +115,13 @@ class CheckinTranslationsZh {
     'checkin_overviewName': '签到概览',
     'checkin_overviewDescription': '显示签到统计信息',
     'checkin_statsTitle': '打卡统计',
+
+    // 统计页
+    'checkin_statsWeek': '本周',
+    'checkin_statsMonth': '本月',
+    'checkin_statsTotalCheckins': '总打卡次数',
+    'checkin_statsUnit': '次',
+    'checkin_statsCompletedItems': '@completed / @total 项有打卡',
     'checkin_quickAccess': '快速访问',
     'checkin_quickAccessDesc': '点击跳转到指定签到项目',
     'checkin_multiQuickAccess': '多项目打卡',

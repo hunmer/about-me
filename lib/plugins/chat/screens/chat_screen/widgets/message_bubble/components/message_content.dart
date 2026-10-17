@@ -12,6 +12,7 @@ import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/utils/message_content_utils.dart';
 import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
 import 'package:aboutme/plugins/chat/widgets/image_stack_message_widget.dart';
+import 'package:aboutme/plugins/chat/widgets/video_message_widget.dart';
 import 'package:aboutme/plugins/chat/widgets/video_stack_message_widget.dart';
 import 'package:aboutme/widgets/file_preview/index.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/audio_message_bubble.dart';
@@ -111,76 +112,10 @@ class MessageContent extends StatelessWidget {
             isOutgoing: message.type == MessageType.sent,
           );
         }
-        return Pressable(
-          onPressed: () {
-            NavigationHelper.push(
-              context,
-              FilePreviewScreen(
-                filePath: filePath,
-                fileName: fileName,
-                mimeType: mimeType,
-                fileSize: fileSize,
-              ),
-            );
-          },
-          builder: (context, states) {
-            final pressed = states.contains(WidgetState.pressed);
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: theme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: DsIcon(
-                            DsIconKind.video,
-                            size: 24,
-                            color: theme.primary,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              fileName,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                                color: pressed ? theme.primary : textColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              '${(fileSize / 1024).toStringAsFixed(1)} KB',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.textSub,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
+        // 单视频：与图片一致以封面图展示，点击播放
+        return VideoMessageWidget(
+          message: message,
+          isOutgoing: message.type == MessageType.sent,
         );
       } else if (type == 'document' || type == 'file') {
         // 确定文件图标和颜色（文件类型图标无 DS 等价物，保留 Material Icon）

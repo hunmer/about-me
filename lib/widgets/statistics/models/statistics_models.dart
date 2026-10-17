@@ -1,12 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// 通用统计数据类型
-enum StatisticsType {
-  activities,
-  checkins,
-  custom,
-}
-
 /// 日期范围选项
 enum DateRangeOption {
   today,
@@ -74,67 +67,6 @@ class TimeSeriesData {
   });
 }
 
-/// 通用统计屏幕配置
-class StatisticsConfig {
-  /// 统计类型
-  final StatisticsType type;
-
-  /// 标题
-  final String title;
-
-  /// 副标题
-  final String? subtitle;
-
-  /// 是否显示日期范围
-  final bool showDateRange;
-
-  /// 可用的日期范围选项
-  final List<DateRangeOption> availableRanges;
-
-  /// 默认日期范围
-  final DateRangeOption defaultRange;
-
-  /// 图表颜色主题
-  final List<Color> chartColors;
-
-  /// 是否显示24小时分布（仅对单日数据有效）
-  final bool show24hDistribution;
-
-  /// 加载状态时的占位组件
-  final Widget? loadingWidget;
-
-  /// 空数据时的占位组件
-  final Widget? emptyWidget;
-
-  const StatisticsConfig({
-    required this.type,
-    required this.title,
-    this.subtitle,
-    this.showDateRange = true,
-    this.availableRanges = const [
-      DateRangeOption.today,
-      DateRangeOption.thisWeek,
-      DateRangeOption.thisMonth,
-      DateRangeOption.thisYear,
-      DateRangeOption.custom,
-    ],
-    this.defaultRange = DateRangeOption.thisWeek,
-    this.chartColors = const [
-      Color(0xFF60A5FA), // blue-400
-      Color(0xFF4ADE80), // green-400
-      Color(0xFF818CF8), // indigo-400
-      Color(0xFFFB923C), // orange-400
-      Color(0xFFF87171), // red-400
-      Color(0xFFFACC15), // yellow-400
-      Color(0xFF2DD4BF), // teal-400
-      Color(0xFFA78BFA), // purple-400
-    ],
-    this.show24hDistribution = false,
-    this.loadingWidget,
-    this.emptyWidget,
-  });
-}
-
 /// 通用统计数据
 class StatisticsData {
   /// 标题
@@ -189,34 +121,5 @@ class StatisticsData {
     return startDate.year == endDate.year &&
         startDate.month == endDate.month &&
         startDate.day == endDate.day;
-  }
-}
-
-/// 日期范围选择器状态
-class DateRangeState {
-  final DateRangeOption selectedRange;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final bool isLoading;
-
-  const DateRangeState({
-    required this.selectedRange,
-    this.startDate,
-    this.endDate,
-    this.isLoading = false,
-  });
-
-  DateRangeState copyWith({
-    DateRangeOption? selectedRange,
-    DateTime? startDate,
-    DateTime? endDate,
-    bool? isLoading,
-  }) {
-    return DateRangeState(
-      selectedRange: selectedRange ?? this.selectedRange,
-      startDate: startDate ?? this.startDate,
-      endDate: endDate ?? this.endDate,
-      isLoading: isLoading ?? this.isLoading,
-    );
   }
 }
