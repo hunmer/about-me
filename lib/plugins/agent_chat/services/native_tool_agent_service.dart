@@ -15,6 +15,8 @@ import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_service.dart';
 import 'package:aboutme/plugins/openai/controllers/model_controller.dart';
+import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
+import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
@@ -280,9 +282,11 @@ class NativeToolAgentService {
           .where(
             (t) =>
                 t.name == 'read_image' ||
-                const {'list_files', 'read_file', 'write_file'}.contains(
-                  t.name,
-                ) ||
+                const {
+                  'list_files',
+                  'read_file',
+                  'write_file',
+                }.contains(t.name) ||
                 (allMeta[t.name] != null &&
                     candidates.contains(allMeta[t.name]!.pluginId)),
           )
@@ -800,6 +804,40 @@ class NativeToolAgentService {
         ),
       ),
     ];
+  }
+
+  /// 解析「默认识图能力」agent（无会话上下文的场景直接调用，
+  /// 如 bill 插件拍照识别账单）：以默认厂商的默认模型为基座，
+  /// 走与 read_image 相同的识图模型解析链。
+  /// 返回 null 表示无可用厂商或未配置识图模型
+  static Future<AIAgent?> resolveDefaultImageAgent() async {
+    final List<ServiceProvider> providers;
+    try {
+      providers = await ProviderController().getProviders();
+    } catch (_) {
+      return null;
+    }
+    if (providers.isEmpty) return null;
+    final defaultId =
+        OpenAIPlugin.instance.settings['defaultProviderId'] as String?;
+    final provider = providers.firstWhere(
+      (p) => p.id == defaultId,
+      orElse: () => providers.first,
+    );
+    final base = AIAgent(
+      id: 'default_image_base',
+      name: '默认识图',
+      description: '',
+      tags: const [],
+      serviceProviderId: provider.id,
+      baseUrl: provider.baseUrl,
+      headers: provider.headers,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      model: provider.defaultModel ?? '',
+      apiFormat: provider.apiFormat,
+    );
+    return _resolveImageAgent(base);
   }
 
   /// 解析识图请求使用的 agent：

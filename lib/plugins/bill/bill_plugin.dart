@@ -1,14 +1,19 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:get/get.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/image_compression_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/gestures.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/plugin_base.dart';
@@ -23,6 +28,7 @@ import 'repositories/client_bill_repository.dart';
 import 'controls/bill_controller.dart';
 import 'screens/bill_list_screen_supercupertino.dart';
 import 'screens/bill_stats_screen_supercupertino.dart';
+import 'screens/bill_scan_sheet.dart';
 import 'screens/subscription_list_screen.dart';
 import 'screens/account_list_screen.dart';
 import 'screens/bill_edit_screen.dart';
@@ -444,6 +450,56 @@ class _BillMainViewState extends State<BillMainView>
     super.dispose();
   }
 
+  /// 拍照记账：选图 → 默认识图能力分析 → 识别结果勾选后批量入库
+  Future<void> _handleScanBill() async {
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      saveDirectory: 'bill',
+    );
+    if (result == null || !mounted) return;
+
+    // 优先用返回的字节（相册/拍照/表情包均有），无字节再回退本地路径
+    final bytes = result['bytes'] as List<int>?;
+    File? imageFile;
+    if (bytes != null && bytes.isNotEmpty) {
+      final tmpDir = await Directory.systemTemp.createTemp('bill_scan');
+      imageFile = File('${tmpDir.path}/image.jpg');
+      await imageFile.writeAsBytes(bytes);
+      // 与 read_image 一致：超过 3MB 先压缩（多模态接口限制请求体大小）
+      if (bytes.length > 3 * 1024 * 1024) {
+        final compressed = await ImageCompressionService().compressImage(
+          sourcePath: imageFile.path,
+          targetPath: '${tmpDir.path}/image_c.jpg',
+          quality: 80,
+        );
+        imageFile = File(compressed);
+      }
+    } else {
+      final url = result['url'] as String?;
+      if (url != null && url.isNotEmpty) {
+        final path = await ImageUtils.getAbsolutePath(url);
+        if (await File(path).exists()) imageFile = File(path);
+      }
+    }
+    if (imageFile == null) {
+      Toast.error('bill_scanFailed'.tr);
+      return;
+    }
+    if (!mounted) return;
+
+    // 打开前在 DS 主题树内取底色（sheet 是新路由，取不到 DS 主题）
+    final theme = DSThemeBridge.resolve(context);
+    await SmoothBottomSheet.show(
+      context: context,
+      backgroundColor: theme.surface,
+      builder: (context) => BillScanSheet(
+        billPlugin: billPlugin,
+        accountId: billPlugin.selectedAccount?.id ?? '',
+        imageFile: imageFile!,
+      ),
+    );
+  }
+
   /// 构建 FAB
   Widget _buildFab() {
     return DSThemeBridge(
@@ -515,6 +571,13 @@ class _BillMainViewState extends State<BillMainView>
         ],
       ),
       fab: _buildFab(),
+      // 子栏左侧拍照圆钮：拍照/选图 → 默认识图能力分析 → 勾选入库
+      leadingAction: DsIcon(
+        DsIconKind.camera,
+        size: 16,
+        color: DSThemeBridge.resolve(context).textSub,
+      ),
+      onLeadingTap: _handleScanBill,
       items: const [
         DSNavItem(icon: DsIconKind.piggy, label: '账单列表'),
         // 周期性订阅（日历+勾）

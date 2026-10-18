@@ -192,7 +192,11 @@ class _BillStatsScreenSupercupertinoState
         ),
       ),
     );
-    controller.dispose();
+    // showDSDialog 的 await 在 pop 瞬间返回，此时退场动画（160ms）仍在
+    // 播放、TextField 还在树上；立即 dispose 会让它抛
+    // "used after being disposed" 并把子树替换成 ErrorWidget（连锁溢出），
+    // 延迟到退场结束后再释放
+    Future.delayed(const Duration(milliseconds: 500), controller.dispose);
     if (!mounted || input == null) return;
 
     final value = double.tryParse(input);

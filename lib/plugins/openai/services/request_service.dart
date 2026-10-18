@@ -365,8 +365,11 @@ class RequestService {
       final content = responseContent.isEmpty
           ? 'No response content'
           : responseContent;
+      final preview = content.length > 200
+          ? '${content.substring(0, 200)}... (${content.length}字符)'
+          : content;
       developer.log(
-        '收到响应: ${content.length}字符, 耗时: ${stopwatch.elapsedMilliseconds}ms',
+        '收到响应: ${content.length}字符, 耗时: ${stopwatch.elapsedMilliseconds}ms, 预览: $preview',
         name: 'RequestService',
       );
 

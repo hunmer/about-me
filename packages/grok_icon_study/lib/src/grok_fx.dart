@@ -128,32 +128,29 @@ List<Offset> lerpRing(List<Offset> a, List<Offset> b, double t) =>
   return (left.isFinite ? left : r, right.isFinite ? right : r);
 }
 
-/// Source capsule — 胶囊（铅笔笔身）。
+/// Source capsule — 胶囊（铅笔笔身）。宽 n、长 e，上下各一个半圆端帽。
 Path capsulePath(double n, double e, double r) {
-  final w = n / 2, top = r - e / 2 + w, bot = r + e / 2 - w;
-  final rect1 = Rect.fromCircle(center: Offset(r - w, top), radius: w);
-  final rect2 = Rect.fromCircle(center: Offset(r + w, bot), radius: w);
+  final w = n / 2;
+  final top = r - e / 2 + w, bot = r + e / 2 - w;
   return Path()
     ..moveTo(r - w, top)
-    ..arcTo(rect1, math.pi, math.pi / 2, false)
-    ..arcTo(Rect.fromCircle(center: Offset(r + w, top), radius: w), -math.pi / 2, math.pi / 2, false)
+    // 顶部半圆：从左端经上方到右端（sweep 1，顺时针）
+    ..arcTo(Rect.fromCircle(center: Offset(r, top), radius: w), math.pi, math.pi, false)
     ..lineTo(r + w, bot)
-    ..arcTo(rect2, -math.pi / 2, math.pi / 2, false)
-    ..arcTo(Rect.fromCircle(center: Offset(r - w, bot), radius: w), math.pi / 2, math.pi / 2, false)
+    // 底部半圆：从右端经下方回左端
+    ..arcTo(Rect.fromCircle(center: Offset(r, bot), radius: w), 0, math.pi, false)
     ..close();
 }
 
-/// Source taper — 锥形（感叹号）。
+/// Source taper — 锥形（感叹号）。上宽 n、下宽 e、长 len，两端半圆。
 Path taperPath(double n, double e, double len, double r) {
-  final s = n / 2, rr = e / 2, i = r - len / 2, o = r + len / 2;
-  final topArc = Rect.fromCircle(center: Offset(r - s, i + s), radius: s);
+  final s = n / 2, rr = e / 2;
+  final top = r - len / 2, bot = r + len / 2;
   return Path()
-    ..moveTo(r - s, i + s)
-    ..arcTo(topArc, math.pi, math.pi / 2, false)
-    ..arcTo(Rect.fromCircle(center: Offset(r + s, i + s), radius: s), -math.pi / 2, math.pi / 2, false)
-    ..lineTo(r + rr, o - rr)
-    ..arcTo(Rect.fromCircle(center: Offset(r - rr, o - rr), radius: rr), -math.pi / 2, math.pi / 2, false)
-    ..arcTo(Rect.fromCircle(center: Offset(r + rr, o - rr), radius: rr), math.pi / 2, math.pi / 2, false)
+    ..moveTo(r - s, top + s)
+    ..arcTo(Rect.fromCircle(center: Offset(r, top + s), radius: s), math.pi, math.pi, false)
+    ..lineTo(r + rr, bot - rr)
+    ..arcTo(Rect.fromCircle(center: Offset(r, bot - rr), radius: rr), 0, math.pi, false)
     ..close();
 }
 
@@ -208,14 +205,6 @@ double waveAmt(double ze) =>
 // ---------------------------------------------------------------------------
 // 绘制记录（替代 DOM 元素）
 // ---------------------------------------------------------------------------
-
-/// translate + rotate(deg) + scale + translate(-R,-R) 的组合矩阵。
-Matrix4 trsMatrix(double tx, double ty, double rotDeg, double scale, double pivot) =>
-    Matrix4.identity()
-      ..translate(tx, ty)
-      ..multiply(Matrix4.rotationZ(rotDeg * math.pi / 180))
-      ..scale(scale)
-      ..translate(-pivot, -pivot);
 
 class FxDotDraw {
   final Matrix4 matrix;
