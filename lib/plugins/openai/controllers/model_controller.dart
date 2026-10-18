@@ -171,7 +171,7 @@ class ModelController {
     if (!_initialized) {
       await _loadFromStorage();
     }
-    
+
     for (var group in _modelGroups) {
       try {
         final model = group.models.firstWhere(
@@ -184,6 +184,11 @@ class ModelController {
       }
     }
     return null;
+  }
+
+  /// 模型是否支持视觉输入；模型库无记录时返回 null（能力未知）
+  Future<bool?> supportsVision(String modelId) async {
+    return (await getModelById(modelId))?.supportsVision;
   }
   
   // 重置为默认模型
@@ -217,6 +222,9 @@ class ModelController {
           id: modelId,
           name: (m['name'] as String?) ?? modelId,
           group: groupId,
+          supportsVision: _parseSupportsVision(m),
+          supportsReasoning: m['reasoning'] as bool?,
+          contextLimit: ((m['limit'] as Map?)?['context'] as num?)?.toInt(),
         ));
       });
       if (models.isEmpty) return;
@@ -230,7 +238,16 @@ class ModelController {
     return groups;
   }
 
-  /// 将远端分组合并进本地列表（只增不减：已有组补充新模型，未知组整组添加）
+  /// models.dev 新版用 modalities.input 标记输入模态，旧版用 attachment
+  static bool? _parseSupportsVision(Map<String, dynamic> model) {
+    final modalities = model['modalities'];
+    if (modalities is Map && modalities['input'] is List) {
+      return (modalities['input'] as List).contains('image');
+    }
+    return model['attachment'] as bool?;
+  }
+
+  /// 将远端分组合并进本地列表（只增不减：已有组补充新模型并更新能力字段，未知组整组添加）
   /// 返回统计结果
   Future<({int addedGroups, int addedModels})> mergeModelGroups(
     List<LLMModelGroup> remoteGroups,
@@ -241,6 +258,7 @@ class ModelController {
 
     var addedGroups = 0;
     var addedModels = 0;
+    var needsSave = false;
     for (final remote in remoteGroups) {
       LLMModelGroup? existing;
       for (final group in _modelGroups) {
@@ -254,17 +272,30 @@ class ModelController {
         _modelGroups.add(remote);
         addedGroups++;
         addedModels += remote.models.length;
+        needsSave = true;
       } else {
         for (final model in remote.models) {
-          if (!existing.models.any((m) => m.id == model.id)) {
+          final index = existing.models.indexWhere((m) => m.id == model.id);
+          if (index == -1) {
             existing.models.add(model);
             addedModels++;
+            needsSave = true;
+          } else {
+            // 已有模型：用远端数据补齐本地缺失的能力字段
+            final current = existing.models[index];
+            final merged = current.withCapabilitiesFrom(model);
+            existing.models[index] = merged;
+            if (merged.supportsVision != current.supportsVision ||
+                merged.supportsReasoning != current.supportsReasoning ||
+                merged.contextLimit != current.contextLimit) {
+              needsSave = true;
+            }
           }
         }
       }
     }
 
-    if (addedGroups > 0 || addedModels > 0) {
+    if (needsSave) {
       await _saveToStorage();
     }
     return (addedGroups: addedGroups, addedModels: addedModels);

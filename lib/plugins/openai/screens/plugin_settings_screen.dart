@@ -5,6 +5,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'provider_settings_screen.dart';
 import 'model_list_screen.dart';
+import 'multimodal_model_setup_screen.dart';
 import 'prompt_preset_screen.dart';
 import '../services/agentlib_resource_service.dart';
 import 'package:agentlib/agent_slots.dart';
@@ -20,13 +21,12 @@ class PluginSettingsScreen extends StatefulWidget {
 }
 
 class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
-  late final TextEditingController _multimodalModelController;
+  late String _multimodalModelLabel;
+
   @override
   void initState() {
     super.initState();
-    _multimodalModelController = TextEditingController(
-      text: OpenAIPlugin.instance.settings['defaultMultimodalModel'] as String? ?? '',
-    );
+    _multimodalModelLabel = _loadMultimodalModelLabel();
     AgentResourceSlots slots;
     try {
       slots = AgentLibResourceService.fromSettings(
@@ -38,16 +38,25 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _multimodalModelController.dispose();
-    super.dispose();
+  /// 识图模型设置项展示：优先新配置（含连接信息），回退旧版仅模型名
+  String _loadMultimodalModelLabel() {
+    final settings = OpenAIPlugin.instance.settings;
+    final config =
+        settings['multimodalModelConfig'] as Map<String, dynamic>?;
+    final model =
+        (config?['model'] as String?) ??
+        (settings['defaultMultimodalModel'] as String? ?? '');
+    return model.trim().isEmpty ? '未配置' : model.trim();
   }
 
-  Future<void> _saveMultimodalModel(String value) async {
-    await OpenAIPlugin.instance.updateSettings({
-      'defaultMultimodalModel': value.trim(),
-    });
+  Future<void> _openMultimodalModelSetup() async {
+    await NavigationHelper.push(
+      context,
+      const MultimodalModelSetupScreen(),
+    );
+    if (mounted) {
+      setState(() => _multimodalModelLabel = _loadMultimodalModelLabel());
+    }
   }
 
   void _saveSlots(AgentResourceSlots slots) {
@@ -80,21 +89,23 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
                               size: 22,
                               color: theme.primary,
                             ),
-                            title: '默认多模态模型',
-                            subtitle: '当前模型不支持图片时，read_image 工具使用此模型解析',
-                            showChevron: false,
+                            title: '默认识图模型',
+                            subtitle:
+                                '当前模型不支持图片时，read_image 工具使用此模型解析',
+                            showChevron: true,
                             trailing: SizedBox(
-                              width: 180,
-                              child: TextField(
-                                controller: _multimodalModelController,
-                                textInputAction: TextInputAction.done,
-                                decoration: const InputDecoration(
-                                  hintText: '如 gpt-4o',
-                                  isDense: true,
+                              width: 120,
+                              child: Text(
+                                _multimodalModelLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
                                 ),
-                                onSubmitted: _saveMultimodalModel,
                               ),
                             ),
+                            onTap: _openMultimodalModelSetup,
                           ),
                           SizedBox(height: theme.spacing.sm),
                           DSListItem(

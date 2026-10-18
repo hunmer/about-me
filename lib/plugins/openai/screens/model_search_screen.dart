@@ -11,10 +11,15 @@ class ModelSearchScreen extends StatefulWidget {
   final String? initialModelId;
   final String? initialProvider;
 
+  /// 仅显示支持视觉输入的模型（识图模型选择用）；
+  /// 模型库尚无能力数据（未同步 models.dev）时回退为全部模型
+  final bool visionOnly;
+
   const ModelSearchScreen({
     super.key,
     this.initialModelId,
     this.initialProvider,
+    this.visionOnly = false,
   });
 
   @override
@@ -45,7 +50,7 @@ class _ModelSearchScreenState extends State<ModelSearchScreen>
     try {
       final models = await _modelController.getModels();
       setState(() {
-        _modelGroups = models;
+        _modelGroups = _filterVisionOnly(models);
         _tabController = TabController(
           length: _modelGroups.length,
           vsync: this,
@@ -94,6 +99,24 @@ class _ModelSearchScreenState extends State<ModelSearchScreen>
         break;
       }
     }
+  }
+
+  List<LLMModelGroup> _filterVisionOnly(List<LLMModelGroup> groups) {
+    if (!widget.visionOnly) return groups;
+    final filtered = groups
+        .map(
+          (g) => LLMModelGroup(
+            id: g.id,
+            name: g.name,
+            models: g.models
+                .where((m) => m.supportsVision == true)
+                .toList(),
+          ),
+        )
+        .where((g) => g.models.isNotEmpty)
+        .toList();
+    // 能力数据缺失（未同步过 models.dev）时不过滤，避免列表为空无法选择
+    return filtered.isEmpty ? groups : filtered;
   }
 
   List<LLMModel> _getFilteredModels(List<LLMModel> models) {

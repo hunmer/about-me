@@ -3,22 +3,46 @@ class LLMModel {
   final String name;
   final String group;
 
+  /// 能力信息（来源 models.dev）；内置列表与旧缓存可能缺失，null 表示未知
+  final bool? supportsVision;
+  final bool? supportsReasoning;
+  final int? contextLimit;
+
   const LLMModel({
     required this.id,
     required this.name,
     required this.group,
+    this.supportsVision,
+    this.supportsReasoning,
+    this.contextLimit,
   });
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     'group': group,
+    if (supportsVision != null) 'supportsVision': supportsVision,
+    if (supportsReasoning != null) 'supportsReasoning': supportsReasoning,
+    if (contextLimit != null) 'contextLimit': contextLimit,
   };
 
   factory LLMModel.fromJson(Map<String, dynamic> json) => LLMModel(
     id: json['id'] as String,
     name: json['name'] as String,
     group: json['group'] as String,
+    supportsVision: json['supportsVision'] as bool?,
+    supportsReasoning: json['supportsReasoning'] as bool?,
+    contextLimit: (json['contextLimit'] as num?)?.toInt(),
+  );
+
+  /// 用远端数据补齐本地缺失的能力字段
+  LLMModel withCapabilitiesFrom(LLMModel other) => LLMModel(
+    id: id,
+    name: name,
+    group: group,
+    supportsVision: supportsVision ?? other.supportsVision,
+    supportsReasoning: supportsReasoning ?? other.supportsReasoning,
+    contextLimit: contextLimit ?? other.contextLimit,
   );
 }
 

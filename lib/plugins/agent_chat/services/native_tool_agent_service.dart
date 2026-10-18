@@ -12,6 +12,7 @@ import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_service.dart';
+import 'package:aboutme/plugins/openai/controllers/model_controller.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
@@ -592,12 +593,10 @@ class NativeToolAgentService {
               .where((value) => value.isNotEmpty)
               .toList();
           if (paths.isEmpty) return '没有提供图片路径';
-          final settings = OpenAIPlugin.instance.settings;
-          final multimodalModel = settings['defaultMultimodalModel'] as String?;
-          if (multimodalModel == null || multimodalModel.trim().isEmpty) {
-            return '尚未在 OpenAI 插件设置中配置默认多模态模型';
+          final agent = await _resolveImageAgent(imageAgent);
+          if (agent == null) {
+            return '当前模型不支持图片识别，且尚未在 OpenAI 插件设置中配置识图模型';
           }
-          final agent = imageAgent.copyWith(model: multimodalModel.trim());
           final descriptions = <String>[];
           for (final path in paths) {
             final file = File(path);
@@ -623,6 +622,44 @@ class NativeToolAgentService {
     );
     debugPrint('[NativeTool] 已构建 ${tools.length} 个原生工具');
     return (tools, _toolMetaCache!);
+  }
+
+  /// 解析识图请求使用的 agent：
+  /// 1. 当前模型支持视觉输入 → 直接用当前模型；
+  /// 2. 设置中配置了识图模型（multimodalModelConfig）→ 用独立连接配置；
+  /// 3. 旧版仅模型名配置（defaultMultimodalModel）→ 复用当前连接仅换模型。
+  /// 返回 null 表示当前模型不支持视觉且未配置识图模型
+  static Future<AIAgent?> _resolveImageAgent(AIAgent imageAgent) async {
+    if (await ModelController().supportsVision(imageAgent.model) == true) {
+      return imageAgent;
+    }
+    final settings = OpenAIPlugin.instance.settings;
+    final config = settings['multimodalModelConfig'] as Map<String, dynamic>?;
+    final model =
+        (config?['model'] as String? ??
+            settings['defaultMultimodalModel'] as String?)
+            ?.trim();
+    if (model == null || model.isEmpty) return null;
+    if (config != null && model == config['model']?.trim()) {
+      return AIAgent(
+        id: 'multimodal_reader',
+        name: '识图模型',
+        description: '',
+        tags: const [],
+        serviceProviderId:
+            (config['providerId'] as String?) ?? imageAgent.serviceProviderId,
+        baseUrl: (config['baseUrl'] as String?) ?? imageAgent.baseUrl,
+        headers:
+            config['headers'] is Map
+                ? Map<String, String>.from(config['headers'] as Map)
+                : imageAgent.headers,
+        createdAt: imageAgent.createdAt,
+        updatedAt: DateTime.now(),
+        model: model,
+        apiFormat: (config['apiFormat'] as String?) ?? 'openai',
+      );
+    }
+    return imageAgent.copyWith(model: model);
   }
 
   /// 缓存失效（工具配置变更时调用）

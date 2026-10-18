@@ -76,11 +76,10 @@ class _OnboardingProviderSetupState extends State<OnboardingProviderSetup> {
     _modelGroups = await _modelData.getModels();
     if (!mounted) return;
     // 模型库就绪后重新解析当前厂商的模型列表
+    setState(() => _modelsLoaded = true);
     final preset = _currentPreset;
     if (preset != null) {
       _selectPreset(preset, preferModelId: widget.values['model'] as String?);
-    } else {
-      setState(() => _modelsLoaded = true);
     }
   }
 
