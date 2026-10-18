@@ -43,4 +43,8 @@ const Map<String, String> dataManagementTranslationsZh = {
 
   // 其他
   'data_management_editNotImplemented': '编辑功能待实现',
+
+  // 文件查看
+  'data_management_fileReadFailed': '文件读取失败',
+  'data_management_textTruncated': '文件较大，仅显示开头部分',
 };

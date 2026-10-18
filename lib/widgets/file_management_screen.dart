@@ -1,14 +1,17 @@
 import 'dart:io';
 
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/utils/file_utils.dart';
 import 'package:aboutme/core/utils/zip.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
+import 'package:aboutme/widgets/text_file_viewer.dart';
 
 import 'package:archive/archive_io.dart';
 import 'package:file_picker/file_picker.dart';
@@ -447,6 +450,60 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
+  /// 可直接阅读的文本类扩展名（含常见代码/配置文件）
+  static const _textExtensions = {
+    '.txt', '.md', '.markdown', '.json', '.xml', '.yaml', '.yml', '.csv',
+    '.log', '.ini', '.conf', '.properties', '.toml', '.sql', '.dart',
+    '.js', '.ts', '.jsx', '.tsx', '.html', '.htm', '.css', '.py', '.rb',
+    '.go', '.rs', '.java', '.kt', '.swift', '.c', '.h', '.cpp', '.sh',
+  };
+
+  /// 音频扩展名（GalleryViewer 以文件信息卡展示，不可内嵌播放）
+  static const _audioExtensions = {
+    '.mp3', '.m4a', '.aac', '.wav', '.ogg', '.flac', '.opus', '.wma',
+  };
+
+  /// 图片/视频扩展名（GalleryViewer 内嵌查看与播放）
+  static const _mediaExtensions = {
+    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.heic',
+    '.mp4', '.mov', '.avi', '.mkv', '.webm', '.3gp', '.m4v',
+  };
+
+  /// 点击文件按类型分发查看：文本 → 查看页；媒体 → GalleryViewer
+  void _openFile(File file) {
+    final ext = path.extension(file.path).toLowerCase();
+
+    if (_textExtensions.contains(ext)) {
+      NavigationHelper.push(
+        context,
+        TextFileViewer(file: file),
+        routeName: '/text_file_viewer',
+      );
+      return;
+    }
+
+    if (_audioExtensions.contains(ext)) {
+      // gallery 无音频播放器，传 audio mime 让文件信息卡显示音频图标
+      GalleryViewer.showFilePreview(
+        context,
+        filePath: file.path,
+        fileSize: file.lengthSync(),
+        mimeType: 'audio',
+      );
+      return;
+    }
+
+    if (_mediaExtensions.contains(ext)) {
+      // 图片/视频由 showFilePreview 按扩展名自行判定渲染方式
+      GalleryViewer.showFilePreview(
+        context,
+        filePath: file.path,
+        fileSize: file.lengthSync(),
+      );
+    }
+    // 其余类型保持原状：点击无操作
+  }
+
   String get _appBarTitle =>
       directoryStack.length > 1
           ? path.basename(currentDirectory!.path)
@@ -588,7 +645,13 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
     final selected = selectedItems[file.path] ?? false;
 
     return GestureDetector(
-      onTap: isDirectory ? () => _navigateToDirectory(file) : null,
+      onTap: () {
+        if (isDirectory) {
+          _navigateToDirectory(file);
+        } else {
+          _openFile(file as File);
+        }
+      },
       onLongPress: () => _showContextMenu(file.path, isDirectory),
       child: Container(
         padding: EdgeInsets.symmetric(

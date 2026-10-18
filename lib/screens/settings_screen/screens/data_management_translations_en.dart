@@ -43,4 +43,8 @@ const Map<String, String> dataManagementTranslationsEn = {
 
   // Others
   'data_management_editNotImplemented': 'Edit feature not implemented',
+
+  // File viewing
+  'data_management_fileReadFailed': 'Failed to read file',
+  'data_management_textTruncated': 'File is large, only the beginning is shown',
 };

@@ -241,17 +241,17 @@ class _JellyLive2DState extends State<JellyLive2D> {
             navigationPadding: navigationPadding,
             fitContainer: fitHeight != null,
           );
-          // Windows and macOS can resize their native/web viewport to the
-          // target size. Keeping the native bounds equal to the painted bounds
-          // is required for correct hit-test coordinates on macOS platform
-          // views, which otherwise receive events in the unscaled 360px view.
+          // Resize supported native views to the painted size. Scaling a fixed
+          // 360px viewport blurs iOS rendering and can leave platform-view
+          // bounds and hit-test coordinates out of sync with the model.
           final viewportLayout = computeJellyLive2DViewportLayout(
             displaySize: displaySize,
             baseViewportHeight: _defaultSize,
             useResizableViewport:
                 !kIsWeb &&
                 (defaultTargetPlatform == TargetPlatform.windows ||
-                    defaultTargetPlatform == TargetPlatform.macOS),
+                    defaultTargetPlatform == TargetPlatform.macOS ||
+                    defaultTargetPlatform == TargetPlatform.iOS),
           );
           final viewportSize = Size(
             viewportLayout.viewportHeight * _modelViewportAspectRatio,
