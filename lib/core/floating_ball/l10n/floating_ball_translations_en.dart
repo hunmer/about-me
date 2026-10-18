@@ -29,6 +29,21 @@ const Map<String, String> floatingBallTranslationsEn = {
   'floating_ball_clear': 'Clear',
   'floating_ball_selectIcon': 'Select Icon',
   'floating_ball_save': 'Save',
+  'floating_ball_addButton': 'Add Button',
+  'floating_ball_editButton': 'Edit Button',
+  'floating_ball_buttonTitle': 'Button Title',
+  'floating_ball_imageSet': 'Image set (highest priority)',
+  'floating_ball_iconSet': 'Icon set: @icon',
+  'floating_ball_selectImage': 'Select Image',
+  'floating_ball_changeImage': 'Change Image',
+  'floating_ball_tapToSelectAction': 'Tap to select the action to execute',
+  'floating_ball_clearAction': 'Clear Action',
+  'floating_ball_executionData': 'Execution Data',
+  'floating_ball_executionDataHint':
+      'JSON format, e.g. {"action": "openPlugin", "args": {"plugin": "chat"}}',
+  'floating_ball_pleaseEnterTitle': 'Please enter a button title',
+  'floating_ball_invalidJson': 'Invalid execution data format: @error',
+  'floating_ball_actionGroupLabel': 'Action group: @title',
 
   // const Text 硬编码迁移(en)
   'floating_ball_buttonIcon': 'Button Icon',

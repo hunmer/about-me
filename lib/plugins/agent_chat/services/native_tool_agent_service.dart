@@ -712,6 +712,41 @@ class NativeToolAgentService {
 
   List<Tool<Map<String, dynamic>>> _buildFileTools(_NativeToolRunContext run) {
     final files = AgentFileSpaceService.instance;
+    Future<Object?> executeFileTool(
+      String method,
+      String title,
+      Map<String, dynamic> args,
+      Future<Object?> Function() execute,
+    ) async {
+      if (++run.toolCallCount > maxToolCallsPerLoop) {
+        return {'error': '工具调用次数已达上限，请直接回答'};
+      }
+      final argsJson = jsonEncode(args);
+      final step = ToolCallStep(
+        method: method,
+        title: title,
+        desc: '参数：$argsJson',
+        data: argsJson,
+        status: ToolCallStatus.running,
+      );
+      run.steps.add(step);
+      await run.notifySteps();
+      try {
+        final result = await execute();
+        step
+          ..status = ToolCallStatus.success
+          ..result = result is String ? result : jsonEncode(result);
+        await run.notifySteps();
+        return result;
+      } catch (e) {
+        step
+          ..status = ToolCallStatus.failed
+          ..error = e.toString();
+        await run.notifySteps();
+        return {'error': e.toString()};
+      }
+    }
+
     final autoSpace = <String, Object?>{
       'type': 'string',
       'enum': <String>['auto', 'agent', 'channel'],
@@ -736,15 +771,20 @@ class NativeToolAgentService {
           },
           'required': <String>[],
         }),
-        onCall: (args) async => {
-          'files': await files.listFiles(
-            agentId: run.agentId,
-            conversationId: run.conversationId,
-            relativePath: args['path'] as String? ?? '',
-            recursive: args['recursive'] == true,
-            space: args['space'] as String? ?? 'auto',
-          ),
-        },
+        onCall: (args) => executeFileTool(
+          'list_files',
+          '枚举文件',
+          args,
+          () async => {
+            'files': await files.listFiles(
+              agentId: run.agentId,
+              conversationId: run.conversationId,
+              relativePath: args['path'] as String? ?? '',
+              recursive: args['recursive'] == true,
+              space: args['space'] as String? ?? 'auto',
+            ),
+          },
+        ),
       ),
       Tool<Map<String, dynamic>>(
         name: 'read_file',
@@ -760,7 +800,7 @@ class NativeToolAgentService {
           },
           'required': <String>['path'],
         }),
-        onCall: (args) async {
+        onCall: (args) => executeFileTool('read_file', '读取文件', args, () async {
           final filePath = args['path'] as String;
           final content = await files.readFile(
             relativePath: filePath,
@@ -771,7 +811,7 @@ class NativeToolAgentService {
           return content == null
               ? {'error': '文件不存在: $filePath'}
               : {'path': filePath, 'content': content};
-        },
+        }),
       ),
       Tool<Map<String, dynamic>>(
         name: 'write_file',
@@ -795,12 +835,17 @@ class NativeToolAgentService {
           },
           'required': <String>['path', 'content'],
         }),
-        onCall: (args) => files.writeFile(
-          relativePath: args['path'] as String,
-          content: args['content'] as String,
-          agentId: run.agentId,
-          conversationId: run.conversationId,
-          space: args['space'] as String? ?? 'agent',
+        onCall: (args) => executeFileTool(
+          'write_file',
+          '写入文件',
+          args,
+          () => files.writeFile(
+            relativePath: args['path'] as String,
+            content: args['content'] as String,
+            agentId: run.agentId,
+            conversationId: run.conversationId,
+            space: args['space'] as String? ?? 'agent',
+          ),
         ),
       ),
     ];

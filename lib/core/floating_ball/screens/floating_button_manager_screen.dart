@@ -37,10 +37,7 @@ class _FloatingButtonManagerScreenState
 
   /// 添加按钮
   Future<void> _addButton() async {
-    final result = await showDialog<FloatingBallButtonData>(
-      context: context,
-      builder: (context) => const FloatingButtonEditDialog(),
-    );
+    final result = await FloatingButtonEditDialog.show(context);
 
     if (result != null) {
       setState(() {
@@ -52,12 +49,10 @@ class _FloatingButtonManagerScreenState
 
   /// 编辑按钮
   Future<void> _editButton(int index) async {
-    final result = await showDialog<FloatingBallButtonData>(
-      context: context,
-      builder: (context) => FloatingButtonEditDialog(
-        initialButton: _buttons[index],
-        index: index,
-      ),
+    final result = await FloatingButtonEditDialog.show(
+      context,
+      initialButton: _buttons[index],
+      index: index,
     );
 
     if (result != null) {

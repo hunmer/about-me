@@ -6,13 +6,16 @@ import 'package:aboutme/widgets/picker/icon_picker_dialog.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:floating_ball_plugin/floating_ball_plugin.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/constants/app_icons.dart';
 import 'package:aboutme/core/action/action_manager.dart';
 import 'package:aboutme/core/action/widgets/action_selector_dialog.dart';
 import 'package:aboutme/core/action/models/action_instance.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
-/// 悬浮按钮编辑对话框
+/// 悬浮按钮编辑对话框（手绘风）
 class FloatingButtonEditDialog extends StatefulWidget {
   final FloatingBallButtonData? initialButton;
   final int? index;
@@ -22,6 +25,22 @@ class FloatingButtonEditDialog extends StatefulWidget {
     this.initialButton,
     this.index,
   });
+
+  /// 统一弹窗入口：走 showDSDialog 获得手绘入场与遮罩
+  static Future<FloatingBallButtonData?> show(
+    BuildContext context, {
+    FloatingBallButtonData? initialButton,
+    int? index,
+  }) {
+    return showDSDialog<FloatingBallButtonData>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => FloatingButtonEditDialog(
+        initialButton: initialButton,
+        index: index,
+      ),
+    );
+  }
 
   @override
   State<FloatingButtonEditDialog> createState() =>
@@ -123,7 +142,7 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
   /// 获取当前选中动作的显示名称
   String _getSelectedActionLabel() {
     if (_selectedActionResult == null || _selectedActionResult!.isEmpty) {
-      return '点击选择动作';
+      return 'floating_ball_tapToSelectAction'.tr;
     }
 
     if (_selectedActionResult!.singleAction != null) {
@@ -136,10 +155,12 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
     }
 
     if (_selectedActionResult!.actionGroup != null) {
-      return '动作组: ${_selectedActionResult!.actionGroup!.title}';
+      return 'floating_ball_actionGroupLabel'.trParams({
+        'title': _selectedActionResult!.actionGroup!.title,
+      });
     }
 
-    return '点击选择动作';
+    return 'floating_ball_tapToSelectAction'.tr;
   }
 
   /// 选择图片
@@ -222,7 +243,7 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
   /// 保存按钮
   void _save() {
     if (_titleController.text.trim().isEmpty) {
-      toastService.showToast('请输入按钮标题');
+      toastService.showToast('floating_ball_pleaseEnterTitle'.tr);
       return;
     }
 
@@ -234,7 +255,9 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
         data = jsonDecode(dataText) as Map<String, dynamic>;
       }
     } catch (e) {
-      toastService.showToast('执行数据格式错误: $e');
+      toastService.showToast(
+        'floating_ball_invalidJson'.trParams({'error': e.toString()}),
+      );
       return;
     }
 
@@ -248,17 +271,38 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
     Navigator.of(context).pop(button);
   }
 
+  /// 清空确认
+  void _confirmClear() {
+    showDSDialog(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (dialogContext) => DSDialog(
+        title: 'floating_ball_clearIconImage'.tr,
+        message: 'floating_ball_confirmClearIconImage'.tr,
+        cancelText: 'floating_ball_cancel'.tr,
+        confirmText: 'floating_ball_clear'.tr,
+        confirmVariant: DSButtonVariant.destructive,
+        onCancel: () => Navigator.of(dialogContext).pop(),
+        onConfirm: () {
+          _clearImage();
+          _clearIcon();
+          Navigator.of(dialogContext).pop();
+        },
+      ),
+    );
+  }
+
   /// 构建图标预览
-  Widget _buildIconPreview() {
+  Widget _buildIconPreview(AppThemeData theme) {
     // 如果有图片，优先显示图片
     if (_imageBase64 != null) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(6),
         child: Image.memory(
           base64Decode(_imageBase64!),
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.image_not_supported);
+            return Icon(Icons.image_not_supported, color: theme.textSub);
           },
         ),
       );
@@ -273,208 +317,111 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
       }
     }
 
-    return Icon(iconData);
+    return Icon(iconData, color: theme.text);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+    final theme = AppTheme.of(context);
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 440),
+      // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
+      // （showDSDialog 外层已包 WiredDraw，这里消费描画进度做墨线入场）
+      child: DsSketchPanel(
+        theme: theme,
+        radius: theme.radii.xxl,
+        padding: EdgeInsets.all(theme.spacing.lg),
+        progress: WiredDrawTransition.progressOf(context),
+        child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 标题
               Text(
-                widget.index == null ? '添加按钮' : '编辑按钮',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                widget.index == null
+                    ? 'floating_ball_addButton'.tr
+                    : 'floating_ball_editButton'.tr,
+                textAlign: TextAlign.center,
+                style: DsTypography.title.copyWith(color: theme.text),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: theme.spacing.lg),
 
               // 按钮标题
-              TextField(
+              DSInput(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: '按钮标题',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'floating_ball_buttonTitle'.tr,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: theme.spacing.lg),
 
               // 按钮图标设置
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('floating_ball_buttonIcon'.tr,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            // 图标预览
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: _buildIconPreview(),
-                            ),
-                            const SizedBox(width: 8),
-                            // 显示选择状态
-                            Expanded(
-                              child: Text(
-                                _imageBase64 != null
-                                    ? '已设置图片（优先级最高）'
-                                    : '已设置图标：$_selectedIcon',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _imageBase64 != null
-                                      ? Colors.green
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 清除按钮
-                  if (_imageBase64 != null || _selectedIcon != 'ic_menu_info_details')
-                    IconButton(
-                      icon: const Icon(Icons.clear_all, color: Colors.red),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text('floating_ball_clearIconImage'.tr),
-                            content: Text('floating_ball_confirmClearIconImage'.tr),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text('floating_ball_cancel'.tr),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  _clearImage();
-                                  _clearIcon();
-                                  Navigator.pop(context);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                ),
-                                child: Text('floating_ball_clear'.tr),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      tooltip: '清空图标和图片',
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
+              _buildIconSection(theme),
+              SizedBox(height: theme.spacing.sm),
+
               // 操作按钮组
               Row(
                 children: [
                   // 选择图标按钮
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: DSButton(
+                      label: 'floating_ball_selectIcon'.tr,
+                      variant: DSButtonVariant.secondary,
+                      size: DSButtonSize.sm,
+                      icon: DsIconKind.tag,
                       onPressed: _pickIcon,
-                      icon: const Icon(Icons.tag),
-                      label: Text('floating_ball_selectIcon'.tr),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: theme.spacing.sm),
                   // 选择图片按钮
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: DSButton(
+                      label: _imageBase64 == null
+                          ? 'floating_ball_selectImage'.tr
+                          : 'floating_ball_changeImage'.tr,
+                      variant: DSButtonVariant.secondary,
+                      size: DSButtonSize.sm,
+                      icon: DsIconKind.image,
                       onPressed: _pickImage,
-                      icon: const Icon(Icons.image),
-                      label: Text(_imageBase64 == null ? '选择图片' : '更换图片'),
                     ),
                   ),
                 ],
               ),
-              const Divider(height: 32),
+
+              SizedBox(height: theme.spacing.lg),
+              Container(
+                height: 1,
+                color: theme.textSub.withValues(alpha: 0.25),
+              ),
+              SizedBox(height: theme.spacing.lg),
 
               // 动作选择器
-              InkWell(
-                onTap: _openActionSelector,
-                borderRadius: BorderRadius.circular(4),
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: '选择动作',
-                    border: const OutlineInputBorder(),
-                    helperText: '点击选择要执行的动作',
-                    suffixIcon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_selectedActionResult != null &&
-                            !_selectedActionResult!.isEmpty)
-                          IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () {
-                              setState(() {
-                                _selectedActionResult = null;
-                                _dataController.text = '{}';
-                              });
-                            },
-                            tooltip: '清除动作',
-                          ),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
-                  ),
-                  child: Text(
-                    _getSelectedActionLabel(),
-                    style: TextStyle(
-                      color: _selectedActionResult == null ||
-                              _selectedActionResult!.isEmpty
-                          ? Colors.grey[600]
-                          : null,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              _buildActionSelector(theme),
+              SizedBox(height: theme.spacing.lg),
 
               // 执行数据
-              TextField(
+              DSInput(
                 controller: _dataController,
-                decoration: const InputDecoration(
-                  labelText: '执行数据',
-                  border: OutlineInputBorder(),
-                  helperText: 'JSON 格式，例如: {"action": "openPlugin", "args": {"plugin": "chat"}}',
-                ),
+                label: 'floating_ball_executionData'.tr,
+                hint: 'floating_ball_executionDataHint'.tr,
                 maxLines: 4,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: theme.spacing.xl),
 
               // 操作按钮
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
+                  DSButton(
+                    label: 'floating_ball_cancel'.tr,
+                    variant: DSButtonVariant.ghost,
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('floating_ball_cancel'.tr),
                   ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
+                  SizedBox(width: theme.spacing.sm),
+                  DSButton(
+                    label: 'floating_ball_save'.tr,
+                    icon: DsIconKind.check,
                     onPressed: _save,
-                    child: Text('floating_ball_save'.tr),
                   ),
                 ],
               ),
@@ -482,6 +429,137 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
           ),
         ),
       ),
+    );
+  }
+
+  /// 图标/图片设置区
+  Widget _buildIconSection(AppThemeData theme) {
+    final hasCustom =
+        _imageBase64 != null || _selectedIcon != 'ic_menu_info_details';
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'floating_ball_buttonIcon'.tr,
+                style:
+                    DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  // 图标预览
+                  JellyBox(
+                    width: 44,
+                    height: 44,
+                    radius: theme.radii.sm,
+                    color: theme.surfaceAlt,
+                    alignment: Alignment.center,
+                    child: _buildIconPreview(theme),
+                  ),
+                  const SizedBox(width: 8),
+                  // 显示选择状态
+                  Expanded(
+                    child: Text(
+                      _imageBase64 != null
+                          ? 'floating_ball_imageSet'.tr
+                          : 'floating_ball_iconSet'.trParams({
+                              'icon': _selectedIcon,
+                            }),
+                      style: DsTypography.caption.copyWith(
+                        color: _imageBase64 != null
+                            ? theme.success
+                            : theme.textSub,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // 清除按钮
+        if (hasCustom)
+          DSIconButton(
+            icon: DsIconKind.trash,
+            size: 34,
+            color: theme.surfaceAlt,
+            iconColor: theme.danger,
+            onPressed: _confirmClear,
+            tooltip: 'floating_ball_clearIconImage'.tr,
+          ),
+      ],
+    );
+  }
+
+  /// 动作选择触发行（墨线盒 + 当前动作 + 清除/箭头）
+  Widget _buildActionSelector(AppThemeData theme) {
+    final hasAction =
+        _selectedActionResult != null && !_selectedActionResult!.isEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'core_selectAction'.tr,
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        ),
+        const SizedBox(height: 4),
+        Pressable(
+          onPressed: _openActionSelector,
+          builder: (context, states) {
+            final pressed = states.contains(WidgetState.pressed);
+            return Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: theme.spacing.md,
+                vertical: theme.spacing.sm,
+              ),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: theme.radii.lg,
+                fillColor: pressed ? theme.surfaceAlt : theme.surface,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _getSelectedActionLabel(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: DsTypography.body.copyWith(
+                        color: hasAction ? theme.text : theme.textSub,
+                      ),
+                    ),
+                  ),
+                  if (hasAction)
+                    DSIconButton(
+                      icon: DsIconKind.close,
+                      size: 30,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: () {
+                        setState(() {
+                          _selectedActionResult = null;
+                          _dataController.text = '{}';
+                        });
+                      },
+                      tooltip: 'floating_ball_clearAction'.tr,
+                    ),
+                  DsIcon(DsIconKind.chevronRight, color: theme.textSub),
+                ],
+              ),
+            );
+          },
+        ),
+        SizedBox(height: theme.spacing.xs),
+        Text(
+          'floating_ball_tapToSelectAction'.tr,
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        ),
+      ],
     );
   }
 }

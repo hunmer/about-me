@@ -29,7 +29,22 @@ const Map<String, String> floatingBallTranslationsZh = {
   'floating_ball_clear': '清空',
   'floating_ball_selectIcon': '选择图标',
   'floating_ball_save': '保存',
+  'floating_ball_addButton': '添加按钮',
+  'floating_ball_editButton': '编辑按钮',
+  'floating_ball_buttonTitle': '按钮标题',
+  'floating_ball_imageSet': '已设置图片（优先级最高）',
+  'floating_ball_iconSet': '已设置图标：@icon',
+  'floating_ball_selectImage': '选择图片',
+  'floating_ball_changeImage': '更换图片',
+  'floating_ball_tapToSelectAction': '点击选择要执行的动作',
+  'floating_ball_clearAction': '清除动作',
+  'floating_ball_executionData': '执行数据',
+  'floating_ball_executionDataHint':
+      'JSON 格式，例如: {"action": "openPlugin", "args": {"plugin": "chat"}}',
+  'floating_ball_pleaseEnterTitle': '请输入按钮标题',
+  'floating_ball_invalidJson': '执行数据格式错误: @error',
+  'floating_ball_actionGroupLabel': '动作组: @title',
 
   // const Text 硬编码迁移(zh)
-  'floating_ball_buttonIcon': 'Button Icon',
+  'floating_ball_buttonIcon': '按钮图标',
 };
