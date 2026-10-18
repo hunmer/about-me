@@ -206,7 +206,7 @@ class BillTranslationsEn {
   'bill_budgetRemaining': 'Remaining',
   'bill_budgetOverspent': 'Over budget',
   'bill_dailyExpenseChart': 'Daily Expenses',
-  'bill_monthBillsCount': '{count} bills',
+  'bill_monthBillsCount': '@count bills',
   'bill_noData': 'No data',
 
   // Bill scan (image recognition)
@@ -216,8 +216,8 @@ class BillTranslationsEn {
       'No image model configured. Set it up in OpenAI plugin settings first',
   'bill_scanFailed': 'Recognition failed',
   'bill_scanNoItems': 'No bills recognized from the image',
-  'bill_scanAddSelected': 'Add selected ({count})',
+  'bill_scanAddSelected': 'Add selected (@count)',
   'bill_scanSaving': 'Saving…',
-  'bill_scanAdded': '{count} bills added',
+  'bill_scanAdded': '@count bills added',
 };
 }

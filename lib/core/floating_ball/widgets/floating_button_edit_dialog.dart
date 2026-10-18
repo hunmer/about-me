@@ -85,12 +85,10 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
 
     if (!mounted) return;
 
-    final result = await showDialog<ActionSelectorResult>(
-      context: context,
-      builder: (context) => ActionSelectorDialog(
-        initialValue: _selectedActionResult,
-        showGroupEditor: false,
-      ),
+    final result = await ActionSelectorDialog.show(
+      context,
+      initialValue: _selectedActionResult,
+      showGroupEditor: false,
     );
 
     if (result != null) {

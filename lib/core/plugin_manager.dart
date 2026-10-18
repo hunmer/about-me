@@ -226,13 +226,17 @@ class PluginManager {
 
   /// 从全局路由记录取当前页面所属的插件ID（当前路由为 `/plugin/<id>` 时），
   /// 比 [_currentPlugin] 可靠：后者只在 toHomeScreen 清空，普通返回手势
-  /// 后仍保留旧值，用它做排除会把真正最近使用的插件误排除掉
+  /// 后仍保留旧值，用它做排除会把真正最近使用的插件误排除掉。
+  /// 栈顶是插件子页面（不带 `/plugin/` 前缀）时，回退取栈内的插件主界面，
+  /// 避免把当前插件当作"上次插件"重复打开
   String? getCurrentRoutePluginId() {
     final routeName = RouteHistoryManager.getCurrentContext()?.pageId;
-    if (routeName == null || !routeName.startsWith('/plugin/')) return null;
-    final rest = routeName.substring('/plugin/'.length);
-    final slash = rest.indexOf('/');
-    return slash == -1 ? rest : rest.substring(0, slash);
+    if (routeName != null && routeName.startsWith('/plugin/')) {
+      final rest = routeName.substring('/plugin/'.length);
+      final slash = rest.indexOf('/');
+      return slash == -1 ? rest : rest.substring(0, slash);
+    }
+    return RouteHistoryManager.getStackPluginId();
   }
 
   /// 获取是否自动打开最后使用的插件
@@ -272,6 +276,10 @@ class PluginManager {
         ModalRoute.of(context)?.settings.name ??
         RouteHistoryManager.getCurrentContext()?.pageId;
     if (currentRouteName == '/plugin/${plugin.id}') {
+      return;
+    }
+    // 当前停在该插件的子页面时（栈顶路由不带 /plugin/ 前缀），同样不重复入栈
+    if (getCurrentRoutePluginId() == plugin.id) {
       return;
     }
     // 记录打开历史

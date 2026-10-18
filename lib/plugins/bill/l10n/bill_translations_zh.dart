@@ -202,7 +202,7 @@ class BillTranslationsZh {
   'bill_budgetRemaining': '剩余',
   'bill_budgetOverspent': '已超支',
   'bill_dailyExpenseChart': '每日支出',
-  'bill_monthBillsCount': '{count} 笔',
+  'bill_monthBillsCount': '@count 笔',
   'bill_noData': '暂无数据',
 
   // 拍照记账（识图识别）
@@ -211,8 +211,8 @@ class BillTranslationsZh {
   'bill_scanNoModel': '未配置识图模型，请先在 OpenAI 插件设置中配置',
   'bill_scanFailed': '识别失败',
   'bill_scanNoItems': '未从图片中识别出账单',
-  'bill_scanAddSelected': '添加选中 ({count})',
+  'bill_scanAddSelected': '添加选中 (@count)',
   'bill_scanSaving': '保存中…',
-  'bill_scanAdded': '已添加 {count} 笔账单',
+  'bill_scanAdded': '已添加 @count 笔账单',
 };
 }

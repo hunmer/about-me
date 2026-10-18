@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/common/cute_notepad_editor.dart';
 import 'package:aboutme/widgets/quill_viewer/index.dart';
 
 /// 通用富文本编辑屏文案覆盖项（默认沿用日记文案，按业务覆盖需要的字段）
@@ -261,6 +263,32 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
     }
   }
 
+  // ===== 分享 =====
+
+  /// 当前内容快照（标题, Quill JSON）：编辑态取编辑控制器实时内容
+  (String, String) _currentSnapshot() {
+    final title = _isEditing ? (_titleController?.text ?? _title) : _title;
+    final content = _isEditing && _contentController != null
+        ? jsonEncode(_contentController!.document.toDelta().toJson())
+        : _contentJson;
+    return (title, content);
+  }
+
+  /// 分享文本（移动端系统分享）：标题 + 正文纯文本
+  Future<void> _shareText() async {
+    final (title, content) = _currentSnapshot();
+    final text = tryParseQuillDeltaToText(content) ?? content;
+    final body = title.trim().isEmpty ? text : '$title\n\n$text';
+    if (body.trim().isEmpty) return;
+    await Share.share(body);
+  }
+
+  /// 分享图片：内容带入可爱便签编辑器制作后分享/保存
+  void _shareAsImage() {
+    final (_, content) = _currentSnapshot();
+    CuteNotepadEditorPage.show(context, initialText: content);
+  }
+
   // ===== 标签编辑 =====
 
   void _addTag(String raw) {
@@ -305,6 +333,57 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
 
   // ===== 构建 =====
 
+  /// 右上角「更多」气泡菜单：分享 / 分享图片
+  Widget _buildMoreMenu(AppThemeData theme) {
+    return DSPopover(
+      width: 180,
+      contentBuilder: (popoverContext, close) {
+        final popoverTheme = DSThemeBridge.resolve(popoverContext);
+        Widget menuRow(DsIconKind icon, String label, VoidCallback onTap) {
+          return Pressable(
+            onPressed: () {
+              close();
+              onTap();
+            },
+            builder: (context, states) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              color: states.contains(WidgetState.pressed)
+                  ? popoverTheme.surfaceAlt
+                  : null,
+              child: Row(
+                children: [
+                  DsIcon(icon, size: 18, color: popoverTheme.textSub),
+                  const SizedBox(width: 10),
+                  Text(
+                    label,
+                    style: DsTypography.body.copyWith(
+                      color: popoverTheme.text,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            menuRow(DsIconKind.share, 'app_share'.tr, _shareText),
+            menuRow(DsIconKind.image, 'app_shareImage'.tr, _shareAsImage),
+          ],
+        );
+      },
+      child: DSIconButton(
+        icon: DsIconKind.more,
+        size: 40,
+        color: theme.surface,
+        iconColor: theme.text,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
@@ -333,7 +412,7 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 顶部导航行：圆形返回按钮（左）+ 样式设置按钮（右）
+                // 顶部导航行：圆形返回按钮（左）+ 样式设置/更多按钮（右）
                 Row(
                   children: [
                     DSIconButton(
@@ -344,7 +423,7 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     const Spacer(),
-                    if (widget.onOpenStyleSettings != null)
+                    if (widget.onOpenStyleSettings != null) ...[
                       DSIconButton(
                         icon: DsIconKind.tune,
                         size: 40,
@@ -352,6 +431,9 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
                         iconColor: theme.text,
                         onPressed: () => widget.onOpenStyleSettings!(),
                       ),
+                      const SizedBox(width: 10),
+                    ],
+                    _buildMoreMenu(theme),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -493,6 +575,8 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
                 ),
                 const SizedBox(width: 10),
               ],
+              _buildMoreMenu(theme),
+              const SizedBox(width: 10),
               // 保存按钮（手绘主色胶囊）
               DSButton(
                 label: _text(widget.texts?.save, 'diary_save'),

@@ -45,6 +45,7 @@ const Map<String, String> appTranslationsEn = {
   'app_confirm': 'Confirm',
   'app_import': 'Import',
   'app_share': 'Share',
+  'app_shareImage': 'Share as Image',
   'app_makeSticker': 'Make Sticker',
   'app_notepadText': 'Notepad text',
   'app_notepadTextHint': 'Enter content; lines starting with "- [ ]" render as a todo list',

@@ -36,6 +36,12 @@ class RouteHistoryManager extends NavigatorObserver {
   /// 用于"询问当前上下文"功能获取当前页面信息
   PageVisitRecord? _currentRouteContext;
 
+  /// 路由栈中插件主界面路由（`/plugin/<id>`）的层数
+  int _pluginRouteCount = 0;
+
+  /// 最近一次入栈的插件主界面路由名（与层数配合还原栈内插件）
+  String? _topPluginRouteName;
+
   /// 初始化管理器（从存储加载历史记录）
   Future<void> initialize({StorageManager? storage}) async {
     if (_initialized) return;
@@ -274,12 +280,14 @@ class RouteHistoryManager extends NavigatorObserver {
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
+    _trackPluginRoute(route, 1);
     _recordRoute(route);
   }
 
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPop(route, previousRoute);
+    _trackPluginRoute(route, -1, previousRoute);
     // pop 操作不记录新路由，但可以更新当前上下文到前一个路由
     if (previousRoute != null) {
       _updateCurrentContextFromRoute(previousRoute);
@@ -289,9 +297,51 @@ class RouteHistoryManager extends NavigatorObserver {
   @override
   void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
     super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    if (oldRoute != null) {
+      _trackPluginRoute(oldRoute, -1);
+    }
     if (newRoute != null) {
+      _trackPluginRoute(newRoute, 1);
       _recordRoute(newRoute);
     }
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didRemove(route, previousRoute);
+    _trackPluginRoute(route, -1, previousRoute);
+  }
+
+  /// 维护栈内插件主界面路由的计数与最新记录
+  ///
+  /// [delta] 入栈为 1、出栈为 -1；[revealedRoute] 出栈后露出的下层路由，
+  /// 若它也是插件主界面则回写为栈内最新插件
+  void _trackPluginRoute(Route<dynamic> route, int delta,
+      [Route<dynamic>? revealedRoute]) {
+    final name = route.settings.name;
+    if (name == null || !name.startsWith('/plugin/')) return;
+    _pluginRouteCount += delta;
+    if (_pluginRouteCount < 0) _pluginRouteCount = 0;
+    final revealedName = revealedRoute?.settings.name;
+    if (revealedName != null && revealedName.startsWith('/plugin/')) {
+      _topPluginRouteName = revealedName;
+    } else if (delta > 0) {
+      _topPluginRouteName = name;
+    }
+  }
+
+  /// 获取当前路由栈中插件主界面所属的插件ID
+  ///
+  /// 栈顶是插件子页面（路由名不带 `/plugin/` 前缀）时，栈内下方
+  /// 仍有插件主界面，返回该插件ID；栈内没有插件路由时返回 null
+  static String? getStackPluginId() {
+    final manager = instance;
+    if (manager._pluginRouteCount <= 0) return null;
+    final name = manager._topPluginRouteName;
+    if (name == null) return null;
+    final rest = name.substring('/plugin/'.length);
+    final slash = rest.indexOf('/');
+    return slash == -1 ? rest : rest.substring(0, slash);
   }
 
 

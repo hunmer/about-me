@@ -82,6 +82,9 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
     _billController.setPlugin(this);
     await _billController.initialize();
 
+    // 加载持久化设置（如统计页的每月预算），否则重启后 _settings 为空
+    await loadSettings(const {});
+
     // 初始化 UseCase
     final repository = ClientBillRepository(
       billController: _billController,

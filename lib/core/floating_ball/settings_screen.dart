@@ -208,19 +208,16 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
             title: _getGestureName(gesture),
             subtitle: displayText,
             onTap: () async {
-              final result = await showDialog<ActionSelectorResult>(
-                context: context,
-                builder:
-                    (context) => ActionSelectorDialog(
-                      gesture: gesture,
-                      initialValue:
-                          config != null
-                              ? ActionSelectorResult(
-                                singleAction: config.singleAction,
-                                actionGroup: config.group,
-                              )
-                              : null,
-                    ),
+              final result = await ActionSelectorDialog.show(
+                context,
+                gesture: gesture,
+                initialValue:
+                    config != null
+                        ? ActionSelectorResult(
+                          singleAction: config.singleAction,
+                          actionGroup: config.group,
+                        )
+                        : null,
               );
 
               if (result != null && mounted) {

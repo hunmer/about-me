@@ -65,11 +65,9 @@ class _ActionGroupEditorState extends State<ActionGroupEditor> {
   }
 
   void _onAddAction() async {
-    final result = await showDialog<ActionSelectorResult>(
-      context: context,
-      builder: (context) => const ActionSelectorDialog(
-        showGroupEditor: false,
-      ),
+    final result = await ActionSelectorDialog.show(
+      context,
+      showGroupEditor: false,
     );
 
     if (result != null && result.singleAction != null) {
@@ -81,13 +79,11 @@ class _ActionGroupEditorState extends State<ActionGroupEditor> {
 
   void _onEditAction(int index) async {
     final action = _actions[index];
-    final result = await showDialog<ActionSelectorResult>(
-      context: context,
-      builder: (context) => ActionSelectorDialog(
-        showGroupEditor: false,
-        initialValue: ActionSelectorResult(
-          singleAction: action,
-        ),
+    final result = await ActionSelectorDialog.show(
+      context,
+      showGroupEditor: false,
+      initialValue: ActionSelectorResult(
+        singleAction: action,
       ),
     );
 

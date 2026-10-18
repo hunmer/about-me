@@ -9,6 +9,8 @@ import 'package:aboutme/core/action/models/action_definition.dart';
 import 'package:aboutme/core/action/models/action_instance.dart';
 import 'package:aboutme/core/action/models/action_group.dart';
 import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'action_config_form.dart';
 import 'action_group_editor.dart';
 import 'package:get/get.dart';
@@ -39,7 +41,7 @@ enum ActionSelectorTab {
   custom,    // 自定义动作
 }
 
-/// 动作选择对话框
+/// 动作选择对话框（手绘风）
 class ActionSelectorDialog extends StatefulWidget {
   final FloatingBallGesture? gesture;
   final ActionSelectorResult? initialValue;
@@ -52,15 +54,29 @@ class ActionSelectorDialog extends StatefulWidget {
     this.showGroupEditor = true,
   });
 
+  /// 统一弹窗入口：走 showDSDialog 获得手绘入场与遮罩
+  static Future<ActionSelectorResult?> show(
+    BuildContext context, {
+    FloatingBallGesture? gesture,
+    ActionSelectorResult? initialValue,
+    bool showGroupEditor = true,
+  }) {
+    return showDSDialog<ActionSelectorResult>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => ActionSelectorDialog(
+        gesture: gesture,
+        initialValue: initialValue,
+        showGroupEditor: showGroupEditor,
+      ),
+    );
+  }
+
   @override
   State<ActionSelectorDialog> createState() => _ActionSelectorDialogState();
 }
 
-class _ActionSelectorDialogState extends State<ActionSelectorDialog>
-    with TickerProviderStateMixin {
-  // Tab 控制器
-  late TabController _tabController;
-
+class _ActionSelectorDialogState extends State<ActionSelectorDialog> {
   // 搜索控制器
   final TextEditingController _searchController = TextEditingController();
 
@@ -97,9 +113,6 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
   void initState() {
     super.initState();
 
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(_onTabChanged);
-
     // 加载数据
     _loadActions();
 
@@ -109,18 +122,8 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _onTabChanged() {
-    if (!_tabController.indexIsChanging) {
-      setState(() {
-        _currentTab = ActionSelectorTab.values[_tabController.index];
-        _filterActions();
-      });
-    }
   }
 
   void _loadActions() {
@@ -154,11 +157,6 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
           // 恢复表单数据
           _formData = Map<String, dynamic>.from(_initialFormData ?? {});
         });
-
-        // 异步设置 Tab 索引
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _tabController.index = _currentTab.index;
-        });
       } catch (e) {
         print('Warning: Action not found: ${initial.singleAction?.actionId}');
       }
@@ -171,11 +169,8 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
             _selectedGroup = initial.actionGroup;
             _currentTab = ActionSelectorTab.group;
           });
-
-          // 设置 Tab 索引
-          _tabController.index = _currentTab.index;
         } else {
-          print('Warning: Action group not found: ${initial.actionGroup?.id}');
+          print('Warning: Action group not found: ${initial.actionGroup!.id}');
         }
       });
     }
@@ -312,135 +307,105 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = AppTheme.of(context);
+    final hasInitialValue =
+        widget.initialValue != null && !widget.initialValue!.isEmpty;
 
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
-        ),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: 480,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+      ),
+      // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
+      child: DsSketchPanel(
+        theme: theme,
+        radius: theme.radii.xxl,
+        padding: EdgeInsets.all(theme.spacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // 标题栏
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.bolt,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '选择动作',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
+            _buildTitleRow(theme),
+
+            SizedBox(height: theme.spacing.md),
 
             // 搜索框
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: '搜索动作...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onChanged: _onSearchChanged,
-              ),
+            DSInput.search(
+              controller: _searchController,
+              hint: 'core_searchActions'.tr,
+              onChanged: _onSearchChanged,
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: theme.spacing.md),
 
             // Tab 栏
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: '单动作'),
-                  Tab(text: '动作组'),
-                  Tab(text: '自定义'),
-                ],
-              ),
+            DSTabs(
+              labels: [
+                'core_singleAction'.tr,
+                'core_actionGroup'.tr,
+                'core_customAction'.tr,
+              ],
+              selected: _currentTab.index,
+              onChanged: (index) {
+                setState(() {
+                  _currentTab = ActionSelectorTab.values[index];
+                  _filterActions();
+                });
+              },
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: theme.spacing.md),
 
             // 内容区域
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildSingleActionTab(),
-                    _buildGroupTab(),
-                    _buildCustomTab(),
-                  ],
-                ),
+              child: IndexedStack(
+                index: _currentTab.index,
+                children: [
+                  _buildSingleActionTab(),
+                  _buildGroupTab(),
+                  _buildCustomTab(),
+                ],
               ),
             ),
 
-            // 底部按钮
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // 左侧：清除按钮
-                  if (widget.initialValue != null &&
-                      !widget.initialValue!.isEmpty) ...[
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(
-                          context,
-                          const ActionSelectorResult(), // 返回空的结果
-                        );
-                      },
-                      icon: const Icon(Icons.clear_all, size: 18),
-                      label: Text('core_clearSettings'.tr),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[300],
-                        foregroundColor: Colors.black87,
-                      ),
-                    ),
-                  ] else
-                    const SizedBox(),
+            SizedBox(height: theme.spacing.md),
 
-                  // 右侧：取消和确认按钮
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('app_cancel'.tr),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: _onConfirm,
-                        child: Text('app_confirm'.tr),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            // 底部按钮
+            Row(
+              children: [
+                // 左侧：清除按钮
+                if (hasInitialValue)
+                  DSButton(
+                    label: 'core_clearSettings'.tr,
+                    variant: DSButtonVariant.outline,
+                    icon: DsIconKind.block,
+                    onPressed: () {
+                      Navigator.pop(
+                        context,
+                        const ActionSelectorResult(), // 返回空的结果
+                      );
+                    },
+                  )
+                else
+                  const Spacer(),
+
+                // 右侧：取消和确认按钮
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DSButton(
+                      label: 'app_cancel'.tr,
+                      variant: DSButtonVariant.ghost,
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    SizedBox(width: theme.spacing.sm),
+                    DSButton(
+                      label: 'app_confirm'.tr,
+                      onPressed: _onConfirm,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),
@@ -448,50 +413,77 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
     );
   }
 
+  Widget _buildTitleRow(AppThemeData theme) {
+    return Row(
+      children: [
+        DsIcon(DsIconKind.sparkle, color: theme.primary),
+        SizedBox(width: theme.spacing.sm),
+        Expanded(
+          child: Text(
+            'core_selectAction'.tr,
+            style: DsTypography.title.copyWith(color: theme.text),
+          ),
+        ),
+        DSIconButton(
+          icon: DsIconKind.close,
+          size: 36,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
+    );
+  }
+
+  /// 空状态占位
+  Widget _buildEmptyState(String emoji, String title) {
+    return Center(
+      child: DSEmptyState(emoji: emoji, title: title),
+    );
+  }
+
+  /// 选中指示（单选圆点；卡片整体与圆点都可点击选中）
+  Widget _buildSelectIndicator({
+    required String? value,
+    required String? groupValue,
+    required VoidCallback onSelect,
+  }) {
+    return DSRadio<String?>(
+      value: value,
+      groupValue: groupValue,
+      onChanged: (_) => onSelect(),
+    );
+  }
+
   Widget _buildSingleActionTab() {
+    final theme = AppTheme.of(context);
+
     return Column(
       children: [
         // 动作列表
         Expanded(
           child: _filteredActions.isEmpty
-              ? Center(
-                  child: Text(
-                    '没有找到动作',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                )
+              ? _buildEmptyState('⚡', 'core_noActionsFound'.tr)
               : ListView.builder(
+                  padding: EdgeInsets.zero,
                   itemCount: _filteredActions.length,
                   itemBuilder: (context, index) {
                     final action = _filteredActions[index];
-                    final isSelected = _selectedDefinition?.id == action.id;
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.grey[300],
-                          child: Icon(
-                            action.icon ?? Icons.help_outline,
-                            color: Colors.white,
-                          ),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: DSListItemCard(
+                        title: action.title,
+                        subtitle:
+                            action.description ?? 'core_noDescription'.tr,
+                        leading: Icon(action.icon ?? Icons.help_outline),
+                        iconColor: theme.primary,
+                        trailing: _buildSelectIndicator(
+                          value: action.id,
+                          groupValue: _selectedDefinition?.id,
+                          onSelect: () => _onSelectDefinition(action),
                         ),
-                        title: Text(action.title),
-                        subtitle: Text(
-                          action.description ?? '无描述',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.check_circle,
-                                color: Theme.of(context).colorScheme.primary,
-                              )
-                            : const Icon(Icons.radio_button_unchecked),
                         onTap: () => _onSelectDefinition(action),
-                        onLongPress: () => _onSelectDefinition(action),
                       ),
                     );
                   },
@@ -500,26 +492,30 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
 
         // 配置表单（如果选择了动作）
         if (_selectedDefinition != null) ...[
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 16),
-          SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '动作配置',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                ActionConfigForm(
-                  actionDefinition: _selectedDefinition!,
-                  initialData: _initialFormData,
-                  onChanged: _onFormDataChanged,
-                ),
-              ],
+          SizedBox(height: theme.spacing.md),
+          Container(
+            height: 1,
+            color: theme.textSub.withValues(alpha: 0.25),
+          ),
+          SizedBox(height: theme.spacing.md),
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'core_actionConfig'.tr,
+                    style:
+                        DsTypography.heading.copyWith(color: theme.text),
+                  ),
+                  const SizedBox(height: 8),
+                  ActionConfigForm(
+                    actionDefinition: _selectedDefinition!,
+                    initialData: _initialFormData,
+                    onChanged: _onFormDataChanged,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -528,50 +524,35 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
   }
 
   Widget _buildGroupTab() {
+    final theme = AppTheme.of(context);
+
     return Column(
       children: [
         // 动作组列表
         Expanded(
           child: _filteredGroups.isEmpty
-              ? Center(
-                  child: Text(
-                    '没有动作组',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                )
+              ? _buildEmptyState('🗂️', 'core_noActionGroups'.tr)
               : ListView.builder(
+                  padding: EdgeInsets.zero,
                   itemCount: _filteredGroups.length,
                   itemBuilder: (context, index) {
                     final group = _filteredGroups[index];
-                    final isSelected = _selectedGroup?.id == group.id;
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: group.displayColor?.withOpacity(0.2) ??
-                              Colors.grey[300],
-                          child: Icon(
-                            group.displayIcon ?? Icons.folder,
-                            color: group.displayColor ?? Colors.grey,
-                          ),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: DSListItemCard(
+                        title: group.title,
+                        subtitle: 'core_actionsCount'.trParams({
+                          'count': group.actionCount.toString(),
+                        }),
+                        leading:
+                            Icon(group.displayIcon ?? Icons.folder_outlined),
+                        iconColor: group.displayColor ?? theme.secondary,
+                        trailing: _buildSelectIndicator(
+                          value: group.id,
+                          groupValue: _selectedGroup?.id,
+                          onSelect: () => _onSelectGroup(group),
                         ),
-                        title: Text(group.title),
-                        subtitle: Text(
-                          '${group.actionCount} 个动作',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.check_circle,
-                                color: Theme.of(context).colorScheme.primary,
-                              )
-                            : const Icon(Icons.radio_button_unchecked),
                         onTap: () => _onSelectGroup(group),
                       ),
                     );
@@ -581,16 +562,13 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
 
         // 创建组按钮
         if (widget.showGroupEditor) ...[
-          const SizedBox(height: 16),
-          SingleChildScrollView(
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _onCreateGroup,
-                icon: const Icon(Icons.add),
-                label: Text('core_createActionGroup'.tr),
-              ),
-            ),
+          SizedBox(height: theme.spacing.md),
+          DSButton(
+            label: 'core_createActionGroup'.tr,
+            variant: DSButtonVariant.secondary,
+            icon: DsIconKind.plus,
+            expand: true,
+            onPressed: _onCreateGroup,
           ),
         ],
       ],
@@ -598,43 +576,28 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog>
   }
 
   Widget _buildCustomTab() {
+    final theme = AppTheme.of(context);
+
     return _filteredCustomActions.isEmpty
-        ? Center(
-            child: Text(
-              '没有自定义动作',
-              style: TextStyle(
-                color: Colors.grey[600],
-              ),
-            ),
-          )
+        ? _buildEmptyState('✨', 'core_noCustomActions'.tr)
         : ListView.builder(
+            padding: EdgeInsets.zero,
             itemCount: _filteredCustomActions.length,
             itemBuilder: (context, index) {
               final action = _filteredCustomActions[index];
-              final isSelected = _selectedCustomAction?.id == action.id;
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.grey[300],
-                    child: Icon(
-                      action.displayIcon ?? Icons.star,
-                      color: Colors.white,
-                    ),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: DSListItemCard(
+                  title: action.displayTitle,
+                  subtitle: action.displayDescription ?? action.actionId,
+                  leading: Icon(action.displayIcon ?? Icons.star),
+                  iconColor: theme.secondary,
+                  trailing: _buildSelectIndicator(
+                    value: action.id,
+                    groupValue: _selectedCustomAction?.id,
+                    onSelect: () => _onSelectCustomAction(action),
                   ),
-                  title: Text(action.displayTitle),
-                  subtitle: Text(
-                    action.displayDescription ?? action.actionId,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: isSelected
-                      ? Icon(
-                          Icons.check_circle,
-                          color: Theme.of(context).colorScheme.primary,
-                        )
-                      : const Icon(Icons.radio_button_unchecked),
                   onTap: () => _onSelectCustomAction(action),
                 ),
               );
