@@ -44,18 +44,26 @@ class _BillScanSheetState extends State<BillScanSheet> {
   /// 保存进行中：禁用确认按钮，防重复点击产生并发保存
   bool _saving = false;
 
-  /// 识别 prompt：注入当前时间（模型无时间信息时回退用），日期精确到分钟
+  /// 识别 prompt：注入当前时间（模型无时间信息时回退用），日期精确到分钟。
+  /// 覆盖票据、支付/转账记录、电商/外卖订单列表等消费记录场景
   String get _prompt {
     final now = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
-    return '你是记账助手。分析图片中的账单/票据/消费记录，提取每一笔收支。'
+    return '你是记账助手。从图片中提取每一笔收支。图片可以是收据/发票/小票、'
+        '支付或转账记录截图、账单月报，也可以是电商购物订单列表'
+        '（淘宝/拼多多/京东/美团等订单页，每个订单记一笔）、'
+        '外卖/打车/充值等消费记录。'
         '只输出 JSON 数组，不要输出任何解释或代码块标记，每个元素格式：'
         '{"title":"事项名称","amount":12.5,"isExpense":true,'
-        '"category":"餐饮","note":"备注或空串","date":"2026-01-01 12:30"}。'
+        '"category":"餐饮","note":"备注或空串","date":"2026-01-01 12:30"}。\n'
+        'amount 规则：优先取实付金额；先用后付/待付款/待收货的订单'
+        '取应付金额照常记录，不要因当前实付显示 0 而跳过；'
+        '多件商品按订单合计或单价×数量计算；收入（退款/工资/转账入账）'
+        'isExpense 为 false。\n'
         'date 精确到分钟，格式 yyyy-MM-dd HH:mm：有完整时间按图片识别；'
         '只有日期没有时间时用该日期加当前时间的时分；完全没有时间信息时'
-        '用当前时间 $now。'
+        '用当前时间 $now。\n'
         'category 只能取：餐饮、购物、交通、日用、娱乐、医疗、教育、住房、'
-        '工资、奖金、投资、其他。没有识别到任何账单时输出 []。';
+        '工资、奖金、投资、其他。没有识别到任何收支时输出 []。';
   }
 
   @override
@@ -79,7 +87,10 @@ class _BillScanSheetState extends State<BillScanSheet> {
         _prompt,
         agent,
         imageFile: widget.imageFile,
+        // 订单列表等场景条目多，放宽输出上限避免 JSON 被截断
+        maxTokens: 4000,
       );
+      debugPrint('[BillScan] 模型原始返回(${content.length}字符): $content');
       final items = _parseItems(content);
       if (!mounted) return;
       setState(() {
