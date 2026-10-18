@@ -192,5 +192,17 @@ class BillTranslationsZh {
   'bill_subscriptionDaysHint': '例如：30',
   'bill_dailyAmount': '单日金额',
   'bill_perDaySuffix': ' / 天',
+
+  // 统计页(手绘风格)
+  'bill_monthBudget': '每月预算',
+  'bill_budgetHint': '设置每月支出上限, 掌控花销节奏',
+  'bill_budgetSetAmount': '设置预算金额',
+  'bill_budgetInvalid': '请输入有效金额',
+  'bill_budgetUsed': '已用',
+  'bill_budgetRemaining': '剩余',
+  'bill_budgetOverspent': '已超支',
+  'bill_dailyExpenseChart': '每日支出',
+  'bill_monthBillsCount': '{count} 笔',
+  'bill_noData': '暂无数据',
 };
 }

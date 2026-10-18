@@ -1,3 +1,5 @@
+import 'dart:ui' show Offset;
+
 // Generated from grok-icon-study replica/geometry-data.js — personal study only.
 // Data extracted from Grok Bot.app v0.18.0 (copyright xAI).
 

@@ -29,17 +29,16 @@ class _GrokStudyScreenState extends State<GrokStudyScreen> {
     bot = GrokCharacter(
       mode: 'hold',
       state: _state,
-      shape: _shape,
-      color: _color,
+      shapeName: _shape,
+      colorId: _color,
       seed: 7,
     )..followPointer = _follow;
     bot64 = GrokCharacter(
       mode: 'hold',
       state: _state,
-      shape: _shape,
-      color: _color,
+      shapeName: _shape,
+      colorId: _color,
       seed: 8,
-      sizePx: 64,
     );
     // 与源码 playground 一致：跳过首个 idle，从 curious 起播
     bot.setStateName('curious', resetEyes: true);

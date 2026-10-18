@@ -196,5 +196,17 @@ class BillTranslationsEn {
   'bill_subscriptionDaysHint': 'e.g. 30',
   'bill_dailyAmount': 'Daily Amount',
   'bill_perDaySuffix': ' / day',
+
+  // Stats screen (sketch style)
+  'bill_monthBudget': 'Monthly Budget',
+  'bill_budgetHint': 'Set a monthly spending limit',
+  'bill_budgetSetAmount': 'Set Budget Amount',
+  'bill_budgetInvalid': 'Enter a valid amount',
+  'bill_budgetUsed': 'Used',
+  'bill_budgetRemaining': 'Remaining',
+  'bill_budgetOverspent': 'Over budget',
+  'bill_dailyExpenseChart': 'Daily Expenses',
+  'bill_monthBillsCount': '{count} bills',
+  'bill_noData': 'No data',
 };
 }

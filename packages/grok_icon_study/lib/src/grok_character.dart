@@ -81,7 +81,7 @@ class GrokCharacter extends ChangeNotifier {
   String _state;
   final bool loginWrap;
   late final bool eyeTopology;
-  late final FaceTune? faceTune;
+  late final t.FaceTune? faceTune;
   final double poseTurn, poseTilt, poseRoll;
   final double homeTurn, homeTilt, homeRoll;
   double poseScaleVal = 1;
@@ -126,7 +126,7 @@ class GrokCharacter extends ChangeNotifier {
   int winkEye = 0;
   double winkUntil = 0;
   Spring? spinTurn;
-  Trick? trick;
+  tr.Trick? trick;
   double hopAt = -1;
   double trickAt = 0;
   int trickCycle = 0;
@@ -137,7 +137,7 @@ class GrokCharacter extends ChangeNotifier {
   int ovTurnDir = 1;
   double pointerTx = 0, pointerTy = 0;
   Offset? pointerRel;
-  String prevShape;
+  late String prevShape;
   GrokFacePort? prevFace;
   List<Offset>? prevRing;
   double? prevTilt;
@@ -167,7 +167,7 @@ class GrokCharacter extends ChangeNotifier {
     String state = 'idle',
     this.loginWrap = true,
     bool? eyeTopologyOverride,
-    FaceTune? faceTuneOverride,
+    t.FaceTune? faceTuneOverride,
     this.poseTurn = t.poseTurn,
     this.poseTilt = t.poseTilt,
     this.poseRoll = t.poseRoll,
@@ -539,7 +539,7 @@ class GrokCharacter extends ChangeNotifier {
       _morphEyes(13, 11);
     }
     if (ctx.wakeEye != null) {
-      _morphEyes(ctx.wakeEye![0].toInt(), ctx.wakeEye![1].toInt());
+      _morphEyes(ctx.wakeEye![0].toInt(), ctx.wakeEye![1]);
       ctx.wakeEye = null;
     }
     if (ctx.wakeBlink && !ctx.wakingBlinked && blinkQueue.isEmpty) {
@@ -750,9 +750,8 @@ class GrokCharacter extends ChangeNotifier {
   Color get eyeFill => eyeColor ?? const Color(0xFFF3EFE6);
 
   void _paint(double now, {double spinAngle = 0}) {
-    final geo = GrokGeometry;
-    final r = geo.re;
-    final shape = geo.shapes[shapeName]!;
+    final r = GrokGeometry.re;
+    final shape = GrokGeometry.shapes[shapeName]!;
     final fxFrame = FxFrame();
     particles.update(now, _pendingDt, spinAngle, partScale,
         (trick?.kind == 'spinWild') || wildWide || _state == 'humming',
@@ -766,7 +765,7 @@ class GrokCharacter extends ChangeNotifier {
     } else {
       face = GrokFacePort.from(shape.face);
     }
-    final fromTilt = prevTilt ?? (geo.shapes[prevShape]?.tiltScale ?? 1);
+    final fromTilt = prevTilt ?? (GrokGeometry.shapes[prevShape]?.tiltScale ?? 1);
     final tilt = morphing ? fromTilt + (shape.tiltScale - fromTilt) * morphK : shape.tiltScale;
 
     final yl = clampN(overlay.x, 0, 1);
@@ -784,7 +783,7 @@ class GrokCharacter extends ChangeNotifier {
 
     final jc = clampN(yl / pBlend, 0, 1);
     final isPencil = ovKind == 'pencil' || ovPrev == 'pencil';
-    final tear = geo.shapes['teardrop']?.path;
+    final tear = GrokGeometry.shapes['teardrop']?.path;
     final spinAmt = ex.turn;
     final spinning = spinAmt != null;
     final restRing = morphing
@@ -856,8 +855,8 @@ class GrokCharacter extends ChangeNotifier {
       overlayX: overlay.x,
       eyeBoostX: eyeScale.x,
       re: r,
-      g9e: geo.g9e,
-      vjt: geo.vjt,
+      g9e: GrokGeometry.g9e,
+      vjt: GrokGeometry.vjt,
       extras: extras,
       ringHint: ringHint,
       badgeRing: restRing,

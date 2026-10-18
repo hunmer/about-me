@@ -1,13 +1,12 @@
 // Ported from grok-icon-study replica/src/fx.js — overlay glyphs + particle ribbons.
 // Source symbols: E_t I_t za/$a/Ms/oi/_r/ua/No/Eo/Ho/hl/cd/Bt.
 import 'dart:math' as math;
-import 'dart:ui' show Path;
 
 import 'package:vector_math/vector_math_64.dart' show Matrix4;
 
 import 'grok_geometry.dart';
 import 'grok_math.dart';
-import 'package:flutter/painting.dart' show Color, HSLColor;
+import 'package:flutter/painting.dart';
 
 const double re0 = 114.2705;
 const int starColorValue = GrokGeometry.starColor;
@@ -681,7 +680,7 @@ class Particles {
   }
 
   void update(double now, double dt, double spinAngle, double szScale, bool wideStyle, bool sustainBelts, FxFrame frame) {
-    final y = last < 0 ? dt : math.max((now - last) / 1000, 0);
+    final y = last < 0 ? dt : math.max((now - last) / 1000, 0.0);
     last = now;
     sizeScale = szScale;
     spin = spinAngle;
@@ -826,7 +825,7 @@ class OverlayLayer {
       stroke: true,
       strokeWidth: 5,
     ));
-    final en = mtR * dt, zt = 2 * math.pi * en;
+    final en = mtR * dt;
     frame.rings.add(FxCircleDraw(
       cx: r,
       cy: r,
@@ -1006,7 +1005,7 @@ class OverlayLayer {
     final mt = rc3(clampN(ze * 1.1, 0, 1));
     final lt = math.exp(-((dt % 2.2) * 5.5)), yn = math.sin(dt * 42) * 2.2 * lt;
     final m = Matrix4.identity()
-      ..translate(0, -26 - (1 - mt) * 70)
+      ..translate(0.0, -26 - (1 - mt) * 70)
       ..translate(r, r - 74)
       ..multiply(Matrix4.rotationZ(yn * math.pi / 180))
       ..translate(-r, -(r - 74))
@@ -1111,7 +1110,7 @@ class OverlayLayer {
 // 形状工具（Source turnAtOf / beltRadius / shapeMetrics / overlayRing）
 // ---------------------------------------------------------------------------
 
-final Map<String, List<Offset> Function(double yaw)> _turnAtCache = {};
+final Map<String, List<Offset> Function(double yaw)?> _turnAtCache = {};
 List<Offset> Function(double yaw)? turnAtOf(String name, String path, double r) {
   if (_turnAtCache.containsKey(name)) return _turnAtCache[name];
   final solid = GrokGeometry.solids[name];

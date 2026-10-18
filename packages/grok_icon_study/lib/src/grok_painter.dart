@@ -2,11 +2,9 @@
 import 'dart:math' as math;
 import 'dart:typed_data' show Float64List;
 import 'dart:ui' as ui show Gradient;
-import 'dart:ui' show Offset, Path;
 
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/widgets.dart';
-import 'package:vector_math/vector_math_64.dart' show Matrix4;
 
 import 'grok_character.dart';
 import 'grok_fx.dart';

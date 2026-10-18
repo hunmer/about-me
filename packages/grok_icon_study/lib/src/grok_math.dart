@@ -28,6 +28,7 @@ const double springDt = 1 / 120;
 int springSteps(double dt) => math.max(1, (dt / springDt).ceil());
 
 double clampN(double n, double a, double b) => n < a ? a : (n > b ? b : n);
+double hypot2(double a, double b) => math.sqrt(a * a + b * b);
 double lerpN(double a, double b, double t) => a + (b - a) * t;
 double randOf(math.Random rnd, double a, double b) => a + rnd.nextDouble() * (b - a);
 int signOf(math.Random rnd) => rnd.nextDouble() < 0.5 ? -1 : 1;
@@ -100,7 +101,7 @@ List<Offset> flattenPath(String d, [double e = 4]) {
   while (r < tokens.length) {
     if (RegExp('[a-zA-Z]').hasMatch(tokens[r])) cmd = tokens[r++].toUpperCase();
     if (cmd == 'Z') {
-      final gap = math.hypot(ox - sx0, oy - sy0);
+      final gap = hypot2(ox - sx0, oy - sy0);
       if (gap > 0.01) {
         sample((f) => Offset(sx0 + (ox - sx0) * f, sy0 + (oy - sy0) * f), gap);
       }
@@ -118,7 +119,7 @@ List<Offset> flattenPath(String d, [double e = 4]) {
       cmd = 'L';
     } else if (cmd == 'L') {
       final fx = rd(), fy = rd();
-      sample((y) => Offset(ox + (fx - ox) * y, oy + (fy - oy) * y), math.hypot(fx - ox, fy - oy));
+      sample((y) => Offset(ox + (fx - ox) * y, oy + (fy - oy) * y), hypot2(fx - ox, fy - oy));
       ox = fx;
       oy = fy;
     } else if (cmd == 'Q') {
@@ -130,7 +131,7 @@ List<Offset> flattenPath(String d, [double e = 4]) {
           return Offset(n * n * vx + 2 * n * x * fx + x * x * tx,
               n * n * vy + 2 * n * x * fy + x * x * ty);
         },
-        math.hypot(fx - ox, fy - oy) + math.hypot(tx - fx, ty - fy),
+        hypot2(fx - ox, fy - oy) + hypot2(tx - fx, ty - fy),
       );
       ox = tx;
       oy = ty;
@@ -145,9 +146,9 @@ List<Offset> flattenPath(String d, [double e = 4]) {
             a * a * a * by + 3 * a * a * e2 * f1y + 3 * a * e2 * e2 * f2y + e2 * e2 * e2 * vy,
           );
         },
-        math.hypot(f1x - ox, f1y - oy) +
-            math.hypot(f2x - f1x, f2y - f1y) +
-            math.hypot(vx - f2x, vy - f2y),
+        hypot2(f1x - ox, f1y - oy) +
+            hypot2(f2x - f1x, f2y - f1y) +
+            hypot2(vx - f2x, vy - f2y),
       );
       ox = vx;
       oy = vy;

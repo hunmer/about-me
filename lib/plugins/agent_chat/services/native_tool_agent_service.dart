@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/services/agent_file_space_service.dart';
 import 'package:aboutme/core/services/image_compression_service.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
@@ -279,6 +280,9 @@ class NativeToolAgentService {
           .where(
             (t) =>
                 t.name == 'read_image' ||
+                const {'list_files', 'read_file', 'write_file'}.contains(
+                  t.name,
+                ) ||
                 (allMeta[t.name] != null &&
                     candidates.contains(allMeta[t.name]!.pluginId)),
           )
@@ -484,6 +488,7 @@ class NativeToolAgentService {
       name: 'run_js',
       description:
           '${useJsTools ? '' : '优先使用插件工具；仅在需要脚本组合或插件工具无法满足时使用。'}'
+          '文件操作必须直接调用 list_files、read_file 或 write_file，不要用 JavaScript 拼接文件操作。'
           '执行 JavaScript，可用 await Aboutme.plugins.<插件>.<方法>(参数对象) 调用 API。'
           '用 setResult(value); return value; 返回结果。\n$apiDocs',
       inputSchema: Schema.fromMap(
@@ -518,6 +523,14 @@ class NativeToolAgentService {
         final methodName = toolId.startsWith('${pluginId}_')
             ? toolId.substring(pluginId.length + 1)
             : toolId;
+        if (pluginId == 'openai' &&
+            const {
+              'list_files',
+              'read_file',
+              'write_file',
+            }.contains(methodName)) {
+          continue;
+        }
         (configs[pluginId] ??= {})[methodName] = config;
       }
       for (final entry in configs.entries) {
@@ -688,8 +701,105 @@ class NativeToolAgentService {
         },
       ),
     );
+    tools.addAll(_buildFileTools(run));
     debugPrint('[NativeTool] 已构建 ${tools.length} 个原生工具');
     return (tools, _toolMetaCache!);
+  }
+
+  List<Tool<Map<String, dynamic>>> _buildFileTools(_NativeToolRunContext run) {
+    final files = AgentFileSpaceService.instance;
+    final autoSpace = <String, Object?>{
+      'type': 'string',
+      'enum': <String>['auto', 'agent', 'channel'],
+      'description': '查询范围，auto 按 Agent 空间优先并最多查询两个空间',
+    };
+    return [
+      Tool<Map<String, dynamic>>(
+        name: 'list_files',
+        description: '枚举当前 Agent 和频道文件，Agent 空间优先。',
+        inputSchema: Schema.fromMap(<String, Object?>{
+          'type': 'object',
+          'properties': <String, Object?>{
+            'path': <String, Object?>{
+              'type': 'string',
+              'description': '空间内相对目录，默认为根目录',
+            },
+            'recursive': <String, Object?>{
+              'type': 'boolean',
+              'description': '是否递归枚举子目录',
+            },
+            'space': autoSpace,
+          },
+          'required': <String>[],
+        }),
+        onCall: (args) async => {
+          'files': await files.listFiles(
+            agentId: run.agentId,
+            conversationId: run.conversationId,
+            relativePath: args['path'] as String? ?? '',
+            recursive: args['recursive'] == true,
+            space: args['space'] as String? ?? 'auto',
+          ),
+        },
+      ),
+      Tool<Map<String, dynamic>>(
+        name: 'read_file',
+        description: '读取文本文件，默认按 Agent 空间优先查找。',
+        inputSchema: Schema.fromMap(<String, Object?>{
+          'type': 'object',
+          'properties': <String, Object?>{
+            'path': <String, Object?>{
+              'type': 'string',
+              'description': '空间内相对文件路径',
+            },
+            'space': autoSpace,
+          },
+          'required': <String>['path'],
+        }),
+        onCall: (args) async {
+          final filePath = args['path'] as String;
+          final content = await files.readFile(
+            relativePath: filePath,
+            agentId: run.agentId,
+            conversationId: run.conversationId,
+            space: args['space'] as String? ?? 'auto',
+          );
+          return content == null
+              ? {'error': '文件不存在: $filePath'}
+              : {'path': filePath, 'content': content};
+        },
+      ),
+      Tool<Map<String, dynamic>>(
+        name: 'write_file',
+        description: '写入文本文件，默认写入 Agent 独立空间。',
+        inputSchema: Schema.fromMap(<String, Object?>{
+          'type': 'object',
+          'properties': <String, Object?>{
+            'path': <String, Object?>{
+              'type': 'string',
+              'description': '空间内相对文件路径',
+            },
+            'content': <String, Object?>{
+              'type': 'string',
+              'description': '要写入的文本内容',
+            },
+            'space': <String, Object?>{
+              'type': 'string',
+              'enum': <String>['agent', 'channel'],
+              'description': '写入空间，默认 agent',
+            },
+          },
+          'required': <String>['path', 'content'],
+        }),
+        onCall: (args) => files.writeFile(
+          relativePath: args['path'] as String,
+          content: args['content'] as String,
+          agentId: run.agentId,
+          conversationId: run.conversationId,
+          space: args['space'] as String? ?? 'agent',
+        ),
+      ),
+    ];
   }
 
   /// 解析识图请求使用的 agent：

@@ -146,6 +146,8 @@ final Map<String, String> screensTranslationsZh = {
   'screens_aboutmeComplete': 'Aboutme 完整 (aboutme://app.example.com/open)',
   'screens_customApp': '自定义应用 (myapp://custom.host)',
   'screens_intentTest': 'Intent 测试',
+  'screens_grokCharacterStudyTitle': 'Grok 角色动效',
+  'screens_grokCharacterStudySubtitle': '弹簧角色引擎单动画播放调试',
   'screens_quickRegister': '快速注册',
   'screens_bulletScheme': '• @scheme',
 

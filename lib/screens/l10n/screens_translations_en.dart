@@ -152,6 +152,8 @@ final Map<String, String> screensTranslationsEn = {
       'Aboutme Complete (aboutme://app.example.com/open)',
   'screens_customApp': 'Custom App (myapp://custom.host)',
   'screens_intentTest': 'Intent Test',
+  'screens_grokCharacterStudyTitle': 'Grok Character Motion',
+  'screens_grokCharacterStudySubtitle': 'Spring character engine single-animation debug',
   'screens_quickRegister': 'Quick Register',
   'screens_bulletScheme': '• @scheme',
 

@@ -1108,6 +1108,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "8.0.0"
+  grok_icon_study:
+    dependency: "direct main"
+    description:
+      path: "packages/grok_icon_study"
+      relative: true
+    source: path
+    version: "0.1.0"
   home_widget:
     dependency: "direct main"
     description:

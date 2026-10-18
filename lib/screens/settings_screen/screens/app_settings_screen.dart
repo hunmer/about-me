@@ -16,6 +16,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/widgets/route_viewer_dialog.dart';
 import 'package:aboutme/plugins/reminder/screens/reminder_list_screen.dart';
+import 'package:grok_icon_study/grok_icon_study.dart';
 import '../controllers/settings_screen_controller.dart';
 import '../widgets/settings_group.dart';
 import '../widgets/settings_tile.dart';
@@ -465,6 +466,19 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                           );
                         },
                       ),
+                    SettingsTile(
+                      icon: DsIconKind.animation,
+                      iconColor: DsAccentColors.slate,
+                      title: 'screens_grokCharacterStudyTitle'.tr,
+                      subtitle: 'screens_grokCharacterStudySubtitle'.tr,
+                      onTap: () {
+                        NavigationHelper.push(
+                          context,
+                          const GrokStudyScreen(),
+                          routeName: '/settings/grok_study',
+                        );
+                      },
+                    ),
                     SettingsTile(
                       icon: DsIconKind.category,
                       iconColor: DsAccentColors.slate,

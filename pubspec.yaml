@@ -117,6 +117,9 @@ dependencies:
     path: packages/floating_ball_plugin
   aboutme_widgets:
     path: packages/aboutme_widgets
+  # Grok 登录页角色动效（弹簧驱动角色引擎）移植，仅供学习
+  grok_icon_study:
+    path: packages/grok_icon_study
   # 原生服务插件化
   aboutme_foreground_service:
     path: packages/aboutme_foreground_service

@@ -459,17 +459,7 @@ class _BillMainViewState extends State<BillMainView>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 4, bottom: 8),
-                  child: Text(
-                    'bill_addBill'.tr,
-                    style: DsTypography.title.copyWith(
-                      color: theme.text,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                    ),
-                  ),
-                ),
+                // 标题与保存按钮由 BillEditScreen 的 DSLightHeader 提供
                 // 固定高度：BillEditScreen 内部 Expanded 布局需要
                 // 有界高度约束
                 SizedBox(

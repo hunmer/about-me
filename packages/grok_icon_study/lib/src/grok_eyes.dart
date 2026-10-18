@@ -1,6 +1,7 @@
 // Ported from grok-icon-study replica/src/eyes.js — eye morph, wink, blink queue, placement.
 // Source symbols: en / ks / mn / P2.
 import 'dart:math' as math;
+import 'dart:ui' show Offset;
 
 import 'grok_geometry.dart';
 import 'grok_math.dart';
@@ -46,7 +47,7 @@ class EyesInput {
   final double morphT;
   final GrokShapeData shape;
   final GrokFacePort face;
-  final FaceTune? faceTune;
+  final t.FaceTune? faceTune;
   final bool uniformEyes;
   final double eyeScaleProp;
   final double blinkX;

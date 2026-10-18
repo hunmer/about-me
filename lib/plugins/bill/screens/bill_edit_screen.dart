@@ -277,6 +277,30 @@ class _BillEditScreenState extends State<BillEditScreen> {
               ),
       body: Column(
         children: [
+          // sheet 模式无 AppBar，由 DSLightHeader 提供标题与保存动作
+          if (widget.embeddedInSheet)
+            DSThemeBridge(
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return DSLightHeader(
+                    title:
+                        widget.bill == null
+                            ? 'bill_addBill'.tr
+                            : 'bill_editBill'.tr,
+                    showBack: false,
+                    trailing: DSIconButton(
+                      icon: DsIconKind.check,
+                      size: 38,
+                      color: theme.surface,
+                      iconColor: theme.text,
+                      tooltip: 'bill_save'.tr,
+                      onPressed: () => _wrapperState?.submitForm(),
+                    ),
+                  );
+                },
+              ),
+            ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
@@ -324,8 +348,9 @@ class _BillEditScreenState extends State<BillEditScreen> {
             ),
           ),
 
-          // 保存按钮区域
-          _buildSaveButton(backgroundColor, primaryColor),
+          // 保存按钮区域（sheet 模式下保存在 header 右侧图标）
+          if (!widget.embeddedInSheet)
+            _buildSaveButton(backgroundColor, primaryColor),
         ],
       ),
     );
