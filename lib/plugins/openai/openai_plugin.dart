@@ -270,11 +270,8 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       '$storageDir/agents.json',
     );
     if (agentData.isEmpty) {
-      // 文件为空时写入默认智能体：
-      // 开发环境写入全部示例数据；正式环境仅写入内置必备的引导智能体
-      final defaultAgents = kDebugMode
-          ? OpenAISampleData.defaultAgents
-          : OpenAISampleData.builtinAgents;
+      // 文件为空时写入全部默认智能体（开发/正式环境一致）
+      final defaultAgents = OpenAISampleData.defaultAgents;
       final avatarMap = await _copyBundledAgentAvatars(
         defaultAgents.map((agent) => agent['avatarUrl']).whereType<String>(),
       );
@@ -372,8 +369,8 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       final presetData = await AboutmeDataService.instance.readPath(
         'openai/prompt_presets.json',
       );
-      if ((presetData.isEmpty || presetData['presets'] == null) && kDebugMode) {
-        // 如果没有预设数据，使用示例数据中的默认预设（仅开发环境）
+      if (presetData.isEmpty || presetData['presets'] == null) {
+        // 如果没有预设数据，使用示例数据中的默认预设
         final defaultPresets = OpenAISampleData.defaultPresets;
 
         await AboutmeDataService.instance.writePath(

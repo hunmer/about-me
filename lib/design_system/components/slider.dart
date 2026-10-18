@@ -73,16 +73,22 @@ class _DSSliderState extends State<DSSlider> {
           // WiredSlider 无 onChangeEnd 参数：指针抬起/取消即视为结束
           onPointerUp: (_) => _end(),
           onPointerCancel: (_) => _end(),
-          child: WiredSlider(
-            value: value,
-            // 受控协议：返回 true 表示接受变更
-            onChanged: disabled
-                ? null
-                : (v) {
-                    _pendingValue = v;
-                    widget.onChanged?.call(v);
-                    return true;
-                  },
+          child: SizedBox(
+            // WiredSlider 隐藏了 thumb/overlay，内部承担手势的 Material
+            // Slider 高度塌缩到 trackHeight（4px）；高度约束有界时它会
+            // 直接采用约束值，借此把拖拽热区扩到最小交互高度
+            height: 44,
+            child: WiredSlider(
+              value: value,
+              // 受控协议：返回 true 表示接受变更
+              onChanged: disabled
+                  ? null
+                  : (v) {
+                      _pendingValue = v;
+                      widget.onChanged?.call(v);
+                      return true;
+                    },
+            ),
           ),
         ),
       ),

@@ -237,13 +237,14 @@ extension _JellyLive2DBubble on _JellyLive2DState {
       await SmoothBottomSheet.showWithTitle<void>(
         context: context,
         title: '气泡位置',
+        minHeight: MediaQuery.sizeOf(context).height * 0.3,
         child: Builder(builder: (sheetContext) {
           final theme = AppTheme.of(sheetContext);
           return StatefulBuilder(
             builder: (context, setSheetState) => Padding(
               padding: EdgeInsets.fromLTRB(
                 theme.spacing.xl,
-                0,
+                theme.spacing.md,
                 theme.spacing.xl,
                 theme.spacing.md,
               ),
@@ -255,6 +256,7 @@ extension _JellyLive2DBubble on _JellyLive2DState {
                     '水平位置',
                     style: DsTypography.label.copyWith(color: theme.text),
                   ),
+                  SizedBox(height: theme.spacing.sm),
                   DSSlider(
                     value: ((_bubbleOffsetX + 0.45) / 0.9).clamp(0.0, 1.0),
                     onChanged: (value) {
@@ -263,10 +265,12 @@ extension _JellyLive2DBubble on _JellyLive2DState {
                     },
                     onChangeEnd: (_) => _saveBubblePosition(),
                   ),
+                  SizedBox(height: theme.spacing.sm),
                   Text(
                     '垂直位置',
                     style: DsTypography.label.copyWith(color: theme.text),
                   ),
+                  SizedBox(height: theme.spacing.sm),
                   DSSlider(
                     value: ((_bubbleOffsetY + 0.45) / 0.9).clamp(0.0, 1.0),
                     onChanged: (value) {
@@ -275,6 +279,7 @@ extension _JellyLive2DBubble on _JellyLive2DState {
                     },
                     onChangeEnd: (_) => _saveBubblePosition(),
                   ),
+                  SizedBox(height: theme.spacing.md),
                   DSButton(
                     label: '恢复居中',
                     size: DSButtonSize.sm,

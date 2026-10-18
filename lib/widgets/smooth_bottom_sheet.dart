@@ -23,6 +23,7 @@ class SmoothBottomSheet {
   /// [borderRadius] - 圆角半径，默认 20
   /// [showDragHandle] - 是否显示拖拽指示器，默认 true
   /// [enableDrag] - 是否启用拖拽，默认 true
+  /// [minHeight] - 内容最小高度（含拖拽指示器），内容不足时撑开，默认不限制
   static Future<T?> show<T>({
     required BuildContext context,
     required Widget Function(BuildContext) builder,
@@ -32,6 +33,7 @@ class SmoothBottomSheet {
     double borderRadius = 20,
     bool showDragHandle = true,
     bool enableDrag = true,
+    double? minHeight,
   }) {
     return Navigator.of(context).push<T>(
       ModalSheetRoute(
@@ -43,6 +45,7 @@ class SmoothBottomSheet {
             backgroundColor: backgroundColor,
             borderRadius: borderRadius,
             showDragHandle: showDragHandle,
+            minHeight: minHeight,
           ),
         ),
       ),
@@ -69,6 +72,7 @@ class SmoothBottomSheet {
     double borderRadius = 20,
     bool showDragHandle = true,
     bool enableDrag = true,
+    double? minHeight,
   }) {
     return show<T>(
       context: context,
@@ -78,6 +82,7 @@ class SmoothBottomSheet {
       borderRadius: borderRadius,
       showDragHandle: showDragHandle,
       enableDrag: enableDrag,
+      minHeight: minHeight,
       builder: (context) => _SheetWithTitle(
         title: title,
         showCloseButton: showCloseButton,
@@ -123,12 +128,14 @@ class _SheetContent extends StatelessWidget {
   final Color? backgroundColor;
   final double borderRadius;
   final bool showDragHandle;
+  final double? minHeight;
 
   const _SheetContent({
     required this.builder,
     this.backgroundColor,
     required this.borderRadius,
     required this.showDragHandle,
+    this.minHeight,
   });
 
   @override
@@ -148,17 +155,22 @@ class _SheetContent extends StatelessWidget {
             top: Radius.circular(borderRadius),
           ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 拖拽指示器
-            if (showDragHandle) _buildDragHandle(theme),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: minHeight ?? 0,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 拖拽指示器
+              if (showDragHandle) _buildDragHandle(theme),
 
-            // 内容 - 使用 Flexible 包裹以允许动态高度
-            Flexible(
-              child: builder(context),
-            ),
-          ],
+              // 内容 - 使用 Flexible 包裹以允许动态高度
+              Flexible(
+                child: builder(context),
+              ),
+            ],
+          ),
         ),
       ),
     );

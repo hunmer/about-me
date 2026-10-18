@@ -242,7 +242,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
             fitContainer: fitHeight != null,
           );
           // Resize supported native views to the painted size. Scaling a fixed
-          // 360px viewport blurs iOS rendering and can leave platform-view
+          // 360px viewport blurs mobile rendering and can leave platform-view
           // bounds and hit-test coordinates out of sync with the model.
           final viewportLayout = computeJellyLive2DViewportLayout(
             displaySize: displaySize,
@@ -251,7 +251,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
                 !kIsWeb &&
                 (defaultTargetPlatform == TargetPlatform.windows ||
                     defaultTargetPlatform == TargetPlatform.macOS ||
-                    defaultTargetPlatform == TargetPlatform.iOS),
+                    defaultTargetPlatform == TargetPlatform.iOS ||
+                    defaultTargetPlatform == TargetPlatform.android),
           );
           final viewportSize = Size(
             viewportLayout.viewportHeight * _modelViewportAspectRatio,
@@ -305,8 +306,13 @@ class _JellyLive2DState extends State<JellyLive2D> {
                       bottom: modelBottomInset,
                       height: displaySize,
                       child: AnimatedOpacity(
+                        // Android hybrid composition needs a painted view to
+                        // attach its TextureView surface and finish loading.
                         opacity:
-                            _isSwitchingModel ||
+                            !kIsWeb &&
+                                defaultTargetPlatform == TargetPlatform.android
+                            ? 1
+                            : _isSwitchingModel ||
                                 _controller.value.lastError != null
                             ? 0
                             : 1,

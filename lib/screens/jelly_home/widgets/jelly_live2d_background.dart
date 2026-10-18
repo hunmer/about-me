@@ -160,13 +160,14 @@ extension _JellyLive2DBackground on _JellyLive2DState {
     return SmoothBottomSheet.showWithTitle<void>(
       context: context,
       title: '背景设置',
+      minHeight: MediaQuery.sizeOf(context).height * 0.3,
       child: Builder(
         builder: (sheetContext) {
           final theme = AppTheme.of(sheetContext);
           return SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               theme.spacing.xl,
-              0,
+              theme.spacing.md,
               theme.spacing.xl,
               theme.spacing.md,
             ),
@@ -179,6 +180,7 @@ extension _JellyLive2DBackground on _JellyLive2DState {
                     '背景模糊',
                     style: DsTypography.label.copyWith(color: theme.text),
                   ),
+                  SizedBox(height: theme.spacing.sm),
                   DSSlider(
                     value:
                         (_backgroundBlur / _backgroundBlurMax).clamp(0.0, 1.0),
@@ -194,6 +196,7 @@ extension _JellyLive2DBackground on _JellyLive2DState {
                     '背景不透明度',
                     style: DsTypography.label.copyWith(color: theme.text),
                   ),
+                  SizedBox(height: theme.spacing.sm),
                   DSSlider(
                     value: _backgroundOpacity.clamp(0.0, 1.0),
                     onChanged: (ratio) => _previewBackground(
