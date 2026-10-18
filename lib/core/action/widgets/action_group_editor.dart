@@ -3,13 +3,16 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/action/models/action_instance.dart';
 import 'package:aboutme/core/action/models/action_group.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'action_selector_dialog.dart';
 import 'package:get/get.dart';
 
-/// 动作组编辑器
+/// 动作组编辑器（手绘风）
 class ActionGroupEditor extends StatefulWidget {
   final ActionGroup? group;
 
@@ -18,17 +21,26 @@ class ActionGroupEditor extends StatefulWidget {
     this.group,
   });
 
+  /// 统一弹窗入口：走 showDSDialog 获得手绘入场与遮罩
+  static Future<ActionGroup?> show(BuildContext context, {ActionGroup? group}) {
+    return showDSDialog<ActionGroup>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => ActionGroupEditor(group: group),
+    );
+  }
+
   @override
   State<ActionGroupEditor> createState() => _ActionGroupEditorState();
 }
 
 class _ActionGroupEditorState extends State<ActionGroupEditor> {
-  // 表单控制器
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
   // 标题和描述控制器
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+
+  // 优先级输入
+  late final TextEditingController _priorityController;
 
   // 操作符
   GroupOperator _operator = GroupOperator.sequence;
@@ -55,12 +67,14 @@ class _ActionGroupEditorState extends State<ActionGroupEditor> {
       _actions.addAll(group.actions);
       _priority = group.priority;
     }
+    _priorityController = TextEditingController(text: _priority.toString());
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _priorityController.dispose();
     super.dispose();
   }
 
@@ -121,7 +135,8 @@ class _ActionGroupEditorState extends State<ActionGroupEditor> {
   }
 
   Future<void> _onSave() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_titleController.text.trim().isEmpty) {
+      Toast.show('core_pleaseEnterGroupTitle'.tr);
       return;
     }
 
@@ -149,313 +164,320 @@ class _ActionGroupEditorState extends State<ActionGroupEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = AppTheme.of(context);
 
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: 440,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+      ),
+      // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
+      // （showDSDialog 外层已包 WiredDraw，这里消费描画进度做墨线入场）
+      child: DsSketchPanel(
+        theme: theme,
+        radius: theme.radii.xxl,
+        padding: EdgeInsets.all(theme.spacing.lg),
+        progress: WiredDrawTransition.progressOf(context),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // 标题栏
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.folder_shared,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      widget.group != null ? 'core_editActionGroup'.tr : 'core_createActionGroupTitle'.tr,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
+            _buildTitleRow(theme),
 
-            const Divider(),
+            SizedBox(height: theme.spacing.sm),
 
             // 表单内容
             Expanded(
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 基本信息
-                      Text(
-                        'core_basicInfo'.tr,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _titleController,
-                        decoration: InputDecoration(
-                          labelText: 'core_groupTitle'.tr,
-                          hintText: 'core_enterActionGroupTitle'.tr,
-                          border: const OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'core_pleaseEnterGroupTitle'.tr;
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _descriptionController,
-                        decoration: InputDecoration(
-                          labelText: 'core_groupDescription'.tr,
-                          hintText: 'core_enterActionGroupDescription'.tr,
-                          border: const OutlineInputBorder(),
-                        ),
-                        maxLines: 2,
-                      ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 基本信息
+                    _buildSectionTitle(theme, 'core_basicInfo'.tr),
+                    SizedBox(height: theme.spacing.sm),
+                    DSInput(
+                      controller: _titleController,
+                      label: 'core_groupTitle'.tr,
+                      hint: 'core_enterActionGroupTitle'.tr,
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    DSInput(
+                      controller: _descriptionController,
+                      label: 'core_groupDescription'.tr,
+                      hint: 'core_enterActionGroupDescription'.tr,
+                      maxLines: 3,
+                    ),
 
-                      const SizedBox(height: 24),
+                    SizedBox(height: theme.spacing.xl),
 
-                      // 执行配置
-                      Text(
-                        'core_executionConfig'.tr,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                    // 执行配置
+                    _buildSectionTitle(theme, 'core_executionConfig'.tr),
+                    SizedBox(height: theme.spacing.sm),
+                    _buildLabel(theme, 'core_operator'.tr),
+                    const SizedBox(height: 4),
+                    DSSelect<GroupOperator>(
+                      value: _operator,
+                      hint: 'core_selectExecutionMethod'.tr,
+                      items: [
+                        DSSelectItem(
+                          value: GroupOperator.sequence,
+                          label: 'core_sequentialExecution'.tr,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<GroupOperator>(
-                        value: _operator,
-                        decoration: InputDecoration(
-                          labelText: 'core_operator'.tr,
-                          hintText: 'core_selectExecutionMethod'.tr,
-                          border: const OutlineInputBorder(),
+                        DSSelectItem(
+                          value: GroupOperator.parallel,
+                          label: 'core_parallelExecution'.tr,
                         ),
-                        items: [
-                          DropdownMenuItem(
-                            value: GroupOperator.sequence,
-                            child: Text('core_sequentialExecution'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: GroupOperator.parallel,
-                            child: Text('core_parallelExecution'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: GroupOperator.condition,
-                            child: Text('core_conditionalExecution'.tr),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() {
-                              _operator = value;
-                            });
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<GroupExecutionMode>(
-                        value: _executionMode,
-                        decoration: InputDecoration(
-                          labelText: 'core_executionMode'.tr,
-                          hintText: 'core_selectExecutionMode'.tr,
-                          border: const OutlineInputBorder(),
+                        DSSelectItem(
+                          value: GroupOperator.condition,
+                          label: 'core_conditionalExecution'.tr,
                         ),
-                        items: [
-                          DropdownMenuItem(
-                            value: GroupExecutionMode.all,
-                            child: Text('core_executeAllActions'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: GroupExecutionMode.any,
-                            child: Text('core_executeAnyAction'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: GroupExecutionMode.first,
-                            child: Text('core_executeFirstOnly'.tr),
-                          ),
-                          DropdownMenuItem(
-                            value: GroupExecutionMode.last,
-                            child: Text('core_executeLastOnly'.tr),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() {
-                              _executionMode = value;
-                            });
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        initialValue: _priority.toString(),
-                        decoration: InputDecoration(
-                          labelText: 'core_priority'.tr,
-                          hintText: 'core_priorityDescription'.tr,
-                          border: const OutlineInputBorder(),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _operator = value),
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    _buildLabel(theme, 'core_executionMode'.tr),
+                    const SizedBox(height: 4),
+                    DSSelect<GroupExecutionMode>(
+                      value: _executionMode,
+                      hint: 'core_selectExecutionMode'.tr,
+                      items: [
+                        DSSelectItem(
+                          value: GroupExecutionMode.all,
+                          label: 'core_executeAllActions'.tr,
                         ),
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                          setState(() {
-                            _priority = int.tryParse(value) ?? 0;
-                          });
-                        },
-                      ),
+                        DSSelectItem(
+                          value: GroupExecutionMode.any,
+                          label: 'core_executeAnyAction'.tr,
+                        ),
+                        DSSelectItem(
+                          value: GroupExecutionMode.first,
+                          label: 'core_executeFirstOnly'.tr,
+                        ),
+                        DSSelectItem(
+                          value: GroupExecutionMode.last,
+                          label: 'core_executeLastOnly'.tr,
+                        ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _executionMode = value),
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    DSInput(
+                      controller: _priorityController,
+                      label: 'core_priority'.tr,
+                      hint: 'core_priorityDescription'.tr,
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) =>
+                          _priority = int.tryParse(value) ?? 0,
+                    ),
 
-                      const SizedBox(height: 24),
+                    SizedBox(height: theme.spacing.xl),
 
-                      // 动作列表
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
+                    // 动作列表
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: _buildSectionTitle(
+                            theme,
                             'core_actionList'.tr,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
                           ),
-                          ElevatedButton.icon(
-                            onPressed: _onAddAction,
-                            icon: const Icon(Icons.add),
-                            label: Text('core_addAction'.tr),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // 动作列表
-                      _actions.isEmpty
-                          ? Container(
-                              padding: const EdgeInsets.all(16.0),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.grey[300]!,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'core_noActionsAdded'.tr,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ),
-                            )
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _actions.length,
-                              itemBuilder: (context, index) {
-                                final action = _actions[index];
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 8),
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor:
-                                          Colors.grey[300],
-                                      child: Icon(
-                                        action.displayIcon ??
-                                            Icons.code,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    title: Text(action.displayTitle),
-                                    subtitle: Text(
-                                      action.displayDescription ??
-                                          action.actionId,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    trailing: PopupMenuButton<String>(
-                                      onSelected: (value) {
-                                        switch (value) {
-                                          case 'edit':
-                                            _onEditAction(index);
-                                            break;
-                                          case 'moveUp':
-                                            _onMoveUp(index);
-                                            break;
-                                          case 'moveDown':
-                                            _onMoveDown(index);
-                                            break;
-                                          case 'remove':
-                                            _onRemoveAction(index);
-                                            break;
-                                        }
-                                      },
-                                      itemBuilder: (context) => [
-                                        PopupMenuItem(
-                                          value: 'edit',
-                                          child: Text('core_edit'.tr),
-                                        ),
-                                        if (index > 0)
-                                          PopupMenuItem(
-                                            value: 'moveUp',
-                                            child: Text('core_moveUp'.tr),
-                                          ),
-                                        if (index < _actions.length - 1)
-                                          PopupMenuItem(
-                                            value: 'moveDown',
-                                            child: Text('core_moveDown'.tr),
-                                          ),
-                                        PopupMenuItem(
-                                          value: 'remove',
-                                          child: Text('core_delete'.tr),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                    ],
-                  ),
+                        ),
+                        DSButton(
+                          label: 'core_addAction'.tr,
+                          variant: DSButtonVariant.secondary,
+                          size: DSButtonSize.sm,
+                          icon: DsIconKind.plus,
+                          onPressed: _onAddAction,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    _buildActionList(theme),
+                  ],
                 ),
               ),
             ),
 
-            const Divider(),
+            SizedBox(height: theme.spacing.md),
 
             // 底部按钮
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('core_cancel'.tr),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    onPressed: _onSave,
-                    icon: const Icon(Icons.save),
-                    label: Text('core_save'.tr),
-                  ),
-                ],
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                DSButton(
+                  label: 'core_cancel'.tr,
+                  variant: DSButtonVariant.ghost,
+                  onPressed: () => Navigator.pop(context),
+                ),
+                SizedBox(width: theme.spacing.sm),
+                DSButton(
+                  label: 'core_save'.tr,
+                  icon: DsIconKind.check,
+                  onPressed: _onSave,
+                ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTitleRow(AppThemeData theme) {
+    return Row(
+      children: [
+        DsIcon(DsIconKind.folder, color: theme.primary),
+        SizedBox(width: theme.spacing.sm),
+        Expanded(
+          child: Text(
+            widget.group != null
+                ? 'core_editActionGroup'.tr
+                : 'core_createActionGroupTitle'.tr,
+            style: DsTypography.title.copyWith(color: theme.text),
+          ),
+        ),
+        DSIconButton(
+          icon: DsIconKind.close,
+          size: 36,
+          color: theme.surfaceAlt,
+          iconColor: theme.textSub,
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(AppThemeData theme, String text) {
+    return Text(
+      text,
+      style: DsTypography.heading.copyWith(color: theme.text),
+    );
+  }
+
+  Widget _buildLabel(AppThemeData theme, String text) {
+    return Text(
+      text,
+      style: DsTypography.caption.copyWith(color: theme.textSub),
+    );
+  }
+
+  Widget _buildActionList(AppThemeData theme) {
+    if (_actions.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(theme.spacing.lg),
+        decoration: dsSketchDecoration(theme: theme, radius: theme.radii.lg),
+        child: Center(
+          child: Text(
+            'core_noActionsAdded'.tr,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        for (var index = 0; index < _actions.length; index++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _buildActionItem(theme, index),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildActionItem(AppThemeData theme, int index) {
+    final action = _actions[index];
+
+    return DSListItemCard(
+      title: action.displayTitle,
+      subtitle: action.displayDescription ?? action.actionId,
+      leading: Icon(action.displayIcon ?? Icons.code),
+      iconColor: theme.primary,
+      trailing: _buildItemMenu(theme, index),
+      onTap: () => _onEditAction(index),
+    );
+  }
+
+  /// 条目操作菜单（编辑/上移/下移/删除）
+  Widget _buildItemMenu(AppThemeData theme, int index) {
+    return DSPopover(
+      width: 150,
+      contentBuilder: (popoverContext, close) {
+        final popoverTheme = DSThemeBridge.resolve(popoverContext);
+
+        Widget menuRow(String label, DsIconKind icon, VoidCallback onTap,
+            {Color? color}) {
+          return Pressable(
+            onPressed: () {
+              close();
+              onTap();
+            },
+            builder: (context, states) {
+              final pressed = states.contains(WidgetState.pressed);
+              return Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: popoverTheme.spacing.md,
+                  vertical: popoverTheme.spacing.sm,
+                ),
+                color: pressed
+                    ? popoverTheme.surfaceAlt.withValues(alpha: 0.7)
+                    : null,
+                child: Row(
+                  children: [
+                    DsIcon(
+                      icon,
+                      size: 18,
+                      color: color ?? popoverTheme.text,
+                    ),
+                    SizedBox(width: popoverTheme.spacing.sm),
+                    Text(
+                      label,
+                      style: DsTypography.body.copyWith(
+                        color: color ?? popoverTheme.text,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        }
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            menuRow('core_edit'.tr, DsIconKind.edit, () => _onEditAction(index)),
+            if (index > 0)
+              menuRow(
+                'core_moveUp'.tr,
+                DsIconKind.chevronUp,
+                () => _onMoveUp(index),
+              ),
+            if (index < _actions.length - 1)
+              menuRow(
+                'core_moveDown'.tr,
+                DsIconKind.chevronDown,
+                () => _onMoveDown(index),
+              ),
+            menuRow(
+              'core_delete'.tr,
+              DsIconKind.trash,
+              () => _onRemoveAction(index),
+              color: popoverTheme.danger,
+            ),
+          ],
+        );
+      },
+      child: DSIconButton(
+        icon: DsIconKind.more,
+        size: 34,
+        color: theme.surfaceAlt,
+        iconColor: theme.textSub,
       ),
     );
   }

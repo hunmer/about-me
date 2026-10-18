@@ -125,4 +125,11 @@ const Map<String, String> coreTranslationsEn = {
 
   // Empty state placeholders
   'core_noButtons': 'No buttons yet',
+
+  // Action Config Form
+  'core_pluginName': 'Plugin Name',
+  'core_selectPluginToOpen': 'Select the plugin to open',
+  'core_noExtraConfig': 'No extra configuration needed',
+  'core_selectTime': 'Select Time',
+  'core_selectDateTime': 'Select Date & Time',
 };

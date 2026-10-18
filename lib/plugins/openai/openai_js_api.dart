@@ -3,64 +3,6 @@ part of 'openai_plugin.dart';
 // JS API 实现 - 私有方法
 // defineJSAPI() 方法在主插件类中实现
 
-/// 枚举当前 Agent 可见的文件空间（Agent 空间优先，其次频道空间）。
-Future<String> _jsListFiles(Map<String, dynamic> params) async {
-  try {
-    final result = await AgentFileSpaceService.instance.listFiles(
-      agentId: params['agentId'] as String?,
-      conversationId: params['conversationId'] as String?,
-      relativePath: (params['path'] as String?) ?? '',
-      recursive: params['recursive'] == true,
-      space: (params['space'] as String?) ?? 'auto',
-    );
-    return jsonEncode(result);
-  } catch (e) {
-    return jsonEncode({'error': e.toString()});
-  }
-}
-
-/// 读取文件内容，默认按 Agent 空间、频道空间顺序查找。
-Future<String> _jsReadFile(Map<String, dynamic> params) async {
-  final filePath = params['path'] as String?;
-  if (filePath == null || filePath.trim().isEmpty) {
-    return jsonEncode({'error': '缺少必需参数: path'});
-  }
-  try {
-    final content = await AgentFileSpaceService.instance.readFile(
-      relativePath: filePath,
-      agentId: params['agentId'] as String?,
-      conversationId: params['conversationId'] as String?,
-      space: (params['space'] as String?) ?? 'auto',
-    );
-    if (content == null) return jsonEncode({'error': '文件不存在: $filePath'});
-    return jsonEncode({'path': filePath, 'content': content});
-  } catch (e) {
-    return jsonEncode({'error': e.toString()});
-  }
-}
-
-/// 写入文件，默认写入 Agent 独立空间。
-Future<String> _jsWriteFile(Map<String, dynamic> params) async {
-  final filePath = params['path'] as String?;
-  final content = params['content'] as String?;
-  if (filePath == null || filePath.trim().isEmpty) {
-    return jsonEncode({'error': '缺少必需参数: path'});
-  }
-  if (content == null) return jsonEncode({'error': '缺少必需参数: content'});
-  try {
-    final result = await AgentFileSpaceService.instance.writeFile(
-      relativePath: filePath,
-      content: content,
-      agentId: params['agentId'] as String?,
-      conversationId: params['conversationId'] as String?,
-      space: (params['space'] as String?) ?? 'agent',
-    );
-    return jsonEncode(result);
-  } catch (e) {
-    return jsonEncode({'error': e.toString()});
-  }
-}
-
 /// 查询 AI 对用户的长期记忆（活人感记忆工具，供 LLM 按需调用）
 Future<String> _jsSearchMemory(Map<String, dynamic> params) async {
   final memory = MemoryService.instance;

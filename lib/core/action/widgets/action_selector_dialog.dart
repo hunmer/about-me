@@ -4,6 +4,7 @@ library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/action/action_manager.dart';
 import 'package:aboutme/core/action/models/action_definition.dart';
 import 'package:aboutme/core/action/models/action_instance.dart';
@@ -251,10 +252,7 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog> {
   }
 
   Future<void> _onCreateGroup() async {
-    final result = await showDialog<ActionGroup>(
-      context: context,
-      builder: (context) => const ActionGroupEditor(),
-    );
+    final result = await ActionGroupEditor.show(context);
 
     if (result != null) {
       // 保存动作组到 ActionManager
@@ -317,10 +315,12 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog> {
         maxHeight: MediaQuery.sizeOf(context).height * 0.8,
       ),
       // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
+      // （showDSDialog 外层已包 WiredDraw，这里消费描画进度做墨线入场）
       child: DsSketchPanel(
         theme: theme,
         radius: theme.radii.xxl,
         padding: EdgeInsets.all(theme.spacing.lg),
+        progress: WiredDrawTransition.progressOf(context),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

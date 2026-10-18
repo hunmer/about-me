@@ -106,11 +106,6 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       'post_moment': _jsPostMoment,
       'list_agent_assets': _jsListAgentAssets,
 
-      // Agent / 频道独立文件空间
-      'list_files': _jsListFiles,
-      'read_file': _jsReadFile,
-      'write_file': _jsWriteFile,
-
       // 服务商管理
       'getProviders': _jsGetProviders,
       'testProvider': _jsTestProvider,

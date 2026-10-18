@@ -259,6 +259,9 @@ class PluginManager {
     _currentPlugin = plugin;
     _lastOpenedPluginId = plugin.id;
     _pluginAccessTimes[plugin.id] = DateTime.now().millisecondsSinceEpoch;
+    // OpenContainer 等自定义导航的插件页路由名不带 /plugin/ 前缀，
+    // 预登记给下一个入栈路由，供路由栈的插件识别（防重复打开）
+    RouteHistoryManager.markNextRouteAsPlugin(plugin.id);
     _saveConfig();
   }
 

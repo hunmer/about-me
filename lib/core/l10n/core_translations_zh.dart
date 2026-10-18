@@ -125,4 +125,11 @@ const Map<String, String> coreTranslationsZh = {
 
   // 空状态占位
   'core_noButtons': '暂无按钮',
+
+  // Action Config Form
+  'core_pluginName': '插件名称',
+  'core_selectPluginToOpen': '选择要打开的插件',
+  'core_noExtraConfig': '此动作无需额外配置',
+  'core_selectTime': '选择时间',
+  'core_selectDateTime': '选择日期时间',
 };

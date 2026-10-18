@@ -6,12 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/action/models/action_definition.dart';
 import 'package:aboutme/core/action/models/action_form.dart';
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
 
 /// 表单值改变回调
 typedef OnFormChanged = void Function(Map<String, dynamic> values);
 
-/// 动作配置表单
+/// 动作配置表单（手绘风）
 class ActionConfigForm extends StatefulWidget {
   final ActionDefinition actionDefinition;
   final OnFormChanged? onChanged;
@@ -31,14 +32,11 @@ class ActionConfigForm extends StatefulWidget {
 }
 
 class _ActionConfigFormState extends State<ActionConfigForm> {
-  // 表单键
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
   // 表单数据
   final Map<String, dynamic> _formData = {};
 
-  // 错误信息
-  final Map<String, List<String>> _errors = {};
+  // 文本输入控制器（DSInput 无 initialValue，按字段名懒创建）
+  final Map<String, TextEditingController> _controllers = {};
 
   @override
   void initState() {
@@ -62,6 +60,21 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
     });
   }
 
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  TextEditingController _controllerOf(String fieldName, String initial) {
+    return _controllers.putIfAbsent(
+      fieldName,
+      () => TextEditingController(text: initial),
+    );
+  }
+
   void _emitChange() {
     widget.onChanged?.call(Map.from(_formData));
   }
@@ -73,17 +86,7 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
     _emitChange();
   }
 
-  void _setError(String fieldName, List<String> errors) {
-    setState(() {
-      _errors[fieldName] = errors;
-    });
-  }
-
-  void _clearError(String fieldName) {
-    setState(() {
-      _errors.remove(fieldName);
-    });
-  }
+  bool get _fieldReadOnly => widget.readOnly;
 
   List<Widget> _buildFormFields() {
     final widgets = <Widget>[];
@@ -115,8 +118,8 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
       return [
         _buildPluginSelectorField(
           'plugin',
-          '插件名称',
-          '选择要打开的插件',
+          'core_pluginName'.tr,
+          'core_selectPluginToOpen'.tr,
           _formData['plugin'] as String?,
         ),
       ];
@@ -126,21 +129,21 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
     return [
       Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Text(
-          '此动作无需额外配置',
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontStyle: FontStyle.italic,
-          ),
+        child: Builder(
+          builder: (context) {
+            final theme = AppTheme.of(context);
+            return Text(
+              'core_noExtraConfig'.tr,
+              style: DsTypography.caption
+                  .copyWith(color: theme.textSub, fontStyle: FontStyle.italic),
+            );
+          },
         ),
       ),
     ];
   }
 
   Widget _buildFormField(String fieldName, FormFieldConfig config) {
-    final hasError = _errors.containsKey(fieldName);
-    final errorText = hasError ? _errors[fieldName]!.join('\n') : null;
-
     Widget fieldWidget;
 
     switch (config.type) {
@@ -197,125 +200,67 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          fieldWidget,
-          if (errorText != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4.0),
-              child: Text(
-                errorText,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-        ],
-      ),
+      child: fieldWidget,
     );
   }
 
   Widget _buildTextField(String fieldName, FormFieldConfig config) {
     final value = _formData[fieldName] as String? ?? '';
 
-    return TextFormField(
-      initialValue: value,
-      decoration: InputDecoration(
-        labelText: config.label,
-        hintText: config.hint,
-        border: const OutlineInputBorder(),
-        errorMaxLines: 3,
-      ),
-      enabled: !(widget.readOnly || config.readOnly),
+    return DSInput(
+      controller: _controllerOf(fieldName, value),
+      label: config.label,
+      hint: config.hint,
+      enabled: !(_fieldReadOnly || config.readOnly),
       onChanged: (value) => _updateField(fieldName, value),
-      validator: (value) {
-        final errors = config.validate(value);
-        if (errors.isNotEmpty) {
-          _setError(fieldName, errors);
-          return errors.first;
-        }
-        _clearError(fieldName);
-        return null;
-      },
     );
   }
 
   Widget _buildTextArea(String fieldName, FormFieldConfig config) {
     final value = _formData[fieldName] as String? ?? '';
 
-    return TextFormField(
-      initialValue: value,
-      decoration: InputDecoration(
-        labelText: config.label,
-        hintText: config.hint,
-        border: const OutlineInputBorder(),
-        errorMaxLines: 3,
-      ),
+    return DSInput(
+      controller: _controllerOf(fieldName, value),
+      label: config.label,
+      hint: config.hint,
       maxLines: 3,
-      enabled: !(widget.readOnly || config.readOnly),
+      enabled: !(_fieldReadOnly || config.readOnly),
       onChanged: (value) => _updateField(fieldName, value),
-      validator: (value) {
-        final errors = config.validate(value);
-        if (errors.isNotEmpty) {
-          _setError(fieldName, errors);
-          return errors.first;
-        }
-        _clearError(fieldName);
-        return null;
-      },
     );
   }
 
   Widget _buildSelectField(String fieldName, FormFieldConfig config) {
     final value = _formData[fieldName];
 
-    return DropdownButtonFormField<String>(
-      value: value as String?,
-      decoration: InputDecoration(
-        labelText: config.label,
-        hintText: config.hint,
-        border: const OutlineInputBorder(),
-        errorMaxLines: 3,
-      ),
-      items: [
-        if (!config.required)
-          DropdownMenuItem<String>(
-            value: null,
-            child: Text('core_notSelected'.tr),
-          ),
-        ...?config.options?.map(
-          (option) => DropdownMenuItem<String>(
-            value: option.value,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(option.label),
-                if (option.description != null)
-                  Text(
-                    option.description!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel(config.label),
+        const SizedBox(height: 4),
+        DSSelect<String?>(
+          value: value as String?,
+          hint: config.hint ?? 'core_notSelected'.tr,
+          enabled: !(_fieldReadOnly || config.readOnly),
+          items: [
+            if (!config.required)
+              DSSelectItem<String?>(
+                value: null,
+                label: 'core_notSelected'.tr,
+              ),
+            ...?config.options?.map(
+              (option) => DSSelectItem<String?>(
+                value: option.value,
+                label: option.description != null
+                    ? '${option.label} · ${option.description}'
+                    : option.label,
+              ),
             ),
-          ),
+          ],
+          onChanged: _fieldReadOnly || config.readOnly
+              ? (_) {}
+              : (value) => _updateField(fieldName, value),
         ),
       ],
-      onChanged: widget.readOnly || config.readOnly ? null : (value) => _updateField(fieldName, value),
-      validator: (value) {
-        final errors = config.validate(value);
-        if (errors.isNotEmpty) {
-          _setError(fieldName, errors);
-          return errors.first;
-        }
-        _clearError(fieldName);
-        return null;
-      },
     );
   }
 
@@ -325,50 +270,37 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          config.label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-        ),
+        _buildLabel(config.label),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 4,
           children: [
-            ...?config.options?.map(
-              (option) {
-                final isSelected = value.contains(option.value);
-                return FilterChip(
-                  label: Text(option.label),
-                  selected: isSelected,
-                  onSelected: widget.readOnly || config.readOnly
-                      ? null
-                      : (selected) {
-                          setState(() {
-                            if (selected) {
-                              value.add(option.value);
-                            } else {
-                              value.remove(option.value);
-                            }
-                            _updateField(fieldName, value);
-                          });
-                        },
-                );
-              },
-            ),
+            ...?config.options?.map((option) {
+              final isSelected = value.contains(option.value);
+              return DSChip(
+                label: option.label,
+                selected: isSelected,
+                onSelected: _fieldReadOnly || config.readOnly
+                    ? null
+                    : (_) {
+                        setState(() {
+                          if (isSelected) {
+                            value.remove(option.value);
+                          } else {
+                            value.add(option.value);
+                          }
+                          _updateField(fieldName, value);
+                        });
+                      },
+              );
+            }),
           ],
         ),
         if (config.hint != null)
           Padding(
             padding: const EdgeInsets.only(top: 4.0),
-            child: Text(
-              config.hint!,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
+            child: _buildLabel(config.hint!),
           ),
       ],
     );
@@ -376,28 +308,48 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
 
   Widget _buildCheckboxField(String fieldName, FormFieldConfig config) {
     final value = _formData[fieldName] as bool? ?? false;
+    final disabled = _fieldReadOnly || config.readOnly;
 
-    return CheckboxListTile(
-      title: Text(config.label),
-      subtitle: config.hint != null ? Text(config.hint!) : null,
-      value: value,
-      onChanged: widget.readOnly || config.readOnly
-          ? null
-          : (value) => _updateField(fieldName, value),
-      controlAffinity: ListTileControlAffinity.leading,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        DSCheckbox(
+          value: value,
+          onChanged: disabled ? null : (value) => _updateField(fieldName, value),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildLabel(config.label),
+              if (config.hint != null) _buildLabel(config.hint!),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildSwitchField(String fieldName, FormFieldConfig config) {
     final value = _formData[fieldName] as bool? ?? false;
+    final disabled = _fieldReadOnly || config.readOnly;
 
-    return SwitchListTile(
-      title: Text(config.label),
-      subtitle: config.hint != null ? Text(config.hint!) : null,
-      value: value,
-      onChanged: widget.readOnly || config.readOnly
-          ? null
-          : (value) => _updateField(fieldName, value),
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildLabel(config.label),
+              if (config.hint != null) _buildLabel(config.hint!),
+            ],
+          ),
+        ),
+        DSSwitch(
+          value: value,
+          onChanged: disabled ? null : (value) => _updateField(fieldName, value),
+        ),
+      ],
     );
   }
 
@@ -408,24 +360,20 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
 
     final min = (config.extraParams?['min'] as num?)?.toDouble() ?? 0.0;
     final max = (config.extraParams?['max'] as num?)?.toDouble() ?? 100.0;
-    final divisions = config.extraParams?['divisions'] as int?;
+    final disabled = _fieldReadOnly || config.readOnly;
+    // DSSlider 取 0.0~1.0 归一值
+    final normalized = max > min ? ((value - min) / (max - min)).clamp(0.0, 1.0) : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${config.label}: ${value.round()}',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        Slider(
-          value: value,
-          min: min,
-          max: max,
-          divisions: divisions,
-          label: value.round().toString(),
-          onChanged: widget.readOnly || config.readOnly
+        _buildLabel('${config.label}: ${value.round()}'),
+        DSSlider(
+          value: normalized,
+          onChanged: disabled
               ? null
-              : (value) => _updateField(fieldName, value),
+              : (normalized) =>
+                  _updateField(fieldName, min + normalized * (max - min)),
         ),
       ],
     );
@@ -434,28 +382,57 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
   Widget _buildNumberField(String fieldName, FormFieldConfig config) {
     final value = _formData[fieldName] as num?;
 
-    return TextFormField(
-      initialValue: value?.toString(),
-      decoration: InputDecoration(
-        labelText: config.label,
-        hintText: config.hint,
-        border: const OutlineInputBorder(),
-        errorMaxLines: 3,
-      ),
+    return DSInput(
+      controller: _controllerOf(fieldName, value?.toString() ?? ''),
+      label: config.label,
+      hint: config.hint,
       keyboardType: TextInputType.number,
-      readOnly: widget.readOnly || config.readOnly,
+      enabled: !(_fieldReadOnly || config.readOnly),
       onChanged: (value) => _updateField(
         fieldName,
         value.isEmpty ? null : num.tryParse(value),
       ),
-      validator: (value) {
-        final errors = config.validate(value);
-        if (errors.isNotEmpty) {
-          _setError(fieldName, errors);
-          return errors.first;
+    );
+  }
+
+  /// 值展示行（日期/时间/颜色等点选字段的触发行）
+  Widget _buildPickerRow({
+    required String label,
+    required String displayText,
+    required DsIconKind icon,
+    VoidCallback? onTap,
+    Widget? trailing,
+  }) {
+    return Builder(
+      builder: (context) {
+        final theme = AppTheme.of(context);
+        Widget row = Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel(label),
+                  const SizedBox(height: 2),
+                  Text(
+                    displayText,
+                    style: DsTypography.body.copyWith(color: theme.text),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: theme.spacing.sm),
+            if (trailing != null)
+              trailing
+            else
+              DsIcon(icon, size: 22, color: theme.textSub),
+          ],
+        );
+        // 整行作为点击区（onTap 为 null 时不可点）
+        if (onTap != null) {
+          row = Pressable(onPressed: onTap, builder: (_, __) => row);
         }
-        _clearError(fieldName);
-        return null;
+        return row;
       },
     );
   }
@@ -463,22 +440,20 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
   Widget _buildDateField(String fieldName, FormFieldConfig config) {
     final value = _formData[fieldName] as DateTime?;
 
-    return ListTile(
-      title: Text(config.label),
-      subtitle: Text(
-        value != null
-            ? '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}'
-            : config.hint ?? '选择日期',
-      ),
-      trailing: const Icon(Icons.calendar_today),
-      onTap: widget.readOnly || config.readOnly
+    return _buildPickerRow(
+      label: config.label,
+      displayText: value != null
+          ? '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}'
+          : config.hint ?? 'core_selectDate'.tr,
+      icon: DsIconKind.calendar,
+      onTap: _fieldReadOnly || config.readOnly
           ? null
           : () async {
-              final date = await showDatePicker(
+              final date = await showDSDatePickerDialog(
                 context: context,
-                initialDate: value ?? DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
+                initial: value,
+                cancelText: 'app_cancel'.tr,
+                confirmText: 'app_confirm'.tr,
               );
               if (date != null) {
                 _updateField(fieldName, date);
@@ -490,20 +465,19 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
   Widget _buildTimeField(String fieldName, FormFieldConfig config) {
     final value = _formData[fieldName] as TimeOfDay?;
 
-    return ListTile(
-      title: Text(config.label),
-      subtitle: Text(
-        value != null
-            ? value.format(context)
-            : config.hint ?? '选择时间',
-      ),
-      trailing: const Icon(Icons.access_time),
-      onTap: widget.readOnly || config.readOnly
+    return _buildPickerRow(
+      label: config.label,
+      displayText:
+          value != null ? value.format(context) : config.hint ?? 'core_selectTime'.tr,
+      icon: DsIconKind.clock,
+      onTap: _fieldReadOnly || config.readOnly
           ? null
           : () async {
-              final time = await showTimePicker(
+              final time = await showDSTimePickerDialog(
                 context: context,
-                initialTime: value ?? TimeOfDay.now(),
+                initial: value,
+                cancelText: 'app_cancel'.tr,
+                confirmText: 'app_confirm'.tr,
               );
               if (time != null) {
                 _updateField(fieldName, time);
@@ -515,39 +489,41 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
   Widget _buildDateTimeField(String fieldName, FormFieldConfig config) {
     final value = _formData[fieldName] as DateTime?;
 
-    return ListTile(
-      title: Text(config.label),
-      subtitle: Text(
-        value != null
-            ? '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')} ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}'
-            : config.hint ?? '选择日期时间',
-      ),
-      trailing: const Icon(Icons.event),
-      onTap: widget.readOnly || config.readOnly
+    return _buildPickerRow(
+      label: config.label,
+      displayText: value != null
+          ? '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')} ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}'
+          : config.hint ?? 'core_selectDateTime'.tr,
+      icon: DsIconKind.calendarCheck,
+      onTap: _fieldReadOnly || config.readOnly
           ? null
           : () async {
-              final date = await showDatePicker(
+              final date = await showDSDatePickerDialog(
                 context: context,
-                initialDate: value ?? DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
+                initial: value,
+                cancelText: 'app_cancel'.tr,
+                confirmText: 'app_confirm'.tr,
               );
               if (date != null) {
-                final time = await showTimePicker(
+                final time = await showDSTimePickerDialog(
                   context: context,
-                  initialTime: value != null
+                  initial: value != null
                       ? TimeOfDay.fromDateTime(value)
-                      : TimeOfDay.now(),
+                      : null,
+                  cancelText: 'app_cancel'.tr,
+                  confirmText: 'app_confirm'.tr,
                 );
                 if (time != null) {
-                  final dateTime = DateTime(
-                    date.year,
-                    date.month,
-                    date.day,
-                    time.hour,
-                    time.minute,
+                  _updateField(
+                    fieldName,
+                    DateTime(
+                      date.year,
+                      date.month,
+                      date.day,
+                      time.hour,
+                      time.minute,
+                    ),
                   );
-                  _updateField(fieldName, dateTime);
                 }
               }
             },
@@ -563,148 +539,166 @@ class _ActionConfigFormState extends State<ActionConfigForm> {
     // 获取所有真实插件
     final plugins = globalPluginManager.allPlugins;
 
-    return DropdownButtonFormField<String>(
-      value: currentValue,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        border: const OutlineInputBorder(),
-      ),
-      items: [
-        DropdownMenuItem<String>(
-          value: null,
-          child: Text('core_notSelected'.tr),
-        ),
-        ...plugins.map(
-          (plugin) => DropdownMenuItem<String>(
-            value: plugin.id,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  plugin.icon ?? Icons.extension,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    plugin.getPluginName(context) ?? plugin.id,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel(label),
+        const SizedBox(height: 4),
+        DSSelect<String?>(
+          value: currentValue,
+          hint: hint ?? 'core_notSelected'.tr,
+          items: [
+            DSSelectItem<String?>(
+              value: null,
+              label: 'core_notSelected'.tr,
             ),
-          ),
+            ...plugins.map(
+              (plugin) => DSSelectItem<String?>(
+                value: plugin.id,
+                label: plugin.getPluginName(context) ?? plugin.id,
+              ),
+            ),
+          ],
+          onChanged: (value) => _updateField(fieldName, value),
         ),
       ],
-      onChanged: (value) => _updateField(fieldName, value),
     );
   }
 
   Widget _buildColorPickerField(String fieldName, FormFieldConfig config) {
     final value = _formData[fieldName] as Color?;
 
-    return ListTile(
-      title: Text(config.label),
-      subtitle: Text(
-        value != null
-            ? '#${value.value.toRadixString(16).padLeft(8, '0')}'
-            : config.hint ?? '选择颜色',
-      ),
-      trailing: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          color: value ?? Colors.transparent,
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ),
-      onTap: widget.readOnly || config.readOnly
+    return _buildPickerRow(
+      label: config.label,
+      displayText: value != null
+          ? '#${value.value.toRadixString(16).padLeft(8, '0')}'
+          : config.hint ?? 'core_selectColor'.tr,
+      icon: DsIconKind.palette,
+      onTap: _fieldReadOnly || config.readOnly
           ? null
-          : () async {
-              // 预设颜色列表
-              final presetColors = [
-                Colors.red,
-                Colors.pink,
-                Colors.purple,
-                Colors.deepPurple,
-                Colors.indigo,
-                Colors.blue,
-                Colors.lightBlue,
-                Colors.cyan,
-                Colors.teal,
-                Colors.green,
-                Colors.lightGreen,
-                Colors.lime,
-                Colors.yellow,
-                Colors.amber,
-                Colors.orange,
-                Colors.deepOrange,
-                Colors.brown,
-                Colors.grey,
-                Colors.blueGrey,
-                Colors.black,
-              ];
-
-              final color = await showDialog<Color>(
-                context: context,
-                builder: (context) => AlertDialog(
-                        title: Text('app_selectColor'.tr),
-                  content: SizedBox(
-                    width: double.maxFinite,
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: presetColors
-                          .map(
-                            (c) => InkWell(
-                              onTap: () => Navigator.pop(context, c),
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: c,
-                                  border: Border.all(
-                                    color: Colors.grey,
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                            child: Text('app_cancel'.tr),
-                    ),
-                  ],
-                ),
-              );
-              if (color != null) {
-                _updateField(fieldName, color);
-              }
-            },
+          : () => _pickColor(context, fieldName, value),
+      trailing: Builder(
+        builder: (context) {
+          final theme = AppTheme.of(context);
+          return JellyBox(
+            width: 30,
+            height: 30,
+            radius: theme.radii.sm,
+            color: value ?? theme.surfaceAlt,
+          );
+        },
+      ),
     );
   }
 
+  Future<void> _pickColor(
+    BuildContext context,
+    String fieldName,
+    Color? current,
+  ) async {
+    // 预设颜色列表（待选色板数据，非 UI 主题色）
+    final presetColors = [
+      const Color(0xFFF44336),
+      const Color(0xFFE91E63),
+      const Color(0xFF9C27B0),
+      const Color(0xFF673AB7),
+      const Color(0xFF3F51B5),
+      const Color(0xFF2196F3),
+      const Color(0xFF03A9F4),
+      const Color(0xFF00BCD4),
+      const Color(0xFF009688),
+      const Color(0xFF4CAF50),
+      const Color(0xFF8BC34A),
+      const Color(0xFFCDDC39),
+      const Color(0xFFFFEB3B),
+      const Color(0xFFFFC107),
+      const Color(0xFFFF9800),
+      const Color(0xFFFF5722),
+      const Color(0xFF795548),
+      const Color(0xFF9E9E9E),
+      const Color(0xFF607D8B),
+      const Color(0xFF212121),
+    ];
+
+    final theme = AppTheme.of(context);
+    final color = await showDSDialog<Color>(
+      context: context,
+      theme: theme,
+      builder: (context) => ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 320),
+        child: DsSketchPanel(
+          theme: theme,
+          radius: theme.radii.xxl,
+          padding: EdgeInsets.all(theme.spacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'app_selectColor'.tr,
+                textAlign: TextAlign.center,
+                style: DsTypography.title.copyWith(color: theme.text),
+              ),
+              SizedBox(height: theme.spacing.lg),
+              Wrap(
+                spacing: theme.spacing.sm,
+                runSpacing: theme.spacing.sm,
+                children: [
+                  for (final c in presetColors)
+                    Pressable(
+                      onPressed: () => Navigator.of(context).pop(c),
+                      builder: (context, states) {
+                        final pressed =
+                            states.contains(WidgetState.pressed);
+                        return JellyBox(
+                          width: 38,
+                          height: 38,
+                          radius: theme.radii.sm,
+                          color: pressed ? c.mixBlack(0.08) : c,
+                          raised: !pressed,
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (color != null) {
+      _updateField(fieldName, color);
+    }
+  }
+
   Widget _buildIconSelectorField(String fieldName, FormFieldConfig config) {
-    // TODO: 实现图标选择器
-    return Text('图标选择器（暂未实现）');
+    return Builder(
+      builder: (context) {
+        final theme = AppTheme.of(context);
+        return Text(
+          'core_iconSelectorNotImplemented'.tr,
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        );
+      },
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Builder(
+      builder: (context) {
+        final theme = AppTheme.of(context);
+        return Text(
+          text,
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: _buildFormFields(),
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _buildFormFields(),
     );
   }
 }
