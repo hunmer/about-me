@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/services/agent_file_space_service.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/services/clipboard_service.dart';
@@ -104,6 +105,11 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       'generate_image': _jsGenerateImage,
       'post_moment': _jsPostMoment,
       'list_agent_assets': _jsListAgentAssets,
+
+      // Agent / 频道独立文件空间
+      'list_files': _jsListFiles,
+      'read_file': _jsReadFile,
+      'write_file': _jsWriteFile,
 
       // 服务商管理
       'getProviders': _jsGetProviders,
@@ -266,7 +272,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
     await _migrateBundledAgentAvatars();
 
     // 确保 agents.json 文件存在并初始化默认智能体
-    final agentData = await AboutmeDataService.instance.readPath('$storageDir/agents.json');
+    final agentData = await AboutmeDataService.instance.readPath(
+      '$storageDir/agents.json',
+    );
     if (agentData.isEmpty) {
       // 文件为空时写入默认智能体：
       // 开发环境写入全部示例数据；正式环境仅写入内置必备的引导智能体
@@ -274,9 +282,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
           ? OpenAISampleData.defaultAgents
           : OpenAISampleData.builtinAgents;
       final avatarMap = await _copyBundledAgentAvatars(
-        defaultAgents
-            .map((agent) => agent['avatarUrl'])
-            .whereType<String>(),
+        defaultAgents.map((agent) => agent['avatarUrl']).whereType<String>(),
       );
       for (final agent in defaultAgents) {
         final url = agent['avatarUrl'];
@@ -285,7 +291,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
         }
       }
 
-      await AboutmeDataService.instance.writePath('$storageDir/agents.json', {'agents': defaultAgents});
+      await AboutmeDataService.instance.writePath('$storageDir/agents.json', {
+        'agents': defaultAgents,
+      });
       debugPrint('已初始化 ${defaultAgents.length} 个默认智能体');
     }
 
@@ -328,9 +336,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   /// 这里统一迁移为 app_data 下的 './openai/agents/...' 相对路径。
   Future<void> _migrateBundledAgentAvatars() async {
     try {
-      final agentData = await AboutmeDataService.instance.readPath(
-        '$storageDir/agents.json',
-      ) as Map<String, dynamic>?;
+      final agentData =
+          await AboutmeDataService.instance.readPath('$storageDir/agents.json')
+              as Map<String, dynamic>?;
       final agents = agentData?['agents'] as List?;
       if (agents == null || agents.isEmpty) return;
 
@@ -367,14 +375,17 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
   /// 初始化提示词预设数据
   Future<void> _initializePromptPresets() async {
     try {
-      final presetData = await AboutmeDataService.instance.readPath('openai/prompt_presets.json');
+      final presetData = await AboutmeDataService.instance.readPath(
+        'openai/prompt_presets.json',
+      );
       if ((presetData.isEmpty || presetData['presets'] == null) && kDebugMode) {
         // 如果没有预设数据，使用示例数据中的默认预设（仅开发环境）
         final defaultPresets = OpenAISampleData.defaultPresets;
 
-        await AboutmeDataService.instance.writePath('openai/prompt_presets.json', {
-          'presets': defaultPresets.map((p) => p.toJson()).toList(),
-        });
+        await AboutmeDataService.instance.writePath(
+          'openai/prompt_presets.json',
+          {'presets': defaultPresets.map((p) => p.toJson()).toList()},
+        );
         debugPrint('已初始化 ${defaultPresets.length} 个默认提示词预设');
       }
     } catch (e) {
@@ -433,7 +444,8 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       final preset = providers[index];
       final updated = preset.copyWith(
         headers: preset.headers.map(
-          (key, value) => MapEntry(key, value.replaceAll('YOUR_API_KEY', apiKey)),
+          (key, value) =>
+              MapEntry(key, value.replaceAll('YOUR_API_KEY', apiKey)),
         ),
         defaultModel: model.isNotEmpty ? model : preset.defaultModel,
       );
@@ -481,15 +493,17 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
     PluginManager pluginManager,
     ConfigManager configManager,
   ) async {
-    // Register plugin settings
     // 插件已在 initialize() 中完成初始化
     // 这里可以添加额外的应用级注册逻辑
-    await configManager.savePluginConfig(id, {'providers': []});
+    // 注意：不要写 configs/openai/settings.json——那是 loadSettings 的
+    // 持久化文件，覆盖会清空 defaultProviderId / multimodalModelConfig 等设置
   }
 
   Future<Map<String, dynamic>> _getAgentsData() async {
     try {
-      final agentData = await AboutmeDataService.instance.readPath('$storageDir/agents.json');
+      final agentData = await AboutmeDataService.instance.readPath(
+        '$storageDir/agents.json',
+      );
       if (agentData.isNotEmpty) {
         return Map<String, dynamic>.from(agentData);
       }

@@ -1,0 +1,18 @@
+name: grok_icon_study
+description: >-
+  Grok 登录页角色动效（弹簧驱动角色引擎）的 Flutter 移植，来自
+  blessonism/grok-icon-study 学习性复刻。素材版权归 xAI，仅供学习。
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  vector_math: ^2.1.4
+
+flutter:
+  uses-material-design: true

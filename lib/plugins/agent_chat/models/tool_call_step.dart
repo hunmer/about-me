@@ -17,6 +17,11 @@ class ToolCallStep {
     /// - 当 method='run_js' 时，为 JavaScript 代码字符串
     final String data;
 
+    /// 执行结果格式（决定 UI 如何渲染 result）
+    /// - 'json': 标准 JSON，用 JSON 视图渲染（默认，工具无需声明）
+    /// - 'markdown': 纯文本/Markdown，如 read_image 的图片描述
+    final String resultFormat;
+
     /// 执行状态
     ToolCallStatus status;
 
@@ -31,6 +36,7 @@ class ToolCallStep {
         required this.title,
         required this.desc,
         required this.data,
+        this.resultFormat = 'json',
         this.status = ToolCallStatus.pending,
         this.result,
         this.error,
@@ -55,6 +61,7 @@ class ToolCallStep {
             title: json['title'] as String? ?? '执行步骤',
             desc: json['desc'] as String? ?? '',
             data: json['data'] as String? ?? '',
+            resultFormat: json['resultFormat'] as String? ?? 'json',
             status: parsedStatus,
             result: json['result'] as String?,
             error: json['error'] as String?,
@@ -68,6 +75,7 @@ class ToolCallStep {
             'title': title,
             'desc': desc,
             'data': data,
+            'resultFormat': resultFormat,
             'status': status.name,
             'result': result,
             'error': error,
@@ -80,6 +88,7 @@ class ToolCallStep {
         String? title,
         String? desc,
         String? data,
+        String? resultFormat,
         ToolCallStatus? status,
         String? result,
         String? error,
@@ -89,6 +98,7 @@ class ToolCallStep {
             title: title ?? this.title,
             desc: desc ?? this.desc,
             data: data ?? this.data,
+            resultFormat: resultFormat ?? this.resultFormat,
             status: status ?? this.status,
             result: result ?? this.result,
             error: error ?? this.error,
@@ -104,6 +114,7 @@ class ToolCallStep {
             title: title,
             desc: desc,
             data: data,
+            resultFormat: resultFormat,
             status: state,
         );
     }

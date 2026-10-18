@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_json_view/flutter_json_view.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -226,10 +230,7 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
                           color: theme.success.withValues(alpha: 0.5),
                         ),
                       ),
-                      child: SelectableText(
-                        step.result!,
-                        style: DsTypography.caption.copyWith(color: theme.text),
-                      ),
+                      child: _buildResultContent(step, theme),
                     ),
                   ],
 
@@ -286,6 +287,60 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
         ],
       ),
     );
+  }
+
+  /// 按步骤声明的返回格式渲染结果
+  ///
+  /// - [ToolCallStep.resultFormat] 'markdown'：纯文本/Markdown（如 read_image 描述）
+  /// - 默认 'json'：标准 JSON 用可折叠 JSON 视图；解析失败回退纯文本
+  Widget _buildResultContent(ToolCallStep step, dynamic theme) {
+    final result = step.result ?? '';
+
+    if (step.resultFormat == 'markdown') {
+      return MarkdownBody(
+        data: result,
+        styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+          p: DsTypography.caption.copyWith(color: theme.text, height: 1.5),
+          listBullet: DsTypography.caption.copyWith(color: theme.text),
+          blockquote: TextStyle(color: theme.textSub),
+          code: DsTypography.caption.copyWith(
+            fontFamily: 'monospace',
+            color: theme.text,
+          ),
+        ),
+      );
+    }
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(result);
+    } catch (_) {
+      decoded = null;
+    }
+    if (decoded == null) {
+      return SelectableText(
+        result,
+        style: DsTypography.caption.copyWith(color: theme.text),
+      );
+    }
+
+    final jsonTheme = JsonViewTheme(
+      backgroundColor: Colors.transparent,
+      defaultTextStyle: DsTypography.caption.copyWith(
+        color: theme.text,
+        fontSize: 13,
+      ),
+      keyStyle: TextStyle(color: Colors.deepPurple.shade700),
+      stringStyle: TextStyle(color: Colors.amber.shade900),
+      intStyle: TextStyle(color: Colors.blue.shade700),
+      doubleStyle: TextStyle(color: Colors.blue.shade700),
+      boolStyle: TextStyle(color: Colors.green.shade700),
+      openIcon: Icon(Icons.arrow_drop_down, size: 18, color: theme.textSub),
+      closeIcon: Icon(Icons.arrow_drop_up, size: 18, color: theme.textSub),
+    );
+    return decoded is Map<String, dynamic>
+        ? JsonView.map(decoded, theme: jsonTheme)
+        : JsonView.string(result, theme: jsonTheme);
   }
 
   /// 构建状态图标

@@ -17,13 +17,8 @@ class ToolConfigManager {
   static final ToolConfigManager instance = ToolConfigManager._();
   ToolConfigManager._();
 
-  // 存储管理器（跨平台: 本地文件/HTTP 远端/Web IndexedDB）
-  StorageManager? _storage;
-
   // 工具配置在存储中的路径前缀
   static const String _toolsPrefix = 'agent_chat/tools';
-
-  StorageManager get _manager => _storage ??= StorageManager();
 
   // 内存缓存
   List<List<String>> _toolIndex = [];
@@ -101,8 +96,6 @@ class ToolConfigManager {
   /// 首次启动时会从 assets 复制配置到存储
   Future<void> initialize({StorageManager? storage}) async {
     if (_initialized) return;
-    if (storage != null) _storage = storage;
-
     try {
       // 以索引文件是否存在判断是否已初始化过（与旧版本地文件位置兼容）
       if (!await AboutmeDataService.instance.existsPath(
@@ -118,6 +111,8 @@ class ToolConfigManager {
       // 老安装可能已经有 moments.json，但内容来自尚未包含生图工具的旧版本。
       // 只补缺失方法并重建索引，保留用户自定义的描述和启用状态。
       await _syncMissingMomentTools();
+      // 增量同步文件空间工具，保留用户对已有工具的启用状态和描述修改。
+      await _syncMissingPluginTools('openai');
 
       // 加载工具索引和配置
       await _loadAllConfigs();
@@ -181,6 +176,38 @@ class ToolConfigManager {
       print('✅ 增量补拷 moments 缺失工具');
     } catch (e) {
       print('⚠️ moments 工具增量同步失败: $e');
+    }
+  }
+
+  Future<void> _syncMissingPluginTools(String pluginId) async {
+    final path = '$_toolsPrefix/$pluginId.json';
+    try {
+      final bundledJson = await rootBundle.loadString(
+        'lib/plugins/agent_chat/tools/$pluginId.json',
+      );
+      final bundled = jsonDecode(bundledJson);
+      if (bundled is! Map<String, dynamic>) return;
+
+      final storedData = await AboutmeDataService.instance.readPath(path, null);
+      final stored = storedData is Map<String, dynamic>
+          ? Map<String, dynamic>.from(storedData)
+          : <String, dynamic>{};
+      var changed = false;
+      for (final entry in bundled.entries) {
+        if (stored.containsKey(entry.key)) continue;
+        stored[entry.key] = entry.value;
+        changed = true;
+      }
+      if (!changed) return;
+
+      await AboutmeDataService.instance.writePath(
+        path,
+        const JsonEncoder.withIndent('  ').convert(stored),
+      );
+      await _regenerateToolIndex();
+      print('✅ 增量同步 $pluginId 缺失工具');
+    } catch (e) {
+      print('⚠️ $pluginId 工具增量同步失败: $e');
     }
   }
 
@@ -292,13 +319,12 @@ class ToolConfigManager {
       );
 
       if (jsonData is List && jsonData.isNotEmpty) {
-        _toolIndex =
-            jsonData
-                .map(
-                  (item) =>
-                      (item as List<dynamic>).map((e) => e.toString()).toList(),
-                )
-                .toList();
+        _toolIndex = jsonData
+            .map(
+              (item) =>
+                  (item as List<dynamic>).map((e) => e.toString()).toList(),
+            )
+            .toList();
       } else {
         print('⚠️ index.json 不存在');
         _toolIndex = [];
@@ -601,13 +627,11 @@ class ToolConfigManager {
 
       // 导入索引
       final List<dynamic> indexData = importData['index'];
-      _toolIndex =
-          indexData
-              .map(
-                (item) =>
-                    (item as List<dynamic>).map((e) => e.toString()).toList(),
-              )
-              .toList();
+      _toolIndex = indexData
+          .map(
+            (item) => (item as List<dynamic>).map((e) => e.toString()).toList(),
+          )
+          .toList();
 
       // 导入插件配置
       _pluginTools.clear();

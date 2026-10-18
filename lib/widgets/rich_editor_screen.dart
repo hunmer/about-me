@@ -336,17 +336,21 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
                 // 顶部导航行：圆形返回按钮（左）+ 样式设置按钮（右）
                 Row(
                   children: [
-                    _CircleIconButton(
-                      theme: theme,
-                      icon: Icons.chevron_left,
-                      onTap: () => Navigator.of(context).pop(),
+                    DSIconButton(
+                      icon: DsIconKind.chevronLeft,
+                      size: 40,
+                      color: theme.surface,
+                      iconColor: theme.text,
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                     const Spacer(),
                     if (widget.onOpenStyleSettings != null)
-                      _CircleIconButton(
-                        theme: theme,
-                        icon: Icons.tune,
-                        onTap: () => widget.onOpenStyleSettings!(),
+                      DSIconButton(
+                        icon: DsIconKind.tune,
+                        size: 40,
+                        color: theme.surface,
+                        iconColor: theme.text,
+                        onPressed: () => widget.onOpenStyleSettings!(),
                       ),
                   ],
                 ),
@@ -429,7 +433,7 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
     final actions = <Widget>[
       EditorDockButton(
         theme: theme,
-        icon: Icons.edit_outlined,
+        icon: DsIconKind.edit,
         tooltip: _text(widget.texts?.editTooltip, 'diary_edit'),
         onTap: _startEditing,
       ),
@@ -437,29 +441,17 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
       if (widget.onDelete != null)
         EditorDockButton(
           theme: theme,
-          icon: Icons.delete_outline,
+          icon: DsIconKind.trash,
           tooltip: _text(widget.texts?.deleteTooltip, 'diary_deleteDiary'),
           danger: true,
           onTap: _showDeleteConfirmation,
         ),
     ];
-    return Container(
+    // 手绘墨盒 dock：实底 + 墨线描边胶囊（手绘风无柔影）
+    return JellyBox(
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: theme.surface.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: theme.stroke),
-        boxShadow: [
-          BoxShadow(
-            color: theme.isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : const Color(0x14221918),
-            blurRadius: 36,
-            offset: const Offset(0, 12),
-            spreadRadius: -4,
-          ),
-        ],
-      ),
+      radius: BorderRadius.circular(999),
+      color: theme.surface,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -483,53 +475,30 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              _CircleIconButton(
-                theme: theme,
-                icon: Icons.close,
-                onTap: _cancelEditing,
+              DSIconButton(
+                icon: DsIconKind.close,
+                size: 40,
+                color: theme.surface,
+                iconColor: theme.text,
+                onPressed: _cancelEditing,
               ),
               const Spacer(),
               if (widget.onOpenStyleSettings != null) ...[
-                _CircleIconButton(
-                  theme: theme,
-                  icon: Icons.tune,
-                  onTap: () => widget.onOpenStyleSettings!(),
+                DSIconButton(
+                  icon: DsIconKind.tune,
+                  size: 40,
+                  color: theme.surface,
+                  iconColor: theme.text,
+                  onPressed: () => widget.onOpenStyleSettings!(),
                 ),
                 const SizedBox(width: 10),
               ],
-              // 保存按钮（主色胶囊）
-              Material(
-                color: theme.primary,
-                borderRadius: BorderRadius.circular(999),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(999),
-                  onTap: _save,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.check_rounded,
-                          size: 18,
-                          color: theme.onPrimary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _text(widget.texts?.save, 'diary_save'),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: theme.onPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              // 保存按钮（手绘主色胶囊）
+              DSButton(
+                label: _text(widget.texts?.save, 'diary_save'),
+                icon: DsIconKind.check,
+                size: DSButtonSize.sm,
+                onPressed: _save,
               ),
             ],
           ),
@@ -590,14 +559,14 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
           ),
         ),
 
-        // 富文本工具栏（固定在底部，键盘上方）
+        // 富文本工具栏（固定在底部，键盘上方）；容器走手绘墨线
         Container(
           margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: theme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.stroke),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: theme.surface,
+            radius: BorderRadius.circular(16),
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -648,44 +617,19 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
     );
   }
 
-  /// 标签编辑行：已有标签 chips（点击删除）+ 输入框（回车添加）
+  /// 标签编辑行：已有标签手绘 chips（点 × 删除）+ 输入框（回车添加）
   Widget _buildTagEditor(AppThemeData theme) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
         for (final tag in _tags)
-          InputChip(
-            label: Text(tag, style: TextStyle(color: theme.text, fontSize: 12)),
-            backgroundColor: theme.surfaceAlt,
-            side: BorderSide(color: theme.stroke),
-            deleteIcon: Icon(Icons.close, size: 14, color: theme.textSub),
-            onDeleted: () => _removeTag(tag),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
+          DSChip(label: tag, onDeleted: () => _removeTag(tag)),
         SizedBox(
-          width: 120,
-          child: TextField(
+          width: 160,
+          child: DSInput(
             controller: _tagInputController,
-            style: TextStyle(fontSize: 12, color: theme.text),
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: _text(widget.texts?.addTag, 'diary_addTag'),
-              hintStyle: TextStyle(fontSize: 12, color: theme.textSub),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(999),
-                borderSide: BorderSide(color: theme.stroke),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(999),
-                borderSide: BorderSide(color: theme.primary),
-              ),
-            ),
+            hint: _text(widget.texts?.addTag, 'diary_addTag'),
             onSubmitted: _addTag,
           ),
         ),
@@ -748,37 +692,9 @@ void _tryConvertCheckboxMarkdown(
   }
 }
 
-/// 圆形图标按钮（主题表面色 + 描边）
-class _CircleIconButton extends StatelessWidget {
-  final AppThemeData theme;
-  final IconData icon;
-  final VoidCallback onTap;
+/// 圆形图标按钮已由 DSIconButton 取代（手绘实底圆 + 墨线描边）
 
-  const _CircleIconButton({
-    required this.theme,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: theme.surface,
-      shape: CircleBorder(side: BorderSide(color: theme.stroke)),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(icon, size: 20, color: theme.text),
-        ),
-      ),
-    );
-  }
-}
-
-/// 标签胶囊（表面色小圆角药丸，highlight 为主色描边）
+/// 标签胶囊（手绘墨线药丸，highlight 为主色描边）
 class EditorTagPill extends StatelessWidget {
   final AppThemeData theme;
   final String label;
@@ -795,15 +711,17 @@ class EditorTagPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.surface.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: highlight ? theme.primary : theme.stroke),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        stroke: highlight ? theme.primary : null,
+        strokeWidth: highlight ? 2.2 : 1.5,
+        radius: BorderRadius.circular(999),
+        seed: label.hashCode & 0xffff,
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 12,
+        style: DsTypography.caption.copyWith(
           fontWeight: FontWeight.w500,
           color: highlight ? theme.primary : theme.textSub,
         ),
@@ -815,7 +733,7 @@ class EditorTagPill extends StatelessWidget {
 /// 底部 dock 圆形操作按钮（child 优先于 icon 显示）
 class EditorDockButton extends StatelessWidget {
   final AppThemeData theme;
-  final IconData? icon;
+  final DsIconKind? icon;
   final Widget? child;
   final String tooltip;
   final VoidCallback onTap;
@@ -839,20 +757,20 @@ class EditorDockButton extends StatelessWidget {
     final fg = danger ? theme.danger : theme.textSub;
     return Tooltip(
       message: tooltip,
-      child: Material(
-        color: bg,
-        shape: CircleBorder(
-          side: BorderSide(color: theme.stroke.withValues(alpha: 0.6)),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-            width: 42,
-            height: 42,
-            child: Center(
-              child: child ?? Icon(icon, size: 18, color: fg),
-            ),
+      child: Pressable(
+        onPressed: onTap,
+        builder: (context, states) => Container(
+          width: 42,
+          height: 42,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: bg,
+            circle: true,
+            strokeWidth: 1.6,
+            seed: 420,
+          ),
+          child: Center(
+            child: child ?? DsIcon(icon!, size: 18, color: fg),
           ),
         ),
       ),

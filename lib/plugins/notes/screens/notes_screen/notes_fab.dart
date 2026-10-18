@@ -5,10 +5,10 @@ import 'package:aboutme/plugins/notes/models/note.dart';
 import 'package:aboutme/plugins/notes/models/todo_item.dart';
 import 'package:aboutme/plugins/notes/screens/todo_edit_screen.dart';
 import 'folder_operations.dart';
-import 'note_quick_create_sheet.dart';
+import 'note_operations.dart';
 import 'notes_screen_state.dart';
 
-mixin NotesFab on NotesMainViewState, FolderOperations {
+mixin NotesFab on NotesMainViewState, NoteOperations, FolderOperations {
   bool _fabExpanded = false;
 
   Widget buildExpandableFab() {
@@ -44,21 +44,8 @@ mixin NotesFab on NotesMainViewState, FolderOperations {
                     setState(() {
                       _fabExpanded = false;
                     });
-                    NoteQuickCreateSheet.show(
-                      context: context,
-                      onSave: (title, content, tags, style) async {
-                        await plugin.controller.createNote(
-                          title,
-                          content,
-                          currentFolderId,
-                          tags: tags,
-                          color: style.color,
-                          bgStyle: style.bgStyle,
-                          icon: style.icon,
-                        );
-                        loadCurrentFolder();
-                      },
-                    );
+                    // 新建笔记直接进入全屏富文本编辑器
+                    createNewNote();
                   },
                 ),
                 const SizedBox(height: 16),

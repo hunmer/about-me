@@ -25,6 +25,8 @@ import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/aliveness/widgets/aliveness_settings_section.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/services/agent_file_space_service.dart';
+import 'package:aboutme/widgets/file_management_screen.dart';
 import 'model_search_screen.dart';
 
 // ServiceProvider 模型已包含 apiFormat 字段
@@ -303,10 +305,9 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
   }
 
   Future<void> _selectResources({required bool skills}) async {
-    final global =
-        skills
-            ? AgentLibResourceService.globalSlots.skills
-            : AgentLibResourceService.globalSlots.mcpServers;
+    final global = skills
+        ? AgentLibResourceService.globalSlots.skills
+        : AgentLibResourceService.globalSlots.mcpServers;
     final existing = skills ? _selectedSkills : _selectedMcpServers;
     final resources = [
       ...global,
@@ -333,10 +334,9 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     return DSListItem(
       leading: DsIcon(skills ? DsIconKind.layers : DsIconKind.block, size: 22),
       title: skills ? 'AgentLib Skills' : 'AgentLib MCP Servers',
-      subtitle:
-          selected.isEmpty
-              ? '未选择'
-              : selected.map((item) => item.displayName).join('、'),
+      subtitle: selected.isEmpty
+          ? '未选择'
+          : selected.map((item) => item.displayName).join('、'),
       showChevron: true,
       onTap: () => _selectResources(skills: skills),
     );
@@ -347,21 +347,19 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     final confirmed = await showDSDialog<bool>(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (dialogContext) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (dialogContext) => DSDialog(
-                    title: 'openai_deleteAgentConfirm'.tr,
-                    message: 'openai_deleteAgentMessage'.tr,
-                    confirmText: 'openai_delete'.tr,
-                    cancelText: 'openai_cancel'.tr,
-                    confirmVariant: DSButtonVariant.destructive,
-                    onConfirm: () => Navigator.of(dialogContext).pop(true),
-                    onCancel: () => Navigator.of(dialogContext).pop(false),
-                  ),
-            ),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (dialogContext) => DSDialog(
+            title: 'openai_deleteAgentConfirm'.tr,
+            message: 'openai_deleteAgentMessage'.tr,
+            confirmText: 'openai_delete'.tr,
+            cancelText: 'openai_cancel'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () => Navigator.of(dialogContext).pop(true),
+            onCancel: () => Navigator.of(dialogContext).pop(false),
           ),
+        ),
+      ),
     );
 
     if (confirmed != true || _editingAgent == null) return;
@@ -395,57 +393,55 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       final choice = await showDSDialog<String>(
         context: context,
         theme: DSThemeBridge.resolve(context),
-        builder:
-            (dialogContext) => DSThemeBridge(
-              child: Builder(
-                builder: (context) {
-                  final theme = DSThemeBridge.resolve(context);
-                  return JellyBox(
-                    radius: theme.radii.xxl,
-                    padding: EdgeInsets.all(theme.spacing.xl),
-                    constraints: const BoxConstraints(maxWidth: 360),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'openai_shareAgent'.tr,
-                          textAlign: TextAlign.center,
-                          style: DsTypography.title.copyWith(color: theme.text),
-                        ),
-                        SizedBox(height: theme.spacing.sm),
-                        Text(
-                          'openai_shareHeadersWarning'.tr,
-                          textAlign: TextAlign.center,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
-                          ),
-                        ),
-                        SizedBox(height: theme.spacing.lg),
-                        DSButton(
-                          label: 'openai_cancel'.tr,
-                          variant: DSButtonVariant.outline,
-                          onPressed:
-                              () => Navigator.of(dialogContext).pop('cancel'),
-                        ),
-                        SizedBox(height: theme.spacing.sm),
-                        DSButton(
-                          label: 'openai_removeHeaders'.tr,
-                          onPressed:
-                              () => Navigator.of(dialogContext).pop('remove'),
-                        ),
-                        SizedBox(height: theme.spacing.sm),
-                        DSButton(
-                          label: 'openai_keepHeaders'.tr,
-                          onPressed:
-                              () => Navigator.of(dialogContext).pop('keep'),
-                        ),
-                      ],
+        builder: (dialogContext) => DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return JellyBox(
+                radius: theme.radii.xxl,
+                padding: EdgeInsets.all(theme.spacing.xl),
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'openai_shareAgent'.tr,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.title.copyWith(color: theme.text),
                     ),
-                  );
-                },
-              ),
-            ),
+                    SizedBox(height: theme.spacing.sm),
+                    Text(
+                      'openai_shareHeadersWarning'.tr,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    DSButton(
+                      label: 'openai_cancel'.tr,
+                      variant: DSButtonVariant.outline,
+                      onPressed: () =>
+                          Navigator.of(dialogContext).pop('cancel'),
+                    ),
+                    SizedBox(height: theme.spacing.sm),
+                    DSButton(
+                      label: 'openai_removeHeaders'.tr,
+                      onPressed: () =>
+                          Navigator.of(dialogContext).pop('remove'),
+                    ),
+                    SizedBox(height: theme.spacing.sm),
+                    DSButton(
+                      label: 'openai_keepHeaders'.tr,
+                      onPressed: () => Navigator.of(dialogContext).pop('keep'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
       );
 
       if (choice == 'cancel' || choice == null) return;
@@ -615,16 +611,16 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                     ],
                     DSThemeBridge(
                       child: DSIconButton(
-                        icon:
-                            widget.isFromMarketplace
-                                ? DsIconKind.download
-                                : DsIconKind.check,
+                        icon: widget.isFromMarketplace
+                            ? DsIconKind.download
+                            : DsIconKind.check,
                         size: 40,
                         color: theme.surfaceAlt,
                         iconColor: theme.textSub,
                         onPressed: _saveAgent,
-                        tooltip:
-                            widget.isFromMarketplace ? '安装' : 'openai_save'.tr,
+                        tooltip: widget.isFromMarketplace
+                            ? '安装'
+                            : 'openai_save'.tr,
                       ),
                     ),
                   ],
@@ -685,20 +681,19 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           labelText: 'openai_serviceProvider'.tr,
                           initialValue:
                               _providers.any((p) => p.id == _selectedProviderId)
-                                  ? _selectedProviderId
-                                  : (_providers.isNotEmpty
-                                      ? _providers.first.id
-                                      : null),
+                              ? _selectedProviderId
+                              : (_providers.isNotEmpty
+                                    ? _providers.first.id
+                                    : null),
                           required: true,
-                          items:
-                              _providers
-                                  .map(
-                                    (p) => DropdownMenuItem(
-                                      value: p.id,
-                                      child: Text(p.label),
-                                    ),
-                                  )
-                                  .toList(),
+                          items: _providers
+                              .map(
+                                (p) => DropdownMenuItem(
+                                  value: p.id,
+                                  child: Text(p.label),
+                                ),
+                              )
+                              .toList(),
                           onChanged: (value) {
                             if (value != null) {
                               final provider = _providers.firstWhere(
@@ -718,15 +713,14 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           hintText: '选择 API 格式',
                           initialValue: _editingAgent?.apiFormat ?? 'openai',
                           required: true,
-                          items:
-                              ApiFormat.values
-                                  .map(
-                                    (format) => DropdownMenuItem(
-                                      value: format.value,
-                                      child: Text(format.label),
-                                    ),
-                                  )
-                                  .toList(),
+                          items: ApiFormat.values
+                              .map(
+                                (format) => DropdownMenuItem(
+                                  value: format.value,
+                                  child: Text(format.label),
+                                ),
+                              )
+                              .toList(),
                         ),
                         // 描述
                         FormFieldConfig(
@@ -841,15 +835,13 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                         FormFieldConfig(
                           name: 'openingQuestions',
                           type: FormFieldType.listAdd,
-                          initialValue:
-                              _editingAgent?.openingQuestions ?? [],
+                          initialValue: _editingAgent?.openingQuestions ?? [],
                           extra: {
                             'initialItems':
                                 _editingAgent?.openingQuestions ?? [],
                           },
-                          visible:
-                              (values) =>
-                                  values['enableOpeningQuestions'] == true,
+                          visible: (values) =>
+                              values['enableOpeningQuestions'] == true,
                         ),
                       ],
                       onSubmit: (values) {
@@ -877,16 +869,39 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                         title: Text('openai_assetGallery'.tr),
                         subtitle: Text('openai_assetGalleryDesc'.tr),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap:
-                            _editingAgent == null
-                                ? null
-                                : () => NavigationHelper.push(
-                                  context,
-                                  AgentAssetsScreen(
-                                    agentId: _editingAgent!.id,
-                                    agentName: _editingAgent!.name,
-                                  ),
+                        onTap: _editingAgent == null
+                            ? null
+                            : () => NavigationHelper.push(
+                                context,
+                                AgentAssetsScreen(
+                                  agentId: _editingAgent!.id,
+                                  agentName: _editingAgent!.name,
                                 ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: ListTile(
+                        leading: const Icon(Icons.folder_outlined),
+                        title: const Text('文件管理'),
+                        subtitle: const Text('管理此 Agent 的独立文件空间'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () async {
+                          final agent = _editingAgent;
+                          if (agent == null) return;
+                          final directory = await AgentFileSpaceService.instance
+                              .directoryForAgent(agent.id);
+                          if (!mounted) return;
+                          NavigationHelper.push(
+                            context,
+                            FileManagementScreen(
+                              rootDirectory: directory,
+                              title: '${agent.name} 文件',
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -920,27 +935,25 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       showDSDialog(
         context: context,
         theme: DSThemeBridge.resolve(context),
-        builder:
-            (dialogContext) => DSThemeBridge(
-              child: Builder(
-                builder:
-                    (dialogContext) => DSDialog(
-                      title: 'openai_updateConfig'.tr,
-                      message: 'openai_updateConfigConfirm'.tr,
-                      confirmText: 'openai_useDefaultConfig'.tr,
-                      cancelText: 'openai_keepCurrentConfig'.tr,
-                      onCancel: () {
-                        Navigator.of(dialogContext).pop();
-                        // 保留当前配置，不更新
-                      },
-                      onConfirm: () {
-                        Navigator.of(dialogContext).pop();
-                        // 更新为服务商默认配置
-                        _updateFormWithProvider(provider);
-                      },
-                    ),
-              ),
+        builder: (dialogContext) => DSThemeBridge(
+          child: Builder(
+            builder: (dialogContext) => DSDialog(
+              title: 'openai_updateConfig'.tr,
+              message: 'openai_updateConfigConfirm'.tr,
+              confirmText: 'openai_useDefaultConfig'.tr,
+              cancelText: 'openai_keepCurrentConfig'.tr,
+              onCancel: () {
+                Navigator.of(dialogContext).pop();
+                // 保留当前配置，不更新
+              },
+              onConfirm: () {
+                Navigator.of(dialogContext).pop();
+                // 更新为服务商默认配置
+                _updateFormWithProvider(provider);
+              },
             ),
+          ),
+        ),
       );
     } else {
       // 新建智能体，直接使用服务商默认配置
@@ -949,7 +962,10 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
   }
 
   // 使用服务商配置更新表单
-  void _updateFormWithProvider(ServiceProvider provider, {bool silent = false}) {
+  void _updateFormWithProvider(
+    ServiceProvider provider, {
+    bool silent = false,
+  }) {
     if (_formKey.currentState != null) {
       final currentValues = Map<String, dynamic>.from(
         _formKey.currentState!.value,
@@ -975,8 +991,9 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       context,
       ModelSearchScreen(
         initialModelId: currentModel,
-        initialProvider:
-            _selectedProviderId.isEmpty ? null : _selectedProviderId,
+        initialProvider: _selectedProviderId.isEmpty
+            ? null
+            : _selectedProviderId,
       ),
     );
     if (selectedModel != null && _formKey.currentState != null) {
@@ -1130,22 +1147,19 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       context: context,
       theme: DSThemeBridge.resolve(context),
       barrierDismissible: false,
-      builder:
-          (dialogContext) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (context) => _SmartSoulDialog(
-                    defaultOptimize: hasCurrentSoul,
-                    onGenerate:
-                        (optimize, requirement) => SoulForgeService.generate(
-                          optimize: optimize,
-                          requirement: requirement,
-                          connectionAgent: _buildConnectionAgent(),
-                          currentAgent: current,
-                        ),
-                  ),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (context) => _SmartSoulDialog(
+            defaultOptimize: hasCurrentSoul,
+            onGenerate: (optimize, requirement) => SoulForgeService.generate(
+              optimize: optimize,
+              requirement: requirement,
+              connectionAgent: _buildConnectionAgent(),
+              currentAgent: current,
             ),
           ),
+        ),
+      ),
     );
 
     if (result != null && mounted) {
@@ -1175,18 +1189,18 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     if (systemPrompt != null && systemPrompt.isNotEmpty) {
       // 替换 system 消息，保留现有非 system 预设消息
       final prompts = form.instantValue['promptEditor'] as List<dynamic>? ?? [];
-      final others =
-          prompts
-              .where((p) => (p as Map<String, dynamic>)['type'] != 'system')
-              .toList();
+      final others = prompts
+          .where((p) => (p as Map<String, dynamic>)['type'] != 'system')
+          .toList();
       patch['promptEditor'] = [
         {'type': 'system', 'content': systemPrompt},
         ...others,
       ];
     }
 
-    final questions =
-        (soul['openingQuestions'] as List<dynamic>?)?.cast<String>().toList();
+    final questions = (soul['openingQuestions'] as List<dynamic>?)
+        ?.cast<String>()
+        .toList();
     if (questions != null && questions.isNotEmpty) {
       patch['enableOpeningQuestions'] = true;
       patch['openingQuestions'] = questions;
@@ -1290,14 +1304,12 @@ class _SmartSoulDialogState extends State<_SmartSoulDialog> {
                         child: DSButton(
                           label: '智能创建',
                           size: DSButtonSize.sm,
-                          variant:
-                              _optimize
-                                  ? DSButtonVariant.outline
-                                  : DSButtonVariant.primary,
-                          onPressed:
-                              _isGenerating
-                                  ? null
-                                  : () => setState(() => _optimize = false),
+                          variant: _optimize
+                              ? DSButtonVariant.outline
+                              : DSButtonVariant.primary,
+                          onPressed: _isGenerating
+                              ? null
+                              : () => setState(() => _optimize = false),
                         ),
                       ),
                       SizedBox(width: theme.spacing.sm),
@@ -1305,14 +1317,12 @@ class _SmartSoulDialogState extends State<_SmartSoulDialog> {
                         child: DSButton(
                           label: '智能优化',
                           size: DSButtonSize.sm,
-                          variant:
-                              _optimize
-                                  ? DSButtonVariant.primary
-                                  : DSButtonVariant.outline,
-                          onPressed:
-                              _isGenerating
-                                  ? null
-                                  : () => setState(() => _optimize = true),
+                          variant: _optimize
+                              ? DSButtonVariant.primary
+                              : DSButtonVariant.outline,
+                          onPressed: _isGenerating
+                              ? null
+                              : () => setState(() => _optimize = true),
                         ),
                       ),
                     ],
@@ -1320,10 +1330,9 @@ class _SmartSoulDialogState extends State<_SmartSoulDialog> {
                   SizedBox(height: theme.spacing.md),
                   DSInput(
                     controller: _controller,
-                    hint:
-                        _optimize
-                            ? '例如：更嘴硬一点，少用 emoji，加一条关于深夜聊天的边界'
-                            : '例如：一个毒舌但靠谱的程序员搭子，喜欢用梗图说话',
+                    hint: _optimize
+                        ? '例如：更嘴硬一点，少用 emoji，加一条关于深夜聊天的边界'
+                        : '例如：一个毒舌但靠谱的程序员搭子，喜欢用梗图说话',
                     maxLines: 6,
                     enabled: !_isGenerating,
                   ),
@@ -1345,10 +1354,9 @@ class _SmartSoulDialogState extends State<_SmartSoulDialog> {
                         child: DSButton(
                           label: 'openai_cancel'.tr,
                           variant: DSButtonVariant.outline,
-                          onPressed:
-                              _isGenerating
-                                  ? null
-                                  : () => Navigator.of(context).pop(),
+                          onPressed: _isGenerating
+                              ? null
+                              : () => Navigator.of(context).pop(),
                         ),
                       ),
                       SizedBox(width: theme.spacing.md),

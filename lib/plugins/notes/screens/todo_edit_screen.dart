@@ -52,13 +52,19 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
   late TodoMeta _meta;
   late NoteStyleSelection _style;
 
+  /// 当前展开的样式选择器面板；null = 全部收起
+  _StylePanel? _stylePanel;
+
   bool get _isEditing => widget.note != null;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.note?.title ?? '');
-    final items = TodoItem.parseList(widget.note?.content ?? '');
+    // 过滤历史脏数据里的空条目（如仅剩勾选标记的行）
+    var items = TodoItem.parseList(widget.note?.content ?? '')
+        .where((item) => item.text.trim().isNotEmpty)
+        .toList();
     if (items.isEmpty) items.add(TodoItem(text: ''));
     _itemControllers = items.map((item) => TextEditingController(text: item.text)).toList();
     _checkedStates = items.map((item) => item.checked).toList();
@@ -143,13 +149,21 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     final items = <TodoItem>[];
     for (var i = 0; i < _itemControllers.length; i++) {
       final text = _itemControllers[i].text.trim();
+      // 空白条目直接跳过，不参与提交
       if (text.isEmpty) continue;
-      items.add(TodoItem(text: text, checked: _checkedStates[i]));
+      final checked = i < _checkedStates.length && _checkedStates[i];
+      items.add(TodoItem(text: text, checked: checked));
     }
     // 清理已删除条目的完成时间记录
     _meta.retainTexts(items.map((item) => item.text).toSet());
-    await widget.onSave(_titleController.text, items, _meta, _style);
-    if (mounted) Navigator.of(context).pop();
+    try {
+      await widget.onSave(_titleController.text.trim(), items, _meta, _style);
+    } catch (e) {
+      debugPrint('TodoEditSheet save error: $e');
+    } finally {
+      // 保存异常也要关闭抽屉，避免提交卡死
+      if (mounted) Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -219,17 +233,6 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-                child: NoteColorPickerRow(
-                  selected: _style.color,
-                  selectedStyle: _style.bgStyle,
-                  selectedIcon: _style.icon,
-                  onChanged: (color) => setState(() => _style.color = color),
-                  onStyleChanged: (style) => setState(() => _style.bgStyle = style),
-                  onIconChanged: (icon) => setState(() => _style.icon = icon),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
                 child: DSButton(
                   label: 'notes_todoAddItem'.tr,
                   icon: DsIconKind.plus,
@@ -238,9 +241,117 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
                   onPressed: _addItem,
                 ),
               ),
+              // 样式选择器面板：底部栏点击图标后在表单下方互斥展开
+              AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                alignment: Alignment.topCenter,
+                child: _stylePanel == null
+                    ? const SizedBox(width: double.infinity)
+                    : Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                        child: _buildStylePanel(context),
+                      ),
+              ),
+              // 底部样式切换栏：颜色 / 背景 / 图标
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: Row(
+                  children: [
+                    _buildPanelToggle(
+                      context,
+                      _StylePanel.color,
+                      DsIconKind.palette,
+                      'notes_color'.tr,
+                    ),
+                    const SizedBox(width: 8),
+                    _buildPanelToggle(
+                      context,
+                      _StylePanel.background,
+                      DsIconKind.grid,
+                      'notes_bgStyle'.tr,
+                    ),
+                    const SizedBox(width: 8),
+                    _buildPanelToggle(
+                      context,
+                      _StylePanel.icon,
+                      DsIconKind.mood,
+                      'notes_icon'.tr,
+                    ),
+                  ],
+                ),
+              ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  /// 当前展开的样式选择器内容（同一时刻只显示一个）
+  Widget _buildStylePanel(BuildContext context) {
+    switch (_stylePanel) {
+      case _StylePanel.color:
+        return NoteColorSwatchRow(
+          selected: _style.color,
+          onChanged: (color) => setState(() => _style.color = color),
+        );
+      case _StylePanel.background:
+        return DsSketchFillPickerRow(
+          selected: _style.bgStyle,
+          labelKey: null,
+          onChanged: (style) => setState(() => _style.bgStyle = style ?? 0),
+        );
+      case _StylePanel.icon:
+        return NoteIconPickerRow(
+          selectedIcon: _style.icon,
+          onChanged: (icon) => setState(() => _style.icon = icon),
+        );
+      case null:
+        return const SizedBox.shrink();
+    }
+  }
+
+  /// 底部样式切换按钮：手绘描边块，选中项主题色实底 + 反色内容
+  Widget _buildPanelToggle(
+    BuildContext context,
+    _StylePanel panel,
+    DsIconKind icon,
+    String label,
+  ) {
+    final theme = DSThemeBridge.resolve(context);
+    final active = _stylePanel == panel;
+    return Expanded(
+      child: GestureDetector(
+        // 再次点击当前面板则收起
+        onTap: () => setState(() => _stylePanel = active ? null : panel),
+        child: Container(
+          height: 38,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: active ? theme.primary : null,
+            radius: BorderRadius.circular(12),
+            strokeWidth: active ? 2.2 : 1.5,
+            seed: 300 + panel.index,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              DsIcon(
+                icon,
+                size: 15,
+                color: active ? theme.onPrimary : theme.textSub,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: DsTypography.caption.copyWith(
+                  color: active ? theme.onPrimary : theme.textSub,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -307,3 +418,6 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
     );
   }
 }
+
+/// 样式选择器面板类型：颜色 / 背景填充 / 水印图标
+enum _StylePanel { color, background, icon }

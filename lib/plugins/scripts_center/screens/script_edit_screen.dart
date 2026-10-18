@@ -704,71 +704,74 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
 
           return Scaffold(
             backgroundColor: dsScaffoldBackground(theme),
-            body: Column(
-              children: [
-                // 轻量手绘顶栏：返回圆钮 + 居中标题 + 保存按钮
-                DSLightHeader(
-                  title: isEditMode
-                      ? 'scripts_center_editScript'.tr
-                      : 'scripts_center_createNewScript'.tr,
-                  trailing: DSIconButton(
-                    icon: DsIconKind.check,
-                    size: 38,
-                    color: theme.primary,
-                    iconColor: theme.onPrimary,
-                    tooltip:
-                        isEditMode
-                            ? 'scripts_center_save'.tr
-                            : 'scripts_center_create'.tr,
-                    onPressed: _saveScript,
-                  ),
-                ),
-
-                // 已访问的编辑分区，IndexedStack 保留各分区状态
-                Expanded(
-                  child: IndexedStack(
-                    index: _visitedTabs.indexOf(_currentTabIndex),
-                    children: [for (final tab in _visitedTabs) _buildTab(tab)],
-                  ),
-                ),
-
-                // 底部弧形导航：基本信息 / 代码 / 高级设置 / 配置
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: EdgeInsets.all(theme.spacing.lg),
-                    child: DSBottomNavigation(
-                      currentIndex: _currentTabIndex,
-                      onTap: (index) {
-                        setState(() {
-                          if (!_visitedTabs.contains(index)) {
-                            _visitedTabs.add(index);
-                          }
-                          _currentTabIndex = index;
-                        });
-                      },
-                      items: [
-                        DSNavItem(
-                          icon: DsIconKind.info,
-                          label: 'scripts_center_basicInfo'.tr,
-                        ),
-                        DSNavItem(
-                          icon: DsIconKind.code,
-                          label: 'scripts_center_codeEditor'.tr,
-                        ),
-                        DSNavItem(
-                          icon: DsIconKind.gear,
-                          label: 'scripts_center_advancedSettings'.tr,
-                        ),
-                        DSNavItem(
-                          icon: DsIconKind.tune,
-                          label: 'scripts_center_config'.tr,
-                        ),
-                      ],
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  // 轻量手绘顶栏：返回圆钮 + 居中标题 + 保存按钮
+                  DSLightHeader(
+                    title: isEditMode
+                        ? 'scripts_center_editScript'.tr
+                        : 'scripts_center_createNewScript'.tr,
+                    trailing: DSIconButton(
+                      icon: DsIconKind.check,
+                      size: 38,
+                      color: theme.primary,
+                      iconColor: theme.onPrimary,
+                      tooltip:
+                          isEditMode
+                              ? 'scripts_center_save'.tr
+                              : 'scripts_center_create'.tr,
+                      onPressed: _saveScript,
                     ),
                   ),
-                ),
-              ],
+
+                  // 已访问的编辑分区，IndexedStack 保留各分区状态
+                  Expanded(
+                    child: IndexedStack(
+                      index: _visitedTabs.indexOf(_currentTabIndex),
+                      children: [for (final tab in _visitedTabs) _buildTab(tab)],
+                    ),
+                  ),
+
+                  // 底部弧形导航：基本信息 / 代码 / 高级设置 / 配置
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: EdgeInsets.all(theme.spacing.lg),
+                      child: DSBottomNavigation(
+                        currentIndex: _currentTabIndex,
+                        onTap: (index) {
+                          setState(() {
+                            if (!_visitedTabs.contains(index)) {
+                              _visitedTabs.add(index);
+                            }
+                            _currentTabIndex = index;
+                          });
+                        },
+                        items: [
+                          DSNavItem(
+                            icon: DsIconKind.info,
+                            label: 'scripts_center_basicInfo'.tr,
+                          ),
+                          DSNavItem(
+                            icon: DsIconKind.code,
+                            label: 'scripts_center_codeEditor'.tr,
+                          ),
+                          DSNavItem(
+                            icon: DsIconKind.gear,
+                            label: 'scripts_center_advancedSettings'.tr,
+                          ),
+                          DSNavItem(
+                            icon: DsIconKind.tune,
+                            label: 'scripts_center_config'.tr,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

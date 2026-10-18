@@ -225,6 +225,24 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
               },
             ),
             _AppBarMenuAction(
+              icon: DsIconKind.folder,
+              label: '文件管理',
+              theme: popoverTheme,
+              onTap: () async {
+                close();
+                final directory = await AgentFileSpaceService.instance
+                    .directoryForChannel(widget.conversation.id);
+                if (!mounted) return;
+                NavigationHelper.push(
+                  context,
+                  FileManagementScreen(
+                    rootDirectory: directory,
+                    title: '${widget.conversation.title} 文件',
+                  ),
+                );
+              },
+            ),
+            _AppBarMenuAction(
               icon: DsIconKind.sort,
               label: 'agent_chat_tokenStatistics'.tr,
               theme: popoverTheme,

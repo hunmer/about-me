@@ -153,6 +153,7 @@ dependencies:
   skribble: ^0.3.1
   skribble_icons_material: ^0.3.1
   video_thumbnail: ^0.5.6
+  flutter_json_view: ^1.1.5
 dev_dependencies:
   flutter_test:
     sdk: flutter

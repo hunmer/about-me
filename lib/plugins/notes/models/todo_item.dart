@@ -31,9 +31,14 @@ class TodoItem {
       line = line.trimLeft();
       if (line.isEmpty) continue;
       if (line.startsWith(_checkedMark)) {
-        items.add(TodoItem(text: line.substring(_checkedMark.length).trim(), checked: true));
+        final text = line.substring(_checkedMark.length).trim();
+        // 跳过只有勾选标记的空行（历史脏数据）
+        if (text.isEmpty) continue;
+        items.add(TodoItem(text: text, checked: true));
       } else if (line.startsWith(_uncheckedMark)) {
-        items.add(TodoItem(text: line.substring(_uncheckedMark.length).trim()));
+        final text = line.substring(_uncheckedMark.length).trim();
+        if (text.isEmpty) continue;
+        items.add(TodoItem(text: text));
       } else {
         items.add(TodoItem(text: line));
       }

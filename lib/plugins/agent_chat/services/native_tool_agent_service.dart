@@ -41,7 +41,15 @@ class NativeToolExecutionException implements Exception {
 }
 
 class _NativeToolRunContext {
-  _NativeToolRunContext(this.onToolSteps, this.onImageDescription);
+  _NativeToolRunContext(
+    this.onToolSteps,
+    this.onImageDescription, {
+    required this.agentId,
+    required this.conversationId,
+  });
+
+  final String agentId;
+  final String? conversationId;
 
   final Future<void> Function(List<ToolCallStep> steps)? onToolSteps;
   final Future<void> Function(String path, String description)?
@@ -57,9 +65,14 @@ class _NativeToolRunContext {
     if (callback == null) return Future<void>.value();
 
     final snapshot = steps.map((step) => step.copyWith()).toList();
+    final sw = Stopwatch()..start();
     final update = updateChain.then((_) async {
       try {
         await callback(snapshot);
+        debugPrint(
+          '[NativeTool] 步骤已上报 UI: ${snapshot.length}步 '
+          '(${sw.elapsedMilliseconds}ms)',
+        );
       } catch (e, stack) {
         debugPrint('[NativeTool] 工具步骤状态更新失败: $e\n$stack');
       }
@@ -236,7 +249,12 @@ class NativeToolAgentService {
     bool alivenessOnlyTools = false,
     bool imageOnlyTools = false,
   }) async {
-    final run = _NativeToolRunContext(onToolSteps, onImageDescription);
+    final run = _NativeToolRunContext(
+      onToolSteps,
+      onImageDescription,
+      agentId: agent.id,
+      conversationId: conversationId,
+    );
     final (allTools, allMeta) = _buildTools(run, agent);
     if (allTools.isEmpty) {
       throw StateError('标准工具集为空（ToolConfigManager 未初始化或没有启用的工具）');
@@ -379,6 +397,16 @@ class NativeToolAgentService {
       )) {
         if (isCancelling?.call() == true) {
           throw Exception('已取消发送');
+        }
+        // 调试：非文本增量的 chunk（toolCall/messages/done 等）全部打印，
+        // 定位工具轮次与流结束事件是否到达
+        final chunkType = chunk.runtimeType.toString();
+        if (!chunkType.contains('TextDelta')) {
+          debugPrint(
+            '[NativeTool] chunk: $chunkType '
+            'thinking=${chunk.thinking?.length ?? 0} '
+            'output=${chunk.output.length} messages=${chunk.messages.length}',
+          );
         }
         if (chunk.thinking != null && chunk.thinking!.isNotEmpty) {
           onThinking?.call(chunk.thinking!);
@@ -597,11 +625,14 @@ class NativeToolAgentService {
               .toList();
           if (paths.isEmpty) return '没有提供图片路径';
           final argsJson = jsonEncode(args);
+          debugPrint('[NativeTool] [read_image] 工具调用: $argsJson');
           final step = ToolCallStep(
             method: 'read_image',
             title: '读取图片',
             desc: '参数：$argsJson',
             data: argsJson,
+            // 返回的是识图模型的 Markdown 文本描述，非 JSON
+            resultFormat: 'markdown',
             status: ToolCallStatus.running,
           );
           run.steps.add(step);
@@ -609,8 +640,7 @@ class NativeToolAgentService {
           try {
             final agent = await _resolveImageAgent(imageAgent);
             if (agent == null) {
-              final message =
-                  '当前模型不支持图片识别，且尚未在 OpenAI 插件设置中配置识图模型';
+              final message = '当前模型不支持图片识别，且尚未在 OpenAI 插件设置中配置识图模型';
               step
                 ..status = ToolCallStatus.failed
                 ..error = message;
@@ -634,13 +664,19 @@ class NativeToolAgentService {
                 imageFile: await _compressImageIfNeeded(file),
               );
               descriptions.add('$path：$description');
+              debugPrint(
+                '[NativeTool] [read_image] 单图解析完成: $path '
+                '(${description.length}字符, 模型=${agent.model})',
+              );
               await run.onImageDescription?.call(path, description);
+              debugPrint('[NativeTool] [read_image] 描述已回写附件: $path');
             }
             final result = descriptions.join('\n');
             step
               ..status = ToolCallStatus.success
               ..result = result;
             await run.notifySteps();
+            debugPrint('[NativeTool] [read_image] 工具返回 (${result.length}字符)');
             return result;
           } catch (e) {
             step
@@ -662,17 +698,33 @@ class NativeToolAgentService {
   /// 3. 旧版仅模型名配置（defaultMultimodalModel）→ 复用当前连接仅换模型。
   /// 返回 null 表示当前模型不支持视觉且未配置识图模型
   static Future<AIAgent?> _resolveImageAgent(AIAgent imageAgent) async {
-    if (await ModelController().supportsVision(imageAgent.model) == true) {
+    final supportsVision = await ModelController().supportsVision(
+      imageAgent.model,
+    );
+    debugPrint(
+      '[NativeTool] [read_image] 识图模型解析: 当前模型=${imageAgent.model} '
+      'supportsVision=$supportsVision',
+    );
+    if (supportsVision == true) {
+      debugPrint('[NativeTool] [read_image] 使用当前模型直读');
       return imageAgent;
     }
     final settings = OpenAIPlugin.instance.settings;
     final config = settings['multimodalModelConfig'] as Map<String, dynamic>?;
     final model =
         (config?['model'] as String? ??
-            settings['defaultMultimodalModel'] as String?)
+                settings['defaultMultimodalModel'] as String?)
             ?.trim();
-    if (model == null || model.isEmpty) return null;
+    if (model == null || model.isEmpty) {
+      debugPrint('[NativeTool] [read_image] 未配置识图模型');
+      return null;
+    }
     if (config != null && model == config['model']?.trim()) {
+      debugPrint(
+        '[NativeTool] [read_image] 使用独立识图配置: '
+        'provider=${config['providerId']} model=$model '
+        'format=${config['apiFormat']}',
+      );
       return AIAgent(
         id: 'multimodal_reader',
         name: '识图模型',
@@ -681,16 +733,16 @@ class NativeToolAgentService {
         serviceProviderId:
             (config['providerId'] as String?) ?? imageAgent.serviceProviderId,
         baseUrl: (config['baseUrl'] as String?) ?? imageAgent.baseUrl,
-        headers:
-            config['headers'] is Map
-                ? Map<String, String>.from(config['headers'] as Map)
-                : imageAgent.headers,
+        headers: config['headers'] is Map
+            ? Map<String, String>.from(config['headers'] as Map)
+            : imageAgent.headers,
         createdAt: imageAgent.createdAt,
         updatedAt: DateTime.now(),
         model: model,
         apiFormat: (config['apiFormat'] as String?) ?? 'openai',
       );
     }
+    debugPrint('[NativeTool] [read_image] 兼容旧配置: 仅替换模型为 $model');
     return imageAgent.copyWith(model: model);
   }
 
@@ -709,8 +761,10 @@ class NativeToolAgentService {
         targetPath: '${dir.path}/$name',
         quality: 80,
       );
-      debugPrint('[NativeTool] 大图已压缩: ${await file.length()} → '
-          '${await File(compressed).length()} bytes');
+      debugPrint(
+        '[NativeTool] 大图已压缩: ${await file.length()} → '
+        '${await File(compressed).length()} bytes',
+      );
       return File(compressed);
     } catch (e) {
       debugPrint('[NativeTool] 图片压缩失败，使用原图: $e');
@@ -762,6 +816,13 @@ class NativeToolAgentService {
       return {'error': 'args 必须是对象，无参数时传 {}'};
     }
     final methodArgs = rawArgs;
+    if (pluginId == 'openai' &&
+        const {'list_files', 'read_file', 'write_file'}.contains(methodName)) {
+      methodArgs.putIfAbsent('agentId', () => run.agentId);
+      if (run.conversationId != null) {
+        methodArgs.putIfAbsent('conversationId', () => run.conversationId);
+      }
+    }
     final missing = config.parameters
         .where((p) => !p.optional && !methodArgs.containsKey(p.name))
         .map((p) => p.name)

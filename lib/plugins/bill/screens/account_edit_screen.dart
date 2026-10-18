@@ -6,8 +6,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/account.dart';
-import 'package:aboutme/widgets/picker/app_color_picker.dart';
-import 'package:aboutme/widgets/picker/icon_picker_dialog.dart';
+import 'package:aboutme/widgets/form_fields/circle_icon_picker_field.dart';
 import 'package:aboutme/widgets/form_fields/text_input_field.dart';
 
 class AccountEditScreen extends StatefulWidget {
@@ -37,47 +36,6 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
   void dispose() {
     _titleController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickIcon() async {
-    final IconData? result = await showIconPickerDialog(context, _selectedIcon);
-    if (result != null) {
-      setState(() {
-        _selectedIcon = result;
-      });
-    }
-  }
-
-  Future<void> _pickColor() async {
-    Color newColor = _selectedColor;
-    final Color? color = await showDialog<Color>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('app_selectBackgroundColor'.tr),
-          content: SingleChildScrollView(
-            child: AppColorPicker(
-              selectedColor: _selectedColor,
-              onColorChanged: (color) => newColor = color,
-              showLabels: true,
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('app_ok'.tr),
-              onPressed: () {
-                Navigator.of(context).pop(newColor);
-              },
-            ),
-          ],
-        );
-      },
-    );
-    if (color != null) {
-      setState(() {
-        _selectedColor = color;
-      });
-    }
   }
 
   @override
@@ -118,52 +76,16 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 32),
-                    // Icon Display
-                    GestureDetector(
-                      onTap: _pickIcon,
-                      child: Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _selectedColor.withValues(alpha: 0.1),
-                        ),
-                        child: Icon(
-                          _selectedIcon,
-                          size: 48,
-                          color: _selectedColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Icon & Color Selection Trigger
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TextButton(
-                          onPressed: _pickIcon,
-                          child: Text(
-                            '选择图标',
-                            style: TextStyle(
-                              color: _selectedColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: _pickColor,
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _selectedColor,
-                              border: Border.all(color: theme.stroke, width: 1),
-                            ),
-                          ),
-                        ),
-                      ],
+                    // Icon & Color Picker
+                    CircleIconPickerField(
+                      currentIcon: _selectedIcon,
+                      currentBackgroundColor: _selectedColor,
+                      onValueChanged: (value) {
+                        setState(() {
+                          _selectedIcon = value['icon'] as IconData;
+                          _selectedColor = value['color'] as Color;
+                        });
+                      },
                     ),
                     const SizedBox(height: 48),
                     // Input Field

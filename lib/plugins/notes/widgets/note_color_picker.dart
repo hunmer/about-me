@@ -42,6 +42,108 @@ final List<DsIconKind?> kNoteIconChoices = <DsIconKind?>[
   DsIconKind.sun,
 ];
 
+/// 手绘风格色板行（无标题）：一排圆形色块，选中项墨线描边加粗 + 对勾
+class NoteColorSwatchRow extends StatelessWidget {
+  const NoteColorSwatchRow({super.key, this.selected, required this.onChanged});
+
+  /// 当前选中色（null = 默认）
+  final Color? selected;
+
+  final ValueChanged<Color?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    return Wrap(
+      spacing: 10,
+      runSpacing: 8,
+      children: [
+        for (final choice in kNoteColorChoices) _buildSwatch(theme, choice),
+      ],
+    );
+  }
+
+  Widget _buildSwatch(AppThemeData theme, Color? choice) {
+    final isSelected = choice == selected;
+    // 默认项画中空墨线圆，其余画实色圆；选中后加粗描边并画对勾
+    final checkColor = choice == null || choice.computeLuminance() > 0.55
+        ? theme.ink
+        : theme.paper;
+    return GestureDetector(
+      onTap: () => onChanged(choice),
+      child: Container(
+        width: 26,
+        height: 26,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: choice,
+          circle: true,
+          strokeWidth: isSelected ? 2.6 : 1.6,
+          seed: choice?.value ?? 0,
+        ),
+        child: isSelected
+            ? Center(
+                child: DsIcon(
+                  DsIconKind.check,
+                  size: 14,
+                  color: checkColor,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+}
+
+/// 手绘风格水印图标选择行（无标题）：无图标项用 close；选中项主题色实底圆 + 反色图标
+class NoteIconPickerRow extends StatelessWidget {
+  const NoteIconPickerRow({super.key, this.selectedIcon, required this.onChanged});
+
+  /// 当前水印图标（DsIconKind 枚举名）；null = 无
+  final String? selectedIcon;
+
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final choice in kNoteIconChoices) _buildIconChoice(theme, choice),
+      ],
+    );
+  }
+
+  Widget _buildIconChoice(AppThemeData theme, DsIconKind? choice) {
+    final isSelected =
+        (choice?.name ?? '') == (selectedIcon ?? '') &&
+        (choice != null || selectedIcon == null);
+    return GestureDetector(
+      onTap: () => onChanged(choice?.name),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: isSelected ? theme.primary : null,
+          circle: true,
+          strokeWidth: isSelected ? 2.4 : 1.5,
+          seed: 200 + (choice?.index ?? 0),
+        ),
+        child: Center(
+          child: DsIcon(
+            choice ?? DsIconKind.close,
+            size: 18,
+            color: isSelected ? theme.onPrimary : theme.textSub,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// 手绘风格颜色选择行：一排圆形色块，选中项墨线描边加粗 + 对勾；
 /// 传入 [onStyleChanged] 时追加背景填充风格选择行（排线/交叉/点/之字/横线/实底）；
 /// 传入 [onIconChanged] 时追加水印图标选择行。
@@ -95,14 +197,7 @@ class NoteColorPickerRow extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 10,
-                runSpacing: 8,
-                children: [
-                  for (final choice in kNoteColorChoices)
-                    _buildSwatch(context, theme, choice),
-                ],
-              ),
+              NoteColorSwatchRow(selected: selected, onChanged: onChanged),
               if (onStyleChanged != null) ...[
                 const SizedBox(height: 12),
                 DsSketchFillPickerRow(
@@ -127,81 +222,11 @@ class NoteColorPickerRow extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final choice in kNoteIconChoices)
-                      _buildIconChoice(theme, choice),
-                  ],
-                ),
+                NoteIconPickerRow(selectedIcon: selectedIcon, onChanged: onIconChanged!),
               ],
             ],
           );
         },
-      ),
-    );
-  }
-
-  /// 图标选择块：无图标项用 close；选中项主题色实底圆 + 反色图标
-  Widget _buildIconChoice(AppThemeData theme, DsIconKind? choice) {
-    final isSelected =
-        (choice?.name ?? '') == (selectedIcon ?? '') &&
-        (choice != null || selectedIcon == null);
-    return GestureDetector(
-      onTap: () => onIconChanged!(choice?.name),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: isSelected ? theme.primary : null,
-          circle: true,
-          strokeWidth: isSelected ? 2.4 : 1.5,
-          seed: 200 + (choice?.index ?? 0),
-        ),
-        child: Center(
-          child: DsIcon(
-            choice ?? DsIconKind.close,
-            size: 18,
-            color: isSelected ? theme.onPrimary : theme.textSub,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSwatch(
-    BuildContext context,
-    AppThemeData theme,
-    Color? choice,
-  ) {
-    final isSelected = choice == selected;
-    // 默认项画中空墨线圆，其余画实色圆；选中后加粗描边并画对勾
-    final checkColor = choice == null || choice.computeLuminance() > 0.55
-        ? theme.ink
-        : theme.paper;
-    return GestureDetector(
-      onTap: () => onChanged(choice),
-      child: Container(
-        width: 26,
-        height: 26,
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: choice,
-          circle: true,
-          strokeWidth: isSelected ? 2.6 : 1.6,
-          seed: choice?.value ?? 0,
-        ),
-        child: isSelected
-            ? Center(
-                child: DsIcon(
-                  DsIconKind.check,
-                  size: 14,
-                  color: checkColor,
-                ),
-              )
-            : null,
       ),
     );
   }

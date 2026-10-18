@@ -29,6 +29,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/services/agent_file_space_service.dart';
 import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -49,6 +50,7 @@ import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_list.da
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_bubble/index.dart'
     as chat_bubble;
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/file_management_screen.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
