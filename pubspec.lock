@@ -339,7 +339,7 @@ packages:
     source: hosted
     version: "1.0.2"
   cupertino_icons:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: cupertino_icons
       sha256: "41e005c33bd814be4d3096aff55b1908d419fde52ca656c8c47719ec745873cd"
@@ -402,7 +402,7 @@ packages:
     source: hosted
     version: "4.3.3"
   device_info_plus:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: device_info_plus
       sha256: "98f28b42168cc509abc92f88518882fd58061ea372d7999aecc424345c7bff6a"
@@ -466,7 +466,7 @@ packages:
     source: hosted
     version: "3.0.0"
   encrypt:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: encrypt
       sha256: "62d9aa4670cc2a8798bab89b39fc71b6dfbacf615de6cf5001fb39f7e4a996a2"
@@ -481,14 +481,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  event:
-    dependency: "direct main"
-    description:
-      name: event
-      sha256: "5809a742e6274146a23d9cba63c24caf2f4c87a9a781fdf16ef07f052becaf72"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.0"
   execution_timer:
     dependency: transitive
     description:
@@ -1461,7 +1453,7 @@ packages:
     source: hosted
     version: "0.7.6"
   json_schema:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: json_schema
       sha256: f37d9c3fdfe8c9aae55fdfd5af815d24ce63c3a0f6a2c1f0982c30f43643fa1a
@@ -1524,14 +1516,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.1.1"
-  liquid_glass_easy:
-    dependency: "direct main"
-    description:
-      name: liquid_glass_easy
-      sha256: "48f2147e8b662402ccef9304cf8c216082b7913ad985ea2ac3d4f402b16ab417"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.3.4"
   listen:
     dependency: transitive
     description:

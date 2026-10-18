@@ -11,6 +11,8 @@ PODS:
   - flutter_tts (0.0.1):
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
+  - image_compress_plus_macos (1.0.3):
+    - FlutterMacOS
   - irondash_engine_context (0.0.1):
     - FlutterMacOS
   - location (0.0.1):
@@ -26,6 +28,7 @@ DEPENDENCIES:
   - flutter_secure_storage_macos (from `Flutter/ephemeral/.symlinks/plugins/flutter_secure_storage_macos/macos`)
   - flutter_tts (from `Flutter/ephemeral/.symlinks/plugins/flutter_tts/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
+  - image_compress_plus_macos (from `Flutter/ephemeral/.symlinks/plugins/image_compress_plus_macos/macos`)
   - irondash_engine_context (from `Flutter/ephemeral/.symlinks/plugins/irondash_engine_context/macos`)
   - location (from `Flutter/ephemeral/.symlinks/plugins/location/macos`)
   - super_native_extensions (from `Flutter/ephemeral/.symlinks/plugins/super_native_extensions/macos`)
@@ -47,6 +50,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/flutter_tts/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
+  image_compress_plus_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/image_compress_plus_macos/macos
   irondash_engine_context:
     :path: Flutter/ephemeral/.symlinks/plugins/irondash_engine_context/macos
   location:
@@ -60,12 +65,13 @@ SPEC CHECKSUMS:
   flutter_js: 79c3c70d33ba464c67d8eb88639a61aa718cd8b8
   flutter_secure_storage_macos: 7f45e30f838cf2659862a4e4e3ee1c347c2b3b54
   flutter_tts: ae915565cc6948444b513acc8ee021993281e027
-  FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
+  FlutterMacOS: c232990155153907050900a2e175c7773903ba4e
+  image_compress_plus_macos: e17fc799966049aeafb8510956be83f368343a58
   irondash_engine_context: 893c7d96d20ce361d7e996f39d360c4c2f9869ba
   location: c002b64375c0739e7afa30cbd0b675554830d208
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   super_native_extensions: c2795d6d9aedf4a79fae25cb6160b71b50549189
 
-PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
+PODFILE CHECKSUM: 1e95c36afbfd1cb6423ceca4de7a8e1b256fb6ac
 
 COCOAPODS: 1.16.2

@@ -22,10 +22,10 @@
 | 桌面小组件 | `home_widget`、`live_activities` |
 | 消息推送 | `firebase_core`、`firebase_messaging` |
 | 多媒体 | `audioplayers`、`record`、`video_player`（+win）、`flutter_tts`、`image`、`image_compress_plus`（flutter_image_compress 社区分支，支持 Windows/Linux） |
-| UI/设计系统 | Material 3、`adaptive_theme`、`fl_chart`、`lottie`、`smooth_sheets`、`skribble` + `skribble_icons_material`（手绘纸墨风核心）、`liquid_glass_easy`、`flutter_svg`、`super_cupertino_navigation_bar`、`radial_disc_bottom_bar` |
+| UI/设计系统 | Material 3、`adaptive_theme`、`fl_chart`、`lottie`、`smooth_sheets`、`skribble` + `skribble_icons_material`（手绘纸墨风核心）、`flutter_svg`、`super_cupertino_navigation_bar`、`radial_disc_bottom_bar` |
 | 桌面窗口 | `window_manager`、`screen_retriever`（窗口位置/大小记忆） |
 
-> 注：`encrypt`/`crypto` 仍在依赖中，但客户端加密服务已删除（2026-10-12），同步现为明文。
+> 注：`crypto` 仍在依赖中；`encrypt` 已移除（加密归 aboutme_data_sdk 自身依赖），客户端加密服务已删除（2026-10-12），同步现为明文。
 
 ### 路径依赖（workspace 内子包）
 

@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -515,8 +515,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
         final controller = snapshot.data;
         if (snapshot.hasError) return Text('screens_live2dInitFailed'.tr);
         if (controller == null) return const SizedBox.shrink();
-        // 液态玻璃磨砂背景：Impeller 下实时折射背景，
-        // Skia/无 LiquidGlassView 时自动降级为磨砂（模糊 + 着色 + 描边）
+        // 磨砂背景（模糊 + 半透明白着色，圆角 28）
         //
         // removeBottom：外层 Positioned 已避让悬浮导航栏/键盘，
         // 去掉 MessageInput 内部 SafeArea 消费的底部 inset，避免双重避让
@@ -525,17 +524,20 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
         return MediaQuery.removePadding(
           context: context,
           removeBottom: true,
-          child: LiquidGlassLens(
-            style: const LiquidGlassStyle(
-              shape: LiquidGlassShape.roundedRectangle(cornerRadius: 28),
-              appearance: LiquidGlassAppearance(
-                blur: LiquidGlassBlur(sigmaX: 16, sigmaY: 16),
-                color: Color(0x59FFFFFF),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0x59FFFFFF),
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: MessageInput(
+                  controller: controller,
+                  showQuickActions: false,
+                ),
               ),
-            ),
-            child: MessageInput(
-              controller: controller,
-              showQuickActions: false,
             ),
           ),
         );
