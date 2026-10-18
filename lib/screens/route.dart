@@ -244,6 +244,18 @@ class AppRoutes extends NavigatorObserver {
   static const String commonWidgetSelector = '/common_widget_selector';
 
   // ==================== 路由生成器 ====================
+  /// 启动栈只包含目标页，避免默认补入旧版首页 `/`，被 iOS 返回手势露出。
+  static List<Route<dynamic>> generateInitialRoutes(String initialRouteName) {
+    final settings = RouteSettings(name: initialRouteName);
+    final builder = routes[initialRouteName];
+    return [
+      if (builder != null)
+        RouteHelpers.createRoute(Builder(builder: builder), settings: settings)
+      else
+        generateRoute(settings),
+    ];
+  }
+
   static Route<dynamic> generateRoute(RouteSettings settings) {
     // 确保路由已初始化
     _initRoutes();
