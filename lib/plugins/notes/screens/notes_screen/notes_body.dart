@@ -47,11 +47,14 @@ mixin NotesBody
                     child: FolderBreadcrumbs(
                       folders: _buildBreadcrumbItems(),
                       onFolderTap: (folderId) {
-                        // 点击面包屑导航到对应文件夹
-                        setState(() {
-                          currentFolderId = folderId;
-                          loadCurrentFolder();
-                        });
+                        // 每级文件夹对应一个子页面，按层级差弹出页面回到目标层级
+                        final items = _buildBreadcrumbItems();
+                        final index = items.indexWhere(
+                          (item) => item.id == folderId,
+                        );
+                        var pops = items.length - 1 - index;
+                        if (index < 0 || pops <= 0) return;
+                        Navigator.of(context).popUntil((_) => pops-- == 0);
                       },
                     ),
                   ),
@@ -93,12 +96,7 @@ mixin NotesBody
                                   color: Colors.blueGrey,
                                 ),
                                 noteCount: archivedCount,
-                                onTap: () {
-                                  setState(() {
-                                    currentFolderId = kArchivedFolderId;
-                                    loadCurrentFolder();
-                                  });
-                                },
+                                onTap: () => openFolderPage(kArchivedFolderId),
                               ),
                             ),
                           );

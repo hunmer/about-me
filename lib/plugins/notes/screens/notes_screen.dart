@@ -13,7 +13,10 @@ import 'notes_screen/notes_route_context.dart';
 import 'notes_screen/notes_screen_state.dart';
 
 class NotesMainView extends StatefulWidget {
-  const NotesMainView({super.key});
+  /// 初始打开的文件夹（'root' 根目录，kArchivedFolderId 已归档视图）
+  final String folderId;
+
+  const NotesMainView({super.key, this.folderId = 'root'});
 
   @override
   State<NotesMainView> createState() => _NotesMainViewState();

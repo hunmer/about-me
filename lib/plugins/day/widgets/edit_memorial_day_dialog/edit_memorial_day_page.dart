@@ -247,7 +247,7 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
                         id == 'off' ? null : RecurrenceUnit.values.byName(id);
                   }),
                   useHorizontalScroll: false,
-                  gridColumns: 3,
+                  gridColumns: 4,
                   options: [
                     OptionItem(id: 'off', label: 'day_recurrenceOff'.tr),
                     OptionItem(
@@ -258,15 +258,21 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
                       id: RecurrenceUnit.months.name,
                       label: 'day_recurrenceMonths'.tr,
                     ),
+                    OptionItem(
+                      id: RecurrenceUnit.years.name,
+                      label: 'day_recurrenceYears'.tr,
+                    ),
                   ],
                 ),
                 if (_recurrenceUnit != null) ...[
                   const SizedBox(height: 16),
                   TextInputField(
                     controller: _intervalController,
-                    labelText: _recurrenceUnit == RecurrenceUnit.days
-                        ? 'day_recurrenceEveryDays'.tr
-                        : 'day_recurrenceEveryMonths'.tr,
+                    labelText: switch (_recurrenceUnit) {
+                      RecurrenceUnit.days => 'day_recurrenceEveryDays'.tr,
+                      RecurrenceUnit.months => 'day_recurrenceEveryMonths'.tr,
+                      _ => 'day_recurrenceEveryYears'.tr,
+                    },
                     hintText: '1',
                     keyboardType: TextInputType.number,
                   ),

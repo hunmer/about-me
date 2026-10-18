@@ -446,6 +446,8 @@ final Map<String, String> screensTranslationsEn = {
   'screens_expBarPosition': 'Exp Bar Position',
   'screens_iconPosition': 'Icon Position',
   'screens_valuePosition': 'Value Position',
+  'screens_topPanelAvatarHint':
+      'Tap the avatar to change it. If the Live2D archive has a cover, the cover takes precedence.',
   'screens_logSystem': 'Log System',
   'screens_confirmDeleteLogs': 'Delete all log files? This cannot be undone.',
 

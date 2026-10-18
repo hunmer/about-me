@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/notes/notes_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -36,6 +37,7 @@ class NotesMainViewState extends State<NotesMainView> {
     super.initState();
     plugin = NotesPlugin.instance;
     _eventManager = EventManager.instance;
+    currentFolderId = widget.folderId;
     // 订阅同步刷新事件
     _eventManager.subscribe('notes_refresh', _handleSyncRefresh);
     loadCurrentFolder();
@@ -53,6 +55,9 @@ class NotesMainViewState extends State<NotesMainView> {
 
   @protected
   void loadCurrentFolder() {
+    // 面包屑 popUntil 会连带移除下层页面，push 的 Future 完成时
+    // 本页面可能已销毁，此时不能再 setState
+    if (!mounted) return;
     setState(() {
       if (isArchivedView) {
         // 已归档视图：平铺展示所有归档的文件夹与笔记
@@ -80,12 +85,19 @@ class NotesMainViewState extends State<NotesMainView> {
     });
   }
 
+  /// 以子页面形式进入文件夹（含"已归档"虚拟目录），
+  /// 返回手势/返回键回到上一级；返回后刷新本层列表（子项计数等）
+  @protected
+  void openFolderPage(String folderId) {
+    NavigationHelper.push(
+      context,
+      NotesMainView(folderId: folderId),
+    ).then((_) => loadCurrentFolder());
+  }
+
   @protected
   void navigateToFolder(Folder folder) {
-    setState(() {
-      currentFolderId = folder.id;
-      loadCurrentFolder();
-    });
+    openFolderPage(folder.id);
   }
 
   @protected

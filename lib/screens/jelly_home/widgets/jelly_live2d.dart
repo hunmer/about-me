@@ -26,7 +26,6 @@ import 'jelly_live2d_layout.dart';
 import 'jelly_live2d_models.dart';
 import 'jelly_live2d_panel.dart';
 import 'jelly_speech_bubble.dart';
-import 'jelly_status_panel_settings.dart';
 
 export 'jelly_live2d_models.dart';
 

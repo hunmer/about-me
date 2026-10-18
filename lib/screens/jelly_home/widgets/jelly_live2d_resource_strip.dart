@@ -27,7 +27,6 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
         child: switch (panel) {
           JellyLive2dPanel.bubble => _buildBubbleStrip(theme),
           JellyLive2dPanel.background => _buildBackgroundStrip(theme),
-          JellyLive2dPanel.statusPanel => _buildStatusPanelStrip(theme),
           JellyLive2dPanel.archive => _buildArchiveStrip(theme),
         },
       ),
@@ -103,109 +102,6 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatusPanelStrip(AppThemeData theme) {
-    unawaited(JellyStatusPanelSettings.instance.load());
-    final settings = JellyStatusPanelSettings.instance;
-    return AnimatedBuilder(
-      animation: settings,
-      builder: (context, _) => SizedBox(
-        height: 104,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: [
-            for (final style in settings.styles)
-              Padding(
-                padding: EdgeInsets.only(right: theme.spacing.sm),
-                child: _statusPanelTile(theme, settings, style),
-              ),
-            _addTile(
-              theme,
-              width: 132,
-              height: 104,
-              iconSize: 24,
-              onTap: () => settings.upload(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _statusPanelTile(
-    AppThemeData theme,
-    JellyStatusPanelSettings settings,
-    JellyStatusPanelStyle style,
-  ) {
-    return GestureDetector(
-      onTap: () => settings.selectStyle(style.id),
-      child: Container(
-        width: 132,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: style.id == settings.selectedStyle.id
-                ? theme.primary
-                : theme.stroke,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  JellyConfigurableImage(
-                    path: style.asset,
-                    fit: BoxFit.contain,
-                  ),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () async {
-                        await settings.selectStyle(style.id);
-                        if (mounted) await settings.edit(context);
-                      },
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: theme.surface.withValues(alpha: 0.9),
-                        ),
-                        child: Center(
-                          child: DsIcon(
-                            DsIconKind.edit,
-                            size: 14,
-                            color: theme.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              style.label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: DsTypography.label.copyWith(color: theme.text),
-            ),
-          ],
-        ),
       ),
     );
   }

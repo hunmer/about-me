@@ -17,7 +17,7 @@ class StackedFolderCardExample extends StatelessWidget {
 
   static final _assetPhotos = [
     'asset://assets/images/default_avatar.jpg',
-    'assets/images/jelly_status_panel.png',
+    'assets/live2d_backgrounds/Live2D背景·冬日窗边.jpg',
     'assets/images/image_not_found.jpg',
   ];
 

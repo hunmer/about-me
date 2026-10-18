@@ -421,6 +421,7 @@ final Map<String, String> screensTranslationsZh = {
   'screens_expBarPosition': 'Exp Bar Position',
   'screens_iconPosition': 'Icon Position',
   'screens_valuePosition': 'Value Position',
+  'screens_topPanelAvatarHint': '点击头像可更换。若 Live2D 档案设有封面，面板优先显示档案封面。',
   'screens_logSystem': '日志系统',
   'screens_confirmDeleteLogs': '删除所有日志文件？此操作不可撤销。',
 

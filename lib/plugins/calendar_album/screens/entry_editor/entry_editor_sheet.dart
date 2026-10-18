@@ -127,7 +127,7 @@ class _EntryEditorSheetBodyState extends State<_EntryEditorSheetBody> {
   /// 保存日记，成功后关闭弹层
   void save() {
     if (!mounted) return;
-    final result = _controller.saveEntry(context);
+    final result = _controller.saveEntry(widget.calendarController);
     if (result != null) {
       Navigator.of(context).pop();
     }

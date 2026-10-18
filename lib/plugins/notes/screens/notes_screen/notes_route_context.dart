@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
-import 'package:aboutme/plugins/notes/models/folder.dart';
 import 'notes_screen_state.dart';
 
 mixin NotesRouteContext on NotesMainViewState {
@@ -56,18 +55,6 @@ mixin NotesRouteContext on NotesMainViewState {
   @override
   void loadCurrentFolder() {
     super.loadCurrentFolder();
-    updateRouteContext();
-  }
-
-  @override
-  void navigateToFolder(Folder folder) {
-    super.navigateToFolder(folder);
-    updateRouteContext();
-  }
-
-  @override
-  void navigateBack() {
-    super.navigateBack();
     updateRouteContext();
   }
 }

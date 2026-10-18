@@ -5,7 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
 /// 循环周期单位：截止日期 = 上次重置日期 + 叠加量
-enum RecurrenceUnit { days, months }
+enum RecurrenceUnit { days, months, years }
 
 class MemorialDay {
   final String id;
@@ -25,7 +25,7 @@ class MemorialDay {
   /// 循环单位；null 表示不循环（targetDate 即截止日期）
   final RecurrenceUnit? recurrenceUnit;
 
-  /// 循环叠加量（每 N 天 / 每 N 月），仅 [recurrenceUnit] 非 null 时生效
+  /// 循环叠加量（每 N 天 / 每 N 月 / 每 N 年），仅 [recurrenceUnit] 非 null 时生效
   final int recurrenceInterval;
 
   MemorialDay({
@@ -66,16 +66,22 @@ class MemorialDay {
   // 是否开启循环
   bool get isRecurring => recurrenceUnit != null && recurrenceInterval > 0;
 
-  DateTime _addCycle(DateTime base) {
+  /// [base] 叠加 [cycles] 个周期（可为负，用于回退到上一轮起点）
+  DateTime _addCycle(DateTime base, [int cycles = 1]) {
     return switch (recurrenceUnit) {
       RecurrenceUnit.days => DateTime(
         base.year,
         base.month,
-        base.day + recurrenceInterval,
+        base.day + cycles * recurrenceInterval,
       ),
       RecurrenceUnit.months => DateTime(
         base.year,
-        base.month + recurrenceInterval,
+        base.month + cycles * recurrenceInterval,
+        base.day,
+      ),
+      RecurrenceUnit.years => DateTime(
+        base.year + cycles * recurrenceInterval,
+        base.month,
         base.day,
       ),
       null => base,
@@ -88,29 +94,27 @@ class MemorialDay {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final start = DateTime(targetDate.year, targetDate.month, targetDate.day);
+    // 截止日期取第一个不早于今天的循环点；目标日期尚未到期时就是它本身，
+    // 不能再多叠加一轮（否则生日还剩30天+每12月循环会显示390+天）
     if (recurrenceUnit == RecurrenceUnit.days) {
       // 按天可整除，直接算出让截止日不早于今天的最小倍数，避免逐轮循环
       final diff = today.difference(start).inDays;
       final k =
-          diff <= 0 ? 1 : (diff + recurrenceInterval - 1) ~/ recurrenceInterval;
-      return DateTime(
-        start.year,
-        start.month,
-        start.day + (k - 1) * recurrenceInterval,
-      );
+          diff <= 0 ? 0 : (diff + recurrenceInterval - 1) ~/ recurrenceInterval;
+      return _addCycle(start, k - 1);
     }
-    var base = start;
-    while (_addCycle(base).isBefore(today)) {
-      base = _addCycle(base);
+    var due = start;
+    while (due.isBefore(today)) {
+      due = _addCycle(due);
     }
-    return base;
+    return _addCycle(due, -1);
   }
 
   /// 实际生效的截止日期：循环时为 上次重置日期 + 叠加量，否则为所选日期
   DateTime get effectiveTargetDate =>
       isRecurring ? _addCycle(cycleStartDate) : targetDate;
 
-  /// 循环摘要文案（"每3天"/"每2月"）；未开启循环返回 null
+  /// 循环摘要文案（"每3天"/"每2月"/"每1年"）；未开启循环返回 null
   String? get recurrenceSummary {
     if (!isRecurring) return null;
     return switch (recurrenceUnit) {
@@ -118,6 +122,9 @@ class MemorialDay {
         'count': recurrenceInterval.toString(),
       }),
       RecurrenceUnit.months => 'day_everyMonths'.trParams({
+        'count': recurrenceInterval.toString(),
+      }),
+      RecurrenceUnit.years => 'day_everyYears'.trParams({
         'count': recurrenceInterval.toString(),
       }),
       null => null,

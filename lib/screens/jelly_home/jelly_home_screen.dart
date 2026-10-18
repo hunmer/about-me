@@ -264,11 +264,12 @@ class _CottageTabState extends State<_CottageTab> {
   }
 
   /// 顶部状态面板的显示高度：与 JellyStatusPanel 同一套约束
-  /// （maxWidth 900 / maxHeight 150 + 可见区纵横比）计算，
+  /// （maxWidth 900 / maxHeight 150 + 面板纵横比）计算，
   /// 右侧状态按钮以此为顶部偏移避让
   double _statusPanelHeight(double availableWidth) {
-    final style = JellyStatusPanelSettings.instance.selectedStyle;
-    final height = math.min(availableWidth, 900) / style.visibleAspectRatio;
+    final height =
+        math.min(availableWidth, 900) /
+        JellyStatusPanelSettings.panelAspectRatio;
     return height.clamp(0.0, JellyStatusPanelSettings.maxDisplayHeight);
   }
 

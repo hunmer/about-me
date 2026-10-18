@@ -202,9 +202,6 @@ flutter:
     - assets/icon/icon.png
     - assets/images/image_not_found.jpg
     - assets/images/default_avatar.jpg
-    - assets/images/jelly_status_panel.png
-    - assets/images/jelly_status_panel_a2.png
-    - assets/images/jelly_status_panel_a3.png
     - assets/tool_templates/
     - assets/icons/material/  # Material Icons for Android widgets
     - assets/icons/svg/  # SVG 图标（空状态等）

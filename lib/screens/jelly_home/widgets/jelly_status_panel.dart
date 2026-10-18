@@ -1,13 +1,19 @@
 import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/screens/jelly_home/companion_controller.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/widgets/picker/avatar_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-import 'jelly_status_panel_config.dart';
-import 'jelly_status_panel_settings.dart';
 import 'jelly_configurable_image.dart';
+import 'jelly_status_panel_settings.dart';
 
+/// 状态项种类（图标与取值见 [_StatusItem] / [_value]）
+enum JellyStatusItemType { mood, energy, affection, companionDays }
+
+/// 顶部状态面板：手绘组件构建（纸底 + 排线 + 墨线框），长按更换头像
 class JellyStatusPanel extends StatefulWidget {
   const JellyStatusPanel({super.key, required this.controller});
 
@@ -50,6 +56,7 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
@@ -60,65 +67,22 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
         child: AnimatedBuilder(
           animation: _settings,
           builder: (context, _) => AspectRatio(
-            aspectRatio: _settings.selectedStyle.visibleAspectRatio,
+            aspectRatio: JellyStatusPanelSettings.panelAspectRatio,
             child: GestureDetector(
               behavior: HitTestBehavior.translucent,
-              onLongPress: () => _settings.edit(context),
-              child: LayoutBuilder(
-                builder: (context, constraints) => AnimatedBuilder(
+              onLongPress: () => _editAvatar(theme),
+              child: DsSketchPanel(
+                theme: theme,
+                radius: theme.radii.xxl,
+                padding: EdgeInsets.symmetric(
+                  horizontal: theme.spacing.xl,
+                  vertical: theme.spacing.sm,
+                ),
+                child: AnimatedBuilder(
                   animation: widget.controller,
-                  builder: (context, _) => Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      _CroppedStatusPanelImage(style: _settings.selectedStyle),
-                      _avatarPositioned(
-                        _mapRegion(_settings.config.avatarRegion),
-                        constraints.biggest,
-                      ),
-                      _positioned(
-                        _mapRegion(_settings.config.experienceRegion),
-                        constraints.biggest,
-                        _ExperienceBar(
-                          level: _level,
-                          value: _experience,
-                          max: _experienceMax,
-                        ),
-                      ),
-                      for (final item in _settings.config.items) ...[
-                        _positioned(
-                          _mapRegion(item.iconRegion),
-                          constraints.biggest,
-                          Image.asset(
-                            _iconAsset(item.type),
-                            width: _iconSize(
-                              item.iconRegion,
-                              constraints.biggest,
-                            ),
-                            height: _iconSize(
-                              item.iconRegion,
-                              constraints.biggest,
-                            ),
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        _positioned(
-                          _mapRegion(item.valueRegion),
-                          constraints.biggest,
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              _value(item.type),
-                              maxLines: 1,
-                              style: const TextStyle(
-                                color: Color(0xFF695B58),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                  builder: (context, _) => FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: _buildContent(theme),
                   ),
                 ),
               ),
@@ -129,7 +93,71 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
     );
   }
 
-  Rect _mapRegion(Rect source) => _settings.selectedStyle.mapToVisible(source);
+  Widget _buildContent(AppThemeData theme) {
+    final types = JellyStatusItemType.values;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _AvatarFrame(theme: theme, child: _buildAvatar()),
+        SizedBox(width: theme.spacing.lg),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _settings.userName,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+                SizedBox(width: theme.spacing.md),
+                Text(
+                  'Lv.$_level',
+                  style: DsTypography.heading.copyWith(
+                    color: theme.primaryText,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 220,
+                  height: 18,
+                  child: _SketchProgressBar(
+                    theme: theme,
+                    value: _experience / _experienceMax,
+                  ),
+                ),
+                SizedBox(width: theme.spacing.sm),
+                Text(
+                  '$_experience/$_experienceMax',
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < types.length; i++) ...[
+                  if (i > 0) SizedBox(width: theme.spacing.lg),
+                  _StatusItem(
+                    theme: theme,
+                    type: types[i],
+                    value: _value(types[i]),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
   /// 头像优先取选中 Live2D 档案的封面，无封面时回退用户头像
   Widget _buildAvatar() {
@@ -147,36 +175,37 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
     return AdaptiveImage(imagePath: avatarPath, fit: BoxFit.cover);
   }
 
-  Widget _positioned(Rect rect, Size size, Widget child) {
-    return Positioned.fromRect(
-      rect: Rect.fromLTRB(
-        rect.left * size.width,
-        rect.top * size.height,
-        rect.right * size.width,
-        rect.bottom * size.height,
+  /// 长按更换用户头像（档案封面优先级更高，见 [_buildAvatar]）
+  Future<void> _editAvatar(AppThemeData theme) {
+    return showDSDialog(
+      context: context,
+      builder: (dialogContext) => DSDialog(
+        title: 'screens_configureTopPanel'.tr,
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AvatarPicker(
+              size: 54,
+              username: _settings.userName,
+              currentAvatarPath: _settings.avatarPath,
+              defaultAvatarAsset: 'assets/images/default_avatar.jpg',
+              saveDirectory: 'avatars',
+              onAvatarChanged: _settings.saveAvatar,
+            ),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                'screens_topPanelAvatarHint'.tr,
+                style: DsTypography.body.copyWith(color: theme.textSub),
+              ),
+            ),
+          ],
+        ),
+        confirmText: 'app_save'.tr,
+        cancelText: 'app_cancel'.tr,
       ),
-      child: Center(child: child),
     );
   }
-
-  /// 头像按区域短边取正方形再裁圆：Center 下约束是松的，
-  /// 不固定尺寸时图片按原始宽高 sizing，非正方形封面会裁成椭圆
-  Widget _avatarPositioned(Rect region, Size size) {
-    final edge = Size(
-      region.width * size.width,
-      region.height * size.height,
-    ).shortestSide;
-    return _positioned(
-      region,
-      size,
-      ClipOval(
-        child: SizedBox.square(dimension: edge, child: _buildAvatar()),
-      ),
-    );
-  }
-
-  double _iconSize(Rect rect, Size size) =>
-      (rect.width * size.width).clamp(14.0, 34.0);
 
   String _value(JellyStatusItemType type) => switch (type) {
     JellyStatusItemType.mood => '${widget.controller.mood}',
@@ -187,80 +216,27 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
   };
 }
 
-class _CroppedStatusPanelImage extends StatelessWidget {
-  const _CroppedStatusPanelImage({required this.style});
+/// 头像 + 手绘墨线圆环边框
+class _AvatarFrame extends StatelessWidget {
+  const _AvatarFrame({required this.theme, required this.child});
 
-  final JellyStatusPanelStyle style;
+  static const double size = 92;
 
-  @override
-  Widget build(BuildContext context) {
-    final bounds = style.visibleBounds;
-    return ClipRect(
-      child: FractionalTranslation(
-        translation: Offset(
-          -bounds.left / bounds.width,
-          -bounds.top / bounds.height,
-        ),
-        child: FractionallySizedBox(
-          widthFactor: 1 / bounds.width,
-          heightFactor: 1 / bounds.height,
-          alignment: Alignment.topLeft,
-          child: JellyConfigurableImage(path: style.asset, fit: BoxFit.fill),
-        ),
-      ),
-    );
-  }
-}
-
-class _ExperienceBar extends StatelessWidget {
-  const _ExperienceBar({
-    required this.level,
-    required this.value,
-    required this.max,
-  });
-
-  final int level;
-  final int value;
-  final int max;
+  final AppThemeData theme;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          Row(
-            children: [
-              Text(
-                'Lv.$level',
-                style: const TextStyle(
-                  color: Color(0xFF695B58),
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: value / max,
-                    minHeight: 8,
-                    backgroundColor: const Color(0x66FFFFFF),
-                    color: const Color(0xFFF4A9B9),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '$value/$max',
-                style: const TextStyle(
-                  color: Color(0xFF806F6A),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          ClipOval(child: child),
+          IgnorePointer(
+            child: DecoratedBox(
+              decoration: dsSketchDecoration(theme: theme, circle: true),
+            ),
           ),
         ],
       ),
@@ -268,11 +244,67 @@ class _ExperienceBar extends StatelessWidget {
   }
 }
 
-// 心情在源图里没有对应表情，取最接近的星星；如需换用其它图标改这里即可
-//（素材目录 assets/jelly_icons/，共 30 枚，见 docs/jelly_icons/split_icons.py）。
-String _iconAsset(JellyStatusItemType type) => switch (type) {
-  JellyStatusItemType.mood => 'assets/jelly_icons/star.webp',
-  JellyStatusItemType.energy => 'assets/jelly_icons/lightning.webp',
-  JellyStatusItemType.affection => 'assets/jelly_icons/heart.webp',
-  JellyStatusItemType.companionDays => 'assets/jelly_icons/calendar.webp',
-};
+/// 手绘经验条：墨线胶囊轨道 + 实底填充
+class _SketchProgressBar extends StatelessWidget {
+  const _SketchProgressBar({required this.theme, required this.value});
+
+  final AppThemeData theme;
+  final double value;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: theme.radii.pill,
+        fillColor: theme.surfaceAlt,
+        strokeWidth: 1.6,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(2.5),
+        child: ClipRRect(
+          borderRadius: theme.radii.pill,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: value.clamp(0.0, 1.0),
+              child: ColoredBox(color: theme.primary),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 单个状态项：手绘图标 + 数值
+class _StatusItem extends StatelessWidget {
+  const _StatusItem({
+    required this.theme,
+    required this.type,
+    required this.value,
+  });
+
+  final AppThemeData theme;
+  final JellyStatusItemType type;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DsIcon(_icon(type), size: 18, color: theme.primaryText),
+        const SizedBox(width: 4),
+        Text(value, style: DsTypography.heading.copyWith(color: theme.text)),
+      ],
+    );
+  }
+
+  DsIconKind _icon(JellyStatusItemType type) => switch (type) {
+    JellyStatusItemType.mood => DsIconKind.mood,
+    JellyStatusItemType.energy => DsIconKind.fire,
+    JellyStatusItemType.affection => DsIconKind.heart,
+    JellyStatusItemType.companionDays => DsIconKind.calendarCheck,
+  };
+}

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:provider/provider.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -40,11 +39,7 @@ class EntryEditorController {
     locationController.dispose();
   }
 
-  CalendarEntry? saveEntry(BuildContext context) {
-    final calendarController = Provider.of<CalendarController>(
-      context,
-      listen: false,
-    );
+  CalendarEntry? saveEntry(CalendarController calendarController) {
     // 如果标题为空且没有图片,则提示错误
     if (titleController.text.isEmpty && imageUrls.isEmpty) {
       toastService.showToast('calendar_album_title_cannot_be_empty'.tr);
