@@ -91,4 +91,56 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     }
   });
+
+  testWidgets('iOS 长按输入框显示文本选择菜单', (tester) async {
+    final controller = TextEditingController(text: 'selectable text');
+    addTearDown(controller.dispose);
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await tester.pumpWidget(buildInput(controller));
+      await tester.longPressAt(tester.getCenter(find.byType(EditableText)));
+      await tester.pumpAndSettle();
+
+      expect(controller.selection.isCollapsed, isFalse);
+      expect(
+        find.byType(CupertinoAdaptiveTextSelectionToolbar),
+        findsOneWidget,
+      );
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('iOS 空输入框聚焦后长按可以粘贴剪贴板文本', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async => switch (call.method) {
+        'Clipboard.hasStrings' => <String, dynamic>{'value': true},
+        'Clipboard.getData' => <String, dynamic>{'text': 'clipboard text'},
+        _ => null,
+      },
+    );
+    try {
+      await tester.pumpWidget(buildInput(controller));
+      await tester.tap(find.byType(EditableText));
+      await tester.pumpAndSettle();
+      await tester.longPress(find.byType(EditableText));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Paste'), findsOneWidget);
+      await tester.tap(find.text('Paste'));
+      await tester.pumpAndSettle();
+
+      expect(controller.text, 'clipboard text');
+    } finally {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      );
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
 }

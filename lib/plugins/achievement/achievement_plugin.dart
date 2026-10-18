@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -81,9 +82,14 @@ class AchievementPlugin extends BasePlugin {
   void resolveStats() => _statsResolver?.resolveAll();
 
   void _onLevelUp(EventArgs args) {
-    if (args is AchievementLevelUpEventArgs) {
-      AchievementUnlockDialog.enqueue(args);
-    }
+    if (args is! AchievementLevelUpEventArgs) return;
+    // 新用户引导页展示期间不弹成就弹窗（成就仍正常解锁入账，仅不打断引导）
+    final onboarded = globalConfigManager.getAppConfigValue<bool>(
+      'onboardingCompleted',
+      false,
+    );
+    if (!onboarded) return;
+    AchievementUnlockDialog.enqueue(args);
   }
 
   /// 供其他模块（小组件、JS API 等）调用的控制器

@@ -95,6 +95,13 @@ Future<void> initializeHomeWidgets() async {
     // 初始化布局管理器
     final layoutManager = HomeLayoutManager();
     await layoutManager.initialize();
+
+    // 首页可能在小组件注册完成前就初始化了布局（此时注册表为空，
+    // 默认布局生成结果为空）。此处注册表已就绪，若仍无项目则重新
+    // 加载以生成默认布局（用户主动清空过的布局不受影响）
+    if (layoutManager.items.isEmpty) {
+      await layoutManager.loadLayout();
+    }
   } catch (e) {
     debugPrint('主页小组件系统初始化失败: $e');
   }

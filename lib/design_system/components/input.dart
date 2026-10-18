@@ -212,6 +212,8 @@ class _DSInputState extends State<DSInput>
                                     behavior: HitTestBehavior.translucent,
                                     child: EditableText(
                                       key: editableTextKey,
+                                      // 手势由外层处理，避免内部基础长按抢走菜单事件。
+                                      rendererIgnoresPointer: true,
                                       controller: _effectiveController,
                                       focusNode: _effectiveFocus,
                                       readOnly: !widget.enabled,
