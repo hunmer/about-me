@@ -38,6 +38,18 @@ PODS:
   - IosAwnCore (0.10.0)
   - irondash_engine_context (0.0.1):
     - Flutter
+  - libwebp (1.5.0):
+    - libwebp/demux (= 1.5.0)
+    - libwebp/mux (= 1.5.0)
+    - libwebp/sharpyuv (= 1.5.0)
+    - libwebp/webp (= 1.5.0)
+  - libwebp/demux (1.5.0):
+    - libwebp/webp
+  - libwebp/mux (1.5.0):
+    - libwebp/demux
+  - libwebp/sharpyuv (1.5.0)
+  - libwebp/webp (1.5.0):
+    - libwebp/sharpyuv
   - live2d_flutter (1.0.3):
     - Flutter
   - location (0.0.1):
@@ -48,6 +60,9 @@ PODS:
   - SQLite.swift/standard (0.14.1)
   - super_native_extensions (0.0.1):
     - Flutter
+  - video_thumbnail (0.0.1):
+    - Flutter
+    - libwebp
 
 DEPENDENCIES:
   - aboutme_foreground_service (from `.symlinks/plugins/aboutme_foreground_service/ios`)
@@ -69,10 +84,12 @@ DEPENDENCIES:
   - live2d_flutter (from `.symlinks/plugins/live2d_flutter/ios`)
   - location (from `.symlinks/plugins/location/ios`)
   - super_native_extensions (from `.symlinks/plugins/super_native_extensions/ios`)
+  - video_thumbnail (from `.symlinks/plugins/video_thumbnail/ios`)
 
 SPEC REPOS:
   trunk:
     - IosAwnCore
+    - libwebp
     - OrderedSet
     - SQLite.swift
 
@@ -115,6 +132,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/location/ios"
   super_native_extensions:
     :path: ".symlinks/plugins/super_native_extensions/ios"
+  video_thumbnail:
+    :path: ".symlinks/plugins/video_thumbnail/ios"
 
 SPEC CHECKSUMS:
   aboutme_foreground_service: 2a4e81411f254f8a6ae2addffc7a259e6009fa72
@@ -124,7 +143,7 @@ SPEC CHECKSUMS:
   aboutme_widgets: 6ee7db2eda2d84221da770aeec3c8e99da93f105
   awesome_notifications: 0f432b28098d193920b11a44cfa9d2d9313a3888
   device_calendar: b55b2c5406cfba45c95a59f9059156daee1f74ed
-  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   flutter_foreground_task: a159d2c2173b33699ddb3e6c2a067045d7cebb89
   flutter_inappwebview_ios: b89ba3482b96fb25e00c967aae065701b66e9b99
   flutter_js: 867813c1830e1d9b2c5d547cdb6f61801e2f2145
@@ -134,11 +153,13 @@ SPEC CHECKSUMS:
   intelligence: 15222bed61d1cd5bb8247b4bf4189ee70ef9f774
   IosAwnCore: 653786a911089012092ce831f2945cd339855a89
   irondash_engine_context: 8e58ca8e0212ee9d1c7dc6a42121849986c88486
+  libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   live2d_flutter: 137700d0e4a2d108e73ec9c33e6c0097df939b82
   location: 155caecf9da4f280ab5fe4a55f94ceccfab838f8
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   SQLite.swift: 2992550ebf3c5b268bf4352603e3df87d2a4ed72
   super_native_extensions: b763c02dc3a8fd078389f410bf15149179020cb4
+  video_thumbnail: b637e0ad5f588ca9945f6e2c927f73a69a661140
 
 PODFILE CHECKSUM: e1155e3acfcfb03bdf668f0d9a6e9cb4e922b9bb
 

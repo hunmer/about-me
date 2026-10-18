@@ -190,6 +190,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             height: 180,
             radius: theme.radii.circle,
             color: page.tint,
+            alignment: Alignment.center,
             child: DsIcon(page.icon, size: 84, color: DsColors.white),
           ),
         ],
@@ -203,6 +204,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       width: size,
       height: size,
       radius: theme.radii.circle,
+      alignment: Alignment.center,
       child: DsIcon(icon, size: size * 0.5, color: color),
     );
   }

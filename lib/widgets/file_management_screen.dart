@@ -1,15 +1,20 @@
 import 'dart:io';
+
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/utils/file_utils.dart';
 import 'package:aboutme/core/utils/zip.dart';
-import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 import 'package:archive/archive_io.dart';
-import 'package:flutter/material.dart';
-import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:path/path.dart' as path;
 
 class FileManagementScreen extends StatefulWidget {
   final Directory? rootDirectory;
@@ -100,28 +105,16 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
 
     if (selectedPaths.isEmpty) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('data_management_confirmDelete'.tr),
-        content: Text(
-          'data_management_confirmDeleteItems'.trParams({
-            'count': selectedPaths.length.toString(),
-          }),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('data_management_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              'data_management_delete'.tr,
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
+      builder: (dialogContext) => DSDialog(
+        title: 'data_management_confirmDelete'.tr,
+        message: 'data_management_confirmDeleteItems'.trParams({
+          'count': selectedPaths.length.toString(),
+        }),
+        confirmText: 'data_management_delete'.tr,
+        cancelText: 'data_management_cancel'.tr,
+        confirmVariant: DSButtonVariant.destructive,
       ),
     );
 
@@ -162,9 +155,9 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
 
     final appDir =
         widget.rootDirectory ?? await StorageManager.appDataDirectory();
-    final targetDir = await showDialog<Directory>(
+    final targetDir = await showDSDialog<Directory>(
       context: context,
-      builder: (context) => FolderPickerDialog(
+      builder: (dialogContext) => FolderPickerDialog(
         rootDirectory: appDir,
         initialDirectory: currentDirectory ?? appDir,
       ),
@@ -188,27 +181,72 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
     }
   }
 
-  Future<void> _renameItem(String oldPath, bool isDirectory) async {
-    final nameController = TextEditingController(text: path.basename(oldPath));
-    final result = await showDialog<String>(
+  /// 手绘输入弹窗：新建文件/文件夹与重命名共用（面板 + 输入框 + 按钮）
+  Future<String?> _showNameDialog({
+    required String title,
+    required String hint,
+    String? initial,
+  }) {
+    final nameController = TextEditingController(text: initial ?? '');
+    return showDSDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('data_management_rename'.tr),
-        content: TextField(
-          controller: nameController,
-          decoration: InputDecoration(hintText: 'data_management_rename'.tr),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (dialogContext) {
+            final theme = DSThemeBridge.resolve(dialogContext);
+            return DsSketchPanel(
+              theme: theme,
+              radius: theme.radii.xxl,
+              padding: EdgeInsets.all(theme.spacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: DsTypography.title.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.lg),
+                  DSInput(controller: nameController, hint: hint),
+                  SizedBox(height: theme.spacing.xl),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DSButton(
+                          label: 'data_management_cancel'.tr,
+                          variant: DSButtonVariant.outline,
+                          onPressed:
+                              () => Navigator.pop(dialogContext, null),
+                        ),
+                      ),
+                      SizedBox(width: theme.spacing.md),
+                      Expanded(
+                        child: DSButton(
+                          label: 'data_management_create'.tr,
+                          onPressed:
+                              () => Navigator.pop(
+                                dialogContext,
+                                nameController.text,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('data_management_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, nameController.text),
-            child: Text('data_management_create'.tr),
-          ),
-        ],
       ),
+    ).whenComplete(() => nameController.dispose());
+  }
+
+  Future<void> _renameItem(String oldPath, bool isDirectory) async {
+    final result = await _showNameDialog(
+      title: 'data_management_rename'.tr,
+      hint: 'data_management_rename'.tr,
+      initial: path.basename(oldPath),
     );
 
     if (result != null && result.isNotEmpty) {
@@ -229,27 +267,28 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
   void _showContextMenu(String itemPath, bool isDirectory) {
     SmoothBottomSheet.show(
       context: context,
-      builder: (context) => Column(
+      builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!isDirectory)
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: Text('app_edit'.tr),
+            SmoothSheetAction(
+              icon: DsIconKind.edit,
+              label: 'app_edit'.tr,
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
                 // 这里可以添加编辑文件的逻辑
                 Toast.show('data_management_editNotImplemented'.tr);
               },
             ),
-          ListTile(
-            leading: const Icon(Icons.drive_file_rename_outline),
-            title: Text('app_rename'.tr),
+          SmoothSheetAction(
+            icon: DsIconKind.edit,
+            label: 'app_rename'.tr,
             onTap: () {
-              Navigator.pop(context);
+              Navigator.pop(sheetContext);
               _renameItem(itemPath, isDirectory);
             },
           ),
+          SizedBox(height: MediaQuery.paddingOf(sheetContext).bottom + 8),
         ],
       ),
     );
@@ -374,26 +413,9 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
   }
 
   Future<void> _createNewFile() async {
-    final nameController = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('data_management_newFile'.tr),
-        content: TextField(
-          controller: nameController,
-          decoration: InputDecoration(hintText: 'data_management_newFile'.tr),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('data_management_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, nameController.text),
-            child: Text('data_management_create'.tr),
-          ),
-        ],
-      ),
+    final result = await _showNameDialog(
+      title: 'data_management_newFile'.tr,
+      hint: 'data_management_newFile'.tr,
     );
 
     if (result != null && result.isNotEmpty) {
@@ -404,26 +426,9 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
   }
 
   Future<void> _createNewFolder() async {
-    final nameController = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('data_management_newFolder'.tr),
-        content: TextField(
-          controller: nameController,
-          decoration: InputDecoration(hintText: 'data_management_newFolder'.tr),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('data_management_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, nameController.text),
-            child: Text('data_management_create'.tr),
-          ),
-        ],
-      ),
+    final result = await _showNameDialog(
+      title: 'data_management_newFolder'.tr,
+      hint: 'data_management_newFolder'.tr,
     );
 
     if (result != null && result.isNotEmpty) {
@@ -442,115 +447,200 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
+  String get _appBarTitle =>
+      directoryStack.length > 1
+          ? path.basename(currentDirectory!.path)
+          : (widget.title ??
+                (currentDirectory != null
+                    ? path.basename(currentDirectory!.path)
+                    : 'data_management_dataManagementTitle'.tr));
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          directoryStack.length > 1
-              ? path.basename(currentDirectory!.path)
-              : (widget.title ??
-                    (currentDirectory != null
-                        ? path.basename(currentDirectory!.path)
-                        : 'data_management_dataManagementTitle'.tr)),
-        ),
-        leading: directoryStack.length > 1
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _navigateUp,
-              )
-            : null,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshFiles,
-            tooltip: 'data_management_refresh'.tr,
-          ),
-          IconButton(
-            icon: const Icon(Icons.upload_file),
-            onPressed: _importFiles,
-            tooltip: 'data_management_importFiles'.tr,
-          ),
-          if (selectedItems.isNotEmpty) ...[
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: _deleteSelected,
-              tooltip: 'data_management_deleteSelected'.tr,
-            ),
-            IconButton(
-              icon: const Icon(Icons.drive_file_move),
-              onPressed: _moveSelected,
-              tooltip: 'data_management_moveSelected'.tr,
-            ),
-            IconButton(
-              icon: const Icon(Icons.download),
-              onPressed: _exportSelected,
-              tooltip: 'data_management_exportSelected'.tr,
-            ),
-          ],
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: currentDirectory == null
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    itemCount: files.length,
-                    itemBuilder: (context, index) {
-                      final file = files[index];
-                      final isDirectory = file is Directory;
-                      return ListTile(
-                        leading: isDirectory
-                            ? const Icon(Icons.folder, color: Colors.amber)
-                            : const Icon(Icons.insert_drive_file),
-                        title: Text(path.basename(file.path)),
-                        subtitle: isDirectory
-                            ? null
-                            : Text(
-                                _formatFileSize((file as File).lengthSync()),
-                              ),
-                        trailing: Checkbox(
-                          value: selectedItems[file.path] ?? false,
-                          onChanged: (value) =>
-                              _toggleSelection(file.path, isDirectory),
-                        ),
-                        onTap: () {
-                          if (isDirectory) {
-                            _navigateToDirectory(file);
-                          }
-                        },
-                        onLongPress: () {
-                          _showContextMenu(file.path, isDirectory);
-                        },
-                      );
-                    },
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    // DS 组件依赖 AppTheme 祖先，通用页面外层自包主题桥（已有树时零开销透传）
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+
+          return SuperCupertinoNavigationWrapper(
+            title: Text(_appBarTitle),
+            enableLargeTitle: false,
+            // 目录栈多于一层时返回按钮改为“返回上级目录”
+            backButton:
+                directoryStack.length > 1
+                    ? DSIconButton(
+                        icon: DsIconKind.chevronLeft,
+                        size: 36,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: _navigateUp,
+                      )
+                    : null,
+            actions: [
+              DSIconButton(
+                icon: DsIconKind.refresh,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'data_management_refresh'.tr,
+                onPressed: _refreshFiles,
+              ),
+              DSIconButton(
+                icon: DsIconKind.upload,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'data_management_importFiles'.tr,
+                onPressed: _importFiles,
+              ),
+              if (selectedItems.isNotEmpty) ...[
+                DSIconButton(
+                  icon: DsIconKind.trash,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.danger,
+                  tooltip: 'data_management_deleteSelected'.tr,
+                  onPressed: _deleteSelected,
+                ),
+                DSIconButton(
+                  icon: DsIconKind.driveFileMove,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  tooltip: 'data_management_moveSelected'.tr,
+                  onPressed: _moveSelected,
+                ),
+                DSIconButton(
+                  icon: DsIconKind.download,
+                  size: 36,
+                  color: theme.surfaceAlt,
+                  iconColor: theme.textSub,
+                  tooltip: 'data_management_exportSelected'.tr,
+                  onPressed: _exportSelected,
+                ),
+              ],
+            ],
+            body: Column(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.create_new_folder),
-                    label: Text('data_management_newFolder'.tr),
-                    onPressed: _createNewFolder,
-                  ),
+                  child:
+                      currentDirectory == null
+                          ? Center(
+                            child: DSLoadingDots(
+                              label: 'data_management_refresh'.tr,
+                            ),
+                          )
+                          : HandDrawnListView(
+                            itemCount: files.length,
+                            // 倾斜角度由文件路径确定性生成，目录内排序后不变
+                            tiltKeyOf: (index) => files[index].path,
+                            separatorBuilder:
+                                (_, __) => const SizedBox(height: 16),
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                            itemBuilder:
+                                (context, index) => _buildFileItem(
+                                  context,
+                                  files[index],
+                                ),
+                          ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.note_add),
-                    label: Text('data_management_newFile'.tr),
-                    onPressed: _createNewFile,
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    theme.spacing.lg,
+                    theme.spacing.sm,
+                    theme.spacing.lg,
+                    theme.spacing.sm +
+                        MediaQuery.paddingOf(context).bottom,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: DSButton(
+                          icon: DsIconKind.folder,
+                          label: 'data_management_newFolder'.tr,
+                          onPressed: _createNewFolder,
+                        ),
+                      ),
+                      SizedBox(width: theme.spacing.md),
+                      Expanded(
+                        child: DSButton(
+                          icon: DsIconKind.file,
+                          label: 'data_management_newFile'.tr,
+                          onPressed: _createNewFile,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// 单个文件/目录便签卡片：实底 + 墨线描边，选中态主色淡底 + 主色描边
+  Widget _buildFileItem(BuildContext context, FileSystemEntity file) {
+    final theme = DSThemeBridge.resolve(context);
+    final isDirectory = file is Directory;
+    final selected = selectedItems[file.path] ?? false;
+
+    return GestureDetector(
+      onTap: isDirectory ? () => _navigateToDirectory(file) : null,
+      onLongPress: () => _showContextMenu(file.path, isDirectory),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: theme.spacing.lg,
+          vertical: theme.spacing.md,
+        ),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          radius: theme.radii.lg,
+          fillColor: selected
+              ? theme.primary.withValues(alpha: 0.15)
+              : theme.surface,
+          stroke: selected ? theme.primary : null,
+          seed: file.path.hashCode & 0x7fffffff,
+        ),
+        child: Row(
+          children: [
+            DsIcon(
+              isDirectory ? DsIconKind.folder : DsIconKind.file,
+              size: 26,
+              color: isDirectory ? theme.warning : theme.textSub,
+            ),
+            SizedBox(width: theme.spacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    path.basename(file.path),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTypography.body.copyWith(color: theme.text),
+                  ),
+                  if (!isDirectory) ...[
+                    SizedBox(height: 2),
+                    Text(
+                      _formatFileSize((file as File).lengthSync()),
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            DSCheckbox(
+              value: selected,
+              onChanged: (_) => _toggleSelection(file.path, isDirectory),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -604,7 +694,8 @@ class _FolderPickerDialogState extends State<FolderPickerDialog> {
       });
     } catch (e) {
       setState(() {
-        errorMessage = '无法加载目录: ${e.toString()}';
+        errorMessage =
+            '${'data_management_directoryLoadFailed'.tr}: ${e.toString()}';
       });
     } finally {
       setState(() {
@@ -633,54 +724,121 @@ class _FolderPickerDialogState extends State<FolderPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Row(
+    final theme = DSThemeBridge.resolve(context);
+
+    return DsSketchPanel(
+      theme: theme,
+      radius: theme.radii.xxl,
+      padding: EdgeInsets.all(theme.spacing.lg),
+      width: double.maxFinite,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Text(
-              path.basename(currentDirectory.path),
-              overflow: TextOverflow.ellipsis,
-            ),
+          Text(
+            path.basename(currentDirectory.path),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: DsTypography.title.copyWith(color: theme.text),
+          ),
+          SizedBox(height: theme.spacing.md),
+          Flexible(
+            child:
+                isLoading
+                    ? Center(child: DSLoadingDots())
+                    : errorMessage != null
+                    ? Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: theme.spacing.xl,
+                      ),
+                      child: Text(
+                        errorMessage!,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                    )
+                    : folders.isEmpty
+                    ? Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: theme.spacing.xl,
+                      ),
+                      child: Text(
+                        'data_management_directoryAccessFailed'.tr,
+                        textAlign: TextAlign.center,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                    )
+                    : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: folders.length,
+                      itemBuilder:
+                          (context, index) => _buildFolderRow(
+                            context,
+                            folders[index] as Directory,
+                          ),
+                    ),
+          ),
+          SizedBox(height: theme.spacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: DSButton(
+                  label: 'app_cancel'.tr,
+                  variant: DSButtonVariant.outline,
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              SizedBox(width: theme.spacing.md),
+              Expanded(
+                child: DSButton(
+                  label: 'data_management_select'.tr,
+                  onPressed: () => Navigator.pop(context, currentDirectory),
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : errorMessage != null
-            ? Center(child: Text(errorMessage!))
-            : folders.isEmpty
-            ? Center(child: Text('data_management_directoryAccessFailed'.tr))
-            : ListView.builder(
-                shrinkWrap: true,
-                itemCount: folders.length,
-                itemBuilder: (context, index) {
-                  final folder = folders[index] as Directory;
-                  return ListTile(
-                    leading: folder.path == '..'
-                        ? const Icon(Icons.arrow_upward)
-                        : const Icon(Icons.folder, color: Colors.amber),
-                    title: folder.path == '..'
-                        ? Text('data_management_move'.tr)
-                        : Text(path.basename(folder.path)),
-                    onTap: folder.path == '..'
-                        ? () => _navigateUp()
-                        : () => _navigateTo(folder),
-                  );
-                },
+    );
+  }
+
+  Widget _buildFolderRow(BuildContext context, Directory folder) {
+    final theme = DSThemeBridge.resolve(context);
+    final isUp = folder.path == '..';
+
+    return Pressable(
+      onPressed: isUp ? _navigateUp : () => _navigateTo(folder),
+      builder: (context, states) => Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: theme.spacing.md,
+          vertical: theme.spacing.sm,
+        ),
+        color: states.contains(WidgetState.pressed)
+            ? theme.surfaceAlt
+            : DsColors.transparent,
+        child: Row(
+          children: [
+            DsIcon(
+              isUp ? DsIconKind.chevronUp : DsIconKind.folder,
+              size: 20,
+              color: isUp ? theme.textSub : theme.warning,
+            ),
+            SizedBox(width: theme.spacing.md),
+            Expanded(
+              child: Text(
+                isUp ? 'data_management_move'.tr : path.basename(folder.path),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: DsTypography.body.copyWith(color: theme.text),
               ),
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('app_cancel'.tr),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, currentDirectory),
-          child: Text('data_management_select'.tr),
-        ),
-      ],
     );
   }
 }
