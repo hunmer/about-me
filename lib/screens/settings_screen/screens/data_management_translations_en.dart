@@ -47,4 +47,9 @@ const Map<String, String> dataManagementTranslationsEn = {
   // File viewing
   'data_management_fileReadFailed': 'Failed to read file',
   'data_management_textTruncated': 'File is large, only the beginning is shown',
+
+  // Empty state
+  'data_management_emptyTitle': 'Empty directory',
+  'data_management_emptyMessage':
+      'Create a file or folder with the buttons below',
 };

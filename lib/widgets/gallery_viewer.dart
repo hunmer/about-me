@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/utils/blob_url.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,6 +25,7 @@ class GalleryPhoto {
     this.caption,
     this.subText,
     this.isVideo = false,
+    this.isAudio = false,
     this.thumbUrl,
     this.isFile = false,
     this.fileSize,
@@ -34,6 +37,9 @@ class GalleryPhoto {
 
   /// 是否为视频（页面渲染内嵌播放器，单击播放/暂停）
   final bool isVideo;
+
+  /// 是否为音频（页面渲染内嵌播放器，audioplayers）
+  final bool isAudio;
 
   /// 视频缩略图地址（封面），优先于 url 解析；图片项忽略
   final String? thumbUrl;
@@ -138,10 +144,9 @@ class GalleryViewer extends StatefulWidget {
     final ext = path.extension(filePath).toLowerCase();
     final mime = mimeType ?? '';
 
-    final isVideo =
-        mime.startsWith('video/') || _videoExtensions.contains(ext);
-    final isImage =
-        mime.startsWith('image/') || _imageExtensions.contains(ext);
+    final isVideo = mime.startsWith('video/') || _videoExtensions.contains(ext);
+    final isAudio = mime.startsWith('audio/') || _audioExtensions.contains(ext);
+    final isImage = mime.startsWith('image/') || _imageExtensions.contains(ext);
 
     final GalleryPhoto photo;
     if (isVideo) {
@@ -150,6 +155,13 @@ class GalleryViewer extends StatefulWidget {
         caption: displayName,
         isVideo: true,
         thumbUrl: _companionThumbPath(filePath),
+      );
+    } else if (isAudio) {
+      photo = GalleryPhoto(
+        url: filePath,
+        caption: displayName,
+        isAudio: true,
+        fileSize: fileSize > 0 ? fileSize : null,
       );
     } else if (isImage) {
       photo = GalleryPhoto(url: filePath, caption: displayName);
@@ -175,11 +187,34 @@ class GalleryViewer extends StatefulWidget {
   }
 
   static const _videoExtensions = {
-    '.mp4', '.mov', '.avi', '.mkv', '.webm', '.3gp', '.m4v',
+    '.mp4',
+    '.mov',
+    '.avi',
+    '.mkv',
+    '.webm',
+    '.3gp',
+    '.m4v',
+  };
+
+  static const _audioExtensions = {
+    '.mp3',
+    '.m4a',
+    '.aac',
+    '.wav',
+    '.ogg',
+    '.flac',
+    '.opus',
+    '.wma',
   };
 
   static const _imageExtensions = {
-    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.heic',
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.webp',
+    '.bmp',
+    '.heic',
   };
 
   /// 本地视频的伴生首帧缩略图路径（`<name>.thumb.jpg` 命名约定），
@@ -234,10 +269,7 @@ class _GalleryViewerState extends State<GalleryViewer>
         duration: const Duration(milliseconds: 360),
       )..forward();
       _entranceController = controller;
-      _entranceScale = Tween<double>(
-        begin: 0.72,
-        end: 1,
-      ).animate(
+      _entranceScale = Tween<double>(begin: 0.72, end: 1).animate(
         CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
       );
       _entranceOpacity = CurvedAnimation(
@@ -316,9 +348,11 @@ class _GalleryViewerState extends State<GalleryViewer>
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(28),
                     child: FadeTransition(
-                      opacity: _entranceOpacity ?? const AlwaysStoppedAnimation(1),
+                      opacity:
+                          _entranceOpacity ?? const AlwaysStoppedAnimation(1),
                       child: ScaleTransition(
-                        scale: _entranceScale ?? const AlwaysStoppedAnimation(1),
+                        scale:
+                            _entranceScale ?? const AlwaysStoppedAnimation(1),
                         child: PhotoViewGallery.builder(
                           itemCount: photos.length,
                           pageController: _pageController,
@@ -337,6 +371,16 @@ class _GalleryViewerState extends State<GalleryViewer>
                             if (photo.isVideo) {
                               return PhotoViewGalleryPageOptions.customChild(
                                 child: _GalleryVideo(
+                                  url: photo.url,
+                                  isActive: index == _index,
+                                ),
+                                disableGestures: true,
+                              );
+                            }
+                            // 音频页：内嵌播放器（audioplayers，同样禁用缩放手势）
+                            if (photo.isAudio) {
+                              return PhotoViewGalleryPageOptions.customChild(
+                                child: _GalleryAudio(
                                   url: photo.url,
                                   isActive: index == _index,
                                 ),
@@ -581,6 +625,7 @@ class _GalleryViewerState extends State<GalleryViewer>
                   // 视频缩略图优先用封面，无封面时不解析视频本体（图标占位）
                   url: photo.isVideo ? (photo.thumbUrl ?? '') : photo.url,
                   isVideo: photo.isVideo,
+                  isAudio: photo.isAudio,
                   isFile: photo.isFile,
                 ),
               ),
@@ -681,7 +726,8 @@ class _GalleryImage extends StatelessWidget {
       builder: (context, snapshot) {
         final resolved = snapshot.data;
         if (resolved != null) return _buildImage(resolved);
-        if (snapshot.hasError || snapshot.connectionState == ConnectionState.done) {
+        if (snapshot.hasError ||
+            snapshot.connectionState == ConnectionState.done) {
           // 解析完成但无可用 provider（文件缺失等）
           return const _GalleryFallback();
         }
@@ -715,6 +761,7 @@ class _GalleryThumbImage extends StatelessWidget {
   const _GalleryThumbImage({
     required this.url,
     this.isVideo = false,
+    this.isAudio = false,
     this.isFile = false,
   });
 
@@ -722,12 +769,19 @@ class _GalleryThumbImage extends StatelessWidget {
 
   final bool isVideo;
 
+  final bool isAudio;
+
   final bool isFile;
 
   @override
   Widget build(BuildContext context) {
     if (url.isEmpty || isFile) {
-      return _iconPlaceholder(isFile ? _fileIcon(null) : Icons.videocam_outlined);
+      return _iconPlaceholder(
+        isFile ? _fileIcon(null) : Icons.videocam_outlined,
+      );
+    }
+    if (isAudio) {
+      return _iconPlaceholder(Icons.audiotrack_outlined);
     }
 
     final provider = GalleryImageResolver.cached(url);
@@ -739,7 +793,9 @@ class _GalleryThumbImage extends StatelessWidget {
         final resolved = snapshot.data;
         if (resolved != null) return _buildImage(resolved);
         // 未就绪时露出底色占位
-        return isVideo ? _iconPlaceholder(Icons.videocam_outlined) : const SizedBox.shrink();
+        return isVideo
+            ? _iconPlaceholder(Icons.videocam_outlined)
+            : const SizedBox.shrink();
       },
     );
   }
@@ -884,11 +940,7 @@ class _GalleryVideoState extends State<_GalleryVideo> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.white38,
-              ),
+              const Icon(Icons.error_outline, size: 64, color: Colors.white38),
               const SizedBox(height: 16),
               Text(
                 'file_preview_videoLoadFailed'.tr,
@@ -965,10 +1017,9 @@ class _GalleryVideoTapOverlay extends StatelessWidget {
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 50),
           reverseDuration: const Duration(milliseconds: 200),
-          child:
-              isPlaying
-                  ? const SizedBox.shrink()
-                  : Container(color: Colors.black26),
+          child: isPlaying
+              ? const SizedBox.shrink()
+              : Container(color: Colors.black26),
         ),
         GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -994,11 +1045,7 @@ class _GalleryVideoTapOverlay extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.18),
               border: Border.all(color: Colors.white70),
             ),
-            child: const Icon(
-              Icons.play_arrow,
-              color: Colors.white,
-              size: 34,
-            ),
+            child: const Icon(Icons.play_arrow, color: Colors.white, size: 34),
           ),
       ],
     );
@@ -1041,16 +1088,16 @@ class _GalleryVideoProgressBar extends StatelessWidget {
               trackHeight: 2.5,
             ),
             child: Slider(
-              value: position.inMilliseconds
-                  .toDouble()
-                  .clamp(0.0, maxMs <= 0 ? 1.0 : maxMs),
+              value: position.inMilliseconds.toDouble().clamp(
+                0.0,
+                maxMs <= 0 ? 1.0 : maxMs,
+              ),
               max: maxMs <= 0 ? 1.0 : maxMs,
-              onChanged:
-                  maxMs <= 0
-                      ? null
-                      : (value) => controller.seekTo(
-                        Duration(milliseconds: value.toInt()),
-                      ),
+              onChanged: maxMs <= 0
+                  ? null
+                  : (value) => controller.seekTo(
+                      Duration(milliseconds: value.toInt()),
+                    ),
             ),
           ),
           Row(
@@ -1074,6 +1121,238 @@ class _GalleryVideoProgressBar extends StatelessWidget {
               ),
               Text(
                 _formatDuration(duration),
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 音频页渲染：audioplayers 内嵌播放器（本地文件走 DeviceFileSource，
+/// 打开即自动播放），居中音符视觉 + 播放/暂停大按钮 + 底部进度条
+/// （样式与视频页一致）；切走页面（isActive=false）自动暂停，
+/// 页面销毁时释放播放器
+class _GalleryAudio extends StatefulWidget {
+  const _GalleryAudio({required this.url, this.isActive = true});
+
+  final String url;
+
+  /// 是否为当前可见页（非当前页暂停播放）
+  final bool isActive;
+
+  @override
+  State<_GalleryAudio> createState() => _GalleryAudioState();
+}
+
+class _GalleryAudioState extends State<_GalleryAudio> {
+  AudioPlayer? _player;
+  bool _isPlaying = false;
+  bool _hasError = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  final List<StreamSubscription> _subs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePlayer();
+  }
+
+  @override
+  void didUpdateWidget(_GalleryAudio oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // PageView 相邻页保活时，非当前页暂停避免后台继续出声
+    if (!widget.isActive && _isPlaying) {
+      _player?.pause();
+    }
+  }
+
+  Future<void> _initializePlayer() async {
+    try {
+      final player = AudioPlayer();
+      _player = player;
+      _subs.add(
+        player.onPositionChanged.listen((p) {
+          if (mounted) setState(() => _position = p);
+        }),
+      );
+      _subs.add(
+        player.onDurationChanged.listen((d) {
+          if (mounted) setState(() => _duration = d);
+        }),
+      );
+      _subs.add(
+        player.onPlayerStateChanged.listen((s) {
+          if (mounted) {
+            setState(() => _isPlaying = s == PlayerState.playing);
+          }
+        }),
+      );
+      _subs.add(
+        player.onPlayerComplete.listen((_) {
+          // 播完归零，下一次 resume 从头播放（resume 对 stopped 态同样有效）
+          player.seek(Duration.zero);
+          if (mounted) setState(() => _position = Duration.zero);
+        }),
+      );
+      // 打开即自动播放
+      await player.play(DeviceFileSource(widget.url));
+    } catch (e) {
+      debugPrint('音频初始化错误: $e');
+      if (mounted) {
+        setState(() => _hasError = true);
+        Toast.error('${'app_audioLoadFailed'.tr}: $e');
+      }
+    }
+  }
+
+  void _togglePlay() {
+    final player = _player;
+    if (player == null) return;
+    if (_isPlaying) {
+      player.pause();
+    } else {
+      player.resume();
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final sub in _subs) {
+      sub.cancel();
+    }
+    _player?.dispose();
+    super.dispose();
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return duration.inHours > 0
+        ? '${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds'
+        : '$twoDigitMinutes:$twoDigitSeconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.white38),
+              const SizedBox(height: 16),
+              Text(
+                'app_audioLoadFailed'.tr,
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 播放中音符轻微放大，模拟律动
+                AnimatedScale(
+                  scale: _isPlaying ? 1.12 : 1.0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                  child: const Icon(
+                    Icons.music_note,
+                    size: 80,
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildPlayPauseButton(),
+              ],
+            ),
+          ),
+        ),
+        _buildProgressBar(),
+      ],
+    );
+  }
+
+  /// 播放/暂停大按钮（样式对齐视频页播放遮罩按钮）
+  Widget _buildPlayPauseButton() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _togglePlay,
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.18),
+          border: Border.all(color: Colors.white70),
+        ),
+        child: Icon(
+          _isPlaying ? Icons.pause : Icons.play_arrow,
+          color: Colors.white,
+          size: 38,
+        ),
+      ),
+    );
+  }
+
+  /// 底部进度条（样式对齐视频页进度条）
+  Widget _buildProgressBar() {
+    final maxMs = _duration.inMilliseconds.toDouble();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: Colors.white,
+              inactiveTrackColor: Colors.white24,
+              thumbColor: Colors.white,
+              overlayColor: Colors.white24,
+              trackHeight: 2.5,
+            ),
+            child: Slider(
+              value: _position.inMilliseconds.toDouble().clamp(
+                0.0,
+                maxMs <= 0 ? 1.0 : maxMs,
+              ),
+              max: maxMs <= 0 ? 1.0 : maxMs,
+              onChanged: maxMs <= 0
+                  ? null
+                  : (value) =>
+                        _player?.seek(Duration(milliseconds: value.toInt())),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _formatDuration(_position),
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+              IconButton(
+                icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                color: Colors.white,
+                iconSize: 28,
+                onPressed: _togglePlay,
+              ),
+              Text(
+                _formatDuration(_duration),
                 style: const TextStyle(color: Colors.white54, fontSize: 12),
               ),
             ],
@@ -1136,11 +1415,7 @@ class _GalleryFilePage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              _fileIcon(photo.mimeType),
-              size: 64,
-              color: Colors.white70,
-            ),
+            Icon(_fileIcon(photo.mimeType), size: 64, color: Colors.white70),
             const SizedBox(height: 16),
             Text(
               photo.caption ?? path.basename(photo.url),
@@ -1241,9 +1516,7 @@ class GalleryFileActions {
                   '${'file_preview_name'.tr}: ${fileName ?? path.basename(absolutePath)}',
                 ),
                 Text(absolutePath),
-                Text(
-                  '${'file_preview_fileSize'.tr}: ${_formatFileSize(size)}',
-                ),
+                Text('${'file_preview_fileSize'.tr}: ${_formatFileSize(size)}'),
                 Text(
                   '${'file_preview_fileType'.tr}: ${path.extension(absolutePath)}',
                 ),

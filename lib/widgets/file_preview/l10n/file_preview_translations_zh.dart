@@ -40,4 +40,11 @@ const Map<String, String> filePreviewTranslationsZh = {
   'file_preview_preview_not_available': '预览不可用',
   'file_preview_loading_preview': '正在加载预览...',
   'file_preview_open_file_location': '打开文件位置',
+
+  // gallery_viewer 引用的驼峰键（补齐缺失，避免界面显示键名）
+  'file_preview_fileNotExist': '文件不存在',
+  'file_preview_errorFilePreviewFailed': '文件预览失败',
+  'file_preview_videoLoadFailed': '视频加载失败',
+  'file_preview_fileSize': '文件大小',
+  'file_preview_fileType': '文件类型',
 };

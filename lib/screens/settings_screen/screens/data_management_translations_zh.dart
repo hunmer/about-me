@@ -47,4 +47,8 @@ const Map<String, String> dataManagementTranslationsZh = {
   // 文件查看
   'data_management_fileReadFailed': '文件读取失败',
   'data_management_textTruncated': '文件较大，仅显示开头部分',
+
+  // 空态
+  'data_management_emptyTitle': '目录为空',
+  'data_management_emptyMessage': '点击下方按钮新建文件或文件夹',
 };

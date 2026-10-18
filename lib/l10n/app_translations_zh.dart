@@ -221,6 +221,7 @@ const Map<String, String> appTranslationsZh = {
   'app_takePhoto': '拍照',
   'app_loadingVideo': '正在加载视频...',
   'app_videoLoadFailed': '视频加载失败: @error',
+  'app_audioLoadFailed': '音频加载失败',
 
   // Form validation
   'app_pleaseEnterTitle': '请输入标题',

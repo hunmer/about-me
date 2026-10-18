@@ -234,6 +234,7 @@ const Map<String, String> appTranslationsEn = {
   'app_takePhoto': 'Take photo',
   'app_loadingVideo': 'Loading video...',
   'app_videoLoadFailed': 'Video load failed: @error',
+  'app_audioLoadFailed': 'Audio load failed',
 
   // Form validation
   'app_pleaseEnterTitle': 'Please Enter Title',

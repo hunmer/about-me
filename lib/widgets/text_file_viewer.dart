@@ -67,9 +67,7 @@ class _TextFileViewerState extends State<TextFileViewer> {
               child: Column(
                 children: [
                   DSLightHeader(title: path.basename(widget.file.path)),
-                  Expanded(
-                    child: _buildBody(context, theme),
-                  ),
+                  Expanded(child: _buildBody(context, theme)),
                 ],
               ),
             ),

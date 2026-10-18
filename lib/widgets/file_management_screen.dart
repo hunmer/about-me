@@ -219,19 +219,15 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
                         child: DSButton(
                           label: 'data_management_cancel'.tr,
                           variant: DSButtonVariant.outline,
-                          onPressed:
-                              () => Navigator.pop(dialogContext, null),
+                          onPressed: () => Navigator.pop(dialogContext, null),
                         ),
                       ),
                       SizedBox(width: theme.spacing.md),
                       Expanded(
                         child: DSButton(
                           label: 'data_management_create'.tr,
-                          onPressed:
-                              () => Navigator.pop(
-                                dialogContext,
-                                nameController.text,
-                              ),
+                          onPressed: () =>
+                              Navigator.pop(dialogContext, nameController.text),
                         ),
                       ),
                     ],
@@ -452,24 +448,79 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
 
   /// 可直接阅读的文本类扩展名（含常见代码/配置文件）
   static const _textExtensions = {
-    '.txt', '.md', '.markdown', '.json', '.xml', '.yaml', '.yml', '.csv',
-    '.log', '.ini', '.conf', '.properties', '.toml', '.sql', '.dart',
-    '.js', '.ts', '.jsx', '.tsx', '.html', '.htm', '.css', '.py', '.rb',
-    '.go', '.rs', '.java', '.kt', '.swift', '.c', '.h', '.cpp', '.sh',
+    '.txt',
+    '.md',
+    '.markdown',
+    '.json',
+    '.xml',
+    '.yaml',
+    '.yml',
+    '.csv',
+    '.log',
+    '.ini',
+    '.conf',
+    '.properties',
+    '.toml',
+    '.sql',
+    '.dart',
+    '.js',
+    '.ts',
+    '.jsx',
+    '.tsx',
+    '.html',
+    '.htm',
+    '.css',
+    '.py',
+    '.rb',
+    '.go',
+    '.rs',
+    '.java',
+    '.kt',
+    '.swift',
+    '.c',
+    '.h',
+    '.cpp',
+    '.sh',
   };
 
-  /// 音频扩展名（GalleryViewer 以文件信息卡展示，不可内嵌播放）
+  /// 图片扩展名（GalleryViewer 内嵌查看）
+  static const _imageExtensions = {
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.webp',
+    '.bmp',
+    '.heic',
+  };
+
+  /// 视频扩展名（GalleryViewer 内嵌播放）
+  static const _videoExtensions = {
+    '.mp4',
+    '.mov',
+    '.avi',
+    '.mkv',
+    '.webm',
+    '.3gp',
+    '.m4v',
+  };
+
+  /// 音频扩展名（GalleryViewer 内嵌播放，audioplayers）
   static const _audioExtensions = {
-    '.mp3', '.m4a', '.aac', '.wav', '.ogg', '.flac', '.opus', '.wma',
+    '.mp3',
+    '.m4a',
+    '.aac',
+    '.wav',
+    '.ogg',
+    '.flac',
+    '.opus',
+    '.wma',
   };
 
-  /// 图片/视频扩展名（GalleryViewer 内嵌查看与播放）
-  static const _mediaExtensions = {
-    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.heic',
-    '.mp4', '.mov', '.avi', '.mkv', '.webm', '.3gp', '.m4v',
-  };
+  /// 图片 + 视频
+  static const _mediaExtensions = {..._imageExtensions, ..._videoExtensions};
 
-  /// 点击文件按类型分发查看：文本 → 查看页；媒体 → GalleryViewer
+  /// 点击文件按类型分发查看：文本 → 查看页；媒体 → 目录相册集
   void _openFile(File file) {
     final ext = path.extension(file.path).toLowerCase();
 
@@ -482,35 +533,55 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
       return;
     }
 
-    if (_audioExtensions.contains(ext)) {
-      // gallery 无音频播放器，传 audio mime 让文件信息卡显示音频图标
-      GalleryViewer.showFilePreview(
-        context,
-        filePath: file.path,
-        fileSize: file.lengthSync(),
-        mimeType: 'audio',
-      );
-      return;
-    }
-
-    if (_mediaExtensions.contains(ext)) {
-      // 图片/视频由 showFilePreview 按扩展名自行判定渲染方式
-      GalleryViewer.showFilePreview(
-        context,
-        filePath: file.path,
-        fileSize: file.lengthSync(),
-      );
+    if (_mediaExtensions.contains(ext) || _audioExtensions.contains(ext)) {
+      _openMediaGallery(file);
     }
     // 其余类型保持原状：点击无操作
   }
 
-  String get _appBarTitle =>
-      directoryStack.length > 1
-          ? path.basename(currentDirectory!.path)
-          : (widget.title ??
-                (currentDirectory != null
-                    ? path.basename(currentDirectory!.path)
-                    : 'data_management_dataManagementTitle'.tr));
+  /// 以当前目录内全部图片/视频/音频为相册集打开（列表当前排序顺序），
+  /// 横滑连续浏览，初始定位到点击的文件
+  void _openMediaGallery(File file) {
+    final mediaFiles = files.whereType<File>().where((f) {
+      final ext = path.extension(f.path).toLowerCase();
+      return _mediaExtensions.contains(ext) || _audioExtensions.contains(ext);
+    }).toList();
+    final initialIndex = mediaFiles.indexOf(file);
+    if (initialIndex < 0) return;
+
+    final photos = [
+      for (final f in mediaFiles)
+        GalleryPhoto(
+          url: f.path,
+          caption: path.basename(f.path),
+          isVideo: _videoExtensions.contains(
+            path.extension(f.path).toLowerCase(),
+          ),
+          isAudio: _audioExtensions.contains(
+            path.extension(f.path).toLowerCase(),
+          ),
+        ),
+    ];
+
+    NavigationHelper.push(
+      context,
+      GalleryViewer(
+        title: path.basename(currentDirectory?.path ?? ''),
+        showFileActions: true,
+        entranceAnimation: true,
+        photos: photos,
+        initialIndex: initialIndex,
+      ),
+      routeName: '/gallery_viewer',
+    );
+  }
+
+  String get _appBarTitle => directoryStack.length > 1
+      ? path.basename(currentDirectory!.path)
+      : (widget.title ??
+            (currentDirectory != null
+                ? path.basename(currentDirectory!.path)
+                : 'data_management_dataManagementTitle'.tr));
 
   @override
   Widget build(BuildContext context) {
@@ -524,16 +595,15 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
             title: Text(_appBarTitle),
             enableLargeTitle: false,
             // 目录栈多于一层时返回按钮改为“返回上级目录”
-            backButton:
-                directoryStack.length > 1
-                    ? DSIconButton(
-                        icon: DsIconKind.chevronLeft,
-                        size: 36,
-                        color: theme.surfaceAlt,
-                        iconColor: theme.textSub,
-                        onPressed: _navigateUp,
-                      )
-                    : null,
+            backButton: directoryStack.length > 1
+                ? DSIconButton(
+                    icon: DsIconKind.chevronLeft,
+                    size: 36,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    onPressed: _navigateUp,
+                  )
+                : null,
             actions: [
               DSIconButton(
                 icon: DsIconKind.refresh,
@@ -581,34 +651,40 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
             body: Column(
               children: [
                 Expanded(
-                  child:
-                      currentDirectory == null
-                          ? Center(
-                            child: DSLoadingDots(
-                              label: 'data_management_refresh'.tr,
-                            ),
-                          )
-                          : HandDrawnListView(
-                            itemCount: files.length,
-                            // 倾斜角度由文件路径确定性生成，目录内排序后不变
-                            tiltKeyOf: (index) => files[index].path,
-                            separatorBuilder:
-                                (_, __) => const SizedBox(height: 16),
-                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                            itemBuilder:
-                                (context, index) => _buildFileItem(
-                                  context,
-                                  files[index],
-                                ),
+                  child: currentDirectory == null
+                      ? Center(
+                          child: DSLoadingDots(
+                            label: 'data_management_refresh'.tr,
                           ),
+                        )
+                      : files.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(theme.spacing.xl),
+                            child: DSEmptyState(
+                              icon: DsIconKind.folder,
+                              title: 'data_management_emptyTitle'.tr,
+                              message: 'data_management_emptyMessage'.tr,
+                            ),
+                          ),
+                        )
+                      : HandDrawnListView(
+                          itemCount: files.length,
+                          // 倾斜角度由文件路径确定性生成，目录内排序后不变
+                          tiltKeyOf: (index) => files[index].path,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 16),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                          itemBuilder: (context, index) =>
+                              _buildFileItem(context, files[index]),
+                        ),
                 ),
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     theme.spacing.lg,
                     theme.spacing.sm,
                     theme.spacing.lg,
-                    theme.spacing.sm +
-                        MediaQuery.paddingOf(context).bottom,
+                    theme.spacing.sm + MediaQuery.paddingOf(context).bottom,
                   ),
                   child: Row(
                     children: [
@@ -806,44 +882,36 @@ class _FolderPickerDialogState extends State<FolderPickerDialog> {
           ),
           SizedBox(height: theme.spacing.md),
           Flexible(
-            child:
-                isLoading
-                    ? Center(child: DSLoadingDots())
-                    : errorMessage != null
-                    ? Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: theme.spacing.xl,
+            child: isLoading
+                ? Center(child: DSLoadingDots())
+                : errorMessage != null
+                ? Padding(
+                    padding: EdgeInsets.symmetric(vertical: theme.spacing.xl),
+                    child: Text(
+                      errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
                       ),
-                      child: Text(
-                        errorMessage!,
-                        textAlign: TextAlign.center,
-                        style: DsTypography.caption.copyWith(
-                          color: theme.textSub,
-                        ),
-                      ),
-                    )
-                    : folders.isEmpty
-                    ? Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: theme.spacing.xl,
-                      ),
-                      child: Text(
-                        'data_management_directoryAccessFailed'.tr,
-                        textAlign: TextAlign.center,
-                        style: DsTypography.caption.copyWith(
-                          color: theme.textSub,
-                        ),
-                      ),
-                    )
-                    : ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: folders.length,
-                      itemBuilder:
-                          (context, index) => _buildFolderRow(
-                            context,
-                            folders[index] as Directory,
-                          ),
                     ),
+                  )
+                : folders.isEmpty
+                ? Padding(
+                    padding: EdgeInsets.symmetric(vertical: theme.spacing.xl),
+                    child: Text(
+                      'data_management_directoryAccessFailed'.tr,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: folders.length,
+                    itemBuilder: (context, index) =>
+                        _buildFolderRow(context, folders[index] as Directory),
+                  ),
           ),
           SizedBox(height: theme.spacing.md),
           Row(

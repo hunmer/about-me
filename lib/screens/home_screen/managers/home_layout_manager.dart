@@ -7,6 +7,7 @@ import 'package:aboutme/screens/home_screen/models/home_folder_item.dart';
 import 'package:aboutme/screens/home_screen/models/home_stack_item.dart';
 import 'package:aboutme/screens/home_screen/models/layout_config.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 
 /// 主页布局管理器
 ///
@@ -117,8 +118,11 @@ class HomeLayoutManager extends ChangeNotifier {
               })
               .toList();
         } else {
-          // 没有配置，初始化空布局
-          _items = [];
+          // 没有保存过项目，初始化默认布局并保存
+          _items = _buildDefaultItems();
+          if (_items.isNotEmpty) {
+            await saveLayout();
+          }
         }
 
         // 加载网格列数配置
@@ -138,8 +142,11 @@ class HomeLayoutManager extends ChangeNotifier {
           }
         }
       } else {
-        // 没有配置，初始化空布局
-        _items = [];
+        // 没有配置，初始化默认布局并保存
+        _items = _buildDefaultItems();
+        if (_items.isNotEmpty) {
+          await saveLayout();
+        }
       }
 
       _isDirty = false;
@@ -153,6 +160,24 @@ class HomeLayoutManager extends ChangeNotifier {
         _isLoading = false;
       });
     }
+  }
+
+  /// 构建默认布局：所有插件的 1x1 图标入口小组件
+  ///
+  /// 每个插件在 HomeWidgetRegistry 中注册了 `{pluginId}_icon` 的
+  /// 1x1 图标入口小组件，首次使用时将它们全部放置到主页
+  List<HomeItem> _buildDefaultItems() {
+    return HomeWidgetRegistry()
+        .getAllWidgets()
+        .where((widget) => widget.id == '${widget.pluginId}_icon')
+        .map(
+          (widget) => HomeWidgetItem(
+            id: 'default_${widget.id}',
+            widgetId: widget.id,
+            size: const SmallSize(),
+          ),
+        )
+        .toList();
   }
 
   /// 保存布局到配置
