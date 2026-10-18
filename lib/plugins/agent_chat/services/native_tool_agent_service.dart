@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/core/services/image_compression_service.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
@@ -567,7 +568,9 @@ class NativeToolAgentService {
     tools.add(
       Tool<Map<String, dynamic>>(
         name: 'read_image',
-        description: '读取并描述一张或多张本地图片。传入当前消息提供的图片文件路径。',
+        description:
+            '读取并描述一张或多张本地图片。传入当前消息提供的图片文件路径。'
+            '返回的图片描述仅供你参考，请基于描述自行分析并回答用户问题，不要原样复述。',
         inputSchema: Schema.fromMap(<String, Object?>{
           'type': 'object',
           'properties': <String, Object?>{
@@ -593,30 +596,59 @@ class NativeToolAgentService {
               .where((value) => value.isNotEmpty)
               .toList();
           if (paths.isEmpty) return '没有提供图片路径';
-          final agent = await _resolveImageAgent(imageAgent);
-          if (agent == null) {
-            return '当前模型不支持图片识别，且尚未在 OpenAI 插件设置中配置识图模型';
-          }
-          final descriptions = <String>[];
-          for (final path in paths) {
-            final file = File(path);
-            if (!await file.exists()) {
-              descriptions.add('$path：文件不存在');
-              continue;
+          final argsJson = jsonEncode(args);
+          final step = ToolCallStep(
+            method: 'read_image',
+            title: '读取图片',
+            desc: '参数：$argsJson',
+            data: argsJson,
+            status: ToolCallStatus.running,
+          );
+          run.steps.add(step);
+          await run.notifySteps();
+          try {
+            final agent = await _resolveImageAgent(imageAgent);
+            if (agent == null) {
+              final message =
+                  '当前模型不支持图片识别，且尚未在 OpenAI 插件设置中配置识图模型';
+              step
+                ..status = ToolCallStatus.failed
+                ..error = message;
+              await run.notifySteps();
+              return message;
             }
-            final question = args['question']?.toString();
-            final prompt = question == null || question.isEmpty
-                ? '请准确描述这张图片中的主要内容、文字和重要细节。'
-                : question;
-            final description = await RequestService.chat(
-              prompt,
-              agent,
-              imageFile: file,
-            );
-            descriptions.add('$path：$description');
-            await run.onImageDescription?.call(path, description);
+            final descriptions = <String>[];
+            for (final path in paths) {
+              final file = File(path);
+              if (!await file.exists()) {
+                descriptions.add('$path：文件不存在');
+                continue;
+              }
+              final question = args['question']?.toString();
+              final prompt = question == null || question.isEmpty
+                  ? '请准确描述这张图片中的主要内容、文字和重要细节。'
+                  : question;
+              final description = await RequestService.chat(
+                prompt,
+                agent,
+                imageFile: await _compressImageIfNeeded(file),
+              );
+              descriptions.add('$path：$description');
+              await run.onImageDescription?.call(path, description);
+            }
+            final result = descriptions.join('\n');
+            step
+              ..status = ToolCallStatus.success
+              ..result = result;
+            await run.notifySteps();
+            return result;
+          } catch (e) {
+            step
+              ..status = ToolCallStatus.failed
+              ..error = e.toString();
+            await run.notifySteps();
+            return '图片解析失败: $e';
           }
-          return descriptions.join('\n');
         },
       ),
     );
@@ -660,6 +692,30 @@ class NativeToolAgentService {
       );
     }
     return imageAgent.copyWith(model: model);
+  }
+
+  /// 超过 3MB 的图片先压缩（多模态接口通常限制请求体大小），
+  /// 压缩失败时回退原图
+  static Future<File> _compressImageIfNeeded(File file) async {
+    const maxBytes = 3 * 1024 * 1024;
+    if (await file.length() <= maxBytes) return file;
+    try {
+      final name = file.uri.pathSegments.isEmpty
+          ? 'image.jpg'
+          : file.uri.pathSegments.last;
+      final dir = await Directory.systemTemp.createTemp('read_image');
+      final compressed = await ImageCompressionService().compressImage(
+        sourcePath: file.path,
+        targetPath: '${dir.path}/$name',
+        quality: 80,
+      );
+      debugPrint('[NativeTool] 大图已压缩: ${await file.length()} → '
+          '${await File(compressed).length()} bytes');
+      return File(compressed);
+    } catch (e) {
+      debugPrint('[NativeTool] 图片压缩失败，使用原图: $e');
+      return file;
+    }
   }
 
   /// 缓存失效（工具配置变更时调用）

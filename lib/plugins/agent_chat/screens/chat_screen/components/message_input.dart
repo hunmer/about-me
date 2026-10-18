@@ -6,6 +6,8 @@ import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_command.dart';
 import 'package:aboutme/plugins/agent_chat/models/saved_tool_template.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
@@ -500,16 +502,16 @@ class _MessageInputState extends State<MessageInput> {
               ],
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.controller.selectedFiles.asMap().entries.map((
-                entry,
-              ) {
-                final index = entry.key;
-                final file = entry.value;
-                return _buildFileChip(file, index);
-              }).toList(),
+            // 文件缩略图条（横滑，图片显示缩略图，其余类型显示图标卡）
+            SizedBox(
+              height: 60,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: widget.controller.selectedFiles.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) =>
+                    _buildFileThumb(theme, index),
+              ),
             ),
           ],
         ],
@@ -572,53 +574,80 @@ class _MessageInputState extends State<MessageInput> {
     );
   }
 
-  /// 构建文件芯片
-  Widget _buildFileChip(File file, int index) {
-    final theme = DSThemeBridge.resolve(context);
+  /// 单个待发送文件的缩略图：图片显示预览，其余类型显示图标卡；
+  /// 点击主体用系统程序打开，右上 × 移除（样式复用 chat 插件 MetadataDisplay）
+  Widget _buildFileThumb(AppThemeData theme, int index) {
+    final file = widget.controller.selectedFiles[index];
     final isImage = FilePickerHelper.isImageFile(file);
-    final fileName = FilePickerHelper.getFileName(file);
 
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        GestureDetector(
+          onTap: () => _openFileWithSystem(file.path),
+          child: ClipRRect(
+            borderRadius: theme.radii.sm,
+            child: SizedBox(
+              width: 52,
+              height: 52,
+              child: isImage
+                  ? Image(
+                      image: ImageUtils.createImageProvider(file.path),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) =>
+                          _fileTypeFallback(theme, file, DsIconKind.image),
+                    )
+                  : _fileTypeFallback(theme, file, DsIconKind.copy),
+            ),
+          ),
+        ),
+        // 右上取消图标
+        Positioned(
+          top: -6,
+          right: -6,
+          child: GestureDetector(
+            onTap: () => widget.controller.removeFile(index),
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.text,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: Center(
+                child: DsIcon(DsIconKind.close, size: 10, color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 非图片文件的图标卡兜底
+  Widget _fileTypeFallback(AppThemeData theme, File file, DsIconKind fallback) {
+    final iconData = FilePickerHelper.getFileIcon(file);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: dsSketchDecoration(
-        theme: theme,
-        fillColor: theme.surface,
-        stroke: theme.textSub.withValues(alpha: 0.3),
-        radius: theme.radii.sm,
-        // 文件 chip 列表项：按索引错开墨迹（design.md §9.4）
-        seed: index + 1,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 文件扩展名图标映射（含配色）刻意保留 Material
-          if (isImage)
-            DsIcon(DsIconKind.image, size: 18, color: theme.primaryText)
-          else
-            Icon(
-              FilePickerHelper.getFileIcon(file),
-              size: 18,
-              color: theme.primaryText,
-            ),
-          const SizedBox(width: 6),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 150),
-            child: Text(
-              fileName,
-              style: DsTypography.caption.copyWith(color: theme.text),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Pressable(
-            onPressed: () => widget.controller.removeFile(index),
-            semanticLabel: '移除文件',
-            builder: (context, states) =>
-                DsIcon(DsIconKind.close, size: 16, color: theme.textSub),
-          ),
-        ],
+      color: theme.primary.mixWhite(0.85),
+      child: Center(
+        child: FilePickerHelper.isImageFile(file)
+            ? DsIcon(fallback, size: 20, color: theme.primary)
+            : Icon(iconData, size: 20, color: theme.primary),
       ),
     );
+  }
+
+  /// 用系统程序打开文件（桌面端）
+  void _openFileWithSystem(String path) {
+    if (path.isEmpty) return;
+    if (UniversalPlatform.isWindows) {
+      Process.run('explorer', [path]);
+    } else if (UniversalPlatform.isMacOS) {
+      Process.run('open', [path]);
+    } else if (UniversalPlatform.isLinux) {
+      Process.run('xdg-open', [path]);
+    }
   }
 
   /// 显示附件菜单

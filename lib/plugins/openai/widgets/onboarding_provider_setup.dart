@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/openai/controllers/model_controller.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'package:aboutme/plugins/openai/models/llm_models.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
 
 /// OpenAI 插件首次引导的配置步骤：厂商 / 模型 / API Key
 ///
@@ -52,8 +53,11 @@ class _OnboardingProviderSetupState extends State<OnboardingProviderSetup> {
   @override
   void initState() {
     super.initState();
-    // 步骤页可能被 PageView 回收重建，已收集的选择/输入优先从 values 恢复
-    final savedProviderId = widget.values['providerId'] as String?;
+    // 步骤页可能被 PageView 回收重建，已收集的选择/输入优先从 values 恢复；
+    // 重进引导（values 为空）时带出当前默认厂商
+    final savedProviderId =
+        (widget.values['providerId'] as String?) ??
+        OpenAIPlugin.instance.settings['defaultProviderId'] as String?;
     final savedModel = widget.values['model'] as String? ?? '';
     ServiceProvider? preset;
     if (_presets.isNotEmpty) {
@@ -68,8 +72,35 @@ class _OnboardingProviderSetupState extends State<OnboardingProviderSetup> {
     _apiKeyController.text = (widget.values['apiKey'] as String?) ?? '';
     if (preset != null) {
       _selectPreset(preset, preferModelId: savedModel);
+      if (widget.values['apiKey'] == null) {
+        _restoreSavedApiKey(preset);
+      }
     }
     _loadModelGroups();
+  }
+
+  /// 带出该厂商已保存的 API Key（providers.json 中为真实 Key 时），
+  /// 避免重进引导改默认模型时因 Key 为空导致配置应用被跳过
+  Future<void> _restoreSavedApiKey(ServiceProvider preset) async {
+    try {
+      final providers = await ProviderController().getProviders();
+      ServiceProvider? saved;
+      for (final p in providers) {
+        if (p.id == preset.id) {
+          saved = p;
+          break;
+        }
+      }
+      if (saved == null) return;
+      if (saved.headers.values.any((v) => v.contains('YOUR_API_KEY'))) return;
+      final apiKey =
+          saved.headers['Authorization']?.replaceFirst('Bearer ', '') ?? '';
+      if (apiKey.isEmpty || !mounted) return;
+      widget.values['apiKey'] = apiKey;
+      setState(() => _apiKeyController.text = apiKey);
+    } catch (_) {
+      // 读取失败保持为空，由用户手动填写
+    }
   }
 
   Future<void> _loadModelGroups() async {
@@ -162,6 +193,7 @@ class _OnboardingProviderSetupState extends State<OnboardingProviderSetup> {
           onChanged: (value) {
             final preset = _presets.firstWhere((p) => p.id == value);
             _selectPreset(preset);
+            _restoreSavedApiKey(preset);
           },
         ),
         SizedBox(height: theme.spacing.lg),

@@ -73,6 +73,12 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
   List<AgentResourceItem> _selectedMcpServers = [];
   AlivenessConfig _alivenessConfig = const AlivenessConfig();
 
+  /// 克隆后当前页面切换为编辑副本（不再退出页面）
+  AIAgent? _clonedAgent;
+
+  /// 页面当前编辑的对象：克隆后为副本，否则为传入的 agent
+  AIAgent? get _editingAgent => _clonedAgent ?? widget.agent;
+
   @override
   void initState() {
     super.initState();
@@ -213,7 +219,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     }
 
     final agent = AIAgent(
-      id: widget.agent?.id ?? const Uuid().v4(),
+      id: _editingAgent?.id ?? const Uuid().v4(),
       name: values['name'] as String? ?? '',
       description: values['description'] as String? ?? '',
       serviceProviderId: _selectedProviderId,
@@ -221,7 +227,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       headers: _parseHeaders(values['headers'] as String? ?? ''),
       model: values['model'] as String? ?? 'gpt-3.5-turbo',
       tags: (values['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-      createdAt: widget.agent?.createdAt ?? DateTime.now(),
+      createdAt: _editingAgent?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
       temperature: (double.tryParse('${values['temperature']}') ?? 0.7).clamp(
         0.0,
@@ -271,11 +277,11 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       } else if (widget.agent == null) {
         // 新建 agent，添加到正式 agents 列表
         await controller.addAgent(agent);
-      } else if (widget.isFromMarketplace) {
-        // 从商场安装，添加到正式agents列表
+      } else if (widget.isFromMarketplace && _clonedAgent == null) {
+        // 从商场安装，添加到正式agents列表（已克隆过的走更新）
         await controller.addAgent(agent);
       } else {
-        // 编辑现有 Agent
+        // 编辑现有 Agent（含克隆出的副本）
         await controller.updateAgent(agent);
       }
 
@@ -284,7 +290,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
         ToastService.instance.showToast(
           widget.isFromMarketplace
               ? '安装成功'
-              : (widget.agent == null ? '创建成功' : '保存成功'),
+              : (_editingAgent == null ? '创建成功' : '保存成功'),
         );
         // 返回true表示保存成功
         Navigator.of(context).pop(true);
@@ -358,12 +364,12 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
           ),
     );
 
-    if (confirmed != true || widget.agent == null) return;
+    if (confirmed != true || _editingAgent == null) return;
 
     try {
       final plugin = PluginManager.instance.getPlugin('openai') as OpenAIPlugin;
       final controller = plugin.controller;
-      await controller.deleteAgent(widget.agent!.id);
+      await controller.deleteAgent(_editingAgent!.id);
       if (mounted) {
         ToastService.instance.showToast('openai_agentDeleted'.tr);
         // 返回true表示删除成功
@@ -377,10 +383,11 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
   }
 
   Future<void> _shareAgent() async {
-    if (widget.agent == null) return;
+    final current = _editingAgent;
+    if (current == null) return;
 
-    final agentJson = widget.agent!.toJson();
-    final hasHeaders = widget.agent!.headers.isNotEmpty;
+    final agentJson = current.toJson();
+    final hasHeaders = current.headers.isNotEmpty;
 
     // 如果有 headers，询问用户是否包含
     if (hasHeaders) {
@@ -461,7 +468,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
   }
 
   Future<void> _cloneAgent() async {
-    if (widget.agent == null || _formKey.currentState == null) return;
+    if (_editingAgent == null || _formKey.currentState == null) return;
 
     // 先触发表单保存和验证，确保获取当前表单的最新值
     if (!_formKey.currentState!.saveAndValidate()) {
@@ -532,8 +539,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       await controller.addAgent(clonedAgent);
       if (mounted) {
         ToastService.instance.showToast('openai_agentCloned'.tr);
-        // 返回克隆的智能体，以便可能的进一步操作
-        Navigator.of(context).pop(clonedAgent);
+        // 不退出页面：当前表单切换为编辑新副本（key 变化强制重建表单）
+        setState(() => _clonedAgent = clonedAgent);
       }
     } catch (e) {
       if (mounted) {
@@ -549,7 +556,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            widget.agent == null
+            _editingAgent == null
                 ? 'openai_createAgent'.tr
                 : 'openai_editAgent'.tr,
           ),
@@ -572,7 +579,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                       ),
                     ),
                     // 只有在非回调模式下才显示删除、分享、克隆按钮
-                    if (widget.onSave == null && widget.agent != null) ...[
+                    if (widget.onSave == null && _editingAgent != null) ...[
                       DSThemeBridge(
                         child: DSIconButton(
                           icon: DsIconKind.share,
@@ -594,7 +601,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                         ),
                       ),
                       // 内置 agent 不可删除
-                      if (!SoulForgeService.isBuiltinAgent(widget.agent!.id))
+                      if (!SoulForgeService.isBuiltinAgent(_editingAgent!.id))
                         DSThemeBridge(
                           child: DSIconButton(
                             icon: DsIconKind.trash,
@@ -633,6 +640,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   FormBuilderWrapper(
+                    // 克隆后 _editingAgent.id 变化，强制重建表单以应用副本数据
+                    key: ValueKey('agent_form_${_editingAgent?.id ?? 'new'}'),
                     formKey: _formKey,
                     buttonBuilder: (context, onSubmit, onReset) {
                       return const SizedBox.shrink();
@@ -647,13 +656,13 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           name: 'iconAvatar',
                           type: FormFieldType.iconAvatarRow,
                           initialValue: {
-                            'icon': widget.agent?.icon,
+                            'icon': _editingAgent?.icon,
                             'iconColor':
-                                widget.agent?.iconColor ??
+                                _editingAgent?.iconColor ??
                                 _getColorForServiceProvider(
                                   _selectedProviderId,
                                 ),
-                            'avatarUrl': widget.agent?.avatarUrl,
+                            'avatarUrl': _editingAgent?.avatarUrl,
                           },
                           extra: {
                             'avatarSaveDirectory': 'openai/agent_avatars',
@@ -665,7 +674,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           type: FormFieldType.text,
                           labelText: 'openai_agentName'.tr,
                           hintText: 'openai_enterAgentName'.tr,
-                          initialValue: widget.agent?.name ?? '',
+                          initialValue: _editingAgent?.name ?? '',
                           required: true,
                           validationMessage: 'openai_pleaseEnterName'.tr,
                         ),
@@ -707,7 +716,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           type: FormFieldType.select,
                           labelText: 'API 格式',
                           hintText: '选择 API 格式',
-                          initialValue: widget.agent?.apiFormat ?? 'openai',
+                          initialValue: _editingAgent?.apiFormat ?? 'openai',
                           required: true,
                           items:
                               ApiFormat.values
@@ -725,7 +734,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           type: FormFieldType.textArea,
                           labelText: 'openai_description'.tr,
                           hintText: 'openai_enterDescription'.tr,
-                          initialValue: widget.agent?.description ?? '',
+                          initialValue: _editingAgent?.description ?? '',
                           required: true,
                           validationMessage: 'openai_pleaseEnterDescription'.tr,
                           extra: {'minLines': 3, 'maxLines': 3},
@@ -736,7 +745,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           type: FormFieldType.select,
                           labelText: 'openai_promptPreset'.tr,
                           hintText: 'openai_selectPromptPreset'.tr,
-                          initialValue: widget.agent?.promptPresetId,
+                          initialValue: _editingAgent?.promptPresetId,
                           items: [
                             DropdownMenuItem<String>(
                               value: null,
@@ -755,7 +764,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           name: 'promptEditor',
                           type: FormFieldType.promptEditor,
                           initialValue:
-                              widget.agent?.messages
+                              _editingAgent?.messages
                                       ?.map((p) => p.toJson())
                                       .toList()
                                   as List<dynamic>? ??
@@ -767,7 +776,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           type: FormFieldType.text,
                           labelText: 'openai_baseUrl'.tr,
                           hintText: 'openai_enterBaseUrl'.tr,
-                          initialValue: widget.agent?.baseUrl ?? '',
+                          initialValue: _editingAgent?.baseUrl ?? '',
                           required: true,
                           validationMessage: 'openai_pleaseEnterBaseUrl'.tr,
                         ),
@@ -777,7 +786,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           type: FormFieldType.text,
                           labelText: 'openai_model'.tr,
                           hintText: 'openai_enterModel'.tr,
-                          initialValue: widget.agent?.model ?? '',
+                          initialValue: _editingAgent?.model ?? '',
                           suffixButtons: [
                             InputGroupButton(
                               icon: Icons.search,
@@ -791,7 +800,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           type: FormFieldType.number,
                           labelText: '生成温度（0-2）',
                           hintText: '0.7（越高越随机，角色扮演建议 0.7-0.9）',
-                          initialValue: widget.agent?.temperature ?? 0.7,
+                          initialValue: _editingAgent?.temperature ?? 0.7,
                         ),
                         // Headers
                         FormFieldConfig(
@@ -800,7 +809,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           labelText: 'openai_headers'.tr,
                           hintText: 'openai_enterHeaders'.tr,
                           initialValue: _formatHeaders(
-                            widget.agent?.headers ?? {},
+                            _editingAgent?.headers ?? {},
                           ),
                           extra: {'minLines': 3, 'maxLines': 3},
                         ),
@@ -808,7 +817,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                         FormFieldConfig(
                           name: 'tags',
                           type: FormFieldType.tags,
-                          initialTags: widget.agent?.tags ?? [],
+                          initialTags: _editingAgent?.tags ?? [],
                         ),
                         // 启用函数调用
                         FormFieldConfig(
@@ -817,7 +826,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           labelText: 'openai_enablePluginFunctionCalls'.tr,
                           hintText: 'openai_allowAICallPluginFunctions'.tr,
                           initialValue:
-                              widget.agent?.enableFunctionCalling ?? false,
+                              _editingAgent?.enableFunctionCalling ?? false,
                         ),
                         // 启用开场白问题
                         FormFieldConfig(
@@ -826,16 +835,17 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                           labelText: 'openai_enableGuessWhatYouWantToAsk'.tr,
                           hintText: 'openai_showPresetOpeningQuestions'.tr,
                           initialValue:
-                              widget.agent?.enableOpeningQuestions ?? false,
+                              _editingAgent?.enableOpeningQuestions ?? false,
                         ),
                         // 开场白问题列表（条件显示）
                         FormFieldConfig(
                           name: 'openingQuestions',
                           type: FormFieldType.listAdd,
-                          initialValue: widget.agent?.openingQuestions ?? [],
+                          initialValue:
+                              _editingAgent?.openingQuestions ?? [],
                           extra: {
                             'initialItems':
-                                widget.agent?.openingQuestions ?? [],
+                                _editingAgent?.openingQuestions ?? [],
                           },
                           visible:
                               (values) =>
@@ -854,11 +864,11 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                   const SizedBox(height: 8),
                   AlivenessSettingsSection(
                     config: _alivenessConfig,
-                    agentId: widget.agent?.id,
-                    agentName: widget.agent?.name ?? '',
+                    agentId: _editingAgent?.id,
+                    agentName: _editingAgent?.name ?? '',
                     onChanged: (c) => setState(() => _alivenessConfig = c),
                   ),
-                  if (widget.agent?.id != null) ...[
+                  if (_editingAgent?.id != null) ...[
                     const SizedBox(height: 8),
                     Card(
                       margin: EdgeInsets.zero,
@@ -868,13 +878,13 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                         subtitle: Text('openai_assetGalleryDesc'.tr),
                         trailing: const Icon(Icons.chevron_right),
                         onTap:
-                            widget.agent == null
+                            _editingAgent == null
                                 ? null
                                 : () => NavigationHelper.push(
                                   context,
                                   AgentAssetsScreen(
-                                    agentId: widget.agent!.id,
-                                    agentName: widget.agent!.name,
+                                    agentId: _editingAgent!.id,
+                                    agentName: _editingAgent!.name,
                                   ),
                                 ),
                       ),
@@ -905,8 +915,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
 
   // 处理服务商切换
   void _handleProviderChange(ServiceProvider provider) {
-    // 如果是编辑现有智能体，先询问用户是否要更新配置
-    if (widget.agent != null) {
+    // 如果是编辑现有智能体（含克隆出的副本），先询问用户是否要更新配置
+    if (_editingAgent != null) {
       showDSDialog(
         context: context,
         theme: DSThemeBridge.resolve(context),
@@ -1097,7 +1107,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       }
     }
     return AIAgent(
-      id: widget.agent?.id ?? 'draft',
+      id: _editingAgent?.id ?? 'draft',
       name: values['name'] as String? ?? '',
       description: values['description'] as String? ?? '',
       tags: (values['tags'] as List<dynamic>?)?.cast<String>() ?? [],

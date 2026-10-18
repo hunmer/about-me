@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/screens/onboarding/plugin_onboarding_screen.dart';
 import 'provider_settings_screen.dart';
 import 'model_list_screen.dart';
 import 'multimodal_model_setup_screen.dart';
@@ -59,6 +60,19 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
     }
   }
 
+  /// 重新运行引导的配置步骤（厂商 / 默认模型 / API Key），
+  /// 跳过欢迎页；完成后走插件的 onOnboardingComplete 应用配置
+  void _reopenOnboardingSetup() {
+    showPluginOnboarding(
+      context,
+      plugin: OpenAIPlugin.instance,
+      steps: OpenAIPlugin.instance
+          .getOnboardingSteps(context)
+          .where((step) => step.builder != null)
+          .toList(),
+    );
+  }
+
   void _saveSlots(AgentResourceSlots slots) {
     AgentLibResourceService.globalSlots = slots;
     OpenAIPlugin.instance.updateSettings(
@@ -106,6 +120,18 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
                               ),
                             ),
                             onTap: _openMultimodalModelSetup,
+                          ),
+                          SizedBox(height: theme.spacing.sm),
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.refresh,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: '默认模型设置',
+                            subtitle: '重新运行引导，配置默认厂商、模型与 API Key',
+                            showChevron: true,
+                            onTap: _reopenOnboardingSetup,
                           ),
                           SizedBox(height: theme.spacing.sm),
                           DSListItem(
