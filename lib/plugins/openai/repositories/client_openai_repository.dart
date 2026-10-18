@@ -33,7 +33,8 @@ class ClientOpenAIRepository implements IOpenAIRepository {
     PaginationParams? pagination,
   }) async {
     try {
-      final agents = await agentController.loadAgents();
+      // 对外列表接口不返回内置 agent（builtin_ 前缀）
+      final agents = await agentController.loadVisibleAgents();
       final dtos = agents.map(_agentToDto).toList();
 
       if (pagination != null && pagination.hasPagination) {
@@ -101,7 +102,8 @@ class ClientOpenAIRepository implements IOpenAIRepository {
     OpenAIAgentQuery query,
   ) async {
     try {
-      final agents = await agentController.loadAgents();
+      // 搜索接口同样不返回内置 agent
+      final agents = await agentController.loadVisibleAgents();
       final List<AIAgent> filtered = [];
 
       for (final agent in agents) {

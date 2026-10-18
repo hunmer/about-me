@@ -2,6 +2,8 @@ class AchievementTranslationsZh {
   static const Map<String, String> translations = {
     // 插件信息
     'achievement_name': '成就',
+    'achievement_widgetName': '成就',
+    'achievement_widgetDescription': '快速打开成就',
     'achievement_pluginDescription': '成就系统：记录使用足迹，解锁等级徽章',
     'achievement_overviewWidgetDescription': '展示成就解锁进度与累计积分，点击进入成就展览',
 

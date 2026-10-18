@@ -521,10 +521,10 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
   // ==================== 小组件统计方法 ====================
 
-  /// 获取总助手数
+  /// 获取总助手数（用户可见的，不含内置 agent）
   Future<int> getTotalAgentsCount() async {
     try {
-      final agents = await controller.loadAgents();
+      final agents = await controller.loadVisibleAgents();
       return agents.length;
     } catch (e) {
       debugPrint('获取总助手数失败: $e');

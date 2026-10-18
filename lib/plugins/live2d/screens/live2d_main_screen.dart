@@ -36,7 +36,7 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
   }
 
   Future<void> _loadAgents() async {
-    final agents = await AgentController().loadAgents();
+    final agents = await AgentController().loadVisibleAgents();
     if (mounted) {
       setState(() {
         agentNames = {for (final a in agents) a.id: a.name};

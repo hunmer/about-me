@@ -4,16 +4,20 @@ library;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+export 'register_icon_widget.dart';
+
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/achievement/achievement_plugin.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
+import 'register_icon_widget.dart';
 
 /// 注册成就插件的主页小组件
 void register() {
   final registry = HomeWidgetRegistry();
+  registerIconWidget(registry);
   registry.register(
     HomeWidget(
       id: 'achievement_overview',

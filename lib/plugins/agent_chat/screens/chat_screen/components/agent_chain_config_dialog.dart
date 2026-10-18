@@ -51,8 +51,9 @@ class _AgentChainConfigDialogState extends State<AgentChainConfigDialog> {
       final openAIPlugin =
           PluginManager.instance.getPlugin('openai') as OpenAIPlugin?;
       if (openAIPlugin != null) {
-        // 加载所有agents (包括临时agents)
-        final normalAgents = await openAIPlugin.controller.loadAgents();
+        // 加载所有agents (包括临时agents；内置 agent 不出现在可选列表)
+        final normalAgents =
+            await openAIPlugin.controller.loadVisibleAgents();
         final temporaryAgents = openAIPlugin.controller.temporaryAgents;
         // 加载extra storage agents
         final extraAgents = await openAIPlugin.controller

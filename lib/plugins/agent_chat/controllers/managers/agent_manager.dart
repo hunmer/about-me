@@ -191,7 +191,8 @@ class AgentManager {
           PluginManager.instance.getPlugin('openai') as OpenAIPlugin?;
 
       if (openAIPlugin != null) {
-        return await openAIPlugin.controller.loadAgents();
+        // 内置 agent（Soul Forge）不进入聊天可选列表
+        return await openAIPlugin.controller.loadVisibleAgents();
       }
       return [];
     } catch (e) {

@@ -122,7 +122,7 @@ JSON 字段：
     await ensureBuiltinAgent();
 
     // 连接配置优先用当前表单，失败兜底用内置 agent 自身
-    final connection = connectionAgent ?? await _loadBuiltinAgent();
+    final connection = connectionAgent ?? await loadBuiltinAgent();
     if (connection == null) {
       throw Exception('内置 Agent 未就绪，请稍后重试');
     }
@@ -150,7 +150,8 @@ JSON 字段：
     return json;
   }
 
-  static Future<AIAgent?> _loadBuiltinAgent() async {
+  /// 读取内置 agent（供设置页编辑其连接配置）
+  static Future<AIAgent?> loadBuiltinAgent() async {
     final agents = await AgentController().loadAgents();
     for (final a in agents) {
       if (a.id == builtinAgentId) return a;

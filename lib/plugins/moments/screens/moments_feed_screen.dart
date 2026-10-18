@@ -90,7 +90,7 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
       await controller.loadAgents();
       if (!mounted) return;
       setState(() {
-        for (final agent in controller.agents) {
+        for (final agent in controller.visibleAgents) {
           _agents[agent.id] = agent;
         }
       });

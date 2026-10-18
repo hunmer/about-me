@@ -2,6 +2,8 @@ class AchievementTranslationsEn {
   static const Map<String, String> translations = {
     // Plugin info
     'achievement_name': 'Achievements',
+    'achievement_widgetName': 'Achievements',
+    'achievement_widgetDescription': 'Quick access to Achievements',
     'achievement_pluginDescription':
         'Achievement system: track your usage and unlock level badges',
     'achievement_overviewWidgetDescription':

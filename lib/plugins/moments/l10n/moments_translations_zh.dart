@@ -1,6 +1,8 @@
 /// 朋友圈插件 简体中文翻译
 const Map<String, String> momentsTranslationsZh = {
   'moments_name': '朋友圈',
+  'moments_widgetName': '朋友圈',
+  'moments_widgetDescription': '快速打开朋友圈',
   'moments_profileTitle': '个人主页',
   'moments_me': '我',
   'moments_filterAll': '✨ 全部',

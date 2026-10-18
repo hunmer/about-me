@@ -1,6 +1,8 @@
 /// 朋友圈插件 English translations
 const Map<String, String> momentsTranslationsEn = {
   'moments_name': 'Moments',
+  'moments_widgetName': 'Moments',
+  'moments_widgetDescription': 'Quick access to Moments',
   'moments_profileTitle': 'Profile',
   'moments_me': 'Me',
   'moments_filterAll': '✨ All',

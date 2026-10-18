@@ -71,7 +71,7 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
       // 并行加载商场 Agent 和本地 Agent
       final results = await Future.wait([
         _marketplaceService.fetchMarketplaceAgents(url: widget.marketplaceUrl),
-        _agentController.loadAgents(),
+        _agentController.loadVisibleAgents(),
       ]);
 
       _marketplaceAgents = results[0];
@@ -102,7 +102,7 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
   /// 刷新本地 Agent 列表（安装后调用）
   Future<void> _refreshLocalAgents() async {
     try {
-      _localAgents = await _agentController.loadAgents();
+      _localAgents = await _agentController.loadVisibleAgents();
       setState(() {});
     } catch (e) {
       // 静默失败，不影响用户体验

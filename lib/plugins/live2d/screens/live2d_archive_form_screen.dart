@@ -56,7 +56,7 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
     _coverPath = archive?.coverPath;
     widget.onReady?.call(_save);
     widget.onDeleteReady?.call(_delete);
-    AgentController().loadAgents().then((value) {
+    AgentController().loadVisibleAgents().then((value) {
       if (mounted) setState(() => agents = value);
     });
   }

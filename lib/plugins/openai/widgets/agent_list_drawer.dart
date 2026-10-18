@@ -443,7 +443,7 @@ class _AgentListDrawerState extends State<AgentListDrawer>
                                     (PluginManager.instance.getPlugin('openai')
                                             as OpenAIPlugin)
                                         .controller
-                                        .loadAgents(),
+                                        .loadVisibleAgents(),
                                 builder: (context, snapshot) {
                                   if (snapshot.hasData) {
                                     return _buildAgentList(snapshot.data!);
@@ -476,7 +476,7 @@ class _AgentListDrawerState extends State<AgentListDrawer>
                                 (PluginManager.instance.getPlugin('openai')
                                         as OpenAIPlugin)
                                     .controller
-                                    .loadAgents(),
+                                    .loadVisibleAgents(),
                             builder: (context, snapshot) {
                               if (snapshot.hasData) {
                                 return _buildAgentList(snapshot.data!);

@@ -13,7 +13,6 @@ import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'package:aboutme/plugins/openai/screens/agent_marketplace_screen.dart';
-import 'package:aboutme/plugins/openai/services/soul_forge_service.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 
 class AgentListScreen extends StatefulWidget {
@@ -81,10 +80,8 @@ class _AgentListScreenState extends State<AgentListScreen> {
   }
 
   Future<void> _loadAgents() async {
-    // 确保内置 Soul Forge agent 存在（幂等）
-    await SoulForgeService.ensureBuiltinAgent();
     await _agentController.loadAgents();
-    // 加载所有类别
+    // 加载所有类别（内置 agent 已在 controller 层排除）
     _allTags = await _agentController.getAllTags();
     // 加载所有服务商
     _allProviders = await _providerController.getProviders();
@@ -105,7 +102,7 @@ class _AgentListScreenState extends State<AgentListScreen> {
   }
 
   List<AIAgent> _getFilteredAgents() {
-    return _agentController.agents.where((agent) {
+    return _agentController.visibleAgents.where((agent) {
       // 服务商筛选 - 从 MultiFilter 获取
       final selectedProviders =
           _multiFilterValues['providers'] as List<String>? ?? [];

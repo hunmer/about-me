@@ -27,6 +27,16 @@ class AgentController extends ChangeNotifier {
   List<AIAgent> _agents = [];
   List<AIAgent> get agents => List.unmodifiable(_agents);
 
+  /// 用户可见的 agents（排除 builtin_ 前缀的内置 agent，如 Soul Forge）
+  List<AIAgent> get visibleAgents =>
+      List.unmodifiable(_agents.where((a) => !a.id.startsWith('builtin_')));
+
+  /// 加载并返回可见 agents；展示类列表统一使用，内部逻辑仍用 loadAgents
+  Future<List<AIAgent>> loadVisibleAgents() async {
+    await loadAgents();
+    return visibleAgents;
+  }
+
   // 临时agent列表(仅保存在内存中,不会保存到agents.json)
   final List<AIAgent> _temporaryAgents = [];
   List<AIAgent> get temporaryAgents => List.unmodifiable(_temporaryAgents);
@@ -178,7 +188,8 @@ class AgentController extends ChangeNotifier {
     await loadAgents();
     final Set<String> uniqueTags = {};
 
-    for (final agent in _agents) {
+    // 内置 agent 不对用户展示，其标签也不进入筛选列表
+    for (final agent in visibleAgents) {
       uniqueTags.addAll(agent.tags);
     }
 

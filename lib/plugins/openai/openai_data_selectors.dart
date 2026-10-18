@@ -24,7 +24,7 @@ void _registerDataSelectors() {
           isFinalStep: true,
           emptyText: '暂无 AI 助手',
           dataLoader: (_) async {
-            final agents = await agentController.loadAgents();
+            final agents = await agentController.loadVisibleAgents();
             return agents
                 .map(
                   (agent) => SelectableItem(

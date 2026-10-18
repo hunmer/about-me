@@ -12,6 +12,8 @@ import '../services/agentlib_resource_service.dart';
 import 'package:agentlib/agent_slots.dart';
 import '../aliveness/widgets/jev_settings_dialog.dart';
 import '../openai_plugin.dart';
+import '../services/soul_forge_service.dart';
+import 'agent_edit_screen.dart';
 import 'agent_resource_list_screen.dart';
 
 class PluginSettingsScreen extends StatefulWidget {
@@ -71,6 +73,14 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
           .where((step) => step.builder != null)
           .toList(),
     );
+  }
+
+  /// 打开内置 Soul Forge 的编辑页（连接 / 模型配置）
+  Future<void> _openSoulForgeSettings() async {
+    await SoulForgeService.ensureBuiltinAgent();
+    final agent = await SoulForgeService.loadBuiltinAgent();
+    if (!mounted || agent == null) return;
+    await NavigationHelper.push(context, AgentEditScreen(agent: agent));
   }
 
   void _saveSlots(AgentResourceSlots slots) {
@@ -207,6 +217,18 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
                             subtitle: '活人感增强的快决策层，未配置时使用本地规则',
                             showChevron: true,
                             onTap: () => showJevSettingsDialog(context),
+                          ),
+                          SizedBox(height: theme.spacing.sm),
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.star,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: 'Soul Forge',
+                            subtitle: '内置人格设计师，配置生成人设使用的模型与连接',
+                            showChevron: true,
+                            onTap: _openSoulForgeSettings,
                           ),
                           SizedBox(height: theme.spacing.sm),
                           DSListItem(
