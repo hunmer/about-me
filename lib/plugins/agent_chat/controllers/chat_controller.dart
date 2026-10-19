@@ -87,6 +87,15 @@ class ChatController extends ChangeNotifier {
   /// 活人感模型请求正在生成，允许新消息打断并重新合并生成。
   bool _alivenessGenerating = false;
 
+  /// 待注入首条用户消息的路由上下文（"询问当前上下文"入口传入，
+  /// 携带 channelId 等结构化参数，随首条消息发给 agent 后清空）
+  String? _pendingRouteContext;
+
+  /// 设置随首条用户消息注入的路由上下文
+  void setPendingRouteContext(String? text) {
+    _pendingRouteContext = (text == null || text.isEmpty) ? null : text;
+  }
+
   ChatController({
     required this.conversation,
     required this.messageService,
@@ -477,11 +486,20 @@ class ChatController extends ChangeNotifier {
         };
       }
 
+      // 首条消息注入路由上下文（description + channelId 等参数），
+      // 后续消息不重复携带
+      var content = text;
+      final routeContext = _pendingRouteContext;
+      if (routeContext != null) {
+        content = '$routeContext\n\n$text';
+        _pendingRouteContext = null;
+      }
+
       // 创建用户消息
       final userMessage = ChatMessage.user(
         conversationId: conversation.id,
-        content: text,
-        tokenCount: TokenCounterService.estimateTokenCount(text),
+        content: content,
+        tokenCount: TokenCounterService.estimateTokenCount(content),
         attachments: await _processAttachments(),
       ).copyWith(metadata: metadata.isNotEmpty ? metadata : null);
 
@@ -489,7 +507,7 @@ class ChatController extends ChangeNotifier {
       await messageService.addMessage(userMessage);
 
       // 更新会话的最后消息
-      await conversationService.updateLastMessage(conversation.id, text);
+      await conversationService.updateLastMessage(conversation.id, content);
 
       // 清空输入
       final userInput = text;

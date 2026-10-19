@@ -74,6 +74,7 @@ class ChatScreen extends StatefulWidget {
   final List<File>? initialFiles; // 初始附件文件（预添加到消息）
   final bool autoSend; // 是否自动发送 initialMessage
   final List<String>? initialPrompts; // 初始开场白列表（优先于猜你想问，如路由上下文快捷提问）
+  final String? initialContext; // 初始路由上下文（随首条用户消息注入，携带 channelId 等参数）
 
   const ChatScreen({
     super.key,
@@ -85,6 +86,7 @@ class ChatScreen extends StatefulWidget {
     this.initialFiles,
     this.autoSend = false,
     this.initialPrompts,
+    this.initialContext,
   });
 
   @override
@@ -234,6 +236,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (widget.initialMessage != null && widget.initialMessage!.isNotEmpty) {
       _controller.setInputText(widget.initialMessage!);
       debugPrint('✅ 已设置初始消息到输入框: ${widget.initialMessage}');
+    }
+
+    // 如果提供了初始路由上下文，随首条用户消息注入
+    if (widget.initialContext != null && widget.initialContext!.isNotEmpty) {
+      _controller.setPendingRouteContext(widget.initialContext);
+      debugPrint('✅ 已设置初始路由上下文: ${widget.initialContext}');
     }
 
     // 如果提供了初始文件，设置到 controller

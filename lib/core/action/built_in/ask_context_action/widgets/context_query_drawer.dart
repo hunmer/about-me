@@ -107,6 +107,29 @@ class _ContextQueryDrawerState extends State<ContextQueryDrawer> {
     }
   }
 
+  /// 组装注入给 agent 的路由上下文：人类可读描述 + 结构化参数键值
+  ///
+  /// 示例：
+  /// ```
+  /// [当前上下文] 用户正在 默认频道 频道中聊天
+  /// 路由参数: channelId=xxx, channelName=默认频道
+  /// ```
+  static String? _buildContextText(RouteContext routeContext) {
+    final params =
+        routeContext.arguments is Map<String, dynamic>
+            ? routeContext.arguments as Map<String, dynamic>
+            : const <String, dynamic>{};
+    if (routeContext.description.isEmpty && params.isEmpty) return null;
+
+    final buffer = StringBuffer('[当前上下文] ${routeContext.description}');
+    if (params.isNotEmpty) {
+      buffer.write(
+        '\n路由参数: ${params.entries.map((e) => '${e.key}=${e.value}').join(', ')}',
+      );
+    }
+    return buffer.toString();
+  }
+
   /// 展示聊天界面
   Future<void> _showChatScreen(
     AgentChatPlugin plugin,
@@ -121,23 +144,25 @@ class _ContextQueryDrawerState extends State<ContextQueryDrawer> {
     final initialAgentId = conversation.agentId;
     final initialAgentChain = conversation.agentChain;
 
-    // 展示聊天界面
-    await SmoothBottomSheet.show<void>(
-      context: context,
-      builder: (context) => SizedBox(
-        height: MediaQuery.of(context).size.height * 0.9,
-        child: ChatScreen(
-          conversation: conversation,
-          storage: controller.storage,
-          conversationService: controller.conversationService,
-          getSettings: () => plugin.settings,
-          initialMessage: widget.routeContext.description, // 将上下文描述设为初始消息
-          initialPrompts: RouteParser.getOpeningPrompts(
-            widget.routeContext.routeName,
-          ), // 路由对应的开场白按钮列表
+      // 展示聊天界面
+      await SmoothBottomSheet.show<void>(
+        context: context,
+        builder: (context) => SizedBox(
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: ChatScreen(
+            conversation: conversation,
+            storage: controller.storage,
+            conversationService: controller.conversationService,
+            getSettings: () => plugin.settings,
+            // 路由上下文（含 channelId 等参数）随首条用户消息注入给
+            // agent，替代原先仅预填描述文本（点开场白会被覆盖丢失）
+            initialContext: _buildContextText(widget.routeContext),
+            initialPrompts: RouteParser.getOpeningPrompts(
+              widget.routeContext.routeName,
+            ), // 路由对应的开场白按钮列表
+          ),
         ),
-      ),
-    );
+      );
 
     // 聊天界面关闭后，检查 Agent 配置是否发生变化
     if (!mounted) return;
