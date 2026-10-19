@@ -1,6 +1,16 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
+import 'package:path/path.dart' as path;
+import 'package:uuid/uuid.dart';
+import 'package:aboutme/widgets/emoji_picker/index.dart';
+import 'package:aboutme/plugins/chat/services/sticker_service.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/emoji_handler.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_drawer.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_command.dart';
@@ -29,17 +39,13 @@ import '../../../../../../core/services/toast_service.dart';
 class MessageInput extends StatefulWidget {
   final ChatController controller;
 
-  /// 是否显示顶部图标工具栏（图片/视频上传、Agent 编辑、Skills、MCP）；
-  /// 关闭后输入框高度更紧凑（如 Live2D 悬浮输入条）
-  final bool showQuickActions;
-
-  /// 屏幕注入的附加工具栏动作（工具模板/工具管理/朋友圈/文件管理等）
+  /// 屏幕注入的附加动作（工具模板/工具管理/朋友圈/文件管理等），
+  /// 与内置动作一起在"+"抽屉网格中展示
   final List<common.MessageInputQuickAction> extraQuickActions;
 
   const MessageInput({
     super.key,
     required this.controller,
-    this.showQuickActions = true,
     this.extraQuickActions = const [],
   });
 
@@ -237,49 +243,57 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  /// 顶部图标工具栏：常用上传（图片/视频）固定于此，
-  /// 其余为 Agent 编辑 / Skills / MCP / 仅JS切换 及屏幕注入的附加动作
-  List<common.MessageInputQuickAction> _buildQuickActions() {
+  /// "+"抽屉完整动作列表（原顶部工具栏快捷动作并入此处，网格展示）
+  List<MessageInputAction> _buildDrawerActions() {
     final controller = widget.controller;
     final agentReady = controller.currentAgent != null;
     return [
-      common.MessageInputQuickAction(
+      MessageInputAction(
+        title: 'agent_chat_image'.tr,
         icon: DsIconKind.image,
-        tooltip: 'agent_chat_image'.tr,
-        onPressed: () => controller.pickImages(),
+        onTap: () => controller.pickImages(),
       ),
-      common.MessageInputQuickAction(
+      MessageInputAction(
+        title: 'agent_chat_document'.tr,
+        icon: DsIconKind.copy,
+        onTap: () => controller.pickDocuments(),
+      ),
+      MessageInputAction(
+        title: '选择视频',
         icon: DsIconKind.video,
-        tooltip: '选择视频',
-        onPressed: _pickVideos,
+        onTap: _pickVideos,
       ),
-      common.MessageInputQuickAction(
+      MessageInputAction(
+        title: '编辑Agent',
         icon: DsIconKind.bot,
-        tooltip: '编辑Agent',
-        onPressed: agentReady ? _openAgentEdit : null,
+        onTap: agentReady ? _openAgentEdit : () {},
       ),
-      common.MessageInputQuickAction(
+      MessageInputAction(
+        title: '选择Skill',
         icon: DsIconKind.book,
-        tooltip: '选择Skill',
-        onPressed: () => _showResourceMenu(skills: true),
+        onTap: () => _showResourceMenu(skills: true),
       ),
-      common.MessageInputQuickAction(
+      MessageInputAction(
+        title: '选择MCP',
         icon: DsIconKind.block,
-        tooltip: '选择MCP',
-        onPressed: () => _showResourceMenu(skills: false),
+        onTap: () => _showResourceMenu(skills: false),
       ),
-      // 仅使用 JS 工具切换（发送中禁用，开启时高亮）
-      common.MessageInputQuickAction(
+      // 仅使用 JS 工具切换（发送中禁用）
+      MessageInputAction(
+        title: '仅使用JS${controller.useJsTools ? '（开）' : '（关）'}',
         icon: DsIconKind.code,
-        tooltip: controller.useJsTools
-            ? '仅使用 JS：已开启'
-            : '仅使用 JS：已关闭（插件 Tools 与 JS 均可用）',
-        active: controller.useJsTools,
-        onPressed: controller.isSending
-            ? null
+        onTap: controller.isSending
+            ? () {}
             : () => controller.setUseJsTools(!controller.useJsTools),
       ),
-      ...widget.extraQuickActions,
+      ...widget.extraQuickActions.map(
+        (action) => MessageInputAction(
+          title: action.tooltip,
+          icon: action.icon,
+          onTap: action.onPressed ?? () {},
+          onLongPress: action.onLongPress,
+        ),
+      ),
     ];
   }
 
@@ -303,7 +317,6 @@ class _MessageInputState extends State<MessageInput> {
       focusNode: _focusNode,
       enabled: agentReady,
       hintText: agentReady ? '输入消息...' : '请先选择Agent...',
-      quickActions: widget.showQuickActions ? _buildQuickActions() : const [],
       onOpenActionsDrawer: _showAttachmentMenu,
       useSketchPanel: true,
       // 输入框上方：工具模板搜索 / 命令选择器 / 待发送状态
@@ -359,37 +372,42 @@ class _MessageInputState extends State<MessageInput> {
                   ),
                 ),
               ),
+            // 表情：Unicode 插入光标处，内置图片表情作为附件发送
+            _InlineIconAction(
+              icon: DsIconKind.mood,
+              color: theme.textSub,
+              onPressed: _showEmojiPicker,
+              tooltip: '表情',
+            ),
+            // 录音：点击开始/停止，识别结果实时写入输入框；
+            // 未配置时回退为对话框输入
+            if (_recognitionService != null)
+              PressToRecordButton(
+                textController: _textController,
+                recognitionService: _recognitionService!,
+                enabled: agentReady,
+                size: 20,
+                tooltip: '录音',
+                onRecognitionComplete: (text) {
+                  // 聚焦到输入框
+                  _focusNode.requestFocus();
+                },
+                onError: (error) {
+                  if (mounted) {
+                    toastService.showToast('语音识别失败: $error');
+                  }
+                },
+              )
+            else
+              _InlineIconAction(
+                icon: DsIconKind.mic,
+                color: theme.textSub,
+                onPressed: agentReady ? _showVoiceInputDialog : null,
+                tooltip: '语音输入（未配置）',
+              ),
           ],
         ),
       ),
-      // 语音按钮（长按录音；未配置时回退为对话框输入）
-      voiceButton: _recognitionService != null
-          ? PressToRecordButton(
-              textController: _textController,
-              recognitionService: _recognitionService!,
-              enabled: agentReady,
-              tooltip: '长按录音',
-              onRecognitionComplete: (text) {
-                // 聚焦到输入框
-                _focusNode.requestFocus();
-              },
-              onError: (error) {
-                if (mounted) {
-                  toastService.showToast('语音识别失败: $error');
-                }
-              },
-            )
-          : Pressable(
-              onPressed: agentReady ? _showVoiceInputDialog : null,
-              semanticLabel: '语音输入（未配置）',
-              builder: (context, states) => SizedBox(
-                width: 40,
-                height: 40,
-                child: Center(
-                  child: DsIcon(DsIconKind.mic, size: 22, color: theme.textSub),
-                ),
-              ),
-            ),
       // 发送/取消按钮
       sendButton: DSIconButton(
         icon: widget.controller.isSending
@@ -614,45 +632,120 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  /// 显示附件菜单（"+"按钮：完整底部抽屉动作列表）
+  /// 显示附件菜单（"+"按钮：完整动作列表，网格展示）
   void _showAttachmentMenu() {
     SmoothBottomSheet.show(
       context: context,
       builder: (context) => DSThemeBridge(
         child: Builder(
           builder: (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DSListItem(
-                  leading: DsIcon(
-                    DsIconKind.image,
-                    size: 22,
-                    color: DSThemeBridge.resolve(context).primaryText,
-                  ),
-                  title: 'agent_chat_image'.tr,
-                  onTap: () {
-                    Navigator.pop(context);
-                    widget.controller.pickImages();
-                  },
-                ),
-                DSListItem(
-                  leading: DsIcon(
-                    DsIconKind.book,
-                    size: 22,
-                    color: DSThemeBridge.resolve(context).primaryText,
-                  ),
-                  title: 'agent_chat_document'.tr,
-                  onTap: () {
-                    Navigator.pop(context);
-                    widget.controller.pickDocuments();
-                  },
-                ),
-              ],
+            child: MessageInputActionsDrawer(
+              actions: _buildDrawerActions(),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  /// 打开表情选择器：Unicode 表情插入输入框光标处，
+  /// 内置图片表情/贴图写入临时文件后作为附件发送
+  Future<void> _showEmojiPicker() async {
+    final stickerCollections = await StickerService.instance.listCollections();
+    if (!mounted) return;
+    final sheetHeight = math.min(
+      520.0,
+      MediaQuery.of(context).size.height * 0.7,
+    );
+    await SmoothBottomSheet.show(
+      context: context,
+      builder: (sheetContext) => SizedBox(
+        height: sheetHeight,
+        width: double.infinity,
+        child: ProviderScope(
+          child: EmojiPicker(
+            types: const [kEmojiPickerTypeEmoji, kEmojiPickerTypeImage],
+            appendCategories: buildStickerCategories(stickerCollections),
+            onSelection: (value, isFreeText) {
+              if (value.startsWith(kStickerPrefix)) {
+                Navigator.of(sheetContext).pop();
+                _attachSticker(value.substring(kStickerPrefix.length));
+              } else if (value.startsWith(kBuiltInEmojiPrefix)) {
+                Navigator.of(sheetContext).pop();
+                _attachEmojiAsset(
+                  value.substring(kBuiltInEmojiPrefix.length),
+                );
+              } else {
+                _insertTextAtCursor(value);
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 内置图片表情（asset）转临时文件并加入待发送文件
+  Future<void> _attachEmojiAsset(String assetPath) async {
+    try {
+      final data = await rootBundle.load(assetPath);
+      final bytes = data.buffer.asUint8List(
+        data.offsetInBytes,
+        data.lengthInBytes,
+      );
+      await _attachBytesAsFile(path.basename(assetPath), bytes);
+    } catch (e) {
+      debugPrint('表情附件添加失败: $e');
+      if (mounted) {
+        toastService.showToast('表情发送失败: $e');
+      }
+    }
+  }
+
+  /// 贴图转临时文件并加入待发送文件
+  Future<void> _attachSticker(String stickerPath) async {
+    try {
+      final bytes = await StickerService.instance.readStickerBytes(stickerPath);
+      if (bytes == null) {
+        if (mounted) {
+          toastService.showToast('贴图文件不存在或读取失败');
+        }
+        return;
+      }
+      await _attachBytesAsFile(path.basename(stickerPath), bytes);
+    } catch (e) {
+      debugPrint('贴图附件添加失败: $e');
+      if (mounted) {
+        toastService.showToast('贴图发送失败: $e');
+      }
+    }
+  }
+
+  /// 字节写入临时文件后加入待发送文件
+  Future<void> _attachBytesAsFile(String fileName, List<int> bytes) async {
+    final file = File(
+      path.join(
+        Directory.systemTemp.path,
+        '${const Uuid().v4()}${path.extension(fileName)}',
+      ),
+    );
+    await file.writeAsBytes(bytes);
+    widget.controller.addFiles([file]);
+  }
+
+  /// 在光标处插入文本（Unicode 表情）
+  void _insertTextAtCursor(String text) {
+    final selection = _textController.selection.isValid
+        ? _textController.selection
+        : TextSelection.collapsed(offset: _textController.text.length);
+    final newText = _textController.text.replaceRange(
+      selection.start,
+      selection.end,
+      text,
+    );
+    _textController.value = _textController.value.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: selection.start + text.length),
     );
   }
 
@@ -1153,5 +1246,45 @@ class _MessageInputState extends State<MessageInput> {
         toastService.showToast('发送失败: $e');
       }
     }
+  }
+}
+
+/// 输入框内嵌的无边框小图标按钮（表情/语音）
+class _InlineIconAction extends StatelessWidget {
+  const _InlineIconAction({
+    required this.icon,
+    required this.color,
+    this.onPressed,
+    this.tooltip,
+  });
+
+  final DsIconKind icon;
+  final Color color;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onPressed == null;
+    return Pressable(
+      onPressed: onPressed,
+      semanticLabel: tooltip,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return AnimatedScale(
+          scale: pressed && !disabled ? 0.85 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+            child: DsIcon(
+              icon,
+              size: 18,
+              color: disabled ? color.withValues(alpha: 0.4) : color,
+            ),
+          ),
+        );
+      },
+    );
   }
 }

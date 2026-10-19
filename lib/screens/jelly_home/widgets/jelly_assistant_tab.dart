@@ -196,7 +196,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                             padding: EdgeInsets.only(bottom: bottomInset),
                             child: MessageInput(
                               controller: controller,
-                              showQuickActions: false,
                             ),
                           ),
                         ),
@@ -312,7 +311,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
           ),
           const SizedBox(height: 32),
           Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: 24),
             child: Text(
               'screens_assistantIdeas'.tr,
               style: DsTypography.title.copyWith(color: theme.text),
@@ -320,6 +319,11 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
           ),
           MarqueeButtonListCardWidget(
             inline: true,
+            rows: 3,
+            // 手绘风：纸底 + 主题文字，去柔影（design.md §9.3）
+            cardColor: theme.surface,
+            textColor: theme.text,
+            showShadow: false,
             items: [
               (
                 Icons.schedule,
@@ -335,8 +339,10 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
               (
                 Icons.water_drop,
                 'screens_assistantIdeaCheckin'.tr,
-                theme.primary,
+                theme.danger,
               ),
+              (Icons.event, 'screens_assistantIdeaEvent'.tr, theme.primary),
+              (Icons.alarm, 'screens_assistantIdeaTimer'.tr, theme.warning),
             ]
                 .map(
                   (e) => MarqueeButtonItemData(

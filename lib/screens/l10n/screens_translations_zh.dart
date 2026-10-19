@@ -445,6 +445,8 @@ final Map<String, String> screensTranslationsZh = {
   'screens_assistantIdeaBill': '记笔账：午饭 25 元',
   'screens_assistantIdeaDiary': '写段日记：今天心情不错',
   'screens_assistantIdeaCheckin': '打卡：喝水 500 毫升',
+  'screens_assistantIdeaEvent': '记个日程：周五晚 7 点健身',
+  'screens_assistantIdeaTimer': '定个提醒：一小时后叫我起来走走',
   'screens_assistantOpenFull': '查看完整对话',
   'screens_assistantInitFailed': '聊天助手初始化失败',
 };

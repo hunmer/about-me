@@ -357,7 +357,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// 输入框顶部工具栏的附加动作（由顶栏迁移而来）
+  /// 输入框"+"抽屉的附加动作（网格展示）
   List<MessageInputQuickAction> _buildExtraQuickActions() {
     return [
       MessageInputQuickAction(

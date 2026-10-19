@@ -471,6 +471,8 @@ final Map<String, String> screensTranslationsEn = {
   'screens_assistantIdeaBill': 'Expense: lunch ¥25',
   'screens_assistantIdeaDiary': 'Diary: feeling good today',
   'screens_assistantIdeaCheckin': 'Check in: drank 500ml water',
+  'screens_assistantIdeaEvent': 'Schedule: gym Friday 7 pm',
+  'screens_assistantIdeaTimer': 'Remind me: walk break in 1 hour',
   'screens_assistantOpenFull': 'Open full chat',
   'screens_assistantInitFailed': 'Chat assistant failed to initialize',
 };

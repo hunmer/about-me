@@ -72,7 +72,7 @@ Future<void> handleEmojiSelection({
                       _buildEmojiCategory(emojiFaces, '方块表情'),
                       _buildEmojiCategory(emojiAssets, '内置表情'),
                     ].lock,
-                    appendCategories: _buildStickerCategories(
+                    appendCategories: buildStickerCategories(
                       stickerCollections,
                     ),
                     onSelection: (value, isFreeText) {
@@ -153,8 +153,9 @@ EmojiCategory _buildEmojiCategory(List<String> assets, String categoryName) {
   );
 }
 
-/// 将贴图合集转为选择器分类（每个合集一个分类）
-IList<EmojiCategory> _buildStickerCategories(
+/// 将贴图合集转为选择器分类（每个合集一个分类）；
+/// 选中值带 [kStickerPrefix] 前缀，供消费方读取贴图字节（跨插件复用）
+IList<EmojiCategory> buildStickerCategories(
   List<StickerCollection> collections,
 ) {
   return collections

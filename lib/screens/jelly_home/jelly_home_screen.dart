@@ -526,8 +526,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
         //
         // removeBottom：外层 Positioned 已避让悬浮导航栏/键盘，
         // 去掉 MessageInput 内部 SafeArea 消费的底部 inset，避免双重避让
-        // 抬高输入框；showQuickActions: false 收起常驻快捷入口行，
-        // 输入框高度随内容（多行文本 / 命令面板 / 附件状态）自动伸缩
+        // 抬高输入框；输入框高度随内容（多行文本 / 命令面板 / 附件状态）自动伸缩
         return MediaQuery.removePadding(
           context: context,
           removeBottom: true,
@@ -542,7 +541,6 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
                 ),
                 child: MessageInput(
                   controller: controller,
-                  showQuickActions: false,
                 ),
               ),
             ),

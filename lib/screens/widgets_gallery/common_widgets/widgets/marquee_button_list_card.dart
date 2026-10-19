@@ -61,6 +61,15 @@ class MarqueeButtonListCardWidget extends StatefulWidget {
   /// 组件尺寸
   final HomeWidgetSize size;
 
+  /// 卡片背景色（null = 内置米色/深色）
+  final Color? cardColor;
+
+  /// 胶囊文字色（null = 内置墨色/白色）
+  final Color? textColor;
+
+  /// 是否显示卡片柔影
+  final bool showShadow;
+
   const MarqueeButtonListCardWidget({
     super.key,
     required this.items,
@@ -72,6 +81,9 @@ class MarqueeButtonListCardWidget extends StatefulWidget {
     this.itemBuilder,
     this.inline = false,
     this.size = const Wide2Size(),
+    this.cardColor,
+    this.textColor,
+    this.showShadow = true,
   });
 
   /// 从 props 创建实例
@@ -181,6 +193,10 @@ class _MarqueeButtonListCardWidgetState
     final rowCount = math.max(1, math.min(widget.rows, widget.items.length));
     final rowHeight = 40 * scale;
     final rowSpacing = 10 * scale;
+    final cardBg =
+        widget.cardColor ?? (isDark ? const Color(0xFF1E293B) : const Color(0xFFF7F3EB));
+    final pillText =
+        widget.textColor ?? (isDark ? Colors.white : const Color(0xFF211D15));
 
     Widget card = MouseRegion(
       onEnter: widget.pauseOnHover ? (_) => _paused.value = true : null,
@@ -189,15 +205,17 @@ class _MarqueeButtonListCardWidgetState
         width: widget.inline ? double.maxFinite : 384 * scale,
         padding: EdgeInsets.all(16 * scale),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF7F3EB),
+          color: cardBg,
           borderRadius: BorderRadius.circular(24 * scale),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          boxShadow: widget.showShadow
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -217,7 +235,7 @@ class _MarqueeButtonListCardWidgetState
                     speed: widget.speed,
                     gap: 10 * scale,
                     scale: scale,
-                    isDark: isDark,
+                    textColor: pillText,
                     itemBuilder: widget.itemBuilder,
                     onItemTap: widget.onItemTap,
                     pausedListenable: _paused,
@@ -255,7 +273,7 @@ class _MarqueeRow extends StatefulWidget {
   final double speed;
   final double gap;
   final double scale;
-  final bool isDark;
+  final Color textColor;
   final Widget Function(BuildContext, MarqueeButtonItemData)? itemBuilder;
   final void Function(MarqueeButtonItemData, int)? onItemTap;
   final ValueListenable<bool> pausedListenable;
@@ -266,7 +284,7 @@ class _MarqueeRow extends StatefulWidget {
     required this.speed,
     required this.gap,
     required this.scale,
-    required this.isDark,
+    required this.textColor,
     required this.itemBuilder,
     required this.onItemTap,
     required this.pausedListenable,
@@ -347,7 +365,7 @@ class _MarqueeRowState extends State<_MarqueeRow>
         : _DefaultPill(
             item: item,
             scale: widget.scale,
-            isDark: widget.isDark,
+            textColor: widget.textColor,
             onTap: widget.onItemTap == null
                 ? null
                 : () => widget.onItemTap!(item, itemIndex),
@@ -364,18 +382,20 @@ class _MarqueeRowState extends State<_MarqueeRow>
 class _DefaultPill extends StatelessWidget {
   final MarqueeButtonItemData item;
   final double scale;
-  final bool isDark;
+  final Color textColor;
   final VoidCallback? onTap;
 
   const _DefaultPill({
     required this.item,
     required this.scale,
-    required this.isDark,
+    required this.textColor,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // 文字色亮度反推明暗：暗色主题文字偏亮，胶囊底/描边透明度更高
+    final onDark = textColor.computeLuminance() > 0.5;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -387,10 +407,10 @@ class _DefaultPill extends StatelessWidget {
             vertical: 8 * scale,
           ),
           decoration: BoxDecoration(
-            color: item.color.withOpacity(isDark ? 0.22 : 0.13),
+            color: item.color.withOpacity(onDark ? 0.22 : 0.13),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: item.color.withOpacity(isDark ? 0.5 : 0.4),
+              color: item.color.withOpacity(onDark ? 0.5 : 0.4),
             ),
           ),
           child: Row(
@@ -408,7 +428,7 @@ class _DefaultPill extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13 * scale,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF211D15),
+                    color: textColor,
                   ),
                 ),
               ),
