@@ -4,6 +4,30 @@ import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 ///
 /// 供 dartantic_ai 的 Tool(name, description, inputSchema) 使用
 class ToolSchemaBuilder {
+  /// 配置中的 params 表示 JS API 的单个对象实参，Dart 回调直接接收其内容。
+  static Map<String, dynamic> invocationArgs(
+    ToolConfig config,
+    Map<String, dynamic> args,
+  ) {
+    if (config.parameters.length == 1 &&
+        config.parameters.single.name == 'params' &&
+        config.parameters.single.type.toLowerCase() == 'object' &&
+        args['params'] is Map) {
+      return Map<String, dynamic>.from(args['params'] as Map);
+    }
+    return Map<String, dynamic>.from(args);
+  }
+
+  static String? resultError(dynamic result) {
+    if (result is! Map) return null;
+    final error = result['error'];
+    if (error != null && error.toString().isNotEmpty) return error.toString();
+    if (result['success'] == false) {
+      return result['message']?.toString() ?? '插件返回执行失败';
+    }
+    return null;
+  }
+
   /// 脏 type → JSON Schema type 的规范化映射（键统一小写比较）
   static const _typeMap = {
     'string': 'string',

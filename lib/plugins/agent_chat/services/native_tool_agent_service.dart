@@ -1045,6 +1045,7 @@ class NativeToolAgentService {
         .toList();
     if (missing.isNotEmpty) return {'error': '缺少必填参数：${missing.join(', ')}'};
 
+    final invocationArgs = ToolSchemaBuilder.invocationArgs(config, methodArgs);
     final argsJson = jsonEncode(methodArgs);
 
     final step = ToolCallStep(
@@ -1054,7 +1055,7 @@ class NativeToolAgentService {
       data: jsonEncode({
         'pluginId': pluginId,
         'method': methodName,
-        'args': methodArgs,
+        'args': invocationArgs,
       }),
       status: ToolCallStatus.running,
     );
@@ -1065,18 +1066,28 @@ class NativeToolAgentService {
     );
 
     try {
+      debugPrint(
+        '[NativeTool] 路由=$pluginId.$methodName '
+        '输入字段=${methodArgs.keys.join(',')} '
+        '实参字段=${invocationArgs.keys.join(',')}',
+      );
       final rawResult = await JSBridgeManager.instance.pluginTools.invoke(
         pluginId,
         methodName,
-        methodArgs,
+        invocationArgs,
       );
       final result = rawResult is String ? rawResult : jsonEncode(rawResult);
+      final decoded = _tryDecodeJson(result);
+      final error = ToolSchemaBuilder.resultError(decoded);
       step
-        ..status = ToolCallStatus.success
+        ..status = error == null ? ToolCallStatus.success : ToolCallStatus.failed
+        ..error = error
         ..result = result;
       await run.notifySteps();
+      if (error != null) {
+        debugPrint('[NativeTool] ✗ $pluginId.$methodName 业务失败: $error');
+      }
       // 结果回传 LLM：JSON 字符串解析后原样传，其余包 result 字段
-      final decoded = _tryDecodeJson(result);
       return (decoded is Map<String, dynamic>)
           ? decoded
           : (decoded is List ? {'result': decoded} : {'result': result});

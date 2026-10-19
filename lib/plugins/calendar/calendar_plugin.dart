@@ -123,6 +123,8 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
 
     // 注册数据选择器
     _registerDataSelectors();
+
+    await registerJSAPI();
   }
 
   @override

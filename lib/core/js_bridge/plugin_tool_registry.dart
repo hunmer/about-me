@@ -21,7 +21,11 @@ class PluginToolRegistry {
           .where((methods) => methods.containsKey(method))
           .toList();
       if (matches.length != 1) {
-        throw StateError('插件接口不存在或路由不唯一：$pluginId.$method');
+        throw StateError(
+          '插件接口不存在或路由不唯一：$pluginId.$method；'
+          '该插件已注册方法：${_handlers[pluginId]?.keys.join(',') ?? '未注册'}；'
+          '同名候选数：${matches.length}',
+        );
       }
       handler = matches.single[method]!;
     }
