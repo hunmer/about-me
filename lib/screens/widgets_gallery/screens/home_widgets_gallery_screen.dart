@@ -177,6 +177,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'GradientProgressCard - 渐变轨道与斜线纹理进度卡片',
         route: '/widgets_gallery/gradient_progress_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.speed,
+        title: '周期分数仪表卡片',
+        subtitle: 'PeriodScoreGaugeCard - 周期切换与马蹄形分数仪表',
+        route: '/widgets_gallery/period_score_gauge_card',
+      ),
     ];
   }
 
@@ -457,6 +464,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'StripedWeeklyChartCard - 斜线胶囊柱与每周数据图表',
         route: '/widgets_gallery/striped_weekly_chart_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.calendar_view_month,
+        title: '月度胶囊图表卡片',
+        subtitle: 'MonthlyCapsuleChartCard - 斜线轨道与月度胶囊统计图',
+        route: '/widgets_gallery/monthly_capsule_chart_card',
+      ),
     ];
   }
 
@@ -575,6 +589,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         title: '切角统计网格卡片',
         subtitle: 'CutoutStatGridCard - 液体切角图标与多列统计数据',
         route: '/widgets_gallery/cutout_stat_grid_card',
+      ),
+      _buildListItem(
+        context,
+        icon: Icons.auto_awesome,
+        title: '闪光统计网格卡片',
+        subtitle: 'SparkleStatGridCard - 闪光水印与双列统计数据',
+        route: '/widgets_gallery/sparkle_stat_grid_card',
       ),
     ];
   }

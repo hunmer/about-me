@@ -342,11 +342,14 @@ class _CutoutCornerPainter extends CustomPainter {
       Rect.fromLTWH(side, 0, curve, curve),
       Rect.fromLTWH(0, side, curve, curve),
     ]) {
+      canvas.save();
+      canvas.clipRect(rect);
       final path = Path()
         ..fillType = PathFillType.evenOdd
         ..addRect(rect)
         ..addOval(Rect.fromCircle(center: rect.bottomRight, radius: curve));
       canvas.drawPath(path, paint);
+      canvas.restore();
     }
   }
 

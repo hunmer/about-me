@@ -97,6 +97,9 @@ import 'widgets/illustrated_metric_card.dart';
 import 'widgets/cutout_stat_grid_card.dart';
 import 'widgets/gradient_progress_card.dart';
 import 'widgets/striped_weekly_chart_card.dart';
+import 'widgets/sparkle_stat_grid_card.dart';
+import 'widgets/period_score_gauge_card.dart';
+import 'widgets/monthly_capsule_chart_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -195,6 +198,9 @@ enum CommonWidgetId {
   cutoutStatGridCard,
   gradientProgressCard,
   stripedWeeklyChartCard,
+  sparkleStatGridCard,
+  periodScoreGaugeCard,
+  monthlyCapsuleChartCard,
 }
 
 /// 公共小组件元数据
@@ -965,6 +971,30 @@ class CommonWidgetsRegistry {
       defaultSize: Wide2Size(),
       supportedSizes: [Wide2Size(), Large3Size()],
     ),
+    CommonWidgetId.sparkleStatGridCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.sparkleStatGridCard,
+      name: '闪光统计网格卡片',
+      description: '带闪光与书本水印的双列图标数值统计卡片',
+      icon: Icons.auto_awesome,
+      defaultSize: Wide2Size(),
+      supportedSizes: [Wide2Size(), Large3Size()],
+    ),
+    CommonWidgetId.periodScoreGaugeCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.periodScoreGaugeCard,
+      name: '周期分数仪表卡片',
+      description: '周期分段切换与马蹄形分数仪表进度卡片',
+      icon: Icons.speed,
+      defaultSize: Large3Size(),
+      supportedSizes: [Large3Size(), Wide2Size()],
+    ),
+    CommonWidgetId.monthlyCapsuleChartCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.monthlyCapsuleChartCard,
+      name: '月度胶囊图表卡片',
+      description: '斜线胶囊轨道、底部填充和浮动徽标的月度统计图表',
+      icon: Icons.calendar_view_month,
+      defaultSize: Large3Size(),
+      supportedSizes: [Large3Size(), Wide2Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1217,6 +1247,15 @@ class CommonWidgetBuilder {
         return GradientProgressCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.stripedWeeklyChartCard:
         return StripedWeeklyChartCardWidget.fromProps(
+          finalProps,
+          effectiveSize,
+        );
+      case CommonWidgetId.sparkleStatGridCard:
+        return SparkleStatGridCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.periodScoreGaugeCard:
+        return PeriodScoreGaugeCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.monthlyCapsuleChartCard:
+        return MonthlyCapsuleChartCardWidget.fromProps(
           finalProps,
           effectiveSize,
         );

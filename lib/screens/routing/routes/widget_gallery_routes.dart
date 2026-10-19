@@ -93,6 +93,9 @@ import 'package:aboutme/screens/widgets_gallery/screens/illustrated_metric_card_
 import 'package:aboutme/screens/widgets_gallery/screens/cutout_stat_grid_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/gradient_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/striped_weekly_chart_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/sparkle_stat_grid_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/period_score_gauge_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/monthly_capsule_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/inbox_message_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
@@ -874,6 +877,30 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '斜线周图表卡片',
     ),
     RouteDefinition(
+      path: '/widgets_gallery/sparkle_stat_grid_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SparkleStatGridCardExample(),
+        settings: settings,
+      ),
+      description: '闪光统计网格卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/period_score_gauge_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const PeriodScoreGaugeCardExample(),
+        settings: settings,
+      ),
+      description: '周期分数仪表卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/monthly_capsule_chart_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const MonthlyCapsuleChartCardExample(),
+        settings: settings,
+      ),
+      description: '月度胶囊图表卡片',
+    ),
+    RouteDefinition(
       path: '/widgets_gallery/inbox_message_card',
       handler: (settings) => RouteHelpers.createRoute(
         const InboxMessageCardExample(),
@@ -1073,6 +1100,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '渐变进度卡片',
     subtitle: 'GradientProgressCard',
     route: '/widgets_gallery/gradient_progress_card',
+  ),
+  WidgetPreviewItem(
+    category: '进度类',
+    icon: Icons.speed,
+    title: '周期分数仪表卡片',
+    subtitle: 'PeriodScoreGaugeCard',
+    route: '/widgets_gallery/period_score_gauge_card',
   ),
   // 追踪类
   WidgetPreviewItem(
@@ -1336,6 +1370,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     subtitle: 'StripedWeeklyChartCard',
     route: '/widgets_gallery/striped_weekly_chart_card',
   ),
+  WidgetPreviewItem(
+    category: '图表类',
+    icon: Icons.calendar_view_month,
+    title: '月度胶囊图表卡片',
+    subtitle: 'MonthlyCapsuleChartCard',
+    route: '/widgets_gallery/monthly_capsule_chart_card',
+  ),
   // 内容类
   WidgetPreviewItem(
     category: '内容类',
@@ -1441,6 +1482,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '切角统计网格卡片',
     subtitle: 'CutoutStatGridCard',
     route: '/widgets_gallery/cutout_stat_grid_card',
+  ),
+  WidgetPreviewItem(
+    category: '内容类',
+    icon: Icons.auto_awesome,
+    title: '闪光统计网格卡片',
+    subtitle: 'SparkleStatGridCard',
+    route: '/widgets_gallery/sparkle_stat_grid_card',
   ),
   // 财务类
   WidgetPreviewItem(

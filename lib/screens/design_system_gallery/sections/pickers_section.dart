@@ -20,6 +20,33 @@ class _PickersSectionState extends State<PickersSection> {
   int _segment = 1;
   final Set<String> _chips = {'默认标签'};
 
+  List<DSMenuItem> get _menuItems => [
+    DSMenuItem(
+      label: '重命名',
+      icon: DsIconKind.edit,
+      trailing: 'Ctrl+R',
+      onTap: () => showDSToast(context, message: '已重命名', type: DSToastType.info),
+    ),
+    DSMenuItem(
+      label: '复制链接',
+      icon: DsIconKind.link,
+      onTap: () => showDSToast(context, message: '链接已复制', type: DSToastType.success),
+    ),
+    DSMenuItem(
+      label: '分享',
+      icon: DsIconKind.share,
+      onTap: () => showDSToast(context, message: '分享出去啦', type: DSToastType.info),
+    ),
+    const DSMenuItem.divider(),
+    DSMenuItem(
+      label: '删除',
+      icon: DsIconKind.trash,
+      danger: true,
+      enabled: false,
+      onTap: () => showDSToast(context, message: '已删除'),
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
@@ -53,6 +80,33 @@ class _PickersSectionState extends State<PickersSection> {
                   options: const ['日', '周', '月'],
                   selected: _segment,
                   onChanged: (i) => setState(() => _segment = i),
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const DemoSubHeader('下拉菜单（Dropdown）'),
+                DSDropdown(
+                  width: 200,
+                  label: '更多操作',
+                  icon: DsIconKind.tune,
+                  items: _menuItems,
+                ),
+                SizedBox(height: theme.spacing.md),
+                const DemoSubHeader('菜单（Menu，图标触发 → 右对齐浮层）'),
+                DSMenu(
+                  align: DSMenuAlign.end,
+                  items: _menuItems,
+                  child: JellyBox(
+                    width: 46,
+                    height: 46,
+                    radius: theme.radii.lg,
+                    child: Center(
+                      child: DsIcon(DsIconKind.dots, color: theme.text),
+                    ),
+                  ),
                 ),
               ],
             ),

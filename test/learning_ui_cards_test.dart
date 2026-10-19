@@ -25,6 +25,31 @@ void main() {
     expect(find.text('12'), findsOneWidget);
     expect(find.text('lessons'), findsOneWidget);
     expect(find.byIcon(Icons.auto_stories_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.north_east_rounded), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('插画指标卡片右下按钮响应点击', (tester) async {
+    var tapCount = 0;
+    await _pumpCard(
+      tester,
+      IllustratedMetricCardWidget(
+        data: const IllustratedMetricData(
+          title: 'Study Hours',
+          value: '43',
+          unit: 'Hours',
+          icon: Icons.alarm_rounded,
+          backgroundColor: Color(0xFFFAEEAB),
+          illustrationBackgroundColor: Color(0xFFCBC0EB),
+        ),
+        onAction: () => tapCount++,
+        size: const WideSize(),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('illustrated-metric-action')));
+    await tester.pump();
+    expect(tapCount, 1);
     expect(tester.takeException(), isNull);
   });
 
