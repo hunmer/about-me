@@ -389,23 +389,13 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   /// 空状态视图
   Widget _buildEmptyState() {
-    final theme = DSThemeBridge.resolve(context);
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          DsIcon(DsIconKind.chat, size: 80, color: theme.textSub),
-          const SizedBox(height: 16),
-          Text(
-            '还没有任何会话',
-            style: DsTypography.title.copyWith(color: theme.textSub),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '点击右下角的 + 按钮创建新会话',
-            style: DsTypography.body.copyWith(color: theme.textSub),
-          ),
-        ],
+      child: DSEmptyState(
+        icon: DsIconKind.chat,
+        title: '还没有任何会话',
+        message: '创建一个频道，开始和 AI 聊天吧',
+        actionLabel: '新建会话',
+        onAction: _showAddChannelDialog,
       ),
     );
   }

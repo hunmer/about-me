@@ -13,9 +13,13 @@ import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 import '../media_log_plugin.dart';
 import '../models/media_item.dart';
 import '../screens/media_detail_screen.dart';
+import '../widgets/media_bookshelf_view.dart';
 import '../widgets/media_item_card.dart';
 import '../widgets/media_item_form.dart';
 import '../widgets/media_item_list_tile.dart';
+
+/// 视图模式：瀑布流网格 / 单列列表 / 手绘书架
+enum _MediaViewMode { grid, list, shelf }
 
 /// 媒体记录列表页：瀑布流封面网格 + 多条件过滤 + 搜索 + 排序
 ///
@@ -32,8 +36,14 @@ class _MediaListScreenState extends State<MediaListScreen> {
   String _searchQuery = '';
   String _sortBy = 'default'; // default, title, rating, finished
 
-  /// 视图模式：true = 瀑布流网格（默认），false = 单列列表（支持滑动操作）
-  bool _isGridView = true;
+  _MediaViewMode _viewMode = _MediaViewMode.grid;
+
+  /// 切换按钮的下一档（网格 → 列表 → 书架 → 网格循环）
+  _MediaViewMode get _nextViewMode => switch (_viewMode) {
+    _MediaViewMode.grid => _MediaViewMode.list,
+    _MediaViewMode.list => _MediaViewMode.shelf,
+    _MediaViewMode.shelf => _MediaViewMode.grid,
+  };
 
   @override
   void initState() {
@@ -392,14 +402,21 @@ class _MediaListScreenState extends State<MediaListScreen> {
             builder: (context) {
               final theme = DSThemeBridge.resolve(context);
               return DSIconButton(
-                icon: _isGridView ? DsIconKind.list : DsIconKind.grid,
+                icon: switch (_nextViewMode) {
+                  _MediaViewMode.grid => DsIconKind.grid,
+                  _MediaViewMode.list => DsIconKind.list,
+                  _MediaViewMode.shelf => DsIconKind.shelf,
+                },
                 size: 36,
                 color: theme.surfaceAlt,
                 iconColor: theme.textSub,
-                tooltip: _isGridView
-                    ? 'media_viewAsList'.tr
-                    : 'media_viewAsGrid'.tr,
-                onPressed: () => setState(() => _isGridView = !_isGridView),
+                tooltip: switch (_nextViewMode) {
+                  _MediaViewMode.grid => 'media_viewAsGrid'.tr,
+                  _MediaViewMode.list => 'media_viewAsList'.tr,
+                  _MediaViewMode.shelf => 'media_viewAsShelf'.tr,
+                },
+                onPressed: () =>
+                    setState(() => _viewMode = _nextViewMode),
               );
             },
           ),
@@ -423,7 +440,23 @@ class _MediaListScreenState extends State<MediaListScreen> {
                 title: 'media_noItems'.tr,
               ),
             )
-          else if (_isGridView)
+          else if (_viewMode == _MediaViewMode.shelf)
+            // 手绘书架：items 已过滤排序，不符合条件的书直接不上架
+            MediaBookshelfView(
+              items: items,
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.paddingOf(context).bottom,
+              ),
+              onTap: (item) => NavigationHelper.pushHero(
+                context,
+                MediaDetailScreen(itemId: item.id),
+              ),
+              onLongPress: _showItemActions,
+            )
+          else if (_viewMode == _MediaViewMode.grid)
             MasonryGridView.count(
               padding: EdgeInsets.fromLTRB(
                 16,

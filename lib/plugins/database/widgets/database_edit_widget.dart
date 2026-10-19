@@ -179,7 +179,10 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
     final theme = DSThemeBridge.resolve(context);
     return Stack(
       children: [
+        // sheet 内无最大高度约束（内容自适应撑开），
+        // 垂直 viewport 必须 shrinkWrap 否则拿到无界高度崩溃
         ReorderableListView(
+          shrinkWrap: true,
           onReorder: (oldIndex, newIndex) {
             setState(() {
               if (newIndex > oldIndex) newIndex--;

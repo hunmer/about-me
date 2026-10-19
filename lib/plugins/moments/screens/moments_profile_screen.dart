@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:path/path.dart' as p;
+import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
+import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
+
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
@@ -48,6 +51,7 @@ class _TagGroup {
 const _masonryHeights = [118.0, 92.0, 132.0, 100.0, 126.0, 96.0, 116.0, 106.0];
 
 class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
+  final _navBarKeys = NavigationBarStaticComponentsKeys();
   final _moments = MomentsService.instance;
   AIAgent? _agent;
   String? _activeTag; // null = 合集卡片视图
@@ -109,8 +113,7 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
     return list;
   }
 
-  String get _authorKey =>
-      isUser ? MomentPost.userAuthorId : widget.agentId!;
+  String get _authorKey => isUser ? MomentPost.userAuthorId : widget.agentId!;
 
   /// 封面解析：显式背景 > agent 头像 >（用户）null
   String? _resolveCoverPath() {
@@ -121,18 +124,40 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
   }
 
   /// 固定头部：返回 / 标题 / 更多
+  /// 包内 PersistentNavigationBar；仅 push 子页面（agent 主页）使用，
+  /// embedded（宿主页 tab）的顶栏由宿主页统一渲染
   Widget _buildNavBar() {
-    return DSLightHeader(
-      title: 'moments_profileTitle'.tr,
-      // embedded = 宿主页 tab 内嵌，无返回钮
-      showBack: !widget.embedded,
-      trailing: DSIconButton(
-        icon: DsIconKind.more,
-        size: 38,
-        onPressed:
-            () => ToastService.instance.showToast(
-              'moments_linkCopied'.trParams({'name': _displayName}),
-            ),
+    final theme = AppTheme.of(context);
+    return PersistentNavigationBar(
+      components: NavigationBarStaticComponents(
+        keys: _navBarKeys,
+        route: null,
+        userLeading: DSIconButton(
+          icon: DsIconKind.chevronLeft,
+          size: 38,
+          color: theme.surface,
+          iconColor: theme.text,
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        automaticallyImplyLeading: false,
+        automaticallyImplyTitle: false,
+        previousPageTitle: null,
+        userMiddle: Text(
+          'moments_profileTitle'.tr,
+          style: DsTypography.title.copyWith(color: theme.text),
+        ),
+        userTrailing: DSIconButton(
+          icon: DsIconKind.more,
+          size: 38,
+          onPressed: () => ToastService.instance.showToast(
+            'moments_linkCopied'.trParams({'name': _displayName}),
+          ),
+        ),
+        userLargeTitle: null,
+        largeTitleActions: null,
+        appbarBottom: null,
+        padding: null,
+        large: false,
       ),
     );
   }
@@ -173,14 +198,13 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
       height: 230,
       // 长按封面：有自定义背景时可恢复默认
       onLongPress: hasExplicit ? _showBgOptions : null,
-      overlay:
-          isUser
-              ? InterestPill(
-                label: 'moments_changeBg'.tr,
-                leading: DsIcon(DsIconKind.image, size: 12),
-                onTap: _uploadBg,
-              )
-              : null,
+      overlay: isUser
+          ? InterestPill(
+              label: 'moments_changeBg'.tr,
+              leading: DsIcon(DsIconKind.image, size: 12),
+              onTap: _uploadBg,
+            )
+          : null,
     );
   }
 
@@ -265,24 +289,24 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
       backgroundColor: theme.background,
       // 内容延伸到 dock 后面，矮窗口下整页可滚
       extendBody: true,
-      body:
-          hasCover
-              ? Stack(
-                children: [
-                  Positioned.fill(
-                    child: CustomScrollView(slivers: slivers),
-                  ),
-                  Positioned(top: 0, left: 0, right: 0, child: _buildNavBar()),
-                ],
-              )
-              : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildNavBar(),
-                  Expanded(child: CustomScrollView(slivers: slivers)),
-                ],
-              ),
-
+      // 顶栏：embedded 由宿主页统一渲染（封面延伸/顶部避让同由宿主页处理）；
+      // push 子页面（agent 主页）自带返回顶栏，设封面时浮在封面上
+      body: widget.embedded
+          ? CustomScrollView(slivers: slivers)
+          : hasCover
+          ? Stack(
+              children: [
+                Positioned.fill(child: CustomScrollView(slivers: slivers)),
+                Positioned(top: 0, left: 0, right: 0, child: _buildNavBar()),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildNavBar(),
+                Expanded(child: CustomScrollView(slivers: slivers)),
+              ],
+            ),
     );
   }
 
@@ -297,10 +321,7 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
           Positioned(
             top: -6,
             left: 48,
-            child: const MomentSticker(
-              kind: stickerChili,
-              rotation: -0.09,
-            ),
+            child: const MomentSticker(kind: stickerChili, rotation: -0.09),
           ),
           Positioned(
             top: 8,
@@ -310,18 +331,12 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
           Positioned(
             bottom: 16,
             left: 22,
-            child: const MomentSticker(
-              kind: stickerCocktail,
-              rotation: -0.1,
-            ),
+            child: const MomentSticker(kind: stickerCocktail, rotation: -0.1),
           ),
           Positioned(
             bottom: 14,
             right: 24,
-            child: const MomentSticker(
-              kind: stickerFigma,
-              rotation: 0.23,
-            ),
+            child: const MomentSticker(kind: stickerFigma, rotation: 0.23),
           ),
           // 中央头像：墨线圆环 + 纸底
           Container(
@@ -354,8 +369,7 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
     int liked,
     int comments,
   ) {
-    final bio =
-        isUser ? 'moments_bioUser'.tr : (_agent?.description ?? '');
+    final bio = isUser ? 'moments_bioUser'.tr : (_agent?.description ?? '');
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -437,13 +451,12 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
             const SizedBox(width: 6),
             TagPill(
               tag: MomentTags.byKey(entry.key),
-              onTap:
-                  () => ToastService.instance.showToast(
-                    'moments_tagCount'.trParams({
-                      'tag': MomentTags.byKey(entry.key).label,
-                      'n': '${entry.value}',
-                    }),
-                  ),
+              onTap: () => ToastService.instance.showToast(
+                'moments_tagCount'.trParams({
+                  'tag': MomentTags.byKey(entry.key).label,
+                  'n': '${entry.value}',
+                }),
+              ),
             ),
           ],
         ],
@@ -552,10 +565,8 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
                     angle: i.isEven ? -0.087 : 0.087,
                     child: _CollectionCard(
                       group: groups[i],
-                      onTap:
-                          () => setState(
-                            () => _activeTag = groups[i].tag.key,
-                          ),
+                      onTap: () =>
+                          setState(() => _activeTag = groups[i].tag.key),
                     ),
                   ),
                 ),
@@ -644,9 +655,7 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
                               child: _MasonryImage(
                                 path: group.images[i],
                                 height:
-                                    _masonryHeights[
-                                      i % _masonryHeights.length
-                                    ],
+                                    _masonryHeights[i % _masonryHeights.length],
                                 onTap: () => _openGroupViewer(group, i),
                               ),
                             ),
@@ -665,11 +674,10 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
   void _openGroupViewer(_TagGroup group, int initialIndex) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder:
-            (_) => PhotoViewerScreen(
-              imageRelativePaths: group.images,
-              initialIndex: initialIndex,
-            ),
+        builder: (_) => PhotoViewerScreen(
+          imageRelativePaths: group.images,
+          initialIndex: initialIndex,
+        ),
       ),
     );
   }
@@ -694,10 +702,7 @@ class _StatButton extends StatelessWidget {
         children: [
           TextSpan(
             text: '$value',
-            style: DsTypography.label.copyWith(
-              fontSize: 12,
-              color: theme.text,
-            ),
+            style: DsTypography.label.copyWith(fontSize: 12, color: theme.text),
           ),
           TextSpan(text: ' $label', style: DsTypography.caption),
         ],

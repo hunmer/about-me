@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
-import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -50,7 +48,6 @@ class MomentsFeedScreen extends StatefulWidget {
 class MomentsFeedScreenState extends State<MomentsFeedScreen> {
   final _moments = MomentsService.instance;
   final _scrollController = ScrollController();
-  final _navBarKeys = NavigationBarStaticComponentsKeys();
   final Map<String, AIAgent> _agents = {};
   String? _filter; // null = 全部
 
@@ -114,9 +111,7 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
       }
     }
     final agentIds =
-        latest.keys
-            .where((k) => k != MomentPost.userAuthorId)
-            .toList()
+        latest.keys.where((k) => k != MomentPost.userAuthorId).toList()
           ..sort((a, b) => latest[b]!.compareTo(latest[a]!));
     return [
       const MomentsAuthorInfo(id: MomentPost.userAuthorId),
@@ -124,22 +119,11 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
     ];
   }
 
-  int get _todayAgentPostCount {
-    final now = DateTime.now();
-    return _moments.posts
-        .where(
-          (p) => !p.isUserPost && now.difference(p.createdAt).inHours < 24,
-        )
-        .length;
-  }
-
   void _openProfile(MomentsAuthorInfo author) {
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder:
-            (_, __, ___) => MomentsProfileScreen(
-              agentId: author.isUser ? null : author.id,
-            ),
+        pageBuilder: (_, __, ___) =>
+            MomentsProfileScreen(agentId: author.isUser ? null : author.id),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 260),
@@ -148,15 +132,13 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
   }
 
   void _openStory(MomentsAuthorInfo author, List<MomentPost> posts) {
-    final items =
-        posts
-            .where(
-              (p) =>
-                  (p.isUserPost ? MomentPost.userAuthorId : p.agentId) ==
-                  author.id,
-            )
-            .take(8)
-            .toList();
+    final items = posts
+        .where(
+          (p) =>
+              (p.isUserPost ? MomentPost.userAuthorId : p.agentId) == author.id,
+        )
+        .take(8)
+        .toList();
     if (items.isEmpty) {
       unawaited(_openCompose());
       return;
@@ -165,8 +147,8 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
-        pageBuilder:
-            (_, __, ___) => StoryViewerScreen(author: author, posts: items),
+        pageBuilder: (_, __, ___) =>
+            StoryViewerScreen(author: author, posts: items),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 220),
@@ -186,21 +168,19 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
     final ok = await showDSDialog<bool>(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (dialogContext) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (ctx) => DSDialog(
-                    title: 'moments_deleteTitle'.tr,
-                    message: 'moments_deleteMessage'.tr,
-                    cancelText: 'app_cancel'.tr,
-                    confirmText: 'app_delete'.tr,
-                    confirmVariant: DSButtonVariant.destructive,
-                    onConfirm: () => Navigator.pop(dialogContext, true),
-                    onCancel: () => Navigator.pop(dialogContext, false),
-                  ),
-            ),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (ctx) => DSDialog(
+            title: 'moments_deleteTitle'.tr,
+            message: 'moments_deleteMessage'.tr,
+            cancelText: 'app_cancel'.tr,
+            confirmText: 'app_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () => Navigator.pop(dialogContext, true),
+            onCancel: () => Navigator.pop(dialogContext, false),
           ),
+        ),
+      ),
     );
     if (ok == true) {
       await _moments.deletePost(post.id);
@@ -211,21 +191,17 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    final posts =
-        _filter == null
-            ? _moments.posts
-            : _moments.posts.where((p) => p.tag == _filter).toList();
-    final unread = _todayAgentPostCount;
+    final posts = _filter == null
+        ? _moments.posts
+        : _moments.posts.where((p) => p.tag == _filter).toList();
     final coverPath = _moments.profileBgOf(MomentPost.userAuthorId);
     final hasCover = coverPath != null && coverPath.isNotEmpty;
 
-    final navBar = _buildNavBar(theme, unread);
     final slivers = <Widget>[
       SliverToBoxAdapter(
-        child:
-            hasCover
-                ? MomentsCover(path: coverPath, height: 210)
-                : _buildFeedBanner(theme),
+        child: hasCover
+            ? MomentsCover(path: coverPath, height: 210)
+            : _buildFeedBanner(theme),
       ),
       SliverToBoxAdapter(child: _buildStories(theme)),
       SliverToBoxAdapter(child: _buildFilters()),
@@ -263,116 +239,23 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
     return Scaffold(
       backgroundColor: theme.background,
       extendBody: true,
-      // 设置了背景图：头部透明浮在封面上（封面延伸到状态栏后）；
-      // 未设置：常规固定头部 + 签名统计横幅
-      body:
-          hasCover
-              ? Stack(
-                children: [
-                  Positioned.fill(
-                    child: CustomScrollView(
-                      controller: _scrollController,
-                      slivers: slivers,
-                    ),
-                  ),
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: navBar,
-                  ),
-                ],
-              )
-              : Column(
-                children: [
-                  navBar,
-                  Expanded(
-                    // 全部内容进滚动区，任意窗口高度都不会溢出
-                    child: CustomScrollView(
-                      controller: _scrollController,
-                      slivers: slivers,
-                    ),
-                  ),
-                ],
-              ),
-    );
-  }
-
-  /// 固定头部：标题 + 互动铃铛（投稿入口已移至底部 dock 右侧圆钮）
-  Widget _buildNavBar(AppThemeData theme, int unread) {
-    return PersistentNavigationBar(
-      components: NavigationBarStaticComponents(
-        keys: _navBarKeys,
-        route: null,
-        userLeading: null,
-        automaticallyImplyLeading: false,
-        automaticallyImplyTitle: false,
-        previousPageTitle: null,
-        userMiddle: Text(
-          'moments_name'.tr,
-          style: DsTypography.title.copyWith(color: theme.text),
-        ),
-        userTrailing: Align(
-          alignment: AlignmentDirectional.centerEnd,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              DSIconButton(
-                icon: DsIconKind.heart,
-                size: 38,
-                onPressed:
-                    () => ToastService.instance.showToast(
-                      unread > 0
-                          ? 'moments_interactNew'.trParams({'n': '$unread'})
-                          : 'moments_interactNone'.tr,
-                    ),
-              ),
-              if (unread > 0)
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: theme.danger,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '$unread',
-                      style: TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                        color: theme.onDanger,
-                        height: 1,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        userLargeTitle: null,
-        largeTitleActions: null,
-        appbarBottom: null,
-        padding: null,
-        large: false,
-      ),
+      // 顶栏由宿主页统一渲染：设了背景图时封面顶到屏幕最上方
+      // （宿主页导航栏浮于其上），否则内容从避让区下方开始
+      body: CustomScrollView(controller: _scrollController, slivers: slivers),
     );
   }
 
   /// 未设背景图时的顶部手写签名 + 统计横幅
   Widget _buildFeedBanner(AppThemeData theme) {
     final now = DateTime.now();
-    final today =
-        _moments.posts
-            .where((p) => now.difference(p.createdAt).inHours < 24)
-            .length;
-    final buddies =
-        _moments.posts
-            .where((p) => !p.isUserPost)
-            .map((p) => p.agentId)
-            .toSet()
-            .length;
+    final today = _moments.posts
+        .where((p) => now.difference(p.createdAt).inHours < 24)
+        .length;
+    final buddies = _moments.posts
+        .where((p) => !p.isUserPost)
+        .map((p) => p.agentId)
+        .toSet()
+        .length;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -400,9 +283,7 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
                 const SizedBox(height: 2),
                 Text(
                   'moments_feedSubline'.tr,
-                  style: DsTypography.caption.copyWith(
-                    color: theme.textSub,
-                  ),
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                 ),
               ],
             ),
@@ -545,8 +426,7 @@ class _StoryAvatar extends StatelessWidget {
                     height: 20,
                     decoration: dsSketchDecoration(
                       theme: theme,
-                      fillColor:
-                          author.isUser ? theme.primary : theme.surface,
+                      fillColor: author.isUser ? theme.primary : theme.surface,
                       stroke: theme.ink.withValues(alpha: 0.6),
                       circle: true,
                       seed: 7,
@@ -557,8 +437,9 @@ class _StoryAvatar extends StatelessWidget {
                         style: TextStyle(
                           fontSize: author.isUser ? 11 : 10,
                           fontWeight: FontWeight.bold,
-                          color:
-                              author.isUser ? theme.onPrimary : theme.textSub,
+                          color: author.isUser
+                              ? theme.onPrimary
+                              : theme.textSub,
                           height: 1,
                         ),
                       ),
@@ -681,30 +562,29 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
           ],
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
-            child:
-                _commentBoxOpen
-                    ? Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: DSInput(
-                              controller: _commentController,
-                              focusNode: _commentFocus,
-                              hint: 'moments_commentHint'.tr,
-                              onSubmitted: (_) => _submitComment(),
-                            ),
+            child: _commentBoxOpen
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: DSInput(
+                            controller: _commentController,
+                            focusNode: _commentFocus,
+                            hint: 'moments_commentHint'.tr,
+                            onSubmitted: (_) => _submitComment(),
                           ),
-                          const SizedBox(width: 8),
-                          InterestPill(
-                            label: 'moments_send'.tr,
-                            selected: true,
-                            onTap: () => unawaited(_submitComment()),
-                          ),
-                        ],
-                      ),
-                    )
-                    : const SizedBox.shrink(),
+                        ),
+                        const SizedBox(width: 8),
+                        InterestPill(
+                          label: 'moments_send'.tr,
+                          selected: true,
+                          onTap: () => unawaited(_submitComment()),
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -862,12 +742,9 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
                                 width: i == _activeImage ? 16 : 6,
                                 height: 6,
                                 decoration: BoxDecoration(
-                                  color:
-                                      i == _activeImage
-                                          ? theme.paper
-                                          : theme.paper.withValues(
-                                            alpha: 0.45,
-                                          ),
+                                  color: i == _activeImage
+                                      ? theme.paper
+                                      : theme.paper.withValues(alpha: 0.45),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                               ),
@@ -933,11 +810,10 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
   void _openViewer() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder:
-            (_) => PhotoViewerScreen(
-              imageRelativePaths: widget.post.images,
-              initialIndex: _activeImage,
-            ),
+        builder: (_) => PhotoViewerScreen(
+          imageRelativePaths: widget.post.images,
+          initialIndex: _activeImage,
+        ),
       ),
     );
   }
@@ -991,8 +867,7 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
         InterestPill(
           label: 'moments_share'.tr,
           leading: DsIcon(DsIconKind.send, size: 12),
-          onTap:
-              () => ToastService.instance.showToast('moments_shareDone'.tr),
+          onTap: () => ToastService.instance.showToast('moments_shareDone'.tr),
         ),
         const Spacer(),
         GestureDetector(
@@ -1005,10 +880,9 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
           child: DsIcon(
             widget.saved ? DsIconKind.star : DsIconKind.star,
             size: 18,
-            color:
-                widget.saved ? theme.warning : theme.textSub.withValues(
-                  alpha: 0.7,
-                ),
+            color: widget.saved
+                ? theme.warning
+                : theme.textSub.withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -1113,11 +987,7 @@ class _HeartBurstState extends State<_HeartBurst>
               angle: (t - 0.5) * 0.5,
               child: Opacity(
                 opacity: fade.clamp(0, 1),
-                child: DsIcon(
-                  DsIconKind.heart,
-                  size: 72,
-                  color: theme.danger,
-                ),
+                child: DsIcon(DsIconKind.heart, size: 72, color: theme.danger),
               ),
             ),
           ),
@@ -1265,10 +1135,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                             ),
                             Text(
                               '${formatRelativeTime(post.createdAt)} · '
-                              'moments_storySeq'.trParams({
-                                'i': '${_index + 1}',
-                                'n': '${widget.posts.length}',
-                              }),
+                                      'moments_storySeq'
+                                  .trParams({
+                                    'i': '${_index + 1}',
+                                    'n': '${widget.posts.length}',
+                                  }),
                               style: DsTypography.caption.copyWith(
                                 fontSize: 10,
                                 color: theme.paper.withValues(alpha: 0.7),
@@ -1392,14 +1263,19 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          for (final emoji in const ['🌶️', '🍸', '💣', '❤️', '✨'])
+                          for (final emoji in const [
+                            '🌶️',
+                            '🍸',
+                            '💣',
+                            '❤️',
+                            '✨',
+                          ])
                             GestureDetector(
-                              onTap:
-                                  () => ToastService.instance.showToast(
-                                    'moments_storyReaction'.trParams({
-                                      'emoji': emoji,
-                                    }),
-                                  ),
+                              onTap: () => ToastService.instance.showToast(
+                                'moments_storyReaction'.trParams({
+                                  'emoji': emoji,
+                                }),
+                              ),
                               child: Text(
                                 emoji,
                                 style: const TextStyle(fontSize: 16),
@@ -1471,17 +1347,16 @@ class _SegmentFillState extends State<_SegmentFill>
     if (!widget.active) return const SizedBox.shrink();
     return AnimatedBuilder(
       animation: _controller,
-      builder:
-          (context, _) => FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: _controller.value,
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.paper,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
+      builder: (context, _) => FractionallySizedBox(
+        alignment: Alignment.centerLeft,
+        widthFactor: _controller.value,
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.paper,
+            borderRadius: BorderRadius.circular(999),
           ),
+        ),
+      ),
     );
   }
 }

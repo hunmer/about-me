@@ -130,6 +130,7 @@ enum DsIconKind {
   gesture,
   shuffle,
   driveFileMove,
+  shelf,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -257,7 +258,8 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.wifi: Icons.wifi_tethering,
   DsIconKind.gesture: Icons.gesture,
   DsIconKind.shuffle: Icons.shuffle,
-  DsIconKind.driveFileMove: Icons.drive_file_move_outlined,
+  DsIconKind.driveFileMove: Icons.drive_file_move,
+  DsIconKind.shelf: Icons.video_library,
 };
 
 /// 图标组件：基于系统 Material Icons

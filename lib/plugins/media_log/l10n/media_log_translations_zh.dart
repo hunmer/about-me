@@ -40,6 +40,7 @@ const Map<String, String> mediaLogTranslationsZh = {
   'media_noItems': '暂无记录',
   'media_viewAsList': '切换为列表视图',
   'media_viewAsGrid': '切换为网格视图',
+  'media_viewAsShelf': '切换为书架视图',
   'media_allKinds': '全部类型',
   'media_ratingAll': '全部评分',
   'media_rating3Plus': '3 分及以上',

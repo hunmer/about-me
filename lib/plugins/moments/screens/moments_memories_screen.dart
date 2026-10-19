@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
-import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
@@ -22,7 +20,6 @@ class MomentsMemoriesScreen extends StatefulWidget {
 
 class _MomentsMemoriesScreenState extends State<MomentsMemoriesScreen> {
   final _moments = MomentsService.instance;
-  final _navBarKeys = NavigationBarStaticComponentsKeys();
   String? _filter; // null = 全部
 
   @override
@@ -45,164 +42,106 @@ class _MomentsMemoriesScreenState extends State<MomentsMemoriesScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    final posts =
-        _filter == null
-            ? _moments.posts
-            : _moments.posts.where((p) => p.tag == _filter).toList();
-    final images =
-        posts.expand((p) => p.images).toList(growable: false);
+    final posts = _filter == null
+        ? _moments.posts
+        : _moments.posts.where((p) => p.tag == _filter).toList();
+    final images = posts.expand((p) => p.images).toList(growable: false);
 
     return Scaffold(
       backgroundColor: theme.background,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          PersistentNavigationBar(
-            components: NavigationBarStaticComponents(
-              keys: _navBarKeys,
-              route: null,
-              userLeading: const SizedBox(width: 38),
-              automaticallyImplyLeading: false,
-              automaticallyImplyTitle: false,
-              previousPageTitle: null,
-              userMiddle: Text(
-                'moments_tabMemories'.tr,
-                style: DsTypography.title.copyWith(color: theme.text),
+      // 顶栏由宿主页统一渲染，内容从避让区下方开始
+      body: images.isEmpty
+          ? Center(
+              child: Text(
+                _moments.posts.isEmpty
+                    ? 'moments_collectionsEmptyNoPosts'.tr
+                    : 'moments_collectionsEmptyNoImages'.tr,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
-              userTrailing: const SizedBox(width: 38),
-              userLargeTitle: null,
-              largeTitleActions: null,
-              appbarBottom: null,
-              padding: null,
-              large: false,
-            ),
-          ),
-          Expanded(
-            child:
-                images.isEmpty
-                    ? Center(
-                      child: Text(
-                        _moments.posts.isEmpty
-                            ? 'moments_collectionsEmptyNoPosts'.tr
-                            : 'moments_collectionsEmptyNoImages'.tr,
-                        style: DsTypography.caption.copyWith(
-                          color: theme.textSub,
+            )
+          : CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 34,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(20, 2, 20, 6),
+                      children: [
+                        InterestPill(
+                          label: 'moments_filterAll'.tr,
+                          selected: _filter == null,
+                          onTap: () => setState(() => _filter = null),
                         ),
-                      ),
-                    )
-                    : CustomScrollView(
-                      slivers: [
-                        SliverToBoxAdapter(
-                          child: SizedBox(
-                            height: 34,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.fromLTRB(
-                                20,
-                                2,
-                                20,
-                                6,
-                              ),
-                              children: [
-                                InterestPill(
-                                  label: 'moments_filterAll'.tr,
-                                  selected: _filter == null,
-                                  onTap:
-                                      () => setState(() => _filter = null),
-                                ),
-                                const SizedBox(width: 6),
-                                for (final tag in MomentTags.all) ...[
-                                  TagPill(
-                                    tag: tag,
-                                    selected: _filter == tag.key,
-                                    onTap:
-                                        () => setState(
-                                          () => _filter = tag.key,
-                                        ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                ],
-                              ],
-                            ),
+                        const SizedBox(width: 6),
+                        for (final tag in MomentTags.all) ...[
+                          TagPill(
+                            tag: tag,
+                            selected: _filter == tag.key,
+                            onTap: () => setState(() => _filter = tag.key),
                           ),
-                        ),
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 140),
-                          sliver: SliverToBoxAdapter(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (var col = 0; col < 2; col++)
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                        left: col == 1 ? 5 : 0,
-                                        right: col == 0 ? 5 : 0,
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          for (
-                                            var i = col;
-                                            i < images.length;
-                                            i += 2
-                                          )
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.only(
-                                                    bottom: 16,
-                                                  ),
-                                              // 瀑布流 cell 便签化（窄卡小贴条）
-                                              child: HandDrawnStickyItem(
-                                                tiltKey: images[i],
-                                                tapeWidth: 56,
-                                                tapeHeight: 18,
-                                                child: GestureDetector(
-                                                  onTap:
-                                                      () => _openViewer(
-                                                        images,
-                                                        i,
-                                                      ),
-                                                  child: Container(
-                                                    height: _heightOf(i),
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                          3,
-                                                        ),
-                                                    decoration:
-                                                        dsSketchDecoration(
-                                                          theme: theme,
-                                                          fillColor:
-                                                              theme.surface,
-                                                          radius:
-                                                              theme.radii.md,
-                                                          seed:
-                                                              images[i]
-                                                                  .hashCode,
-                                                        ),
-                                                    child: ClipRRect(
-                                                      borderRadius:
-                                                          theme.radii.sm,
-                                                      child: MomentImage(
-                                                        path: images[i],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
+                          const SizedBox(width: 6),
+                        ],
                       ],
                     ),
-          ),
-        ],
-      ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 140),
+                  sliver: SliverToBoxAdapter(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var col = 0; col < 2; col++)
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                left: col == 1 ? 5 : 0,
+                                right: col == 0 ? 5 : 0,
+                              ),
+                              child: Column(
+                                children: [
+                                  for (var i = col; i < images.length; i += 2)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16,
+                                      ),
+                                      // 瀑布流 cell 便签化（窄卡小贴条）
+                                      child: HandDrawnStickyItem(
+                                        tiltKey: images[i],
+                                        tapeWidth: 56,
+                                        tapeHeight: 18,
+                                        child: GestureDetector(
+                                          onTap: () => _openViewer(images, i),
+                                          child: Container(
+                                            height: _heightOf(i),
+                                            padding: const EdgeInsets.all(3),
+                                            decoration: dsSketchDecoration(
+                                              theme: theme,
+                                              fillColor: theme.surface,
+                                              radius: theme.radii.md,
+                                              seed: images[i].hashCode,
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius: theme.radii.sm,
+                                              child: MomentImage(
+                                                path: images[i],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -223,11 +162,8 @@ class _MomentsMemoriesScreenState extends State<MomentsMemoriesScreen> {
   void _openViewer(List<String> images, int index) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder:
-            (_) => PhotoViewerScreen(
-              imageRelativePaths: images,
-              initialIndex: index,
-            ),
+        builder: (_) =>
+            PhotoViewerScreen(imageRelativePaths: images, initialIndex: index),
       ),
     );
   }

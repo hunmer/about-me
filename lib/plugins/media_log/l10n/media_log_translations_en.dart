@@ -40,6 +40,7 @@ const Map<String, String> mediaLogTranslationsEn = {
   'media_noItems': 'No records yet',
   'media_viewAsList': 'Switch to list view',
   'media_viewAsGrid': 'Switch to grid view',
+  'media_viewAsShelf': 'Switch to bookshelf view',
   'media_allKinds': 'All types',
   'media_ratingAll': 'Any rating',
   'media_rating3Plus': '3+ stars',
