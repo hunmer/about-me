@@ -39,6 +39,7 @@ import 'controllers/provider_controller.dart';
 import 'controllers/service_provider_controller.dart';
 import 'controllers/model_controller.dart';
 import 'services/request_service.dart';
+import 'services/chat_assistant_service.dart';
 import 'models/ai_agent.dart';
 import 'widgets/onboarding_provider_setup.dart';
 import 'services/prompt_preset_service.dart';
@@ -125,6 +126,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
     // Initialize default service providers
     await initializeDefaultData();
+
+    // 启动时按版本创建或升级内置聊天助手。
+    await ChatAssistantService.ensureBuiltinAgent();
 
     // 初始化聊天事件处理器
     _chatEventHandler.initialize();

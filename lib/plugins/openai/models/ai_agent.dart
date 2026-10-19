@@ -17,6 +17,8 @@ class Prompt {
 
 class AIAgent {
   final String id;
+  /// 定义版本号，内置或商店 Agent 更新时递增；null 表示旧数据或未版本化。
+  final int? version;
   final String name;
   final String description;
   final String systemPrompt; // 保留字段用于兼容，但不推荐使用
@@ -61,6 +63,7 @@ class AIAgent {
 
   const AIAgent({
     required this.id,
+    this.version,
     required this.name,
     required this.description,
     this.systemPrompt = '', // 保留字段用于兼容
@@ -92,6 +95,7 @@ class AIAgent {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    if (version != null) 'version': version,
     'name': name,
     'description': description,
     // systemPrompt 不再保存到 JSON，从 messages 中获取
@@ -142,6 +146,7 @@ class AIAgent {
 
     return AIAgent(
       id: json['id'] as String,
+      version: json['version'] as int?,
       name: json['name'] as String,
       description: json['description'] as String,
       systemPrompt: legacySystemPrompt ?? '', // 保留字段但不推荐使用
@@ -203,6 +208,7 @@ class AIAgent {
   /// 创建一个新的 AIAgent 实例，可以选择性地更新某些字段
   AIAgent copyWith({
     String? id,
+    int? version,
     String? name,
     String? description,
     List<String>? tags,
@@ -232,6 +238,7 @@ class AIAgent {
   }) {
     return AIAgent(
       id: id ?? this.id,
+      version: version ?? this.version,
       name: name ?? this.name,
       description: description ?? this.description,
       systemPrompt: '', // 保留字段但不推荐使用

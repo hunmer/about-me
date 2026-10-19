@@ -231,6 +231,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
 
     final agent = AIAgent(
       id: _editingAgent?.id ?? const Uuid().v4(),
+      version: _editingAgent?.version,
       name: values['name'] as String? ?? '',
       description: values['description'] as String? ?? '',
       serviceProviderId: _selectedProviderId,
@@ -504,6 +505,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     // 创建一个新的智能体，复制当前智能体的所有属性，但生成新ID并更新名称
     final clonedAgent = AIAgent(
       id: const Uuid().v4(),
+      version: _editingAgent?.version,
       name: '${values['name'] as String? ?? ''} (复制)',
       description: values['description'] as String? ?? '',
       serviceProviderId: _selectedProviderId,
