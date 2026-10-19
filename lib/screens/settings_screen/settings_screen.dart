@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -30,6 +32,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _controller = SettingsScreenController();
+
+    // 补报路由上下文（observer 路径只记裸路由名，不带标题）
+    RouteHistoryManager.updateCurrentContext(
+      pageId: AppRoutes.settings,
+      title: 'app_settings'.tr,
+    );
 
     _controller.addListener(() {
       if (mounted) {

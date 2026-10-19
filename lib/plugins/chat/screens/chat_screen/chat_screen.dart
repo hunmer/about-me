@@ -29,6 +29,7 @@ import 'dialogs/clear_messages_dialog.dart';
 import 'utils/message_list_builder.dart';
 // SuperCupertino 导航包装器
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -731,6 +732,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ];
     }
 
+    final autoAgent = _autoReplyAgent;
     return [
       DSMenu(
         align: DSMenuAlign.end,
@@ -739,6 +741,17 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: DsIconKind.list,
             label: 'chat_multiSelectMode'.tr,
             onTap: _controller.toggleMultiSelectMode,
+          ),
+          DSMenuItem(
+            icon: DsIconKind.bot,
+            label:
+                autoAgent == null
+                    ? 'chat_autoReplyEnable'.tr
+                    : 'chat_autoReplyDisable'.trParams({'name': autoAgent['name'] ?? ''}),
+            onTap:
+                autoAgent == null
+                    ? _openAutoReplyAgentPicker
+                    : _disableAutoReply,
           ),
           DSMenuItem(
             icon: DsIconKind.trash,
@@ -756,6 +769,45 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     ];
+  }
+
+  /// 频道自动回复配置的 agent（未配置返回 null）
+  Map<String, String>? get _autoReplyAgent {
+    final live = ChatPlugin.instance.channelService.channels.firstWhere(
+      (c) => c.id == widget.channel.id,
+      orElse: () => widget.channel,
+    );
+    final agent = live.metadata?['autoReplyAgent'];
+    if (agent is Map && agent['id'] is String && (agent['id'] as String).isNotEmpty) {
+      return {'id': agent['id'] as String, 'name': (agent['name'] ?? '') as String};
+    }
+    return null;
+  }
+
+  /// 弹出 agent 选择（单选），选择后开启频道自动回复
+  void _openAutoReplyAgentPicker() {
+    SmoothBottomSheet.show<List<Map<String, String>>>(
+      context: context,
+      builder: (sheetContext) => AgentListDrawer(
+        selectedAgents: const [],
+        allowMultipleSelection: false,
+        onAgentSelected: (agents) =>
+            _setAutoReplyAgent(agents.isEmpty ? null : agents.first),
+      ),
+    );
+  }
+
+  void _disableAutoReply() => _setAutoReplyAgent(null);
+
+  Future<void> _setAutoReplyAgent(Map<String, String>? agent) async {
+    await ChatPlugin.instance.channelService.updateChannelMetadata(
+      widget.channel.id,
+      {'autoReplyAgent': agent},
+    );
+    if (mounted) setState(() {});
+    Toast.success(
+      agent == null ? '已关闭自动回复' : '已开启自动回复：${agent['name']}',
+    );
   }
 
   /// 构建聊天主体内容
@@ -910,9 +962,29 @@ class _ChatScreenState extends State<ChatScreen> {
               controller: _controller.draftController,
               onSendMessage:
                   (content, {metadata, String type = 'text', replyTo}) async {
+                // 频道开启自动回复时，把配置的 agent 并入消息元数据，
+                // openai 插件据此以「评论线程」形式自动回复（不进频道消息列表）
+                Map<String, dynamic>? effectiveMetadata = metadata;
+                final autoAgent = _autoReplyAgent;
+                if (autoAgent != null) {
+                  effectiveMetadata = {...?metadata};
+                  final agents = List<Map<String, dynamic>>.from(
+                    (effectiveMetadata['agents'] as List<dynamic>? ?? [])
+                        .map((a) => Map<String, dynamic>.from(a as Map)),
+                  );
+                  if (!agents.any((a) => a['id'] == autoAgent['id'])) {
+                    agents.add(Map<String, dynamic>.from(autoAgent));
+                  }
+                  effectiveMetadata['agents'] = agents;
+                  effectiveMetadata['autoReply'] = true;
+                  effectiveMetadata['autoReplyAgent'] = Map<String, dynamic>.from(
+                    autoAgent,
+                  );
+                  effectiveMetadata['contextCount'] ??= 20;
+                }
                 final sent = await _controller.sendMessage(
                   content,
-                  metadata: metadata,
+                  metadata: effectiveMetadata,
                   type: type,
                   replyTo: _replyToMessage,
                 );

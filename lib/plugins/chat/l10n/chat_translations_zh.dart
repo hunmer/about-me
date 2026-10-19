@@ -29,6 +29,8 @@ class ChatTranslationsZh {
     'chat_info': '信息',
     'chat_multiSelectMode': '多选模式',
     'chat_clearMessages': '清空消息',
+    'chat_autoReplyEnable': '开启自动回复',
+    'chat_autoReplyDisable': '关闭自动回复：@name',
     'chat_channelInfo': '频道信息',
     'chat_selectedMessages': '已选择 @count 条消息',
     'chat_edited': '已编辑',

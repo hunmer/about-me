@@ -412,6 +412,7 @@ class RouteHistoryManager extends NavigatorObserver {
       visitCount: 1,
       params: _extractParams(args),
     );
+    debugPrint('RouteHistoryManager: 更新当前路由上下文 "$routeName"（observer），参数: ${_currentRouteContext!.params}');
 
     // 异步记录到历史（不阻塞 UI）
     _recordToHistory(routeName, args);

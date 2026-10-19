@@ -29,6 +29,8 @@ class ChatTranslationsEn {
     'chat_info': 'Info',
     'chat_multiSelectMode': 'Multi-select Mode',
     'chat_clearMessages': 'Clear Messages',
+    'chat_autoReplyEnable': 'Enable Auto Reply',
+    'chat_autoReplyDisable': 'Disable Auto Reply: @name',
     'chat_channelInfo': 'Channel Info',
     'chat_selectedMessages': '@count messages selected',
     'chat_edited': 'edited',

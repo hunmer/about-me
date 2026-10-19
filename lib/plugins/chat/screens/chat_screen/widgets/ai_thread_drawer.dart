@@ -8,6 +8,8 @@ import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
 import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/aliveness/channels/chat_aliveness_channel.dart';
+import 'package:aboutme/plugins/openai/handlers/chat_event_handler.dart'
+    show submitAutoReplyThreadMessage;
 
 /// AI 回复线程的底部 drawer 简易聊天界面：
 /// 气泡消息（根消息 + 线程内多轮）+ 输入框续聊（走同一套活人感编排）。
@@ -88,12 +90,21 @@ class _AiThreadDrawerState extends State<AiThreadDrawer> {
       for (final agentId in thread.agentIds) {
         final agent = await openaiPlugin.controller.getAgent(agentId);
         if (agent == null) continue;
-        await submitAiThreadMessage(
+        // 活人感 agent 走编排；未开启活人感（频道自动回复线程）走直接生成
+        final handled = await submitAiThreadMessage(
           agent: agent,
           channelId: thread.channelId,
           rootMessageId: thread.rootMessageId,
           text: text,
         );
+        if (!handled) {
+          await submitAutoReplyThreadMessage(
+            agent: agent,
+            channelId: thread.channelId,
+            rootMessageId: thread.rootMessageId,
+            text: text,
+          );
+        }
       }
     } catch (e) {
       Toast.error('发送失败: $e');

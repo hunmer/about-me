@@ -10,6 +10,8 @@ import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'package:aboutme/plugins/openai/services/chat_media_service.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
+import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
 /// 用于传递多个值的事件参数
@@ -102,6 +104,10 @@ class ChatEventHandler {
             hasImage: hasImage,
           ),
         );
+      } else if (_isAutoReplyAgent(metadata, agentData)) {
+        // 频道自动回复（无需 @）：回复收敛到根消息的 AI 线程，
+        // 频道内以「[agent] 正在评论」入口呈现
+        agentTasks.add(_processAutoReplyResponse(agent!, message));
       } else {
         // 原有直接生成路径
         agentTasks.add(
@@ -113,6 +119,68 @@ class ChatEventHandler {
     await Future.wait(agentTasks);
   }
 
+  /// 该 agentData 是否为频道自动回复配置的 agent
+  bool _isAutoReplyAgent(
+    Map<String, dynamic> metadata,
+    Map<String, dynamic> agentData,
+  ) {
+    if (metadata['autoReply'] != true) return false;
+    return metadata['autoReplyAgent']?['id'] == agentData['id'];
+  }
+
+  /// 频道自动回复（无需 @）：回复收敛到根消息的
+  /// [AiThread]（与活人感线程同一存储），频道内以「[agent] 正在评论」入口呈现
+  Future<void> _processAutoReplyResponse(AIAgent agent, Message message) async {
+    final channelId = message.channelId as String;
+    try {
+      // 上下文：system + 频道近期历史（排除根消息/异常消息）+ 当前消息
+      final contextMessages = <ChatCompletionMessage>[
+        ChatCompletionMessage.system(
+          content: await RequestService.getEffectiveSystemPrompt(agent),
+        ),
+      ];
+      final contextCount = (message.metadata?['contextCount'] as int?) ?? 20;
+      final recent = _plugin.channelService.getRecentMessages(
+        channelId,
+        contextCount,
+      );
+      for (final msg in recent) {
+        if (msg.id == message.id) continue;
+        if (msg.metadata?['isError'] == true) continue;
+        if (msg.content.trim().isEmpty) continue;
+        if (msg.metadata?['isAI'] == true) {
+          contextMessages.add(
+            ChatCompletionMessage.assistant(content: msg.content),
+          );
+        } else {
+          contextMessages.add(
+            ChatCompletionMessage.user(
+              content: ChatCompletionUserMessageContent.string(
+                ChatMediaService.contextText(msg),
+              ),
+            ),
+          );
+        }
+      }
+      contextMessages.add(
+        ChatCompletionMessage.user(
+          content: ChatCompletionUserMessageContent.string(
+            ChatMediaService.contextText(message, allowRead: true),
+          ),
+        ),
+      );
+
+      await _generateIntoThread(
+        agent,
+        rootId: message.id,
+        channelId: channelId,
+        contextMessages: contextMessages,
+        handleMessages: [message],
+      );
+    } catch (e) {
+      developer.log('自动回复失败: $e', name: 'ChatEventHandler');
+    }
+  }
   // 将单个agent的响应处理逻辑抽取为独立方法
   Future<void> _processAgentResponse(
     Map<String, dynamic> agentData,
@@ -406,5 +474,132 @@ class ChatEventHandler {
     for (final messageId in messageIds) {
       _cleanupMessageResources(messageId);
     }
+  }
+}
+
+/// 线程内直接生成（自动回复路径共用，区别于活人感编排）：
+/// thinking 占位 + 流式 token 写入线程，失败标错
+Future<void> _generateIntoThread(
+  AIAgent agent, {
+  required String rootId,
+  required String channelId,
+  required List<ChatCompletionMessage> contextMessages,
+  List<Message> handleMessages = const [],
+}) async {
+  final threads = AiThreadService.instance;
+  await threads.ensureThread(rootId, channelId, agent.id);
+  final placeholder = AiThreadMessage(
+    id: 'ai_auto_${agent.id}_${DateTime.now().millisecondsSinceEpoch}',
+    role: 'assistant',
+    content: '',
+    status: 'thinking',
+    date: DateTime.now(),
+    agentId: agent.id,
+    agentName: agent.name,
+  );
+  await threads.appendMessage(rootId, placeholder, persist: false);
+
+  final buffer = StringBuffer();
+  await ChatMediaService.streamResponse(
+    agent: agent,
+    prompt: null,
+    messages: handleMessages,
+    contextMessages: contextMessages,
+    onToken: (token) async {
+      buffer.write(token);
+      await threads.updateMessage(
+        rootId,
+        placeholder.id,
+        content: RequestService.processThinkingContent(buffer.toString()),
+        persist: false,
+      );
+    },
+    onError: (error) async {
+      await threads.updateMessage(
+        rootId,
+        placeholder.id,
+        content: '抱歉，生成回复时出现错误：$error',
+        status: 'error',
+      );
+    },
+    onComplete: () async {
+      await threads.updateMessage(
+        rootId,
+        placeholder.id,
+        content: RequestService.processThinkingContent(buffer.toString()),
+        status: 'done',
+      );
+    },
+    maxRetries: 3,
+    retryDelay: 1000,
+  );
+}
+
+/// 自动回复线程的续聊入口（drawer 追问且 agent 未开启活人感时的直接生成路径；
+/// 活人感 agent 仍走 [submitAiThreadMessage] 的编排）：
+/// 上下文 = system + 频道历史（排除根消息）+ 线程多轮 + 本次追问
+Future<void> submitAutoReplyThreadMessage({
+  required AIAgent agent,
+  required String channelId,
+  required String rootMessageId,
+  required String text,
+}) async {
+  final plugin = PluginManager.instance.getPlugin('chat')! as ChatPlugin;
+  final thread = AiThreadService.instance.getThread(rootMessageId);
+  try {
+    final contextMessages = <ChatCompletionMessage>[
+      ChatCompletionMessage.system(
+        content: await RequestService.getEffectiveSystemPrompt(agent),
+      ),
+    ];
+    for (final msg in plugin.channelService.getRecentMessages(channelId, 20)) {
+      if (msg.id == rootMessageId) continue;
+      if (msg.metadata?['isError'] == true) continue;
+      if (msg.content.trim().isEmpty) continue;
+      if (msg.metadata?['isAI'] == true) {
+        contextMessages.add(
+          ChatCompletionMessage.assistant(content: msg.content),
+        );
+      } else {
+        contextMessages.add(
+          ChatCompletionMessage.user(
+            content: ChatCompletionUserMessageContent.string(
+              ChatMediaService.contextText(msg),
+            ),
+          ),
+        );
+      }
+    }
+    if (thread != null) {
+      for (final msg in thread.messages) {
+        if (msg.status == 'thinking' || msg.status == 'error') continue;
+        if (msg.role == 'assistant') {
+          if (msg.type == 'audio' || msg.content.trim().isEmpty) continue;
+          contextMessages.add(
+            ChatCompletionMessage.assistant(content: msg.content),
+          );
+        } else {
+          contextMessages.add(
+            ChatCompletionMessage.user(
+              content: ChatCompletionUserMessageContent.string(msg.content),
+            ),
+          );
+        }
+      }
+    }
+    contextMessages.add(
+      ChatCompletionMessage.user(
+        content: ChatCompletionUserMessageContent.string(text),
+      ),
+    );
+
+    await _generateIntoThread(
+      agent,
+      rootId: rootMessageId,
+      channelId: channelId,
+      contextMessages: contextMessages,
+    );
+  } catch (e) {
+    developer.log('自动回复续聊失败: $e', name: 'ChatEventHandler');
   }
 }

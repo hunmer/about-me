@@ -4,9 +4,11 @@ import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/ai_thread_drawer.dart';
 import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 用户消息下方的 AI 回复入口：
-/// 生成中显示"正在输入…"，完成后显示【有 xx 条回复】，点击弹出底部 drawer。
+/// 生成中显示「[agent] 正在评论…」，完成后显示「[agent] 的评论」，
+/// 点击弹出底部 drawer 查看与续聊。
 class AiThreadEntry extends StatefulWidget {
   final Message message;
 
@@ -53,6 +55,13 @@ class _AiThreadEntryState extends State<AiThreadEntry> {
     final isThinking = thread.isThinking;
     if (replyCount == 0 && !isThinking) return const SizedBox.shrink();
 
+    final agentName =
+        thread.messages
+            .map((m) => m.agentName)
+            .whereType<String>()
+            .firstOrNull ??
+        'AI';
+
     // 跟随消息气泡的对齐方向：用户消息（右）→ 入口落右下角，其余落左下角
     final isSent = widget.message.type == MessageType.sent;
     final theme = Theme.of(context);
@@ -80,11 +89,20 @@ class _AiThreadEntryState extends State<AiThreadEntry> {
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 5),
-                if (isThinking)
-                  _TypingText(color: theme.colorScheme.primary)
-                else
+                if (isThinking) ...[
                   Text(
-                    '有 $replyCount 条回复',
+                    '[$agentName] 正在评论',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  _TypingText(color: theme.colorScheme.primary),
+                ] else
+                  Text(
+                    '[$agentName] 的评论',
                     style: TextStyle(
                       fontSize: 12,
                       color: theme.colorScheme.primary,
@@ -100,11 +118,11 @@ class _AiThreadEntryState extends State<AiThreadEntry> {
   }
 
   void _openDrawer(BuildContext context, AiThread thread) {
-    showModalBottomSheet(
+    // AiThreadDrawer 自带表面/高度/拖拽条，外壳保持透明并关闭默认拖拽条
+    SmoothBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
       backgroundColor: Colors.transparent,
+      showDragHandle: false,
       builder: (_) => AiThreadDrawer(rootMessage: widget.message),
     );
   }

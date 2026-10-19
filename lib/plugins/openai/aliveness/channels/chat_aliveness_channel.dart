@@ -347,13 +347,14 @@ Future<void> handleChatAlivenessMessage(
 
 /// AI 回复线程内的追问入口（底部 drawer 输入）：
 /// 追问消息已写入线程，这里只负责把它送入同一套活人感编排。
-Future<void> submitAiThreadMessage({
+/// 返回 false 表示 agent 未开启活人感、编排未接管（宿主走直接生成路径）。
+Future<bool> submitAiThreadMessage({
   required AIAgent agent,
   required String channelId,
   required String rootMessageId,
   required String text,
 }) async {
-  await AlivenessOrchestrator.instance.submit(
+  return AlivenessOrchestrator.instance.submit(
     agent: agent,
     targetId: channelId,
     text: text,
