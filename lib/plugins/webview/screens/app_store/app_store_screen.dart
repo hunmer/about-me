@@ -443,14 +443,11 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
   /// 错误视图
   Widget _buildErrorView(AppStoreManager manager) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: DSEmptyState(
-          emoji: '⚠️',
-          title: manager.error!,
-          actionLabel: 'retry'.tr,
-          onAction: () => manager.fetchApps(),
-        ),
+      child: DSEmptyState(
+        emoji: '⚠️',
+        title: manager.error!,
+        actionLabel: 'retry'.tr,
+        onAction: () => manager.fetchApps(),
       ),
     );
   }

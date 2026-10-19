@@ -361,24 +361,13 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    final theme = DSThemeBridge.resolve(context);
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          DsIcon(DsIconKind.chat, size: 64, color: theme.textSub),
-          const SizedBox(height: 16),
-          Text(
-            _currentAgent != null ? '开始新的对话' : '请先选择一个Agent',
-            style: DsTypography.heading.copyWith(color: theme.textSub),
-          ),
-          const SizedBox(height: 8),
-          if (_currentAgent != null)
-            Text(
-              '当前Agent: ${_currentAgent!.name}',
-              style: DsTypography.body.copyWith(color: theme.textSub),
-            ),
-        ],
+      child: DSThemeBridge(
+        child: DSEmptyState(
+          icon: DsIconKind.chat,
+          title: _currentAgent != null ? '开始新的对话' : '请先选择一个Agent',
+          message: _currentAgent != null ? '当前Agent: ${_currentAgent!.name}' : null,
+        ),
       ),
     );
   }

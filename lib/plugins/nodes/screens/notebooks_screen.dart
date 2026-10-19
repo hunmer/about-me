@@ -201,24 +201,10 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
   }
 
   Widget _buildEmptyState({required bool searching}) {
-    final theme = DSThemeBridge.resolve(context);
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          DsIcon(
-            searching ? DsIconKind.search : DsIconKind.book,
-            size: 64,
-            color: theme.textSub,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            searching
-                ? 'nodes_noResultsFound'.tr
-                : 'nodes_noNotebooks'.tr,
-            style: DsTypography.body.copyWith(color: theme.textSub),
-          ),
-        ],
+      child: DSEmptyState(
+        icon: searching ? DsIconKind.search : DsIconKind.book,
+        title: searching ? 'nodes_noResultsFound'.tr : 'nodes_noNotebooks'.tr,
       ),
     );
   }

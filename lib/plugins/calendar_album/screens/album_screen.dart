@@ -456,6 +456,8 @@ class _AlbumScreenState extends State<AlbumScreen> {
         return SuperCupertinoNavigationWrapper(
           // tab 内嵌页：嵌套 wrapper 必须关闭路由 hero 转场，避免 Hero tag 冲突
           transitionBetweenRoutes: false,
+          // 画布视图：导航栏折叠为小标题，外层滚动锁死（平移手势让给画布）
+          forceCollapsed: _scrapMode,
           title: Text('${'calendar_album_all_photos'.tr} (${photos.length})'),
           largeTitle: 'calendar_album_all_photos'.tr,
           enableLargeTitle: true,
@@ -575,6 +577,9 @@ class _PhotoCell extends StatefulWidget {
       return Image.network(
         imageUrl,
         fit: BoxFit.contain,
+        // 网络图下载/解码期间用 1:1 占位撑住格子高度
+        loadingBuilder: (context, child, loadingProgress) =>
+            loadingProgress == null ? child : placeholder(),
         errorBuilder: (context, error, stackTrace) {
           debugPrint('Error loading network image: $error');
           return placeholder();
@@ -590,6 +595,11 @@ class _PhotoCell extends StatefulWidget {
             return Image.file(
               file,
               fit: BoxFit.contain,
+              // 本地图解码首帧就绪前用 1:1 占位撑住格子高度
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                if (wasSynchronouslyLoaded || frame != null) return child;
+                return placeholder();
+              },
               errorBuilder: (context, error, stackTrace) {
                 debugPrint('Error loading local image: $error');
                 return placeholder();

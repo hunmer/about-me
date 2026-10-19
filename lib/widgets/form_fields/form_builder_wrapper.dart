@@ -248,13 +248,10 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
 
   /// 构建空状态提示
   Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: DSEmptyState(
-        emoji: '📭',
-        title: widget.config.emptyStateMessage ?? '暂无字段',
-        message: '可在配置中添加表单字段',
-      ),
+    return DSEmptyState(
+      emoji: '📭',
+      title: widget.config.emptyStateMessage ?? '暂无字段',
+      message: '可在配置中添加表单字段',
     );
   }
 

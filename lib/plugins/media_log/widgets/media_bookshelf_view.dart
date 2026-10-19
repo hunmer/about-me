@@ -47,8 +47,10 @@ class MediaBookshelfView extends StatelessWidget {
         var cursor = 0;
         var rowIndex = 0;
         while (cursor < items.length) {
-          final hasPlant =
-              handDrawnUnitRandom('media_shelf_plant_$rowIndex') > 0.3;
+          // 首层书够时固定摆一盆保证可见，其余层确定性随机（约 1/3）
+          final hasPlant = rowIndex == 0
+              ? items.length >= 4
+              : handDrawnUnitRandom('media_shelf_plant_$rowIndex') > 0.3;
           final capacity = booksPerShelf - (hasPlant ? 2 : 0);
           final take = math.min(capacity, items.length - cursor);
           // 槽位固定：末层不足补空位占位，保证各层书脊等宽

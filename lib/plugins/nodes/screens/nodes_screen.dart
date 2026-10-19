@@ -172,21 +172,7 @@ class _NodesScreenState extends State<NodesScreen> {
   }
 
   Widget _buildEmptyState({required DsIconKind icon, required String message}) {
-    final theme = DSThemeBridge.resolve(context);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          DsIcon(icon, size: 64, color: theme.textSub),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: DsTypography.body.copyWith(color: theme.textSub),
-          ),
-        ],
-      ),
-    );
+    return Center(child: DSEmptyState(icon: icon, title: message));
   }
 
   void _copyToText(BuildContext context, Notebook notebook) {

@@ -302,14 +302,11 @@ class _AgentMarketplaceScreenState extends State<AgentMarketplaceScreen> {
 
     if (_errorMessage != null) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: DSEmptyState(
-            emoji: '⚠️',
-            title: _errorMessage!,
-            actionLabel: 'openai_retry'.tr,
-            onAction: _loadMarketplaceData,
-          ),
+        child: DSEmptyState(
+          emoji: '⚠️',
+          title: _errorMessage!,
+          actionLabel: 'openai_retry'.tr,
+          onAction: _loadMarketplaceData,
         ),
       );
     }

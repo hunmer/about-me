@@ -46,7 +46,8 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_onboardingWelcomeTitle': '欢迎使用 AI 助手',
   'openai_onboardingWelcomeDesc': '创建属于你的智能体：自定义人设、提示词和模型，随时与 AI 伙伴畅聊。',
   'openai_onboardingSetupTitle': '配置模型服务',
-  'openai_onboardingSetupDesc': '选择厂商并填写 API Key，将自动应用到默认智能体和新建智能体（也可稍后在设置中配置）。',
+  'openai_onboardingSetupDesc':
+      '选择厂商并填写 API Key，将自动应用到默认智能体和新建智能体（也可稍后在设置中配置）。',
   'openai_updateConfig': '更新配置',
   'openai_useDefaultConfig': '使用默认配置',
   'openai_keepCurrentConfig': '保持当前配置',
@@ -328,4 +329,20 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_addManually': '手动添加',
   'openai_importSkillFromLocal': '从本地导入技能',
   'openai_install': '安装',
+
+  // Soul Forge（修改人设）与新建智能体菜单
+  'openai_editPersona': '修改人设',
+  'openai_more': '更多',
+  'openai_soulForgeTitle': '智能创建 / 优化人设',
+  'openai_soulForgeDesc': '由内置 Soul Forge 生成 SOUL.md 格式化 JSON 并回填表单',
+  'openai_smartCreate': '智能创建',
+  'openai_smartOptimize': '智能优化',
+  'openai_soulForgeHintCreate': '例如：一个毒舌但靠谱的程序员搭子，喜欢用梗图说话',
+  'openai_soulForgeHintOptimize': '例如：更嘴硬一点，少用 emoji，加一条关于深夜聊天的边界',
+  'openai_soulForgeRequirementEmpty': '请先填写你的要求',
+  'openai_soulForgeGenerating': '正在生成人设…',
+  'openai_soulForgeGenerate': '生成',
+  'openai_soulForgeApplied': '人设已生成并填充，请检查后保存',
+  'openai_newAgentMenu': '新建智能体',
+  'openai_createBlankAgent': '新建空白',
 };

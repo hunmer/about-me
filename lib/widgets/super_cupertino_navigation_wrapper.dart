@@ -82,6 +82,10 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
   /// 折叠状态回调
   final Function(bool)? onCollapsed;
 
+  /// 强制导航栏折叠为小标题状态并锁定外层滚动
+  /// （body 自持手势时使用，如画布视图的平移拖拽）
+  final bool forceCollapsed;
+
   /// 是否启用拉伸效果
   final bool stretch;
 
@@ -178,6 +182,7 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
     this.previousPageTitle,
     this.previousPageTitleStyle,
     this.onCollapsed,
+    this.forceCollapsed = false,
     this.stretch = true,
     // 过滤栏参数
     this.enableFilterBar = false,
@@ -459,6 +464,7 @@ class _SuperCupertinoNavigationWrapperState
         backgroundColor: _resolveBackgroundColor(),
           body: SuperScaffold(
             onCollapsed: widget.onCollapsed,
+            forceCollapsed: widget.forceCollapsed,
             stretch: widget.stretch,
             transitionBetweenRoutes: widget.transitionBetweenRoutes,
             appBar: _buildSuperAppBar(),

@@ -26,6 +26,7 @@ class SuperScaffold extends StatefulWidget {
     this.brightness,
     this.scrollController,
     this.transitionBetweenRoutes = true,
+    this.forceCollapsed = false,
   }) : super(key: key) {
     measures = Measures(
       searchTextFieldHeight: appBar.searchBar!.height,
@@ -91,6 +92,11 @@ class SuperScaffold extends StatefulWidget {
 
   final Function(bool)? onCollapsed;
   late final ScrollController? scrollController;
+
+  /// Force the nav bar into its collapsed (small title) state and lock the
+  /// outer scroll view. Used when the body owns its own gestures (e.g. a
+  /// pannable canvas) and the outer scroll would interfere with it.
+  final bool forceCollapsed;
 
   @override
   State<SuperScaffold> createState() => _SuperScaffoldState();
@@ -198,24 +204,28 @@ class _SuperScaffoldState extends State<SuperScaffold> {
         child: Stack(
           children: [
             NestedScrollViewPlus(
-              physics: SnapScrollPhysics(
-                parent: const BouncingScrollPhysics(),
-                snaps: [
-                  if (widget.appBar.searchBar!.scrollBehavior ==
-                      SearchBarScrollBehavior.floated)
-                    Snap.avoidZone(0, widget.measures.searchContainerHeight),
-                  if (widget.appBar.searchBar!.scrollBehavior ==
-                      SearchBarScrollBehavior.floated)
-                    Snap.avoidZone(
-                        widget.measures.searchContainerHeight,
-                        widget.measures.largeTitleContainerHeight +
-                            widget.measures.searchContainerHeight),
-                  if (widget.appBar.searchBar!.scrollBehavior ==
-                      SearchBarScrollBehavior.pinned)
-                    Snap.avoidZone(
-                        0, widget.measures.largeTitleContainerHeight),
-                ],
-              ),
+              // forceCollapsed：外层滚动锁死，拖动手势全部让给 body（如画布平移）
+              physics: widget.forceCollapsed
+                  ? const NeverScrollableScrollPhysics()
+                  : SnapScrollPhysics(
+                      parent: const BouncingScrollPhysics(),
+                      snaps: [
+                        if (widget.appBar.searchBar!.scrollBehavior ==
+                            SearchBarScrollBehavior.floated)
+                          Snap.avoidZone(
+                              0, widget.measures.searchContainerHeight),
+                        if (widget.appBar.searchBar!.scrollBehavior ==
+                            SearchBarScrollBehavior.floated)
+                          Snap.avoidZone(
+                              widget.measures.searchContainerHeight,
+                              widget.measures.largeTitleContainerHeight +
+                                  widget.measures.searchContainerHeight),
+                        if (widget.appBar.searchBar!.scrollBehavior ==
+                            SearchBarScrollBehavior.pinned)
+                          Snap.avoidZone(
+                              0, widget.measures.largeTitleContainerHeight),
+                      ],
+                    ),
               controller: _scrollController,
               headerSliverBuilder:
                   (BuildContext context, bool innerBoxIsScrolled) => [
@@ -286,6 +296,16 @@ class _SuperScaffoldState extends State<SuperScaffold> {
             ValueListenableBuilder(
               valueListenable: Store.instance.scrollOffset,
               builder: (context, scrollOffset, child) {
+                // forceCollapsed：渲染按折叠判定阈值取偏移（阈值与
+                // checkIfCollapsed 一致），大标题收起、小标题淡入
+                final double effOffset = widget.forceCollapsed
+                    ? (widget.appBar.searchBar!.scrollBehavior ==
+                            SearchBarScrollBehavior.floated
+                        ? widget.measures.largeTitleContainerHeight +
+                            widget.measures.searchContainerHeight
+                        : widget.measures.largeTitleContainerHeight)
+                    : _scrollOffset;
+
                 // full appbar height
                 double fullappbarheight =
                     widget.appBar.searchBar!.scrollBehavior ==
@@ -293,7 +313,7 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                         ? clampDouble(
                             topPadding +
                                 widget.measures.appbarHeight -
-                                _scrollOffset,
+                                effOffset,
                             topPadding +
                                 widget.measures.primaryToolbarHeight +
                                 widget.appBar.bottom!.height,
@@ -303,7 +323,7 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                         : clampDouble(
                             topPadding +
                                 widget.measures.appbarHeight -
-                                _scrollOffset,
+                                effOffset,
                             topPadding +
                                 widget.measures.appbarHeight -
                                 widget.measures.largeTitleContainerHeight,
@@ -315,17 +335,17 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                 double largeTitleHeight =
                     widget.appBar.searchBar!.scrollBehavior ==
                             SearchBarScrollBehavior.floated
-                        ? (_scrollOffset > widget.measures.searchContainerHeight
+                        ? (effOffset > widget.measures.searchContainerHeight
                             ? clampDouble(
                                 widget.measures.largeTitleContainerHeight -
-                                    (_scrollOffset -
+                                    (effOffset -
                                         widget.measures.searchContainerHeight),
                                 0,
                                 widget.measures.largeTitleContainerHeight)
                             : widget.measures.largeTitleContainerHeight)
                         : clampDouble(
                             widget.measures.largeTitleContainerHeight -
-                                _scrollOffset,
+                                effOffset,
                             0,
                             widget.measures.largeTitleContainerHeight);
 
@@ -337,7 +357,7 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                             ? widget.measures.searchContainerHeight
                             : clampDouble(
                                 widget.measures.searchContainerHeight -
-                                    _scrollOffset,
+                                    effOffset,
                                 0,
                                 widget.measures.searchContainerHeight))
                         : widget.measures.searchContainerHeight;
@@ -346,19 +366,19 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                         SearchBarScrollBehavior.floated
                     ? (Store.instance.searchBarHasFocus.value
                         ? 1
-                        : clampDouble(1 - _scrollOffset / 10, 0, 1))
+                        : clampDouble(1 - effOffset / 10, 0, 1))
                     : 1;
 
                 double titleOpacity = widget.appBar.searchBar!.scrollBehavior ==
                         SearchBarScrollBehavior.floated
-                    ? (_scrollOffset >=
+                    ? (effOffset >=
                             (widget.measures.appbarHeightExceptPrimaryToolbar -
                                 widget.appBar.bottom!.height)
                         ? 1
                         : (widget.measures.largeTitleContainerHeight > 0
                             ? 0
                             : 1))
-                    : (_scrollOffset >=
+                    : (effOffset >=
                             (widget.measures.largeTitleContainerHeight)
                         ? 1
                         : (widget.measures.largeTitleContainerHeight > 0
@@ -370,8 +390,8 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                     widget.measures.searchContainerHeight +
                     widget.appBar.bottom!.height;
 
-                double scaleTitle = _scrollOffset < 0
-                    ? clampDouble((1 - _scrollOffset / 1500), 1, 1.12)
+                double scaleTitle = effOffset < 0
+                    ? clampDouble((1 - effOffset / 1500), 1, 1.12)
                     : 1;
 
                 if (widget.appBar.searchBar!.animationBehavior ==
@@ -1025,8 +1045,10 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                 largeTitleTextStyle:
                                     widget.appBar.largeTitle!.textStyle,
                                 border: const Border(),
-                                hasUserMiddle: _collapsed,
-                                largeExpanded: !_collapsed &&
+                                hasUserMiddle:
+                                    _collapsed || widget.forceCollapsed,
+                                largeExpanded: !(_collapsed ||
+                                        widget.forceCollapsed) &&
                                     widget.appBar.largeTitle!.enabled,
                                 searchBarHasFocus:
                                     Store.instance.searchBarHasFocus.value,

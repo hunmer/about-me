@@ -16,6 +16,7 @@ import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_tem
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
 
 /// 会话列表屏幕
@@ -220,65 +221,29 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
     ];
   }
 
-  /// 显示添加频道对话框
+  /// 显示添加频道底部弹层（smooth_sheets）
   Future<void> _showAddChannelDialog() async {
     final nameController = TextEditingController();
 
     try {
-      final result = await showDSDialog<bool>(
+      final result = await SmoothBottomSheet.showForm<bool>(
         context: context,
-        theme: DSThemeBridge.resolve(context),
-        builder:
-            (dialogContext) => DSThemeBridge(
-              child: Builder(
-                builder: (ctx) {
-                  final theme = DSThemeBridge.resolve(ctx);
-                  return JellyBox(
-                    radius: theme.radii.xxl,
-                    padding: EdgeInsets.all(theme.spacing.xl),
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'agent_chat_addChannel'.tr,
-                          textAlign: TextAlign.center,
-                          style: DsTypography.title.copyWith(color: theme.text),
-                        ),
-                        SizedBox(height: theme.spacing.md),
-                        DSInput(
-                          controller: nameController,
-                          label: '频道名称',
-                          hint: '请输入频道名称',
-                        ),
-                        SizedBox(height: theme.spacing.lg),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DSButton(
-                                label: 'agent_chat_cancel'.tr,
-                                variant: DSButtonVariant.outline,
-                                onPressed:
-                                    () => Navigator.pop(dialogContext, false),
-                              ),
-                            ),
-                            SizedBox(width: theme.spacing.md),
-                            Expanded(
-                              child: DSButton(
-                                label: 'agent_chat_create'.tr,
-                                onPressed:
-                                    () => Navigator.pop(dialogContext, true),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
+        title: 'agent_chat_addChannel'.tr,
+        child: Builder(
+          builder: (ctx) {
+            final theme = DSThemeBridge.resolve(ctx);
+            return Padding(
+              padding: EdgeInsets.all(theme.spacing.xl),
+              child: DSInput(
+                controller: nameController,
+                label: '频道名称',
+                hint: '请输入频道名称',
+                textInputAction: TextInputAction.done,
               ),
-            ),
+            );
+          },
+        ),
+        onSave: () => Navigator.pop(context, true),
       );
 
       if (result == true && nameController.text.isNotEmpty) {
@@ -442,24 +407,12 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   /// 空列表状态
   Widget _buildEmptyListState({Key? key}) {
-    final theme = DSThemeBridge.resolve(context);
     return Center(
       key: key,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          DsIcon(DsIconKind.chat, size: 64, color: theme.textSub),
-          const SizedBox(height: 16),
-          Text(
-            '没有匹配的会话',
-            style: DsTypography.heading.copyWith(color: theme.textSub),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '尝试调整搜索条件或分组过滤器',
-            style: DsTypography.body.copyWith(color: theme.textSub),
-          ),
-        ],
+      child: const DSEmptyState(
+        icon: DsIconKind.chat,
+        title: '没有匹配的会话',
+        message: '尝试调整搜索条件或分组过滤器',
       ),
     );
   }

@@ -666,13 +666,10 @@ class _BackgroundSettingsPageState extends State<BackgroundSettingsPage> {
                     // 布局列表
                     if (_layouts.isEmpty)
                       Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: DSEmptyState(
-                            emoji: '🗂️',
-                            title: 'screens_noSavedLayouts'.tr,
-                            message: 'screens_saveLayoutFirst'.tr,
-                          ),
+                        child: DSEmptyState(
+                          emoji: '🗂️',
+                          title: 'screens_noSavedLayouts'.tr,
+                          message: 'screens_saveLayoutFirst'.tr,
                         ),
                       )
                     else

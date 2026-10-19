@@ -478,12 +478,9 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
   /// 空视图
   Widget _buildEmptyView() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: DSEmptyState(
-          icon: DsIconKind.code,
-          title: 'scripts_center_no_scripts_found'.tr,
-        ),
+      child: DSEmptyState(
+        icon: DsIconKind.code,
+        title: 'scripts_center_no_scripts_found'.tr,
       ),
     );
   }

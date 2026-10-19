@@ -27,6 +27,7 @@ import 'package:aboutme/plugins/openai/moments/services/image_gen_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:shared_models/usecases/openai/openai_usecase.dart';
 import 'package:aboutme/widgets/preset_edit_form.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'repositories/client_openai_repository.dart';
 import 'screens/agent_list_screen.dart';
 import 'screens/plugin_settings_screen.dart';
@@ -704,11 +705,7 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
       child: DSFab(
         onPressed: () {
           if (_currentPage == 0) {
-            NavigationHelper.openContainerWithHero(context, (
-              BuildContext context,
-            ) {
-              return AgentEditScreen();
-            });
+            _showCreateAgentMenu();
           } else {
             _showPresetEditPage();
           }
@@ -716,6 +713,44 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
         color: Colors.deepOrange,
         iconColor: Colors.white,
         icon: _currentPage == 0 ? DsIconKind.bot : DsIconKind.clipboard,
+      ),
+    );
+  }
+
+  /// 新建智能体菜单：新建空白 / 智能创建（Soul Forge）
+  void _showCreateAgentMenu() {
+    SmoothBottomSheet.showWithTitle<void>(
+      context: context,
+      title: 'openai_newAgentMenu'.tr,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SmoothSheetAction(
+            icon: DsIconKind.plus,
+            label: 'openai_createBlankAgent'.tr,
+            onTap: () {
+              Navigator.pop(context);
+              NavigationHelper.openContainerWithHero(context, (
+                BuildContext context,
+              ) {
+                return AgentEditScreen();
+              });
+            },
+          ),
+          SmoothSheetAction(
+            icon: DsIconKind.star,
+            label: 'openai_smartCreate'.tr,
+            onTap: () {
+              Navigator.pop(context);
+              NavigationHelper.openContainerWithHero(context, (
+                BuildContext context,
+              ) {
+                return AgentEditScreen(autoOpenSoulForge: true);
+              });
+            },
+          ),
+        ],
       ),
     );
   }

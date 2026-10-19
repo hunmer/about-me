@@ -170,27 +170,15 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    final theme = DSThemeBridge.resolve(context);
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          DsIcon(DsIconKind.clipboard, size: 64, color: theme.textSub),
-          const SizedBox(height: 16),
-          Text(
-            _searchQuery.isEmpty
-                ? 'agent_chat_emptyTemplates'.tr
-                : 'agent_chat_noMatchTemplates'.tr,
-            style: DsTypography.heading.copyWith(color: theme.textSub),
-          ),
-          if (_searchQuery.isEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              'agent_chat_emptyTemplatesHint'.tr,
-              style: DsTypography.body.copyWith(color: theme.textSub),
-            ),
-          ],
-        ],
+      child: DSEmptyState(
+        icon: DsIconKind.clipboard,
+        title: _searchQuery.isEmpty
+            ? 'agent_chat_emptyTemplates'.tr
+            : 'agent_chat_noMatchTemplates'.tr,
+        message: _searchQuery.isEmpty
+            ? 'agent_chat_emptyTemplatesHint'.tr
+            : null,
       ),
     );
   }

@@ -1,10 +1,16 @@
 import 'dart:async';
+import 'dart:io' show File;
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
+import 'package:path_provider/path_provider.dart';
 
+import '../cute_notepad_card.dart' show captureCuteNotepadPng;
 import 'scrapbook_item_content.dart';
 import 'scrapbook_item_models.dart';
 import 'scrapbook_painters.dart';
@@ -27,7 +33,8 @@ class ScrapbookCanvasCardWidget extends StatefulWidget {
 
   /// 条目双击回调（只读模式下浏览照片等场景使用）。
   /// 经 onTap 自测双击实现——条目若注册 onDoubleTap 会被画布
-  /// 外层单击手势在竞技场中抢先淘汰，导致双击永不触发
+  /// 外层单击手势在竞技场中抢先淘汰，导致双击永不触发。
+  /// 只读模式下未注册本回调时，双击图片条目内建打开 GalleryViewer
   final void Function(ScrapItemData item)? onItemDoubleTap;
 
   /// 组件尺寸
@@ -95,6 +102,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   Timer? _toastTimer;
   int _spawnCounter = 0;
   int _snapIndex = 0;
+
+  final GlobalKey _exportBoundaryKey = GlobalKey();
+  bool _exporting = false;
 
   static const _tokyoSnaps = [
     (
@@ -377,27 +387,30 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
         borderRadius: BorderRadius.circular(12 * scale),
         child: Stack(
           children: [
-            // 画布交互区（网格 + 变换平面）
+            // 画布交互区（网格 + 变换平面），RepaintBoundary 用于导出图片
             Positioned.fill(
               child: Listener(
                 onPointerSignal: _onPointerSignal,
-                child: _doodleMode
-                    ? GestureDetector(
-                        onPanStart: _onDoodleStart,
-                        onPanUpdate: _onDoodleUpdate,
-                        child: _buildCanvasLayers(gridColor, isDark),
-                      )
-                    : GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedId = null;
-                            _menuOpen = false;
-                          });
-                        },
-                        onScaleStart: _onScaleStart,
-                        onScaleUpdate: _onScaleUpdate,
-                        child: _buildCanvasLayers(gridColor, isDark),
-                      ),
+                child: RepaintBoundary(
+                  key: _exportBoundaryKey,
+                  child: _doodleMode
+                      ? GestureDetector(
+                          onPanStart: _onDoodleStart,
+                          onPanUpdate: _onDoodleUpdate,
+                          child: _buildCanvasLayers(gridColor, isDark),
+                        )
+                      : GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedId = null;
+                              _menuOpen = false;
+                            });
+                          },
+                          onScaleStart: _onScaleStart,
+                          onScaleUpdate: _onScaleUpdate,
+                          child: _buildCanvasLayers(gridColor, isDark),
+                        ),
+                ),
               ),
             ),
             // 顶部导航 pill（只读模式下隐藏）
@@ -417,10 +430,17 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                       });
                       _showToast('🇯🇵 Viewing Tokyo Trip • Day 1 of 5');
                     }),
-                    _buildNavPill('Save', isDark, () {
-                      setState(() => _selectedId = null);
-                      _showToast('✨ Saved "Tokyo DAY 1" to Memories!');
-                    }),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildExportButton(isDark),
+                        const SizedBox(width: 8),
+                        _buildNavPill('Save', isDark, () {
+                          setState(() => _selectedId = null);
+                          _showToast('✨ Saved "Tokyo DAY 1" to Memories!');
+                        }),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -684,11 +704,48 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       _lastItemTap = now;
       if (last != null && now.difference(last).inMilliseconds < 320) {
         _lastItemTap = null;
-        widget.onItemDoubleTap?.call(item);
+        // 外部回调优先（自行接管打开逻辑），未注册则内建打开 GalleryViewer
+        if (widget.onItemDoubleTap != null) {
+          widget.onItemDoubleTap!.call(item);
+        } else {
+          _openPhotoInGalleryViewer(item);
+        }
       }
       return;
     }
     if (!_doodleMode) _selectItem(item);
+  }
+
+  /// 只读模式双击图片条目：用 GalleryViewer 打开画布上的照片集
+  /// （按 z 序收集全部 photo 条目，双击项为起始页），非图片条目忽略
+  void _openPhotoInGalleryViewer(ScrapItemData item) {
+    if (item.kind != ScrapItemKind.photo) return;
+    final photoItems = _sortedItems()
+        .where(
+          (e) =>
+              e.kind == ScrapItemKind.photo &&
+              e.imageUrl != null &&
+              e.imageUrl!.isNotEmpty,
+        )
+        .toList();
+    if (photoItems.isEmpty) return;
+
+    final index = photoItems.indexOf(item);
+    NavigationHelper.push(
+      context,
+      GalleryViewer(
+        title: 'Scrapbook',
+        entranceAnimation: true,
+        initialIndex: index < 0 ? 0 : index,
+        photos: [
+          for (final photo in photoItems)
+            GalleryPhoto(
+              url: photo.imageUrl!,
+              caption: photo.captions.isNotEmpty ? photo.captions.first : null,
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildControlChip(String label, VoidCallback onTap) {
@@ -751,6 +808,88 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
         ),
       ),
     );
+  }
+
+  // ===== 导出画布 =====
+
+  Widget _buildExportButton(bool isDark) {
+    return GestureDetector(
+      onTap: _exporting ? null : _exportCanvasPng,
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xD92A3648) : const Color(0xD9FBF9F4),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isDark ? const Color(0xFF3B4A61) : const Color(0xFFE5E0D4),
+          ),
+        ),
+        alignment: Alignment.center,
+        child: _exporting
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF001AFF),
+                ),
+              )
+            : Icon(
+                Icons.download,
+                size: 16,
+                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+              ),
+      ),
+    );
+  }
+
+  Future<void> _exportCanvasPng() async {
+    if (_exporting) return;
+    setState(() {
+      _exporting = true;
+      // 隐藏选中虚线框与控制按钮，避免拍进图里
+      _selectedId = null;
+      _menuOpen = false;
+    });
+
+    try {
+      // 确保入场动画与选中态消失后的帧都已绘制
+      if (_entryController.isAnimating) {
+        await _entryController.forward();
+      }
+      final pngBytes = await captureCuteNotepadPng(
+        _exportBoundaryKey,
+        pixelRatio: 3,
+      );
+      if (pngBytes == null) {
+        throw StateError('无法获取画布绘制边界');
+      }
+
+      final dir = await getTemporaryDirectory();
+      final file = File(
+        '${dir.path}/scrapbook-canvas-'
+        '${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await file.writeAsBytes(pngBytes);
+
+      if (!mounted) return;
+      ToastService.instance.showToast(
+        '已导出画布 PNG：${file.path}',
+        type: ToastType.success,
+      );
+    } catch (e) {
+      if (mounted) {
+        ToastService.instance.showToast(
+          '导出失败：$e',
+          type: ToastType.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _exporting = false);
+      }
+    }
   }
 
   // ===== 创建抽屉 & 涂鸦横幅 =====

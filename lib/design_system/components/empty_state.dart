@@ -43,53 +43,60 @@ class DSEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // 表情底座：手绘圆盘
-        JellyBox(
-          width: 92,
-          height: 92,
-          radius: theme.radii.circle,
-          color: theme.surfaceAlt,
-          raised: true,
-          alignment: Alignment.center,
-          child:
-              icon != null
-                  ? DsIcon(icon!, size: 44, color: theme.textSub)
-                  : svgAsset != null
-                  ? SvgPicture.asset(
-                    svgAsset!,
-                    width: 44,
-                    height: 44,
-                    colorFilter: ColorFilter.mode(theme.textSub, BlendMode.srcIn),
-                  )
-                  : Text(emoji!, style: const TextStyle(fontSize: 42)),
-        ),
-        SizedBox(height: theme.spacing.lg),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: DsTypography.heading.copyWith(color: theme.text),
-        ),
-        if (message != null) ...[
-          SizedBox(height: theme.spacing.xs),
-          Text(
-            message!,
-            textAlign: TextAlign.center,
-            style: DsTypography.caption.copyWith(color: theme.textSub),
+    return Padding(
+      // 宽区域/弹窗中兜底留白，避免按钮与文本贴边
+      padding: EdgeInsets.all(theme.spacing.xxl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 表情底座：手绘圆盘
+          JellyBox(
+            width: 92,
+            height: 92,
+            radius: theme.radii.circle,
+            color: theme.surfaceAlt,
+            raised: true,
+            alignment: Alignment.center,
+            child:
+                icon != null
+                    ? DsIcon(icon!, size: 44, color: theme.textSub)
+                    : svgAsset != null
+                    ? SvgPicture.asset(
+                      svgAsset!,
+                      width: 44,
+                      height: 44,
+                      colorFilter: ColorFilter.mode(
+                        theme.textSub,
+                        BlendMode.srcIn,
+                      ),
+                    )
+                    : Text(emoji!, style: const TextStyle(fontSize: 42)),
           ),
-        ],
-        if (actionLabel != null) ...[
           SizedBox(height: theme.spacing.lg),
-          DSButton(
-            label: actionLabel!,
-            size: DSButtonSize.sm,
-            onPressed: onAction,
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: DsTypography.heading.copyWith(color: theme.text),
           ),
+          if (message != null) ...[
+            SizedBox(height: theme.spacing.xs),
+            Text(
+              message!,
+              textAlign: TextAlign.center,
+              style: DsTypography.caption.copyWith(color: theme.textSub),
+            ),
+          ],
+          if (actionLabel != null) ...[
+            SizedBox(height: theme.spacing.lg),
+            DSButton(
+              label: actionLabel!,
+              size: DSButtonSize.sm,
+              onPressed: onAction,
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

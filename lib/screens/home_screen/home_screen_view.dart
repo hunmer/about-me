@@ -426,29 +426,10 @@ class HomeScreenView extends StatelessWidget {
                 : 0,
       ),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.widgets_outlined,
-              size: 64,
-              color: Theme.of(context).disabledColor,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'screens_noWidgetsYet'.tr,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).disabledColor,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'screens_clickPlusToAdd'.tr,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).disabledColor,
-              ),
-            ),
-          ],
+        child: DSEmptyState(
+          emoji: '🧩',
+          title: 'screens_noWidgetsYet'.tr,
+          message: 'screens_clickPlusToAdd'.tr,
         ),
       ),
     );

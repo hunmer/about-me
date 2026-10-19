@@ -196,21 +196,9 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    final theme = DSThemeBridge.resolve(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            DsIcon(DsIconKind.info, size: 64, color: theme.textSub),
-            const SizedBox(height: 16),
-            Text(
-              '暂无可用的问题示例',
-              style: DsTypography.heading.copyWith(color: theme.textSub),
-            ),
-          ],
-        ),
+    return const Center(
+      child: DSThemeBridge(
+        child: DSEmptyState(icon: DsIconKind.info, title: '暂无可用的问题示例'),
       ),
     );
   }

@@ -265,23 +265,8 @@ class _ToolDetailDialogState extends State<ToolDetailDialog>
 
   /// 空状态展示
   Widget _buildEmptyState(DsIconKind icon, String text) {
-    return Builder(
-      builder: (context) {
-        final theme = DSThemeBridge.resolve(context);
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              DsIcon(icon, size: 48, color: theme.textSub),
-              const SizedBox(height: 16),
-              Text(
-                text,
-                style: DsTypography.heading.copyWith(color: theme.textSub),
-              ),
-            ],
-          ),
-        );
-      },
+    return Center(
+      child: DSThemeBridge(child: DSEmptyState(icon: icon, title: text)),
     );
   }
 

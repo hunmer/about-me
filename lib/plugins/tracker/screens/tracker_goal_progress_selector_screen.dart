@@ -192,30 +192,14 @@ class _TrackerGoalProgressSelectorScreenState
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    return DSThemeBridge(
-      child: Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // DS 无 track_changes 图标，用 refresh 顶替
-                DsIcon(DsIconKind.refresh, size: 64, color: theme.disabled),
-                const SizedBox(height: 16),
-                Text(
-                  '暂无目标',
-                  style: DsTypography.body.copyWith(color: theme.textSub),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '请先在目标追踪插件中创建目标',
-                  style: DsTypography.caption.copyWith(color: theme.textSub),
-                ),
-              ],
-            ),
-          );
-        },
+    return const DSThemeBridge(
+      child: Center(
+        // DS 无 track_changes 图标，用 refresh 顶替
+        child: DSEmptyState(
+          icon: DsIconKind.refresh,
+          title: '暂无目标',
+          message: '请先在目标追踪插件中创建目标',
+        ),
       ),
     );
   }

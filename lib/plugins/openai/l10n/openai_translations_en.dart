@@ -2,11 +2,14 @@
 final Map<String, String> openaiTranslationsEn = {
   // Basic Info
   'openai_name': 'AI Assistant',
-  'openai_pluginDescription': 'AI assistant plugin supporting multiple LLM providers',
+  'openai_pluginDescription':
+      'AI assistant plugin supporting multiple LLM providers',
   'openai_totalAgents': 'Total Agents',
   'openai_defaultAgentName': 'General Assistant',
-  'openai_defaultAgentDescription': 'A friendly AI assistant that can help answer various questions and complete various tasks.',
-  'openai_defaultSystemPrompt': 'You are a helpful AI assistant who excels at answering questions and providing useful suggestions. Please communicate with users in a friendly tone.',
+  'openai_defaultAgentDescription':
+      'A friendly AI assistant that can help answer various questions and complete various tasks.',
+  'openai_defaultSystemPrompt':
+      'You are a helpful AI assistant who excels at answering questions and providing useful suggestions. Please communicate with users in a friendly tone.',
   'openai_generalTag': 'General',
   'openai_qaTag': 'Q&A',
   'openai_suggestionsTag': 'Suggestions',
@@ -44,13 +47,16 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_serviceProvider': 'Service Provider',
   'openai_pleaseSelectProvider': 'Please select a service provider',
   'openai_onboardingWelcomeTitle': 'Welcome to AI Assistants',
-  'openai_onboardingWelcomeDesc': 'Create your own agents with custom personas, prompts and models, and chat with your AI companions anytime.',
+  'openai_onboardingWelcomeDesc':
+      'Create your own agents with custom personas, prompts and models, and chat with your AI companions anytime.',
   'openai_onboardingSetupTitle': 'Set Up a Model Service',
-  'openai_onboardingSetupDesc': 'Pick a provider and enter your API Key. It will be applied to default agents and new agents automatically (you can also configure later in settings).',
+  'openai_onboardingSetupDesc':
+      'Pick a provider and enter your API Key. It will be applied to default agents and new agents automatically (you can also configure later in settings).',
   'openai_updateConfig': 'Update Configuration',
   'openai_useDefaultConfig': 'Use Default Config',
   'openai_keepCurrentConfig': 'Keep Current Config',
-  'openai_updateConfigConfirm': 'Do you want to update the current settings with this provider\'s default configuration?',
+  'openai_updateConfigConfirm':
+      'Do you want to update the current settings with this provider\'s default configuration?',
   'openai_configUpdated': 'Updated to provider default configuration',
   'openai_undoAction': 'Undo',
   'openai_description': 'Description',
@@ -72,7 +78,8 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_testAgent': 'Test Agent',
   'openai_avatar': 'Avatar',
   'openai_deleteAgentConfirm': 'Delete Agent',
-  'openai_deleteAgentMessage': 'Are you sure you want to delete this agent? This action cannot be undone.',
+  'openai_deleteAgentMessage':
+      'Are you sure you want to delete this agent? This action cannot be undone.',
   'openai_cancel': 'Cancel',
   'openai_delete': 'Delete',
   'openai_agentDeleted': 'Agent deleted',
@@ -87,9 +94,11 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_loadingProviders': 'Loading...',
   'openai_loadProvidersError': 'Error loading providers',
   'openai_enablePluginFunctionCalls': 'Enable Plugin Function Calls',
-  'openai_allowAICallPluginFunctions': 'Allow AI to call plugin functions to get data',
+  'openai_allowAICallPluginFunctions':
+      'Allow AI to call plugin functions to get data',
   'openai_enableGuessWhatYouWantToAsk': 'Enable Guess What You Want to Ask',
-  'openai_showPresetOpeningQuestions': 'Show preset opening questions in chat interface',
+  'openai_showPresetOpeningQuestions':
+      'Show preset opening questions in chat interface',
 
   // Agent List Screen
   'openai_agentListTitle': 'AI Assistant',
@@ -106,7 +115,8 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_updateModelFailed': 'Failed to update model',
   'openai_deleteModelFailed': 'Failed to delete model',
   'openai_confirmDelete': 'Confirm Delete',
-  'openai_confirmDeleteModel': 'Are you sure you want to delete model @modelName?',
+  'openai_confirmDeleteModel':
+      'Are you sure you want to delete model @modelName?',
   'openai_addModel': 'Add Model',
   'openai_editModel': 'Edit Model',
   'openai_modelId': 'Model ID',
@@ -182,12 +192,14 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_savePreset': 'Save Preset',
   'openai_editPreset': 'Edit Preset',
   'openai_deletePreset': 'Delete Preset',
-  'openai_confirmDeletePreset': 'Are you sure you want to delete this preset? This action cannot be undone.',
+  'openai_confirmDeletePreset':
+      'Are you sure you want to delete this preset? This action cannot be undone.',
   'openai_pleaseEnterTitle': 'Please enter a title',
   'openai_presetSaved': 'Preset saved',
   'openai_saveFailed': 'Save failed',
   'openai_noPresetsYet': 'No presets yet',
-  'openai_createFirstPreset': 'Click the button in the bottom left to create your first preset',
+  'openai_createFirstPreset':
+      'Click the button in the bottom left to create your first preset',
   'openai_addTag': 'Add Tag',
   'openai_enterTagName': 'Enter tag name',
   'openai_tagName': 'Tag Name',
@@ -196,7 +208,8 @@ final Map<String, String> openaiTranslationsEn = {
 
   // Provider Settings
   'openai_confirmDeleteProviderTitle': 'Confirm Delete',
-  'openai_confirmDeleteProviderMessage': 'Are you sure you want to delete this provider?',
+  'openai_confirmDeleteProviderMessage':
+      'Are you sure you want to delete this provider?',
   'openai_pluginSettingsTitle': 'AI Assistant Settings',
   'openai_providerSettingsTitle': 'Provider Settings',
   'openai_addProviderTooltip': 'Add new AI provider',
@@ -218,13 +231,15 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_editHeader': 'Edit',
   'openai_deleteHeader': 'Delete',
   'openai_unsavedChangesTitle': 'Unsaved Changes',
-  'openai_unsavedHeaderWarning': 'There are unsaved changes in the header input fields. Do you want to discard these changes?',
+  'openai_unsavedHeaderWarning':
+      'There are unsaved changes in the header input fields. Do you want to discard these changes?',
   'openai_discard': 'Discard',
 
   // Provider Edit Screen - modes
   'openai_modeRegular': 'Regular',
   'openai_modeAdvanced': 'Advanced',
-  'openai_regularModeDesc': 'Pick a provider and paste your API key. Base URL, API format and headers are filled automatically',
+  'openai_regularModeDesc':
+      'Pick a provider and paste your API key. Base URL, API format and headers are filled automatically',
   'openai_apiKey': 'API Key',
   'openai_apiKeyHint': 'Paste your API key',
   'openai_apiKeyRequired': 'Please enter the API key',
@@ -237,11 +252,13 @@ final Map<String, String> openaiTranslationsEn = {
 
   // Prompt Preset
   'openai_promptPresetManagement': 'Prompt Preset Management',
-  'openai_promptPresetManagementDescription': 'Manage reusable system prompt templates',
+  'openai_promptPresetManagementDescription':
+      'Manage reusable system prompt templates',
   'openai_promptPreset': 'Prompt Preset',
   'openai_selectPromptPreset': 'Select Prompt Preset',
   'openai_noPreset': 'No Preset',
-  'openai_promptPresetActiveHint': 'Preset selected, this field will be ignored',
+  'openai_promptPresetActiveHint':
+      'Preset selected, this field will be ignored',
   'openai_promptContent': 'Prompt Content',
   'openai_searchAgent': 'Search agents',
   'openai_searchPresetsHint': 'Search title, description or content',
@@ -252,13 +269,15 @@ final Map<String, String> openaiTranslationsEn = {
 
   // Clipboard Share & Import
   'openai_shareAgent': 'Share Agent',
-  'openai_shareHeadersWarning': 'This agent contains header configuration (may include API Key). Include it?',
+  'openai_shareHeadersWarning':
+      'This agent contains header configuration (may include API Key). Include it?',
   'openai_removeHeaders': 'Remove Sensitive Info',
   'openai_keepHeaders': 'Keep Full Config',
   'openai_agentCopied': 'Agent config copied to clipboard',
   'openai_copyFailed': 'Copy failed',
   'openai_importAgent': 'Import Agent',
-  'openai_importAgentConfirm': 'Agent configuration detected in clipboard. Import it?',
+  'openai_importAgentConfirm':
+      'Agent configuration detected in clipboard. Import it?',
   'openai_import': 'Import',
   'openai_agentImported': 'Agent imported',
   'openai_importFailed': 'Import failed',
@@ -279,12 +298,15 @@ final Map<String, String> openaiTranslationsEn = {
 
   // const Text 硬编码迁移(en)
   'openai_alivenessEnhance': 'Aliveness Boost',
-  'openai_alivenessEnhanceDesc': 'When enabled, this AI pauses to think, replies in chunks, and chats with rhythm',
+  'openai_alivenessEnhanceDesc':
+      'When enabled, this AI pauses to think, replies in chunks, and chats with rhythm',
   'openai_jevScoreAutoRevise': 'Jev Human-likeness Score & Auto Revision',
   'openai_voiceProactiveSend': 'Proactive Voice',
-  'openai_voiceProactiveSendDesc': 'When emotions run high, sends an extra reply as voice (requires a TTS service with synthesis support)',
+  'openai_voiceProactiveSendDesc':
+      'When emotions run high, sends an extra reply as voice (requires a TTS service with synthesis support)',
   'openai_proactiveMessages': 'Proactive Messages',
-  'openai_proactiveMessagesDesc': 'Reaches out to you after long silence or when a follow-up event is due',
+  'openai_proactiveMessagesDesc':
+      'Reaches out to you after long silence or when a follow-up event is due',
   'openai_decisionModel': 'Decision Model',
   'openai_aiSchedule': 'AI Schedule',
   'openai_analyzeChatHistory': 'Analyze Chat History',
@@ -294,7 +316,8 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_followGlobalSettings': 'Follow global settings',
   'openai_jevDecisionModel': 'Aliveness Decision Model (Jev)',
   'openai_foregroundKeepAlive': 'Foreground Keep-alive (Android)',
-  'openai_foregroundKeepAliveDesc': 'A persistent notification keeps proactive scheduling alive, so it can still miss you after you leave the app',
+  'openai_foregroundKeepAliveDesc':
+      'A persistent notification keeps proactive scheduling alive, so it can still miss you after you leave the app',
   'openai_regenerateTodaySchedule': 'Regenerate today\'s schedule?',
   'openai_regenerate': 'Regenerate',
   'openai_generateTodaySchedule': 'Generate Today Schedule',
@@ -308,10 +331,12 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_uploadPhoto': 'Upload Photo',
   'openai_uploadPhotoDesc': 'Pick from gallery/local, can be named',
   'openai_createPlaceholder': 'New Placeholder',
-  'openai_createPlaceholderDesc': 'Define name & prompt, generate with AI later',
+  'openai_createPlaceholderDesc':
+      'Define name & prompt, generate with AI later',
   'openai_viewFullImage': 'View Full Image',
   'openai_generateImage': 'Generate Image',
-  'openai_generateImageDesc': 'Generate from prompt with their persona appended',
+  'openai_generateImageDesc':
+      'Generate from prompt with their persona appended',
   'openai_img2img': 'Generate from this image (img2img)',
   'openai_img2imgDesc': 'Generate a new image with this one as reference',
   'openai_overwriteCurrentImage': 'Overwrite current image',
@@ -322,10 +347,30 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_deleteMoment': 'Delete Moment',
   'openai_confirmDeleteMoment': 'Delete this moment?',
   'openai_assetGallery': 'Asset Gallery',
-  'openai_assetGalleryDesc': 'Reference images (three-view, room photos, etc.) kept consistent in generation',
+  'openai_assetGalleryDesc':
+      'Reference images (three-view, room photos, etc.) kept consistent in generation',
   'openai_importSkillFromUrl': 'Import Skill from URL',
   'openai_editResource': 'Edit Resource',
   'openai_addManually': 'Add Manually',
   'openai_importSkillFromLocal': 'Import Skill from Local',
   'openai_install': 'Install',
+
+  // Soul Forge (Edit Persona) & create agent menu
+  'openai_editPersona': 'Edit Persona',
+  'openai_more': 'More',
+  'openai_soulForgeTitle': 'Smart Create / Optimize Persona',
+  'openai_soulForgeDesc':
+      'Generate SOUL.md JSON via built-in Soul Forge and fill the form',
+  'openai_smartCreate': 'Smart Create',
+  'openai_smartOptimize': 'Smart Optimize',
+  'openai_soulForgeHintCreate':
+      'e.g. a sharp-tongued but reliable programmer buddy who loves memes',
+  'openai_soulForgeHintOptimize':
+      'e.g. a bit more stubborn, fewer emojis, add a boundary about late-night chats',
+  'openai_soulForgeRequirementEmpty': 'Please describe your requirement first',
+  'openai_soulForgeGenerating': 'Generating persona…',
+  'openai_soulForgeGenerate': 'Generate',
+  'openai_soulForgeApplied': 'Persona generated and filled, review and save',
+  'openai_newAgentMenu': 'New Agent',
+  'openai_createBlankAgent': 'Blank Agent',
 };

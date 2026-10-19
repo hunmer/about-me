@@ -659,13 +659,10 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
                         )
                       : files.isEmpty
                       ? Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(theme.spacing.xl),
-                            child: DSEmptyState(
-                              icon: DsIconKind.folder,
-                              title: 'data_management_emptyTitle'.tr,
-                              message: 'data_management_emptyMessage'.tr,
-                            ),
+                          child: DSEmptyState(
+                            icon: DsIconKind.folder,
+                            title: 'data_management_emptyTitle'.tr,
+                            message: 'data_management_emptyMessage'.tr,
                           ),
                         )
                       : HandDrawnListView(
