@@ -694,7 +694,8 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                               ],
                             )
                           : SizedBox(
-                              height: 160,
+                              // 需容纳 DSEmptyState 固有高度（92 图标 + 间距 + 标题 + xxl 内边距 ≈ 184）
+                              height: 220,
                               child: Center(
                                 child: DSEmptyState(
                                   emoji: '📖',
