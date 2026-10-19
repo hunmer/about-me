@@ -1091,12 +1091,12 @@ class NativeToolAgentService {
       return (decoded is Map<String, dynamic>)
           ? decoded
           : (decoded is List ? {'result': decoded} : {'result': result});
-    } catch (e) {
+    } catch (e, stack) {
       step
         ..status = ToolCallStatus.failed
         ..error = e.toString();
       await run.notifySteps();
-      debugPrint('[NativeTool] ✗ ${config.title} 失败: $e');
+      debugPrint('[NativeTool] ✗ $pluginId.$methodName 失败: $e\n$stack');
       // 异常以 error 形式回传，模型可自行调整参数重试
       return {'error': e.toString()};
     }

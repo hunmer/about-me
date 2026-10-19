@@ -30,6 +30,7 @@ import 'package:aboutme/design_system/design_system.dart';
 // UseCase 架构导入
 import 'package:shared_models/usecases/calendar/calendar_usecase.dart';
 import './repositories/client_calendar_repository.dart';
+import 'services/calendar_api_params.dart';
 
 // 代码分离：JS API 和数据选择器
 part 'calendar_js_api.dart';

@@ -134,7 +134,11 @@ Future<String> _jsGetUpcoming(Map<String, dynamic> params) async {
 
 /// 创建事件
 Future<String> _jsCreateEvent(Map<String, dynamic> params) async {
-  final result = await CalendarPlugin.instance.calendarUseCase.createEvent(params);
+  final converted = normalizeCalendarApiParams(params);
+  debugPrint('[CalendarAPI] createEvent 日期类型: '
+      'startTime=${converted['startTime'].runtimeType}, '
+      'endTime=${converted['endTime'].runtimeType}');
+  final result = await CalendarPlugin.instance.calendarUseCase.createEvent(converted);
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message});
@@ -145,7 +149,9 @@ Future<String> _jsCreateEvent(Map<String, dynamic> params) async {
 
 /// 更新事件
 Future<String> _jsUpdateEvent(Map<String, dynamic> params) async {
-  final result = await CalendarPlugin.instance.calendarUseCase.updateEvent(params);
+  final result = await CalendarPlugin.instance.calendarUseCase.updateEvent(
+    normalizeCalendarApiParams(params),
+  );
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message});
@@ -170,7 +176,9 @@ Future<String> _jsDeleteEvent(Map<String, dynamic> params) async {
 
 /// 完成事件
 Future<String> _jsCompleteEvent(Map<String, dynamic> params) async {
-  final result = await CalendarPlugin.instance.calendarUseCase.completeEvent(params);
+  final result = await CalendarPlugin.instance.calendarUseCase.completeEvent(
+    normalizeCalendarApiParams(params),
+  );
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message});
