@@ -51,6 +51,8 @@ import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_bubble/
     as chat_bubble;
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/file_management_screen.dart';
+import 'package:aboutme/widgets/message_input/message_input.dart'
+    show MessageInputQuickAction;
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
@@ -336,9 +338,49 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
 
         // 输入框
-        MessageInput(controller: _controller),
+        MessageInput(
+          controller: _controller,
+          extraQuickActions: _buildExtraQuickActions(),
+        ),
       ],
     );
+  }
+
+  /// 输入框顶部工具栏的附加动作（由顶栏迁移而来）
+  List<MessageInputQuickAction> _buildExtraQuickActions() {
+    return [
+      MessageInputQuickAction(
+        icon: DsIconKind.clipboard,
+        tooltip: '工具模板',
+        onPressed: _openToolTemplateManagement,
+      ),
+      MessageInputQuickAction(
+        icon: DsIconKind.gear,
+        tooltip: 'agent_chat_toolManagement'.tr,
+        onPressed: _openToolManagement,
+      ),
+      MessageInputQuickAction(
+        icon: DsIconKind.image,
+        tooltip: '朋友圈',
+        onPressed: _openMoments,
+      ),
+      MessageInputQuickAction(
+        icon: DsIconKind.folder,
+        tooltip: '文件管理',
+        onPressed: () async {
+          final directory = await AgentFileSpaceService.instance
+              .directoryForChannel(widget.conversation.id);
+          if (!mounted) return;
+          NavigationHelper.push(
+            context,
+            FileManagementScreen(
+              rootDirectory: directory,
+              title: '${widget.conversation.title} 文件',
+            ),
+          );
+        },
+      ),
+    ];
   }
 
   @override

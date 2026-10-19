@@ -120,54 +120,50 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
               });
             },
             semanticLabel: '${index + 1}. ${step.title}',
-            builder:
-                (context, states) => Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      // 状态图标
-                      _buildStatusIcon(step.status),
-                      const SizedBox(width: 8),
+            builder: (context, states) => Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // 状态图标
+                  _buildStatusIcon(step.status),
+                  const SizedBox(width: 8),
 
-                      // 步骤标题
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${index + 1}. ${step.title}',
-                              style: DsTypography.body.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.text,
-                              ),
-                            ),
-                            if (step.desc.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                step.desc,
-                                style: DsTypography.caption.copyWith(
-                                  color: theme.textSub,
-                                ),
-                                maxLines: isExpanded ? null : 1,
-                                overflow:
-                                    isExpanded ? null : TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ],
+                  // 步骤标题
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${index + 1}. ${step.title}',
+                          style: DsTypography.body.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.text,
+                          ),
                         ),
-                      ),
-
-                      // 展开/折叠图标
-                      DsIcon(
-                        isExpanded
-                            ? DsIconKind.chevronUp
-                            : DsIconKind.chevronDown,
-                        size: 20,
-                        color: theme.textSub,
-                      ),
-                    ],
+                        if (step.desc.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            step.desc,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                            maxLines: isExpanded ? null : 1,
+                            overflow: isExpanded ? null : TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
+
+                  // 展开/折叠图标
+                  DsIcon(
+                    isExpanded ? DsIconKind.chevronUp : DsIconKind.chevronDown,
+                    size: 20,
+                    color: theme.textSub,
+                  ),
+                ],
+              ),
+            ),
           ),
 
           // 展开的详细内容

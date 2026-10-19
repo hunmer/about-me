@@ -4,15 +4,17 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:get/get.dart';
 import 'message_input_types.dart';
 import 'message_input_state.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
 import 'widgets/metadata_display.dart';
-import 'widgets/input_field.dart';
-import 'widgets/send_button.dart';
+import 'package:aboutme/widgets/message_input/message_input.dart' as common;
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_drawer.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_builder.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/emoji_handler.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/image_handler.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/local_video_handler.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
@@ -39,7 +41,9 @@ class MessageInput extends StatefulWidget {
 
 class _MessageInputState extends State<MessageInput> {
   late FocusNode _focusNode;
-  late FocusNode _keyboardListenerFocusNode;
+
+  /// MessageInputState 构造占位用（键盘监听已移入公共组件）
+  final FocusNode _stateKeyboardListenerFocusNode = FocusNode();
   List<Map<String, String>> selectedAgents = [];
   bool showAgentList = false;
 
@@ -56,7 +60,6 @@ class _MessageInputState extends State<MessageInput> {
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
-    _keyboardListenerFocusNode = FocusNode();
 
     // 加载频道的元数据
     _loadChannelMetadata();
@@ -118,7 +121,7 @@ class _MessageInputState extends State<MessageInput> {
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
-    _keyboardListenerFocusNode.dispose();
+    _stateKeyboardListenerFocusNode.dispose();
     widget.controller.removeListener(_onTextChanged);
     _recognitionService?.dispose();
     super.dispose();
@@ -187,7 +190,7 @@ class _MessageInputState extends State<MessageInput> {
     _messageInputState = MessageInputState(
       controller: widget.controller,
       focusNode: _focusNode,
-      keyboardListenerFocusNode: _keyboardListenerFocusNode,
+      keyboardListenerFocusNode: _stateKeyboardListenerFocusNode,
       selectedAgents: selectedAgents,
       selectedFiles: selectedFiles,
       showAgentList: showAgentList,
@@ -285,118 +288,106 @@ class _MessageInputState extends State<MessageInput> {
     );
   }
 
+  /// 顶部图标工具栏快捷动作：常用上传固定在此（底部抽屉动作的快捷方式）
+  List<common.MessageInputQuickAction> _buildQuickActions() {
+    final fileService = FileService();
+    return [
+      common.MessageInputQuickAction(
+        icon: DsIconKind.image,
+        tooltip: 'chat_photo'.tr,
+        onPressed: () => handleImageSelection(
+          context: context,
+          fileService: fileService,
+          onFileSelected: _handleFileSelected,
+          fromCamera: false,
+        ),
+        onLongPress: () => handleImageSelection(
+          context: context,
+          fileService: fileService,
+          onFileSelected: _handleFileSelected,
+          fromCamera: false,
+          multiple: true,
+        ),
+      ),
+      common.MessageInputQuickAction(
+        icon: DsIconKind.video,
+        tooltip: 'chat_video'.tr,
+        onPressed: () => handleLocalVideoSelection(
+          context: context,
+          fileService: fileService,
+          onFileSelected: _handleFileSelected,
+        ),
+        onLongPress: () => handleLocalVideoSelection(
+          context: context,
+          fileService: fileService,
+          onFileSelected: _handleFileSelected,
+          multiple: true,
+        ),
+      ),
+    ];
+  }
+
+  /// "+"按钮：打开完整的底部抽屉动作列表
+  void _showActionsDrawer() {
+    SmoothBottomSheet.show(
+      context: context,
+      builder: (context) => MessageInputActionsDrawer(
+        actions: MessageInputActionsBuilder.getDefaultActions(
+          context,
+          onFileSelected: _handleFileSelected,
+          onSendMessage: widget.onSendMessage,
+          textController: widget.controller,
+        ),
+        onFileSelected: _handleFileSelected,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DSThemeBridge(
-      child: Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
-          // 悬浮输入框：与屏幕底部保持间距（含底部安全边距），圆角卡片浮于列表之上
-          return Container(
-            margin: EdgeInsets.only(
-              left: 8.0,
-              right: 8.0,
-              bottom: 8.0 + MediaQuery.of(context).padding.bottom,
-            ),
-            decoration: BoxDecoration(
-              color: theme.surface,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: theme.shadows.soft,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 元数据显示区域
-                MetadataDisplay(
-                  selectedFiles: selectedFiles,
-                  selectedAgents: selectedAgents,
-                  onShowAgentListDrawer: _showAgentListDrawer,
-                  onFileRemoveAt: _removeFileAt,
-                  onAgentRemove: _removeAgent,
-                  contextRange: contextRange,
-                  onContextRangeChange: _handleContextRangeChange,
-                ),
-
-                // 输入区域
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4.0, right: 8.0),
-                      child: DSIconButton(
-                        icon: DsIconKind.plus,
-                        color: theme.surfaceAlt,
-                        iconColor: theme.textSub,
-                        onPressed: () {
-                          SmoothBottomSheet.show(
-                            context: context,
-                            builder: (context) => MessageInputActionsDrawer(
-                              actions:
-                                  MessageInputActionsBuilder.getDefaultActions(
-                                    context,
-                                    onFileSelected: _handleFileSelected,
-                                    onSendMessage: widget.onSendMessage,
-                                    textController: widget.controller,
-                                  ),
-                              onFileSelected: _handleFileSelected,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    // 文本输入框（表情/语音内嵌为右侧后缀）
-                    Expanded(
-                      child: InputField(
-                        controller: widget.controller,
-                        focusNode: _focusNode,
-                        keyboardListenerFocusNode: _keyboardListenerFocusNode,
-                        suffix: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _InlineIconAction(
-                              icon: DsIconKind.mood,
-                              color: theme.textSub,
-                              onPressed: _showEmojiPicker,
-                              tooltip: '表情',
-                            ),
-                            if (_recognitionService != null)
-                              _InlineIconAction(
-                                icon: DsIconKind.mic,
-                                color: theme.textSub,
-                                onPressed: _showVoiceInputDialog,
-                                tooltip: '语音输入',
-                              )
-                            else
-                              _InlineIconAction(
-                                icon: DsIconKind.mic,
-                                color: theme.textSub,
-                                tooltip: '语音输入（未配置）',
-                              ),
-                          ],
-                        ),
-                        onChanged: (text) => widget.onSaveDraft(text),
-                        onKeyEvent: (event) =>
-                            _messageInputState.handleKeyPress(event),
-                      ),
-                    ),
-
-                    // 发送按钮
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 8.0,
-                        right: 8.0,
-                        bottom: 4.0,
-                      ),
-                      child: SendButton(onPressed: _handleSendMessage),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
+    final theme = DSThemeBridge.resolve(context);
+    return common.MessageInput(
+      controller: widget.controller,
+      focusNode: _focusNode,
+      hintText: 'chat_enterMessage'.tr,
+      onChanged: (text) => widget.onSaveDraft(text),
+      quickActions: _buildQuickActions(),
+      onOpenActionsDrawer: _showActionsDrawer,
+      header: MetadataDisplay(
+        selectedFiles: selectedFiles,
+        selectedAgents: selectedAgents,
+        onShowAgentListDrawer: _showAgentListDrawer,
+        onFileRemoveAt: _removeFileAt,
+        onAgentRemove: _removeAgent,
+        contextRange: contextRange,
+        onContextRangeChange: _handleContextRangeChange,
       ),
+      inputSuffix: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _InlineIconAction(
+            icon: DsIconKind.mood,
+            color: theme.textSub,
+            onPressed: _showEmojiPicker,
+            tooltip: '表情',
+          ),
+          if (_recognitionService != null)
+            _InlineIconAction(
+              icon: DsIconKind.mic,
+              color: theme.textSub,
+              onPressed: _showVoiceInputDialog,
+              tooltip: '语音输入',
+            )
+          else
+            _InlineIconAction(
+              icon: DsIconKind.mic,
+              color: theme.textSub,
+              tooltip: '语音输入（未配置）',
+            ),
+        ],
+      ),
+      onSend: _handleSendMessage,
+      onKeyEvent: (event) => _messageInputState.handleKeyPress(event),
     );
   }
 }

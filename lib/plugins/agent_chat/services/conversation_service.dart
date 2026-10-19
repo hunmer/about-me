@@ -66,21 +66,18 @@ class ConversationService extends ChangeNotifier {
                 .toList(),
           );
         _conversations.sort(Conversation.compare);
-      } else {
-        // 没有数据，首次使用，加载示例数据
-        debugPrint('AgentChat插件: 首次初始化，正在加载示例数据...');
-        await _loadSampleData();
       }
     } catch (e) {
       debugPrint('加载会话失败: $e');
-      // 加载失败时，加载示例数据
-      await _loadSampleData();
     }
   }
 
-  /// 加载示例数据（仅开发环境，生产环境保持空数据）
-  Future<void> _loadSampleData() async {
-    if (!kDebugMode) return;
+  /// 加载示例数据（存储为空时写入，供首次打开引导选择调用）
+  Future<void> loadSampleData() async {
+    final data = await AboutmeDataService.instance.readPath(
+      'agent_chat/conversations.json',
+    );
+    if (data is List && data.isNotEmpty) return;
     try {
       // 获取示例数据
       final sampleData = AgentChatSampleData.getFullSampleData();

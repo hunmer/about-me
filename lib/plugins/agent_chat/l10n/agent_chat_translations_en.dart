@@ -207,4 +207,8 @@ const Map<String, String> agentChatTranslationsEn = {
   'agent_chat_stepCodeRequired': 'Code for step @index cannot be empty',
   'agent_chat_templateUpdated': 'Tool template "@name" updated',
   'agent_chat_toolSaved': 'Tool "@name" saved',
+
+  // Sample data
+  'agentChat_sampleConversationsTitle': 'Sample conversations & messages',
+  'agentChat_sampleConversationsDesc': 'Create grouped sample AI conversations with messages',
 };

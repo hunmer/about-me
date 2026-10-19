@@ -3,6 +3,7 @@ import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import '../../../models/agent_chain_node.dart';
 
 import 'package:get/get.dart';
+
 /// Agent 模式选择对话框
 ///
 /// 提供单 Agent 模式和 Agent 链模式的选择，
@@ -32,11 +33,14 @@ class AgentModeSelectionDialog extends StatelessWidget {
       final chainLength = agentChain.length;
       // 显示前 3 个 agent 名称，超过则显示省略号
       final displayCount = chainLength > 3 ? 3 : chainLength;
-      final agentNames = agentChain.take(displayCount).map((node) {
-        // 这里需要从 agentId 获取 agent name，暂时先显示 ID
-        // 在实际使用时，调用方应该传入包含 agent name 的信息
-        return node.agentId;
-      }).join(' → ');
+      final agentNames = agentChain
+          .take(displayCount)
+          .map((node) {
+            // 这里需要从 agentId 获取 agent name，暂时先显示 ID
+            // 在实际使用时，调用方应该传入包含 agent name 的信息
+            return node.agentId;
+          })
+          .join(' → ');
 
       final suffix = chainLength > 3 ? '...' : '';
       return '当前 ($chainLength个): $agentNames$suffix';

@@ -18,25 +18,29 @@ import 'package:aboutme/plugins/openai/services/agentlib_resource_service.dart';
 import 'package:agentlib/agent_slots.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/message_input/message_input.dart' as common;
 import 'suggested_questions_dialog.dart';
 import 'command_selector.dart';
 import 'tool_template_selector.dart';
 import 'package:aboutme/plugins/agent_chat/widgets/press_to_record_button.dart';
 import '../../../../../../core/services/toast_service.dart';
-import 'agent_chat_text_input.dart';
 
 /// 消息输入框组件
 class MessageInput extends StatefulWidget {
   final ChatController controller;
 
-  /// 是否显示顶部快捷入口行（Agent 编辑 / Skills / MCP）；
+  /// 是否显示顶部图标工具栏（图片/视频上传、Agent 编辑、Skills、MCP）；
   /// 关闭后输入框高度更紧凑（如 Live2D 悬浮输入条）
   final bool showQuickActions;
+
+  /// 屏幕注入的附加工具栏动作（工具模板/工具管理/朋友圈/文件管理等）
+  final List<common.MessageInputQuickAction> extraQuickActions;
 
   const MessageInput({
     super.key,
     required this.controller,
     this.showQuickActions = true,
+    this.extraQuickActions = const [],
   });
 
   @override
@@ -233,219 +237,180 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
+  /// 顶部图标工具栏：常用上传（图片/视频）固定于此，
+  /// 其余为 Agent 编辑 / Skills / MCP / 仅JS切换 及屏幕注入的附加动作
+  List<common.MessageInputQuickAction> _buildQuickActions() {
+    final controller = widget.controller;
+    final agentReady = controller.currentAgent != null;
+    return [
+      common.MessageInputQuickAction(
+        icon: DsIconKind.image,
+        tooltip: 'agent_chat_image'.tr,
+        onPressed: () => controller.pickImages(),
+      ),
+      common.MessageInputQuickAction(
+        icon: DsIconKind.video,
+        tooltip: '选择视频',
+        onPressed: _pickVideos,
+      ),
+      common.MessageInputQuickAction(
+        icon: DsIconKind.bot,
+        tooltip: '编辑Agent',
+        onPressed: agentReady ? _openAgentEdit : null,
+      ),
+      common.MessageInputQuickAction(
+        icon: DsIconKind.book,
+        tooltip: '选择Skill',
+        onPressed: () => _showResourceMenu(skills: true),
+      ),
+      common.MessageInputQuickAction(
+        icon: DsIconKind.block,
+        tooltip: '选择MCP',
+        onPressed: () => _showResourceMenu(skills: false),
+      ),
+      // 仅使用 JS 工具切换（发送中禁用，开启时高亮）
+      common.MessageInputQuickAction(
+        icon: DsIconKind.code,
+        tooltip: controller.useJsTools
+            ? '仅使用 JS：已开启'
+            : '仅使用 JS：已关闭（插件 Tools 与 JS 均可用）',
+        active: controller.useJsTools,
+        onPressed: controller.isSending
+            ? null
+            : () => controller.setUseJsTools(!controller.useJsTools),
+      ),
+      ...widget.extraQuickActions,
+    ];
+  }
+
+  /// 选择视频并加入待发送文件
+  Future<void> _pickVideos() async {
+    final files = await FilePickerHelper.pickFiles(
+      allowedExtensions: const ['mp4', 'mov', 'avi', 'mkv', 'webm'],
+    );
+    if (files.isNotEmpty) {
+      widget.controller.addFiles(files);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    // 输入面板为大容器档：纸底 + 排线 + 墨线框（design.md §9.1，去柔影）
-    return SafeArea(
-      top: false,
-      left: false,
-      right: false,
-      child: DsSketchPanel(
-        theme: theme,
-        radius: theme.radii.xl,
-        child: Column(
+    final agentReady = widget.controller.currentAgent != null;
+
+    return common.MessageInput(
+      controller: _textController,
+      focusNode: _focusNode,
+      enabled: agentReady,
+      hintText: agentReady ? '输入消息...' : '请先选择Agent...',
+      quickActions: widget.showQuickActions ? _buildQuickActions() : const [],
+      onOpenActionsDrawer: _showAttachmentMenu,
+      useSketchPanel: true,
+      // 输入框上方：工具模板搜索 / 命令选择器 / 待发送状态
+      header: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_isSearchingTools) _buildToolTemplateSearchArea(),
+
+          // 命令选择器
+          if (_isCommandMode && _filteredCommands.isNotEmpty)
+            CommandSelector(
+              commands: _filteredCommands,
+              onCommandSelected: _handleCommandSelected,
+            ),
+
+          if (!_isSearchingTools &&
+              _isCommandMode &&
+              (_commandToolQuery?.isNotEmpty ?? false))
+            _buildToolCommandSearchResults(),
+
+          // 当前状态显示区域（工具模板和文件）
+          if (!_isSearchingTools &&
+              (widget.controller.selectedToolTemplate != null ||
+                  widget.controller.selectedFiles.isNotEmpty))
+            _buildCurrentStatus(),
+        ],
+      ),
+      inputSuffix: Padding(
+        padding: const EdgeInsets.only(right: 4),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 工具模板搜索结果
-            if (_isSearchingTools) _buildToolTemplateSearchArea(),
-
-            // 命令选择器
-            if (_isCommandMode && _filteredCommands.isNotEmpty)
-              CommandSelector(
-                commands: _filteredCommands,
-                onCommandSelected: _handleCommandSelected,
-              ),
-
-            if (!_isSearchingTools &&
-                _isCommandMode &&
-                (_commandToolQuery?.isNotEmpty ?? false))
-              _buildToolCommandSearchResults(),
-
-            // 当前状态显示区域（工具模板和文件）
-            if (!_isSearchingTools &&
-                (widget.controller.selectedToolTemplate != null ||
-                    widget.controller.selectedFiles.isNotEmpty))
-              _buildCurrentStatus(),
-
-            // 快捷入口：Agent 编辑与 Skills 选择（紧凑模式下隐藏）
-            if (widget.showQuickActions)
+            // Token统计
+            if (widget.controller.inputText.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Row(
-                  children: [
-                    Pressable(
-                      onPressed: widget.controller.currentAgent != null
-                          ? _openAgentEdit
-                          : null,
-                      semanticLabel: '编辑Agent',
-                      builder: (context, states) => DsIcon(
-                        DsIconKind.bot,
-                        size: 20,
-                        color: widget.controller.currentAgent != null
-                            ? theme.primaryText
-                            : theme.textSub.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Pressable(
-                      onPressed: () => _showResourceMenu(skills: true),
-                      semanticLabel: '选择Skill',
-                      builder: (context, states) => DsIcon(
-                        DsIconKind.book,
-                        size: 20,
-                        color: theme.primaryText,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Pressable(
-                      onPressed: () => _showResourceMenu(skills: false),
-                      semanticLabel: '选择MCP',
-                      builder: (context, states) => DsIcon(
-                        DsIconKind.block,
-                        size: 20,
-                        color: theme.primaryText,
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsets.only(right: 4),
+                child: Text(
+                  '~${widget.controller.inputTokenCount}',
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
                 ),
               ),
-
-            // 输入框区域
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // 附件按钮
-                    Pressable(
-                      onPressed: _showAttachmentMenu,
-                      semanticLabel: '添加附件',
-                      builder: (context, states) => SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: Center(
-                          child: DsIcon(
-                            DsIconKind.copy,
-                            size: 22,
-                            color: theme.textSub,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // 输入框
-                    Expanded(
-                      child: AgentChatTextInput(
-                        controller: _textController,
-                        focusNode: _focusNode,
-                        onSubmitted: (_) {
-                          if (_canSendMessage()) {
-                            _sendMessage();
-                          }
-                        },
-                        enabled: widget.controller.currentAgent != null,
-                        backgroundColor: Colors.transparent,
-                        hintText: widget.controller.currentAgent != null
-                            ? '输入消息...'
-                            : '请先选择Agent...',
-                        suffixIcon: Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Token统计
-                              if (widget.controller.inputText.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 4),
-                                  child: Text(
-                                    '~${widget.controller.inputTokenCount}',
-                                    style: DsTypography.caption.copyWith(
-                                      color: theme.textSub,
-                                    ),
-                                  ),
-                                ),
-                              // "你可以问"按钮
-                              if (widget.controller.currentAgent != null)
-                                Pressable(
-                                  onPressed: _showSuggestedQuestions,
-                                  semanticLabel: '你可以问',
-                                  builder: (context, states) => Padding(
-                                    padding: const EdgeInsets.all(4),
-                                    child: DsIcon(
-                                      DsIconKind.star,
-                                      size: 20,
-                                      color: theme.warning,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // 语音按钮（长按录音）
-                    if (_recognitionService != null)
-                      PressToRecordButton(
-                        textController: _textController,
-                        recognitionService: _recognitionService!,
-                        enabled: widget.controller.currentAgent != null,
-                        tooltip: '长按录音',
-                        onRecognitionComplete: (text) {
-                          // 聚焦到输入框
-                          _focusNode.requestFocus();
-                        },
-                        onError: (error) {
-                          if (mounted) {
-                            toastService.showToast('语音识别失败: $error');
-                          }
-                        },
-                      )
-                    else
-                      Pressable(
-                        onPressed: widget.controller.currentAgent != null
-                            ? _showVoiceInputDialog
-                            : null,
-                        semanticLabel: '语音输入（未配置）',
-                        builder: (context, states) => SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: Center(
-                            child: DsIcon(
-                              DsIconKind.mic,
-                              size: 22,
-                              color: theme.textSub,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // 发送/取消按钮
-                    DSIconButton(
-                      icon: widget.controller.isSending
-                          ? DsIconKind
-                                .close // 显示取消图标
-                          : DsIconKind.send,
-                      size: 44,
-                      color: widget.controller.isSending
-                          ? theme
-                                .danger // 发送中显示红色
-                          : theme.primary,
-                      onPressed: widget.controller.isSending
-                          ? () => widget.controller
-                                .cancelSending() // 取消发送
-                          : (_canSendMessage() ? _sendMessage : null),
-                    ),
-                  ],
+            // "你可以问"按钮
+            if (agentReady)
+              Pressable(
+                onPressed: _showSuggestedQuestions,
+                semanticLabel: '你可以问',
+                builder: (context, states) => Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: DsIcon(
+                    DsIconKind.star,
+                    size: 20,
+                    color: theme.warning,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
+      // 语音按钮（长按录音；未配置时回退为对话框输入）
+      voiceButton: _recognitionService != null
+          ? PressToRecordButton(
+              textController: _textController,
+              recognitionService: _recognitionService!,
+              enabled: agentReady,
+              tooltip: '长按录音',
+              onRecognitionComplete: (text) {
+                // 聚焦到输入框
+                _focusNode.requestFocus();
+              },
+              onError: (error) {
+                if (mounted) {
+                  toastService.showToast('语音识别失败: $error');
+                }
+              },
+            )
+          : Pressable(
+              onPressed: agentReady ? _showVoiceInputDialog : null,
+              semanticLabel: '语音输入（未配置）',
+              builder: (context, states) => SizedBox(
+                width: 40,
+                height: 40,
+                child: Center(
+                  child: DsIcon(DsIconKind.mic, size: 22, color: theme.textSub),
+                ),
+              ),
+            ),
+      // 发送/取消按钮
+      sendButton: DSIconButton(
+        icon: widget.controller.isSending
+            ? DsIconKind
+                  .close // 显示取消图标
+            : DsIconKind.send,
+        size: 44,
+        color: widget.controller.isSending
+            ? theme
+                  .danger // 发送中显示红色
+            : theme.primary,
+        onPressed: widget.controller.isSending
+            ? () => widget.controller
+                  .cancelSending() // 取消发送
+            : (_canSendMessage() ? _sendMessage : null),
+      ),
+      onSend: () {
+        if (_canSendMessage()) {
+          _sendMessage();
+        }
+      },
     );
   }
 
@@ -509,8 +474,7 @@ class _MessageInputState extends State<MessageInput> {
                 scrollDirection: Axis.horizontal,
                 itemCount: widget.controller.selectedFiles.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (context, index) =>
-                    _buildFileThumb(theme, index),
+                itemBuilder: (context, index) => _buildFileThumb(theme, index),
               ),
             ),
           ],
@@ -650,7 +614,7 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  /// 显示附件菜单
+  /// 显示附件菜单（"+"按钮：完整底部抽屉动作列表）
   void _showAttachmentMenu() {
     SmoothBottomSheet.show(
       context: context,

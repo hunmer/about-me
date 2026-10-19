@@ -21,6 +21,12 @@ const Map<String, String> appTranslationsEn = {
   'app_onboarding_getStarted': 'GET STARTED',
   'app_onboarding_skip': 'SKIP',
 
+  // Plugin onboarding (sample data selection)
+  'plugin_onboarding_sample_title': 'Sample Data',
+  'plugin_onboarding_sample_desc':
+      'We can create some sample data to help you explore this plugin. You can delete it anytime later.',
+  'plugin_onboarding_sample_selectAll': 'Select all',
+
   // Common actions
   'app_ok': 'OK',
   'app_select': 'Select',

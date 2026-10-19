@@ -122,10 +122,7 @@ class _SaveToolDialogState extends State<SaveToolDialog> {
           const SizedBox(height: 12),
           // DSTabs 挂内容页后支持左右滑动切换（design_system/components/tabs.dart）
           DSTabs(
-            labels: [
-              'agent_chat_basicInfo'.tr,
-              'agent_chat_executionSteps'.tr,
-            ],
+            labels: ['agent_chat_basicInfo'.tr, 'agent_chat_executionSteps'.tr],
             selected: _selectedTab,
             onChanged: (index) => setState(() => _selectedTab = index),
             contentHeight: 500,
@@ -212,19 +209,18 @@ class _SaveToolDialogState extends State<SaveToolDialog> {
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children:
-                    _getDeclaredTools()
-                        .where((tool) {
-                          final name = tool['name'] ?? tool['id'] ?? '';
-                          return name.trim().isNotEmpty;
-                        })
-                        .map((tool) {
-                          return DSChip(
-                            icon: DsIconKind.gear,
-                            label: tool['name'] ?? tool['id'] ?? '',
-                          );
-                        })
-                        .toList(),
+                children: _getDeclaredTools()
+                    .where((tool) {
+                      final name = tool['name'] ?? tool['id'] ?? '';
+                      return name.trim().isNotEmpty;
+                    })
+                    .map((tool) {
+                      return DSChip(
+                        icon: DsIconKind.gear,
+                        label: tool['name'] ?? tool['id'] ?? '',
+                      );
+                    })
+                    .toList(),
               ),
             ),
           ],
@@ -247,15 +243,14 @@ class _SaveToolDialogState extends State<SaveToolDialog> {
             suffix: Pressable(
               onPressed: _addTag,
               semanticLabel: 'agent_chat_addTag'.tr,
-              builder:
-                  (context, states) => Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: DsIcon(
-                      DsIconKind.plus,
-                      size: 20,
-                      color: theme.primaryText,
-                    ),
-                  ),
+              builder: (context, states) => Padding(
+                padding: const EdgeInsets.all(12),
+                child: DsIcon(
+                  DsIconKind.plus,
+                  size: 20,
+                  color: theme.primaryText,
+                ),
+              ),
             ),
             onSubmitted: (_) => _addTag(),
           ),
@@ -264,17 +259,16 @@ class _SaveToolDialogState extends State<SaveToolDialog> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children:
-                  _tags.map((tag) {
-                    return DSChip(
-                      label: tag,
-                      onDeleted: () {
-                        setState(() {
-                          _tags.remove(tag);
-                        });
-                      },
-                    );
-                  }).toList(),
+              children: _tags.map((tag) {
+                return DSChip(
+                  label: tag,
+                  onDeleted: () {
+                    setState(() {
+                      _tags.remove(tag);
+                    });
+                  },
+                );
+              }).toList(),
             ),
           ],
 
@@ -331,12 +325,8 @@ class _SaveToolDialogState extends State<SaveToolDialog> {
               Pressable(
                 onPressed: _addStep,
                 semanticLabel: 'agent_chat_addStep'.tr,
-                builder:
-                    (context, states) => DsIcon(
-                      DsIconKind.plus,
-                      size: 24,
-                      color: theme.primaryText,
-                    ),
+                builder: (context, states) =>
+                    DsIcon(DsIconKind.plus, size: 24, color: theme.primaryText),
               ),
             ],
           ),
@@ -344,30 +334,29 @@ class _SaveToolDialogState extends State<SaveToolDialog> {
 
         // 步骤列表
         Expanded(
-          child:
-              _steps.isEmpty
-                  ? Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: dsSketchDecoration(
-                      theme: theme,
-                      fillColor: theme.surfaceAlt,
-                      stroke: theme.textSub.withValues(alpha: 0.3),
-                      radius: theme.radii.sm,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'agent_chat_noStepsHint'.tr,
-                        style: DsTypography.body.copyWith(color: theme.textSub),
-                      ),
-                    ),
-                  )
-                  : ReorderableListView.builder(
-                    itemCount: _steps.length,
-                    onReorder: _onReorderSteps,
-                    itemBuilder: (context, index) {
-                      return _buildStepEditor(index);
-                    },
+          child: _steps.isEmpty
+              ? Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    fillColor: theme.surfaceAlt,
+                    stroke: theme.textSub.withValues(alpha: 0.3),
+                    radius: theme.radii.sm,
                   ),
+                  child: Center(
+                    child: Text(
+                      'agent_chat_noStepsHint'.tr,
+                      style: DsTypography.body.copyWith(color: theme.textSub),
+                    ),
+                  ),
+                )
+              : ReorderableListView.builder(
+                  itemCount: _steps.length,
+                  onReorder: _onReorderSteps,
+                  itemBuilder: (context, index) {
+                    return _buildStepEditor(index);
+                  },
+                ),
         ),
       ],
     );
@@ -453,21 +442,19 @@ class _SaveToolDialogState extends State<SaveToolDialog> {
               : 'agent_chat_stepIndex'.trParams({'index': '${index + 1}'}),
           style: DsTypography.body.copyWith(color: theme.text),
         ),
-        subtitle:
-            step.desc.isNotEmpty
-                ? Text(
-                  step.desc,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: DsTypography.caption.copyWith(color: theme.textSub),
-                )
-                : null,
+        subtitle: step.desc.isNotEmpty
+            ? Text(
+                step.desc,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              )
+            : null,
         trailing: Pressable(
           onPressed: () => _deleteStep(index),
           semanticLabel: 'agent_chat_deleteStep'.tr,
-          builder:
-              (context, states) =>
-                  DsIcon(DsIconKind.trash, size: 20, color: theme.danger),
+          builder: (context, states) =>
+              DsIcon(DsIconKind.trash, size: 20, color: theme.danger),
         ),
         children: [
           Padding(
@@ -610,17 +597,15 @@ Future<bool?> showSaveToolDialog(
   return showDSDialog<bool>(
     context: context,
     theme: DSThemeBridge.resolve(context),
-    builder:
-        (context) => DSThemeBridge(
-          child: Builder(
-            builder:
-                (context) => SaveToolDialog(
-                  message: message,
-                  templateService: templateService,
-                  declaredTools: declaredTools,
-                ),
-          ),
+    builder: (context) => DSThemeBridge(
+      child: Builder(
+        builder: (context) => SaveToolDialog(
+          message: message,
+          templateService: templateService,
+          declaredTools: declaredTools,
         ),
+      ),
+    ),
   );
 }
 
@@ -633,15 +618,13 @@ Future<bool?> showEditToolDialog(
   return showDSDialog<bool>(
     context: context,
     theme: DSThemeBridge.resolve(context),
-    builder:
-        (context) => DSThemeBridge(
-          child: Builder(
-            builder:
-                (context) => SaveToolDialog(
-                  templateService: templateService,
-                  editingTemplate: template,
-                ),
-          ),
+    builder: (context) => DSThemeBridge(
+      child: Builder(
+        builder: (context) => SaveToolDialog(
+          templateService: templateService,
+          editingTemplate: template,
         ),
+      ),
+    ),
   );
 }

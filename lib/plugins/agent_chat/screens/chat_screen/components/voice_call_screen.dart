@@ -261,21 +261,19 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     final confirm = await showDSDialog<bool>(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (dialogContext) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (ctx) => DSDialog(
-                    title: '结束通话',
-                    message: '确定要结束当前通话吗？',
-                    cancelText: '取消',
-                    confirmText: '结束',
-                    confirmVariant: DSButtonVariant.destructive,
-                    onConfirm: () => Navigator.pop(dialogContext, true),
-                    onCancel: () => Navigator.pop(dialogContext, false),
-                  ),
-            ),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (ctx) => DSDialog(
+            title: '结束通话',
+            message: '确定要结束当前通话吗？',
+            cancelText: '取消',
+            confirmText: '结束',
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () => Navigator.pop(dialogContext, true),
+            onCancel: () => Navigator.pop(dialogContext, false),
           ),
+        ),
+      ),
     );
 
     if (confirm == true) {
@@ -289,15 +287,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     final result = await showDSDialog<VoiceCallConfig>(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (context) => VoiceCallConfigDialog(
-                    initialConfig: widget.manager.config,
-                  ),
-            ),
-          ),
+      builder: (context) => DSThemeBridge(
+        child: Builder(
+          builder: (context) =>
+              VoiceCallConfigDialog(initialConfig: widget.manager.config),
+        ),
+      ),
     );
 
     if (result != null) {
@@ -322,21 +317,19 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: Container(
-        decoration:
-            hasBackgroundImage
-                ? BoxDecoration(
-                  image: DecorationImage(
-                    image: FileImage(File(backgroundImage)),
-                    fit: BoxFit.cover,
-                  ),
-                )
-                : null,
+        decoration: hasBackgroundImage
+            ? BoxDecoration(
+                image: DecorationImage(
+                  image: FileImage(File(backgroundImage)),
+                  fit: BoxFit.cover,
+                ),
+              )
+            : null,
         child: Container(
           // 添加半透明遮罩以提高可读性
-          decoration:
-              hasBackgroundImage
-                  ? BoxDecoration(color: Colors.black.withOpacity(0.4))
-                  : null,
+          decoration: hasBackgroundImage
+              ? BoxDecoration(color: Colors.black.withOpacity(0.4))
+              : null,
           child: SafeArea(
             child: Column(
               children: [
@@ -370,21 +363,20 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           Pressable(
             onPressed: _exit,
             semanticLabel: '退出',
-            builder:
-                (context, states) => Container(
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: Colors.white10,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const DsIcon(
-                    DsIconKind.chevronLeft,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
+            builder: (context, states) => Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Colors.white10,
+                shape: BoxShape.circle,
+              ),
+              child: const DsIcon(
+                DsIconKind.chevronLeft,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
           ),
           const SizedBox(width: 16),
           // 标题
@@ -414,21 +406,20 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           Pressable(
             onPressed: _openSettings,
             semanticLabel: '设置',
-            builder:
-                (context, states) => Container(
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: Colors.white10,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const DsIcon(
-                    DsIconKind.gear,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
+            builder: (context, states) => Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Colors.white10,
+                shape: BoxShape.circle,
+              ),
+              child: const DsIcon(
+                DsIconKind.gear,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
           ),
         ],
       ),
@@ -477,8 +468,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
           width: 120,
           height: 120,
           fit: BoxFit.cover,
-          errorBuilder:
-              (context, error, stackTrace) => _buildDefaultAvatarIcon(agent),
+          errorBuilder: (context, error, stackTrace) =>
+              _buildDefaultAvatarIcon(agent),
         ),
       );
     } else {
@@ -652,29 +643,28 @@ class _VoiceCallScreenState extends State<VoiceCallScreen>
     return Pressable(
       onPressed: onTap,
       semanticLabel: label,
-      builder:
-          (context, states) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+      builder: (context, states) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DsIcon(icon, color: color, size: 14),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DsIcon(icon, color: color, size: 14),
-                const SizedBox(width: 4),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
+        ),
+      ),
     );
   }
 

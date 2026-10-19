@@ -144,26 +144,6 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
     }
 
     return [
-      DSIconButton(
-        icon: DsIconKind.code,
-        size: 36,
-        color: _controller.useJsTools ? theme.primary : theme.surfaceAlt,
-        iconColor: _controller.useJsTools ? theme.onPrimary : theme.textSub,
-        onPressed: _controller.isSending
-            ? null
-            : () => _controller.setUseJsTools(!_controller.useJsTools),
-        tooltip: _controller.useJsTools
-            ? '仅使用 JS：已开启'
-            : '仅使用 JS：已关闭（插件 Tools 与 JS 均可用）',
-      ),
-      DSIconButton(
-        icon: DsIconKind.clipboard,
-        size: 36,
-        color: theme.surfaceAlt,
-        iconColor: theme.textSub,
-        onPressed: _openToolTemplateManagement,
-        tooltip: '工具模板',
-      ),
       // 语音相关按钮（仅在设置了 Agent 时显示）
       if (_currentAgent != null) ...[
         DSIconButton(
@@ -204,42 +184,6 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
               onTap: () {
                 close();
                 _toggleMultiSelectMode();
-              },
-            ),
-            _AppBarMenuAction(
-              icon: DsIconKind.gear,
-              label: 'agent_chat_toolManagement'.tr,
-              theme: popoverTheme,
-              onTap: () {
-                close();
-                _openToolManagement();
-              },
-            ),
-            _AppBarMenuAction(
-              icon: DsIconKind.image,
-              label: '朋友圈',
-              theme: popoverTheme,
-              onTap: () {
-                close();
-                _openMoments();
-              },
-            ),
-            _AppBarMenuAction(
-              icon: DsIconKind.folder,
-              label: '文件管理',
-              theme: popoverTheme,
-              onTap: () async {
-                close();
-                final directory = await AgentFileSpaceService.instance
-                    .directoryForChannel(widget.conversation.id);
-                if (!mounted) return;
-                NavigationHelper.push(
-                  context,
-                  FileManagementScreen(
-                    rootDirectory: directory,
-                    title: '${widget.conversation.title} 文件',
-                  ),
-                );
               },
             ),
             _AppBarMenuAction(

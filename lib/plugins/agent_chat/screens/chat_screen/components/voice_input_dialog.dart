@@ -299,20 +299,18 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
       final shouldGoToSettings = await showDSDialog<bool>(
         context: context,
         theme: DSThemeBridge.resolve(context),
-        builder:
-            (dialogContext) => DSThemeBridge(
-              child: Builder(
-                builder:
-                    (ctx) => DSDialog(
-                      title: 'AI智能纠错',
-                      message: '您还未配置AI纠错助手。是否跳转到设置界面进行配置？',
-                      cancelText: '取消',
-                      confirmText: '去设置',
-                      onConfirm: () => Navigator.of(dialogContext).pop(true),
-                      onCancel: () => Navigator.of(dialogContext).pop(false),
-                    ),
-              ),
+        builder: (dialogContext) => DSThemeBridge(
+          child: Builder(
+            builder: (ctx) => DSDialog(
+              title: 'AI智能纠错',
+              message: '您还未配置AI纠错助手。是否跳转到设置界面进行配置？',
+              cancelText: '取消',
+              confirmText: '去设置',
+              onConfirm: () => Navigator.of(dialogContext).pop(true),
+              onCancel: () => Navigator.of(dialogContext).pop(false),
             ),
+          ),
+        ),
       );
 
       if (shouldGoToSettings == true && mounted) {
@@ -502,26 +500,25 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
                     });
                   },
                   semanticLabel: '清空文本',
-                  builder:
-                      (context, states) => Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: theme.surface,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(26),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                  builder: (context, states) => Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: theme.surface,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(26),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
-                        child: DsIcon(
-                          DsIconKind.close,
-                          size: 16,
-                          color: theme.textSub,
-                        ),
-                      ),
+                      ],
+                    ),
+                    child: DsIcon(
+                      DsIconKind.close,
+                      size: 16,
+                      color: theme.textSub,
+                    ),
+                  ),
                 );
               },
             ),
@@ -600,16 +597,15 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: _isRecording ? theme.danger : theme.primary,
-                boxShadow:
-                    _isRecording
-                        ? [
-                          BoxShadow(
-                            color: theme.danger.withAlpha(102),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ]
-                        : [],
+                boxShadow: _isRecording
+                    ? [
+                        BoxShadow(
+                          color: theme.danger.withAlpha(102),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ]
+                    : [],
               ),
               child: DsIcon(DsIconKind.mic, color: theme.onPrimary, size: 40),
             ),
@@ -632,25 +628,23 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
       child: Pressable(
         onPressed: onPressed,
         semanticLabel: tooltip,
-        builder:
-            (context, states) => Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color:
-                    isActive ? theme.primary.mixWhite(0.88) : theme.surfaceAlt,
-                border: Border.all(
-                  color: isActive ? theme.primary : Colors.transparent,
-                  width: 2,
-                ),
-              ),
-              child: DsIcon(
-                icon,
-                size: 24,
-                color: isActive ? theme.primaryText : theme.textSub,
-              ),
+        builder: (context, states) => Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isActive ? theme.primary.mixWhite(0.88) : theme.surfaceAlt,
+            border: Border.all(
+              color: isActive ? theme.primary : Colors.transparent,
+              width: 2,
             ),
+          ),
+          child: DsIcon(
+            icon,
+            size: 24,
+            color: isActive ? theme.primaryText : theme.textSub,
+          ),
+        ),
       ),
     );
   }
@@ -668,10 +662,9 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
         const SizedBox(width: 12),
         DSButton(
           label: 'agent_chat_send'.tr,
-          onPressed:
-              _currentState == SpeechRecognitionState.recording
-                  ? null
-                  : _confirmSend,
+          onPressed: _currentState == SpeechRecognitionState.recording
+              ? null
+              : _confirmSend,
         ),
       ],
     );

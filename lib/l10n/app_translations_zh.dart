@@ -21,6 +21,11 @@ const Map<String, String> appTranslationsZh = {
   'app_onboarding_getStarted': '开始使用',
   'app_onboarding_skip': '跳过',
 
+  // Plugin onboarding (sample data selection)
+  'plugin_onboarding_sample_title': '示例数据',
+  'plugin_onboarding_sample_desc': '首次使用可以为你创建一些示例数据，帮你快速了解插件功能，稍后可随时删除。',
+  'plugin_onboarding_sample_selectAll': '全选',
+
   // Common actions
   'app_ok': '确定',
   'app_select': '选择',

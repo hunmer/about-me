@@ -201,27 +201,21 @@ class BillController with ChangeNotifier {
             _accounts.add(Account.fromJson(item));
           }
         }
-      } else {
-        // 如果没有数据，加载示例数据
-        await _loadSampleData();
       }
 
       notifyListeners();
     } catch (e) {
       debugPrint('加载账户失败: $e');
-      // 加载失败时尝试使用示例数据
-      try {
-        await _loadSampleData();
-        notifyListeners();
-      } catch (sampleError) {
-        debugPrint('加载示例数据失败: $sampleError');
-      }
     }
   }
 
-  // 加载示例数据（仅开发环境，生产环境保持空数据）
-  Future<void> _loadSampleData() async {
-    if (!kDebugMode) return;
+  /// 加载示例数据（存储为空时写入，供首次打开引导选择调用）
+  Future<void> loadSampleData() async {
+    final accountsData = await AboutmeDataService.instance.readPath(
+      'bill/$_accountsKey.json',
+      {'accounts': []},
+    );
+    if ((accountsData['accounts'] ?? []).isNotEmpty) return;
     try {
       // 获取示例数据
       final sampleData = BillSampleData.getSampleData();
@@ -236,6 +230,7 @@ class BillController with ChangeNotifier {
 
         // 保存示例数据到存储
         await _saveAccounts();
+        notifyListeners();
 
         debugPrint('已加载示例数据，包含 ${_accounts.length} 个账户');
       }

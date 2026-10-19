@@ -219,5 +219,9 @@ class BillTranslationsEn {
   'bill_scanAddSelected': 'Add selected (@count)',
   'bill_scanSaving': 'Saving…',
   'bill_scanAdded': '@count bills added',
+
+  // Sample data
+  'bill_sampleAccountsTitle': 'Sample accounts & bills',
+  'bill_sampleAccountsDesc': 'Create sample accounts with bill records',
 };
 }

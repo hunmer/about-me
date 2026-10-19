@@ -98,15 +98,22 @@ class ContactPlugin extends BasePlugin with JSBridgePlugin {
     // 3. 创建 UseCase
     _useCase = ContactUseCase(repository as IContactRepository);
 
-    // 4. 初始化默认数据
-    await _controller.createDefaultContacts();
-
-    // 5. 注册 JS API（最后一步）
+    // 4. 注册 JS API（最后一步）
     await registerJSAPI();
 
-    // 6. 注册数据选择器
+    // 5. 注册数据选择器
     _registerDataSelectors();
   }
+
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'contacts',
+      title: 'contact_sampleContactsTitle'.tr,
+      description: 'contact_sampleContactsDesc'.tr,
+      apply: () => _controller.createDefaultContacts(),
+    ),
+  ];
 
   @override
   Future<void> registerToApp(

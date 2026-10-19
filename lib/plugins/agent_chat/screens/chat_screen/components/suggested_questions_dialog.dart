@@ -106,12 +106,11 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
 
           // 内容区域
           Flexible(
-            child:
-                _isLoading
-                    ? const Center(child: DSThemeBridge(child: DSLoadingDots()))
-                    : _questions == null || _questions!.isEmpty
-                    ? _buildEmptyState()
-                    : _buildQuestionsList(),
+            child: _isLoading
+                ? const Center(child: DSThemeBridge(child: DSLoadingDots()))
+                : _questions == null || _questions!.isEmpty
+                ? _buildEmptyState()
+                : _buildQuestionsList(),
           ),
         ],
       ),
@@ -145,18 +144,13 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
           Pressable(
             onPressed: () => Navigator.pop(context),
             semanticLabel: '关闭',
-            builder:
-                (context, states) => SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: Center(
-                    child: DsIcon(
-                      DsIconKind.close,
-                      size: 20,
-                      color: theme.textSub,
-                    ),
-                  ),
-                ),
+            builder: (context, states) => SizedBox(
+              width: 32,
+              height: 32,
+              child: Center(
+                child: DsIcon(DsIconKind.close, size: 20, color: theme.textSub),
+              ),
+            ),
           ),
         ],
       ),
@@ -232,13 +226,12 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
       shrinkWrap: true,
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: questions.length,
-      separatorBuilder:
-          (context, index) => Divider(
-            color: theme.textSub.withValues(alpha: 0.2),
-            height: 1,
-            indent: 16,
-            endIndent: 16,
-          ),
+      separatorBuilder: (context, index) => Divider(
+        color: theme.textSub.withValues(alpha: 0.2),
+        height: 1,
+        indent: 16,
+        endIndent: 16,
+      ),
       itemBuilder: (context, index) => _buildQuestionItem(questions[index]),
     );
   }
@@ -249,25 +242,24 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
     return Pressable(
       onPressed: () => Navigator.pop(context, question),
       semanticLabel: question,
-      builder:
-          (context, states) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    question,
-                    style: DsTypography.body.copyWith(color: theme.text),
-                  ),
-                ),
-                DsIcon(
-                  DsIconKind.chevronRight,
-                  size: 14,
-                  color: theme.textSub.withValues(alpha: 0.7),
-                ),
-              ],
+      builder: (context, states) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                question,
+                style: DsTypography.body.copyWith(color: theme.text),
+              ),
             ),
-          ),
+            DsIcon(
+              DsIconKind.chevronRight,
+              size: 14,
+              color: theme.textSub.withValues(alpha: 0.7),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -279,11 +271,10 @@ Future<String?> showSuggestedQuestionsDialog(
 ) {
   return SmoothBottomSheet.show<String>(
     context: context,
-    builder:
-        (context) => DSThemeBridge(
-          child: Builder(
-            builder: (context) => SuggestedQuestionsDialog(storage: storage),
-          ),
-        ),
+    builder: (context) => DSThemeBridge(
+      child: Builder(
+        builder: (context) => SuggestedQuestionsDialog(storage: storage),
+      ),
+    ),
   );
 }

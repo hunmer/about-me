@@ -445,10 +445,8 @@ class ContactController {
     return interactions.length;
   }
 
-  // 创建默认联系人数据（仅开发环境，生产环境保持空数据）
+  /// 创建示例联系人数据（存储为空时写入，供首次打开引导选择调用）
   Future<void> createDefaultContacts() async {
-    if (!kDebugMode) return;
-
     // 检查是否已有联系人数据
     final existingContacts = await AboutmeDataService.instance.readPath(
       contactsKey,

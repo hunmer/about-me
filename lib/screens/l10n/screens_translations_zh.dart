@@ -361,6 +361,7 @@ final Map<String, String> screensTranslationsZh = {
   'screens_jellyLive2dLoadStageLoading': '正在加载',
   'screens_jellyLive2dArchives': 'Live2D 档案',
   'screens_jellyLive2dNoArchives': '暂无档案，请在 Live2D 设置中创建',
+  'screens_jellyLive2dOpenModelList': '模型列表',
   'screens_jellyLive2dCharacterSize': '人物大小',
   'screens_jellyLive2dShrink': '缩小',
   'screens_jellyLive2dEnlarge': '放大',

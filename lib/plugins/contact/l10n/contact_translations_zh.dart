@@ -132,4 +132,8 @@ const Map<String, String> contactTranslationsZh = {
   'contact_notFound': '联系人不存在',
   'contact_unknownContact': '未知联系人',
   'contact_pluginNotFound': '联系人插件未初始化',
+
+  // 示例数据
+  'contact_sampleContactsTitle': '示例联系人与互动',
+  'contact_sampleContactsDesc': '创建示例联系人和互动记录',
 };

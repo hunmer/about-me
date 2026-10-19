@@ -132,6 +132,16 @@ class ChatPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   ChatConfigService get settingsService => configService;
   ChatConfigService get userService => configService;
 
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'channels',
+      title: 'chat_sampleChannelsTitle'.tr,
+      description: 'chat_sampleChannelsDesc'.tr,
+      apply: () => dataService.loadSampleData(),
+    ),
+  ];
+
   // UseCase
   late final ChatUseCase chatUseCase;
 

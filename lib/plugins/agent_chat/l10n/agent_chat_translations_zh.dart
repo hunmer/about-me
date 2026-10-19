@@ -206,4 +206,8 @@ const Map<String, String> agentChatTranslationsZh = {
   'agent_chat_stepCodeRequired': '步骤 @index 的代码不能为空',
   'agent_chat_templateUpdated': '工具模板 "@name" 更新成功',
   'agent_chat_toolSaved': '工具 "@name" 保存成功',
+
+  // 示例数据
+  'agentChat_sampleConversationsTitle': '示例会话与消息',
+  'agentChat_sampleConversationsDesc': '创建分组好的示例 AI 会话和消息记录',
 };

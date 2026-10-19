@@ -383,6 +383,7 @@ final Map<String, String> screensTranslationsEn = {
   'screens_jellyLive2dLoadStageLoading': 'Loading',
   'screens_jellyLive2dArchives': 'Live2D Profiles',
   'screens_jellyLive2dNoArchives': 'No profiles yet. Create one in Live2D settings',
+  'screens_jellyLive2dOpenModelList': 'Models',
   'screens_jellyLive2dCharacterSize': 'Character Size',
   'screens_jellyLive2dShrink': 'Shrink',
   'screens_jellyLive2dEnlarge': 'Enlarge',

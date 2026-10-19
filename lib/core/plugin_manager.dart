@@ -4,6 +4,7 @@ import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/screens/onboarding/plugin_onboarding_screen.dart';
+import 'package:aboutme/screens/onboarding/sample_data_selection_step.dart';
 import 'package:flutter/material.dart';
 import 'plugin_base.dart';
 import 'storage/storage_manager.dart';
@@ -308,14 +309,24 @@ class PluginManager {
   /// 首次打开插件时弹出引导页
   ///
   /// 弹出即记录（含跳过场景），后续不再重复弹出；
-  /// 引导完成时由引导页自行调用 plugin.onOnboardingComplete
+  /// 引导完成时由引导页自行调用 plugin.onOnboardingComplete，
+  /// 声明了示例数据分组的插件会在引导步骤末尾附加「示例数据选择」
   void _maybeShowOnboarding(BuildContext context, PluginBase plugin) {
     if (_onboardingShownPlugins.contains(plugin.id)) return;
     final steps = plugin.getOnboardingSteps(context);
-    if (steps.isEmpty) return;
+    final sampleGroups = plugin.getSampleDataGroups();
+    if (steps.isEmpty && sampleGroups.isEmpty) return;
     _onboardingShownPlugins.add(plugin.id);
     _saveConfig();
-    showPluginOnboarding(context, plugin: plugin, steps: steps);
+    showPluginOnboarding(
+      context,
+      plugin: plugin,
+      steps: [
+        ...steps,
+        if (sampleGroups.isNotEmpty)
+          buildSampleDataSelectionStep(sampleGroups),
+      ],
+    );
   }
 
   static toHomeScreen(BuildContext context) {

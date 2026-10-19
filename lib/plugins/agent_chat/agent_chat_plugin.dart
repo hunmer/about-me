@@ -50,6 +50,20 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
   ConversationController? _conversationController;
   ConversationController? get conversationController => _conversationController;
 
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'conversations',
+      title: 'agentChat_sampleConversationsTitle'.tr,
+      description: 'agentChat_sampleConversationsDesc'.tr,
+      apply: () async {
+        final controller = _conversationController;
+        if (controller == null) return;
+        await controller.conversationService.loadSampleData();
+      },
+    ),
+  ];
+
   ToolTemplateService? _templateService;
   ToolTemplateService? get templateService => _templateService;
 

@@ -78,6 +78,16 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
   BillController get controller => _billController;
 
   @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'accounts',
+      title: 'bill_sampleAccountsTitle'.tr,
+      description: 'bill_sampleAccountsDesc'.tr,
+      apply: () => _billController.loadSampleData(),
+    ),
+  ];
+
+  @override
   Future<void> initialize() async {
     _billController.setPlugin(this);
     await _billController.initialize();

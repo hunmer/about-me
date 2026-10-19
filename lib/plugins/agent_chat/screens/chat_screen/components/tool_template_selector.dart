@@ -47,18 +47,17 @@ class ToolTemplateSelector extends StatelessWidget {
                 Pressable(
                   onPressed: onCancel,
                   semanticLabel: '取消',
-                  builder:
-                      (context, states) => SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: Center(
-                          child: DsIcon(
-                            DsIconKind.close,
-                            size: 20,
-                            color: theme.textSub,
-                          ),
-                        ),
+                  builder: (context, states) => SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Center(
+                      child: DsIcon(
+                        DsIconKind.close,
+                        size: 20,
+                        color: theme.textSub,
                       ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -117,100 +116,96 @@ class ToolTemplateSelector extends StatelessWidget {
         final theme = DSThemeBridge.resolve(context);
         return Pressable(
           onPressed: () => onTemplateSelected(template),
-          builder:
-              (context, states) => Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+          builder: (context, states) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                // 图标
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    fillColor: theme.warning.mixWhite(0.9),
+                    radius: theme.radii.sm,
+                  ),
+                  child: DsIcon(
+                    DsIconKind.gear,
+                    size: 22,
+                    color: theme.warning,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    // 图标
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: dsSketchDecoration(
-                        theme: theme,
-                        fillColor: theme.warning.mixWhite(0.9),
-                        radius: theme.radii.sm,
-                      ),
-                      child: DsIcon(
-                        DsIconKind.gear,
-                        size: 22,
-                        color: theme.warning,
-                      ),
-                    ),
 
-                    const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-                    // 信息
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                // 信息
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        template.name,
+                        style: DsTypography.body.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.text,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
                         children: [
+                          DsIcon(
+                            DsIconKind.clipboard,
+                            size: 12,
+                            color: theme.textSub,
+                          ),
+                          const SizedBox(width: 4),
                           Text(
-                            template.name,
-                            style: DsTypography.body.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.text,
+                            '${template.steps.length} 个步骤',
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              DsIcon(
-                                DsIconKind.clipboard,
-                                size: 12,
-                                color: theme.textSub,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${template.steps.length} 个步骤',
-                                style: DsTypography.caption.copyWith(
-                                  color: theme.textSub,
-                                ),
-                              ),
-                              if (template.usageCount > 0) ...[
-                                const SizedBox(width: 12),
-                                DsIcon(
-                                  DsIconKind.star,
-                                  size: 12,
-                                  color: theme.success,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '使用 ${template.usageCount} 次',
-                                  style: DsTypography.caption.copyWith(
-                                    color: theme.success,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          if (template.description != null) ...[
-                            const SizedBox(height: 4),
+                          if (template.usageCount > 0) ...[
+                            const SizedBox(width: 12),
+                            DsIcon(
+                              DsIconKind.star,
+                              size: 12,
+                              color: theme.success,
+                            ),
+                            const SizedBox(width: 4),
                             Text(
-                              template.description!,
+                              '使用 ${template.usageCount} 次',
                               style: DsTypography.caption.copyWith(
-                                color: theme.textSub,
+                                color: theme.success,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ],
                       ),
-                    ),
-
-                    // 箭头
-                    DsIcon(
-                      DsIconKind.chevronRight,
-                      size: 14,
-                      color: theme.textSub.withValues(alpha: 0.7),
-                    ),
-                  ],
+                      if (template.description != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          template.description!,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
+
+                // 箭头
+                DsIcon(
+                  DsIconKind.chevronRight,
+                  size: 14,
+                  color: theme.textSub.withValues(alpha: 0.7),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );

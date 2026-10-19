@@ -269,5 +269,9 @@ class ChatTranslationsEn {
   'chat_randomWalkEmpty': 'No messages to walk through under current filters',
   'chat_randomWalkReshuffle': 'Reshuffle',
   'chat_randomWalkCount': '@seen of @total cards seen',
+
+  // Sample data
+  'chat_sampleChannelsTitle': 'Sample channels & messages',
+  'chat_sampleChannelsDesc': 'Create sample chat channels, messages and settings',
 };
 }

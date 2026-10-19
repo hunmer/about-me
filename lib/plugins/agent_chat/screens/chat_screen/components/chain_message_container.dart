@@ -336,18 +336,16 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
     Widget? statusWidget; // 使用Widget替代IconData，支持动画
 
     if (hasError) {
-      backgroundColor =
-          isSelected
-              ? theme.danger.mixWhite(0.88)
-              : theme.danger.mixWhite(0.88).withValues(alpha: 0.4);
+      backgroundColor = isSelected
+          ? theme.danger.mixWhite(0.88)
+          : theme.danger.mixWhite(0.88).withValues(alpha: 0.4);
       borderColor = theme.danger;
       textColor = theme.text;
       statusWidget = DsIcon(DsIconKind.close, size: 16, color: theme.danger);
     } else if (isGenerating) {
-      backgroundColor =
-          isSelected
-              ? theme.primary.mixWhite(0.88)
-              : theme.primary.mixWhite(0.88).withValues(alpha: 0.4);
+      backgroundColor = isSelected
+          ? theme.primary.mixWhite(0.88)
+          : theme.primary.mixWhite(0.88).withValues(alpha: 0.4);
       borderColor = theme.primary;
       textColor = theme.text;
       // 弹跳加载点
@@ -357,10 +355,9 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
         child: Center(child: DSLoadingDots(size: 5)),
       );
     } else {
-      backgroundColor =
-          isSelected
-              ? theme.success.mixWhite(0.88)
-              : theme.success.mixWhite(0.88).withValues(alpha: 0.4);
+      backgroundColor = isSelected
+          ? theme.success.mixWhite(0.88)
+          : theme.success.mixWhite(0.88).withValues(alpha: 0.4);
       borderColor = theme.success;
       textColor = theme.text;
       statusWidget = DsIcon(DsIconKind.check, size: 16, color: theme.success);
@@ -437,9 +434,7 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
             ),
             if (streaming.isNotEmpty) ...[
               const SizedBox(height: 12),
-              MarkdownContent(
-                content: _stripMarkdownCodeBlocks(streaming),
-              ),
+              MarkdownContent(content: _stripMarkdownCodeBlocks(streaming)),
             ],
             const SizedBox(height: 8),
             Row(
@@ -483,9 +478,7 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
 
     // 非工具消息：流式正文 / 生成中占位
     if (currentContent.isNotEmpty) {
-      return MarkdownContent(
-        content: _stripMarkdownCodeBlocks(currentContent),
-      );
+      return MarkdownContent(content: _stripMarkdownCodeBlocks(currentContent));
     }
     if (isGenerating) {
       return Row(
@@ -515,9 +508,9 @@ class _ChainMessageContainerState extends State<ChainMessageContainer> {
   String _extractMarkedReply(String content) {
     final index = content.indexOf('[AI最终回复]');
     if (index == -1) return '';
-    return ChatMessage.splitThink(content.substring(index + '[AI最终回复]'.length))
-        .$2
-        .trim();
+    return ChatMessage.splitThink(
+      content.substring(index + '[AI最终回复]'.length),
+    ).$2.trim();
   }
 
   /// 移除 Markdown 代码块的开头和结尾标记（如 ```json 或 ```）

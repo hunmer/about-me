@@ -2,6 +2,7 @@ import 'package:aboutme/screens/routing/route_definition.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';
 import 'package:aboutme/screens/home_screen/home_screen.dart';
 import 'package:aboutme/screens/onboarding/onboarding_screen.dart';
+import 'package:aboutme/screens/profile_screen/profile_screen.dart';
 import 'package:aboutme/screens/settings_screen/settings_screen.dart';
 
 /// 核心屏幕路由注册表
@@ -31,6 +32,16 @@ class CoreRoutes implements RouteRegistry {
             settings: settings,
           ),
           description: '引导页（首次启动展示）',
+        ),
+
+        // 个人主页（玩家信息）
+        RouteDefinition(
+          path: '/profile',
+          handler: (settings) => RouteHelpers.createRoute(
+            const ProfileScreen(),
+            settings: settings,
+          ),
+          description: '个人主页（玩家信息）',
         ),
 
         // 设置页面

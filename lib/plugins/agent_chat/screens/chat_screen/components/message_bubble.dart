@@ -163,10 +163,7 @@ class AgentMessageContent extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          MarkdownContent(
-            content: _extractFinalReply(),
-            textColor: textColor,
-          ),
+          MarkdownContent(content: _extractFinalReply(), textColor: textColor),
           CollapsibleProcessSection(message: message, onRerunStep: onRerun),
         ],
       );
@@ -177,7 +174,8 @@ class AgentMessageContent extends StatelessWidget {
   }
 
   /// 生成中可见的流式正文：剥内联 think 标签，截掉结构化展示过的工具结果段
-  String _visibleStreamingText() => ChatMessage.stripToolResult(message.content);
+  String _visibleStreamingText() =>
+      ChatMessage.stripToolResult(message.content);
 
   /// 已完成消息的最终回复：优先 [AI最终回复] 标记，无标记时兜底显示
   /// 剥离 think 后、工具结果段之前的全部正文

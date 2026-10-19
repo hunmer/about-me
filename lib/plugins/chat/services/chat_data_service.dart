@@ -35,21 +35,17 @@ class ChatDataService {
   // ==================== 初始化 ====================
 
   Future<void> initialize() async {
-    await _initializeDefaultData();
     await _loadChannels();
     // AI 回复线程全量加载（入口行与 drawer 依赖内存缓存）
     await AiThreadService.instance.loadAll();
   }
 
-  Future<void> _initializeDefaultData() async {
-    final channelsListData = await AboutmeDataService.instance.readPath('chat/channels.json');
-    if (channelsListData.isEmpty && kDebugMode) {
-      debugPrint('Chat插件: 首次初始化，正在加载示例数据...');
-      await _loadSampleData();
-    }
-  }
-
-  Future<void> _loadSampleData() async {
+  /// 加载示例数据（存储为空时写入，供首次打开引导选择调用）
+  Future<void> loadSampleData() async {
+    final channelsListData = await AboutmeDataService.instance.readPath(
+      'chat/channels.json',
+    );
+    if (channelsListData.isNotEmpty) return;
     try {
       final sampleData = getSampleChannelsData();
       final sampleMessages = getSampleMessagesData();

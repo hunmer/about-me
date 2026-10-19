@@ -264,5 +264,9 @@ class ChatTranslationsZh {
   'chat_randomWalkEmpty': '当前过滤条件下没有可漫步的消息',
   'chat_randomWalkReshuffle': '重新洗牌',
   'chat_randomWalkCount': '已漫步 @seen 张 / 共 @total 张',
+
+  // 示例数据
+  'chat_sampleChannelsTitle': '示例频道与消息',
+  'chat_sampleChannelsDesc': '创建几个示例聊天频道、消息和设置',
 };
 }

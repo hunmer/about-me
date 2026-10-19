@@ -214,5 +214,9 @@ class BillTranslationsZh {
   'bill_scanAddSelected': '添加选中 (@count)',
   'bill_scanSaving': '保存中…',
   'bill_scanAdded': '已添加 @count 笔账单',
+
+  // 示例数据
+  'bill_sampleAccountsTitle': '示例账户与账单',
+  'bill_sampleAccountsDesc': '创建包含账单记录的示例账户',
 };
 }

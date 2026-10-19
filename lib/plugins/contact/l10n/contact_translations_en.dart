@@ -132,4 +132,8 @@ const Map<String, String> contactTranslationsEn = {
   'contact_notFound': 'Contact not found',
   'contact_unknownContact': 'Unknown Contact',
   'contact_pluginNotFound': 'Contacts plugin not initialized',
+
+  // Sample data
+  'contact_sampleContactsTitle': 'Sample contacts & interactions',
+  'contact_sampleContactsDesc': 'Create sample contacts with interaction records',
 };

@@ -10,7 +10,7 @@ import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/home_schedule_screen.dart';
 import 'package:aboutme/screens/home_screen/home_screen.dart';
-import 'package:aboutme/screens/settings_screen/settings_screen.dart';
+import 'package:aboutme/screens/profile_screen/profile_screen.dart';
 
 import 'companion_controller.dart';
 import 'widgets/jelly_bottom_nav.dart';
@@ -31,7 +31,7 @@ import 'package:get/get.dart' hide Value;
 /// 果冻小屋主页（应用默认启动页）
 ///
 /// 底部导航在四个页签间切换内容（不切换路由）：
-/// 小屋（果冻风布局）/ 日程（日期数据视图）/ 看板（固定布局网格）/ 我的（设置）。
+/// 小屋（果冻风布局）/ 日程（日期数据视图）/ 看板（固定布局网格）/ 我的（个人主页）。
 ///
 /// 路由：/jelly_home
 class JellyHomeScreen extends StatefulWidget {
@@ -88,7 +88,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
             enabled: _tabIndex == 2,
             child: const HomeScreen(asRoot: false),
           ),
-          HeroMode(enabled: _tabIndex == 3, child: const SettingsScreen()),
+          HeroMode(enabled: _tabIndex == 3, child: const ProfileScreen()),
         ],
       ),
     );

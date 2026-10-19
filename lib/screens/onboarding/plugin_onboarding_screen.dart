@@ -5,6 +5,7 @@ import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart'
     show DSThemeBridge, dsScaffoldBackground;
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/screens/onboarding/sample_data_selection_step.dart';
 
 /// 插件首次打开引导页
 ///
@@ -60,6 +61,13 @@ class _PluginOnboardingScreenState extends State<PluginOnboardingScreen> {
     if (!mounted) return;
     Navigator.of(context).pop();
     await plugin.onOnboardingComplete(context, values);
+    // 应用用户在「示例数据选择」步骤勾选的分组（跳过引导视为未勾选）
+    final selectedIds = values[kSampleDataGroupIdsKey];
+    if (selectedIds is List) {
+      await plugin.applySampleDataGroups(
+        selectedIds.whereType<String>().toList(),
+      );
+    }
   }
 
   void _next() {

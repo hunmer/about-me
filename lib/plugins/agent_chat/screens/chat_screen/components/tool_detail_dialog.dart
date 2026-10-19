@@ -65,15 +65,14 @@ class _ToolDetailDialogState extends State<ToolDetailDialog>
               Pressable(
                 onPressed: () => Navigator.of(context).pop(),
                 semanticLabel: '关闭',
-                builder:
-                    (context, states) => Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: DsIcon(
-                        DsIconKind.close,
-                        size: 20,
-                        color: theme.textSub,
-                      ),
-                    ),
+                builder: (context, states) => Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: DsIcon(
+                    DsIconKind.close,
+                    size: 20,
+                    color: theme.textSub,
+                  ),
+                ),
               ),
             ],
           ),
@@ -180,21 +179,19 @@ class _ToolDetailDialogState extends State<ToolDetailDialog>
                 Align(
                   alignment: Alignment.topRight,
                   child: Pressable(
-                    onPressed:
-                        () => _copyToClipboard(
-                          widget.detail.toolCallData.toString(),
-                          '工具调用数据',
-                        ),
+                    onPressed: () => _copyToClipboard(
+                      widget.detail.toolCallData.toString(),
+                      '工具调用数据',
+                    ),
                     semanticLabel: '复制工具调用数据',
-                    builder:
-                        (context, states) => Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: DsIcon(
-                            DsIconKind.copy,
-                            size: 18,
-                            color: theme.textSub,
-                          ),
-                        ),
+                    builder: (context, states) => Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: DsIcon(
+                        DsIconKind.copy,
+                        size: 18,
+                        color: theme.textSub,
+                      ),
+                    ),
                   ),
                 ),
                 // 工具调用步骤
@@ -247,12 +244,8 @@ class _ToolDetailDialogState extends State<ToolDetailDialog>
                   child: Pressable(
                     onPressed: () => _copyToClipboard(content, '内容'),
                     semanticLabel: '复制内容',
-                    builder:
-                        (context, states) => DsIcon(
-                          DsIconKind.copy,
-                          size: 18,
-                          color: theme.textSub,
-                        ),
+                    builder: (context, states) =>
+                        DsIcon(DsIconKind.copy, size: 18, color: theme.textSub),
                   ),
                 ),
               ),

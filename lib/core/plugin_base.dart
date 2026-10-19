@@ -44,6 +44,33 @@ class PluginOnboardingStep {
   builder;
 }
 
+/// 插件示例数据分组
+///
+/// 插件通过 [PluginBase.getSampleDataGroups] 声明可选择的示例数据，
+/// 首次打开插件时引导页会展示分组列表（默认全选），
+/// 用户勾选后由 [apply] 创建对应数据（应写入存储并保证幂等：
+/// 已有数据时跳过或合并，不重复灌入）。
+class PluginSampleDataGroup {
+  const PluginSampleDataGroup({
+    required this.id,
+    required this.title,
+    this.description,
+    required this.apply,
+  });
+
+  /// 分组唯一标识（插件内唯一）
+  final String id;
+
+  /// 分组标题（引导页勾选项文案）
+  final String title;
+
+  /// 分组说明（可选，勾选项副文案）
+  final String? description;
+
+  /// 应用该组示例数据
+  final Future<void> Function() apply;
+}
+
 /// 插件基类，所有插件必须继承此类
 abstract class PluginBase {
   /// 插件唯一标识符
@@ -209,4 +236,33 @@ abstract class PluginBase {
     BuildContext context,
     Map<String, dynamic> values,
   ) async {}
+
+  /// 声明插件提供的示例数据分组（可选实现）
+  ///
+  /// 返回非空列表时，首次打开插件的引导页末尾会附加
+  /// 「示例数据选择」步骤（默认全选），用户勾选的分组会在引导
+  /// 完成后通过 [applySampleDataGroups] 依次应用。
+  /// 应用时机不区分开发/生产环境，由用户选择决定。
+  List<PluginSampleDataGroup> getSampleDataGroups() => const [];
+
+  /// 应用用户勾选的示例数据分组
+  ///
+  /// 由引导页在完成后调用，逐组执行 [PluginSampleDataGroup.apply]，
+  /// 最后调用 [refreshData] 让插件从存储重载数据刷新界面。
+  Future<void> applySampleDataGroups(List<String> groupIds) async {
+    if (groupIds.isEmpty) return;
+    for (final group in getSampleDataGroups()) {
+      if (!groupIds.contains(group.id)) continue;
+      try {
+        await group.apply();
+      } catch (e) {
+        debugPrint('插件($id) 应用示例数据分组 ${group.id} 失败: $e');
+      }
+    }
+    try {
+      await refreshData();
+    } catch (e) {
+      debugPrint('插件($id) 应用示例数据后刷新失败: $e');
+    }
+  }
 }
