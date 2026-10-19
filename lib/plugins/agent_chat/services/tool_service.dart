@@ -307,20 +307,6 @@ class ToolService {
     'additionalProperties': false,
   };
 
-  /// 第一阶段 JSON Schema - 工具需求
-  static const Map<String, dynamic> toolRequestSchema = {
-    'type': 'object',
-    'properties': {
-      'needed_tools': {
-        'type': 'array',
-        'description': '需要使用的工具ID列表',
-        'items': {'type': 'string'},
-      },
-    },
-    'required': ['needed_tools'],
-    'additionalProperties': false,
-  };
-
   /// 初始化工具服务（加载所有工具配置）
   static Future<void> initialize({StorageManager? storage}) async {
     if (_initialized) return;
@@ -624,22 +610,9 @@ class ToolService {
       'if (result.tasks && result.tasks.length > 0) { ... } // 正确！',
     );
     buffer.writeln('```');
-    buffer.writeln('\n你可以调用以下插件功能来获取数据或执行操作。');
-    buffer.writeln('\n### 🎯 run_js 工具用途说明\n');
-    buffer.writeln('**JavaScript 代码可用于**:');
-    buffer.writeln('- ✅ 数据查询(调用插件 API 获取数据)');
-    buffer.writeln('- ✅ 数据修改(执行签到、创建任务、更新数据等操作)');
-    buffer.writeln('- ✅ 数据处理(过滤、排序、统计、计算等)');
-    buffer.writeln('- ✅ 数据格式化(转换数据结构、格式化输出等)');
-    buffer.writeln('\n**JavaScript 代码不应用于**:');
-    buffer.writeln('- ❌ 生成建议、分析、总结等自然语言内容');
-    buffer.writeln('- ❌ 回答用户的"为什么"、"怎么样"等分析性问题');
-    buffer.writeln('- ❌ 提供指导、意见或评价');
-    buffer.writeln('\n**⚠️ 重要原则**:');
-    buffer.writeln('- 当用户提出明确的操作需求(如"帮我签到"、"创建任务")时,应生成完整的操作步骤,直接完成任务');
-    buffer.writeln('- 不要只查询信息后询问用户确认,应该根据用户意图自动完成完整流程');
-    buffer.writeln('- 一个步骤中可以包含多个操作');
-    buffer.writeln('\n**正确流程**: JavaScript 返回结构化数据 → AI 基于数据进行分析和建议');
+    buffer.writeln(
+      '\n优先使用上面列出的专用插件工具。只有没有合适工具，或确实需要用脚本组合操作时，才生成 JavaScript 步骤。',
+    );
     buffer.writeln('\n## 📝 工具调用格式\n');
     buffer.writeln('**🚨 重要：必须使用以下 Markdown 格式，不要使用 JSON 格式！**\n');
     buffer.writeln('**严格遵循**:');
@@ -848,7 +821,9 @@ const result = await Aboutme.toolCall.getResult({step: 0});
 if (result.tasks && result.tasks.length > 0) { ... } // 正确！
 ```
 
-### 🎯 run_js 工具用途说明
+### run_js（补充能力）
+
+优先使用上方的专用插件工具。只有没有合适工具或确需组合多个操作时，才使用 JavaScript。
 
 **JavaScript 代码可用于**:
 - ✅ 数据查询(调用插件 API 获取数据)
@@ -907,9 +882,9 @@ return result;
 ''';
   }
 
-  // ==================== 新增：两阶段工具调用支持 ====================
+  // ==================== 工具文档 ====================
 
-  /// 生成工具简要索引 Prompt（第一阶段）
+  /// 生成工具简要索引 Prompt
   static String _generateToolBriefPrompt() {
     final toolIndex = ToolConfigManager.instance.getToolIndex(
       enabledOnly: true,
@@ -917,11 +892,6 @@ return result;
 
     final buffer = StringBuffer();
     buffer.writeln('\n## 🛠️ 可用工具');
-    buffer.writeln('\n**严格遵循：仅返回 JSON，不要任何额外文本或解释**');
-    buffer.writeln('\n返回格式：');
-    buffer.writeln('```json');
-    buffer.writeln('{"needed_tools": ["tool_id1", "tool_id2"]}');
-    buffer.writeln('```\n');
     buffer.writeln('可用工具列表（${toolIndex.length} 个）：\n');
 
     for (final item in toolIndex) {
@@ -939,13 +909,6 @@ return result;
 
 ## 🛠️ 可用工具
 
-**严格遵循：仅返回 JSON，不要任何额外文本或解释**
-
-返回格式：
-```json
-{"needed_tools": ["tool_id1", "tool_id2"]}
-```
-
 可用工具列表：
 - **todo_getTasks**: 获取任务列表
 - **todo_getTodayTasks**: 获取今日任务
@@ -953,7 +916,7 @@ return result;
 ''';
   }
 
-  /// 获取工具简要索引 Prompt（用于第一阶段 AI 请求）
+  /// 获取工具简要索引 Prompt
   static String getToolBriefPrompt() {
     if (!_initialized) {
       print('[ToolService] 警告：工具服务未初始化，使用后备简要 Prompt');
@@ -962,8 +925,11 @@ return result;
     return _cachedToolBriefPrompt ?? _getFallbackBriefPrompt();
   }
 
-  /// 获取工具详细文档 Prompt（第二阶段）
-  static Future<String> getToolDetailPrompt(List<String> toolIds) async {
+  /// 获取工具详细文档；模板修改只需要文档，不附加调用输出格式。
+  static Future<String> getToolDetailPrompt(
+    List<String> toolIds, {
+    bool includeCallFormat = true,
+  }) async {
     if (toolIds.isEmpty) {
       return '';
     }
@@ -1177,24 +1143,12 @@ return result;
       buffer.writeln('---\n');
     });
 
+    if (!includeCallFormat) return buffer.toString();
+
     // 添加工具调用格式说明
-    buffer.writeln('\n### 🎯 run_js 工具用途说明\n');
-    buffer.writeln('**JavaScript 代码可用于**:');
-    buffer.writeln('- ✅ 数据查询(调用插件 API 获取数据)');
-    buffer.writeln('- ✅ 数据修改(执行签到、创建任务、更新数据等操作)');
-    buffer.writeln('- ✅ 数据处理(过滤、排序、统计、计算等)');
-    buffer.writeln('- ✅ 数据格式化(转换数据结构、格式化输出等)');
-    buffer.writeln('\n**JavaScript 代码不应用于**:');
-    buffer.writeln('- ❌ 生成建议、分析、总结等自然语言内容');
-    buffer.writeln('- ❌ 回答用户的"为什么"、"怎么样"等分析性问题');
-    buffer.writeln('- ❌ 提供指导、意见或评价');
-    buffer.writeln('\n**⚠️ 重要原则**:');
-    buffer.writeln('- 当用户提出明确的操作需求时,应生成完整的操作步骤,直接完成任务');
-    buffer.writeln('- 不要只查询信息后询问用户确认,应该根据用户意图自动完成完整流程');
-    buffer.writeln('- 一个步骤中可以包含查询+操作的完整逻辑(如:查找项目ID → 执行签到)');
-    buffer.writeln('\n**正确流程**:');
-    buffer.writeln('1. JavaScript 返回结构化数据(如数组、对象)');
-    buffer.writeln('2. AI 基于这些数据进行自然语言分析和建议\n');
+    buffer.writeln(
+      '\n优先使用上面列出的专用插件工具。仅当没有合适工具，或确需组合多个操作时，才生成 JavaScript 步骤。\n',
+    );
     buffer.writeln('## 📝 生成工具调用\n');
     buffer.writeln('**🚨 重要：必须使用以下 Markdown 格式，不要使用 JSON 格式！**\n');
     buffer.writeln('**严格遵循**:');
@@ -1232,27 +1186,6 @@ return result;
     buffer.writeln('```\n');
 
     return buffer.toString();
-  }
-
-  /// 解析 AI 返回的工具需求
-  static List<String>? parseToolRequest(String response) {
-    try {
-      // 使用通用JSON解析方法
-      final json = parseJsonFromResponse(
-        response,
-        requiredField: 'needed_tools',
-      );
-
-      if (json == null || !json.containsKey('needed_tools')) {
-        return null;
-      }
-
-      final tools = json['needed_tools'] as List<dynamic>;
-      return tools.map((e) => e.toString()).toList();
-    } catch (e) {
-      print('[ToolService] 解析工具需求失败: $e');
-      return null;
-    }
   }
 
   // ==================== 工具模版匹配支持（第零阶段）====================

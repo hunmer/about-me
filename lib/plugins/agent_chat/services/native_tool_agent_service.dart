@@ -482,19 +482,11 @@ class NativeToolAgentService {
     onRunJs,
     bool useJsTools = false,
   }) {
-    final apiDocs = pluginTools
-        .map(
-          (tool) =>
-              '${tool.name}: ${tool.description}\n参数定义：${tool.inputSchema.toJson()}',
-        )
-        .join('\n\n');
     final jsTool = Tool<Map<String, dynamic>>(
       name: 'run_js',
       description:
-          '${useJsTools ? '' : '优先使用插件工具；仅在需要脚本组合或插件工具无法满足时使用。'}'
-          '文件操作必须直接调用 list_files、read_file 或 write_file，不要用 JavaScript 拼接文件操作。'
-          '执行 JavaScript，可用 await Aboutme.plugins.<插件>.<方法>(参数对象) 调用 API。'
-          '用 setResult(value); return value; 返回结果。\n$apiDocs',
+          '${useJsTools ? '' : '请优先使用专用插件工具；仅在没有合适工具或需要组合多个操作时使用。'}'
+          '执行 JavaScript 代码。',
       inputSchema: Schema.fromMap(
         ToolSchemaBuilder.buildSchemaMap([
           ToolParameter(

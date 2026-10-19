@@ -40,11 +40,17 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   MessageService? _messageService;
   final ScrollController _scrollController = ScrollController();
 
-  /// 待机 curious / 处理中 thinking / 完成 happy 片刻，点击跳一下；
-  /// 空会话作首页大角色，消息流中作最新 AI 消息的动态头像
-  final GrokCharacter _character = GrokCharacter(
+  /// 首页大角色与消息流头像各用独立实例：共享实例在 36px/176px 间切换时，
+  /// 位置弹簧会按新宽度放大旧偏移（清空消息出现闪现/侧滑回归）。
+  /// 两实例同步同一套表情状态：处理中 thinking / 完成 happy 片刻 /
+  /// 待机（首页 curious 张望、头像 idle 眨眼），点击跳一下
+  final GrokCharacter _heroCharacter = GrokCharacter(
     mode: 'hold',
     state: 'curious',
+  );
+  final GrokCharacter _avatarCharacter = GrokCharacter(
+    mode: 'hold',
+    state: 'idle',
   );
   bool _wasSending = false;
   Timer? _settleTimer;
@@ -118,21 +124,24 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   }
 
   /// 处理状态映射角色表情：处理中 thinking，完成先 happy 片刻，
-  /// 再回到待机（空会话 curious 张望 / 消息流 idle 平静眨眼）
+  /// 再回到各自待机态（首页 curious 张望 / 头像 idle 平静眨眼）
   void _syncCharacterState(bool sending) {
     _settleTimer?.cancel();
     _settleTimer = null;
     if (sending == _wasSending) return;
     _wasSending = sending;
     if (sending) {
-      _character.setStateName('thinking');
+      _heroCharacter.setStateName('thinking');
+      // 头像不用 thinking（三点眼）——与占位气泡的墨点加载动画重复
+      _avatarCharacter.setStateName('searching');
       return;
     }
-    _character.setStateName('happy');
+    _heroCharacter.setStateName('happy');
+    _avatarCharacter.setStateName('happy');
     _settleTimer = Timer(const Duration(seconds: 2), () {
       if (!mounted || _wasSending) return;
-      final empty = _controller?.messages.isEmpty ?? true;
-      _character.setStateName(empty ? 'curious' : 'idle');
+      _heroCharacter.setStateName('curious');
+      _avatarCharacter.setStateName('idle');
     });
   }
 
@@ -166,7 +175,8 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     _messageService?.removeListener(_onControllerChanged);
     _controller?.dispose();
     _scrollController.dispose();
-    _character.dispose();
+    _heroCharacter.dispose();
+    _avatarCharacter.dispose();
     super.dispose();
   }
 
@@ -178,8 +188,9 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     final bottomInset = math.max(mq.padding.bottom, mq.viewInsets.bottom);
     // setColor 不触发重建，角色每帧自绘，可在 build 中安全同步墨色
     final scheme = theme.isDark ? 'dark' : 'light';
-    if (_character.scheme != scheme) {
-      _character.setColor('black', scheme);
+    if (_heroCharacter.scheme != scheme) {
+      _heroCharacter.setColor('black', scheme);
+      _avatarCharacter.setColor('black', scheme);
     }
     _controllerFuture ??= _initialize();
 
@@ -351,7 +362,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
 
   Widget _buildHero(AppThemeData theme, ChatController controller) {
     // 同头像：预置渲染宽度，避免挂载首帧几何错位
-    _character.updateRenderWidth(176);
+    _heroCharacter.updateRenderWidth(176);
     return WiredDraw(
       // 视口最小高度撑满可用区：内容整体垂直居中，空间不足时仍可滚动
       child: LayoutBuilder(
@@ -370,9 +381,9 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                   children: [
                     Center(
                       child: GestureDetector(
-                        onTap: _character.bounceOnce,
+                        onTap: _heroCharacter.bounceOnce,
                         child: GrokCharacterView(
-                          character: _character,
+                          character: _heroCharacter,
                           sizePx: 176,
                           pointerFollow: true,
                         ),
@@ -520,7 +531,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
       itemBuilder: (context, index) {
         final isLast = index == messages.length + (showPlaceholder ? 1 : 0) - 1;
         if (showPlaceholder && index == messages.length) {
-          return _buildPlaceholderRow(theme, isLast: isLast);
+          return _buildPlaceholderRow(theme, controller, isLast: isLast);
         }
         final message = messages[index];
         if (message.isSessionDivider) {
@@ -558,8 +569,14 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     );
   }
 
-  /// AI 处理中的占位气泡：动态 grok 头像（thinking）+ 手绘面板墨点加载动画
-  Widget _buildPlaceholderRow(AppThemeData theme, {required bool isLast}) {
+  /// AI 处理中的占位气泡：动态 grok 头像（thinking）+ 当前执行步骤的 muted 小文本
+  Widget _buildPlaceholderRow(
+    AppThemeData theme,
+    ChatController controller, {
+    required bool isLast,
+  }) {
+    final stepText =
+        controller.typingStatusText ?? 'screens_assistantTyping'.tr;
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
       child: Row(
@@ -577,10 +594,26 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                   hachure: false,
                   radius: BorderRadius.circular(18),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 14,
+                    horizontal: 14,
+                    vertical: 12,
                   ),
-                  child: DSLoadingDots(size: 8, color: theme.textSub),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DSLoadingDots(size: 6, color: theme.textSub),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          stepText,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -609,13 +642,13 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     if (live) {
       // 视图在 postFrame 才同步渲染宽度；新 AI 消息到达时头像重挂载，
       // 预置宽度避免首帧按旧宽度绘制导致「慢半拍」出场
-      _character.updateRenderWidth(36);
+      _avatarCharacter.updateRenderWidth(36);
       return GestureDetector(
-        onTap: _character.bounceOnce,
+        onTap: _avatarCharacter.bounceOnce,
         child: SizedBox(
           width: 36,
           height: 36,
-          child: GrokCharacterView(character: _character, sizePx: 36),
+          child: GrokCharacterView(character: _avatarCharacter, sizePx: 36),
         ),
       );
     }
