@@ -272,6 +272,13 @@ class ChatTranslationsEn {
   'chat_randomWalkReshuffle': 'Reshuffle',
   'chat_randomWalkCount': '@seen of @total cards seen',
 
+  // AI reply thread drawer
+  'chat_threadTitle': 'AI Replies',
+  'chat_threadTyping': 'Typing…',
+  'chat_threadThinking': 'Thinking…',
+  'chat_threadInputHint': 'Send a message…',
+  'chat_threadSendFailed': 'Failed to send: @error',
+
   // Sample data
   'chat_sampleChannelsTitle': 'Sample channels & messages',
   'chat_sampleChannelsDesc': 'Create sample chat channels, messages and settings',

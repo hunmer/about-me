@@ -288,6 +288,9 @@ class RouteHistoryManager extends NavigatorObserver {
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
+    debugPrint(
+      'RouteHistoryManager: didPush name=${route.settings.name} '
+      'type=${route.runtimeType}');
     _claimPendingPluginRoute(route);
     _trackPluginRoute(route, 1);
     _recordRoute(route);
@@ -368,6 +371,12 @@ class RouteHistoryManager extends NavigatorObserver {
           _routePluginOwners.remove(name);
         }
       }
+    } else if (delta > 0) {
+      // 无关页面（设置页、无名对话框等）入栈后栈顶不再是插件页面：
+      // 清掉栈顶插件标记，pop 回插件主界面时由下方 revealedRoute 逻辑
+      // 恢复。否则压在插件上的页面会被 openPlugin 误判为该插件的
+      // 子页面而拒绝跳转
+      _stackTopPluginId = null;
     }
     if (revealedRoute != null) {
       final revealedId = _pluginIdOfRoute(revealedRoute);

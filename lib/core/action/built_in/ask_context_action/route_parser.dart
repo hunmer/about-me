@@ -113,6 +113,75 @@ class RouteParser {
     '/nfc': '用户正在使用NFC功能',
   };
 
+  /// 路由开场白映射表
+  ///
+  /// 键：路由名称（与 [_routeTemplates] 对齐）
+  /// 值：该路由下打开聊天时的快捷开场白按钮列表
+  static const Map<String, List<String>> _routeOpeningPrompts = {
+    // 核心路由
+    '/': ['总结一下我今天的整体情况', '今天有什么重要的事？'],
+
+    // 日记插件
+    '/diary': ['帮我写今天的日记', '分析我最近的日记心情'],
+    '/diary_detail': ['总结这篇日记的要点', '帮我润色这篇日记'],
+    '/diary_edit': ['帮我润色这篇日记', '给我的日记起个标题'],
+
+    // 待办插件
+    '/todo': ['总结我今天的待办情况', '帮我规划今天的任务'],
+    '/todo_list': ['总结待办列表的完成情况', '帮我安排任务优先级'],
+    '/todo_history': ['分析我已完成的任务', '总结我的任务完成效率'],
+    '/todo_detail': ['帮我拆解这个任务', '分析这个任务的完成情况'],
+    '/todo_form_new': ['帮我想想这个任务怎么拆解', '给这个任务设置个合理的截止时间'],
+
+    // 账单插件
+    '/bill': ['分析我最近的消费情况', '帮我记录一笔账单'],
+    '/bill_list': ['分析这个月的账单明细', '找出可以节省的开销'],
+    '/bill_stats': ['总结这个月的消费结构', '对比最近几个月的消费趋势'],
+    '/bill_subscriptions': ['分析我的订阅支出', '哪些订阅可以取消？'],
+
+    // 日历插件
+    '/calendar': ['我今天有什么日程？', '帮我创建一个日程'],
+    '/calendar_main': ['总结我近期的日程安排', '帮我规划本周的时间'],
+    '/calendar_event_list': ['总结我所有的日程事件', '帮我找出空闲时间段'],
+    '/calendar_event_detail': ['提醒我活动前的准备事项', '帮我分析这个日程安排是否合理'],
+
+    // 活动插件
+    '/activity': ['分析我今天的活动情况', '帮我记录新活动'],
+    '/activity_timeline': ['分析这天的活动时间轴', '总结这天的活动分布'],
+
+    // 其他插件
+    '/tracker': ['分析我的目标进度', '帮我调整目标计划'],
+    '/habits': ['分析我的习惯完成情况', '帮我制定习惯计划'],
+    '/habits_list': ['总结习惯的坚持情况', '哪些习惯需要重点关注？'],
+    '/skills_list': ['总结我的技能练习情况', '帮我制定练习计划'],
+    '/skill_detail': ['分析这个技能的练习记录', '帮我规划下一步练习'],
+    '/notes': ['帮我整理笔记', '总结我最近的笔记'],
+    '/notes_list': ['总结这个文件夹的笔记', '帮我归类整理这些笔记'],
+    '/note_edit': ['帮我润色这篇笔记', '给这篇笔记提炼要点'],
+    '/checkin': ['分析我的打卡情况', '总结最近打卡的规律'],
+    '/checkin_list': ['分析这个分组的打卡情况', '哪些项目容易忘记打卡？'],
+    '/checkin_stats': ['分析打卡统计数据', '总结我的打卡趋势'],
+    '/checkin_record': ['分析这个项目的打卡记录', '给我一些坚持打卡的建议'],
+    '/contact': ['帮我整理联系人', '总结我的联系人构成'],
+    '/goods': ['帮我盘点物品', '分析物品的使用频率'],
+    '/goods/warehouses': ['总结各仓库的物品情况', '哪些物品需要补货？'],
+    '/goods/items_all': ['分析物品的使用记录', '帮我清理闲置物品'],
+    '/chat': ['总结最近的聊天记录', '帮我回顾重要对话'],
+    '/chat/timeline': ['总结最近聊了什么', '帮我回顾聊天时间线'],
+    '/chat/channel': ['总结这个频道的聊天内容', '帮我回顾重要消息'],
+    '/calendar_album': ['总结最近的日记相册', '帮我回顾这个月的记录'],
+    '/calendar_album_calendar': ['分析这天的日记内容', '帮我回顾这天的记录'],
+    '/calendar_album_album': ['帮我回顾相册里的照片', '总结照片记录的生活'],
+    '/database': ['帮我分析数据库数据', '总结数据的整体情况'],
+    '/day': ['总结最近的日计划完成情况', '帮我规划明天'],
+    '/day_list': ['整理一下我的纪念日', '最近有什么纪念日要到了？'],
+    '/day_detail': ['帮我回顾这个纪念日的意义', '为这个纪念日想句祝福'],
+    '/nodes': ['总结我的知识库内容', '帮我梳理知识结构'],
+    '/timer': ['分析我的计时使用情况', '帮我总结时间开销'],
+    '/timer_main': ['总结这组计时器的使用情况', '分析我的时间分配'],
+    '/timer_details': ['分析这个任务的计时情况', '总结这个任务的时间开销'],
+  };
+
   /// 解析当前路由
   ///
   /// 从BuildContext中提取路由信息并转换为RouteContext对象
@@ -209,5 +278,24 @@ class RouteParser {
   /// 检查路由是否已注册
   static bool isRouteRegistered(String routeName) {
     return _routeTemplates.containsKey(routeName);
+  }
+
+  /// 获取路由对应的开场白列表
+  ///
+  /// 兼容 `/plugin/{id}` 形式的路由（如 `/plugin/activity` 会尝试匹配 `/activity`）。
+  /// 未匹配时返回空列表。
+  static List<String> getOpeningPrompts(String routeName) {
+    final prompts = _routeOpeningPrompts[routeName];
+    if (prompts != null) {
+      return prompts;
+    }
+
+    // /plugin/{pluginId} 形式的路由，去掉前缀后再匹配
+    if (routeName.startsWith('/plugin/')) {
+      final subRoute = '/${routeName.substring('/plugin/'.length)}';
+      return _routeOpeningPrompts[subRoute] ?? const [];
+    }
+
+    return const [];
   }
 }

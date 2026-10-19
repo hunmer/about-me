@@ -2,8 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:aboutme/core/utils/network.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -62,10 +65,59 @@ class Live2DOnlineCatalog {
   static const int maxPreloadedMotions = 24;
   static final Map<String, Future<Live2DModelDefinition>> _cacheTasks = {};
 
+  static Future<http.Response> _get(Uri uri) async {
+    // Re-detect the proxy on retries and retain normal TLS verification.
+    final proxy = await detectSystemProxyUrl();
+    final transport = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 10);
+    if (proxy != null) transport.findProxy = (_) => 'PROXY $proxy';
+    final client = IOClient(transport);
+    try {
+      final candidates = <Uri>[
+        uri,
+        // The model repository is also available over GitHub's HTTPS origin.
+        if (uri.host == 'cdn.jsdelivr.net' &&
+            uri.path.startsWith('/gh/Eikanya/Live2d-model@master/'))
+          uri.replace(
+            host: 'raw.githubusercontent.com',
+            pathSegments: [
+              'Eikanya',
+              'Live2d-model',
+              'master',
+              ...uri.pathSegments.skip(3),
+            ],
+          ),
+      ];
+      for (var index = 0; index < candidates.length; index++) {
+        final candidate = candidates[index];
+        debugPrint('[Live2DOnline] GET $candidate proxy=${proxy ?? 'DIRECT'}');
+        try {
+          final response = await client
+              .get(candidate)
+              .timeout(const Duration(seconds: 10));
+          debugPrint(
+            '[Live2DOnline] HTTP ${response.statusCode} $candidate '
+            'bytes=${response.bodyBytes.length}',
+          );
+          if (response.statusCode >= 500 && index < candidates.length - 1) {
+            continue;
+          }
+          return response;
+        } catch (error) {
+          debugPrint('[Live2DOnline] ${error.runtimeType} $candidate: $error');
+          if (index == candidates.length - 1) rethrow;
+        }
+      }
+      throw StateError('No Live2D download source available');
+    } finally {
+      client.close();
+    }
+  }
+
   static Future<List<Live2DOnlineModelItem>> fetchModels() async {
-    final response = await http
-        .get(Uri.parse(live2DOnlineCatalogUrl))
-        .timeout(const Duration(seconds: 25));
+    final response = await _get(
+      Uri.parse(live2DOnlineCatalogUrl),
+    ).timeout(const Duration(seconds: 25));
     if (response.statusCode != 200) {
       throw Exception(
         'screens_jellyLive2dRepoHttpError'.trParams({
@@ -144,9 +196,7 @@ class Live2DOnlineCatalog {
     Live2DOnlineModelItem item,
   ) async {
     final modelUri = Uri.parse(item.url);
-    final response = await http
-        .get(modelUri)
-        .timeout(const Duration(seconds: 25));
+    final response = await _get(modelUri).timeout(const Duration(seconds: 25));
     if (response.statusCode != 200) {
       throw Exception(
         'screens_jellyLive2dConfigHttpError'.trParams({
@@ -179,7 +229,15 @@ class Live2DOnlineCatalog {
     }
     return _cacheTasks.putIfAbsent(
       '${model.modelDir}${model.modelFile}',
-      () => _cacheDefinition(model),
+      () async {
+        try {
+          return await _cacheDefinition(model);
+        } catch (_) {
+          // A failed download must not poison subsequent attempts.
+          _cacheTasks.remove('${model.modelDir}${model.modelFile}');
+          rethrow;
+        }
+      },
     );
   }
 
@@ -194,9 +252,9 @@ class Live2DOnlineCatalog {
     final localModelFile = File(p.join(cacheDir.path, model.modelFile));
     if (!await completeFile.exists()) {
       await cacheDir.create(recursive: true);
-      final response = await http
-          .get(sourceUri)
-          .timeout(const Duration(seconds: 30));
+      final response = await _get(
+        sourceUri,
+      ).timeout(const Duration(seconds: 30));
       if (response.statusCode != 200) {
         throw Exception('在线 Live2D 模型下载失败: HTTP ${response.statusCode}');
       }
@@ -212,7 +270,7 @@ class Live2DOnlineCatalog {
         final target = File(p.join(cacheDir.path, normalized));
         await target.parent.create(recursive: true);
         final uri = sourceUri.resolve(relativePath);
-        final asset = await http.get(uri).timeout(const Duration(seconds: 30));
+        final asset = await _get(uri).timeout(const Duration(seconds: 30));
         if (asset.statusCode != 200) {
           throw Exception('在线 Live2D 资源下载失败: ${uri.toString()}');
         }

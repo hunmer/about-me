@@ -51,6 +51,9 @@ class MessageBubble extends StatefulWidget {
   /// 时间戳行尾部插槽（如 agent 场景的"显示思考过程"入口）
   final Widget? infoBarTrailing;
 
+  /// 时间戳行前部插槽（MessageTimestamp 左侧，如 AI 评论入口）
+  final Widget? infoBarLeading;
+
   /// 自定义悬浮操作栏内容（传入时替换默认 MessageActions 按钮行）
   final Widget? actionsOverride;
 
@@ -78,6 +81,7 @@ class MessageBubble extends StatefulWidget {
     this.onToggleFavorite,
     this.contentBuilder,
     this.infoBarTrailing,
+    this.infoBarLeading,
     this.actionsOverride,
     this.showActionsOnOwnMessage = false,
   });
@@ -390,6 +394,11 @@ class _MessageBubbleState extends State<MessageBubble>
                               onTap: widget.onToggleFavorite!,
                             ),
                           const SizedBox(width: 5),
+                          // 时间戳左侧插槽（AI 评论入口等）
+                          if (widget.infoBarLeading != null) ...[
+                            widget.infoBarLeading!,
+                            const SizedBox(width: 5),
+                          ],
                           MessageTimestamp(
                             date:
                                 _currentMessage.updatedAt ??

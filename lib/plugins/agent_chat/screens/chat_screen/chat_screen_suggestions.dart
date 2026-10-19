@@ -4,6 +4,14 @@ part of 'chat_screen.dart';
 extension _ChatScreenSuggestionsExt on _ChatScreenState {
   /// 加载建议问题
   Future<void> _loadSuggestedQuestions() async {
+    // 路由上下文等外部传入的开场白优先展示
+    if (widget.initialPrompts != null && widget.initialPrompts!.isNotEmpty) {
+      setState(() {
+        _suggestedQuestions = List.from(widget.initialPrompts!);
+      });
+      return;
+    }
+
     // 检查 agent 是否开启了猜你想问功能
     if (_currentAgent == null || !_currentAgent!.enableOpeningQuestions) {
       setState(() {

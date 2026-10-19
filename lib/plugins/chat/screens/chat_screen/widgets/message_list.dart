@@ -279,11 +279,13 @@ class _MessageListState extends State<MessageList> {
                           item.id == widget.highlightedMessage?.id,
                       onToggleFavorite: () => widget.onToggleFavorite(item),
                       onReplyTap: widget.onReplyTap,
+                      // AI 评论入口（时间戳左侧：正在评论 / 图标+条数）
+                      infoBarLeading: widget.isMultiSelectMode
+                          ? null
+                          : AiThreadEntry(message: item),
                     ),
                   ),
                 ),
-                // AI 回复线程入口（@AI 消息下方：有 xx 条回复 / 正在输入…）
-                if (!widget.isMultiSelectMode) AiThreadEntry(message: item),
               ],
             ),
           );

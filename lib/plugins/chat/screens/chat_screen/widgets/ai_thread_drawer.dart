@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart' hide Value;
+import 'package:skribble/skribble.dart' show WiredDraw, WiredDrawTransition;
 
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
 import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
@@ -10,9 +14,13 @@ import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/aliveness/channels/chat_aliveness_channel.dart';
 import 'package:aboutme/plugins/openai/handlers/chat_event_handler.dart'
     show submitAutoReplyThreadMessage;
+import 'package:aboutme/widgets/message_input/message_input.dart';
 
 /// AI 回复线程的底部 drawer 简易聊天界面：
 /// 气泡消息（根消息 + 线程内多轮）+ 输入框续聊（走同一套活人感编排）。
+///
+/// 手绘纸墨风（design.md §9）：面板走 DsSketchPanel（纸底 + 排线 +
+/// 墨线框），气泡走 dsSketchDecoration 实底墨线描边。
 class AiThreadDrawer extends StatefulWidget {
   final Message rootMessage;
 
@@ -107,7 +115,7 @@ class _AiThreadDrawerState extends State<AiThreadDrawer> {
         }
       }
     } catch (e) {
-      Toast.error('发送失败: $e');
+      Toast.error('chat_threadSendFailed'.trParams({'error': '$e'}));
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -116,155 +124,124 @@ class _AiThreadDrawerState extends State<AiThreadDrawer> {
   @override
   Widget build(BuildContext context) {
     final thread = AiThreadService.instance.getThread(widget.rootMessage.id);
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final mq = MediaQuery.of(context);
 
     final title = _resolveTitle(thread);
 
     return Padding(
       padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
-      child: Container(
-        // 键盘弹出时压缩高度，保证输入行可见
-        height: (mq.size.height * 0.78 - mq.viewInsets.bottom).clamp(
-          300.0,
-          mq.size.height * 0.85,
-        ),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              // 拖拽条 + 标题
-              Column(
+      child: DSThemeBridge(
+        // 打开 drawer 时墨线描画入场（design.md §10）
+        child: WiredDraw(
+          child: DsSketchPanel(
+            theme: theme,
+            // 键盘弹出时压缩高度，保证输入行可见
+            height: (mq.size.height * 0.78 - mq.viewInsets.bottom).clamp(
+              300.0,
+              mq.size.height * 0.85,
+            ),
+            radius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: SafeArea(
+              top: false,
+              child: Column(
                 children: [
-                  const SizedBox(height: 8),
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: theme.textTheme.titleMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                  // 拖拽条 + 标题
+                  Column(
+                    children: [
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: theme.ink.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        if (thread?.isThinking == true)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              '正在输入…',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.primary,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: DsTypography.title.copyWith(
+                                  color: theme.text,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ),
-                        IconButton(
-                          icon: const Icon(Icons.close, size: 20),
-                          onPressed: () => Navigator.of(context).pop(),
+                            if (thread?.isThinking == true)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Text(
+                                  'chat_threadTyping'.tr,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.primary,
+                                  ),
+                                ),
+                              ),
+                            DSIconButton(
+                              icon: DsIconKind.close,
+                              size: 36,
+                              color: theme.surface,
+                              iconColor: theme.text,
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+                  _SketchDivider(color: theme.ink.withValues(alpha: 0.35)),
+                  // 消息列表（聊天流不套便签化，design.md §11.4）
+                  Expanded(
+                    child:
+                        thread == null
+                            ? const SizedBox.shrink()
+                            : ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              itemCount: thread.messages.length + 1,
+                              itemBuilder: (context, index) {
+                                if (index == 0) {
+                                  return _buildBubble(
+                                    content: widget.rootMessage.content,
+                                    isUser: true,
+                                    seedId: widget.rootMessage.id,
+                                  );
+                                }
+                                final msg = thread.messages[index - 1];
+                                return _buildBubble(
+                                  content: msg.content,
+                                  isUser: msg.role == 'user',
+                                  agentName: msg.agentName,
+                                  status: msg.status,
+                                  type: msg.type,
+                                  audioPath: msg.audioPath,
+                                  audioDurationSec: msg.audioDurationSec,
+                                  seedId: msg.id,
+                                );
+                              },
+                            ),
+                  ),
+                  // 输入行（复用通用 MessageInput：手绘面板 + 底部安全区）
+                  MessageInput(
+                    controller: _inputController,
+                    hintText: 'chat_threadInputHint'.tr,
+                    onSend: _sending ? null : _send,
+                    useSketchPanel: true,
                   ),
                 ],
               ),
-              Divider(height: 1, color: theme.colorScheme.outlineVariant),
-              // 消息列表
-              Expanded(
-                child:
-                    thread == null
-                        ? const SizedBox.shrink()
-                        : ListView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            itemCount: thread.messages.length + 1,
-                            itemBuilder: (context, index) {
-                              if (index == 0) {
-                                return _buildBubble(
-                                  content: widget.rootMessage.content,
-                                  isUser: true,
-                                );
-                              }
-                              final msg = thread.messages[index - 1];
-                              return _buildBubble(
-                                content: msg.content,
-                                isUser: msg.role == 'user',
-                                agentName: msg.agentName,
-                                status: msg.status,
-                                type: msg.type,
-                                audioPath: msg.audioPath,
-                                audioDurationSec: msg.audioDurationSec,
-                              );
-                            },
-                          ),
-              ),
-              // 输入行
-              Divider(height: 1, color: theme.colorScheme.outlineVariant),
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 12,
-                  right: 4,
-                  top: 6,
-                  bottom: 6,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _inputController,
-                        minLines: 1,
-                        maxLines: 4,
-                        textInputAction: TextInputAction.newline,
-                        decoration: InputDecoration(
-                          hintText: '发送消息…',
-                          isDense: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor:
-                              theme.colorScheme.surfaceContainerHighest,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 9,
-                          ),
-                        ),
-                        onSubmitted: (_) => _send(),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.send,
-                        color:
-                            _sending
-                                ? theme.colorScheme.outlineVariant
-                                : theme.colorScheme.primary,
-                      ),
-                      onPressed: _sending ? null : _send,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -279,64 +256,58 @@ class _AiThreadDrawerState extends State<AiThreadDrawer> {
             .toSet()
             .toList() ??
         <String>[];
-    if (names.isEmpty) return 'AI 回复';
-    return names.length == 1 ? names.first : 'AI 回复';
+    if (names.isEmpty) return 'chat_threadTitle'.tr;
+    return names.length == 1 ? names.first : 'chat_threadTitle'.tr;
   }
 
   Widget _buildBubble({
     required String content,
     required bool isUser,
+    required String seedId,
     String? agentName,
     String? status,
     String type = 'text',
     String? audioPath,
     int? audioDurationSec,
   }) {
-    final theme = Theme.of(context);
+    final theme = DSThemeBridge.resolve(context);
     final isThinking = status == 'thinking';
     final isError = status == 'error';
+
+    // 自己的消息实底主色，AI 消息次级纸面，出错淡红底（design.md §9.1）
+    final bgColor =
+        isUser
+            ? theme.primary
+            : isError
+            ? theme.danger.mixWhite(0.82)
+            : theme.surfaceAlt;
+    final fgColor = isUser ? theme.onPrimary : isError ? theme.danger : theme.text;
 
     final bubble = Container(
       constraints: const BoxConstraints(maxWidth: 300),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color:
-            isUser
-                ? theme.colorScheme.primary
-                : isError
-                ? theme.colorScheme.errorContainer
-                : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(14),
-          topRight: const Radius.circular(14),
-          bottomLeft: Radius.circular(isUser ? 14 : 4),
-          bottomRight: Radius.circular(isUser ? 4 : 14),
-        ),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: bgColor,
+        radius: BorderRadius.circular(16),
+        seed: seedId.hashCode & 0x7fffffff,
+        progress: WiredDrawTransition.progressOf(context),
       ),
       child:
           type == 'audio' && audioPath != null
           ? AudioPlayerWidget(
               audioPath: audioPath,
               durationInSeconds: audioDurationSec ?? 0,
-              primaryColor: theme.colorScheme.primary,
+              primaryColor: theme.primary,
             )
           : isThinking
           ? Text(
-              '正在想…',
-              style: TextStyle(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontSize: 14,
-              ),
+              'chat_threadThinking'.tr,
+              style: DsTypography.body.copyWith(color: theme.textSub),
             )
           : Text(
               content,
-              style: TextStyle(
-                fontSize: 14,
-                color:
-                    isUser
-                        ? theme.colorScheme.onPrimary
-                        : theme.colorScheme.onSurface,
-              ),
+              style: DsTypography.body.copyWith(color: fgColor),
             ),
     );
 
@@ -351,12 +322,38 @@ class _AiThreadDrawerState extends State<AiThreadDrawer> {
               padding: const EdgeInsets.only(left: 4, bottom: 2),
               child: Text(
                 agentName,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
             ),
           bubble,
+        ],
+      ),
+    );
+  }
+}
+
+/// 手绘虚线分隔线：断续墨线段替代 Material Divider（design.md §9.3）
+class _SketchDivider extends StatelessWidget {
+  const _SketchDivider({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          for (final w in const [22.0, 14.0, 30.0, 18.0, 24.0, 12.0])
+            Container(
+              width: w,
+              height: 2,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
         ],
       ),
     );

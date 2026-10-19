@@ -6,8 +6,8 @@ import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/ai_thread_drawe
 import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
-/// 用户消息下方的 AI 回复入口：
-/// 生成中显示「[agent] 正在评论…」，完成后显示「[agent] 的评论」，
+/// 用户消息时间戳行内的 AI 评论入口（MessageTimestamp 左侧）：
+/// 生成中显示「[agent] 正在评论…」，完成后仅显示图标 + 回复条数，
 /// 点击弹出底部 drawer 查看与续聊。
 class AiThreadEntry extends StatefulWidget {
   final Message message;
@@ -61,57 +61,42 @@ class _AiThreadEntryState extends State<AiThreadEntry> {
             .whereType<String>()
             .firstOrNull ??
         'AI';
-
-    // 跟随消息气泡的对齐方向：用户消息（右）→ 入口落右下角，其余落左下角
-    final isSent = widget.message.type == MessageType.sent;
-    final theme = Theme.of(context);
-    return Padding(
-      padding: isSent
-          ? const EdgeInsets.only(right: 8, top: 2, bottom: 6)
-          : const EdgeInsets.only(left: 44, top: 2, bottom: 6),
-      child: Align(
-        alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: replyCount > 0 ? () => _openDrawer(context, thread) : null,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withAlpha(20),
-              borderRadius: BorderRadius.circular(14),
+    final primary = Theme.of(context).colorScheme.primary;
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: replyCount > 0 ? () => _openDrawer(context, thread) : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isThinking ? Icons.more_horiz : Icons.chat_bubble_outline,
+              size: 13,
+              color: primary,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isThinking ? Icons.more_horiz : Icons.chat_bubble_outline,
-                  size: 13,
-                  color: theme.colorScheme.primary,
+            const SizedBox(width: 3),
+            if (isThinking) ...[
+              Text(
+                '[$agentName] 正在评论',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: primary,
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(width: 5),
-                if (isThinking) ...[
-                  Text(
-                    '[$agentName] 正在评论',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  _TypingText(color: theme.colorScheme.primary),
-                ] else
-                  Text(
-                    '[$agentName] 的评论',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+              ),
+              const SizedBox(width: 4),
+              _TypingText(color: primary),
+            ] else
+              Text(
+                '$replyCount',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+          ],
         ),
       ),
     );

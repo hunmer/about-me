@@ -72,6 +72,7 @@ class ChatScreen extends StatefulWidget {
   final String? initialMessage; // 初始消息文本（预填充到输入框）
   final List<File>? initialFiles; // 初始附件文件（预添加到消息）
   final bool autoSend; // 是否自动发送 initialMessage
+  final List<String>? initialPrompts; // 初始开场白列表（优先于猜你想问，如路由上下文快捷提问）
 
   const ChatScreen({
     super.key,
@@ -82,6 +83,7 @@ class ChatScreen extends StatefulWidget {
     this.initialMessage,
     this.initialFiles,
     this.autoSend = false,
+    this.initialPrompts,
   });
 
   @override
