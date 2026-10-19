@@ -378,6 +378,19 @@ class GrokCharacter extends ChangeNotifier {
 
   void updateRenderWidth(double w) => pxW = w;
 
+  /// 姿态弹簧立即吸附到目标值：挂载出场时直接呈现稳定姿态，
+  /// 消除从偏移位置弹入的位移动画（不影响后续表情/跳动动画）
+  void snapPose() {
+    for (final s in [
+      spin, txS, tyS, squash, blink, eyeScale, gazeX, gazeY,
+      eyeMorph, overlay, overlayMix, notify, humDots, shapeSpring,
+      overlayTurn,
+    ]) {
+      s.x = s.t;
+      s.v = 0;
+    }
+  }
+
   void _applyPoseScale() {
     poseScaleVal = loginWrap ? t.poseScaleOf(shapeName) : 1;
   }

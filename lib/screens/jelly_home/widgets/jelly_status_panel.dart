@@ -246,7 +246,7 @@ class _AvatarFrame extends StatelessWidget {
   }
 }
 
-/// 手绘经验条：墨线胶囊轨道 + 实底填充
+/// 手绘经验条：空心墨线胶囊轨道，实心段长度表示进度
 class _SketchProgressBar extends StatelessWidget {
   const _SketchProgressBar({required this.theme, required this.value});
 
@@ -259,7 +259,6 @@ class _SketchProgressBar extends StatelessWidget {
       decoration: dsSketchDecoration(
         theme: theme,
         radius: theme.radii.pill,
-        fillColor: theme.hatch,
         strokeWidth: 1.6,
       ),
       child: Padding(

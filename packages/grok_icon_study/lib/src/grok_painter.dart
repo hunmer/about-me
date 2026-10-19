@@ -254,6 +254,10 @@ class _GrokCharacterViewState extends State<GrokCharacterView>
   late final Ticker _ticker;
   final GlobalKey _boxKey = GlobalKey();
 
+  /// 挂载后首帧已吸附姿态：先 tick 应用当前姿态目标，再吸附弹簧，
+  /// 出场即为稳定姿态（无位移弹入）
+  bool _poseSnapped = false;
+
   @override
   void initState() {
     super.initState();
@@ -262,6 +266,10 @@ class _GrokCharacterViewState extends State<GrokCharacterView>
 
   void _onTick(Duration elapsed) {
     widget.character.tick(elapsed.inMicroseconds / 1000);
+    if (!_poseSnapped) {
+      _poseSnapped = true;
+      widget.character.snapPose();
+    }
   }
 
   @override
