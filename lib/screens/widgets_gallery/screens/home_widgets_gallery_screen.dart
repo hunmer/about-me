@@ -723,6 +723,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'WalkStackCard - 手绘书摘卡堆叠，拖拽切卡与随机漫步',
         route: '/widgets_gallery/walk_stack_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.swipe_left,
+        title: '无限滚动按钮列表卡片',
+        subtitle: 'MarqueeButtonListCard - 多行水平无限循环滚动按钮，悬浮暂停',
+        route: '/widgets_gallery/marquee_button_list_card',
+      ),
     ];
   }
 

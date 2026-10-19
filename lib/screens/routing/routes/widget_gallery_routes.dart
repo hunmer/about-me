@@ -96,6 +96,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/striped_weekly_chart_car
 import 'package:aboutme/screens/widgets_gallery/screens/sparkle_stat_grid_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/period_score_gauge_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_capsule_chart_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/marquee_button_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/inbox_message_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
@@ -901,6 +902,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '月度胶囊图表卡片',
     ),
     RouteDefinition(
+      path: '/widgets_gallery/marquee_button_list_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const MarqueeButtonListCardExample(),
+        settings: settings,
+      ),
+      description: '无限滚动按钮列表卡片',
+    ),
+    RouteDefinition(
       path: '/widgets_gallery/inbox_message_card',
       handler: (settings) => RouteHelpers.createRoute(
         const InboxMessageCardExample(),
@@ -1597,5 +1606,12 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '随机漫步卡片堆叠',
     subtitle: 'WalkStackCard - 手绘书摘卡堆叠随机漫步',
     route: '/widgets_gallery/walk_stack_card',
+  ),
+  WidgetPreviewItem(
+    category: '工具类',
+    icon: Icons.swipe_left,
+    title: '无限滚动按钮列表卡片',
+    subtitle: 'MarqueeButtonListCard - 多行水平循环滚动按钮',
+    route: '/widgets_gallery/marquee_button_list_card',
   ),
 ];

@@ -100,6 +100,7 @@ import 'widgets/striped_weekly_chart_card.dart';
 import 'widgets/sparkle_stat_grid_card.dart';
 import 'widgets/period_score_gauge_card.dart';
 import 'widgets/monthly_capsule_chart_card.dart';
+import 'widgets/marquee_button_list_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -201,6 +202,7 @@ enum CommonWidgetId {
   sparkleStatGridCard,
   periodScoreGaugeCard,
   monthlyCapsuleChartCard,
+  marqueeButtonListCard,
 }
 
 /// 公共小组件元数据
@@ -995,6 +997,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [Large3Size(), Wide2Size()],
     ),
+    CommonWidgetId.marqueeButtonListCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.marqueeButtonListCard,
+      name: '无限滚动按钮列表卡片',
+      description: '多行水平无限循环滚动的胶囊按钮列表：可定义行数与滚动速度，支持自定义元素与点击回调，鼠标悬浮暂停',
+      icon: Icons.swipe_left,
+      defaultSize: Wide2Size(),
+      supportedSizes: [WideSize(), Wide2Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1259,6 +1269,8 @@ class CommonWidgetBuilder {
           finalProps,
           effectiveSize,
         );
+      case CommonWidgetId.marqueeButtonListCard:
+        return MarqueeButtonListCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

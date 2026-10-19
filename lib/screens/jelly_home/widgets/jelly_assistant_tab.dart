@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:grok_icon_study/grok_icon_study.dart';
 import 'package:skribble/skribble.dart';
 
 import 'package:aboutme/core/event/event.dart';
@@ -22,9 +23,9 @@ import 'package:get/get.dart' hide Value;
 /// 聊天助手页签（底部导航第 2 个页签）
 ///
 /// 手绘纸墨风的快捷速记入口（自 ai_assistant_voice_chat_ui.html 转译）：
-/// 无消息时展示墨线光球 + 问候语 + 热门想法卡；有消息后切换为消息流；
-/// 绑定内置「聊天助手」agent（见 [ChatAssistantService]）的临时会话，
-/// 把用户一句话描述快速变成插件工具调用并记录。
+/// 无消息时展示 Grok 角色动效（grok_icon_study）+ 问候语 + 热门想法卡；
+/// 有消息后切换为消息流；绑定内置「聊天助手」agent（见 [ChatAssistantService]）
+/// 的临时会话，把用户一句话描述快速变成插件工具调用并记录。
 class JellyAssistantTab extends StatefulWidget {
   const JellyAssistantTab({super.key});
 
@@ -32,24 +33,24 @@ class JellyAssistantTab extends StatefulWidget {
   State<JellyAssistantTab> createState() => _JellyAssistantTabState();
 }
 
-class _JellyAssistantTabState extends State<JellyAssistantTab>
-    with SingleTickerProviderStateMixin {
+class _JellyAssistantTabState extends State<JellyAssistantTab> {
   Future<ChatController?>? _controllerFuture;
   ChatController? _controller;
   MessageService? _messageService;
 
   final ScrollController _scrollController = ScrollController();
 
-  /// 光球呼吸动画（持续运行，发送中光芒更长）
-  late final AnimationController _orbAnimation;
+  /// Grok 角色：待机好奇张望，发送中切 thinking；
+  /// 点击跳一下（hop），跟随指针注视
+  final GrokCharacter _character = GrokCharacter(
+    mode: 'hold',
+    state: 'curious',
+  );
+  bool _wasSending = false;
 
   @override
   void initState() {
     super.initState();
-    _orbAnimation = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat();
     eventManager.subscribe('plugin_loaded', _onPluginLoaded);
   }
 
@@ -109,13 +110,22 @@ class _JellyAssistantTabState extends State<JellyAssistantTab>
     _controller = controller;
     controller.addListener(_onControllerChanged);
     messageService.addListener(_onControllerChanged);
+    _syncCharacterState(controller.isSending);
     return controller;
+  }
+
+  /// 发送状态映射到角色状态：发送中 thinking，空闲回 curious
+  void _syncCharacterState(bool sending) {
+    if (sending == _wasSending) return;
+    _wasSending = sending;
+    _character.setStateName(sending ? 'thinking' : 'curious');
   }
 
   void _onControllerChanged() {
     if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _syncCharacterState(_controller?.isSending ?? false);
       setState(() {});
       _scrollToBottom();
     });
@@ -137,7 +147,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab>
     _messageService?.removeListener(_onControllerChanged);
     _controller?.dispose();
     _scrollController.dispose();
-    _orbAnimation.dispose();
+    _character.dispose();
     super.dispose();
   }
 
@@ -269,8 +279,13 @@ class _JellyAssistantTabState extends State<JellyAssistantTab>
     );
   }
 
-  /// 空会话首页：墨线光球 + 状态徽章 + 问候 + 热门想法卡
+  /// 空会话首页：Grok 角色动效 + 状态徽章 + 问候 + 热门想法卡
   Widget _buildHero(AppThemeData theme, ChatController controller) {
+    // 角色墨色跟随深浅模式（setColor 不触发重建，角色每帧自绘）
+    final scheme = theme.isDark ? 'dark' : 'light';
+    if (_character.scheme != scheme) {
+      _character.setColor('black', scheme);
+    }
     return WiredDraw(
       child: ListView(
         padding: EdgeInsets.fromLTRB(
@@ -282,10 +297,13 @@ class _JellyAssistantTabState extends State<JellyAssistantTab>
         children: [
           const SizedBox(height: 12),
           Center(
-            child: _AssistantOrb(
-              animation: _orbAnimation,
-              active: controller.isSending,
-              size: 168,
+            child: GestureDetector(
+              onTap: _character.bounceOnce,
+              child: GrokCharacterView(
+                character: _character,
+                sizePx: 176,
+                pointerFollow: true,
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -495,170 +513,4 @@ class _JellyAssistantTabState extends State<JellyAssistantTab>
       ),
     );
   }
-}
-
-/// 墨线光球：rough 圆盘（排线淡彩）+ 呼吸光芒 + 中心点；
-/// [active]（发送中）时光芒更长，呼应 HTML 版的聆听脉冲
-class _AssistantOrb extends StatelessWidget {
-  const _AssistantOrb({
-    required this.animation,
-    required this.active,
-    this.size = 168,
-  });
-
-  final Animation<double> animation;
-  final bool active;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, _) => CustomPaint(
-        size: Size.square(size),
-        painter: _AssistantOrbPainter(
-          drawConfig: theme.wired.drawConfig,
-          inkColor: theme.ink,
-          hatchColor: theme.hatch,
-          rayColor: theme.primary,
-          t: animation.value,
-          active: active,
-          progress: WiredDrawTransition.progressOf(context),
-        ),
-      ),
-    );
-  }
-}
-
-class _AssistantOrbPainter extends CustomPainter {
-  _AssistantOrbPainter({
-    required this.drawConfig,
-    required this.inkColor,
-    required this.hatchColor,
-    required this.rayColor,
-    required this.t,
-    required this.active,
-    this.progress,
-  });
-
-  final DrawConfig drawConfig;
-  final Color inkColor;
-  final Color hatchColor;
-  final Color rayColor;
-
-  /// 呼吸相位（0~1 循环）
-  final double t;
-  final bool active;
-
-  /// 环境描画动画（WiredDraw 入场）；null = 立即全画
-  final Animation<double>? progress;
-
-  static const int _rayCount = 16;
-
-  Paint _ink(Color color, double width) {
-    return Paint()
-      ..style = PaintingStyle.stroke
-      ..isAntiAlias = true
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..strokeWidth = width
-      ..color = color;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (size.isEmpty) return;
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final enter = progress?.value ?? 1.0;
-
-    // 中心圆盘：墨线描边 + 排线淡彩
-    final discDiameter = size.width * 0.64;
-    final discConfig = drawConfig.copyWith(seed: 21);
-    discConfig.randomizer.reset();
-    final discGen = Generator(
-      discConfig,
-      HachureFiller(
-        FillerConfig.build(
-          drawConfig: discConfig,
-          hachureGap: 7,
-          fillWeight: 1.2,
-        ),
-      ),
-    );
-    RoughDrawing(
-      discGen.circle(cx, cy, discDiameter),
-      _ink(inkColor, 2),
-      _ink(hatchColor, 1.2),
-    ).paint(canvas, progress: enter, pressure: 0);
-
-    // 放射光芒：圆盘外圈向外的短墨线，长度随呼吸相位起伏
-    final amplitude = active ? 1.4 : 1.0;
-    final innerRadius = discDiameter / 2 + size.width * 0.02;
-    final rayPaint = _ink(rayColor, 1.6);
-    for (var i = 0; i < _rayCount; i++) {
-      final angle = -math.pi / 2 + 2 * math.pi * i / _rayCount;
-      final phase = i * 1.7;
-      final breathe =
-          (0.6 + 0.4 * math.sin(2 * math.pi * t + phase)) * amplitude;
-      final outer = innerRadius + size.width * 0.08 * breathe;
-      final config = drawConfig.copyWith(seed: 40 + i);
-      config.randomizer.reset();
-      final gen = Generator(config, NoFiller());
-      RoughDrawing(
-        gen.line(
-          cx + math.cos(angle) * innerRadius,
-          cy + math.sin(angle) * innerRadius,
-          cx + math.cos(angle) * outer,
-          cy + math.sin(angle) * outer,
-        ),
-        rayPaint,
-        rayPaint,
-      ).paint(canvas, progress: enter, pressure: 0);
-    }
-
-    // 中心实心点 + 右上两颗小星星（对应原版星芒点缀）
-    final coreConfig = drawConfig.copyWith(seed: 77);
-    coreConfig.randomizer.reset();
-    final coreGen = Generator(
-      coreConfig,
-      SolidFiller(),
-    );
-    RoughDrawing(
-      coreGen.circle(cx, cy, size.width * 0.09),
-      _ink(rayColor, 1.4),
-      _ink(rayColor, 1.4),
-    ).paint(canvas, progress: enter, pressure: 0);
-
-    for (final (sx, sy, s) in [
-      (size.width * 0.78, size.height * 0.24, size.width * 0.045),
-      (size.width * 0.22, size.height * 0.72, size.width * 0.032),
-    ]) {
-      final config = drawConfig.copyWith(seed: 90 + s.toInt());
-      config.randomizer.reset();
-      final gen = Generator(config, NoFiller());
-      final star = _ink(rayColor, 1.4);
-      RoughDrawing(
-        gen.line(sx - s, sy, sx + s, sy),
-        star,
-        star,
-      ).paint(canvas, progress: enter, pressure: 0);
-      RoughDrawing(
-        gen.line(sx, sy - s, sx, sy + s),
-        star,
-        star,
-      ).paint(canvas, progress: enter, pressure: 0);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_AssistantOrbPainter oldDelegate) =>
-      oldDelegate.t != t ||
-      oldDelegate.active != active ||
-      oldDelegate.drawConfig != drawConfig ||
-      oldDelegate.inkColor != inkColor ||
-      oldDelegate.hatchColor != hatchColor ||
-      oldDelegate.rayColor != rayColor ||
-      oldDelegate.progress != progress;
 }

@@ -403,18 +403,26 @@ class RadialDiscBottomBar extends StatelessWidget {
       ),
     );
 
-    // 仅显式声明"只要主弧 dock"（never）时裁掉画布上下空区；
-    // auto/always 实例可能随 tab 动态出现子栏，若按当前内容裁剪，
-    // 占位高度会在 tab 间跳变（body 内容经 bottomNavigationBar
-    // 高度联动跟随跳动）。
+    // 子栏未展示（wantsSubBar 为 false：never 策略 / 未传子栏内容 /
+    // auto 切到后半 tab / subBarVisible 显式收起）时裁掉画布上下
+    // 空区，不占用子栏高度；展开/收起经 300ms 过渡与子栏折叠弹簧
+    // 同步，避免 bottomNavigationBar 高度联动生硬跳变。
     // OverflowBox 放松约束让场景保持 380×146（直接嵌套 SizedBox
     // 会被外层紧约束压扁，导致下半部分不可命中）
-    if (subBarBehavior == RadialSubBarBehavior.never) {
-      final hasFloating = floatingAction != null || hasFloatingDiscs;
-      final cropTop = hasFloating ? _floatActionCropTop : _dockCropTop;
-      scene = SizedBox(
+    final hasFloating =
+        !subBarPossible &&
+        (floatingAction != null ||
+            leadingAction != null ||
+            trailingAction != null);
+    final cropTop = hasFloating ? _floatActionCropTop : _dockCropTop;
+    scene = TweenAnimationBuilder<double>(
+      tween: Tween<double>(end: !wantsSubBar ? 1.0 : 0.0),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      builder: (context, cropT, child) => SizedBox(
         width: RadialGeometry.canvasWidth,
-        height: RadialGeometry.canvasHeight - cropTop - _dockCropBottom,
+        height:
+            RadialGeometry.canvasHeight - (cropTop + _dockCropBottom) * cropT,
         child: OverflowBox(
           alignment: Alignment.topLeft,
           minWidth: RadialGeometry.canvasWidth,
@@ -422,12 +430,13 @@ class RadialDiscBottomBar extends StatelessWidget {
           minHeight: RadialGeometry.canvasHeight,
           maxHeight: RadialGeometry.canvasHeight,
           child: Transform.translate(
-            offset: Offset(0, -cropTop),
-            child: scene,
+            offset: Offset(0, -cropTop * cropT),
+            child: child,
           ),
         ),
-      );
-    }
+      ),
+      child: scene,
+    );
     return scene;
   }
 
@@ -455,9 +464,9 @@ class RadialDiscBottomBar extends StatelessWidget {
             shadowsOnly: true,
           ),
         ),
-        // 玻璃层：扇环内背景模糊 + 填充
+        // 主扇环玻璃层：背景模糊 + 填充（恒定）
         ClipPath(
-          clipper: _RibbonClipper(fold: fold),
+          clipper: const _RibbonClipper(),
           child: BackdropFilter(
             filter: ImageFilter.blur(
               sigmaX: frostSigma,
@@ -471,6 +480,33 @@ class RadialDiscBottomBar extends StatelessWidget {
                 optionT: optionT,
                 hasSubLabels: subLabels != null,
                 fillsOnly: true,
+                part: _RibbonPart.main,
+              ),
+            ),
+          ),
+        ),
+        // 子栏扇环玻璃层：BackdropFilter 无法按 alpha 采样，玻璃区域
+        // 若靠硬裁剪收尾（fold 过阈值整块消失），背景模糊突变会闪
+        // 一下——用 Opacity 随折叠进度整层淡出（模糊渐弱消失）
+        Opacity(
+          opacity: fold.clamp(0.0, 1.0),
+          child: ClipPath(
+            clipper: _SubRibbonClipper(fold: fold),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: frostSigma,
+                sigmaY: frostSigma,
+              ),
+              child: CustomPaint(
+                size: size,
+                painter: _ScenePainter(
+                  style: style,
+                  fold: fold,
+                  optionT: optionT,
+                  hasSubLabels: subLabels != null,
+                  fillsOnly: true,
+                  part: _RibbonPart.sub,
+                ),
               ),
             ),
           ),
@@ -634,15 +670,25 @@ class RadialDiscBottomBar extends StatelessWidget {
   }
 }
 
-/// 扇环玻璃裁剪：主扇环 + 随折叠进度缩放的子栏扇环
+/// 主扇环玻璃裁剪（恒定）
 class _RibbonClipper extends CustomClipper<Path> {
-  _RibbonClipper({required this.fold});
+  const _RibbonClipper();
+
+  @override
+  Path getClip(Size size) => RadialGeometry.mainRibbon;
+
+  @override
+  bool shouldReclip(_RibbonClipper oldClipper) => false;
+}
+
+/// 子栏扇环玻璃裁剪：随折叠进度向画布底部圆心收缩
+class _SubRibbonClipper extends CustomClipper<Path> {
+  _SubRibbonClipper({required this.fold});
 
   final double fold;
 
   @override
   Path getClip(Size size) {
-    if (fold <= 0.001) return RadialGeometry.mainRibbon;
     final progress = fold.clamp(0.0, 1.0);
     final scale = 0.92 + 0.08 * progress;
     final origin = Offset(
@@ -653,13 +699,12 @@ class _RibbonClipper extends CustomClipper<Path> {
       ..translate(origin.dx, origin.dy)
       ..scale(scale)
       ..translate(-origin.dx, -origin.dy);
-    return Path()
-      ..addPath(RadialGeometry.mainRibbon, Offset.zero)
-      ..addPath(RadialGeometry.subRibbon.transform(matrix.storage), Offset.zero);
+    return RadialGeometry.subRibbon.transform(matrix.storage);
   }
 
   @override
-  bool shouldReclip(_RibbonClipper oldClipper) => oldClipper.fold != fold;
+  bool shouldReclip(_SubRibbonClipper oldClipper) =>
+      oldClipper.fold != fold;
 }
 
 /// 包内默认手绘档（宿主未传 drawConfig 时使用，参数对齐 skribble playful）
@@ -673,8 +718,14 @@ final DrawConfig _fallbackSketchConfig = DrawConfig.build(
 
 /// 背景画布：主 / 子两条扇环 + 子栏弧形滑动药丸
 ///
+/// 磨砂模式下按扇环拆层绘制：主扇环 / 子栏扇环各成一块玻璃
+enum _RibbonPart { all, main, sub }
+
+/// 背景画布：主 / 子两条扇环 + 子栏弧形滑动药丸
+///
 /// [shadowsOnly] / [fillsOnly] 用于磨砂模式拆分绘制：
-/// 阴影层在玻璃裁剪外，玻璃体层在 ClipPath 内。
+/// 阴影层在玻璃裁剪外，玻璃体层在 ClipPath 内；
+/// [part] 进一步限定只画哪条扇环（两层玻璃各自填充）。
 class _ScenePainter extends CustomPainter {
   _ScenePainter({
     required this.style,
@@ -683,6 +734,7 @@ class _ScenePainter extends CustomPainter {
     this.hasSubLabels = false,
     this.shadowsOnly = false,
     this.fillsOnly = false,
+    this.part = _RibbonPart.all,
   });
 
   final RadialDiscBarStyle style;
@@ -700,6 +752,8 @@ class _ScenePainter extends CustomPainter {
   final bool shadowsOnly;
   final bool fillsOnly;
 
+  final _RibbonPart part;
+
   /// 背景画布不参与命中：CustomPainter.hitTest 默认 true 会把整个
   /// 画布矩形（含弧线外的透明角落）变成命中黑洞，挡住下层内容点击；
   /// 命中交给各按钮自身的 GestureDetector
@@ -708,7 +762,7 @@ class _ScenePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (fold > 0.001) {
+    if (fold > 0.001 && part != _RibbonPart.main) {
       final progress = fold.clamp(0.0, 1.0);
       final scale = 0.92 + 0.08 * progress;
       final origin = const Offset(
@@ -762,6 +816,7 @@ class _ScenePainter extends CustomPainter {
       }
       canvas.restore();
     }
+    if (part == _RibbonPart.sub) return;
     if (!fillsOnly) _paintShadows(canvas, RadialGeometry.mainRibbon, 1);
     if (!shadowsOnly) _paintFill(canvas, RadialGeometry.mainRibbon, 1);
   }
@@ -823,5 +878,6 @@ class _ScenePainter extends CustomPainter {
       oldDelegate.style != style ||
       oldDelegate.hasSubLabels != hasSubLabels ||
       oldDelegate.shadowsOnly != shadowsOnly ||
-      oldDelegate.fillsOnly != fillsOnly;
+      oldDelegate.fillsOnly != fillsOnly ||
+      oldDelegate.part != part;
 }
