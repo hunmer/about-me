@@ -645,7 +645,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
 
   /// 数据库编辑：全页展示（design.md §5 平台路由转场）
   Future<void> _showDatabaseEditor(DatabaseModel database) async {
-    await NavigationHelper.push<bool>(
+    await NavigationHelper.pushAnimated<bool>(
       context,
       DatabaseEditWidget(
         controller: widget.controller,

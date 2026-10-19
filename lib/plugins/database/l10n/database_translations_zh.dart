@@ -90,5 +90,8 @@ class DatabaseTranslationsZh {
     'database_field_required': '@name不能为空',
     'database_show_in_preview': '在预览中显示',
     'database_edit_field_title': '编辑字段',
+    'database_fields_required': '至少需要添加一个字段',
+    'database_no_fields_title': '暂无字段',
+    'database_add_field': '添加字段',
   };
 }

@@ -42,6 +42,22 @@ class RouteHelpers {
     return createRoute(page, settings: settings, useAnimation: false);
   }
 
+  /// 创建带转场动画的子页面路由（Material 滑动/淡入转场）
+  ///
+  /// 与零时长路由不同，本路由保留 Material 300ms 转场，页面以
+  /// 平台标准动画入场（Android 上滑/桌面淡入缩放）。为避免转场
+  /// 期间透明背景页面透出下层旧页面，页面外垫一层 AppBackground
+  /// （全局背景生效时为不透明背景，否则透传由页面自身背景兜底）
+  static Route<T> createAnimatedRoute<T extends Object?>(
+    Widget page, {
+    RouteSettings? settings,
+  }) {
+    return MaterialPageRoute<T>(
+      settings: settings,
+      builder: (context) => AppBackground(child: page),
+    );
+  }
+
   /// 创建 Hero 飞行动画路由
   ///
   /// Hero 飞行时长取决于路由 [TransitionRoute.transitionDuration]，

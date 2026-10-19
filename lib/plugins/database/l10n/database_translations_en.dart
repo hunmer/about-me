@@ -94,5 +94,8 @@ class DatabaseTranslationsEn {
     'database_field_required': '@name is required',
     'database_show_in_preview': 'Show in preview',
     'database_edit_field_title': 'Edit Field',
+    'database_fields_required': 'At least one field is required',
+    'database_no_fields_title': 'No fields yet',
+    'database_add_field': 'Add Field',
   };
 }

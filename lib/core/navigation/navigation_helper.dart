@@ -91,6 +91,25 @@ class NavigationHelper {
     );
   }
 
+  /// 推送带转场动画的子页面（常规"打开子页面"入口）
+  ///
+  /// iOS 用 CupertinoPageRoute（原生左滑返回）；其他平台用 Material
+  /// 标准转场（滑动/淡入，见 [RouteHelpers.createAnimatedRoute]），
+  /// 代替 [push] 在非 iOS 平台的零时长瞬切
+  static Future<T?> pushAnimated<T extends Object?>(
+    BuildContext context,
+    Widget page, {
+    String? routeName,
+  }) {
+    if (_isIOS) {
+      return push<T>(context, page, routeName: routeName);
+    }
+    final settings = routeName != null ? RouteSettings(name: routeName) : null;
+    return Navigator.of(context).push<T>(
+      RouteHelpers.createAnimatedRoute<T>(page, settings: settings),
+    );
+  }
+
   /// 推送到新页面（带命名路由）
   ///
   /// [context] BuildContext

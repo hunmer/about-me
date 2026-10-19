@@ -87,13 +87,16 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
                       'database_fields_tab_title'.tr,
                     ],
                     selected: _selectedTab,
-                    onChanged: (index) =>
-                        setState(() => _selectedTab = index),
+                    onChanged: (index) => setState(() => _selectedTab = index),
                   ),
+                  // IndexedStack 常驻两个 Tab：表单 State 不随切换销毁，
+                  // 否则停在字段 Tab 点保存时表单已卸载（submitForm 无反应），
+                  // 且切换会丢失已填内容
                   Expanded(
-                    child: _selectedTab == 0
-                        ? _buildInfoTab()
-                        : _buildFieldsTab(),
+                    child: IndexedStack(
+                      index: _selectedTab,
+                      children: [_buildInfoTab(), _buildFieldsTab()],
+                    ),
                   ),
                 ],
               ),
@@ -168,12 +171,36 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
 
   Widget _buildFieldsTab() {
     final theme = DSThemeBridge.resolve(context);
+
+    // 空字段：手绘空态提示（点右下角 + 添加）
+    if (_fields.isEmpty) {
+      return Center(
+        child: DSEmptyState(
+          icon: DsIconKind.layers,
+          title: 'database_no_fields_title'.tr,
+          message: 'database_no_fields_hint'.tr,
+          actionLabel: 'database_add_field'.tr,
+          onAction: _showAddFieldDialog,
+        ),
+      );
+    }
+
     return Stack(
       children: [
         ReorderableListView(
           padding: EdgeInsets.only(
             bottom: MediaQuery.paddingOf(context).bottom + 88,
           ),
+          // 手绘风：替换默认 Material 阴影浮起预览，仅轻微缩放反馈
+          proxyDecorator: (child, index, animation) {
+            return AnimatedBuilder(
+              animation: animation,
+              builder: (context, _) {
+                final t = Curves.easeOut.transform(animation.value);
+                return Transform.scale(scale: 1.0 + 0.02 * t, child: child);
+              },
+            );
+          },
           onReorder: (oldIndex, newIndex) {
             setState(() {
               if (newIndex > oldIndex) newIndex--;
@@ -194,61 +221,64 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
               }
             }
 
-            return DSListItem(
+            // key 须在 ReorderableListView 直接子级上（拖拽排序要求）；
+            // 行间垂直留白由外层 Padding 提供
+            return Padding(
               key: ValueKey(field.id),
-              title: field.name,
-              subtitle: field.type,
-              leading: DSCheckbox(
-                value: showInPreview,
-                semanticLabel: 'database_show_in_preview'.tr,
-                onChanged: (value) {
-                  setState(() {
-                    // 更新 metadata 中的 showInPreview
-                    Map<String, dynamic>? metadata;
-                    if (field.description != null &&
-                        field.description!.isNotEmpty) {
-                      try {
-                        metadata =
-                            jsonDecode(field.description!)
-                                as Map<String, dynamic>?;
-                      } catch (e) {
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: DSListItem(
+                title: field.name,
+                subtitle: field.type,
+                leading: DSCheckbox(
+                  value: showInPreview,
+                  semanticLabel: 'database_show_in_preview'.tr,
+                  onChanged: (value) {
+                    setState(() {
+                      // 更新 metadata 中的 showInPreview
+                      Map<String, dynamic>? metadata;
+                      if (field.description != null &&
+                          field.description!.isNotEmpty) {
+                        try {
+                          metadata =
+                              jsonDecode(field.description!)
+                                  as Map<String, dynamic>?;
+                        } catch (e) {
+                          metadata = {};
+                        }
+                      } else {
                         metadata = {};
                       }
-                    } else {
-                      metadata = {};
-                    }
-                    metadata ??= {};
-                    metadata['showInPreview'] = value ?? false;
+                      metadata ??= {};
+                      metadata['showInPreview'] = value ?? false;
 
-                    final index = _fields.indexWhere(
-                      (f) => f.id == field.id,
-                    );
-                    if (index >= 0) {
-                      _fields[index] = field.copyWith(
-                        description: jsonEncode(metadata),
-                      );
-                    }
-                  });
-                },
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DSIconButton(
-                    icon: DsIconKind.edit,
-                    size: 32,
-                    tooltip: 'app_edit'.tr,
-                    onPressed: () => _editField(field),
-                  ),
-                  DSIconButton(
-                    icon: DsIconKind.trash,
-                    size: 32,
-                    iconColor: theme.danger,
-                    tooltip: 'app_delete'.tr,
-                    onPressed: () => _deleteField(field),
-                  ),
-                  DsIcon(DsIconKind.drag, color: theme.textSub),
-                ],
+                      final index = _fields.indexWhere((f) => f.id == field.id);
+                      if (index >= 0) {
+                        _fields[index] = field.copyWith(
+                          description: jsonEncode(metadata),
+                        );
+                      }
+                    });
+                  },
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DSIconButton(
+                      icon: DsIconKind.edit,
+                      size: 32,
+                      tooltip: 'app_edit'.tr,
+                      onPressed: () => _editField(field),
+                    ),
+                    DSIconButton(
+                      icon: DsIconKind.trash,
+                      size: 32,
+                      iconColor: theme.danger,
+                      tooltip: 'app_delete'.tr,
+                      onPressed: () => _deleteField(field),
+                    ),
+                    DsIcon(DsIconKind.drag, color: theme.textSub),
+                  ],
+                ),
               ),
             );
           }).toList(),
@@ -323,9 +353,7 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
       context: context,
       builder: (context) => DSDialog(
         title: 'database_delete_field_title'.tr,
-        message: 'database_delete_field_confirm'.trParams({
-          'name': field.name,
-        }),
+        message: 'database_delete_field_confirm'.trParams({'name': field.name}),
         confirmText: 'app_delete'.tr,
         cancelText: 'app_cancel'.tr,
         confirmVariant: DSButtonVariant.destructive,
@@ -364,6 +392,12 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
   }
 
   Future<void> _saveChanges() async {
+    // 数据库至少需要一个字段：空字段拦截提示并切到字段 Tab 引导
+    if (_fields.isEmpty) {
+      Toast.error('database_fields_required'.tr);
+      setState(() => _selectedTab = 1);
+      return;
+    }
     _isSaving = true;
     _wrapperState?.submitForm();
   }

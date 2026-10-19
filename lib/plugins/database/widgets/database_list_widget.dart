@@ -180,12 +180,13 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
       child: DSCard(
         padding: EdgeInsets.zero,
         onTap: () {
-          NavigationHelper.push(
+          NavigationHelper.pushAnimated(
             context,
             DatabaseDetailWidget(
               controller: DatabaseController(widget.service),
               databaseId: database.id,
             ),
+            routeName: '/database_detail',
           ).then((_) => _loadDatabases());
         },
         child: Column(
@@ -370,7 +371,7 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
     BuildContext context,
     DatabaseModel database,
   ) async {
-    final result = await NavigationHelper.push<bool>(
+    final result = await NavigationHelper.pushAnimated<bool>(
       context,
       DatabaseEditWidget(
         controller: DatabaseController(widget.service),
