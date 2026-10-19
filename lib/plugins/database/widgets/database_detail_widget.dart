@@ -65,6 +65,12 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
   /// 数据是否需要重新加载
   bool _needsReload = true;
 
+  /// 记录数据 Future 缓存（避免任意 setState 都回到 loading 态）
+  Future<List<record_model.Record>>? _recordsFuture;
+
+  /// 已同步进列表的 future（identity 比较，避免复用缓存时重复同步）
+  Future<List<record_model.Record>>? _consumedFuture;
+
   /// 上一次的过滤状态（用于避免重复触发）
   Map<String, dynamic>? _lastFilterState;
 
@@ -313,9 +319,16 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
 
                 final database = widget.controller.currentDatabase!;
 
+                // 仅在需要重载时重新拉取记录：任意 setState 复用缓存
+                // Future，避免每次重建都回到 loading 态并重播卡片动画
+                if (_needsReload || _recordsFuture == null) {
+                  _needsReload = false;
+                  _recordsFuture = widget.controller.getRecords(database.id);
+                }
+
                 // 加载记录数据
                 return FutureBuilder<List<record_model.Record>>(
-                  future: widget.controller.getRecords(database.id),
+                  future: _recordsFuture,
                   builder: (context, recordSnapshot) {
                     if (recordSnapshot.connectionState ==
                         ConnectionState.waiting) {
@@ -324,10 +337,12 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
 
                     final records = recordSnapshot.data ?? [];
 
-                    // 初始化或更新记录列表（不在build中调用setState）
-                    if (_needsReload || _allRecords.length != records.length) {
+                    // 仅新拉取的 future 才同步数据：复用缓存 future 的
+                    // 普通 setState 跳过（保留删除等本地修改，不重播动画）
+                    if (_allRecords.isEmpty ||
+                        !identical(_consumedFuture, _recordsFuture)) {
+                      _consumedFuture = _recordsFuture;
                       _allRecords = records;
-                      _needsReload = false;
                       // 直接计算过滤结果，不调用setState
                       _filteredRecords = _computeFilteredRecords(
                         _allRecords,
@@ -616,7 +631,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
     record_model.Record? record,
   ) async {
     VoidCallback? submitRecord;
-    await SmoothBottomSheet.showForm(
+    final result = await SmoothBottomSheet.showForm<record_model.Record>(
       context: context,
       title: 'database_edit_record_title'.tr,
       child: RecordEditWidget(
@@ -628,10 +643,10 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
       ),
       onSave: () => submitRecord?.call(),
     );
-    if (mounted) {
-      setState(() {
-        _needsReload = true;
-      });
+    // 仅真正保存了记录（返回非 null）才刷新列表；
+    // 直接关闭弹层不触发列表更新与重绘动画
+    if (mounted && result != null) {
+      setState(() => _needsReload = true);
     }
   }
 

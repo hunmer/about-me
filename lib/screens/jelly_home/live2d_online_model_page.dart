@@ -1,9 +1,10 @@
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'live2d_online_models.dart';
+import 'live2d_online_preview_page.dart';
 
 class Live2DOnlineModelPage extends StatefulWidget {
   const Live2DOnlineModelPage({super.key});
@@ -38,8 +39,9 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
     } catch (error) {
       if (!mounted) return;
       setState(
-        () => _error =
-            'screens_jellyLive2dOnlineLoadRepoFailed'.trParams({'error': '$error'}),
+        () => _error = 'screens_jellyLive2dOnlineLoadRepoFailed'.trParams({
+          'error': '$error',
+        }),
       );
     } finally {
       if (mounted) setState(() => _loadingCatalog = false);
@@ -53,14 +55,21 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
       _error = null;
     });
     try {
-      final definition = await Live2DOnlineCatalog.loadDefinition(item);
-      if (!mounted) return;
+      final definition = await Navigator.of(context)
+          .push<Live2DModelDefinition>(
+            MaterialPageRoute(
+              fullscreenDialog: true,
+              builder: (_) => Live2DOnlinePreviewPage(item: item),
+            ),
+          );
+      if (!mounted || definition == null) return;
       Navigator.of(context).pop(definition);
     } catch (error) {
       if (!mounted) return;
       setState(
-        () => _error =
-            'screens_jellyLive2dOnlineLoadConfigFailed'.trParams({'error': '$error'}),
+        () => _error = 'screens_jellyLive2dOnlineLoadConfigFailed'.trParams({
+          'error': '$error',
+        }),
       );
     } finally {
       if (mounted) setState(() => _loadingUrl = null);
@@ -132,17 +141,15 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
                 if (_categories.isNotEmpty) ...[
                   SizedBox(height: theme.spacing.md),
                   DSChipBar(
-                    labels: [
-                      'screens_jellyLive2dOnlineAll'.tr,
-                      ..._categories,
-                    ],
-                    selected:
-                        (_categories.indexOf(_category ?? '') + 1).clamp(
-                          0,
-                          _categories.length,
-                        ),
+                    labels: ['screens_jellyLive2dOnlineAll'.tr, ..._categories],
+                    selected: (_categories.indexOf(_category ?? '') + 1).clamp(
+                      0,
+                      _categories.length,
+                    ),
                     onChanged: (index) => setState(
-                      () => _category = index == 0 ? null : _categories[index - 1],
+                      () => _category = index == 0
+                          ? null
+                          : _categories[index - 1],
                     ),
                   ),
                 ],
@@ -216,18 +223,17 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
                 title: model.name,
                 subtitle: model.category,
                 leading: DsIcon(DsIconKind.bot, size: 20, color: theme.primary),
-                trailing:
-                    loading
-                        ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: DSLoadingDots(size: 4.5),
-                        )
-                        : DsIcon(
-                          DsIconKind.chevronRight,
-                          size: 18,
-                          color: theme.textSub,
-                        ),
+                trailing: loading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: DSLoadingDots(size: 4.5),
+                      )
+                    : DsIcon(
+                        DsIconKind.chevronRight,
+                        size: 18,
+                        color: theme.textSub,
+                      ),
                 onTap: _loadingUrl == null ? () => _selectModel(model) : null,
               );
             },

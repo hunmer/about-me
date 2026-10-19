@@ -93,5 +93,32 @@ class DatabaseTranslationsZh {
     'database_fields_required': '至少需要添加一个字段',
     'database_no_fields_title': '暂无字段',
     'database_add_field': '添加字段',
+
+    // 字段配置表单（field_type_selector_field）
+    'database_fieldTypeLabel': '字段类型',
+    'database_fieldNameHint': '请输入字段名称',
+    'database_fieldNameRequiredError': '字段名称为必填项，请填写后重试',
+    'database_fieldNameEmptyValidation': '字段名称不能为空',
+    'database_placeholderLabel': '占位提示',
+    'database_placeholderHint': '输入框占位文本',
+    'database_defaultValueHint': '请输入默认值',
+    'database_maxLinesLabel': '最大行数',
+    'database_maxLinesHint': '默认 3 行',
+    'database_minValueLabel': '最小值',
+    'database_maxValueLabel': '最大值',
+    'database_ratingMaxHint': '默认 5',
+    'database_optionsLabel': '选项列表',
+    'database_optionsHint': '每行一个选项',
+    'database_defaultTimeHint': '留空使用当前时间',
+    'database_dateFormatLabel': '日期格式',
+    'database_defaultCheckedLabel': '默认选中',
+    'database_defaultUrlLabel': '默认 URL',
+    'database_notSelected': '未选择',
+    'database_selectedTypesCount': '已选择 @n 个字段类型',
+    'database_selectAll': '全选',
+    'database_deselectAll': '反选',
+
+    // 记录保存
+    'database_record_empty': '请填写记录内容后再保存',
   };
 }

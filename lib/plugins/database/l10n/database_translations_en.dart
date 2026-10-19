@@ -97,5 +97,32 @@ class DatabaseTranslationsEn {
     'database_fields_required': 'At least one field is required',
     'database_no_fields_title': 'No fields yet',
     'database_add_field': 'Add Field',
+
+    // Field config form (field_type_selector_field)
+    'database_fieldTypeLabel': 'Field Type',
+    'database_fieldNameHint': 'Enter field name',
+    'database_fieldNameRequiredError': 'Field name is required',
+    'database_fieldNameEmptyValidation': 'Field name cannot be empty',
+    'database_placeholderLabel': 'Placeholder',
+    'database_placeholderHint': 'Input placeholder text',
+    'database_defaultValueHint': 'Enter default value',
+    'database_maxLinesLabel': 'Max Lines',
+    'database_maxLinesHint': 'Default 3 lines',
+    'database_minValueLabel': 'Min Value',
+    'database_maxValueLabel': 'Max Value',
+    'database_ratingMaxHint': 'Default 5',
+    'database_optionsLabel': 'Options',
+    'database_optionsHint': 'One option per line',
+    'database_defaultTimeHint': 'Leave empty for current time',
+    'database_dateFormatLabel': 'Date Format',
+    'database_defaultCheckedLabel': 'Checked by Default',
+    'database_defaultUrlLabel': 'Default URL',
+    'database_notSelected': 'Not selected',
+    'database_selectedTypesCount': '@n field types selected',
+    'database_selectAll': 'Select All',
+    'database_deselectAll': 'Deselect',
+
+    // Record saving
+    'database_record_empty': 'Please fill in the record before saving',
   };
 }

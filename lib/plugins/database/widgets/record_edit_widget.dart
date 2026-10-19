@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/database/controllers/database_controller.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
@@ -36,6 +37,9 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
   late Map<String, dynamic> _fields;
   FormBuilderWrapperState? _formState;
 
+  /// 打开表单时的初始值快照（新建模式下用于判定"未填写任何内容"）
+  late Map<String, dynamic> _initialSnapshot;
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +63,18 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
         }
       });
     }
+    _initialSnapshot = Map<String, dynamic>.from(_fields);
     widget.onReady?.call(_saveRecord);
+  }
+
+  /// 新建模式下表单值是否与初始默认值完全一致（未填写任何内容）
+  bool _isUntouched(Map<String, dynamic> values) {
+    if (values.length != _initialSnapshot.length) return false;
+    return _initialSnapshot.entries.every((entry) {
+      final current = values[entry.key];
+      return current == entry.value ||
+          current?.toString() == entry.value.toString();
+    });
   }
 
   /// 将 DatabaseField 类型映射到 FormFieldType
@@ -120,6 +135,8 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
 
       // 构建 extra 配置
       Map<String, dynamic> extra = {};
+      // Dropdown 选项经 config.items 传给 select 字段（非 extra）
+      List<DropdownMenuItem>? dropdownItems;
 
       // 根据字段类型添加额外配置
       switch (field.type) {
@@ -171,7 +188,7 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
                 .split('\n')
                 .where((s) => s.trim().isNotEmpty)
                 .toList();
-            extra['items'] = optionsList
+            dropdownItems = optionsList
                 .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
                 .toList();
           }
@@ -197,6 +214,7 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
           'name': field.name,
         }),
         enabled: true,
+        items: dropdownItems,
         extra: extra.isNotEmpty ? extra : null,
       );
     }).toList();
@@ -248,6 +266,12 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
     if (isValid) {
       // 从 FormBuilderWrapper 获取表单值
       final formValues = _formState?.currentValues ?? {};
+
+      // 新建模式下未填写任何内容（与初始默认值一致）时禁止保存
+      if (widget.record == null && _isUntouched(formValues)) {
+        Toast.error('database_record_empty'.tr);
+        return;
+      }
 
       record_model.Record resultRecord;
 

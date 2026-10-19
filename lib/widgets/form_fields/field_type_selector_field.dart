@@ -72,10 +72,14 @@ class _FieldTypeSelectorFieldState
   String get _selectedText {
     if (widget.multiSelect) {
       final selectedList = _selectedValue as List<String>?;
-      if (selectedList == null || selectedList.isEmpty) return '未选择';
-      return '已选择 ${selectedList.length} 个字段类型';
+      if (selectedList == null || selectedList.isEmpty) {
+        return 'database_notSelected'.tr;
+      }
+      return 'database_selectedTypesCount'.trParams({
+        'n': selectedList.length.toString(),
+      });
     } else {
-      return _selectedValue?.toString() ?? '未选择';
+      return _selectedValue?.toString() ?? 'database_notSelected'.tr;
     }
   }
 
@@ -87,7 +91,7 @@ class _FieldTypeSelectorFieldState
             widget.prefixIcon != null
                 ? Icon(widget.prefixIcon, color: Theme.of(context).colorScheme.primary)
                 : Icon(Icons.dashboard, color: Theme.of(context).colorScheme.primary),
-        title: Text(widget.dialogTitle ?? '选择字段类型'),
+        title: Text(widget.dialogTitle ?? 'database_select_field_type_title'.tr),
         subtitle: Text(_selectedText),
         trailing: const Icon(Icons.chevron_right),
         onTap: widget.enabled ? _showFieldTypeSelector : null,
@@ -104,7 +108,7 @@ class _FieldTypeSelectorFieldState
             (context) => FieldTypeSelectorDialog(
               initialSelectedTypes:
                   _selectedValue != null ? [_selectedValue as String] : [],
-              dialogTitle: widget.dialogTitle ?? '选择字段类型',
+              dialogTitle: widget.dialogTitle ?? 'database_select_field_type_title'.tr,
               multiSelect: false,
               showConfigTab: true,
               initialField: widget.initialField,
@@ -124,7 +128,7 @@ class _FieldTypeSelectorFieldState
         builder:
             (context) => FieldTypeSelectorDialog(
               initialSelectedTypes: _selectedValue as List<String>? ?? [],
-              dialogTitle: widget.dialogTitle ?? '选择字段类型',
+              dialogTitle: widget.dialogTitle ?? 'database_select_field_type_title'.tr,
               multiSelect: true,
             ),
       );
@@ -143,7 +147,7 @@ class _FieldTypeSelectorFieldState
             (context) => FieldTypeSelectorDialog(
               initialSelectedTypes:
                   _selectedValue != null ? [_selectedValue as String] : [],
-              dialogTitle: widget.dialogTitle ?? '选择字段类型',
+              dialogTitle: widget.dialogTitle ?? 'database_select_field_type_title'.tr,
               multiSelect: false,
             ),
       );
@@ -264,25 +268,24 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
       FormFieldConfig(
         name: '__fieldType',
         type: FormFieldType.select,
-        labelText: '字段类型',
+        labelText: 'database_fieldTypeLabel'.tr,
         initialValue: _selectedType,
-        extra: {
-          'items': [
-            for (final type in _availableTypes)
-              DropdownMenuItem(value: type, child: Text(type)),
-          ],
-        },
+        // select 字段消费的是 config.items（非 extra）
+        items: [
+          for (final type in _availableTypes)
+            DropdownMenuItem(value: type, child: Text(type)),
+        ],
       ),
       // 字段名称（必填）
       FormFieldConfig(
         name: 'name',
         type: FormFieldType.text,
-        labelText: '字段名称 *',
-        hintText: '请输入字段名称',
+        labelText: '${'database_field_name_label'.tr} *',
+        hintText: 'database_fieldNameHint'.tr,
         initialValue:
             _lastValues['name']?.toString() ?? widget.initialField?.name ?? '',
         required: true,
-        validationMessage: '字段名称不能为空',
+        validationMessage: 'database_fieldNameEmptyValidation'.tr,
         prefixIcon: Icons.label,
       ),
     ];
@@ -296,8 +299,8 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
           FormFieldConfig(
             name: 'placeholder',
             type: FormFieldType.text,
-            labelText: '占位提示',
-            hintText: '输入框占位文本',
+            labelText: 'database_placeholderLabel'.tr,
+            hintText: 'database_placeholderHint'.tr,
             initialValue: textOf('placeholder'),
             prefixIcon: Icons.help_outline,
           ),
@@ -307,8 +310,8 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
                 _selectedType == 'Long Text'
                     ? FormFieldType.textArea
                     : FormFieldType.text,
-            labelText: '默认值',
-            hintText: '请输入默认值',
+            labelText: 'database_default_value_label'.tr,
+            hintText: 'database_defaultValueHint'.tr,
             initialValue: textOf('defaultValue'),
             prefixIcon: Icons.data_array,
           ),
@@ -316,8 +319,8 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
             FormFieldConfig(
               name: 'maxLines',
               type: FormFieldType.number,
-              labelText: '最大行数',
-              hintText: '默认 3 行',
+              labelText: 'database_maxLinesLabel'.tr,
+              hintText: 'database_maxLinesHint'.tr,
               initialValue: intOf('maxLines', 3),
               prefixIcon: Icons.line_style,
             ),
@@ -330,24 +333,24 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
           FormFieldConfig(
             name: 'minValue',
             type: FormFieldType.number,
-            labelText: '最小值',
-            hintText: '最小值',
+            labelText: 'database_minValueLabel'.tr,
+            hintText: 'database_minValueLabel'.tr,
             initialValue: intOf('minValue', 0),
             prefixIcon: Icons.arrow_downward,
           ),
           FormFieldConfig(
             name: 'maxValue',
             type: FormFieldType.number,
-            labelText: '最大值',
-            hintText: _selectedType == 'Rating' ? '默认 5' : '最大值',
+            labelText: 'database_maxValueLabel'.tr,
+            hintText: _selectedType == 'Rating' ? 'database_ratingMaxHint'.tr : 'database_maxValueLabel'.tr,
             initialValue: intOf('maxValue', _selectedType == 'Rating' ? 5 : 100),
             prefixIcon: Icons.arrow_upward,
           ),
           FormFieldConfig(
             name: 'defaultValue',
             type: FormFieldType.number,
-            labelText: '默认值',
-            hintText: '请输入默认值',
+            labelText: 'database_default_value_label'.tr,
+            hintText: 'database_defaultValueHint'.tr,
             initialValue: intOf('defaultValue', 0),
             prefixIcon: Icons.data_array,
           ),
@@ -359,8 +362,8 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
           FormFieldConfig(
             name: 'options',
             type: FormFieldType.textArea,
-            labelText: '选项列表',
-            hintText: '每行一个选项',
+            labelText: 'database_optionsLabel'.tr,
+            hintText: 'database_optionsHint'.tr,
             initialValue: textOf('options'),
             prefixIcon: Icons.list,
             extra: {'maxLines': 5},
@@ -375,15 +378,15 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
           FormFieldConfig(
             name: 'defaultValue',
             type: FormFieldType.text,
-            labelText: '默认值',
-            hintText: '留空使用当前时间',
+            labelText: 'database_default_value_label'.tr,
+            hintText: 'database_defaultTimeHint'.tr,
             initialValue: textOf('defaultValue', 'now'),
             prefixIcon: Icons.access_time,
           ),
           FormFieldConfig(
             name: 'format',
             type: FormFieldType.text,
-            labelText: '日期格式',
+            labelText: 'database_dateFormatLabel'.tr,
             hintText: _selectedType == 'Time' ? 'HH:mm' : 'yyyy-MM-dd',
             initialValue: textOf(
               'format',
@@ -399,8 +402,8 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
           FormFieldConfig(
             name: 'defaultValue',
             type: FormFieldType.switchField,
-            labelText: '默认选中',
-            hintText: '默认状态',
+            labelText: 'database_defaultCheckedLabel'.tr,
+            hintText: 'database_defaultCheckedLabel'.tr,
             initialValue: _lastValues['defaultValue'] == true ||
                 savedConfig['defaultValue'] == true,
           ),
@@ -412,7 +415,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
           FormFieldConfig(
             name: 'placeholder',
             type: FormFieldType.text,
-            labelText: '占位提示',
+            labelText: 'database_placeholderLabel'.tr,
             hintText: 'https://example.com',
             initialValue: textOf('placeholder'),
             prefixIcon: Icons.link,
@@ -420,8 +423,8 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
           FormFieldConfig(
             name: 'defaultValue',
             type: FormFieldType.text,
-            labelText: '默认 URL',
-            hintText: '请输入默认 URL',
+            labelText: 'database_defaultUrlLabel'.tr,
+            hintText: 'database_defaultValueHint'.tr,
             initialValue: textOf('defaultValue'),
             prefixIcon: Icons.data_array,
           ),
@@ -551,7 +554,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
                                 bottom: theme.spacing.sm,
                               ),
                               child: Text(
-                                '字段名称为必填项，请填写后重试',
+                                'database_fieldNameRequiredError'.tr,
                                 style: DsTypography.caption.copyWith(
                                   color: theme.danger,
                                 ),
@@ -614,7 +617,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
           TextButton.icon(
             onPressed: _toggleSelectAll,
             icon: Icon(_hasSelection ? Icons.deselect : Icons.select_all),
-            label: Text(_hasSelection ? '反选' : '全选'),
+            label: Text(_hasSelection ? 'database_deselectAll'.tr : 'database_selectAll'.tr),
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.primary,
             ),
