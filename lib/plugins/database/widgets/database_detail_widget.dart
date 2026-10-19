@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/database/widgets/record_edit_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
@@ -296,44 +297,53 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: _loadingFuture,
-      builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return DSThemeBridge(
-              child: Center(child: DSLoadingDots()),
-            );
-          }
+    // 加载态处于 wrapper（自带 Scaffold 背景）之外，先垫一层
+    // 与 wrapper 一致的页面背景，避免路由过渡期透出黑色底层
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          return Container(
+            color: dsScaffoldBackground(DSThemeBridge.resolve(context)),
+            child: FutureBuilder(
+              future: _loadingFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: DSLoadingDots());
+                }
 
-        final database = widget.controller.currentDatabase!;
+                final database = widget.controller.currentDatabase!;
 
-        // 加载记录数据
-        return FutureBuilder<List<record_model.Record>>(
-          future: widget.controller.getRecords(database.id),
-          builder: (context, recordSnapshot) {
-            if (recordSnapshot.connectionState == ConnectionState.waiting) {
-              // 处于 wrapper body 的 DSThemeBridge 之外，需自带桥
-              return DSThemeBridge(child: Center(child: DSLoadingDots()));
-            }
+                // 加载记录数据
+                return FutureBuilder<List<record_model.Record>>(
+                  future: widget.controller.getRecords(database.id),
+                  builder: (context, recordSnapshot) {
+                    if (recordSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return Center(child: DSLoadingDots());
+                    }
 
-            final records = recordSnapshot.data ?? [];
+                    final records = recordSnapshot.data ?? [];
 
-            // 初始化或更新记录列表（不在build中调用setState）
-            if (_needsReload || _allRecords.length != records.length) {
-              _allRecords = records;
-              _needsReload = false;
-              // 直接计算过滤结果，不调用setState
-              _filteredRecords = _computeFilteredRecords(
-                _allRecords,
-                _multiFilterState.getAllValues(),
-                _searchKeyword,
-              );
-            }
+                    // 初始化或更新记录列表（不在build中调用setState）
+                    if (_needsReload || _allRecords.length != records.length) {
+                      _allRecords = records;
+                      _needsReload = false;
+                      // 直接计算过滤结果，不调用setState
+                      _filteredRecords = _computeFilteredRecords(
+                        _allRecords,
+                        _multiFilterState.getAllValues(),
+                        _searchKeyword,
+                      );
+                    }
 
-            return _buildSuperCupertinoContent(database);
-          },
-        );
-      },
+                    return _buildSuperCupertinoContent(database);
+                  },
+                );
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -633,19 +643,15 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
     }
   }
 
-  /// 数据库编辑：smooth_sheets 底部弹层
+  /// 数据库编辑：全页展示（design.md §5 平台路由转场）
   Future<void> _showDatabaseEditor(DatabaseModel database) async {
-    VoidCallback? submitDatabase;
-    await SmoothBottomSheet.showForm<bool>(
-      context: context,
-      title: 'database_edit_database_title'.tr,
-      child: DatabaseEditWidget(
+    await NavigationHelper.push<bool>(
+      context,
+      DatabaseEditWidget(
         controller: widget.controller,
         database: database,
-        embedInSheet: true,
-        onReady: (submit) => submitDatabase = submit,
       ),
-      onSave: () => submitDatabase?.call(),
+      routeName: '/database_edit',
     );
     if (mounted) setState(() {});
   }

@@ -365,22 +365,18 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
     await _showDatabaseEditor(context, newDatabase);
   }
 
-  /// 数据库新建/编辑：smooth_sheets 底部弹层
+  /// 数据库新建/编辑：全页展示（design.md §5 平台路由转场）
   Future<void> _showDatabaseEditor(
     BuildContext context,
     DatabaseModel database,
   ) async {
-    VoidCallback? submitDatabase;
-    final result = await SmoothBottomSheet.showForm<bool>(
-      context: context,
-      title: 'database_edit_database_title'.tr,
-      child: DatabaseEditWidget(
+    final result = await NavigationHelper.push<bool>(
+      context,
+      DatabaseEditWidget(
         controller: DatabaseController(widget.service),
         database: database,
-        embedInSheet: true,
-        onReady: (submit) => submitDatabase = submit,
       ),
-      onSave: () => submitDatabase?.call(),
+      routeName: '/database_edit',
     );
 
     if (result == true && mounted) {

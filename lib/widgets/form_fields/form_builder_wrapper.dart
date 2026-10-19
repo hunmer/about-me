@@ -246,12 +246,15 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
     );
   }
 
-  /// 构建空状态提示
+  /// 构建空状态提示（撑满可用宽度，内容由 DSEmptyState 自行居中）
   Widget _buildEmptyState() {
-    return DSEmptyState(
-      emoji: '📭',
-      title: widget.config.emptyStateMessage ?? '暂无字段',
-      message: '可在配置中添加表单字段',
+    return SizedBox(
+      width: double.infinity,
+      child: DSEmptyState(
+        emoji: '📭',
+        title: widget.config.emptyStateMessage ?? '暂无字段',
+        message: '可在配置中添加表单字段',
+      ),
     );
   }
 

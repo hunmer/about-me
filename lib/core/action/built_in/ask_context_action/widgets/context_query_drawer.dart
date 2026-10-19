@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import '../route_parser.dart';
 import '../models/route_context.dart';
 
 /// 上下文查询抽屉
@@ -127,6 +128,9 @@ class _ContextQueryDrawerState extends State<ContextQueryDrawer> {
           conversationService: controller.conversationService,
           getSettings: () => plugin.settings,
           initialMessage: widget.routeContext.description, // 将上下文描述设为初始消息
+          initialPrompts: RouteParser.getOpeningPrompts(
+            widget.routeContext.routeName,
+          ), // 路由对应的开场白按钮列表
         ),
       ),
     );
