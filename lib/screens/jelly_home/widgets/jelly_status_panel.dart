@@ -80,9 +80,11 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
                 ),
                 child: AnimatedBuilder(
                   animation: widget.controller,
-                  builder: (context, _) => FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: _buildContent(theme),
+                  builder: (context, _) => Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: _buildContent(theme),
+                    ),
                   ),
                 ),
               ),
@@ -257,7 +259,7 @@ class _SketchProgressBar extends StatelessWidget {
       decoration: dsSketchDecoration(
         theme: theme,
         radius: theme.radii.pill,
-        fillColor: theme.surfaceAlt,
+        fillColor: theme.hatch,
         strokeWidth: 1.6,
       ),
       child: Padding(

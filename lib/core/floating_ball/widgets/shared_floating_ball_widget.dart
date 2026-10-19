@@ -436,13 +436,12 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
   Widget _buildMainBall() {
     return Listener(
       onPointerUp: (event) {
+        // 只清除按下状态；_canDrag/_isDragging 必须留给 _handleLongPressEnd
+        // 清理并保存位置——原始指针事件先于手势回调执行，这里提前清空
+        // 会导致 onLongPressEnd 里的保存逻辑永远不触发
         if (_pointerDown) {
           setState(() {
             _pointerDown = false;
-            if (_canDrag) {
-              _canDrag = false;
-              _isDragging = false;
-            }
           });
         }
       },
