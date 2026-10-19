@@ -271,10 +271,11 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
 
   // ==================== 临时频道管理 ====================
 
-  /// 创建或获取用于上下文查询的临时会话
+  /// 为上下文查询创建全新临时会话
   ///
-  /// 如果已存在且未过期，则返回现有会话；否则创建新会话
-  Future<Conversation> getOrCreateTemporaryConversation({
+  /// 同路由已存在临时会话时先删除（含消息），保证每次打开都是全新会话；
+  /// 路由的 Agent 配置记忆（saveRouteAgentConfig）不受影响
+  Future<Conversation> createFreshTemporaryConversation({
     required String routeName,
     required String title,
     String? agentId,
@@ -285,26 +286,20 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
       throw Exception('conversationController 未初始化');
     }
 
-    // 尝试获取已存在的临时会话
-    var conversation = controller.conversationService
+    // 删除同路由的旧临时会话（含消息），避免历史残留与堆积
+    final existing = controller.conversationService
         .getTemporaryConversationForRoute(routeName);
-
-    if (conversation != null) {
-      debugPrint('找到已存在的临时会话: ${conversation.id}');
-      return conversation;
+    if (existing != null) {
+      await controller.conversationService.deleteConversation(existing.id);
     }
 
-    // 创建新的临时会话
-    debugPrint('为路由 $routeName 创建新的临时会话');
-    conversation = await controller.conversationService
-        .createTemporaryConversation(
-          title: title,
-          routeName: routeName,
-          agentId: agentId,
-          agentChain: agentChain,
-        );
-
-    return conversation;
+    debugPrint('为路由 $routeName 创建全新的临时会话');
+    return controller.conversationService.createTemporaryConversation(
+      title: title,
+      routeName: routeName,
+      agentId: agentId,
+      agentChain: agentChain,
+    );
   }
 
   /// 保存路由的 Agent 配置

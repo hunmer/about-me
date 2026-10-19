@@ -1,6 +1,7 @@
 param(
     [string]$ToolsDirectory = (Join-Path $PSScriptRoot "../lib/plugins/agent_chat/tools"),
-    [switch]$UpdateIndex
+    [switch]$UpdateIndex,
+    [switch]$RemoveUnregistered
 )
 
 $ErrorActionPreference = "Stop"
@@ -8,9 +9,52 @@ $ToolsDirectory = [System.IO.Path]::GetFullPath($ToolsDirectory)
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $ToolsDirectory "../../../../"))
 $indexPath = Join-Path $ToolsDirectory "index.json"
 $errors = [System.Collections.Generic.List[string]]::new()
+$unregisteredTools = [System.Collections.Generic.List[object]]::new()
 
 function Add-Error([string]$Message) {
     $script:errors.Add($Message)
+}
+
+function Remove-TopLevelJsonObject([string]$Json, [string]$PropertyName) {
+    $key = [regex]::Escape($PropertyName)
+    $pattern = '(?m)^\s*"' + $key + '"\s*:\s*\{'
+    $match = [regex]::Match($Json, $pattern)
+    if (-not $match.Success) { throw "找不到要移除的工具定义: $PropertyName" }
+
+    $openBrace = $Json.IndexOf('{', $match.Index + $match.Length - 1)
+    $depth = 0
+    $inString = $false
+    $escaped = $false
+    $closeBrace = -1
+    for ($i = $openBrace; $i -lt $Json.Length; $i++) {
+        $char = $Json[$i]
+        if ($inString) {
+            if ($escaped) { $escaped = $false }
+            elseif ($char -eq '\') { $escaped = $true }
+            elseif ($char -eq '"') { $inString = $false }
+            continue
+        }
+        if ($char -eq '"') { $inString = $true; continue }
+        if ($char -eq '{') { $depth++ }
+        elseif ($char -eq '}') {
+            $depth--
+            if ($depth -eq 0) { $closeBrace = $i; break }
+        }
+    }
+    if ($closeBrace -lt 0) { throw "工具定义 JSON 对象未闭合: $PropertyName" }
+
+    $end = $closeBrace + 1
+    while ($end -lt $Json.Length -and [char]::IsWhiteSpace($Json[$end])) { $end++ }
+    if ($end -lt $Json.Length -and $Json[$end] -eq ',') {
+        $end++
+        while ($end -lt $Json.Length -and ($Json[$end] -eq "`r" -or $Json[$end] -eq "`n")) { $end++ }
+        return $Json.Remove($match.Index, $end - $match.Index)
+    }
+
+    $start = $match.Index
+    while ($start -gt 0 -and [char]::IsWhiteSpace($Json[$start - 1])) { $start-- }
+    if ($start -gt 0 -and $Json[$start - 1] -eq ',') { $start-- }
+    return $Json.Remove($start, $closeBrace + 1 - $start)
 }
 
 function Get-FunctionBody([string]$Source, [string]$FunctionName) {
@@ -118,15 +162,30 @@ foreach ($file in Get-ChildItem -LiteralPath $ToolsDirectory -Filter "*.json" | 
     foreach ($method in $config.Keys) {
         $checked++
         $toolId = if ($method.StartsWith("${pluginId}_")) { $method } else { "${pluginId}_$method" }
-        if (-not $indexIds.ContainsKey($toolId)) { Add-Error "索引缺失工具: $toolId" }
+        if (-not $UpdateIndex -and -not $indexIds.ContainsKey($toolId)) { Add-Error "索引缺失工具: $toolId" }
         $apiMethod = $method
         if ($pluginId -notin @("system", "ui") -and $apiMethod.StartsWith("${pluginId}_")) {
             $apiMethod = $apiMethod.Substring($pluginId.Length + 1)
         }
         if ($pluginId -eq "ui") { $apiMethod = $method }
         if ($pluginId -eq "openai" -and $apiMethod -in @("list_files", "read_file", "write_file")) { continue }
-        if ($apiMethod -notin $registered) { Add-Error "$($file.Name) 方法未注册: $method (源码插件: $sourcePlugin)" }
+        if ($apiMethod -notin $registered) {
+            $unregisteredTools.Add([pscustomobject]@{ Path = $file.FullName; Name = $method })
+            if (-not $RemoveUnregistered) { Add-Error "$($file.Name) 方法未注册: $method (源码插件: $sourcePlugin)" }
+        }
     }
+}
+
+if ($RemoveUnregistered -and $unregisteredTools.Count -gt 0) {
+    foreach ($fileGroup in ($unregisteredTools | Group-Object Path)) {
+        $content = Get-Content -Raw -LiteralPath $fileGroup.Name
+        foreach ($tool in $fileGroup.Group) {
+            $content = Remove-TopLevelJsonObject $content $tool.Name
+        }
+        Set-Content -LiteralPath $fileGroup.Name -Value $content -NoNewline -Encoding utf8
+    }
+    Write-Host "已移除 $($unregisteredTools.Count) 个未注册工具定义，并将重建索引。" -ForegroundColor Yellow
+    $UpdateIndex = $true
 }
 
 if ($UpdateIndex) {
@@ -140,17 +199,22 @@ if ($UpdateIndex) {
             $newIndex.Add(@($toolId, $title))
         }
     }
-    $newIndex | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $indexPath -Encoding utf8
+    $indexLines = foreach ($entry in $newIndex) { ConvertTo-Json -InputObject $entry -Compress }
+    $indexContent = "[`n" + (($indexLines | ForEach-Object { "  $_" }) -join ",`n") + "`n]"
+    Set-Content -LiteralPath $indexPath -Value $indexContent -Encoding utf8
     $indexIds = @{}
     foreach ($entry in $newIndex) { $indexIds[[string]$entry[0]] = $true }
 }
 
 foreach ($id in $indexIds.Keys) {
-    $pluginId = ($id -split "_", 2)[0]
-    $filePath = Join-Path $ToolsDirectory "$pluginId.json"
-    if (-not (Test-Path -LiteralPath $filePath)) { Add-Error "索引条目没有对应配置文件: $id"; continue }
+    $pluginFile = Get-ChildItem -LiteralPath $ToolsDirectory -Filter "*.json" |
+        Where-Object { $_.Name -ne "index.json" -and $id.StartsWith("$($_.BaseName)_") } |
+        Sort-Object { $_.BaseName.Length } -Descending |
+        Select-Object -First 1
+    if (-not $pluginFile) { Add-Error "索引条目没有对应配置文件: $id"; continue }
+    $pluginId = $pluginFile.BaseName
     $method = $id.Substring($pluginId.Length + 1)
-    try { $config = Get-Content -Raw -LiteralPath $filePath | ConvertFrom-Json -AsHashtable }
+    try { $config = Get-Content -Raw -LiteralPath $pluginFile.FullName | ConvertFrom-Json -AsHashtable }
     catch { continue }
     if (-not $config.ContainsKey($method) -and -not $config.ContainsKey($id)) { Add-Error "配置缺少索引工具: $id" }
 }

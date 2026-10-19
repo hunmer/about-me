@@ -76,8 +76,8 @@ class _ContextQueryDrawerState extends State<ContextQueryDrawer> {
       final agentId = routeConfig?.agentId ?? defaultAgentId;
       final agentChain = routeConfig?.agentChain;
 
-      // 创建或获取临时会话
-      final conversation = await plugin.getOrCreateTemporaryConversation(
+      // 每次打开都创建全新会话（同路由旧临时会话会被删除）
+      final conversation = await plugin.createFreshTemporaryConversation(
         routeName: widget.routeContext.routeName,
         title: '询问: ${widget.routeContext.description}',
         agentId: agentId,

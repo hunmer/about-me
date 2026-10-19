@@ -40,6 +40,8 @@ class NotesMainViewState extends State<NotesMainView> {
     currentFolderId = widget.folderId;
     // 订阅同步刷新事件
     _eventManager.subscribe('notes_refresh', _handleSyncRefresh);
+    _eventManager.subscribe('notes_cache_updated', _handleSyncRefresh);
+    _eventManager.subscribe('note_updated', _handleSyncRefresh);
     loadCurrentFolder();
   }
 
@@ -129,6 +131,8 @@ class NotesMainViewState extends State<NotesMainView> {
   @override
   void dispose() {
     _eventManager.unsubscribe('notes_refresh', _handleSyncRefresh);
+    _eventManager.unsubscribe('notes_cache_updated', _handleSyncRefresh);
+    _eventManager.unsubscribe('note_updated', _handleSyncRefresh);
     searchController.dispose();
     super.dispose();
   }
