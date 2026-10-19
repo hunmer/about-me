@@ -43,10 +43,14 @@ class MessageInput extends StatefulWidget {
   /// 与内置动作一起在"+"抽屉网格中展示
   final List<common.MessageInputQuickAction> extraQuickActions;
 
+  /// 素描面板是否画墨线描边（透传通用输入框；false = 无边框）
+  final bool showPanelStroke;
+
   const MessageInput({
     super.key,
     required this.controller,
     this.extraQuickActions = const [],
+    this.showPanelStroke = true,
   });
 
   @override
@@ -319,6 +323,7 @@ class _MessageInputState extends State<MessageInput> {
       hintText: agentReady ? '输入消息...' : '请先选择Agent...',
       onOpenActionsDrawer: _showAttachmentMenu,
       useSketchPanel: true,
+      showPanelStroke: widget.showPanelStroke,
       // 输入框上方：工具模板搜索 / 命令选择器 / 待发送状态
       header: Column(
         mainAxisSize: MainAxisSize.min,

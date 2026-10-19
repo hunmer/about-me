@@ -50,6 +50,9 @@ class MessageInput extends StatefulWidget {
   /// 容器风格：false 悬浮圆角卡片（chat 列表浮层）；true 素描面板 + 底部安全区
   final bool useSketchPanel;
 
+  /// 素描面板是否画墨线描边（false = 仅纸底/排线，无边框）
+  final bool showPanelStroke;
+
   const MessageInput({
     super.key,
     required this.controller,
@@ -66,6 +69,7 @@ class MessageInput extends StatefulWidget {
     this.onSend,
     this.onKeyEvent,
     this.useSketchPanel = false,
+    this.showPanelStroke = true,
   });
 
   @override
@@ -209,6 +213,9 @@ class _MessageInputState extends State<MessageInput> {
               child: DsSketchPanel(
                 theme: theme,
                 radius: theme.radii.xl,
+                stroke: widget.showPanelStroke
+                    ? null
+                    : DsColors.transparent,
                 child: body,
               ),
             );

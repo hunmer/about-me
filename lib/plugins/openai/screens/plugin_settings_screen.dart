@@ -13,6 +13,7 @@ import 'package:agentlib/agent_slots.dart';
 import '../aliveness/widgets/jev_settings_dialog.dart';
 import '../openai_plugin.dart';
 import '../services/soul_forge_service.dart';
+import '../services/chat_assistant_service.dart';
 import 'agent_edit_screen.dart';
 import 'agent_resource_list_screen.dart';
 import '../models/ai_agent.dart';
@@ -27,6 +28,9 @@ class PluginSettingsScreen extends StatefulWidget {
 class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
   late String _multimodalModelLabel;
 
+  /// 内置聊天助手当前使用的模型（设置项尾部展示）
+  String _chatAssistantModelLabel = '';
+
   /// 可选 Agent 列表（askContext 默认 Agent 配置用）
   List<AIAgent> _agents = [];
 
@@ -37,6 +41,7 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
   void initState() {
     super.initState();
     _multimodalModelLabel = _loadMultimodalModelLabel();
+    _loadChatAssistantModelLabel();
     _askContextAgentId =
         OpenAIPlugin.instance.settings['askContextDefaultAgentId'] as String?;
     _loadAgents();
@@ -91,6 +96,23 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
     final agent = await SoulForgeService.loadBuiltinAgent();
     if (!mounted || agent == null) return;
     await NavigationHelper.push(context, AgentEditScreen(agent: agent));
+  }
+
+  /// 内置聊天助手设置项尾部展示：当前使用的模型名
+  Future<void> _loadChatAssistantModelLabel() async {
+    final agent = await ChatAssistantService.loadBuiltinAgent();
+    if (!mounted) return;
+    final model = agent?.model.trim() ?? '';
+    setState(() => _chatAssistantModelLabel = model.isEmpty ? '未配置' : model);
+  }
+
+  /// 打开内置聊天助手的编辑页（服务商 / 模型 / 连接配置）
+  Future<void> _openChatAssistantSettings() async {
+    await ChatAssistantService.ensureBuiltinAgent();
+    final agent = await ChatAssistantService.loadBuiltinAgent();
+    if (!mounted || agent == null) return;
+    await NavigationHelper.push(context, AgentEditScreen(agent: agent));
+    _loadChatAssistantModelLabel();
   }
 
   /// 加载可选 Agent 列表（不含内置 Agent）
@@ -286,6 +308,30 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
                             subtitle: '内置人格设计师，配置生成人设使用的模型与连接',
                             showChevron: true,
                             onTap: _openSoulForgeSettings,
+                          ),
+                          SizedBox(height: theme.spacing.sm),
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.chat,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: '聊天助手',
+                            subtitle: '内置快捷速记助手，配置服务商与模型',
+                            showChevron: true,
+                            trailing: SizedBox(
+                              width: 120,
+                              child: Text(
+                                _chatAssistantModelLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            ),
+                            onTap: _openChatAssistantSettings,
                           ),
                           SizedBox(height: theme.spacing.sm),
                           DSListItem(

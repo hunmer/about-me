@@ -78,7 +78,9 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     if (agentChat == null) return null;
 
     var conversation = agentChat.conversationService
-        .getTemporaryConversationForRoute(ChatAssistantService.conversationRoute);
+        .getTemporaryConversationForRoute(
+          ChatAssistantService.conversationRoute,
+        );
     conversation ??= await agentChat.conversationService
         .createTemporaryConversation(
           title: 'screens_assistantTitle'.tr,
@@ -159,52 +161,63 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
         color: theme.background,
         child: SafeArea(
           bottom: false,
-          child: Column(
-            children: [
-              _buildHeader(theme),
-              Expanded(
-                child: FutureBuilder<ChatController?>(
-                  future: _controllerFuture,
-                  builder: (context, snapshot) {
-                    final controller = snapshot.data;
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          'screens_assistantInitFailed'.tr,
-                          style: DsTypography.body.copyWith(
-                            color: theme.textSub,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      );
-                    }
-                    if (controller == null) return const SizedBox.shrink();
-                    final messages = controller.messages;
-                    return Column(
-                      children: [
-                        Expanded(
-                          child: messages.isEmpty
-                              ? _buildHero(theme, controller)
-                              : _buildMessageList(theme, controller, messages),
-                        ),
-                        // removeBottom：外部已按导航栏/键盘避让，
-                        // 去掉 MessageInput 内部 SafeArea 的底部 inset
-                        MediaQuery.removePadding(
-                          context: context,
-                          removeBottom: true,
-                          child: Padding(
-                            padding: EdgeInsets.only(bottom: bottomInset),
-                            child: MessageInput(
-                              controller: controller,
+          // 宽屏下整体内容收拢为居中的中央列
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: Column(
+                children: [
+                  _buildHeader(theme),
+                  Expanded(
+                    child: FutureBuilder<ChatController?>(
+                      future: _controllerFuture,
+                      builder: (context, snapshot) {
+                        final controller = snapshot.data;
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'screens_assistantInitFailed'.tr,
+                              style: DsTypography.body.copyWith(
+                                color: theme.textSub,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                          );
+                        }
+                        if (controller == null) return const SizedBox.shrink();
+                        final messages = controller.messages;
+                        return Column(
+                          children: [
+                            Expanded(
+                              child: messages.isEmpty
+                                  ? _buildHero(theme, controller)
+                                  : _buildMessageList(
+                                      theme,
+                                      controller,
+                                      messages,
+                                    ),
+                            ),
+                            // removeBottom：外部已按导航栏/键盘避让，
+                            // 去掉 MessageInput 内部 SafeArea 的底部 inset
+                            MediaQuery.removePadding(
+                              context: context,
+                              removeBottom: true,
+                              child: Padding(
+                                padding: EdgeInsets.only(bottom: bottomInset),
+                                child: MessageInput(
+                                  controller: controller,
+                                  showPanelStroke: false,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -276,86 +289,113 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
       _character.setColor('black', scheme);
     }
     return WiredDraw(
-      child: ListView(
-        padding: EdgeInsets.fromLTRB(
-          theme.spacing.lg,
-          theme.spacing.md,
-          theme.spacing.lg,
-          theme.spacing.md,
+      // 视口最小高度撑满可用区：内容整体垂直居中，空间不足时仍可滚动
+      child: LayoutBuilder(
+        builder: (context, constraints) => ListView(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spacing.lg,
+            vertical: theme.spacing.md,
+          ),
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: GestureDetector(
+                        onTap: _character.bounceOnce,
+                        child: GrokCharacterView(
+                          character: _character,
+                          sizePx: 176,
+                          pointerFollow: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Center(child: _buildBadge(theme, controller)),
+                    const SizedBox(height: 16),
+                    Text(
+                      'screens_assistantGreeting'.tr,
+                      style: DsTypography.heading.copyWith(color: theme.text),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'screens_assistantReady'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: Text(
+                        'screens_assistantIdeas'.tr,
+                        style: DsTypography.title.copyWith(color: theme.text),
+                      ),
+                    ),
+                    MarqueeButtonListCardWidget(
+                      inline: true,
+                      rows: 3,
+                      // 手绘风：纸底 + 主题文字，去柔影（design.md §9.3）
+                      cardColor: theme.surface,
+                      textColor: theme.text,
+                      showShadow: false,
+                      items:
+                          [
+                                (
+                                  Icons.schedule,
+                                  'screens_assistantIdeaTodo'.tr,
+                                  theme.primary,
+                                ),
+                                (
+                                  Icons.savings,
+                                  'screens_assistantIdeaBill'.tr,
+                                  theme.warning,
+                                ),
+                                (
+                                  Icons.menu_book,
+                                  'screens_assistantIdeaDiary'.tr,
+                                  theme.success,
+                                ),
+                                (
+                                  Icons.water_drop,
+                                  'screens_assistantIdeaCheckin'.tr,
+                                  theme.danger,
+                                ),
+                                (
+                                  Icons.event,
+                                  'screens_assistantIdeaEvent'.tr,
+                                  theme.primary,
+                                ),
+                                (
+                                  Icons.alarm,
+                                  'screens_assistantIdeaTimer'.tr,
+                                  theme.warning,
+                                ),
+                              ]
+                              .map(
+                                (e) => MarqueeButtonItemData(
+                                  label: e.$2,
+                                  icon: e.$1,
+                                  color: e.$3,
+                                  payload: e.$2,
+                                ),
+                              )
+                              .toList(),
+                      onItemTap: (item, _) =>
+                          controller.setInputText(item.label),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        children: [
-          const SizedBox(height: 12),
-          Center(
-            child: GestureDetector(
-              onTap: _character.bounceOnce,
-              child: GrokCharacterView(
-                character: _character,
-                sizePx: 176,
-                pointerFollow: true,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Center(child: _buildBadge(theme, controller)),
-          const SizedBox(height: 16),
-          Text(
-            'screens_assistantGreeting'.tr,
-            style: DsTypography.heading.copyWith(color: theme.text),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'screens_assistantReady'.tr,
-            style: DsTypography.caption.copyWith(color: theme.textSub),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 24),
-            child: Text(
-              'screens_assistantIdeas'.tr,
-              style: DsTypography.title.copyWith(color: theme.text),
-            ),
-          ),
-          MarqueeButtonListCardWidget(
-            inline: true,
-            rows: 3,
-            // 手绘风：纸底 + 主题文字，去柔影（design.md §9.3）
-            cardColor: theme.surface,
-            textColor: theme.text,
-            showShadow: false,
-            items: [
-              (
-                Icons.schedule,
-                'screens_assistantIdeaTodo'.tr,
-                theme.primary,
-              ),
-              (Icons.savings, 'screens_assistantIdeaBill'.tr, theme.warning),
-              (
-                Icons.menu_book,
-                'screens_assistantIdeaDiary'.tr,
-                theme.success,
-              ),
-              (
-                Icons.water_drop,
-                'screens_assistantIdeaCheckin'.tr,
-                theme.danger,
-              ),
-              (Icons.event, 'screens_assistantIdeaEvent'.tr, theme.primary),
-              (Icons.alarm, 'screens_assistantIdeaTimer'.tr, theme.warning),
-            ]
-                .map(
-                  (e) => MarqueeButtonItemData(
-                    label: e.$2,
-                    icon: e.$1,
-                    color: e.$3,
-                    payload: e.$2,
-                  ),
-                )
-                .toList(),
-            onItemTap: (item, _) => controller.setInputText(item.label),
-          ),
-        ],
       ),
     );
   }
@@ -379,7 +419,9 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
           ),
           const SizedBox(width: 6),
           Text(
-            working ? 'screens_assistantWorking'.tr : 'screens_assistantBadgeIdle'.tr,
+            working
+                ? 'screens_assistantWorking'.tr
+                : 'screens_assistantBadgeIdle'.tr,
             style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
         ],
