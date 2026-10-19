@@ -22,88 +22,135 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
     }
   }
 
-  /// 顶栏标题：会话名 + Agent/输入中状态
+  /// 打开 Agent 选择器（单选，切换会话的 Agent）
+  Future<void> _openAgentSelector() async {
+    final result = await SmoothBottomSheet.show<List<Map<String, String>>>(
+      context: context,
+      builder: (context) => DSThemeBridge(
+        child: Builder(
+          builder: (context) => AgentListDrawer(
+            selectedAgents: _currentAgent != null
+                ? [
+                    {'id': _currentAgent!.id, 'name': _currentAgent!.name},
+                  ]
+                : [],
+            onAgentSelected: (agents) {},
+            allowMultipleSelection: false,
+          ),
+        ),
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      final agentId = result.first['id'];
+      if (agentId != null && agentId != _currentAgent?.id) {
+        try {
+          await _controller.switchToSingleAgent(agentId);
+        } catch (e) {
+          toastService.showToast('切换Agent失败: $e');
+          return;
+        }
+        _syncAgentStateFromController();
+        setState(() {});
+        _loadSuggestedQuestions(); // Agent 变化后刷新开场白
+      }
+    }
+  }
+
+  /// 顶栏标题：会话名 + Agent/输入中状态（点击可切换 Agent）
   Widget _buildAgentTitle() {
     final isTyping =
         _controller.isSending ||
         _controller.isThinking ||
         _controller.alivenessFlushActive;
 
-    return DSThemeBridge(
-      child: Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
-          return ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 240),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.conversation.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: DsTypography.body.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.text,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _openAgentSelector,
+      child: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 240),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.conversation.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTypography.body.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.text,
+                    ),
                   ),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 正在输入状态（替代 agent 信息显示）
-                    if (isTyping) ...[
-                      SizedBox(
-                        width: 6,
-                        height: 6,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: theme.primary,
-                            shape: BoxShape.circle,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 正在输入状态（替代 agent 信息显示）
+                      if (isTyping) ...[
+                        SizedBox(
+                          width: 6,
+                          height: 6,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: theme.primary,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          _controller.typingStatusText ?? '正在输入中…',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.primary,
-                            fontWeight: FontWeight.w500,
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            _controller.typingStatusText ?? '正在输入中…',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
-                    ] else ...[
-                      DsIcon(
-                        _isChainMode ? DsIconKind.layers : DsIconKind.bot,
-                        size: 12,
-                        color: theme.textSub,
-                      ),
-                      const SizedBox(width: 4),
-                      // 显示 agent 信息
-                      Flexible(
-                        child: Text(
-                          _getAgentDisplayText(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: DsTypography.caption.copyWith(
-                            color: _hasValidAgent()
-                                ? theme.textSub
-                                : theme.warning,
-                            fontWeight: FontWeight.w500,
+                      ] else ...[
+                        DsIcon(
+                          _isChainMode ? DsIconKind.layers : DsIconKind.bot,
+                          size: 12,
+                          color: theme.textSub,
+                        ),
+                        const SizedBox(width: 4),
+                        // 显示 agent 信息
+                        Flexible(
+                          child: Text(
+                            _getAgentDisplayText(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: DsTypography.caption.copyWith(
+                              color: _hasValidAgent()
+                                  ? theme.textSub
+                                  : theme.warning,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
+                        // 可点击切换 Agent 的提示箭头
+                        DsIcon(
+                          DsIconKind.chevronDown,
+                          size: 12,
+                          color: _hasValidAgent()
+                              ? theme.textSub
+                              : theme.warning,
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

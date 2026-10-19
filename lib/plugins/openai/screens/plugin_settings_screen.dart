@@ -15,6 +15,7 @@ import '../openai_plugin.dart';
 import '../services/soul_forge_service.dart';
 import 'agent_edit_screen.dart';
 import 'agent_resource_list_screen.dart';
+import '../models/ai_agent.dart';
 
 class PluginSettingsScreen extends StatefulWidget {
   const PluginSettingsScreen({super.key});
@@ -26,10 +27,19 @@ class PluginSettingsScreen extends StatefulWidget {
 class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
   late String _multimodalModelLabel;
 
+  /// 可选 Agent 列表（askContext 默认 Agent 配置用）
+  List<AIAgent> _agents = [];
+
+  /// askContext 默认 Agent ID（null 表示不使用默认）
+  String? _askContextAgentId;
+
   @override
   void initState() {
     super.initState();
     _multimodalModelLabel = _loadMultimodalModelLabel();
+    _askContextAgentId =
+        OpenAIPlugin.instance.settings['askContextDefaultAgentId'] as String?;
+    _loadAgents();
     AgentResourceSlots slots;
     try {
       slots = AgentLibResourceService.fromSettings(
@@ -83,6 +93,24 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
     await NavigationHelper.push(context, AgentEditScreen(agent: agent));
   }
 
+  /// 加载可选 Agent 列表（不含内置 Agent）
+  Future<void> _loadAgents() async {
+    try {
+      final agents = await OpenAIPlugin.instance.controller.loadVisibleAgents();
+      if (mounted) {
+        setState(() => _agents = agents);
+      }
+    } catch (e) {
+      debugPrint('加载Agent列表失败: $e');
+    }
+  }
+
+  /// 切换 askContext 默认 Agent
+  void _onAskContextAgentChanged(String? agentId) {
+    setState(() => _askContextAgentId = agentId);
+    OpenAIPlugin.instance.updateSettings({'askContextDefaultAgentId': agentId});
+  }
+
   void _saveSlots(AgentResourceSlots slots) {
     AgentLibResourceService.globalSlots = slots;
     OpenAIPlugin.instance.updateSettings(
@@ -130,6 +158,35 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
                               ),
                             ),
                             onTap: _openMultimodalModelSetup,
+                          ),
+                          SizedBox(height: theme.spacing.sm),
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.bot,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: '询问上下文默认Agent',
+                            subtitle: '询问当前上下文打开聊天时，未单独配置路由时使用的Agent',
+                            showChevron: false,
+                            trailing: DSSelect<String?>(
+                              width: 140,
+                              value: _askContextAgentId,
+                              hint: '未设置',
+                              items: [
+                                const DSSelectItem<String?>(
+                                  label: '未设置',
+                                  value: null,
+                                ),
+                                ..._agents.map(
+                                  (agent) => DSSelectItem<String?>(
+                                    label: agent.name,
+                                    value: agent.id,
+                                  ),
+                                ),
+                              ],
+                              onChanged: _onAskContextAgentChanged,
+                            ),
                           ),
                           SizedBox(height: theme.spacing.sm),
                           DSListItem(

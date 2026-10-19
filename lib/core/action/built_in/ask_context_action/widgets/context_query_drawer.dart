@@ -5,6 +5,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import '../route_parser.dart';
 import '../models/route_context.dart';
@@ -68,8 +69,11 @@ class _ContextQueryDrawerState extends State<ContextQueryDrawer> {
       }
 
       // 尝试从路由配置中读取上次使用的 Agent 配置
+      // 路由未单独配置时，回退到 openai 设置中的 askContext 默认 Agent
       final routeConfig = plugin.getRouteAgentConfig(widget.routeContext.routeName);
-      final agentId = routeConfig?.agentId;
+      final defaultAgentId =
+          OpenAIPlugin.instance.settings['askContextDefaultAgentId'] as String?;
+      final agentId = routeConfig?.agentId ?? defaultAgentId;
       final agentChain = routeConfig?.agentChain;
 
       // 创建或获取临时会话

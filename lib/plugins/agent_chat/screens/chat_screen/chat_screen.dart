@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';

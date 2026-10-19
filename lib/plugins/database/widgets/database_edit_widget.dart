@@ -191,6 +191,9 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
           padding: EdgeInsets.only(
             bottom: MediaQuery.paddingOf(context).bottom + 88,
           ),
+          // 关闭桌面端自动追加的 Material 拖拽条（会与自定义图标
+          // 并存出现两个拖拽钮），拖拽入口由行尾自定义图标接管
+          buildDefaultDragHandles: false,
           // 手绘风：替换默认 Material 阴影浮起预览，仅轻微缩放反馈
           proxyDecorator: (child, index, animation) {
             return AnimatedBuilder(
@@ -208,7 +211,9 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
               _fields.insert(newIndex, item);
             });
           },
-          children: _fields.map((field) {
+          children: _fields.asMap().entries.map((entry) {
+            final index = entry.key;
+            final field = entry.value;
             // 解析 metadata 获取 showInPreview
             bool showInPreview = false;
             if (field.description != null && field.description!.isNotEmpty) {
@@ -276,7 +281,11 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
                       tooltip: 'app_delete'.tr,
                       onPressed: () => _deleteField(field),
                     ),
-                    DsIcon(DsIconKind.drag, color: theme.textSub),
+                    // 自定义拖拽条：接管拖拽手势（替代被关闭的默认 handle）
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: DsIcon(DsIconKind.drag, color: theme.textSub),
+                    ),
                   ],
                 ),
               ),

@@ -367,6 +367,8 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
           icon: DsIconKind.chat,
           title: _currentAgent != null ? '开始新的对话' : '请先选择一个Agent',
           message: _currentAgent != null ? '当前Agent: ${_currentAgent!.name}' : null,
+          actionLabel: _currentAgent == null ? '选择Agent' : null,
+          onAction: _currentAgent == null ? _openAgentSelector : null,
         ),
       ),
     );
