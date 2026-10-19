@@ -127,11 +127,7 @@ class CalendarController extends ChangeNotifier {
       <String, dynamic>{},
     );
 
-    // 检查是否有数据，如果没有则加载示例数据
-    if (data.isEmpty) {
-      await _loadSampleData();
-      return;
-    }
+    if (data.isEmpty) return;
 
     // 加载现有数据
     data.forEach((key, value) {
@@ -154,9 +150,13 @@ class CalendarController extends ChangeNotifier {
     await _loadEntries();
   }
 
-  /// 加载示例数据（仅开发环境，生产环境保持空数据）
-  Future<void> _loadSampleData() async {
-    if (!kDebugMode) return;
+  /// 加载示例数据（存储为空时写入，供首次打开引导选择调用）
+  Future<void> loadSampleData() async {
+    final data = await AboutmeDataService.instance.readPath(
+      _storageKey,
+      <String, dynamic>{},
+    );
+    if (data.isNotEmpty) return;
     final sampleEntries = CalendarAlbumSampleData.getSampleCalendarEntriesGrouped();
 
     // 将示例数据加载到内存中

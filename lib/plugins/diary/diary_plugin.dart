@@ -193,6 +193,16 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
     }
   }
 
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'entries',
+      title: 'diary_sampleEntriesTitle'.tr,
+      description: 'diary_sampleEntriesDesc'.tr,
+      apply: () => DiaryUtils.createSampleEntries(),
+    ),
+  ];
+
   // 缓存统计数据（用于同步访问）
   int _cachedTodayWordCount = 0;
   int _cachedMonthWordCount = 0;

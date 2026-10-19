@@ -48,6 +48,18 @@ class DayPlugin extends BasePlugin with JSBridgePlugin {
   bool _isInitialized = false;
 
   @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'memorialDays',
+      title: 'day_sampleMemorialDaysTitle'.tr,
+      description: 'day_sampleMemorialDaysDesc'.tr,
+      apply: () => _isInitialized
+          ? _controller.loadSampleMemorialDays()
+          : Future.value(),
+    ),
+  ];
+
+  @override
   final String id = 'day';
 
   @override

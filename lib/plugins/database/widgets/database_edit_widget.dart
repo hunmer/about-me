@@ -11,7 +11,6 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
 import 'package:aboutme/plugins/database/controllers/database_controller.dart';
-import 'package:aboutme/plugins/database/controllers/field_controller.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
 import 'package:aboutme/plugins/database/models/field_model.dart';
 import 'package:aboutme/plugins/database/models/database_field.dart';
@@ -47,6 +46,9 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
   List<FieldModel> _fields = [];
   bool _isSaving = false; // 标记是否正在保存
 
+  /// 弹层模式下 DSTabs 的当前页（替代 Material TabController）
+  int _selectedTab = 0;
+
   @override
   void initState() {
     super.initState();
@@ -71,26 +73,20 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
   @override
   Widget build(BuildContext context) {
     if (widget.embedInSheet) {
+      // 弹层外壳（SmoothBottomSheet）已注入 AppTheme，可直接用 DS 组件
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(text: 'database_information_tab_title'.tr),
-              Tab(text: 'database_fields_tab_title'.tr),
+          DSTabs(
+            labels: [
+              'database_information_tab_title'.tr,
+              'database_fields_tab_title'.tr,
             ],
+            selected: _selectedTab,
+            onChanged: (index) => setState(() => _selectedTab = index),
           ),
           Flexible(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Information Tab
-                _buildInfoTab(),
-                // Fields Tab
-                _buildFieldsTab(),
-              ],
-            ),
+            child: _selectedTab == 0 ? _buildInfoTab() : _buildFieldsTab(),
           ),
         ],
       );
@@ -157,7 +153,9 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
               labelText: 'database_database_name_label'.tr,
               initialValue: _editedDatabase.name,
               required: true,
-              validationMessage: '${'database_database_name_label'.tr}不能为空',
+              validationMessage: 'database_field_required'.trParams({
+                'name': 'database_database_name_label'.tr,
+              }),
               prefixIcon: Icons.storage,
             ),
 
@@ -178,6 +176,7 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
   }
 
   Widget _buildFieldsTab() {
+    final theme = DSThemeBridge.resolve(context);
     return Stack(
       children: [
         ReorderableListView(
@@ -201,67 +200,60 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
               }
             }
 
-            return ListTile(
+            return DSListItem(
               key: ValueKey(field.id),
-              title: Text(field.name),
-              subtitle: Text(field.type),
-              leading: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 预览显示 checkbox
-                  Checkbox(
-                    value: showInPreview,
-                    onChanged: (value) {
-                      setState(() {
-                        // 更新 metadata 中的 showInPreview
-                        Map<String, dynamic>? metadata;
-                        if (field.description != null &&
-                            field.description!.isNotEmpty) {
-                          try {
-                            metadata =
-                                jsonDecode(field.description!)
-                                    as Map<String, dynamic>?;
-                          } catch (e) {
-                            metadata = {};
-                          }
-                        } else {
-                          metadata = {};
-                        }
-                        metadata ??= {};
-                        metadata['showInPreview'] = value ?? false;
+              title: field.name,
+              subtitle: field.type,
+              leading: DSCheckbox(
+                value: showInPreview,
+                semanticLabel: 'database_show_in_preview'.tr,
+                onChanged: (value) {
+                  setState(() {
+                    // 更新 metadata 中的 showInPreview
+                    Map<String, dynamic>? metadata;
+                    if (field.description != null &&
+                        field.description!.isNotEmpty) {
+                      try {
+                        metadata =
+                            jsonDecode(field.description!)
+                                as Map<String, dynamic>?;
+                      } catch (e) {
+                        metadata = {};
+                      }
+                    } else {
+                      metadata = {};
+                    }
+                    metadata ??= {};
+                    metadata['showInPreview'] = value ?? false;
 
-                        final index = _fields.indexWhere(
-                          (f) => f.id == field.id,
-                        );
-                        if (index >= 0) {
-                          _fields[index] = field.copyWith(
-                            description: jsonEncode(metadata),
-                          );
-                        }
-                      });
-                    },
-                  ),
-                  Icon(
-                    FieldController.fieldTypes[field.type] ?? Icons.help,
-                    color: Colors.deepPurple,
-                  ),
-                ],
+                    final index = _fields.indexWhere(
+                      (f) => f.id == field.id,
+                    );
+                    if (index >= 0) {
+                      _fields[index] = field.copyWith(
+                        description: jsonEncode(metadata),
+                      );
+                    }
+                  });
+                },
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 20),
+                  DSIconButton(
+                    icon: DsIconKind.edit,
+                    size: 32,
+                    tooltip: 'app_edit'.tr,
                     onPressed: () => _editField(field),
-                    tooltip: '编辑'.tr,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, size: 20),
+                  DSIconButton(
+                    icon: DsIconKind.trash,
+                    size: 32,
+                    iconColor: theme.danger,
+                    tooltip: 'app_delete'.tr,
                     onPressed: () => _deleteField(field),
-                    tooltip: '删除'.tr,
-                    color: Theme.of(context).colorScheme.error,
                   ),
-                  const Icon(Icons.drag_handle),
+                  DsIcon(DsIconKind.drag, color: theme.textSub),
                 ],
               ),
             );
@@ -315,7 +307,7 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
       context: context,
       builder: (context) => FieldTypeSelectorDialog(
         initialSelectedTypes: [field.type],
-        dialogTitle: '编辑字段',
+        dialogTitle: 'database_edit_field_title'.tr,
         multiSelect: false,
         showConfigTab: true,
         initialField: field,
@@ -336,26 +328,16 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget>
 
   /// 删除字段
   Future<void> _deleteField(FieldModel field) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('database_delete_field_title'.tr),
-        content: Text(
-          'database_delete_field_confirm'.trParams({'name': field.name}),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('app_cancel'.tr),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: Text('app_delete'.tr),
-          ),
-        ],
+      builder: (context) => DSDialog(
+        title: 'database_delete_field_title'.tr,
+        message: 'database_delete_field_confirm'.trParams({
+          'name': field.name,
+        }),
+        confirmText: 'app_delete'.tr,
+        cancelText: 'app_cancel'.tr,
+        confirmVariant: DSButtonVariant.destructive,
       ),
     );
 

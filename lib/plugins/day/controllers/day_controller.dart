@@ -150,11 +150,7 @@ class DayController extends ChangeNotifier {
     final fileExists = await AboutmeDataService.instance.existsPath(filePath);
 
     if (!fileExists) {
-      // 文件不存在，仅开发环境写入示例数据，生产环境保持空数据
       _memorialDays.clear();
-      if (kDebugMode) {
-        _memorialDays.addAll(DaySampleData.getSampleMemorialDays());
-      }
       await _saveMemorialDays();
       _sortMemorialDays();
       return;
@@ -205,6 +201,26 @@ class DayController extends ChangeNotifier {
     } catch (e) {
       debugPrint('保存纪念日数据失败: $e');
     }
+  }
+
+  /// 加载示例纪念日数据（存储为空时写入，供首次打开引导选择调用）
+  Future<void> loadSampleMemorialDays() async {
+    final filePath = '${'day'}/memorial_days.json';
+    var content = await AboutmeDataService.instance.readPathText(filePath);
+    if (content.isNotEmpty) {
+      try {
+        final List<dynamic> jsonList = jsonDecode(content);
+        if (jsonList.isNotEmpty) return;
+      } catch (e) {
+        debugPrint('解析纪念日数据失败: $e');
+        return;
+      }
+    }
+
+    _memorialDays.addAll(DaySampleData.getSampleMemorialDays());
+    await _saveMemorialDays();
+    _sortMemorialDays();
+    notifyListeners();
   }
 
   // 添加纪念日

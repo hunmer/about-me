@@ -69,5 +69,26 @@ class DatabaseTranslationsZh {
 
     // const Text 硬编码迁移(zh)
     'database_sortMethod': '排序方式',
+
+    // 记录列表/过滤
+    'database_search_records': '搜索记录...',
+    'database_filter_date_range': '日期',
+    'database_filter_sort': '排序',
+    'database_sort_updated_desc': '最新更新',
+    'database_sort_updated_asc': '最早更新',
+    'database_sort_created_desc': '最新创建',
+    'database_sort_created_asc': '最早创建',
+    'database_no_matching_records': '没有匹配的记录',
+    'database_no_records_yet': '暂无记录',
+    'database_try_adjust_filters': '尝试调整过滤条件',
+    'database_record_updated_at': '更新于 @time',
+    'database_time_today': '今天',
+    'database_time_yesterday': '昨天',
+    'database_time_days_ago': '@n天前',
+
+    // 表单校验
+    'database_field_required': '@name不能为空',
+    'database_show_in_preview': '在预览中显示',
+    'database_edit_field_title': '编辑字段',
   };
 }

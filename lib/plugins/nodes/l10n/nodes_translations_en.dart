@@ -108,4 +108,8 @@ final Map<String, String> nodesTranslationsEn = {
   'nodes_notebookListWidgetDesc': 'Display all nodes in notebook',
   'nodes_nodeCount': '@count nodes',
   'nodes_noNodes': 'No nodes',
+
+  // Sample data
+  'nodes_sampleNotebooksTitle': 'Sample notebooks',
+  'nodes_sampleNotebooksDesc': 'Create sample work/life/learning notebooks with nodes',
 };

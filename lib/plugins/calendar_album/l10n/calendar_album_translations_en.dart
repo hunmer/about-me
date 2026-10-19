@@ -187,5 +187,9 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_weekly_description': 'Show photos from this week',
     'calendar_album_photo_carousel_name': 'Photo Carousel',
     'calendar_album_photo_carousel_description': 'Recent 30 days photo carousel',
+
+    // Sample data
+    'calendarAlbum_sampleEntriesTitle': 'Sample journal entries',
+    'calendarAlbum_sampleEntriesDesc': 'Create date-grouped sample journal entries',
   };
 }

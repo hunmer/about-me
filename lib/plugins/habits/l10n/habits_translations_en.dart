@@ -209,5 +209,11 @@ class HabitsTranslationsEn {
   'habits_emptyHint': 'Create habits in the Habits plugin first',
   'habits_noMatchingSkills': 'No matching skills',
   'habits_searchKeyword': 'Search: @query',
+
+  // Sample data
+  'habits_sampleHabitsTitle': 'Sample habits & records',
+  'habits_sampleHabitsDesc': 'Create sample habits with completion records',
+  'habits_sampleSkillsTitle': 'Sample skills',
+  'habits_sampleSkillsDesc': 'Create sample skill categories for habits',
 };
 }

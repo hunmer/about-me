@@ -1,7 +1,10 @@
 import 'dart:convert';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide Value;
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_args.dart';
 
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
@@ -111,7 +114,11 @@ class ContactPlugin extends BasePlugin with JSBridgePlugin {
       id: 'contacts',
       title: 'contact_sampleContactsTitle'.tr,
       description: 'contact_sampleContactsDesc'.tr,
-      apply: () => _controller.createDefaultContacts(),
+      apply: () async {
+        await _controller.createDefaultContacts();
+        // 通知已打开的联系人界面刷新（插件未实现 refreshData）
+        EventManager.instance.broadcast('contact_refresh', Value({}));
+      },
     ),
   ];
 

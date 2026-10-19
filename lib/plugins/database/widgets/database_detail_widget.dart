@@ -3,6 +3,7 @@ import 'package:aboutme/plugins/database/widgets/record_edit_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/database/controllers/database_controller.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
@@ -13,6 +14,7 @@ import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:skribble/skribble.dart';
 import '../models/record.dart' as record_model;
 
 /// 记录排序选项
@@ -83,7 +85,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
       // 1. 日期范围过滤（基于更新时间）
       FilterItem(
         id: 'dateRange',
-        title: '日期',
+        title: 'database_filter_date_range'.tr,
         type: FilterType.dateRange,
         builder: (context, currentValue, onChanged) {
           return FilterBuilders.buildDateRangeFilter(
@@ -98,24 +100,28 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
       // 2. 排序方式
       FilterItem(
         id: 'sort',
-        title: '排序',
+        title: 'database_filter_sort'.tr,
         type: FilterType.custom,
         builder: (context, currentValue, onChanged) {
           return _buildSortFilter(context, currentValue, onChanged);
         },
         getBadge: (value) {
           if (value == null) return null;
-          final option = value as RecordSortOption;
-          return switch (option) {
-            RecordSortOption.updatedDesc => '最新更新',
-            RecordSortOption.updatedAsc => '最早更新',
-            RecordSortOption.createdDesc => '最新创建',
-            RecordSortOption.createdAsc => '最早创建',
-          };
+          return _sortLabel(value as RecordSortOption);
         },
         initialValue: RecordSortOption.updatedDesc,
       ),
     ];
+  }
+
+  /// 排序选项文案
+  String _sortLabel(RecordSortOption option) {
+    return switch (option) {
+      RecordSortOption.updatedDesc => 'database_sort_updated_desc'.tr,
+      RecordSortOption.updatedAsc => 'database_sort_updated_asc'.tr,
+      RecordSortOption.createdDesc => 'database_sort_created_desc'.tr,
+      RecordSortOption.createdAsc => 'database_sort_created_asc'.tr,
+    };
   }
 
   /// 构建排序选择器
@@ -126,43 +132,32 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
   ) {
     final option =
         currentValue as RecordSortOption? ?? RecordSortOption.updatedDesc;
+    const options = RecordSortOption.values;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'database_sortMethod'.tr,
-          style: TextStyle(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 12),
-        SegmentedButton<RecordSortOption>(
-          segments: const [
-            ButtonSegment(
-              value: RecordSortOption.updatedDesc,
-              label: Text('最新更新'),
-              icon: Icon(Icons.arrow_downward, size: 16),
-            ),
-            ButtonSegment(
-              value: RecordSortOption.updatedAsc,
-              label: Text('最早更新'),
-              icon: Icon(Icons.arrow_upward, size: 16),
-            ),
-            ButtonSegment(
-              value: RecordSortOption.createdDesc,
-              label: Text('最新创建'),
-            ),
-            ButtonSegment(
-              value: RecordSortOption.createdAsc,
-              label: Text('最早创建'),
-            ),
-          ],
-          selected: {option},
-          onSelectionChanged: (Set<RecordSortOption> newSelection) {
-            onChanged(newSelection.first);
-          },
-        ),
-      ],
+    // 过滤面板经 Overlay 展示，DS 组件需自带 DSThemeBridge（design.md §8）
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'database_sortMethod'.tr,
+                style: DsTypography.heading.copyWith(
+                  color: DSThemeBridge.resolve(context).text,
+                ),
+              ),
+              const SizedBox(height: 12),
+              DSSegmentedControl(
+                options: [for (final o in options) _sortLabel(o)],
+                selected: options.indexOf(option),
+                onChanged: (index) => onChanged(options[index]),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -304,9 +299,11 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
     return FutureBuilder(
       future: _loadingFuture,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return DSThemeBridge(
+              child: Center(child: DSLoadingDots()),
+            );
+          }
 
         final database = widget.controller.currentDatabase!;
 
@@ -315,7 +312,8 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
           future: widget.controller.getRecords(database.id),
           builder: (context, recordSnapshot) {
             if (recordSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              // 处于 wrapper body 的 DSThemeBridge 之外，需自带桥
+              return DSThemeBridge(child: Center(child: DSLoadingDots()));
             }
 
             final records = recordSnapshot.data ?? [];
@@ -345,17 +343,25 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
       largeTitle: database.name,
       automaticallyImplyLeading: true,
 
-      // 顶部操作按钮
+      // 顶部操作按钮（actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge）
       actions: [
-        IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: () => _showDatabaseEditor(database),
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              return DSIconButton(
+                icon: DsIconKind.edit,
+                size: 40,
+                tooltip: 'database_edit_database_title'.tr,
+                onPressed: () => _showDatabaseEditor(database),
+              );
+            },
+          ),
         ),
       ],
 
       // 启用搜索栏
       enableSearchBar: true,
-      searchPlaceholder: '搜索记录...',
+      searchPlaceholder: 'database_search_records'.tr,
       onSearchChanged: _onSearchChanged,
 
       // 启用多条件过滤
@@ -364,24 +370,28 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
       multiFilterBarHeight: 50,
       onMultiFilterChanged: _onMultiFilterChanged,
 
-      // 主体内容（包含浮动按钮）
-      body: Stack(
-        children: [
-          // 主要内容
-          _filteredRecords.isEmpty
-              ? _buildEmptyState()
-              : _buildMasonryView(database),
+      // 主体内容（包含浮动按钮）；卡片等 DS 组件统一经桥接取手绘主题
+      body: DSThemeBridge(
+        child: Stack(
+          children: [
+            // 主要内容
+            _filteredRecords.isEmpty
+                ? _buildEmptyState()
+                : _buildMasonryView(database),
 
-          // 浮动操作按钮
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: DSThemeBridge(
-              // DSFab 内部取 AppTheme，需包桥
-              child: DSFab(onPressed: () => _showRecordEditor(database, null)),
+            // 浮动操作按钮
+            Positioned(
+              right: 16,
+              bottom: 16,
+              child: DSThemeBridge(
+                // DSFab 内部取 AppTheme，需包桥
+                child: DSFab(
+                  onPressed: () => _showRecordEditor(database, null),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -392,37 +402,12 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
         _multiFilterState.hasAnyFilter || _searchKeyword.isNotEmpty;
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            hasFilters ? Icons.filter_list_off : Icons.inbox,
-            size: 64,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurfaceVariant.withOpacity(0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            hasFilters ? '没有匹配的记录' : '暂无记录',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurfaceVariant.withOpacity(0.6),
-            ),
-          ),
-          if (hasFilters) ...[
-            const SizedBox(height: 8),
-            Text(
-              '尝试调整过滤条件',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurfaceVariant.withOpacity(0.4),
-              ),
-            ),
-          ],
-        ],
+      child: DSEmptyState(
+        icon: hasFilters ? DsIconKind.close : DsIconKind.inbox,
+        title: hasFilters
+            ? 'database_no_matching_records'.tr
+            : 'database_no_records_yet'.tr,
+        message: hasFilters ? 'database_try_adjust_filters'.tr : null,
       ),
     );
   }
@@ -430,84 +415,85 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
   /// 构建瀑布流视图
   Widget _buildMasonryView(DatabaseModel database) {
     return MasonryGridView.count(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.paddingOf(context).bottom,
+      ),
       crossAxisCount: 2,
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
       itemCount: _filteredRecords.length,
       itemBuilder: (context, index) {
         final record = _filteredRecords[index];
-        return _buildRecordCard(database, record);
+        // 手绘便签倾斜 + 贴条（角度由记录 id 哈希确定），
+        // 挂载即播墨线描画入场（design.md §10/§11）
+        return HandDrawnStickyItem(
+          tiltKey: record.id,
+          child: WiredDraw(child: _buildRecordCard(database, record)),
+        );
       },
     );
   }
 
   /// 构建记录卡片
   Widget _buildRecordCard(DatabaseModel database, record_model.Record record) {
+    final theme = DSThemeBridge.resolve(context);
     // 获取需要显示在预览中的字段
     final previewFields = database.fields
         .where((f) => f.showInPreview)
         .toList();
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
+    return GestureDetector(
+      // 长按弹操作菜单（tap 由 DSCard 内部 Pressable 处理）
+      onLongPress: () => _showRecordMenu(context, record),
+      child: DSCard(
         onTap: () => _showRecordEditor(database, record),
-        onLongPress: () {
-          _showRecordMenu(context, record);
-        },
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxHeight: 400),
           child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 标题
-                  Text(
-                    record.fields['title']?.toString() ??
-                        'database_untitled_record'.tr,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 标题
+                Text(
+                  record.fields['title']?.toString() ??
+                      'database_untitled_record'.tr,
+                  style: DsTypography.heading.copyWith(color: theme.text),
+                ),
+                const SizedBox(height: 12),
+
+                // 预览字段信息 - 使用 FormBuilderWrapper
+                if (previewFields.isNotEmpty) ...[
+                  FormBuilderWrapper(
+                    config: FormConfig(
+                      fields: previewFields.map((field) {
+                        return FormFieldConfig(
+                          name: field.name,
+                          type: _mapFieldType(field.type),
+                          labelText: field.name,
+                          initialValue: record.fields[field.name],
+                          enabled: false, // 禁止编辑
+                        );
+                      }).toList(),
+                      onSubmit: (_) {}, // 空回调，不会触发
+                      showSubmitButton: false,
+                      showResetButton: false,
+                      fieldSpacing: 8,
                     ),
                   ),
-                  const SizedBox(height: 12),
-
-                  // 预览字段信息 - 使用 FormBuilderWrapper
-                  if (previewFields.isNotEmpty) ...[
-                    FormBuilderWrapper(
-                      config: FormConfig(
-                        fields: previewFields.map((field) {
-                          return FormFieldConfig(
-                            name: field.name,
-                            type: _mapFieldType(field.type),
-                            labelText: field.name,
-                            initialValue: record.fields[field.name],
-                            enabled: false, // 禁止编辑
-                          );
-                        }).toList(),
-                        onSubmit: (_) {}, // 空回调，不会触发
-                        showSubmitButton: false,
-                        showResetButton: false,
-                        fieldSpacing: 8,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-
-                  // 更新时间
-                  Text(
-                    '更新于 ${_formatDateTime(record.updatedAt)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurfaceVariant.withOpacity(0.5),
-                      fontSize: 11,
-                    ),
-                  ),
+                  const SizedBox(height: 4),
                 ],
-              ),
+
+                // 更新时间
+                Text(
+                  'database_record_updated_at'.trParams({
+                    'time': _formatDateTime(record.updatedAt),
+                  }),
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+              ],
             ),
           ),
         ),
@@ -545,13 +531,17 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
+    final hhmm =
+        '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
 
     if (difference.inDays == 0) {
-      return '今天 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      return '${'database_time_today'.tr} $hhmm';
     } else if (difference.inDays == 1) {
-      return '昨天 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      return '${'database_time_yesterday'.tr} $hhmm';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}天前';
+      return 'database_time_days_ago'.trParams({
+        'n': difference.inDays.toString(),
+      });
     } else {
       return '${dateTime.month}/${dateTime.day}';
     }
@@ -561,25 +551,16 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
     BuildContext context,
     record_model.Record record,
   ) {
-    return showDialog<bool>(
+    return showDSDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('database_delete_record_title'.tr),
-        content: Text(
-          'database_delete_record_message'.trParams({
-            'name': record.fields['title'] ?? 'database_untitled_record'.tr,
-          }),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('database_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text('database_delete'.tr),
-          ),
-        ],
+      builder: (context) => DSDialog(
+        title: 'database_delete_record_title'.tr,
+        message: 'database_delete_record_message'.trParams({
+          'name': record.fields['title'] ?? 'database_untitled_record'.tr,
+        }),
+        confirmText: 'database_delete'.tr,
+        cancelText: 'database_cancel'.tr,
+        confirmVariant: DSButtonVariant.destructive,
       ),
     ).then((value) => value ?? false);
   }
@@ -597,17 +578,18 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: Text('database_edit'.tr),
+            SmoothSheetAction(
+              icon: DsIconKind.edit,
+              label: 'database_edit'.tr,
               onTap: () {
                 Navigator.of(context).pop();
                 _editRecord(context, record);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.delete),
-              title: Text('database_delete'.tr),
+            SmoothSheetAction(
+              icon: DsIconKind.trash,
+              label: 'database_delete'.tr,
+              destructive: true,
               onTap: () async {
                 Navigator.of(context).pop();
                 final shouldDelete = await _confirmDelete(context, record);

@@ -158,5 +158,11 @@ class ActivityTranslationsZh {
     // 界面标题
     'activity_myActivities': '活动',
     'activity_searchPlaceholder': '搜索活动、标签或注释...',
+
+    // 示例数据
+    'activity_sampleTagDataTitle': '示例标签与心情',
+    'activity_sampleTagDataDesc': '创建示例标签分组、最近标签和心情',
+    'activity_sampleActivitiesTitle': '示例活动记录',
+    'activity_sampleActivitiesDesc': '创建今日与昨日的示例活动记录',
   };
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
@@ -57,11 +56,6 @@ class SkillController {
               .where((s) => s != null)
               .toList();
 
-      // 如果没有技能数据且未初始化过，创建默认技能
-      if (_skills.isEmpty) {
-        await _createDefaultSkills();
-      }
-
       return _skills;
     } catch (e) {
       print('Error loading skills: $e');
@@ -69,9 +63,10 @@ class SkillController {
     }
   }
 
-  Future<void> _createDefaultSkills() async {
-    // 仅开发环境注入示例数据，生产环境保持空数据
-    if (!kDebugMode) return;
+  /// 创建示例技能数据（存储为空时写入，供首次打开引导选择调用）
+  Future<void> createDefaultSkills() async {
+    final existing = await AboutmeDataService.instance.readPath(_skillsKey, []);
+    if (existing is List && existing.isNotEmpty) return;
 
     // 使用示例数据创建默认技能
     final sampleData = HabitsSampleData.getSampleData();

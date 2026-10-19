@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -309,18 +308,31 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
             _warehouses.add(warehouse);
           }
         }
-      } else {
-        // 没有仓库数据，创建示例仓库
-        await _createSampleWarehouses();
       }
     } catch (e) {
       debugPrint('Error loading warehouses: $e');
     }
   }
 
-  /// 创建示例仓库数据（仅开发环境，生产环境保持空数据）
-  Future<void> _createSampleWarehouses() async {
-    if (!kDebugMode) return;
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'warehouses',
+      title: 'goods_sampleWarehousesTitle'.tr,
+      description: 'goods_sampleWarehousesDesc'.tr,
+      apply: () => createSampleWarehouses(),
+    ),
+  ];
+
+  /// 创建示例仓库数据（存储为空时写入，供首次打开引导选择调用）
+  Future<void> createSampleWarehouses() async {
+    final warehousesData = await AboutmeDataService.instance.readPath(
+      'goods/warehouses.json',
+    );
+    if (warehousesData.isNotEmpty &&
+        (warehousesData['warehouses'] as List?)?.isNotEmpty == true) {
+      return;
+    }
     try {
       // 获取示例仓库数据
       final sampleWarehouses = GoodsSampleData.getSampleWarehouses();

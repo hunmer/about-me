@@ -193,7 +193,9 @@ class _RecordEditWidgetState extends State<RecordEditWidget> {
         hintText: metadata['placeholder']?.toString(),
         initialValue: defaultValue,
         required: field.isRequired,
-        validationMessage: '${field.name}不能为空',
+        validationMessage: 'database_field_required'.trParams({
+          'name': field.name,
+        }),
         enabled: true,
         extra: extra.isNotEmpty ? extra : null,
       );

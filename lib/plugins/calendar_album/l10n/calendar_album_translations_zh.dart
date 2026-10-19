@@ -183,5 +183,9 @@ class CalendarAlbumTranslationsZh {
     'calendar_album_weekly_description': '展示本周七天的日记图片',
     'calendar_album_photo_carousel_name': '照片轮播',
     'calendar_album_photo_carousel_description': '最近30天的照片轮播',
+
+    // 示例数据
+    'calendarAlbum_sampleEntriesTitle': '示例日记条目',
+    'calendarAlbum_sampleEntriesDesc': '创建按日期分组的示例日记条目',
   };
 }

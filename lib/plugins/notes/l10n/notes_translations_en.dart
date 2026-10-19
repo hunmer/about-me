@@ -151,4 +151,8 @@ final Map<String, String> notesTranslationsEn = {
   'notes_clearDateFilter': 'Clear Date Filter',
   'notes_skip': 'Skip',
   'notes_noTags': 'No Tags Available',
+
+  // Sample data
+  'notes_sampleFoldersTitle': 'Sample folders',
+  'notes_sampleFoldersDesc': 'Create sample note folder categories',
 };

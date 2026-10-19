@@ -142,6 +142,26 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     return _activityService;
   }
 
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'tagData',
+      title: 'activity_sampleTagDataTitle'.tr,
+      description: 'activity_sampleTagDataDesc'.tr,
+      apply: () => _isInitialized
+          ? _activityService.loadSampleTagData()
+          : Future.value(),
+    ),
+    PluginSampleDataGroup(
+      id: 'activities',
+      title: 'activity_sampleActivitiesTitle'.tr,
+      description: 'activity_sampleActivitiesDesc'.tr,
+      apply: () => _isInitialized
+          ? _activityService.loadSampleActivities()
+          : Future.value(),
+    ),
+  ];
+
   // 获取通知服务实例
   ActivityNotificationService get notificationService {
     if (!_isInitialized) {
@@ -274,9 +294,6 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     // 确保活动记录数据目录存在
     await storage.createDirectory('activity');
     _activityService = ActivityService(storage, 'activity');
-
-    // 初始化默认数据（如果是首次使用）
-    await _activityService.initializeDefaultData();
 
     // 创建 Repository 和 UseCase 实例
     final repository = ClientActivityRepository(

@@ -109,4 +109,8 @@ final Map<String, String> nodesTranslationsZh = {
   'nodes_notebookListWidgetDesc': '显示笔记本中的所有节点',
   'nodes_nodeCount': '@count 个节点',
   'nodes_noNodes': '暂无节点',
+
+  // 示例数据
+  'nodes_sampleNotebooksTitle': '示例笔记本',
+  'nodes_sampleNotebooksDesc': '创建工作、生活、学习示例笔记本与节点',
 };

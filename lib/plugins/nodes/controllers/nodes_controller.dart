@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
@@ -95,24 +94,17 @@ class NodesController extends ChangeNotifier {
         if (_notebooks.isNotEmpty && _selectedNotebook == null) {
           _selectedNotebook = _notebooks.first;
         }
-      } else {
-        // 如果数据为空，加载示例数据
-        debugPrint('【NodesController】未找到现有数据，加载示例数据');
-        await _loadSampleData();
       }
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading notebooks: $e');
-      // 加载失败时，加载示例数据
-      debugPrint('【NodesController】加载数据失败，加载示例数据');
-      await _loadSampleData();
-      notifyListeners();
     }
   }
 
-  /// 加载示例数据（仅开发环境，生产环境保持空数据）
-  Future<void> _loadSampleData() async {
-    if (!kDebugMode) return;
+  /// 加载示例数据（存储为空时写入，供首次打开引导选择调用）
+  Future<void> loadSampleData() async {
+    final notebooksData = await AboutmeDataService.instance.readPath('nodes/nodes_notebooks.json');
+    if (notebooksData.isNotEmpty) return;
     try {
       _notebooks = NodesSampleData.getSampleNotebooks();
       if (_notebooks.isNotEmpty) {

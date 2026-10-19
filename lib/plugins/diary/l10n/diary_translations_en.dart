@@ -140,5 +140,9 @@ class DiaryTranslationsEn {
     'diary_stats_bounceAgain': 'Bounce Again',
     'diary_stats_closeCard': 'Close',
     'diary_stats_moodJarMemory': 'Mood Jar Memory',
+
+    // Sample data
+    'diary_sampleEntriesTitle': 'Sample diary entries',
+    'diary_sampleEntriesDesc': 'Create a few sample diary entries',
   };
 }

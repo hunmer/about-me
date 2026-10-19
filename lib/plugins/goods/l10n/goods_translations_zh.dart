@@ -187,4 +187,8 @@ const Map<String, String> goodsTranslationsZh = {
   'goods_itemCount': '@count 件物品',
   'goods_routeTitleWarehouse': '物品 - 仓库: @warehouse',
   'goods_routeTitleAll': '物品 - 所有物品',
+
+  // 示例数据
+  'goods_sampleWarehousesTitle': '示例仓库与物品',
+  'goods_sampleWarehousesDesc': '创建包含物品的示例仓库',
 };

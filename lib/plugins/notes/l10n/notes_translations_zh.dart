@@ -151,4 +151,8 @@ final Map<String, String> notesTranslationsZh = {
   'notes_clearDateFilter': '清除日期过滤',
   'notes_skip': '跳过',
   'notes_noTags': '暂无标签',
+
+  // 示例数据
+  'notes_sampleFoldersTitle': '示例文件夹',
+  'notes_sampleFoldersDesc': '创建示例笔记文件夹分类',
 };

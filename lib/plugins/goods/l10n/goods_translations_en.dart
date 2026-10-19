@@ -195,4 +195,8 @@ const Map<String, String> goodsTranslationsEn = {
   'goods_itemCount': '@count items',
   'goods_routeTitleWarehouse': 'Items - Warehouse: @warehouse',
   'goods_routeTitleAll': 'Items - All',
+
+  // Sample data
+  'goods_sampleWarehousesTitle': 'Sample warehouses & items',
+  'goods_sampleWarehousesDesc': 'Create sample warehouses with items',
 };

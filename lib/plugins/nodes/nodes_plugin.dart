@@ -85,6 +85,18 @@ class NodesPlugin extends PluginBase with JSBridgePlugin {
   NodesController get controller => _controller;
   NodesUseCase get useCase => _useCase;
 
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'notebooks',
+      title: 'nodes_sampleNotebooksTitle'.tr,
+      description: 'nodes_sampleNotebooksDesc'.tr,
+      apply: () => _isInitialized
+          ? _controller.loadSampleData()
+          : Future.value(),
+    ),
+  ];
+
   // ========== 小组件统计方法 ==========
 
   /// 获取笔记本总数

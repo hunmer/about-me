@@ -99,4 +99,8 @@ final Map<String, String> dayTranslationsZh = {
   // const Text 硬编码迁移(zh)
   'day_customRange': '自定义范围',
   'day_enterCustomDaysRange': '输入自定义天数范围',
+
+  // 示例数据
+  'day_sampleMemorialDaysTitle': '示例纪念日',
+  'day_sampleMemorialDaysDesc': '创建几个示例纪念日条目',
 };

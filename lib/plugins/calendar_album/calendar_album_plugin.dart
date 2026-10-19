@@ -69,6 +69,20 @@ class CalendarAlbumPlugin extends BasePlugin with JSBridgePlugin {
   CalendarController? _calendarController;
   CalendarController? get calendarController => _calendarController;
 
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'entries',
+      title: 'calendarAlbum_sampleEntriesTitle'.tr,
+      description: 'calendarAlbum_sampleEntriesDesc'.tr,
+      apply: () async {
+        final controller = _calendarController;
+        if (controller == null) return;
+        await controller.loadSampleData();
+      },
+    ),
+  ];
+
   TagController? _tagController;
   TagController? get tagController => _tagController;
 

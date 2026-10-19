@@ -183,6 +183,22 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
   CompletionRecordController getRecordController() => _recordController;
 
   @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'habits',
+      title: 'habits_sampleHabitsTitle'.tr,
+      description: 'habits_sampleHabitsDesc'.tr,
+      apply: () => _habitController.createDefaultHabits(),
+    ),
+    PluginSampleDataGroup(
+      id: 'skills',
+      title: 'habits_sampleSkillsTitle'.tr,
+      description: 'habits_sampleSkillsDesc'.tr,
+      apply: () => _skillController.createDefaultSkills(),
+    ),
+  ];
+
+  @override
   Future<void> registerToApp(
     PluginManager pluginManager,
     ConfigManager configManager,

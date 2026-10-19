@@ -203,5 +203,11 @@ class HabitsTranslationsZh {
   'habits_emptyHint': '请先在习惯插件中创建习惯',
   'habits_noMatchingSkills': '未找到匹配的技能',
   'habits_searchKeyword': '搜索词: @query',
+
+  // 示例数据
+  'habits_sampleHabitsTitle': '示例习惯与打卡记录',
+  'habits_sampleHabitsDesc': '创建示例习惯和对应的完成记录',
+  'habits_sampleSkillsTitle': '示例技能',
+  'habits_sampleSkillsDesc': '创建示例技能分类，供习惯关联',
 };
 }

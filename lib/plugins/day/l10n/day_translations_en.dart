@@ -99,4 +99,8 @@ final Map<String, String> dayTranslationsEn = {
   // const Text 硬编码迁移(en)
   'day_customRange': 'Custom Range',
   'day_enterCustomDaysRange': 'Enter custom day range',
+
+  // Sample data
+  'day_sampleMemorialDaysTitle': 'Sample memorial days',
+  'day_sampleMemorialDaysDesc': 'Create a few sample memorial day entries',
 };

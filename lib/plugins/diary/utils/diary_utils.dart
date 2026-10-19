@@ -47,12 +47,9 @@ class DiaryUtils {
       // 使用索引文件来管理日记条目
       final indexPath = path.join(_pluginDir, 'diary_index.json');
 
-      // 如果索引文件不存在，创建一个空的索引并添加示例数据
+      // 如果索引文件不存在，创建一个空的索引
       if (!await AboutmeDataService.instance.existsPath(indexPath)) {
         await AboutmeDataService.instance.writePath(indexPath, {});
-        // 创建示例日记
-        await _createSampleEntries();
-        // 重新加载索引
         final newIndex = await AboutmeDataService.instance.readPath(indexPath);
         if (newIndex == null) return entries;
       }
@@ -170,9 +167,11 @@ class DiaryUtils {
     }
   }
 
-  /// 创建示例日记条目（仅开发环境，生产环境保持空数据）
-  static Future<void> _createSampleEntries() async {
-    if (!kDebugMode) return;
+  /// 创建示例日记条目（索引为空时写入，供首次打开引导选择调用）
+  static Future<void> createSampleEntries() async {
+    final indexPath = path.join(_pluginDir, 'diary_index.json');
+    final index = await AboutmeDataService.instance.readPath(indexPath);
+    if (index is Map && index.isNotEmpty) return;
 
     try {
       // 获取示例日记数据

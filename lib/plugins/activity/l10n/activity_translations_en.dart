@@ -160,5 +160,11 @@ class ActivityTranslationsEn {
     // Interface titles
     'activity_myActivities': 'My Activities',
     'activity_searchPlaceholder': 'Search activities, tags, or notes...',
+
+    // Sample data
+    'activity_sampleTagDataTitle': 'Sample tags & moods',
+    'activity_sampleTagDataDesc': 'Create sample tag groups, recent tags and moods',
+    'activity_sampleActivitiesTitle': 'Sample activity records',
+    'activity_sampleActivitiesDesc': 'Create sample activities for today and yesterday',
   };
 }

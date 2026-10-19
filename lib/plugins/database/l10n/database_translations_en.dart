@@ -73,5 +73,26 @@ class DatabaseTranslationsEn {
 
     // const Text 硬编码迁移(en)
     'database_sortMethod': 'Sort Method',
+
+    // Record list / filters
+    'database_search_records': 'Search records...',
+    'database_filter_date_range': 'Date',
+    'database_filter_sort': 'Sort',
+    'database_sort_updated_desc': 'Recently updated',
+    'database_sort_updated_asc': 'Oldest updated',
+    'database_sort_created_desc': 'Recently created',
+    'database_sort_created_asc': 'Oldest created',
+    'database_no_matching_records': 'No matching records',
+    'database_no_records_yet': 'No records yet',
+    'database_try_adjust_filters': 'Try adjusting the filters',
+    'database_record_updated_at': 'Updated @time',
+    'database_time_today': 'Today',
+    'database_time_yesterday': 'Yesterday',
+    'database_time_days_ago': '@n days ago',
+
+    // Form validation
+    'database_field_required': '@name is required',
+    'database_show_in_preview': 'Show in preview',
+    'database_edit_field_title': 'Edit Field',
   };
 }

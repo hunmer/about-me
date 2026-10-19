@@ -138,5 +138,9 @@ class DiaryTranslationsZh {
     'diary_stats_bounceAgain': '再弹一下',
     'diary_stats_closeCard': '收起卡片',
     'diary_stats_moodJarMemory': '心情罐回忆',
+
+    // 示例数据
+    'diary_sampleEntriesTitle': '示例日记',
+    'diary_sampleEntriesDesc': '创建几篇示例日记条目',
   };
 }

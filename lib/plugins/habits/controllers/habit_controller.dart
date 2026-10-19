@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
@@ -35,7 +34,6 @@ class HabitController {
   final TimerController timerController;
   final SkillController skillController;
   static const _habitsKey = 'habits/habits.json';
-  static const String _initializedKey = 'habits/habits_initialized.json';
   List<Habit> _habits = [];
 
   HabitController(
@@ -80,18 +78,6 @@ class HabitController {
               .where((h) => h != null)
               .toList();
 
-      // 如果没有习惯数据且未初始化过，创建默认习惯
-      if (_habits.isEmpty) {
-        final isInitialized = await AboutmeDataService.instance.readPath(
-          _initializedKey,
-          false,
-        );
-        if (isInitialized == false) {
-          await _createDefaultHabits();
-          await AboutmeDataService.instance.writePath(_initializedKey, true);
-        }
-      }
-
       return _habits;
     } catch (e) {
       print('Error loading habits: $e');
@@ -99,9 +85,10 @@ class HabitController {
     }
   }
 
-  Future<void> _createDefaultHabits() async {
-    // 仅开发环境注入示例数据，生产环境保持空数据
-    if (!kDebugMode) return;
+  /// 创建示例习惯数据（存储为空时写入，供首次打开引导选择调用）
+  Future<void> createDefaultHabits() async {
+    final existing = await AboutmeDataService.instance.readPath(_habitsKey, []);
+    if (existing is List && existing.isNotEmpty) return;
 
     // 使用示例数据创建默认习惯
     final sampleData = HabitsSampleData.getSampleData();

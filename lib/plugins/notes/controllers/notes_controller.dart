@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
@@ -72,18 +71,25 @@ class NotesController {
           final folder = Folder.fromJson(item);
           _folders[folder.id] = folder;
         }
-      } else if (kDebugMode) {
-        // 加载示例文件夹数据（仅开发环境，生产环境保持空数据）
-        final sampleFolders = NotesSampleData.getSampleFolders();
-        for (var folder in sampleFolders) {
-          _folders[folder.id] = folder;
-        }
-        await _saveFolders();
       }
     } catch (e) {
       debugPrint('Error loading folders: $e');
       rethrow;
     }
+  }
+
+  /// 加载示例文件夹数据（存储为空时写入，供首次打开引导选择调用）
+  Future<void> loadSampleFolders() async {
+    final data = await AboutmeDataService.instance
+        .readPathText('notes/folders.json')
+        .catchError((_) => '');
+    if (data.isNotEmpty) return;
+
+    final sampleFolders = NotesSampleData.getSampleFolders();
+    for (var folder in sampleFolders) {
+      _folders[folder.id] = folder;
+    }
+    await _saveFolders();
   }
 
   Future<void> _loadNotes() async {

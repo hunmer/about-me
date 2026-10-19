@@ -40,6 +40,16 @@ class NotesPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
 
   late NotesController controller;
 
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'folders',
+      title: 'notes_sampleFoldersTitle'.tr,
+      description: 'notes_sampleFoldersDesc'.tr,
+      apply: () => controller.loadSampleFolders(),
+    ),
+  ];
+
   /// 支持刷新的文件路径前缀
   static const List<String> _refreshableFiles = ['notes/'];
 
