@@ -9,7 +9,7 @@ import 'package:aboutme/plugins/notes/models/note.dart';
 import 'package:aboutme/plugins/notes/models/note_style_selection.dart';
 import 'package:aboutme/plugins/notes/models/todo_item.dart';
 import 'package:aboutme/plugins/notes/widgets/note_color_picker.dart';
-import 'package:aboutme/widgets/quill_viewer/quill_viewer.dart';
+import 'package:aboutme/widgets/common/cute_notepad_editor.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
@@ -273,41 +273,26 @@ class NoteCard extends StatelessWidget {
                   if (note.isTodo)
                     ..._buildTodoItems(theme, contentSub, seed, progress)
                   else
-                    ShaderMask(
-                      shaderCallback: (rect) => const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.white,
-                          Colors.white,
-                          Colors.transparent,
-                        ],
-                        stops: [0.0, 0.75, 1.0],
-                      ).createShader(rect),
-                      blendMode: BlendMode.dstIn,
-                      // 撑满卡片宽度（QuillViewer 内部 IntrinsicWidth 会收缩到最长行），
-                      // 限高约 3 行做摘要；IgnorePointer 禁止卡片内滚动
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: IgnorePointer(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              maxHeight: 64,
-                            ),
-                            child: ClipRect(
-                              child: DefaultTextStyle(
-                                style: DsTypography.body.copyWith(
-                                  color: contentSub,
-                                ),
-                                child: QuillViewer(
-                                  data: note.content,
-                                  selectable: false,
-                                ),
-                              ),
-                            ),
+                    Builder(
+                      // Delta 富文本提取纯文本，超过 3 行截断，
+                      // "..." 单独一行展示
+                      builder: (context) {
+                        final plain =
+                            tryParseQuillDeltaToText(note.content) ??
+                            note.content;
+                        final lines = plain.split('\n');
+                        final summary = lines.length > 3
+                            ? '${lines.take(3).join('\n')}\n...'
+                            : plain;
+                        return Text(
+                          summary,
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                          style: DsTypography.body.copyWith(
+                            color: contentSub,
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   const SizedBox(height: 12),
                   // 待办进度 / 标签徽章

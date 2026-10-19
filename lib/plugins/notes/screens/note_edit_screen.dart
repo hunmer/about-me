@@ -144,8 +144,6 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final note = _currentNote;
     return RichEditorScreen(
       reloadToken: _contentVersion,
-      // 笔记打开默认进入编辑态
-      startEditing: true,
       onOpenStyleSettings: _currentNote != null ? _showStyleSheet : null,
       initialTitle: note?.title ?? '',
       initialContent: note?.content ?? '',

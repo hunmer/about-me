@@ -22,6 +22,10 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
   /// 导航栏标题
   final Widget title;
 
+  /// 标题是否水平居中（Cupertino 默认居中）；
+  /// false 时紧随返回按钮左对齐
+  final bool centerTitle;
+
   /// 大标题
   final String largeTitle;
 
@@ -164,6 +168,7 @@ class SuperCupertinoNavigationWrapper extends StatefulWidget {
     super.key,
     required this.title,
     required this.body,
+    this.centerTitle = true,
     this.largeTitle = '',
     this.enableLargeTitle = true,
     this.enableSearchBar = false,
@@ -680,6 +685,7 @@ class _SuperCupertinoNavigationWrapperState
       automaticallyImplyLeading: effectiveAutomaticallyImplyLeading,
       leading: _resolveLeading(),
       title: widget.title,
+      centerTitle: widget.centerTitle,
       previousPageTitle: widget.previousPageTitle ?? 'core_back'.tr,
       previousPageTitleStyle:
           widget.previousPageTitleStyle ??

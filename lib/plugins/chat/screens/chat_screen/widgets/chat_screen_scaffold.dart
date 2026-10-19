@@ -17,6 +17,9 @@ class ChatScreenScaffold extends StatelessWidget {
   /// 导航栏标题（可点击/富文本由使用方自行包装手势）
   final Widget title;
 
+  /// 标题是否水平居中；false 时紧随返回按钮左对齐
+  final bool centerTitle;
+
   /// 大标题
   final String largeTitle;
 
@@ -50,6 +53,7 @@ class ChatScreenScaffold extends StatelessWidget {
     required this.title,
     required this.largeTitle,
     required this.body,
+    this.centerTitle = true,
     this.actions,
     this.enableSearchBar = false,
     this.searchPlaceholder = '',
@@ -127,6 +131,7 @@ class ChatScreenScaffold extends StatelessWidget {
             ),
           SuperCupertinoNavigationWrapper(
             title: title,
+            centerTitle: centerTitle,
             largeTitle: largeTitle,
             body: body,
             enableLargeTitle: false,

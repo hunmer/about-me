@@ -314,6 +314,8 @@ class _ChatScreenState extends State<ChatScreen> {
     // 复用 chat 插件的通用聊天壳：SuperCupertino 导航 + 背景支持 + body 插槽
     return ChatScreenScaffold(
       title: _buildAgentTitle(),
+      // 两行标题（会话名 + agent 名）居中时会随宽度漂移，固定左对齐更稳
+      centerTitle: false,
       largeTitle: widget.conversation.title,
       enableSearchBar: true,
       searchPlaceholder: '搜索消息内容...',

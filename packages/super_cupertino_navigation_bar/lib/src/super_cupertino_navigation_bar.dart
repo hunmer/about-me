@@ -467,6 +467,8 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                         : 1,
                                     child: PersistentNavigationBar(
                                       components: components,
+                                      centerMiddle:
+                                          widget.appBar.centerTitle,
                                       middleVisible:
                                           widget.appBar.alwaysShowTitle
                                               ? null

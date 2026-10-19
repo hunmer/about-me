@@ -15,6 +15,7 @@ class SuperAppBar {
     this.previousPageTitle = "Back",
     this.previousPageTitleStyle,
     this.alwaysShowTitle = false,
+    this.centerTitle = true,
     this.searchBar,
     this.largeTitle,
     this.bottom,
@@ -116,6 +117,10 @@ class SuperAppBar {
   /// This should be set to false if you only want to show [largeTitle] in
   /// expanded state and [middle] in collapsed state.
   final bool alwaysShowTitle;
+
+  /// 标题是否在工具栏水平居中；false 时紧随 leading 左对齐
+  /// （透传给 NavigationToolbar.centerMiddle）
+  final bool centerTitle;
   final double? leadingWidth;
   SuperSearchBar? searchBar;
   SuperLargeTitle? largeTitle;

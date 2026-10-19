@@ -12,6 +12,7 @@ class PersistentNavigationBar extends StatelessWidget {
     this.padding,
     this.middleVisible,
     this.height = 56.0,
+    this.centerMiddle = true,
   });
 
   final NavigationBarStaticComponents components;
@@ -40,6 +41,9 @@ class PersistentNavigationBar extends StatelessWidget {
   /// Whether the middle widget has a visible animated opacity. A null value
   /// means the middle opacity will not be animated.
   final bool? middleVisible;
+
+  /// middle 是否水平居中；false 时紧随 leading 左对齐
+  final bool centerMiddle;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +94,7 @@ class PersistentNavigationBar extends StatelessWidget {
       leading: leading,
       middle: middle,
       trailing: trailing,
+      centerMiddle: centerMiddle,
       middleSpacing: 6.0,
     );
 
