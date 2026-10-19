@@ -8,6 +8,19 @@ import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 
 void main() {
+  test('时间工具返回可解析的时间和时区', () {
+    final now = DateTime(2026, 10, 19, 18, 21);
+    final result = NativeToolAgentService.currentTimeData(now);
+    expect(DateTime.parse(result['datetime'] as String).millisecondsSinceEpoch,
+        now.millisecondsSinceEpoch);
+    expect(result['timezone'], now.timeZoneName);
+    expect(result['utcOffset'], matches(RegExp(r'^[+-]\d{2}:\d{2}$')));
+    expect(result['year'], 2026);
+    final utc = NativeToolAgentService.currentTimeData(now.toUtc());
+    expect(utc['utcOffset'], '+00:00');
+    expect(DateTime.parse(utc['datetime'] as String), now.toUtc());
+  });
+
   group('工具执行模式', () {
     late Tool<Map<String, dynamic>> pluginTool;
     setUp(() {
@@ -24,20 +37,20 @@ void main() {
         pluginTools: [pluginTool],
         onRunJs: (args) async => {'result': args['code']},
       );
-      expect(tools.map((t) => t.name), ['bill', 'run_js']);
+      expect(tools.map((t) => t.name), ['bill', 'get_current_time', 'run_js']);
       expect(tools.first, same(pluginTool));
-      expect(tools.last.description, contains('优先使用插件工具'));
+      expect(tools.last.description, contains('专用工具可完成的操作应直接调用'));
+      expect(tools.last.description, isNot(contains('账单插件')));
     });
 
-    test('开启 JS 模式时只提供 run_js', () {
+    test('开启 JS 模式时保留时间工具与 run_js', () {
       final tools = NativeToolAgentService.buildToolSet(
         pluginTools: [pluginTool],
         onRunJs: (args) async => {'result': args['code']},
         useJsTools: true,
       );
-      expect(tools.map((t) => t.name), ['run_js']);
-      expect(tools.single.description, contains('账单插件'));
-      expect(tools.single.description, isNot(contains('优先使用插件工具')));
+      expect(tools.map((t) => t.name), ['get_current_time', 'run_js']);
+      expect(tools.last.description, '执行 JavaScript 代码。');
     });
 
     test('开启 JS 模式时仍保留 read_image 标准工具', () {
@@ -62,7 +75,7 @@ void main() {
         useJsTools: true,
       );
 
-      expect(tools.map((tool) => tool.name), ['read_image', 'run_js']);
+      expect(tools.map((tool) => tool.name), ['read_image', 'get_current_time', 'run_js']);
     });
   });
 
@@ -196,7 +209,7 @@ void main() {
       expect(schema['properties'], {});
     });
 
-    test('描述组装包含说明与示例', () {
+    test('原生工具描述包含说明但不携带 JS 调用示例', () {
       final config = ToolConfig(
         title: '测试工具',
         description: '这是描述',
@@ -207,7 +220,7 @@ void main() {
       final desc = ToolSchemaBuilder.buildDescription(config);
       expect(desc.contains('这是描述'), true);
       expect(desc.contains('返回字符串'), true);
-      expect(desc.contains('await test()'), true);
+      expect(desc.contains('await test()'), false);
     });
   });
 

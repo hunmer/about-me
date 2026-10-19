@@ -71,7 +71,7 @@ class ToolSchemaBuilder {
   static List<String> _requiredOf(List<ToolParameter> params) =>
       params.where((p) => !p.optional).map((p) => p.name).toList();
 
-  /// 生成 FC 工具描述：标题 + 说明 + 返回值 + 首个示例（帮助模型理解参数用法）
+  /// 生成原生工具描述，不注入面向 JS 执行环境的调用示例。
   static String buildDescription(ToolConfig config) {
     final buffer = StringBuffer();
     if (config.description.isNotEmpty) {
@@ -81,16 +81,6 @@ class ToolSchemaBuilder {
       buffer
         ..write('\n返回：')
         ..write(config.returns.description);
-    }
-    // 示例代码对参数格式很有指导性，取一条（截断控制 token）
-    if (config.examples.isNotEmpty) {
-      final code = config.examples.first.code.trim();
-      if (code.isNotEmpty) {
-        final clipped = code.length > 400 ? '${code.substring(0, 400)}…' : code;
-        buffer
-          ..write('\n参考调用：')
-          ..write(clipped);
-      }
     }
     if (config.notes != null && config.notes!.isNotEmpty) {
       buffer

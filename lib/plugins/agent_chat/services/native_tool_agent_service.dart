@@ -300,6 +300,7 @@ class NativeToolAgentService {
     tools = buildToolSet(
       pluginTools: tools,
       onRunJs: (args) => _dispatchJs(run, args),
+      onGetCurrentTime: (_) => _dispatchCurrentTime(run),
       useJsTools: alivenessOnlyTools ? false : useJsTools,
     );
     if (imageOnlyTools) {
@@ -308,6 +309,7 @@ class NativeToolAgentService {
     debugPrint(
       '[NativeTool] 请求配置：agent=${agent.id} format=${agent.apiFormat} '
       'functionCalling=${agent.enableFunctionCalling} '
+      'useJsTools=$useJsTools '
       'imageTool=${_hasImageGenerationTool ? 'available' : 'missing'} '
       'tools=${tools.map((tool) => tool.name).join(',')}',
     );
@@ -475,17 +477,40 @@ class NativeToolAgentService {
 
   // ---------- 工具集构建 ----------
 
-  /// 普通模式保留 JS 作为补充；JS 模式只注册 run_js。
+  /// 时间只作为工具结果返回，不注入 system prompt 或工具描述。
+  static Map<String, dynamic> currentTimeData(DateTime now) {
+    final offset = now.timeZoneOffset;
+    final minutes = offset.inMinutes.abs();
+    final hoursText = (minutes ~/ 60).toString().padLeft(2, '0');
+    final minutesText = (minutes % 60).toString().padLeft(2, '0');
+    final zone = '${offset.isNegative ? '-' : '+'}$hoursText:$minutesText';
+    return {
+      'timestamp': now.millisecondsSinceEpoch,
+      'datetime': now.isUtc ? now.toIso8601String() : '${now.toIso8601String()}$zone',
+      'timezone': now.timeZoneName,
+      'utcOffset': zone,
+      'year': now.year,
+      'month': now.month,
+      'day': now.day,
+      'hour': now.hour,
+      'minute': now.minute,
+      'second': now.second,
+      'weekday': now.weekday,
+    };
+  }
+
+  /// 普通模式保留 JS 作为补充；时间和识图工具在 JS 模式下仍可用。
   static List<Tool<Map<String, dynamic>>> buildToolSet({
     required List<Tool<Map<String, dynamic>>> pluginTools,
     required Future<Map<String, dynamic>> Function(Map<String, dynamic>)
     onRunJs,
+    Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onGetCurrentTime,
     bool useJsTools = false,
   }) {
     final jsTool = Tool<Map<String, dynamic>>(
       name: 'run_js',
       description:
-          '${useJsTools ? '' : '请优先使用专用插件工具；仅在没有合适工具或需要组合多个操作时使用。'}'
+          '${useJsTools ? '' : '专用工具可完成的操作应直接调用；仅用于专用工具无法完成的脚本计算。'}'
           '执行 JavaScript 代码。',
       inputSchema: Schema.fromMap(
         ToolSchemaBuilder.buildSchemaMap([
@@ -502,6 +527,12 @@ class NativeToolAgentService {
       ...pluginTools.where((tool) => tool.name == 'read_image'),
       if (!useJsTools)
         ...pluginTools.where((tool) => tool.name != 'read_image'),
+      Tool<Map<String, dynamic>>(
+        name: 'get_current_time',
+        description: '获取设备当前日期、时间和时区。处理今天、明天等相对日期前调用；日期时间参数需保留返回的时区偏移。',
+        inputSchema: Schema.fromMap(ToolSchemaBuilder.buildSchemaMap([])),
+        onCall: onGetCurrentTime ?? (_) async => currentTimeData(DateTime.now()),
+      ),
       jsTool,
     ];
   }
@@ -1061,6 +1092,25 @@ class NativeToolAgentService {
   }
 
   // ---------- 转换工具 ----------
+
+  Future<Map<String, dynamic>> _dispatchCurrentTime(
+    _NativeToolRunContext run,
+  ) async {
+    if (++run.toolCallCount > maxToolCallsPerLoop) {
+      return {'error': '工具调用次数已达上限，请直接回答'};
+    }
+    final result = currentTimeData(DateTime.now());
+    run.steps.add(ToolCallStep(
+      method: 'get_current_time',
+      title: '获取当前时间',
+      desc: '读取设备日期、时间和时区',
+      data: '{}',
+      status: ToolCallStatus.success,
+      result: jsonEncode(result),
+    ));
+    await run.notifySteps();
+    return result;
+  }
 
   Future<Map<String, dynamic>> _dispatchJs(
     _NativeToolRunContext run,
