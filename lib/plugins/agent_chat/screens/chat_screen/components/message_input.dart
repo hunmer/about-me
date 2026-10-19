@@ -46,15 +46,23 @@ class MessageInput extends StatefulWidget {
   /// 顶部图标工具栏快捷动作（空列表则隐藏工具栏行）
   final List<common.MessageInputQuickAction> toolbarActions;
 
+  /// 工具栏右侧动作组（贴右缘排布）
+  final List<common.MessageInputQuickAction> trailingToolbarActions;
+
   /// 素描面板是否画墨线描边（透传通用输入框；false = 无边框）
   final bool showPanelStroke;
+
+  /// 素描面板描边用虚线（透传；需 showPanelStroke 为 true）
+  final bool dashedPanelStroke;
 
   const MessageInput({
     super.key,
     required this.controller,
     this.extraQuickActions = const [],
     this.toolbarActions = const [],
+    this.trailingToolbarActions = const [],
     this.showPanelStroke = true,
+    this.dashedPanelStroke = false,
   });
 
   @override
@@ -328,7 +336,9 @@ class _MessageInputState extends State<MessageInput> {
       onOpenActionsDrawer: _showAttachmentMenu,
       useSketchPanel: true,
       showPanelStroke: widget.showPanelStroke,
+      dashedPanelStroke: widget.dashedPanelStroke,
       quickActions: widget.toolbarActions,
+      trailingQuickActions: widget.trailingToolbarActions,
       // 输入框上方：工具模板搜索 / 命令选择器 / 待发送状态
       header: Column(
         mainAxisSize: MainAxisSize.min,

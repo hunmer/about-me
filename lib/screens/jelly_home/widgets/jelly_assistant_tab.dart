@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -39,12 +40,14 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   MessageService? _messageService;
   final ScrollController _scrollController = ScrollController();
 
-  /// 待机 curious / 发送中 thinking，点击跳一下
+  /// 待机 curious / 处理中 thinking / 完成 happy 片刻，点击跳一下；
+  /// 空会话作首页大角色，消息流中作最新 AI 消息的动态头像
   final GrokCharacter _character = GrokCharacter(
     mode: 'hold',
     state: 'curious',
   );
   bool _wasSending = false;
+  Timer? _settleTimer;
 
   @override
   void initState() {
@@ -114,10 +117,23 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     return controller;
   }
 
+  /// 处理状态映射角色表情：处理中 thinking，完成先 happy 片刻，
+  /// 再回到待机（空会话 curious 张望 / 消息流 idle 平静眨眼）
   void _syncCharacterState(bool sending) {
+    _settleTimer?.cancel();
+    _settleTimer = null;
     if (sending == _wasSending) return;
     _wasSending = sending;
-    _character.setStateName(sending ? 'thinking' : 'curious');
+    if (sending) {
+      _character.setStateName('thinking');
+      return;
+    }
+    _character.setStateName('happy');
+    _settleTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted || _wasSending) return;
+      final empty = _controller?.messages.isEmpty ?? true;
+      _character.setStateName(empty ? 'curious' : 'idle');
+    });
   }
 
   void _onControllerChanged() {
@@ -142,6 +158,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   @override
   void dispose() {
     eventManager.unsubscribe('plugin_loaded', _onPluginLoaded);
+    _settleTimer?.cancel();
     _controller?.removeListener(_onControllerChanged);
     _messageService?.removeListener(_onControllerChanged);
     _controller?.dispose();
@@ -156,6 +173,11 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     // 输入区避让悬浮导航栏（padding）与键盘（viewInsets）取较大者
     final mq = MediaQuery.of(context);
     final bottomInset = math.max(mq.padding.bottom, mq.viewInsets.bottom);
+    // setColor 不触发重建，角色每帧自绘，可在 build 中安全同步墨色
+    final scheme = theme.isDark ? 'dark' : 'light';
+    if (_character.scheme != scheme) {
+      _character.setColor('black', scheme);
+    }
     _controllerFuture ??= _initialize();
 
     return AppTheme(
@@ -209,11 +231,13 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                                 padding: EdgeInsets.only(bottom: bottomInset),
                                 child: MessageInput(
                                   controller: controller,
-                                  showPanelStroke: false,
-                                  toolbarActions: [
+                                  showPanelStroke: true,
+                                  dashedPanelStroke: true,
+                                  trailingToolbarActions: [
                                     MessageInputQuickAction(
                                       icon: DsIconKind.trash,
-                                      tooltip: 'screens_assistantClearMessages'.tr,
+                                      tooltip:
+                                          'screens_assistantClearMessages'.tr,
                                       onPressed: () =>
                                           _confirmClearMessages(controller),
                                     ),
@@ -318,11 +342,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   }
 
   Widget _buildHero(AppThemeData theme, ChatController controller) {
-    // setColor 不触发重建，角色每帧自绘，可在 build 中安全同步墨色
-    final scheme = theme.isDark ? 'dark' : 'light';
-    if (_character.scheme != scheme) {
-      _character.setColor('black', scheme);
-    }
     return WiredDraw(
       // 视口最小高度撑满可用区：内容整体垂直居中，空间不足时仍可滚动
       child: LayoutBuilder(
@@ -464,13 +483,17 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     );
   }
 
-  /// AI 气泡复用 AgentMessageContent（markdown + 工具调用步骤）；
-  /// 聊天流不做便签化（design.md §11.4）
+  /// 消息流：左右头像 + 气泡；最新 AI 消息的 bot 头像为 grok 动态表情，
+  /// 随处理状态切换（thinking/happy/idle），历史 AI 消息为静态图标
   Widget _buildMessageList(
     AppThemeData theme,
     ChatController controller,
     List<ChatMessage> messages,
   ) {
+    String? lastAiId;
+    for (final message in messages) {
+      if (!message.isUser && !message.isSessionDivider) lastAiId = message.id;
+    }
     return ListView.builder(
       controller: _scrollController,
       padding: EdgeInsets.fromLTRB(
@@ -496,11 +519,62 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
         final isLast = index == messages.length - 1;
         return Padding(
           padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-          child: message.isUser
-              ? _buildUserBubble(theme, message)
-              : _buildAiBubble(theme, controller, message),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: message.isUser
+                ? [
+                    Expanded(child: _buildUserBubble(theme, message)),
+                    SizedBox(width: theme.spacing.sm),
+                    _buildUserAvatar(theme),
+                  ]
+                : [
+                    _buildBotAvatar(theme, live: message.id == lastAiId),
+                    SizedBox(width: theme.spacing.sm),
+                    Expanded(child: _buildAiBubble(theme, controller, message)),
+                  ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildUserAvatar(AppThemeData theme) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        circle: true,
+      ),
+      child: Center(
+        child: DsIcon(DsIconKind.user, size: 18, color: theme.primary),
+      ),
+    );
+  }
+
+  Widget _buildBotAvatar(AppThemeData theme, {required bool live}) {
+    if (live) {
+      return GestureDetector(
+        onTap: _character.bounceOnce,
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: GrokCharacterView(character: _character, sizePx: 36),
+        ),
+      );
+    }
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        circle: true,
+      ),
+      child: Center(
+        child: DsIcon(DsIconKind.bot, size: 18, color: theme.textSub),
+      ),
     );
   }
 

@@ -9,27 +9,58 @@ import '../message_input_types.dart';
 class MessageInputQuickToolbar extends StatelessWidget {
   final List<MessageInputQuickAction> actions;
 
-  const MessageInputQuickToolbar({super.key, required this.actions});
+  /// 右侧动作组（贴工具栏右缘，溢出时向左滚动）
+  final List<MessageInputQuickAction> trailingActions;
+
+  const MessageInputQuickToolbar({
+    super.key,
+    required this.actions,
+    this.trailingActions = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (actions.isEmpty) return const SizedBox();
+    if (actions.isEmpty && trailingActions.isEmpty) return const SizedBox();
 
     final theme = DSThemeBridge.resolve(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      // 动作较多时窄屏横向滚动，避免溢出
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final (index, action) in actions.indexed) ...[
-              if (index > 0) const SizedBox(width: 20),
-              _QuickToolbarItem(action: action, theme: theme),
-            ],
-          ],
-        ),
+      // 左右两组各自独立横向滚动：左组从左缘排布，右组贴右缘
+      child: Row(
+        children: [
+          Expanded(
+            child: actions.isEmpty
+                ? const SizedBox()
+                : SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final (index, action) in actions.indexed) ...[
+                          if (index > 0) const SizedBox(width: 20),
+                          _QuickToolbarItem(action: action, theme: theme),
+                        ],
+                      ],
+                    ),
+                  ),
+          ),
+          if (actions.isNotEmpty && trailingActions.isNotEmpty)
+            const SizedBox(width: 20),
+          if (trailingActions.isNotEmpty)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              reverse: true,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final (index, action) in trailingActions.indexed) ...[
+                    if (index > 0) const SizedBox(width: 20),
+                    _QuickToolbarItem(action: action, theme: theme),
+                  ],
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

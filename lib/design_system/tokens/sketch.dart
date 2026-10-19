@@ -48,11 +48,11 @@ class DsStrokeStyle {
 
   /// 本风格的绘制配置（主题设置页的预览块用）
   DrawConfig get drawConfig => DrawConfig.build(
-        roughness: level.roughness,
-        maxRandomnessOffset: level.maxRandomnessOffset,
-        lineWobble: level.lineWobble,
-        pen: pen ?? level.pen,
-      );
+    roughness: level.roughness,
+    maxRandomnessOffset: level.maxRandomnessOffset,
+    lineWobble: level.lineWobble,
+    pen: pen ?? level.pen,
+  );
 }
 
 /// 描边线风格集合
@@ -276,8 +276,11 @@ RoughBoxDecoration dsSketchDecoration({
     case DsSketchFill.solid:
       filler = SolidFiller();
       resolvedFillColor = fillColor;
-    case DsSketchFill.hachure || DsSketchFill.crossHatch ||
-          DsSketchFill.dots || DsSketchFill.zigzag || DsSketchFill.ruled:
+    case DsSketchFill.hachure ||
+        DsSketchFill.crossHatch ||
+        DsSketchFill.dots ||
+        DsSketchFill.zigzag ||
+        DsSketchFill.ruled:
       // 点画的点径/密度需要更大参数才可见
       filler = switch (style) {
         DsSketchFill.crossHatch => HatchFiller(
@@ -331,8 +334,8 @@ RoughBoxDecoration dsSketchDecoration({
     shape: circle
         ? RoughBoxShape.circle
         : (radius == null
-            ? RoughBoxShape.rectangle
-            : RoughBoxShape.roundedRectangle),
+              ? RoughBoxShape.rectangle
+              : RoughBoxShape.roundedRectangle),
     borderRadius: circle ? null : (radius ?? BorderRadius.zero),
     borderStyle: RoughDrawingStyle(
       width: strokeWidth,
@@ -379,17 +382,16 @@ class _DsRoughBoxDecoration extends RoughBoxDecoration {
   /// 手绘墨迹本身不参与裁剪，按形状返回标准几何路径。
   @override
   Path getClipPath(Rect rect, TextDirection textDirection) => switch (shape) {
-        RoughBoxShape.rectangle => Path()..addRect(rect),
-        RoughBoxShape.roundedRectangle => Path()
-          ..addRRect((borderRadius ?? BorderRadius.zero).toRRect(rect)),
-        RoughBoxShape.circle || RoughBoxShape.ellipse =>
-          Path()..addOval(rect),
-      };
+    RoughBoxShape.rectangle => Path()..addRect(rect),
+    RoughBoxShape.roundedRectangle =>
+      Path()..addRRect((borderRadius ?? BorderRadius.zero).toRRect(rect)),
+    RoughBoxShape.circle || RoughBoxShape.ellipse => Path()..addOval(rect),
+  };
 }
 
 class _DsRoughBoxPainter extends BoxPainter {
   _DsRoughBoxPainter(this.decoration, [VoidCallback? onChanged])
-      : super(onChanged) {
+    : super(onChanged) {
     // 跟随环境描画动画（WiredDraw/WiredDrawTransition）逐帧重绘墨线
     final progress = decoration.progress;
     if (onChanged != null && progress != null) {
@@ -592,8 +594,10 @@ class _DsSketchStickerLayer extends StatelessWidget {
     return AnimatedBuilder(
       animation: animation,
       builder: (context, _) {
-        final t = ((animation.value - (1 - _enterWindow)) / _enterWindow)
-            .clamp(0.0, 1.0);
+        final t = ((animation.value - (1 - _enterWindow)) / _enterWindow).clamp(
+          0.0,
+          1.0,
+        );
         if (t >= 1) return content;
         // easeOutBack 让 scale 越过 1 再回落，模拟「啪地贴上」
         return Opacity(
@@ -650,6 +654,7 @@ class DsSketchPanel extends StatelessWidget {
     this.hachureColor,
     this.alignment,
     this.hachure = true,
+    this.dashedStroke = false,
     this.fillStyle,
     this.seed = 1,
     this.progress,
@@ -671,6 +676,10 @@ class DsSketchPanel extends StatelessWidget {
 
   /// 关闭后不画排线（纯纸底 + 描边）
   final bool hachure;
+
+  /// 虚线描边：替代 rough 实线墨线框（rough 引擎不支持 dash stroke，
+  /// 以路径匀速虚线近似手绘虚框）
+  final bool dashedStroke;
 
   /// 显式填充预设（排线/交叉/点/之字/实底）；null 时按 [hachure] 走默认排线
   final DsSketchFill? fillStyle;
@@ -703,13 +712,13 @@ class DsSketchPanel extends StatelessWidget {
         decoration: dsSketchDecoration(
           theme: theme,
           radius: radius,
-          stroke: stroke,
+          // 虚线模式下 rough 实线描边隐藏，改由上层虚线画笔画边框
+          stroke: dashedStroke ? DsColors.transparent : stroke,
           fillColor: fillStyle == DsSketchFill.solid
               ? (hachureColor ?? theme.hatch)
-              : (hachure || fillStyle != null
-                    ? DsColors.transparent
-                    : null),
-          fillStyle: fillStyle ??
+              : (hachure || fillStyle != null ? DsColors.transparent : null),
+          fillStyle:
+              fillStyle ??
               (hachure ? DsSketchFill.hachure : null) ??
               (fillColor != null ? DsSketchFill.solid : null),
           hachureColor: hachureColor,
@@ -717,6 +726,9 @@ class DsSketchPanel extends StatelessWidget {
           seed: seed,
           progress: progress,
         ),
+        dashedBorder: dashedStroke
+            ? _DashedBorder(color: stroke ?? theme.ink, radius: radius)
+            : null,
         child: content,
       ),
     );
@@ -741,9 +753,17 @@ class DsSketchPanel extends StatelessWidget {
 /// 排线/描边衬层：铺满所在容器（与内容同尺寸），
 /// 墨线画在容器真实边界上
 class _RoughUnderlay extends StatelessWidget {
-  const _RoughUnderlay({required this.decoration, this.child});
+  const _RoughUnderlay({
+    required this.decoration,
+    this.dashedBorder,
+    this.child,
+  });
 
   final RoughBoxDecoration decoration;
+
+  /// 可选虚线边框（画在 rough 层之上、内容之下）
+  final _DashedBorder? dashedBorder;
+
   final Widget? child;
 
   @override
@@ -753,13 +773,21 @@ class _RoughUnderlay extends StatelessWidget {
       // 无内容时仅描边层（尺寸由外部约束决定）
       return CustomPaint(
         painter: _BoxPainterProxy(decoration),
+        foregroundPainter: dashedBorder == null
+            ? null
+            : _DashedBorderPainter(border: dashedBorder!),
       );
     }
     return Stack(
       children: [
         Positioned.fill(
           child: IgnorePointer(
-            child: CustomPaint(painter: _BoxPainterProxy(decoration)),
+            child: CustomPaint(
+              painter: _BoxPainterProxy(decoration),
+              foregroundPainter: dashedBorder == null
+                  ? null
+                  : _DashedBorderPainter(border: dashedBorder!),
+            ),
           ),
         ),
         content,
@@ -768,11 +796,69 @@ class _RoughUnderlay extends StatelessWidget {
   }
 }
 
+/// 虚线边框规格（颜色 / 圆角）
+class _DashedBorder {
+  const _DashedBorder({required this.color, this.radius});
+
+  final Color color;
+  final BorderRadius? radius;
+}
+
+/// 沿容器边界画虚线边框：圆角/直角路径按「画 7 空 5」取段
+class _DashedBorderPainter extends CustomPainter {
+  const _DashedBorderPainter({required this.border});
+
+  final _DashedBorder border;
+
+  static const double _strokeWidth = 1.6;
+  static const double _dashLength = 7;
+  static const double _gapLength = 5;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final half = _strokeWidth / 2;
+    final rect = Offset.zero & size;
+    final rrect = border.radius?.toRRect(rect.deflate(half));
+    final path = rrect == null
+        ? (Path()..addRect(rect.deflate(half)))
+        : (Path()..addRRect(rrect));
+
+    final dashed = Path();
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      var drawing = true;
+      while (distance < metric.length) {
+        final segment = drawing ? _dashLength : _gapLength;
+        final next = math.min(distance + segment, metric.length);
+        if (drawing) {
+          dashed.addPath(metric.extractPath(distance, next), Offset.zero);
+        }
+        distance = next;
+        drawing = !drawing;
+      }
+    }
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..isAntiAlias = true
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = _strokeWidth
+      ..color = border.color;
+    canvas.drawPath(dashed, paint);
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
+      oldDelegate.border.color != border.color ||
+      oldDelegate.border.radius != border.radius;
+}
+
 /// 把 [RoughBoxDecoration] 的 BoxPainter 适配成 CustomPainter
 class _BoxPainterProxy extends CustomPainter {
   _BoxPainterProxy(this.decoration)
-      : _painter = decoration.createBoxPainter(),
-        super(repaint: decoration.progress);
+    : _painter = decoration.createBoxPainter(),
+      super(repaint: decoration.progress);
 
   final RoughBoxDecoration decoration;
   final BoxPainter _painter;

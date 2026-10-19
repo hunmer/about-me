@@ -26,6 +26,9 @@ class MessageInput extends StatefulWidget {
   /// 顶部图标工具栏快捷动作（空列表则隐藏该行）
   final List<MessageInputQuickAction> quickActions;
 
+  /// 工具栏右侧动作组（贴右缘排布）
+  final List<MessageInputQuickAction> trailingQuickActions;
+
   /// "+"按钮回调：打开完整的底部抽屉动作列表（null 隐藏按钮）
   final VoidCallback? onOpenActionsDrawer;
 
@@ -53,6 +56,9 @@ class MessageInput extends StatefulWidget {
   /// 素描面板是否画墨线描边（false = 仅纸底/排线，无边框）
   final bool showPanelStroke;
 
+  /// 素描面板描边用虚线（需 [showPanelStroke] 为 true）
+  final bool dashedPanelStroke;
+
   const MessageInput({
     super.key,
     required this.controller,
@@ -61,6 +67,7 @@ class MessageInput extends StatefulWidget {
     this.enabled = true,
     this.onChanged,
     this.quickActions = const [],
+    this.trailingQuickActions = const [],
     this.onOpenActionsDrawer,
     this.header,
     this.inputSuffix,
@@ -70,6 +77,7 @@ class MessageInput extends StatefulWidget {
     this.onKeyEvent,
     this.useSketchPanel = false,
     this.showPanelStroke = true,
+    this.dashedPanelStroke = false,
   });
 
   @override
@@ -143,8 +151,11 @@ class _MessageInputState extends State<MessageInput> {
               // 输入框上方附加区（待发送预览、命令选择器、搜索结果等）
               if (widget.header != null) widget.header!,
 
-              // 顶部图标工具栏：底部抽屉动作的快捷方式
-              MessageInputQuickToolbar(actions: widget.quickActions),
+              // 顶部图标工具栏：底部抽屉动作的快捷方式（左组 + 右组）
+              MessageInputQuickToolbar(
+                actions: widget.quickActions,
+                trailingActions: widget.trailingQuickActions,
+              ),
 
               // 输入行（素描面板风格带内边距，悬浮卡片风格紧贴内容区）
               Padding(
@@ -216,6 +227,7 @@ class _MessageInputState extends State<MessageInput> {
                 stroke: widget.showPanelStroke
                     ? null
                     : DsColors.transparent,
+                dashedStroke: widget.showPanelStroke && widget.dashedPanelStroke,
                 child: body,
               ),
             );
