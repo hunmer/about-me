@@ -217,11 +217,16 @@ class ConversationController extends ChangeNotifier {
 
   /// 获取过滤后的会话列表
   List<Conversation> _getFilteredConversations() {
-    var filtered = conversationService.conversations;
+    // 临时/隐藏会话（hideInList，如聊天助手、Live2D 的路由会话）不进列表
+    var filtered = conversationService.getNonTemporaryConversations();
 
     // 应用搜索
     if (_searchQuery.isNotEmpty) {
-      filtered = conversationService.searchConversations(_searchQuery);
+      final visibleIds = filtered.map((c) => c.id).toSet();
+      filtered = conversationService
+          .searchConversations(_searchQuery)
+          .where((c) => visibleIds.contains(c.id))
+          .toList();
     }
 
     // 应用分组过滤

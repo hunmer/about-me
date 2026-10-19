@@ -420,6 +420,8 @@ class ConversationService extends ChangeNotifier {
       final metadata = c.metadata;
       if (metadata == null) return true;
 
+      // 临时会话（"询问当前上下文"的路由会话）与显式隐藏的会话不进列表
+      if (metadata['isTemporary'] == true) return false;
       final hideInList = metadata['hideInList'] == true;
       return !hideInList;
     }).toList();

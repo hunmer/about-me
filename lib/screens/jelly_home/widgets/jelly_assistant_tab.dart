@@ -155,6 +155,9 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     );
   }
 
+  /// 气泡最大高度：屏幕高的 80%，超长内容在气泡内滚动
+  double get _bubbleMaxHeight => MediaQuery.sizeOf(context).height * 0.8;
+
   @override
   void dispose() {
     eventManager.unsubscribe('plugin_loaded', _onPluginLoaded);
@@ -228,7 +231,12 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                               context: context,
                               removeBottom: true,
                               child: Padding(
-                                padding: EdgeInsets.only(bottom: bottomInset),
+                                padding: EdgeInsets.fromLTRB(
+                                  theme.spacing.lg,
+                                  theme.spacing.sm,
+                                  theme.spacing.lg,
+                                  bottomInset,
+                                ),
                                 child: MessageInput(
                                   controller: controller,
                                   showPanelStroke: true,
@@ -342,6 +350,8 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   }
 
   Widget _buildHero(AppThemeData theme, ChatController controller) {
+    // 同头像：预置渲染宽度，避免挂载首帧几何错位
+    _character.updateRenderWidth(176);
     return WiredDraw(
       // 视口最小高度撑满可用区：内容整体垂直居中，空间不足时仍可滚动
       child: LayoutBuilder(
@@ -494,6 +504,10 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     for (final message in messages) {
       if (!message.isUser && !message.isSessionDivider) lastAiId = message.id;
     }
+    // AI 尚未产出文本（发送中且最后一条是用户消息）时末尾显示占位气泡；
+    // 占位期间动态头像挂到占位行，上一条 AI 消息转静态图标
+    final showPlaceholder =
+        controller.isSending && (messages.isEmpty || messages.last.isUser);
     return ListView.builder(
       controller: _scrollController,
       padding: EdgeInsets.fromLTRB(
@@ -502,8 +516,12 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
         theme.spacing.lg,
         theme.spacing.md,
       ),
-      itemCount: messages.length,
+      itemCount: messages.length + (showPlaceholder ? 1 : 0),
       itemBuilder: (context, index) {
+        final isLast = index == messages.length + (showPlaceholder ? 1 : 0) - 1;
+        if (showPlaceholder && index == messages.length) {
+          return _buildPlaceholderRow(theme, isLast: isLast);
+        }
         final message = messages[index];
         if (message.isSessionDivider) {
           return Padding(
@@ -516,7 +534,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
             ),
           );
         }
-        final isLast = index == messages.length - 1;
         return Padding(
           padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
           child: Row(
@@ -528,13 +545,48 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                     _buildUserAvatar(theme),
                   ]
                 : [
-                    _buildBotAvatar(theme, live: message.id == lastAiId),
+                    _buildBotAvatar(
+                      theme,
+                      live: !showPlaceholder && message.id == lastAiId,
+                    ),
                     SizedBox(width: theme.spacing.sm),
                     Expanded(child: _buildAiBubble(theme, controller, message)),
                   ],
           ),
         );
       },
+    );
+  }
+
+  /// AI 处理中的占位气泡：动态 grok 头像（thinking）+ 手绘面板墨点加载动画
+  Widget _buildPlaceholderRow(AppThemeData theme, {required bool isLast}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          _buildBotAvatar(theme, live: true),
+          SizedBox(width: theme.spacing.sm),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: DsSketchPanel(
+                  theme: theme,
+                  hachure: false,
+                  radius: BorderRadius.circular(18),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 14,
+                  ),
+                  child: DSLoadingDots(size: 8, color: theme.textSub),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -555,6 +607,9 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
 
   Widget _buildBotAvatar(AppThemeData theme, {required bool live}) {
     if (live) {
+      // 视图在 postFrame 才同步渲染宽度；新 AI 消息到达时头像重挂载，
+      // 预置宽度避免首帧按旧宽度绘制导致「慢半拍」出场
+      _character.updateRenderWidth(36);
       return GestureDetector(
         onTap: _character.bounceOnce,
         child: SizedBox(
@@ -582,16 +637,19 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     return Align(
       alignment: Alignment.centerRight,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 460),
+        constraints: BoxConstraints(maxWidth: 460, maxHeight: _bubbleMaxHeight),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: dsSketchDecoration(
           theme: theme,
           fillColor: theme.primary,
           radius: BorderRadius.circular(18),
         ),
-        child: Text(
-          message.content,
-          style: DsTypography.body.copyWith(color: theme.onPrimary),
+        // 超长内容（粘贴大段文本）在气泡内滚动，不撑满整屏
+        child: SingleChildScrollView(
+          child: Text(
+            message.content,
+            style: DsTypography.body.copyWith(color: theme.onPrimary),
+          ),
         ),
       ),
     );
@@ -605,17 +663,19 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 520),
+        constraints: BoxConstraints(maxWidth: 520, maxHeight: _bubbleMaxHeight),
         child: DsSketchPanel(
           theme: theme,
           hachure: false,
           radius: BorderRadius.circular(18),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: AgentMessageContent(
-            message: message,
-            textColor: theme.text,
-            messageService: _messageService,
-            getAgentName: (_) => controller.currentAgent?.name,
+          child: SingleChildScrollView(
+            child: AgentMessageContent(
+              message: message,
+              textColor: theme.text,
+              messageService: _messageService,
+              getAgentName: (_) => controller.currentAgent?.name,
+            ),
           ),
         ),
       ),
