@@ -18,14 +18,11 @@ import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart'
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/openai/services/chat_assistant_service.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/marquee_button_list_card.dart';
 import 'package:get/get.dart' hide Value;
 
-/// 聊天助手页签（底部导航第 2 个页签）
-///
-/// 手绘纸墨风的快捷速记入口（自 ai_assistant_voice_chat_ui.html 转译）：
-/// 无消息时展示 Grok 角色动效（grok_icon_study）+ 问候语 + 热门想法卡；
-/// 有消息后切换为消息流；绑定内置「聊天助手」agent（见 [ChatAssistantService]）
-/// 的临时会话，把用户一句话描述快速变成插件工具调用并记录。
+/// 聊天助手页签：手绘风快捷速记入口，
+/// 绑定内置「聊天助手」agent（[ChatAssistantService]）的临时会话
 class JellyAssistantTab extends StatefulWidget {
   const JellyAssistantTab({super.key});
 
@@ -37,11 +34,9 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   Future<ChatController?>? _controllerFuture;
   ChatController? _controller;
   MessageService? _messageService;
-
   final ScrollController _scrollController = ScrollController();
 
-  /// Grok 角色：待机好奇张望，发送中切 thinking；
-  /// 点击跳一下（hop），跟随指针注视
+  /// 待机 curious / 发送中 thinking，点击跳一下
   final GrokCharacter _character = GrokCharacter(
     mode: 'hold',
     state: 'curious',
@@ -64,7 +59,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     });
   }
 
-  /// 释放旧 controller（帧末 dispose，避免 MessageInput 先行移除监听）
+  /// 帧末再释放旧 controller，避免 MessageInput 先行移除监听
   void _resetController() {
     final controller = _controller;
     final messageService = _messageService;
@@ -114,7 +109,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     return controller;
   }
 
-  /// 发送状态映射到角色状态：发送中 thinking，空闲回 curious
   void _syncCharacterState(bool sending) {
     if (sending == _wasSending) return;
     _wasSending = sending;
@@ -153,7 +147,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
 
   @override
   Widget build(BuildContext context) {
-    // 与小屋页签同款：跟随当前主题色板的轻量主题
     final theme = AppThemeData.fromPalette(DsThemeColorController().palette);
     // 输入区避让悬浮导航栏（padding）与键盘（viewInsets）取较大者
     final mq = MediaQuery.of(context);
@@ -219,7 +212,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     );
   }
 
-  /// 顶栏：标题 + 副标题（工作状态），尾部跳转完整聊天页
   Widget _buildHeader(AppThemeData theme) {
     final controller = _controller;
     final sending = controller?.isSending ?? false;
@@ -265,7 +257,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     );
   }
 
-  /// 打开完整聊天页（搜索 / 消息操作 / agent 切换等完整能力）
   void _openFullChat(ChatController? controller) {
     if (controller == null) return;
     NavigationHelper.push(
@@ -279,9 +270,8 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     );
   }
 
-  /// 空会话首页：Grok 角色动效 + 状态徽章 + 问候 + 热门想法卡
   Widget _buildHero(AppThemeData theme, ChatController controller) {
-    // 角色墨色跟随深浅模式（setColor 不触发重建，角色每帧自绘）
+    // setColor 不触发重建，角色每帧自绘，可在 build 中安全同步墨色
     final scheme = theme.isDark ? 'dark' : 'light';
     if (_character.scheme != scheme) {
       _character.setColor('black', scheme);
@@ -328,32 +318,42 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
               style: DsTypography.title.copyWith(color: theme.text),
             ),
           ),
-          GridView.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1.5,
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            children: [
-              for (final (icon, labelKey) in _ideaPresets)
-                _buildIdeaCard(theme, icon, labelKey, controller),
-            ],
+          MarqueeButtonListCardWidget(
+            inline: true,
+            items: [
+              (
+                Icons.schedule,
+                'screens_assistantIdeaTodo'.tr,
+                theme.primary,
+              ),
+              (Icons.savings, 'screens_assistantIdeaBill'.tr, theme.warning),
+              (
+                Icons.menu_book,
+                'screens_assistantIdeaDiary'.tr,
+                theme.success,
+              ),
+              (
+                Icons.water_drop,
+                'screens_assistantIdeaCheckin'.tr,
+                theme.primary,
+              ),
+            ]
+                .map(
+                  (e) => MarqueeButtonItemData(
+                    label: e.$2,
+                    icon: e.$1,
+                    color: e.$3,
+                    payload: e.$2,
+                  ),
+                )
+                .toList(),
+            onItemTap: (item, _) => controller.setInputText(item.label),
           ),
         ],
       ),
     );
   }
 
-  /// 预设想法卡：(图标, 文案键)；文案本身即发给 agent 的提示
-  static const List<(DsIconKind, String)> _ideaPresets = [
-    (DsIconKind.clock, 'screens_assistantIdeaTodo'),
-    (DsIconKind.piggy, 'screens_assistantIdeaBill'),
-    (DsIconKind.book, 'screens_assistantIdeaDiary'),
-    (DsIconKind.drop, 'screens_assistantIdeaCheckin'),
-  ];
-
-  /// 状态徽章胶囊：小助手 / 正在处理
   Widget _buildBadge(AppThemeData theme, ChatController controller) {
     final working = controller.isSending;
     return Container(
@@ -381,57 +381,8 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     );
   }
 
-  /// 热门想法卡：点击把预设提示填入输入框
-  Widget _buildIdeaCard(
-    AppThemeData theme,
-    DsIconKind icon,
-    String labelKey,
-    ChatController controller,
-  ) {
-    return Pressable(
-      onPressed: () => controller.setInputText(labelKey.tr),
-      semanticLabel: labelKey.tr,
-      builder: (context, states) => Opacity(
-        opacity: states.contains(WidgetState.pressed) ? 0.85 : 1,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: dsSketchDecoration(
-            theme: theme,
-            fillColor: theme.surface,
-            radius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: dsSketchDecoration(
-                  theme: theme,
-                  fillColor: theme.hatch,
-                  radius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: DsIcon(icon, size: 18, color: theme.primary),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                labelKey.tr,
-                style: DsTypography.caption.copyWith(color: theme.text),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 消息流：用户右气泡（主题色实底）/ AI 左气泡（复用 AgentMessageContent，
-  /// 支持 markdown 与工具调用步骤展示）；聊天流不做便签化（design.md §11.4）
+  /// AI 气泡复用 AgentMessageContent（markdown + 工具调用步骤）；
+  /// 聊天流不做便签化（design.md §11.4）
   Widget _buildMessageList(
     AppThemeData theme,
     ChatController controller,

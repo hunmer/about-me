@@ -461,7 +461,7 @@ class RadialDiscBottomBar extends StatelessWidget {
             fold: fold,
             optionT: optionT,
             hasSubLabels: subLabels != null,
-            shadowsOnly: true,
+            phase: _PaintPhase.shadows,
           ),
         ),
         // 主扇环玻璃层：背景模糊 + 填充（恒定）
@@ -479,7 +479,7 @@ class RadialDiscBottomBar extends StatelessWidget {
                 fold: fold,
                 optionT: optionT,
                 hasSubLabels: subLabels != null,
-                fillsOnly: true,
+                phase: _PaintPhase.fills,
                 part: _RibbonPart.main,
               ),
             ),
@@ -504,11 +504,23 @@ class RadialDiscBottomBar extends StatelessWidget {
                   fold: fold,
                   optionT: optionT,
                   hasSubLabels: subLabels != null,
-                  fillsOnly: true,
+                  phase: _PaintPhase.fills,
                   part: _RibbonPart.sub,
                 ),
               ),
             ),
+          ),
+        ),
+        // 墨线描边层：画在裁剪外——描边以路径边界为中心，进 ClipPath
+        // 会被裁掉外半边，弧线顶缘只剩一半线宽
+        CustomPaint(
+          size: size,
+          painter: _ScenePainter(
+            style: style,
+            fold: fold,
+            optionT: optionT,
+            hasSubLabels: subLabels != null,
+            phase: _PaintPhase.strokes,
           ),
         ),
       ],
@@ -721,19 +733,22 @@ final DrawConfig _fallbackSketchConfig = DrawConfig.build(
 /// 磨砂模式下按扇环拆层绘制：主扇环 / 子栏扇环各成一块玻璃
 enum _RibbonPart { all, main, sub }
 
+/// 绘制相位：磨砂模式把阴影 / 玻璃填充 / 墨线描边拆成独立层
+enum _PaintPhase { all, shadows, fills, strokes }
+
 /// 背景画布：主 / 子两条扇环 + 子栏弧形滑动药丸
 ///
-/// [shadowsOnly] / [fillsOnly] 用于磨砂模式拆分绘制：
-/// 阴影层在玻璃裁剪外，玻璃体层在 ClipPath 内；
-/// [part] 进一步限定只画哪条扇环（两层玻璃各自填充）。
+/// 磨砂模式按 [phase] 与 [part] 拆分绘制：阴影层在玻璃裁剪外，
+/// 玻璃填充层在 ClipPath + BackdropFilter 内；墨线描边层必须放在
+/// 裁剪外——描边以路径边界为中心，进 ClipPath 会被裁掉外半边，
+/// 弧线顶缘只剩一半线宽（顶部描边不清晰）。
 class _ScenePainter extends CustomPainter {
   _ScenePainter({
     required this.style,
     required this.fold,
     required this.optionT,
     this.hasSubLabels = false,
-    this.shadowsOnly = false,
-    this.fillsOnly = false,
+    this.phase = _PaintPhase.all,
     this.part = _RibbonPart.all,
   });
 
@@ -749,8 +764,7 @@ class _ScenePainter extends CustomPainter {
   /// （subActions）模式下没有选项文字，药丸只是悬在左侧的色块
   final bool hasSubLabels;
 
-  final bool shadowsOnly;
-  final bool fillsOnly;
+  final _PaintPhase phase;
 
   final _RibbonPart part;
 
@@ -774,51 +788,69 @@ class _ScenePainter extends CustomPainter {
       canvas.scale(scale);
       canvas.translate(-origin.dx, -origin.dy);
 
-      if (!fillsOnly) _paintShadows(canvas, RadialGeometry.subRibbon, progress);
-      if (!shadowsOnly) {
-        _paintFill(canvas, RadialGeometry.subRibbon, progress);
-        if (hasSubLabels) {
-          final pillCenter =
-              RadialGeometry.optionLeftAngle +
-              (RadialGeometry.optionRightAngle - RadialGeometry.optionLeftAngle) *
-                  optionT;
-          final subPill = RadialGeometry.annularSector(
-            pillCenter - RadialGeometry.subPillHalfWidth,
-            pillCenter + RadialGeometry.subPillHalfWidth,
-            RadialGeometry.subPillInnerRadius,
-            RadialGeometry.subPillOuterRadius,
-          );
-          // 手绘药丸：waver 抖动轮廓实底 + 墨线描边（path 随 optionT
-          // 连续变化，不进缓存；短弧采样代价小）
-          final config = style.drawConfig ?? _fallbackSketchConfig;
-          final subPillWavered = waveredPolygons(
-            waverPath(subPill, config, amplitude: 1.0),
-          );
-          canvas.drawPath(
-            subPillWavered,
-            Paint()
-              ..color = style.subPillColor.withValues(
-                alpha: style.subPillColor.a * progress,
-              ),
-          );
-          canvas.drawPath(
-            subPillWavered,
-            Paint()
+      if (phase == _PaintPhase.all || phase == _PaintPhase.shadows) {
+        _paintShadows(canvas, RadialGeometry.subRibbon, progress);
+      }
+      if (phase == _PaintPhase.all || phase == _PaintPhase.fills) {
+        _paintRibbonFill(canvas, RadialGeometry.subRibbon, progress);
+        if (hasSubLabels) _paintSubPill(canvas, optionT, progress, false);
+      }
+      if (phase == _PaintPhase.all || phase == _PaintPhase.strokes) {
+        _paintRibbonStroke(canvas, RadialGeometry.subRibbon, progress);
+        if (hasSubLabels) _paintSubPill(canvas, optionT, progress, true);
+      }
+      canvas.restore();
+    }
+    if (part == _RibbonPart.sub) return;
+    if (phase == _PaintPhase.all || phase == _PaintPhase.shadows) {
+      _paintShadows(canvas, RadialGeometry.mainRibbon, 1);
+    }
+    if (phase == _PaintPhase.all || phase == _PaintPhase.fills) {
+      _paintRibbonFill(canvas, RadialGeometry.mainRibbon, 1);
+    }
+    if (phase == _PaintPhase.all || phase == _PaintPhase.strokes) {
+      _paintRibbonStroke(canvas, RadialGeometry.mainRibbon, 1);
+    }
+  }
+
+  /// 子栏弧形滑动药丸：[strokeOnly] 为 false 画 waver 实底，true 画墨线
+  void _paintSubPill(
+    Canvas canvas,
+    double optionT,
+    double alpha,
+    bool strokeOnly,
+  ) {
+    final pillCenter =
+        RadialGeometry.optionLeftAngle +
+        (RadialGeometry.optionRightAngle - RadialGeometry.optionLeftAngle) *
+            optionT;
+    final subPill = RadialGeometry.annularSector(
+      pillCenter - RadialGeometry.subPillHalfWidth,
+      pillCenter + RadialGeometry.subPillHalfWidth,
+      RadialGeometry.subPillInnerRadius,
+      RadialGeometry.subPillOuterRadius,
+    );
+    // 手绘药丸：waver 抖动轮廓实底 + 墨线描边（path 随 optionT
+    // 连续变化，不进缓存；短弧采样代价小）
+    final config = style.drawConfig ?? _fallbackSketchConfig;
+    final subPillWavered = waveredPolygons(
+      waverPath(subPill, config, amplitude: 1.0),
+    );
+    final paint =
+        strokeOnly
+            ? (Paint()
               ..style = PaintingStyle.stroke
               ..strokeWidth = 1.5
               ..strokeJoin = StrokeJoin.round
               ..strokeCap = StrokeCap.round
               ..color = style.strokeColor.withValues(
-                alpha: style.strokeColor.a * progress,
-              ),
-          );
-        }
-      }
-      canvas.restore();
-    }
-    if (part == _RibbonPart.sub) return;
-    if (!fillsOnly) _paintShadows(canvas, RadialGeometry.mainRibbon, 1);
-    if (!shadowsOnly) _paintFill(canvas, RadialGeometry.mainRibbon, 1);
+                alpha: style.strokeColor.a * alpha,
+              ))
+            : (Paint()
+              ..color = style.subPillColor.withValues(
+                alpha: style.subPillColor.a * alpha,
+              ));
+    canvas.drawPath(subPillWavered, paint);
   }
 
   void _paintShadows(Canvas canvas, Path path, double alpha) {
@@ -832,8 +864,8 @@ class _ScenePainter extends CustomPainter {
     }
   }
 
-  void _paintFill(Canvas canvas, Path path, double alpha) {
-    // 手绘扇环：waver 抖动轮廓（填充边界与墨线都带手绘痕迹）
+  /// 手绘扇环填充：waver 抖动轮廓实底
+  void _paintRibbonFill(Canvas canvas, Path path, double alpha) {
     final config = style.drawConfig ?? _fallbackSketchConfig;
     final wavered = waveredPolygons(_cachedContours(path, config));
     canvas.drawPath(
@@ -843,6 +875,12 @@ class _ScenePainter extends CustomPainter {
           alpha: style.fillColor.a * alpha,
         ),
     );
+  }
+
+  /// 手绘扇环墨线：与填充共用同一 waver 轮廓，画在裁剪外才完整
+  void _paintRibbonStroke(Canvas canvas, Path path, double alpha) {
+    final config = style.drawConfig ?? _fallbackSketchConfig;
+    final wavered = waveredPolygons(_cachedContours(path, config));
     canvas.drawPath(
       wavered,
       Paint()
@@ -877,7 +915,6 @@ class _ScenePainter extends CustomPainter {
       oldDelegate.optionT != optionT ||
       oldDelegate.style != style ||
       oldDelegate.hasSubLabels != hasSubLabels ||
-      oldDelegate.shadowsOnly != shadowsOnly ||
-      oldDelegate.fillsOnly != fillsOnly ||
+      oldDelegate.phase != phase ||
       oldDelegate.part != part;
 }
