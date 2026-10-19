@@ -21,6 +21,16 @@ import '../widgets/media_item_list_tile.dart';
 /// 视图模式：瀑布流网格 / 单列列表 / 手绘书架
 enum _MediaViewMode { grid, list, shelf }
 
+extension _MediaViewModeX on _MediaViewMode {
+  String get persistedName => name;
+
+  static _MediaViewMode fromName(String? name) => switch (name) {
+    'grid' => _MediaViewMode.grid,
+    'list' => _MediaViewMode.list,
+    _ => _MediaViewMode.shelf,
+  };
+}
+
 /// 媒体记录列表页：瀑布流封面网格 + 多条件过滤 + 搜索 + 排序
 ///
 /// UI 迁移自 ai_picks_demo 首页（双列错落瀑布流）。
@@ -36,7 +46,7 @@ class _MediaListScreenState extends State<MediaListScreen> {
   String _searchQuery = '';
   String _sortBy = 'default'; // default, title, rating, finished
 
-  _MediaViewMode _viewMode = _MediaViewMode.grid;
+  _MediaViewMode _viewMode = _MediaViewMode.shelf;
 
   /// 切换按钮的下一档（网格 → 列表 → 书架 → 网格循环）
   _MediaViewMode get _nextViewMode => switch (_viewMode) {
@@ -45,9 +55,18 @@ class _MediaListScreenState extends State<MediaListScreen> {
     _MediaViewMode.shelf => _MediaViewMode.grid,
   };
 
+  void _cycleViewMode() {
+    setState(() => _viewMode = _nextViewMode);
+    MediaLogPlugin.instance.setViewMode(_viewMode.persistedName);
+  }
+
   @override
   void initState() {
     super.initState();
+    // 恢复持久化的视图偏好（plugin 初始化先于页面构建完成）
+    _viewMode = _MediaViewModeX.fromName(
+      MediaLogPlugin.instance.viewMode,
+    );
     MediaLogPlugin.instance.addListener(_onDataChanged);
   }
 
@@ -415,8 +434,7 @@ class _MediaListScreenState extends State<MediaListScreen> {
                   _MediaViewMode.list => 'media_viewAsList'.tr,
                   _MediaViewMode.shelf => 'media_viewAsShelf'.tr,
                 },
-                onPressed: () =>
-                    setState(() => _viewMode = _nextViewMode),
+                onPressed: _cycleViewMode,
               );
             },
           ),

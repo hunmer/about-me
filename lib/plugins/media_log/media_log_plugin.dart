@@ -35,6 +35,20 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
   final List<MediaItem> _items = [];
   final List<Function()> _listeners = [];
 
+  /// 列表视图模式（grid / list / shelf），默认书柜，持久化到 ui_settings.json
+  String _viewMode = 'shelf';
+
+  String get viewMode => _viewMode;
+
+  Future<void> setViewMode(String mode) async {
+    if (_viewMode == mode) return;
+    _viewMode = mode;
+    await AboutmeDataService.instance.writePath(
+      'media_log/ui_settings.json',
+      {'viewMode': mode},
+    );
+  }
+
   List<MediaItem> get items => _items;
 
   void addListener(Function() listener) => _listeners.add(listener);
@@ -75,6 +89,15 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
 
   Future<void> _loadItems() async {
     try {
+      // 视图偏好（独立小文件，读取失败回落默认书柜）
+      final ui = await AboutmeDataService.instance.readPath(
+        'media_log/ui_settings.json',
+      );
+      final mode = ui is Map ? ui['viewMode'] : null;
+      if (mode == 'grid' || mode == 'list' || mode == 'shelf') {
+        _viewMode = mode;
+      }
+
       final data = await AboutmeDataService.instance.readPath(
         'media_log/items.json',
       );

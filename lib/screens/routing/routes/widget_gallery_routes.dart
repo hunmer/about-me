@@ -89,6 +89,10 @@ import 'package:aboutme/screens/widgets_gallery/screens/cute_notepad_card_exampl
 import 'package:aboutme/screens/widgets_gallery/screens/scrapbook_canvas_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/arc_rotary_wheel_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/walk_stack_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/illustrated_metric_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/cutout_stat_grid_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/gradient_progress_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/striped_weekly_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/inbox_message_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
@@ -111,549 +115,869 @@ class WidgetGalleryRoutes implements RouteRegistry {
 
   @override
   List<RouteDefinition> get routes => [
-        // 组件展示主页
-        RouteDefinition(
-          path: '/widgets_gallery',
-          handler: (settings) => RouteHelpers.createRoute(const WidgetsGalleryScreen(), settings: settings),
-          description: '组件展示主页',
-        ),
-        RouteDefinition(
-          path: 'widgets_gallery',
-          handler: (settings) => RouteHelpers.createRoute(const WidgetsGalleryScreen(), settings: settings),
-          description: '组件展示主页（别名）',
-        ),
-
-        // 各组件示例
-        RouteDefinition(
-          path: '/widgets_gallery/color_picker',
-          handler: (settings) => RouteHelpers.createRoute(const ColorPickerExample(), settings: settings),
-          description: '颜色选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/icon_picker',
-          handler: (settings) => RouteHelpers.createRoute(const IconPickerExample(), settings: settings),
-          description: '图标选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/avatar_picker',
-          handler: (settings) => RouteHelpers.createRoute(const AvatarPickerExample(), settings: settings),
-          description: '头像选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/circle_icon_picker',
-          handler: (settings) => RouteHelpers.createRoute(const CircleIconPickerExample(), settings: settings),
-          description: '圆形图标选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/calendar_strip_picker',
-          handler: (settings) => RouteHelpers.createRoute(const CalendarStripPickerExample(), settings: settings),
-          description: '日历条选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/image_picker',
-          handler: (settings) => RouteHelpers.createRoute(const ImagePickerExample(), settings: settings),
-          description: '图片选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/location_picker',
-          handler: (settings) => RouteHelpers.createRoute(const LocationPickerExample(), settings: settings),
-          description: '位置选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/aboutme_editor',
-          handler: (settings) => RouteHelpers.createRoute(const AboutmeEditorExample(), settings: settings),
-          description: '编辑器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/data_selector',
-          handler: (settings) => RouteHelpers.createRoute(const DataSelectorExample(), settings: settings),
-          description: '数据选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/enhanced_calendar',
-          handler: (settings) => RouteHelpers.createRoute(const EnhancedCalendarExample(), settings: settings),
-          description: '增强日历示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/group_selector',
-          handler: (settings) => RouteHelpers.createRoute(const GroupSelectorExample(), settings: settings),
-          description: '分组选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/simple_group_selector',
-          handler: (settings) => RouteHelpers.createRoute(const SimpleGroupSelectorExample(), settings: settings),
-          description: '简单分组选择器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/tag_manager',
-          handler: (settings) => RouteHelpers.createRoute(const TagManagerExample(), settings: settings),
-          description: '标签管理器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/custom_dialog',
-          handler: (settings) => RouteHelpers.createRoute(const CustomDialogExample(), settings: settings),
-          description: '自定义对话框示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/persona_intro_dialog',
-          handler: (settings) => RouteHelpers.createRoute(const PersonaIntroDialogExample(), settings: settings),
-          description: '人设介绍对话框示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/smooth_bottom_sheet',
-          handler: (settings) => RouteHelpers.createRoute(const SmoothBottomSheetExample(), settings: settings),
-          description: '底部面板示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/file_preview',
-          handler: (settings) => RouteHelpers.createRoute(const FilePreviewExample(), settings: settings),
-          description: '文件预览示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/app_drawer',
-          handler: (settings) => RouteHelpers.createRoute(const AppDrawerExample(), settings: settings),
-          description: '抽屉示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/home_widgets',
-          handler: (settings) => RouteHelpers.createRoute(const HomeWidgetsGalleryScreen(), settings: settings),
-          description: '桌面小组件示例列表',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/all_widgets_preview',
-          handler: (settings) {
-            final items = settings.arguments as List<WidgetPreviewItem>?;
-            return RouteHelpers.createRoute(
-              AllWidgetsPreviewPage(widgetItems: items ?? _defaultWidgetItems),
-              settings: settings,
-            );
-          },
-          description: '所有小组件预览',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/half_circle_gauge_widget',
-          handler: (settings) => RouteHelpers.createRoute(const HalfCircleGaugeWidgetExample(), settings: settings),
-          description: '半圆仪表盘示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/widget_config_editor',
-          handler: (settings) => RouteHelpers.createRoute(const WidgetConfigEditorExample(), settings: settings),
-          description: '组件配置编辑器示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/preset_edit_form',
-          handler: (settings) => RouteHelpers.createRoute(const PresetEditFormExample(), settings: settings),
-          description: '预设编辑表单示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/super_cupertino_navigation',
-          handler: (settings) => RouteHelpers.createRoute(const SuperCupertinoNavigationExample(), settings: settings),
-          description: '导航示例',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/segmented_progress_card',
-          handler: (settings) => RouteHelpers.createRoute(const SegmentedProgressCardExample(), settings: settings),
-          description: '分段进度条统计卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/circular_progress_card',
-          handler: (settings) => RouteHelpers.createRoute(const CircularProgressCardExample(), settings: settings),
-          description: '圆形进度卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/monthly_progress_with_dots_card',
-          handler: (settings) => RouteHelpers.createRoute(const MonthlyProgressWithDotsCardExample(), settings: settings),
-          description: '月度进度圆点卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/multi_metric_progress_card',
-          handler: (settings) => RouteHelpers.createRoute(const MultiMetricProgressCardExample(), settings: settings),
-          description: '多指标进度卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/line_chart_trend_card',
-          handler: (settings) => RouteHelpers.createRoute(const LineChartTrendCardExample(), settings: settings),
-          description: '折线图趋势卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/vertical_bar_chart_card',
-          handler: (settings) => RouteHelpers.createRoute(const VerticalBarChartCardExample(), settings: settings),
-          description: '垂直柱状图卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/trend_line_chart_widget',
-          handler: (settings) => RouteHelpers.createRoute(const TrendLineChartWidgetExample(), settings: settings),
-          description: '趋势折线图',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/stacked_bar_chart_card',
-          handler: (settings) => RouteHelpers.createRoute(const StackedBarChartCardExample(), settings: settings),
-          description: '堆叠柱状图卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/stacked_bar_chart_widget',
-          handler: (settings) => RouteHelpers.createRoute(const StackedBarChartWidgetExample(), settings: settings),
-          description: '堆叠条形图组件',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/earnings_trend_card',
-          handler: (settings) => RouteHelpers.createRoute(const EarningsTrendCardExample(), settings: settings),
-          description: '收益趋势卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/ranked_bar_chart_card',
-          handler: (settings) => RouteHelpers.createRoute(const RankedBarChartCardExample(), settings: settings),
-          description: '排名条形图卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/smooth_line_chart_card',
-          handler: (settings) => RouteHelpers.createRoute(const SmoothLineChartCardExample(), settings: settings),
-          description: '平滑折线图卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/audio_waveform_widget',
-          handler: (settings) => RouteHelpers.createRoute(const AudioWaveformWidgetExample(), settings: settings),
-          description: '音频波形小组件',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/dual_slider_widget',
-          handler: (settings) => RouteHelpers.createRoute(const DualSliderWidgetExample(), settings: settings),
-          description: '双滑块小组件',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/storage_breakdown_widget',
-          handler: (settings) => RouteHelpers.createRoute(const StorageBreakdownWidgetExample(), settings: settings),
-          description: '存储分段小组件',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/route_tracking_card',
-          handler: (settings) => RouteHelpers.createRoute(const RouteTrackingCardExample(), settings: settings),
-          description: '运输追踪路线卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/bar_chart_stats_card',
-          handler: (settings) => RouteHelpers.createRoute(const BarChartStatsCardExample(), settings: settings),
-          description: '柱状图统计卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/activity_progress_card',
-      handler:
-          (settings) => RouteHelpers.createRoute(
-            CardDotProgressDisplayExample(),
-            settings: settings,
-          ),
-          description: '活动进度卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/daily_bar_chart_card',
-          handler: (settings) => RouteHelpers.createRoute(const DailyBarChartCardExample(), settings: settings),
-          description: '每日条形图卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/weekly_bar_chart_card',
-          handler: (settings) => RouteHelpers.createRoute(const WeeklyBarChartCardExample(), settings: settings),
-          description: '周条形图卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/wallet_balance_card',
-          handler: (settings) => RouteHelpers.createRoute(const WalletBalanceCardExample(), settings: settings),
-          description: '钱包余额概览卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/event_calendar_widget',
-          handler: (settings) => RouteHelpers.createRoute(const EventCalendarWidgetExample(), settings: settings),
-          description: '日历事件卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/performance_bar_chart',
-          handler: (settings) => RouteHelpers.createRoute(const PerformanceBarChartExample(), settings: settings),
-          description: '性能指标柱状图',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/portfolio_stacked_chart',
-          handler: (settings) => RouteHelpers.createRoute(const PortfolioStackedChartExample(), settings: settings),
-          description: '投资组合堆叠图',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/spending_trend_chart',
-          handler: (settings) => RouteHelpers.createRoute(const SpendingTrendChartExample(), settings: settings),
-          description: '支出趋势折线图',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/blood_pressure_tracker',
-          handler: (settings) => RouteHelpers.createRoute(const BloodPressureTrackerExample(), settings: settings),
-          description: '血压追踪器',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/stress_level_monitor',
-          handler: (settings) => RouteHelpers.createRoute(const StressLevelMonitorExample(), settings: settings),
-          description: '压力水平监测卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/daily_todo_list_widget',
-          handler: (settings) => RouteHelpers.createRoute(const DailyTodoListWidgetExample(), settings: settings),
-          description: '每日待办事项卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/weekly_steps_progress_card',
-          handler: (settings) => RouteHelpers.createRoute(const WeeklyStepsProgressCardExample(), settings: settings),
-          description: '每周步数进度卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/weekly_dot_tracker_card',
-          handler: (settings) => RouteHelpers.createRoute(const WeeklyDotTrackerCardExample(), settings: settings),
-          description: '周点阵追踪卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/mini_trend_card',
-          handler: (settings) => RouteHelpers.createRoute(const MiniTrendCardExample(), settings: settings),
-          description: '迷你趋势卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/daily_events_card',
-          handler: (settings) => RouteHelpers.createRoute(const DailyEventsCardExample(), settings: settings),
-          description: '日期事件卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/score_card_widget',
-          handler: (settings) => RouteHelpers.createRoute(const ScoreCardWidgetExample(), settings: settings),
-          description: '分数卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/category_stack_widget',
-          handler: (settings) => RouteHelpers.createRoute(const CategoryStackWidgetExample(), settings: settings),
-          description: '分类堆叠消费卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/timeline_schedule_card',
-          handler: (settings) => RouteHelpers.createRoute(const TimelineScheduleCardExample(), settings: settings),
-          description: '时间线日程卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/expense_comparison_chart',
-          handler: (settings) => RouteHelpers.createRoute(const ExpenseComparisonChartExample(), settings: settings),
-          description: '支出对比图表',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/activity_rings_card',
-          handler: (settings) => RouteHelpers.createRoute(const ActivityRingsCardExample(), settings: settings),
-          description: '活动圆环卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/modern_egfr_health_widget',
-      handler:
-          (settings) => RouteHelpers.createRoute(
-            const ModernFlipCounterCardExample(),
-            settings: settings,
-          ),
-          description: 'eGFR 健康指标卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/modern_rounded_balance_widget',
-          handler: (settings) => RouteHelpers.createRoute(const ModernRoundedBalanceWidgetExample(), settings: settings),
-          description: '余额卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/sleep_stage_chart',
-          handler: (settings) => RouteHelpers.createRoute(const SleepStageChartExample(), settings: settings),
-          description: '睡眠阶段图表',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/monthly_bill_card',
-          handler: (settings) => RouteHelpers.createRoute(const MonthlyBillCardExample(), settings: settings),
-          description: '月度账单卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/task_list_card',
-          handler: (settings) => RouteHelpers.createRoute(const TaskListCardExample(), settings: settings),
-          description: '任务列表卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/rounded_task_list_card',
-          handler: (settings) => RouteHelpers.createRoute(const RoundedTaskListCardExample(), settings: settings),
-          description: '圆角任务列表卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/upcoming_tasks_widget',
-          handler: (settings) => RouteHelpers.createRoute(const UpcomingTasksWidgetExample(), settings: settings),
-          description: '即将到来的任务小组件',
-        ),
+    // 组件展示主页
     RouteDefinition(
-          path: '/widgets_gallery/mood_chart_card',
-          handler: (settings) => RouteHelpers.createRoute(const ChartIconDisplayCardExample(), settings: settings),
-          description: '心情图表卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/modern_rounded_mood_widget',
-      handler:
-          (settings) => RouteHelpers.createRoute(
-            const ModernRoundedBarIconCardExample(),
-            settings: settings,
-          ),
-          description: '现代化圆角心情追踪小组件',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/modern_rounded_spending_widget',
-          handler: (settings) => RouteHelpers.createRoute(const ModernRoundedSpendingWidgetExample(), settings: settings),
-          description: '消费卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/hydration_tracker_widget',
-          handler: (settings) => RouteHelpers.createRoute(const HydrationTrackerWidgetExample(), settings: settings),
-          description: '饮水追踪器',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/trend_value_card',
-          handler: (settings) => RouteHelpers.createRoute(const TrendValueCardExample(), settings: settings),
-          description: '趨勢數值卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/sleep_duration_card',
-          handler: (settings) => RouteHelpers.createRoute(const SleepDurationCardExample(), settings: settings),
-          description: '睡眠时长统计卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/weight_trend_chart',
-          handler: (settings) => RouteHelpers.createRoute(
-            const WeightTrendChartExample(),
-            settings: settings,
-          ),
-          description: '体重趋势图表',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/account_balance_card',
-          handler: (settings) => RouteHelpers.createRoute(const AccountBalanceCardExample(), settings: settings),
-          description: '账户余额卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/multi_metric_progress_card',
-          handler: (settings) => RouteHelpers.createRoute(const MultiMetricProgressCardExample(), settings: settings),
-          description: '多指标进度跟踪卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/icon_circular_progress_card',
-          handler: (settings) => RouteHelpers.createRoute(const IconCircularProgressCardExample(), settings: settings),
-          description: '图标圆形进度卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/color_tag_task_card',
-          handler: (settings) => RouteHelpers.createRoute(const ColorTagTaskCardExample(), settings: settings),
-          description: '彩色标签任务列表卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/donut_chart_stats_card',
-          handler: (settings) => RouteHelpers.createRoute(const DonutChartStatsCardExample(), settings: settings),
-          description: '甜甜圈图统计卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/health_score_ring_card',
-          handler: (settings) => RouteHelpers.createRoute(const HealthScoreRingCardExample(), settings: settings),
-          description: '健康分数环形统计卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/petal_radial_chart_card',
-          handler: (settings) => RouteHelpers.createRoute(const PetalRadialChartCardExample(), settings: settings),
-          description: '花瓣径向统计卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/stacked_folder_card',
-          handler: (settings) => RouteHelpers.createRoute(const StackedFolderCardExample(), settings: settings),
-          description: '堆叠文件夹卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/stacked_accordion_card',
-          handler: (settings) => RouteHelpers.createRoute(const StackedAccordionCardExample(), settings: settings),
-          description: '堆叠手风琴卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/cute_notepad_card',
-          handler: (settings) => RouteHelpers.createRoute(const CuteNotepadCardExample(), settings: settings),
-          description: '可爱手账便签卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/scrapbook_canvas_card',
-          handler: (settings) => RouteHelpers.createRoute(const ScrapbookCanvasCardExample(), settings: settings),
-          description: '手帐无限画布卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/arc_rotary_wheel_card',
-          handler: (settings) => RouteHelpers.createRoute(const ArcRotaryWheelCardExample(), settings: settings),
-          description: '弧形圆盘选择卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/walk_stack_card',
-          handler: (settings) => RouteHelpers.createRoute(const WalkStackCardExample(), settings: settings),
-          description: '随机漫步卡片堆叠',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/inbox_message_card',
-          handler: (settings) => RouteHelpers.createRoute(const InboxMessageCardExample(), settings: settings),
-          description: '收件箱消息卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/notes_list_card',
-          handler: (settings) => RouteHelpers.createRoute(const NotesListCardExample(), settings: settings),
-          description: '笔记列表卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/circular_metrics_card',
-          handler: (settings) => RouteHelpers.createRoute(const CircularMetricsCardExample(), settings: settings),
-          description: '环形指标卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/rental_preview_card',
-          handler: (settings) => RouteHelpers.createRoute(const RentalPreviewCardExample(), settings: settings),
-          description: '租赁预览卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/rounded_reminders_list',
-          handler: (settings) => RouteHelpers.createRoute(const RoundedRemindersListExample(), settings: settings),
-          description: '圆角提醒事项列表卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/curve_progress_card',
-          handler: (settings) => RouteHelpers.createRoute(const CurveProgressCardExample(), settings: settings),
-          description: '曲线进度卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/nutrition_progress_card',
-          handler: (settings) => RouteHelpers.createRoute(
-            const NutritionProgressCardExample(),
-            settings: settings,
-          ),
-          description: '营养进度追踪卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/trend_list_card',
-          handler: (settings) => RouteHelpers.createRoute(const TrendListCardExample(), settings: settings),
-          description: '趋势列表卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/screen_time_chart',
-          handler: (settings) => RouteHelpers.createRoute(const ScreenTimeChartExample(), settings: settings),
-          description: '屏幕时间统计图表',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/vertical_bar_chart_widget',
-          handler: (settings) => RouteHelpers.createRoute(const VerticalBarChartExample(), settings: settings),
-          description: '垂直条形图卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/rounded_task_progress_widget',
-          handler: (settings) => RouteHelpers.createRoute(const RoundedTaskProgressWidgetExample(), settings: settings),
-          description: '圆角任务进度小组件',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/task_progress_card',
-          handler: (settings) => RouteHelpers.createRoute(const TaskProgressCardExample(), settings: settings),
-          description: '任务进度卡片',
-        ),
-        RouteDefinition(
-          path: '/widgets_gallery/task_list_stat_card',
-          handler: (settings) => RouteHelpers.createRoute(const TaskListStatCardExample(), settings: settings),
-          description: '任务统计列表卡片',
-        ),
-      ];
+      path: '/widgets_gallery',
+      handler: (settings) => RouteHelpers.createRoute(
+        const WidgetsGalleryScreen(),
+        settings: settings,
+      ),
+      description: '组件展示主页',
+    ),
+    RouteDefinition(
+      path: 'widgets_gallery',
+      handler: (settings) => RouteHelpers.createRoute(
+        const WidgetsGalleryScreen(),
+        settings: settings,
+      ),
+      description: '组件展示主页（别名）',
+    ),
+
+    // 各组件示例
+    RouteDefinition(
+      path: '/widgets_gallery/color_picker',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ColorPickerExample(),
+        settings: settings,
+      ),
+      description: '颜色选择器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/icon_picker',
+      handler: (settings) => RouteHelpers.createRoute(
+        const IconPickerExample(),
+        settings: settings,
+      ),
+      description: '图标选择器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/avatar_picker',
+      handler: (settings) => RouteHelpers.createRoute(
+        const AvatarPickerExample(),
+        settings: settings,
+      ),
+      description: '头像选择器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/circle_icon_picker',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CircleIconPickerExample(),
+        settings: settings,
+      ),
+      description: '圆形图标选择器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/calendar_strip_picker',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CalendarStripPickerExample(),
+        settings: settings,
+      ),
+      description: '日历条选择器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/image_picker',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ImagePickerExample(),
+        settings: settings,
+      ),
+      description: '图片选择器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/location_picker',
+      handler: (settings) => RouteHelpers.createRoute(
+        const LocationPickerExample(),
+        settings: settings,
+      ),
+      description: '位置选择器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/aboutme_editor',
+      handler: (settings) => RouteHelpers.createRoute(
+        const AboutmeEditorExample(),
+        settings: settings,
+      ),
+      description: '编辑器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/data_selector',
+      handler: (settings) => RouteHelpers.createRoute(
+        const DataSelectorExample(),
+        settings: settings,
+      ),
+      description: '数据选择器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/enhanced_calendar',
+      handler: (settings) => RouteHelpers.createRoute(
+        const EnhancedCalendarExample(),
+        settings: settings,
+      ),
+      description: '增强日历示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/group_selector',
+      handler: (settings) => RouteHelpers.createRoute(
+        const GroupSelectorExample(),
+        settings: settings,
+      ),
+      description: '分组选择器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/simple_group_selector',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SimpleGroupSelectorExample(),
+        settings: settings,
+      ),
+      description: '简单分组选择器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/tag_manager',
+      handler: (settings) => RouteHelpers.createRoute(
+        const TagManagerExample(),
+        settings: settings,
+      ),
+      description: '标签管理器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/custom_dialog',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CustomDialogExample(),
+        settings: settings,
+      ),
+      description: '自定义对话框示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/persona_intro_dialog',
+      handler: (settings) => RouteHelpers.createRoute(
+        const PersonaIntroDialogExample(),
+        settings: settings,
+      ),
+      description: '人设介绍对话框示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/smooth_bottom_sheet',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SmoothBottomSheetExample(),
+        settings: settings,
+      ),
+      description: '底部面板示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/file_preview',
+      handler: (settings) => RouteHelpers.createRoute(
+        const FilePreviewExample(),
+        settings: settings,
+      ),
+      description: '文件预览示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/app_drawer',
+      handler: (settings) => RouteHelpers.createRoute(
+        const AppDrawerExample(),
+        settings: settings,
+      ),
+      description: '抽屉示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/home_widgets',
+      handler: (settings) => RouteHelpers.createRoute(
+        const HomeWidgetsGalleryScreen(),
+        settings: settings,
+      ),
+      description: '桌面小组件示例列表',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/all_widgets_preview',
+      handler: (settings) {
+        final items = settings.arguments as List<WidgetPreviewItem>?;
+        return RouteHelpers.createRoute(
+          AllWidgetsPreviewPage(widgetItems: items ?? _defaultWidgetItems),
+          settings: settings,
+        );
+      },
+      description: '所有小组件预览',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/half_circle_gauge_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const HalfCircleGaugeWidgetExample(),
+        settings: settings,
+      ),
+      description: '半圆仪表盘示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/widget_config_editor',
+      handler: (settings) => RouteHelpers.createRoute(
+        const WidgetConfigEditorExample(),
+        settings: settings,
+      ),
+      description: '组件配置编辑器示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/preset_edit_form',
+      handler: (settings) => RouteHelpers.createRoute(
+        const PresetEditFormExample(),
+        settings: settings,
+      ),
+      description: '预设编辑表单示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/super_cupertino_navigation',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SuperCupertinoNavigationExample(),
+        settings: settings,
+      ),
+      description: '导航示例',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/segmented_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SegmentedProgressCardExample(),
+        settings: settings,
+      ),
+      description: '分段进度条统计卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/circular_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CircularProgressCardExample(),
+        settings: settings,
+      ),
+      description: '圆形进度卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/monthly_progress_with_dots_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const MonthlyProgressWithDotsCardExample(),
+        settings: settings,
+      ),
+      description: '月度进度圆点卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/multi_metric_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const MultiMetricProgressCardExample(),
+        settings: settings,
+      ),
+      description: '多指标进度卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/line_chart_trend_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const LineChartTrendCardExample(),
+        settings: settings,
+      ),
+      description: '折线图趋势卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/vertical_bar_chart_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const VerticalBarChartCardExample(),
+        settings: settings,
+      ),
+      description: '垂直柱状图卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/trend_line_chart_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const TrendLineChartWidgetExample(),
+        settings: settings,
+      ),
+      description: '趋势折线图',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/stacked_bar_chart_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const StackedBarChartCardExample(),
+        settings: settings,
+      ),
+      description: '堆叠柱状图卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/stacked_bar_chart_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const StackedBarChartWidgetExample(),
+        settings: settings,
+      ),
+      description: '堆叠条形图组件',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/earnings_trend_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const EarningsTrendCardExample(),
+        settings: settings,
+      ),
+      description: '收益趋势卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/ranked_bar_chart_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const RankedBarChartCardExample(),
+        settings: settings,
+      ),
+      description: '排名条形图卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/smooth_line_chart_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SmoothLineChartCardExample(),
+        settings: settings,
+      ),
+      description: '平滑折线图卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/audio_waveform_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const AudioWaveformWidgetExample(),
+        settings: settings,
+      ),
+      description: '音频波形小组件',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/dual_slider_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const DualSliderWidgetExample(),
+        settings: settings,
+      ),
+      description: '双滑块小组件',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/storage_breakdown_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const StorageBreakdownWidgetExample(),
+        settings: settings,
+      ),
+      description: '存储分段小组件',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/route_tracking_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const RouteTrackingCardExample(),
+        settings: settings,
+      ),
+      description: '运输追踪路线卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/bar_chart_stats_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const BarChartStatsCardExample(),
+        settings: settings,
+      ),
+      description: '柱状图统计卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/activity_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        CardDotProgressDisplayExample(),
+        settings: settings,
+      ),
+      description: '活动进度卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/daily_bar_chart_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const DailyBarChartCardExample(),
+        settings: settings,
+      ),
+      description: '每日条形图卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/weekly_bar_chart_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const WeeklyBarChartCardExample(),
+        settings: settings,
+      ),
+      description: '周条形图卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/wallet_balance_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const WalletBalanceCardExample(),
+        settings: settings,
+      ),
+      description: '钱包余额概览卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/event_calendar_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const EventCalendarWidgetExample(),
+        settings: settings,
+      ),
+      description: '日历事件卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/performance_bar_chart',
+      handler: (settings) => RouteHelpers.createRoute(
+        const PerformanceBarChartExample(),
+        settings: settings,
+      ),
+      description: '性能指标柱状图',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/portfolio_stacked_chart',
+      handler: (settings) => RouteHelpers.createRoute(
+        const PortfolioStackedChartExample(),
+        settings: settings,
+      ),
+      description: '投资组合堆叠图',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/spending_trend_chart',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SpendingTrendChartExample(),
+        settings: settings,
+      ),
+      description: '支出趋势折线图',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/blood_pressure_tracker',
+      handler: (settings) => RouteHelpers.createRoute(
+        const BloodPressureTrackerExample(),
+        settings: settings,
+      ),
+      description: '血压追踪器',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/stress_level_monitor',
+      handler: (settings) => RouteHelpers.createRoute(
+        const StressLevelMonitorExample(),
+        settings: settings,
+      ),
+      description: '压力水平监测卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/daily_todo_list_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const DailyTodoListWidgetExample(),
+        settings: settings,
+      ),
+      description: '每日待办事项卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/weekly_steps_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const WeeklyStepsProgressCardExample(),
+        settings: settings,
+      ),
+      description: '每周步数进度卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/weekly_dot_tracker_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const WeeklyDotTrackerCardExample(),
+        settings: settings,
+      ),
+      description: '周点阵追踪卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/mini_trend_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const MiniTrendCardExample(),
+        settings: settings,
+      ),
+      description: '迷你趋势卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/daily_events_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const DailyEventsCardExample(),
+        settings: settings,
+      ),
+      description: '日期事件卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/score_card_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ScoreCardWidgetExample(),
+        settings: settings,
+      ),
+      description: '分数卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/category_stack_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CategoryStackWidgetExample(),
+        settings: settings,
+      ),
+      description: '分类堆叠消费卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/timeline_schedule_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const TimelineScheduleCardExample(),
+        settings: settings,
+      ),
+      description: '时间线日程卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/expense_comparison_chart',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ExpenseComparisonChartExample(),
+        settings: settings,
+      ),
+      description: '支出对比图表',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/activity_rings_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ActivityRingsCardExample(),
+        settings: settings,
+      ),
+      description: '活动圆环卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/modern_egfr_health_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ModernFlipCounterCardExample(),
+        settings: settings,
+      ),
+      description: 'eGFR 健康指标卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/modern_rounded_balance_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ModernRoundedBalanceWidgetExample(),
+        settings: settings,
+      ),
+      description: '余额卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/sleep_stage_chart',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SleepStageChartExample(),
+        settings: settings,
+      ),
+      description: '睡眠阶段图表',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/monthly_bill_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const MonthlyBillCardExample(),
+        settings: settings,
+      ),
+      description: '月度账单卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/task_list_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const TaskListCardExample(),
+        settings: settings,
+      ),
+      description: '任务列表卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/rounded_task_list_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const RoundedTaskListCardExample(),
+        settings: settings,
+      ),
+      description: '圆角任务列表卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/upcoming_tasks_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const UpcomingTasksWidgetExample(),
+        settings: settings,
+      ),
+      description: '即将到来的任务小组件',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/mood_chart_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ChartIconDisplayCardExample(),
+        settings: settings,
+      ),
+      description: '心情图表卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/modern_rounded_mood_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ModernRoundedBarIconCardExample(),
+        settings: settings,
+      ),
+      description: '现代化圆角心情追踪小组件',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/modern_rounded_spending_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ModernRoundedSpendingWidgetExample(),
+        settings: settings,
+      ),
+      description: '消费卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/hydration_tracker_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const HydrationTrackerWidgetExample(),
+        settings: settings,
+      ),
+      description: '饮水追踪器',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/trend_value_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const TrendValueCardExample(),
+        settings: settings,
+      ),
+      description: '趨勢數值卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/sleep_duration_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SleepDurationCardExample(),
+        settings: settings,
+      ),
+      description: '睡眠时长统计卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/weight_trend_chart',
+      handler: (settings) => RouteHelpers.createRoute(
+        const WeightTrendChartExample(),
+        settings: settings,
+      ),
+      description: '体重趋势图表',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/account_balance_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const AccountBalanceCardExample(),
+        settings: settings,
+      ),
+      description: '账户余额卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/multi_metric_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const MultiMetricProgressCardExample(),
+        settings: settings,
+      ),
+      description: '多指标进度跟踪卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/icon_circular_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const IconCircularProgressCardExample(),
+        settings: settings,
+      ),
+      description: '图标圆形进度卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/color_tag_task_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ColorTagTaskCardExample(),
+        settings: settings,
+      ),
+      description: '彩色标签任务列表卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/donut_chart_stats_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const DonutChartStatsCardExample(),
+        settings: settings,
+      ),
+      description: '甜甜圈图统计卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/health_score_ring_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const HealthScoreRingCardExample(),
+        settings: settings,
+      ),
+      description: '健康分数环形统计卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/petal_radial_chart_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const PetalRadialChartCardExample(),
+        settings: settings,
+      ),
+      description: '花瓣径向统计卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/stacked_folder_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const StackedFolderCardExample(),
+        settings: settings,
+      ),
+      description: '堆叠文件夹卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/stacked_accordion_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const StackedAccordionCardExample(),
+        settings: settings,
+      ),
+      description: '堆叠手风琴卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/cute_notepad_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CuteNotepadCardExample(),
+        settings: settings,
+      ),
+      description: '可爱手账便签卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/scrapbook_canvas_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ScrapbookCanvasCardExample(),
+        settings: settings,
+      ),
+      description: '手帐无限画布卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/arc_rotary_wheel_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ArcRotaryWheelCardExample(),
+        settings: settings,
+      ),
+      description: '弧形圆盘选择卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/walk_stack_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const WalkStackCardExample(),
+        settings: settings,
+      ),
+      description: '随机漫步卡片堆叠',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/illustrated_metric_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const IllustratedMetricCardExample(),
+        settings: settings,
+      ),
+      description: '插画指标卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/cutout_stat_grid_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CutoutStatGridCardExample(),
+        settings: settings,
+      ),
+      description: '切角统计网格卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/gradient_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const GradientProgressCardExample(),
+        settings: settings,
+      ),
+      description: '渐变进度卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/striped_weekly_chart_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const StripedWeeklyChartCardExample(),
+        settings: settings,
+      ),
+      description: '斜线周图表卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/inbox_message_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const InboxMessageCardExample(),
+        settings: settings,
+      ),
+      description: '收件箱消息卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/notes_list_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const NotesListCardExample(),
+        settings: settings,
+      ),
+      description: '笔记列表卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/circular_metrics_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CircularMetricsCardExample(),
+        settings: settings,
+      ),
+      description: '环形指标卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/rental_preview_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const RentalPreviewCardExample(),
+        settings: settings,
+      ),
+      description: '租赁预览卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/rounded_reminders_list',
+      handler: (settings) => RouteHelpers.createRoute(
+        const RoundedRemindersListExample(),
+        settings: settings,
+      ),
+      description: '圆角提醒事项列表卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/curve_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CurveProgressCardExample(),
+        settings: settings,
+      ),
+      description: '曲线进度卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/nutrition_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const NutritionProgressCardExample(),
+        settings: settings,
+      ),
+      description: '营养进度追踪卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/trend_list_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const TrendListCardExample(),
+        settings: settings,
+      ),
+      description: '趋势列表卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/screen_time_chart',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ScreenTimeChartExample(),
+        settings: settings,
+      ),
+      description: '屏幕时间统计图表',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/vertical_bar_chart_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const VerticalBarChartExample(),
+        settings: settings,
+      ),
+      description: '垂直条形图卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/rounded_task_progress_widget',
+      handler: (settings) => RouteHelpers.createRoute(
+        const RoundedTaskProgressWidgetExample(),
+        settings: settings,
+      ),
+      description: '圆角任务进度小组件',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/task_progress_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const TaskProgressCardExample(),
+        settings: settings,
+      ),
+      description: '任务进度卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/task_list_stat_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const TaskListStatCardExample(),
+        settings: settings,
+      ),
+      description: '任务统计列表卡片',
+    ),
+  ];
 }
 
 /// 默认的小组件预览项列表
@@ -742,6 +1066,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '圆角任务进度小组件',
     subtitle: 'RoundedTaskProgressWidget',
     route: '/widgets_gallery/rounded_task_progress_widget',
+  ),
+  WidgetPreviewItem(
+    category: '进度类',
+    icon: Icons.linear_scale,
+    title: '渐变进度卡片',
+    subtitle: 'GradientProgressCard',
+    route: '/widgets_gallery/gradient_progress_card',
   ),
   // 追踪类
   WidgetPreviewItem(
@@ -998,6 +1329,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     subtitle: 'RevenueTrendCard',
     route: '/widgets_gallery/revenue_trend_card',
   ),
+  WidgetPreviewItem(
+    category: '图表类',
+    icon: Icons.bar_chart,
+    title: '斜线周图表卡片',
+    subtitle: 'StripedWeeklyChartCard',
+    route: '/widgets_gallery/striped_weekly_chart_card',
+  ),
   // 内容类
   WidgetPreviewItem(
     category: '内容类',
@@ -1089,6 +1427,20 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '手帐无限画布卡片',
     subtitle: 'ScrapbookCanvasCard - 可平移缩放的手帐拼贴画布',
     route: '/widgets_gallery/scrapbook_canvas_card',
+  ),
+  WidgetPreviewItem(
+    category: '内容类',
+    icon: Icons.auto_stories,
+    title: '插画指标卡片',
+    subtitle: 'IllustratedMetricCard',
+    route: '/widgets_gallery/illustrated_metric_card',
+  ),
+  WidgetPreviewItem(
+    category: '内容类',
+    icon: Icons.dashboard_customize,
+    title: '切角统计网格卡片',
+    subtitle: 'CutoutStatGridCard',
+    route: '/widgets_gallery/cutout_stat_grid_card',
   ),
   // 财务类
   WidgetPreviewItem(

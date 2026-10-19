@@ -156,24 +156,6 @@ class _AgentListDrawerState extends State<AgentListDrawer>
     }
   }
 
-  Future<void> _editAgent(AIAgent agent) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AgentEditScreen(
-          agent: agent,
-          extraStorageKey: widget.extraStorageKey,
-        ),
-      ),
-    );
-    if (result != true || !mounted) return;
-    if (widget.extraStorageKey != null) {
-      await _loadExtraStorageAgents();
-    } else {
-      setState(() {});
-    }
-  }
-
   // 检查智能体是否已被选中
   bool _isAgentSelected(String agentId) {
     return _selectedAgents.any((agent) => agent['id'] == agentId);
@@ -325,10 +307,12 @@ class _AgentListDrawerState extends State<AgentListDrawer>
     return Builder(
       builder: (context) {
         final theme = DSThemeBridge.resolve(context);
-        return ListView.builder(
+        return ListView.separated(
           shrinkWrap: true,
           physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           itemCount: agents.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final agent = agents[index];
             final agentData = {'id': agent.id, 'name': agent.name};
@@ -341,12 +325,6 @@ class _AgentListDrawerState extends State<AgentListDrawer>
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DSIconButton(
-                    icon: DsIconKind.edit,
-                    size: 32,
-                    tooltip: '编辑 Agent',
-                    onPressed: () => _editAgent(agent),
-                  ),
                   if (showDeleteButton)
                     DSIconButton(
                       icon: DsIconKind.trash,
@@ -392,27 +370,16 @@ class _AgentListDrawerState extends State<AgentListDrawer>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      DsIcon(DsIconKind.bot, size: 24, color: theme.primary),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'openai_selectAgent'.tr,
-                          style: DsTypography.title.copyWith(color: theme.text),
-                        ),
-                      ),
-                      DSIconButton(
-                        icon: DsIconKind.plus,
-                        size: 36,
-                        color: theme.surfaceAlt,
-                        iconColor: theme.textSub,
-                        tooltip: '新建 Agent',
-                        onPressed: _addNewAgent,
-                      ),
-                    ],
+                DSLightHeader(
+                  title: 'openai_selectAgent'.tr,
+                  showBack: false,
+                  trailing: DSIconButton(
+                    icon: DsIconKind.plus,
+                    size: 38,
+                    color: theme.surface,
+                    iconColor: theme.text,
+                    tooltip: '新建 Agent',
+                    onPressed: _addNewAgent,
                   ),
                 ),
                 Padding(

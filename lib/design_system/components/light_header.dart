@@ -27,8 +27,7 @@ class DSLightHeader extends StatelessWidget {
   /// 尾部动作（通常为 38px 圆形 DSIconButton）；null 时占位保持标题居中
   final Widget? trailing;
 
-  /// 尾部动作区宽度；放置多个按钮时调大，
-  /// 同时会在左侧补等宽空隙保持标题居中
+  /// 尾部动作区宽度；放置多个按钮时调大
   final double trailingWidth;
 
   /// 返回回调，默认 [Navigator.maybePop]
@@ -51,19 +50,12 @@ class DSLightHeader extends StatelessWidget {
         children: [
           // 尾部动作区超过默认圆钮宽度时，左侧补差保持标题居中
           if (showBack)
-            Padding(
-              padding: EdgeInsetsDirectional.only(
-                start: trailingWidth > _buttonSize
-                    ? trailingWidth - _buttonSize
-                    : 0,
-              ),
-              child: DSIconButton(
-                icon: DsIconKind.chevronLeft,
-                size: _buttonSize,
-                color: theme.surface,
-                iconColor: theme.text,
-                onPressed: onBack ?? () => Navigator.of(context).maybePop(),
-              ),
+            DSIconButton(
+              icon: DsIconKind.chevronLeft,
+              size: _buttonSize,
+              color: theme.surface,
+              iconColor: theme.text,
+              onPressed: onBack ?? () => Navigator.of(context).maybePop(),
             )
           else
             const SizedBox(width: _buttonSize),

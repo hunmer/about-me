@@ -295,6 +295,12 @@ class _SuperCupertinoNavigationWrapperState
   @override
   void didUpdateWidget(SuperCupertinoNavigationWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // 进入画布等强制折叠态时同步收起过滤/搜索栏（清空搜索与过滤条件）
+    if (widget.forceCollapsed &&
+        !oldWidget.forceCollapsed &&
+        _isToolbarVisible) {
+      _hideToolbar();
+    }
     // 外部过滤值变化时（如仓库卡片快切）同步到过滤栏状态
     if (!const MapEquality().equals(
       oldWidget.initialMultiFilters ?? const {},
@@ -560,20 +566,23 @@ class _SuperCupertinoNavigationWrapperState
 
   /// 切换过滤栏与搜索栏显示状态
   void _toggleToolbarVisibility() {
-    final bool next = !_isToolbarVisible;
-    // 隐藏时退出搜索模式，清空搜索文本与焦点
-    if (!next && _isSearchFocused) {
+    if (!_isToolbarVisible) {
+      setState(() => _isToolbarVisible = true);
+      return;
+    }
+    _hideToolbar();
+  }
+
+  /// 隐藏过滤栏与搜索栏，退出搜索模式并清空所有过滤条件
+  void _hideToolbar() {
+    if (_isSearchFocused) {
       _exitSearchMode();
     }
     setState(() {
-      _isToolbarVisible = next;
-
-      // 切换时清空所有过滤条件
-      if (!next) {
-        _multiFilterState.clearAll();
-        // 通知外部过滤条件已清空
-        widget.onMultiFilterChanged?.call({});
-      }
+      _isToolbarVisible = false;
+      _multiFilterState.clearAll();
+      // 通知外部过滤条件已清空
+      widget.onMultiFilterChanged?.call({});
     });
   }
 

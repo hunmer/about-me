@@ -93,6 +93,10 @@ import 'widgets/cute_notepad_card.dart';
 import 'widgets/scrapbook_canvas_card/scrapbook_canvas_card.dart';
 import 'widgets/arc_rotary_wheel_card.dart';
 import 'widgets/walk_stack_card.dart';
+import 'widgets/illustrated_metric_card.dart';
+import 'widgets/cutout_stat_grid_card.dart';
+import 'widgets/gradient_progress_card.dart';
+import 'widgets/striped_weekly_chart_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -187,6 +191,10 @@ enum CommonWidgetId {
   scrapbookCanvasCard,
   arcRotaryWheelCard,
   walkStackCard,
+  illustratedMetricCard,
+  cutoutStatGridCard,
+  gradientProgressCard,
+  stripedWeeklyChartCard,
 }
 
 /// 公共小组件元数据
@@ -896,8 +904,7 @@ class CommonWidgetsRegistry {
     CommonWidgetId.cuteNotepadCard: const CommonWidgetMetadata(
       id: CommonWidgetId.cuteNotepadCard,
       name: '可爱手账便签卡片',
-      description:
-          '手绘便签纸（16 种风格预设：方格/格纹/波浪框/撕边/活页孔等）+ 可爱贴纸与手写内容，高度随内容自适应',
+      description: '手绘便签纸（16 种风格预设：方格/格纹/波浪框/撕边/活页孔等）+ 可爱贴纸与手写内容，高度随内容自适应',
       icon: Icons.sticky_note_2,
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize(), Large3Size()],
@@ -925,6 +932,38 @@ class CommonWidgetsRegistry {
       icon: Icons.style,
       defaultSize: Large3Size(),
       supportedSizes: [Large3Size()],
+    ),
+    CommonWidgetId.illustratedMetricCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.illustratedMetricCard,
+      name: '插画指标卡片',
+      description: '彩色插画区域搭配标题、数值和单位，适合展示学习与活动指标',
+      icon: Icons.auto_stories,
+      defaultSize: WideSize(),
+      supportedSizes: [WideSize(), Wide2Size()],
+    ),
+    CommonWidgetId.cutoutStatGridCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.cutoutStatGridCard,
+      name: '切角统计网格卡片',
+      description: '液体切角圆形图标与多列统计数据网格',
+      icon: Icons.dashboard_customize,
+      defaultSize: Wide2Size(),
+      supportedSizes: [Wide2Size(), Large3Size()],
+    ),
+    CommonWidgetId.gradientProgressCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.gradientProgressCard,
+      name: '渐变进度卡片',
+      description: '渐变轨道、斜线纹理与可拖动圆形滑块的百分比进度卡片',
+      icon: Icons.linear_scale,
+      defaultSize: WideSize(),
+      supportedSizes: [WideSize(), Wide2Size()],
+    ),
+    CommonWidgetId.stripedWeeklyChartCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.stripedWeeklyChartCard,
+      name: '斜线周图表卡片',
+      description: '带虚线网格、斜线胶囊柱和选中提示的每周数据图表',
+      icon: Icons.bar_chart,
+      defaultSize: Wide2Size(),
+      supportedSizes: [Wide2Size(), Large3Size()],
     ),
   };
 
@@ -964,10 +1003,9 @@ class CommonWidgetBuilder {
     // 如果 props 中有 _pixelCategory，使用它创建基于像素尺寸的有效 size
     // 这样公共组件可以根据实际像素尺寸调整布局
     final pixelCategory = props['_pixelCategory'] as SizeCategory?;
-    final effectiveSize =
-        pixelCategory != null
-            ? HomeWidgetSize.fromCategory(pixelCategory)
-            : size;
+    final effectiveSize = pixelCategory != null
+        ? HomeWidgetSize.fromCategory(pixelCategory)
+        : size;
 
     switch (widgetId) {
       case CommonWidgetId.circularProgressCard:
@@ -1171,6 +1209,17 @@ class CommonWidgetBuilder {
         return ArcRotaryWheelCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.walkStackCard:
         return WalkStackCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.illustratedMetricCard:
+        return IllustratedMetricCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.cutoutStatGridCard:
+        return CutoutStatGridCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.gradientProgressCard:
+        return GradientProgressCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.stripedWeeklyChartCard:
+        return StripedWeeklyChartCardWidget.fromProps(
+          finalProps,
+          effectiveSize,
+        );
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

@@ -63,9 +63,9 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         ),
         title: Text(
           '预览所有小组件',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
           '使用垂直标签页浏览所有组件示例',
@@ -169,6 +169,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         title: '圆角任务进度小组件',
         subtitle: 'RoundedTaskProgressWidget - 圆角风格的任务进度展示小组件',
         route: '/widgets_gallery/rounded_task_progress_widget',
+      ),
+      _buildListItem(
+        context,
+        icon: Icons.linear_scale,
+        title: '渐变进度卡片',
+        subtitle: 'GradientProgressCard - 渐变轨道与斜线纹理进度卡片',
+        route: '/widgets_gallery/gradient_progress_card',
       ),
     ];
   }
@@ -443,6 +450,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'RevenueTrendCard - 圆角收入趋势曲线图表卡片',
         route: '/widgets_gallery/revenue_trend_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.bar_chart,
+        title: '斜线周图表卡片',
+        subtitle: 'StripedWeeklyChartCard - 斜线胶囊柱与每周数据图表',
+        route: '/widgets_gallery/striped_weekly_chart_card',
+      ),
     ];
   }
 
@@ -547,6 +561,20 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         title: '手帐无限画布卡片',
         subtitle: 'ScrapbookCanvasCard - 可平移缩放的手帐拼贴画布',
         route: '/widgets_gallery/scrapbook_canvas_card',
+      ),
+      _buildListItem(
+        context,
+        icon: Icons.auto_stories,
+        title: '插画指标卡片',
+        subtitle: 'IllustratedMetricCard - 彩色插画与活动指标展示卡片',
+        route: '/widgets_gallery/illustrated_metric_card',
+      ),
+      _buildListItem(
+        context,
+        icon: Icons.dashboard_customize,
+        title: '切角统计网格卡片',
+        subtitle: 'CutoutStatGridCard - 液体切角图标与多列统计数据',
+        route: '/widgets_gallery/cutout_stat_grid_card',
       ),
     ];
   }
@@ -683,9 +711,9 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

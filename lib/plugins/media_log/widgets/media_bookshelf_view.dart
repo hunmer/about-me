@@ -165,17 +165,29 @@ class MediaBookshelfView extends StatelessWidget {
             semanticLabel: item.title,
             builder: (context, states) {
               final pressed = states.contains(WidgetState.pressed);
-              return AnimatedScale(
-                scale: pressed ? 0.94 : 1,
-                alignment: Alignment.bottomCenter,
-                duration: const Duration(milliseconds: 120),
-                child: CustomPaint(
-                  size: Size(double.infinity, height),
-                  painter: _BookSpinePainter(
-                    item: item,
-                    theme: AppTheme.of(context),
-                    seed: item.id.hashCode & 0xffff,
-                    progress: WiredDrawTransition.progressOf(context),
+              final hovered = states.contains(WidgetState.hovered);
+              // 悬浮"拿起"：上移 + 轻微放大（同便签组件悬浮姿态）
+              return AnimatedContainer(
+                transform: Matrix4.translationValues(
+                  0,
+                  hovered && !pressed ? -6 : 0,
+                  0,
+                ),
+                transformAlignment: Alignment.bottomCenter,
+                duration: const Duration(milliseconds: 160),
+                curve: Curves.easeOutCubic,
+                child: AnimatedScale(
+                  scale: pressed ? 0.94 : (hovered ? 1.04 : 1),
+                  alignment: Alignment.bottomCenter,
+                  duration: const Duration(milliseconds: 120),
+                  child: CustomPaint(
+                    size: Size(double.infinity, height),
+                    painter: _BookSpinePainter(
+                      item: item,
+                      theme: AppTheme.of(context),
+                      seed: item.id.hashCode & 0xffff,
+                      progress: WiredDrawTransition.progressOf(context),
+                    ),
                   ),
                 ),
               );
