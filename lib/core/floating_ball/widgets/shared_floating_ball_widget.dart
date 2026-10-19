@@ -202,16 +202,22 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
     super.dispose();
   }
 
-  // 长按开始
+  // 长按按下（长按尚未确认，快速点击也会触发，不能在这里设置拖动状态）
   void _handleLongPressDown(LongPressDownDetails details) {
     if (!_adapter.supportsDragging || _position == null) return;
 
-    // 长按开始拖动
+    // 只记录拖动起始位置，供松手时判断滑动/位移
+    _dragStartPosition = details.globalPosition;
+  }
+
+  // 长按确认（500ms 后），进入可拖动状态
+  void _handleLongPressStart(LongPressStartDetails details) {
+    if (!_adapter.supportsDragging || _position == null) return;
+
     setState(() {
       _pointerDown = true;
       _canDrag = true;
       _isDragging = true;
-      _dragStartPosition = details.globalPosition;
       _lastLongPressDragUpdate = details.globalPosition;
     });
   }
@@ -455,6 +461,7 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
       child: GestureDetector(
         onTapUp: _handleTapUp,
         onLongPressDown: _handleLongPressDown,
+        onLongPressStart: _handleLongPressStart,
         onLongPressMoveUpdate: _handleLongPressMoveUpdate,
         onLongPressEnd: _handleLongPressEnd,
         onPanStart: (details) {

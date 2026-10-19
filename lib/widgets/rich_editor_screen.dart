@@ -79,6 +79,9 @@ class RichEditorScreen extends StatefulWidget {
   /// （编辑态下会重建编辑控制器，用于外部同步刷新）
   final int reloadToken;
 
+  /// 打开时直接进入编辑态（默认 false 进入阅读态）
+  final bool startEditing;
+
   final RichEditorTexts? texts;
 
   const RichEditorScreen({
@@ -95,6 +98,7 @@ class RichEditorScreen extends StatefulWidget {
     this.onDelete,
     this.onOpenStyleSettings,
     this.reloadToken = 0,
+    this.startEditing = false,
     this.texts,
   });
 
@@ -131,7 +135,7 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
     _tags = List.of(widget.initialTags);
     _isNewEntry = widget.initialContent.trim().isEmpty;
     _wordCount = _countChars(_contentJson);
-    if (_isNewEntry) {
+    if (_isNewEntry || widget.startEditing) {
       _startEditing();
     }
   }

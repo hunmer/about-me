@@ -285,18 +285,25 @@ class NoteCard extends StatelessWidget {
                         stops: [0.0, 0.75, 1.0],
                       ).createShader(rect),
                       blendMode: BlendMode.dstIn,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxHeight: 200, // 限制最大高度，模拟 maxLines: 8
-                        ),
-                        child: ClipRect(
-                          child: DefaultTextStyle(
-                            style: DsTypography.body.copyWith(
-                              color: contentSub,
+                      // 撑满卡片宽度（QuillViewer 内部 IntrinsicWidth 会收缩到最长行），
+                      // 限高约 3 行做摘要；IgnorePointer 禁止卡片内滚动
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: IgnorePointer(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxHeight: 64,
                             ),
-                            child: QuillViewer(
-                              data: note.content,
-                              selectable: false,
+                            child: ClipRect(
+                              child: DefaultTextStyle(
+                                style: DsTypography.body.copyWith(
+                                  color: contentSub,
+                                ),
+                                child: QuillViewer(
+                                  data: note.content,
+                                  selectable: false,
+                                ),
+                              ),
                             ),
                           ),
                         ),

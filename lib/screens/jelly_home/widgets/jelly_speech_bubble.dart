@@ -23,56 +23,56 @@ class BubbleTextRegions {
 
   static const Map<String, BubbleTextRegions> byAsset = {
     'assets/bubbles/可拉伸兔子聊天气泡素材.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.25),
-      Rect.fromLTRB(0.10, 0.30, 0.91, 0.86),
+      Rect.fromLTRB(0.1902, 0.3068, 0.4701, 0.4179),
+      Rect.fromLTRB(0.1223, 0.3744, 0.8777, 0.6449),
     ),
     'assets/bubbles/小猫聊天气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.07, 0.43, 0.25),
-      Rect.fromLTRB(0.10, 0.30, 0.89, 0.86),
+      Rect.fromLTRB(0.1168, 0.2440, 0.4620, 0.4034),
+      Rect.fromLTRB(0.0815, 0.3696, 0.9212, 0.7512),
     ),
     'assets/bubbles/月亮晚安气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.10, 0.30, 0.88, 0.86),
+      Rect.fromLTRB(0.1223, 0.2826, 0.3451, 0.3792),
+      Rect.fromLTRB(0.0815, 0.3792, 0.8342, 0.7222),
     ),
     'assets/bubbles/星星聊天气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.10, 0.30, 0.87, 0.86),
+      Rect.fromLTRB(0.2500, 0.2295, 0.4484, 0.3599),
+      Rect.fromLTRB(0.1141, 0.3696, 0.8859, 0.7174),
     ),
     'assets/bubbles/小恐龙侧边气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.10, 0.30, 0.87, 0.86),
+      Rect.fromLTRB(0.1658, 0.3261, 0.3723, 0.4275),
+      Rect.fromLTRB(0.1549, 0.4275, 0.7038, 0.6546),
     ),
     'assets/bubbles/樱桃回形针气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.10, 0.30, 0.88, 0.86),
+      Rect.fromLTRB(0.1685, 0.2874, 0.3995, 0.3744),
+      Rect.fromLTRB(0.1793, 0.3937, 0.7717, 0.6739),
     ),
     'assets/bubbles/甜点蛋糕气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.10, 0.30, 0.87, 0.86),
+      Rect.fromLTRB(0.1522, 0.2681, 0.3315, 0.3744),
+      Rect.fromLTRB(0.1658, 0.3937, 0.7717, 0.6932),
     ),
     'assets/bubbles/游戏机像素气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.10, 0.30, 0.86, 0.86),
+      Rect.fromLTRB(0.1467, 0.2198, 0.3587, 0.3406),
+      Rect.fromLTRB(0.1386, 0.3647, 0.7853, 0.6691),
     ),
     'assets/bubbles/小熊聊天气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.10, 0.30, 0.86, 0.86),
+      Rect.fromLTRB(0.1630, 0.2150, 0.3342, 0.3164),
+      Rect.fromLTRB(0.0897, 0.3357, 0.9266, 0.7415),
     ),
     'assets/bubbles/甜酷翅膀深色气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.10, 0.30, 0.88, 0.86),
+      Rect.fromLTRB(0.1957, 0.2440, 0.4375, 0.3647),
+      Rect.fromLTRB(0.1223, 0.3792, 0.8261, 0.6063),
     ),
     'assets/bubbles/彩虹渐变气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.10, 0.31, 0.88, 0.86),
+      Rect.fromLTRB(0.1440, 0.2198, 0.3342, 0.3261),
+      Rect.fromLTRB(0.1440, 0.3647, 0.8505, 0.7222),
     ),
     'assets/bubbles/奶茶杯气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.10, 0.30, 0.79, 0.86),
+      Rect.fromLTRB(0.1603, 0.2150, 0.3424, 0.3357),
+      Rect.fromLTRB(0.1250, 0.3406, 0.7717, 0.6546),
     ),
     'assets/bubbles/云朵天使气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.20, 0.08, 0.43, 0.26),
-      Rect.fromLTRB(0.12, 0.30, 0.86, 0.86),
+      Rect.fromLTRB(0.2663, 0.2585, 0.4538, 0.3792),
+      Rect.fromLTRB(0.2310, 0.3647, 0.7582, 0.6208),
     ),
   };
 

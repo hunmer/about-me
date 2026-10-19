@@ -269,7 +269,12 @@ class _SketchProgressBar extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: FractionallySizedBox(
               widthFactor: value.clamp(0.0, 1.0),
-              child: ColoredBox(color: theme.primary),
+              // ColoredBox 无 child 时按 loose 约束收敛为 0 尺寸，
+              // 必须挂一个撑满的 child 才能画出实心段
+              child: ColoredBox(
+                color: theme.primary,
+                child: const SizedBox.expand(),
+              ),
             ),
           ),
         ),

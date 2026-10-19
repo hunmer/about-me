@@ -268,6 +268,8 @@ flutter:
 flutter_native_splash:
   # 生成: dart run flutter_native_splash:create  还原: dart run flutter_native_splash:remove
   # 全屏启动图（原图 webp 不受支持，已转为 PNG，源: 高清 (2).webp 1440x2560）
+  # 注意: 重新生成后 iOS storyboard 的 LaunchBackground 会被重置为 scaleToFill（拉伸变形），
+  # 需手动把 ios/Runner/Base.lproj/LaunchScreen.storyboard 中 LaunchBackground 的 contentMode 改回 scaleAspectFill
   background_image: "assets/splash/splash.png"
   android_12:
     # Android 12+ 系统限制不支持全屏背景图，仅显示纯色 + 圆形图标（取自图片平均色）
