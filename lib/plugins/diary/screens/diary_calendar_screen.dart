@@ -78,12 +78,27 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
 
     // 订阅同步刷新事件
     EventManager.instance.subscribe('diary_refresh', _handleSyncRefresh);
+    EventManager.instance.subscribe('diary_entry_created', _handleSyncRefresh);
+    EventManager.instance.subscribe('diary_entry_updated', _handleSyncRefresh);
+    EventManager.instance.subscribe('diary_entry_deleted', _handleSyncRefresh);
   }
 
   @override
   void dispose() {
     // 取消订阅，避免内存泄漏
     EventManager.instance.unsubscribe('diary_refresh', _handleSyncRefresh);
+    EventManager.instance.unsubscribe(
+      'diary_entry_created',
+      _handleSyncRefresh,
+    );
+    EventManager.instance.unsubscribe(
+      'diary_entry_updated',
+      _handleSyncRefresh,
+    );
+    EventManager.instance.unsubscribe(
+      'diary_entry_deleted',
+      _handleSyncRefresh,
+    );
     _calendarController.dispose();
     _sheetController.dispose();
     super.dispose();
@@ -418,75 +433,75 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 100),
                   child: SfCalendar(
-                  controller: _calendarController,
-                  view: CalendarView.month,
-                  initialDisplayDate: _focusedDay,
-                  minDate: DateTime.utc(2020, 1, 1),
-                  maxDate: DateTime.now(),
-                  headerHeight: 0,
-                  viewHeaderHeight: 36,
-                  showNavigationArrow: false,
-                  firstDayOfWeek: 1, // 周一开头（与设计稿一致）
-                  todayHighlightColor: Colors.transparent,
-                  viewHeaderStyle: ViewHeaderStyle(
-                    backgroundColor: palette.canvas,
-                    dayTextStyle: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                      color: palette.textMuted,
+                    controller: _calendarController,
+                    view: CalendarView.month,
+                    initialDisplayDate: _focusedDay,
+                    minDate: DateTime.utc(2020, 1, 1),
+                    maxDate: DateTime.now(),
+                    headerHeight: 0,
+                    viewHeaderHeight: 36,
+                    showNavigationArrow: false,
+                    firstDayOfWeek: 1, // 周一开头（与设计稿一致）
+                    todayHighlightColor: Colors.transparent,
+                    viewHeaderStyle: ViewHeaderStyle(
+                      backgroundColor: palette.canvas,
+                      dayTextStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                        color: palette.textMuted,
+                      ),
                     ),
+                    monthViewSettings: const MonthViewSettings(
+                      showTrailingAndLeadingDates: true,
+                      dayFormat: 'EEE',
+                    ),
+                    cellBorderColor: Colors.transparent,
+                    selectionDecoration: const BoxDecoration(),
+                    monthCellBuilder:
+                        (BuildContext context, MonthCellDetails details) {
+                          final day = details.date;
+                          return DiaryCalendarDayCell(
+                            palette: palette,
+                            day: day,
+                            entry:
+                                _diaryEntries[DateTime(
+                                  day.year,
+                                  day.month,
+                                  day.day,
+                                )],
+                            isSelected: _isSameDay(_selectedDay, day),
+                            isToday: _isSameDay(now, day),
+                            isOtherMonth:
+                                day.year != _focusedDay.year ||
+                                day.month != _focusedDay.month,
+                            isFuture: day.isAfter(
+                              DateTime(now.year, now.month, now.day),
+                            ),
+                          );
+                        },
+                    onTap: (CalendarTapDetails details) {
+                      if (details.date != null) {
+                        _onDayClicked(details.date!, details.date!);
+                        setState(() {
+                          _calendarController.selectedDate = details.date;
+                        });
+                      }
+                    },
+                    onViewChanged: (ViewChangedDetails details) {
+                      if (details.visibleDates.isNotEmpty) {
+                        final newFocusedDay = details
+                            .visibleDates[details.visibleDates.length ~/ 2];
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            setState(() {
+                              _focusedDay = newFocusedDay;
+                            });
+                          }
+                        });
+                      }
+                    },
                   ),
-                  monthViewSettings: const MonthViewSettings(
-                    showTrailingAndLeadingDates: true,
-                    dayFormat: 'EEE',
-                  ),
-                  cellBorderColor: Colors.transparent,
-                  selectionDecoration: const BoxDecoration(),
-                  monthCellBuilder:
-                      (BuildContext context, MonthCellDetails details) {
-                        final day = details.date;
-                        return DiaryCalendarDayCell(
-                          palette: palette,
-                          day: day,
-                          entry:
-                              _diaryEntries[DateTime(
-                                day.year,
-                                day.month,
-                                day.day,
-                              )],
-                          isSelected: _isSameDay(_selectedDay, day),
-                          isToday: _isSameDay(now, day),
-                          isOtherMonth:
-                              day.year != _focusedDay.year ||
-                              day.month != _focusedDay.month,
-                          isFuture: day.isAfter(
-                            DateTime(now.year, now.month, now.day),
-                          ),
-                        );
-                      },
-                  onTap: (CalendarTapDetails details) {
-                    if (details.date != null) {
-                      _onDayClicked(details.date!, details.date!);
-                      setState(() {
-                        _calendarController.selectedDate = details.date;
-                      });
-                    }
-                  },
-                  onViewChanged: (ViewChangedDetails details) {
-                    if (details.visibleDates.isNotEmpty) {
-                      final newFocusedDay = details
-                          .visibleDates[details.visibleDates.length ~/ 2];
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          setState(() {
-                            _focusedDay = newFocusedDay;
-                          });
-                        }
-                      });
-                    }
-                  },
-                ),
                 ),
               ),
             ],

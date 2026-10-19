@@ -40,12 +40,24 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
     _initializeController();
     // 订阅同步刷新事件
     EventManager.instance.subscribe('day_refresh', _handleSyncRefresh);
+    EventManager.instance.subscribe('memorial_day_added', _handleSyncRefresh);
+    EventManager.instance.subscribe('memorial_day_updated', _handleSyncRefresh);
+    EventManager.instance.subscribe('memorial_day_deleted', _handleSyncRefresh);
   }
 
   @override
   void dispose() {
     // 取消订阅，避免内存泄漏
     EventManager.instance.unsubscribe('day_refresh', _handleSyncRefresh);
+    EventManager.instance.unsubscribe('memorial_day_added', _handleSyncRefresh);
+    EventManager.instance.unsubscribe(
+      'memorial_day_updated',
+      _handleSyncRefresh,
+    );
+    EventManager.instance.unsubscribe(
+      'memorial_day_deleted',
+      _handleSyncRefresh,
+    );
     super.dispose();
   }
 

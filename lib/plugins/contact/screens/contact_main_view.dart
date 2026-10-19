@@ -91,6 +91,9 @@ class ContactMainViewState extends State<ContactMainView> {
 
     // 订阅同步刷新事件
     EventManager.instance.subscribe('contact_refresh', _handleSyncRefresh);
+    EventManager.instance.subscribe('contact_created', _handleSyncRefresh);
+    EventManager.instance.subscribe('contact_updated', _handleSyncRefresh);
+    EventManager.instance.subscribe('contact_deleted', _handleSyncRefresh);
 
     // 加载标签（用于多条件过滤）
     _loadAvailableTags();
@@ -103,6 +106,9 @@ class ContactMainViewState extends State<ContactMainView> {
   void dispose() {
     // 取消订阅，避免内存泄漏
     EventManager.instance.unsubscribe('contact_refresh', _handleSyncRefresh);
+    EventManager.instance.unsubscribe('contact_created', _handleSyncRefresh);
+    EventManager.instance.unsubscribe('contact_updated', _handleSyncRefresh);
+    EventManager.instance.unsubscribe('contact_deleted', _handleSyncRefresh);
     _listController.dispose();
     super.dispose();
   }
@@ -111,6 +117,7 @@ class ContactMainViewState extends State<ContactMainView> {
   void _handleSyncRefresh(EventArgs args) {
     debugPrint('[ContactMainView] 收到同步刷新事件');
     if (mounted) {
+      setState(() {});
       _loadAvailableTags();
     }
   }

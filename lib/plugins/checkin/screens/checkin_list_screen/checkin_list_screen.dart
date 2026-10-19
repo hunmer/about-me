@@ -7,7 +7,8 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
-import 'package:aboutme/widgets/common/checkin_item_card.dart' show CheckinWeekdayHeader;
+import 'package:aboutme/widgets/common/checkin_item_card.dart'
+    show CheckinWeekdayHeader;
 import 'package:aboutme/plugins/checkin/services/group_sort_service.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
 import 'package:aboutme/plugins/checkin/widgets/checkin_record_dialog.dart';
@@ -47,6 +48,10 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
     controller = widget.controller;
     // 订阅同步刷新事件
     _eventManager.subscribe('checkin_refresh', _handleSyncRefresh);
+    _eventManager.subscribe('checkin_completed', _handleSyncRefresh);
+    _eventManager.subscribe('checkin_cancelled', _handleSyncRefresh);
+    _eventManager.subscribe('checkin_deleted', _handleSyncRefresh);
+    _eventManager.subscribe('checkin_reset', _handleSyncRefresh);
     // 恢复最后一次排序设置
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await controller.restoreLastSortSetting();
@@ -66,6 +71,10 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
   void dispose() {
     // 取消订阅，避免内存泄漏
     _eventManager.unsubscribe('checkin_refresh', _handleSyncRefresh);
+    _eventManager.unsubscribe('checkin_completed', _handleSyncRefresh);
+    _eventManager.unsubscribe('checkin_cancelled', _handleSyncRefresh);
+    _eventManager.unsubscribe('checkin_deleted', _handleSyncRefresh);
+    _eventManager.unsubscribe('checkin_reset', _handleSyncRefresh);
     super.dispose();
   }
 
@@ -110,54 +119,52 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
             const CheckinWeekdayHeader(),
           // 打卡项目列表（不包含过滤栏）
           Expanded(
-            child:
-                filteredItems.isEmpty
-                    ? Center(
-                      child: DSEmptyState(
-                        icon: DsIconKind.calendarCheck,
-                        title: 'checkin_noRecords'.tr,
-                        message: 'checkin_createCheckin'.tr,
-                      ),
-                    )
-                    : SingleChildScrollView(
-                      padding: EdgeInsets.only(
-                        top: 12, // 贴条顶部出血
-                        bottom: MediaQuery.paddingOf(context).bottom,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: StaggeredGrid.count(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 16, // ≥ 贴条出血,避免压盖
-                          crossAxisSpacing: 0,
-                          children:
-                              filteredItems.asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final item = entry.value;
-                                return StaggeredGridTile.fit(
-                                  crossAxisCellCount:
-                                      item.cardStyle == CheckinCardStyle.small
-                                          ? 1
-                                          : 2,
-                                  // 手绘便签:随机倾斜 + 贴条(角度由 item.id 哈希确定);
-                                  // 挂载即描画入场
-                                  child: HandDrawnStickyItem(
-                                    tiltKey: item.id,
-                                    child: WiredDraw(
-                                      child: CheckinItemCard(
-                                        item: item,
-                                        index: index,
-                                        itemIndex: index,
-                                        controller: controller,
-                                        onStateChanged: _handleStateChanged,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                        ),
+            child: filteredItems.isEmpty
+                ? Center(
+                    child: DSEmptyState(
+                      icon: DsIconKind.calendarCheck,
+                      title: 'checkin_noRecords'.tr,
+                      message: 'checkin_createCheckin'.tr,
+                    ),
+                  )
+                : SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      top: 12, // 贴条顶部出血
+                      bottom: MediaQuery.paddingOf(context).bottom,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: StaggeredGrid.count(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 16, // ≥ 贴条出血,避免压盖
+                        crossAxisSpacing: 0,
+                        children: filteredItems.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final item = entry.value;
+                          return StaggeredGridTile.fit(
+                            crossAxisCellCount:
+                                item.cardStyle == CheckinCardStyle.small
+                                ? 1
+                                : 2,
+                            // 手绘便签:随机倾斜 + 贴条(角度由 item.id 哈希确定);
+                            // 挂载即描画入场
+                            child: HandDrawnStickyItem(
+                              tiltKey: item.id,
+                              child: WiredDraw(
+                                child: CheckinItemCard(
+                                  item: item,
+                                  index: index,
+                                  itemIndex: index,
+                                  controller: controller,
+                                  onStateChanged: _handleStateChanged,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
+                  ),
           ),
         ],
       ),
@@ -219,28 +226,27 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 0,
                   mainAxisSpacing: 16, // ≥ 贴条出血,避免压盖
-                  children:
-                      searchResults.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final item = entry.value;
-                        return StaggeredGridTile.fit(
-                          crossAxisCellCount:
-                              item.cardStyle == CheckinCardStyle.small ? 1 : 2,
-                          // 手绘便签:随机倾斜 + 贴条;挂载即描画入场
-                          child: HandDrawnStickyItem(
-                            tiltKey: item.id,
-                            child: WiredDraw(
-                              child: CheckinItemCard(
-                                item: item,
-                                index: index,
-                                itemIndex: index,
-                                controller: controller,
-                                onStateChanged: _handleStateChanged,
-                              ),
-                            ),
+                  children: searchResults.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    return StaggeredGridTile.fit(
+                      crossAxisCellCount:
+                          item.cardStyle == CheckinCardStyle.small ? 1 : 2,
+                      // 手绘便签:随机倾斜 + 贴条;挂载即描画入场
+                      child: HandDrawnStickyItem(
+                        tiltKey: item.id,
+                        child: WiredDraw(
+                          child: CheckinItemCard(
+                            item: item,
+                            index: index,
+                            itemIndex: index,
+                            controller: controller,
+                            onStateChanged: _handleStateChanged,
                           ),
-                        );
-                      }).toList(),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ),
@@ -277,8 +283,8 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
             allItemsLabel: 'checkin_allGroups'.tr,
           );
         },
-        getBadge:
-            (value) => FilterBuilders.singleChoiceBadge(value, groupOptions),
+        getBadge: (value) =>
+            FilterBuilders.singleChoiceBadge(value, groupOptions),
         // 详情层最右侧的"管理分组"入口
         trailing: DSThemeBridge(
           child: Builder(
@@ -315,9 +321,8 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
         },
         builder: (context, currentValue, onChanged) {
           final value = (currentValue as Map<String, dynamic>?) ?? {};
-          final sortType = GroupSortType.values[
-            value['type'] as int? ?? GroupSortType.upcoming.index
-          ];
+          final sortType = GroupSortType
+              .values[value['type'] as int? ?? GroupSortType.upcoming.index];
           final reversed = value['reversed'] as bool? ?? false;
           return Wrap(
             spacing: 8,
@@ -389,13 +394,12 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
 
       SmoothBottomSheet.show(
         context: context,
-        builder:
-            (context) => CheckinRecordDialog(
-              item: item,
-              controller: controller,
-              onCheckinCompleted: _handleStateChanged,
-              selectedDate: selectedDate,
-            ),
+        builder: (context) => CheckinRecordDialog(
+          item: item,
+          controller: controller,
+          onCheckinCompleted: _handleStateChanged,
+          selectedDate: selectedDate,
+        ),
       );
     });
   }
