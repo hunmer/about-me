@@ -31,6 +31,9 @@ class AIRequestHandler {
   /// 是否正在取消
   final bool Function() isCancelling;
 
+  /// 会话级路由上下文（隐藏注入 system prompt 的 prefix，不在聊天 UI 显示）
+  final String? Function()? getRouteContext;
+
   /// 工具调用处理回调
   final Future<void> Function(String messageId, String aiResponse)?
   onHandleToolCall;
@@ -47,6 +50,7 @@ class AIRequestHandler {
     required this.getCurrentAgent,
     required this.getToolAgent,
     required this.isCancelling,
+    this.getRouteContext,
     this.onHandleToolCall,
   }) {
     // 初始化工具调用编排器
@@ -418,6 +422,12 @@ class AIRequestHandler {
     // 添加系统提示词
     if (currentAgent != null) {
       String systemPrompt = currentAgent.systemPrompt;
+
+      // 会话级路由上下文作为 prefix prompt 隐藏注入（携带 channelId 等）
+      final routeContext = getRouteContext?.call();
+      if (routeContext != null && routeContext.isNotEmpty) {
+        systemPrompt = '$routeContext\n\n$systemPrompt';
+      }
 
       // 如果有选中的工具，添加工具提示
       final tools = _getSelectedTools();

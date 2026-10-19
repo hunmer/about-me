@@ -14,6 +14,7 @@ import 'package:aboutme/screens/profile_screen/profile_screen.dart';
 
 import 'companion_controller.dart';
 import 'widgets/jelly_bottom_nav.dart';
+import 'widgets/jelly_assistant_tab.dart';
 import 'widgets/jelly_companion_card.dart';
 import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_live2d_panel.dart';
@@ -30,8 +31,9 @@ import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/messag
 import 'package:get/get.dart' hide Value;
 /// 果冻小屋主页（应用默认启动页）
 ///
-/// 底部导航在四个页签间切换内容（不切换路由）：
-/// 小屋（果冻风布局）/ 日程（日期数据视图）/ 看板（固定布局网格）/ 我的（个人主页）。
+/// 底部导航在五个页签间切换内容（不切换路由）：
+/// 小屋（果冻风布局）/ 聊天助手（快捷速记）/ 日程（日期数据视图）/
+/// 看板（固定布局网格）/ 我的（个人主页）。
 ///
 /// 路由：/jelly_home
 class JellyHomeScreen extends StatefulWidget {
@@ -83,12 +85,16 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
             enabled: _tabIndex == 0,
             child: _CottageTab(chatVisible: _chatVisible, panel: _live2dPanel),
           ),
-          HeroMode(enabled: _tabIndex == 1, child: const HomeScheduleScreen()),
           HeroMode(
-            enabled: _tabIndex == 2,
+            enabled: _tabIndex == 1,
+            child: const JellyAssistantTab(),
+          ),
+          HeroMode(enabled: _tabIndex == 2, child: const HomeScheduleScreen()),
+          HeroMode(
+            enabled: _tabIndex == 3,
             child: const HomeScreen(asRoot: false),
           ),
-          HeroMode(enabled: _tabIndex == 3, child: const ProfileScreen()),
+          HeroMode(enabled: _tabIndex == 4, child: const ProfileScreen()),
         ],
       ),
     );

@@ -18,6 +18,7 @@ import 'package:aboutme/plugins/openai/moments/screens/agent_assets_screen.dart'
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'package:aboutme/plugins/openai/services/test_service.dart';
 import 'package:aboutme/plugins/openai/services/soul_forge_service.dart';
+import 'package:aboutme/plugins/openai/services/chat_assistant_service.dart';
 import 'package:aboutme/plugins/openai/services/prompt_preset_service.dart';
 import 'package:aboutme/plugins/openai/services/agentlib_resource_service.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_resource_selector.dart';
@@ -594,7 +595,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                 },
               ),
               // 内置 agent 不可删除
-              if (!SoulForgeService.isBuiltinAgent(_editingAgent!.id))
+              if (!SoulForgeService.isBuiltinAgent(_editingAgent!.id) &&
+                  !ChatAssistantService.isBuiltinAgent(_editingAgent!.id))
                 _AgentMenuRow(
                   icon: DsIcon(
                     DsIconKind.trash,

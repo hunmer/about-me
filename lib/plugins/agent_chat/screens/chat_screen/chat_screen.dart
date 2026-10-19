@@ -238,9 +238,9 @@ class _ChatScreenState extends State<ChatScreen> {
       debugPrint('✅ 已设置初始消息到输入框: ${widget.initialMessage}');
     }
 
-    // 如果提供了初始路由上下文，随首条用户消息注入
+    // 如果提供了初始路由上下文，随每次请求隐藏注入 system prompt
     if (widget.initialContext != null && widget.initialContext!.isNotEmpty) {
-      _controller.setPendingRouteContext(widget.initialContext);
+      _controller.setRouteContext(widget.initialContext);
       debugPrint('✅ 已设置初始路由上下文: ${widget.initialContext}');
     }
 

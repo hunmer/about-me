@@ -6,6 +6,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 import 'package:aboutme/plugins/openai/services/soul_forge_service.dart';
+import 'package:aboutme/plugins/openai/services/chat_assistant_service.dart';
 import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_detail_dialog.dart';
@@ -42,7 +43,8 @@ class AgentListItem extends StatelessWidget {
       ],
       trailingActions: [
         // 内置 agent 不可删除
-        if (!SoulForgeService.isBuiltinAgent(agent.id))
+        if (!SoulForgeService.isBuiltinAgent(agent.id) &&
+                !ChatAssistantService.isBuiltinAgent(agent.id))
           SwipeActionPresets.delete(onTap: () => _deleteAgent(context)),
       ],
       child: Padding(

@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 
 import 'jelly_live2d_panel.dart';
 
-/// 果冻小屋主导航的四个页签
-enum JellyTab { cottage, schedule, board, mine }
+/// 果冻小屋主导航的五个页签
+enum JellyTab { cottage, assistant, schedule, board, mine }
 
-/// 果冻小屋底部导航（小屋 / 日程 / 看板 / 我的）
+/// 果冻小屋底部导航（小屋 / 聊天助手 / 日程 / 看板 / 我的）
 ///
 /// 漂浮式：[child]（页面内容）铺满全屏并延伸到导航栏下方，
 /// 导航栏悬浮在内容之上，不占用布局高度。点击页签通过 [onTap]
@@ -72,6 +72,7 @@ class JellyBottomNav extends StatelessWidget {
       return DSBottomNavigation(
         items: const [
           DSNavItem(icon: DsIconKind.home, label: '小屋'),
+          DSNavItem(icon: DsIconKind.bot, label: '聊天助手'),
           DSNavItem(icon: DsIconKind.calendar, label: '日程'),
           DSNavItem(icon: DsIconKind.grid, label: '看板'),
           DSNavItem(icon: DsIconKind.user, label: '我的', showBadge: true),

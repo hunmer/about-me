@@ -87,13 +87,13 @@ class ChatController extends ChangeNotifier {
   /// 活人感模型请求正在生成，允许新消息打断并重新合并生成。
   bool _alivenessGenerating = false;
 
-  /// 待注入首条用户消息的路由上下文（"询问当前上下文"入口传入，
-  /// 携带 channelId 等结构化参数，随首条消息发给 agent 后清空）
-  String? _pendingRouteContext;
+  /// 会话级路由上下文（"询问当前上下文"入口注入，携带 channelId 等
+  /// 参数；隐藏注入到每次请求的 system prompt，不在聊天 UI 显示）
+  String? _routeContext;
 
-  /// 设置随首条用户消息注入的路由上下文
-  void setPendingRouteContext(String? text) {
-    _pendingRouteContext = (text == null || text.isEmpty) ? null : text;
+  /// 设置随请求隐藏注入的路由上下文（prefix prompt）
+  void setRouteContext(String? text) {
+    _routeContext = (text == null || text.isEmpty) ? null : text;
   }
 
   ChatController({
@@ -301,6 +301,7 @@ class ChatController extends ChangeNotifier {
         getCurrentAgent: () => _agentManager.currentAgent,
         getToolAgent: _agentManager.getToolAgent,
         isCancelling: () => _isCancelling,
+        getRouteContext: () => _routeContext,
       );
 
       _agentChainExecutor = AgentChainExecutor(
@@ -309,6 +310,7 @@ class ChatController extends ChangeNotifier {
         getAgentChain: () => _agentManager.agentChain,
         getToolAgent: _agentManager.getToolAgent,
         isCancelling: () => _isCancelling,
+        getRouteContext: () => _routeContext,
       );
 
       _foregroundServiceManager = ChatForegroundServiceManager(
@@ -486,20 +488,11 @@ class ChatController extends ChangeNotifier {
         };
       }
 
-      // 首条消息注入路由上下文（description + channelId 等参数），
-      // 后续消息不重复携带
-      var content = text;
-      final routeContext = _pendingRouteContext;
-      if (routeContext != null) {
-        content = '$routeContext\n\n$text';
-        _pendingRouteContext = null;
-      }
-
       // 创建用户消息
       final userMessage = ChatMessage.user(
         conversationId: conversation.id,
-        content: content,
-        tokenCount: TokenCounterService.estimateTokenCount(content),
+        content: text,
+        tokenCount: TokenCounterService.estimateTokenCount(text),
         attachments: await _processAttachments(),
       ).copyWith(metadata: metadata.isNotEmpty ? metadata : null);
 
@@ -507,7 +500,7 @@ class ChatController extends ChangeNotifier {
       await messageService.addMessage(userMessage);
 
       // 更新会话的最后消息
-      await conversationService.updateLastMessage(conversation.id, content);
+      await conversationService.updateLastMessage(conversation.id, text);
 
       // 清空输入
       final userInput = text;

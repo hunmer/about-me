@@ -42,6 +42,9 @@ class AgentChainExecutor {
   /// 是否正在取消
   final bool Function() isCancelling;
 
+  /// 会话级路由上下文（隐藏注入 system prompt 的 prefix，不在聊天 UI 显示）
+  final String? Function()? getRouteContext;
+
   /// 工具执行器（链式调用专用，不调用续写回调）
   late final ToolExecutor _toolExecutor;
 
@@ -54,6 +57,7 @@ class AgentChainExecutor {
     required this.getAgentChain,
     this.getToolAgent,
     required this.isCancelling,
+    this.getRouteContext,
   }) {
     // 创建专用的工具执行器，不传递续写回调
     // 链式调用有自己的逻辑来处理工具执行后的总结
@@ -245,6 +249,12 @@ class AgentChainExecutor {
 
     // 构建 system prompt（工具列表不再在这里添加，改为通过 additionalPrompts 传递）
     String systemPrompt = agent.systemPrompt;
+
+    // 会话级路由上下文作为 prefix prompt 隐藏注入（携带 channelId 等）
+    final routeContext = getRouteContext?.call();
+    if (routeContext != null && routeContext.isNotEmpty) {
+      systemPrompt = '$routeContext\n\n$systemPrompt';
+    }
 
     debugPrint(
       '🔧 [链式调用] Agent ${agent.name}: enableToolCalling=$enableToolCalling, agent.enableFunctionCalling=${agent.enableFunctionCalling}',
