@@ -449,4 +449,7 @@ final Map<String, String> screensTranslationsZh = {
   'screens_assistantIdeaTimer': '定个提醒：一小时后叫我起来走走',
   'screens_assistantOpenFull': '查看完整对话',
   'screens_assistantInitFailed': '聊天助手初始化失败',
+  'screens_assistantClearMessages': '清空消息',
+  'screens_assistantClearConfirm': '确定要清空当前会话的所有消息吗？此操作不可恢复。',
+  'screens_assistantCleared': '聊天记录已清空',
 };

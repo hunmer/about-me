@@ -7,6 +7,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
@@ -19,6 +20,8 @@ import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/openai/services/chat_assistant_service.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/marquee_button_list_card.dart';
+import 'package:aboutme/widgets/message_input/message_input.dart'
+    show MessageInputQuickAction;
 import 'package:get/get.dart' hide Value;
 
 /// 聊天助手页签：手绘风快捷速记入口，
@@ -207,6 +210,14 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                                 child: MessageInput(
                                   controller: controller,
                                   showPanelStroke: false,
+                                  toolbarActions: [
+                                    MessageInputQuickAction(
+                                      icon: DsIconKind.trash,
+                                      tooltip: 'screens_assistantClearMessages'.tr,
+                                      onPressed: () =>
+                                          _confirmClearMessages(controller),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -280,6 +291,30 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
         getSettings: () => AgentChatPlugin.instance.settings,
       ),
     );
+  }
+
+  /// 工具栏「清空消息」：确认后清空当前会话，回到空会话首页
+  Future<void> _confirmClearMessages(ChatController controller) async {
+    final confirm = await showDSDialog<bool>(
+      context: context,
+      theme: AppTheme.of(context),
+      builder: (dialogContext) => DSDialog(
+        title: 'screens_assistantClearMessages'.tr,
+        message: 'screens_assistantClearConfirm'.tr,
+        cancelText: 'app_cancel'.tr,
+        confirmText: 'screens_assistantClearMessages'.tr,
+        confirmVariant: DSButtonVariant.destructive,
+        onConfirm: () => Navigator.pop(dialogContext, true),
+        onCancel: () => Navigator.pop(dialogContext, false),
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await controller.clearAllMessages();
+      if (mounted) toastService.showToast('screens_assistantCleared'.tr);
+    } catch (e) {
+      if (mounted) toastService.showToast('$e');
+    }
   }
 
   Widget _buildHero(AppThemeData theme, ChatController controller) {

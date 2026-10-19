@@ -475,4 +475,8 @@ final Map<String, String> screensTranslationsEn = {
   'screens_assistantIdeaTimer': 'Remind me: walk break in 1 hour',
   'screens_assistantOpenFull': 'Open full chat',
   'screens_assistantInitFailed': 'Chat assistant failed to initialize',
+  'screens_assistantClearMessages': 'Clear messages',
+  'screens_assistantClearConfirm':
+      'Clear all messages in this conversation? This cannot be undone.',
+  'screens_assistantCleared': 'Chat history cleared',
 };
