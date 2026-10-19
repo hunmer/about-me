@@ -466,14 +466,6 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 标题
-                Text(
-                  record.fields['title']?.toString() ??
-                      'database_untitled_record'.tr,
-                  style: DsTypography.heading.copyWith(color: theme.text),
-                ),
-                const SizedBox(height: 12),
-
                 // 预览字段信息 - 使用 FormBuilderWrapper
                 if (previewFields.isNotEmpty) ...[
                   FormBuilderWrapper(

@@ -324,7 +324,7 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
   }
 
   Future<void> _editField(FieldModel field) async {
-    final result = await showDialog<FieldModel>(
+    final result = await showDSDialog<FieldModel>(
       context: context,
       builder: (context) => FieldTypeSelectorDialog(
         initialSelectedTypes: [field.type],
@@ -368,7 +368,7 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
   }
 
   Future<void> _showAddFieldDialog() async {
-    final result = await showDialog<FieldModel>(
+    final result = await showDSDialog<FieldModel>(
       context: context,
       builder: (context) => FieldTypeSelectorDialog(
         initialSelectedTypes: [],

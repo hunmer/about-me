@@ -3,13 +3,15 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/form_field_wrapper.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
 import 'package:aboutme/plugins/database/controllers/field_controller.dart';
 import 'package:aboutme/plugins/database/models/field_model.dart';
+import 'package:skribble/skribble.dart';
 
 import 'package:get/get.dart';
 /// 字段类型选择器字段
@@ -190,13 +192,16 @@ class FieldTypeSelectorDialog extends StatefulWidget {
       FieldTypeSelectorDialogState();
 }
 
-class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog> {
   late Set<String> _selectedTypes;
   late String _selectedType;
-  final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
   FormBuilderWrapperState? _wrapperState;
+
+  /// 表单最近一次的实时值（类型切换重建表单时保留已填内容）
+  Map<String, dynamic> _lastValues = {};
+
+  /// 字段名称必填校验失败标注
+  bool _nameError = false;
 
   /// 是否有选中的类型
   bool get _hasSelection => _selectedTypes.isNotEmpty;
@@ -210,10 +215,6 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
-      length: widget.showConfigTab ? 2 : 1,
-      vsync: this,
-    );
     _selectedTypes = widget.initialSelectedTypes.toSet();
 
     // 如果没有初始选中类型，默认选中第一个
@@ -222,42 +223,6 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
       _selectedTypes.add(_selectedType);
     } else {
       _selectedType = widget.initialField?.type ?? _selectedTypes.first;
-    }
-
-    // 监听 Tab 变化
-    _tabController.addListener(_handleTabChange);
-  }
-
-  @override
-  void dispose() {
-    _tabController.removeListener(_handleTabChange);
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _handleTabChange() {
-    if (_tabController.indexIsChanging) return;
-    // 当切换到配置 Tab 时，确保已选择类型
-    if (_tabController.index == 1 && _selectedType.isEmpty) {
-      _tabController.animateTo(0);
-    }
-  }
-
-  /// 选择类型后自动跳转到配置 Tab
-  void _onTypeSelected(String type) {
-    setState(() {
-      _selectedType = type;
-      _selectedTypes.clear();
-      _selectedTypes.add(type);
-    });
-
-    // 如果是配置模式，延迟跳转到第二个 Tab
-    if (widget.showConfigTab) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) {
-          _tabController.animateTo(1);
-        }
-      });
     }
   }
 
@@ -272,19 +237,50 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
     });
   }
 
-  /// 构建配置表单字段
+  /// 表单值变化：同步实时值；类型下拉切换时重建类型相关配置字段
+  void _handleValuesChanged(Map<String, dynamic> values) {
+    _lastValues = values;
+    final type = values['__fieldType']?.toString();
+    if (type != null && type.isNotEmpty && type != _selectedType) {
+      setState(() => _selectedType = type);
+    }
+  }
+
+  /// 构建配置表单字段（类型下拉 + 字段名称 + 类型相关配置）
   List<FormFieldConfig> _buildConfigFields() {
-    // 解析已保存的配置
+    // 解析已保存的配置（实时输入优先于持久化配置）
     final savedConfig = _parseDescription(widget.initialField?.description);
+    String textOf(String key, [String fallback = '']) =>
+        _lastValues[key]?.toString() ??
+        savedConfig[key]?.toString() ??
+        fallback;
+    int intOf(String key, int fallback) =>
+        int.tryParse(_lastValues[key]?.toString() ?? '') ??
+        int.tryParse(savedConfig[key]?.toString() ?? '') ??
+        fallback;
 
     final fields = <FormFieldConfig>[
+      // 字段类型（下拉选择，切换即时重建下方配置）
+      FormFieldConfig(
+        name: '__fieldType',
+        type: FormFieldType.select,
+        labelText: '字段类型',
+        initialValue: _selectedType,
+        extra: {
+          'items': [
+            for (final type in _availableTypes)
+              DropdownMenuItem(value: type, child: Text(type)),
+          ],
+        },
+      ),
       // 字段名称（必填）
       FormFieldConfig(
         name: 'name',
         type: FormFieldType.text,
-        labelText: '字段名称',
+        labelText: '字段名称 *',
         hintText: '请输入字段名称',
-        initialValue: widget.initialField?.name ?? '',
+        initialValue:
+            _lastValues['name']?.toString() ?? widget.initialField?.name ?? '',
         required: true,
         validationMessage: '字段名称不能为空',
         prefixIcon: Icons.label,
@@ -302,7 +298,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             type: FormFieldType.text,
             labelText: '占位提示',
             hintText: '输入框占位文本',
-            initialValue: savedConfig['placeholder']?.toString() ?? '',
+            initialValue: textOf('placeholder'),
             prefixIcon: Icons.help_outline,
           ),
           FormFieldConfig(
@@ -313,7 +309,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
                     : FormFieldType.text,
             labelText: '默认值',
             hintText: '请输入默认值',
-            initialValue: savedConfig['defaultValue']?.toString() ?? '',
+            initialValue: textOf('defaultValue'),
             prefixIcon: Icons.data_array,
           ),
           if (_selectedType == 'Long Text')
@@ -322,8 +318,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
               type: FormFieldType.number,
               labelText: '最大行数',
               hintText: '默认 3 行',
-              initialValue:
-                  int.tryParse(savedConfig['maxLines']?.toString() ?? '') ?? 3,
+              initialValue: intOf('maxLines', 3),
               prefixIcon: Icons.line_style,
             ),
         ]);
@@ -337,8 +332,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             type: FormFieldType.number,
             labelText: '最小值',
             hintText: '最小值',
-            initialValue:
-                int.tryParse(savedConfig['minValue']?.toString() ?? '') ?? 0,
+            initialValue: intOf('minValue', 0),
             prefixIcon: Icons.arrow_downward,
           ),
           FormFieldConfig(
@@ -346,9 +340,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             type: FormFieldType.number,
             labelText: '最大值',
             hintText: _selectedType == 'Rating' ? '默认 5' : '最大值',
-            initialValue:
-                int.tryParse(savedConfig['maxValue']?.toString() ?? '') ??
-                (_selectedType == 'Rating' ? 5 : 100),
+            initialValue: intOf('maxValue', _selectedType == 'Rating' ? 5 : 100),
             prefixIcon: Icons.arrow_upward,
           ),
           FormFieldConfig(
@@ -356,9 +348,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             type: FormFieldType.number,
             labelText: '默认值',
             hintText: '请输入默认值',
-            initialValue:
-                int.tryParse(savedConfig['defaultValue']?.toString() ?? '') ??
-                0,
+            initialValue: intOf('defaultValue', 0),
             prefixIcon: Icons.data_array,
           ),
         ]);
@@ -371,7 +361,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             type: FormFieldType.textArea,
             labelText: '选项列表',
             hintText: '每行一个选项',
-            initialValue: savedConfig['options']?.toString() ?? '',
+            initialValue: textOf('options'),
             prefixIcon: Icons.list,
             extra: {'maxLines': 5},
           ),
@@ -387,7 +377,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             type: FormFieldType.text,
             labelText: '默认值',
             hintText: '留空使用当前时间',
-            initialValue: savedConfig['defaultValue']?.toString() ?? 'now',
+            initialValue: textOf('defaultValue', 'now'),
             prefixIcon: Icons.access_time,
           ),
           FormFieldConfig(
@@ -395,9 +385,10 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             type: FormFieldType.text,
             labelText: '日期格式',
             hintText: _selectedType == 'Time' ? 'HH:mm' : 'yyyy-MM-dd',
-            initialValue:
-                savedConfig['format']?.toString() ??
-                (_selectedType == 'Time' ? 'HH:mm' : 'yyyy-MM-dd'),
+            initialValue: textOf(
+              'format',
+              _selectedType == 'Time' ? 'HH:mm' : 'yyyy-MM-dd',
+            ),
             prefixIcon: Icons.text_format,
           ),
         ]);
@@ -410,7 +401,8 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             type: FormFieldType.switchField,
             labelText: '默认选中',
             hintText: '默认状态',
-            initialValue: savedConfig['defaultValue'] == true,
+            initialValue: _lastValues['defaultValue'] == true ||
+                savedConfig['defaultValue'] == true,
           ),
         );
         break;
@@ -422,7 +414,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             type: FormFieldType.text,
             labelText: '占位提示',
             hintText: 'https://example.com',
-            initialValue: savedConfig['placeholder']?.toString() ?? '',
+            initialValue: textOf('placeholder'),
             prefixIcon: Icons.link,
           ),
           FormFieldConfig(
@@ -430,7 +422,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             type: FormFieldType.text,
             labelText: '默认 URL',
             hintText: '请输入默认 URL',
-            initialValue: savedConfig['defaultValue']?.toString() ?? '',
+            initialValue: textOf('defaultValue'),
             prefixIcon: Icons.data_array,
           ),
         ]);
@@ -472,13 +464,12 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
     );
   }
 
-  /// 从表单值构建 description 字段
+  /// 从表单值构建 description 字符串（排除名称与类型选择器内部键）
   String? _buildDescription(Map<String, dynamic> values) {
     final description = <String, dynamic>{};
 
-    // 收集所有非 name 字段
     for (final key in values.keys) {
-      if (key != 'name') {
+      if (key != 'name' && key != '__fieldType') {
         final value = values[key];
         if (value != null && value.toString().isNotEmpty) {
           description[key] = value;
@@ -491,8 +482,14 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
 
   void _handleConfirm() {
     if (widget.showConfigTab) {
-      // 配置模式：验证表单并保存
-      _wrapperState?.submitForm();
+      // 单表单模式：自行校验必填项，失败时标注且不关闭
+      final values = _wrapperState?.currentValues ?? _lastValues;
+      final name = values['name']?.toString().trim() ?? '';
+      if (name.isEmpty) {
+        setState(() => _nameError = true);
+        return;
+      }
+      _handleConfigSubmit(values);
     } else {
       // 普通模式：直接返回选中的类型
       if (widget.multiSelect) {
@@ -504,49 +501,125 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
   }
 
   void _handleConfigSubmit(Map<String, dynamic> values) {
+    _nameError = false;
     final fieldModel = _buildFieldModel(values);
     Navigator.pop(context, fieldModel);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.showConfigTab) {
+      return _buildConfigForm();
+    }
+    return _buildPlainSelector();
+  }
+
+  /// 配置模式：合并单表单（类型下拉 + 名称必填 + 类型配置），
+  /// 手绘面板外壳（配合 showDSDialog 使用）
+  Widget _buildConfigForm() {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: DsSketchPanel(
+              theme: theme,
+              radius: theme.radii.xl,
+              padding: EdgeInsets.all(theme.spacing.lg),
+              progress: WiredDrawTransition.progressOf(context),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    widget.dialogTitle,
+                    textAlign: TextAlign.center,
+                    style: DsTypography.title.copyWith(color: theme.text),
+                  ),
+                  SizedBox(height: theme.spacing.md),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 必填校验失败标注
+                          if (_nameError)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                bottom: theme.spacing.sm,
+                              ),
+                              child: Text(
+                                '字段名称为必填项，请填写后重试',
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.danger,
+                                ),
+                              ),
+                            ),
+                          // 类型切换时重建表单（同键已填值经 _lastValues 保留）
+                          FormBuilderWrapper(
+                            key: ValueKey(_selectedType),
+                            onStateReady: (state) => _wrapperState = state,
+                            config: FormConfig(
+                              showSubmitButton: false,
+                              showResetButton: false,
+                              fieldSpacing: 16,
+                              fields: _buildConfigFields(),
+                              onValuesChanged: _handleValuesChanged,
+                              onSubmit: _handleConfigSubmit,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: theme.spacing.md),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      DSButton(
+                        label: 'app_cancel'.tr,
+                        variant: DSButtonVariant.secondary,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      SizedBox(width: theme.spacing.sm),
+                      DSButton(
+                        label: 'app_ok'.tr,
+                        onPressed: _handleConfirm,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 普通模式（多选/单选，无配置）：保留原列表选择
+  Widget _buildPlainSelector() {
     return AlertDialog(
       title: Text(widget.dialogTitle),
       content: SizedBox(
-        width: widget.showConfigTab ? 500 : 400,
-        height: widget.showConfigTab ? 500 : 400,
-        child:
-            widget.showConfigTab
-                ? Column(
-                  children: [
-                    // Tab Bar
-                    TabBar(
-                      controller: _tabController,
-                      tabs: [Tab(text: '选择类型'), Tab(text: '配置属性')],
-                    ),
-                    const SizedBox(height: 16),
-                    // Tab Views
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [_buildTypeSelectionTab(), _buildConfigTab()],
-                      ),
-                    ),
-                  ],
-                )
-                : _buildTypeSelectionTab(),
+        width: 400,
+        height: 400,
+        child: _buildTypeSelectionTab(),
       ),
       actions: [
-        // 左侧全选/反选按钮（仅多选模式且非配置模式）
-        if (widget.multiSelect && !widget.showConfigTab)
+        // 左侧全选/反选按钮（仅多选模式）
+        if (widget.multiSelect)
           TextButton.icon(
             onPressed: _toggleSelectAll,
             icon: Icon(_hasSelection ? Icons.deselect : Icons.select_all),
             label: Text(_hasSelection ? '反选' : '全选'),
-            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.primary),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
           ),
-        if (widget.multiSelect && !widget.showConfigTab)
-          const SizedBox(width: 8),
+        if (widget.multiSelect) const SizedBox(width: 8),
         // 右侧取消/确定按钮
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -560,7 +633,7 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
     );
   }
 
-  /// 构建类型选择 Tab
+  /// 构建类型选择列表（普通模式）
   Widget _buildTypeSelectionTab() {
     return ListView.builder(
       itemCount: _availableTypes.length,
@@ -569,8 +642,8 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
         final icon = FieldController.fieldTypes[type];
         final isSelected = _selectedTypes.contains(type);
 
-        if (widget.multiSelect && !widget.showConfigTab) {
-          // 多选模式（配置模式下禁用多选）
+        if (widget.multiSelect) {
+          // 多选模式
           return CheckboxListTile(
             secondary: Icon(icon, color: Theme.of(context).colorScheme.primary),
             title: Text(type),
@@ -594,29 +667,17 @@ class FieldTypeSelectorDialogState extends State<FieldTypeSelectorDialog>
             groupValue: _selectedType,
             onChanged: (value) {
               if (value != null) {
-                _onTypeSelected(value);
+                setState(() {
+                  _selectedType = value;
+                  _selectedTypes
+                    ..clear()
+                    ..add(value);
+                });
               }
             },
           );
         }
       },
-    );
-  }
-
-  /// 构建配置 Tab
-  Widget _buildConfigTab() {
-    final configFields = _buildConfigFields();
-
-    return FormBuilderWrapper(
-      formKey: _formKey,
-      onStateReady: (state) => _wrapperState = state,
-      config: FormConfig(
-        showSubmitButton: false,
-        showResetButton: false,
-        fieldSpacing: 16,
-        fields: configFields,
-        onSubmit: _handleConfigSubmit,
-      ),
     );
   }
 }
