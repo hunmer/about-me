@@ -105,6 +105,8 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
                 )
                 : ReorderableListView.builder(
                     padding: EdgeInsets.only(
+                      // 首行贴条上半露出卡片外，顶部预留出血边距避免被视口裁剪
+                      top: stickyTapeBleed(),
                       left: 16,
                       right: 16,
                       bottom: MediaQuery.paddingOf(context).bottom,

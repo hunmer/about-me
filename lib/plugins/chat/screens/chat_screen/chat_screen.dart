@@ -732,48 +732,27 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return [
-      // SuperCupertinoNavigationWrapper 的 actions 槽位没有 Material 祖先，
-      // 而 PopupMenuButton 自定义 child 时内部会构建 InkWell，需要透明 Material 承载
-      Material(
-        type: MaterialType.transparency,
-        child: PopupMenuButton<String>(
-          padding: EdgeInsets.zero,
-          tooltip: '更多操作',
-          child: DSIconButton(
-            icon: DsIconKind.more,
-            size: 36,
-            color: ds.surfaceAlt,
-            iconColor: ds.textSub,
+      DSMenu(
+        align: DSMenuAlign.end,
+        items: [
+          DSMenuItem(
+            icon: DsIconKind.list,
+            label: 'chat_multiSelectMode'.tr,
+            onTap: _controller.toggleMultiSelectMode,
           ),
-          onSelected: (value) {
-            if (value == 'multi_select') {
-              _controller.toggleMultiSelectMode();
-            } else if (value == 'clear') {
-              _showClearConfirmationDialog();
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'multi_select',
-              child: Row(
-                children: [
-                  DsIcon(DsIconKind.list, size: 18, color: ds.textSub),
-                  const SizedBox(width: 12),
-                  Text('chat_multiSelectMode'.tr),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'clear',
-              child: Row(
-                children: [
-                  DsIcon(DsIconKind.trash, size: 18, color: ds.danger),
-                  const SizedBox(width: 12),
-                  Text('chat_clearMessages'.tr),
-                ],
-              ),
-            ),
-          ],
+          DSMenuItem(
+            icon: DsIconKind.trash,
+            danger: true,
+            label: 'chat_clearMessages'.tr,
+            onTap: _showClearConfirmationDialog,
+          ),
+        ],
+        child: DSIconButton(
+          icon: DsIconKind.more,
+          size: 36,
+          color: ds.surfaceAlt,
+          iconColor: ds.textSub,
+          tooltip: '更多操作',
         ),
       ),
     ];
