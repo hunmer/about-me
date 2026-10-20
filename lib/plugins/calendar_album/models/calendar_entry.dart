@@ -9,6 +9,10 @@ class CalendarEntry {
   final DateTime updatedAt;
   final List<String> tags;
   final String? location;
+
+  /// 位置经纬度，格式 "lat,lng"（GCJ-02，来自 LocationPicker），
+  /// 与 [location] 地址文本配套，供地图功能使用
+  final String? latLng;
   final String? mood;
   final String? weather;
   final List<String> imageUrls;
@@ -22,6 +26,7 @@ class CalendarEntry {
     required this.updatedAt,
     this.tags = const [],
     this.location,
+    this.latLng,
     this.mood,
     this.weather,
     this.imageUrls = const [],
@@ -34,6 +39,7 @@ class CalendarEntry {
     required DateTime createdAt,
     List<String> tags = const [],
     String? location,
+    String? latLng,
     String? mood,
     String? weather,
     List<String> imageUrls = const [],
@@ -47,6 +53,7 @@ class CalendarEntry {
       updatedAt: createdAt,
       tags: tags,
       location: location,
+      latLng: latLng,
       mood: mood,
       weather: weather,
       imageUrls: imageUrls,
@@ -60,6 +67,7 @@ class CalendarEntry {
     DateTime? updatedAt,
     List<String>? tags,
     String? location,
+    String? latLng,
     String? mood,
     String? weather,
     List<String>? imageUrls,
@@ -73,6 +81,7 @@ class CalendarEntry {
       updatedAt: updatedAt ?? DateTime.now(),
       tags: tags ?? this.tags,
       location: location ?? this.location,
+      latLng: latLng ?? this.latLng,
       mood: mood ?? this.mood,
       weather: weather ?? this.weather,
       imageUrls: imageUrls ?? this.imageUrls,
@@ -89,6 +98,7 @@ class CalendarEntry {
       'updatedAt': updatedAt.toIso8601String(),
       'tags': tags,
       'location': location,
+      'latLng': latLng,
       'mood': mood,
       'weather': weather,
       'imageUrls': imageUrls,
@@ -105,6 +115,7 @@ class CalendarEntry {
       updatedAt: DateTime.parse(json['updatedAt']),
       tags: List<String>.from(json['tags'] ?? []),
       location: json['location'],
+      latLng: json['latLng'],
       mood: json['mood'],
       weather: json['weather'],
       imageUrls: List<String>.from(json['imageUrls'] ?? []),

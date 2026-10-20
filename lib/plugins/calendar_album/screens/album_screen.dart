@@ -16,6 +16,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'dart:io';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
+import 'package:aboutme/plugins/calendar_album/screens/album_map_screen.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/scrapbook_canvas_card/scrapbook_canvas_card.dart';
@@ -444,6 +445,38 @@ class _AlbumScreenState extends State<AlbumScreen> {
     );
   }
 
+  /// 右上角地图入口：把当前过滤结果中带定位的照片铺到照片地图
+  Widget _buildMapEntry(List<_PhotoRecord> photos) {
+    final ds = AppTheme.of(context);
+    return DSIconButton(
+      icon: DsIconKind.locationOn,
+      size: 36,
+      color: ds.surfaceAlt,
+      iconColor: ds.textSub,
+      tooltip: 'calendar_album_photo_map'.tr,
+      onPressed: () {
+        // 两列表平行：locatedPhotos 供地图渲染，locatedRecords 供图库打开
+        final locatedRecords = <_PhotoRecord>[];
+        final locatedPhotos = <AlbumMapPhoto>[];
+        for (final record in photos) {
+          final latLng = record.entry.latLng;
+          if (latLng == null || latLng.isEmpty) continue;
+          locatedRecords.add(record);
+          locatedPhotos.add(
+            AlbumMapPhoto(url: record.url, entry: record.entry),
+          );
+        }
+        NavigationHelper.push(
+          context,
+          AlbumMapScreen(
+            photos: locatedPhotos,
+            onOpenGallery: (index) => _openGallery(locatedRecords, index),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CalendarController>(
@@ -461,8 +494,8 @@ class _AlbumScreenState extends State<AlbumScreen> {
           title: Text('${'calendar_album_all_photos'.tr} (${photos.length})'),
           largeTitle: 'calendar_album_all_photos'.tr,
           enableLargeTitle: true,
-          // 右上角：瀑布流 ⇄ 贴图画布 切换
-          actions: [_buildScrapToggle()],
+          // 右上角：瀑布流 ⇄ 贴图画布 切换 + 照片地图入口
+          actions: [_buildMapEntry(photos), _buildScrapToggle()],
           // ===== 搜索 =====
           enableSearchBar: true,
           searchPlaceholder: 'calendar_album_search_photos_placeholder'.tr,

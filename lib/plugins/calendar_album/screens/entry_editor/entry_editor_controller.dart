@@ -12,6 +12,9 @@ class EntryEditorController {
   late TextEditingController titleController;
   late TextEditingController contentController;
   late TextEditingController locationController;
+
+  /// 位置经纬度 "lat,lng"（GCJ-02），与 locationController 地址文本配套
+  String? latLng;
   String? mood;
   String? weather;
   List<String> selectedTags = [];
@@ -27,6 +30,7 @@ class EntryEditorController {
     titleController = TextEditingController(text: entry?.title ?? '');
     contentController = TextEditingController(text: entry?.content ?? '');
     locationController = TextEditingController(text: entry?.location ?? '');
+    latLng = entry?.latLng;
     mood = entry?.mood;
     weather = entry?.weather;
     imageUrls = entry?.imageUrls.toList() ?? [];
@@ -53,6 +57,7 @@ class EntryEditorController {
         tags: selectedTags.toList(),
         location:
             locationController.text.isEmpty ? null : locationController.text,
+        latLng: latLng,
         mood: mood,
         weather: weather,
         imageUrls: imageUrls,
@@ -67,6 +72,7 @@ class EntryEditorController {
         tags: selectedTags.toList(),
         location:
             locationController.text.isEmpty ? null : locationController.text,
+        latLng: latLng,
         mood: mood,
         weather: weather,
         imageUrls: imageUrls,

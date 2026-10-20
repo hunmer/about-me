@@ -290,6 +290,9 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
                 });
               }
             },
+            onLatLngSelected: (lat, lng) {
+              controller.latLng = '$lat,$lng';
+            },
             isMobile: isMobile,
           ),
         ),

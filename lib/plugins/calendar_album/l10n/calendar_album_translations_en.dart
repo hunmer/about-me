@@ -54,6 +54,10 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_today_diary': 'Today',
     'calendar_album_all_photos': 'All Photos',
     'calendar_album_scrapbook_canvas': 'Scrapbook Canvas',
+    'calendar_album_photo_map': 'Photo Map',
+    'calendar_album_map_empty': 'No located photos yet',
+    'calendar_album_map_empty_hint':
+        'Pick a location in a diary entry to see its photos on the map',
     'calendar_album_no_photos': 'No Photos',
     'calendar_album_calendar_diary': 'Calendar Diary',
     'calendar_album_album': 'Album',

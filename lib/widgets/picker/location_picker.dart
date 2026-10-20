@@ -32,11 +32,17 @@ class Position {
 
 class LocationPicker extends StatefulWidget {
   final ValueChanged<String> onLocationSelected;
+
+  /// 选择结果附带经纬度（GCJ-02 火星坐标，latitude 在前）。
+  /// 搜索结果缺失经纬度时不回调。
+  final void Function(double latitude, double longitude)? onLatLngSelected;
+
   final bool isMobile;
 
   const LocationPicker({
     super.key,
     required this.onLocationSelected,
+    this.onLatLngSelected,
     required this.isMobile,
   });
 
@@ -296,6 +302,16 @@ class _LocationPickerState extends State<LocationPicker> {
                         return Pressable(
                           onPressed: () {
                             widget.onLocationSelected(result['address']);
+                            // 高德 location 格式为 "lng,lat"（GCJ-02）
+                            final parts = (result['location'] as String? ?? '')
+                                .split(',');
+                            if (parts.length == 2) {
+                              final lng = double.tryParse(parts[0]);
+                              final lat = double.tryParse(parts[1]);
+                              if (lat != null && lng != null) {
+                                widget.onLatLngSelected?.call(lat, lng);
+                              }
+                            }
                             Navigator.of(context).pop();
                           },
                           child: Padding(
