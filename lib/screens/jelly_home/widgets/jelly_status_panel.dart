@@ -13,7 +13,7 @@ import 'jelly_status_panel_settings.dart';
 /// 状态项种类（图标与取值见 [_StatusItem] / [_value]）
 enum JellyStatusItemType { mood, energy, affection, companionDays }
 
-/// 顶部状态面板：手绘组件构建（纸底 + 排线 + 墨线框），长按更换头像
+/// 资源条状态面板：手绘组件构建（纸底 + 排线 + 墨线框），长按更换头像
 class JellyStatusPanel extends StatefulWidget {
   const JellyStatusPanel({super.key, required this.controller});
 
@@ -59,6 +59,7 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
     final theme = AppTheme.of(context);
     return Align(
       alignment: Alignment.topCenter,
+      heightFactor: 1,
       child: ConstrainedBox(
         constraints: const BoxConstraints(
           maxWidth: 900,
@@ -169,10 +170,7 @@ class _JellyStatusPanelState extends State<JellyStatusPanel> {
     }
     final avatarPath = _settings.avatarPath;
     if (avatarPath == null) {
-      return Image.asset(
-        'assets/images/default_avatar.jpg',
-        fit: BoxFit.cover,
-      );
+      return Image.asset('assets/images/default_avatar.jpg', fit: BoxFit.cover);
     }
     return AdaptiveImage(imagePath: avatarPath, fit: BoxFit.cover);
   }

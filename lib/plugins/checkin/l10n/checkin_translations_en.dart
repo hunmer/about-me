@@ -90,7 +90,7 @@ class CheckinTranslationsEn {
     'checkin_resetButton': 'Reset',
     'checkin_addCheckinRecord': 'Add Check-in Record',
     'checkin_addSpecificDateCheckin': 'Add Check-in for Specific Date',
-    'checkin_syncStartTime': 'Sync Start Time',
+    'checkin_useCurrentTime': 'Use Current Time',
     'checkin_checkinDateLabel': 'Check-in Date',
     'checkin_checkinTimeLabel': 'Check-in Time',
     'checkin_noteHint': 'Add notes (optional)',

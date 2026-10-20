@@ -993,11 +993,19 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         return;
       }
 
+      final livePhotoCount = entities
+          .where((entity) => entity.isLivePhoto)
+          .length;
+      final useLivePhotos = livePhotoCount == 0
+          ? false
+          : await _confirmLivePhotoChoice(context, livePhotoCount);
+      if (useLivePhotos == null) return;
+
       final images = <_PickedImage>[];
       for (final entity in entities) {
         final file = await entity.originFile ?? await entity.file;
         if (file != null) {
-          final liveVideo = entity.isLivePhoto
+          final liveVideo = useLivePhotos && entity.isLivePhoto
               ? await entity.originFileWithSubtype
               : null;
           images.add(
@@ -1015,6 +1023,33 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         Toast.error('${'image_picker_selectImageFailed'.tr}: $e');
       }
     }
+  }
+
+  /// 统一决定本次选择中的 Live Photo 是否保留动态视频。
+  /// 多选时只弹一次，避免逐张打断用户选择流程。
+  Future<bool?> _confirmLivePhotoChoice(
+    BuildContext context,
+    int livePhotoCount,
+  ) {
+    final countText = '$livePhotoCount 张实况照片';
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('检测到实况照片'),
+        content: Text('本次选择包含 $countText，请决定导入方式。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('使用普通照片'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('使用实况照片'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 桌面端/Web：系统文件选择

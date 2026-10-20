@@ -43,6 +43,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   collection: ^1.17.0
   audioplayers: 6.5.0
+  flutter_soloud: ^5.2.1
   dio: ^5.4.1
   logging: ^1.2.0
   flutter_form_builder: ^10.2.0

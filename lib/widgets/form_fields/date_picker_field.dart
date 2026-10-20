@@ -37,6 +37,9 @@ class DatePickerField extends StatelessWidget {
   /// 同步按钮的无障碍标签
   final String? syncLabel;
 
+  /// 同步按钮图标
+  final DsIconKind syncIcon;
+
   const DatePickerField({
     super.key,
     required this.date,
@@ -48,6 +51,7 @@ class DatePickerField extends StatelessWidget {
     this.labelWidth = 100,
     this.onSync,
     this.syncLabel,
+    this.syncIcon = DsIconKind.refresh,
   });
 
   @override
@@ -139,7 +143,7 @@ class DatePickerField extends StatelessWidget {
       semanticLabel: syncLabel,
       child: Padding(
         padding: EdgeInsets.all(theme.spacing.xs),
-        child: DsIcon(DsIconKind.refresh, size: 18, color: theme.primary),
+        child: DsIcon(syncIcon, size: 18, color: theme.primary),
       ),
     );
   }

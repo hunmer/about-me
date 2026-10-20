@@ -1046,6 +1046,7 @@ class _GalleryVideoTapOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isPlaying = controller.value.isPlaying;
     return Stack(
+      alignment: Alignment.center,
       children: [
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 50),

@@ -5,6 +5,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -19,7 +20,6 @@ import 'widgets/jelly_companion_card.dart';
 import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_live2d_panel.dart';
 import 'widgets/jelly_status_panel.dart';
-import 'widgets/jelly_status_panel_settings.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
@@ -29,6 +29,7 @@ import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/message_input.dart';
 
 import 'package:get/get.dart' hide Value;
+
 /// 果冻小屋主页（应用默认启动页）
 ///
 /// 底部导航在五个页签间切换内容（不切换路由）：
@@ -53,6 +54,16 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
   /// 小屋页签的 JellyLive2D 读取并渲染资源列表
   final ValueNotifier<JellyLive2dPanel?> _live2dPanel =
       ValueNotifier<JellyLive2dPanel?>(null);
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
+    }
+  }
 
   @override
   void dispose() {
@@ -85,10 +96,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
             enabled: _tabIndex == 0,
             child: _CottageTab(chatVisible: _chatVisible, panel: _live2dPanel),
           ),
-          HeroMode(
-            enabled: _tabIndex == 1,
-            child: const JellyAssistantTab(),
-          ),
+          HeroMode(enabled: _tabIndex == 1, child: const JellyAssistantTab()),
           HeroMode(enabled: _tabIndex == 2, child: const HomeScheduleScreen()),
           HeroMode(
             enabled: _tabIndex == 3,
@@ -102,7 +110,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
 }
 
 /// 小屋页签：Live2D 角色全屏展示，
-/// 顶部信息面板与右侧陪伴状态按钮，
+/// 底部可切换状态面板与右侧陪伴状态按钮，
 /// 底部聊天表单按需切换显示。
 class _CottageTab extends StatefulWidget {
   const _CottageTab({this.chatVisible = false, this.panel});
@@ -145,37 +153,45 @@ class _CottageTabState extends State<_CottageTab> {
     // 聊天表单避让底部：悬浮导航栏（padding）与键盘（viewInsets）取较大者
     final mq = MediaQuery.of(context);
     final bottomInset = math.max(mq.padding.bottom, mq.viewInsets.bottom);
+    final topInset = mq.padding.top;
 
     return AppTheme(
       data: theme,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [theme.backgroundAlt, theme.background],
-          ),
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+          systemStatusBarContrastEnforced: false,
         ),
-        child: SafeArea(
-          bottom: false,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Live2D 角色铺满整个页签，背景图随之延伸到状态面板下方；
-              // 角色可用高度通过 topInset 扣除状态面板高度，
-              // 点击命中角色本体（hit area）算一次陪伴互动。
-              Positioned(
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 0,
-                child: AnimatedBuilder(
-                  animation: JellyStatusPanelSettings.instance,
-                  builder: (context, _) => JellyLive2D(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [theme.backgroundAlt, theme.background],
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            bottom: false,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 背景铺到系统状态栏后方；角色和气泡仍避让顶部安全区。
+                // 角色可用高度通过 topInset 扣除顶部预留高度，
+                // 点击命中角色本体（hit area）算一次陪伴互动。
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: JellyLive2D(
                     fill: false,
                     fitContainer: true,
-                    topInset: _statusPanelHeight(mq.size.width),
+                    topInset: topInset,
                     panel: widget.panel,
+                    statusPanel: JellyStatusPanel(controller: _companion),
                     message: _live2dMessage,
                     reaction: _live2dReaction,
                     initialModel: modelDefinitionForArchive(
@@ -189,19 +205,33 @@ class _CottageTabState extends State<_CottageTab> {
                     },
                   ),
                 ),
-              ),
-              JellyStatusPanel(controller: _companion),
-              // 左右两侧悬浮图标按钮（assets/jelly_icons 素材）：
-              // 右列首项为陪伴状态入口，其余为玩法占位；
-              // 顶部按状态面板实际显示高度偏移避让
-              Align(
-                alignment: Alignment.topLeft,
-                child: AnimatedBuilder(
-                  animation: JellyStatusPanelSettings.instance,
-                  builder: (context, _) => _buildSideButtonColumn(
+                if (topInset > 0)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: topInset + 16,
+                    child: const IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0x99000000), Colors.transparent],
+                            stops: [0.6, 1],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                // 左右两侧悬浮图标按钮（assets/jelly_icons 素材）：
+                // 右列首项为陪伴状态入口，其余为玩法占位；
+                // 顶部避让系统状态栏
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: _buildSideButtonColumn(
                     theme,
-                    topOffset:
-                        _statusPanelHeight(mq.size.width) + theme.spacing.sm,
+                    topOffset: topInset + theme.spacing.sm,
                     buttons: const [
                       (
                         asset: 'assets/jelly_icons/envelope.webp',
@@ -221,15 +251,11 @@ class _CottageTabState extends State<_CottageTab> {
                     ],
                   ),
                 ),
-              ),
-              Align(
-                alignment: Alignment.topRight,
-                child: AnimatedBuilder(
-                  animation: JellyStatusPanelSettings.instance,
-                  builder: (context, _) => _buildSideButtonColumn(
+                Align(
+                  alignment: Alignment.topRight,
+                  child: _buildSideButtonColumn(
                     theme,
-                    topOffset:
-                        _statusPanelHeight(mq.size.width) + theme.spacing.sm,
+                    topOffset: topInset + theme.spacing.sm,
                     buttons: [
                       (
                         asset: 'assets/jelly_icons/heart.webp',
@@ -249,34 +275,24 @@ class _CottageTabState extends State<_CottageTab> {
                     ],
                   ),
                 ),
-              ),
-              // 聊天表单（导航栏聊天按钮切换显示；保持挂载以维持会话监听）
-              Positioned(
-                left: theme.spacing.lg,
-                right: theme.spacing.lg,
-                bottom: bottomInset + theme.spacing.sm,
-                child: Visibility(
-                  visible: widget.chatVisible,
-                  maintainState: true,
-                  maintainAnimation: true,
-                  child: Live2DChatInput(onReply: _scheduleLive2dReply),
+                // 聊天表单（导航栏聊天按钮切换显示；保持挂载以维持会话监听）
+                Positioned(
+                  left: theme.spacing.lg,
+                  right: theme.spacing.lg,
+                  bottom: bottomInset + theme.spacing.sm,
+                  child: Visibility(
+                    visible: widget.chatVisible,
+                    maintainState: true,
+                    maintainAnimation: true,
+                    child: Live2DChatInput(onReply: _scheduleLive2dReply),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
-  }
-
-  /// 顶部状态面板的显示高度：与 JellyStatusPanel 同一套约束
-  /// （maxWidth 900 / maxHeight 150 + 面板纵横比）计算，
-  /// 右侧状态按钮以此为顶部偏移避让
-  double _statusPanelHeight(double availableWidth) {
-    final height =
-        math.min(availableWidth, 900) /
-        JellyStatusPanelSettings.panelAspectRatio;
-    return height.clamp(0.0, JellyStatusPanelSettings.maxDisplayHeight);
   }
 
   /// 左右两侧悬浮图标按钮列（jelly_icons 素材），自上而下排列
@@ -403,7 +419,9 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     if (args is! Value<String> || args.value != 'agent_chat' || !mounted) {
       return;
     }
-    debugPrint('[ChatClear] plugin_loaded(agent_chat) -> reset controller future');
+    debugPrint(
+      '[ChatClear] plugin_loaded(agent_chat) -> reset controller future',
+    );
     setState(() {
       _initializedKey = null;
       _controllerFuture = null;
@@ -447,7 +465,9 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     await controller.initialize();
     _messageService = messageService;
     _controller = controller;
-    debugPrint('[ChatClear] Live2D controller initialized #${identityHashCode(controller)} key=$_currentKey');
+    debugPrint(
+      '[ChatClear] Live2D controller initialized #${identityHashCode(controller)} key=$_currentKey',
+    );
     messageService.addListener(_onMessagesChanged);
     return controller;
   }
@@ -500,7 +520,9 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     _messageService = null;
     _lastReplyId = null;
     _lastReplyContent = null;
-    debugPrint('[ChatClear] reset controller old=#${identityHashCode(controller)}');
+    debugPrint(
+      '[ChatClear] reset controller old=#${identityHashCode(controller)}',
+    );
     messageService?.removeListener(_onMessagesChanged);
     // 帧末再释放旧 controller，避免仍在显示它的 MessageInput 先行移除监听
     if (controller != null) {
@@ -539,9 +561,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
                   color: const Color(0x59FFFFFF),
                   borderRadius: BorderRadius.circular(28),
                 ),
-                child: MessageInput(
-                  controller: controller,
-                ),
+                child: MessageInput(controller: controller),
               ),
             ),
           ),

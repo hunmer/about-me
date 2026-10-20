@@ -166,7 +166,8 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
                     inline: true,
                   ),
                   SizedBox(height: theme.spacing.md),
-                  // 终止时间选择：忘记开始时间时可点同步按钮，将结束时间回填到开始时间
+                  // 终止时间选择：右侧按钮一键应用当前时分，
+                  // 早于开始时间时沿用回推规则同步开始时间
                   DatePickerField(
                     date: _endTime,
                     onTap: () => _selectTime(context, false),
@@ -174,8 +175,9 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
                     placeholder: '',
                     labelText: 'app_endTime'.tr,
                     inline: true,
-                    onSync: () => setState(() => _startTime = _endTime),
-                    syncLabel: 'checkin_syncStartTime'.tr,
+                    onSync: _applyCurrentTimeToEndTime,
+                    syncLabel: 'checkin_useCurrentTime'.tr,
+                    syncIcon: DsIconKind.clock,
                   ),
                   SizedBox(height: theme.spacing.md),
                   // 备注输入框
@@ -213,6 +215,24 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
 
   String _formatTime(DateTime d) =>
       '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+  /// 将当前时分应用到结束时间（仍锚定所选日期），
+  /// 早于开始时间时与手动改时间一致，回推开始时间
+  void _applyCurrentTimeToEndTime() {
+    final now = DateTime.now();
+    setState(() {
+      _endTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        now.hour,
+        now.minute,
+      );
+      if (_endTime.isBefore(_startTime)) {
+        _startTime = _endTime;
+      }
+    });
+  }
 
   Future<void> _submit(BuildContext context) async {
     // 标准化时间，保留到秒级别（忽略毫秒）

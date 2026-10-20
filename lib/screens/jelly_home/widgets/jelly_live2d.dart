@@ -66,6 +66,7 @@ class JellyLive2D extends StatefulWidget {
     this.fitContainer = false,
     this.topInset = 0,
     this.panel,
+    this.statusPanel,
   });
 
   /// 点击角色（命中或未命中可点击区域都会回调）时通知宿主，
@@ -98,6 +99,9 @@ class JellyLive2D extends StatefulWidget {
   /// 底部资源面板开关（由底部导航子栏图标驱动）：
   /// 值非空时在底部导航上方展示水平可滚动的资源列表
   final ValueListenable<JellyLive2dPanel?>? panel;
+
+  /// 宿主提供的状态面板，与其他资源共用底部资源条展示。
+  final Widget? statusPanel;
 
   @override
   State<JellyLive2D> createState() => _JellyLive2DState();
@@ -314,7 +318,7 @@ class _JellyLive2DState extends State<JellyLive2D> {
                                 defaultTargetPlatform == TargetPlatform.android
                             ? 1
                             : _isSwitchingModel ||
-                                _controller.value.lastError != null
+                                  _controller.value.lastError != null
                             ? 0
                             : 1,
                         duration: const Duration(milliseconds: 160),

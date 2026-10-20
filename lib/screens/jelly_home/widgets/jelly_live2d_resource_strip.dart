@@ -27,6 +27,8 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
         child: switch (panel) {
           JellyLive2dPanel.bubble => _buildBubbleStrip(theme),
           JellyLive2dPanel.background => _buildBackgroundStrip(theme),
+          JellyLive2dPanel.status =>
+            widget.statusPanel ?? const SizedBox.shrink(),
           JellyLive2dPanel.archive => _buildArchiveStrip(theme),
         },
       ),

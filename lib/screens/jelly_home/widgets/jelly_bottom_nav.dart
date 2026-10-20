@@ -54,9 +54,7 @@ class JellyBottomNav extends StatelessWidget {
           final mq = MediaQuery.of(context);
           return MediaQuery(
             data: mq.copyWith(
-              viewPadding: mq.viewPadding.copyWith(
-                bottom: mq.padding.bottom,
-              ),
+              viewPadding: mq.viewPadding.copyWith(bottom: mq.padding.bottom),
             ),
             child: child,
           );
@@ -85,62 +83,63 @@ class JellyBottomNav extends StatelessWidget {
         subBarBehavior: RadialSubBarBehavior.always,
         subBarVisible: current == JellyTab.cottage,
         // 子栏左侧：切换 Live2D 聊天表单
-        leadingAction:
-            onToggleChat != null
-                ? Builder(
-                  builder: (context) {
-                    final navTheme = AppTheme.of(context);
-                    return DsIcon(
-                      DsIconKind.chat,
-                      size: 16,
-                      color: chatActive
-                          ? navTheme.primary
-                          : navTheme.textSub,
-                    );
-                  },
-                )
-                : null,
+        leadingAction: onToggleChat != null
+            ? Builder(
+                builder: (context) {
+                  final navTheme = AppTheme.of(context);
+                  return DsIcon(
+                    DsIconKind.chat,
+                    size: 16,
+                    color: chatActive ? navTheme.primary : navTheme.textSub,
+                  );
+                },
+              )
+            : null,
         onLeadingTap: onToggleChat,
         // 子栏最右侧：切换 Live2D 档案（与面板同款 激活高亮/再点收起）
-        trailingAction:
-            live2dPanel != null
-                ? DsIcon(
-                    DsIconKind.switchAccount,
-                    size: 16,
-                    color:
-                        activePanel == JellyLive2dPanel.archive
-                            ? theme.onPrimary
-                            : theme.textSub,
-                  )
-                : null,
-        onTrailingTap:
-            live2dPanel != null
-                ? () => _toggleLive2dPanel(live2dPanel!, JellyLive2dPanel.archive)
-                : null,
+        trailingAction: live2dPanel != null
+            ? DsIcon(
+                DsIconKind.switchAccount,
+                size: 16,
+                color: activePanel == JellyLive2dPanel.archive
+                    ? theme.onPrimary
+                    : theme.textSub,
+              )
+            : null,
+        onTrailingTap: live2dPanel != null
+            ? () => _toggleLive2dPanel(live2dPanel!, JellyLive2dPanel.archive)
+            : null,
         trailingSelected: activePanel == JellyLive2dPanel.archive,
         // 小屋子栏：气泡/背景/状态面板资源入口，
         // 激活（面板打开）时圆钮以主题色实底高亮
-        subActions:
-            live2dPanel != null
-                ? [
-                  _live2dPanelAction(
-                    live2dPanel!,
-                    JellyLive2dPanel.bubble,
-                    '气泡样式',
-                    DsIconKind.bubble,
-                    activePanel,
-                    theme,
-                  ),
-                  _live2dPanelAction(
-                    live2dPanel!,
-                    JellyLive2dPanel.background,
-                    '背景图片',
-                    DsIconKind.image,
-                    activePanel,
-                    theme,
-                  ),
-                ]
-                : null,
+        subActions: live2dPanel != null
+            ? [
+                _live2dPanelAction(
+                  live2dPanel!,
+                  JellyLive2dPanel.bubble,
+                  '气泡样式',
+                  DsIconKind.bubble,
+                  activePanel,
+                  theme,
+                ),
+                _live2dPanelAction(
+                  live2dPanel!,
+                  JellyLive2dPanel.background,
+                  '背景图片',
+                  DsIconKind.image,
+                  activePanel,
+                  theme,
+                ),
+                _live2dPanelAction(
+                  live2dPanel!,
+                  JellyLive2dPanel.status,
+                  '状态面板',
+                  DsIconKind.mood,
+                  activePanel,
+                  theme,
+                ),
+              ]
+            : null,
       );
     }
 

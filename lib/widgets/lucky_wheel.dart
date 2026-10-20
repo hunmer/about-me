@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
 
 /// 时计幸运转盘（极简 SVG 幸运大转盘的 Flutter 移植版）
 ///
@@ -137,35 +137,49 @@ class _LuckyWheelState extends State<LuckyWheel>
   // 粒子
   final List<_Particle> _particles = [];
 
-  // 音效
-  final List<AudioPlayer> _tickPlayers = [];
-  int _tickPlayerCursor = 0;
-  AudioPlayer? _chimePlayer;
-  final Map<int, Uint8List> _tickBytesCache = {};
-  Uint8List? _chimeBytes;
+  // 音效（SoLoud 低延迟引擎 + 程序合成 WAV）
+  static const int _tickLevels = 8;
+  final List<AudioSource> _tickSources = [];
+  AudioSource? _chimeSource;
+  bool _audioReady = false;
 
   @override
   void initState() {
     super.initState();
-    for (var i = 0; i < 6; i++) {
-      final p = AudioPlayer();
-      try {
-        p.setPlayerMode(PlayerMode.lowLatency);
-      } catch (_) {}
-      _tickPlayers.add(p);
-    }
-    _chimePlayer = AudioPlayer();
+    _initAudio();
     _stopwatch.start();
     _ticker = createTicker(_onTick)..start();
+  }
+
+  Future<void> _initAudio() async {
+    try {
+      final soloud = SoLoud.instance;
+      if (!soloud.isInitialized) {
+        await soloud.init();
+      }
+      for (var level = 0; level < _tickLevels; level++) {
+        _tickSources.add(await soloud.loadMem(
+          'lucky_wheel_tick_$level.wav',
+          _synthTick(level / (_tickLevels - 1)),
+        ));
+      }
+      _chimeSource =
+          await soloud.loadMem('lucky_wheel_chime.wav', _synthChime());
+      _audioReady = true;
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     _ticker.dispose();
-    for (final p in _tickPlayers) {
-      p.dispose();
+    final soloud = SoLoud.instance;
+    if (soloud.isInitialized) {
+      for (final s in _tickSources) {
+        soloud.disposeSource(s);
+      }
+      final chime = _chimeSource;
+      if (chime != null) soloud.disposeSource(chime);
     }
-    _chimePlayer?.dispose();
     _stopwatch.stop();
     super.dispose();
   }
@@ -312,28 +326,29 @@ class _LuckyWheelState extends State<LuckyWheel>
 
   // ---------------------------------------------------------------- 程序合成音效
 
-  Future<void> _playTick(double velocityFactor) async {
-    if (!_soundEnabled) return;
+  void _playTick(double velocityFactor) {
+    if (!_soundEnabled || !_audioReady) return;
     final now = _stopwatch.elapsed;
-    // 高速旋转时销钉极密，限制最小间隔避免音频线程过载
-    if ((now - _lastTickSoundTime).inMilliseconds < 40) return;
+    // 高速旋转时销钉极密，限制最小间隔避免声音糊成一片
+    if ((now - _lastTickSoundTime).inMilliseconds < 20) return;
     _lastTickSoundTime = now;
 
-    final level = (velocityFactor * 7).round().clamp(0, 7);
-    final bytes = _tickBytesCache.putIfAbsent(
-        level, () => _synthTick(level / 7.0));
-    final player = _tickPlayers[_tickPlayerCursor];
-    _tickPlayerCursor = (_tickPlayerCursor + 1) % _tickPlayers.length;
-    try {
-      await player.play(BytesSource(bytes));
-    } catch (_) {}
+    final level = (velocityFactor * (_tickLevels - 1))
+        .round()
+        .clamp(0, _tickLevels - 1);
+    if (level < _tickSources.length) {
+      try {
+        SoLoud.instance.play(_tickSources[level]);
+      } catch (_) {}
+    }
   }
 
-  Future<void> _playChime() async {
-    if (!_soundEnabled) return;
-    final bytes = _chimeBytes ??= _synthChime();
+  void _playChime() {
+    if (!_soundEnabled || !_audioReady) return;
+    final source = _chimeSource;
+    if (source == null) return;
     try {
-      await _chimePlayer?.play(BytesSource(bytes));
+      SoLoud.instance.play(source);
     } catch (_) {}
   }
 
