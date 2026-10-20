@@ -52,6 +52,9 @@ class RouteParser {
     // AI插件
     '/agent_chat': '用户正在使用AI对话',
     '/openai': '用户正在管理AI助手',
+    '/openai/agents': '用户正在管理AI智能体',
+    '/openai/presets': '用户正在查看提示词预设',
+    '/openai/chat': '用户正在查看AI会话列表',
 
     // 活动插件
     '/activity': '用户正在查看活动记录',
@@ -87,6 +90,8 @@ class RouteParser {
     '/goods/item_dialog_new': '用户正在创建新物品',
     '/media_log': '用户正在查看媒体记录（共 {itemCount} 条）',
     '/media_log/detail': '用户正在查看媒体详情：{title}（{kind}，评分: {rating}）',
+    '/media_log/form_new': '用户正在新增媒体记录',
+    '/media_log/form_edit': '用户正在编辑媒体记录：{title}（{kind}）',
     '/chat': '用户正在查看聊天',
     '/chat/channels': '用户正在查看聊天频道列表',
     '/chat/timeline': '用户正在查看聊天时间线',
@@ -190,8 +195,14 @@ class RouteParser {
     '/store/my_items': ['总结一下我有哪些物品', '帮我看看哪些物品该用了'],
     '/store/points_history': ['分析我的积分收支', '最近积分变化大吗？'],
     '/rich_editor': ['帮我润色正在编辑的内容', '帮这段内容起个标题'],
+    '/openai': ['帮我配置AI助手', '总结我的智能体列表'],
+    '/openai/agents': ['帮我创建一个智能体', '总结我的智能体用法'],
+    '/openai/presets': ['帮我写一个提示词预设', '优化我现有的预设'],
+    '/openai/chat': ['总结最近的AI对话', '帮我继续之前的对话'],
     '/media_log': ['总结我的阅读观影记录', '推荐我下一部看/读什么'],
     '/media_log/detail': ['帮我写一条短评', '总结这条记录的点评'],
+    '/media_log/form_new': ['帮我起个标题', '根据我的口味推荐一部作品'],
+    '/media_log/form_edit': ['帮我润色这条记录的简介', '给这条记录推荐合适的标签'],
     '/timer': ['分析我的计时使用情况', '帮我总结时间开销'],
     '/timer_main': ['总结这组计时器的使用情况', '分析我的时间分配'],
     '/timer_details': ['分析这个任务的计时情况', '总结这个任务的时间开销'],

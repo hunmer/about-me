@@ -359,6 +359,20 @@ class _MediaListScreenState extends State<MediaListScreen> {
   }
 
   Future<void> _openItemForm({MediaKind? kind, MediaItem? initial}) async {
+    // 表单 sheet 为无名路由，手动上报表单上下文，关闭后恢复列表上下文
+    final isEdit = initial != null;
+    RouteHistoryManager.updateCurrentContext(
+      pageId: isEdit ? '/media_log/form_edit' : '/media_log/form_new',
+      title: isEdit ? 'media_editItem'.tr : 'media_newItem'.tr,
+      params: isEdit
+          ? {
+              'title': initial.title,
+              'kind': initial.kind == MediaKind.reading
+                  ? 'media_reading'.tr
+                  : 'media_watching'.tr,
+            }
+          : null,
+    );
     final result = await SmoothBottomSheet.showWithTitle<MediaItem>(
       context: context,
       title: initial == null ? 'media_newItem'.tr : 'media_editItem'.tr,
@@ -368,6 +382,7 @@ class _MediaListScreenState extends State<MediaListScreen> {
         availableTags: _getAllTags(),
       ),
     );
+    if (mounted) _updateRouteContext();
     if (result == null || !mounted) return;
     if (result.id.isEmpty) {
       await MediaLogPlugin.instance.saveItem(

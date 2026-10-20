@@ -32,24 +32,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     super.initState();
     MediaLogPlugin.instance.addListener(_onDataChanged);
     // 上报路由上下文，供"询问当前上下文"识别详情页
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final item = MediaLogPlugin.instance.getItem(widget.itemId);
-      RouteHistoryManager.updateCurrentContext(
-        pageId: '/media_log/detail',
-        title: item?.title ?? 'media_name'.tr,
-        params: {
-          'itemId': widget.itemId,
-          'title': item?.title ?? '',
-          'kind': item == null
-              ? ''
-              : (item.kind == MediaKind.reading
-                    ? 'media_reading'.tr
-                    : 'media_watching'.tr),
-          'rating': item?.rating?.toStringAsFixed(1) ?? '未评分',
-        },
-      );
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateRouteContext());
+  }
+
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到详情页状态
+  void _updateRouteContext() {
+    if (!mounted) return;
+    final item = MediaLogPlugin.instance.getItem(widget.itemId);
+    RouteHistoryManager.updateCurrentContext(
+      pageId: '/media_log/detail',
+      title: item?.title ?? 'media_name'.tr,
+      params: {
+        'itemId': widget.itemId,
+        'title': item?.title ?? '',
+        'kind': item == null
+            ? ''
+            : (item.kind == MediaKind.reading
+                  ? 'media_reading'.tr
+                  : 'media_watching'.tr),
+        'rating': item?.rating?.toStringAsFixed(1) ?? '未评分',
+      },
+    );
   }
 
   @override
@@ -70,6 +73,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   /// 编辑条目（表单 sheet 内含删除入口）
   Future<void> _editItem(MediaItem item) async {
+    // 表单 sheet 为无名路由，手动上报编辑上下文，关闭后恢复详情上下文
+    RouteHistoryManager.updateCurrentContext(
+      pageId: '/media_log/form_edit',
+      title: 'media_editItem'.tr,
+      params: {
+        'itemId': item.id,
+        'title': item.title,
+        'kind': item.kind == MediaKind.reading
+            ? 'media_reading'.tr
+            : 'media_watching'.tr,
+      },
+    );
     final result = await SmoothBottomSheet.showWithTitle<dynamic>(
       context: context,
       title: 'media_editItem'.tr,
@@ -80,6 +95,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         showDelete: true,
       ),
     );
+    if (mounted) _updateRouteContext();
     if (result == null || !mounted) return;
     if (result == 'delete') {
       await MediaLogPlugin.instance.deleteItem(item.id);

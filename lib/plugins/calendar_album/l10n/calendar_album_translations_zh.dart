@@ -187,5 +187,20 @@ class CalendarAlbumTranslationsZh {
     // 示例数据
     'calendarAlbum_sampleEntriesTitle': '示例日记条目',
     'calendarAlbum_sampleEntriesDesc': '创建按日期分组的示例日记条目',
+
+    // 统计页
+    'calendar_album_statsTab': '统计',
+    'calendar_album_statsToday': '今日',
+    'calendar_album_statsTodayEntries': '今日日记',
+    'calendar_album_statsUnit': '篇',
+    'calendar_album_statsVsYesterday': '@diff 较昨日',
+    'calendar_album_statsSummary': '共 @total 篇 · @photos 张照片 · @tags 个标签',
+    'calendar_album_statsStreak': '连续记录 @count 天',
+    'calendar_album_statsNoEntries': '还没有日记',
+    'calendar_album_statsTodayChart': '今日记录分布',
+    'calendar_album_statsDailyChart': '每日记录分布',
+    'calendar_album_statsDailyAvg': '日均 @count 篇',
+    'calendar_album_statsCountLabel': '@count 篇日记',
+    'calendar_album_statsTagChart': '标签分布',
   };
 }

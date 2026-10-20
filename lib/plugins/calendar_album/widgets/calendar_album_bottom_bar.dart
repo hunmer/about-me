@@ -4,9 +4,9 @@ import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/plugins/calendar_album/screens/calendar_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/tag_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/album_screen.dart';
+import 'package:aboutme/plugins/calendar_album/screens/stats_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,7 +15,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
 /// CalendarAlbum 插件的底部栏组件
-/// 提供日历视图、标签视图和相册视图三个 Tab 的切换功能
+/// 提供日历视图、标签视图、相册视图和统计视图四个 Tab 的切换功能
 class CalendarAlbumBottomBar extends StatefulWidget {
   final CalendarAlbumPlugin plugin;
 
@@ -30,7 +30,6 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
   late TabController _tabController;
   late int _currentPage;
   final GlobalKey _bottomBarKey = GlobalKey();
-  final GlobalKey _fabKey = GlobalKey();
 
   late final CalendarController _calendarController;
   late final TagController _tagController;
@@ -39,7 +38,7 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
   void initState() {
     super.initState();
     _currentPage = 0;
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.animation?.addListener(() {
       final value = _tabController.animation!.value.round();
       if (value != _currentPage && mounted) {
@@ -60,133 +59,24 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
     super.dispose();
   }
 
-  /// 构建 FAB
-  Widget _buildFab() {
-    return Builder(
-      builder: (context) {
-        return DSThemeBridge(
-          // DSFab 内部取 AppTheme，需包桥
-          child: DSFab(
-            key: _fabKey,
-            color: widget.plugin.color,
-            iconColor: Colors.white,
-            icon: _currentPage == 0
-                ? DsIconKind.edit
-                : _currentPage == 1
-                ? DsIconKind.gear
-                : DsIconKind.image,
-            onPressed: () {
-              if (_currentPage == 0) {
-                // Tab0: 新建日记（底部弹层）
-                EntryEditorSheet.show(
-                  context,
-                  initialDate: _calendarController.selectedDate,
-                  calendarController: _calendarController,
-                  tagController: _tagController,
-                );
-                return;
-              }
-              NavigationHelper.openContainerWithHero(
-                context,
-                (context) {
-                  if (_currentPage == 1) {
-                    // Tab1: 标签管理
-                    return Scaffold(
-                      appBar: AppBar(
-                        title: Text('calendar_album_tag_management'.tr),
-                      ),
-                      body: Center(
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.label),
-                          label: Text('calendar_album_manage_tags'.tr),
-                          onPressed: () async {
-                            await _tagController.showTagManagerDialog(context);
-                          },
-                        ),
-                      ),
-                    );
-                  } else {
-                    // Tab2: 相册统计
-                    final allImages = _calendarController.getAllImages();
-                    return Scaffold(
-                      appBar: AppBar(
-                        title: Text('calendar_album_album_statistics'.tr),
-                      ),
-                      body: AlertDialog(
-                        title: Text('calendar_album_album_statistics'.tr),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${'calendar_album_total_photo_count'.tr}: ${allImages.length}',
-                            ),
-                            const SizedBox(height: 16),
-                            if (allImages.isNotEmpty) ...[
-                              Text(
-                                'calendar_album_recent_photos'.tr,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                height: 100,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: allImages.length.clamp(0, 10),
-                                  itemBuilder: (context, index) {
-                                    final imageUrl = allImages[index];
-                                    return Container(
-                                      width: 80,
-                                      margin: const EdgeInsets.only(right: 8),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: Colors.grey.shade300,
-                                        ),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(7),
-                                        child: Image.network(
-                                          imageUrl,
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                                return Container(
-                                                  color: Colors.grey.shade200,
-                                                  child: const Icon(
-                                                    Icons.broken_image,
-                                                  ),
-                                                );
-                                              },
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: Text('calendar_album_close'.tr),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                },
-                sourceKey: _fabKey,
-                heroTag: 'calendar_album_fab_$_currentPage',
-                closedShape: const CircleBorder(),
-              );
-            },
-          ),
-        );
-      },
+  /// 构建 FAB（仅日历 tab 显示新建日记入口）
+  Widget? _buildFab() {
+    if (_currentPage != 0) return null;
+    return DSThemeBridge(
+      // DSFab 内部取 AppTheme，需包桥
+      child: DSFab(
+        color: widget.plugin.color,
+        iconColor: Colors.white,
+        icon: DsIconKind.edit,
+        onPressed: () {
+          EntryEditorSheet.show(
+            context,
+            initialDate: _calendarController.selectedDate,
+            calendarController: _calendarController,
+            tagController: _tagController,
+          );
+        },
+      ),
     );
   }
 
@@ -225,6 +115,11 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
             ],
             child: AlbumScreen(key: const PageStorageKey('album')),
           ),
+          // Tab3: 统计视图
+          CalendarAlbumStatsView(
+            calendarController: _calendarController,
+            tagController: _tagController,
+          ),
         ],
       ),
       fab: _buildFab(),
@@ -235,6 +130,7 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
         ),
         DSNavItem(icon: DsIconKind.tag, label: 'calendar_album_tags'.tr),
         DSNavItem(icon: DsIconKind.image, label: 'calendar_album_album'.tr),
+        DSNavItem(icon: DsIconKind.chart, label: 'calendar_album_statsTab'.tr),
       ],
     );
   }

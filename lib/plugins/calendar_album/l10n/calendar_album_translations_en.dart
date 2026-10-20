@@ -191,5 +191,20 @@ class CalendarAlbumTranslationsEn {
     // Sample data
     'calendarAlbum_sampleEntriesTitle': 'Sample journal entries',
     'calendarAlbum_sampleEntriesDesc': 'Create date-grouped sample journal entries',
+
+    // Stats
+    'calendar_album_statsTab': 'Stats',
+    'calendar_album_statsToday': 'Today',
+    'calendar_album_statsTodayEntries': 'Entries Today',
+    'calendar_album_statsUnit': 'entries',
+    'calendar_album_statsVsYesterday': '@diff vs yesterday',
+    'calendar_album_statsSummary': '@total entries · @photos photos · @tags tags',
+    'calendar_album_statsStreak': '@count-day streak',
+    'calendar_album_statsNoEntries': 'No entries yet',
+    'calendar_album_statsTodayChart': 'Today',
+    'calendar_album_statsDailyChart': 'Last 7 Days',
+    'calendar_album_statsDailyAvg': 'Avg @count / day',
+    'calendar_album_statsCountLabel': '@count entries',
+    'calendar_album_statsTagChart': 'By Tag',
   };
 }

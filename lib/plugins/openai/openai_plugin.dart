@@ -8,6 +8,7 @@ import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/services/clipboard_service.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:uuid/uuid.dart';
@@ -679,8 +680,41 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
         setState(() {
           _currentPage = value;
         });
+        // 更新路由上下文
+        _updateRouteContext(value);
       }
     });
+
+    // 初始化时设置路由上下文
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateRouteContext(_currentPage);
+    });
+  }
+
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到当前tab状态
+  void _updateRouteContext(int tabIndex) {
+    String pageId;
+    String title;
+
+    switch (tabIndex) {
+      case 1:
+        pageId = '/openai/presets';
+        title = 'openai_promptPreset'.tr;
+        break;
+      case 2:
+        pageId = '/openai/chat';
+        title = 'agent_chat_aiChat'.tr;
+        break;
+      default:
+        pageId = '/openai/agents';
+        title = 'openai_agentsTab'.tr;
+    }
+
+    RouteHistoryManager.updateCurrentContext(
+      pageId: pageId,
+      title: title,
+      params: {'tabIndex': tabIndex},
+    );
   }
 
   @override

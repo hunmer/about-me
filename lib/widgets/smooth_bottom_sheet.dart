@@ -24,6 +24,8 @@ class SmoothBottomSheet {
   /// [showDragHandle] - 是否显示拖拽指示器，默认 true
   /// [enableDrag] - 是否启用拖拽，默认 true
   /// [minHeight] - 内容最小高度（含拖拽指示器），内容不足时撑开，默认不限制
+  ///
+  /// 抽屉高度上限为屏幕高度的 80%，超出部分由内容自行滚动。
   static Future<T?> show<T>({
     required BuildContext context,
     required Widget Function(BuildContext) builder,
@@ -158,6 +160,7 @@ class _SheetContent extends StatelessWidget {
         child: ConstrainedBox(
           constraints: BoxConstraints(
             minHeight: minHeight ?? 0,
+            maxHeight: MediaQuery.sizeOf(context).height * 0.8,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -240,8 +243,8 @@ class _SheetWithTitle extends StatelessWidget {
 
         const Divider(height: 1),
 
-        // 内容
-        child,
+        // 内容 - Flexible 限高，超高时由内容自行滚动
+        Flexible(child: child),
 
         // 底部操作按钮
         if (actions != null && actions!.isNotEmpty) ...[
