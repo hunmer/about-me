@@ -27,34 +27,6 @@ class EntryEditorTagHandler extends StatefulWidget {
 class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
   late final TagController tagController;
 
-  final List<({Color bg, Color text, Color border})> _colorStyles = [
-    (
-      bg: Colors.blue.shade50,
-      text: Colors.blue.shade700,
-      border: Colors.blue.shade100,
-    ),
-    (
-      bg: Colors.purple.shade50,
-      text: Colors.purple.shade700,
-      border: Colors.purple.shade100,
-    ),
-    (
-      bg: Colors.orange.shade50,
-      text: Colors.orange.shade800,
-      border: Colors.orange.shade100,
-    ),
-    (
-      bg: Colors.green.shade50,
-      text: Colors.green.shade800,
-      border: Colors.green.shade100,
-    ),
-    (
-      bg: Colors.pink.shade50,
-      text: Colors.pink.shade700,
-      border: Colors.pink.shade100,
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -64,46 +36,6 @@ class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
         widget.controller.entry != null) {
       widget.controller.selectedTags = List.from(widget.controller.entry!.tags);
     }
-  }
-
-  Widget _buildTagChip(String tag, int index) {
-    final style = _colorStyles[index % _colorStyles.length];
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: style.bg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: style.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '#$tag',
-            style: TextStyle(
-              color: style.text,
-              fontWeight: FontWeight.w500,
-              fontSize: 14,
-            ),
-          ),
-          if (!widget.readOnly) ...[
-            const SizedBox(width: 6),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  widget.controller.selectedTags.remove(tag);
-                });
-              },
-              child: Icon(
-                Icons.close,
-                size: 14,
-                color: style.text.withOpacity(0.6),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
   }
 
   /// 标签选择对话框内的文件夹卡片渲染：TagFolderCard + 选中态角标
@@ -144,64 +76,31 @@ class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
     );
   }
 
-  Widget _buildAddTagButton() {
-    return GestureDetector(
-      onTap: () async {
-        final result = await tagController.showTagManagerDialog(
-          context,
-          tagItemBuilder: _buildFolderTagItem,
-        );
-        if (result != null && mounted) {
-          setState(() {
-            widget.controller.selectedTags = List.from(result);
-          });
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.grey.shade300,
-            style: BorderStyle.solid,
-          ), // Simulating dashed with solid light grey for simplicity, or use CustomPaint if strict. The previous image handler used standard border, so consistent here.
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.add, size: 16, color: Colors.grey.shade600),
-            const SizedBox(width: 4),
-            Text(
-              'calendar_album_add_tag'.tr,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
+  @override
+  Widget build(BuildContext context) {
+    // 标签来自受管理的标签库，关闭行内自定义输入，仅经对话框增删
+    return DSTagInput(
+      tags: widget.controller.selectedTags,
+      onTagsChanged: widget.readOnly
+          ? null
+          : (tags) => setState(() {
+              widget.controller.selectedTags = List.from(tags);
+            }),
+      allowCustom: false,
+      addLabel: 'calendar_album_add_tag'.tr,
+      onAddPressed: widget.readOnly ? null : _showTagManagerDialog,
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            ...widget.controller.selectedTags.asMap().entries.map((entry) {
-              return _buildTagChip(entry.value, entry.key);
-            }),
-            if (!widget.readOnly) _buildAddTagButton(),
-          ],
-        ),
-      ],
+  Future<void> _showTagManagerDialog() async {
+    final result = await tagController.showTagManagerDialog(
+      context,
+      tagItemBuilder: _buildFolderTagItem,
     );
+    if (result != null && mounted) {
+      setState(() {
+        widget.controller.selectedTags = List.from(result);
+      });
+    }
   }
 }

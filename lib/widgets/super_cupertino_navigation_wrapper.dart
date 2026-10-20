@@ -523,7 +523,16 @@ class _SuperCupertinoNavigationWrapperState
                   child: widget.filterBarChild,
                 ),
               // 主体内容 - 根据搜索状态切换
-              Expanded(child: currentBody),
+              // iOS 上 SuperAppBar 的 header sliver 已含状态栏高度，页面内
+              // SafeArea 再读 MediaQuery.padding.top 会双重留白，故统一消耗
+              // 掉 top inset（各页面无需重复做平台判断）
+              Expanded(
+                child: MediaQuery.removePadding(
+                  context: context,
+                  removeTop: UniversalPlatform.isIOS,
+                  child: currentBody,
+                ),
+              ),
             ],
           ),
         ),

@@ -490,10 +490,17 @@ class _TagsDialogState extends State<TagsDialog> {
     final content = _buildContent();
 
     if (widget.displayMode == TagsDisplayMode.dialog) {
-      // sheet 面板（DsSketchPanel）已提供纸底背景，这里只约束高度
+      // sheet 面板（DsSketchPanel）已提供纸底背景，这里只约束高度。
+      // 弹层顶部不处于状态栏下方，须清掉 top inset：否则内嵌
+      // SuperCupertinoNavigationWrapper 的 SuperAppBar header 仍会
+      // 读 MediaQuery.padding.top 叠出一块状态栏高度的空白
       return SizedBox(
         height: MediaQuery.of(context).size.height * 0.85,
-        child: content,
+        child: MediaQuery.removePadding(
+          context: context,
+          removeTop: true,
+          child: content,
+        ),
       );
     }
 
