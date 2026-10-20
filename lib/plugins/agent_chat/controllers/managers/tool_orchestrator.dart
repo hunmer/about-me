@@ -64,7 +64,6 @@ class ToolOrchestrator {
         conversationId: context.conversationId,
         useJsTools: context.useJsTools?.call() ?? false,
         alivenessOnlyTools:
-            agent.alivenessConfig?.enabled == true &&
             !(enableToolCalling && agent.enableFunctionCalling),
         onUpdateMessage: onUpdateMessage,
         onImageDescription: (path, description) async {

@@ -813,24 +813,57 @@ class ChatController extends ChangeNotifier {
   Future<void> regenerateResponse(String messageId) async {
     debugPrint('🔄 重新生成消息: $messageId');
 
-    try {
-      final message = messageService.getMessage(conversation.id, messageId);
-      if (message != null && message.parentId != null) {
-        // 获取父消息（用户消息）
-        final parentMessage = messageService.getMessage(
-          conversation.id,
-          message.parentId!,
-        );
-        if (parentMessage != null) {
-          // 删除当前消息，重新生成
-          await messageService.deleteMessage(conversation.id, messageId);
-          // 重新发送父消息
-          await sendMessage();
-        }
+    if (_isSending || _isThinking) {
+      throw StateError('请先停止当前生成，再重新生成');
+    }
+
+    final history = List<ChatMessage>.from(messageService.currentMessages);
+    final messageIndex = history.indexWhere((m) => m.id == messageId);
+    if (messageIndex < 0 || history[messageIndex].isUser) {
+      throw StateError('未找到需要重新生成的 AI 消息');
+    }
+
+    // 普通链式回复没有 parentId，从目标消息向前查找本轮用户输入。
+    int userIndex = -1;
+    for (int i = messageIndex - 1; i >= 0; i--) {
+      if (history[i].isSessionDivider) break;
+      if (history[i].isUser) {
+        userIndex = i;
+        break;
       }
+    }
+    if (userIndex < 0) {
+      throw StateError('未找到对应的用户消息，无法重新生成');
+    }
+    final userMessage = history[userIndex];
+    debugPrint(
+      '🔄 重新生成上下文: userMessageId=${userMessage.id}, '
+      'historyCount=${userIndex + 1}, attachments=${userMessage.attachments.length}',
+    );
+
+    _isSending = true;
+    _isCancelling = false;
+    notifyListeners();
+    try {
+      await _agentManager.reloadCurrentAgents();
+      if (_agentManager.agentChain.isEmpty) {
+        throw StateError('未选择 Agent');
+      }
+      if (_isCancelling) return;
+
+      await messageService.deleteMessage(conversation.id, messageId);
+      await _agentChainExecutor.executeChain(
+        userInput: userMessage.content,
+        files: userMessage.attachments.map((a) => File(a.filePath)).toList(),
+        conversationHistory: history.sublist(0, userIndex + 1),
+      );
     } catch (e) {
       debugPrint('❌ 重新生成失败: $e');
       rethrow;
+    } finally {
+      _isSending = false;
+      _typingStatusText = null;
+      notifyListeners();
     }
   }
 

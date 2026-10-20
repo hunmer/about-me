@@ -57,7 +57,8 @@ class ChatMediaService {
         if (!descriptions.containsKey(path)) sources.putIfAbsent(path, () => message);
       }
     }
-    if (sources.isEmpty) {
+    final memoryEnabled = agent.alivenessConfig?.memoryEnabled == true;
+    if (sources.isEmpty && !memoryEnabled) {
       await RequestService.streamResponseWithRetry(
         agent: agent,
         prompt: prompt,
@@ -85,7 +86,8 @@ class ChatMediaService {
         contextMessages: contextMessages,
         files: resolvedSources.keys.map(File.new).toList(),
         isCancelling: shouldCancel,
-        imageOnlyTools: true,
+        imageOnlyTools: !memoryEnabled,
+        alivenessOnlyTools: memoryEnabled,
         onUpdateMessage: (text, _) {
           final delta = text.startsWith(emitted) ? text.substring(emitted.length) : text;
           emitted = text;

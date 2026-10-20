@@ -271,7 +271,15 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
               action(
                 DsIconKind.refresh,
                 '重新生成',
-                () => _controller.regenerateResponse(source.id),
+                () async {
+                  try {
+                    await _controller.regenerateResponse(source.id);
+                  } catch (e) {
+                    if (mounted) {
+                      toastService.showToast('重新生成失败: $e');
+                    }
+                  }
+                },
               ),
             if (!source.isUser && isToolCallMessage) ...[
               action(

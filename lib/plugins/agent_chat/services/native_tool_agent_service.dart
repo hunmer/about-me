@@ -19,6 +19,7 @@ import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 
@@ -198,7 +199,8 @@ class NativeToolAgentService {
     }.contains(agent.apiFormat.trim().toLowerCase());
     if (!hasNativeApiFormat) return false;
     return (enableToolCalling && agent.enableFunctionCalling) ||
-        agent.alivenessConfig?.enabled == true;
+        agent.alivenessConfig?.enabled == true ||
+        agent.alivenessConfig?.memoryEnabled == true;
   }
 
   Map<String, Map<String, ToolConfig>>? _toolConfigCache;
@@ -274,11 +276,14 @@ class NativeToolAgentService {
     var tools = allTools;
     if (alivenessOnlyTools) {
       tools = tools
-          .where((tool) => tool.name == 'moments' || tool.name == 'read_image')
+          .where((tool) =>
+              tool.name == 'read_image' ||
+              (tool.name == 'memory' && agent.alivenessConfig?.memoryEnabled == true) ||
+              (tool.name == 'moments' && agent.alivenessConfig?.enabled == true))
           .toList();
     }
     if (candidates != null && allTools.length > 30) {
-      tools = allTools
+      tools = tools
           .where(
             (t) =>
                 t.name == 'read_image' ||
@@ -302,6 +307,7 @@ class NativeToolAgentService {
       onRunJs: (args) => _dispatchJs(run, args),
       onGetCurrentTime: (_) => _dispatchCurrentTime(run),
       useJsTools: alivenessOnlyTools ? false : useJsTools,
+      builtInOnly: alivenessOnlyTools,
     );
     if (imageOnlyTools) {
       tools = tools.where((tool) => tool.name == 'read_image').toList();
@@ -333,13 +339,18 @@ class NativeToolAgentService {
     final system = cleanSystemExtras.isEmpty
         ? cleanSystemPrompt
         : '$cleanSystemPrompt\n\n$cleanSystemExtras';
-    final effectiveSystem = alivenessOnlyTools
+    final effectiveSystem = alivenessOnlyTools && agent.alivenessConfig?.enabled == true
         ? '$system\n\n[生图工具规则]\n'
               '当用户要求看你的照片、自拍、合照或某个场景的图片时，必须调用 moments.generate_image 并发送图片。'
               '用户提到的具体照片不在资产列表中，也不能因此拒绝：可以把用户描述写入 prompt，'
               '并按角色需要引用已有的「三视图」或其他资产做图生图；没有合适参考图时直接文生图。'
               '不要只回复“没有这张图”“无法生成”或解释自己是 AI。'
         : system;
+    final memorySystem = agent.alivenessConfig?.memoryEnabled == true
+        ? '$effectiveSystem\n\n[历史记忆检索]\n'
+            '需要回忆用户或你自己的过往、偏好、计划等信息时，调用 memory 工具按关键词检索。'
+            '当前注入的摘要只是部分记忆，未命中时应换关键词查询；不要编造，也不要仅凭摘要说没有记忆。'
+        : effectiveSystem;
 
     final isAnthropic = agent.apiFormat.toLowerCase() == 'anthropic';
     final Agent dartAgent;
@@ -383,7 +394,7 @@ class NativeToolAgentService {
       );
     }
 
-    final history = _convertHistory(contextMessages, effectiveSystem);
+    final history = _convertHistory(contextMessages, memorySystem);
     // 图片作为多模态附件（随 prompt 一起发送）
     // 图片不作为 DataPart 注入主会话，避免历史和当前请求携带 Base64。
     // 将路径提供给 read_image 工具，工具会在独立的多模态请求中解析。
@@ -506,6 +517,7 @@ class NativeToolAgentService {
     onRunJs,
     Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onGetCurrentTime,
     bool useJsTools = false,
+    bool builtInOnly = false,
   }) {
     final jsTool = Tool<Map<String, dynamic>>(
       name: 'run_js',
@@ -525,15 +537,17 @@ class NativeToolAgentService {
     );
     return [
       ...pluginTools.where((tool) => tool.name == 'read_image'),
-      if (!useJsTools)
+      if (!useJsTools || builtInOnly)
         ...pluginTools.where((tool) => tool.name != 'read_image'),
+      if (useJsTools && !builtInOnly)
+        ...pluginTools.where((tool) => tool.name == 'memory'),
       Tool<Map<String, dynamic>>(
         name: 'get_current_time',
         description: '获取设备当前日期、时间和时区。处理今天、明天等相对日期前调用；日期时间参数需保留返回的时区偏移。',
         inputSchema: Schema.fromMap(ToolSchemaBuilder.buildSchemaMap([])),
         onCall: onGetCurrentTime ?? (_) async => currentTimeData(DateTime.now()),
       ),
-      jsTool,
+      if (!builtInOnly) jsTool,
     ];
   }
 
@@ -576,6 +590,8 @@ class NativeToolAgentService {
     final tools = <Tool<Map<String, dynamic>>>[];
     for (final entry in _toolConfigCache!.entries) {
       final pluginId = entry.key;
+      // 记忆作为内置只读能力，不依赖插件工具配置和 JS 桥接。
+      if (pluginId == 'memory') continue;
       final methods = entry.value;
       final methodNames = methods.keys.toList()..sort();
       final argsProperties = <String, Object?>{};
@@ -630,6 +646,32 @@ class NativeToolAgentService {
             'required': <String>['method', 'args'],
           }),
           onCall: (args) => _dispatch(run, pluginId, args),
+        ),
+      );
+    }
+    if (imageAgent.alivenessConfig?.memoryEnabled == true) {
+      tools.add(
+        Tool<Map<String, dynamic>>(
+          name: 'memory',
+          description: '检索当前 Agent 的历史记忆（包括关于用户与自己的记忆）。query 为相关关键词；为空时读取核心记忆。',
+          inputSchema: Schema.fromMap(<String, Object?>{
+            'type': 'object',
+            'properties': <String, Object?>{
+              'query': <String, Object?>{'type': 'string'},
+            },
+          }),
+          onCall: (args) async {
+            run.toolCallCount++;
+            if (run.toolCallCount > maxToolCallsPerLoop) {
+              return {'error': '记忆检索已达工具调用上限，请基于已有结果回答'};
+            }
+            final results = await MemoryService.instance.searchForTool(
+              run.agentId, args['query'] as String?,
+            );
+            debugPrint('[NativeTool][记忆读取] agent=${run.agentId} '
+                'query=${args['query']} hits=${results.length}');
+            return {'memories': results};
+          },
         ),
       );
     }

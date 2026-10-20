@@ -8,6 +8,7 @@ class MemoryFragment {
   final List<String> tags; // 激活关键词（2~4 个）
   final String? emotionTag; // 情绪标签
   final bool isSelf; // true = 关于 AI 自己的记忆（自我碎片）；false = 关于用户的
+  final String category; // 分类索引；旧记忆归入 other
   double importance; // 0~1
   bool userMarked; // 用户手动标记（不参与遗忘），管理页可切换
   bool archived; // 遗忘后归档，不再激活
@@ -21,6 +22,7 @@ class MemoryFragment {
     required this.tags,
     this.emotionTag,
     this.isSelf = false,
+    this.category = 'other',
     this.importance = 0.5,
     this.userMarked = false,
     this.archived = false,
@@ -40,6 +42,7 @@ class MemoryFragment {
     'id': id,
     'content': content,
     'tags': tags,
+    'category': category,
     'emotionTag': emotionTag,
     if (isSelf) 'isSelf': true,
     'importance': importance,
@@ -57,6 +60,7 @@ class MemoryFragment {
         tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? const [],
         emotionTag: json['emotionTag'] as String?,
         isSelf: json['isSelf'] as bool? ?? false,
+        category: json['category'] as String? ?? 'other',
         importance:
             ((json['importance'] as num?)?.toDouble() ?? 0.5).clamp(0.0, 1.0),
         userMarked: json['userMarked'] as bool? ?? false,

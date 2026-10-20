@@ -85,6 +85,7 @@ class AgentChainExecutor {
     required List<File> files,
     SavedToolTemplate? selectedTemplate,
     String? alivenessSystemSuffix,
+    List<ChatMessage>? conversationHistory,
   }) async {
     // 从服务中获取最新的会话数据，避免使用过时的快照
     final latestConversation = context.conversationService.getConversation(
@@ -186,6 +187,7 @@ class AgentChainExecutor {
           enableToolCalling: agent.enableFunctionCalling,
           conv: latestConversation,
           alivenessSystemSuffix: effectiveSuffix,
+          conversationHistory: conversationHistory,
         );
 
         // 调用当前 agent
@@ -278,6 +280,7 @@ class AgentChainExecutor {
     bool enableToolCalling = false,
     Conversation? conv,
     String? alivenessSystemSuffix,
+    List<ChatMessage>? conversationHistory,
   }) {
     // 使用传入的会话或默认的 conversation
     final targetConversation = conv ?? conversation;
@@ -357,6 +360,7 @@ class AgentChainExecutor {
         final historyMessages = _buildConversationContextMessages(
           userInput,
           targetConversation,
+          conversationHistory,
         );
         messages.addAll(historyMessages);
         break;
@@ -826,6 +830,7 @@ class AgentChainExecutor {
   List<ChatCompletionMessage> _buildConversationContextMessages(
     String userInput, [
     Conversation? conv,
+    List<ChatMessage>? conversationHistory,
   ]) {
     // 使用传入的会话或默认的 conversation
     final targetConversation = conv ?? conversation;
@@ -835,7 +840,8 @@ class AgentChainExecutor {
     final messages = <ChatCompletionMessage>[];
 
     // 获取历史消息（排除正在生成的消息）
-    final allMessages = context.messageService.currentMessages;
+    final allMessages =
+        conversationHistory ?? context.messageService.currentMessages;
     final historyMessages = allMessages
         .where((msg) => !msg.isGenerating)
         .toList();

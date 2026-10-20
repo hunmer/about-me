@@ -43,6 +43,28 @@ void main() {
       expect(tools.last.description, isNot(contains('账单插件')));
     });
 
+    test('JS 模式仍保留内置记忆，关闭通用工具时不提供 run_js', () {
+      final memory = Tool<Map<String, dynamic>>(
+        name: 'memory',
+        description: '历史记忆',
+        inputSchema: Schema.fromMap(ToolSchemaBuilder.buildSchemaMap([])),
+        onCall: (_) async => {'memories': []},
+      );
+      final jsMode = NativeToolAgentService.buildToolSet(
+        pluginTools: [pluginTool, memory],
+        onRunJs: (_) async => {},
+        useJsTools: true,
+      );
+      expect(jsMode.map((t) => t.name), ['memory', 'get_current_time', 'run_js']);
+      final builtInMode = NativeToolAgentService.buildToolSet(
+        pluginTools: [memory],
+        onRunJs: (_) async => {},
+        useJsTools: true,
+        builtInOnly: true,
+      );
+      expect(builtInMode.map((t) => t.name), ['memory', 'get_current_time']);
+    });
+
     test('开启 JS 模式时保留时间工具与 run_js', () {
       final tools = NativeToolAgentService.buildToolSet(
         pluginTools: [pluginTool],
@@ -336,6 +358,21 @@ void main() {
       );
 
       expect(NativeToolAgentService.instance.supports(agent, true), isFalse);
+    });
+
+    test('独立记忆开启时不依赖通用工具调用或活人感开关', () {
+      final agent = AIAgent.fromJson({
+        'id': 'memory-agent', 'name': 'Memory', 'description': '',
+        'serviceProviderId': 'test', 'baseUrl': 'https://example.com/v1',
+        'headers': <String, String>{}, 'model': 'test',
+        'enableFunctionCalling': false,
+        'alivenessConfig': {'enabled': false, 'memoryEnabled': true},
+      });
+      expect(NativeToolAgentService.instance.supports(agent, false), true);
+      expect(NativeToolAgentService.instance.supports(agent, true), true);
+      expect(NativeToolAgentService.instance.supports(agent.copyWith(
+        alivenessConfig: const AlivenessConfig(memoryEnabled: false),
+      ), false), false);
     });
 
     test('活人感开启时不依赖通用工具调用开关', () {
