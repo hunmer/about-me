@@ -62,6 +62,8 @@ final Map<String, String> dayTranslationsEn = {
   'day_searchHintSubtitle': 'Searches titles and notes',
   'day_searchNoResult': 'No matching memorial days',
   'day_searchNoResultHint': 'Try different keywords',
+  'day_tabList': 'List',
+  'day_tabCalendar': 'Calendar',
   'day_tagCountdown': 'Countdown',
   'day_tagPassed': 'Remembered',
   'day_tagToday': 'Today',

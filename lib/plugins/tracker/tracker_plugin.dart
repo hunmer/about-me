@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:get/get.dart';
 import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_base.dart';
@@ -13,6 +15,7 @@ import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/plugins/tracker/models/goal.dart';
 import 'package:aboutme/plugins/tracker/screens/goal_detail_screen.dart';
 import 'package:aboutme/plugins/tracker/screens/search_results_screen.dart';
+import 'package:aboutme/plugins/tracker/screens/stats_screen.dart';
 import 'package:aboutme/plugins/tracker/widgets/goal_edit_page.dart';
 import 'package:provider/provider.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -61,13 +64,26 @@ class TrackerMainView extends StatefulWidget {
   State<TrackerMainView> createState() => _TrackerMainViewState();
 }
 
-class _TrackerMainViewState extends State<TrackerMainView> {
+class _TrackerMainViewState extends State<TrackerMainView>
+    with SingleTickerProviderStateMixin {
   String _searchQuery = '';
   bool _isGridView = true;
+  late final TabController _tabController;
+  int _currentPage = 0;
+  final GlobalKey _bottomBarKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.animation?.addListener(() {
+      final value = _tabController.animation!.value.round();
+      if (value != _currentPage && mounted) {
+        setState(() {
+          _currentPage = value;
+        });
+      }
+    });
     // 恢复持久化的视图偏好（默认网格）
     _isGridView = TrackerPlugin.instance.settings['is_grid_view'] != false;
     // 如果有 initialGoalId，在初始化后跳转到目标详情
@@ -76,6 +92,12 @@ class _TrackerMainViewState extends State<TrackerMainView> {
         _navigateToGoalDetail(widget.initialGoalId!);
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   void _toggleGridView() {
@@ -98,6 +120,28 @@ class _TrackerMainViewState extends State<TrackerMainView> {
 
   @override
   Widget build(BuildContext context) {
+    return CustomBottomBar(
+      currentIndex: _currentPage,
+      tabController: _tabController,
+      bottomBarKey: _bottomBarKey,
+      body: (context, controller) => TabBarView(
+        controller: _tabController,
+        dragStartBehavior: DragStartBehavior.down,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          _buildGoalsView(),
+          const TrackerStatsView(),
+        ],
+      ),
+      items: [
+        DSNavItem(icon: DsIconKind.target, label: 'tracker_goalTracking'.tr),
+        DSNavItem(icon: DsIconKind.chart, label: 'tracker_statsTab'.tr),
+      ],
+    );
+  }
+
+  /// 目标列表 tab（原主视图，含搜索与导航栏操作）
+  Widget _buildGoalsView() {
     final theme = DSThemeBridge.resolve(context);
     return SuperCupertinoNavigationWrapper(
       title: Text(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_info.dart';
@@ -278,6 +279,20 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
       // 新建模式：无已存配置，直接放行
       _configLoaded = true;
     }
+
+    // 上报路由上下文，供"询问当前上下文"识别
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final isEdit = widget.script != null;
+      RouteHistoryManager.updateCurrentContext(
+        pageId: '/scripts_center/edit',
+        title: widget.script?.name ?? 'scripts_center_newScript'.tr,
+        params: {
+          'mode': isEdit ? '编辑' : (widget.initialData != null ? '导入' : '新建'),
+          'scriptName': widget.script?.name ?? '',
+        },
+      );
+    });
   }
 
   /// 应用配置文件数据（兼容新 profiles 格式与旧扁平格式）

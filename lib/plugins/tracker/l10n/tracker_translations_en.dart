@@ -112,5 +112,21 @@ class TrackerTranslationsEn {
     'tracker_invalidNumberError': 'Please enter a valid number',
     'tracker_cancelComplete': 'Mark incomplete',
     'tracker_completeNow': 'Complete',
+
+    // Stats
+    'tracker_statsTab': 'Stats',
+    'tracker_statsToday': 'Today',
+    'tracker_statsTodayRecords': 'Records Today',
+    'tracker_statsUnit': 'records',
+    'tracker_statsVsYesterday': '@diff vs yesterday',
+    'tracker_statsSummary': '@active active · @done done',
+    'tracker_statsActiveGoals': '@count goals tracked today',
+    'tracker_statsTodayChart': 'Records Today',
+    'tracker_statsDailyChart': 'Last 7 Days',
+    'tracker_statsDailyAvg': 'Avg @count / day',
+    'tracker_statsCountLabel': '@count records',
+    'tracker_statsGroupChart': 'By Group',
+    'tracker_statsNoGoals': 'No goals yet',
+    'tracker_statsNoGoalsHint': 'Create a goal to start tracking',
   };
 }

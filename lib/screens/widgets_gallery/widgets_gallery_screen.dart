@@ -260,6 +260,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
             subtitle: 'SwatchCameraFrame（相机比例样式：原始 / 9:16 / 16:9）',
             route: '/widgets_gallery/swatch_camera_frame',
           ),
+          _buildListItem(
+            context,
+            icon: Icons.receipt_long,
+            title: '热敏打印账单',
+            subtitle: 'RunReceiptPrinter（热敏打印机吐纸动画，支持拖拽查看）',
+            route: '/widgets_gallery/run_receipt_printer',
+          ),
         ],
       ),
     );

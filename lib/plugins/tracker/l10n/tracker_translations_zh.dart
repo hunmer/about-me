@@ -108,5 +108,21 @@ class TrackerTranslationsZh {
     'tracker_invalidNumberError': '请输入有效的数字',
     'tracker_cancelComplete': '取消完成',
     'tracker_completeNow': '一键完成',
+
+    // 统计页
+    'tracker_statsTab': '统计',
+    'tracker_statsToday': '今日',
+    'tracker_statsTodayRecords': '今日记录',
+    'tracker_statsUnit': '条',
+    'tracker_statsVsYesterday': '@diff 较昨日',
+    'tracker_statsSummary': '进行中 @active · 已完成 @done',
+    'tracker_statsActiveGoals': '今日打卡 @count 个目标',
+    'tracker_statsTodayChart': '今日记录分布',
+    'tracker_statsDailyChart': '每日记录分布',
+    'tracker_statsDailyAvg': '日均 @count 条',
+    'tracker_statsCountLabel': '@count 条记录',
+    'tracker_statsGroupChart': '分组分布',
+    'tracker_statsNoGoals': '还没有目标',
+    'tracker_statsNoGoalsHint': '先创建一个目标开始追踪',
   };
 }

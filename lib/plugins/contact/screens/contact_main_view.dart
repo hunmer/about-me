@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lpinyin/lpinyin.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/aboutme_sf_calendar/aboutme_sf_calendar.dart';
+import 'package:aboutme/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 
@@ -14,6 +17,7 @@ import 'package:aboutme/plugins/contact/contact_plugin.dart';
 import 'package:aboutme/plugins/contact/controllers/contact_controller.dart';
 import 'package:aboutme/plugins/contact/models/contact_model.dart';
 import 'package:aboutme/plugins/contact/models/filter_sort_config.dart';
+import 'package:aboutme/plugins/contact/models/interaction_record_model.dart';
 import 'package:aboutme/plugins/contact/screens/contact_detail_screen.dart';
 import 'package:aboutme/plugins/contact/widgets/contact_form.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -34,6 +38,14 @@ class ContactMainViewState extends State<ContactMainView> {
   List<Contact> _searchResults = [];
   String _currentSearchQuery = '';
   bool _isSearching = false;
+
+  // 当前 tab：0 联系人列表 / 1 日历
+  int _currentTab = 0;
+
+  // 日历 tab 数据（联系人 + 联系记录）
+  late CalendarController _calendarController;
+  List<Contact> _calendarContacts = [];
+  List<InteractionRecord> _interactions = [];
 
   // 多条件过滤参数
   Map<String, dynamic> _multiFilters = {};
@@ -98,6 +110,10 @@ class ContactMainViewState extends State<ContactMainView> {
     // 加载标签（用于多条件过滤）
     _loadAvailableTags();
 
+    // 加载日历 tab 数据（联系人 + 联系记录）
+    _calendarController = CalendarController()..displayDate = DateTime.now();
+    _loadCalendarData();
+
     // 加载持久化过滤配置（回显到多条件过滤栏）
     _loadInitialFilters();
   }
@@ -110,7 +126,25 @@ class ContactMainViewState extends State<ContactMainView> {
     EventManager.instance.unsubscribe('contact_updated', _handleSyncRefresh);
     EventManager.instance.unsubscribe('contact_deleted', _handleSyncRefresh);
     _listController.dispose();
+    _calendarController.dispose();
     super.dispose();
+  }
+
+  /// 加载日历 tab 数据（联系人 + 联系记录）
+  Future<void> _loadCalendarData() async {
+    final contacts = await _controller.getAllContacts();
+    final interactions = await _controller.getAllInteractions();
+    if (!mounted) return;
+    setState(() {
+      _calendarContacts = contacts;
+      _interactions = interactions;
+    });
+  }
+
+  /// 切换底部 dock tab；进入日历时刷新记录
+  void _switchTab(int index) {
+    setState(() => _currentTab = index);
+    if (index == 1) _loadCalendarData();
   }
 
   /// 处理同步刷新事件
@@ -297,6 +331,7 @@ class ContactMainViewState extends State<ContactMainView> {
     if (mounted) {
       setState(() {});
       _loadAvailableTags();
+      _loadCalendarData();
     }
   }
 
@@ -340,6 +375,64 @@ class ContactMainViewState extends State<ContactMainView> {
         ),
       ],
     );
+  }
+
+  /// 弧形圆盘底部导航：列表 / 日历 双 tab，"+" 停靠子栏右圆钮位
+  Widget _buildDock(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
+      child: DSBottomNavigation(
+        items: [
+          DSNavItem(icon: DsIconKind.user, label: 'contact_tabList'.tr),
+          DSNavItem(icon: DsIconKind.calendar, label: 'contact_tabCalendar'.tr),
+        ],
+        currentIndex: _currentTab,
+        onTap: _switchTab,
+        frosted: true,
+        // fab 停靠到子栏右圆钮位置：等比缩到 35，与其他圆钮（35 圆）同尺寸
+        floatingAction: SizedBox(
+          width: 35,
+          height: 35,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: DSFab(key: _addButtonKey, onPressed: _addContact),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 日历 tab：月视图 + 议程，标记各联系人的联系记录
+  Widget _buildCalendarTab(BuildContext context) {
+    return Padding(
+      // 底部让位悬浮 dock
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.paddingOf(context).bottom + 110,
+      ),
+      child: AboutmeSfCalendar(
+        controller: _calendarController,
+        view: CalendarView.month,
+        showAgenda: true,
+        firstDayOfWeek: 1,
+        appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+        dataSource: ContactInteractionCalendarDataSource(
+          _calendarContacts,
+          _interactions,
+        ),
+        onTap: _onCalendarTap,
+      ),
+    );
+  }
+
+  /// 点击日历日程进入联系人详情
+  void _onCalendarTap(CalendarTapDetails details) {
+    final appointments = details.appointments;
+    if (appointments != null && appointments.isNotEmpty) {
+      final appointment = appointments.first;
+      if (appointment is ContactInteractionAppointment) {
+        _openDetail(appointment.contact);
+      }
+    }
   }
 
   /// 加载所有标签（用于多条件过滤）
@@ -521,7 +614,8 @@ class ContactMainViewState extends State<ContactMainView> {
         ListView.builder(
           controller: _listController,
           padding: EdgeInsets.only(
-            bottom: MediaQuery.paddingOf(context).bottom,
+            // 底部让位悬浮 dock
+            bottom: MediaQuery.paddingOf(context).bottom + 110,
           ),
           itemCount: totalItems,
           itemBuilder: (context, index) {
@@ -720,49 +814,117 @@ class ContactMainViewState extends State<ContactMainView> {
         enableMultiFilter: true,
         multiFilterItems: _buildFilterItems(),
         onMultiFilterChanged: _applyMultiFilters,
-        body: _buildFabStack(
-          FutureBuilder<List<Contact>>(
-            future: _getFilteredContacts(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                return Center(child: Text('contact_errorMessage'.tr));
-              }
-
-              final contacts = snapshot.data ?? [];
-
-              if (contacts.isEmpty) {
-                final theme = DSThemeBridge.resolve(context);
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+        body: DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              return Stack(
+                children: [
+                  // tab 内容：0 联系人列表 / 1 日历
+                  LazyIndexedStack(
+                    index: _currentTab,
                     children: [
-                      DsIcon(
-                        DsIconKind.search,
-                        size: 64,
-                        color: theme.textSub.withValues(alpha: 0.6),
+                      FutureBuilder<List<Contact>>(
+                        future: _getFilteredContacts(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text('contact_errorMessage'.tr),
+                            );
+                          }
+
+                          final contacts = snapshot.data ?? [];
+
+                          if (contacts.isEmpty) {
+                            final theme = DSThemeBridge.resolve(context);
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  DsIcon(
+                                    DsIconKind.search,
+                                    size: 64,
+                                    color: theme.textSub.withValues(alpha: 0.6),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'contact_noContacts'.tr,
+                                    style: DsTypography.title.copyWith(
+                                      color: theme.textSub,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return _buildGroupedContactList(contacts);
+                        },
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'contact_noContacts'.tr,
-                        style: DsTypography.title.copyWith(
-                          color: theme.textSub,
-                        ),
-                      ),
+                      _buildCalendarTab(context),
                     ],
                   ),
-                );
-              }
-
-              return _buildGroupedContactList(contacts);
+                  // 弧形圆盘底部导航（悬浮 dock，+ 钮停靠右圆钮位）
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: SafeArea(
+                      top: false,
+                      child: _buildDock(context),
+                    ),
+                  ),
+                ],
+              );
             },
           ),
         ),
         enableLargeTitle: true,
       ),
     );
+  }
+}
+
+/// 联系记录日程（携带联系人引用，供点击回跳详情）
+class ContactInteractionAppointment extends Appointment {
+  final Contact contact;
+
+  ContactInteractionAppointment({
+    required super.startTime,
+    required super.endTime,
+    required super.subject,
+    required super.color,
+    required this.contact,
+  });
+}
+
+/// 联系记录日历数据源：把各联系人名下的联系记录映射为日程
+class ContactInteractionCalendarDataSource extends CalendarDataSource {
+  ContactInteractionCalendarDataSource(
+    List<Contact> contacts,
+    List<InteractionRecord> interactions,
+  ) {
+    final contactsById = {for (final contact in contacts) contact.id: contact};
+    final appointments = <ContactInteractionAppointment>[];
+    for (final record in interactions) {
+      final contact = contactsById[record.contactId];
+      if (contact == null) continue;
+      appointments.add(
+        ContactInteractionAppointment(
+          startTime: record.date,
+          endTime: record.date.add(const Duration(hours: 1)),
+          subject: contact.name,
+          color: contact.iconColor,
+          contact: contact,
+        ),
+      );
+    }
+    this.appointments = appointments;
   }
 }

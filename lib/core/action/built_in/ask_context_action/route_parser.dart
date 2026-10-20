@@ -124,6 +124,9 @@ class RouteParser {
     '/day_new': '用户正在新建纪念日',
     '/nodes': '用户正在查看知识库',
     '/scripts_center': '用户正在查看脚本中心',
+    '/scripts_center/logs': '用户正在查看脚本执行记录',
+    '/scripts_center/store': '用户正在查看插件商场',
+    '/scripts_center/edit': '用户正在{mode}脚本：{scriptName}',
     '/store': '用户正在查看商店',
     '/store/my_items': '用户正在查看我的物品（{itemCount} 件）',
     '/store/points_history': '用户正在查看积分历史（当前积分：{points}）',
@@ -231,6 +234,10 @@ class RouteParser {
     '/timer': ['分析我的计时使用情况', '帮我总结时间开销'],
     '/timer_main': ['总结这组计时器的使用情况', '分析我的时间分配'],
     '/timer_stats': ['分析我的时间分配', '总结最近的时间开销'],
+    '/scripts_center': ['总结我安装的脚本', '帮我写一个自动化脚本'],
+    '/scripts_center/logs': ['分析最近的脚本执行情况', '哪个脚本经常失败？'],
+    '/scripts_center/store': ['推荐一些实用的脚本', '总结商场里有哪些分类'],
+    '/scripts_center/edit': ['帮我实现这个脚本的功能', '检查这个脚本有什么问题'],
     '/timer_details': ['分析这个任务的计时情况', '总结这个任务的时间开销'],
   };
 

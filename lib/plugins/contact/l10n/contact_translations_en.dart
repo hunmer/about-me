@@ -117,6 +117,8 @@ const Map<String, String> contactTranslationsEn = {
   'contact_searchPlaceholder': 'Search contacts by name, phone, notes...',
   'contact_searchNoResults': 'No matching contacts found',
   'contact_searchHintEmpty': 'Type keywords to search contacts',
+  'contact_tabList': 'List',
+  'contact_tabCalendar': 'Calendar',
   // Home Widget Strings
   'contact_widgetName': 'Contacts',
   'contact_widgetDescription': 'Quick access to contacts',

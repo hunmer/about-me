@@ -2,8 +2,11 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/aboutme_sf_calendar/aboutme_sf_calendar.dart';
+import 'package:aboutme/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/day/controllers/day_controller.dart';
 import 'package:aboutme/plugins/day/widgets/sketch_milestone_card.dart';
@@ -31,12 +34,18 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
   // 搜索查询状态
   String _searchQuery = '';
 
+  // 当前 tab：0 手绘网格 / 1 日历
+  int _currentTab = 0;
+
   late DayController _controller;
+  late CalendarController _calendarController;
 
   @override
   void initState() {
     super.initState();
     _controller = DayController();
+    _calendarController = CalendarController()
+      ..displayDate = DateTime.now();
     _initializeController();
     // 订阅同步刷新事件
     EventManager.instance.subscribe('day_refresh', _handleSyncRefresh);
@@ -58,6 +67,7 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
       'memorial_day_deleted',
       _handleSyncRefresh,
     );
+    _calendarController.dispose();
     super.dispose();
   }
 
@@ -207,15 +217,22 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
                 builder: (context) {
                   return Stack(
                     children: [
-                      _buildBody(context, controller),
-                      // FAB 覆盖层
+                      // tab 内容：0 手绘网格 / 1 日历
+                      LazyIndexedStack(
+                        index: _currentTab,
+                        children: [
+                          _buildBody(context, controller),
+                          _buildCalendarTab(context, controller),
+                        ],
+                      ),
+                      // 弧形圆盘底部导航（悬浮 dock，+ 钮停靠右圆钮位）
                       Positioned(
-                        bottom: 16,
-                        right: 16,
-                        child: DSIconButton(
-                          icon: DsIconKind.plus,
-                          size: 56,
-                          onPressed: () => _showEditDialog(context),
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: SafeArea(
+                          top: false,
+                          child: _buildDock(context),
                         ),
                       ),
                     ],
@@ -320,6 +337,65 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
     return _buildGrid(context, controller.memorialDays, controller.isDraggable);
   }
 
+  /// 弧形圆盘底部导航：列表 / 日历 双 tab，"+" 停靠子栏右圆钮位
+  Widget _buildDock(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
+      child: DSBottomNavigation(
+        items: [
+          DSNavItem(icon: DsIconKind.grid, label: 'day_tabList'.tr),
+          DSNavItem(icon: DsIconKind.calendar, label: 'day_tabCalendar'.tr),
+        ],
+        currentIndex: _currentTab,
+        onTap: (index) => setState(() => _currentTab = index),
+        frosted: true,
+        // fab 停靠到子栏右圆钮位置：等比缩到 35，与其他圆钮（35 圆）同尺寸
+        floatingAction: SizedBox(
+          width: 35,
+          height: 35,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: DSIconButton(
+              icon: DsIconKind.plus,
+              size: 56,
+              color: theme.primary,
+              onPressed: () => _showEditDialog(context),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 日历 tab：月视图 + 议程，标记各纪念日的发生日期
+  Widget _buildCalendarTab(BuildContext context, DayController controller) {
+    return Padding(
+      // 底部让位悬浮 dock
+      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + 110),
+      child: AboutmeSfCalendar(
+        controller: _calendarController,
+        view: CalendarView.month,
+        showAgenda: true,
+        firstDayOfWeek: 1,
+        appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+        dataSource: MemorialDayCalendarDataSource(controller.memorialDays),
+        onTap: _onCalendarTap,
+      ),
+    );
+  }
+
+  /// 点击日历日程进入纪念日详情
+  void _onCalendarTap(CalendarTapDetails details) {
+    final appointments = details.appointments;
+    if (appointments != null && appointments.isNotEmpty) {
+      final appointment = appointments.first;
+      if (appointment is MemorialDayAppointment) {
+        _openDetail(context, appointment.memorialDay);
+      }
+    }
+  }
+
   /// 2 列里程碑卡片网格（手动排序模式下支持拖拽）
   Widget _buildGrid(
     BuildContext context,
@@ -337,8 +413,8 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
       left: 16,
       right: 16,
       top: 16,
-      // 底部让位 FAB
-      bottom: MediaQuery.paddingOf(context).bottom + 90,
+      // 底部让位悬浮 dock
+      bottom: MediaQuery.paddingOf(context).bottom + 120,
     );
 
     Widget cardBuilder(BuildContext context, int index) {
@@ -451,5 +527,69 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
         },
       ),
     );
+  }
+}
+
+/// 纪念日日程（携带纪念日引用，供点击回跳详情）
+class MemorialDayAppointment extends Appointment {
+  final MemorialDay memorialDay;
+
+  MemorialDayAppointment({
+    required super.startTime,
+    required super.endTime,
+    required super.subject,
+    required super.color,
+    required this.memorialDay,
+  });
+}
+
+/// 纪念日日历数据源
+class MemorialDayCalendarDataSource extends CalendarDataSource {
+  MemorialDayCalendarDataSource(List<MemorialDay> days) {
+    final appointments = <MemorialDayAppointment>[];
+    for (final day in days) {
+      for (final date in upcomingDates(day)) {
+        appointments.add(
+          MemorialDayAppointment(
+            startTime: date,
+            endTime: date,
+            subject: day.title,
+            color: day.backgroundColor,
+            memorialDay: day,
+          ),
+        );
+      }
+    }
+    this.appointments = appointments;
+  }
+
+  /// 纪念日的发生日期：非循环取生效日期一次；循环展开未来一年内的各次
+  static List<DateTime> upcomingDates(MemorialDay day) {
+    final first = day.effectiveTargetDate;
+    final start = DateTime(first.year, first.month, first.day);
+    if (!day.isRecurring) return [start];
+
+    final horizon = DateTime.now().add(const Duration(days: 365));
+    final dates = <DateTime>[start];
+    var next = start;
+    while (dates.length < 12) {
+      next = switch (day.recurrenceUnit) {
+        RecurrenceUnit.days => next.add(Duration(days: day.recurrenceInterval)),
+        RecurrenceUnit.months => DateTime(
+          next.year,
+          next.month + day.recurrenceInterval,
+          next.day,
+        ),
+        RecurrenceUnit.years => DateTime(
+          next.year + day.recurrenceInterval,
+          next.month,
+          next.day,
+        ),
+        null => next,
+      };
+      if (next.isAfter(horizon)) break;
+      dates.add(next);
+    }
+    return dates;
   }
 }

@@ -62,6 +62,8 @@ final Map<String, String> dayTranslationsZh = {
   'day_searchHintSubtitle': '支持搜索标题和笔记内容',
   'day_searchNoResult': '未找到匹配的纪念日',
   'day_searchNoResultHint': '尝试使用其他关键词搜索',
+  'day_tabList': '列表',
+  'day_tabCalendar': '日历',
   'day_tagCountdown': '倒计时',
   'day_tagPassed': '已纪念',
   'day_tagToday': '就是今天',

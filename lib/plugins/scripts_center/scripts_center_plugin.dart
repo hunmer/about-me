@@ -13,6 +13,7 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event_args.dart' as event_args;
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -504,6 +505,27 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
     _plugin =
         PluginManager.instance.getPlugin('scripts_center')
             as ScriptsCenterPlugin;
+    // 初始化时设置路由上下文
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateRouteContext(_currentIndex);
+    });
+  }
+
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到当前页签状态
+  /// （IndexedStack 常驻构建，切页签不触发子页 initState）
+  void _updateRouteContext(int index) {
+    if (!mounted) return;
+    const pageIds = [
+      '/scripts_center',
+      '/scripts_center/logs',
+      '/scripts_center/store',
+    ];
+    const titles = ['脚本', '执行记录', '插件商场'];
+    RouteHistoryManager.updateCurrentContext(
+      pageId: pageIds[index.clamp(0, pageIds.length - 1)],
+      title: titles[index.clamp(0, titles.length - 1)],
+      params: {'tabIndex': index},
+    );
   }
 
   void _setSearchQuery(String query) {
@@ -614,6 +636,7 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
                       setState(() {
                         _currentIndex = index;
                       });
+                      _updateRouteContext(index);
                     },
                     // 子栏右侧圆钮：新建/导入脚本菜单（无子栏胶囊，
                     // 恒传 never 保持仅 dock 的紧凑占位）

@@ -26,6 +26,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/half_circle_gauge_widget
 import 'package:aboutme/screens/widgets_gallery/screens/widget_config_editor_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/preset_edit_form_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/super_cupertino_navigation_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/run_receipt_printer_example.dart';
 
 import 'package:aboutme/screens/widgets_gallery/screens/segmented_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/circular_progress_card_example.dart';
@@ -1030,6 +1031,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: 'AI 人格选择轮播（发光小人 / 自定义展示组件）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/run_receipt_printer',
+      handler: (settings) => RouteHelpers.createRoute(
+        const RunReceiptPrinterExample(),
+        settings: settings,
+      ),
+      description: '热敏打印 Run Receipt 账单（吐纸动画 + 拖拽查看）',
     ),
   ];
 }
