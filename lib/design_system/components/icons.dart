@@ -131,6 +131,7 @@ enum DsIconKind {
   shuffle,
   driveFileMove,
   shelf,
+  print,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -203,8 +204,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.blur: Icons.blur_on,
   DsIconKind.opacity: Icons.opacity,
   DsIconKind.tune: Icons.tune,
-  DsIconKind.switchAccount: Icons.switch_account,
-  DsIconKind.code: Icons.code,
+  DsIconKind.switchAccount: Icons.switch_account,  DsIconKind.code: Icons.code,
   DsIconKind.chart: Icons.bar_chart,
   DsIconKind.nfc: Icons.nfc,
   DsIconKind.eyeOff: Icons.visibility_off_outlined,
@@ -260,6 +260,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.shuffle: Icons.shuffle,
   DsIconKind.driveFileMove: Icons.drive_file_move,
   DsIconKind.shelf: Icons.video_library,
+  DsIconKind.print: Icons.print_outlined,
 };
 
 /// 图标组件：基于系统 Material Icons

@@ -11,6 +11,7 @@ import 'package:aboutme/plugins/bill/models/bill_model.dart';
 import 'package:aboutme/plugins/bill/models/bill.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/widgets/month_selector.dart';
+import 'package:aboutme/widgets/run_receipt_printer.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'bill_edit_screen.dart';
@@ -246,6 +247,107 @@ class _BillListScreenSupercupertinoState
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
+  // ---- 当月账单小票（RunReceiptPrinter）----
+
+  RunReceiptData _buildReceiptData() {
+    final bills = [..._allMonthBills]..sort((a, b) => a.date.compareTo(b.date));
+    final accountName =
+        widget.billPlugin.accounts
+            .where((a) => a.id == widget.accountId)
+            .firstOrNull
+            ?.title ??
+        'ALL ACCOUNTS';
+    final daysInMonth = DateTime(
+      _focusedDay.year,
+      _focusedDay.month + 1,
+      0,
+    ).day;
+
+    double income = 0, expense = 0;
+    final segments = <RunReceiptSegment>[
+      for (final (i, bill) in bills.indexed)
+        RunReceiptSegment(
+          label: bill.title.isEmpty ? bill.category : bill.title,
+          pace: (bill.isExpense ? '-' : '+') + _formatCurrency(bill.amount),
+          time: DateFormat('MM-dd').format(bill.date),
+          hr: i + 1,
+          zoneColor: bill.isExpense ? _expenseColor : _incomeColor,
+        ),
+    ];
+    for (final bill in bills) {
+      if (bill.isExpense) {
+        expense += bill.amount;
+      } else {
+        income += bill.amount;
+      }
+    }
+    final balance = income - expense;
+
+    return RunReceiptData(
+      title: 'BILL RECEIPT',
+      orderNo:
+          'ORDER:#${_focusedDay.year}'
+          '${_focusedDay.month.toString().padLeft(2, '0')}',
+      date: DateFormat('MMMM yyyy', 'en_US')
+          .format(_focusedDay)
+          .toUpperCase(),
+      mode: accountName.toUpperCase(),
+      segments: segments,
+      tableHeaders: const ['ITEM', 'AMOUNT', 'TYPE', 'DATE', '#'],
+      tableAligns: const [
+        TextAlign.left,
+        TextAlign.right,
+        TextAlign.center,
+        TextAlign.right,
+        TextAlign.right,
+      ],
+      stats: [
+        ('INCOME', _formatCurrency(income)),
+        ('EXPENSE', _formatCurrency(expense)),
+        ('BILLS', '${bills.length} ITEMS'),
+        (
+          'AVG DAILY',
+          _formatCurrency(expense / daysInMonth),
+        ),
+      ],
+      paceRangeText: 'BALANCE ${_formatCurrency(balance)}',
+      chartStartLabel: 'DAY 1',
+      chartEndLabel: 'DAY $daysInMonth',
+      totalLabel:
+          (balance < 0 ? '-' : '+') + _formatCurrency(balance.abs()),
+      description:
+          'This receipt summarizes the bills of\n'
+          'the month above, capturing income,\n'
+          'expense and balance as a simple\n'
+          'record of where money went.',
+      footerOffice: 'ABOUT ME',
+      footerDate: DateFormat('EEE-MMM HH:mm', 'en_US')
+          .format(DateTime.now())
+          .toUpperCase(),
+      slogan: 'EVERY BILL LEAVES A TRACE.',
+      generatedBy: 'GENERATED LOCALLY VIA ABOUT ME.',
+    );
+  }
+
+  void _openReceiptPrinter() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => Scaffold(
+          backgroundColor: const Color(0xFFF3F3F1),
+          appBar: AppBar(
+            title: Text('bill_billList'.tr),
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.black87,
+            elevation: 0,
+          ),
+          body: RunReceiptPrinter(data: _buildReceiptData()),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCalendarCell(DateTime day, bool isSelected) {
     final theme = DSThemeBridge.resolve(context);
     final date = DateTime(day.year, day.month, day.day);
@@ -374,6 +476,22 @@ class _BillListScreenSupercupertinoState
       enableLargeTitle: true,
       actions: [
         // SuperAppBar 的 actions 经 Overlay 渲染,DS 按钮需自带 DSThemeBridge
+        // 打印当月账单小票（热敏打印动画，支持导出图片）
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.print,
+                size: 36,
+                color: theme.surfaceAlt,
+                iconColor: theme.textSub,
+                tooltip: 'bill_billList'.tr,
+                onPressed: _openReceiptPrinter,
+              );
+            },
+          ),
+        ),
         // (DS 暂无钱包图标,account_balance_wallet 用 piggy 近似)
         DSThemeBridge(
           child: Builder(

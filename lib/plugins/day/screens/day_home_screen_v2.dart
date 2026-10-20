@@ -380,20 +380,8 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
         firstDayOfWeek: 1,
         appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
         dataSource: MemorialDayCalendarDataSource(controller.memorialDays),
-        onTap: _onCalendarTap,
       ),
     );
-  }
-
-  /// 点击日历日程进入纪念日详情
-  void _onCalendarTap(CalendarTapDetails details) {
-    final appointments = details.appointments;
-    if (appointments != null && appointments.isNotEmpty) {
-      final appointment = appointments.first;
-      if (appointment is MemorialDayAppointment) {
-        _openDetail(context, appointment.memorialDay);
-      }
-    }
   }
 
   /// 2 列里程碑卡片网格（手动排序模式下支持拖拽）
@@ -530,32 +518,18 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
   }
 }
 
-/// 纪念日日程（携带纪念日引用，供点击回跳详情）
-class MemorialDayAppointment extends Appointment {
-  final MemorialDay memorialDay;
-
-  MemorialDayAppointment({
-    required super.startTime,
-    required super.endTime,
-    required super.subject,
-    required super.color,
-    required this.memorialDay,
-  });
-}
-
 /// 纪念日日历数据源
 class MemorialDayCalendarDataSource extends CalendarDataSource {
   MemorialDayCalendarDataSource(List<MemorialDay> days) {
-    final appointments = <MemorialDayAppointment>[];
+    final appointments = <Appointment>[];
     for (final day in days) {
       for (final date in upcomingDates(day)) {
         appointments.add(
-          MemorialDayAppointment(
+          Appointment(
             startTime: date,
             endTime: date,
             subject: day.title,
             color: day.backgroundColor,
-            memorialDay: day,
           ),
         );
       }

@@ -25,6 +25,9 @@ class ThermalPrinter extends StatefulWidget {
   /// 是否显示右上角「重新打印」按钮
   final bool showReplayButton;
 
+  /// 导出图片回调；非 null 时右上角显示「导出图片」按钮
+  final Future<void> Function()? onExportImage;
+
   /// 舞台背景色
   final Color backgroundColor;
 
@@ -41,6 +44,7 @@ class ThermalPrinter extends StatefulWidget {
     this.autoStart = true,
     this.serratedEdge = true,
     this.showReplayButton = true,
+    this.onExportImage,
     this.backgroundColor = const Color(0xFFF3F3F1),
     this.slotColor = const Color(0xFF1A1A1A),
     this.paperColor = Colors.white,
@@ -315,50 +319,70 @@ class ThermalPrinterState extends State<ThermalPrinter>
               ),
             ),
           ),
-          // 右上角重播按钮
-          if (widget.showReplayButton)
+          // 右上角重播/导出按钮
+          if (widget.showReplayButton || widget.onExportImage != null)
             Positioned(
               top: 16,
               right: 16,
-              child: Opacity(
-                opacity: 0.6,
-                child: Material(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(20),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: replay,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.replay,
-                            size: 13,
-                            color: Color(0xFF333333),
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            '重新打印',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 1,
-                              color: Color(0xFF333333),
-                            ),
-                          ),
-                        ],
-                      ),
+              child: Row(
+                children: [
+                  if (widget.onExportImage != null)
+                    _buildTopButton(
+                      icon: Icons.download_outlined,
+                      label: '导出图片',
+                      onTap: widget.onExportImage!,
                     ),
-                  ),
-                ),
+                  if (widget.showReplayButton)
+                    _buildTopButton(
+                      icon: Icons.replay,
+                      label: '重新打印',
+                      onTap: replay,
+                    ),
+                ],
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// 右上角小按钮（重播/导出共用样式）
+  Widget _buildTopButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Opacity(
+      opacity: 0.6,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Material(
+          color: Colors.black.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 13, color: const Color(0xFF333333)),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

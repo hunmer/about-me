@@ -1,7 +1,17 @@
+import 'dart:io' show File;
+import 'dart:isolate' show Isolate;
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
-import 'package:aboutme/widgets/thermal_printer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
+import 'package:flutter/services.dart' show Uint8List;
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/thermal_printer.dart';
 
 /// 单段配速明细
 class RunReceiptSegment {
@@ -10,6 +20,7 @@ class RunReceiptSegment {
   final String pace;
   final String time;
   final int hr;
+  final Color zoneColor;
 
   const RunReceiptSegment({
     required this.label,
@@ -17,24 +28,31 @@ class RunReceiptSegment {
     required this.time,
     this.isFast = false,
     this.hr = 0,
+    this.zoneColor = const Color(0xFF7BD53C),
   });
 }
 
-/// 跑步账单数据
+/// 跑步账单数据（表头/统计行可参数化，供其他场景复用为通用小票）
 class RunReceiptData {
   final String title;
   final String orderNo;
   final String date;
   final String mode;
   final List<RunReceiptSegment> segments;
+
+  /// 明细表头（5 列，需与 [segments] 各字段对应）
+  final List<String> tableHeaders;
+
+  /// 明细各列对齐（与 [tableHeaders] 等长）
+  final List<TextAlign> tableAligns;
+
+  /// 汇总统计行 (label, value)
+  final List<(String, String)> stats;
+
   final String paceRangeText;
   final String chartStartLabel;
   final String chartEndLabel;
   final String totalLabel;
-  final String duration;
-  final String avgPace;
-  final String best1k;
-  final String calories;
   final String description;
   final String footerOffice;
   final String footerDate;
@@ -55,14 +73,24 @@ class RunReceiptData {
       ),
       RunReceiptSegment(label: '1.08 KM', pace: "09'59\"", time: '00:50'),
     ],
+    this.tableHeaders = const ['ITEM', 'PACE', 'ZONE', 'TIME', 'HR'],
+    this.tableAligns = const [
+      TextAlign.left,
+      TextAlign.left,
+      TextAlign.center,
+      TextAlign.right,
+      TextAlign.right,
+    ],
+    this.stats = const [
+      ('DURATION', '00:10:12'),
+      ('AVG PACE', "09'24\"/KM"),
+      ('BEST 1K', "09'21\"/KM"),
+      ('CALORIES', '73 KCAL'),
+    ],
     this.paceRangeText = "09'21\"/KM-09'59\"/KM | 09'24\"/KM",
     this.chartStartLabel = '0KM',
     this.chartEndLabel = '1.1KM',
     this.totalLabel = '1.08 KM',
-    this.duration = '00:10:12',
-    this.avgPace = "09'24\"/KM",
-    this.best1k = "09'21\"/KM",
-    this.calories = '73 KCAL',
     this.description =
         'Every run leaves a trace. Run Receipt\n'
         'turns it into something you can keep and\n'
@@ -82,22 +110,99 @@ class RunReceiptData {
 ///
 /// 打印内容通过 [data] 参数化；打印机动画/拖拽/重播由通用组件
 /// [ThermalPrinter] 提供，外部可用 GlobalKey 调 `ThermalPrinterState.replay()`。
-class RunReceiptPrinter extends StatelessWidget {
+/// 右上角「导出图片」按钮将 [RunReceiptContent] 完整渲染为 PNG 并唤起系统分享。
+class RunReceiptPrinter extends StatefulWidget {
   final RunReceiptData data;
   final bool autoStart;
+  final bool showExportButton;
 
   const RunReceiptPrinter({
     super.key,
     this.data = const RunReceiptData(),
     this.autoStart = true,
+    this.showExportButton = true,
   });
+
+  @override
+  State<RunReceiptPrinter> createState() => _RunReceiptPrinterState();
+}
+
+class _RunReceiptPrinterState extends State<RunReceiptPrinter> {
+  final GlobalKey _boundaryKey = GlobalKey();
+  bool _exporting = false;
+
+  Future<void> _exportImage() async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final bytes = await captureRunReceiptPng(_boundaryKey);
+      if (bytes == null) {
+        Toast.error('导出失败');
+        return;
+      }
+      final dir = await getTemporaryDirectory();
+      final file = File(
+        '${dir.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await file.writeAsBytes(bytes);
+      await Share.shareXFiles([XFile(file.path)]);
+    } catch (e) {
+      Toast.error('导出失败: $e');
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return ThermalPrinter(
-      autoStart: autoStart,
-      child: RunReceiptContent(data: data),
+      autoStart: widget.autoStart,
+      onExportImage:
+          widget.showExportButton && !_exporting ? _exportImage : null,
+      child: RepaintBoundary(
+        key: _boundaryKey,
+        child: RunReceiptContent(data: widget.data),
+      ),
     );
+  }
+}
+
+/// 捕获 [RunReceiptContent]（需被 RepaintBoundary 包裹并传入其 key）
+/// 当前完整画面为 PNG 字节，不受打印机吐纸动画裁剪影响
+Future<Uint8List?> captureRunReceiptPng(
+  GlobalKey boundaryKey, {
+  double pixelRatio = 3,
+}) async {
+  await WidgetsBinding.instance.endOfFrame;
+  final boundary =
+      boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+  if (boundary == null) return null;
+
+  final image = await boundary.toImage(pixelRatio: pixelRatio);
+  try {
+    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (data == null) return null;
+    // 纯 Dart PNG 编码（避免部分平台 toByteData(png) 编码挂起）。
+    // 编码移入后台 isolate，避免阻塞 UI 线程
+    final rgba = data.buffer.asUint8List(
+      data.offsetInBytes,
+      data.lengthInBytes,
+    );
+    final width = image.width;
+    final height = image.height;
+    return await Isolate.run(() {
+      final pngImage = img.Image.fromBytes(
+        width: width,
+        height: height,
+        bytes: rgba.buffer,
+        bytesOffset: rgba.offsetInBytes,
+        order: img.ChannelOrder.rgba,
+        numChannels: 4,
+      );
+      return img.encodePng(pngImage);
+    });
+  } finally {
+    image.dispose();
   }
 }
 
@@ -277,13 +382,10 @@ class RunReceiptContent extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                _buildStatRow('DURATION', data.duration),
-                const SizedBox(height: 6),
-                _buildStatRow('AVG PACE', data.avgPace),
-                const SizedBox(height: 6),
-                _buildStatRow('BEST 1K', data.best1k),
-                const SizedBox(height: 6),
-                _buildStatRow('CALORIES', data.calories),
+                for (final (i, stat) in data.stats.indexed) ...[
+                  if (i > 0) const SizedBox(height: 6),
+                  _buildStatRow(stat.$1, stat.$2),
+                ],
               ],
             ),
           ),
@@ -393,14 +495,8 @@ class RunReceiptContent extends StatelessWidget {
 
   Widget _buildTableHeader() {
     const flex = [150, 100, 70, 90, 45];
-    const labels = ['ITEM', 'PACE', 'ZONE', 'TIME', 'HR'];
-    const aligns = [
-      TextAlign.left,
-      TextAlign.left,
-      TextAlign.center,
-      TextAlign.right,
-      TextAlign.right,
-    ];
+    final labels = data.tableHeaders;
+    final aligns = data.tableAligns;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -480,8 +576,8 @@ class RunReceiptContent extends StatelessWidget {
               child: Container(
                 width: 7.5,
                 height: 7.5,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF7BD53C),
+                decoration: BoxDecoration(
+                  color: seg.zoneColor,
                   shape: BoxShape.circle,
                 ),
               ),
