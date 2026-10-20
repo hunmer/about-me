@@ -426,4 +426,21 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_soulForgeApplied': 'Persona generated and filled, review and save',
   'openai_newAgentMenu': 'New Agent',
   'openai_createBlankAgent': 'Blank Agent',
+
+  // Topic collections tab (topic tree + topic conversations)
+  'openai_topicsTab': 'Topics',
+  'openai_topicNewConversation': 'Start new conversation',
+  'openai_topicConversations': 'Existing conversations',
+  'openai_topicConversationLabel': 'Chat @index',
+  'openai_topicDeleteConversation': 'Delete conversation',
+  'openai_topicDeleteConfirm':
+      'The chat history of this topic will be permanently deleted. Delete it?',
+  'openai_topicConversationDeleted': 'Conversation deleted',
+  'openai_topicCreateFailed': 'Failed to create conversation',
+  'openai_topicChatUnavailable': 'Chat service is not ready yet',
+  'openai_topicEditPrompt': 'Customize AI prompt',
+  'openai_topicPromptSaved': 'Prompt saved',
+  'openai_topicPromptHint':
+      'System prompt of the "@name" collection. Saving syncs it to the built-in agent; open conversations are not affected.',
+  'openai_topicPromptPlaceholder': 'Enter the AI prompt for this collection',
 };

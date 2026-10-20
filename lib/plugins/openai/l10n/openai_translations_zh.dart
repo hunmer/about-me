@@ -394,4 +394,20 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_soulForgeApplied': '人设已生成并填充，请检查后保存',
   'openai_newAgentMenu': '新建智能体',
   'openai_createBlankAgent': '新建空白',
+
+  // 话题合集 tab（话题树 + 话题会话）
+  'openai_topicsTab': '话题',
+  'openai_topicNewConversation': '开始新对话',
+  'openai_topicConversations': '已有对话',
+  'openai_topicConversationLabel': '对话 @index',
+  'openai_topicDeleteConversation': '删除对话',
+  'openai_topicDeleteConfirm': '删除后该话题下的这段聊天记录将不可恢复，确定删除？',
+  'openai_topicConversationDeleted': '对话已删除',
+  'openai_topicCreateFailed': '创建对话失败',
+  'openai_topicChatUnavailable': '聊天服务未就绪，请稍后再试',
+  'openai_topicEditPrompt': '自定义 AI 提示词',
+  'openai_topicPromptSaved': '提示词已保存',
+  'openai_topicPromptHint':
+      '「@name」合集的 AI 系统提示词，保存后同步到该合集的内置智能体；已开启的对话不受影响。',
+  'openai_topicPromptPlaceholder': '输入合集的 AI 提示词',
 };

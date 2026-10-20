@@ -36,6 +36,7 @@ import 'screens/agent_list_screen.dart';
 import 'screens/plugin_settings_screen.dart';
 import 'screens/prompt_preset_screen.dart';
 import 'screens/agent_edit_screen.dart';
+import 'screens/topic_collection_screen.dart';
 import 'handlers/chat_event_handler.dart';
 import 'controllers/agent_controller.dart';
 import 'controllers/provider_controller.dart';
@@ -673,7 +674,7 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
   void initState() {
     super.initState();
     _currentPage = 0;
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.animation?.addListener(() {
       final value = _tabController.animation!.value.round();
       if (value != _currentPage && mounted) {
@@ -704,6 +705,10 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
       case 2:
         pageId = '/openai/chat';
         title = 'agent_chat_aiChat'.tr;
+        break;
+      case 3:
+        pageId = '/openai/topics';
+        title = 'openai_topicsTab'.tr;
         break;
       default:
         pageId = '/openai/agents';
@@ -816,14 +821,17 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
           AgentListScreen(),
           PromptPresetScreen(),
           AgentChatMainView(),
+          TopicCollectionScreen(),
         ],
       ),
-      // 会话列表自带导航栏"+"入口，该 tab 下隐藏 FAB 避免重复
-      fab: _currentPage == 2 ? null : _buildFab(),
+      // 会话列表自带导航栏"+"入口，话题 tab 的操作在页内，
+      // 该两个 tab 下隐藏 FAB 避免重复
+      fab: _currentPage >= 2 ? null : _buildFab(),
       items: [
         DSNavItem(icon: DsIconKind.bot, label: 'openai_agentsTab'.tr),
         DSNavItem(icon: DsIconKind.book, label: 'openai_promptPreset'.tr),
         DSNavItem(icon: DsIconKind.chat, label: 'agent_chat_aiChat'.tr),
+        DSNavItem(icon: DsIconKind.category, label: 'openai_topicsTab'.tr),
       ],
     );
   }

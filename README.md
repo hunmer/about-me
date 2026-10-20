@@ -163,4 +163,6 @@ procm-command start server
 
 ## 📄 许可证
 
-MIT License
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh)
+
+本项目采用知识共享署名-非商业性使用 4.0 国际许可协议，允许非商用前提下使用、修改和分发，**禁止用于商业目的**。如需商业授权，请联系作者。

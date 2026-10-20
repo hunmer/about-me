@@ -63,6 +63,7 @@ dependencies:
   url_launcher: ^6.2.5
   crop_your_image: ^2.0.0
   fl_chart: ^0.66.2
+  graphview: ^1.5.1
   package_info_plus: ^9.0.0
   flutter_styled_toast: ^2.3.0
   smooth_sheets: ^0.15.0

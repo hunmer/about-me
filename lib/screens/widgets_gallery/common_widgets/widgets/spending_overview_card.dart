@@ -336,6 +336,25 @@ class _SpendingOverviewCardWidgetState
     final shares = _currentShares();
     final pcts = normalizePercents(shares);
 
+    // 矮尺寸：仅甜甜圈图 + 内圆中心总额
+    if (widget.size is SmallSize ||
+        widget.size is MediumSize ||
+        widget.size is WideSize) {
+      final (whole, cents) = _splitCurrency(_period.total);
+      return CustomPaint(
+        size: Size.infinite,
+        painter: _ClippedDonutPainter(
+          shares: shares,
+          percents: pcts,
+          colors: widget.categories.map((c) => c.color).toList(),
+          progress: _entrance.value,
+          highlightIndex: _highlightIndex,
+          centerWhole: whole,
+          centerCents: cents,
+        ),
+      );
+    }
+
     // 甜甜圈图为整卡背景层（右缘被卡片平切）
     final chart = CustomPaint(
       size: Size.infinite,
@@ -347,13 +366,6 @@ class _SpendingOverviewCardWidgetState
         highlightIndex: _highlightIndex,
       ),
     );
-
-    // 矮尺寸只显示甜甜圈图
-    if (widget.size is SmallSize ||
-        widget.size is MediumSize ||
-        widget.size is WideSize) {
-      return chart;
-    }
 
     return Stack(
       children: [
@@ -706,12 +718,18 @@ class _ClippedDonutPainter extends CustomPainter {
   final double progress;
   final int? highlightIndex;
 
+  /// 内圆中心总额（矮尺寸模式；null 不绘制）
+  final String? centerWhole;
+  final String? centerCents;
+
   _ClippedDonutPainter({
     required this.shares,
     required this.percents,
     required this.colors,
     required this.progress,
     required this.highlightIndex,
+    this.centerWhole,
+    this.centerCents,
   });
 
   // 几何配置（基于 404×374 设计稿，按卡片宽度缩放）
@@ -902,6 +920,43 @@ class _ClippedDonutPainter extends CustomPainter {
       );
     }
 
+    // 内圆中心总额（按可见底井区域居中：左界 cx - rInner，右界右缘平面）
+    if (centerWhole != null) {
+      final centerX = (cx - rInner + planeX) / 2;
+      final centerText = TextPainter(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: centerWhole,
+              style: TextStyle(
+                color: const Color(0xFF111317),
+                fontSize: rInner * 0.34,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.02 * rInner * 0.34,
+                height: 1.0,
+              ),
+            ),
+            if (centerCents != null)
+              TextSpan(
+                text: centerCents,
+                style: TextStyle(
+                  color: const Color(0xFF6D7078),
+                  fontSize: rInner * 0.28,
+                  fontWeight: FontWeight.w300,
+                  height: 1.0,
+                ),
+              ),
+          ],
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      centerText.paint(
+        canvas,
+        Offset(centerX, cy) -
+            Offset(centerText.width / 2, centerText.height / 2),
+      );
+    }
+
     canvas.restore();
   }
 
@@ -1089,6 +1144,8 @@ class _ClippedDonutPainter extends CustomPainter {
   bool shouldRepaint(covariant _ClippedDonutPainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.highlightIndex != highlightIndex ||
+        oldDelegate.centerWhole != centerWhole ||
+        oldDelegate.centerCents != centerCents ||
         oldDelegate.shares.length != shares.length ||
         !_listEquals(oldDelegate.shares, shares);
   }
