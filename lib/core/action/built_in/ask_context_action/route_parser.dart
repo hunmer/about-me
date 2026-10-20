@@ -51,10 +51,13 @@ class RouteParser {
 
     // AI插件
     '/agent_chat': '用户正在使用AI对话',
+    '/agent_chat/conversation': '用户正在与AI对话：{conversationTitle}',
     '/openai': '用户正在管理AI助手',
     '/openai/agents': '用户正在管理AI智能体',
     '/openai/presets': '用户正在查看提示词预设',
     '/openai/chat': '用户正在查看AI会话列表',
+    '/openai/agent_edit': '用户正在{mode}AI智能体：{name}（{tab}）',
+    '/openai/preset_edit': '用户正在{mode}提示词预设：{name}',
 
     // 活动插件
     '/activity': '用户正在查看活动记录',
@@ -199,6 +202,9 @@ class RouteParser {
     '/openai/agents': ['帮我创建一个智能体', '总结我的智能体用法'],
     '/openai/presets': ['帮我写一个提示词预设', '优化我现有的预设'],
     '/openai/chat': ['总结最近的AI对话', '帮我继续之前的对话'],
+    '/openai/agent_edit': ['帮我想一个智能体人设', '为这个智能体设计开场白'],
+    '/openai/preset_edit': ['帮我写一个提示词预设', '优化这个预设的内容'],
+    '/agent_chat/conversation': ['总结这次AI对话', '继续和我讨论这个话题'],
     '/media_log': ['总结我的阅读观影记录', '推荐我下一部看/读什么'],
     '/media_log/detail': ['帮我写一条短评', '总结这条记录的点评'],
     '/media_log/form_new': ['帮我起个标题', '根据我的口味推荐一部作品'],

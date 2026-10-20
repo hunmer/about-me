@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/plugins/tts/widgets/tts_settings_dialog.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
@@ -155,6 +156,18 @@ class _ChatScreenState extends State<ChatScreen> {
         JSBridgeManager.instance.registerUIHandlers(context);
         _uiHandlersRegistered = true;
         debugPrint('✓ ChatScreen: UI 处理器已注册');
+      }
+      // 上报路由上下文，供"询问当前上下文"识别当前对话
+      if (mounted) {
+        RouteHistoryManager.updateCurrentContext(
+          pageId: '/agent_chat/conversation',
+          title: widget.conversation.title,
+          params: {
+            'conversationId': widget.conversation.id,
+            'conversationTitle': widget.conversation.title,
+            'agentId': widget.conversation.agentId ?? '',
+          },
+        );
       }
     });
 

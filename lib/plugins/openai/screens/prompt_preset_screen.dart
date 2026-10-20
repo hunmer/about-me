@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -114,6 +115,15 @@ class _PromptPresetScreenState extends State<PromptPresetScreen> {
 
   /// 显示编辑页面
   Future<void> _showEditPage({PromptPreset? preset}) async {
+    // 编辑页为无名路由，手动上报编辑上下文，关闭后恢复预设tab上下文
+    RouteHistoryManager.updateCurrentContext(
+      pageId: '/openai/preset_edit',
+      title: preset?.name ?? 'openai_promptPreset'.tr,
+      params: {
+        'mode': preset == null ? '新建' : '编辑',
+        'name': preset?.name ?? '',
+      },
+    );
     await showPresetEditPage(
       context: context,
       preset: preset,
@@ -131,6 +141,12 @@ class _PromptPresetScreenState extends State<PromptPresetScreen> {
         await _loadPresets();
       },
     );
+    if (mounted) {
+      RouteHistoryManager.updateCurrentContext(
+        pageId: '/openai/presets',
+        title: 'openai_promptPreset'.tr,
+      );
+    }
   }
 
   /// 删除预设

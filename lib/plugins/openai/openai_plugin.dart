@@ -724,6 +724,12 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
   }
 
   void _showPresetEditPage() async {
+    // 预设编辑页为无名路由，手动上报编辑上下文，关闭后恢复当前tab上下文
+    RouteHistoryManager.updateCurrentContext(
+      pageId: '/openai/preset_edit',
+      title: 'openai_promptPreset'.tr,
+      params: {'mode': '新建', 'name': ''},
+    );
     await showPresetEditPage(
       context: context,
       onSave: (preset, prompts) async {
@@ -736,6 +742,7 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
         }
       },
     );
+    if (mounted) _updateRouteContext(_currentPage);
   }
 
   /// 构建 FAB

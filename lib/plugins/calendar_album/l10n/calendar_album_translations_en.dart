@@ -206,5 +206,7 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_statsDailyAvg': 'Avg @count / day',
     'calendar_album_statsCountLabel': '@count entries',
     'calendar_album_statsTagChart': 'By Tag',
+    'calendar_album_statsMoodChart': 'By Mood',
+    'calendar_album_statsWeatherChart': 'By Weather',
   };
 }

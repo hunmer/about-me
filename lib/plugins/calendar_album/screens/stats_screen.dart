@@ -67,6 +67,10 @@ class _CalendarAlbumStatsViewState extends State<CalendarAlbumStatsView> {
                 _buildBarChartCard(theme),
                 const SizedBox(height: 16),
                 _buildTagCard(theme),
+                const SizedBox(height: 16),
+                _buildMoodCard(theme),
+                const SizedBox(height: 16),
+                _buildWeatherCard(theme),
               ],
             );
           },
@@ -502,6 +506,145 @@ class _CalendarAlbumStatsViewState extends State<CalendarAlbumStatsView> {
               color: selected ? accent : Colors.transparent,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ===== 心情/天气分布 =====
+
+  Widget _buildMoodCard(ThemeData theme) {
+    return _buildEnumDistCard(
+      theme,
+      title: 'calendar_album_statsMoodChart'.tr,
+      icon: Icons.mood,
+      labelOf: (v) => _optionLabel('calendar_album_mood_${v.toLowerCase()}', v),
+      valueOf: (e) => e.mood,
+    );
+  }
+
+  Widget _buildWeatherCard(ThemeData theme) {
+    return _buildEnumDistCard(
+      theme,
+      title: 'calendar_album_statsWeatherChart'.tr,
+      icon: Icons.cloud_outlined,
+      labelOf: (v) =>
+          _optionLabel('calendar_album_weather_${v.toLowerCase()}', v),
+      valueOf: (e) => e.weather,
+    );
+  }
+
+  /// 翻译 key 缺失时回退原始值（日记里可能存自定义心情/天气）
+  String _optionLabel(String key, String raw) {
+    final t = key.tr;
+    return t == key ? raw : t;
+  }
+
+  Widget _buildEnumDistCard(
+    ThemeData theme, {
+    required String title,
+    required IconData icon,
+    required String Function(String) labelOf,
+    required String? Function(CalendarEntry) valueOf,
+  }) {
+    final counts = <String, int>{};
+    for (final e in _allEntries) {
+      final v = valueOf(e);
+      if (v == null || v.isEmpty) continue;
+      counts[v] = (counts[v] ?? 0) + 1;
+    }
+    if (counts.isEmpty) return const SizedBox.shrink();
+
+    final entries = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final maxCount = entries.first.value;
+
+    final dsTheme = DSThemeBridge.resolve(context);
+    final palette = [
+      dsTheme.primary,
+      dsTheme.success,
+      dsTheme.warning,
+      dsTheme.danger,
+      dsTheme.secondary,
+    ];
+
+    return StatsSketchCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          for (var i = 0; i < entries.length; i++)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: i == entries.length - 1 ? 0 : 10,
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 72,
+                    child: Text(
+                      labelOf(entries[i].key),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.4),
+                      ),
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: (entries[i].value / maxCount).clamp(
+                          0.04,
+                          1.0,
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: palette[i % palette.length].withValues(
+                              alpha: 0.55,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${entries[i].value}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: palette[i % palette.length],
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

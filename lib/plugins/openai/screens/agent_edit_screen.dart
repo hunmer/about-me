@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/clipboard_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -106,11 +107,34 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
           widget.agent!.alivenessConfig ?? const AlivenessConfig();
     }
     _loadAgentFileDir();
+    // 上报路由上下文，供"询问当前上下文"识别（页面多经无名路由/容器打开）
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateRouteContext());
     if (widget.autoOpenSoulForge) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _showSmartSoulSheet();
       });
     }
+  }
+
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到编辑状态
+  void _updateRouteContext() {
+    if (!mounted) return;
+    const tabKeys = [
+      'openai_tabBasic',
+      'openai_tabAliveness',
+      'openai_tabAssets',
+      'openai_tabFiles',
+    ];
+    final agent = _editingAgent;
+    RouteHistoryManager.updateCurrentContext(
+      pageId: '/openai/agent_edit',
+      title: agent?.name ?? 'openai_createBlankAgent'.tr,
+      params: {
+        'mode': agent == null ? '新建' : '编辑',
+        'name': agent?.name ?? '新智能体',
+        'tab': tabKeys[_tabIndex.clamp(0, tabKeys.length - 1)].tr,
+      },
+    );
   }
 
   /// 获取服务商默认颜色
@@ -690,7 +714,10 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                         'openai_tabFiles'.tr,
                       ],
                       selected: _tabIndex,
-                      onChanged: (i) => setState(() => _tabIndex = i),
+                      onChanged: (i) {
+                        setState(() => _tabIndex = i);
+                        _updateRouteContext();
+                      },
                     ),
                   ),
                   Expanded(

@@ -202,5 +202,7 @@ class CalendarAlbumTranslationsZh {
     'calendar_album_statsDailyAvg': '日均 @count 篇',
     'calendar_album_statsCountLabel': '@count 篇日记',
     'calendar_album_statsTagChart': '标签分布',
+    'calendar_album_statsMoodChart': '心情分布',
+    'calendar_album_statsWeatherChart': '天气分布',
   };
 }

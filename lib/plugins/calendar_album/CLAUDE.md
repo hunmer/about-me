@@ -55,14 +55,15 @@ class CalendarAlbumPlugin extends BasePlugin {
 
 ### 主界面入口
 
-**文件**: `screens/main_screen.dart`
+**文件**: `widgets/calendar_album_bottom_bar.dart`
 
-**路由**: 通过 `CalendarAlbumPlugin.buildMainView()` 返回 `CalendarAlbumMainView`，其内部渲染 `MainScreen`
+**路由**: 通过 `CalendarAlbumPlugin.buildMainView()` 返回 `CalendarAlbumMainView`，其内部渲染 `CalendarAlbumBottomBar`
 
-**界面结构**: 底部导航栏切换三个视图
+**界面结构**: 底部导航栏切换四个视图
 - 日历视图 (`CalendarScreen`)
 - 标签视图 (`TagScreen`)
 - 相册视图 (`AlbumScreen`)
+- 统计视图 (`CalendarAlbumStatsView`)
 
 ---
 
@@ -312,33 +313,37 @@ class CalendarEntry {
 | 组件 | 文件 | 职责 |
 |------|------|------|
 | `CalendarAlbumMainView` | `calendar_album_plugin.dart` | 插件主视图容器 |
-| `MainScreen` | `screens/main_screen.dart` | 主界面（底部导航） |
+| `CalendarAlbumBottomBar` | `widgets/calendar_album_bottom_bar.dart` | 主界面（底部导航，四 Tab） |
 | `CalendarScreen` | `screens/calendar_screen.dart` | 日历视图 |
 | `TagScreen` | `screens/tag_screen.dart` | 标签视图 |
 | `AlbumScreen` | `screens/album_screen.dart` | 相册视图 |
+| `CalendarAlbumStatsView` | `screens/stats_screen.dart` | 统计视图 |
 | `EntryEditorScreen` | `screens/entry_editor_screen.dart` | 日记编辑界面 |
 | `EntryDetailScreen` | `screens/entry_detail_screen.dart` | 日记详情界面 |
 | `EntryList` | `widgets/entry_list.dart` | 日记列表组件 |
 
-### MainScreen 布局
+### CalendarAlbumBottomBar 布局
 
 **布局结构**:
 ```
-Scaffold
-├── body: PageView (三个页面)
+CustomBottomBar
+├── body: TabBarView (四个页面，禁用滑动切换)
 │   ├── CalendarScreen (日历视图)
 │   ├── TagScreen (标签视图)
-│   └── AlbumScreen (相册视图)
-└── bottomNavigationBar: BottomNavigationBar
-    ├── 日历 (calendar_today)
+│   ├── AlbumScreen (相册视图)
+│   └── CalendarAlbumStatsView (统计视图)
+├── fab: DSFab (仅日历 Tab 显示，新建日记)
+└── items: DSBottomNavigation
+    ├── 日历 (calendar)
     ├── 标签 (tag)
-    └── 相册 (photo_library)
+    ├── 相册 (image)
+    └── 统计 (chart)
 ```
 
 **关键特性**:
-- PageController 实现左右滑动切换
+- TabController 驱动页面切换，DS 弧形底部导航
 - PageStorageKey 保持页面状态
-- Provider 多层级状态共享
+- Provider 多层级状态共享（日历/标签/相册视图）
 
 ### CalendarScreen 布局
 
@@ -654,10 +659,10 @@ calendar_album/
 │   ├── calendar_controller.dart              # 日历控制器（日记CRUD）
 │   └── tag_controller.dart                   # 标签控制器（标签管理）
 ├── screens/
-│   ├── main_screen.dart                      # 主界面（底部导航）
 │   ├── calendar_screen.dart                  # 日历视图
 │   ├── tag_screen.dart                       # 标签视图
 │   ├── album_screen.dart                     # 相册视图
+│   ├── stats_screen.dart                     # 统计视图
 │   ├── entry_editor_screen.dart              # 编辑器主入口
 │   ├── entry_detail_screen.dart              # 详情页主入口
 │   ├── entry_editor/                         # 编辑器模块
