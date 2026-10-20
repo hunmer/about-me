@@ -24,7 +24,7 @@ class MessageInputQuickToolbar extends StatelessWidget {
 
     final theme = DSThemeBridge.resolve(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       // 左右两组各自独立横向滚动：左组从左缘排布，右组贴右缘
       child: Row(
         children: [
@@ -79,15 +79,33 @@ class _QuickToolbarItem extends StatelessWidget {
       onPressed: action.onPressed,
       onLongPress: action.onLongPress,
       semanticLabel: action.tooltip,
-      builder: (context, states) => DsIcon(
-        action.icon,
-        size: 20,
-        color: action.active
-            ? theme.primary
-            : disabled
-            ? theme.textSub.withValues(alpha: 0.5)
-            : theme.primaryText,
-      ),
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return AnimatedScale(
+          scale: pressed && !disabled ? 0.94 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: JellyBox(
+            width: 36,
+            height: 36,
+            radius: theme.radii.sm,
+            color: pressed && !disabled
+                ? theme.surfaceAlt.mixBlack(0.08)
+                : theme.surfaceAlt,
+            strokeColor: DsColors.transparent,
+            alignment: Alignment.center,
+            child: DsIcon(
+              action.icon,
+              size: 20,
+              color: action.active
+                  ? theme.primary
+                  : disabled
+                  ? theme.textSub.withValues(alpha: 0.5)
+                  : theme.primaryText,
+            ),
+          ),
+        );
+      },
     );
   }
 }

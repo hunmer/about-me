@@ -157,11 +157,11 @@ class _MessageInputState extends State<MessageInput> {
                 trailingActions: widget.trailingQuickActions,
               ),
 
-              // 输入行（素描面板风格带内边距，悬浮卡片风格紧贴内容区）
+              // 输入行（素描面板风格带内边距，悬浮卡片风格仅留底部间距）
               Padding(
                 padding: widget.useSketchPanel
                     ? const EdgeInsets.all(12)
-                    : EdgeInsets.zero,
+                    : const EdgeInsets.only(bottom: 8),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
