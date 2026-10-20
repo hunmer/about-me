@@ -158,6 +158,8 @@ dependencies:
   skribble_icons_material: ^0.3.1
   video_thumbnail: ^0.5.6
   flutter_json_view: ^1.1.5
+  flutter_map: ^8.2.2  # Moments NYC demo 地图（lib/widgets/moments_nyc_map_demo.dart）
+  latlong2: ^0.9.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

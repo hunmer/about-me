@@ -508,19 +508,21 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
               ),
             ],
           ),
-          SizedBox(height: 16 * k),
-          Text(
-            item.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: const Color(0xFF121212),
-              fontSize: 19.5 * k,
-              fontWeight: FontWeight.w800,
-              height: 1.15,
+          if (item.title.isNotEmpty) ...[
+            SizedBox(height: 16 * k),
+            Text(
+              item.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: const Color(0xFF121212),
+                fontSize: 19.5 * k,
+                fontWeight: FontWeight.w800,
+                height: 1.15,
+              ),
             ),
-          ),
-          SizedBox(height: 3 * k),
+            SizedBox(height: 3 * k),
+          ],
           _buildBottomRow(item, k),
         ],
       ),
