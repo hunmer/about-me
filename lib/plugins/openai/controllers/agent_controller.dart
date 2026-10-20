@@ -178,10 +178,14 @@ class AgentController extends ChangeNotifier {
 
   Future<AIAgent?> getAgent(String agentId) async {
     await loadAgents();
-    return _agents.firstWhere(
-      (agent) => agent.id == agentId,
-      orElse: () => throw Exception('Agent not found'),
-    );
+    for (final agent in _agents) {
+      if (agent.id == agentId) return agent;
+    }
+    // 临时 agent（如话题合集的独立 agent 配置），仅内存态
+    for (final agent in _temporaryAgents) {
+      if (agent.id == agentId) return agent;
+    }
+    throw Exception('Agent not found');
   }
 
   Future<List<String>> getAllTags() async {

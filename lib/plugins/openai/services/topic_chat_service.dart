@@ -15,11 +15,16 @@ import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 ///
 /// 职责：
 /// - 注册话题合集（内置，后续可扩展自定义合集）
-/// - 合集 prompt 自定义：覆盖值持久化，并同步到合集内置 agent
+/// - 合集的 AI 是一份**完整 agent 配置**（模型/参数/人设等），
+///   独立存储在 `openai/topic_agents_<collectionId>.json`
+///   （extra storage，与全局 agents.json 互不影响），
+///   编辑入口复用 [AgentEditScreen]（传 extraStorageKey）
+/// - 运行时经 [AgentController.addTemporaryAgent] 注入内存，
+///   聊天链路按 agentId 即可解析（getAgent 含临时 agent）
 /// - 按（合集 × 话题）创建/查询互相隔离的会话：
 ///   会话带 `hideInList` 元数据，不进 agent_chat 会话列表，入口只有话题 tab
 /// - 新会话写入固定的第一条介绍消息（写入后不再改动，
-///   后续改 prompt / 换 agent 均不影响已写入的首条消息）
+///   后续改 agent 配置 / 换 agent 均不影响已写入的首条消息）
 class TopicChatService {
   TopicChatService._();
 
@@ -36,74 +41,68 @@ class TopicChatService {
     return null;
   }
 
-  // ========== prompt 自定义 ==========
+  // ========== 合集 agent（完整配置，独立存储） ==========
 
-  /// prompt 覆盖值持久化文件（openai 插件存储目录）
-  Future<Map<String, dynamic>> _readOverrides() async {
-    try {
-      final data = await AboutmeDataService.instance.readPath(
-        '${OpenAIPlugin.instance.storageDir}/topic_collections.json',
-      );
-      if (data is Map<String, dynamic>) {
-        final overrides = data['promptOverrides'];
-        if (overrides is Map<String, dynamic>) return overrides;
-      }
-    } catch (_) {}
-    return {};
-  }
+  /// 合集 agent 的 extra storage key（独立于 agents.json 的存储文件）
+  static String storageKeyFor(TopicCollection collection) =>
+      'topic_agents_${collection.id}';
 
-  Future<void> _writeOverrides(Map<String, dynamic> overrides) async {
-    await AboutmeDataService.instance.writePath(
-      '${OpenAIPlugin.instance.storageDir}/topic_collections.json',
-      {'promptOverrides': overrides},
-    );
-  }
-
-  /// 合集生效的系统提示词（用户覆盖 > 内置默认）
-  Future<String> effectivePrompt(TopicCollection collection) async {
-    final overrides = await _readOverrides();
-    final override = overrides[collection.id];
-    if (override is String && override.trim().isNotEmpty) return override;
-    return collection.prompt;
-  }
-
-  /// 是否已被用户自定义（用于编辑界面区分默认值）
-  Future<String?> promptOverride(TopicCollection collection) async {
-    final overrides = await _readOverrides();
-    final override = overrides[collection.id];
-    return override is String && override.trim().isNotEmpty ? override : null;
-  }
-
-  /// 保存 prompt 覆盖并同步到合集内置 agent 的 system 消息
-  Future<void> setPromptOverride(
-    TopicCollection collection,
-    String prompt,
-  ) async {
-    final overrides = await _readOverrides();
-    overrides[collection.id] = prompt;
-    await _writeOverrides(overrides);
-    await _syncAgentPrompt(collection, prompt);
-  }
-
-  // ========== 内置 agent ==========
-
-  /// 合集内置 agent id（各合集一份，可被用户在 agent_chat 里继续编辑）
+  /// 合集 agent id（沿用 builtin_ 前缀：即使被误存进 agents.json 也不会出现在可见列表）
   String agentIdFor(TopicCollection collection) =>
       'builtin_topic_${collection.id}';
 
-  /// 确保合集内置 agent 存在；返回 agent id
+  /// 确保合集 agent 配置存在并注入运行时（temporary 列表），返回该 agent
   ///
-  /// 已存在时不覆写（用户可能在 agent_chat 里改过该 agent）；
-  /// 仅在用户保存 prompt 覆盖时显式同步 system 消息（见 [setPromptOverride]）。
-  Future<String> ensureCollectionAgent(TopicCollection collection) async {
-    final agentId = agentIdFor(collection);
+  /// - 独立存储已有配置：读取并刷新到临时列表（编辑保存后重新打开即生效）
+  /// - 首次使用：以内置默认（合集 prompt 为 system 消息 + 首个服务商连接配置）
+  ///   生成完整配置并写入独立存储
+  Future<AIAgent> ensureCollectionAgent(TopicCollection collection) async {
     final controller = AgentController();
-    final agents = await controller.loadAgents();
-    for (final agent in agents) {
-      if (agent.id == agentId) return agentId;
+    await _cleanupLegacyAgents();
+    final storageKey = storageKeyFor(collection);
+    final stored = await controller.loadExtraStorageAgents(storageKey);
+    AIAgent agent;
+    if (stored.isNotEmpty) {
+      agent = stored.first;
+    } else {
+      agent = await _defaultAgentFor(collection);
+      await controller.saveAgentToExtraStorage(agent, storageKey);
     }
+    controller.addTemporaryAgent(agent);
+    return agent;
+  }
 
-    // 取第一个服务商的连接配置，保证开箱可用（同 ChatAssistantService）
+  /// 旧版本曾把合集 agent 写入全局 agents.json（prompt 覆盖另存
+  /// topic_collections.json）：getAgent 优先命中旧数据会让独立存储的
+  /// 编辑不生效，启动后清掉（deleteAgent 拦截 builtin_ 前缀，
+  /// 这里直接清洗存储文件与遗留文件）
+  Future<void> _cleanupLegacyAgents() async {
+    final path = '${OpenAIPlugin.instance.storageDir}/agents.json';
+    final data = await AboutmeDataService.instance.readPath(path);
+    if (data is Map<String, dynamic>) {
+      final list = data['agents'];
+      if (list is List && list.isNotEmpty) {
+        final filtered =
+            list.where((item) {
+              final id = item is Map<String, dynamic> ? item['id'] : null;
+              return id is! String || !id.startsWith('builtin_topic_');
+            }).toList();
+        if (filtered.length != list.length) {
+          await AboutmeDataService.instance.writePath(path, {
+            'agents': filtered,
+          });
+        }
+      }
+    }
+    try {
+      await AboutmeDataService.instance.deletePath(
+        '${OpenAIPlugin.instance.storageDir}/topic_collections.json',
+      );
+    } catch (_) {}
+  }
+
+  /// 合集默认 agent：完整 AIAgent 配置，取首个服务商连接参数保证开箱可用
+  Future<AIAgent> _defaultAgentFor(TopicCollection collection) async {
     String providerId = '';
     String baseUrl = '';
     Map<String, String> headers = {};
@@ -123,15 +122,15 @@ class TopicChatService {
         }
       }
     } catch (_) {
-      // 无服务商时仍创建占位配置，用户可稍后编辑
+      // 无服务商时仍创建占位配置，用户可稍后在编辑页配置
     }
 
-    final agent = AIAgent(
-      id: agentId,
+    return AIAgent(
+      id: agentIdFor(collection),
       version: 1,
       name: collection.name,
       description: collection.description,
-      tags: const ['内置', '话题合集'],
+      tags: const ['话题合集'],
       serviceProviderId: providerId,
       baseUrl: baseUrl,
       headers: headers,
@@ -140,36 +139,9 @@ class TopicChatService {
       model: model,
       maxLength: 2048,
       icon: topicCollectionIcon(collection.id),
-      messages: [
-        Prompt(type: 'system', content: await effectivePrompt(collection)),
-      ],
+      messages: [Prompt(type: 'system', content: collection.prompt)],
       apiFormat: apiFormat,
     );
-    await controller.saveAgent(agent);
-    return agentId;
-  }
-
-  /// 把 prompt 覆盖同步进内置 agent 的 system 消息（保留非 system 预设）
-  Future<void> _syncAgentPrompt(
-    TopicCollection collection,
-    String prompt,
-  ) async {
-    final agentId = agentIdFor(collection);
-    final controller = AgentController();
-    final agents = await controller.loadAgents();
-    for (final agent in agents) {
-      if (agent.id != agentId) continue;
-      await controller.saveAgent(
-        agent.copyWith(
-          messages: [
-            Prompt(type: 'system', content: prompt),
-            ...?agent.messages?.where((message) => message.type != 'system'),
-          ],
-          updatedAt: DateTime.now(),
-        ),
-      );
-      return;
-    }
   }
 
   // ========== 话题会话 ==========
@@ -179,10 +151,10 @@ class TopicChatService {
 
   Map<String, dynamic> _metadataFor(
     TopicCollection collection,
-    TopicNode node,
+    TopicNode topic,
   ) => {
     'hideInList': true,
-    'topicChat': {'collectionId': collection.id, 'topicId': node.id},
+    'topicChat': {'collectionId': collection.id, 'topicId': topic.id},
   };
 
   static ({String collectionId, String topicId})? topicInfoOf(
@@ -202,11 +174,11 @@ class TopicChatService {
   /// 某话题（含子树，供分组节点聚合）的会话
   List<Conversation> conversationsFor(
     TopicCollection collection,
-    TopicNode node,
+    TopicNode topic,
   ) {
     final service = _conversationService;
     if (service == null) return const [];
-    final subtreeIds = node.subtree().map((n) => n.id).toSet();
+    final subtreeIds = topic.subtree().map((n) => n.id).toSet();
     return service.conversations.where((conversation) {
       final info = topicInfoOf(conversation);
       return info != null &&
@@ -262,10 +234,10 @@ class TopicChatService {
       throw Exception('agent_chat 插件未就绪');
     }
 
-    final agentId = await ensureCollectionAgent(collection);
+    final agent = await ensureCollectionAgent(collection);
     var conversation = await service.createConversation(
       title: '${collection.name}·${topic.title}',
-      agentId: agentId,
+      agentId: agent.id,
       groups: [hiddenGroup],
     );
     conversation = conversation.copyWith(

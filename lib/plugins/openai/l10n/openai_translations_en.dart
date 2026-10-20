@@ -438,9 +438,5 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_topicConversationDeleted': 'Conversation deleted',
   'openai_topicCreateFailed': 'Failed to create conversation',
   'openai_topicChatUnavailable': 'Chat service is not ready yet',
-  'openai_topicEditPrompt': 'Customize AI prompt',
-  'openai_topicPromptSaved': 'Prompt saved',
-  'openai_topicPromptHint':
-      'System prompt of the "@name" collection. Saving syncs it to the built-in agent; open conversations are not affected.',
-  'openai_topicPromptPlaceholder': 'Enter the AI prompt for this collection',
+  'openai_topicEditAgent': 'Edit collection AI',
 };

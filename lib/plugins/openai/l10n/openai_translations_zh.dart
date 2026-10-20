@@ -405,9 +405,5 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_topicConversationDeleted': '对话已删除',
   'openai_topicCreateFailed': '创建对话失败',
   'openai_topicChatUnavailable': '聊天服务未就绪，请稍后再试',
-  'openai_topicEditPrompt': '自定义 AI 提示词',
-  'openai_topicPromptSaved': '提示词已保存',
-  'openai_topicPromptHint':
-      '「@name」合集的 AI 系统提示词，保存后同步到该合集的内置智能体；已开启的对话不受影响。',
-  'openai_topicPromptPlaceholder': '输入合集的 AI 提示词',
+  'openai_topicEditAgent': '编辑合集 AI 配置',
 };

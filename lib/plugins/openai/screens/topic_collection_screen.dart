@@ -14,6 +14,8 @@ import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
 import 'package:aboutme/plugins/agent_chat/services/conversation_service.dart';
 import 'package:aboutme/plugins/openai/models/topic_collection.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
+import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 import 'package:aboutme/plugins/openai/services/topic_chat_service.dart';
 import 'package:aboutme/plugins/openai/widgets/sketch_tree_edge_renderer.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -188,12 +190,12 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
             builder: (context) {
               final theme = DSThemeBridge.resolve(context);
               return DSIconButton(
-                icon: DsIconKind.edit,
+                icon: DsIconKind.bot,
                 size: 36,
                 color: theme.surfaceAlt,
                 iconColor: theme.textSub,
-                tooltip: 'openai_topicEditPrompt'.tr,
-                onPressed: () => _showPromptEditor(collection),
+                tooltip: 'openai_topicEditAgent'.tr,
+                onPressed: () => _editCollectionAgent(collection),
               );
             },
           ),
@@ -501,12 +503,21 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
     }
   }
 
-  void _openConversation(Conversation conversation) {
+  void _openConversation(Conversation conversation) async {
     final controller = AgentChatPlugin.instance.conversationController;
     if (controller == null) {
       toastService.showToast('openai_topicChatUnavailable'.tr);
       return;
     }
+    // 合集 agent 存在独立存储（extra storage），会话按 agentId 解析前
+    // 需注入临时列表（app 重启后临时表为空）
+    final collection = TopicChatService.instance.collectionById(
+      TopicChatService.topicInfoOf(conversation)?.collectionId ?? '',
+    );
+    if (collection != null) {
+      await TopicChatService.instance.ensureCollectionAgent(collection);
+    }
+    if (!mounted) return;
     NavigationHelper.push(
       context,
       ChatScreen(
@@ -518,48 +529,32 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
     );
   }
 
-  // ========== prompt 自定义 ==========
+  // ========== 合集 agent 配置 ==========
 
-  Future<void> _showPromptEditor(TopicCollection collection) async {
-    final controller = TextEditingController(
-      text: await TopicChatService.instance.effectivePrompt(collection),
+  /// 打开 agent 编辑页：合集的 AI 是一份完整 agent 配置，
+  /// 独立存储（extra storage），经 AgentEditScreen 编辑。
+  /// 走 onSave 回调模式：保存由回调写独立存储，
+  /// 编辑页的分享/克隆/删除入口（面向全局 agent 列表）不出现
+  Future<void> _editCollectionAgent(TopicCollection collection) async {
+    final agent = await TopicChatService.instance.ensureCollectionAgent(
+      collection,
     );
-    final theme = DSThemeBridge.resolve(context);
-    await SmoothBottomSheet.showForm(
-      context: context,
-      title: 'openai_topicEditPrompt'.tr,
-      onSave: () async {
-        final text = controller.text.trim();
-        if (text.isEmpty) return;
-        Navigator.pop(context);
-        await TopicChatService.instance.setPromptOverride(collection, text);
-        if (mounted) {
-          toastService.showToast('openai_topicPromptSaved'.tr);
-        }
-      },
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'openai_topicPromptHint'.trParams({'name': collection.name}),
-              style: DsTypography.caption.copyWith(color: theme.textSub),
-            ),
-            const SizedBox(height: 12),
-            DSInput(
-              controller: controller,
-              maxLines: 10,
-              minLines: 6,
-              maxLength: 8000,
-              hint: 'openai_topicPromptPlaceholder'.tr,
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
+    if (!mounted) return;
+    await NavigationHelper.push(
+      context,
+      AgentEditScreen(
+        agent: agent,
+        onSave: (edited) async {
+          await AgentController().saveAgentToExtraStorage(
+            edited,
+            TopicChatService.storageKeyFor(collection),
+          );
+          return edited;
+        },
       ),
     );
+    // 编辑保存写入了独立存储，重新注入临时表让新对话立即生效
+    await TopicChatService.instance.ensureCollectionAgent(collection);
   }
 }
 
