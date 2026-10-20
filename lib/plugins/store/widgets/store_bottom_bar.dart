@@ -11,6 +11,7 @@ import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/store/store_plugin.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 
 /// Store 插件的底部栏组件
 /// 提供商品列表、用户物品和积分历史三个 Tab 的切换功能
@@ -40,7 +41,14 @@ class _StoreBottomBarState extends State<StoreBottomBar>
         setState(() {
           _currentPage = value;
         });
+        // 更新路由上下文
+        _updateRouteContext(value);
       }
+    });
+
+    // 初始化时设置路由上下文
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateRouteContext(_currentPage);
     });
   }
 
@@ -48,6 +56,36 @@ class _StoreBottomBarState extends State<StoreBottomBar>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到当前tab状态
+  void _updateRouteContext(int tabIndex) {
+    final controller = widget.plugin.controller;
+    String pageId;
+    String title;
+    final Map<String, dynamic> params = {'tabIndex': tabIndex};
+
+    switch (tabIndex) {
+      case 1:
+        pageId = '/store/my_items';
+        title = 'store_myItems'.tr;
+        params['itemCount'] = controller.userItems.length;
+        break;
+      case 2:
+        pageId = '/store/points_history';
+        title = 'store_pointsHistory'.tr;
+        params['points'] = controller.currentPoints;
+        break;
+      default:
+        pageId = '/store';
+        title = 'store_productList'.tr;
+    }
+
+    RouteHistoryManager.updateCurrentContext(
+      pageId: pageId,
+      title: title,
+      params: params,
+    );
   }
 
   /// 显示添加积分对话框

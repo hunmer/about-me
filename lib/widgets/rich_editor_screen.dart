@@ -6,6 +6,7 @@ import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/common/cute_notepad_editor.dart';
@@ -134,6 +135,22 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
     if (_isNewEntry) {
       _startEditing();
     }
+    // 无名路由打开时（RouteHistoryManager 记为 unknown），上报通用编辑页
+    // 上下文供"询问当前上下文"识别；命名路由（如 /diary_edit）已带有效
+    // 上下文，保持不动
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final current = RouteHistoryManager.getCurrentContext();
+      if (current == null || current.pageId == 'unknown') {
+        RouteHistoryManager.updateCurrentContext(
+          pageId: '/rich_editor',
+          title: widget.initialTitle.trim().isEmpty
+              ? '富文本编辑'
+              : widget.initialTitle,
+          params: {'title': widget.initialTitle},
+        );
+      }
+    });
   }
 
   @override

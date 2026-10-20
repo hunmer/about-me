@@ -90,6 +90,8 @@ class RouteParser {
     '/chat/timeline': '用户正在查看聊天时间线',
     '/chat/tags': '用户正在查看聊天标签',
     '/chat/channel': '用户正在 {channelName} 频道中聊天',
+    '/chat/stats': '用户正在查看聊天统计',
+    '/chat/timeline_walk': '用户正在随机漫游聊天时间线',
     '/calendar_album': '用户正在查看日历相册',
     '/calendar_album_calendar': '用户正在查看 {date} 的日历日记',
     '/calendar_album_entry_detail': '用户正在查看 {date} 的日记：{title}（ID: {entryId}）',
@@ -104,6 +106,8 @@ class RouteParser {
     '/nodes': '用户正在查看知识库',
     '/scripts_center': '用户正在查看脚本中心',
     '/store': '用户正在查看商店',
+    '/store/my_items': '用户正在查看我的物品（{itemCount} 件）',
+    '/store/points_history': '用户正在查看积分历史（当前积分：{points}）',
     '/timer': '用户正在查看计时器',
     '/timer_main': '用户正在查看 {group} 分组的计时器列表',
     '/timer_details': '用户正在查看计时器任务 {taskName} 的详情（当前计时器: {currentTimerName}，状态: {isRunning}）',
@@ -169,6 +173,8 @@ class RouteParser {
     '/chat': ['总结最近的聊天记录', '帮我回顾重要对话'],
     '/chat/timeline': ['总结最近聊了什么', '帮我回顾聊天时间线'],
     '/chat/channel': ['总结这个频道的聊天内容', '帮我回顾重要消息'],
+    '/chat/stats': ['总结我的聊天数据', '哪个频道最活跃？'],
+    '/chat/timeline_walk': ['帮我回顾刚漫游到的消息', '总结这段聊天内容'],
     '/calendar_album': ['总结最近的日记相册', '帮我回顾这个月的记录'],
     '/calendar_album_calendar': ['分析这天的日记内容', '帮我回顾这天的记录'],
     '/calendar_album_album': ['帮我回顾相册里的照片', '总结照片记录的生活'],
@@ -177,6 +183,9 @@ class RouteParser {
     '/day_list': ['整理一下我的纪念日', '最近有什么纪念日要到了？'],
     '/day_detail': ['帮我回顾这个纪念日的意义', '为这个纪念日想句祝福'],
     '/nodes': ['总结我的知识库内容', '帮我梳理知识结构'],
+    '/store': ['我还有多少积分？', '推荐一些值得兑换的商品'],
+    '/store/my_items': ['总结一下我有哪些物品', '帮我看看哪些物品该用了'],
+    '/store/points_history': ['分析我的积分收支', '最近积分变化大吗？'],
     '/timer': ['分析我的计时使用情况', '帮我总结时间开销'],
     '/timer_main': ['总结这组计时器的使用情况', '分析我的时间分配'],
     '/timer_details': ['分析这个任务的计时情况', '总结这个任务的时间开销'],
@@ -226,6 +235,16 @@ class RouteParser {
 
       // 确保至少有一个有效的路由名称
       routeName ??= '/';
+
+      // /plugin/{id} 形式的路由（openPlugin 推入，如 /plugin/store）
+      // 去掉前缀后按子路由模板匹配（/plugin/store → /store）
+      if (!_routeTemplates.containsKey(routeName) &&
+          routeName.startsWith('/plugin/')) {
+        final subRoute = '/${routeName.substring('/plugin/'.length)}';
+        if (_routeTemplates.containsKey(subRoute)) {
+          routeName = subRoute;
+        }
+      }
 
       // 获取路由模板
       String description = _routeTemplates[routeName] ?? '用户正在查看：$routeName';

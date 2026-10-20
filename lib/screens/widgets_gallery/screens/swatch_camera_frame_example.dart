@@ -1,7 +1,7 @@
 import 'package:aboutme/widgets/swatch_camera_frame.dart';
 import 'package:flutter/material.dart';
 
-/// Swatch 3D 相机相框示例（可切换 1:2 / 9:16 / 16:9 三种相框比例）
+/// Swatch 3D 相机相框示例（可切换相机背面 原始 / 9:16 / 16:9 三种比例样式）
 class SwatchCameraFrameExample extends StatefulWidget {
   const SwatchCameraFrameExample({super.key});
 
@@ -29,7 +29,7 @@ class _SwatchCameraFrameExampleState extends State<SwatchCameraFrameExample> {
               segments: const [
                 ButtonSegment(
                   value: SwatchFrameRatio.original,
-                  label: Text('1:2'),
+                  label: Text('原始'),
                 ),
                 ButtonSegment(
                   value: SwatchFrameRatio.portrait9x16,
@@ -59,7 +59,7 @@ class _SwatchCameraFrameExampleState extends State<SwatchCameraFrameExample> {
           const Padding(
             padding: EdgeInsets.only(bottom: 16),
             child: Text(
-              '点击相机播放动画 · 奖励态点击任意处返回',
+              '切换比例改变相机形态 · 点击相机播放动画 · 奖励态点击任意处返回',
               style: TextStyle(fontSize: 12, color: Colors.black45),
             ),
           ),

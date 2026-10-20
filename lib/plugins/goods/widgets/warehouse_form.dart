@@ -73,10 +73,7 @@ class _WarehouseFormState extends State<WarehouseForm> {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Row(
         children: [
-          DSIconButton(
-            icon: widget.inSheet ? DsIconKind.close : DsIconKind.chevronLeft,
-            onPressed: () => Navigator.pop(context),
-          ),
+          const SizedBox(width: 44), // Balance the close button
           Expanded(
             child: Text(
               isEdit
@@ -89,7 +86,10 @@ class _WarehouseFormState extends State<WarehouseForm> {
               ),
             ),
           ),
-          const SizedBox(width: 44), // Balance the back button
+          DSIconButton(
+            icon: widget.inSheet ? DsIconKind.close : DsIconKind.chevronLeft,
+            onPressed: () => Navigator.pop(context),
+          ),
         ],
       ),
     );

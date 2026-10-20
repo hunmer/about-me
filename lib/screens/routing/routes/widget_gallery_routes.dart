@@ -1020,7 +1020,7 @@ class WidgetGalleryRoutes implements RouteRegistry {
         const SwatchCameraFrameExample(),
         settings: settings,
       ),
-      description: 'Swatch 3D 相机相框（1:2 / 9:16 / 16:9）',
+      description: 'Swatch 3D 相机相框（相机比例样式 原始 / 9:16 / 16:9）',
     ),
   ];
 }

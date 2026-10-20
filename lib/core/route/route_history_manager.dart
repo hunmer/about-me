@@ -36,6 +36,14 @@ class RouteHistoryManager extends NavigatorObserver {
   /// 用于"询问当前上下文"功能获取当前页面信息
   PageVisitRecord? _currentRouteContext;
 
+  /// 当前栈顶的页面路由（有路由名的才算页面，弹层/对话框不算）
+  /// 用于把页面手动设置的上下文绑定到路由
+  Route<dynamic>? _currentTopPageRoute;
+
+  /// 各页面路由手动设置过的上下文（弱引用，路由销毁后条目可回收）
+  /// pop 返回页面时优先按它恢复，避免只按路由名恢复而丢失 channelId 等参数
+  final Expando<PageVisitRecord> _manualRouteContexts = Expando();
+
   /// 路由栈中插件主界面路由的层数
   int _pluginRouteCount = 0;
 
@@ -293,6 +301,9 @@ class RouteHistoryManager extends NavigatorObserver {
       'type=${route.runtimeType}');
     _claimPendingPluginRoute(route);
     _trackPluginRoute(route, 1);
+    if (_hasRouteName(route)) {
+      _currentTopPageRoute = route;
+    }
     _recordRoute(route);
   }
 
@@ -300,9 +311,10 @@ class RouteHistoryManager extends NavigatorObserver {
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPop(route, previousRoute);
     _trackPluginRoute(route, -1, previousRoute);
-    // pop 操作不记录新路由，但可以更新当前上下文到前一个路由
-    if (previousRoute != null) {
-      _updateCurrentContextFromRoute(previousRoute);
+    // pop 操作不记录新路由，但可以更新当前上下文到前一个路由。
+    // 弹出的若是弹层/对话框（无路由名），上下文一直描述其下方页面，无需恢复
+    if (previousRoute != null && _hasRouteName(route)) {
+      _restoreContextForRoute(previousRoute);
     }
   }
 
@@ -315,6 +327,9 @@ class RouteHistoryManager extends NavigatorObserver {
     if (newRoute != null) {
       _claimPendingPluginRoute(newRoute);
       _trackPluginRoute(newRoute, 1);
+      if (_hasRouteName(newRoute)) {
+        _currentTopPageRoute = newRoute;
+      }
       _recordRoute(newRoute);
     }
   }
@@ -405,8 +420,8 @@ class RouteHistoryManager extends NavigatorObserver {
 
     // 只有设置了路由名称的才能记录到历史（用于复原跳转）
     if (routeName == null || routeName.isEmpty) {
-      // 没有路由名称，无法复原跳转，只更新当前上下文
-      _updateCurrentContextFromRoute(route);
+      // 弹层/对话框（无路由名）不是页面导航，
+      // 不覆盖当前上下文（否则会丢掉页面手动设置的 channelId 等参数）
       return;
     }
 
@@ -440,6 +455,28 @@ class RouteHistoryManager extends NavigatorObserver {
       visitCount: 1,
       params: _extractParams(args),
     );
+  }
+
+  /// 路由是否带有效名字（页面路由）；无名字的视为弹层/对话框
+  bool _hasRouteName(Route<dynamic> route) {
+    final name = route.settings.name;
+    return name != null && name.isNotEmpty;
+  }
+
+  /// pop 返回某页面时恢复上下文
+  ///
+  /// 优先恢复该页面手动设置过的上下文（含 channelId 等参数），
+  /// 没有手动设置过才按路由名生成
+  void _restoreContextForRoute(Route<dynamic> route) {
+    if (_hasRouteName(route)) {
+      _currentTopPageRoute = route;
+    }
+    final manual = _manualRouteContexts[route];
+    if (manual != null) {
+      _currentRouteContext = manual;
+      return;
+    }
+    _updateCurrentContextFromRoute(route);
   }
 
   /// 从参数对象提取参数 Map
@@ -536,6 +573,12 @@ class RouteHistoryManager extends NavigatorObserver {
       visitCount: 1,
       params: params,
     );
+
+    // 绑定到当前栈顶页面路由，pop 返回该页面时按它恢复（保留参数）
+    final topRoute = manager._currentTopPageRoute;
+    if (topRoute != null) {
+      manager._manualRouteContexts[topRoute] = manager._currentRouteContext!;
+    }
 
     debugPrint('RouteHistoryManager: 更新当前路由上下文 "$pageId"，参数: $params');
   }

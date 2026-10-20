@@ -5,24 +5,30 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-/// 相框尺寸比例
+/// 相机背面（大取景器形态）面板的长宽比例样式
 enum SwatchFrameRatio {
-  /// 原始 1:2（390x780）
-  original(390 / 780),
+  /// 原始 294x312
+  original(294, 312),
 
-  /// 竖屏 9:16
-  portrait9x16(9 / 16),
+  /// 竖长 9:16（198x352）
+  portrait9x16(198, 352),
 
-  /// 横屏 16:9（场景左右留白居中）
-  landscape16x9(16 / 9);
+  /// 横宽 16:9（336x189）
+  landscape16x9(336, 189);
 
-  const SwatchFrameRatio(this.aspectRatio);
+  const SwatchFrameRatio(this.backWidth, this.backHeight);
 
-  final double aspectRatio;
+  /// 背面面板宽度（场景坐标）
+  final double backWidth;
+
+  /// 背面面板高度（场景坐标）
+  final double backHeight;
 }
 
 /// "Swatch This" 3D 相机交互动画相框
 ///
+/// 相框固定为 390x780（1:2）样式，内部场景等比居中适配。
+/// [ratio] 控制相机翻转到背面时的面板比例样式（原始 / 9:16 / 16:9）。
 /// 点击相机/手套播放一段 3D 翻转拍照动画，完成后进入奖励态，
 /// 奖励态点击任意处返回初始态。1.6 秒无操作自动播放（可用 [autoPlay] 关闭）。
 class SwatchCameraFrame extends StatefulWidget {
@@ -56,11 +62,22 @@ class _SwatchCameraFrameState extends State<SwatchCameraFrame>
   @override
   void initState() {
     super.initState();
+    _s.backW = widget.ratio.backWidth;
+    _s.backH = widget.ratio.backHeight;
     _ticker = createTicker(_onTick)..start();
     if (widget.autoPlay) {
       _autoPlayTimer = Timer(const Duration(milliseconds: 1600), () {
         if (_mode == _AnimMode.idle) _trigger();
       });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SwatchCameraFrame oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.ratio != widget.ratio) {
+      _s.backW = widget.ratio.backWidth;
+      _s.backH = widget.ratio.backHeight;
     }
   }
 
@@ -321,11 +338,10 @@ class _SwatchCameraFrameState extends State<SwatchCameraFrame>
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: widget.ratio.aspectRatio,
+      aspectRatio: sceneW / sceneH,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final fitScale = math.min(constraints.maxWidth / sceneW,
-              constraints.maxHeight / sceneH);
+          final fitScale = constraints.maxWidth / sceneW;
           final radius = 42.0 * fitScale;
           final borderRadius = BorderRadius.circular(radius);
           return Container(
@@ -377,6 +393,10 @@ class _SwatchCameraFrameState extends State<SwatchCameraFrame>
 /// 相机 3D 与场景 UI 的全部可变状态
 class _CameraState {
   double nowMs = 0;
+
+  // 相机背面面板尺寸（由 SwatchFrameRatio 决定）
+  double backW = 294;
+  double backH = 312;
 
   // 相机核心 3D 参数
   double cx = 195;
@@ -754,8 +774,8 @@ class _SwatchScenePainter extends CustomPainter {
 
   // ================= 核心：3D 相机 =================
   void _paintCamera(Canvas canvas) {
-    final w = _lerp(144, 294, s.morph);
-    final h = _lerp(112, 312, s.morph);
+    final w = _lerp(144, s.backW, s.morph);
+    final h = _lerp(112, s.backH, s.morph);
     final r = _lerp(24, 42, s.morph);
 
     final radY = s.ry * _deg;
@@ -920,7 +940,7 @@ class _SwatchScenePainter extends CustomPainter {
     final backZ = -s.depth / 2;
     canvas.save();
     canvas.translate(-sinY * backZ, sinX * backZ);
-    canvas.scale((w / 294) * faceScaleX, h / 312);
+    canvas.scale((w / s.backW) * faceScaleX, h / s.backH);
 
     // 背面机身外框与高光金属倒角
     final bodyRect = Rect.fromLTWH(-147, -156, 294, 312);
