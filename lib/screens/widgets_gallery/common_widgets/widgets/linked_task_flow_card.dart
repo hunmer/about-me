@@ -23,6 +23,21 @@ class LinkedTaskItemData {
   /// 卡片宽度占比（0 - 1，为 null 时按索引轮换 0.645 / 0.765 / 0.76）
   final double? widthFactor;
 
+  /// 头像槽：自定义头像 Widget（如心情表情），优先于 avatarColor/avatarIcon
+  final Widget? avatar;
+
+  /// 照片槽：显示在顶行胶囊右侧的圆形缩略图
+  final ImageProvider? photo;
+
+  /// 文本胶囊槽位（非空时替代 "Assign to" 固定行）
+  final List<String>? chips;
+
+  /// 是否显示进度填充与百分比文案（默认 true）
+  final bool showProgress;
+
+  /// 进度关闭时胶囊内的文字槽（如天气/位置）
+  final String? badgeText;
+
   const LinkedTaskItemData({
     required this.title,
     required this.assignee,
@@ -30,6 +45,11 @@ class LinkedTaskItemData {
     this.avatarColor,
     this.avatarIcon,
     this.widthFactor,
+    this.avatar,
+    this.photo,
+    this.chips,
+    this.showProgress = true,
+    this.badgeText,
   });
 }
 
@@ -416,17 +436,18 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
                   clipBehavior: Clip.antiAlias,
                   child: Stack(
                     children: [
-                      // 白色半透明进度填充层
-                      FractionallySizedBox(
-                        widthFactor: (fill * item.progress / 100).clamp(
-                          0.0,
-                          1.0,
+                      // 白色半透明进度填充层（进度关闭时不占槽位）
+                      if (item.showProgress)
+                        FractionallySizedBox(
+                          widthFactor: (fill * item.progress / 100).clamp(
+                            0.0,
+                            1.0,
+                          ),
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            color: Colors.white.withValues(alpha: 0.42),
+                          ),
                         ),
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          color: Colors.white.withValues(alpha: 0.42),
-                        ),
-                      ),
                       Padding(
                         padding: EdgeInsets.only(right: 12 * k),
                         child: Row(
@@ -435,7 +456,9 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
                             SizedBox(width: 8 * k),
                             Expanded(
                               child: Text(
-                                '${(fill * item.progress).round()}% Done',
+                                item.showProgress
+                                    ? '${(fill * item.progress).round()}% Done'
+                                    : (item.badgeText ?? ''),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -454,6 +477,18 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
                 ),
               ),
               SizedBox(width: 8 * k),
+              // 照片槽：胶囊右侧的圆形缩略图
+              if (item.photo != null)
+                ClipOval(
+                  child: Image(
+                    image: item.photo!,
+                    width: 38 * k,
+                    height: 38 * k,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              if (item.photo != null) SizedBox(width: 8 * k),
               // 圆形操作按钮
               _wrapTap(
                 Container(
@@ -486,35 +521,78 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
             ),
           ),
           SizedBox(height: 3 * k),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: 'Assign to: ',
-                  style: TextStyle(
-                    color: const Color(0xFF8E4728),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                TextSpan(
-                  text: item.assignee,
-                  style: TextStyle(
-                    color: const Color(0xFF121212),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 13.5 * k, height: 1.3),
-          ),
+          _buildBottomRow(item, k),
         ],
       ),
     );
   }
 
+  /// 底部行：chips 槽位优先，回退到 "Assign to" 负责人（gallery 兼容）
+  Widget _buildBottomRow(LinkedTaskItemData item, double k) {
+    if (item.chips != null && item.chips!.isNotEmpty) {
+      return Wrap(
+        spacing: 6 * k,
+        runSpacing: 4 * k,
+        children: [
+          for (final chip in item.chips!)
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: 9 * k,
+                vertical: 3 * k,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.42),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                chip,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: const Color(0xFF121212),
+                  fontSize: 11 * k,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: 'Assign to: ',
+            style: TextStyle(
+              color: const Color(0xFF8E4728),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          TextSpan(
+            text: item.assignee,
+            style: TextStyle(
+              color: const Color(0xFF121212),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(fontSize: 13.5 * k, height: 1.3),
+    );
+  }
+
   Widget _buildAvatar(LinkedTaskItemData item, int index, double k) {
+    // 头像槽：自定义 Widget 优先（FittedBox 保证任意尺寸都不溢出）
+    if (item.avatar != null) {
+      return SizedBox(
+        width: 38 * k,
+        height: 38 * k,
+        child: Center(child: FittedBox(child: item.avatar!)),
+      );
+    }
     final color = item.avatarColor ??
         _defaultAvatarColors[index % _defaultAvatarColors.length];
     return Container(

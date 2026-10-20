@@ -201,7 +201,7 @@ class _EnhancedCalendarState extends State<EnhancedCalendar> {
                 ? (widget.config.todayDecoration?.color ??
                     Theme.of(context).primaryColor.withValues(alpha: 0.1))
                 : hasEntryWithoutImage
-                ? Theme.of(context).primaryColor.withValues(alpha: 0.08)
+                ? Theme.of(context).primaryColor.withValues(alpha: 0.22)
                 : null,
         image:
             backgroundImage != null
@@ -252,7 +252,7 @@ class _EnhancedCalendarState extends State<EnhancedCalendar> {
                     size: 11,
                     color: Theme.of(
                       context,
-                    ).primaryColor.withValues(alpha: 0.45),
+                    ).primaryColor.withValues(alpha: 0.75),
                   ),
                 ),
               if (count != null && count > 1)

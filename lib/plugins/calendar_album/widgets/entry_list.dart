@@ -3,7 +3,21 @@ import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
+import 'package:aboutme/plugins/diary/widgets/diary_mood_face.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/linked_task_flow_card.dart';
+
+/// 相册英文心情 -> diary 心情 emoji（复用表情图片与配色）
+const _moodEmojiMap = {
+  'Happy': '😊',
+  'Sad': '😢',
+  'Excited': '🥳',
+  'Tired': '😴',
+  'Calm': '😐',
+  'Anxious': '😬',
+  'Content': '☺️',
+  'Angry': '😡',
+};
 
 class EntryList extends StatelessWidget {
   final List<CalendarEntry> entries;
@@ -45,7 +59,7 @@ class EntryList extends StatelessWidget {
     );
   }
 
-  /// 连线任务流卡片：每篇日记一张交错卡片，点击打开编辑
+  /// 连线任务流卡片：每篇日记一张交错卡片（心情表情 + 照片 + 标题 + 信息胶囊）
   Widget _buildList(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -55,8 +69,36 @@ class EntryList extends StatelessWidget {
           for (final entry in entries)
             LinkedTaskItemData(
               title: entry.title,
-              assignee: entry.location ?? entry.mood ?? '',
-              progress: 100,
+              assignee: '',
+              showProgress: false,
+              // 胶囊文字槽：天气（无天气留空）
+              badgeText:
+                  entry.weather != null
+                      ? 'calendar_album_weather_${entry.weather!.toLowerCase()}'
+                            .tr
+                      : null,
+              // 头像槽：心情表情脸
+              avatar:
+                  entry.mood != null
+                      ? DiaryMoodFaceCircle(
+                        spec: diaryMoodSpecOf(
+                          _moodEmojiMap[entry.mood!] ?? entry.mood!,
+                        ),
+                        size: 38,
+                      )
+                      : null,
+              avatarIcon:
+                  entry.mood == null ? Icons.menu_book : null,
+              // 照片槽：首图
+              photo:
+                  entry.imageUrls.isNotEmpty
+                      ? ImageUtils.createImageProvider(entry.imageUrls.first)
+                      : null,
+              // 文本胶囊槽位：位置 + 标签
+              chips: [
+                if (entry.location != null) entry.location!,
+                ...entry.tags.take(2),
+              ],
             ),
         ],
         onItemTap: (index) => onTap(entries[index]),
