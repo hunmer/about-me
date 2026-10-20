@@ -130,6 +130,8 @@ class _SyncfusionCalendarWidgetState extends State<SyncfusionCalendarWidget> {
 
     final backgroundImage = dayData?.backgroundImage;
     final count = dayData?.count;
+    // 有条目但无图：格子显示占位（淡底 + 小图标）
+    final hasEntryWithoutImage = dayData != null && backgroundImage == null;
     final isSelected =
         _selectedDate != null && _isSameDay(details.date, _selectedDate!);
     final isToday = _isSameDay(details.date, DateTime.now());
@@ -197,10 +199,12 @@ class _SyncfusionCalendarWidgetState extends State<SyncfusionCalendarWidget> {
         margin: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          // 优先级：背景图片 > 今天高亮 > 默认
+          // 优先级：背景图片 > 今天高亮 > 条目占位 > 默认
           color:
               backgroundImage == null && isToday
                   ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                  : hasEntryWithoutImage
+                  ? Theme.of(context).primaryColor.withValues(alpha: 0.22)
                   : null,
           image:
               backgroundImage != null
@@ -223,6 +227,20 @@ class _SyncfusionCalendarWidgetState extends State<SyncfusionCalendarWidget> {
           children: [
             // 日期数字
             Center(child: Text(details.date.day.toString(), style: textStyle)),
+
+            // 条目占位小图标（有日记无图）
+            if (hasEntryWithoutImage)
+              Positioned(
+                bottom: 3,
+                right: 3,
+                child: Icon(
+                  Icons.image_outlined,
+                  size: 11,
+                  color: Theme.of(
+                    context,
+                  ).primaryColor.withValues(alpha: 0.75),
+                ),
+              ),
 
             // 计数徽章
             if (count != null && count > 1)

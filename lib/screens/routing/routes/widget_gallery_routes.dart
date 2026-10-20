@@ -11,7 +11,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/image_picker_example.dar
 import 'package:aboutme/screens/widgets_gallery/screens/location_picker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/aboutme_editor_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/data_selector_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/enhanced_calendar_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/group_selector_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/simple_group_selector_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/tag_manager_example.dart';
@@ -27,6 +26,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/widget_config_editor_exa
 import 'package:aboutme/screens/widgets_gallery/screens/preset_edit_form_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/super_cupertino_navigation_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/run_receipt_printer_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/moments_nyc_map_example.dart';
 
 import 'package:aboutme/screens/widgets_gallery/screens/segmented_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/circular_progress_card_example.dart';
@@ -217,14 +217,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '数据选择器示例',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/enhanced_calendar',
-      handler: (settings) => RouteHelpers.createRoute(
-        const EnhancedCalendarExample(),
-        settings: settings,
-      ),
-      description: '增强日历示例',
     ),
     RouteDefinition(
       path: '/widgets_gallery/group_selector',
@@ -1084,6 +1076,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '热敏打印 Run Receipt 账单（吐纸动画 + 拖拽查看）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/moments_nyc_map',
+      handler: (settings) => RouteHelpers.createRoute(
+        const MomentsNycMapExample(),
+        settings: settings,
+      ),
+      description: 'Moments 纽约互动地图（flutter_map + 手账照片详情）',
     ),
   ];
 }

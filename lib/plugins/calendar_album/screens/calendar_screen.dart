@@ -736,13 +736,13 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
   }
 
   /// 获取指定月份的日历数据（带缓存）- 垂直视图
-  /// 注意: isSelected 和 isToday 状态由 EnhancedCalendar 内部的 _dayBuilder 处理，
+  /// 注意: isSelected 和 isToday 状态由 SyncfusionCalendarWidget 内部的 _monthCellBuilder 处理，
   /// 这里只需要提供背景图片和条目数量等静态数据
   Map<DateTime, CalendarDayData> _getCalendarDayData(DateTime month) {
     final monthKey = _getMonthKey(month);
 
     // 检查缓存 - 直接返回，不修改缓存中的选中/今日状态
-    // EnhancedCalendar._dayBuilder 会自己计算这些动态状态
+    // SyncfusionCalendarWidget._monthCellBuilder 会自己计算这些动态状态
     if (_cachedDayData.containsKey(monthKey)) {
       return _cachedDayData[monthKey]!;
     }
@@ -776,7 +776,7 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
           date: date,
           backgroundImage: backgroundImage,
           count: entries.length,
-          // 以下状态由 EnhancedCalendar._dayBuilder 内部计算，这里设置默认值
+          // 以下状态由 SyncfusionCalendarWidget._monthCellBuilder 内部计算，这里设置默认值
           isSelected: false,
           isToday: false,
           isCurrentMonth: date.year == month.year && date.month == month.month,

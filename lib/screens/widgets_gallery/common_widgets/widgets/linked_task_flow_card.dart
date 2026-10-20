@@ -38,6 +38,13 @@ class LinkedTaskItemData {
   /// 进度关闭时胶囊内的文字槽（如天气/位置）
   final String? badgeText;
 
+  /// 负责人行前缀文案（默认 "Assign to: "，传空串则只显示内容）
+  final String? assignLabel;
+
+  /// 图片堆叠槽：嵌入卡片的自定义内容（如 WalkStackCardWidget 照片堆），
+  /// 占据 chips 行以下的剩余卡面空间（FittedBox 自适应缩放）
+  final Widget? photoStack;
+
   const LinkedTaskItemData({
     required this.title,
     required this.assignee,
@@ -50,6 +57,8 @@ class LinkedTaskItemData {
     this.chips,
     this.showProgress = true,
     this.badgeText,
+    this.assignLabel,
+    this.photoStack,
   });
 }
 
@@ -87,6 +96,9 @@ class LinkedTaskFlowCardWidget extends StatefulWidget {
   /// 组件尺寸
   final HomeWidgetSize size;
 
+  /// 单卡高度（设计基准 px，默认 130；嵌入 photoStack 等大内容时可调高）
+  final double cardHeight;
+
   const LinkedTaskFlowCardWidget({
     super.key,
     required this.items,
@@ -98,6 +110,7 @@ class LinkedTaskFlowCardWidget extends StatefulWidget {
     this.inline = false,
     this.onItemTap,
     this.size = const Large3Size(),
+    this.cardHeight = 130,
   });
 
   /// 从 props 创建实例
@@ -258,7 +271,7 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
   double _computeHeight(double boxWidth) {
     final k = boxWidth / _designWidth;
     final n = math.max(1, widget.items.length);
-    return n * 130 * k + (n - 1) * 26 * k + 2 * 14 * k;
+    return n * widget.cardHeight * k + (n - 1) * 26 * k + 2 * 14 * k;
   }
 
   @override
@@ -276,7 +289,7 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
         final k = width / _designWidth;
         final vPad = 14.0 * k;
         final hPad = 16.0 * k;
-        final cardH = 130.0 * k;
+        final cardH = widget.cardHeight * k;
         final gap = 26.0 * k;
         final stageW = width - 2 * hPad;
 
@@ -524,65 +537,85 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
             SizedBox(height: 3 * k),
           ],
           _buildBottomRow(item, k),
+          // 图片堆叠槽：占满剩余卡面，内容自适应缩放
+          if (item.photoStack != null)
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(top: 8 * k),
+                child: Center(child: FittedBox(child: item.photoStack!)),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  /// 底部行：chips 槽位优先，回退到 "Assign to" 负责人（gallery 兼容）
+  /// 底部行：chips 槽位与内容行（原 "Assign to" 负责人）可共存
   Widget _buildBottomRow(LinkedTaskItemData item, double k) {
-    if (item.chips != null && item.chips!.isNotEmpty) {
-      return Wrap(
-        spacing: 6 * k,
-        runSpacing: 4 * k,
-        children: [
-          for (final chip in item.chips!)
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: 9 * k,
-                vertical: 3 * k,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.42),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                chip,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: const Color(0xFF121212),
-                  fontSize: 11 * k,
-                  fontWeight: FontWeight.w600,
-                  height: 1.2,
+    final chips =
+        (item.chips == null || item.chips!.isEmpty) ? null : item.chips;
+    final showContent = item.assignee.isNotEmpty;
+
+    if (chips == null && !showContent) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (chips != null)
+          Wrap(
+            spacing: 6 * k,
+            runSpacing: 4 * k,
+            children: [
+              for (final chip in chips)
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 9 * k,
+                    vertical: 3 * k,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.42),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    chip,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: const Color(0xFF121212),
+                      fontSize: 11 * k,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-        ],
-      );
-    }
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: 'Assign to: ',
-            style: TextStyle(
-              color: const Color(0xFF8E4728),
-              fontWeight: FontWeight.w600,
-            ),
+            ],
           ),
-          TextSpan(
-            text: item.assignee,
-            style: TextStyle(
-              color: const Color(0xFF121212),
-              fontWeight: FontWeight.w700,
+        if (chips != null && showContent) SizedBox(height: 4 * k),
+        if (showContent)
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: item.assignLabel ?? 'Assign to: ',
+                  style: TextStyle(
+                    color: const Color(0xFF8E4728),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextSpan(
+                  text: item.assignee,
+                  style: TextStyle(
+                    color: const Color(0xFF121212),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 13.5 * k, height: 1.3),
           ),
-        ],
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(fontSize: 13.5 * k, height: 1.3),
+      ],
     );
   }
 

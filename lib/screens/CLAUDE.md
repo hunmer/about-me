@@ -119,7 +119,6 @@
   - `location_picker_example.dart` - 位置选择器示例
   - `aboutme_editor_example.dart` - 编辑器示例
   - `data_selector_example.dart` - 数据选择器示例
-  - `enhanced_calendar_example.dart` - 增强日历示例
   - `group_selector_example.dart` - 分组选择器示例
   - `simple_group_selector_example.dart` - 简单分组选择器示例
   - `tag_manager_example.dart` - 标签管理器示例

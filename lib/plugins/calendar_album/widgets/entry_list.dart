@@ -21,8 +21,11 @@ const _moodEmojiMap = {
   'Angry': '😡',
 };
 
-/// 图片堆卡片缩放（基准卡 282×348，适配抽屉宽度）
-const double _photoStackScale = 0.5;
+/// 卡内照片堆缩放（基准卡 282×348，实际由 FittedBox 再自适应卡面）
+const double _photoStackScale = 0.3;
+
+/// 内嵌照片堆后调高的单卡高度（基准 px）
+const double _entryCardHeight = 240;
 
 class EntryList extends StatelessWidget {
   final List<CalendarEntry> entries;
@@ -67,100 +70,85 @@ class EntryList extends StatelessWidget {
   Widget _buildList(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Column(
-        children: [
-          // 连线卡片：心情表情 + 名称胶囊 + 信息胶囊（主题配色，不用橘色默认）
-          Expanded(
-            child: LinkedTaskFlowCardWidget(
-              inline: true,
-              backgroundFrom: theme.surfaceAlt,
-              backgroundTo: theme.surfaceAlt,
-              cardColor: theme.surface,
-              connectorColor: theme.primary,
-              showStripes: false,
-              items: [
-                for (final entry in entries)
-                  LinkedTaskItemData(
-                    title: '',
-                    assignee: '',
-                    showProgress: false,
-                    // 名称显示到顶部胶囊
-                    badgeText: entry.title,
-                    avatar:
-                        entry.mood != null
-                            ? DiaryMoodFaceCircle(
-                              spec: diaryMoodSpecOf(
-                                _moodEmojiMap[entry.mood!] ?? entry.mood!,
-                              ),
-                              size: 38,
-                            )
-                            : null,
-                    avatarIcon: entry.mood == null ? Icons.menu_book : null,
-                    chips: [
-                      if (entry.location != null) entry.location!,
-                      if (entry.weather != null)
-                        'calendar_album_weather_${entry.weather!.toLowerCase()}'
-                            .tr,
-                      ...entry.tags.take(2),
-                    ],
-                  ),
-              ],
-              onItemTap: (index) => onTap(entries[index]),
-            ),
-          ),
-          if (_hasPhotos) ...[
-            const SizedBox(height: 12),
-            _buildPhotoStack(),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+      children: [
+        // 连线卡片：心情表情 + 名称胶囊 + 信息胶囊 + 卡内照片堆（主题配色）
+        LinkedTaskFlowCardWidget(
+          backgroundFrom: theme.surfaceAlt,
+          backgroundTo: theme.surfaceAlt,
+          cardColor: theme.surface,
+          connectorColor: theme.primary,
+          showStripes: false,
+          cardHeight: _entryCardHeight,
+          items: [
+            for (final entry in entries)
+              LinkedTaskItemData(
+                title: '',
+                // 日记注释（正文摘要）显示到底部内容行
+                assignee: entry.content,
+                assignLabel: '',
+                showProgress: false,
+                // 名称显示到顶部胶囊
+                badgeText: entry.title,
+                avatar:
+                    entry.mood != null
+                        ? DiaryMoodFaceCircle(
+                          spec: diaryMoodSpecOf(
+                            _moodEmojiMap[entry.mood!] ?? entry.mood!,
+                          ),
+                          size: 38,
+                        )
+                        : null,
+                avatarIcon: entry.mood == null ? Icons.menu_book : null,
+                chips: [
+                  if (entry.location != null) entry.location!,
+                  if (entry.weather != null)
+                    'calendar_album_weather_${entry.weather!.toLowerCase()}'
+                        .tr,
+                  ...entry.tags.take(2),
+                ],
+                // 卡内照片堆：该日记图片一图一卡，可拖拽切换
+                photoStack:
+                    entry.imageUrls.isNotEmpty
+                        ? _buildPhotoStack(entry)
+                        : null,
+              ),
           ],
-        ],
-      ),
+          onItemTap: (index) => onTap(entries[index]),
+        ),
+      ],
     );
   }
 
-  /// 当天是否有图片可堆叠
-  bool get _hasPhotos => entries.any((e) => e.imageUrls.isNotEmpty);
-
-  /// 照片堆叠卡（参考 ImageStackMessageWidget）：当天全部图片一图一卡，
+  /// 照片堆叠卡（参考 ImageStackMessageWidget）：一图一卡，
   /// 拖拽顶层卡切换，点击图片卡打开所属日记
-  Widget _buildPhotoStack() {
-    // 卡片 id -> (所属日记, 图片路径)
-    final cardMeta = <String, MapEntry<CalendarEntry, String>>{};
-    final cards = <WalkStackCardData>[];
-    for (final entry in entries) {
-      for (var i = 0; i < entry.imageUrls.length; i++) {
-        final id = 'album_${entry.id}_$i';
-        cardMeta[id] = MapEntry(entry, entry.imageUrls[i]);
-        cards.add(
-          WalkStackCardData(id: id, quote: '', imagePaths: [entry.imageUrls[i]]),
-        );
-      }
-    }
-    final total = cards.length;
+  Widget _buildPhotoStack(CalendarEntry entry) {
+    final images = entry.imageUrls;
 
     return WalkStackCardWidget(
-      cards: cards,
+      cards: [
+        for (var i = 0; i < images.length; i++)
+          WalkStackCardData(
+            id: 'album_${entry.id}_$i',
+            quote: '',
+            imagePaths: [images[i]],
+          ),
+      ],
       size: const SmallSize(scale: _photoStackScale),
-      // 抽屉底为纯色，磨砂意义不大且省 BackdropFilter 开销
+      // 纸底已是浅色，磨砂意义不大且省 BackdropFilter 开销
       frosted: false,
-      cardBuilder: (context, card) {
-        final meta = cardMeta[card.id]!;
-        return _buildPhotoCardFace(
-          meta.value,
-          total,
-          () => onTap(meta.key),
-        );
-      },
+      cardBuilder:
+          (context, card) => _buildPhotoCardFace(
+            card.imagePaths.first,
+            images.length,
+            () => onTap(entry),
+          ),
     );
   }
 
   /// 图片卡面：图片铺满 + 左下 "+N" 照片数角标
-  Widget _buildPhotoCardFace(
-    String path,
-    int total,
-    VoidCallback onTap,
-  ) {
+  Widget _buildPhotoCardFace(String path, int total, VoidCallback onTap) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -173,9 +161,7 @@ class EntryList extends StatelessWidget {
             errorBuilder:
                 (_, __, ___) => ColoredBox(
                   color: Colors.black.withValues(alpha: 0.08),
-                  child: const Center(
-                    child: DsIcon(DsIconKind.image, size: 24),
-                  ),
+                  child: const Center(child: DsIcon(DsIconKind.image, size: 24)),
                 ),
           ),
           Positioned(

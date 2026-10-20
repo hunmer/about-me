@@ -123,13 +123,6 @@ class WidgetsGalleryScreen extends StatelessWidget {
 
           // 日历类组件
           _buildSectionHeader(context, '日历类'),
-          _buildListItem(
-            context,
-            icon: Icons.event,
-            title: '增强日历',
-            subtitle: 'EnhancedCalendar',
-            route: '/widgets_gallery/enhanced_calendar',
-          ),
 
           const Divider(),
 
@@ -266,6 +259,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
             title: '热敏打印账单',
             subtitle: 'RunReceiptPrinter（热敏打印机吐纸动画，支持拖拽查看）',
             route: '/widgets_gallery/run_receipt_printer',
+          ),
+          _buildListItem(
+            context,
+            icon: Icons.map,
+            title: 'Moments 纽约地图',
+            subtitle: 'MomentsNycMapDemo（flutter_map + 手账照片详情）',
+            route: '/widgets_gallery/moments_nyc_map',
           ),
         ],
       ),

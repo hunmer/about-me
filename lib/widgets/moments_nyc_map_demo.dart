@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -105,7 +106,7 @@ class _MomentsNycMapDemoState extends State<MomentsNycMapDemo>
   String? _toastText;
   Timer? _toastTimer;
 
-  static const _placeOfPowerPoint = LatLng(40.7712, -73.9748);
+  static const _placeOfPowerPoint = LatLng(31.2335, 121.4751); // 人民广场
 
   static const _captionsCycle = [
     'Midtown Manhattan',
@@ -194,7 +195,7 @@ class _MomentsNycMapDemoState extends State<MomentsNycMapDemo>
   static const _pins = [
     _MapPinData(
       momentId: 'west-ny',
-      point: LatLng(40.7924, -74.0143),
+      point: LatLng(31.2242, 121.4108), // 中山公园
       kind: _PinKind.single,
       rotation: -6,
       badgeMonth: 'MAY',
@@ -205,13 +206,13 @@ class _MomentsNycMapDemoState extends State<MomentsNycMapDemo>
     ),
     _MapPinData(
       momentId: 'place-of-power',
-      point: _placeOfPowerPoint,
+      point: _placeOfPowerPoint, // 人民广场
       kind: _PinKind.heroCluster,
       rotation: 0,
     ),
     _MapPinData(
       momentId: 'chelsea',
-      point: LatLng(40.7465, -74.0014),
+      point: LatLng(31.1903, 121.4369), // 徐家汇
       kind: _PinKind.single,
       rotation: -3,
       badgeMonth: 'MAY',
@@ -221,7 +222,7 @@ class _MomentsNycMapDemoState extends State<MomentsNycMapDemo>
     ),
     _MapPinData(
       momentId: 'gramercy',
-      point: LatLng(40.7380, -73.9860),
+      point: LatLng(31.2197, 121.4752), // 新天地
       kind: _PinKind.single,
       rotation: 6,
       badgeMonth: 'MAY',
@@ -231,13 +232,13 @@ class _MomentsNycMapDemoState extends State<MomentsNycMapDemo>
     ),
     _MapPinData(
       momentId: 'sunset',
-      point: LatLng(40.7233, -74.0030),
+      point: LatLng(31.2397, 121.5015), // 陆家嘴
       kind: _PinKind.sunsetCluster,
       rotation: 0,
     ),
     _MapPinData(
       momentId: 'walk',
-      point: LatLng(40.7265, -73.9800),
+      point: LatLng(31.2095, 121.4680), // 田子坊
       kind: _PinKind.walkCluster,
       rotation: 0,
     ),
@@ -367,7 +368,7 @@ class _MomentsNycMapDemoState extends State<MomentsNycMapDemo>
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        initialCenter: const LatLng(40.7484, -73.9857),
+        initialCenter: const LatLng(31.2280, 121.4650), // 上海市区
         initialZoom: 12.2,
         interactionOptions: const InteractionOptions(
           flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
@@ -561,17 +562,20 @@ class _MomentsNycMapDemoState extends State<MomentsNycMapDemo>
             ),
           ),
           const SizedBox(height: 12),
-          // 协作头像
-          SizedBox(
-            height: 28,
-            child: Stack(
-              children: [
-                for (var i = 0; i < _avatars.length; i++)
-                  Positioned(
-                    left: i * 20.0,
-                    child: _avatar(_avatars[i], 28, borderColor: _paperCream),
-                  ),
-              ],
+          // 协作头像（3 个叠放总宽 68，整体居中）
+          Center(
+            child: SizedBox(
+              width: 68,
+              height: 28,
+              child: Stack(
+                children: [
+                  for (var i = 0; i < _avatars.length; i++)
+                    Positioned(
+                      left: i * 20.0,
+                      child: _avatar(_avatars[i], 28, borderColor: _paperCream),
+                    ),
+                ],
+              ),
             ),
           ),
           // 卡片区（网格纸背景 + 横向翻页）
@@ -585,12 +589,22 @@ class _MomentsNycMapDemoState extends State<MomentsNycMapDemo>
                     child: CustomPaint(painter: _ScrapbookGridPainter()),
                   ),
                 ),
-                PageView.builder(
-                  controller: _cardController,
-                  itemCount: 4, // 0=装饰边卡, 1..3=卡片 0..2
-                  onPageChanged: (i) => setState(() => _activePage = i),
-                  itemBuilder: (context, page) =>
-                      _buildDetailPage(page, moment),
+                // 桌面端 PageView 默认只响应触摸拖拽，需显式放开鼠标
+                ScrollConfiguration(
+                  behavior: const MaterialScrollBehavior().copyWith(
+                    dragDevices: const {
+                      PointerDeviceKind.touch,
+                      PointerDeviceKind.mouse,
+                      PointerDeviceKind.trackpad,
+                    },
+                  ),
+                  child: PageView.builder(
+                    controller: _cardController,
+                    itemCount: 4, // 0=装饰边卡, 1..3=卡片 0..2
+                    onPageChanged: (i) => setState(() => _activePage = i),
+                    itemBuilder: (context, page) =>
+                        _buildDetailPage(page, moment),
+                  ),
                 ),
               ],
             ),
