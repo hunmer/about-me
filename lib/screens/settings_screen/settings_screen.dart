@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/screens/route.dart';
@@ -176,7 +177,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text('settings_screen_settingsTitle'.tr),
       largeTitle: 'settings_screen_settingsTitle'.tr,
       enableLargeTitle: false,
-      body: SafeArea(bottom: false, child: list),
+      // iOS 上 SuperAppBar 已处理状态栏区域，SafeArea 顶部留白会叠加，故关闭
+      body: SafeArea(
+        top: !UniversalPlatform.isIOS,
+        bottom: false,
+        child: list,
+      ),
     );
   }
 }

@@ -12,6 +12,7 @@ import 'storage/storage_manager.dart';
 /// 插件管理器，负责管理所有已注册的插件
 class PluginManager {
   StorageManager? _storageManager;
+  Future<void> _configSaveQueue = Future<void>.value();
   static const String _configStorageKey = 'configs/plugin_manager.json';
   Map<String, int> _pluginAccessTimes = {};
   // 插件固定时间（毫秒时间戳），被固定的插件在列表中置顶，
@@ -202,21 +203,26 @@ class PluginManager {
   }
 
   /// 保存合并后的配置文件
-  Future<void> _saveConfig() async {
-    if (_storageManager == null) return;
+  Future<void> _saveConfig() {
+    final storage = _storageManager;
+    if (storage == null) return Future<void>.value();
 
-    try {
-      final config = {
-        'accessTimes': _pluginAccessTimes,
-        'pinnedTimes': _pluginPinnedTimes,
-        'onboardingShown': _onboardingShownPlugins.toList(),
-        'settings': _settings,
-        'lastOpenedPlugin': _lastOpenedPluginId,
-      };
-      await _storageManager!.writeFile(_configStorageKey, jsonEncode(config));
-    } catch (e) {
-      debugPrint('Warning: Failed to save plugin manager config: $e');
-    }
+    final content = jsonEncode({
+      'accessTimes': _pluginAccessTimes,
+      'pinnedTimes': _pluginPinnedTimes,
+      'onboardingShown': _onboardingShownPlugins.toList(),
+      'settings': _settings,
+      'lastOpenedPlugin': _lastOpenedPluginId,
+    });
+    // 打开记录和引导标记会连续保存，按顺序写入，避免旧配置覆盖新状态。
+    _configSaveQueue = _configSaveQueue.then((_) async {
+      try {
+        await storage.writeFile(_configStorageKey, content);
+      } catch (e) {
+        debugPrint('Warning: Failed to save plugin manager config: $e');
+      }
+    });
+    return _configSaveQueue;
   }
 
   /// 获取当前打开的插件

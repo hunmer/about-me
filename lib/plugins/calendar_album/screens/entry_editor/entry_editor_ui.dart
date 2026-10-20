@@ -51,10 +51,15 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
             controller.thumbUrls.add(thumbUrl ?? '');
           },
           onImageRemoved: (index) {
-            controller.imageUrls.removeAt(index);
-            if (index < controller.thumbUrls.length) {
-              controller.thumbUrls.removeAt(index);
-            }
+            // 列表变更必须触发重建，否则界面残留已删图片，再次点击会越界
+            setState(() {
+              if (index < controller.imageUrls.length) {
+                controller.imageUrls.removeAt(index);
+              }
+              if (index < controller.thumbUrls.length) {
+                controller.thumbUrls.removeAt(index);
+              }
+            });
           },
         ),
         const SizedBox(height: 20),

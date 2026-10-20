@@ -327,7 +327,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                           data: MediaQuery.of(
                             context,
                           ).copyWith(textScaler: const TextScaler.linear(1.0)),
-                          child: StyledToast(child: child!),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () =>
+                                FocusManager.instance.primaryFocus?.unfocus(),
+                            child: StyledToast(child: child!),
+                          ),
                         ),
                       ),
                     );

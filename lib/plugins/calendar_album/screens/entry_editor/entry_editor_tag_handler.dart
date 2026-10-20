@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/widgets/tag_folder_card.dart';
 import 'package:aboutme/widgets/tags_dialog/tags_dialog.dart';
 import 'entry_editor_controller.dart';
+
 class EntryEditorTagHandler extends StatefulWidget {
   final EntryEditorController controller;
 
@@ -27,11 +28,31 @@ class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
   late final TagController tagController;
 
   final List<({Color bg, Color text, Color border})> _colorStyles = [
-    (bg: Colors.blue.shade50, text: Colors.blue.shade700, border: Colors.blue.shade100),
-    (bg: Colors.purple.shade50, text: Colors.purple.shade700, border: Colors.purple.shade100),
-    (bg: Colors.orange.shade50, text: Colors.orange.shade800, border: Colors.orange.shade100),
-    (bg: Colors.green.shade50, text: Colors.green.shade800, border: Colors.green.shade100),
-    (bg: Colors.pink.shade50, text: Colors.pink.shade700, border: Colors.pink.shade100),
+    (
+      bg: Colors.blue.shade50,
+      text: Colors.blue.shade700,
+      border: Colors.blue.shade100,
+    ),
+    (
+      bg: Colors.purple.shade50,
+      text: Colors.purple.shade700,
+      border: Colors.purple.shade100,
+    ),
+    (
+      bg: Colors.orange.shade50,
+      text: Colors.orange.shade800,
+      border: Colors.orange.shade100,
+    ),
+    (
+      bg: Colors.green.shade50,
+      text: Colors.green.shade800,
+      border: Colors.green.shade100,
+    ),
+    (
+      bg: Colors.pink.shade50,
+      text: Colors.pink.shade700,
+      border: Colors.pink.shade100,
+    ),
   ];
 
   @override
@@ -39,7 +60,8 @@ class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
     super.initState();
     final plugin = PluginManager.instance.getPlugin('calendar_album');
     tagController = (plugin as dynamic).tagController;
-    if (widget.controller.selectedTags.isEmpty && widget.controller.entry != null) {
+    if (widget.controller.selectedTags.isEmpty &&
+        widget.controller.entry != null) {
       widget.controller.selectedTags = List.from(widget.controller.entry!.tags);
     }
   }
@@ -85,7 +107,11 @@ class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
   }
 
   /// 标签选择对话框内的文件夹卡片渲染：TagFolderCard + 选中态角标
-  Widget _buildFolderTagItem(BuildContext context, TagItem tag, bool isSelected) {
+  Widget _buildFolderTagItem(
+    BuildContext context,
+    TagItem tag,
+    bool isSelected,
+  ) {
     final theme = DSThemeBridge.resolve(context);
     final images = tagController.getTagImages(tag.name);
 
@@ -136,7 +162,10 @@ class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid), // Simulating dashed with solid light grey for simplicity, or use CustomPaint if strict. The previous image handler used standard border, so consistent here.
+          border: Border.all(
+            color: Colors.grey.shade300,
+            style: BorderStyle.solid,
+          ), // Simulating dashed with solid light grey for simplicity, or use CustomPaint if strict. The previous image handler used standard border, so consistent here.
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -162,18 +191,6 @@ class _EntryEditorTagHandlerState extends State<EntryEditorTagHandler> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            'TAGS',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade500,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
         Wrap(
           spacing: 8,
           runSpacing: 8,

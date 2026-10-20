@@ -6,7 +6,7 @@
 
 | 子系统 | 职责 |
 |--------|------|
-| `plugin_manager.dart` / `plugin_base.dart` / `builtin_plugins.dart` | 插件注册、生命周期、访问追踪（现 28 个内置插件） |
+| `plugin_manager.dart` / `plugin_base.dart` / `builtin_plugins.dart` | 插件注册、生命周期、访问追踪（现 29 个内置插件） |
 | `data/aboutme_data_service.dart` | 全局数据入口：基于 aboutme_data_sdk 的本地/远程(REST)自动路由（2026-10 新增，新代码统一走它） |
 | `storage/` / `storage_service.dart` | 跨平台文件存储抽象（IO / Web IndexedDB）+ HTTP 远端存储后端（底层同为 aboutme_data_sdk 转发） |
 | `config_manager.dart` | 应用级与插件级配置 |
@@ -19,7 +19,7 @@
 | `services/` | FCM、日志、剪贴板、快捷方式、统一计时器、App 使用统计（app_usage_service）、桌面窗口几何记忆（window_geometry_service）等 |
 | `routing/` / `route/` | 路由历史与插件路由处理 |
 
-## 功能插件（`lib/plugins/`，28 个内置插件）
+## 功能插件（`lib/plugins/`，29 个内置插件）
 
 | 插件 | 职责 | 旧版文档 |
 |------|------|----------|
@@ -40,7 +40,8 @@
 | nfc | NFC：近场通信读写 | [查看](../lib/plugins/nfc/CLAUDE.md) |
 | nodes | 节点：笔记本树结构 | [查看](../lib/plugins/nodes/CLAUDE.md) |
 | notes | 笔记：无限层级、全文搜索 | [查看](../lib/plugins/notes/CLAUDE.md) |
-| openai | AI 中枢：多服务商、Agent/预设管理、**aliveness 活人感**（延迟回复/分条气泡/记忆/日程/主动消息/语音，2026-10-04）、**moments 朋友圈**（AI 动态流/资产图/自主生图，2026-10-05） | [查看](../lib/plugins/openai/CLAUDE.md) |
+| openai | AI 中枢：多服务商、Agent/预设管理、**aliveness 活人感**（延迟回复/分条气泡/记忆/日程/主动消息/语音，2026-10-04）、**moments 朋友圈数据层**（AI 动态流/资产图/自主生图，2026-10-05；2026-10-20 UI 壳独立为 moments 插件） | [查看](../lib/plugins/openai/CLAUDE.md) |
+| moments | 朋友圈 UI 壳插件（2026-10-20 独立）：动态流/回忆/个人主页三页签，数据在 openai/moments | [查看](../lib/plugins/moments/CLAUDE.md) |
 | reminder | 定时提醒：本地通知、每天/每周/每月调度、错过补触发 | [查看](../lib/plugins/reminder/CLAUDE.md) |
 | scripts_center | 脚本中心：JS 脚本管理 | [查看](../lib/plugins/scripts_center/CLAUDE.md) |
 | store | 物品兑换：积分系统 | [查看](../lib/plugins/store/CLAUDE.md) |

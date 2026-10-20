@@ -18,7 +18,7 @@
 ## 核心初始化：`lib/core/app_initializer.dart`（2026-10 整体重写，现 651 行）
 
 - `AppStartupState` 状态机：`coreReady`（存储+配置）→ `pluginsReady`（插件注册）→ `fullyReady`，驱动启动页进度。
-- `initializeApp()` 初始化链：StorageManager → ConfigManager → PluginManager（经 `BuiltinPlugins.createAll()` 装载 28 个插件）→ JS Bridge → 前台服务 / 通知（aboutme_notifications）→ 快捷方式、悬浮球、FCM、数据迁移控制器等。
+- `initializeApp()` 初始化链：StorageManager → ConfigManager → PluginManager（经 `BuiltinPlugins.createAll()` 装载 29 个插件）→ JS Bridge → 前台服务 / 通知（aboutme_notifications）→ 快捷方式、悬浮球、FCM、数据迁移控制器等。
 - `initializeApp()` 后 `WindowGeometryService.instance.initialize()`（桌面恢复窗口位置/大小）；首帧后 `AppUsageService.instance.init()`（前台使用时长/天数统计）。
 - 应用回到前台时（`didChangeAppLifecycleState`）：同步小组件待处理变更、处理剪贴板。
 - 全局默认字体：TegakiZatsu（851 手写杂书体，`pubspec.yaml` fonts）。

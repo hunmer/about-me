@@ -20,17 +20,17 @@
 | `tools/` | 切图脚本资产（agent_covers 封面切分） |
 | `skills/` | 嵌套仓库 moe-ui-skill（gitlink，内容不在本仓追踪） |
 
-## lib/（应用代码，1881 个 Dart 文件）
+## lib/（应用代码，1981 个 Dart 文件）
 
 | 目录 | 规模 | 说明 |
 |------|------|------|
-| `lib/core/` | 151 Dart 文件 | 核心层：插件系统、存储（含 http_storage 后端）、数据服务入口（`data/aboutme_data_service.dart`）、事件、JS Bridge、悬浮球、动作、路由、services（含旧 sync 同步器、app_usage、window_geometry）等 |
-| `lib/plugins/` | 28 插件 / 1140 文件 | 功能插件（openai 含 aliveness/moments；media_log、achievement 为 2026-10 新增）；根级有 `base_plugin.dart`、`plugin_widget.dart` |
-| `lib/screens/` | 345 文件 | 界面层：jelly_home（默认主页，含 Live2D 渲染 jelly_live2d_* 12 文件与状态面板）、onboarding、startup 闸门、home_screen、settings_screen、widgets_gallery、路由注册等 |
-| `lib/widgets/` | 179 文件 | 通用组件：编辑器、日历、**form_fields 表单字段库（手绘化外壳）**、picker、gallery_viewer、arc_context_menu、emoji_picker 表情选择器（手绘风，原 material_emoji_picker 包迁入）等 |
-| `lib/design_system/` | 49 文件 | 设计系统：手绘纸墨风（skribble 引擎、色板/主题预设、light_header/list_item_card/scribble_marks 等组件） |
-| `lib/services/` `lib/models/` `lib/utils/` `lib/dialogs/` `lib/constants/` | 各 1-9 文件 | 少量顶层服务/模型/工具 |
-| `lib/l10n/` | — | 国际化（`unified_translations.dart`，中/英） |
+| `lib/core/` | 154 Dart 文件 | 核心层：插件系统、存储（含 http_storage 后端）、数据服务入口（`data/aboutme_data_service.dart`）、事件、JS Bridge、悬浮球、动作、路由、l10n、services（含旧 sync 同步器、app_usage、window_geometry）等 |
+| `lib/plugins/` | 29 插件 / 1166 文件 | 功能插件（openai 含 aliveness/moments 数据层；media_log、achievement、moments 为 2026-10 新增）；根级有 `base_plugin.dart`、`plugin_widget.dart`；全部插件有 `l10n/` |
+| `lib/screens/` | 397 文件 | 界面层：jelly_home（默认主页，含 Live2D 渲染 jelly_live2d_* 12 文件与状态面板）、onboarding、startup 闸门、home_screen、settings_screen、widgets_gallery、路由注册等 |
+| `lib/widgets/` | 191 文件 | 通用组件：编辑器、日历、**form_fields 表单字段库（手绘化外壳）**、picker、gallery_viewer、arc_context_menu、emoji_picker 表情选择器（手绘风，原 material_emoji_picker 包迁入）、moments_nyc_map_demo（flutter_map 地图 demo）等 |
+| `lib/design_system/` | 51 文件 | 设计系统：手绘纸墨风（skribble 引擎、色板/主题预设、light_header/list_item_card/scribble_marks 等组件） |
+| `lib/l10n/` | 4 文件 | 国际化聚合：`unified_translations.dart` 汇入应用层 + core + 29 插件的 zh/en 翻译（GetX `.tr`），含 arb 文件 |
+| `lib/services/` `lib/models/` `lib/utils/` `lib/dialogs/` `lib/constants/` | 各 1-12 文件 | 少量顶层服务/模型/工具 |
 
 ## packages/（13 个子包）
 
