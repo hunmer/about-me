@@ -24,7 +24,7 @@ const _moodEmojiMap = {
 /// 卡内照片堆缩放（基准卡 282×348，实际由 FittedBox 再自适应卡面）
 const double _photoStackScale = 0.3;
 
-/// 内嵌照片堆后调高的单卡高度（基准 px）
+/// 单卡高度（基准 px，需容纳信息行 + 正文 + 照片堆）
 const double _entryCardHeight = 240;
 
 class EntryList extends StatelessWidget {
@@ -73,7 +73,7 @@ class EntryList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
       children: [
-        // 连线卡片：心情表情 + 名称胶囊 + 信息胶囊 + 卡内照片堆（主题配色）
+        // 连线卡片：组件仅提供交错布局 + 贝塞尔连线，卡面由 cardBuilder 外置
         LinkedTaskFlowCardWidget(
           backgroundFrom: theme.surfaceAlt,
           backgroundTo: theme.surfaceAlt,
@@ -82,42 +82,84 @@ class EntryList extends StatelessWidget {
           showStripes: false,
           cardHeight: _entryCardHeight,
           items: [
+            // cardBuilder 模式下仅作条目元数据（计数与宽度轮换）
             for (final entry in entries)
-              LinkedTaskItemData(
-                title: '',
-                // 日记注释（正文摘要）显示到底部内容行
-                assignee: entry.content,
-                assignLabel: '',
-                showProgress: false,
-                // 名称显示到顶部胶囊
-                badgeText: entry.title,
-                avatar:
-                    entry.mood != null
-                        ? DiaryMoodFaceCircle(
-                          spec: diaryMoodSpecOf(
-                            _moodEmojiMap[entry.mood!] ?? entry.mood!,
-                          ),
-                          size: 38,
-                        )
-                        : null,
-                avatarIcon: entry.mood == null ? Icons.menu_book : null,
-                chips: [
-                  if (entry.location != null) entry.location!,
-                  if (entry.weather != null)
-                    'calendar_album_weather_${entry.weather!.toLowerCase()}'
-                        .tr,
-                  ...entry.tags.take(2),
-                ],
-                // 卡内照片堆：该日记图片一图一卡，可拖拽切换
-                photoStack:
-                    entry.imageUrls.isNotEmpty
-                        ? _buildPhotoStack(entry)
-                        : null,
-              ),
+              LinkedTaskItemData(title: entry.title, assignee: ''),
           ],
           onItemTap: (index) => onTap(entries[index]),
+          cardBuilder:
+              (context, index) => _buildEntryCardFace(context, entries[index]),
         ),
       ],
+    );
+  }
+
+  /// 日记卡面（手绘墨盒）：心情脸 + 标题 / 信息徽章 / 正文摘要 / 照片堆
+  Widget _buildEntryCardFace(BuildContext context, CalendarEntry entry) {
+    final theme = DSThemeBridge.resolve(context);
+    final chips = <Widget>[
+      if (entry.location != null)
+        DSBadge(label: entry.location!, autoColor: true, fontSize: 10),
+      if (entry.weather != null)
+        DSBadge(
+          label: 'calendar_album_weather_${entry.weather!.toLowerCase()}'.tr,
+          autoColor: true,
+          fontSize: 10,
+        ),
+      ...entry.tags.take(2).map(
+        (tag) => DSBadge(label: tag, autoColor: true, fontSize: 10),
+      ),
+    ];
+
+    return JellyBox(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (entry.mood != null) ...[
+                DiaryMoodFaceCircle(
+                  spec: diaryMoodSpecOf(
+                    _moodEmojiMap[entry.mood!] ?? entry.mood!,
+                  ),
+                  size: 28,
+                ),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Text(
+                  entry.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+              ),
+            ],
+          ),
+          if (chips.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Wrap(spacing: 6, runSpacing: 4, children: chips),
+          ],
+          if (entry.content.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              entry.content,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: DsTypography.body.copyWith(color: theme.textSub),
+            ),
+          ],
+          // 该日记的照片堆：一图一卡，可拖拽切换
+          if (entry.imageUrls.isNotEmpty)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Center(child: FittedBox(child: _buildPhotoStack(entry))),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -152,45 +194,54 @@ class EntryList extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image(
-            image: ImageUtils.createImageProvider(path),
-            fit: BoxFit.cover,
-            errorBuilder:
-                (_, __, ___) => ColoredBox(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  child: const Center(child: DsIcon(DsIconKind.image, size: 24)),
-                ),
-          ),
-          Positioned(
-            left: 8,
-            bottom: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DsIcon(DsIconKind.image, size: 12, color: Colors.white),
-                  const SizedBox(width: 3),
-                  Text(
-                    '+$total',
-                    style: DsTypography.caption.copyWith(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+      // 图片卡圆角（含角标一起裁剪）
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image(
+              image: ImageUtils.createImageProvider(path),
+              fit: BoxFit.cover,
+              errorBuilder:
+                  (_, __, ___) => ColoredBox(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    child: const Center(
+                      child: DsIcon(DsIconKind.image, size: 24),
                     ),
                   ),
-                ],
+            ),
+            Positioned(
+              left: 8,
+              bottom: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DsIcon(DsIconKind.image, size: 12, color: Colors.white),
+                    const SizedBox(width: 3),
+                    Text(
+                      '+$total',
+                      style: DsTypography.caption.copyWith(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

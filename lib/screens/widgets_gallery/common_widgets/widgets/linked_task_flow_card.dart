@@ -62,12 +62,18 @@ class LinkedTaskItemData {
   });
 }
 
+/// 自定义卡面构建器：[index] 对应 [LinkedTaskItemData] 在 items 中的下标
+typedef LinkedTaskCardBuilder = Widget Function(BuildContext context, int index);
+
 /// 连线任务流卡片
 ///
 /// 参考橙色 Admin Dashboard 效果图：交错左右对齐的任务卡片
 /// （头像 + 进度胶囊 + 标题 + 负责人）由贝塞尔曲线依次相连，
 /// 入场时按「卡片浮现 -> 连线生长 -> 下一张卡片」编排播放，
 /// 连线带循环流光与端点圆点。
+///
+/// 提供 [LinkedTaskFlowCardWidget.cardBuilder] 时卡面整面外置，
+/// 组件仅负责交错布局、连线与动画。
 class LinkedTaskFlowCardWidget extends StatefulWidget {
   /// 任务条目列表（相邻两张卡片之间自动连线）
   final List<LinkedTaskItemData> items;
@@ -99,6 +105,10 @@ class LinkedTaskFlowCardWidget extends StatefulWidget {
   /// 单卡高度（设计基准 px，默认 130；嵌入 photoStack 等大内容时可调高）
   final double cardHeight;
 
+  /// 自定义卡面构建器（提供时整面替换默认任务卡面，
+  /// 组件仅保留交错布局、贝塞尔连线与入场编排——连线能力本体）
+  final LinkedTaskCardBuilder? cardBuilder;
+
   const LinkedTaskFlowCardWidget({
     super.key,
     required this.items,
@@ -111,6 +121,7 @@ class LinkedTaskFlowCardWidget extends StatefulWidget {
     this.onItemTap,
     this.size = const Large3Size(),
     this.cardHeight = 130,
+    this.cardBuilder,
   });
 
   /// 从 props 创建实例
@@ -410,7 +421,13 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
               alignment: _isLeftAligned(index)
                   ? Alignment.centerLeft
                   : Alignment.centerRight,
-              child: _wrapTap(_buildCardBody(index, k, fill), index),
+              // cardBuilder 外置卡面；默认渲染内置任务卡
+              child: _wrapTap(
+                widget.cardBuilder != null
+                    ? widget.cardBuilder!(context, index)
+                    : _buildCardBody(index, k, fill),
+                index,
+              ),
             ),
           ),
         );
