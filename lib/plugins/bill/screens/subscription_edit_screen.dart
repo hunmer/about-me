@@ -23,6 +23,9 @@ class SubscriptionEditScreen extends StatefulWidget {
 }
 
 class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
+  /// 表单 wrapper 状态（onStateReady 回传），供 AppBar 保存按钮触发提交
+  FormBuilderWrapperState? _formWrapperState;
+
   @override
   void initState() {
     super.initState();
@@ -168,8 +171,22 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: DSThemeBridge(
+              child: DSIconButton(
+                icon: DsIconKind.save,
+                size: 38,
+                tooltip: 'bill_save'.tr,
+                onPressed: () => _formWrapperState?.submitForm(),
+              ),
+            ),
+          ),
+        ],
       ),
       body: FormBuilderWrapper(
+        onStateReady: (state) => _formWrapperState = state,
         buttonBuilder: (context, onSubmit, onReset) {
           // 自定义按钮区域：保存按钮在 AppBar，底部显示删除按钮
           return Builder(
@@ -226,6 +243,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
 
               // 名称和价格组
               FormFieldGroup(
+                showBackground: false,
                 children: [
                   fields[1], // 名称
                   fields[2], // 价格
@@ -234,22 +252,14 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
               const SizedBox(height: 24),
 
               // 时间组
-              Container(
+              Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: DSThemeBridge.resolve(context).surfaceAlt,
-                  borderRadius: BorderRadius.circular(12),
-                ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 开始和结束日期
-                    FormFieldGroup(
-                      showDividers: true,
-                      children: [
-                        fields[3], // 开始日期
-                        fields[4], // 结束日期
-                      ],
-                    ),
+                    fields[3], // 开始日期
+                    const SizedBox(height: 12),
+                    fields[4], // 结束日期
                     const SizedBox(height: 16),
 
                     // 周期按钮
@@ -261,6 +271,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
 
               // 自动订阅开关
               FormFieldGroup(
+                showBackground: false,
                 showDividers: false,
                 children: [
                   fields[6], // isActive
@@ -270,33 +281,10 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
 
               // 备注
               FormFieldGroup(
+                showBackground: false,
                 showDividers: false,
                 children: [
                   fields[7], // 备注
-                ],
-              ),
-
-              // 自定义按钮区域（删除按钮）
-              ButtonBar(
-                alignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    child: DSThemeBridge(
-                      child: DSButton(
-                        label: 'bill_save'.tr,
-                        onPressed: () {
-                          // 触发表单提交
-                          final wrapper =
-                              context
-                                  .findAncestorStateOfType<
-                                    FormBuilderWrapperState
-                                  >();
-                          wrapper?.submitForm();
-                        },
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ],

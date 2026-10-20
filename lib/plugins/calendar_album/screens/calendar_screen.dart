@@ -491,6 +491,23 @@ class _CalendarScreenState extends State<CalendarScreen>
       context: context,
       title:
           '${DateFormat('yyyy年MM月dd日').format(selectedDate)}${'calendar_album_diary_for_date'.tr}',
+      // 标题栏右侧新建按钮：带当前选中日期打开编辑器
+      headerActions: [
+        Builder(
+          builder: (sheetContext) => DSButton(
+            label: 'calendar_album_create_new_diary'.tr,
+            size: DSButtonSize.sm,
+            icon: DsIconKind.plus,
+            onPressed: () {
+              Navigator.pop(sheetContext); // 关闭抽屉
+              _openEntryEditor(
+                initialDate: selectedDate,
+                calendarController: calendarController,
+              );
+            },
+          ),
+        ),
+      ],
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.55,
         child: MultiProvider(

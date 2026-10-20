@@ -137,6 +137,8 @@ class _EnhancedCalendarState extends State<EnhancedCalendar> {
 
     final backgroundImage = dayData?.backgroundImage;
     final count = dayData?.count;
+    // 有条目但无图：格子显示占位（淡底 + 小图标）
+    final hasEntryWithoutImage = dayData != null && backgroundImage == null;
     final isSelected = _selectedDay != null && _isSameDay(day, _selectedDay!);
     final isToday = _isSameDay(day, DateTime.now());
     final isCurrentMonth =
@@ -198,6 +200,8 @@ class _EnhancedCalendarState extends State<EnhancedCalendar> {
             backgroundImage == null && isToday
                 ? (widget.config.todayDecoration?.color ??
                     Theme.of(context).primaryColor.withValues(alpha: 0.1))
+                : hasEntryWithoutImage
+                ? Theme.of(context).primaryColor.withValues(alpha: 0.08)
                 : null,
         image:
             backgroundImage != null
@@ -239,6 +243,18 @@ class _EnhancedCalendarState extends State<EnhancedCalendar> {
           child: Stack(
             children: [
               Center(child: Text(day.day.toString(), style: textStyle)),
+              if (hasEntryWithoutImage)
+                Positioned(
+                  bottom: 3,
+                  right: 3,
+                  child: Icon(
+                    Icons.image_outlined,
+                    size: 11,
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.45),
+                  ),
+                ),
               if (count != null && count > 1)
                 Positioned(
                   top: 2,

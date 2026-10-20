@@ -60,6 +60,7 @@ class SmoothBottomSheet {
   /// [title] - 标题文本
   /// [child] - 内容组件
   /// [actions] - 底部操作按钮列表（可选）
+  /// [headerActions] - 标题栏右侧操作区（可选）
   /// [showCloseButton] - 是否显示关闭按钮，默认 false
   /// 其他参数同 show 方法
   static Future<T?> showWithTitle<T>({
@@ -67,6 +68,7 @@ class SmoothBottomSheet {
     required String title,
     required Widget child,
     List<Widget>? actions,
+    List<Widget>? headerActions,
     bool showCloseButton = false,
     bool swipeDismissible = true,
     bool barrierDismissible = true,
@@ -89,6 +91,7 @@ class SmoothBottomSheet {
         title: title,
         showCloseButton: showCloseButton,
         actions: actions,
+        headerActions: headerActions,
         child: child,
       ),
     );
@@ -198,12 +201,14 @@ class _SheetWithTitle extends StatelessWidget {
   final String title;
   final bool showCloseButton;
   final List<Widget>? actions;
+  final List<Widget>? headerActions;
   final Widget child;
 
   const _SheetWithTitle({
     required this.title,
     required this.showCloseButton,
     this.actions,
+    this.headerActions,
     required this.child,
   });
 
@@ -228,6 +233,12 @@ class _SheetWithTitle extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // 标题栏右侧操作区
+              if (headerActions != null && headerActions!.isNotEmpty) ...[
+                ...headerActions!,
+                const SizedBox(width: 8),
+              ],
 
               // 关闭按钮
               if (showCloseButton)

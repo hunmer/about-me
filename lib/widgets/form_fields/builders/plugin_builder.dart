@@ -403,6 +403,7 @@ Widget buildSubscriptionCycleField(FormFieldConfig config, GlobalKey fieldKey) {
         monthlyLabel: extra['monthlyLabel'] as String? ?? 'app_monthly'.tr,
         quarterlyLabel: extra['quarterlyLabel'] as String? ?? 'app_quarterly'.tr,
         yearlyLabel: extra['yearlyLabel'] as String? ?? 'app_yearly'.tr,
+        customLabel: extra['customLabel'] as String? ?? 'app_customCycle'.tr,
         onDaysChanged: (days) {
           fieldState.didChange(days);
           config.onChanged?.call(days);
