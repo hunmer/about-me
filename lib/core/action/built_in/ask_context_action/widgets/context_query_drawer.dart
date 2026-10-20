@@ -79,7 +79,7 @@ class _ContextQueryDrawerState extends State<ContextQueryDrawer> {
       // 每次打开都创建全新会话（同路由旧临时会话会被删除）
       final conversation = await plugin.createFreshTemporaryConversation(
         routeName: widget.routeContext.routeName,
-        title: '询问: ${widget.routeContext.description}',
+        title: '询问: ${_cleanDescription(widget.routeContext.description)}',
         agentId: agentId,
         agentChain: agentChain,
       );
@@ -107,6 +107,23 @@ class _ContextQueryDrawerState extends State<ContextQueryDrawer> {
     }
   }
 
+  /// 剥离描述中嵌套的询问外壳，防止套娃：
+  /// 在 AI 对话内再次询问时，conversationTitle 已含上一次的
+  /// "询问: …"/"用户正在与AI对话：…"前缀，反复拼接种嵌套无限增长。
+  /// 递归剥掉外壳取最内层原始上下文。
+  static String _cleanDescription(String description) {
+    const prefixes = ['询问: ', '用户正在与AI对话：'];
+    var result = description.trim();
+    while (true) {
+      final hit = prefixes.firstWhereOrNull(
+        (p) => result.startsWith(p),
+      );
+      if (hit == null) break;
+      result = result.substring(hit.length).trim();
+    }
+    return result;
+  }
+
   /// 组装注入给 agent 的路由上下文：人类可读描述 + 结构化参数键值
   ///
   /// 示例：
@@ -119,12 +136,17 @@ class _ContextQueryDrawerState extends State<ContextQueryDrawer> {
         routeContext.arguments is Map<String, dynamic>
             ? routeContext.arguments as Map<String, dynamic>
             : const <String, dynamic>{};
-    if (routeContext.description.isEmpty && params.isEmpty) return null;
+    final description = _cleanDescription(routeContext.description);
+    // conversationTitle 可能携带上一轮的"询问:"前缀，同步清洗
+    final cleanedParams = params.map(
+      (k, v) => MapEntry(k, k == 'conversationTitle' ? _cleanDescription(v.toString()) : v),
+    );
+    if (description.isEmpty && cleanedParams.isEmpty) return null;
 
-    final buffer = StringBuffer('[当前上下文] ${routeContext.description}');
-    if (params.isNotEmpty) {
+    final buffer = StringBuffer('[当前上下文] $description');
+    if (cleanedParams.isNotEmpty) {
       buffer.write(
-        '\n路由参数: ${params.entries.map((e) => '${e.key}=${e.value}').join(', ')}',
+        '\n路由参数: ${cleanedParams.entries.map((e) => '${e.key}=${e.value}').join(', ')}',
       );
     }
     return buffer.toString();

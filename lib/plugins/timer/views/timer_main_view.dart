@@ -199,10 +199,22 @@ class _TimerMainViewState extends State<TimerMainView> {
         currentIndex: _currentTab,
         // onTap 不能为 null：null 会触发内部 IgnorePointer 包裹整个导航栏，
         // 连同 trailingAction 添加圆钮的点击一起被吞掉
-        onTap: (index) => setState(() {
-          _currentTab = index;
-          if (index == 1) _statsRefreshToken++;
-        }),
+        onTap: (index) {
+          setState(() {
+            _currentTab = index;
+            if (index == 1) _statsRefreshToken++;
+          });
+          // 更新路由上下文，使"询问当前上下文"能区分任务列表与统计tab
+          if (index == 1) {
+            RouteHistoryManager.updateCurrentContext(
+              pageId: "/timer_stats",
+              title: '计时统计',
+              params: {'tabIndex': index},
+            );
+          } else {
+            _updateRouteContext(_groupLabelFromFilters(_multiFilters));
+          }
+        },
         trailingAction: DsIcon(
           DsIconKind.plus,
           size: 20,

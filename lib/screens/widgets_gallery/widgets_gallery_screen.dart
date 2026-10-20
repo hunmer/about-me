@@ -106,6 +106,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
           ),
           _buildListItem(
             context,
+            icon: Icons.face_retouching_natural,
+            title: '人格选择轮播',
+            subtitle: 'PersonalityCarousel（发光小人轮播，支持自定义展示组件）',
+            route: '/widgets_gallery/personality_carousel',
+          ),
+          _buildListItem(
+            context,
             icon: Icons.group,
             title: '简单组选择器',
             subtitle: 'SimpleGroupSelector',

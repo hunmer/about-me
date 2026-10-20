@@ -112,6 +112,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_progress_wi
 import 'package:aboutme/screens/widgets_gallery/screens/vertical_bar_chart_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/task_list_stat_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/swatch_camera_frame_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/personality_carousel_example.dart';
 
 /// 组件展示路由注册表
 class WidgetGalleryRoutes implements RouteRegistry {
@@ -1021,6 +1022,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: 'Swatch 3D 相机相框（相机比例样式 原始 / 9:16 / 16:9）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/personality_carousel',
+      handler: (settings) => RouteHelpers.createRoute(
+        const PersonalityCarouselExample(),
+        settings: settings,
+      ),
+      description: 'AI 人格选择轮播（发光小人 / 自定义展示组件）',
     ),
   ];
 }

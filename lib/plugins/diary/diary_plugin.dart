@@ -8,6 +8,7 @@ import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -85,6 +86,18 @@ class _DiaryMainViewState extends State<DiaryMainView> {
   void initState() {
     super.initState();
     _plugin = PluginManager.instance.getPlugin('diary') as DiaryPlugin;
+    // 初始化时设置路由上下文
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateRouteContext());
+  }
+
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到当前tab状态
+  void _updateRouteContext() {
+    if (!mounted) return;
+    RouteHistoryManager.updateCurrentContext(
+      pageId: _currentTab == 1 ? '/diary_stats' : '/diary',
+      title: _currentTab == 1 ? '日记统计' : '日记日历',
+      params: {'tabIndex': _currentTab},
+    );
   }
 
   /// subbar 右侧圆钮：新建/编辑今日日记（编辑选中日走详情 sheet 的编辑按钮）
@@ -126,7 +139,10 @@ class _DiaryMainViewState extends State<DiaryMainView> {
         currentIndex: _currentTab,
         // onTap 不能为 null：null 会触发内部 IgnorePointer 包裹整个导航栏，
         // 连同 trailingAction 圆钮的点击一起被吞掉
-        onTap: (index) => setState(() => _currentTab = index),
+        onTap: (index) {
+          setState(() => _currentTab = index);
+          _updateRouteContext();
+        },
         trailingAction: DsIcon(DsIconKind.plus, size: 20, color: theme.text),
         onTrailingTap: _createTodayDiary,
       ),

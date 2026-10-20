@@ -8,6 +8,7 @@ import 'package:aboutme/plugins/habits/widgets/skills_list.dart';
 import 'package:aboutme/plugins/habits/widgets/habit_form_sheet.dart';
 import 'package:aboutme/plugins/habits/widgets/skill_form.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/keep_alive_wrapper.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,12 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
     super.initState();
     _currentPage = 0;
     _tabController = TabController(length: 3, vsync: this);
+
+    // 获取控制器
+    _habitController = widget.plugin.getHabitController();
+    _skillController = widget.plugin.getSkillController();
+    _recordController = widget.plugin.getRecordController();
+
     _tabController.animation?.addListener(() {
       final value = _tabController.animation!.value.round();
       if (value != _currentPage && mounted) {
@@ -55,13 +62,41 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
           _currentPage = value;
           if (value == 2) _statsRefreshToken++;
         });
+        // 更新路由上下文
+        _updateRouteContext(value);
       }
     });
 
-    // 获取控制器
-    _habitController = widget.plugin.getHabitController();
-    _skillController = widget.plugin.getSkillController();
-    _recordController = widget.plugin.getRecordController();
+    // 初始化时设置路由上下文
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateRouteContext(_currentPage);
+    });
+  }
+
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到当前tab状态
+  void _updateRouteContext(int tabIndex) {
+    String pageId;
+    String title;
+
+    switch (tabIndex) {
+      case 1:
+        pageId = '/skills_list';
+        title = 'habits_skills'.tr;
+        break;
+      case 2:
+        pageId = '/habits_stats';
+        title = 'habits_statsTab'.tr;
+        break;
+      default:
+        pageId = '/habits_list';
+        title = 'habits_habitsList'.tr;
+    }
+
+    RouteHistoryManager.updateCurrentContext(
+      pageId: pageId,
+      title: title,
+      params: {'tabIndex': tabIndex},
+    );
   }
 
   @override

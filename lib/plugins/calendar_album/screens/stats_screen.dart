@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
@@ -32,6 +33,26 @@ class CalendarAlbumStatsView extends StatefulWidget {
 
 class _CalendarAlbumStatsViewState extends State<CalendarAlbumStatsView> {
   int _selectedDay = 6; // 柱状图选中的天（默认今天，即第 7 天）
+
+  @override
+  void initState() {
+    super.initState();
+    // tab 懒加载挂载即上报路由上下文，供"询问当前上下文"识别
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateRouteContext());
+  }
+
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到统计概况
+  void _updateRouteContext() {
+    if (!mounted) return;
+    RouteHistoryManager.updateCurrentContext(
+      pageId: '/calendar_album_stats',
+      title: 'calendar_album_statsTab'.tr,
+      params: {
+        'entryCount': _allEntries.length,
+        'streakDays': _streakDays,
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

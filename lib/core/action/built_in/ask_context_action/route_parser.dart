@@ -20,12 +20,14 @@ class RouteParser {
     '/diary': '用户正在查看日记列表',
     '/diary_detail': '用户正在查看 {date} 的日记',
     '/diary_edit': '用户正在编辑 {date} 的日记',
+    '/diary_stats': '用户正在查看日记统计',
 
     // 待办插件
     '/todo': '用户正在查看待办事项',
     '/todo_list': '用户正在查看待办事项列表（{taskCount} 个任务，{viewMode} 视图）',
     '/todo_list_search': '用户正在搜索待办事项：{searchQuery}（找到 {resultCount} 个结果）',
     '/todo_history': '用户正在查看已完成的待办历史记录（共 {completedCount} 个）',
+    '/todo_stats': '用户正在查看待办统计',
     '/todo_detail': '用户正在查看待办任务：{taskTitle}（ID: {taskId}，状态: {taskStatus}）',
     '/todo_form_new': '用户正在新建待办任务',
     '/todo_form_edit': '用户正在编辑待办任务：{taskTitle}（ID: {taskId}）',
@@ -67,6 +69,8 @@ class RouteParser {
     '/tracker': '用户正在查看目标追踪',
     '/habits': '用户正在查看习惯管理',
     '/habits_list': '用户正在查看习惯列表',
+    '/habits_stats': '用户正在查看习惯统计',
+    '/habit_monthly_list': '用户正在查看习惯月度记录',
     '/skills_list': '用户正在查看技能列表',
     '/habit_form': '用户正在{mode}习惯（{habitTitle}）',
     '/skill_form': '用户正在{mode}技能（{skillTitle}）',
@@ -107,6 +111,7 @@ class RouteParser {
     '/calendar_album_entry_detail': '用户正在查看 {date} 的日记：{title}（ID: {entryId}）',
     '/calendar_album_tags': '用户正在查看标签管理（已选择 {tagCount} 个标签：{tags}）',
     '/calendar_album_album': '用户正在浏览相册（共 {photoCount} 张照片）',
+    '/calendar_album_stats': '用户正在查看日历相册统计（{entryCount} 篇日记，连续 {streakDays} 天）',
     '/calendar_album_entry_editor': '用户正在{mode}日记：{title}（日期: {date}）',
     '/database': '用户正在查看自定义数据库',
     '/day': '用户正在查看日计划',
@@ -120,6 +125,7 @@ class RouteParser {
     '/store/points_history': '用户正在查看积分历史（当前积分：{points}）',
     '/timer': '用户正在查看计时器',
     '/timer_main': '用户正在查看 {group} 分组的计时器列表',
+    '/timer_stats': '用户正在查看计时统计',
     '/timer_details': '用户正在查看计时器任务 {taskName} 的详情（当前计时器: {currentTimerName}，状态: {isRunning}）',
     '/timer_edit': '用户正在{mode}计时器: {taskName}',
     '/tts': '用户正在设置文本转语音',
@@ -138,6 +144,7 @@ class RouteParser {
 
     // 日记插件
     '/diary': ['帮我写今天的日记', '分析我最近的日记心情'],
+    '/diary_stats': ['总结我的日记频率', '我最近写日记多吗？'],
     '/diary_detail': ['总结这篇日记的要点', '帮我润色这篇日记'],
     '/diary_edit': ['帮我润色这篇日记', '给我的日记起个标题'],
 
@@ -145,6 +152,7 @@ class RouteParser {
     '/todo': ['总结我今天的待办情况', '帮我规划今天的任务'],
     '/todo_list': ['总结待办列表的完成情况', '帮我安排任务优先级'],
     '/todo_history': ['分析我已完成的任务', '总结我的任务完成效率'],
+    '/todo_stats': ['分析我的任务完成情况', '总结我的效率趋势'],
     '/todo_detail': ['帮我拆解这个任务', '分析这个任务的完成情况'],
     '/todo_form_new': ['帮我想想这个任务怎么拆解', '给这个任务设置个合理的截止时间'],
 
@@ -168,6 +176,8 @@ class RouteParser {
     '/tracker': ['分析我的目标进度', '帮我调整目标计划'],
     '/habits': ['分析我的习惯完成情况', '帮我制定习惯计划'],
     '/habits_list': ['总结习惯的坚持情况', '哪些习惯需要重点关注？'],
+    '/habits_stats': ['分析我的习惯坚持情况', '哪个习惯完成率最低？'],
+    '/habit_monthly_list': ['回顾这个月的习惯完成情况', '总结我的坚持情况'],
     '/skills_list': ['总结我的技能练习情况', '帮我制定练习计划'],
     '/skill_detail': ['分析这个技能的练习记录', '帮我规划下一步练习'],
     '/notes': ['帮我整理笔记', '总结我最近的笔记'],
@@ -189,6 +199,7 @@ class RouteParser {
     '/calendar_album': ['总结最近的日记相册', '帮我回顾这个月的记录'],
     '/calendar_album_calendar': ['分析这天的日记内容', '帮我回顾这天的记录'],
     '/calendar_album_album': ['帮我回顾相册里的照片', '总结照片记录的生活'],
+    '/calendar_album_stats': ['分析我的记录频率', '我最近的记录习惯怎么样？'],
     '/database': ['帮我分析数据库数据', '总结数据的整体情况'],
     '/day': ['总结最近的日计划完成情况', '帮我规划明天'],
     '/day_list': ['整理一下我的纪念日', '最近有什么纪念日要到了？'],
@@ -211,6 +222,7 @@ class RouteParser {
     '/media_log/form_edit': ['帮我润色这条记录的简介', '给这条记录推荐合适的标签'],
     '/timer': ['分析我的计时使用情况', '帮我总结时间开销'],
     '/timer_main': ['总结这组计时器的使用情况', '分析我的时间分配'],
+    '/timer_stats': ['分析我的时间分配', '总结最近的时间开销'],
     '/timer_details': ['分析这个任务的计时情况', '总结这个任务的时间开销'],
   };
 
