@@ -403,6 +403,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
+        icon: Icons.bar_chart,
+        title: '总销售分析卡片',
+        subtitle: 'TotalSalesAnalyticsCard - 深色柱状图与悬浮数值胶囊销售统计',
+        route: '/widgets_gallery/total_sales_analytics_card',
+      ),
+      _buildListItem(
+        context,
         icon: Icons.trending_up,
         title: '迷你趋势卡片',
         subtitle: 'MiniTrendCard - 迷你折线图趋势展示卡片',

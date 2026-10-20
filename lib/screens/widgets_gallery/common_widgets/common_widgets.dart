@@ -103,6 +103,7 @@ import 'widgets/monthly_capsule_chart_card.dart';
 import 'widgets/marquee_button_list_card.dart';
 import 'widgets/semicircle_gauge_card.dart';
 import 'widgets/expense_tracker_card.dart';
+import 'widgets/total_sales_analytics_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -207,6 +208,7 @@ enum CommonWidgetId {
   marqueeButtonListCard,
   semicircleGaugeCard,
   expenseTrackerCard,
+  totalSalesAnalyticsCard,
 }
 
 /// 公共小组件元数据
@@ -1025,6 +1027,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize(), Large3Size()],
     ),
+    CommonWidgetId.totalSalesAnalyticsCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.totalSalesAnalyticsCard,
+      name: '总销售分析卡片',
+      description: '深色销售统计：头部品牌圆标与操作按钮（通知红点）+ 大号总额 + 柱状图（激活柱滑动斜纹、圆点光环、悬浮数值胶囊），支持周期筛选弹层',
+      icon: Icons.bar_chart,
+      defaultSize: Large3Size(),
+      supportedSizes: [LargeSize(), Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1295,6 +1305,8 @@ class CommonWidgetBuilder {
         return SemicircleGaugeCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.expenseTrackerCard:
         return ExpenseTrackerCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.totalSalesAnalyticsCard:
+        return TotalSalesAnalyticsCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }
