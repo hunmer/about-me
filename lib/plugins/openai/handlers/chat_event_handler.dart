@@ -13,6 +13,7 @@ import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/memory_extraction_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
 /// 用于传递多个值的事件参数
@@ -453,11 +454,13 @@ class ChatEventHandler {
             _plugin.refresh();
           }
 
-          // 记忆独立模式：后台提取本轮记忆（不阻塞消息收尾）
+          // 记忆独立模式：提交本轮到批次服务（不阻塞消息收尾）
           _extractMemoryInBackground(
             agent,
             ChatMediaService.contextText(originalMessage, allowRead: true),
             RequestService.processThinkingContent(contentBuffer.toString()),
+            channelId: channelId,
+            turnId: originalMessage.id,
           );
 
           // 延迟一下再清理资源，确保最后的更新被处理
@@ -511,28 +514,26 @@ Future<String> _systemWithMemory(AIAgent agent, String queryText) async {
   return prompt;
 }
 
-/// 记忆独立模式：回复完成后后台提取本轮记忆并整理遗忘（不阻塞）
+/// 回复完成后提交批次服务，达到所选阈值才提取（不阻塞）。
 void _extractMemoryInBackground(
   AIAgent agent,
   String userText,
-  String assistantText,
-) {
+  String assistantText, {
+  required String channelId,
+  required String turnId,
+}) {
   final cfg = agent.alivenessConfig;
   if (cfg?.memoryEnabled != true) return;
   if (userText.trim().isEmpty || assistantText.trim().isEmpty) return;
   unawaited(
-    MemoryService.instance
-        .extractFromConversation(
-          agent,
-          userText: userText,
-          assistantText: assistantText,
-        )
-        .then(
-          (_) => MemoryService.instance.applyForgetting(
-            agent.id,
-            halfLifeDays: cfg!.forgettingHalfLifeDays,
-          ),
-        ),
+    MemoryExtractionService.instance.recordTurn(
+      agent: agent,
+      scope: 'chat',
+      channelId: channelId,
+      turnId: turnId,
+      userText: userText,
+      assistantText: assistantText,
+    ),
   );
 }
 
@@ -589,12 +590,14 @@ Future<void> _generateIntoThread(
         content: reply,
         status: 'done',
       );
-      // 记忆独立模式：后台提取本轮记忆（根消息文本作为用户侧输入）
+      // 记忆独立模式：提交批次服务（根消息文本作为用户侧输入）
       if (handleMessages.isNotEmpty) {
         _extractMemoryInBackground(
           agent,
           ChatMediaService.contextText(handleMessages.first, allowRead: true),
           reply,
+          channelId: channelId,
+          turnId: rootId,
         );
       }
     },

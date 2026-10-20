@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/behavior_executor.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/decision_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/memory_extraction_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/schedule_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/state_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
@@ -67,12 +68,13 @@ abstract class AlivenessSessionChannel {
 /// 一次缓冲会话：通道 + 累积文本 + 计时器
 class _AlivenessSession {
   final AlivenessSessionChannel channel;
+  final String targetId;
   final List<String> texts = [];
   final List<Object> handles = [];
   Timer? timer;
   bool flushing = false;
   bool rerunRequested = false;
-  _AlivenessSession(this.channel);
+  _AlivenessSession(this.channel, this.targetId);
 }
 
 /// 「活人感」通用编排（chat 与 agent_chat 共用同一套逻辑）：
@@ -111,7 +113,7 @@ class AlivenessOrchestrator {
     var session = _sessions[key];
     final isNew = session == null;
     if (isNew) {
-      session = _AlivenessSession(createSession());
+      session = _AlivenessSession(createSession(), targetId);
       _sessions[key] = session;
       await session.channel.onBufferStart();
     }
@@ -347,18 +349,13 @@ class AlivenessOrchestrator {
       );
       if (config.memoryEnabled) {
         unawaited(
-          _memory
-              .extractFromConversation(
-                agent,
-                userText: mergedText,
-                assistantText: fullContent,
-              )
-              .then((_) => debugPrint('[Aliveness][记忆] 对话提取与遗忘整理已执行')),
-        );
-        unawaited(
-          _memory.applyForgetting(
-            agent.id,
-            halfLifeDays: config.forgettingHalfLifeDays,
+          MemoryExtractionService.instance.recordTurn(
+            agent: agent,
+            scope: channel.scope,
+            channelId: session.targetId,
+            turnId: '${session.targetId}_${DateTime.now().microsecondsSinceEpoch}',
+            userText: mergedText,
+            assistantText: fullContent,
           ),
         );
       }

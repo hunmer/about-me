@@ -11,6 +11,7 @@ import '../../models/saved_tool_template.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/memory_extraction_service.dart';
 import '../../services/tool_service.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
@@ -243,27 +244,22 @@ class AgentChainExecutor {
       i++;
     }
 
-    // 记忆独立模式：后台提取本轮记忆并整理遗忘（不阻塞回复完成）
+    // 记忆独立模式：提交批次服务，达到阈值才提取（不阻塞回复完成）
     final memAgent = memoryAgent;
     if (memAgent != null && !isCancelling()) {
       final reply = chainMessages.isNotEmpty
           ? chainMessages.first.content.trim()
           : '';
       if (reply.isNotEmpty) {
-        final halfLife = memAgent.alivenessConfig!.forgettingHalfLifeDays;
         unawaited(
-          MemoryService.instance
-              .extractFromConversation(
-                memAgent,
-                userText: userInput,
-                assistantText: reply,
-              )
-              .then(
-                (_) => MemoryService.instance.applyForgetting(
-                  memAgent.id,
-                  halfLifeDays: halfLife,
-                ),
-              ),
+          MemoryExtractionService.instance.recordTurn(
+            agent: memAgent,
+            scope: 'agent_chat',
+            channelId: conversation.id,
+            turnId: chainExecutionId,
+            userText: userInput,
+            assistantText: reply,
+          ),
         );
       }
     }

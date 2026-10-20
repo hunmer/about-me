@@ -105,6 +105,7 @@ import 'widgets/semicircle_gauge_card.dart';
 import 'widgets/expense_tracker_card.dart';
 import 'widgets/total_sales_analytics_card.dart';
 import 'widgets/spending_overview_card.dart';
+import 'widgets/linked_task_flow_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -211,6 +212,7 @@ enum CommonWidgetId {
   expenseTrackerCard,
   totalSalesAnalyticsCard,
   spendingOverviewCard,
+  linkedTaskFlowCard,
 }
 
 /// 公共小组件元数据
@@ -1045,6 +1047,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize(), Large3Size()],
     ),
+    CommonWidgetId.linkedTaskFlowCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.linkedTaskFlowCard,
+      name: '连线任务流卡片',
+      description: '交错左右对齐的任务卡片（头像 + 进度胶囊 + 标题 + 负责人）由贝塞尔曲线依次相连：卡片浮现 -> 连线生长 -> 流光循环，支持自定义配色与斜纹背景',
+      icon: Icons.account_tree,
+      defaultSize: Large3Size(),
+      supportedSizes: [Large3Size(), Wide3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1319,6 +1329,8 @@ class CommonWidgetBuilder {
         return TotalSalesAnalyticsCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.spendingOverviewCard:
         return SpendingOverviewCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.linkedTaskFlowCard:
+        return LinkedTaskFlowCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

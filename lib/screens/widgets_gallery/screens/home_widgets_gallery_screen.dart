@@ -625,6 +625,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'SparkleStatGridCard - 闪光水印与双列统计数据',
         route: '/widgets_gallery/sparkle_stat_grid_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.account_tree,
+        title: '连线任务流卡片',
+        subtitle: 'LinkedTaskFlowCard - 交错卡片与贝塞尔连线流光任务流',
+        route: '/widgets_gallery/linked_task_flow_card',
+      ),
     ];
   }
 

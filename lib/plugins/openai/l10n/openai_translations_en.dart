@@ -311,6 +311,11 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_aiSchedule': 'AI Schedule',
   'openai_analyzeChatHistory': 'Analyze Chat History',
   'openai_memoryManagement': 'Memory Management',
+  'openai_memoryExtractionByRounds': 'Extract by conversation rounds',
+  'openai_memoryExtractionByInterval': 'Extract by time interval',
+  'openai_memoryExtractionRounds': 'Rounds per extraction',
+  'openai_memoryExtractionInterval': 'Interval (minutes)',
+  'openai_memoryExtractionHint': 'Each channel tracks completed exchanges independently. Extract in batches when the selected threshold is reached; skip when there are no new exchanges.',
   'openai_memoryManagementDesc':
       'The AI automatically remembers important details and recalls them while chatting (works without Aliveness Boost)',
   'openai_decisionLog': 'Decision Log',

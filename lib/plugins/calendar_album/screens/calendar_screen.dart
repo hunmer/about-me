@@ -926,17 +926,6 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
   final Map<String, Map<DateTime, _PhotoDayInfo>> _cachedDayData = {};
   bool _isLoading = false;
 
-  // 标题小标签的柔和色板（参考图中的彩色事件标签）
-  static const _chipColors = [
-    Color(0xFFFFD54F),
-    Color(0xFF4FC3F7),
-    Color(0xFFFF8A80),
-    Color(0xFFAED581),
-    Color(0xFFCE93D8),
-    Color(0xFFFFB74D),
-    Color(0xFF80CBC4),
-  ];
-
   /// 每行统一行高（有图片的行高；无图片的行留白保持同高）
   static const double _photoRowHeight = 132;
 
@@ -1064,9 +1053,6 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
     return dayData;
   }
 
-  Color _chipColor(String title) =>
-      _chipColors[title.hashCode.abs() % _chipColors.length];
-
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -1079,7 +1065,26 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
 
   /// 首图缩略图：白底 + 手绘墨线描边 + 左右随机小角度倾斜（拍立得效果）。
   /// 倾斜角按日期哈希稳定取值，同一格 rebuild 不抖变
-  Widget _buildTiltedImage(String imagePath, DateTime day, AppThemeData theme) {
+  Widget _buildTiltedImage(String imagePath, DateTime day, AppThemeData theme) =>
+      _buildTiledSlot(
+        // Web/远端存储下 File 路径不可用，统一走 createImageProvider
+        // （内部按 network/asset/file/存储分发，含 StorageImageProvider 解密）
+        Image(
+          image: ImageUtils.createImageProvider(imagePath),
+          width: 36,
+          height: 36,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _imageFallback(theme),
+        ),
+        day,
+        theme,
+      );
+
+  /// 有条目但无图时的占位：同样走拍立得墨盒外框，中间为图片图标
+  Widget _buildTiledPlaceholder(DateTime day, AppThemeData theme) =>
+      _buildTiledSlot(_imageFallback(theme), day, theme);
+
+  Widget _buildTiledSlot(Widget child, DateTime day, AppThemeData theme) {
     const tilts = [-0.10, -0.05, 0.05, 0.10];
     final angle = tilts[(day.day * 31 + day.month * 7) % tilts.length];
     return Transform.rotate(
@@ -1096,15 +1101,7 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(6),
-          // Web/远端存储下 File 路径不可用，统一走 createImageProvider
-          // （内部按 network/asset/file/存储分发，含 StorageImageProvider 解密）
-          child: Image(
-            image: ImageUtils.createImageProvider(imagePath),
-            width: 36,
-            height: 36,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _imageFallback(theme),
-          ),
+          child: child,
         ),
       ),
     );
@@ -1146,13 +1143,23 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
             padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
             child: Column(
               children: [
-                if (info != null && info.imagePath != null)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: _buildTiltedImage(info.imagePath!, day, theme),
-                    ),
-                  ),
+                // 顶部区域始终占满剩余高度：无条目时留空占位，保证日期固定贴底
+                Expanded(
+                  child:
+                      (info != null)
+                          ? Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child:
+                                info.imagePath != null
+                                    ? _buildTiltedImage(
+                                      info.imagePath!,
+                                      day,
+                                      theme,
+                                    )
+                                    : _buildTiledPlaceholder(day, theme),
+                          )
+                          : const SizedBox.shrink(),
+                ),
                 Container(
                   width: 26,
                   height: 26,
@@ -1179,29 +1186,6 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
                     ),
                   ),
                 ),
-                if (info != null) ...[
-                  const SizedBox(height: 2),
-                  // 当日首篇笔记名称
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _chipColor(info.title),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      info.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: DsTypography.caption.copyWith(
-                        fontSize: 9,
-                        color: Colors.black87,
-                      ),
-                      ),
-                  ),
-                ],
               ],
             ),
           ),

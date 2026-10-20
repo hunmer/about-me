@@ -61,6 +61,18 @@ class AlivenessStore {
 
   // ---------- per-agent 记忆（Phase 2） ----------
 
+  Future<Map<String, dynamic>> loadMemoryExtractionState() async {
+    final data = await AboutmeDataService.instance.readPath(
+      '${OpenAIPlugin.instance.storageDir}/aliveness/memory_extraction.json',
+    );
+    return data is Map ? _asStringMap(data) : <String, dynamic>{};
+  }
+
+  Future<void> saveMemoryExtractionState(Map<String, dynamic> data) =>
+      AboutmeDataService.instance.writePath(
+        '${OpenAIPlugin.instance.storageDir}/aliveness/memory_extraction.json', data,
+      );
+
   Future<Map<String, dynamic>> loadMemory(String agentId) async {
     final data = await AboutmeDataService.instance.readPath(
       '${_dir(agentId)}/memory/fragments.json',

@@ -293,7 +293,35 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
               onChanged: (v) =>
                   widget.onChanged(config.copyWith(memoryEnabled: v)),
             ),
-            if (config.memoryEnabled)
+            if (config.memoryEnabled) ...[
+              SizedBox(height: theme.spacing.sm),
+              DSSelect<String>(
+                width: double.infinity,
+                value: config.memoryExtractionMode,
+                items: [
+                  DSSelectItem(value: 'rounds', label: 'openai_memoryExtractionByRounds'.tr),
+                  DSSelectItem(value: 'interval', label: 'openai_memoryExtractionByInterval'.tr),
+                ],
+                onChanged: (mode) => widget.onChanged(config.copyWith(memoryExtractionMode: mode)),
+              ),
+              if (config.memoryExtractionMode == 'rounds')
+                _sliderRow(theme,
+                  label: 'openai_memoryExtractionRounds'.tr,
+                  valueText: '${config.memoryExtractionRounds}',
+                  value: config.memoryExtractionRounds.toDouble(),
+                  min: 1, max: 100,
+                  onChanged: (v) => widget.onChanged(config.copyWith(memoryExtractionRounds: v.round())),
+                )
+              else
+                _sliderRow(theme,
+                  label: 'openai_memoryExtractionInterval'.tr,
+                  valueText: '${config.memoryExtractionIntervalMin}',
+                  value: config.memoryExtractionIntervalMin.toDouble(),
+                  min: 1, max: 1440,
+                  onChanged: (v) => widget.onChanged(config.copyWith(memoryExtractionIntervalMin: v.round())),
+                ),
+              Text('openai_memoryExtractionHint'.tr,
+                style: DsTypography.caption.copyWith(color: theme.textSub)),
               Padding(
                 padding: EdgeInsets.only(left: theme.spacing.sm + 28),
                 child: Align(
@@ -315,6 +343,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),

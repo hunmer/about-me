@@ -20,6 +20,7 @@ import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/memory_extraction_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/proactive_service.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
@@ -143,6 +144,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
     // 启动活人感主动消息调度（周期检查开环/闲置触发，含三重硬限制）
     ProactiveService.instance.start();
+    await MemoryExtractionService.instance.start();
 
     // 初始化 UseCase
     _initializeUseCase();
@@ -524,6 +526,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
     // 停止主动消息调度
     ProactiveService.instance.stop();
+    MemoryExtractionService.instance.stop();
 
     // 清理事件处理器
     _chatEventHandler.dispose();

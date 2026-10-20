@@ -43,6 +43,10 @@ class AlivenessConfig {
   /// 记忆管理独立开关：不依赖总开关，单独开启时普通聊天路径
   /// 也会注入记忆并在回复后提取。旧数据无此字段时跟随 enabled。
   final bool memoryEnabled;
+  /// rounds / interval 二选一，默认累计 10 轮；时间模式默认 10 分钟。
+  final String memoryExtractionMode;
+  final int memoryExtractionRounds;
+  final int memoryExtractionIntervalMin;
 
   const AlivenessConfig({
     this.enabled = false,
@@ -62,6 +66,9 @@ class AlivenessConfig {
     this.humanScoreEnabled = false,
     this.humanScoreThreshold = 2,
     this.memoryEnabled = false,
+    this.memoryExtractionMode = 'rounds',
+    this.memoryExtractionRounds = 10,
+    this.memoryExtractionIntervalMin = 10,
   });
 
   Map<String, dynamic> toJson() => {
@@ -86,6 +93,9 @@ class AlivenessConfig {
       'threshold': humanScoreThreshold,
     },
     'memoryEnabled': memoryEnabled,
+    'memoryExtractionMode': memoryExtractionMode,
+    'memoryExtractionRounds': memoryExtractionRounds,
+    'memoryExtractionIntervalMin': memoryExtractionIntervalMin,
   };
 
   factory AlivenessConfig.fromJson(Map<String, dynamic> json) {
@@ -119,6 +129,9 @@ class AlivenessConfig {
       humanScoreThreshold: (humanScore?['threshold'] as int? ?? 2).clamp(0, 3),
       // 旧数据无此字段：活人感开启的老 agent 此前一直带记忆，保持开启
       memoryEnabled: json['memoryEnabled'] as bool? ?? enabled,
+      memoryExtractionMode: json['memoryExtractionMode'] == 'interval' ? 'interval' : 'rounds',
+      memoryExtractionRounds: (json['memoryExtractionRounds'] as int? ?? 10).clamp(1, 100),
+      memoryExtractionIntervalMin: (json['memoryExtractionIntervalMin'] as int? ?? 10).clamp(1, 1440),
     );
   }
 
@@ -140,6 +153,9 @@ class AlivenessConfig {
     bool? humanScoreEnabled,
     int? humanScoreThreshold,
     bool? memoryEnabled,
+    String? memoryExtractionMode,
+    int? memoryExtractionRounds,
+    int? memoryExtractionIntervalMin,
   }) {
     return AlivenessConfig(
       enabled: enabled ?? this.enabled,
@@ -163,6 +179,9 @@ class AlivenessConfig {
       humanScoreEnabled: humanScoreEnabled ?? this.humanScoreEnabled,
       humanScoreThreshold: humanScoreThreshold ?? this.humanScoreThreshold,
       memoryEnabled: memoryEnabled ?? this.memoryEnabled,
+      memoryExtractionMode: memoryExtractionMode ?? this.memoryExtractionMode,
+      memoryExtractionRounds: memoryExtractionRounds ?? this.memoryExtractionRounds,
+      memoryExtractionIntervalMin: memoryExtractionIntervalMin ?? this.memoryExtractionIntervalMin,
     );
   }
 }

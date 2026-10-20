@@ -88,6 +88,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/semicircle_gauge_card_ex
 import 'package:aboutme/screens/widgets_gallery/screens/expense_tracker_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/total_sales_analytics_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/spending_overview_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/linked_task_flow_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_folder_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_accordion_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/cute_notepad_card_example.dart';
@@ -835,6 +836,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '支出概览卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/linked_task_flow_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        LinkedTaskFlowCardExample(),
+        settings: settings,
+      ),
+      description: '连线任务流卡片',
     ),
     RouteDefinition(
       path: '/widgets_gallery/stacked_folder_card',
@@ -1589,6 +1598,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '闪光统计网格卡片',
     subtitle: 'SparkleStatGridCard',
     route: '/widgets_gallery/sparkle_stat_grid_card',
+  ),
+  WidgetPreviewItem(
+    category: '内容类',
+    icon: Icons.account_tree,
+    title: '连线任务流卡片',
+    subtitle: 'LinkedTaskFlowCard',
+    route: '/widgets_gallery/linked_task_flow_card',
   ),
   // 财务类
   WidgetPreviewItem(
