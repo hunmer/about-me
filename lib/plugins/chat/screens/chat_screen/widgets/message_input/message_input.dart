@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'message_input_types.dart';
 import 'message_input_state.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
+import '../auto_reply_settings_sheet.dart';
 import 'widgets/metadata_display.dart';
 import 'package:aboutme/widgets/message_input/message_input.dart' as common;
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_drawer.dart';
@@ -164,26 +165,36 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  void _handleContextRangeChange(int newRange) {
-    setState(() {
-      contextRange = newRange;
-      _updateMessageInputState();
-    });
-
-    // 保存上下文范围到频道元数据
-    if (ChatPlugin.instance.channelService.currentChannel != null) {
-      final channelId = ChatPlugin.instance.channelService.currentChannel!.id;
-      ChatPlugin.instance.channelService.updateChannelMetadata(channelId, {
-        'contextRange': newRange,
-      });
-    }
-  }
-
   void _handleFileSelected(Map<String, dynamic> file) {
     setState(() {
       selectedFiles.add(file);
       _updateMessageInputState();
     });
+  }
+
+  /// 智能体统一入口：打开自动回复设置弹层（与频道菜单共用）
+  Future<void> _openAutoReplySettings() async {
+    final channel = ChatPlugin.instance.channelService.currentChannel;
+    if (channel == null) return;
+    await showAutoReplySettingsSheet(context: context, channelId: channel.id);
+    if (mounted) setState(() {}); // 刷新入口文案
+  }
+
+  /// 智能体统一入口的显示文案（空串 = 不显示）：
+  /// 自动回复已开启显示 agent 名，否则显示 @ 选择的智能体名称
+  String _agentsEntryLabel() {
+    final channel = ChatPlugin.instance.channelService.currentChannel;
+    final cfg = channel == null ? <String, dynamic>{} : readAutoReplyConfig(channel);
+    final agent = cfg['enabled'] == true ? autoReplyAgentOf(cfg) : null;
+    if (agent != null) return '自动回复：${agent['name']}';
+    if (selectedAgents.isNotEmpty) {
+      final names = selectedAgents
+          .map((a) => a['name'] ?? '')
+          .where((n) => n.isNotEmpty)
+          .join('、');
+      return '@ $names';
+    }
+    return '';
   }
 
   void _updateMessageInputState() {
@@ -203,31 +214,6 @@ class _MessageInputState extends State<MessageInput> {
       onSendMessage: widget.onSendMessage,
       onClearFile: _removeAllFiles,
     );
-  }
-
-  void _removeAgent(String agentId) {
-    setState(() {
-      selectedAgents.removeWhere((agent) => agent['id'] == agentId);
-      _updateMessageInputState();
-    });
-
-    // 更新频道元数据中的智能体列表
-    if (ChatPlugin.instance.channelService.currentChannel != null) {
-      final channelId = ChatPlugin.instance.channelService.currentChannel!.id;
-
-      // 如果移除后没有选中的智能体，则清空元数据中的智能体列表和上下文范围
-      if (selectedAgents.isEmpty) {
-        ChatPlugin.instance.channelService.updateChannelMetadata(channelId, {
-          'selectedAgents': [],
-          'contextRange': null,
-        });
-      } else {
-        // 否则只更新智能体列表
-        ChatPlugin.instance.channelService.updateChannelMetadata(channelId, {
-          'selectedAgents': selectedAgents,
-        });
-      }
-    }
   }
 
   /// 移除指定下标的待发送文件
@@ -355,12 +341,9 @@ class _MessageInputState extends State<MessageInput> {
       onOpenActionsDrawer: _showActionsDrawer,
       header: MetadataDisplay(
         selectedFiles: selectedFiles,
-        selectedAgents: selectedAgents,
-        onShowAgentListDrawer: _showAgentListDrawer,
+        agentsEntryLabel: _agentsEntryLabel(),
+        onAgentsEntryTap: _openAutoReplySettings,
         onFileRemoveAt: _removeFileAt,
-        onAgentRemove: _removeAgent,
-        contextRange: contextRange,
-        onContextRangeChange: _handleContextRangeChange,
       ),
       inputSuffix: Row(
         mainAxisSize: MainAxisSize.min,

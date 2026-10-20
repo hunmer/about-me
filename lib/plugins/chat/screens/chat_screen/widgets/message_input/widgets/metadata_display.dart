@@ -1,7 +1,6 @@
 import 'dart:io' show Process;
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -12,35 +11,32 @@ import 'package:aboutme/utils/image_utils.dart';
 ///
 /// 文件区：横向缩略图条（图片显示缩略图，其余类型显示图标卡），
 /// 右上 × 逐个移除，点击缩略图用系统程序打开；
-/// 智能体区：上下文范围 chip + 智能体 chips（点击打开列表抽屉）。
+/// 智能体区：统一入口 chip（点击弹出自动回复设置弹层，
+/// 含总开关 / 指定 agent / 上下文长度，与频道菜单共用）。
 class MetadataDisplay extends StatelessWidget {
   /// 待发送文件列表（元素为 {fileInfo, senderInfo}，支持多个）
   final List<Map<String, dynamic>> selectedFiles;
-  final List<Map<String, String>> selectedAgents;
-  final Function() onShowAgentListDrawer;
-  final Function(int) onFileRemoveAt;
-  final Function(String) onAgentRemove;
-  final int contextRange;
-  final Function(int) onContextRangeChange;
 
-  static const int minRange = 0;
-  static const int maxRange = 50;
-  static const int defaultRange = 10;
+  /// 智能体统一入口的显示文案（空串表示不显示）
+  final String agentsEntryLabel;
+
+  /// 点击智能体统一入口：打开自动回复设置弹层
+  final Function() onAgentsEntryTap;
+
+  final Function(int) onFileRemoveAt;
 
   const MetadataDisplay({
     super.key,
     required this.selectedFiles,
-    required this.selectedAgents,
-    required this.onShowAgentListDrawer,
+    required this.agentsEntryLabel,
+    required this.onAgentsEntryTap,
     required this.onFileRemoveAt,
-    required this.onAgentRemove,
-    this.contextRange = defaultRange,
-    required this.onContextRangeChange,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (selectedFiles.isEmpty && selectedAgents.isEmpty) {
+    final showAgentsEntry = agentsEntryLabel.isNotEmpty;
+    if (selectedFiles.isEmpty && !showAgentsEntry) {
       // 没有文件和智能体时不显示任何内容
       return const SizedBox();
     }
@@ -67,30 +63,18 @@ class MetadataDisplay extends StatelessWidget {
                           _buildFileThumb(context, theme, index),
                     ),
                   ),
-                if (selectedFiles.isNotEmpty && selectedAgents.isNotEmpty)
+                if (selectedFiles.isNotEmpty && showAgentsEntry)
                   const SizedBox(height: 8),
 
-                // 智能体区：上下文范围 + 智能体 chips
-                if (selectedAgents.isNotEmpty)
+                // 智能体统一入口：点击打开自动回复设置弹层
+                if (showAgentsEntry)
                   Row(
                     children: [
-                      _buildContextRangeChip(context, theme),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: onShowAgentListDrawer,
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: selectedAgents.map((agent) {
-                              return DSChip(
-                                icon: DsIconKind.bot,
-                                label: agent['name'] ?? '',
-                                onDeleted:
-                                    () => onAgentRemove(agent['id'] ?? ''),
-                              );
-                            }).toList(),
-                          ),
+                      GestureDetector(
+                        onTap: onAgentsEntryTap,
+                        child: DSChip(
+                          icon: DsIconKind.bot,
+                          label: agentsEntryLabel,
                         ),
                       ),
                     ],
@@ -191,106 +175,5 @@ class MetadataDisplay extends StatelessWidget {
     } else if (UniversalPlatform.isLinux) {
       Process.run('xdg-open', [path]);
     }
-  }
-
-  Widget _buildContextRangeChip(BuildContext context, AppThemeData theme) {
-    return Container(
-      padding: EdgeInsets.zero,
-      child: GestureDetector(
-        onTap: () => _showContextRangeDialog(context),
-        child: DSChip(
-          icon: DsIconKind.clock,
-          label: '${'chat_contextRange'.tr}: $contextRange',
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showContextRangeDialog(BuildContext context) async {
-    double currentValue = contextRange.toDouble();
-
-    await showDSDialog(
-      context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => StatefulBuilder(
-            builder:
-                (context, setState) => DSThemeBridge(
-                  child: Builder(
-                    builder: (context) {
-                      final theme = DSThemeBridge.resolve(context);
-                      return JellyBox(
-                        radius: theme.radii.xxl,
-                        padding: EdgeInsets.all(theme.spacing.xl),
-                        constraints: const BoxConstraints(maxWidth: 360),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'chat_setContextRange'.tr,
-                              textAlign: TextAlign.center,
-                              style: DsTypography.title.copyWith(
-                                color: theme.text,
-                              ),
-                            ),
-                            SizedBox(height: theme.spacing.lg),
-                            Text(
-                              '${'chat_currentRange'.tr}: ${currentValue.round()}',
-                              textAlign: TextAlign.center,
-                              style: DsTypography.body.copyWith(
-                                color: theme.text,
-                              ),
-                            ),
-                            DSSlider(
-                              value:
-                                  (currentValue - minRange) /
-                                  (maxRange - minRange),
-                              onChanged: (value) {
-                                setState(() {
-                                  currentValue =
-                                      minRange + value * (maxRange - minRange);
-                                });
-                              },
-                            ),
-                            Text(
-                              'chat_rangeHint'.tr,
-                              style: DsTypography.caption.copyWith(
-                                color: theme.textSub,
-                              ),
-                            ),
-                            SizedBox(height: theme.spacing.lg),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: DSButton(
-                                    label: 'app_cancel'.tr,
-                                    variant: DSButtonVariant.outline,
-                                    onPressed:
-                                        () => Navigator.of(context).pop(),
-                                  ),
-                                ),
-                                SizedBox(width: theme.spacing.md),
-                                Expanded(
-                                  child: DSButton(
-                                    label: 'app_ok'.tr,
-                                    onPressed: () {
-                                      onContextRangeChange(
-                                        currentValue.round(),
-                                      );
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-          ),
-    );
   }
 }

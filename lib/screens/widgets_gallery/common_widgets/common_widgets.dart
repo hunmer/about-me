@@ -104,6 +104,7 @@ import 'widgets/marquee_button_list_card.dart';
 import 'widgets/semicircle_gauge_card.dart';
 import 'widgets/expense_tracker_card.dart';
 import 'widgets/total_sales_analytics_card.dart';
+import 'widgets/spending_overview_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -209,6 +210,7 @@ enum CommonWidgetId {
   semicircleGaugeCard,
   expenseTrackerCard,
   totalSalesAnalyticsCard,
+  spendingOverviewCard,
 }
 
 /// 公共小组件元数据
@@ -1035,6 +1037,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize(), Large3Size()],
     ),
+    CommonWidgetId.spendingOverviewCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.spendingOverviewCard,
+      name: '支出概览卡片',
+      description: '磨砂浅灰支出概览：总额与趋势 + 分类列表 + 右缘垂直平切甜甜圈图（首尾段外凸投影、中间段斜纹），支持任意数量分类与周期下拉切换',
+      icon: Icons.donut_small,
+      defaultSize: Large3Size(),
+      supportedSizes: [LargeSize(), Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1307,6 +1317,8 @@ class CommonWidgetBuilder {
         return ExpenseTrackerCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.totalSalesAnalyticsCard:
         return TotalSalesAnalyticsCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.spendingOverviewCard:
+        return SpendingOverviewCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

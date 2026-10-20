@@ -139,7 +139,10 @@ class ChatEventHandler {
           content: await RequestService.getEffectiveSystemPrompt(agent),
         ),
       ];
-      final contextCount = (message.metadata?['contextCount'] as int?) ?? 20;
+      // 自动回复专用上下文长度：默认 0（只传入当前这句话），
+      // 与 @ 流程的消息级 contextCount 互不影响
+      final contextCount =
+          (message.metadata?['autoReplyContextCount'] as num?)?.toInt() ?? 0;
       final recent = _plugin.channelService.getRecentMessages(
         channelId,
         contextCount,

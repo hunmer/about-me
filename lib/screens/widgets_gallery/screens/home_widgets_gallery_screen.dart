@@ -410,6 +410,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
+        icon: Icons.donut_small,
+        title: '支出概览卡片',
+        subtitle: 'SpendingOverviewCard - 右缘平切甜甜圈图与分类列表支出概览',
+        route: '/widgets_gallery/spending_overview_card',
+      ),
+      _buildListItem(
+        context,
         icon: Icons.trending_up,
         title: '迷你趋势卡片',
         subtitle: 'MiniTrendCard - 迷你折线图趋势展示卡片',

@@ -87,6 +87,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/petal_radial_chart_card_
 import 'package:aboutme/screens/widgets_gallery/screens/semicircle_gauge_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/expense_tracker_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/total_sales_analytics_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/spending_overview_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_folder_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_accordion_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/cute_notepad_card_example.dart';
@@ -828,6 +829,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '总销售分析卡片',
     ),
     RouteDefinition(
+      path: '/widgets_gallery/spending_overview_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SpendingOverviewCardExample(),
+        settings: settings,
+      ),
+      description: '支出概览卡片',
+    ),
+    RouteDefinition(
       path: '/widgets_gallery/stacked_folder_card',
       handler: (settings) => RouteHelpers.createRoute(
         const StackedFolderCardExample(),
@@ -1376,6 +1385,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '总销售分析卡片',
     subtitle: 'TotalSalesAnalyticsCard',
     route: '/widgets_gallery/total_sales_analytics_card',
+  ),
+  WidgetPreviewItem(
+    category: '图表类',
+    icon: Icons.donut_small,
+    title: '支出概览卡片',
+    subtitle: 'SpendingOverviewCard',
+    route: '/widgets_gallery/spending_overview_card',
   ),
   WidgetPreviewItem(
     category: '图表类',
