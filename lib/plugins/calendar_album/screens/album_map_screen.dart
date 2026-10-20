@@ -5,20 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
+import 'package:provider/provider.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
+import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
+import 'package:aboutme/plugins/calendar_album/screens/album_photo_query.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
-
-/// 相册地图页的单张带定位照片（坐标取自所属日记条目的 latLng）
-class AlbumMapPhoto {
-  const AlbumMapPhoto({required this.url, required this.entry});
-
-  final String url;
-  final CalendarEntry entry;
-}
 
 /// 解析 GCJ-02 "lat,lng" 字符串并转 WGS84（OSM 瓦片坐标系），失败返回 null
 LatLng? parseGcj02ToWgs84(String? latLng) {
@@ -87,15 +81,16 @@ LatLng? parseGcj02ToWgs84(String? latLng) {
 }
 
 /// 照片地图：带定位信息的日记照片以照片大头针形式标记在 OSM 地图上，
-/// 同一坐标的多张照片堆叠成一组。视觉参考 lib/widgets/moments_nyc_map_demo.dart
+/// 同一坐标的多张照片堆叠成一组。视觉参考 lib/widgets/moments_nyc_map_demo.dart。
+/// 与相册页共用多条件过滤栏与搜索，过滤条件变化时大头针实时增减
 class AlbumMapScreen extends StatefulWidget {
-  const AlbumMapScreen({super.key, required this.photos, this.onOpenGallery});
+  const AlbumMapScreen({super.key, this.initialQuery, this.onOpenGallery});
 
-  /// 带定位的照片列表（顺序即图库打开顺序）
-  final List<AlbumMapPhoto> photos;
+  /// 进入地图页时继承的过滤条件（相册页当前过滤状态）
+  final AlbumPhotoQuery? initialQuery;
 
-  /// 点击照片大头针打开图库（参数为照片在 photos 中的索引）
-  final void Function(int index)? onOpenGallery;
+  /// 点击照片大头针打开图库（当前过滤结果列表 + 点击索引）
+  final void Function(List<AlbumMapPhoto> photos, int index)? onOpenGallery;
 
   @override
   State<AlbumMapScreen> createState() => _AlbumMapScreenState();
@@ -107,7 +102,7 @@ class _PinGroup {
 
   final LatLng point;
 
-  /// 组内照片在 photos 中的索引（首张用于打开图库）
+  /// 组内照片在过滤结果中的索引（首张用于打开图库）
   final List<int> indices;
 }
 
@@ -119,11 +114,68 @@ const _monthLabels = [
 class _AlbumMapScreenState extends State<AlbumMapScreen> {
   final _mapController = MapController();
 
-  /// 坐标 → 照片索引分组（保持插入顺序）
-  List<_PinGroup> _buildGroups() {
+  late AlbumPhotoQuery _query =
+      widget.initialQuery ?? const AlbumPhotoQuery();
+
+  /// 当前过滤结果（build 时更新，供大头针点击回调使用）
+  List<AlbumMapPhoto> _records = const [];
+
+  bool _mapReady = false;
+
+  /// 待适配的视野坐标集合；地图就绪后或坐标集合变化时消费
+  List<LatLng>? _pendingFitPoints;
+  String? _lastFitSignature;
+
+  /// 过滤条件变化 → 重建大头针；坐标集合变化 → 重新适配视野
+  void _applyFilters(Map<String, dynamic> filters) {
+    // addPostFrameCallback 避免在过滤栏 build 阶段调用 setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _query = AlbumPhotoQuery(
+            multiFilters: filters,
+            searchQuery: _query.searchQuery,
+          );
+        });
+      }
+    });
+  }
+
+  /// 坐标集合签名变化时安排一次视野适配（签名相同不重置，避免打断用户平移）
+  void _maybeScheduleFit(List<_PinGroup> groups) {
+    final points = groups.map((g) => g.point).toList();
+    final signature =
+        points.map((p) => '${p.latitude},${p.longitude}').join('|');
+    if (signature == _lastFitSignature) return;
+    _lastFitSignature = signature;
+    _pendingFitPoints = points;
+    if (!_mapReady) return; // onMapReady 兜底消费
+    WidgetsBinding.instance.addPostFrameCallback((_) => _consumePendingFit());
+  }
+
+  void _consumePendingFit() {
+    if (!mounted) return;
+    final points = _pendingFitPoints;
+    if (points == null || points.isEmpty) return;
+    _pendingFitPoints = null;
+    if (points.length == 1) {
+      _mapController.move(points.first, 15);
+    } else {
+      _mapController.fitCamera(
+        CameraFit.coordinates(
+          coordinates: points,
+          // 上下留出导航栏/过滤栏与底部安全区
+          padding: const EdgeInsets.fromLTRB(60, 180, 60, 140),
+        ),
+      );
+    }
+  }
+
+  /// 坐标 → 照片索引分组（保持插入顺序，同一条目的照片共享坐标）
+  List<_PinGroup> _buildGroups(List<AlbumMapPhoto> records) {
     final groups = <String, _PinGroup>{};
-    for (var i = 0; i < widget.photos.length; i++) {
-      final photo = widget.photos[i];
+    for (var i = 0; i < records.length; i++) {
+      final photo = records[i];
       final point = parseGcj02ToWgs84(photo.entry.latLng);
       if (point == null) continue;
       final key = photo.entry.latLng!;
@@ -139,69 +191,81 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final groups = _buildGroups();
+    return Consumer<CalendarController>(
+      builder: (context, controller, _) {
+        _records = _query.apply(AlbumPhotoQuery.buildRecords(controller));
+        final groups = _buildGroups(_records);
+        _maybeScheduleFit(groups);
 
-    return SuperCupertinoNavigationWrapper(
-      title: Text('calendar_album_photo_map'.tr),
-      largeTitle: 'calendar_album_photo_map'.tr,
-      enableLargeTitle: true,
-      body: groups.isEmpty
-          ? Center(
-              child: DSThemeBridge(
-                child: DSEmptyState(
-                  emoji: '🗺️',
-                  title: 'calendar_album_map_empty'.tr,
-                  message: 'calendar_album_map_empty_hint'.tr,
-                ),
-              ),
-            )
-          : FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                // 初始视野先取首组坐标，onMapReady 后再适配全部坐标
-                initialCenter: groups.first.point,
-                initialZoom: 13,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                ),
-                onMapReady: () {
-                  final points = groups.map((g) => g.point).toList();
-                  if (points.length == 1) {
-                    _mapController.move(points.first, 15);
-                  } else {
-                    _mapController.fitCamera(
-                      CameraFit.coordinates(
-                        coordinates: points,
-                        // 上下留出导航栏与底部安全区
-                        padding: const EdgeInsets.fromLTRB(60, 140, 60, 140),
-                      ),
-                    );
-                  }
-                },
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'github.hunmer.aboutme',
-                ),
-                MarkerLayer(
-                  markers: [
-                    for (final group in groups)
-                      Marker(
-                        point: group.point,
-                        width: group.indices.length > 1 ? 150 : 76,
-                        height: group.indices.length > 1 ? 132 : 96,
-                        alignment: Alignment.center,
-                        child: GestureDetector(
-                          onTap: () =>
-                              widget.onOpenGallery?.call(group.indices.first),
-                          child: _buildPin(group),
-                        ),
-                      ),
+        return SuperCupertinoNavigationWrapper(
+          title: Text('calendar_album_photo_map'.tr),
+          largeTitle: 'calendar_album_photo_map'.tr,
+          enableLargeTitle: true,
+          // ===== 搜索 =====
+          enableSearchBar: true,
+          searchPlaceholder: 'calendar_album_search_photos_placeholder'.tr,
+          onSearchChanged: (query) {
+            setState(() {
+              _query = AlbumPhotoQuery(
+                multiFilters: _query.multiFilters,
+                searchQuery: query,
+              );
+            });
+          },
+          // ===== 多条件过滤（与相册页共用） =====
+          enableMultiFilter: true,
+          multiFilterItems: AlbumPhotoQuery.buildFilterItems(controller),
+          onMultiFilterChanged: _applyFilters,
+          body: groups.isEmpty
+              ? Center(
+                  child: DSThemeBridge(
+                    child: DSEmptyState(
+                      emoji: '🗺️',
+                      title: 'calendar_album_map_empty'.tr,
+                      message: 'calendar_album_map_empty_hint'.tr,
+                    ),
+                  ),
+                )
+              : FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    // 初始视野先取首组坐标，就绪后按全部坐标适配
+                    initialCenter: groups.first.point,
+                    initialZoom: 13,
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    ),
+                    onMapReady: () {
+                      _mapReady = true;
+                      _consumePendingFit();
+                    },
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'github.hunmer.aboutme',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        for (final group in groups)
+                          Marker(
+                            point: group.point,
+                            width: group.indices.length > 1 ? 150 : 76,
+                            height: group.indices.length > 1 ? 132 : 96,
+                            alignment: Alignment.center,
+                            child: GestureDetector(
+                              onTap: () => widget.onOpenGallery
+                                  ?.call(_records, group.indices.first),
+                              child: _buildPin(group),
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
+        );
+      },
     );
   }
 
@@ -210,7 +274,7 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
   /// 单张：白框照片 + 左上日期徽章；多张：前 3 张扇形堆叠 + 数量贴纸
   Widget _buildPin(_PinGroup group) {
     if (group.indices.length == 1) {
-      final photo = widget.photos[group.indices.first];
+      final photo = _records[group.indices.first];
       return Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
@@ -240,7 +304,7 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
               child: _photoFrame(
                 size: 64,
                 rotationDeg: 0,
-                photo: widget.photos[group.indices[i]],
+                photo: _records[group.indices[i]],
               ),
             ),
           ),
@@ -248,7 +312,7 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
         _photoFrame(
           size: 72,
           rotationDeg: 3,
-          photo: widget.photos[group.indices.first],
+          photo: _records[group.indices.first],
         ),
         // 右下角数量贴纸
         Positioned(
