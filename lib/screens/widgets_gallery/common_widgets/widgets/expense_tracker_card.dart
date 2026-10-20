@@ -161,6 +161,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
 
   late int _selectedMonth;
   late List<double> _fromShares;
+  late List<double> _fromFilled;
   int? _highlightIndex;
 
   @override
@@ -171,6 +172,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
       math.max(0, widget.months.length - 1),
     );
     _fromShares = _sharesFor(_selectedMonth);
+    _fromFilled = _filledFor(_selectedMonth);
 
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 1200),
@@ -216,12 +218,31 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
         .toList(growable: false);
   }
 
+  /// 各分类刻度填充数（相对最大分类金额的比例 × 32，连续值便于插值）
+  List<double> _filledFor(int month) {
+    final amounts = _amountsFor(month);
+    final maxAmount = amounts.fold<double>(0, (m, v) => v > m ? v : m);
+    return amounts
+        .map((v) => maxAmount > 0 ? v / maxAmount * _totalTicks : 0.0)
+        .toList(growable: false);
+  }
+
   /// 当前动画插值后的分类占比
   List<double> _currentShares() {
     final to = _sharesFor(_selectedMonth);
     final t = _monthAnimation.value;
     return List<double>.generate(to.length, (i) {
       final from = i < _fromShares.length ? _fromShares[i] : 0.0;
+      return from + (to[i] - from) * t;
+    });
+  }
+
+  /// 当前动画插值后的刻度填充数
+  List<double> _currentFilled() {
+    final to = _filledFor(_selectedMonth);
+    final t = _monthAnimation.value;
+    return List<double>.generate(to.length, (i) {
+      final from = i < _fromFilled.length ? _fromFilled[i] : 0.0;
       return from + (to[i] - from) * t;
     });
   }
@@ -233,6 +254,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
     if (index == _selectedMonth) return;
     setState(() {
       _fromShares = _currentShares();
+      _fromFilled = _currentFilled();
       _selectedMonth = index;
     });
     _monthController.forward(from: 0);
@@ -492,19 +514,15 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
 
   List<Widget> _buildCategoryRows(double s) {
     final amounts = _amountsFor(_selectedMonth);
-    final maxAmount = amounts.fold<double>(
-      0,
-      (max, v) => v > max ? v : max,
-    );
+    final filledList = _currentFilled();
     final rows = <Widget>[];
 
     for (int i = 0; i < widget.categories.length; i++) {
       final category = widget.categories[i];
       final amount = i < amounts.length ? amounts[i] : 0.0;
-      // 刻度填充数：相对最大分类金额的比例 × 32
-      final targetFilled =
-          maxAmount > 0 ? (amount / maxAmount * _totalTicks).round() : 0;
-      final filled = (targetFilled * _entrance.value).round();
+      // 刻度填充数（连续值，随月份切换插值 + 入场生长）
+      final filled =
+          (i < filledList.length ? filledList[i] : 0.0) * _entrance.value;
       final dimmed = _highlightIndex != null && _highlightIndex != i;
 
       if (i > 0) rows.add(SizedBox(height: 20 * s));
@@ -563,11 +581,12 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
                         ],
                       ),
                       SizedBox(height: 8 * s),
-                      // 32 格刻度条
+                      // 32 格刻度条（填充数插值 + 每格颜色渐变）
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: List.generate(_totalTicks, (t) {
-                          return Container(
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 350),
                             width: 3 * s,
                             height: 14 * s,
                             decoration: BoxDecoration(
