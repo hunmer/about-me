@@ -37,6 +37,9 @@ class FormBuilderWrapper extends StatefulWidget {
   final Widget Function(BuildContext context, List<Widget> fields)?
   contentBuilder;
 
+  /// contentBuilder 内容是否撑满剩余高度（内容含滚动区/IndexedStack 时需开启）
+  final bool expandContent;
+
   const FormBuilderWrapper({
     super.key,
     required this.config,
@@ -44,6 +47,7 @@ class FormBuilderWrapper extends StatefulWidget {
     this.onStateReady,
     this.buttonBuilder,
     this.contentBuilder,
+    this.expandContent = false,
   });
 
   @override
@@ -226,7 +230,9 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
         crossAxisAlignment: widget.config.crossAxisAlignment,
         children: [
           if (widget.contentBuilder != null)
-            widget.contentBuilder!(context, fieldWidgets)
+            widget.expandContent
+                ? Expanded(child: widget.contentBuilder!(context, fieldWidgets))
+                : widget.contentBuilder!(context, fieldWidgets)
           else if (fieldWidgets.isEmpty)
             _buildEmptyState()
           else

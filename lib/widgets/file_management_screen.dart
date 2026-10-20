@@ -23,7 +23,16 @@ class FileManagementScreen extends StatefulWidget {
   final Directory? rootDirectory;
   final String? title;
 
-  const FileManagementScreen({super.key, this.rootDirectory, this.title});
+  /// 嵌入模式：不包导航外壳（SuperCupertinoNavigationWrapper），
+  /// 导航栏上的操作收进顶部工具行，供 Tab 等容器内嵌使用
+  final bool embedded;
+
+  const FileManagementScreen({
+    super.key,
+    this.rootDirectory,
+    this.title,
+    this.embedded = false,
+  });
 
   @override
   State<FileManagementScreen> createState() => _FileManagementScreenState();
@@ -590,6 +599,14 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
+          final body = _buildBody(theme);
+
+          // 嵌入模式：无导航外壳，操作收进顶部工具行
+          if (widget.embedded) {
+            return Column(
+              children: [_buildEmbeddedToolbar(theme), Expanded(child: body)],
+            );
+          }
 
           return SuperCupertinoNavigationWrapper(
             title: Text(_appBarTitle),
@@ -648,66 +665,126 @@ class _FileManagementScreenState extends State<FileManagementScreen> {
                 ),
               ],
             ],
-            body: Column(
-              children: [
-                Expanded(
-                  child: currentDirectory == null
-                      ? Center(
-                          child: DSLoadingDots(
-                            label: 'data_management_refresh'.tr,
-                          ),
-                        )
-                      : files.isEmpty
-                      ? Center(
-                          child: DSEmptyState(
-                            icon: DsIconKind.folder,
-                            title: 'data_management_emptyTitle'.tr,
-                            message: 'data_management_emptyMessage'.tr,
-                          ),
-                        )
-                      : HandDrawnListView(
-                          itemCount: files.length,
-                          // 倾斜角度由文件路径确定性生成，目录内排序后不变
-                          tiltKeyOf: (index) => files[index].path,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 16),
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                          itemBuilder: (context, index) =>
-                              _buildFileItem(context, files[index]),
-                        ),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    theme.spacing.lg,
-                    theme.spacing.sm,
-                    theme.spacing.lg,
-                    theme.spacing.sm + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: DSButton(
-                          icon: DsIconKind.folder,
-                          label: 'data_management_newFolder'.tr,
-                          onPressed: _createNewFolder,
-                        ),
-                      ),
-                      SizedBox(width: theme.spacing.md),
-                      Expanded(
-                        child: DSButton(
-                          icon: DsIconKind.file,
-                          label: 'data_management_newFile'.tr,
-                          onPressed: _createNewFile,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            body: body,
           );
         },
       ),
+    );
+  }
+
+  /// 嵌入模式的顶部工具行：对应独立页面导航栏上的操作按钮
+  Widget _buildEmbeddedToolbar(AppThemeData theme) {
+    DSIconButton button(
+      DsIconKind icon,
+      VoidCallback? onPressed, {
+      String? tooltip,
+      Color? iconColor,
+    }) => DSIconButton(
+      icon: icon,
+      size: 36,
+      color: theme.surfaceAlt,
+      iconColor: iconColor ?? theme.textSub,
+      tooltip: tooltip,
+      onPressed: onPressed,
+    );
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: theme.spacing.sm,
+        vertical: theme.spacing.xs,
+      ),
+      child: Row(
+        children: [
+          if (directoryStack.length > 1)
+            button(DsIconKind.chevronLeft, _navigateUp),
+          button(
+            DsIconKind.refresh,
+            _refreshFiles,
+            tooltip: 'data_management_refresh'.tr,
+          ),
+          button(
+            DsIconKind.upload,
+            _importFiles,
+            tooltip: 'data_management_importFiles'.tr,
+          ),
+          if (selectedItems.isNotEmpty) ...[
+            button(
+              DsIconKind.trash,
+              _deleteSelected,
+              tooltip: 'data_management_deleteSelected'.tr,
+              iconColor: theme.danger,
+            ),
+            button(
+              DsIconKind.driveFileMove,
+              _moveSelected,
+              tooltip: 'data_management_moveSelected'.tr,
+            ),
+            button(
+              DsIconKind.download,
+              _exportSelected,
+              tooltip: 'data_management_exportSelected'.tr,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 页面主体：文件列表 + 底部新建操作
+  Widget _buildBody(AppThemeData theme) {
+    return Column(
+      children: [
+        Expanded(
+          child: currentDirectory == null
+              ? Center(
+                  child: DSLoadingDots(label: 'data_management_refresh'.tr),
+                )
+              : files.isEmpty
+              ? Center(
+                  child: DSEmptyState(
+                    icon: DsIconKind.folder,
+                    title: 'data_management_emptyTitle'.tr,
+                    message: 'data_management_emptyMessage'.tr,
+                  ),
+                )
+              : HandDrawnListView(
+                  itemCount: files.length,
+                  // 倾斜角度由文件路径确定性生成，目录内排序后不变
+                  tiltKeyOf: (index) => files[index].path,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                  itemBuilder: (context, index) =>
+                      _buildFileItem(context, files[index]),
+                ),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            theme.spacing.lg,
+            theme.spacing.sm,
+            theme.spacing.lg,
+            theme.spacing.sm + MediaQuery.paddingOf(context).bottom,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: DSButton(
+                  icon: DsIconKind.folder,
+                  label: 'data_management_newFolder'.tr,
+                  onPressed: _createNewFolder,
+                ),
+              ),
+              SizedBox(width: theme.spacing.md),
+              Expanded(
+                child: DSButton(
+                  icon: DsIconKind.file,
+                  label: 'data_management_newFile'.tr,
+                  onPressed: _createNewFile,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

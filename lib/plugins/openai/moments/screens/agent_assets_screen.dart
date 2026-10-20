@@ -2,27 +2,38 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/moments/models/agent_asset.dart';
 import 'package:aboutme/plugins/openai/moments/services/agent_assets_service.dart';
 import 'package:aboutme/plugins/openai/moments/services/image_gen_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
 import 'package:aboutme/utils/image_utils.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
-import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import 'package:get/get.dart';
+
 /// Agent 资产图管理：占位生成 / 上传命名 / 图生图
+///
+/// 手绘风（design.md §9/§11）：便签网格 + SmoothBottomSheet + showDSDialog；
+/// [embedded] 为 true 时无页面外壳，供编辑页 Tab 内嵌。
 class AgentAssetsScreen extends StatefulWidget {
   final String agentId;
   final String agentName;
+
+  /// 嵌入模式：不包 Scaffold/AppBar，悬浮添加钮叠在网格上，供 Tab 内嵌使用
+  final bool embedded;
 
   const AgentAssetsScreen({
     super.key,
     required this.agentId,
     required this.agentName,
+    this.embedded = false,
   });
 
   @override
@@ -61,7 +72,10 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
     try {
       final agent = await AgentController().getAgent(widget.agentId);
       if (agent != null && agent.description.trim().isNotEmpty) {
-        return '\n\n角色设定：${agent.name}，${agent.description.trim()}';
+        return 'openai_personaSuffix'.trParams({
+          'name': agent.name,
+          'desc': agent.description.trim(),
+        });
       }
     } catch (_) {}
     return '';
@@ -69,105 +83,133 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // 嵌入模式：网格 + 右下角悬浮添加钮，无页面外壳
+    if (widget.embedded) {
+      return Stack(
+        children: [
+          _buildGrid(),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: DSThemeBridge(
+              // DSFab 内部取 AppTheme，需包桥
+              child: DSFab(onPressed: _showAddSheet),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.agentName} 的资产图')),
+      appBar: AppBar(
+        title: Text(
+          'openai_agentAssetsTitle'.trParams({'name': widget.agentName}),
+        ),
+      ),
       floatingActionButton: DSThemeBridge(
         // DSFab 内部取 AppTheme，需包桥
         child: DSFab(onPressed: _showAddSheet),
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 0.72,
-        ),
-        itemCount: _assets.length,
-        itemBuilder: (context, index) => _buildAssetCard(theme, _assets[index]),
-      ),
+      body: _buildGrid(),
     );
   }
 
-  Widget _buildAssetCard(ThemeData theme, AgentAsset asset) {
+  Widget _buildGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 10,
+        // 贴条顶部出血 12px，纵向间距需 ≥ 16（design.md §11.2）
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.72,
+      ),
+      itemCount: _assets.length,
+      itemBuilder: (context, index) => _buildAssetCard(_assets[index]),
+    );
+  }
+
+  /// 资产便签卡（design.md §11）：确定性倾斜 + 顶部小贴条，悬浮拿起
+  Widget _buildAssetCard(AgentAsset asset) {
+    final theme = DSThemeBridge.resolve(context);
     final isGenerating = _generating.contains(asset.id);
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: isGenerating ? null : () => _showAssetSheet(asset),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (asset.hasImage)
-                  FutureBuilder<String>(
-                    future: ImageUtils.getAbsolutePath(asset.path),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData &&
-                          snapshot.data!.isNotEmpty &&
-                          File(snapshot.data!).existsSync()) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            File(snapshot.data!),
-                            fit: BoxFit.cover,
-                          ),
-                        );
-                      }
-                      return _placeholderBox(theme);
-                    },
-                  )
-                else
-                  _placeholderBox(theme),
-                if (isGenerating)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      color: Colors.black38,
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
+    return HandDrawnStickyItem(
+      tiltKey: asset.id,
+      // 窄卡片（3 列）用小号贴条
+      tapeWidth: 56,
+      tapeHeight: 18,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: isGenerating ? null : () => _showAssetSheet(asset),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (asset.hasImage)
+                    FutureBuilder<String>(
+                      future: ImageUtils.getAbsolutePath(asset.path),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData &&
+                            snapshot.data!.isNotEmpty &&
+                            File(snapshot.data!).existsSync()) {
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              File(snapshot.data!),
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        }
+                        return _placeholderBox(theme);
+                      },
+                    )
+                  else
+                    _placeholderBox(theme),
+                  if (isGenerating)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        color: theme.barrier,
+                        child: Center(
+                          child: DSLoadingDots(color: DsColors.white),
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            asset.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-          Text(
-            isGenerating
-                ? '生成中…'
-                : asset.hasImage
-                ? '点击管理'
-                : '未生成 · 点击创建',
-            maxLines: 1,
-            style: TextStyle(fontSize: 10, color: theme.hintColor),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              asset.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: DsTypography.body.copyWith(color: theme.text),
+            ),
+            Text(
+              isGenerating
+                  ? 'openai_assetGenerating'.tr
+                  : asset.hasImage
+                  ? 'openai_assetTapToManage'.tr
+                  : 'openai_assetNotGenerated'.tr,
+              maxLines: 1,
+              style: DsTypography.caption.copyWith(color: theme.textSub),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _placeholderBox(ThemeData theme) {
+  /// 未生成占位：手绘墨线框（无渐变无投影）
+  Widget _placeholderBox(AppThemeData theme) {
     return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor, width: 1.2),
-        color: theme.disabledColor.withValues(alpha: 0.08),
-      ),
-      child: Icon(
-        Icons.image_outlined,
-        size: 32,
-        color: theme.hintColor.withValues(alpha: 0.6),
+      decoration: dsSketchDecoration(theme: theme, radius: theme.radii.lg),
+      child: Center(
+        child: DsIcon(DsIconKind.image, size: 32, color: theme.textSub),
       ),
     );
   }
@@ -175,32 +217,29 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
   // ---------- 添加 ----------
 
   void _showAddSheet() {
-    showModalBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.upload_file),
-              title: Text('openai_uploadPhoto'.tr),
-              subtitle: Text('openai_uploadPhotoDesc'.tr),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickAndUpload();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.auto_awesome),
-              title: Text('openai_createPlaceholder'.tr),
-              subtitle: Text('openai_createPlaceholderDesc'.tr),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showCreatePlaceholderDialog();
-              },
-            ),
-          ],
-        ),
+      title: 'openai_assetGallery'.tr,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SmoothSheetAction(
+            icon: DsIconKind.upload,
+            label: 'openai_uploadPhoto'.tr,
+            onTap: () {
+              Navigator.pop(context);
+              _pickAndUpload();
+            },
+          ),
+          SmoothSheetAction(
+            icon: DsIconKind.sparkle,
+            label: 'openai_createPlaceholder'.tr,
+            onTap: () {
+              Navigator.pop(context);
+              _showCreatePlaceholderDialog();
+            },
+          ),
+        ],
       ),
     );
   }
@@ -213,7 +252,10 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
       compressionQuality: 88,
     );
     if (result == null || result['url'] == null) return;
-    final name = await _promptText(title: '命名照片', hint: '如：三视图、房间照片');
+    final name = await _promptText(
+      title: 'openai_namePhoto'.tr,
+      hint: 'openai_assetNameHint'.tr,
+    );
     if (name == null || name.trim().isEmpty) return;
     await _assetsService.addAsset(
       agentId: widget.agentId,
@@ -223,11 +265,14 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
   }
 
   Future<void> _showCreatePlaceholderDialog() async {
-    final name = await _promptText(title: '资产名称', hint: '如：三视图、房间照片');
+    final name = await _promptText(
+      title: 'openai_assetNameLabel'.tr,
+      hint: 'openai_assetNameHint'.tr,
+    );
     if (name == null || name.trim().isEmpty) return;
     final prompt = await _promptText(
-      title: '生成提示词',
-      hint: '描述这张图的样子，生成时会自动附加 TA 的人设',
+      title: 'openai_promptLabel'.tr,
+      hint: 'openai_promptHint'.tr,
     );
     if (prompt == null) return;
     await _assetsService.addAsset(
@@ -240,88 +285,74 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
   // ---------- 资产操作 ----------
 
   void _showAssetSheet(AgentAsset asset) {
-    showModalBottomSheet(
+    SmoothBottomSheet.showWithTitle(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                asset.name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            if (asset.hasImage)
-              ListTile(
-                leading: const Icon(Icons.fullscreen),
-                title: Text('openai_viewFullImage'.tr),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          PhotoViewerScreen(imageRelativePaths: [asset.path!]),
-                    ),
-                  );
-                },
-              ),
-            if (!asset.hasImage)
-              ListTile(
-                leading: const Icon(Icons.auto_awesome),
-                title: Text('openai_generateImage'.tr),
-                subtitle: Text('openai_generateImageDesc'.tr),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showGenerateDialog(asset);
-                },
-              )
-            else ...[
-              ListTile(
-                leading: const Icon(Icons.transform),
-                title: Text('openai_img2img'.tr),
-                subtitle: Text('openai_img2imgDesc'.tr),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showImg2ImgDialog(asset);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.refresh),
-                title: Text('openai_regenerate'.tr),
-                subtitle: Text('openai_overwriteCurrentImage'.tr),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showGenerateDialog(asset, overwrite: true);
-                },
-              ),
-            ],
-            ListTile(
-              leading: const Icon(Icons.drive_file_rename_outline),
-              title: Text(asset.hasImage ? '重命名' : '编辑名称与提示词'),
+      title: asset.name,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (asset.hasImage)
+            SmoothSheetAction(
+              icon: DsIconKind.photoLibrary,
+              label: 'openai_viewFullImage'.tr,
               onTap: () {
-                Navigator.pop(ctx);
-                _showEditAssetDialog(asset);
+                Navigator.pop(context);
+                NavigationHelper.push(
+                  context,
+                  PhotoViewerScreen(imageRelativePaths: [asset.path!]),
+                );
+              },
+            )
+          else
+            SmoothSheetAction(
+              icon: DsIconKind.sparkle,
+              label: 'openai_generateImage'.tr,
+              onTap: () {
+                Navigator.pop(context);
+                _showGenerateDialog(asset);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: Text('app_delete'.tr, style: TextStyle(color: Colors.red)),
+          if (asset.hasImage) ...[
+            SmoothSheetAction(
+              icon: DsIconKind.flip,
+              label: 'openai_img2img'.tr,
               onTap: () {
-                Navigator.pop(ctx);
-                _assetsService.deleteAsset(
-                  agentId: widget.agentId,
-                  assetId: asset.id,
-                );
+                Navigator.pop(context);
+                _showImg2ImgDialog(asset);
+              },
+            ),
+            SmoothSheetAction(
+              icon: DsIconKind.refresh,
+              label: 'openai_regenerate'.tr,
+              onTap: () {
+                Navigator.pop(context);
+                _showGenerateDialog(asset, overwrite: true);
               },
             ),
           ],
-        ),
+          SmoothSheetAction(
+            icon: DsIconKind.edit,
+            label: asset.hasImage
+                ? 'openai_rename'.tr
+                : 'openai_editNameAndPrompt'.tr,
+            onTap: () {
+              Navigator.pop(context);
+              _showEditAssetDialog(asset);
+            },
+          ),
+          SmoothSheetAction(
+            icon: DsIconKind.trash,
+            label: 'app_delete'.tr,
+            destructive: true,
+            onTap: () {
+              Navigator.pop(context);
+              _assetsService.deleteAsset(
+                agentId: widget.agentId,
+                assetId: asset.id,
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -331,8 +362,10 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
     bool overwrite = false,
   }) async {
     final prompt = await _promptText(
-      title: overwrite ? '重新生成「${asset.name}」' : '生成「${asset.name}」',
-      hint: '生成提示词',
+      title: overwrite
+          ? 'openai_regenerateAsset'.trParams({'name': asset.name})
+          : 'openai_generateAsset'.trParams({'name': asset.name}),
+      hint: 'openai_promptLabel'.tr,
       initial: asset.prompt,
     );
     if (prompt == null || prompt.trim().isEmpty) return;
@@ -346,8 +379,8 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
 
   Future<void> _showImg2ImgDialog(AgentAsset asset) async {
     final prompt = await _promptText(
-      title: '以「${asset.name}」为参考生成',
-      hint: '描述想要的变换，如：换一套秋装、在咖啡店里',
+      title: 'openai_img2imgTitle'.trParams({'name': asset.name}),
+      hint: 'openai_img2imgHint'.tr,
     );
     if (prompt == null || prompt.trim().isEmpty) return;
     await _runGenerate(
@@ -376,7 +409,7 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
         refImageAbsolutePaths: refPaths,
         archiveDir: _archiveDir,
       );
-      if (images.isEmpty) throw Exception('未返回图片');
+      if (images.isEmpty) throw Exception('openai_noImageReturned'.tr);
       if (!mounted) return;
       if (overwrite) {
         await _assetsService.updateAsset(
@@ -384,12 +417,14 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
           assetId: asset.id,
           path: images.first,
         );
-        ToastService.instance.showToast('已生成「${asset.name}」');
+        ToastService.instance.showToast(
+          'openai_assetGeneratedToast'.trParams({'name': asset.name}),
+        );
       } else {
         // 图生图结果：存为新资产（命名）
         final name = await _promptText(
-          title: '生成成功，为新图命名',
-          hint: '如：${asset.name}·新',
+          title: 'openai_nameNewImage'.tr,
+          hint: 'openai_nameNewImageHint'.trParams({'name': asset.name}),
         );
         if (name != null && name.trim().isNotEmpty) {
           await _assetsService.addAsset(
@@ -397,11 +432,17 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
             name: name.trim(),
             path: images.first,
           );
-          ToastService.instance.showToast('已保存「${name.trim()}」');
+          ToastService.instance.showToast(
+            'openai_assetSavedToast'.trParams({'name': name.trim()}),
+          );
         }
       }
     } catch (e) {
-      if (mounted) ToastService.instance.showToast('生成失败: $e');
+      if (mounted) {
+        ToastService.instance.showToast(
+          'openai_generateFailed'.trParams({'error': '$e'}),
+        );
+      }
     } finally {
       if (mounted) setState(() => _generating.remove(asset.id));
     }
@@ -409,16 +450,16 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
 
   Future<void> _showEditAssetDialog(AgentAsset asset) async {
     final name = await _promptText(
-      title: '重命名',
-      hint: '资产名称',
+      title: 'openai_rename'.tr,
+      hint: 'openai_assetNameLabel'.tr,
       initial: asset.name,
     );
     if (name == null || name.trim().isEmpty) return;
     var prompt = asset.prompt;
     if (!asset.hasImage) {
       final p = await _promptText(
-        title: '生成提示词',
-        hint: '留空保持不变',
+        title: 'openai_promptLabel'.tr,
+        hint: 'openai_keepPlaceholder'.tr,
         initial: asset.prompt,
       );
       if (p != null && p.trim().isNotEmpty) prompt = p.trim();
@@ -438,27 +479,20 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
     String initial = '',
   }) {
     final controller = TextEditingController(text: initial);
-    return showDialog<String>(
+    return showDSDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(hintText: hint),
-          autofocus: true,
-          maxLines: 3,
-          minLines: 1,
+      theme: DSThemeBridge.resolve(context),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (dialogContext) => DSDialog(
+            title: title,
+            content: DSInput(controller: controller, hint: hint ?? ''),
+            confirmText: 'app_ok'.tr,
+            cancelText: 'app_cancel'.tr,
+            onConfirm: () => Navigator.of(dialogContext).pop(controller.text),
+            onCancel: () => Navigator.of(dialogContext).pop(),
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('app_cancel'.tr),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, controller.text),
-            child: Text('app_ok'.tr),
-          ),
-        ],
       ),
     );
   }
