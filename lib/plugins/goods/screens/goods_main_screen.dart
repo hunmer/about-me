@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import '../../../../widgets/lazy_indexed_stack.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
 import 'warehouse_list_screen.dart';
 import 'goods_list_screen.dart';
@@ -69,7 +70,7 @@ class _GoodsMainScreenState extends State<GoodsMainScreen> {
     return SuperCupertinoNavigationWrapper(
       title: Text(_currentIndex == 0 ? '所有仓库' : '所有物品'),
       largeTitle: '物品管理',
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: LazyIndexedStack(index: _currentIndex, children: _screens),
       enableLargeTitle: true,
 
       enableBottomBar: true,

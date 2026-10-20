@@ -5,9 +5,9 @@ import 'package:aboutme/plugins/store/widgets/store_view/product_list.dart';
 import 'package:aboutme/plugins/store/widgets/store_view/user_items.dart';
 import 'package:aboutme/plugins/store/widgets/store_view/points_history.dart';
 import 'package:aboutme/plugins/store/widgets/add_product_page.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
+import 'package:aboutme/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/store/store_plugin.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -226,10 +226,8 @@ class _StoreBottomBarState extends State<StoreBottomBar>
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
       body:
-          (context, controller) => TabBarView(
-            controller: _tabController,
-            dragStartBehavior: DragStartBehavior.start,
-            physics: const NeverScrollableScrollPhysics(),
+          (context, controller) => LazyIndexedStack(
+            index: _currentPage,
             children: [
               ProductList(controller: widget.plugin.controller),
               UserItems(controller: widget.plugin.controller),

@@ -9,6 +9,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
+import 'package:aboutme/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import '../widgets/moments_compose_sheet.dart';
@@ -160,7 +161,7 @@ class _MomentsHomeScreenState extends State<MomentsHomeScreen> {
     final theme = AppTheme.of(context);
     // 动态流/我的 tab 设了背景图：封面延伸到状态栏后，
     // 透明导航栏浮在封面上；否则内容下移避让，导航栏固定。
-    // IndexedStack 恒在 Stack 内仅变 padding，浮动/固定切换不重建子页 State
+    // 懒加载 IndexedStack 恒在 Stack 内仅变 padding，浮动/固定切换不重建子页 State
     final hasCover =
         _current != 1 &&
         (_moments.profileBgOf(MomentPost.userAuthorId)?.isNotEmpty ?? false);
@@ -174,7 +175,7 @@ class _MomentsHomeScreenState extends State<MomentsHomeScreen> {
           Positioned.fill(
             child: Padding(
               padding: EdgeInsets.only(top: hasCover ? 0 : topAvoid),
-              child: IndexedStack(
+              child: LazyIndexedStack(
                 index: _current,
                 children: [
                   MomentsFeedScreen(key: _feedKey),

@@ -776,7 +776,9 @@ class _SwatchScenePainter extends CustomPainter {
   void _paintCamera(Canvas canvas) {
     final w = _lerp(144, s.backW, s.morph);
     final h = _lerp(112, s.backH, s.morph);
-    final r = _lerp(24, 42, s.morph);
+    final panelR =
+        42.0 * math.min(1.0, math.min(s.backW / 294, s.backH / 312));
+    final r = _lerp(24, panelR, s.morph);
 
     final radY = s.ry * _deg;
     final radX = s.rx * _deg;
@@ -942,9 +944,18 @@ class _SwatchScenePainter extends CustomPainter {
     canvas.translate(-sinY * backZ, sinX * backZ);
     canvas.scale((w / s.backW) * faceScaleX, h / s.backH);
 
+    // 背面面板按 backW x backH 真实布局，sx/sy 为相对原始 294x312 的比例
+    final bw = s.backW;
+    final bh = s.backH;
+    final sx = bw / 294;
+    final sy = bh / 312;
+    final uni = math.min(sx, sy);
+
     // 背面机身外框与高光金属倒角
-    final bodyRect = Rect.fromLTWH(-147, -156, 294, 312);
-    final bodyRR = RRect.fromRectAndRadius(bodyRect, const Radius.circular(42));
+    final panelR = 42.0 * math.min(1.0, uni);
+    final bodyRect = Rect.fromCenter(center: Offset.zero, width: bw, height: bh);
+    final bodyRR =
+        RRect.fromRectAndRadius(bodyRect, Radius.circular(panelR));
     canvas.drawRRect(bodyRR, Paint()..color = const Color(0xFF0D0D10));
     const bezelGrad = LinearGradient(
       begin: Alignment.topLeft,
@@ -965,13 +976,16 @@ class _SwatchScenePainter extends CustomPainter {
           ..strokeWidth = 4.5
           ..shader = bezelGrad.createShader(bodyRect));
 
-    // 左上角流光高光弧线
+    // 左上角流光高光弧线（跟随面板边缘）
+    canvas.save();
+    canvas.translate(-bw / 2 + 3, -bh / 2 + 2);
+    canvas.scale(sx, sy);
     final rim = Path()
-      ..moveTo(-144, -105)
-      ..lineTo(-144, -116)
-      ..arcToPoint(const Offset(-104, -154),
+      ..moveTo(0, 49)
+      ..lineTo(0, 38)
+      ..arcToPoint(const Offset(40, 0),
           radius: const Radius.circular(40), clockwise: true)
-      ..lineTo(95, -154);
+      ..lineTo(239, 0);
     canvas.drawPath(
         rim,
         Paint()
@@ -979,15 +993,27 @@ class _SwatchScenePainter extends CustomPainter {
           ..color = Colors.white.withValues(alpha: 0.7)
           ..strokeWidth = 2
           ..strokeCap = StrokeCap.round);
+    canvas.restore();
 
-    // 取景器视窗
-    final clipRect = Rect.fromLTWH(-131, -138, 262, 208);
+    // 取景器视窗（保持与面板的相对边距：左右 16、顶部 18、底部 86 控制区）
+    final screenW = bw - 32 * sx;
+    final screenH = bh - 104 * sy;
+    final clipRect =
+        Rect.fromLTWH(-bw / 2 + 16 * sx, -bh / 2 + 18 * sy, screenW, screenH);
+    final screenR = 30.0 * math.min(1.0, uni);
+    final screenCenter = clipRect.center;
+    final contentSx = screenW / 262;
+    final contentSy = screenH / 208;
+    final contentUni = math.min(contentSx, contentSy);
+    final blackRect = Rect.fromLTRB(clipRect.left - 9, clipRect.top - 12,
+        clipRect.right + 9, clipRect.bottom + 10);
+
     canvas.save();
-    canvas.clipRRect(RRect.fromRectAndRadius(clipRect, const Radius.circular(30)));
+    canvas.clipRRect(
+        RRect.fromRectAndRadius(clipRect, Radius.circular(screenR)));
 
     // 屏幕黑底
-    canvas.drawRect(Rect.fromLTWH(-140, -150, 280, 230),
-        Paint()..color = const Color(0xFF070709));
+    canvas.drawRect(blackRect, Paint()..color = const Color(0xFF070709));
 
     // 取景器实时散景画面
     if (s.screenOn > 0) {
@@ -996,18 +1022,21 @@ class _SwatchScenePainter extends CustomPainter {
         Paint()..color = Colors.white.withValues(alpha: s.screenOn),
       );
 
-      // 散景（整组高斯模糊）
+      // 散景（整组高斯模糊，随屏幕比例拉伸铺满）
       final driftX =
           s.screenOn > 0.01 ? math.sin(s.nowMs * 0.0022) * 8 : 0.0;
       final driftY =
           s.screenOn > 0.01 ? math.cos(s.nowMs * 0.0018) * 6 : 0.0;
       canvas.save();
-      canvas.translate(driftX, driftY);
+      canvas.translate(screenCenter.dx, screenCenter.dy);
+      canvas.scale(contentSx, contentSy);
+      canvas.translate(0, 34);
       canvas.saveLayer(
         Rect.fromLTWH(-220, -230, 440, 350),
         Paint()
           ..imageFilter = ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
       );
+      canvas.translate(driftX, driftY);
       canvas.drawRect(Rect.fromLTWH(-150, -160, 300, 240),
           Paint()..color = const Color(0xFF8C8881));
       _ellipse(canvas, -45, -75, 95, 50, -25,
@@ -1040,7 +1069,7 @@ class _SwatchScenePainter extends CustomPainter {
       canvas.restore();
 
       // 屏幕内边缘暗角
-      final vigRect = Rect.fromLTWH(-135, -142, 270, 216);
+      final vigRect = clipRect.inflate(4);
       canvas.drawRect(
           vigRect,
           Paint()
@@ -1053,10 +1082,10 @@ class _SwatchScenePainter extends CustomPainter {
               stops: const [0.55, 1],
             ).createShader(vigRect));
 
-      // 中心取景十字准星框
+      // 中心取景十字准星框（均匀缩放保持形状）
       canvas.save();
-      canvas.translate(0, -34);
-      canvas.scale(s.reticlePulse);
+      canvas.translate(screenCenter.dx, screenCenter.dy);
+      canvas.scale(contentUni * s.reticlePulse);
       final reticlePaint = Paint()
         ..style = PaintingStyle.stroke
         ..color = Colors.white
@@ -1086,9 +1115,10 @@ class _SwatchScenePainter extends CustomPainter {
       canvas.drawLine(const Offset(0, -3.5), const Offset(0, 3.5), crossPaint);
       canvas.restore();
 
-      // 底部颜色识别胶囊标签
+      // 底部颜色识别胶囊标签（均匀缩放保持形状）
       canvas.save();
-      canvas.translate(0, 50);
+      canvas.translate(screenCenter.dx, screenCenter.dy + 84 * contentSy);
+      canvas.scale(contentUni);
       canvas.drawRRect(
           RRect.fromRectAndRadius(
               Rect.fromLTWH(-36, -12, 72, 24), const Radius.circular(12)),
@@ -1120,7 +1150,7 @@ class _SwatchScenePainter extends CustomPainter {
 
     // 拍照瞬间闪光白幕
     if (s.flashOverlayOpacity > 0) {
-      canvas.drawRect(Rect.fromLTWH(-140, -150, 280, 230),
+      canvas.drawRect(blackRect,
           Paint()..color = Colors.white.withValues(alpha: s.flashOverlayOpacity));
     }
 
@@ -1128,8 +1158,8 @@ class _SwatchScenePainter extends CustomPainter {
     if (s.flashComicOpacity > 0 && s.flashComicScale > 0) {
       final o = s.flashComicOpacity;
       canvas.save();
-      canvas.translate(0, -76);
-      canvas.scale(s.flashComicScale);
+      canvas.translate(screenCenter.dx, screenCenter.dy - 42 * contentSy);
+      canvas.scale(s.flashComicScale * contentUni);
 
       final burstPaint = Paint()
         ..style = PaintingStyle.stroke
@@ -1189,7 +1219,7 @@ class _SwatchScenePainter extends CustomPainter {
 
     // 取景器内边框描边
     canvas.drawRRect(
-        RRect.fromRectAndRadius(clipRect, const Radius.circular(30)),
+        RRect.fromRectAndRadius(clipRect, Radius.circular(screenR)),
         Paint()
           ..style = PaintingStyle.stroke
           ..color = const Color(0xFF2C2D32)
@@ -1197,15 +1227,18 @@ class _SwatchScenePainter extends CustomPainter {
 
     canvas.restore(); // 视窗裁剪
 
-    _paintBackControls(canvas);
+    // 底部操控区（随面板剩余空间整体缩放并居中）
+    final controlsScale = math.min(1.0, uni);
+    _paintBackControls(canvas, bh / 2 - 48 * sy, controlsScale);
 
     canvas.restore();
   }
 
   // ================= 背面底部操控区 =================
-  void _paintBackControls(Canvas canvas) {
+  void _paintBackControls(Canvas canvas, double centerY, double groupScale) {
     canvas.save();
-    canvas.translate(0, 108);
+    canvas.translate(0, centerY);
+    canvas.scale(groupScale);
 
     // 左侧猫咪图标
     canvas.save();

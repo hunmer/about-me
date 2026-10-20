@@ -183,6 +183,9 @@ class _SuperScaffoldState extends State<SuperScaffold> {
       largeTitleActions: Row(children: [...?widget.appBar.largeTitle!.actions]),
       userLargeTitle: Text(
         widget.appBar.largeTitle!.largeTitle,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
         style: widget.appBar.largeTitle!.textStyle.copyWith(
           color: widget.appBar.largeTitle!.textStyle.color ??
               Theme.of(context).textTheme.bodyMedium!.color,
@@ -522,14 +525,16 @@ class _SuperScaffoldState extends State<SuperScaffold> {
                                               right: 0,
                                               child: Row(
                                                 children: [
-                                                  Transform.scale(
-                                                    scale: scaleTitle,
-                                                    filterQuality:
-                                                        FilterQuality.high,
-                                                    alignment:
-                                                        Alignment.bottomLeft,
-                                                    child:
-                                                        components.largeTitle,
+                                                  Flexible(
+                                                    child: Transform.scale(
+                                                      scale: scaleTitle,
+                                                      filterQuality:
+                                                          FilterQuality.high,
+                                                      alignment:
+                                                          Alignment.bottomLeft,
+                                                      child:
+                                                          components.largeTitle,
+                                                    ),
                                                   ),
                                                   const Spacer(),
                                                   components.largeTitleActions!,

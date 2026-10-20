@@ -3,6 +3,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -58,6 +59,7 @@ class _MediaListScreenState extends State<MediaListScreen> {
   void _cycleViewMode() {
     setState(() => _viewMode = _nextViewMode);
     MediaLogPlugin.instance.setViewMode(_viewMode.persistedName);
+    _updateRouteContext();
   }
 
   @override
@@ -68,6 +70,22 @@ class _MediaListScreenState extends State<MediaListScreen> {
       MediaLogPlugin.instance.viewMode,
     );
     MediaLogPlugin.instance.addListener(_onDataChanged);
+    // 上报路由上下文（/plugin/media_log 打开时归一化为 /media_log），
+    // 供"询问当前上下文"识别
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateRouteContext());
+  }
+
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到列表状态
+  void _updateRouteContext() {
+    if (!mounted) return;
+    RouteHistoryManager.updateCurrentContext(
+      pageId: '/media_log',
+      title: 'media_name'.tr,
+      params: {
+        'itemCount': MediaLogPlugin.instance.items.length,
+        'viewMode': _viewMode.persistedName,
+      },
+    );
   }
 
   @override

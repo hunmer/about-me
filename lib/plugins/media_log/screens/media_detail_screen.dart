@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -30,6 +31,25 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   void initState() {
     super.initState();
     MediaLogPlugin.instance.addListener(_onDataChanged);
+    // 上报路由上下文，供"询问当前上下文"识别详情页
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final item = MediaLogPlugin.instance.getItem(widget.itemId);
+      RouteHistoryManager.updateCurrentContext(
+        pageId: '/media_log/detail',
+        title: item?.title ?? 'media_name'.tr,
+        params: {
+          'itemId': widget.itemId,
+          'title': item?.title ?? '',
+          'kind': item == null
+              ? ''
+              : (item.kind == MediaKind.reading
+                    ? 'media_reading'.tr
+                    : 'media_watching'.tr),
+          'rating': item?.rating?.toStringAsFixed(1) ?? '未评分',
+        },
+      );
+    });
   }
 
   @override

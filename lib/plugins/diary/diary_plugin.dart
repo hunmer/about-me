@@ -11,6 +11,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/lazy_indexed_stack.dart';
 import 'package:get/get.dart';
 import 'screens/diary_calendar_screen.dart';
 import 'screens/diary_editor_screen.dart';
@@ -136,7 +137,7 @@ class _DiaryMainViewState extends State<DiaryMainView> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        IndexedStack(
+        LazyIndexedStack(
           index: _currentTab,
           children: [
             DiaryCalendarScreen(
