@@ -12,6 +12,7 @@ import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
 /// 用于传递多个值的事件参数
@@ -136,7 +137,10 @@ class ChatEventHandler {
       // 上下文：system + 频道近期历史（排除根消息/异常消息）+ 当前消息
       final contextMessages = <ChatCompletionMessage>[
         ChatCompletionMessage.system(
-          content: await RequestService.getEffectiveSystemPrompt(agent),
+          content: await _systemWithMemory(
+            agent,
+            ChatMediaService.contextText(message, allowRead: true),
+          ),
         ),
       ];
       // 自动回复专用上下文长度：默认 0（只传入当前这句话），
@@ -246,9 +250,12 @@ class ChatEventHandler {
         ValuesEventArgs(typingMessage, typingMessage.id),
       );
 
-      // 准备消息列表，首先添加system消息（使用 getEffectiveSystemPrompt 获取可能包含预设的系统提示词）
-      final effectiveSystemPrompt =
-          await RequestService.getEffectiveSystemPrompt(agent);
+      // 准备消息列表，首先添加system消息（使用 getEffectiveSystemPrompt 获取可能包含预设的系统提示词，
+      // 仅开启记忆管理的 agent 额外拼接记忆注入段）
+      final effectiveSystemPrompt = await _systemWithMemory(
+        agent,
+        ChatMediaService.contextText(originalMessage, allowRead: true),
+      );
       developer.log(
         '系统提示词长度: ${effectiveSystemPrompt.length}字符',
         name: 'ChatEventHandler',
@@ -446,6 +453,13 @@ class ChatEventHandler {
             _plugin.refresh();
           }
 
+          // 记忆独立模式：后台提取本轮记忆（不阻塞消息收尾）
+          _extractMemoryInBackground(
+            agent,
+            ChatMediaService.contextText(originalMessage, allowRead: true),
+            RequestService.processThinkingContent(contentBuffer.toString()),
+          );
+
           // 延迟一下再清理资源，确保最后的更新被处理
           await Future.delayed(const Duration(milliseconds: 200));
 
@@ -478,6 +492,48 @@ class ChatEventHandler {
       _cleanupMessageResources(messageId);
     }
   }
+}
+
+/// 记忆独立模式（开启记忆管理、未走活人感编排）：
+/// 在 system 提示词后拼接记忆注入段，并定位记忆工具的 agent 上下文
+Future<String> _systemWithMemory(AIAgent agent, String queryText) async {
+  var prompt = await RequestService.getEffectiveSystemPrompt(agent);
+  final cfg = agent.alivenessConfig;
+  if (cfg?.memoryEnabled == true) {
+    MemoryService.instance.currentAgentId = agent.id;
+    final suffix = await MemoryService.instance.buildInjectionSuffix(
+      agent.id,
+      queryText,
+      halfLifeDays: cfg!.forgettingHalfLifeDays,
+    );
+    if (suffix.isNotEmpty) prompt = '$prompt\n$suffix';
+  }
+  return prompt;
+}
+
+/// 记忆独立模式：回复完成后后台提取本轮记忆并整理遗忘（不阻塞）
+void _extractMemoryInBackground(
+  AIAgent agent,
+  String userText,
+  String assistantText,
+) {
+  final cfg = agent.alivenessConfig;
+  if (cfg?.memoryEnabled != true) return;
+  if (userText.trim().isEmpty || assistantText.trim().isEmpty) return;
+  unawaited(
+    MemoryService.instance
+        .extractFromConversation(
+          agent,
+          userText: userText,
+          assistantText: assistantText,
+        )
+        .then(
+          (_) => MemoryService.instance.applyForgetting(
+            agent.id,
+            halfLifeDays: cfg!.forgettingHalfLifeDays,
+          ),
+        ),
+  );
 }
 
 /// 线程内直接生成（自动回复路径共用，区别于活人感编排）：
@@ -526,12 +582,21 @@ Future<void> _generateIntoThread(
       );
     },
     onComplete: () async {
+      final reply = RequestService.processThinkingContent(buffer.toString());
       await threads.updateMessage(
         rootId,
         placeholder.id,
-        content: RequestService.processThinkingContent(buffer.toString()),
+        content: reply,
         status: 'done',
       );
+      // 记忆独立模式：后台提取本轮记忆（根消息文本作为用户侧输入）
+      if (handleMessages.isNotEmpty) {
+        _extractMemoryInBackground(
+          agent,
+          ChatMediaService.contextText(handleMessages.first, allowRead: true),
+          reply,
+        );
+      }
     },
     maxRetries: 3,
     retryDelay: 1000,
@@ -551,9 +616,7 @@ Future<void> submitAutoReplyThreadMessage({
   final thread = AiThreadService.instance.getThread(rootMessageId);
   try {
     final contextMessages = <ChatCompletionMessage>[
-      ChatCompletionMessage.system(
-        content: await RequestService.getEffectiveSystemPrompt(agent),
-      ),
+      ChatCompletionMessage.system(content: await _systemWithMemory(agent, text)),
     ];
     for (final msg in plugin.channelService.getRecentMessages(channelId, 20)) {
       if (msg.id == rootMessageId) continue;

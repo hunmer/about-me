@@ -899,13 +899,17 @@ class RequestService {
       try {
         // 标记是否成功完成或出错
         bool succeeded = false;
+        int totalChars = 0;
         String? currentError;
 
         // 调用 streamResponse
         await streamResponse(
           agent: agent,
           prompt: prompt,
-          onToken: onToken,
+          onToken: (token) {
+            totalChars += token.length;
+            onToken(token);
+          },
           onThinking: onThinking,
           onError: (error) {
             currentError = error;
@@ -915,6 +919,15 @@ class RequestService {
             );
           },
           onComplete: () {
+            if (currentError != null) return;
+            if (totalChars == 0) {
+              currentError = 'AI响应为空（0字符）';
+              developer.log(
+                '❌ 第 $attempt 次尝试失败: $currentError',
+                name: 'RequestService',
+              );
+              return;
+            }
             succeeded = true;
             developer.log('✅ 第 $attempt 次尝试成功', name: 'RequestService');
             onComplete();

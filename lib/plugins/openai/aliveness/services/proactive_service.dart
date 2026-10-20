@@ -263,12 +263,14 @@ class ProactiveService {
     AgentState state,
     String triggerInstruction,
   ) async {
-    // 记忆联想：按触发内容激活相关记忆碎片
-    final memorySummary = await _memory.buildMemorySummary(
-      agent.id,
-      triggerInstruction,
-      halfLifeDays: agent.alivenessConfig?.forgettingHalfLifeDays ?? 14,
-    );
+    // 记忆联想：按触发内容激活相关记忆碎片（记忆管理关闭时跳过）
+    final memorySummary = agent.alivenessConfig?.memoryEnabled != true
+        ? ''
+        : await _memory.buildMemorySummary(
+            agent.id,
+            triggerInstruction,
+            halfLifeDays: agent.alivenessConfig?.forgettingHalfLifeDays ?? 14,
+          );
 
     final basePrompt = await RequestService.getEffectiveSystemPrompt(agent);
     final system = '$basePrompt\n\n【你的当前状态】${state.describe()}。\n'

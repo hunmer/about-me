@@ -290,6 +290,7 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_aiSchedule': 'AI 日程',
   'openai_analyzeChatHistory': '分析聊天记录',
   'openai_memoryManagement': '记忆管理',
+  'openai_memoryManagementDesc': '开启后，AI 会自动记住对话中的重要信息并在聊天时联想（无需开启活人感增强）',
   'openai_decisionLog': '决策日志',
   'openai_ttsServiceNotFound': '未找到 TTS 服务',
   'openai_followGlobalSettings': '跟随全局设置',

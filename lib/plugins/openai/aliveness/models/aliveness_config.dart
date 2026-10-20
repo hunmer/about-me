@@ -40,6 +40,10 @@ class AlivenessConfig {
   final bool humanScoreEnabled;
   final int humanScoreThreshold;
 
+  /// 记忆管理独立开关：不依赖总开关，单独开启时普通聊天路径
+  /// 也会注入记忆并在回复后提取。旧数据无此字段时跟随 enabled。
+  final bool memoryEnabled;
+
   const AlivenessConfig({
     this.enabled = false,
     this.bufferMinSec = 8,
@@ -57,6 +61,7 @@ class AlivenessConfig {
     this.ttsServiceId,
     this.humanScoreEnabled = false,
     this.humanScoreThreshold = 2,
+    this.memoryEnabled = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -80,6 +85,7 @@ class AlivenessConfig {
       'enabled': humanScoreEnabled,
       'threshold': humanScoreThreshold,
     },
+    'memoryEnabled': memoryEnabled,
   };
 
   factory AlivenessConfig.fromJson(Map<String, dynamic> json) {
@@ -89,8 +95,9 @@ class AlivenessConfig {
     final proactive = asMap(json['proactive']);
     final voice = asMap(json['voice']);
     final humanScore = asMap(json['humanScore']);
+    final enabled = json['enabled'] as bool? ?? false;
     return AlivenessConfig(
-      enabled: json['enabled'] as bool? ?? false,
+      enabled: enabled,
       bufferMinSec: json['bufferMinSec'] as int? ?? 8,
       bufferMaxSec: json['bufferMaxSec'] as int? ?? 45,
       maxBubbles: (json['maxBubbles'] as int? ?? 5).clamp(1, 5),
@@ -110,6 +117,8 @@ class AlivenessConfig {
       ttsServiceId: json['ttsServiceId'] as String?,
       humanScoreEnabled: humanScore?['enabled'] as bool? ?? false,
       humanScoreThreshold: (humanScore?['threshold'] as int? ?? 2).clamp(0, 3),
+      // 旧数据无此字段：活人感开启的老 agent 此前一直带记忆，保持开启
+      memoryEnabled: json['memoryEnabled'] as bool? ?? enabled,
     );
   }
 
@@ -130,6 +139,7 @@ class AlivenessConfig {
     Object? ttsServiceId = _unset,
     bool? humanScoreEnabled,
     int? humanScoreThreshold,
+    bool? memoryEnabled,
   }) {
     return AlivenessConfig(
       enabled: enabled ?? this.enabled,
@@ -152,6 +162,7 @@ class AlivenessConfig {
           : ttsServiceId as String?,
       humanScoreEnabled: humanScoreEnabled ?? this.humanScoreEnabled,
       humanScoreThreshold: humanScoreThreshold ?? this.humanScoreThreshold,
+      memoryEnabled: memoryEnabled ?? this.memoryEnabled,
     );
   }
 }

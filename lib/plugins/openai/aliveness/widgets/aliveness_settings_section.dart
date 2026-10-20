@@ -265,21 +265,6 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                           ),
                   ),
                   DSButton(
-                    label: 'openai_memoryManagement'.tr,
-                    size: DSButtonSize.sm,
-                    variant: DSButtonVariant.outline,
-                    icon: DsIconKind.storage,
-                    onPressed: widget.agentId == null
-                        ? null
-                        : () => NavigationHelper.push(
-                            context,
-                            MemoryManagerScreen(
-                              agentId: widget.agentId!,
-                              agentName: widget.agentName,
-                            ),
-                          ),
-                  ),
-                  DSButton(
                     label: 'openai_decisionLog'.tr,
                     size: DSButtonSize.sm,
                     variant: DSButtonVariant.outline,
@@ -298,6 +283,38 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
               ),
               SizedBox(height: theme.spacing.sm),
             ],
+            // 记忆管理独立开关：不依赖活人感增强，单独开启即生效
+            _switchRow(
+              theme,
+              icon: DsIconKind.storage,
+              title: 'openai_memoryManagement'.tr,
+              subtitle: 'openai_memoryManagementDesc'.tr,
+              value: config.memoryEnabled,
+              onChanged: (v) =>
+                  widget.onChanged(config.copyWith(memoryEnabled: v)),
+            ),
+            if (config.memoryEnabled)
+              Padding(
+                padding: EdgeInsets.only(left: theme.spacing.sm + 28),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: DSButton(
+                    label: 'openai_memoryManagement'.tr,
+                    size: DSButtonSize.sm,
+                    variant: DSButtonVariant.outline,
+                    icon: DsIconKind.storage,
+                    onPressed: widget.agentId == null
+                        ? null
+                        : () => NavigationHelper.push(
+                            context,
+                            MemoryManagerScreen(
+                              agentId: widget.agentId!,
+                              agentName: widget.agentName,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

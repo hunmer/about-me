@@ -311,6 +311,8 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_aiSchedule': 'AI Schedule',
   'openai_analyzeChatHistory': 'Analyze Chat History',
   'openai_memoryManagement': 'Memory Management',
+  'openai_memoryManagementDesc':
+      'The AI automatically remembers important details and recalls them while chatting (works without Aliveness Boost)',
   'openai_decisionLog': 'Decision Log',
   'openai_ttsServiceNotFound': 'No TTS service found',
   'openai_followGlobalSettings': 'Follow global settings',

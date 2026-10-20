@@ -281,11 +281,20 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
         fillColor: theme.surface,
         foreground: theme.text,
         badge: _conversationCount(collection, topic),
-        onTap: () => bundle.controller.toggleNodeExpanded(
-          bundle.graph,
-          node,
-          animate: true,
-        ),
+        onTap: () {
+          // toggle 的 animate 聚焦的是被点节点本身，这里不启用，
+          // 展开后改为聚焦第一个子节点
+          bundle.controller.toggleNodeExpanded(bundle.graph, node);
+          if (!collapsed) return;
+          final children = bundle.graph.successorsOf(node);
+          if (children.isEmpty) return;
+          // 布局在下一帧完成，届时再定位子节点位置
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            bundle.controller.animateToNode(
+              ValueKey(children.first.key?.value),
+            );
+          });
+        },
       );
     }
 

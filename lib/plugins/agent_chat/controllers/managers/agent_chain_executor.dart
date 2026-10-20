@@ -10,6 +10,7 @@ import '../../models/tool_call_step.dart';
 import '../../models/saved_tool_template.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 import '../../services/tool_service.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
@@ -132,6 +133,26 @@ class AgentChainExecutor {
     // 存储每个 agent 的输出消息
     final chainMessages = <ChatMessage>[];
 
+    // 记忆独立模式：未走活人感编排（无注入段）且单 agent 会话开启了记忆管理时，
+    // 注入记忆上下文并在链完成后提取记忆（链式模式与活人感编排不在此处理）
+    AIAgent? memoryAgent;
+    if (alivenessSystemSuffix == null &&
+        !latestConversation.isChainMode &&
+        agentChain.isNotEmpty &&
+        agentChain.first.alivenessConfig?.memoryEnabled == true) {
+      memoryAgent = agentChain.first;
+      MemoryService.instance.currentAgentId = memoryAgent.id;
+    }
+    String? memorySuffix;
+    if (memoryAgent != null) {
+      memorySuffix = await MemoryService.instance.buildInjectionSuffix(
+        memoryAgent.id,
+        userInput,
+        halfLifeDays: memoryAgent.alivenessConfig!.forgettingHalfLifeDays,
+      );
+    }
+    final effectiveSuffix = alivenessSystemSuffix ?? memorySuffix;
+
     // 遍历执行每个 agent
     // 注意：在执行过程中，链可能会动态扩展（插入工具调用agent）
     int i = 0;
@@ -164,7 +185,7 @@ class AgentChainExecutor {
           previousMessages: chainMessages,
           enableToolCalling: agent.enableFunctionCalling,
           conv: latestConversation,
-          alivenessSystemSuffix: alivenessSystemSuffix,
+          alivenessSystemSuffix: effectiveSuffix,
         );
 
         // 调用当前 agent
@@ -218,6 +239,31 @@ class AgentChainExecutor {
       }
 
       i++;
+    }
+
+    // 记忆独立模式：后台提取本轮记忆并整理遗忘（不阻塞回复完成）
+    final memAgent = memoryAgent;
+    if (memAgent != null && !isCancelling()) {
+      final reply = chainMessages.isNotEmpty
+          ? chainMessages.first.content.trim()
+          : '';
+      if (reply.isNotEmpty) {
+        final halfLife = memAgent.alivenessConfig!.forgettingHalfLifeDays;
+        unawaited(
+          MemoryService.instance
+              .extractFromConversation(
+                memAgent,
+                userText: userInput,
+                assistantText: reply,
+              )
+              .then(
+                (_) => MemoryService.instance.applyForgetting(
+                  memAgent.id,
+                  halfLifeDays: halfLife,
+                ),
+              ),
+        );
+      }
     }
 
     debugPrint('🏁 链式调用完成');

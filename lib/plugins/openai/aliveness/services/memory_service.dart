@@ -163,6 +163,42 @@ class MemoryService {
     return self.take(k).map((f) => '· ${f.content}').join('\n');
   }
 
+  /// 记忆独立注入段（仅开启记忆管理、未走活人感编排时拼到 system 提示词后）。
+  /// 内容与活人感注入段中的记忆块一致：核心常驻 + 话题激活 + 自我近况。
+  Future<String> buildInjectionSuffix(
+    String agentId,
+    String queryText, {
+    int halfLifeDays = 14,
+  }) async {
+    final core = await buildCoreMemorySummary(
+      agentId,
+      halfLifeDays: halfLifeDays,
+    );
+    final self = await buildSelfSummary(agentId, halfLifeDays: halfLifeDays);
+    final activated = await buildMemorySummary(
+      agentId,
+      queryText,
+      halfLifeDays: halfLifeDays,
+    );
+    final buffer = StringBuffer();
+    if (core.isNotEmpty) {
+      buffer.write(
+        '\n【关于用户你一直记得的事】（用户问起你的了解时，'
+        '基于这些内容自然地回答，不要说不知道）\n$core',
+      );
+    }
+    if (activated.isNotEmpty) {
+      buffer.write('\n【当前话题让你想起的往事】\n$activated');
+    }
+    if (self.isNotEmpty) {
+      buffer.write(
+        '\n【你自己的近况】（你亲自说过/做过的事，'
+        '聊到相关话题时自然带出，不要刻意汇报）\n$self',
+      );
+    }
+    return buffer.toString();
+  }
+
   // ---------- 遗忘 ----------
 
   /// 归档权重低于阈值的碎片（未激活的低重要性记忆随时间淡忘）

@@ -159,21 +159,28 @@ class AlivenessOrchestrator {
       _memory.currentAgentId = agent.id;
 
       // 1) 记忆：核心常驻（元问题兜底）+ 自我近况 + 话题激活联想 + 今日日程
+      //    （记忆管理为独立开关，关闭时跳过注入，由回复后提取一并跳过）
       final mergedText = session.texts.join('\n');
       final state = _states.cached(agent.id);
-      final coreMemory = await _memory.buildCoreMemorySummary(
-        agent.id,
-        halfLifeDays: config.forgettingHalfLifeDays,
-      );
-      final selfMemory = await _memory.buildSelfSummary(
-        agent.id,
-        halfLifeDays: config.forgettingHalfLifeDays,
-      );
-      final activatedMemory = await _memory.buildMemorySummary(
-        agent.id,
-        mergedText,
-        halfLifeDays: config.forgettingHalfLifeDays,
-      );
+      final coreMemory = config.memoryEnabled
+          ? await _memory.buildCoreMemorySummary(
+              agent.id,
+              halfLifeDays: config.forgettingHalfLifeDays,
+            )
+          : '';
+      final selfMemory = config.memoryEnabled
+          ? await _memory.buildSelfSummary(
+              agent.id,
+              halfLifeDays: config.forgettingHalfLifeDays,
+            )
+          : '';
+      final activatedMemory = config.memoryEnabled
+          ? await _memory.buildMemorySummary(
+              agent.id,
+              mergedText,
+              halfLifeDays: config.forgettingHalfLifeDays,
+            )
+          : '';
       final schedule = await ScheduleService.instance.loadToday(agent.id);
       final scheduleContext = schedule == null
           ? ''
@@ -338,21 +345,23 @@ class AlivenessOrchestrator {
               ),
             ),
       );
-      unawaited(
-        _memory
-            .extractFromConversation(
-              agent,
-              userText: mergedText,
-              assistantText: fullContent,
-            )
-            .then((_) => debugPrint('[Aliveness][记忆] 对话提取与遗忘整理已执行')),
-      );
-      unawaited(
-        _memory.applyForgetting(
-          agent.id,
-          halfLifeDays: config.forgettingHalfLifeDays,
-        ),
-      );
+      if (config.memoryEnabled) {
+        unawaited(
+          _memory
+              .extractFromConversation(
+                agent,
+                userText: mergedText,
+                assistantText: fullContent,
+              )
+              .then((_) => debugPrint('[Aliveness][记忆] 对话提取与遗忘整理已执行')),
+        );
+        unawaited(
+          _memory.applyForgetting(
+            agent.id,
+            halfLifeDays: config.forgettingHalfLifeDays,
+          ),
+        );
+      }
       if (decision.exploreQuestion != null) {
         debugPrint('[Aliveness][探索] 已注入探索问题: ${decision.exploreQuestion}');
         unawaited(_recordExplored(agent.id, decision.exploreQuestion!, stats));
