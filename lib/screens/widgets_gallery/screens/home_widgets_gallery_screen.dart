@@ -396,6 +396,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
+        icon: Icons.account_balance_wallet,
+        title: '支出追踪卡片',
+        subtitle: 'ExpenseTrackerCard - 半圆弧段仪表与分类刻度条支出统计',
+        route: '/widgets_gallery/expense_tracker_card',
+      ),
+      _buildListItem(
+        context,
         icon: Icons.trending_up,
         title: '迷你趋势卡片',
         subtitle: 'MiniTrendCard - 迷你折线图趋势展示卡片',

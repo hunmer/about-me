@@ -102,6 +102,7 @@ import 'widgets/period_score_gauge_card.dart';
 import 'widgets/monthly_capsule_chart_card.dart';
 import 'widgets/marquee_button_list_card.dart';
 import 'widgets/semicircle_gauge_card.dart';
+import 'widgets/expense_tracker_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -205,6 +206,7 @@ enum CommonWidgetId {
   monthlyCapsuleChartCard,
   marqueeButtonListCard,
   semicircleGaugeCard,
+  expenseTrackerCard,
 }
 
 /// 公共小组件元数据
@@ -1015,6 +1017,14 @@ class CommonWidgetsRegistry {
       defaultSize: MediumSize(),
       supportedSizes: [MediumSize(), WideSize(), LargeSize(), Large3Size()],
     ),
+    CommonWidgetId.expenseTrackerCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.expenseTrackerCard,
+      name: '支出追踪卡片',
+      description: '深色支出统计：半圆彩色弧段仪表（中心总额）+ 月份胶囊选择条（两侧渐隐）+ 分类列表（图标徽章 + 32 格刻度条），点击分类高亮弧段',
+      icon: Icons.account_balance_wallet,
+      defaultSize: Large3Size(),
+      supportedSizes: [LargeSize(), Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1283,6 +1293,8 @@ class CommonWidgetBuilder {
         return MarqueeButtonListCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.semicircleGaugeCard:
         return SemicircleGaugeCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.expenseTrackerCard:
+        return ExpenseTrackerCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

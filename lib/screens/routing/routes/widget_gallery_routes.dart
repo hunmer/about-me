@@ -85,6 +85,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/donut_chart_stats_card_e
 import 'package:aboutme/screens/widgets_gallery/screens/health_score_ring_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/petal_radial_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/semicircle_gauge_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/expense_tracker_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_folder_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stacked_accordion_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/cute_notepad_card_example.dart';
@@ -810,6 +811,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '半圆仪表盘统计卡片',
     ),
     RouteDefinition(
+      path: '/widgets_gallery/expense_tracker_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ExpenseTrackerCardExample(),
+        settings: settings,
+      ),
+      description: '支出追踪卡片',
+    ),
+    RouteDefinition(
       path: '/widgets_gallery/stacked_folder_card',
       handler: (settings) => RouteHelpers.createRoute(
         const StackedFolderCardExample(),
@@ -1344,6 +1353,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '半圆仪表盘统计卡片',
     subtitle: 'SemicircleGaugeCard',
     route: '/widgets_gallery/semicircle_gauge_card',
+  ),
+  WidgetPreviewItem(
+    category: '图表类',
+    icon: Icons.account_balance_wallet,
+    title: '支出追踪卡片',
+    subtitle: 'ExpenseTrackerCard',
+    route: '/widgets_gallery/expense_tracker_card',
   ),
   WidgetPreviewItem(
     category: '图表类',
