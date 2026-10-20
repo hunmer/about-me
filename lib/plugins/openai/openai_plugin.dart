@@ -28,6 +28,8 @@ import 'package:aboutme/utils/image_utils.dart';
 import 'package:shared_models/usecases/openai/openai_usecase.dart';
 import 'package:aboutme/widgets/preset_edit_form.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart'
+    show AgentChatMainView;
 import 'repositories/client_openai_repository.dart';
 import 'screens/agent_list_screen.dart';
 import 'screens/plugin_settings_screen.dart';
@@ -670,7 +672,7 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
   void initState() {
     super.initState();
     _currentPage = 0;
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.animation?.addListener(() {
       final value = _tabController.animation!.value.round();
       if (value != _currentPage && mounted) {
@@ -769,12 +771,18 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
         controller: _tabController,
         dragStartBehavior: DragStartBehavior.down,
         physics: const NeverScrollableScrollPhysics(),
-        children: const [AgentListScreen(), PromptPresetScreen()],
+        children: const [
+          AgentListScreen(),
+          PromptPresetScreen(),
+          AgentChatMainView(),
+        ],
       ),
-      fab: _buildFab(),
+      // 会话列表自带导航栏"+"入口，该 tab 下隐藏 FAB 避免重复
+      fab: _currentPage == 2 ? null : _buildFab(),
       items: [
         DSNavItem(icon: DsIconKind.bot, label: 'openai_agentsTab'.tr),
         DSNavItem(icon: DsIconKind.book, label: 'openai_promptPreset'.tr),
+        DSNavItem(icon: DsIconKind.chat, label: 'agent_chat_aiChat'.tr),
       ],
     );
   }

@@ -246,6 +246,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
             subtitle: 'SuperCupertinoNavigationWrapper',
             route: '/widgets_gallery/super_cupertino_navigation',
           ),
+          _buildListItem(
+            context,
+            icon: Icons.photo_camera,
+            title: 'Swatch 3D 相机相框',
+            subtitle: 'SwatchCameraFrame（1:2 / 9:16 / 16:9 三种比例）',
+            route: '/widgets_gallery/swatch_camera_frame',
+          ),
         ],
       ),
     );

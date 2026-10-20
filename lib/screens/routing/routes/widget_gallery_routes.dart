@@ -111,6 +111,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/task_progress_card_examp
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_progress_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/vertical_bar_chart_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/task_list_stat_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/swatch_camera_frame_example.dart';
 
 /// 组件展示路由注册表
 class WidgetGalleryRoutes implements RouteRegistry {
@@ -1012,6 +1013,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '任务统计列表卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/swatch_camera_frame',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SwatchCameraFrameExample(),
+        settings: settings,
+      ),
+      description: 'Swatch 3D 相机相框（1:2 / 9:16 / 16:9）',
     ),
   ];
 }
