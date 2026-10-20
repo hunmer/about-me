@@ -88,6 +88,7 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
     final liveVideoUrl = index < widget.liveVideoUrls.length
         ? widget.liveVideoUrls[index]
         : null;
+    final hasLiveVideo = liveVideoUrl != null && liveVideoUrl.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: Stack(
@@ -111,13 +112,13 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
                 GalleryViewer(
                   title: 'Gallery',
                   photos: [
-                    GalleryPhoto(
-                      url: url,
-                      thumbUrl: thumbUrl,
-                      liveVideoUrl: liveVideoUrl?.isEmpty == true
-                          ? null
-                          : liveVideoUrl,
-                    ),
+                    hasLiveVideo
+                        ? GalleryPhoto(
+                            url: liveVideoUrl,
+                            isVideo: true,
+                            thumbUrl: thumbUrl ?? url,
+                          )
+                        : GalleryPhoto(url: url, thumbUrl: thumbUrl),
                   ],
                   showFileActions: true,
                 ),
