@@ -1042,6 +1042,14 @@ class _GalleryVideoTapOverlay extends StatelessWidget {
 
   final VideoPlayerController controller;
 
+  void _togglePlayback() {
+    if (controller.value.isPlaying) {
+      controller.pause();
+    } else {
+      controller.play();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isPlaying = controller.value.isPlaying;
@@ -1057,13 +1065,7 @@ class _GalleryVideoTapOverlay extends StatelessWidget {
         ),
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () {
-            if (isPlaying) {
-              controller.pause();
-            } else {
-              controller.play();
-            }
-          },
+          onTap: _togglePlayback,
           child: Container(
             color: Colors.transparent,
             width: double.infinity,
@@ -1071,15 +1073,23 @@ class _GalleryVideoTapOverlay extends StatelessWidget {
           ),
         ),
         if (!isPlaying)
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.18),
-              border: Border.all(color: Colors.white70),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _togglePlayback,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.18),
+                border: Border.all(color: Colors.white70),
+              ),
+              child: const Icon(
+                Icons.play_arrow,
+                color: Colors.white,
+                size: 34,
+              ),
             ),
-            child: const Icon(Icons.play_arrow, color: Colors.white, size: 34),
           ),
       ],
     );
