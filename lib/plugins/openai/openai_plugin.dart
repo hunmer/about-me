@@ -44,6 +44,7 @@ import 'controllers/service_provider_controller.dart';
 import 'controllers/model_controller.dart';
 import 'services/request_service.dart';
 import 'services/chat_assistant_service.dart';
+import 'services/topic_chat_service.dart';
 import 'models/ai_agent.dart';
 import 'widgets/onboarding_provider_setup.dart';
 import 'services/prompt_preset_service.dart';
@@ -133,6 +134,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
     // 启动时按版本创建或升级内置聊天助手。
     await ChatAssistantService.ensureBuiltinAgent();
+
+    // 进入 app 时按 version 同步内置话题合集目录到数据目录
+    await TopicChatService.instance.syncBuiltinCollections();
 
     // 初始化聊天事件处理器
     _chatEventHandler.initialize();

@@ -56,10 +56,11 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
     _bindConversationService();
     // agent_chat 若晚于本屏加载，插件就绪后重绑会话服务
     eventManager.subscribe('plugin_loaded', _onPluginLoaded);
-    // 首个合集在挂载时初始化（build 内调用 setState 不合法）
-    final first = TopicChatService.instance.collections.first;
-    _graphCache[first.id] = _buildGraph(first);
-    _applyCollection(first);
+    // 合集目录为 JSON 数据（首次自动从 assets 按 version 同步）
+    TopicChatService.instance.loadCollections().then((collections) {
+      if (!mounted || collections.isEmpty) return;
+      _selectCollection(collections.first);
+    });
   }
 
   void _onPluginLoaded(EventArgs args) {
@@ -67,6 +68,14 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
       return;
     }
     _bindConversationService();
+    // 合集列表加载是异步的：agent_chat 就绪前加载失败过的话重试
+    if (TopicChatService.instance.collections.isEmpty) {
+      TopicChatService.instance.loadCollections().then((collections) {
+        if (!mounted || collections.isEmpty) return;
+        _selectCollection(collections.first);
+      });
+      return;
+    }
     setState(() {});
   }
 
@@ -142,8 +151,18 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final collection = _selected!;
-    final bundle = _graphCache[collection.id]!;
+    final collection = _selected;
+    final bundle =
+        collection == null ? null : _graphCache[collection.id];
+    if (collection == null || bundle == null) {
+      // 合集目录异步加载中（或为空）：空占位保持布局稳定
+      return SuperCupertinoNavigationWrapper(
+        title: Text('openai_topicsTab'.tr),
+        largeTitle: 'openai_topicsTab'.tr,
+        enableLargeTitle: false,
+        body: const SizedBox.expand(),
+      );
+    }
 
     return SuperCupertinoNavigationWrapper(
       title: Text('openai_topicsTab'.tr),

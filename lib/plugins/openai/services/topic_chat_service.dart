@@ -1,10 +1,14 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show AssetManifest, rootBundle;
+
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/services/conversation_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
-import 'package:aboutme/plugins/openai/data/topic_collections.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/models/topic_collection.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
@@ -14,11 +18,14 @@ import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 /// 话题合集聊天服务
 ///
 /// 职责：
-/// - 注册话题合集（内置，后续可扩展自定义合集）
+/// - 话题合集目录：JSON 分发（assets 内置 + 数据目录落地）。
+///   [syncBuiltinCollections] 在进入 app（插件初始化）/首次加载时执行，
+///   asset 的 version 高于数据目录时覆盖更新（合集 agent 配置与
+///   已有会话不随之改动）
 /// - 合集的 AI 是一份**完整 agent 配置**（模型/参数/人设等），
 ///   独立存储在 `openai/topic_agents_<collectionId>.json`
 ///   （extra storage，与全局 agents.json 互不影响），
-///   编辑入口复用 [AgentEditScreen]（传 extraStorageKey）
+///   编辑入口复用 [AgentEditScreen]（onSave 回调模式）
 /// - 运行时经 [AgentController.addTemporaryAgent] 注入内存，
 ///   聊天链路按 agentId 即可解析（getAgent 含临时 agent）
 /// - 按（合集 × 话题）创建/查询互相隔离的会话：
@@ -30,12 +37,96 @@ class TopicChatService {
 
   static final TopicChatService instance = TopicChatService._();
 
-  /// 所有可用合集（当前仅内置【探索自己】，结构上可继续追加）
+  /// 内置合集目录的 assets 目录
+  static const String assetDir = 'assets/openai/topic_collections';
+
+  /// 数据目录中合集目录的存储前缀（`openai/topic_collections/<id>.json`）
+  String get _storagePrefix =>
+      '${OpenAIPlugin.instance.storageDir}/topic_collections';
+
+  String _collectionPath(String id) => '$_storagePrefix/$id.json';
+
+  List<TopicCollection>? _cachedCollections;
+
+  /// 已加载的合集（数据目录为准；未加载时为空，先 [loadCollections]）
   List<TopicCollection> get collections =>
-      List.unmodifiable(builtinTopicCollections);
+      List.unmodifiable(_cachedCollections ?? const []);
+
+  /// 加载合集列表（首次自动执行资产同步）
+  Future<List<TopicCollection>> loadCollections() async {
+    final cached = _cachedCollections;
+    if (cached != null) return cached;
+
+    final syncedIds = await syncBuiltinCollections();
+    final stored = <TopicCollection>[];
+    for (final id in syncedIds) {
+      try {
+        final data = await AboutmeDataService.instance.readPath(
+          _collectionPath(id),
+        );
+        if (data is Map<String, dynamic>) {
+          stored.add(TopicCollection.fromJson(data));
+        }
+      } catch (e) {
+        debugPrint('[TopicChat] 读取合集 $id 失败: $e');
+      }
+    }
+    _cachedCollections = stored;
+    return stored;
+  }
+
+  /// 使缓存失效（目录更新后下次重新加载）
+  void invalidateCache() => _cachedCollections = null;
+
+  /// 内置合集目录按 version 同步：asset 高于数据目录（或数据目录缺失）
+  /// 时覆盖写入。返回同步后可用的合集 id 集合。
+  Future<Set<String>> syncBuiltinCollections() async {
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    final assetPaths =
+        manifest
+            .listAssets()
+            .where(
+              (asset) =>
+                  asset.startsWith('$assetDir/') &&
+                  asset.toLowerCase().endsWith('.json'),
+            )
+            .toList()
+          ..sort();
+
+    final ids = <String>{};
+    for (final assetPath in assetPaths) {
+      try {
+        final json = jsonDecode(await rootBundle.loadString(assetPath));
+        if (json is! Map<String, dynamic>) continue;
+        final incoming = TopicCollection.fromJson(json);
+        ids.add(incoming.id);
+
+        final existing = await AboutmeDataService.instance.readPath(
+          _collectionPath(incoming.id),
+        );
+        final existingVersion =
+            existing is Map<String, dynamic>
+                ? (existing['version'] as num?)?.toInt() ?? -1
+                : -1;
+        if (incoming.version > existingVersion) {
+          await AboutmeDataService.instance.writePath(
+            _collectionPath(incoming.id),
+            incoming.toJson(),
+          );
+          debugPrint(
+            '[TopicChat] 合集目录更新: ${incoming.id} '
+            'v$existingVersion -> v${incoming.version}',
+          );
+        }
+      } catch (e) {
+        debugPrint('[TopicChat] 同步合集资产 $assetPath 失败: $e');
+      }
+    }
+    return ids;
+  }
 
   TopicCollection? collectionById(String id) {
-    for (final collection in builtinTopicCollections) {
+    for (final collection in collections) {
       if (collection.id == id) return collection;
     }
     return null;
@@ -138,7 +229,7 @@ class TopicChatService {
       updatedAt: DateTime.now(),
       model: model,
       maxLength: 2048,
-      icon: topicCollectionIcon(collection.id),
+      icon: Icons.explore_rounded,
       messages: [Prompt(type: 'system', content: collection.prompt)],
       apiFormat: apiFormat,
     );

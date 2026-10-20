@@ -4,7 +4,8 @@
 /// 无层级限制的话题树（[TopicNode]，分组节点下可以有分组或话题）。
 /// 每个叶子话题可挂多份互相隔离的会话（见 TopicChatService）。
 ///
-/// 目录内容（标题/提问/追问）属于用户提供的内置数据，不走 l10n；
+/// 合集目录以 JSON 分发（assets 内置 + 数据目录按 [version] 更新），
+/// 目录内容（标题/提问/追问）属于内置数据，不走 l10n；
 /// 页面级 UI 文案仍走 openai 插件翻译键。
 class TopicNode {
   const TopicNode({
@@ -43,12 +44,36 @@ class TopicNode {
       yield* child.subtree();
     }
   }
+
+  factory TopicNode.fromJson(Map<String, dynamic> json) {
+    return TopicNode(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      lead: json['lead'] as String?,
+      follow: json['follow'] as String?,
+      depthLabel: json['depthLabel'] as String?,
+      children:
+          (json['children'] as List<dynamic>? ?? [])
+              .map((e) => TopicNode.fromJson(e as Map<String, dynamic>))
+              .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    if (lead != null) 'lead': lead,
+    if (follow != null) 'follow': follow,
+    if (depthLabel != null) 'depthLabel': depthLabel,
+    if (children.isNotEmpty) 'children': children.map((e) => e.toJson()).toList(),
+  };
 }
 
 /// 话题合集
 class TopicCollection {
   const TopicCollection({
     required this.id,
+    required this.version,
     required this.name,
     required this.description,
     required this.prompt,
@@ -56,8 +81,11 @@ class TopicCollection {
     required this.topics,
   });
 
-  /// 合集稳定 id（会话元数据与内置 agent id 均由它派生）
+  /// 合集稳定 id（会话元数据与合集 agent 存储均由它派生）
   final String id;
+
+  /// 目录版本号：assets 内置目录高于数据目录时覆盖更新
+  final int version;
 
   /// 合集名（如「探索自己」）
   final String name;
@@ -65,10 +93,10 @@ class TopicCollection {
   /// 合集简介
   final String description;
 
-  /// 默认 AI 系统提示词（可被用户的自定义覆盖）
+  /// 默认 AI 系统提示词（用于生成合集默认 agent）
   final String prompt;
 
-  /// 新会话固定的第一条介绍消息（{@link TopicNode} 的话题脚本随后拼入）
+  /// 新会话固定的第一条介绍消息（话题脚本随后拼入）
   final String intro;
 
   /// 顶层节点（分组或话题）
@@ -95,4 +123,29 @@ class TopicCollection {
     }
     return count;
   }
+
+  factory TopicCollection.fromJson(Map<String, dynamic> json) {
+    return TopicCollection(
+      id: json['id'] as String,
+      version: (json['version'] as num?)?.toInt() ?? 1,
+      name: json['name'] as String,
+      description: json['description'] as String? ?? '',
+      prompt: json['prompt'] as String? ?? '',
+      intro: json['intro'] as String? ?? '',
+      topics:
+          (json['topics'] as List<dynamic>? ?? [])
+              .map((e) => TopicNode.fromJson(e as Map<String, dynamic>))
+              .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'version': version,
+    'name': name,
+    'description': description,
+    'prompt': prompt,
+    'intro': intro,
+    'topics': topics.map((e) => e.toJson()).toList(),
+  };
 }

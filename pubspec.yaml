@@ -224,6 +224,7 @@ flutter:
     - assets/scripts/ai_image/  # 内置脚本（AI 图片生成）
     - assets/scripts/line_sticker/  # 内置脚本（LINE 贴图下载）
     - assets/scripts/image_search/  # 内置脚本（聚合图片搜索：Unsplash/Pixabay/Google Lens）
+    - assets/openai/topic_collections/  # 内置话题合集目录 JSON（按 version 更新）
     - assets/emojis/  # 内置表情包
     - assets/emoji_faces/  # 方块表情（透明 WebP，切分脚本 docs/emoji_sheet/）
     - assets/emoji/emoji.json  # Unicode 表情数据（表情选择器）
