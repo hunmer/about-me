@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
-import 'package:provider/provider.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -84,7 +83,16 @@ LatLng? parseGcj02ToWgs84(String? latLng) {
 /// 同一坐标的多张照片堆叠成一组。视觉参考 lib/widgets/moments_nyc_map_demo.dart。
 /// 与相册页共用多条件过滤栏与搜索，过滤条件变化时大头针实时增减
 class AlbumMapScreen extends StatefulWidget {
-  const AlbumMapScreen({super.key, this.initialQuery, this.onOpenGallery});
+  const AlbumMapScreen({
+    super.key,
+    required this.controller,
+    this.initialQuery,
+    this.onOpenGallery,
+  });
+
+  /// 相册页的日历控制器。push 出的本页不在相册 Provider 作用域内，
+  /// 直接传实例并用 ListenableBuilder 监听数据变化
+  final CalendarController controller;
 
   /// 进入地图页时继承的过滤条件（相册页当前过滤状态）
   final AlbumPhotoQuery? initialQuery;
@@ -191,8 +199,10 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CalendarController>(
-      builder: (context, controller, _) {
+    return ListenableBuilder(
+      listenable: widget.controller,
+      builder: (context, _) {
+        final controller = widget.controller;
         _records = _query.apply(AlbumPhotoQuery.buildRecords(controller));
         final groups = _buildGroups(_records);
         _maybeScheduleFit(groups);

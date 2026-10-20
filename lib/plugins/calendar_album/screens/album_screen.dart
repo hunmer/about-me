@@ -238,7 +238,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
   }
 
   /// 右上角地图入口：继承相册当前过滤条件进入照片地图（地图页内可继续调整）
-  Widget _buildMapEntry() {
+  Widget _buildMapEntry(CalendarController calendarController) {
     final ds = AppTheme.of(context);
     return DSIconButton(
       icon: DsIconKind.locationOn,
@@ -249,6 +249,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
       onPressed: () => NavigationHelper.push(
         context,
         AlbumMapScreen(
+          controller: calendarController,
           initialQuery: AlbumPhotoQuery(
             multiFilters: _multiFilters,
             searchQuery: _searchQuery,
@@ -286,7 +287,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
           largeTitle: 'calendar_album_all_photos'.tr,
           enableLargeTitle: true,
           // 右上角：瀑布流 ⇄ 贴图画布 切换 + 照片地图入口
-          actions: [_buildMapEntry(), _buildScrapToggle()],
+          actions: [_buildMapEntry(calendarController), _buildScrapToggle()],
           // ===== 搜索 =====
           enableSearchBar: true,
           searchPlaceholder: 'calendar_album_search_photos_placeholder'.tr,
