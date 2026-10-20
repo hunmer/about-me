@@ -244,6 +244,7 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
             JellyBox(
               width: 40,
               height: 40,
+              alignment: Alignment.center,
               radius: theme.radii.lg,
               color: iconColor.mixWhite(0.88),
               child: DsIcon(icon, size: 22, color: iconColor),

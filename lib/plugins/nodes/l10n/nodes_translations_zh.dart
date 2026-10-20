@@ -94,6 +94,7 @@ final Map<String, String> nodesTranslationsZh = {
   // 界面元素
   'nodes_basicInfo': '基本信息',
   'nodes_dateAndFields': '时间与字段',
+  'nodes_mindMapPreview': '思维导图预览',
 
   // Widget Home Strings
   'nodes_widgetName': '节点',

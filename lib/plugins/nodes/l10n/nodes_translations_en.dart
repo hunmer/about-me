@@ -93,6 +93,7 @@ final Map<String, String> nodesTranslationsEn = {
   // UI elements
   'nodes_basicInfo': 'Basic Info',
   'nodes_dateAndFields': 'Date & Fields',
+  'nodes_mindMapPreview': 'Mind Map Preview',
 
   // Widget Home Strings
   'nodes_widgetName': 'Nodes',

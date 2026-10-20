@@ -13,6 +13,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/nodes/widgets/node_card.dart';
 import 'package:aboutme/plugins/nodes/widgets/node_item.dart';
 import 'node_edit_screen.dart';
+import 'node_mind_map_screen.dart';
 import 'package:uuid/uuid.dart';
 
 class NodesScreen extends StatefulWidget {
@@ -48,6 +49,21 @@ class _NodesScreenState extends State<NodesScreen> {
       },
       actions: [
         // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final t = DSThemeBridge.resolve(context);
+              return DSIconButton(
+                icon: DsIconKind.layers,
+                size: 36,
+                color: t.surfaceAlt,
+                iconColor: t.textSub,
+                tooltip: 'nodes_mindMapPreview'.tr,
+                onPressed: () => _openMindMap(context, controller),
+              );
+            },
+          ),
+        ),
         DSThemeBridge(
           child: Builder(
             builder: (context) {
@@ -219,6 +235,16 @@ class _NodesScreenState extends State<NodesScreen> {
               Toast.success('nodes_nodesCleared'.tr);
             },
           ),
+    );
+  }
+
+  void _openMindMap(BuildContext context, NodesController controller) {
+    NavigationHelper.push(
+      context,
+      ChangeNotifierProvider<NodesController>.value(
+        value: controller,
+        child: NodeMindMapScreen(notebookId: widget.notebook.id),
+      ),
     );
   }
 

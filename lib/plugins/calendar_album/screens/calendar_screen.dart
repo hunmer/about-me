@@ -1146,6 +1146,13 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
             padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
             child: Column(
               children: [
+                if (info?.imagePath != null)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: _buildTiltedImage(info.imagePath!, day, theme),
+                    ),
+                  ),
                 Container(
                   width: 26,
                   height: 26,
@@ -1192,15 +1199,8 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
                         fontSize: 9,
                         color: Colors.black87,
                       ),
-                    ),
-                  ),
-                  if (info.imagePath != null)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: _buildTiltedImage(info.imagePath!, day, theme),
                       ),
-                    ),
+                  ),
                 ],
               ],
             ),
