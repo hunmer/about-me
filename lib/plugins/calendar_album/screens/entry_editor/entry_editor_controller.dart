@@ -20,6 +20,7 @@ class EntryEditorController {
   List<String> selectedTags = [];
   List<String> imageUrls = [];
   List<String> thumbUrls = [];
+  List<String> liveVideoUrls = [];
   bool isPreview = false;
 
   EntryEditorController({
@@ -35,6 +36,7 @@ class EntryEditorController {
     weather = entry?.weather;
     imageUrls = entry?.imageUrls.toList() ?? [];
     thumbUrls = entry?.thumbUrls.toList() ?? [];
+    liveVideoUrls = entry?.liveVideoUrls.toList() ?? [];
   }
 
   void dispose() {
@@ -55,13 +57,15 @@ class EntryEditorController {
         title: titleController.text,
         content: contentController.text,
         tags: selectedTags.toList(),
-        location:
-            locationController.text.isEmpty ? null : locationController.text,
+        location: locationController.text.isEmpty
+            ? null
+            : locationController.text,
         latLng: latLng,
         mood: mood,
         weather: weather,
         imageUrls: imageUrls,
         thumbUrls: thumbUrls,
+        liveVideoUrls: liveVideoUrls,
       );
       calendarController.updateEntry(updatedEntry);
       return updatedEntry;
@@ -70,13 +74,15 @@ class EntryEditorController {
         title: titleController.text,
         content: contentController.text,
         tags: selectedTags.toList(),
-        location:
-            locationController.text.isEmpty ? null : locationController.text,
+        location: locationController.text.isEmpty
+            ? null
+            : locationController.text,
         latLng: latLng,
         mood: mood,
         weather: weather,
         imageUrls: imageUrls,
         thumbUrls: thumbUrls,
+        liveVideoUrls: liveVideoUrls,
         createdAt: initialDate ?? DateTime.now(),
       );
       calendarController.addEntry(newEntry);

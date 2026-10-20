@@ -29,6 +29,7 @@ class GalleryPhoto {
     this.subText,
     this.isVideo = false,
     this.isAudio = false,
+    this.liveVideoUrl,
     this.thumbUrl,
     this.isFile = false,
     this.fileSize,
@@ -43,6 +44,9 @@ class GalleryPhoto {
 
   /// 是否为音频（页面渲染内嵌播放器，audioplayers）
   final bool isAudio;
+
+  /// Live Photo 配对视频路径；存在时在查看器中按视频播放。
+  final String? liveVideoUrl;
 
   /// 视频缩略图地址（封面），优先于 url 解析；图片项忽略
   final String? thumbUrl;
@@ -375,6 +379,16 @@ class _GalleryViewerState extends State<GalleryViewer>
                               return PhotoViewGalleryPageOptions.customChild(
                                 child: _GalleryVideo(
                                   url: photo.url,
+                                  isActive: index == _index,
+                                ),
+                                disableGestures: true,
+                              );
+                            }
+                            if (photo.liveVideoUrl != null &&
+                                photo.liveVideoUrl!.isNotEmpty) {
+                              return PhotoViewGalleryPageOptions.customChild(
+                                child: _GalleryVideo(
+                                  url: photo.liveVideoUrl!,
                                   isActive: index == _index,
                                 ),
                                 disableGestures: true,
@@ -1546,7 +1560,9 @@ class GalleryFileActions {
           savePath.toLowerCase().endsWith(ext) ? savePath : '$savePath$ext',
         );
         await file.writeAsBytes(bytes);
-        if (context.mounted) Toast.success('${'app_saveToFile'.tr}: ${file.path}');
+        if (context.mounted) {
+          Toast.success('${'app_saveToFile'.tr}: ${file.path}');
+        }
       }
     } catch (e) {
       if (context.mounted) {

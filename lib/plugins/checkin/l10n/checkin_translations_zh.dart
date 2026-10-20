@@ -90,6 +90,7 @@ class CheckinTranslationsZh {
     'checkin_resetButton': '重置',
     'checkin_addCheckinRecord': '添加打卡记录',
     'checkin_addSpecificDateCheckin': '添加指定日期打卡',
+    'checkin_syncStartTime': '同步开始时间',
     'checkin_checkinDateLabel': '打卡日期',
     'checkin_checkinTimeLabel': '打卡时间',
     'checkin_noteHint': '添加备注(可选)',

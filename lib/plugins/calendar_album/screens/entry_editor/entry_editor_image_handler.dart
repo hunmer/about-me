@@ -4,21 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'dart:io';
 
 class EntryEditorImageHandler extends StatefulWidget {
   final List<String> imageUrls;
   final List<String> thumbUrls;
+  final List<String> liveVideoUrls;
 
   /// 只读模式（隐藏添加按钮与删除角标）
   final bool readOnly;
-  final Function(String url, String? thumbUrl) onImageAdded;
+  final Function(String url, String? thumbUrl, String? liveVideoUrl)
+  onImageAdded;
   final Function(int index) onImageRemoved;
 
   const EntryEditorImageHandler({
     super.key,
     required this.imageUrls,
     required this.thumbUrls,
+    this.liveVideoUrls = const [],
     this.readOnly = false,
     required this.onImageAdded,
     required this.onImageRemoved,
@@ -44,8 +49,9 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
 
   Widget _buildImageContent(String url, String? thumbUrl) {
     // 优先使用缩略图进行预览（空字符串占位视为无缩略图，回退原图）
-    final displayUrl =
-        (thumbUrl != null && thumbUrl.isNotEmpty) ? thumbUrl : url;
+    final displayUrl = (thumbUrl != null && thumbUrl.isNotEmpty)
+        ? thumbUrl
+        : url;
 
     if (displayUrl.startsWith('http://') || displayUrl.startsWith('https://')) {
       return Image.network(
@@ -68,8 +74,8 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
               fit: BoxFit.cover,
               width: 112,
               height: 144,
-              errorBuilder:
-                  (context, error, stackTrace) => _buildDefaultCover(),
+              errorBuilder: (context, error, stackTrace) =>
+                  _buildDefaultCover(),
             );
           }
         }
@@ -79,6 +85,9 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
   }
 
   Widget _buildImageItem(int index, String url, String? thumbUrl) {
+    final liveVideoUrl = index < widget.liveVideoUrls.length
+        ? widget.liveVideoUrls[index]
+        : null;
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: Stack(
@@ -96,9 +105,27 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
                 ),
               ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _buildImageContent(url, thumbUrl),
+            child: GestureDetector(
+              onTap: () => NavigationHelper.push(
+                context,
+                GalleryViewer(
+                  title: 'Gallery',
+                  photos: [
+                    GalleryPhoto(
+                      url: url,
+                      thumbUrl: thumbUrl,
+                      liveVideoUrl: liveVideoUrl?.isEmpty == true
+                          ? null
+                          : liveVideoUrl,
+                    ),
+                  ],
+                  showFileActions: true,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: _buildImageContent(url, thumbUrl),
+              ),
             ),
           ),
           if (!widget.readOnly)
@@ -129,13 +156,14 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
       padding: const EdgeInsets.only(right: 12),
       child: GestureDetector(
         onTap: () async {
-          final results = await ImagePickerDialog.show<List<Map<String, dynamic>>>(
-            context,
-            saveDirectory: 'calendar_album/images',
-            multiple: true,
-            enableCompression: true,
-            compressionQuality: 85,
-          );
+          final results =
+              await ImagePickerDialog.show<List<Map<String, dynamic>>>(
+                context,
+                saveDirectory: 'calendar_album/images',
+                multiple: true,
+                enableCompression: true,
+                compressionQuality: 85,
+              );
           if (results != null && results.isNotEmpty) {
             setState(() {
               for (final result in results) {
@@ -143,6 +171,7 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
                   widget.onImageAdded(
                     result['url'] as String,
                     result['thumbUrl'] as String?,
+                    result['liveVideoUrl'] as String?,
                   );
                 }
               }
@@ -157,9 +186,8 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: Colors.grey.shade300,
-              style:
-                  BorderStyle
-                      .none, // Custom dashed border implementation would be complex here, simplifying with standard border or dashed effect via CustomPainter if needed.
+              style: BorderStyle
+                  .none, // Custom dashed border implementation would be complex here, simplifying with standard border or dashed effect via CustomPainter if needed.
               // For simplicity and standard Flutter widgets, we'll use a standard border for now or a plugin if strict adherence is needed.
               // Re-reading instruction: "dashed border". Flutter doesn't have a simple dashed border property for Container.
               // I will use a custom painter or just a solid border that looks clean.
@@ -234,19 +262,18 @@ class _DashedBorderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = color
-          ..strokeWidth = strokeWidth
-          ..style = PaintingStyle.stroke;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
 
-    final path =
-        Path()..addRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(0, 0, size.width, size.height),
-            Radius.circular(radius),
-          ),
-        );
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          Radius.circular(radius),
+        ),
+      );
 
     final dashPath = _dashPath(
       path,

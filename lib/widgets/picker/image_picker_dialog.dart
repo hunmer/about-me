@@ -31,6 +31,13 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builde
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/multi_filter_bar.dart';
 
+class _PickedImage {
+  const _PickedImage(this.image, {this.liveVideo});
+
+  final XFile image;
+  final XFile? liveVideo;
+}
+
 /// 图片选择器底部弹窗（smooth_sheets ModalSheet）
 ///
 /// 结构：PersistentNavigationBar 头部（middle 为 相册/表情包 tabs，
@@ -97,17 +104,16 @@ class ImagePickerDialog extends StatefulWidget {
     return Navigator.of(context).push<T>(
       ModalSheetRoute<T>(
         swipeDismissible: true,
-        builder:
-            (context) => ImagePickerDialog(
-              initialUrl: initialUrl,
-              saveDirectory: saveDirectory,
-              enableCrop: enableCrop,
-              cropAspectRatio: cropAspectRatio,
-              multiple: multiple,
-              enableCompression: enableCompression,
-              thumbnailPath: thumbnailPath,
-              compressionQuality: compressionQuality,
-            ),
+        builder: (context) => ImagePickerDialog(
+          initialUrl: initialUrl,
+          saveDirectory: saveDirectory,
+          enableCrop: enableCrop,
+          cropAspectRatio: cropAspectRatio,
+          multiple: multiple,
+          enableCompression: enableCompression,
+          thumbnailPath: thumbnailPath,
+          compressionQuality: compressionQuality,
+        ),
       ),
     );
   }
@@ -206,25 +212,24 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         }
         imageKeys.add(key);
         if (!path.basename(key).contains('.thumb')) {
-          images.add(StorageFileInfo(
-            path: key,
-            size: info.size,
-            updatedAt: info.updatedAt,
-          ));
+          images.add(
+            StorageFileInfo(
+              path: key,
+              size: info.size,
+              updatedAt: info.updatedAt,
+            ),
+          );
         }
       }
 
       // 按修改时间倒序；无时间信息的排最后
       images.sort(
-        (a, b) =>
-            (b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
-              a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
-            ),
+        (a, b) => (b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+            .compareTo(a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
       );
 
       // 上限保护，避免网格过大
-      final limited =
-          images.length > 300 ? images.sublist(0, 300) : images;
+      final limited = images.length > 300 ? images.sublist(0, 300) : images;
 
       if (mounted) {
         setState(() {
@@ -461,14 +466,8 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
               SizedBox(height: screenHeight * 0.5, child: _buildGrid(theme)),
               if (_multiple) _buildConfirmBar(theme),
             ] else
-              SizedBox(
-                height: screenHeight * 0.5,
-                child: _buildEmojiPicker(),
-              ),
-            SafeArea(
-              top: false,
-              child: SizedBox(height: theme.spacing.sm),
-            ),
+              SizedBox(height: screenHeight * 0.5, child: _buildEmojiPicker()),
+            SafeArea(top: false, child: SizedBox(height: theme.spacing.sm)),
           ],
         ),
       ),
@@ -483,18 +482,15 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         keys: _navBarKeys,
         route: null,
         // 单选：无返回钮（下滑或点遮罩关闭）；多选：左侧为取消按钮
-        userLeading:
-            _multiple
-                ? TextButton(
-                    onPressed: _cancelMultiple,
-                    child: Text(
-                      'app_cancel'.tr,
-                      style: DsTypography.caption.copyWith(
-                        color: theme.textSub,
-                      ),
-                    ),
-                  )
-                : null,
+        userLeading: _multiple
+            ? TextButton(
+                onPressed: _cancelMultiple,
+                child: Text(
+                  'app_cancel'.tr,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+              )
+            : null,
         automaticallyImplyLeading: false,
         automaticallyImplyTitle: false,
         previousPageTitle: null,
@@ -581,10 +577,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         if (mounted) {
           Navigator.of(context).pop(
             ext == '.svg'
-                ? <String, dynamic>{
-                    'file_path': url,
-                    'svg': utf8.decode(bytes),
-                  }
+                ? <String, dynamic>{'file_path': url, 'svg': utf8.decode(bytes)}
                 : <String, dynamic>{
                     'url': url,
                     'thumbUrl': null,
@@ -611,8 +604,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     final result = await Navigator.of(context).push<Map<String, dynamic>>(
       ModalSheetRoute<Map<String, dynamic>>(
         swipeDismissible: true,
-        builder:
-            (context) => _UrlInputSheet(initialUrl: widget.initialUrl),
+        builder: (context) => _UrlInputSheet(initialUrl: widget.initialUrl),
       ),
     );
     if (result != null && mounted) {
@@ -765,10 +757,9 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
       borderRadius: theme.radii.md,
       child: InkWell(
         borderRadius: theme.radii.md,
-        onTap:
-            () => isMobile
-                ? _pickFromAssetPicker(context)
-                : _pickFromGallery(context),
+        onTap: () => isMobile
+            ? _pickFromAssetPicker(context)
+            : _pickFromGallery(context),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -797,8 +788,9 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: theme.radii.md,
-          border:
-              isSelected ? Border.all(color: theme.primary, width: 2) : null,
+          border: isSelected
+              ? Border.all(color: theme.primary, width: 2)
+              : null,
         ),
         child: ClipRRect(
           borderRadius: theme.radii.md,
@@ -808,17 +800,16 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
               Image(
                 image: ImageUtils.createImageProvider('./$key'),
                 fit: BoxFit.cover,
-                errorBuilder:
-                    (_, _, _) => Container(
-                      color: theme.stroke,
-                      child: Center(
-                        child: DsIcon(
-                          DsIconKind.image,
-                          size: 22,
-                          color: theme.textSub,
-                        ),
-                      ),
+                errorBuilder: (_, _, _) => Container(
+                  color: theme.stroke,
+                  child: Center(
+                    child: DsIcon(
+                      DsIconKind.image,
+                      size: 22,
+                      color: theme.textSub,
                     ),
+                  ),
+                ),
               ),
               if (_multiple)
                 Positioned(
@@ -829,25 +820,24 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
                     height: 22,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color:
-                          isSelected
-                              ? theme.primary
-                              : Colors.black.withValues(alpha: 0.25),
-                      border:
-                          isSelected ? null : Border.all(color: Colors.white70),
+                      color: isSelected
+                          ? theme.primary
+                          : Colors.black.withValues(alpha: 0.25),
+                      border: isSelected
+                          ? null
+                          : Border.all(color: Colors.white70),
                     ),
                     child: Center(
                       // 未选中时角标为空圈，不显示序号（避免 indexOf(-1)+1 显示 0）
-                      child:
-                          isSelected
-                              ? Text(
-                                '$selectedIndex',
-                                style: DsTypography.caption.copyWith(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                ),
-                              )
-                              : const SizedBox.shrink(),
+                      child: isSelected
+                          ? Text(
+                              '$selectedIndex',
+                              style: DsTypography.caption.copyWith(
+                                color: Colors.white,
+                                fontSize: 11,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ),
                 ),
@@ -870,10 +860,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
               height: 60,
               child: ReorderableListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 4,
-                  horizontal: 2,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                 itemCount: _selected.length,
                 onReorder: _onReorderSelected,
                 itemBuilder: (context, index) {
@@ -929,17 +916,16 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
               child: Image(
                 image: ImageUtils.createImageProvider('./$key'),
                 fit: BoxFit.cover,
-                errorBuilder:
-                    (_, _, _) => Container(
-                      color: theme.stroke,
-                      child: Center(
-                        child: DsIcon(
-                          DsIconKind.image,
-                          size: 18,
-                          color: theme.textSub,
-                        ),
-                      ),
+                errorBuilder: (_, _, _) => Container(
+                  color: theme.stroke,
+                  child: Center(
+                    child: DsIcon(
+                      DsIconKind.image,
+                      size: 18,
+                      color: theme.textSub,
                     ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -998,6 +984,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         context,
         pickerConfig: AssetPickerConfig(
           requestType: RequestType.image,
+          enableLivePhoto: true,
           maxAssets: _multiple ? 30 : 1,
         ),
       );
@@ -1006,11 +993,19 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         return;
       }
 
-      final images = <XFile>[];
+      final images = <_PickedImage>[];
       for (final entity in entities) {
         final file = await entity.originFile ?? await entity.file;
         if (file != null) {
-          images.add(XFile(file.path));
+          final liveVideo = entity.isLivePhoto
+              ? await entity.originFileWithSubtype
+              : null;
+          images.add(
+            _PickedImage(
+              XFile(file.path),
+              liveVideo: liveVideo == null ? null : XFile(liveVideo.path),
+            ),
+          );
         }
       }
       await _processSelectedImages(context, images);
@@ -1026,12 +1021,13 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
   Future<void> _pickFromGallery(BuildContext context) async {
     try {
       debugPrint('开始选择图片...');
-      final List<XFile> images =
-          _multiple
-              ? (await _picker.pickMultiImage())
-              : [
-                await _picker.pickImage(source: ImageSource.gallery),
-              ].whereType<XFile>().toList();
+      final List<_PickedImage> images = _multiple
+          ? (await _picker.pickMultiImage())
+                .map((file) => _PickedImage(file))
+                .toList()
+          : [
+              await _picker.pickImage(source: ImageSource.gallery),
+            ].whereType<XFile>().map((file) => _PickedImage(file)).toList();
 
       debugPrint('图片选择完成，数量: ${images.length}');
       await _processSelectedImages(context, images);
@@ -1055,7 +1051,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         debugPrint('用户取消拍照');
         return;
       }
-      await _processSelectedImages(context, [photo]);
+      await _processSelectedImages(context, [_PickedImage(photo)]);
     } catch (e, stackTrace) {
       debugPrint('拍照过程发生异常: $e');
       debugPrint('异常堆栈: $stackTrace');
@@ -1068,7 +1064,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
   /// 统一处理选中的图片：保存 → 裁剪(可选) → 压缩缩略图 → 返回结果
   Future<void> _processSelectedImages(
     BuildContext context,
-    List<XFile> images,
+    List<_PickedImage> images,
   ) async {
     try {
       if (images.isEmpty) {
@@ -1078,8 +1074,9 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
 
       final results = <Map<String, dynamic>>[];
 
-      for (final image in images) {
+      for (final picked in images) {
         try {
+          final image = picked.image;
           debugPrint('处理图片: ${image.path}');
 
           // 保存图片并获取相对路径
@@ -1090,9 +1087,7 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
           debugPrint('图片保存完成，相对路径: $relativePath');
 
           // 获取保存后的文件路径
-          final savedImagePath = await ImageUtils.getAbsolutePath(
-            relativePath,
-          );
+          final savedImagePath = await ImageUtils.getAbsolutePath(relativePath);
           final savedImage = File(savedImagePath);
 
           // 确认文件是否成功保存
@@ -1130,7 +1125,15 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
               relativePath,
             );
             debugPrint('压缩结果: ${compressionResult.keys}');
-            results.add({...compressionResult, 'bytes': bytes});
+            final result = {...compressionResult, 'bytes': bytes};
+            if (picked.liveVideo != null) {
+              final liveVideoUrl = await ImageUtils.saveImage(
+                File(picked.liveVideo!.path),
+                widget.saveDirectory,
+              );
+              result['liveVideoUrl'] = liveVideoUrl;
+            }
+            results.add(result);
           }
         } catch (e) {
           debugPrint('处理单张图片时发生错误: $e');
@@ -1333,10 +1336,9 @@ class _UrlInputSheetState extends State<_UrlInputSheet> {
 
   void _confirm() {
     if (!_isValid) return;
-    Navigator.of(context).pop(<String, dynamic>{
-      'url': _controller.text,
-      'bytes': null,
-    });
+    Navigator.of(
+      context,
+    ).pop(<String, dynamic>{'url': _controller.text, 'bytes': null});
   }
 
   @override
@@ -1470,9 +1472,7 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
       var providers = _fallbackProviders.toList();
       var defaultProvider = 'unsplash';
       try {
-        final scripts = await ScriptsCenterPlugin
-            .instance
-            .scriptManager
+        final scripts = await ScriptsCenterPlugin.instance.scriptManager
             .loadAllScripts();
         for (final script in scripts) {
           if (script.id != _scriptId) continue;
@@ -1488,7 +1488,9 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
             }
           }
         }
-      } catch (_) {/* 脚本中心不可用等情况，回退默认列表 */}
+      } catch (_) {
+        /* 脚本中心不可用等情况，回退默认列表 */
+      }
       _cachedProviders = providers;
       _cachedProviderDefault = defaultProvider;
     }
@@ -1520,7 +1522,9 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
         _thumbBytes[url] = resp.bodyBytes;
         if (mounted) setState(() {});
       }
-    } catch (_) {/* 下载失败保持占位图标 */} finally {
+    } catch (_) {
+      /* 下载失败保持占位图标 */
+    } finally {
       _thumbLoading.remove(url);
     }
   }
@@ -1534,19 +1538,16 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
       _error = null;
     });
     try {
-      final result = await ScriptsCenterPlugin
-          .instance
-          .scriptExecutor
-          .execute(
-            _scriptId,
-            args: {
-              'query': query,
-              'provider': _provider,
-              'perPage': 30,
-              // 内嵌场景不弹脚本自带的结果页，仅取返回数据
-              'showUi': false,
-            },
-          );
+      final result = await ScriptsCenterPlugin.instance.scriptExecutor.execute(
+        _scriptId,
+        args: {
+          'query': query,
+          'provider': _provider,
+          'perPage': 30,
+          // 内嵌场景不弹脚本自带的结果页，仅取返回数据
+          'showUi': false,
+        },
+      );
       if (!mounted) return;
       if (!result.success) {
         setState(() {
@@ -1559,10 +1560,9 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
       }
       // 脚本返回值：{success, message, data: {images: [{url, thumb, ...}]}}
       final data = result.result is Map ? (result.result as Map)['data'] : null;
-      final images =
-          (data is Map && data['images'] is List)
-              ? (data['images'] as List).whereType<Map>().toList()
-              : <Map>[];
+      final images = (data is Map && data['images'] is List)
+          ? (data['images'] as List).whereType<Map>().toList()
+          : <Map>[];
       setState(() {
         _images = images;
         _selected.clear();
@@ -1666,8 +1666,7 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
                       child: DSChip(
                         label: p,
                         selected: _provider == p,
-                        onSelected:
-                            (_) => setState(() => _provider = p),
+                        onSelected: (_) => setState(() => _provider = p),
                       ),
                     ),
                 ],
@@ -1765,8 +1764,9 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: theme.radii.md,
-          border:
-              isSelected ? Border.all(color: theme.primary, width: 2) : null,
+          border: isSelected
+              ? Border.all(color: theme.primary, width: 2)
+              : null,
         ),
         child: ClipRRect(
           borderRadius: theme.radii.md,
@@ -1783,27 +1783,24 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
                     height: 22,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color:
-                          isSelected
-                              ? theme.primary
-                              : Colors.black.withValues(alpha: 0.25),
-                      border:
-                          isSelected
-                              ? null
-                              : Border.all(color: Colors.white70),
+                      color: isSelected
+                          ? theme.primary
+                          : Colors.black.withValues(alpha: 0.25),
+                      border: isSelected
+                          ? null
+                          : Border.all(color: Colors.white70),
                     ),
                     child: Center(
                       // 未选中时角标为空圈，不显示序号（避免 indexOf(-1)+1 显示 0）
-                      child:
-                          isSelected
-                              ? Text(
-                                '$selectedIndex',
-                                style: DsTypography.caption.copyWith(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                ),
-                              )
-                              : const SizedBox.shrink(),
+                      child: isSelected
+                          ? Text(
+                              '$selectedIndex',
+                              style: DsTypography.caption.copyWith(
+                                color: Colors.white,
+                                fontSize: 11,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ),
                 ),
@@ -1826,17 +1823,13 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
               height: 60,
               child: ReorderableListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 4,
-                  horizontal: 2,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                 itemCount: _selected.length,
                 onReorder: _onReorderSelected,
                 itemBuilder: (context, index) {
                   final imgIndex = _selected[index];
                   final img = _images[imgIndex];
-                  final thumbUrl =
-                      (img['thumb'] as String? ?? '').isNotEmpty
+                  final thumbUrl = (img['thumb'] as String? ?? '').isNotEmpty
                       ? img['thumb'] as String
                       : img['url'] as String? ?? '';
                   return Padding(
@@ -1880,7 +1873,8 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
                           top: -6,
                           right: -6,
                           child: GestureDetector(
-                            onTap: () => setState(() => _selected.remove(index)),
+                            onTap: () =>
+                                setState(() => _selected.remove(index)),
                             child: Container(
                               width: 18,
                               height: 18,

@@ -18,6 +18,9 @@ class CalendarEntry {
   final List<String> imageUrls;
   final List<String> thumbUrls;
 
+  /// 与 imageUrls 按索引对应的 Live Photo 配对视频路径，普通图片为空字符串。
+  final List<String> liveVideoUrls;
+
   CalendarEntry({
     required this.id,
     required this.title,
@@ -31,6 +34,7 @@ class CalendarEntry {
     this.weather,
     this.imageUrls = const [],
     this.thumbUrls = const [],
+    this.liveVideoUrls = const [],
   });
 
   factory CalendarEntry.create({
@@ -44,6 +48,7 @@ class CalendarEntry {
     String? weather,
     List<String> imageUrls = const [],
     List<String> thumbUrls = const [],
+    List<String> liveVideoUrls = const [],
   }) {
     return CalendarEntry(
       id: const Uuid().v4(),
@@ -58,6 +63,7 @@ class CalendarEntry {
       weather: weather,
       imageUrls: imageUrls,
       thumbUrls: thumbUrls,
+      liveVideoUrls: liveVideoUrls,
     );
   }
 
@@ -72,6 +78,7 @@ class CalendarEntry {
     String? weather,
     List<String>? imageUrls,
     List<String>? thumbUrls,
+    List<String>? liveVideoUrls,
   }) {
     return CalendarEntry(
       id: id,
@@ -86,6 +93,7 @@ class CalendarEntry {
       weather: weather ?? this.weather,
       imageUrls: imageUrls ?? this.imageUrls,
       thumbUrls: thumbUrls ?? this.thumbUrls,
+      liveVideoUrls: liveVideoUrls ?? this.liveVideoUrls,
     );
   }
 
@@ -103,6 +111,7 @@ class CalendarEntry {
       'weather': weather,
       'imageUrls': imageUrls,
       'thumbUrls': thumbUrls,
+      'liveVideoUrls': liveVideoUrls,
     };
   }
 
@@ -120,6 +129,7 @@ class CalendarEntry {
       weather: json['weather'],
       imageUrls: List<String>.from(json['imageUrls'] ?? []),
       thumbUrls: List<String>.from(json['thumbUrls'] ?? []),
+      liveVideoUrls: List<String>.from(json['liveVideoUrls'] ?? []),
     );
   }
 

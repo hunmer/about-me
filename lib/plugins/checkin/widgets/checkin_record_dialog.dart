@@ -5,6 +5,7 @@ import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
+import 'package:aboutme/widgets/form_fields/date_picker_field.dart';
 
 class CheckinRecordDialog extends StatefulWidget {
   final CheckinItem item;
@@ -146,28 +147,35 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
                   ),
                   SizedBox(height: theme.spacing.lg),
                   // 日期选择
-                  _buildPickerRow(
-                    context,
-                    label: 'app_date'.tr,
-                    value:
-                        '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}',
+                  DatePickerField(
+                    date: _selectedDate,
                     onTap: () => _selectDate(context),
+                    formattedDate: _formatDate(_selectedDate),
+                    placeholder: '',
+                    labelText: 'app_date'.tr,
+                    inline: true,
                   ),
+                  SizedBox(height: theme.spacing.md),
                   // 起始时间选择
-                  _buildPickerRow(
-                    context,
-                    label: 'app_startTime'.tr,
-                    value:
-                        '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
+                  DatePickerField(
+                    date: _startTime,
                     onTap: () => _selectTime(context, true),
+                    formattedDate: _formatTime(_startTime),
+                    placeholder: '',
+                    labelText: 'app_startTime'.tr,
+                    inline: true,
                   ),
-                  // 终止时间选择
-                  _buildPickerRow(
-                    context,
-                    label: 'app_endTime'.tr,
-                    value:
-                        '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
+                  SizedBox(height: theme.spacing.md),
+                  // 终止时间选择：忘记开始时间时可点同步按钮，将结束时间回填到开始时间
+                  DatePickerField(
+                    date: _endTime,
                     onTap: () => _selectTime(context, false),
+                    formattedDate: _formatTime(_endTime),
+                    placeholder: '',
+                    labelText: 'app_endTime'.tr,
+                    inline: true,
+                    onSync: () => setState(() => _startTime = _endTime),
+                    syncLabel: 'checkin_syncStartTime'.tr,
                   ),
                   SizedBox(height: theme.spacing.md),
                   // 备注输入框
@@ -187,23 +195,9 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
                   ),
                   SizedBox(height: theme.spacing.lg),
                   // 操作按钮
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DSButton(
-                          label: 'app_cancel'.tr,
-                          variant: DSButtonVariant.outline,
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DSButton(
-                          label: 'checkin_checkinButton'.tr,
-                          onPressed: () => _submit(context),
-                        ),
-                      ),
-                    ],
+                  DSButton(
+                    label: 'checkin_checkinButton'.tr,
+                    onPressed: () => _submit(context),
                   ),
                 ],
               ),
@@ -214,34 +208,11 @@ class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
     );
   }
 
-  /// 日期/时间选择行：标签 + 可点击值
-  Widget _buildPickerRow(
-    BuildContext context, {
-    required String label,
-    required String value,
-    required VoidCallback onTap,
-  }) {
-    final theme = DSThemeBridge.resolve(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: DsTypography.body.copyWith(color: theme.text),
-            ),
-          ),
-          DSButton(
-            label: value,
-            variant: DSButtonVariant.ghost,
-            size: DSButtonSize.sm,
-            onPressed: onTap,
-          ),
-        ],
-      ),
-    );
-  }
+  String _formatDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  String _formatTime(DateTime d) =>
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
   Future<void> _submit(BuildContext context) async {
     // 标准化时间，保留到秒级别（忽略毫秒）

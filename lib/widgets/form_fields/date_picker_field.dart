@@ -31,6 +31,12 @@ class DatePickerField extends StatelessWidget {
   /// inline模式下label的宽度
   final double labelWidth;
 
+  /// 同步按钮回调（非空时在字段右侧显示同步按钮）
+  final VoidCallback? onSync;
+
+  /// 同步按钮的无障碍标签
+  final String? syncLabel;
+
   const DatePickerField({
     super.key,
     required this.date,
@@ -40,6 +46,8 @@ class DatePickerField extends StatelessWidget {
     this.labelText,
     this.inline = false,
     this.labelWidth = 100,
+    this.onSync,
+    this.syncLabel,
   });
 
   @override
@@ -76,6 +84,10 @@ class DatePickerField extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (onSync != null) ...[
+                SizedBox(width: theme.spacing.sm),
+                _buildSyncButton(context),
+              ],
             ],
           ),
         ),
@@ -108,9 +120,26 @@ class DatePickerField extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (onSync != null) ...[
+              _buildSyncButton(context),
+              SizedBox(width: theme.spacing.xs),
+            ],
             DsIcon(DsIconKind.chevronDown, size: 18, color: theme.primary),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 同步按钮：内层 Pressable 在手势竞技场中优先于外层字段点击
+  Widget _buildSyncButton(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: onSync,
+      semanticLabel: syncLabel,
+      child: Padding(
+        padding: EdgeInsets.all(theme.spacing.xs),
+        child: DsIcon(DsIconKind.refresh, size: 18, color: theme.primary),
       ),
     );
   }

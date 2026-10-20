@@ -267,6 +267,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
             subtitle: 'MomentsNycMapDemo（flutter_map + 手账照片详情）',
             route: '/widgets_gallery/moments_nyc_map',
           ),
+          _buildListItem(
+            context,
+            icon: Icons.casino,
+            title: '时计幸运转盘',
+            subtitle: 'LuckyWheel（极简轻奢表盘 + 棘轮音效 + 金粉粒子）',
+            route: '/widgets_gallery/lucky_wheel',
+          ),
         ],
       ),
     );

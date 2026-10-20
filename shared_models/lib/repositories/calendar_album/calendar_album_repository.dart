@@ -19,6 +19,7 @@ class CalendarAlbumEntryDto {
   final String? weather;
   final List<String> imageUrls;
   final List<String> thumbUrls;
+  final List<String> liveVideoUrls;
 
   const CalendarAlbumEntryDto({
     required this.id,
@@ -32,6 +33,7 @@ class CalendarAlbumEntryDto {
     this.weather,
     this.imageUrls = const [],
     this.thumbUrls = const [],
+    this.liveVideoUrls = const [],
   });
 
   /// 从 JSON 构造
@@ -56,6 +58,10 @@ class CalendarAlbumEntryDto {
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      liveVideoUrls: (json['liveVideoUrls'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
   }
 
@@ -73,6 +79,7 @@ class CalendarAlbumEntryDto {
       'weather': weather,
       'imageUrls': imageUrls,
       'thumbUrls': thumbUrls,
+      'liveVideoUrls': liveVideoUrls,
     };
   }
 
@@ -89,6 +96,7 @@ class CalendarAlbumEntryDto {
     String? weather,
     List<String>? imageUrls,
     List<String>? thumbUrls,
+    List<String>? liveVideoUrls,
   }) {
     return CalendarAlbumEntryDto(
       id: id ?? this.id,
@@ -102,6 +110,7 @@ class CalendarAlbumEntryDto {
       weather: weather ?? this.weather,
       imageUrls: imageUrls ?? this.imageUrls,
       thumbUrls: thumbUrls ?? this.thumbUrls,
+      liveVideoUrls: liveVideoUrls ?? this.liveVideoUrls,
     );
   }
 }

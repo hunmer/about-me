@@ -26,6 +26,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/widget_config_editor_exa
 import 'package:aboutme/screens/widgets_gallery/screens/preset_edit_form_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/super_cupertino_navigation_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/run_receipt_printer_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/lucky_wheel_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/moments_nyc_map_example.dart';
 
 import 'package:aboutme/screens/widgets_gallery/screens/segmented_progress_card_example.dart';
@@ -1084,6 +1085,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: 'Moments 纽约互动地图（flutter_map + 手账照片详情）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/lucky_wheel',
+      handler: (settings) => RouteHelpers.createRoute(
+        const LuckyWheelExample(),
+        settings: settings,
+      ),
+      description: '时计幸运转盘（棘轮音效 + 金粉粒子 + 擒纵指针物理）',
     ),
   ];
 }

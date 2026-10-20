@@ -10,9 +10,14 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 /// 相册瀑布流与照片地图页共用
 class AlbumMapPhoto {
   final String url;
+  final String? liveVideoUrl;
   final CalendarEntry entry;
 
-  const AlbumMapPhoto({required this.url, required this.entry});
+  const AlbumMapPhoto({
+    required this.url,
+    this.liveVideoUrl,
+    required this.entry,
+  });
 }
 
 /// 相册照片的多条件过滤/搜索条件与执行逻辑。
@@ -27,7 +32,8 @@ class AlbumPhotoQuery {
   static List<AlbumMapPhoto> buildRecords(CalendarController controller) {
     final records = <AlbumMapPhoto>[];
     final seen = <String>{};
-    final dates = controller.entries.keys.toList()..sort((a, b) => b.compareTo(a));
+    final dates = controller.entries.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
     for (final date in dates) {
       final entries = controller.entries[date]!;
       final sorted = List<CalendarEntry>.from(entries)
@@ -36,7 +42,16 @@ class AlbumPhotoQuery {
         final urls = [...entry.imageUrls, ...entry.extractImagesFromMarkdown()];
         for (final url in urls) {
           if (url.isEmpty || !seen.add(url)) continue;
-          records.add(AlbumMapPhoto(url: url, entry: entry));
+          final imageIndex = entry.imageUrls.indexOf(url);
+          final liveVideoUrl =
+              imageIndex >= 0 &&
+                  imageIndex < entry.liveVideoUrls.length &&
+                  entry.liveVideoUrls[imageIndex].isNotEmpty
+              ? entry.liveVideoUrls[imageIndex]
+              : null;
+          records.add(
+            AlbumMapPhoto(url: url, liveVideoUrl: liveVideoUrl, entry: entry),
+          );
         }
       }
     }
@@ -48,9 +63,7 @@ class AlbumPhotoQuery {
     var photos = all.where((r) => _passesMultiFilters(r.entry)).toList();
     if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
-      photos = photos
-          .where((r) => _matchesSearch(r.entry, query))
-          .toList();
+      photos = photos.where((r) => _matchesSearch(r.entry, query)).toList();
     }
     return photos;
   }

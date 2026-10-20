@@ -69,6 +69,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
             .map(
               (r) => GalleryPhoto(
                 url: r.url,
+                liveVideoUrl: r.liveVideoUrl,
                 dateText: _formatGalleryDate(r.entry.createdAt),
                 caption: r.entry.title.isNotEmpty
                     ? r.entry.title
@@ -163,7 +164,9 @@ class _AlbumScreenState extends State<AlbumScreen> {
                       child: Row(
                         children: [
                           DsIcon(
-                            _sortBy == value ? DsIconKind.check : DsIconKind.sort,
+                            _sortBy == value
+                                ? DsIconKind.check
+                                : DsIconKind.sort,
                             size: 18,
                             color: popoverTheme.text,
                           ),
@@ -196,11 +199,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
               radius: theme.radii.circle,
               color: theme.surfaceAlt,
               child: Center(
-                child: DsIcon(
-                  DsIconKind.sort,
-                  size: 18,
-                  color: theme.textSub,
-                ),
+                child: DsIcon(DsIconKind.sort, size: 18, color: theme.textSub),
               ),
             ),
           );
@@ -218,9 +217,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
       title: 'calendar_album_route_title_album'.trParams({
         'count': photoCount.toString(),
       }),
-      params: {
-        'photoCount': photoCount.toString(),
-      },
+      params: {'photoCount': photoCount.toString()},
     );
   }
 
@@ -271,10 +268,11 @@ class _AlbumScreenState extends State<AlbumScreen> {
           searchQuery: _searchQuery,
         );
         final photos = query.apply(allPhotos);
-        photos.sort((a, b) =>
-            _sortBy == 'oldest'
-                ? a.entry.createdAt.compareTo(b.entry.createdAt)
-                : b.entry.createdAt.compareTo(a.entry.createdAt));
+        photos.sort(
+          (a, b) => _sortBy == 'oldest'
+              ? a.entry.createdAt.compareTo(b.entry.createdAt)
+              : b.entry.createdAt.compareTo(a.entry.createdAt),
+        );
 
         _updateRouteContext(allPhotos.length);
 
@@ -317,12 +315,12 @@ class _AlbumScreenState extends State<AlbumScreen> {
                   ),
                 )
               : _scrapMode
-                  ? _ScrapbookCanvasSection(
-                    photos: photos,
-                    onOpenGallery: (index) =>
-                        _openGallery(photos, index, entranceAnimation: true),
-                  )
-                  : MasonryGridView.count(
+              ? _ScrapbookCanvasSection(
+                  photos: photos,
+                  onOpenGallery: (index) =>
+                      _openGallery(photos, index, entranceAnimation: true),
+                )
+              : MasonryGridView.count(
                   padding: EdgeInsets.fromLTRB(
                     16,
                     16,
@@ -348,10 +346,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
 
                     return ArcContextMenu(
                       onTap: openViewer,
-                      preview: _PhotoCell.buildPlainImage(
-                        context,
-                        record.url,
-                      ),
+                      preview: _PhotoCell.buildPlainImage(context, record.url),
                       items: [
                         ArcMenuItem(
                           icon: DsIconKind.image,
@@ -576,8 +571,7 @@ class _ScrapbookCanvasSectionState extends State<_ScrapbookCanvasSection> {
       final mood = record.entry.mood;
       final title = record.entry.title.trim();
       // 照片下方的日记标题 caption（过长截断避免多行撑高重叠）
-      final caption =
-          title.length > 12 ? '${title.substring(0, 12)}…' : title;
+      final caption = title.length > 12 ? '${title.substring(0, 12)}…' : title;
 
       items.add(
         ScrapItemData(
@@ -593,10 +587,9 @@ class _ScrapbookCanvasSectionState extends State<_ScrapbookCanvasSection> {
           zIndex: 20 + i,
           captions: caption.isEmpty ? const [] : [caption],
           // 心情气泡：绘制在照片右上角（见 _buildPhotoItem 的 bubbleText 定位）
-          bubbleText:
-              mood != null && mood.isNotEmpty
-                  ? AlbumPhotoQuery.enumLabel('mood', mood)
-                  : null,
+          bubbleText: mood != null && mood.isNotEmpty
+              ? AlbumPhotoQuery.enumLabel('mood', mood)
+              : null,
           tape: ScrapTapeData(
             dx: width * 0.24,
             dy: -7,
@@ -634,4 +627,3 @@ class _ScrapbookCanvasSectionState extends State<_ScrapbookCanvasSection> {
     );
   }
 }
-

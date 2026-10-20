@@ -36,6 +36,7 @@ class ClientCalendarAlbumRepository implements ICalendarAlbumRepository {
       weather: entry.weather,
       imageUrls: entry.imageUrls.toList(),
       thumbUrls: entry.thumbUrls.toList(),
+      liveVideoUrls: entry.liveVideoUrls.toList(),
     );
   }
 
@@ -53,6 +54,7 @@ class ClientCalendarAlbumRepository implements ICalendarAlbumRepository {
       weather: dto.weather,
       imageUrls: dto.imageUrls,
       thumbUrls: dto.thumbUrls,
+      liveVideoUrls: dto.liveVideoUrls,
     );
   }
 
@@ -163,49 +165,45 @@ class ClientCalendarAlbumRepository implements ICalendarAlbumRepository {
 
       // 按日期过滤
       if (query.date != null) {
-        filtered =
-            filtered.where((entry) {
-              final entryDate = DateTime(
-                entry.createdAt.year,
-                entry.createdAt.month,
-                entry.createdAt.day,
-              );
-              final queryDate = DateTime(
-                query.date!.year,
-                query.date!.month,
-                query.date!.day,
-              );
-              return entryDate.isAtSameMomentAs(queryDate);
-            }).toList();
+        filtered = filtered.where((entry) {
+          final entryDate = DateTime(
+            entry.createdAt.year,
+            entry.createdAt.month,
+            entry.createdAt.day,
+          );
+          final queryDate = DateTime(
+            query.date!.year,
+            query.date!.month,
+            query.date!.day,
+          );
+          return entryDate.isAtSameMomentAs(queryDate);
+        }).toList();
       }
 
       // 按标签过滤
       if (query.tags != null && query.tags!.isNotEmpty) {
-        filtered =
-            filtered.where((entry) {
-              return query.tags!.every((tag) => entry.tags.contains(tag));
-            }).toList();
+        filtered = filtered.where((entry) {
+          return query.tags!.every((tag) => entry.tags.contains(tag));
+        }).toList();
       }
 
       // 按关键词搜索（标题和内容）
       if (query.keyword != null && query.keyword!.isNotEmpty) {
         final keyword = query.keyword!.toLowerCase();
-        filtered =
-            filtered.where((entry) {
-              return entry.title.toLowerCase().contains(keyword) ||
-                  entry.content.toLowerCase().contains(keyword);
-            }).toList();
+        filtered = filtered.where((entry) {
+          return entry.title.toLowerCase().contains(keyword) ||
+              entry.content.toLowerCase().contains(keyword);
+        }).toList();
       }
 
       // 按标签关键词搜索
       if (query.tagKeyword != null && query.tagKeyword!.isNotEmpty) {
         final tagKeyword = query.tagKeyword!.toLowerCase();
-        filtered =
-            filtered.where((entry) {
-              return entry.tags.any(
-                (tag) => tag.toLowerCase().contains(tagKeyword),
-              );
-            }).toList();
+        filtered = filtered.where((entry) {
+          return entry.tags.any(
+            (tag) => tag.toLowerCase().contains(tagKeyword),
+          );
+        }).toList();
       }
 
       // 排序（按创建时间倒序）
@@ -266,13 +264,12 @@ class ClientCalendarAlbumRepository implements ICalendarAlbumRepository {
   @override
   Future<Result<List<CalendarAlbumTagGroupDto>>> getTagGroups() async {
     try {
-      final groups =
-          tagController.tagGroups.map((group) {
-            return CalendarAlbumTagGroupDto(
-              name: group.name,
-              tags: List<String>.from(group.tags),
-            );
-          }).toList();
+      final groups = tagController.tagGroups.map((group) {
+        return CalendarAlbumTagGroupDto(
+          name: group.name,
+          tags: List<String>.from(group.tags),
+        );
+      }).toList();
       return Result.success(groups);
     } catch (e) {
       return Result.failure('获取标签组失败: $e', code: ErrorCodes.serverError);
@@ -308,13 +305,12 @@ class ClientCalendarAlbumRepository implements ICalendarAlbumRepository {
         );
       }
 
-      final groups =
-          tagController.tagGroups.map((group) {
-            return CalendarAlbumTagGroupDto(
-              name: group.name,
-              tags: List<String>.from(group.tags),
-            );
-          }).toList();
+      final groups = tagController.tagGroups.map((group) {
+        return CalendarAlbumTagGroupDto(
+          name: group.name,
+          tags: List<String>.from(group.tags),
+        );
+      }).toList();
       return Result.success(groups);
     } catch (e) {
       return Result.failure('更新标签组失败: $e', code: ErrorCodes.serverError);
@@ -364,8 +360,9 @@ class ClientCalendarAlbumRepository implements ICalendarAlbumRepository {
       // 如果有关键词搜索
       if (query.keyword != null && query.keyword!.isNotEmpty) {
         final keyword = query.keyword!.toLowerCase();
-        tags =
-            tags.where((tag) => tag.toLowerCase().contains(keyword)).toList();
+        tags = tags
+            .where((tag) => tag.toLowerCase().contains(keyword))
+            .toList();
       }
 
       final paginated = _applyPagination(tags, query.pagination);
@@ -383,8 +380,9 @@ class ClientCalendarAlbumRepository implements ICalendarAlbumRepository {
       // 搜索标签
       if (query.keyword != null && query.keyword!.isNotEmpty) {
         final keyword = query.keyword!.toLowerCase();
-        tags =
-            tags.where((tag) => tag.toLowerCase().contains(keyword)).toList();
+        tags = tags
+            .where((tag) => tag.toLowerCase().contains(keyword))
+            .toList();
       }
 
       final paginated = _applyPagination(tags, query.pagination);

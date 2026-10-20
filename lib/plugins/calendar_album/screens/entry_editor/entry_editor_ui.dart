@@ -45,10 +45,12 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
         EntryEditorImageHandler(
           imageUrls: controller.imageUrls,
           thumbUrls: controller.thumbUrls,
+          liveVideoUrls: controller.liveVideoUrls,
           readOnly: readOnly,
-          onImageAdded: (url, thumbUrl) {
+          onImageAdded: (url, thumbUrl, liveVideoUrl) {
             controller.imageUrls.add(url);
             controller.thumbUrls.add(thumbUrl ?? '');
+            controller.liveVideoUrls.add(liveVideoUrl ?? '');
           },
           onImageRemoved: (index) {
             // 列表变更必须触发重建，否则界面残留已删图片，再次点击会越界
@@ -59,16 +61,16 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
               if (index < controller.thumbUrls.length) {
                 controller.thumbUrls.removeAt(index);
               }
+              if (index < controller.liveVideoUrls.length) {
+                controller.liveVideoUrls.removeAt(index);
+              }
             });
           },
         ),
         const SizedBox(height: 20),
         _buildContentForm(),
         const SizedBox(height: 20),
-        EntryEditorTagHandler(
-          controller: controller,
-          readOnly: readOnly,
-        ),
+        EntryEditorTagHandler(controller: controller, readOnly: readOnly),
         const SizedBox(height: 20),
         _buildMetadataForm(),
         const SizedBox(height: 40),
@@ -161,10 +163,7 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
               ),
               maxLines: null,
               minLines: 8,
-              style: DsTypography.body.copyWith(
-                color: theme.text,
-                height: 1.5,
-              ),
+              style: DsTypography.body.copyWith(color: theme.text, height: 1.5),
             ),
           ),
         ],
@@ -203,10 +202,9 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
             icon: DsIconKind.pin,
             iconColor: theme.primary,
             label: 'calendar_album_location'.tr,
-            value:
-                controller.locationController.text.isNotEmpty
-                    ? controller.locationController.text
-                    : 'calendar_album_add_location'.tr,
+            value: controller.locationController.text.isNotEmpty
+                ? controller.locationController.text
+                : 'calendar_album_add_location'.tr,
             onTap: readOnly
                 ? null
                 : () => _handleLocationSelection(widget.parentContext),
@@ -219,10 +217,10 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
             icon: DsIconKind.sun,
             iconColor: theme.secondary,
             label: 'calendar_album_weather'.tr,
-            value:
-                controller.weather != null
-                    ? 'calendar_album_weather_${controller.weather!.toLowerCase()}'.tr
-                    : 'calendar_album_add_weather'.tr,
+            value: controller.weather != null
+                ? 'calendar_album_weather_${controller.weather!.toLowerCase()}'
+                      .tr
+                : 'calendar_album_add_weather'.tr,
             onTap: readOnly ? null : () => _showWeatherPicker(weatherOptions),
           ),
         ),

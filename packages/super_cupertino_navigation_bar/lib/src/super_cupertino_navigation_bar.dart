@@ -196,9 +196,14 @@ class _SuperScaffoldState extends State<SuperScaffold> {
       large: true,
     );
 
-    double topPadding = MediaQuery.of(context).padding.top;
+    // 弹层路由（bottom sheet / dialog 等 opaque=false 的路由）顶部不处于
+    // 状态栏下方，header 若仍叠加状态栏高度会残留一条空白占位：
+    // top inset 归零，并让子树（含 body 的 SafeArea）读到已消费的值
+    final bool inModalRoute = ModalRoute.of(context)?.opaque == false;
+    double topPadding =
+        inModalRoute ? 0 : MediaQuery.of(context).padding.top;
 
-    return PopScope(
+    final Widget tree = PopScope(
       canPop: !Store.instance.searchBarHasFocus.value,
       // shouldAddCallback: Store.instance.searchBarHasFocus.value,
       child: SizedBox(
@@ -1072,6 +1077,16 @@ class _SuperScaffoldState extends State<SuperScaffold> {
         ),
       ),
     );
+    if (inModalRoute) {
+      // 子树统一消费 top inset：header 内部若干处直接读
+      // MediaQuery.paddingOf(context).top，须与归零后的 topPadding 一致
+      return MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: tree,
+      );
+    }
+    return tree;
   }
 
   void searchBarFocusThings(bool hasFocus) {
