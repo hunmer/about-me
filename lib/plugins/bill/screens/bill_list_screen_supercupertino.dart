@@ -7,10 +7,12 @@ import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/bill/models/bill_model.dart';
 import 'package:aboutme/plugins/bill/models/bill.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/widgets/month_selector.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/widgets/run_receipt_printer.dart';
 import 'package:aboutme/widgets/swipe_action/index.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -43,7 +45,7 @@ class _BillListScreenSupercupertinoState
 
   // Data State
   List<BillModel> _allMonthBills = []; // All bills for the focused month
-  Map<DateTime, _DailyStats> _dailyStats = {};
+  final _dailyStats = ValueNotifier<Map<DateTime, _DailyStats>>({});
 
   String _filterCategory =
       'all'; // 'all', 'income', 'expense', or specific category name
@@ -79,22 +81,34 @@ class _BillListScreenSupercupertinoState
     widget.billPlugin.addListener(_billPluginListener);
 
     // 初始化时加载当月账单数据，确保日历能显示账单标记
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadMonthBills();
-    });
+    _loadMonthBills();
 
     // 初始化时设置路由上下文（包含选中的日期）
     _updateRouteContext(_focusedDay, selectedDay: _selectedDay);
   }
 
   @override
+  void didUpdateWidget(covariant BillListScreenSupercupertino oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.accountId != widget.accountId) {
+      debugPrint(
+        '[BillList] 账户变更: ${oldWidget.accountId} -> ${widget.accountId}',
+      );
+      _loadMonthBills();
+    }
+  }
+
+  @override
   void dispose() {
     _calendarController.dispose();
     widget.billPlugin.removeListener(_billPluginListener);
+    _dailyStats.dispose();
     super.dispose();
   }
 
   void _loadMonthBills() {
+    if (!mounted) return;
+
     // 检查账户数据是否可用
     if (widget.billPlugin.accounts.isEmpty) {
       Future.delayed(const Duration(seconds: 1), () {
@@ -106,9 +120,20 @@ class _BillListScreenSupercupertinoState
     }
 
     try {
-      final currentAccount = widget.billPlugin.accounts.firstWhere(
-        (account) => account.id == widget.accountId,
-      );
+      final currentAccount = widget.billPlugin.accounts
+          .where((account) => account.id == widget.accountId)
+          .firstOrNull;
+      if (currentAccount == null) {
+        debugPrint(
+          '[BillList] 未找到账户: accountId="${widget.accountId}", '
+          'availableIds=${widget.billPlugin.accounts.map((a) => a.id).toList()}',
+        );
+        setState(() {
+          _allMonthBills = [];
+        });
+        _dailyStats.value = {};
+        return;
+      }
       // Calculate month start and end
       final monthStart = DateTime(_focusedDay.year, _focusedDay.month, 1);
       final monthEnd = DateTime(
@@ -164,15 +189,13 @@ class _BillListScreenSupercupertinoState
       if (mounted) {
         setState(() {
           _allMonthBills = bills;
-          _dailyStats = stats;
         });
-
-        // 强制刷新日历显示
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (mounted) {
-            setState(() {});
-          }
-        });
+        _dailyStats.value = stats;
+        debugPrint(
+          '[BillList] 加载完成: accountId=${widget.accountId}, '
+          'month=${_focusedDay.year}-${_focusedDay.month}, '
+          'bills=${bills.length}, days=${stats.length}',
+        );
       }
     } catch (e) {
       debugPrint('加载账单失败: $e');
@@ -247,21 +270,17 @@ class _BillListScreenSupercupertinoState
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  // ---- 当月账单小票（RunReceiptPrinter）----
+  // ---- 单日账单小票（RunReceiptPrinter）----
 
   RunReceiptData _buildReceiptData() {
-    final bills = [..._allMonthBills]..sort((a, b) => a.date.compareTo(b.date));
+    final day = _selectedDay ?? DateTime.now();
+    final bills = [..._selectedDayBills]..sort((a, b) => a.date.compareTo(b.date));
     final accountName =
         widget.billPlugin.accounts
             .where((a) => a.id == widget.accountId)
             .firstOrNull
             ?.title ??
         'ALL ACCOUNTS';
-    final daysInMonth = DateTime(
-      _focusedDay.year,
-      _focusedDay.month + 1,
-      0,
-    ).day;
 
     double income = 0, expense = 0;
     final segments = <RunReceiptSegment>[
@@ -269,7 +288,7 @@ class _BillListScreenSupercupertinoState
         RunReceiptSegment(
           label: bill.title.isEmpty ? bill.category : bill.title,
           pace: (bill.isExpense ? '-' : '+') + _formatCurrency(bill.amount),
-          time: DateFormat('MM-dd').format(bill.date),
+          time: DateFormat('HH:mm').format(bill.date),
           hr: i + 1,
           zoneColor: bill.isExpense ? _expenseColor : _incomeColor,
         ),
@@ -284,16 +303,21 @@ class _BillListScreenSupercupertinoState
     final balance = income - expense;
 
     return RunReceiptData(
-      title: 'BILL RECEIPT',
+      title: 'bill_receiptTitle'.tr.toUpperCase(),
       orderNo:
-          'ORDER:#${_focusedDay.year}'
-          '${_focusedDay.month.toString().padLeft(2, '0')}',
-      date: DateFormat('MMMM yyyy', 'en_US')
-          .format(_focusedDay)
-          .toUpperCase(),
+          'ORDER:#${day.year}'
+          '${day.month.toString().padLeft(2, '0')}'
+          '${day.day.toString().padLeft(2, '0')}',
+      date: DateFormat('MMMM dd, yyyy', 'en_US').format(day).toUpperCase(),
       mode: accountName.toUpperCase(),
       segments: segments,
-      tableHeaders: const ['ITEM', 'AMOUNT', 'TYPE', 'DATE', '#'],
+      tableHeaders: [
+        'bill_receiptItem'.tr,
+        'bill_receiptAmount'.tr,
+        'bill_receiptType'.tr,
+        'bill_receiptDate'.tr,
+        '#',
+      ],
       tableAligns: const [
         TextAlign.left,
         TextAlign.right,
@@ -302,30 +326,45 @@ class _BillListScreenSupercupertinoState
         TextAlign.right,
       ],
       stats: [
-        ('INCOME', _formatCurrency(income)),
-        ('EXPENSE', _formatCurrency(expense)),
-        ('BILLS', '${bills.length} ITEMS'),
-        (
-          'AVG DAILY',
-          _formatCurrency(expense / daysInMonth),
-        ),
+        ('bill_receiptIncome'.tr, _formatCurrency(income)),
+        ('bill_receiptExpense'.tr, _formatCurrency(expense)),
+        ('bill_receiptBills'.tr, '${bills.length}'),
+        ('bill_receiptBalance'.tr, _formatCurrency(balance)),
       ],
-      paceRangeText: 'BALANCE ${_formatCurrency(balance)}',
-      chartStartLabel: 'DAY 1',
-      chartEndLabel: 'DAY $daysInMonth',
-      totalLabel:
-          (balance < 0 ? '-' : '+') + _formatCurrency(balance.abs()),
-      description:
-          'This receipt summarizes the bills of\n'
-          'the month above, capturing income,\n'
-          'expense and balance as a simple\n'
-          'record of where money went.',
+      paceRangeText:
+          '${'bill_receiptBalance'.tr} ${_formatCurrency(balance)}',
+      chartStartLabel: '00:00',
+      chartEndLabel: '23:59',
+      totalLabel: (balance < 0 ? '-' : '+') + _formatCurrency(balance.abs()),
+      description: 'bill_receiptDescription'.tr,
       footerOffice: 'ABOUT ME',
       footerDate: DateFormat('EEE-MMM HH:mm', 'en_US')
           .format(DateTime.now())
           .toUpperCase(),
-      slogan: 'EVERY BILL LEAVES A TRACE.',
+      slogan: 'bill_receiptSlogan'.tr,
       generatedBy: 'GENERATED LOCALLY VIA ABOUT ME.',
+    );
+  }
+
+  /// 导出小票图片后用 GalleryViewer 打开（内置分享/保存到相册）
+  void _openExportedReceipt(String filePath) {
+    NavigationHelper.push(
+      context,
+      GalleryViewer(
+        title: 'bill_receiptTitle'.tr,
+        showFileActions: true,
+        entranceAnimation: true,
+        photos: [
+          GalleryPhoto(
+            url: filePath,
+            caption: 'bill_receiptTitle'.tr,
+            dateText: DateFormat('yyyy-MM-dd').format(
+              _selectedDay ?? DateTime.now(),
+            ),
+          ),
+        ],
+      ),
+      routeName: '/gallery_viewer',
     );
   }
 
@@ -337,12 +376,15 @@ class _BillListScreenSupercupertinoState
         builder: (_) => Scaffold(
           backgroundColor: const Color(0xFFF3F3F1),
           appBar: AppBar(
-            title: Text('bill_billList'.tr),
+            title: Text('bill_receiptTitle'.tr),
             backgroundColor: Colors.transparent,
             foregroundColor: Colors.black87,
             elevation: 0,
           ),
-          body: RunReceiptPrinter(data: _buildReceiptData()),
+          body: RunReceiptPrinter(
+            data: _buildReceiptData(),
+            onExported: _openExportedReceipt,
+          ),
         ),
       ),
     );
@@ -351,7 +393,7 @@ class _BillListScreenSupercupertinoState
   Widget _buildCalendarCell(DateTime day, bool isSelected) {
     final theme = DSThemeBridge.resolve(context);
     final date = DateTime(day.year, day.month, day.day);
-    final stats = _dailyStats[date];
+    final stats = _dailyStats.value[date];
     final isToday = _isSameDay(DateTime.now(), day);
     final income = stats?.income ?? 0;
     final expense = stats?.expense ?? 0;
@@ -476,7 +518,7 @@ class _BillListScreenSupercupertinoState
       enableLargeTitle: true,
       actions: [
         // SuperAppBar 的 actions 经 Overlay 渲染,DS 按钮需自带 DSThemeBridge
-        // 打印当月账单小票（热敏打印动画，支持导出图片）
+        // 打印选中日账单小票（热敏打印动画，支持导出图片）
         DSThemeBridge(
           child: Builder(
             builder: (context) {
@@ -486,7 +528,7 @@ class _BillListScreenSupercupertinoState
                 size: 36,
                 color: theme.surfaceAlt,
                 iconColor: theme.textSub,
-                tooltip: 'bill_billList'.tr,
+                tooltip: 'bill_receiptTitle'.tr,
                 onPressed: _openReceiptPrinter,
               );
             },
@@ -606,9 +648,15 @@ class _BillListScreenSupercupertinoState
               monthCellBuilder:
                   (BuildContext context, MonthCellDetails details) {
                     final day = details.date;
-                    final isSelected =
-                        _selectedDay != null && _isSameDay(day, _selectedDay!);
-                    return _buildCalendarCell(day, isSelected);
+                    // 月视图可能复用单元格，直接监听统计以响应首次加载和后续更新。
+                    return ValueListenableBuilder<Map<DateTime, _DailyStats>>(
+                      valueListenable: _dailyStats,
+                      builder: (context, stats, child) {
+                        final isSelected = _selectedDay != null &&
+                            _isSameDay(day, _selectedDay!);
+                        return _buildCalendarCell(day, isSelected);
+                      },
+                    );
                   },
               onTap: (CalendarTapDetails details) {
                 if (details.date != null) {

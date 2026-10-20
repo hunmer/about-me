@@ -6,11 +6,14 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/utils/blob_url.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
+import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:share_plus/share_plus.dart';
@@ -466,7 +469,7 @@ class _GalleryViewerState extends State<GalleryViewer>
             ),
           ),
           const SizedBox(width: 12),
-          // 文件操作：仅传媒体路径即可分享 / 定位（针对当前页）
+          // 文件操作：仅传媒体路径即可分享 / 保存 / 定位（针对当前页）
           if (widget.showFileActions) ...[
             _buildHeaderIconButton(
               Icons.ios_share,
@@ -478,6 +481,22 @@ class _GalleryViewerState extends State<GalleryViewer>
               ),
             ),
             const SizedBox(width: 8),
+            // 保存图片：移动端存系统相册，桌面端弹出保存文件对话框
+            if (!kIsWeb &&
+                !current.isVideo &&
+                !current.isAudio &&
+                !current.isFile) ...[
+              _buildHeaderIconButton(
+                UniversalPlatform.isAndroid || UniversalPlatform.isIOS
+                    ? Icons.photo_library_outlined
+                    : Icons.download,
+                UniversalPlatform.isAndroid || UniversalPlatform.isIOS
+                    ? 'app_saveToAlbum'.tr
+                    : 'app_saveToFile'.tr,
+                () => GalleryFileActions.saveToAlbum(context, current.url),
+              ),
+              const SizedBox(width: 8),
+            ],
             if (!kIsWeb) ...[
               _buildHeaderIconButton(
                 Icons.folder_open,
@@ -1471,6 +1490,63 @@ class GalleryFileActions {
         await Share.share(url, subject: text);
       } else {
         if (context.mounted) Toast.error('file_preview_fileNotExist'.tr);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Toast.error(
+          '${'file_preview_errorFilePreviewFailed'.tr}${e.toString()}',
+        );
+      }
+    }
+  }
+
+  /// 保存图片到系统相册：移动端经 photo_manager 写入相册（自动申请权限），
+  /// 桌面端弹出保存文件对话框；在线 URL 先下载字节
+  static Future<void> saveToAlbum(BuildContext context, String url) async {
+    try {
+      Uint8List? bytes;
+      var name = path.basename(url.split('?').first);
+      if (_isHttpUrl(url)) {
+        final res = await http.get(Uri.parse(url));
+        if (res.statusCode != 200) {
+          throw Exception('HTTP ${res.statusCode}');
+        }
+        bytes = res.bodyBytes;
+      } else {
+        final absolutePath = await ImageUtils.getAbsolutePath(url);
+        final file = File(absolutePath);
+        if (!await file.exists()) {
+          if (context.mounted) Toast.error('file_preview_fileNotExist'.tr);
+          return;
+        }
+        bytes = await file.readAsBytes();
+        name = path.basename(absolutePath);
+      }
+      if (bytes.isEmpty) {
+        if (context.mounted) Toast.error('file_preview_fileNotExist'.tr);
+        return;
+      }
+
+      if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+        final state = await PhotoManager.requestPermissionExtend();
+        if (!state.hasAccess) {
+          if (context.mounted) Toast.error('app_stickerNoPermission'.tr);
+          return;
+        }
+        await PhotoManager.editor.saveImage(bytes, filename: name, title: name);
+        if (context.mounted) Toast.success('app_stickerSavedAlbum'.tr);
+      } else {
+        final String? savePath = await FilePicker.platform.saveFile(
+          fileName: name,
+          type: FileType.image,
+        );
+        if (savePath == null) return; // 用户取消
+        final ext = path.extension(name);
+        final file = File(
+          savePath.toLowerCase().endsWith(ext) ? savePath : '$savePath$ext',
+        );
+        await file.writeAsBytes(bytes);
+        if (context.mounted) Toast.success('${'app_saveToFile'.tr}: ${file.path}');
       }
     } catch (e) {
       if (context.mounted) {

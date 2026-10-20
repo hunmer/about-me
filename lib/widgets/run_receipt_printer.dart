@@ -110,17 +110,23 @@ class RunReceiptData {
 ///
 /// 打印内容通过 [data] 参数化；打印机动画/拖拽/重播由通用组件
 /// [ThermalPrinter] 提供，外部可用 GlobalKey 调 `ThermalPrinterState.replay()`。
-/// 右上角「导出图片」按钮将 [RunReceiptContent] 完整渲染为 PNG 并唤起系统分享。
+/// 右上角「导出图片」按钮将 [RunReceiptContent] 完整渲染为 PNG：
+/// 传入 [onExported] 时把临时文件路径交给调用方（如打开图片查看器），
+/// 否则降级为直接唤起系统分享。
 class RunReceiptPrinter extends StatefulWidget {
   final RunReceiptData data;
   final bool autoStart;
   final bool showExportButton;
+
+  /// 导出完成回调（文件已写入临时目录，路径为参数）
+  final void Function(String filePath)? onExported;
 
   const RunReceiptPrinter({
     super.key,
     this.data = const RunReceiptData(),
     this.autoStart = true,
     this.showExportButton = true,
+    this.onExported,
   });
 
   @override
@@ -145,6 +151,10 @@ class _RunReceiptPrinterState extends State<RunReceiptPrinter> {
         '${dir.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.png',
       );
       await file.writeAsBytes(bytes);
+      if (widget.onExported != null) {
+        widget.onExported!(file.path);
+        return;
+      }
       await Share.shareXFiles([XFile(file.path)]);
     } catch (e) {
       Toast.error('导出失败: $e');

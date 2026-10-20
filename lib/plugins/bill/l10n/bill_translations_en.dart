@@ -223,5 +223,22 @@ class BillTranslationsEn {
   // Sample data
   'bill_sampleAccountsTitle': 'Sample accounts & bills',
   'bill_sampleAccountsDesc': 'Create sample accounts with bill records',
+
+  // Daily bill receipt
+  'bill_receiptTitle': 'Bill Receipt',
+  'bill_receiptItem': 'ITEM',
+  'bill_receiptAmount': 'AMOUNT',
+  'bill_receiptType': 'TYPE',
+  'bill_receiptDate': 'TIME',
+  'bill_receiptIncome': 'INCOME',
+  'bill_receiptExpense': 'EXPENSE',
+  'bill_receiptBills': 'BILLS',
+  'bill_receiptBalance': 'BALANCE',
+  'bill_receiptSlogan': 'EVERY BILL LEAVES A TRACE.',
+  'bill_receiptDescription':
+      'This receipt summarizes the bills of\n'
+      'the day above, capturing income,\n'
+      'expense and balance as a simple\n'
+      'record of where money went.',
 };
 }

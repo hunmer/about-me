@@ -101,6 +101,7 @@ import 'widgets/sparkle_stat_grid_card.dart';
 import 'widgets/period_score_gauge_card.dart';
 import 'widgets/monthly_capsule_chart_card.dart';
 import 'widgets/marquee_button_list_card.dart';
+import 'widgets/semicircle_gauge_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -203,6 +204,7 @@ enum CommonWidgetId {
   periodScoreGaugeCard,
   monthlyCapsuleChartCard,
   marqueeButtonListCard,
+  semicircleGaugeCard,
 }
 
 /// 公共小组件元数据
@@ -1005,6 +1007,14 @@ class CommonWidgetsRegistry {
       defaultSize: Wide2Size(),
       supportedSizes: [WideSize(), Wide2Size()],
     ),
+    CommonWidgetId.semicircleGaugeCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.semicircleGaugeCard,
+      name: '半圆仪表盘统计卡片',
+      description: '半圆三段式扇环：纯白进度段 + 斜纹段 + 半透明剩余段，哑铃指针分割，环内中心显示数值，支持拖拽调节',
+      icon: Icons.speed,
+      defaultSize: MediumSize(),
+      supportedSizes: [MediumSize(), WideSize(), LargeSize(), Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1271,6 +1281,8 @@ class CommonWidgetBuilder {
         );
       case CommonWidgetId.marqueeButtonListCard:
         return MarqueeButtonListCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.semicircleGaugeCard:
+        return SemicircleGaugeCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

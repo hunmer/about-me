@@ -558,6 +558,10 @@ class _BillMainViewState extends State<BillMainView>
       return const Center(child: DSThemeBridge(child: DSLoadingDots()));
     }
 
+    // 首帧的账户状态检查尚未执行，先使用第一个账户，避免传入空 ID。
+    final accountId =
+        (billPlugin.selectedAccount ?? billPlugin.accounts.first).id;
+
     return CustomBottomBar(
       currentIndex: _currentPage,
       tabController: _tabController,
@@ -569,12 +573,12 @@ class _BillMainViewState extends State<BillMainView>
         children: [
           BillListScreenSupercupertino(
             billPlugin: billPlugin,
-            accountId: billPlugin.selectedAccount?.id ?? '',
+            accountId: accountId,
           ),
           SubscriptionListScreen(billPlugin: billPlugin),
           BillStatsScreenSupercupertino(
             billPlugin: billPlugin,
-            accountId: billPlugin.selectedAccount?.id ?? '',
+            accountId: accountId,
             // 使用路由参数中的日期范围，如果不存在则使用默认值
             startDate:
                 _statsStartDate ??

@@ -389,6 +389,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
+        icon: Icons.speed,
+        title: '半圆仪表盘统计卡片',
+        subtitle: 'SemicircleGaugeCard - 半圆三段式扇环仪表盘与哑铃指针',
+        route: '/widgets_gallery/semicircle_gauge_card',
+      ),
+      _buildListItem(
+        context,
         icon: Icons.trending_up,
         title: '迷你趋势卡片',
         subtitle: 'MiniTrendCard - 迷你折线图趋势展示卡片',

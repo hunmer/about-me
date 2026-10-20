@@ -218,5 +218,21 @@ class BillTranslationsZh {
   // 示例数据
   'bill_sampleAccountsTitle': '示例账户与账单',
   'bill_sampleAccountsDesc': '创建包含账单记录的示例账户',
+
+  // 单日账单小票
+  'bill_receiptTitle': '账单小票',
+  'bill_receiptItem': '项目',
+  'bill_receiptAmount': '金额',
+  'bill_receiptType': '类型',
+  'bill_receiptDate': '时间',
+  'bill_receiptIncome': '收入',
+  'bill_receiptExpense': '支出',
+  'bill_receiptBills': '笔数',
+  'bill_receiptBalance': '结余',
+  'bill_receiptSlogan': '每一笔账单都留下痕迹。',
+  'bill_receiptDescription':
+      '这是您当日账单的汇总小票，\n'
+      '记录每一笔收支与结余，\n'
+      '可作为当日记账的留存凭证。',
 };
 }
