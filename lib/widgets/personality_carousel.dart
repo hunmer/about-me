@@ -297,6 +297,12 @@ class _PersonalityCarouselState extends State<PersonalityCarousel>
           math.pow(_springDamping, frames);
       _currentPosition += _velocity * frames;
       _currentPosition = _normalize(_currentPosition);
+
+      // 到位后完全静止，避免微幅残速造成的抖动
+      if (diff.abs() < 0.0005 && _velocity.abs() < 0.0005) {
+        _velocity = 0;
+        _currentPosition = _targetIndex;
+      }
     }
 
     // 眼球游移平滑插值
@@ -484,20 +490,18 @@ class _PersonalityCarouselState extends State<PersonalityCarousel>
     final secondary = Color.lerp(
         _items[floorIdx].glowSecondary, _items[ceilIdx].glowSecondary, fraction)!;
 
-    return ImageFiltered(
-      imageFilter: ui.ImageFilter.blur(sigmaX: 36, sigmaY: 36),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: const Alignment(0, -0.44),
-            radius: 0.9,
-            colors: [
-              primary.withValues(alpha: 0.52),
-              secondary.withValues(alpha: 0.28),
-              widget.backgroundColor.withValues(alpha: 0),
-            ],
-            stops: const [0, 0.48, 0.8],
-          ),
+    // 径向渐变本身已是软边缘，无需再高斯模糊（模糊每层每帧开销很大）
+    return Container(
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: const Alignment(0, -0.44),
+          radius: 0.9,
+          colors: [
+            primary.withValues(alpha: 0.52),
+            secondary.withValues(alpha: 0.28),
+            widget.backgroundColor.withValues(alpha: 0),
+          ],
+          stops: const [0, 0.48, 0.8],
         ),
       ),
     );
@@ -568,19 +572,32 @@ class _PersonalityCarouselState extends State<PersonalityCarousel>
     final opacity =
         absDelta > 1.45 ? 0.0 : _lerp(1.0, 0.78, math.min(1.0, absDelta));
 
-    // 漂浮动效（与 HTML orbFloat 一致，带相位偏移）
-    final phase = ((_elapsedSeconds / _floatPeriod) -
-            (index * 1.1 / _floatPeriod)) %
-        1.0;
-    final floatWave = math.sin(phase * math.pi);
-    final floatY = -6 * floatWave;
-    final floatScale = 1 + 0.018 * floatWave;
-
     // 眼球视差：滑动时反向看 + 空闲游移（仅激活球）
     final swipeLookX = (delta * -28 - _velocity * 36).clamp(-24.0, 24.0);
     final activeWeight = math.max(0.0, 1 - absDelta * 1.5);
-    final eyeX = swipeLookX + _eyeX * activeWeight;
-    final eyeY = _eyeY * activeWeight;
+    var eyeX = swipeLookX + _eyeX * activeWeight;
+    var eyeY = _eyeY * activeWeight;
+
+    // 漂浮动效相位（与 HTML orbFloat 一致，带相位偏移）
+    final phase =
+        ((_elapsedSeconds / _floatPeriod) - (index * 1.1 / _floatPeriod)) % 1.0;
+
+    // 空闲且静止时冻结侧位球的内部动效：
+    // 侧位球带高斯模糊，内部动效每帧变化会迫使模糊每帧重算，导致抖动。
+    // 冻结后模糊子树完全静态，由 GPU 缓存。
+    final frozen = !_isDragging &&
+        _velocity == 0 &&
+        _currentPosition == _targetIndex &&
+        extraBlur > 0.1;
+    var effectivePhase = phase;
+    if (frozen) {
+      effectivePhase = 0.25; // 漂浮中段姿态
+      eyeX = 0;
+      eyeY = 0;
+    }
+    final floatWave = math.sin(effectivePhase * math.pi);
+    final floatY = -6 * floatWave;
+    final floatScale = 1 + 0.018 * floatWave;
 
     Widget content = SizedBox(
       width: _orbSize,
@@ -590,8 +607,8 @@ class _PersonalityCarouselState extends State<PersonalityCarousel>
         child: Transform.scale(
           scale: floatScale,
           child: item.avatarBuilder != null
-              ? _buildCustomAvatar(item, phase)
-              : _buildBuiltInOrb(item, phase),
+              ? _buildCustomAvatar(item, effectivePhase)
+              : _buildBuiltInOrb(item, effectivePhase),
         ),
       ),
     );
@@ -644,7 +661,7 @@ class _PersonalityCarouselState extends State<PersonalityCarousel>
                 _goTo(index);
               }
             },
-            child: content,
+            child: RepaintBoundary(child: content),
           ),
         ),
       ),
@@ -659,40 +676,37 @@ class _PersonalityCarouselState extends State<PersonalityCarousel>
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // 外层弥散光环
-        Positioned.fill(
+        // 外层弥散光环（外扩 18px）
+        Positioned(
+          top: -18,
+          left: -18,
+          right: -18,
+          bottom: -18,
           child: Transform.scale(
             scale: 1 + 0.08 * auraWave,
             child: Opacity(
               opacity: _lerp(0.62, 0.82, auraWave),
-              child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                child: Container(
-                  margin: const EdgeInsets.all(-18),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [palette.aura, palette.aura.withValues(alpha: 0)],
-                      stops: const [0, 0.72],
-                    ),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [palette.aura, palette.aura.withValues(alpha: 0)],
+                    stops: const [0, 0.72],
                   ),
                 ),
               ),
             ),
           ),
         ),
-        // 球体
+        // 球体（渐变末段透明过渡，天然软边缘）
         Positioned.fill(
-          child: ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(sigmaX: 1.8, sigmaY: 1.8),
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  center: const Alignment(0, -0.3),
-                  colors: [...palette.sphere, palette.sphere.last.withValues(alpha: 0.2)],
-                  stops: const [0, 0.52, 0.82, 1],
-                ),
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                center: const Alignment(0, -0.3),
+                colors: [...palette.sphere, palette.sphere.last.withValues(alpha: 0.2)],
+                stops: const [0, 0.52, 0.82, 1],
               ),
             ),
           ),
@@ -704,19 +718,16 @@ class _PersonalityCarouselState extends State<PersonalityCarousel>
           width: _orbSize * 0.68,
           height: _orbSize * 0.62,
           child: IgnorePointer(
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    center: const Alignment(0, -0.24),
-                    colors: [
-                      Colors.white.withValues(alpha: 0.55),
-                      Colors.white.withValues(alpha: 0),
-                    ],
-                    stops: const [0, 0.72],
-                  ),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  center: const Alignment(0, -0.24),
+                  colors: [
+                    Colors.white.withValues(alpha: 0.55),
+                    Colors.white.withValues(alpha: 0),
+                  ],
+                  stops: const [0, 0.72],
                 ),
               ),
             ),
@@ -766,20 +777,17 @@ class _PersonalityCarouselState extends State<PersonalityCarousel>
           scale: 1 + 0.08 * auraWave,
           child: Opacity(
             opacity: _lerp(0.5, 0.7, auraWave),
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-              child: Container(
-                width: _orbSize + 36,
-                height: _orbSize + 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      item.glowPrimary,
-                      item.glowPrimary.withValues(alpha: 0),
-                    ],
-                    stops: const [0, 0.72],
-                  ),
+            child: Container(
+              width: _orbSize + 36,
+              height: _orbSize + 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    item.glowPrimary,
+                    item.glowPrimary.withValues(alpha: 0),
+                  ],
+                  stops: const [0, 0.72],
                 ),
               ),
             ),

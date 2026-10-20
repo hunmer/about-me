@@ -64,6 +64,8 @@ class RouteParser {
     // 活动插件
     '/activity': '用户正在查看活动记录',
     '/activity_timeline': '用户正在查看 {date} 的活动时间轴',
+    '/activity_stats': '用户正在查看活动统计',
+    '/activity_calendar': '用户正在查看活动日历',
 
     // 其他插件
     '/tracker': '用户正在查看目标追踪',
@@ -114,6 +116,8 @@ class RouteParser {
     '/calendar_album_stats': '用户正在查看日历相册统计（{entryCount} 篇日记，连续 {streakDays} 天）',
     '/calendar_album_entry_editor': '用户正在{mode}日记：{title}（日期: {date}）',
     '/database': '用户正在查看自定义数据库',
+    '/database_detail': '用户正在查看数据库：{databaseName}（{recordCount} 条记录）',
+    '/database_edit': '用户正在编辑数据库：{databaseName}（{fieldCount} 个字段）',
     '/day': '用户正在查看日计划',
     '/day_list': '用户正在查看纪念日列表（共 {count} 个）',
     '/day_detail': '用户正在查看纪念日详情 - {title}（日期: {date}）',
@@ -171,6 +175,8 @@ class RouteParser {
     // 活动插件
     '/activity': ['分析我今天的活动情况', '帮我记录新活动'],
     '/activity_timeline': ['分析这天的活动时间轴', '总结这天的活动分布'],
+    '/activity_stats': ['总结我的活动频率', '哪类活动花的时间最多？'],
+    '/activity_calendar': ['帮我回顾最近的活动安排', '总结这个月的活动情况'],
 
     // 其他插件
     '/tracker': ['分析我的目标进度', '帮我调整目标计划'],
@@ -201,6 +207,8 @@ class RouteParser {
     '/calendar_album_album': ['帮我回顾相册里的照片', '总结照片记录的生活'],
     '/calendar_album_stats': ['分析我的记录频率', '我最近的记录习惯怎么样？'],
     '/database': ['帮我分析数据库数据', '总结数据的整体情况'],
+    '/database_detail': ['总结这个数据库的内容', '帮我分析这些记录'],
+    '/database_edit': ['帮我想想还需要哪些字段', '优化这个数据库的结构'],
     '/day': ['总结最近的日计划完成情况', '帮我规划明天'],
     '/day_list': ['整理一下我的纪念日', '最近有什么纪念日要到了？'],
     '/day_detail': ['帮我回顾这个纪念日的意义', '为这个纪念日想句祝福'],

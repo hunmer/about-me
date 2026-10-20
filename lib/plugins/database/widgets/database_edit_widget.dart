@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/widgets/form_fields/field_type_selector_field.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
@@ -56,6 +57,20 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
           ),
         )
         .toList();
+
+    // 上报路由上下文，供"询问当前上下文"识别
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      RouteHistoryManager.updateCurrentContext(
+        pageId: '/database_edit',
+        title: _editedDatabase.name,
+        params: {
+          'databaseId': _editedDatabase.id,
+          'databaseName': _editedDatabase.name,
+          'fieldCount': _fields.length,
+        },
+      );
+    });
   }
 
   @override

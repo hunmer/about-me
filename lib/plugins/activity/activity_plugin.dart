@@ -5,6 +5,7 @@ import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:flutter/gestures.dart';
 import 'package:aboutme/core/widgets/custom_bottom_bar.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -1193,8 +1194,39 @@ class _ActivityMainViewState extends State<ActivityMainView>
         setState(() {
           _currentPage = value;
         });
+        // 更新路由上下文（三个 tab 常驻构建，切 tab 不会触发子页 initState）
+        _updateRouteContext(value);
       }
     });
+  }
+
+  /// 更新路由上下文，使"询问当前上下文"功能能获取到当前tab状态
+  ///
+  /// 时间线 tab 用通用的 /activity：切回时不覆盖时间线页自身
+  /// 上报的带日期上下文（日期变化时由时间线页重新上报详细路由）
+  void _updateRouteContext(int tabIndex) {
+    String pageId;
+    String title;
+
+    switch (tabIndex) {
+      case 1:
+        pageId = '/activity_stats';
+        title = 'activity_statistics'.tr;
+        break;
+      case 2:
+        pageId = '/activity_calendar';
+        title = 'activity_calendar'.tr;
+        break;
+      default:
+        pageId = '/activity';
+        title = 'activity_timeline'.tr;
+    }
+
+    RouteHistoryManager.updateCurrentContext(
+      pageId: pageId,
+      title: title,
+      params: {'tabIndex': tabIndex},
+    );
   }
 
   @override

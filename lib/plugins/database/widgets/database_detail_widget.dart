@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/plugins/database/widgets/record_edit_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
@@ -78,6 +79,19 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
   void initState() {
     super.initState();
     _loadingFuture = widget.controller.loadDatabase(widget.databaseId);
+    // 加载完成后上报路由上下文，供"询问当前上下文"识别
+    _loadingFuture.then((_) {
+      if (!mounted) return;
+      RouteHistoryManager.updateCurrentContext(
+        pageId: '/database_detail',
+        title: widget.controller.currentDatabase?.name ?? 'database_name'.tr,
+        params: {
+          'databaseId': widget.databaseId,
+          'databaseName': widget.controller.currentDatabase?.name ?? '',
+          'recordCount': _allRecords.length,
+        },
+      );
+    });
   }
 
   @override
