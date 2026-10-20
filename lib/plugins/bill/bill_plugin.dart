@@ -562,6 +562,9 @@ class _BillMainViewState extends State<BillMainView>
     final accountId =
         (billPlugin.selectedAccount ?? billPlugin.accounts.first).id;
 
+    // 子栏两侧圆钮（左拍照/右 FAB）仅账单列表页可用
+    final bool onFirstTab = _currentPage == 0;
+
     return CustomBottomBar(
       currentIndex: _currentPage,
       tabController: _tabController,
@@ -587,14 +590,16 @@ class _BillMainViewState extends State<BillMainView>
           ),
         ],
       ),
-      fab: _buildFab(),
+      fab: onFirstTab ? _buildFab() : null,
       // 子栏左侧拍照圆钮：拍照/选图 → 默认识图能力分析 → 勾选入库
-      leadingAction: DsIcon(
-        DsIconKind.camera,
-        size: 16,
-        color: DSThemeBridge.resolve(context).textSub,
-      ),
-      onLeadingTap: _handleScanBill,
+      leadingAction: onFirstTab
+          ? DsIcon(
+              DsIconKind.camera,
+              size: 16,
+              color: DSThemeBridge.resolve(context).textSub,
+            )
+          : null,
+      onLeadingTap: onFirstTab ? _handleScanBill : null,
       items: const [
         DSNavItem(icon: DsIconKind.piggy, label: '账单列表'),
         // 周期性订阅（日历+勾）

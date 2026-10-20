@@ -27,8 +27,13 @@ class DSDatePicker extends StatefulWidget {
   State<DSDatePicker> createState() => _DSDatePickerState();
 }
 
+/// 选择器视图层级：日期网格 -> 月份列表 -> 年份列表
+enum _DPView { date, month, year }
+
 class _DSDatePickerState extends State<DSDatePicker> {
   late DateTime _month;
+
+  _DPView _view = _DPView.date;
 
   static const _weekLabels = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -39,8 +44,27 @@ class _DSDatePickerState extends State<DSDatePicker> {
     _month = DateTime(base.year, base.month);
   }
 
-  void _shiftMonth(int delta) {
-    setState(() => _month = DateTime(_month.year, _month.month + delta));
+  /// 当前十年起始年（如 2023 -> 2020）
+  int get _decadeStart => _month.year ~/ 10 * 10;
+
+  String get _viewTitle => switch (_view) {
+    _DPView.date => '${_month.year}年${_month.month}月',
+    _DPView.month => '${_month.year}年',
+    _DPView.year => '$_decadeStart - ${_decadeStart + 9}',
+  };
+
+  /// 按视图翻页：日期翻月 / 月份翻年 / 年份翻十年
+  void _shiftPage(int delta) {
+    setState(() {
+      switch (_view) {
+        case _DPView.date:
+          _month = DateTime(_month.year, _month.month + delta);
+        case _DPView.month:
+          _month = DateTime(_month.year + delta, _month.month);
+        case _DPView.year:
+          _month = DateTime(_month.year + delta * 10, _month.month);
+      }
+    });
   }
 
   bool _isToday(DateTime d) {
@@ -56,6 +80,16 @@ class _DSDatePickerState extends State<DSDatePicker> {
         v.day == d.day;
   }
 
+  bool _isSelectedMonth(int m) {
+    final v = widget.value;
+    return v != null && v.year == _month.year && v.month == m;
+  }
+
+  bool _isCurrentMonth(int m) {
+    final now = DateTime.now();
+    return now.year == _month.year && now.month == m;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
@@ -69,61 +103,222 @@ class _DSDatePickerState extends State<DSDatePicker> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 头部：翻月 + 年月标题
+        // 头部：翻页 + 标题（点标题逐级下钻：日期->月份->年份）
         Row(
           children: [
-            _NavButton(
-              icon: DsIconKind.chevronLeft,
-              onTap: () => _shiftMonth(-1),
-            ),
+            _NavButton(icon: DsIconKind.chevronLeft, onTap: () => _shiftPage(-1)),
             Expanded(
-              child: Text(
-                '${_month.year}年${_month.month}月',
-                textAlign: TextAlign.center,
-                style: DsTypography.heading.copyWith(color: theme.text),
+              child: Pressable(
+                onPressed:
+                    () => setState(() {
+                      if (_view == _DPView.date) {
+                        _view = _DPView.month;
+                      } else if (_view == _DPView.month) {
+                        _view = _DPView.year;
+                      }
+                    }),
+                semanticLabel: _viewTitle,
+                child: Text(
+                  _viewTitle,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.heading.copyWith(color: theme.text),
+                ),
               ),
             ),
-            _NavButton(
-              icon: DsIconKind.chevronRight,
-              onTap: () => _shiftMonth(1),
-            ),
+            _NavButton(icon: DsIconKind.chevronRight, onTap: () => _shiftPage(1)),
           ],
         ),
         SizedBox(height: theme.spacing.md),
-        // 星期行
-        Row(
-          children: [
-            for (final label in _weekLabels)
-              Expanded(
-                child: Center(
-                  child: Text(
-                    label,
-                    style: DsTypography.caption.copyWith(color: theme.textSub),
-                  ),
-                ),
-              ),
-          ],
-        ),
-        SizedBox(height: theme.spacing.sm),
-        // 日期网格
-        for (var row = 0; row < cells / 7; row++)
-          Padding(
-            padding: EdgeInsets.only(bottom: theme.spacing.xs),
-            child: Row(
-              children: [
-                for (var col = 0; col < 7; col++)
-                  Expanded(
-                    child: Center(
-                      child: _buildCell(
-                        context,
-                        dayIndex: row * 7 + col - firstWeekday + 1,
-                      ),
+        // 网格区域支持横滑翻页（日期翻月/月份翻年/年份翻十年）
+        GestureDetector(
+          onHorizontalDragEnd: (details) {
+            final v = details.primaryVelocity ?? 0;
+            if (v > 200) {
+              _shiftPage(-1);
+            } else if (v < -200) {
+              _shiftPage(1);
+            }
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: switch (_view) {
+              // 月份列表：4行3列，点选后回到该月日期网格
+              _DPView.month => [
+                for (var row = 0; row < 4; row++)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: theme.spacing.xs),
+                    child: Row(
+                      children: [
+                        for (var col = 0; col < 3; col++)
+                          Expanded(
+                            child: _buildMonthCell(
+                              context,
+                              month: row * 3 + col + 1,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
               ],
-            ),
+              // 年份列表：十年一组（首尾各带一格相邻十年的年份，点选跳转）
+              _DPView.year => [
+                for (var row = 0; row < 4; row++)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: theme.spacing.xs),
+                    child: Row(
+                      children: [
+                        for (var col = 0; col < 3; col++)
+                          Expanded(
+                            child: _buildYearCell(
+                              context,
+                              year: _decadeStart - 1 + row * 3 + col + 1,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+              // 日期视图：星期行 + 日期网格
+              _DPView.date => [
+                Row(
+                  children: [
+                    for (final label in _weekLabels)
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            label,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(height: theme.spacing.sm),
+                for (var row = 0; row < cells / 7; row++)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: theme.spacing.xs),
+                    child: Row(
+                      children: [
+                        for (var col = 0; col < 7; col++)
+                          Expanded(
+                            child: Center(
+                              child: _buildCell(
+                                context,
+                                dayIndex: row * 7 + col - firstWeekday + 1,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            },
           ),
+        ),
       ],
+    );
+  }
+
+  /// 月份列表格子：选中月主色胶囊，当前月淡底墨圈，点选后回到日期网格
+  Widget _buildMonthCell(BuildContext context, {required int month}) {
+    final theme = AppTheme.of(context);
+    final selected = _isSelectedMonth(month);
+    final current = _isCurrentMonth(month);
+
+    return Pressable(
+      onPressed:
+          () => setState(() {
+            _month = DateTime(_month.year, month);
+            _view = _DPView.date;
+          }),
+      semanticLabel: '${_month.year}年$month月',
+      child:
+          selected
+              ? JellyBox(
+                height: 44,
+                radius: theme.radii.circle,
+                color: theme.primary,
+                alignment: Alignment.center,
+                child: Text(
+                  '$month月',
+                  style: DsTypography.body.copyWith(color: theme.onPrimary),
+                ),
+              )
+              : Container(
+                height: 44,
+                alignment: Alignment.center,
+                decoration:
+                    current
+                        ? dsSketchDecoration(
+                          theme: theme,
+                          circle: true,
+                          fillColor: theme.primary.mixWhite(0.92),
+                          stroke: theme.primary,
+                          strokeWidth: 1.6,
+                        )
+                        : null,
+                child: Text(
+                  '$month月',
+                  style: DsTypography.body.copyWith(
+                    color: current ? theme.primaryText : theme.text,
+                  ),
+                ),
+              ),
+    );
+  }
+
+  /// 年份列表格子：首尾相邻十年的年份淡化显示，点选后回到月份列表
+  Widget _buildYearCell(BuildContext context, {required int year}) {
+    final theme = AppTheme.of(context);
+    final inDecade = year >= _decadeStart && year < _decadeStart + 10;
+    final selected = widget.value?.year == year;
+    final current = DateTime.now().year == year;
+
+    return Pressable(
+      onPressed:
+          () => setState(() {
+            _month = DateTime(year, _month.month);
+            _view = _DPView.month;
+          }),
+      semanticLabel: '$year年',
+      child:
+          selected
+              ? JellyBox(
+                height: 44,
+                radius: theme.radii.circle,
+                color: theme.primary,
+                alignment: Alignment.center,
+                child: Text(
+                  '$year',
+                  style: DsTypography.body.copyWith(color: theme.onPrimary),
+                ),
+              )
+              : Container(
+                height: 44,
+                alignment: Alignment.center,
+                decoration:
+                    current
+                        ? dsSketchDecoration(
+                          theme: theme,
+                          circle: true,
+                          fillColor: theme.primary.mixWhite(0.92),
+                          stroke: theme.primary,
+                          strokeWidth: 1.6,
+                        )
+                        : null,
+                child: Text(
+                  '$year',
+                  style: DsTypography.body.copyWith(
+                    color:
+                        !inDecade
+                            ? theme.textSub
+                            : (current ? theme.primaryText : theme.text),
+                  ),
+                ),
+              ),
     );
   }
 
@@ -137,40 +332,43 @@ class _DSDatePickerState extends State<DSDatePicker> {
     final selected = _isSelected(date);
     final today = _isToday(date);
 
-    if (selected) {
-      return JellyBox(
-        width: 34,
-        height: 34,
-        radius: theme.radii.circle,
-        color: theme.primary,
-        alignment: Alignment.center,
-        child: Text(
-          '$dayIndex',
-          style: DsTypography.body.copyWith(color: theme.onPrimary),
-        ),
-      );
-    }
-
-    // 今日格：淡紫实底 + 主色墨圈；普通日期无装饰
-    return Container(
-      width: 34,
-      height: 34,
-      alignment: Alignment.center,
-      decoration: today
-          ? dsSketchDecoration(
-              theme: theme,
-              circle: true,
-              fillColor: theme.primary.mixWhite(0.92),
-              stroke: theme.primary,
-              strokeWidth: 1.6,
-            )
-          : null,
-      child: Text(
-        '$dayIndex',
-        style: DsTypography.body.copyWith(
-          color: today ? theme.primaryText : theme.text,
-        ),
-      ),
+    return Pressable(
+      onPressed: () => widget.onChanged?.call(date),
+      semanticLabel: '${_month.year}-${_month.month}-$dayIndex',
+      child:
+          selected
+              ? JellyBox(
+                width: 34,
+                height: 34,
+                radius: theme.radii.circle,
+                color: theme.primary,
+                alignment: Alignment.center,
+                child: Text(
+                  '$dayIndex',
+                  style: DsTypography.body.copyWith(color: theme.onPrimary),
+                ),
+              )
+              // 今日格：淡紫实底 + 主色墨圈；普通日期无装饰
+              : Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: today
+                    ? dsSketchDecoration(
+                        theme: theme,
+                        circle: true,
+                        fillColor: theme.primary.mixWhite(0.92),
+                        stroke: theme.primary,
+                        strokeWidth: 1.6,
+                      )
+                    : null,
+                child: Text(
+                  '$dayIndex',
+                  style: DsTypography.body.copyWith(
+                    color: today ? theme.primaryText : theme.text,
+                  ),
+                ),
+              ),
     );
   }
 }
@@ -229,34 +427,36 @@ Future<DateTime?> showDSDatePickerDialog({
         theme: effectiveTheme,
         radius: effectiveTheme.radii.xxl,
         padding: EdgeInsets.all(effectiveTheme.spacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DSDatePicker(
-              value: initialValue,
-              initialMonth: initialValue,
-              onChanged: (date) => selected = date,
-            ),
-            SizedBox(height: effectiveTheme.spacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: DSButton(
-                    label: cancelText ?? '取消',
-                    variant: DSButtonVariant.outline,
-                    onPressed: () => Navigator.of(context).pop(),
+        child: StatefulBuilder(
+          builder: (context, setState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DSDatePicker(
+                value: selected,
+                initialMonth: initialValue,
+                onChanged: (date) => setState(() => selected = date),
+              ),
+              SizedBox(height: effectiveTheme.spacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: DSButton(
+                      label: cancelText ?? '取消',
+                      variant: DSButtonVariant.outline,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
                   ),
-                ),
-                SizedBox(width: effectiveTheme.spacing.md),
-                Expanded(
-                  child: DSButton(
-                    label: confirmText ?? '确定',
-                    onPressed: () => Navigator.of(context).pop(selected),
+                  SizedBox(width: effectiveTheme.spacing.md),
+                  Expanded(
+                    child: DSButton(
+                      label: confirmText ?? '确定',
+                      onPressed: () => Navigator.of(context).pop(selected),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     ),

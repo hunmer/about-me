@@ -119,6 +119,8 @@ const Map<String, String> appTranslationsEn = {
   'app_monthly': 'Monthly',
   'app_quarterly': 'Quarterly',
   'app_yearly': 'Yearly',
+  'app_daysUnit': 'days',
+  'app_customDays': 'Custom days',
   'app_pleaseEnterAmount': 'Please enter an amount',
   'app_enterValidAmount': 'Enter a valid amount',
   'app_amountGreaterThanZero': 'Amount must be greater than 0',

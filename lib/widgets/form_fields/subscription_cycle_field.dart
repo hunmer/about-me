@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 
 /// 订阅周期选择器字段
 ///
-/// 显示三个快捷按钮：月度(30天)、季度(90天)、年度(365天)
-/// 并在下方显示自定义天数输入框
-class SubscriptionCycleField extends StatelessWidget {
+/// 手绘分段控件（月度30/季度90/年度365）+ 自定义天数输入：
+/// 输入非预设天数时分段控件无选中，两端联动互斥
+class SubscriptionCycleField extends StatefulWidget {
   /// 当前选中的天数
   final int currentDays;
 
@@ -34,86 +37,98 @@ class SubscriptionCycleField extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            Expanded(
-              child: _buildCycleButton(
-                context,
-                monthlyLabel,
-                30,
-                currentDays == 30,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildCycleButton(
-                context,
-                quarterlyLabel,
-                90,
-                currentDays == 90,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildCycleButton(
-                context,
-                yearlyLabel,
-                365,
-                currentDays >= 360,
-              ),
-            ),
-          ],
-        ),
-      ),
+  State<SubscriptionCycleField> createState() => _SubscriptionCycleFieldState();
+}
+
+class _SubscriptionCycleFieldState extends State<SubscriptionCycleField> {
+  late final TextEditingController _controller;
+
+  static bool _isPreset(int days) =>
+      days == 30 || days == 90 || days >= 360;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: _isPreset(widget.currentDays) ? '' : '${widget.currentDays}',
     );
   }
 
-  Widget _buildCycleButton(
-    BuildContext context,
-    String label,
-    int days,
-    bool isSelected,
-  ) {
-    return GestureDetector(
-      onTap: enabled ? () => onDaysChanged(days) : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(8),
-          border:
-              isSelected
-                  ? Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withOpacity(0.3),
-                  )
-                  : null,
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            color:
-                isSelected
-                    ? Theme.of(context).colorScheme.onPrimaryContainer
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+  @override
+  void didUpdateWidget(SubscriptionCycleField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 外部值变化（如表单重置）时同步输入框，避免与分段选中态脱节
+    if (widget.currentDays != oldWidget.currentDays) {
+      final expected = _isPreset(widget.currentDays)
+          ? ''
+          : '${widget.currentDays}';
+      if (_controller.text != expected) {
+        _controller.text = expected;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onSegmentChanged(int index) {
+    // 程序赋值不触发 TextField.onChanged，无循环回调
+    _controller.clear();
+    widget.onDaysChanged([30, 90, 365][index]);
+  }
+
+  void _onInputChanged(String text) {
+    final days = int.tryParse(text.trim());
+    if (days != null && days > 0) {
+      widget.onDaysChanged(days);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 自定义天数（非 30/90/365）时无选中项
+    final selectedIndex = switch (widget.currentDays) {
+      30 => 0,
+      90 => 1,
+      _ when widget.currentDays >= 360 => 2,
+      _ => -1,
+    };
+    final theme = DSThemeBridge.resolve(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DSSegmentedControl(
+            options: [
+              widget.monthlyLabel,
+              widget.quarterlyLabel,
+              widget.yearlyLabel,
+            ],
+            selected: selectedIndex,
+            onChanged: widget.enabled ? _onSegmentChanged : null,
           ),
-        ),
+          const SizedBox(height: 12),
+          DSInput(
+            controller: _controller,
+            hint: 'app_customDays'.tr,
+            enabled: widget.enabled,
+            keyboardType: TextInputType.number,
+            onChanged: _onInputChanged,
+            suffix: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Text(
+                'app_daysUnit'.tr,
+                style: DsTypography.body.copyWith(color: theme.textSub),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

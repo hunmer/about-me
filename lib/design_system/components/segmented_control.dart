@@ -38,8 +38,9 @@ class DSSegmentedControl extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              // 滑动高亮块
-              AnimatedAlign(
+              // 滑动高亮块（selected < 0 表示无选中，隐藏）
+              if (selected >= 0)
+                AnimatedAlign(
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
                 alignment: Alignment(

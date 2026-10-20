@@ -118,6 +118,8 @@ const Map<String, String> appTranslationsZh = {
   'app_monthly': '月度',
   'app_quarterly': '季度',
   'app_yearly': '年度',
+  'app_daysUnit': '天',
+  'app_customDays': '自定义天数',
   'app_pleaseEnterAmount': '请输入金额',
   'app_enterValidAmount': '请输入有效的金额',
   'app_amountGreaterThanZero': '金额必须大于0',
