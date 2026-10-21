@@ -505,7 +505,10 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard>
       builder: (context, child) {
         return Transform.scale(
           scale: 0.85 + 0.15 * buttonAnimation.value,
-          child: Opacity(opacity: buttonAnimation.value, child: child),
+          child: Opacity(
+            opacity: buttonAnimation.value.clamp(0.0, 1.0),
+            child: child,
+          ),
         );
       },
       child: Container(

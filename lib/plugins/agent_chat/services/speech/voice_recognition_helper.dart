@@ -4,7 +4,7 @@ import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/voice_input_dialog.dart';
 import 'package:aboutme/core/services/speech_recognition_config_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
-import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'speech_recognition_config.dart';
 import 'tencent_asr_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -36,19 +36,27 @@ class VoiceRecognitionHelper {
         return false;
       }
 
-      // 显示语音输入对话框
-      final result = await showDSDialog<bool>(
+      // 显示语音输入底部弹层
+      final result = await SmoothBottomSheet.show<bool>(
         context: context,
+        // 允许下滑关闭；录音中由 VoiceInputDialog 内的 SheetPopScope 拦截
+        swipeDismissible: true,
         barrierDismissible: false,
-        theme: DSThemeBridge.resolve(context),
+        // 卡片自绘暗色背景，sheet 外壳透明悬浮
+        backgroundColor: Colors.transparent,
         builder:
-            (context) => DSThemeBridge(
-              child: Builder(
-                builder:
-                    (context) => VoiceInputDialog(
-                      recognitionService: recognitionService,
-                      onRecognitionComplete: onComplete,
-                    ),
+            (context) => Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.paddingOf(context).bottom,
+              ),
+              child: DSThemeBridge(
+                child: Builder(
+                  builder:
+                      (context) => VoiceInputDialog(
+                        recognitionService: recognitionService,
+                        onRecognitionComplete: onComplete,
+                      ),
+                ),
               ),
             ),
       );

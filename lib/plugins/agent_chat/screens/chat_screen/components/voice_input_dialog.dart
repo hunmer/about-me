@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_st
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:smooth_sheets/smooth_sheets.dart';
 import 'package:aboutme/widgets/siri_voice_assistant_orb_demo.dart';
 import '../../../../../../core/services/toast_service.dart';
 import '../../../../../../core/services/speech_recognition_config_service.dart';
@@ -241,8 +242,7 @@ class _VoiceInputDialogState extends State<VoiceInputDialog> {
     setState(() {
       _enablePunctuationReplacement = !_enablePunctuationReplacement;
       // 开启时立即应用替换到当前文本
-      if (_enablePunctuationReplacement &&
-          _textController.text.isNotEmpty) {
+      if (_enablePunctuationReplacement && _textController.text.isNotEmpty) {
         _textController.text = _applyPunctuationReplacement(
           _textController.text,
         );
@@ -345,11 +345,15 @@ class _VoiceInputDialogState extends State<VoiceInputDialog> {
   }
 
   /// 取消并关闭
-  void _cancel() {
+  ///
+  /// 录音中先等待取消完成再关闭，否则会被 SheetPopScope 拦截
+  Future<void> _cancel() async {
     if (_isRecording) {
-      _cancelRecording();
+      await _cancelRecording();
     }
-    Navigator.of(context).pop(false); // 返回 false 表示取消
+    if (mounted) {
+      Navigator.of(context).pop(false); // 返回 false 表示取消
+    }
   }
 
   /// 流光球动画模式跟随识别状态
@@ -382,68 +386,71 @@ class _VoiceInputDialogState extends State<VoiceInputDialog> {
   @override
   Widget build(BuildContext context) {
     final hasText = _textController.text.isNotEmpty;
-    final sendingDisabled =
-        _currentState == SpeechRecognitionState.recording;
+    final sendingDisabled = _currentState == SpeechRecognitionState.recording;
 
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: SiriOrbCard(
-          controller: _orbController,
-          mode: _orbMode,
-          prompt: _promptText,
-          // 识别文本预览（超长自动跑马灯）
-          preview: _previewText,
-          // 真实麦克风音量驱动流光球能量
-          energyStream: widget.recognitionService.volumeStream,
-          height: 430,
-          input: SiriOrbInput(
-            controller: _textController,
-            focusNode: _focusNode,
-            hint: '识别的文本将显示在这里，您也可以编辑...',
-            onSubmitted: (_) => _confirmSend(),
-          ),
-          topLeft: SiriOrbCorner(
-            tooltip: 'agent_chat_cancel'.tr,
-            onTap: _cancel,
-            child: const Icon(Icons.close, color: Colors.white, size: 18),
-          ),
-          // 点击流光球：开始/停止录音；长按松开结束
-          onOrbTap: () {
-            if (_isRecording) {
-              _stopRecording();
-            } else {
-              _startRecording(isFromTap: true);
-            }
-          },
-          onOrbLongPressStart: (_) => _startRecording(isFromTap: false),
-          onOrbLongPressEnd: (_) => _stopRecording(),
-          actions: [
-            SiriOrbAction(
-              icon: Icons.spellcheck,
-              label: '标点替换',
-              highlighted: _enablePunctuationReplacement,
-              onTap: _togglePunctuationReplacement,
-            ),
-            SiriOrbAction(
-              icon: Icons.auto_awesome,
-              label: _isCorrecting ? '纠错中…' : 'AI纠错',
-              highlighted: _isCorrecting,
-              onTap: _isCorrecting ? null : () => _performAICorrection(),
-            ),
-            SiriOrbAction(
-              icon: Icons.delete_sweep_outlined,
-              label: '清空',
-              onTap: hasText ? _clearText : null,
-            ),
-            SiriOrbAction(
-              icon: Icons.send_rounded,
-              label: 'agent_chat_send'.tr,
-              highlighted: true,
-              onTap: sendingDisabled ? null : _confirmSend,
-            ),
-          ],
+    return SheetPopScope<bool>(
+      // 录音中拦截下滑/返回键关闭，避免误丢录音；其余状态可下滑关闭
+      canPop: !_isRecording,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _showErrorSnackBar('录音中，请先停止录音');
+        }
+      },
+      child: SiriOrbCard(
+        controller: _orbController,
+        mode: _orbMode,
+        prompt: _promptText,
+        // 识别文本预览（超长自动跑马灯）
+        preview: _previewText,
+        // 真实麦克风音量驱动流光球能量
+        energyStream: widget.recognitionService.volumeStream,
+        height: 430,
+        input: SiriOrbInput(
+          controller: _textController,
+          focusNode: _focusNode,
+          hint: '识别的文本将显示在这里，您也可以编辑...',
+          onSubmitted: (_) => _confirmSend(),
         ),
+        topRight: SiriOrbCorner(
+          tooltip: 'agent_chat_cancel'.tr,
+          onTap: _cancel,
+          child: const Icon(Icons.close, color: Colors.white, size: 18),
+        ),
+        // 点击流光球：开始/停止录音；长按松开结束
+        onOrbTap: () {
+          if (_isRecording) {
+            _stopRecording();
+          } else {
+            _startRecording(isFromTap: true);
+          }
+        },
+        onOrbLongPressStart: (_) => _startRecording(isFromTap: false),
+        onOrbLongPressEnd: (_) => _stopRecording(),
+        actions: [
+          SiriOrbAction(
+            icon: Icons.spellcheck,
+            label: '标点替换',
+            highlighted: _enablePunctuationReplacement,
+            onTap: _togglePunctuationReplacement,
+          ),
+          SiriOrbAction(
+            icon: Icons.auto_awesome,
+            label: _isCorrecting ? '纠错中…' : 'AI纠错',
+            highlighted: _isCorrecting,
+            onTap: _isCorrecting ? null : () => _performAICorrection(),
+          ),
+          SiriOrbAction(
+            icon: Icons.delete_sweep_outlined,
+            label: '清空',
+            onTap: hasText ? _clearText : null,
+          ),
+          SiriOrbAction(
+            icon: Icons.send_rounded,
+            label: 'agent_chat_send'.tr,
+            highlighted: true,
+            onTap: sendingDisabled ? null : _confirmSend,
+          ),
+        ],
       ),
     );
   }

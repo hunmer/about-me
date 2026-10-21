@@ -378,25 +378,48 @@ class _SiriOrbCardState extends State<SiriOrbCard>
                       color: Colors.white, size: 22),
                 ),
               ),
-            // 自定义动作按钮行（任意数量，自动换行）
+            // 底部动作按钮行（单行居中，放不下时横向滚动；抽屉打开时滑出避让）
             if (widget.actions.isNotEmpty)
               Positioned(
-                left: 24,
-                right: 24,
-                bottom: 197,
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final action in widget.actions)
-                      _ActionButton(action: action),
-                  ],
+                left: 76,
+                right: 76,
+                bottom: 22,
+                child: IgnorePointer(
+                  ignoring: input != null && _inputOpen,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 280),
+                    curve: const Cubic(0.22, 1, 0.36, 1),
+                    opacity: input != null && _inputOpen ? 0 : 1,
+                    child: AnimatedSlide(
+                      duration: const Duration(milliseconds: 280),
+                      curve: const Cubic(0.22, 1, 0.36, 1),
+                      offset: input != null && _inputOpen
+                          ? const Offset(0, 0.6)
+                          : Offset.zero,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) =>
+                            SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                                minWidth: constraints.maxWidth),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                for (final action in widget.actions)
+                                  _ActionButton(action: action),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            // 中央录音球
+            // 中央录音球（有动作按钮时上移让位）
             Positioned(
-              bottom: 21,
+              bottom: widget.actions.isNotEmpty ? 84.0 : 21.0,
               left: 0,
               right: 0,
               child: Center(
@@ -789,6 +812,7 @@ class _ActionButtonState extends State<_ActionButton> {
         scale: _pressed ? 0.94 : 1,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             color: highlighted
