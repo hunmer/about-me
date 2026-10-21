@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_json_view/flutter_json_view.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
@@ -96,192 +98,166 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
   /// 构建单个步骤卡片
   Widget _buildStepCard(ToolCallStep step, int index, bool isExpanded) {
     final theme = DSThemeBridge.resolve(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: theme.radii.sm,
-        border: Border.all(
-          color: theme.textSub.withValues(alpha: 0.3),
-          width: 1,
+    final plugin = _resolveStepPlugin(step);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DSListItemCard(
+          title: '${index + 1}. ${step.title}',
+          subtitle: step.desc.isNotEmpty ? step.desc : null,
+          // 非插件步骤（纯 run_js 等）回退到代码图标
+          icon: plugin == null ? DsIconKind.code : null,
+          // 插件步骤使用插件图标作为水印
+          leading: plugin == null ? null : Icon(plugin.icon),
+          iconColor: plugin?.color ?? theme.primary,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildStatusIcon(step.status),
+              const SizedBox(width: 8),
+              DsIcon(
+                isExpanded ? DsIconKind.chevronUp : DsIconKind.chevronDown,
+                size: 20,
+                color: theme.textSub,
+              ),
+            ],
+          ),
+          onTap: () {
+            setState(() {
+              if (isExpanded) {
+                _expandedSteps.remove(index);
+              } else {
+                _expandedSteps.add(index);
+              }
+            });
+          },
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 步骤头部
-          Pressable(
-            onPressed: () {
-              setState(() {
-                if (isExpanded) {
-                  _expandedSteps.remove(index);
-                } else {
-                  _expandedSteps.add(index);
-                }
-              });
-            },
-            semanticLabel: '${index + 1}. ${step.title}',
-            builder: (context, states) => Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  // 状态图标
-                  _buildStatusIcon(step.status),
-                  const SizedBox(width: 8),
 
-                  // 步骤标题
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${index + 1}. ${step.title}',
-                          style: DsTypography.body.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.text,
-                          ),
-                        ),
-                        if (step.desc.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            step.desc,
-                            style: DsTypography.caption.copyWith(
-                              color: theme.textSub,
-                            ),
-                            maxLines: isExpanded ? null : 1,
-                            overflow: isExpanded ? null : TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  // 展开/折叠图标
-                  DsIcon(
-                    isExpanded ? DsIconKind.chevronUp : DsIconKind.chevronDown,
-                    size: 20,
-                    color: theme.textSub,
-                  ),
-                ],
+        // 展开的详细内容
+        if (isExpanded) ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.surface,
+              borderRadius: theme.radii.sm,
+              border: Border.all(
+                color: theme.textSub.withValues(alpha: 0.3),
+                width: 1,
               ),
             ),
-          ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 执行方法
+                _buildInfoRow('方法', step.method),
+                const SizedBox(height: 8),
 
-          // 展开的详细内容
-          if (isExpanded) ...[
-            Divider(height: 1, color: theme.textSub.withValues(alpha: 0.3)),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 执行方法
-                  _buildInfoRow('方法', step.method),
-                  const SizedBox(height: 8),
-
-                  // 执行数据
-                  if (step.data.isNotEmpty) ...[
-                    Text(
-                      '执行代码:',
+                // 执行数据
+                if (step.data.isNotEmpty) ...[
+                  Text(
+                    '执行代码:',
+                    style: DsTypography.caption.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.text,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.surfaceAlt.withValues(alpha: 0.6),
+                      borderRadius: theme.radii.sm,
+                    ),
+                    child: SelectableText(
+                      step.data,
                       style: DsTypography.caption.copyWith(
-                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
                         color: theme.text,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: theme.surfaceAlt.withValues(alpha: 0.6),
-                        borderRadius: theme.radii.sm,
-                      ),
-                      child: SelectableText(
-                        step.data,
-                        style: DsTypography.caption.copyWith(
-                          fontFamily: 'monospace',
-                          color: theme.text,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-
-                  // 执行结果
-                  if (step.result != null) ...[
-                    Text(
-                      '执行结果:',
-                      style: DsTypography.caption.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.success,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: theme.success.mixWhite(0.92),
-                        borderRadius: theme.radii.sm,
-                        border: Border.all(
-                          color: theme.success.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: _buildResultContent(step, theme),
-                    ),
-                  ],
-
-                  // 错误信息
-                  if (step.error != null) ...[
-                    Text(
-                      '错误信息:',
-                      style: DsTypography.caption.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.danger,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: theme.danger.mixWhite(0.92),
-                        borderRadius: theme.radii.sm,
-                        border: Border.all(
-                          color: theme.danger.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: SelectableText(
-                        step.error!,
-                        style: DsTypography.caption.copyWith(color: theme.text),
-                      ),
-                    ),
-                  ],
-
-                  // 重新执行按钮
-                  if (!widget.isGenerating && widget.onRerunStep != null) ...[
-                    const SizedBox(height: 12),
-                    Divider(
-                      height: 1,
-                      color: theme.textSub.withValues(alpha: 0.3),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: DSButton(
-                        label: 'agent_chat_executeAgain'.tr,
-                        icon: DsIconKind.refresh,
-                        size: DSButtonSize.sm,
-                        variant: DSButtonVariant.outline,
-                        onPressed: () => widget.onRerunStep!(index),
-                      ),
-                    ),
-                  ],
+                  ),
+                  const SizedBox(height: 8),
                 ],
-              ),
+
+                // 执行结果
+                if (step.result != null) ...[
+                  Text(
+                    '执行结果:',
+                    style: DsTypography.caption.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.success,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.success.mixWhite(0.92),
+                      borderRadius: theme.radii.sm,
+                      border: Border.all(
+                        color: theme.success.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: _buildResultContent(step, theme),
+                  ),
+                ],
+
+                // 错误信息
+                if (step.error != null) ...[
+                  Text(
+                    '错误信息:',
+                    style: DsTypography.caption.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.danger,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.danger.mixWhite(0.92),
+                      borderRadius: theme.radii.sm,
+                      border: Border.all(
+                        color: theme.danger.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: SelectableText(
+                      step.error!,
+                      style: DsTypography.caption.copyWith(color: theme.text),
+                    ),
+                  ),
+                ],
+
+                // 重新执行按钮
+                if (!widget.isGenerating && widget.onRerunStep != null) ...[
+                  const SizedBox(height: 12),
+                  Divider(
+                    height: 1,
+                    color: theme.textSub.withValues(alpha: 0.3),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: DSButton(
+                      label: 'agent_chat_executeAgain'.tr,
+                      icon: DsIconKind.refresh,
+                      size: DSButtonSize.sm,
+                      variant: DSButtonVariant.outline,
+                      onPressed: () => widget.onRerunStep!(index),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 
@@ -337,6 +313,22 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
     return decoded is Map<String, dynamic>
         ? JsonView.map(decoded, theme: jsonTheme)
         : JsonView.string(result, theme: jsonTheme);
+  }
+
+  /// 解析 plugin_tool 步骤对应的插件
+  ///
+  /// plugin_tool 的 data 为结构化 JSON（{pluginId, method, args}），
+  /// 直接取 pluginId 查插件实例用于展示图标与颜色；run_js 无插件归属，返回 null
+  PluginBase? _resolveStepPlugin(ToolCallStep step) {
+    if (step.method != 'plugin_tool') return null;
+    try {
+      final call = jsonDecode(step.data) as Map<String, dynamic>;
+      final pluginId = call['pluginId'] as String?;
+      if (pluginId == null) return null;
+      return PluginManager.instance.getPlugin(pluginId);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// 构建状态图标

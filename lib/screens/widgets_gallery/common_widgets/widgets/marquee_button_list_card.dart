@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -217,31 +218,44 @@ class _MarqueeButtonListCardWidgetState
                 ]
               : null,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Stack(
           children: [
-            for (var r = 0; r < rowCount; r++)
-              Padding(
-                padding: EdgeInsets.only(top: r > 0 ? rowSpacing : 0),
-                child: SizedBox(
-                  height: rowHeight,
-                  child: _MarqueeRow(
-                    // 按 index % rows 分配，相邻元素落到不同行；携带原始下标供回调
-                    items: [
-                      for (var i = r; i < widget.items.length; i += rowCount)
-                        (widget.items[i], i),
-                    ],
-                    reverse: widget.alternateDirection && r.isOdd,
-                    speed: widget.speed,
-                    gap: 10 * scale,
-                    scale: scale,
-                    textColor: pillText,
-                    itemBuilder: widget.itemBuilder,
-                    onItemTap: widget.onItemTap,
-                    pausedListenable: _paused,
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var r = 0; r < rowCount; r++)
+                  Padding(
+                    padding: EdgeInsets.only(top: r > 0 ? rowSpacing : 0),
+                    child: SizedBox(
+                      height: rowHeight,
+                      child: _MarqueeRow(
+                        // 按 index % rows 分配，相邻元素落到不同行；携带原始下标供回调
+                        items: [
+                          for (var i = r; i < widget.items.length; i += rowCount)
+                            (widget.items[i], i),
+                        ],
+                        reverse: widget.alternateDirection && r.isOdd,
+                        speed: widget.speed,
+                        gap: 10 * scale,
+                        scale: scale,
+                        textColor: pillText,
+                        itemBuilder: widget.itemBuilder,
+                        onItemTap: widget.onItemTap,
+                        pausedListenable: _paused,
+                      ),
+                    ),
                   ),
+              ],
+            ),
+            // 左右边缘渐变模糊
+            Positioned.fill(
+              child: IgnorePointer(
+                child: _EdgeFadeBlur(
+                  edgeWidth: 28 * scale,
+                  sigma: 3,
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -375,6 +389,53 @@ class _MarqueeRowState extends State<_MarqueeRow>
       child = Transform.flip(flipX: true, child: child);
     }
     return Center(child: child);
+  }
+}
+
+/// 左右边缘渐变模糊遮罩
+///
+/// ShaderMask 渐变 alpha 包裹 BackdropFilter：边缘模糊最强、
+/// 向内平滑过渡到无模糊。
+class _EdgeFadeBlur extends StatelessWidget {
+  /// 单侧模糊区宽度
+  final double edgeWidth;
+
+  /// 高斯模糊强度
+  final double sigma;
+
+  const _EdgeFadeBlur({required this.edgeWidth, required this.sigma});
+
+  @override
+  Widget build(BuildContext context) {
+    if (edgeWidth <= 0) return const SizedBox.shrink();
+
+    Widget side(bool fromLeft) => ClipRect(
+          child: ShaderMask(
+            shaderCallback: (rect) => LinearGradient(
+              begin: fromLeft ? Alignment.centerLeft : Alignment.centerRight,
+              end: fromLeft ? Alignment.centerRight : Alignment.centerLeft,
+              colors: const [Colors.black, Colors.transparent],
+            ).createShader(rect),
+            blendMode: BlendMode.dstIn,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: sigma,
+                sigmaY: sigma,
+                tileMode: TileMode.clamp,
+              ),
+              child: const SizedBox.expand(),
+            ),
+          ),
+        );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(width: edgeWidth, child: side(true)),
+        const Spacer(),
+        SizedBox(width: edgeWidth, child: side(false)),
+      ],
+    );
   }
 }
 

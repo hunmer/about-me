@@ -263,11 +263,39 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              provider.label,
-                              style: DsTypography.body.copyWith(
-                                color: theme.text,
-                              ),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    provider.label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: DsTypography.body.copyWith(
+                                      color: theme.text,
+                                    ),
+                                  ),
+                                ),
+                                // 连接测试通过（激活）的绿点标注
+                                if (provider.isActive) ...[
+                                  SizedBox(width: theme.spacing.xs),
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: theme.success,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: theme.success.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                             Text(
                               provider.baseUrl,

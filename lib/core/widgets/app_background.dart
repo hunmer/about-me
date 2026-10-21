@@ -100,6 +100,7 @@ class _AppBackgroundState extends State<AppBackground> {
 
   @override
   void dispose() {
+    _controller.removeListener(_onChanged);
     _gridRenderDebounce?.cancel();
     _gridImage?.dispose();
     super.dispose();
@@ -114,10 +115,6 @@ class _AppBackgroundState extends State<AppBackground> {
     if (gridIndex == null) {
       // 网格已清除：释放位图（无渲染副作用，可在 build 中进行）
       _disposeGridImage();
-    }
-
-    if (path == null && color == null && gridIndex == null) {
-      return widget.child;
     }
 
     final blur = _controller.backgroundBlur;
@@ -163,7 +160,12 @@ class _AppBackgroundState extends State<AppBackground> {
             filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
             child: const ColoredBox(color: Color(0x00000000)),
           ),
-        widget.child,
+        // 始终保留相同的容器层级，并在背景层增减时保留内容子树，
+        // 避免 Navigator/Overlay 重新挂载后丢失动态插入的悬浮球。
+        KeyedSubtree(
+          key: const ValueKey('app_background_content'),
+          child: widget.child,
+        ),
       ],
     );
   }
@@ -248,17 +250,21 @@ class _AppBackgroundState extends State<AppBackground> {
 
     final picture = _recordGridPicture(args);
     if (_gridImage == null) {
-      final placeholder = picture.toImageSync(
+      final placeholderPicture = _scaleGridPicture(picture, 0.25);
+      final placeholder = placeholderPicture.toImageSync(
         (args.size.width / 4).ceil().clamp(1, 1 << 20),
         (args.size.height / 4).ceil().clamp(1, 1 << 20),
       );
+      placeholderPicture.dispose();
       _applyGridImage(placeholder, args);
     }
 
-    final image = await picture.toImage(
+    final scaledPicture = _scaleGridPicture(picture, args.dpr);
+    final image = await scaledPicture.toImage(
       (args.size.width * args.dpr).ceil().clamp(1, 1 << 20),
       (args.size.height * args.dpr).ceil().clamp(1, 1 << 20),
     );
+    scaledPicture.dispose();
     picture.dispose();
     _pendingRender = null;
     if (generation != _gridRenderGeneration || !mounted) {
@@ -269,6 +275,16 @@ class _AppBackgroundState extends State<AppBackground> {
     setState(() {
       _applyGridImage(image, args);
     });
+  }
+
+  // toImage 只指定输出像素范围，不会缩放录制的逻辑坐标。
+  // 占位图与高清图都必须同步缩放画布，否则会裁切或留下透明区域。
+  ui.Picture _scaleGridPicture(ui.Picture picture, double scale) {
+    final recorder = ui.PictureRecorder();
+    Canvas(recorder)
+      ..scale(scale)
+      ..drawPicture(picture);
+    return recorder.endRecording();
   }
 
   void _applyGridImage(ui.Image image, _GridRenderArgs args) {

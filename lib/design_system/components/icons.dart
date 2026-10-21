@@ -17,6 +17,7 @@ enum DsIconKind {
   chevronDown,
   chevronUp,
   star,
+  starOutline,
   bell,
   home,
   chat,
@@ -132,6 +133,7 @@ enum DsIconKind {
   driveFileMove,
   shelf,
   print,
+  keyboardHide,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -148,6 +150,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.chevronDown: Icons.expand_more,
   DsIconKind.chevronUp: Icons.expand_less,
   DsIconKind.star: Icons.star,
+  DsIconKind.starOutline: Icons.star_border,
   DsIconKind.bell: Icons.notifications,
   DsIconKind.home: Icons.home_outlined,
   DsIconKind.chat: Icons.chat_bubble_outline,
@@ -261,6 +264,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.driveFileMove: Icons.drive_file_move,
   DsIconKind.shelf: Icons.video_library,
   DsIconKind.print: Icons.print_outlined,
+  DsIconKind.keyboardHide: Icons.keyboard_hide,
 };
 
 /// 图标组件：基于系统 Material Icons

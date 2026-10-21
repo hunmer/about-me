@@ -168,6 +168,8 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
       title: Text('openai_topicsTab'.tr),
       largeTitle: 'openai_topicsTab'.tr,
       enableLargeTitle: false,
+      // 思维导图自持平移/缩放手势，外层滚动锁死
+      forceCollapsed: true,
       body: DSThemeBridge(
         child: Builder(
           builder: (context) {

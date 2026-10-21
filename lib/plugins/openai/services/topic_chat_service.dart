@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/services/conversation_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/models/topic_collection.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
@@ -155,6 +156,14 @@ class TopicChatService {
     AIAgent agent;
     if (stored.isNotEmpty) {
       agent = stored.first;
+      // 一次性迁移：旧默认配置无 alivenessConfig（编辑页保存后恒非 null），
+      // 说明用户从未改过活人感/记忆设置，按合集默认补开记忆
+      if (collection.memoryEnabled && agent.alivenessConfig == null) {
+        agent = agent.copyWith(
+          alivenessConfig: const AlivenessConfig(memoryEnabled: true),
+        );
+        await controller.saveAgentToExtraStorage(agent, storageKey);
+      }
     } else {
       agent = await _defaultAgentFor(collection);
       await controller.saveAgentToExtraStorage(agent, storageKey);
@@ -232,6 +241,10 @@ class TopicChatService {
       icon: Icons.explore_rounded,
       messages: [Prompt(type: 'system', content: collection.prompt)],
       apiFormat: apiFormat,
+      alivenessConfig:
+          collection.memoryEnabled
+              ? const AlivenessConfig(memoryEnabled: true)
+              : null,
     );
   }
 

@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:agentlib/agentlib.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/models/llm_models.dart';
@@ -45,6 +47,10 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
   bool _isAdvanced = false;
   String? _selectedPresetId;
 
+  /// 连接测试：测试中禁用按钮，成功后置激活（随保存持久化）
+  bool _isTesting = false;
+  bool _isActive = false;
+
   static const String _apiKeyPlaceholder = 'YOUR_API_KEY';
 
   /// 常规模式可选的预设（剔除 baseUrl 含占位符、无法直接使用的预设，如 Azure）
@@ -83,6 +89,7 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
       } else {
         _isAdvanced = true;
       }
+      _isActive = widget.provider!.isActive;
     }
   }
 
@@ -125,6 +132,7 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
       _selectedPresetId = presetId;
       _presetError = null;
       _apiKeyError = null;
+      _isActive = false;
     });
   }
 
@@ -183,12 +191,14 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
       _headers[key] = value;
       _headerKeyController.clear();
       _headerValueController.clear();
+      _isActive = false;
     });
   }
 
   void _removeHeader(String key) {
     setState(() {
       _headers.remove(key);
+      _isActive = false;
     });
   }
 
@@ -275,6 +285,88 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
     return null;
   }
 
+  /// 用当前表单配置验证连通性：优先 GET /models（零消耗），
+  /// 端点不可用（部分网关）时回退最小 chat 请求（需已填默认模型）
+  Future<void> _testConnection() async {
+    final preset = _isAdvanced ? null : _selectedPreset;
+    final baseUrl = (_isAdvanced ? _baseUrlController.text : preset?.baseUrl)
+        ?.trim() ?? '';
+    final headers = _isAdvanced
+        ? _headers
+        : (preset != null
+              ? _buildPresetHeaders(preset, _apiKeyController.text.trim())
+              : <String, String>{});
+    final apiFormat =
+        (_isAdvanced ? _apiFormat : preset?.apiFormat) ?? 'openai';
+    final model = _defaultModelController.text.trim();
+
+    if (baseUrl.isEmpty) {
+      toastService.showToast('openai_baseUrlError'.tr);
+      return;
+    }
+
+    setState(() => _isTesting = true);
+    try {
+      final client = AgentLibClient(baseUrl: baseUrl, headers: headers);
+      try {
+        await client.requestJson('models', method: 'GET').timeout(
+          const Duration(seconds: 15),
+        );
+      } catch (modelsError) {
+        // /models 端点不可用（如部分 Anthropic 兼容网关），回退最小 chat 请求
+        if (model.isEmpty) rethrow;
+        await client
+            .requestJson(
+              apiFormat == ApiFormat.anthropic.value
+                  ? 'messages'
+                  : 'chat/completions',
+              body: {
+                'model': model,
+                'max_tokens': 1,
+                'messages': [
+                  {'role': 'user', 'content': 'hi'},
+                ],
+              },
+            )
+            .timeout(const Duration(seconds: 15));
+      }
+      if (!mounted) return;
+      setState(() => _isActive = true);
+      toastService.showToast('openai_testConnectionSuccess'.tr);
+    } catch (e) {
+      if (!mounted) return;
+      toastService.showToast(
+        '${'openai_testConnectionFailed'.tr}: ${_extractTestError(e)}',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isTesting = false);
+      }
+    }
+  }
+
+  /// 提取服务端返回的原始错误信息；兼容 error.message（openai 风格）
+  /// 与顶层 message（anthropic 风格），无 body 时退回 HTTP 状态码
+  String _extractTestError(Object e) {
+    if (e is AgentLibException) {
+      final body = e.body;
+      if (body is Map) {
+        final error = body['error'];
+        if (error is Map && error['message'] is String) {
+          return error['message'] as String;
+        }
+        if (body['message'] is String) {
+          return body['message'] as String;
+        }
+      }
+      if (body is String && body.isNotEmpty) {
+        return body;
+      }
+      return e.message;
+    }
+    return e.toString();
+  }
+
   Future<void> _saveProvider() async {
     // DSInput 无内建 Form 校验，提交时手动校验
     String? labelError;
@@ -331,6 +423,7 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
           ? null
           : _defaultModelController.text.trim(),
       apiFormat: preset?.apiFormat ?? _apiFormat,
+      isActive: _isActive,
     );
 
     if (widget.provider == null) {
@@ -404,13 +497,30 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                       title: widget.provider == null
                           ? 'openai_addProvider'.tr
                           : 'openai_editProvider'.tr,
-                      trailing: DSIconButton(
-                        icon: DsIconKind.check,
-                        size: 38,
-                        color: theme.surface,
-                        iconColor: theme.text,
-                        onPressed: _saveProvider,
-                        tooltip: 'openai_saveTooltip'.tr,
+                      trailingWidth: 84,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          DSIconButton(
+                            icon: DsIconKind.wifi,
+                            size: 38,
+                            color: theme.surface,
+                            iconColor: _isActive
+                                ? theme.success
+                                : theme.textSub,
+                            onPressed: _isTesting ? null : _testConnection,
+                            tooltip: 'openai_testConnection'.tr,
+                          ),
+                          const SizedBox(width: 8),
+                          DSIconButton(
+                            icon: DsIconKind.check,
+                            size: 38,
+                            color: theme.surface,
+                            iconColor: theme.text,
+                            onPressed: _saveProvider,
+                            tooltip: 'openai_saveTooltip'.tr,
+                          ),
+                        ],
                       ),
                     ),
                     Expanded(
@@ -461,6 +571,9 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                                 if (_baseUrlError != null) {
                                   setState(() => _baseUrlError = null);
                                 }
+                                if (_isActive) {
+                                  setState(() => _isActive = false);
+                                }
                               },
                             ),
                             const SizedBox(height: 16),
@@ -500,6 +613,7 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                                 if (value != null) {
                                   setState(() {
                                     _apiFormat = value;
+                                    _isActive = false;
                                   });
                                 }
                               },
@@ -697,6 +811,9 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
                               onChanged: (_) {
                                 if (_apiKeyError != null) {
                                   setState(() => _apiKeyError = null);
+                                }
+                                if (_isActive) {
+                                  setState(() => _isActive = false);
                                 }
                               },
                             ),

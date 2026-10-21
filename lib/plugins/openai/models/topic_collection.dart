@@ -78,6 +78,7 @@ class TopicCollection {
     required this.description,
     required this.prompt,
     required this.intro,
+    this.memoryEnabled = false,
     required this.topics,
   });
 
@@ -98,6 +99,9 @@ class TopicCollection {
 
   /// 新会话固定的第一条介绍消息（话题脚本随后拼入）
   final String intro;
+
+  /// 合集 agent 默认开启记忆（普通聊天路径注入记忆并在回复后提取）
+  final bool memoryEnabled;
 
   /// 顶层节点（分组或话题）
   final List<TopicNode> topics;
@@ -132,6 +136,7 @@ class TopicCollection {
       description: json['description'] as String? ?? '',
       prompt: json['prompt'] as String? ?? '',
       intro: json['intro'] as String? ?? '',
+      memoryEnabled: json['memoryEnabled'] as bool? ?? false,
       topics:
           (json['topics'] as List<dynamic>? ?? [])
               .map((e) => TopicNode.fromJson(e as Map<String, dynamic>))
@@ -146,6 +151,7 @@ class TopicCollection {
     'description': description,
     'prompt': prompt,
     'intro': intro,
+    'memoryEnabled': memoryEnabled,
     'topics': topics.map((e) => e.toJson()).toList(),
   };
 }

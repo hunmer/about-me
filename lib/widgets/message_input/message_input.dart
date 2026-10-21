@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/utils/platform_utils.dart';
 import 'message_input_types.dart';
 import 'widgets/input_field.dart';
 import 'widgets/quick_toolbar.dart';
@@ -88,28 +89,44 @@ class _MessageInputState extends State<MessageInput> {
   late FocusNode _focusNode;
   final FocusNode _keyboardListenerFocusNode = FocusNode();
 
+  /// 移动端键盘是否弹出（以输入框持有焦点为准），控制"收起键盘"按钮显隐
+  bool _keyboardVisible = false;
+
   @override
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode.addListener(_handleFocusChanged);
+    _keyboardVisible = _focusNode.hasFocus;
   }
 
   @override
   void didUpdateWidget(covariant MessageInput oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.focusNode != widget.focusNode) {
+      _focusNode.removeListener(_handleFocusChanged);
       if (oldWidget.focusNode == null) _focusNode.dispose();
       _focusNode = widget.focusNode ?? FocusNode();
+      _focusNode.addListener(_handleFocusChanged);
+      _keyboardVisible = _focusNode.hasFocus;
     }
   }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChanged);
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
     _keyboardListenerFocusNode.dispose();
     super.dispose();
+  }
+
+  void _handleFocusChanged() {
+    final visible = _focusNode.hasFocus;
+    if (visible != _keyboardVisible) {
+      setState(() => _keyboardVisible = visible);
+    }
   }
 
   /// 默认桌面键盘处理：回车发送、Ctrl+回车换行；输入法组合中（如拼音未上屏）不拦截
@@ -145,6 +162,18 @@ class _MessageInputState extends State<MessageInput> {
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
+          // 移动端键盘弹出时，右组末尾（最右缘）追加"收起键盘"动作
+          var trailingActions = widget.trailingQuickActions;
+          if (PlatformUtils.isMobile && _keyboardVisible) {
+            trailingActions = [
+              ...trailingActions,
+              MessageInputQuickAction(
+                icon: DsIconKind.keyboardHide,
+                tooltip: '收起键盘',
+                onPressed: () => _focusNode.unfocus(),
+              ),
+            ];
+          }
           final body = Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -154,7 +183,7 @@ class _MessageInputState extends State<MessageInput> {
               // 顶部图标工具栏：底部抽屉动作的快捷方式（左组 + 右组）
               MessageInputQuickToolbar(
                 actions: widget.quickActions,
-                trailingActions: widget.trailingQuickActions,
+                trailingActions: trailingActions,
               ),
 
               // 输入行（素描面板风格带内边距，悬浮卡片风格仅留底部间距）

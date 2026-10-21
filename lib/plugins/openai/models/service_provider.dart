@@ -5,6 +5,7 @@ class ServiceProvider {
   Map<String, String> headers;
   String? defaultModel; // 默认模型
   String apiFormat; // API 格式
+  bool isActive; // 连接测试通过（激活）
 
   ServiceProvider({
     required this.id,
@@ -13,6 +14,7 @@ class ServiceProvider {
     Map<String, String>? headers,
     this.defaultModel,
     this.apiFormat = 'openai',
+    this.isActive = false,
   }) : headers = headers ?? {};
 
   // 从JSON构造
@@ -24,6 +26,7 @@ class ServiceProvider {
       headers: Map<String, String>.from(json['headers'] as Map),
       defaultModel: json['defaultModel'] as String?,
       apiFormat: json['apiFormat'] as String? ?? 'openai',
+      isActive: json['isActive'] as bool? ?? false,
     );
   }
 
@@ -36,6 +39,7 @@ class ServiceProvider {
       'headers': headers,
       if (defaultModel != null) 'defaultModel': defaultModel,
       'apiFormat': apiFormat,
+      if (isActive) 'isActive': isActive,
     };
   }
 
@@ -47,6 +51,7 @@ class ServiceProvider {
     Map<String, String>? headers,
     String? defaultModel,
     String? apiFormat,
+    bool? isActive,
   }) {
     return ServiceProvider(
       id: id ?? this.id,
@@ -55,6 +60,7 @@ class ServiceProvider {
       headers: headers ?? Map<String, String>.from(this.headers),
       defaultModel: defaultModel ?? this.defaultModel,
       apiFormat: apiFormat ?? this.apiFormat,
+      isActive: isActive ?? this.isActive,
     );
   }
 }

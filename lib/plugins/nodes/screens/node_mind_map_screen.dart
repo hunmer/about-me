@@ -148,6 +148,8 @@ class _NodeMindMapScreenState extends State<NodeMindMapScreen> {
       title: Text('nodes_mindMapPreview'.tr),
       largeTitle: 'nodes_mindMapPreview'.tr,
       enableLargeTitle: false,
+      // 思维导图自持平移/缩放手势，外层滚动锁死
+      forceCollapsed: true,
       body: bundle == null
           ? const SizedBox.expand()
           : DSThemeBridge(

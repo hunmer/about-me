@@ -620,19 +620,26 @@ class ChatController extends ChangeNotifier {
     _isCancelling = true;
     notifyListeners();
 
-    // 停止当前正在生成的消息
+    // 停止当前正在生成的消息：已产出内容的保留并标记完成，
+    // 仍是空占位的直接删除（否则会残留一条空 AI 气泡）
     final generatingMessages = messageService.currentMessages
         .where((msg) => msg.isGenerating && !msg.isUser)
         .toList();
 
     for (var msg in generatingMessages) {
-      final updatedMsg = msg.copyWith(isGenerating: false);
-      messageService.updateMessage(updatedMsg);
+      final hasToolSteps = msg.toolCall?.steps.isNotEmpty ?? false;
+      if (msg.content.trim().isEmpty && !hasToolSteps) {
+        messageService.deleteMessage(msg.conversationId, msg.id);
+      } else {
+        messageService.updateMessage(msg.copyWith(isGenerating: false));
+      }
     }
 
     _isSending = false;
     _typingStatusText = null;
-    _isCancelling = false;
+    // 不在此处复位 _isCancelling：请求服务的取消检查是异步定时器/流回调，
+    // 同步窗口内立即复位会让取消信号永远不可见、后台流继续生成；
+    // 由下一次 sendMessage / regenerateResponse / 活人感 flush 复位
     notifyListeners();
 
     debugPrint('🛑 已取消当前生成');
