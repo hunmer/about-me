@@ -114,6 +114,7 @@ class ToolConfigManager {
       // 增量同步文件空间工具，保留用户对已有工具的启用状态和描述修改。
       await _syncMissingPluginTools('openai');
       await _syncMissingPluginTools('tracker');
+      await _syncMissingPluginTools('checkin');
 
       // 加载工具索引和配置
       await _loadAllConfigs();
@@ -194,12 +195,13 @@ class ToolConfigManager {
           ? Map<String, dynamic>.from(storedData)
           : <String, dynamic>{};
       var changed = false;
-      if (pluginId == 'tracker') {
+      if (pluginId == 'tracker' || pluginId == 'checkin') {
         // 持久化移除废弃描述，不保留旧方法或别名路由。
-        for (final method in const [
-          'findGoalBy', 'findGoalById', 'findGoalByName', 'findGoalsByGroup',
-        ]) {
-          for (final key in ['tracker_$method', method]) {
+        final obsoleteMethods = pluginId == 'tracker'
+            ? const ['findGoalBy', 'findGoalById', 'findGoalByName', 'findGoalsByGroup']
+            : const ['findCheckinItemBy', 'findCheckinItemById', 'findCheckinItemByName', 'findCheckinItemsByGroup'];
+        for (final method in obsoleteMethods) {
+          for (final key in ['${pluginId}_$method', method]) {
             if (stored.containsKey(key)) {
               stored.remove(key);
               changed = true;

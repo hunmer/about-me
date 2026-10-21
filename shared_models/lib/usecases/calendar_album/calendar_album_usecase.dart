@@ -47,7 +47,7 @@ class CalendarAlbumUseCase {
   Future<Result<Map<String, dynamic>?>> getEntryById(
     Map<String, dynamic> params,
   ) async {
-    final id = params['id'] as String?;
+    final id = (params['id'] ?? params['entryId']) as String?;
     if (id == null || id.isEmpty) {
       return Result.failure('缺少必需参数: id', code: ErrorCodes.invalidParams);
     }
@@ -62,7 +62,7 @@ class CalendarAlbumUseCase {
 
   /// 根据日期获取日记
   Future<Result<dynamic>> getEntriesByDate(Map<String, dynamic> params) async {
-    final dateStr = params['date'] as String?;
+    final dateStr = (params['date'] ?? params['dateStr']) as String?;
     if (dateStr == null || dateStr.isEmpty) {
       return Result.failure('缺少必需参数: date', code: ErrorCodes.invalidParams);
     }
@@ -193,7 +193,9 @@ class CalendarAlbumUseCase {
   /// [params] 必需参数:
   /// - `title`: 标题
   /// - `content`: 内容
-  /// - `createdAt`: 创建时间
+  ///
+  /// 可选参数:
+  /// - `createdAt`: 创建时间（缺省为当前时间，支持 `dateStr` 别名）
   Future<Result<Map<String, dynamic>>> createEntry(
     Map<String, dynamic> params,
   ) async {
@@ -214,14 +216,12 @@ class CalendarAlbumUseCase {
       );
     }
 
-    final createdAtStr = params['createdAt'] as String?;
-    if (createdAtStr == null || createdAtStr.isEmpty) {
-      return Result.failure('缺少必需参数: createdAt',
-          code: ErrorCodes.invalidParams);
-    }
+    final createdAtStr = (params['createdAt'] ?? params['dateStr']) as String?;
 
     try {
-      final createdAt = DateTime.parse(createdAtStr);
+      final createdAt = createdAtStr == null || createdAtStr.isEmpty
+          ? DateTime.now()
+          : DateTime.parse(createdAtStr);
       final now = DateTime.now();
 
       final entry = CalendarAlbumEntryDto(
@@ -259,7 +259,7 @@ class CalendarAlbumUseCase {
   Future<Result<Map<String, dynamic>>> updateEntry(
     Map<String, dynamic> params,
   ) async {
-    final id = params['id'] as String?;
+    final id = (params['id'] ?? params['entryId']) as String?;
     if (id == null || id.isEmpty) {
       return Result.failure('缺少必需参数: id', code: ErrorCodes.invalidParams);
     }
@@ -308,7 +308,7 @@ class CalendarAlbumUseCase {
 
   /// 删除日记
   Future<Result<bool>> deleteEntry(Map<String, dynamic> params) async {
-    final id = params['id'] as String?;
+    final id = (params['id'] ?? params['entryId']) as String?;
     if (id == null || id.isEmpty) {
       return Result.failure('缺少必需参数: id', code: ErrorCodes.invalidParams);
     }

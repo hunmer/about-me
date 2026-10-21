@@ -170,12 +170,124 @@ class _SuggestedQuestionTestDialogState
     }
   }
 
+  Widget _buildResultHistory(
+    SuggestedQuestionTestRunner runner,
+    AppThemeData theme,
+  ) {
+    if (runner.results.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('已回答问题', style: DsTypography.label.copyWith(color: theme.textSub)),
+        const SizedBox(height: 8),
+        for (var i = 0; i < runner.results.length; i++)
+          _buildResultRow(runner.results[i], i, theme),
+      ],
+    );
+  }
+
+  Widget _buildResultRow(
+    Map<String, dynamic> result,
+    int index,
+    AppThemeData theme,
+  ) {
+    final toolErrors = result['toolErrors'];
+    final hasError =
+        result['status'] == 'failed' ||
+        (toolErrors is List && toolErrors.isNotEmpty) ||
+        result['requestError'] != null ||
+        result['persistenceError'] != null;
+    final cancelled = result['status'] == 'cancelled';
+    final status = cancelled
+        ? '已中止'
+        : hasError
+        ? '失败'
+        : '通过';
+    final statusColor = cancelled
+        ? theme.warning
+        : hasError
+        ? theme.danger
+        : theme.success;
+    String? errorText;
+    if (result['requestError'] != null) {
+      errorText = result['requestError'].toString();
+    } else if (result['persistenceError'] != null) {
+      errorText = result['persistenceError'].toString();
+    } else if (toolErrors is List && toolErrors.isNotEmpty) {
+      final firstError = toolErrors.first;
+      if (firstError is Map && firstError['error'] != null) {
+        errorText = firstError['error'].toString();
+      }
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+      decoration: BoxDecoration(
+        color: hasError
+            ? theme.danger.withValues(alpha: 0.08)
+            : theme.surfaceAlt,
+        border: Border(left: BorderSide(color: statusColor, width: 3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(
+              cancelled
+                  ? Icons.pause_circle_outline
+                  : hasError
+                  ? Icons.error_outline
+                  : Icons.check_circle_outline,
+              size: 18,
+              color: statusColor,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${index + 1}. ${result['categoryName'] ?? result['category'] ?? '问题'}',
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  result['question']?.toString() ?? '',
+                  style: DsTypography.body.copyWith(color: theme.text),
+                ),
+                if (errorText != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    errorText,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTypography.caption.copyWith(color: theme.danger),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            status,
+            style: DsTypography.caption.copyWith(color: statusColor),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final runner = widget.runner;
     final running = runner.isRunning;
-    final index = runner.results.length.clamp(0, runner.questions.length - 1);
-    final question = runner.questions[index];
+    final index = runner.questions.isEmpty
+        ? 0
+        : runner.results.length.clamp(0, runner.questions.length - 1);
+    final question = runner.questions.isEmpty ? null : runner.questions[index];
+    final theme = DSThemeBridge.resolve(context);
     if (!running) {
       _reviewPrompt ??= runner.buildReviewPrompt();
     }
@@ -194,31 +306,45 @@ class _SuggestedQuestionTestDialogState
         content: SizedBox(
           width: 640,
           height: MediaQuery.sizeOf(context).height * 0.55,
-          child: running
-              ? SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      LinearProgressIndicator(
-                        value: runner.completedCount / runner.questions.length,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '已完成 ${runner.completedCount}/${runner.questions.length}，'
-                        '发现问题 ${runner.failedCount} 题',
-                      ),
-                      const SizedBox(height: 12),
-                      Text('${question.categoryName} · 第 ${index + 1} 题'),
-                      Text(question.question),
-                      if (runner.stopRequested) ...[
-                        const SizedBox(height: 12),
-                        const Text('正在停止并保存当前会话…'),
-                      ],
-                    ],
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (running) ...[
+                  LinearProgressIndicator(
+                    value: runner.questions.isEmpty
+                        ? 0
+                        : runner.completedCount / runner.questions.length,
                   ),
-                )
-              : SingleChildScrollView(child: SelectableText(_reviewPrompt!)),
+                  const SizedBox(height: 16),
+                  Text(
+                    '已完成 ${runner.completedCount}/${runner.questions.length}，'
+                    '发现问题 ${runner.failedCount} 题',
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                _buildResultHistory(runner, theme),
+                if (running && question != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '正在执行 · ${question.categoryName} · 第 ${index + 1} 题',
+                    style: DsTypography.label.copyWith(color: theme.primary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(question.question),
+                  if (runner.stopRequested) ...[
+                    const SizedBox(height: 12),
+                    const Text('正在停止并保存当前会话…'),
+                  ],
+                ],
+                if (!running) ...[
+                  if (runner.results.isNotEmpty) const SizedBox(height: 8),
+                  SelectableText(_reviewPrompt!),
+                ],
+              ],
+            ),
+          ),
         ),
         actions: [
           if (running)

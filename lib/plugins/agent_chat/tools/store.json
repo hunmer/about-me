@@ -79,13 +79,13 @@
       },
       {
         "name": "price",
-        "type": "Number",
+        "type": "integer",
         "optional": false,
         "description": "价格(积分)"
       },
       {
         "name": "stock",
-        "type": "Number",
+        "type": "integer",
         "optional": false,
         "description": "库存数量"
       },
@@ -103,7 +103,7 @@
       },
       {
         "name": "useDuration",
-        "type": "Number",
+        "type": "integer",
         "optional": false,
         "description": "使用期限(天数)"
       },
@@ -161,13 +161,13 @@
       },
       {
         "name": "price",
-        "type": "Number",
+        "type": "integer",
         "optional": false,
         "description": "价格(积分)"
       },
       {
         "name": "stock",
-        "type": "Number",
+        "type": "integer",
         "optional": false,
         "description": "库存数量"
       },
@@ -185,7 +185,7 @@
       },
       {
         "name": "useDuration",
-        "type": "Number",
+        "type": "integer",
         "optional": false,
         "description": "使用期限(天数)"
       },

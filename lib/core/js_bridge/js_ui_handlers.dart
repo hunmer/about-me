@@ -18,13 +18,13 @@ class JSUIHandlers {
   /// 注册 UI 处理器到 JSEngine
   /// 注意：Toast 已在 MobileJSEngine 中直接处理，这里只注册 Alert/Dialog/Location
   void register(MobileJSEngine engine) {
-    engine.setAlertHandler(_handleAlert);
-    engine.setDialogHandler(_handleDialog);
+    engine.setAlertHandler(handleAlert);
+    engine.setDialogHandler(handleDialog);
     engine.setLocationHandler(_handleLocation);
   }
 
   /// Alert 处理器
-  Future<bool> _handleAlert(
+  Future<bool> handleAlert(
     String message, {
     String? title,
     String? confirmText,
@@ -56,7 +56,7 @@ class JSUIHandlers {
   }
 
   /// Dialog 处理器
-  Future<dynamic> _handleDialog(
+  Future<dynamic> handleDialog(
     String? title,
     String? content,
     List<Map<String, dynamic>> actions,
@@ -80,9 +80,7 @@ class JSUIHandlers {
               onPressed: () => Navigator.of(context).pop(value),
               child: Text(
                 text,
-                style: TextStyle(
-                  color: isDestructive ? Colors.red : null,
-                ),
+                style: TextStyle(color: isDestructive ? Colors.red : null),
               ),
             );
           }).toList(),
@@ -189,10 +187,7 @@ class JSUIHandlers {
       );
 
       if (selectedLocation != null) {
-        return {
-          'name': selectedLocation,
-          'address': selectedLocation,
-        };
+        return {'name': selectedLocation, 'address': selectedLocation};
       }
 
       return null;

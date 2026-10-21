@@ -50,7 +50,9 @@ class SuggestedQuestionTestRunner extends ChangeNotifier {
   int get failedCount => results
       .where(
         (r) =>
-            (r['toolErrors'] as List).isNotEmpty || r['requestError'] != null,
+            (r['toolErrors'] as List).isNotEmpty ||
+            r['requestError'] != null ||
+            r['persistenceError'] != null,
       )
       .length;
 
@@ -148,7 +150,10 @@ class SuggestedQuestionTestRunner extends ChangeNotifier {
             }
           }
         }
-        final failed = toolErrors.isNotEmpty || requestError != null;
+        final failed =
+            toolErrors.isNotEmpty ||
+            requestError != null ||
+            persistenceError != null;
         results.add({
           'index': results.length + 1,
           ...question.toJson(),

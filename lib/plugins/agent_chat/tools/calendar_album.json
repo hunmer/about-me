@@ -76,7 +76,7 @@
     "title": "更新图文",
     "description": "更新已有图文的内容",
     "parameters": [
-      {"name": "entryId", "type": "string", "required": true, "description": "图文ID"},
+      {"name": "id", "type": "string", "required": true, "description": "图文ID"},
       {"name": "title", "type": "string", "required": false, "description": "新标题"},
       {"name": "content", "type": "string", "required": false, "description": "新内容"},
       {"name": "tags", "type": "array", "required": false, "description": "新标签数组"},
@@ -92,7 +92,7 @@
     "examples": [
       {
         "title": "更新图文内容",
-        "code": "const updated = await Aboutme.plugins.calendar_album.updateEntry({\n  entryId: 'entry123',\n  content: '更新后的内容...'\n});\nsetResult('图文已更新');"
+        "code": "const updated = await Aboutme.plugins.calendar_album.updateEntry({\n  id: 'entry123',\n  content: '更新后的内容...'\n});\nsetResult('图文已更新');"
       }
     ],
     "notes": "仅更新提供的字段，其他字段保持不变",
@@ -102,7 +102,7 @@
     "title": "删除图文",
     "description": "删除指定的图文",
     "parameters": [
-      {"name": "entryId", "type": "string", "required": true, "description": "图文ID"}
+      {"name": "id", "type": "string", "required": true, "description": "图文ID"}
     ],
     "returns": {
       "type": "Object",
@@ -111,7 +111,7 @@
     "examples": [
       {
         "title": "删除图文",
-        "code": "const result = await Aboutme.plugins.calendar_album.deleteEntry({ entryId: 'entry123' });\nsetResult(result.success ? '删除成功' : result.error);"
+        "code": "const result = await Aboutme.plugins.calendar_album.deleteEntry({ id: 'entry123' });\nsetResult(result.success ? '删除成功' : result.error);"
       }
     ],
     "notes": "删除操作不可逆",
@@ -121,7 +121,7 @@
     "title": "根据ID获取图文",
     "description": "根据图文ID获取详细信息",
     "parameters": [
-      {"name": "entryId", "type": "string", "required": true, "description": "图文ID"}
+      {"name": "id", "type": "string", "required": true, "description": "图文ID"}
     ],
     "returns": {
       "type": "Object",
@@ -130,7 +130,7 @@
     "examples": [
       {
         "title": "获取图文详情",
-        "code": "const entry = await Aboutme.plugins.calendar_album.getEntryById({ entryId: 'entry123' });\nif (entry.error) {\n  setResult('图文不存在');\n} else {\n  setResult(JSON.stringify(entry, null, 2));\n}"
+        "code": "const entry = await Aboutme.plugins.calendar_album.getEntryById({ id: 'entry123' });\nif (entry.error) {\n  setResult('图文不存在');\n} else {\n  setResult(JSON.stringify(entry, null, 2));\n}"
       }
     ],
     "notes": "如图文不存在，返回对象包含 error 字段",

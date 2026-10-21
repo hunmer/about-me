@@ -8,7 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:json_dynamic_widget/json_dynamic_widget.dart';
 import 'package:aboutme/core/app_initializer.dart' show globalStorage;
 import 'package:aboutme/core/storage/storage_manager.dart' show StorageManager;
-import 'package:aboutme/core/utils/network.dart' show createClientWithSystemProxy;
+import 'package:aboutme/core/utils/network.dart'
+    show createClientWithSystemProxy;
 import 'package:aboutme/screens/json_dynamic_screen/json_dynamic_screen.dart';
 import 'platform/js_engine_interface.dart';
 import 'platform/js_engine_factory.dart';
@@ -120,6 +121,24 @@ class JSBridgeManager {
 
     final handlers = JSUIHandlers(context);
     handlers.register(_engine as MobileJSEngine);
+    // Native Agent 工具与 JS API 共用 Dialog 实现。
+    pluginTools.register('ui', {
+      'dialog': (Map<String, dynamic> args) {
+        final rawOptions = args['options'];
+        final options = rawOptions is Map
+            ? Map<String, dynamic>.from(rawOptions)
+            : <String, dynamic>{};
+        final actions = (options['actions'] as List? ?? const [])
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+        return handlers.handleDialog(
+          options['title']?.toString(),
+          options['content']?.toString(),
+          actions,
+        );
+      },
+    });
     print('✓ UI 处理器已全局注册 (Toast/Alert/Dialog)');
   }
 
@@ -139,6 +158,23 @@ class JSBridgeManager {
     if (_engine is MobileJSEngine) {
       final handlers = JSUIHandlers(context);
       handlers.register(_engine as MobileJSEngine);
+      pluginTools.register('ui', {
+        'dialog': (Map<String, dynamic> args) {
+          final rawOptions = args['options'];
+          final options = rawOptions is Map
+              ? Map<String, dynamic>.from(rawOptions)
+              : <String, dynamic>{};
+          final actions = (options['actions'] as List? ?? const [])
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+          return handlers.handleDialog(
+            options['title']?.toString(),
+            options['content']?.toString(),
+            actions,
+          );
+        },
+      });
       print('✓ UI 处理器已注册 (Toast/Alert/Dialog)');
     } else {
       print('跳过 UI 处理器注册 (Web 平台)');
@@ -220,9 +256,7 @@ class JSBridgeManager {
     _registeredPlugins[plugin.id] = plugin;
     // 记录 API 名注册表（供工具调用解析真实命名空间；热重载后可能为 null）
     _pluginApiNames ??= {};
-    _pluginApiNames!
-        .putIfAbsent(plugin.id, () => {})
-        .addAll(apis.keys);
+    _pluginApiNames!.putIfAbsent(plugin.id, () => {}).addAll(apis.keys);
 
     // 为每个插件创建命名空间
     // 使用 globalThis 确保跨平台兼容性（Web/QuickJS）
@@ -731,7 +765,11 @@ class JSBridgeManager {
             final resp = await client
                 .get(Uri.parse(downloadUrl))
                 .timeout(
-                  Duration(seconds: params['timeout'] is num ? (params['timeout'] as num).toInt() : 120),
+                  Duration(
+                    seconds: params['timeout'] is num
+                        ? (params['timeout'] as num).toInt()
+                        : 120,
+                  ),
                 );
             if (resp.statusCode != 200) {
               throw Exception('下载失败: HTTP ${resp.statusCode}');
@@ -953,7 +991,9 @@ class JSBridgeManager {
               }
               continue;
             }
-            if (filePath != null && filePath.isNotEmpty && File(filePath).existsSync()) {
+            if (filePath != null &&
+                filePath.isNotEmpty &&
+                File(filePath).existsSync()) {
               mreq.files.add(
                 await http.MultipartFile.fromPath(
                   name,
@@ -1098,14 +1138,13 @@ class JSBridgeManager {
           final eventData = {
             'eventName': args.eventName,
             'whenOccurred': args.whenOccurred.toIso8601String(),
-            'data':
-                args is ItemEventArgs
-                    ? {
-                      'itemId': args.itemId,
-                      'title': args.title,
-                      'action': args.action,
-                    }
-                    : {},
+            'data': args is ItemEventArgs
+                ? {
+                    'itemId': args.itemId,
+                    'title': args.title,
+                    'action': args.action,
+                  }
+                : {},
           };
 
           // 调用 JavaScript 回调

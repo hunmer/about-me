@@ -28,6 +28,40 @@ Map<String, dynamic> _paginate<T>(
 
 // ==================== JS API 实现 ====================
 
+/// 工具 schema/JS API 契约（title/accountId/iconCodePoint/backgroundColor）
+/// 与 UseCase 参数名（name/id/icon/color）不同，这里做统一别名兜底，
+/// 两套参数名都接受；icon/color 为 Color.value 的十进制字符串。
+Map<String, dynamic> _adaptAccountParams(Map<String, dynamic> params) {
+  final adapted = Map<String, dynamic>.from(params);
+  void alias(String from, String to, {bool stringify = false}) {
+    final value = adapted[from];
+    if (value != null && !adapted.containsKey(to)) {
+      adapted[to] = stringify ? value.toString() : value;
+    }
+  }
+
+  alias('title', 'name');
+  alias('accountId', 'id');
+  alias('iconCodePoint', 'icon', stringify: true);
+  alias('backgroundColor', 'color', stringify: true);
+  return adapted;
+}
+
+/// 账单参数别名兜底：billId→id、note→description
+Map<String, dynamic> _adaptBillParams(Map<String, dynamic> params) {
+  final adapted = Map<String, dynamic>.from(params);
+  void alias(String from, String to) {
+    final value = adapted[from];
+    if (value != null && !adapted.containsKey(to)) {
+      adapted[to] = value;
+    }
+  }
+
+  alias('billId', 'id');
+  alias('note', 'description');
+  return adapted;
+}
+
 /// 获取所有账户(不包含账单数据)
 /// 支持分页参数: offset, count
 Future<String> _jsGetAccounts(Map<String, dynamic> params) async {
@@ -46,7 +80,9 @@ Future<String> _jsGetAccounts(Map<String, dynamic> params) async {
 /// @param params.iconCodePoint 图标代码点 (可选，默认 Icons.account_balance_wallet)
 /// @param params.backgroundColor 背景颜色值 (可选，默认绿色)
 Future<String> _jsCreateAccount(Map<String, dynamic> params) async {
-  final result = await BillPlugin.instance._billUseCase.createAccount(params);
+  final result = await BillPlugin.instance._billUseCase.createAccount(
+    _adaptAccountParams(params),
+  );
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message ?? '创建账户失败'});
@@ -61,7 +97,9 @@ Future<String> _jsCreateAccount(Map<String, dynamic> params) async {
 /// @param params.iconCodePoint 新图标代码点 (可选)
 /// @param params.backgroundColor 新背景颜色值 (可选)
 Future<String> _jsUpdateAccount(Map<String, dynamic> params) async {
-  final result = await BillPlugin.instance._billUseCase.updateAccount(params);
+  final result = await BillPlugin.instance._billUseCase.updateAccount(
+    _adaptAccountParams(params),
+  );
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message ?? '更新账户失败'});
@@ -73,7 +111,8 @@ Future<String> _jsUpdateAccount(Map<String, dynamic> params) async {
 /// 删除账户
 /// @param params.accountId 账户ID (必需)
 Future<String> _jsDeleteAccount(Map<String, dynamic> params) async {
-  final result = await BillPlugin.instance._billUseCase.deleteAccount(params);
+  final adapted = _adaptAccountParams(params);
+  final result = await BillPlugin.instance._billUseCase.deleteAccount(adapted);
 
   if (result.isFailure) {
     return jsonEncode({
@@ -82,7 +121,7 @@ Future<String> _jsDeleteAccount(Map<String, dynamic> params) async {
     });
   }
 
-  return jsonEncode({'success': true, 'accountId': params['accountId']});
+  return jsonEncode({'success': true, 'accountId': adapted['id']});
 }
 
 /// 获取账单列表
@@ -134,7 +173,9 @@ Future<String> _jsCreateBill(Map<String, dynamic> params) async {
 /// @param params.note 新备注 (可选)
 /// @param params.tag 新标签 (可选)
 Future<String> _jsUpdateBill(Map<String, dynamic> params) async {
-  final result = await BillPlugin.instance._billUseCase.updateBill(params);
+  final result = await BillPlugin.instance._billUseCase.updateBill(
+    _adaptBillParams(params),
+  );
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message ?? '更新账单失败'});
@@ -147,7 +188,8 @@ Future<String> _jsUpdateBill(Map<String, dynamic> params) async {
 /// @param params.accountId 账户ID (必需)
 /// @param params.billId 账单ID (必需)
 Future<String> _jsDeleteBill(Map<String, dynamic> params) async {
-  final result = await BillPlugin.instance._billUseCase.deleteBill(params);
+  final adapted = _adaptBillParams(params);
+  final result = await BillPlugin.instance._billUseCase.deleteBill(adapted);
 
   if (result.isFailure) {
     return jsonEncode({
@@ -158,8 +200,7 @@ Future<String> _jsDeleteBill(Map<String, dynamic> params) async {
 
   return jsonEncode({
     'success': true,
-    'accountId': params['accountId'],
-    'billId': params['billId'],
+    'billId': adapted['id'],
   });
 }
 

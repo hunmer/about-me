@@ -69,6 +69,7 @@ class ToolSchemaBuilder {
     'string': 'string',
     'string|number': 'string',
     'number': 'number',
+    'integer': 'integer',
     'boolean': 'boolean',
     'array': 'array',
     'object': 'object',

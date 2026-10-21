@@ -3,7 +3,6 @@ part of 'timer_plugin.dart';
 // ==================== JS API 实现 ====================
 // 以下函数供 TimerPlugin.defineJSAPI() 使用
 
-
 /// 获取计时器列表
 /// 支持分页参数: offset, count
 Future<dynamic> _jsGetTimers(Map<String, dynamic> params) async {
@@ -37,7 +36,30 @@ Future<dynamic> _jsGetTimers(Map<String, dynamic> params) async {
 
 /// 创建计时器
 Future<dynamic> _jsCreateTimer(Map<String, dynamic> params) async {
-  final result = await TimerPlugin.instance.timerUseCase.createTimerTask(params);
+  // Agent 工具只需提供名称、时长和类型；UseCase 的展示字段使用插件默认值。
+  final normalized = Map<String, dynamic>.from(params)
+    ..putIfAbsent('color', () => TimerPlugin.instance.color.toARGB32())
+    ..putIfAbsent('iconCodePoint', () => TimerPlugin.instance.icon.codePoint);
+  if (!normalized.containsKey('timerItems')) {
+    final type = switch (normalized['type']) {
+      'countUp' => 0,
+      'countDown' => 1,
+      'pomodoro' => 2,
+      final int value => value,
+      _ => 1,
+    };
+    normalized['timerItems'] = [
+      {
+        'id': 'agent-${DateTime.now().microsecondsSinceEpoch}',
+        'name': normalized['name'],
+        'type': type,
+        'duration': (normalized['duration'] as num?)?.toInt() ?? 0,
+      },
+    ];
+  }
+  final result = await TimerPlugin.instance.timerUseCase.createTimerTask(
+    normalized,
+  );
 
   if (result.isFailure) {
     return {'error': result.errorOrNull?.message};
@@ -55,7 +77,9 @@ Future<dynamic> _jsCreateTimer(Map<String, dynamic> params) async {
 Future<dynamic> _jsDeleteTimer(Map<String, dynamic> params) async {
   // 转换参数名:timerId -> id
   final useCaseParams = {'id': params['timerId']};
-  final result = await TimerPlugin.instance.timerUseCase.deleteTimerTask(useCaseParams);
+  final result = await TimerPlugin.instance.timerUseCase.deleteTimerTask(
+    useCaseParams,
+  );
 
   if (result.isFailure) {
     return {'error': result.errorOrNull?.message};
@@ -166,7 +190,9 @@ Future<dynamic> _jsGetTimerStatus(Map<String, dynamic> params) async {
 
   // 转换参数名:timerId -> id
   final useCaseParams = {'id': timerId};
-  final result = await TimerPlugin.instance.timerUseCase.getTimerTaskById(useCaseParams);
+  final result = await TimerPlugin.instance.timerUseCase.getTimerTaskById(
+    useCaseParams,
+  );
 
   if (result.isFailure) {
     return {'error': result.errorOrNull?.message};
@@ -185,8 +211,9 @@ Future<dynamic> _jsGetTimerStatus(Map<String, dynamic> params) async {
   final activeTimerIndex = timerItems.indexWhere(
     (item) => item['isRunning'] == true,
   );
-  final activeTimer =
-      activeTimerIndex != -1 ? timerItems[activeTimerIndex] : null;
+  final activeTimer = activeTimerIndex != -1
+      ? timerItems[activeTimerIndex]
+      : null;
 
   return {
     'id': taskJson['id'],
@@ -209,7 +236,9 @@ Future<dynamic> _jsGetHistory(Map<String, dynamic> params) async {
     'isRunning': false, // 查找非运行状态的任务
   };
 
-  final result = await TimerPlugin.instance.timerUseCase.searchTimerTasks(searchParams);
+  final result = await TimerPlugin.instance.timerUseCase.searchTimerTasks(
+    searchParams,
+  );
 
   if (result.isFailure) {
     return {'error': result.errorOrNull?.message};
@@ -226,43 +255,41 @@ Future<dynamic> _jsGetHistory(Map<String, dynamic> params) async {
     final taskList = paginatedData['data'] as List<dynamic>;
 
     // 过滤已完成的任务(这里简化处理,假设非运行状态就是已完成)
-    final completedTasks =
-        taskList
-            .where((task) {
-              final taskJson = task as Map<String, dynamic>;
-              final timerItems = taskJson['timerItems'] as List<dynamic>;
-              // 如果所有计时器都完成了,认为任务已完成
-              return timerItems.every(
-                (item) => item['duration'] == item['completedDuration'],
-              );
-            })
-            .map((task) {
-              final taskJson = task as Map<String, dynamic>;
-              final timerItems = taskJson['timerItems'] as List<dynamic>;
-              final totalDuration = timerItems.fold<int>(
-                0,
-                (sum, item) => sum + (item['completedDuration'] as int),
-              );
+    final completedTasks = taskList
+        .where((task) {
+          final taskJson = task as Map<String, dynamic>;
+          final timerItems = taskJson['timerItems'] as List<dynamic>;
+          // 如果所有计时器都完成了,认为任务已完成
+          return timerItems.every(
+            (item) => item['duration'] == item['completedDuration'],
+          );
+        })
+        .map((task) {
+          final taskJson = task as Map<String, dynamic>;
+          final timerItems = taskJson['timerItems'] as List<dynamic>;
+          final totalDuration = timerItems.fold<int>(
+            0,
+            (sum, item) => sum + (item['completedDuration'] as int),
+          );
 
-              return {
-                'id': taskJson['id'],
-                'name': taskJson['name'],
-                'group': taskJson['group'],
-                'createdAt': taskJson['createdAt'],
-                'totalDuration': totalDuration,
-                'timerItems':
-                    timerItems
-                        .map(
-                          (item) => {
-                            'name': item['name'],
-                            'type': _getTimerTypeName(item['type'] as int),
-                            'completedDuration': item['completedDuration'],
-                          },
-                        )
-                        .toList(),
-              };
-            })
-            .toList();
+          return {
+            'id': taskJson['id'],
+            'name': taskJson['name'],
+            'group': taskJson['group'],
+            'createdAt': taskJson['createdAt'],
+            'totalDuration': totalDuration,
+            'timerItems': timerItems
+                .map(
+                  (item) => {
+                    'name': item['name'],
+                    'type': _getTimerTypeName(item['type'] as int),
+                    'completedDuration': item['completedDuration'],
+                  },
+                )
+                .toList(),
+          };
+        })
+        .toList();
 
     return {
       'data': completedTasks,
@@ -275,42 +302,40 @@ Future<dynamic> _jsGetHistory(Map<String, dynamic> params) async {
 
   // 非分页结果
   final taskList = data as List<dynamic>;
-  final completedTasks =
-      taskList
-          .where((task) {
-            final taskJson = task as Map<String, dynamic>;
-            final timerItems = taskJson['timerItems'] as List<dynamic>;
-            return timerItems.every(
-              (item) => item['duration'] == item['completedDuration'],
-            );
-          })
-          .map((task) {
-            final taskJson = task as Map<String, dynamic>;
-            final timerItems = taskJson['timerItems'] as List<dynamic>;
-            final totalDuration = timerItems.fold<int>(
-              0,
-              (sum, item) => sum + (item['completedDuration'] as int),
-            );
+  final completedTasks = taskList
+      .where((task) {
+        final taskJson = task as Map<String, dynamic>;
+        final timerItems = taskJson['timerItems'] as List<dynamic>;
+        return timerItems.every(
+          (item) => item['duration'] == item['completedDuration'],
+        );
+      })
+      .map((task) {
+        final taskJson = task as Map<String, dynamic>;
+        final timerItems = taskJson['timerItems'] as List<dynamic>;
+        final totalDuration = timerItems.fold<int>(
+          0,
+          (sum, item) => sum + (item['completedDuration'] as int),
+        );
 
-            return {
-              'id': taskJson['id'],
-              'name': taskJson['name'],
-              'group': taskJson['group'],
-              'createdAt': taskJson['createdAt'],
-              'totalDuration': totalDuration,
-              'timerItems':
-                  timerItems
-                      .map(
-                        (item) => {
-                          'name': item['name'],
-                          'type': _getTimerTypeName(item['type'] as int),
-                          'completedDuration': item['completedDuration'],
-                        },
-                      )
-                      .toList(),
-            };
-          })
-          .toList();
+        return {
+          'id': taskJson['id'],
+          'name': taskJson['name'],
+          'group': taskJson['group'],
+          'createdAt': taskJson['createdAt'],
+          'totalDuration': totalDuration,
+          'timerItems': timerItems
+              .map(
+                (item) => {
+                  'name': item['name'],
+                  'type': _getTimerTypeName(item['type'] as int),
+                  'completedDuration': item['completedDuration'],
+                },
+              )
+              .toList(),
+        };
+      })
+      .toList();
 
   return {'total': completedTasks.length, 'tasks': completedTasks};
 }
@@ -358,7 +383,9 @@ Future<dynamic> _jsFindTimerBy(Map<String, dynamic> params) async {
     searchParams['isRunning'] = value;
   }
 
-  final result = await TimerPlugin.instance.timerUseCase.searchTimerTasks(searchParams);
+  final result = await TimerPlugin.instance.timerUseCase.searchTimerTasks(
+    searchParams,
+  );
 
   if (result.isFailure) {
     return {'error': result.errorOrNull?.message};
@@ -387,19 +414,18 @@ Future<dynamic> _jsFindTimerBy(Map<String, dynamic> params) async {
   if (data is Map<String, dynamic> && data.containsKey('data')) {
     final paginatedData = data;
     final taskList = paginatedData['data'] as List<dynamic>;
-    final matches =
-        taskList.map((task) {
-          final taskJson = task as Map<String, dynamic>;
-          return {
-            'id': taskJson['id'],
-            'name': taskJson['name'],
-            'color': taskJson['color'],
-            'icon': taskJson['iconCodePoint'],
-            'group': taskJson['group'],
-            'isRunning': taskJson['isRunning'],
-            'repeatCount': taskJson['repeatCount'],
-          };
-        }).toList();
+    final matches = taskList.map((task) {
+      final taskJson = task as Map<String, dynamic>;
+      return {
+        'id': taskJson['id'],
+        'name': taskJson['name'],
+        'color': taskJson['color'],
+        'icon': taskJson['iconCodePoint'],
+        'group': taskJson['group'],
+        'isRunning': taskJson['isRunning'],
+        'repeatCount': taskJson['repeatCount'],
+      };
+    }).toList();
 
     // 如果有分页参数,返回分页格式
     final int? offset = params['offset'];
@@ -427,7 +453,9 @@ Future<dynamic> _jsFindTimerById(Map<String, dynamic> params) async {
   }
 
   final useCaseParams = {'id': id};
-  final result = await TimerPlugin.instance.timerUseCase.getTimerTaskById(useCaseParams);
+  final result = await TimerPlugin.instance.timerUseCase.getTimerTaskById(
+    useCaseParams,
+  );
 
   if (result.isFailure) {
     return null;
@@ -479,10 +507,9 @@ Future<dynamic> _jsFindTimerByName(Map<String, dynamic> params) async {
     return findAll ? [] : null;
   }
 
-  final taskList =
-      data is List
-          ? data
-          : (data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+  final taskList = data is List
+      ? data
+      : (data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
 
   final matches = <Map<String, dynamic>>[];
 
@@ -490,10 +517,9 @@ Future<dynamic> _jsFindTimerByName(Map<String, dynamic> params) async {
     final taskJson = task as Map<String, dynamic>;
     final taskName = taskJson['name'] as String;
 
-    final isMatch =
-        fuzzy
-            ? taskName.toLowerCase().contains(name.toLowerCase())
-            : taskName == name;
+    final isMatch = fuzzy
+        ? taskName.toLowerCase().contains(name.toLowerCase())
+        : taskName == name;
 
     if (isMatch) {
       final taskData = {
@@ -543,7 +569,9 @@ Future<dynamic> _jsFindTimersByGroup(Map<String, dynamic> params) async {
 
   // 使用 UseCase 的搜索功能
   final searchParams = {'group': group};
-  final result = await TimerPlugin.instance.timerUseCase.searchTimerTasks(searchParams);
+  final result = await TimerPlugin.instance.timerUseCase.searchTimerTasks(
+    searchParams,
+  );
 
   if (result.isFailure) {
     return {'error': result.errorOrNull?.message};
@@ -557,10 +585,9 @@ Future<dynamic> _jsFindTimersByGroup(Map<String, dynamic> params) async {
   final matches = <Map<String, dynamic>>[];
 
   // 转换格式
-  final taskList =
-      data is List
-          ? data
-          : (data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+  final taskList = data is List
+      ? data
+      : (data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
 
   for (final task in taskList) {
     final taskJson = task as Map<String, dynamic>;

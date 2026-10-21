@@ -252,7 +252,7 @@ Future<String> _jsGetStats(Map<String, dynamic> params) async {
         return jsonEncode({'error': statsResult.errorOrNull?.message ?? '未知错误'});
       }
 
-      final stats = statsResult.dataOrNull as CheckinStatsDto;
+      final stats = CheckinStatsDto.fromJson(statsResult.dataOrNull!);
 
       return jsonEncode({
         'totalItems': stats.totalItems,

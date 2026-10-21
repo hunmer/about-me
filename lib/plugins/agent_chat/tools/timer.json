@@ -56,6 +56,18 @@
         "description": "计时器类型: 'countUp'(正计时)、'countDown'(倒计时)、'pomodoro'(番茄钟)"
       },
       {
+        "name": "color",
+        "type": "Number",
+        "optional": true,
+        "description": "计时器颜色 ARGB 整数，不提供时使用计时器插件默认颜色"
+      },
+      {
+        "name": "iconCodePoint",
+        "type": "Number",
+        "optional": true,
+        "description": "计时器图标 codePoint，不提供时使用计时器插件默认图标"
+      },
+      {
         "name": "group",
         "type": "String",
         "optional": true,

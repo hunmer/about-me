@@ -79,25 +79,31 @@ class StoreUseCase {
     }
 
     try {
+      final stock = _integerParam(params, 'stock');
+      final price = _integerParam(params, 'price');
+      final useDuration = _integerParam(params, 'useDuration');
       final now = DateTime.now();
       final product = ProductDto(
         id: params['id'] as String? ?? _uuid.v4(),
         name: params['name'] as String,
         description: params['description'] as String,
         image: params['image'] as String? ?? '',
-        stock: params['stock'] as int? ?? 0,
-        price: params['price'] as int? ?? 0,
+        stock: stock ?? 0,
+        price: price ?? 0,
         exchangeStart: params['exchangeStart'] != null
             ? DateTime.parse(params['exchangeStart'] as String)
             : now,
         exchangeEnd: params['exchangeEnd'] != null
             ? DateTime.parse(params['exchangeEnd'] as String)
             : DateTime(now.year + 1, now.month, now.day),
-        useDuration: params['useDuration'] as int? ?? 30,
+        useDuration: useDuration ?? 30,
       );
 
       final result = await repository.createProduct(product);
       return result.map((p) => p.toJson());
+    } on ArgumentError catch (e) {
+      return Result.failure(e.message.toString(),
+          code: ErrorCodes.invalidParams);
     } catch (e) {
       return Result.failure('创建商品失败: $e', code: ErrorCodes.serverError);
     }
@@ -113,6 +119,9 @@ class StoreUseCase {
     }
 
     try {
+      final stock = _integerParam(params, 'stock');
+      final price = _integerParam(params, 'price');
+      final useDuration = _integerParam(params, 'useDuration');
       // 获取现有数据
       final existingResult = await repository.getProductById(id);
       if (existingResult.isFailure) {
@@ -129,19 +138,22 @@ class StoreUseCase {
         name: params['name'] as String?,
         description: params['description'] as String?,
         image: params['image'] as String?,
-        stock: params['stock'] as int?,
-        price: params['price'] as int?,
+        stock: stock,
+        price: price,
         exchangeStart: params['exchangeStart'] != null
             ? DateTime.parse(params['exchangeStart'] as String)
             : null,
         exchangeEnd: params['exchangeEnd'] != null
             ? DateTime.parse(params['exchangeEnd'] as String)
             : null,
-        useDuration: params['useDuration'] as int?,
+        useDuration: useDuration,
       );
 
       final result = await repository.updateProduct(id, updated);
       return result.map((p) => p.toJson());
+    } on ArgumentError catch (e) {
+      return Result.failure(e.message.toString(),
+          code: ErrorCodes.invalidParams);
     } catch (e) {
       return Result.failure('更新商品失败: $e', code: ErrorCodes.serverError);
     }
@@ -494,6 +506,18 @@ class StoreUseCase {
   }
 
   // ============ 辅助方法 ============
+
+  // JSON/JS 桥接可能把整数解码为 double；仅接受无精度损失的整数值。
+  int? _integerParam(Map<String, dynamic> params, String field) {
+    final value = params[field];
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num && value.isFinite) {
+      final integer = value.toInt();
+      if (value == integer) return integer;
+    }
+    throw ArgumentError('参数类型错误: $field 必须是整数');
+  }
 
   PaginationParams? _extractPagination(Map<String, dynamic> params) {
     final offset = params['offset'] as int?;
