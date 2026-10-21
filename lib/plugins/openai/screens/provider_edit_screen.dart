@@ -285,17 +285,34 @@ class _ProviderEditScreenState extends State<ProviderEditScreen> {
     return null;
   }
 
+  /// 与聊天路径（RequestService._agentLibClient）一致的 header 归一化：
+  /// api-key 形式的预设（如 DeepSeek）需补 Authorization: Bearer，否则 401
+  Map<String, String> _normalizedHeaders(Map<String, String> headers) {
+    final apiKey =
+        headers['Authorization']?.replaceAll('Bearer ', '') ??
+        headers['api-key'] ??
+        '';
+    final normalized = Map<String, String>.from(headers);
+    if (apiKey.isNotEmpty) {
+      normalized['Authorization'] = 'Bearer $apiKey';
+      normalized['api-key'] = apiKey;
+    }
+    return normalized;
+  }
+
   /// 用当前表单配置验证连通性：优先 GET /models（零消耗），
   /// 端点不可用（部分网关）时回退最小 chat 请求（需已填默认模型）
   Future<void> _testConnection() async {
     final preset = _isAdvanced ? null : _selectedPreset;
     final baseUrl = (_isAdvanced ? _baseUrlController.text : preset?.baseUrl)
         ?.trim() ?? '';
-    final headers = _isAdvanced
-        ? _headers
-        : (preset != null
-              ? _buildPresetHeaders(preset, _apiKeyController.text.trim())
-              : <String, String>{});
+    final headers = _normalizedHeaders(
+      _isAdvanced
+          ? _headers
+          : (preset != null
+                ? _buildPresetHeaders(preset, _apiKeyController.text.trim())
+                : <String, String>{}),
+    );
     final apiFormat =
         (_isAdvanced ? _apiFormat : preset?.apiFormat) ?? 'openai';
     final model = _defaultModelController.text.trim();

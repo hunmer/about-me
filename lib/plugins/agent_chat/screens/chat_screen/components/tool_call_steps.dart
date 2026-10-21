@@ -158,7 +158,7 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
                 // 执行数据
                 if (step.data.isNotEmpty) ...[
                   Text(
-                    '执行代码:',
+                    step.method == 'plugin_tool' ? '执行参数:' : '执行代码:',
                     style: DsTypography.caption.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.text,
@@ -172,13 +172,7 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
                       color: theme.surfaceAlt.withValues(alpha: 0.6),
                       borderRadius: theme.radii.sm,
                     ),
-                    child: SelectableText(
-                      step.data,
-                      style: DsTypography.caption.copyWith(
-                        fontFamily: 'monospace',
-                        color: theme.text,
-                      ),
-                    ),
+                    child: _buildDataContent(step, theme),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -289,31 +283,58 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
     } catch (_) {
       decoded = null;
     }
-    if (decoded == null) {
-      return SelectableText(
-        result,
-        style: DsTypography.caption.copyWith(color: theme.text),
-      );
-    }
-
-    final jsonTheme = JsonViewTheme(
-      backgroundColor: Colors.transparent,
-      defaultTextStyle: DsTypography.caption.copyWith(
-        color: theme.text,
-        fontSize: 13,
-      ),
-      keyStyle: TextStyle(color: Colors.deepPurple.shade700),
-      stringStyle: TextStyle(color: Colors.amber.shade900),
-      intStyle: TextStyle(color: Colors.blue.shade700),
-      doubleStyle: TextStyle(color: Colors.blue.shade700),
-      boolStyle: TextStyle(color: Colors.green.shade700),
-      openIcon: Icon(Icons.arrow_drop_down, size: 18, color: theme.textSub),
-      closeIcon: Icon(Icons.arrow_drop_up, size: 18, color: theme.textSub),
-    );
-    return decoded is Map<String, dynamic>
-        ? JsonView.map(decoded, theme: jsonTheme)
-        : JsonView.string(result, theme: jsonTheme);
+    return _buildJsonOrText(decoded, result, theme);
   }
+
+  /// 执行数据展示：plugin_tool 的参数用 JSON 视图，run_js 回退等宽代码文本
+  Widget _buildDataContent(ToolCallStep step, dynamic theme) {
+    if (step.method == 'plugin_tool') {
+      try {
+        final args = (jsonDecode(step.data) as Map<String, dynamic>)['args'];
+        if (args != null) {
+          return _buildJsonOrText(args, jsonEncode(args), theme);
+        }
+      } catch (_) {}
+    }
+    return SelectableText(
+      step.data,
+      style: DsTypography.caption.copyWith(
+        fontFamily: 'monospace',
+        color: theme.text,
+      ),
+    );
+  }
+
+  /// JSON 值优先用可折叠 JSON 视图，非 JSON 回退纯文本
+  Widget _buildJsonOrText(dynamic decoded, String raw, dynamic theme) {
+    final jsonTheme = _buildJsonTheme(theme);
+    if (decoded is Map<String, dynamic>) {
+      return JsonView.map(decoded, theme: jsonTheme);
+    }
+    if (decoded != null) {
+      return JsonView.string(raw, theme: jsonTheme);
+    }
+    return SelectableText(
+      raw,
+      style: DsTypography.caption.copyWith(color: theme.text),
+    );
+  }
+
+  /// JSON 视图配色跟随主题色板：key 主色、string 警示色、数值副色、布尔成功色
+  JsonViewTheme _buildJsonTheme(dynamic theme) => JsonViewTheme(
+    backgroundColor: Colors.transparent,
+    defaultTextStyle: DsTypography.caption.copyWith(
+      color: theme.text,
+      fontSize: 13,
+    ),
+    keyStyle: TextStyle(color: theme.primaryText),
+    stringStyle: TextStyle(color: theme.warning),
+    intStyle: TextStyle(color: theme.secondary),
+    doubleStyle: TextStyle(color: theme.secondary),
+    boolStyle: TextStyle(color: theme.success),
+    openIcon: Icon(Icons.arrow_drop_down, size: 18, color: theme.textSub),
+    closeIcon: Icon(Icons.arrow_drop_up, size: 18, color: theme.textSub),
+  );
 
   /// 解析 plugin_tool 步骤对应的插件
   ///

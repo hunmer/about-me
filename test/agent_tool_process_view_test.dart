@@ -10,6 +10,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/message_bubble.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/tool_process_view.dart';
 
 ChatMessage _toolMessage({required bool generating, String? thinking}) {
   return ChatMessage.ai(
@@ -51,6 +52,24 @@ Future<void> pumpContent(WidgetTester tester, ChatMessage message) async {
 }
 
 void main() {
+  testWidgets('DeepSeek 重复思考不会再次作为轮次正文显示', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DSThemeBridge(
+            child: const TurnTextsView(
+              thinking: '先查统计',
+              texts: ['<think>先查统计</think>先查统计'],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('第 1 轮'), findsNothing);
+    expect(find.text('先查统计'), findsNothing);
+  });
+
   testWidgets('生成中：思考流 + 工具步骤 + 流式正文同时展示', (tester) async {
     await pumpContent(tester, _toolMessage(generating: true, thinking: '正在分析用户的请求'));
 

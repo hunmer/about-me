@@ -1010,6 +1010,89 @@
         "PROCM_ROOM_ID": "aboutme",
         "PROCM_CLIENT_NAME": "aboutme-app-windows"
       }
+    },
+    {
+      "id": "5aZ2JV74",
+      "name": "dev",
+      "script": ".venv/Scripts/python.exe",
+      "args": [
+        "-m",
+        "uvicorn",
+        "app.server:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8300",
+        "--reload",
+        "--reload-dir",
+        "app",
+        "--loop",
+        "asyncio:ProactorEventLoop"
+      ],
+      "cwd": "E:\\programming\\python\\FavAPI",
+      "status": "exited",
+      "pid": 13964,
+      "exitCode": 1,
+      "error": null,
+      "desc": "（Windows）开发模式（热重载）启动 FavAPI 服务。--loop 必须显式指定 ProactorEventLoop：uvicorn 0.52 在 --reload 下默认 SelectorEventLoop，Windows 上不支持子进程，Playwright 会报 NotImplementedError。--reload-dir app：只监听后端代码，避免 data/ 数据库与 profiles 运行时写入触发重载（热重载出的新 worker 不带 --loop，浏览器功能会悄悄失效）",
+      "group": "FavAPI",
+      "port": null,
+      "roomId": null,
+      "favorite": true,
+      "startedAt": 1792550041187,
+      "lastStartedAt": 1792550058646,
+      "stoppedAt": 1792550093331,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\BK19FU(23168)\\processes\\5aZ2JV74-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\BK19FU(23168)\\processes\\5aZ2JV74-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "IRgOo2pn",
+      "name": "server",
+      "script": ".venv/Scripts/python.exe",
+      "args": [
+        "main.py"
+      ],
+      "cwd": "E:\\programming\\python\\FavAPI",
+      "status": "exited",
+      "pid": 23276,
+      "exitCode": 0,
+      "error": null,
+      "desc": "（Windows）启动 FavAPI 服务（127.0.0.1:8300）",
+      "group": "FavAPI",
+      "port": null,
+      "roomId": null,
+      "favorite": true,
+      "startedAt": 1792550041190,
+      "lastStartedAt": 1792551471358,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\6OPpO4(23340)\\processes\\IRgOo2pn-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\6OPpO4(23340)\\processes\\IRgOo2pn-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "ZAmtTjJ9",
+      "name": "web",
+      "script": "node",
+      "args": [
+        "node_modules/vite/bin/vite.js"
+      ],
+      "cwd": "E:\\programming\\python\\FavAPI\\web",
+      "status": "running",
+      "pid": 1700,
+      "exitCode": null,
+      "error": null,
+      "desc": "前端 web 控制台 dev 服务（127.0.0.1:3000，含 DevInspector 元素定位）",
+      "group": "FavAPI",
+      "port": null,
+      "roomId": null,
+      "favorite": true,
+      "startedAt": 1792550041192,
+      "lastStartedAt": 1792551470317,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\6OPpO4(23340)\\processes\\ZAmtTjJ9-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\6OPpO4(23340)\\processes\\ZAmtTjJ9-stderr.log",
+      "envs": {}
     }
   ]
 }

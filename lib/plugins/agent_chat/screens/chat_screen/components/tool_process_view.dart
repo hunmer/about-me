@@ -119,8 +119,20 @@ class _ThinkingLiveViewState extends State<ThinkingLiveView> {
 /// 各轮正文展示（过程文本，每轮一块）
 class TurnTextsView extends StatelessWidget {
   final List<String> texts;
+  final String? thinking;
 
-  const TurnTextsView({super.key, required this.texts});
+  const TurnTextsView({super.key, required this.texts, this.thinking});
+
+  List<String> get _visibleTexts {
+    final thinkingText = _normalizeProcessText(thinking);
+    return texts.map((text) => ChatMessage.splitThink(text).$2.trim()).where((
+      text,
+    ) {
+      if (text.isEmpty) return false;
+      final normalized = _normalizeProcessText(text);
+      return thinkingText == null || normalized != thinkingText;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +140,7 @@ class TurnTextsView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var i = 0; i < texts.length; i++)
+        for (var i = 0; i < _visibleTexts.length; i++)
           Container(
             width: double.infinity,
             margin: const EdgeInsets.only(bottom: 8),
@@ -156,7 +168,7 @@ class TurnTextsView extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  texts[i],
+                  _visibleTexts[i],
                   style: DsTypography.caption.copyWith(
                     color: theme.textSub,
                     height: 1.4,
@@ -168,6 +180,11 @@ class TurnTextsView extends StatelessWidget {
       ],
     );
   }
+}
+
+String? _normalizeProcessText(String? text) {
+  final normalized = text?.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return normalized == null || normalized.isEmpty ? null : normalized;
 }
 
 /// 生成中的实时过程视图：思考流 + 各轮正文 + 工具步骤状态（Codex 风格全展开）
@@ -193,7 +210,8 @@ class LiveProcessView extends StatelessWidget {
       children: [
         if (thinking != null && thinking.isNotEmpty)
           ThinkingLiveView(thinking: thinking),
-        if (turnTexts.isNotEmpty) TurnTextsView(texts: turnTexts),
+        if (turnTexts.isNotEmpty)
+          TurnTextsView(texts: turnTexts, thinking: thinking),
         if (steps.isNotEmpty)
           ToolCallSteps(
             steps: steps,
@@ -331,7 +349,7 @@ class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
                           const SizedBox(height: 8),
                       ],
                       if (turnTexts.isNotEmpty) ...[
-                        TurnTextsView(texts: turnTexts),
+                        TurnTextsView(texts: turnTexts, thinking: thinking),
                         if (steps.isNotEmpty) const SizedBox(height: 8),
                       ],
                       if (steps.isNotEmpty)

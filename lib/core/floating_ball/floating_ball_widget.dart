@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:get/get.dart';
 import 'floating_ball_service.dart';
@@ -76,6 +77,8 @@ class _FloatingBallWidgetState extends State<FloatingBallWidget> {
     if (gesture == FloatingBallGesture.longPress) {
       return;
     }
+
+    HapticFeedback.mediumImpact();
 
     // 使用 Get.context 获取当前有效的 Navigator context
     final navigatorContext = Get.context;

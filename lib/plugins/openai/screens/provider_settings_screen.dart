@@ -66,10 +66,23 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
     } catch (e) {
       _showErrorSnackBar('${'openai_loadProvidersError'.tr}: $e');
     } finally {
+      _sortProviders();
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  /// 激活的服务商优先显示；Dart sort 不稳定，用原索引做次级 key 保持同级相对顺序
+  void _sortProviders() {
+    final indexed = _providers.asMap().entries.toList()
+      ..sort((a, b) {
+        final active = (b.value.isActive ? 1 : 0).compareTo(
+          a.value.isActive ? 1 : 0,
+        );
+        return active != 0 ? active : a.key.compareTo(b.key);
+      });
+    _providers = indexed.map((e) => e.value).toList();
   }
 
   void _showErrorSnackBar(String message) {
