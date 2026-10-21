@@ -32,10 +32,7 @@ class FieldFilterService {
   /// [options] 过滤选项
   ///
   /// 返回过滤后的数据
-  static dynamic filterData(
-    dynamic data,
-    FilterOptions options,
-  ) {
+  static dynamic filterData(dynamic data, FilterOptions options) {
     // 如果不需要过滤，直接返回
     if (!options.needsFiltering) {
       return data;
@@ -97,10 +94,7 @@ class FieldFilterService {
 
     // Compact/Full 模式：返回摘要 + 记录
     if (options.generateSummary) {
-      return {
-        'sum': _calculateSummary(filteredList),
-        'recs': filteredList,
-      };
+      return {'sum': _calculateSummary(filteredList), 'recs': filteredList};
     } else {
       return filteredList;
     }
@@ -111,6 +105,22 @@ class FieldFilterService {
     Map<String, dynamic> map,
     FilterOptions options,
   ) {
+    // 分页响应保留元数据，只过滤 data 中的记录。
+    if (map['data'] is List &&
+        map.containsKey('total') &&
+        map.containsKey('offset')) {
+      if (options.isSummaryOnly) {
+        return _generateSummary(map['data'] as List, options);
+      }
+      return {
+        ...map,
+        'data': _filterList(
+          map['data'] as List,
+          options.copyWith(generateSummary: false),
+        ),
+      };
+    }
+
     // 检查是否已经是响应格式 {sum: {...}, recs: [...]}
     if (map.containsKey('sum') && map.containsKey('recs')) {
       // 递归过滤 recs
@@ -186,8 +196,7 @@ class FieldFilterService {
     Map<String, dynamic> record,
     FilterOptions options,
   ) {
-    if (options.textLengthLimits == null ||
-        options.textLengthLimits!.isEmpty) {
+    if (options.textLengthLimits == null || options.textLengthLimits!.isEmpty) {
       return record;
     }
 
@@ -230,9 +239,7 @@ class FieldFilterService {
 
   /// 计算统计数据
   static Map<String, dynamic> _calculateSummary(List<dynamic> list) {
-    final summary = <String, dynamic>{
-      'total': list.length,
-    };
+    final summary = <String, dynamic>{'total': list.length};
 
     // 尝试计算常见统计字段
     if (list.isNotEmpty && list.first is Map) {
@@ -282,10 +289,7 @@ class FieldFilterService {
   /// [params] 参数 Map（包含 mode、fields 等）
   ///
   /// 返回过滤后的数据
-  static dynamic filterFromParams(
-    dynamic data,
-    Map<String, dynamic>? params,
-  ) {
+  static dynamic filterFromParams(dynamic data, Map<String, dynamic>? params) {
     final options = FilterOptions.fromParams(params);
     return filterData(data, options);
   }

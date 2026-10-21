@@ -8,7 +8,8 @@ import '../tokens/typography.dart';
 ///
 /// 旗形用 skribble `Generator.polygon` 画 rough 实底
 /// （[color].mixWhite(0.2)）+ 墨线描边；宽随文字自适应
-/// （横向内边距默认 [DsSpacing.xl]）。文字反色居中。
+/// （横向内边距默认左 [DsSpacing.xl]、右 [DsSpacing.xxxl]，右侧多留以避开
+/// V 形凹口）。文字反色居中。
 ///
 /// ```dart
 /// DsTitleBanner(text: '今日手帐')
@@ -47,9 +48,12 @@ class DsTitleBanner extends StatelessWidget {
     final content = Padding(
       padding:
           padding ??
-          EdgeInsets.symmetric(
-            horizontal: theme.spacing.xl,
-            vertical: theme.spacing.sm,
+          EdgeInsets.only(
+            left: theme.spacing.xl,
+            // 右侧多留：V 形凹口最深点在 0.72w，预留不足会侵入文字
+            right: theme.spacing.xxxl,
+            top: theme.spacing.sm,
+            bottom: theme.spacing.sm,
           ),
       child: Text(
         text,

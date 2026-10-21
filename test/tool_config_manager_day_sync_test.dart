@@ -49,7 +49,9 @@ void main() {
   final bundledPath = 'lib/plugins/agent_chat/tools/day.json';
 
   setUpAll(() async {
-    final temporary = await Directory.systemTemp.createTemp('aboutme-day-sync-');
+    final temporary = await Directory.systemTemp.createTemp(
+      'aboutme-day-sync-',
+    );
     PathProviderPlatform.instance = _TemporaryPaths(temporary.path);
     SharedPreferences.setMockInitialValues({});
     globalStorage = StorageManager(storage: _TemporaryStorage(temporary));
@@ -57,11 +59,11 @@ void main() {
     // 仅提供 day 的 assets 描述，其余 asset 请求返回不存在
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMessageHandler('flutter/assets', (message) async {
-      final key = utf8.decode(message!.buffer.asUint8List());
-      if (key != bundledPath) return null;
-      final bytes = await File(key).readAsBytes();
-      return ByteData.view(bytes.buffer, bytes.offsetInBytes, bytes.length);
-    });
+          final key = utf8.decode(message!.buffer.asUint8List());
+          if (key != bundledPath) return null;
+          final bytes = await File(key).readAsBytes();
+          return ByteData.view(bytes.buffer, bytes.offsetInBytes, bytes.length);
+        });
 
     // 模拟老安装：本地已是旧命名（getMemorialDays 等）的 day 配置
     const legacyMethods = [
@@ -115,9 +117,8 @@ void main() {
       'deleteDay',
       'getDaysUntil',
       'getUpcoming',
-      'findDayBy',
-      'findDayByName',
+      'query',
     });
-    expect(methods.where((m) => m.contains('MemorialDay')), isEmpty);
+    expect(methods.where((m) => m.startsWith('find')), isEmpty);
   });
 }

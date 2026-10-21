@@ -456,6 +456,7 @@
       {"name":"group","type":"string","optional":true,"description":"分组，精确匹配"},
       {"name":"unitType","type":"string","optional":true,"description":"单位，精确匹配"},
       {"name":"status","type":"string","optional":true,"description":"active 或 completed"},
+      {"name":"filters","type":"object","optional":true,"description":"多条件 AND 过滤对象；每个键为字段名，值可为单值或候选值数组"},
       {"name":"offset","type":"number","optional":true,"description":"筛选后的分页偏移，默认 0"},
       {"name":"count","type":"number","optional":true,"description":"筛选后的返回数量，默认全部"},
       {"name":"mode","type":"string","optional":true,"description":"复用现有 filter：full、compact、summary"},

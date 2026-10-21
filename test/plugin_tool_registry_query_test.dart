@@ -24,11 +24,13 @@ void main() {
       'fuzzy': true,
       'offset': 0,
       'count': 1,
+      'fields': ['id'],
+      'generateSummary': false,
     });
 
     expect(result, {
       'data': [
-        {'id': 'g1', 'name': '学习'},
+        {'id': 'g1'},
       ],
       'total': 1,
       'offset': 0,
@@ -41,18 +43,41 @@ void main() {
     final registry = PluginToolRegistry();
     registry.register('todo', {
       'getTasks': (Map<String, dynamic> params) => [
-        {'id': '1', 'title': '阅读', 'status': 'done'},
-        {'id': '2', 'title': '运动', 'status': 'done'},
-        {'id': '3', 'title': '阅读', 'status': 'todo'},
+        {
+          'id': '1',
+          'title': '阅读',
+          'status': 'done',
+          'tags': ['工作'],
+        },
+        {
+          'id': '2',
+          'title': '运动',
+          'status': 'done',
+          'tags': ['健康'],
+        },
+        {
+          'id': '3',
+          'title': '阅读',
+          'status': 'todo',
+          'tags': ['工作'],
+        },
       ],
     });
 
     final result = await registry.invoke('todo', 'query', {
       'title': '阅读',
-      'status': 'done',
+      'filters': {
+        'status': 'done',
+        'tags': ['工作', '学习'],
+      },
       'findAll': false,
     });
 
-    expect(result, {'id': '1', 'title': '阅读', 'status': 'done'});
+    expect(result, {
+      'id': '1',
+      'title': '阅读',
+      'status': 'done',
+      'tags': ['工作'],
+    });
   });
 }

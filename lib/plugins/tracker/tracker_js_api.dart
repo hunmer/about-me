@@ -30,7 +30,9 @@ Future<dynamic> _jsQuery(Map<String, dynamic> params) async {
     }
     for (final entry in filters.entries) {
       final values = entry.value is List ? entry.value as List : [entry.value];
-      if (!values.any((value) => goal[entry.key]?.toString() == value.toString())) {
+      if (!values.any(
+        (value) => goal[entry.key]?.toString() == value.toString(),
+      )) {
         return false;
       }
     }
@@ -58,7 +60,9 @@ Future<dynamic> _jsGetGoals(Map<String, dynamic> params) async {
     if (params['count'] != null) 'count': params['count'],
   };
 
-  final result = await TrackerPlugin.instance._trackerUseCase.getGoals(useCaseParams);
+  final result = await TrackerPlugin.instance._trackerUseCase.getGoals(
+    useCaseParams,
+  );
 
   if (result.isFailure) {
     final failure = result.errorOrNull;
@@ -93,7 +97,9 @@ Future<dynamic> _jsGetGoal(Map<String, dynamic> params) async {
     return {'error': '缺少必需参数: goalId'};
   }
 
-  final result = await TrackerPlugin.instance._trackerUseCase.getGoalById({'id': goalId});
+  final result = await TrackerPlugin.instance._trackerUseCase.getGoalById({
+    'id': goalId,
+  });
 
   if (result.isFailure) {
     final failure = result.errorOrNull;
@@ -147,7 +153,9 @@ Future<dynamic> _jsCreateGoal(Map<String, dynamic> params) async {
     'monthDay': params['monthDay'],
   };
 
-  final result = await TrackerPlugin.instance._trackerUseCase.createGoal(useCaseParams);
+  final result = await TrackerPlugin.instance._trackerUseCase.createGoal(
+    useCaseParams,
+  );
 
   if (result.isFailure) {
     final failure = result.errorOrNull;
@@ -204,7 +212,9 @@ Future<dynamic> _jsUpdateGoal(Map<String, dynamic> params) async {
     useCaseParams['dateSettings'] = updateJson['dateSettings'];
   }
 
-  final result = await TrackerPlugin.instance._trackerUseCase.updateGoal(useCaseParams);
+  final result = await TrackerPlugin.instance._trackerUseCase.updateGoal(
+    useCaseParams,
+  );
 
   if (result.isFailure) {
     final failure = result.errorOrNull;
@@ -222,7 +232,9 @@ Future<dynamic> _jsDeleteGoal(Map<String, dynamic> params) async {
     return {'success': false, 'error': '缺少必需参数: goalId'};
   }
 
-  final result = await TrackerPlugin.instance._trackerUseCase.deleteGoal({'id': goalId});
+  final result = await TrackerPlugin.instance._trackerUseCase.deleteGoal({
+    'id': goalId,
+  });
 
   if (result.isFailure) {
     final failure = result.errorOrNull;
@@ -257,7 +269,9 @@ Future<dynamic> _jsRecordData(Map<String, dynamic> params) async {
     useCaseParams['recordedAt'] = DateTime.now().toIso8601String();
   }
 
-  final result = await TrackerPlugin.instance._trackerUseCase.addRecord(useCaseParams);
+  final result = await TrackerPlugin.instance._trackerUseCase.addRecord(
+    useCaseParams,
+  );
 
   if (result.isFailure) {
     final failure = result.errorOrNull;
@@ -287,7 +301,9 @@ Future<dynamic> _jsGetRecords(Map<String, dynamic> params) async {
     if (params['count'] != null) 'count': params['count'],
   };
 
-  final result = await TrackerPlugin.instance._trackerUseCase.getRecordsForGoal(useCaseParams);
+  final result = await TrackerPlugin.instance._trackerUseCase.getRecordsForGoal(
+    useCaseParams,
+  );
 
   if (result.isFailure) {
     final failure = result.errorOrNull;
@@ -321,7 +337,9 @@ Future<dynamic> _jsDeleteRecord(Map<String, dynamic> params) async {
     return {'success': false, 'error': '缺少必需参数: recordId'};
   }
 
-  final result = await TrackerPlugin.instance._trackerUseCase.deleteRecord({'recordId': recordId});
+  final result = await TrackerPlugin.instance._trackerUseCase.deleteRecord({
+    'recordId': recordId,
+  });
 
   if (result.isFailure) {
     final failure = result.errorOrNull;
@@ -341,7 +359,9 @@ Future<dynamic> _jsGetProgress(Map<String, dynamic> params) async {
   }
 
   // 先获取目标详情
-  final goalResult = await TrackerPlugin.instance._trackerUseCase.getGoalById({'id': goalId});
+  final goalResult = await TrackerPlugin.instance._trackerUseCase.getGoalById({
+    'id': goalId,
+  });
 
   if (goalResult.isFailure) {
     final failure = goalResult.errorOrNull;
@@ -353,8 +373,9 @@ Future<dynamic> _jsGetProgress(Map<String, dynamic> params) async {
   final targetValue = (goalJson['targetValue'] as num).toDouble();
 
   // 计算进度
-  final progress =
-      targetValue > 0 ? (currentValue / targetValue).clamp(0.0, 1.0) : 0.0;
+  final progress = targetValue > 0
+      ? (currentValue / targetValue).clamp(0.0, 1.0)
+      : 0.0;
 
   return {
     'goalId': goalId,
@@ -374,7 +395,9 @@ Future<dynamic> _jsGetStats(Map<String, dynamic> params) async {
   if (goalId != null && goalId.isNotEmpty) {
     // 返回单个目标的统计信息
     // 先获取目标详情
-    final goalResult = await TrackerPlugin.instance._trackerUseCase.getGoalById({'id': goalId});
+    final goalResult = await TrackerPlugin.instance._trackerUseCase.getGoalById(
+      {'id': goalId},
+    );
 
     if (goalResult.isFailure) {
       final failure = goalResult.errorOrNull;
@@ -384,9 +407,8 @@ Future<dynamic> _jsGetStats(Map<String, dynamic> params) async {
     final goalJson = goalResult.dataOrNull as Map<String, dynamic>;
 
     // 获取记录列表
-    final recordsResult = await TrackerPlugin.instance._trackerUseCase.getRecordsForGoal({
-      'goalId': goalId,
-    });
+    final recordsResult = await TrackerPlugin.instance._trackerUseCase
+        .getRecordsForGoal({'goalId': goalId});
 
     if (recordsResult.isFailure) {
       final failure = recordsResult.errorOrNull;
@@ -401,8 +423,9 @@ Future<dynamic> _jsGetStats(Map<String, dynamic> params) async {
     );
     final currentValue = (goalJson['currentValue'] as num).toDouble();
     final targetValue = (goalJson['targetValue'] as num).toDouble();
-    final progress =
-        targetValue > 0 ? (currentValue / targetValue).clamp(0.0, 1.0) : 0.0;
+    final progress = targetValue > 0
+        ? (currentValue / targetValue).clamp(0.0, 1.0)
+        : 0.0;
 
     return {
       'goalId': goalId,

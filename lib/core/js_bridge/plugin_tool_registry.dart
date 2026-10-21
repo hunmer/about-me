@@ -11,9 +11,10 @@ class PluginToolRegistry {
     pluginHandlers.addAll(handlers);
     // 查询是所有数据型插件的统一入口。插件没有显式实现时，
     // 复用已有 get* API 的结果执行通用过滤，避免重复维护 find* 方法。
-    final queryHandler = (Map<String, dynamic> params) {
+    Future<dynamic> queryHandler(Map<String, dynamic> params) {
       return _query(pluginId, params);
-    };
+    }
+
     pluginHandlers.putIfAbsent('query', () => queryHandler);
     handlers.putIfAbsent('query', () => queryHandler);
   }
@@ -99,13 +100,14 @@ class PluginToolRegistry {
         'textLengthLimits',
         'generateSummary',
         'abbreviateFieldNames',
-      }.contains(entry.key))
+      }.contains(entry.key)) {
         continue;
-      if (entry.value == null) continue;
+      }
+      if (entry.value == null) {
+        continue;
+      }
       records = records
-          .where(
-            (record) => _matches(record[entry.key], entry.value),
-          )
+          .where((record) => _matches(record[entry.key], entry.value))
           .toList();
     }
     if (params['filters'] is Map) {
@@ -168,7 +170,20 @@ class PluginToolRegistry {
       'tracker': 'getGoals',
     };
     const byEntity = <String, Map<String, String>>{
-      'bill': {'account': 'getAccounts', 'accounts': 'getAccounts'},
+      'activity': {'activity': 'getActivities', 'activities': 'getActivities'},
+      'bill': {
+        'account': 'getAccounts',
+        'accounts': 'getAccounts',
+        'bill': 'getBills',
+        'bills': 'getBills',
+      },
+      'calendar': {'event': 'getEvents', 'events': 'getEvents'},
+      'calendar_album': {
+        'entry': 'getEntries',
+        'entries': 'getEntries',
+        'photo': 'getPhotos',
+        'photos': 'getPhotos',
+      },
       'chat': {
         'channel': 'getChannels',
         'channels': 'getChannels',
@@ -176,14 +191,56 @@ class PluginToolRegistry {
         'messages': 'getMessages',
       },
       'contact': {
+        'contact': 'getContacts',
+        'contacts': 'getContacts',
         'interaction': 'getInteractions',
         'interactions': 'getInteractions',
       },
-      'database': {'record': 'getRecords', 'records': 'getRecords'},
-      'goods': {'warehouse': 'getWarehouses', 'warehouses': 'getWarehouses'},
-      'nodes': {'node': 'getNodes', 'nodes': 'getNodes'},
-      'notes': {'folder': 'getFolders', 'folders': 'getFolders'},
-      'store': {'useritem': 'getUserItems', 'useritems': 'getUserItems'},
+      'checkin': {
+        'item': 'getCheckinItems',
+        'items': 'getCheckinItems',
+        'history': 'getCheckinHistory',
+      },
+      'database': {
+        'database': 'getDatabases',
+        'databases': 'getDatabases',
+        'record': 'getRecords',
+        'records': 'getRecords',
+      },
+      'day': {'day': 'getDays', 'memorialday': 'getDays'},
+      'diary': {'diary': 'getDiaries', 'diaries': 'getDiaries'},
+      'goods': {
+        'warehouse': 'getWarehouses',
+        'warehouses': 'getWarehouses',
+        'item': 'getGoods',
+        'items': 'getGoods',
+      },
+      'nodes': {
+        'notebook': 'getNotebooks',
+        'notebooks': 'getNotebooks',
+        'node': 'getNodes',
+        'nodes': 'getNodes',
+      },
+      'notes': {
+        'note': 'getNotes',
+        'notes': 'getNotes',
+        'folder': 'getFolders',
+        'folders': 'getFolders',
+      },
+      'store': {
+        'product': 'getProducts',
+        'products': 'getProducts',
+        'useritem': 'getUserItems',
+        'useritems': 'getUserItems',
+      },
+      'timer': {'timer': 'getTimers', 'timers': 'getTimers'},
+      'todo': {'task': 'getTasks', 'tasks': 'getTasks'},
+      'tracker': {
+        'goal': 'query',
+        'goals': 'query',
+        'record': 'getRecords',
+        'records': 'getRecords',
+      },
     };
     final explicit = byEntity[pluginId]?[entity];
     if (explicit != null) return explicit;
