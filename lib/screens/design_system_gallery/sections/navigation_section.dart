@@ -15,6 +15,13 @@ class NavigationSection extends StatefulWidget {
 class _NavigationSectionState extends State<NavigationSection> {
   int _navIndex = 0;
   int _pageIndex = 1;
+  final _listController = ScrollController();
+
+  @override
+  void dispose() {
+    _listController.dispose();
+    super.dispose();
+  }
 
   static const _navItems = [
     DSNavItem(icon: DsIconKind.home, label: '小屋'),
@@ -47,6 +54,23 @@ class _NavigationSectionState extends State<NavigationSection> {
             behavior: HitTestBehavior.opaque,
             onTap: () => setState(() => _pageIndex = (_pageIndex + 1) % 4),
             child: DSPageIndicator(count: 4, index: _pageIndex),
+          ),
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('回到顶部（滚动下方列表）'),
+        SizedBox(
+          height: 200,
+          child: DsBackTop(
+            controller: _listController,
+            child: ListView.builder(
+              controller: _listController,
+              itemCount: 40,
+              itemBuilder:
+                  (context, i) => DSListItem(
+                    title: '列表项 ${i + 1}',
+                    subtitle: '滚过 400px 后右下角出现回顶浮钮',
+                  ),
+            ),
           ),
         ),
       ],

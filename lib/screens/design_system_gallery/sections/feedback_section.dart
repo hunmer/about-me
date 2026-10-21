@@ -70,6 +70,97 @@ class FeedbackSection extends StatelessWidget {
             ),
           ],
         ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('Toast 四方向入场（点击触发）'),
+        DemoFlow(
+          children: [
+            for (final (label, from) in [
+              ('从底部', DSToastFrom.bottom),
+              ('从顶部', DSToastFrom.top),
+              ('从左侧', DSToastFrom.left),
+              ('从右侧', DSToastFrom.right),
+            ])
+              DSButton(
+                label: label,
+                size: DSButtonSize.sm,
+                onPressed: () => showDSToast(
+                  context,
+                  message: label,
+                  type: DSToastType.info,
+                  from: from,
+                ),
+              ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('Tooltip 双变种（悬停查看）'),
+        DemoFlow(
+          children: [
+            DSTooltip(
+              message: '主色实底气泡',
+              child: DSIconButton(icon: DsIconKind.star, onPressed: () {}),
+            ),
+            DSTooltip(
+              message: '纸底墨线气泡',
+              variant: DsTooltipVariant.paper,
+              child: DSIconButton(icon: DsIconKind.heart, onPressed: () {}),
+            ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('抽屉（左滑入 / 底部弹层）'),
+        DemoFlow(
+          children: [
+            DSButton(
+              label: '左侧抽屉',
+              size: DSButtonSize.sm,
+              onPressed:
+                  () => showDSDrawer(
+                    context,
+                    side: DsDrawerSide.left,
+                    width: 280,
+                    builder:
+                        (context) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            DsTitleBanner(text: '侧边菜单'),
+                            DSListItem(title: '手帐本', subtitle: '12 篇'),
+                            DSListItem(title: '待办清单', subtitle: '3 项'),
+                            DSListItem(title: '设置'),
+                          ],
+                        ),
+                  ),
+            ),
+            DSButton(
+              label: '底部抽屉',
+              size: DSButtonSize.sm,
+              onPressed:
+                  () => showDSDrawer(
+                    context,
+                    side: DsDrawerSide.bottom,
+                    builder:
+                        (context) =>
+                            const DSListItem(title: '底部弹层', subtitle: '高度随内容'),
+                  ),
+            ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('图片与全屏查看器（点击放大）'),
+        DemoFlow(
+          children: [
+            DsImage.asset(
+              'assets/images/default_avatar.jpg',
+              width: 150,
+              height: 96,
+              onTap:
+                  () => showDsImageViewer(
+                    context,
+                    image: const AssetImage('assets/images/default_avatar.jpg'),
+                  ),
+            ),
+          ],
+        ),
       ],
     );
   }

@@ -84,6 +84,7 @@ class OpenAIChatModel extends ChatModel<OpenAIChatOptions> {
 
     final accumulatedToolCalls = <StreamingToolCall>[];
     final accumulatedTextBuffer = StringBuffer();
+    final accumulatedThinkingBuffer = StringBuffer();
     var chunkCount = 0;
     var lastResult = ChatResult<ChatMessage>(
       output: ChatMessage(role: ChatMessageRole.model, parts: const []),
@@ -149,6 +150,8 @@ class OpenAIChatModel extends ChatModel<OpenAIChatOptions> {
           for (final part in message.parts) {
             if (part is TextPart) {
               accumulatedTextBuffer.write(part.text);
+            } else if (part is ThinkingPart) {
+              accumulatedThinkingBuffer.write(part.text);
             }
           }
 
@@ -164,6 +167,14 @@ class OpenAIChatModel extends ChatModel<OpenAIChatOptions> {
           accumulatedToolCalls,
           accumulatedText: accumulatedTextBuffer.toString(),
         );
+
+        // Previously streamed text is replaced by the complete tool message.
+        // Keep reasoning alongside it for DeepSeek's next tool round.
+        if (accumulatedThinkingBuffer.isNotEmpty) {
+          completeMessage.parts.add(
+            ThinkingPart(accumulatedThinkingBuffer.toString()),
+          );
+        }
 
         yield ChatResult<ChatMessage>(
           id: lastResult.id,

@@ -99,11 +99,7 @@ String stripRepeatedPrefix(String current, String? previous) {
       : current;
 }
 
-/// DeepSeek thinking 模型兼容：请求体注入 `thinking: {"type": "disabled"}`。
-///
-/// DeepSeek 思考模型的多轮工具调用要求把 reasoning_content 传回，
-/// dartantic 不回传会 400；FC 工具场景无需 reasoning，直接关闭思考模式
-/// （还省 token）。仅对 DeepSeek 域名生效，其他端点透传不注入。
+/// DeepSeek thinking 开关适配；思考字段解析与工具轮次回传由 SDK 处理。
 class DeepSeekCompatClient extends http.BaseClient {
   DeepSeekCompatClient(this._inner, {required this.disableThinking});
 
@@ -112,8 +108,7 @@ class DeepSeekCompatClient extends http.BaseClient {
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (!disableThinking ||
-        request is! http.Request ||
+    if (request is! http.Request ||
         request.method != 'POST' ||
         !request.url.path.contains('chat/completions')) {
       return _inner.send(request);
@@ -121,7 +116,9 @@ class DeepSeekCompatClient extends http.BaseClient {
     try {
       final body = jsonDecode(request.body) as Map<String, dynamic>;
       if (!body.containsKey('thinking') && !body.containsKey('reasoning')) {
-        body['thinking'] = {'type': 'disabled'};
+        body['thinking'] = {'type': disableThinking ? 'disabled' : 'enabled'};
+        debugPrint('[NativeTool] DeepSeek 请求: thinking=${body['thinking']} '
+            'messages=${(body['messages'] as List?)?.length ?? 0}');
         final patched = http.Request(request.method, request.url)
           ..headers.addAll(request.headers)
           ..body = jsonEncode(body);
@@ -143,10 +140,7 @@ class AppOpenAIProvider extends OpenAIProvider {
     required String apiKey,
     required Uri baseUrl,
     super.headers = const {},
-  }) : _disableThinking = baseUrl.host.contains('deepseek'),
-       super(apiKey: apiKey, baseUrl: baseUrl);
-
-  final bool _disableThinking;
+  }) : super(apiKey: apiKey, baseUrl: baseUrl);
 
   @override
   ChatModel<OpenAIChatOptions> createChatModel({
@@ -156,9 +150,7 @@ class AppOpenAIProvider extends OpenAIProvider {
     bool enableThinking = false,
     OpenAIChatOptions? options,
   }) {
-    if (_disableThinking) {
-      debugPrint('[NativeTool] DeepSeek 兼容：关闭 thinking 模式');
-    }
+    debugPrint('[NativeTool] DeepSeek 兼容：启用 thinking，捕获 reasoning_content');
     return OpenAIChatModel(
       name: name ?? defaultModelNames[ModelKind.chat]!,
       tools: tools,
@@ -168,7 +160,7 @@ class AppOpenAIProvider extends OpenAIProvider {
       headers: headers,
       client: DeepSeekCompatClient(
         http.Client(),
-        disableThinking: _disableThinking,
+        disableThinking: false,
       ),
       defaultOptions: OpenAIChatOptions(
         temperature: temperature ?? options?.temperature,

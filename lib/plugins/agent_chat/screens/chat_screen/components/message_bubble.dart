@@ -621,7 +621,7 @@ class AgentMessageContent extends StatelessWidget {
             return JellyBox(
               radius: theme.radii.xxl,
               padding: EdgeInsets.all(theme.spacing.xl),
-              constraints: const BoxConstraints(maxWidth: 480, maxHeight: 560),
+              constraints: const BoxConstraints(maxWidth: 480),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

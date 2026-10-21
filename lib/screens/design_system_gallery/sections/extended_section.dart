@@ -4,7 +4,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
-/// 08 扩展组件：Tabs / Accordion / Combobox / Popover / EmptyState / Skeleton
+/// 08 布局与装饰：Tabs / Accordion / Popover / EmptyState / Skeleton / 分隔线 / 壁纸
 class ExtendedSection extends StatefulWidget {
   const ExtendedSection({super.key});
 
@@ -15,16 +15,13 @@ class ExtendedSection extends StatefulWidget {
 class _ExtendedSectionState extends State<ExtendedSection> {
   int _tabIndex = 0;
   int _swipeTabIndex = 0;
-  String? _comboValue;
-
-  static const _comboOptions = ['布丁', '软糖', '果冻', '奶昔', '雪糕', '冰沙'];
 
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     return SectionCard(
       index: '08',
-      title: '扩展组件',
+      title: '布局与装饰',
       children: [
         const DemoSubHeader('标签页（Tabs）'),
         DSTabs(
@@ -76,78 +73,54 @@ class _ExtendedSectionState extends State<ExtendedSection> {
           ],
         ),
         SizedBox(height: theme.spacing.lg),
-        Wrap(
-          spacing: theme.spacing.xl,
-          runSpacing: theme.spacing.lg,
-          crossAxisAlignment: WrapCrossAlignment.start,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const DemoSubHeader('可搜索下拉（Combobox）'),
-                DSCombobox<String>(
-                  width: 200,
-                  hint: '选一个甜品',
-                  value: _comboValue,
-                  items: [
-                    for (final option in _comboOptions)
-                      DSSelectItem(label: option, value: option),
-                  ],
-                  onChanged: (v) => setState(() => _comboValue = v),
-                ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const DemoSubHeader('气泡卡（Popover，点击展开）'),
-                DSPopover(
-                  contentBuilder:
-                      (context, close) => Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            '更多操作',
-                            style: DsTypography.heading.copyWith(
-                              color: theme.text,
-                            ),
-                          ),
-                          SizedBox(height: theme.spacing.sm),
-                          DSButton(
-                            label: '重命名',
-                            variant: DSButtonVariant.ghost,
-                            size: DSButtonSize.sm,
-                            onPressed: () {
-                              close();
-                              showDSToast(
-                                context,
-                                message: '已重命名',
-                                type: DSToastType.success,
-                              );
-                            },
-                          ),
-                          DSButton(
-                            label: '删除',
-                            variant: DSButtonVariant.destructive,
-                            size: DSButtonSize.sm,
-                            onPressed: () {
-                              close();
-                              showDSToast(context, message: '已删除');
-                            },
-                          ),
-                        ],
+            const DemoSubHeader('气泡卡（Popover，点击展开）'),
+            DSPopover(
+              contentBuilder:
+                  (context, close) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        '更多操作',
+                        style: DsTypography.heading.copyWith(
+                          color: theme.text,
+                        ),
                       ),
-                  child: DSButton(
-                    label: '更多操作',
-                    variant: DSButtonVariant.outline,
-                    size: DSButtonSize.sm,
-                    onPressed: () {},
+                      SizedBox(height: theme.spacing.sm),
+                      DSButton(
+                        label: '重命名',
+                        variant: DSButtonVariant.ghost,
+                        size: DSButtonSize.sm,
+                        onPressed: () {
+                          close();
+                          showDSToast(
+                            context,
+                            message: '已重命名',
+                            type: DSToastType.success,
+                          );
+                        },
+                      ),
+                      DSButton(
+                        label: '删除',
+                        variant: DSButtonVariant.destructive,
+                        size: DSButtonSize.sm,
+                        onPressed: () {
+                          close();
+                          showDSToast(context, message: '已删除');
+                        },
+                      ),
+                    ],
                   ),
-                ),
-              ],
+              child: DSButton(
+                label: '更多操作',
+                variant: DSButtonVariant.outline,
+                size: DSButtonSize.sm,
+                onPressed: () {},
+              ),
             ),
           ],
         ),
@@ -170,7 +143,55 @@ class _ExtendedSectionState extends State<ExtendedSection> {
         SizedBox(height: theme.spacing.lg),
         const DemoSubHeader('骨架屏（Skeleton）'),
         const DSSkeletonListItem(),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('骨架屏预设（带斜向流光）'),
+        DemoFlow(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const SizedBox(width: 200, child: SkeletonParagraph(lines: 3)),
+            const SkeletonButton(width: 140),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('旗标标题与分隔线'),
+        const DsTitleBanner(text: '今日手帐'),
+        SizedBox(height: theme.spacing.md),
+        const DSDivider(style: DsDividerStyle.dots),
+        SizedBox(height: theme.spacing.sm),
+        DSDivider(style: DsDividerStyle.dashed, color: theme.primary),
+        SizedBox(height: theme.spacing.sm),
+        const DSDivider(style: DsDividerStyle.plain),
+        SizedBox(height: theme.spacing.sm),
+        const DSDivider(style: DsDividerStyle.dots, label: '带文字的分隔线'),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('壁纸底纹（波点 / 糖霜彩粒 / 网格）'),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _wallpaperSample(theme, DsWallpaperPattern.polka, 'polka 波点'),
+            SizedBox(height: theme.spacing.sm),
+            _wallpaperSample(theme, DsWallpaperPattern.sprinkles, 'sprinkles 糖霜'),
+            SizedBox(height: theme.spacing.sm),
+            _wallpaperSample(theme, DsWallpaperPattern.grid, 'grid 网格'),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _wallpaperSample(AppThemeData theme, DsWallpaperPattern p, String label) {
+    return DsWallpaper(
+      pattern: p,
+      child: SizedBox(
+        height: 64,
+        width: double.infinity,
+        child: Center(
+          child: Text(
+            label,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+        ),
+      ),
     );
   }
 

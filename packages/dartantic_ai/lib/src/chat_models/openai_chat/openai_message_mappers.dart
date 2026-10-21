@@ -206,6 +206,9 @@ extension MessageListToOpenAI on List<ChatMessage> {
     return oai.ChatMessage.assistant(
       content: textContent.isEmpty ? null : textContent,
       toolCalls: toolCalls.isEmpty ? null : toolCalls,
+      reasoningContent: message.parts.whereType<ThinkingPart>().isEmpty
+          ? null
+          : message.parts.whereType<ThinkingPart>().map((p) => p.text).join(),
     );
   }
 }
@@ -218,6 +221,10 @@ ChatMessage messageFromOpenAIStreamDelta(
   List<StreamingToolCall> accumulatedToolCalls,
 ) {
   final parts = <Part>[];
+
+  if (delta.reasoningContent != null && delta.reasoningContent!.isNotEmpty) {
+    parts.add(ThinkingPart(delta.reasoningContent!));
+  }
 
   // Add text content if present
   if (delta.content != null && delta.content!.isNotEmpty) {

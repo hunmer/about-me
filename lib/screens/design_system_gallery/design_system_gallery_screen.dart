@@ -8,13 +8,15 @@ import 'sections/controls_section.dart';
 import 'sections/data_section.dart';
 import 'sections/extended_section.dart';
 import 'sections/feedback_section.dart';
+import 'sections/gallery_section.dart';
 import 'sections/inputs_section.dart';
 import 'sections/navigation_section.dart';
-import 'sections/new_components_section.dart';
 import 'sections/pickers_section.dart';
-import 'sections/variants_section.dart';
 
 /// 手绘风设计系统组件展示页
+///
+/// 布局：顶栏（含深浅切换）+ 分类导航条（DSChipBar，吃自己狗粮）
+/// + 内容区一次只渲染当前分类的组件示例，切换时淡入并回到顶部。
 ///
 /// 路由：/design_system
 class DesignSystemGalleryScreen extends StatefulWidget {
@@ -26,7 +28,19 @@ class DesignSystemGalleryScreen extends StatefulWidget {
 }
 
 class _DesignSystemGalleryScreenState extends State<DesignSystemGalleryScreen> {
+  static const _categories = [
+    '按钮', '输入', '选择器', '控件', '数据展示', '反馈浮层', '导航', '布局装饰', '令牌',
+  ];
+
   bool _dark = false;
+  int _category = 0;
+  final _contentController = ScrollController();
+
+  @override
+  void dispose() {
+    _contentController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,113 +61,93 @@ class _DesignSystemGalleryScreenState extends State<DesignSystemGalleryScreen> {
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: theme.spacing.lg,
-              vertical: theme.spacing.lg,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeader(theme),
-                SizedBox(height: theme.spacing.xl),
-                const ButtonsSection(),
-                SizedBox(height: theme.spacing.lg),
-                const ControlsSection(),
-                SizedBox(height: theme.spacing.lg),
-                const InputsSection(),
-                SizedBox(height: theme.spacing.lg),
-                const PickersSection(),
-                SizedBox(height: theme.spacing.lg),
-                const DataSection(),
-                SizedBox(height: theme.spacing.lg),
-                const FeedbackSection(),
-                SizedBox(height: theme.spacing.lg),
-                const NavigationSection(),
-                SizedBox(height: theme.spacing.lg),
-                const ExtendedSection(),
-                SizedBox(height: theme.spacing.lg),
-                // 新变种与新组件（对标 animal-island-ui 后补充）
-                const VariantsSection(),
-                SizedBox(height: theme.spacing.lg),
-                const NewComponentsSection(),
-                SizedBox(height: theme.spacing.lg),
-                const _TokensCard(),
-                SizedBox(height: theme.spacing.xxl),
-              ],
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(theme),
+              // 分类导航：横滑 chip 条，内容区只展示选中分类
+              DSChipBar(
+                labels: _categories,
+                selected: _category,
+                onChanged: (i) {
+                  setState(() => _category = i);
+                  // 切换分类后内容回到顶部
+                  if (_contentController.hasClients) {
+                    _contentController.jumpTo(0);
+                  }
+                },
+              ),
+              SizedBox(height: theme.spacing.md),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _contentController,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: theme.spacing.lg,
+                    vertical: theme.spacing.sm,
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: DsMotion.fast,
+                    switchInCurve: DsMotion.curve,
+                    switchOutCurve: DsMotion.curve,
+                    child: KeyedSubtree(
+                      key: ValueKey(_category),
+                      child: _buildCategory(_category),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
+  Widget _buildCategory(int index) => switch (index) {
+    0 => const ButtonsSection(),
+    1 => const InputsSection(),
+    2 => const PickersSection(),
+    3 => const ControlsSection(),
+    4 => const DataSection(),
+    5 => const FeedbackSection(),
+    6 => const NavigationSection(),
+    7 => const ExtendedSection(),
+    _ => const _TokensSection(),
+  };
+
   Widget _buildHeader(AppThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        DSTopBar(title: '手绘风 组件库'),
-        SizedBox(height: theme.spacing.xl),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (final c in [
-              theme.warning,
-              theme.secondary,
-              theme.primary,
-              theme.secondary,
-              theme.warning,
-            ])
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xs),
-                child: DsIcon(DsIconKind.star, size: 14, color: c),
-              ),
-          ],
-        ),
-        SizedBox(height: theme.spacing.sm),
-        Text(
-          '手绘风 游戏 UI 组件库',
-          textAlign: TextAlign.center,
-          style: DsTypography.display.copyWith(color: theme.text),
-        ),
-        SizedBox(height: theme.spacing.xs),
-        Text(
-          'claymorphism 立体质感 · 圆润可爱 · 轻松治愈',
-          textAlign: TextAlign.center,
-          style: DsTypography.caption.copyWith(color: theme.textSub),
-        ),
-        SizedBox(height: theme.spacing.md),
-        // 深浅主题切换（用我们自己的 Switch，吃自己的狗粮）
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            DsIcon(
-              DsIconKind.moon,
-              size: 16,
-              color: _dark ? theme.warning : theme.textSub,
-            ),
-            SizedBox(width: theme.spacing.sm),
-            DSSwitch(
-              value: _dark,
-              activeColor: theme.primary,
-              onChanged: (v) => setState(() => _dark = v),
-            ),
-            SizedBox(width: theme.spacing.sm),
-            DsIcon(
-              DsIconKind.sun,
-              size: 16,
-              color: !_dark ? theme.warning : theme.textSub,
-            ),
-          ],
-        ),
-      ],
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
+      child: Row(
+        children: [
+          Expanded(child: DSTopBar(title: '手绘风 组件库', onBack: null)),
+          DsIcon(
+            DsIconKind.moon,
+            size: 16,
+            color: _dark ? theme.warning : theme.textSub,
+          ),
+          SizedBox(width: theme.spacing.sm),
+          // 深浅主题切换（用我们自己的 Switch，吃自己的狗粮）
+          DSSwitch(
+            value: _dark,
+            activeColor: theme.primary,
+            onChanged: (v) => setState(() => _dark = v),
+          ),
+          SizedBox(width: theme.spacing.sm),
+          DsIcon(
+            DsIconKind.sun,
+            size: 16,
+            color: !_dark ? theme.warning : theme.textSub,
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// 设计令牌色板卡（对应设计稿底部的 Design Tokens）
-class _TokensCard extends StatelessWidget {
-  const _TokensCard();
+/// 09 设计令牌色板卡（对应设计稿底部的 Design Tokens）
+class _TokensSection extends StatelessWidget {
+  const _TokensSection();
 
   static const _swatches = <(String, Color)>[
     ('主色', Color(0xFF885CF6)),
@@ -169,65 +163,43 @@ class _TokensCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    return DSCard(
-      radius: theme.radii.xxl,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              DsIcon(DsIconKind.star, size: 16, color: theme.primary),
-              SizedBox(width: theme.spacing.sm),
-              Text(
-                '设计规范（Design Tokens）',
-                style: DsTypography.title.copyWith(color: theme.text),
+    return SectionCard(
+      index: '09',
+      title: '设计规范（Design Tokens）',
+      children: [
+        Wrap(
+          spacing: theme.spacing.md,
+          runSpacing: theme.spacing.md,
+          children: [
+            for (final (name, color) in _swatches)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: theme.stroke, width: 2),
+                    ),
+                  ),
+                  SizedBox(width: theme.spacing.sm),
+                  Text(
+                    name,
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
+                ],
               ),
-            ],
-          ),
-          SizedBox(height: theme.spacing.lg),
-          Wrap(
-            spacing: theme.spacing.md,
-            runSpacing: theme.spacing.md,
-            children: [
-              for (final (name, color) in _swatches)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: theme.stroke, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withValues(alpha: 0.4),
-                            offset: const Offset(0, 2),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: theme.spacing.sm),
-                    Text(
-                      name,
-                      style: DsTypography.caption.copyWith(
-                        color: theme.textSub,
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-          SizedBox(height: theme.spacing.md),
-          Text(
-            '所有组件均采用：果冻/软陶质感、大圆角、顶部高光、白色描边、深色条纹和投影。'
-            '样式全部由 AppTheme 令牌驱动，仅依赖 flutter/widgets.dart。',
-            style: DsTypography.caption.copyWith(color: theme.textSub),
-          ),
-        ],
-      ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.md),
+        Text(
+          '所有组件样式全部由 AppTheme 令牌驱动：手绘墨线（skribble）+ 语义色板'
+          ' + 6 档笔型风格 + 8 套主题预设，仅依赖 flutter/widgets.dart。',
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        ),
+      ],
     );
   }
 }
