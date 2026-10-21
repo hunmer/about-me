@@ -1233,6 +1233,15 @@ class NativeToolAgentService {
     return result;
   }
 
+  /// 模型偶发在 method 名中混入杂质（如 'getNotebooks">'），
+  /// 提取开头的标识符；仅当它恰好是已注册方法之一时返回，否则返回 null 走报错。
+  static String? resolveMethodName(Set<String> knownMethods, String raw) {
+    final match = RegExp(r'^\s*([A-Za-z_][A-Za-z0-9_]*)').firstMatch(raw);
+    final ident = match?.group(1);
+    if (ident == null || !knownMethods.contains(ident)) return null;
+    return ident;
+  }
+
   /// 插件 Tool 直接调用注册的 Dart 接口，结果回传 LLM。
   Future<Map<String, dynamic>> _dispatch(
     _NativeToolRunContext run,
@@ -1261,9 +1270,18 @@ class NativeToolAgentService {
 
     final meta = run.toolMeta[pluginId];
     if (meta == null) return reject('Plugin $pluginId not found');
-    final methodName = args['method'];
+    var methodName = args['method'];
     if (methodName is! String || methodName.isEmpty) {
       return reject('参数 method 必须是非空字符串');
+    }
+    if (!meta.methods.containsKey(methodName)) {
+      final cleaned = resolveMethodName(meta.methods.keys.toSet(), methodName);
+      if (cleaned != null) {
+        debugPrint(
+          '[NativeTool] ⚠️ method 名含杂质，已纠正: $methodName -> $cleaned',
+        );
+        methodName = cleaned;
+      }
     }
     final config = meta.methods[methodName];
     if (config == null) {

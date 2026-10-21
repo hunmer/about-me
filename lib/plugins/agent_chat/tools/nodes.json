@@ -162,7 +162,7 @@
     "description": "在指定笔记本中创建新节点",
     "parameters": [
       {"name": "notebookId", "type": "string", "required": true, "description": "笔记本ID"},
-      {"name": "nodeData", "type": "object", "required": true, "description": "节点数据对象，可包含以下字段: id (可选，自定义节点ID如'node456'), title, notes, parentId, status, tags, customFields 等"}
+      {"name": "nodeData", "type": "object", "required": true, "description": "节点数据对象，可包含以下字段: id (可选，自定义节点ID如'node456'), title, notes, parentId, tags, customFields, startDate, endDate 等。status 为节点状态: 0=todo(待办), 1=doing(进行中), 2=done(已完成), 3=none，也接受字符串 'todo'/'inProgress'/'done'/'none'"}
     ],
     "returns": {
       "type": "Object",
@@ -191,7 +191,7 @@
     "parameters": [
       {"name": "notebookId", "type": "string", "required": true, "description": "笔记本ID"},
       {"name": "nodeId", "type": "string", "required": true, "description": "节点ID"},
-      {"name": "updates", "type": "object", "required": true, "description": "更新数据对象"}
+      {"name": "updates", "type": "object", "required": true, "description": "更新数据对象，可包含 title/notes/tags/customFields/startDate/endDate 等字段。status 为节点状态: 0=todo(待办), 1=doing(进行中), 2=done(已完成), 3=none，也接受字符串 'todo'/'inProgress'/'done'/'none'"}
     ],
     "returns": {
       "type": "Object",

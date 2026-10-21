@@ -283,6 +283,41 @@ void main() {
     });
   });
 
+  group('NativeToolAgentService.resolveMethodName 杂质纠错', () {
+    final known = {'getNotebooks', 'createNode', 'updateNode'};
+
+    test('提取尾部混入杂质的标识符（模型输出 getNotebooks"> 场景）', () {
+      expect(
+        NativeToolAgentService.resolveMethodName(known, 'getNotebooks">'),
+        'getNotebooks',
+      );
+      expect(
+        NativeToolAgentService.resolveMethodName(known, "createNode'>"),
+        'createNode',
+      );
+      expect(
+        NativeToolAgentService.resolveMethodName(known, ' updateNode)'),
+        'updateNode',
+      );
+    });
+
+    test('干净的方法名与无法识别的输入保持原语义', () {
+      // 干净且已注册（正常路径不会走到这里，但不应误伤）
+      expect(
+        NativeToolAgentService.resolveMethodName(known, 'getNotebooks'),
+        'getNotebooks',
+      );
+      // 杂质后的标识符不在注册表中 → null，走原有报错
+      expect(
+        NativeToolAgentService.resolveMethodName(known, 'getNotebooksX">'),
+        isNull,
+      );
+      // 完全非法输入 → null
+      expect(NativeToolAgentService.resolveMethodName(known, '">'), isNull);
+      expect(NativeToolAgentService.resolveMethodName(known, ''), isNull);
+    });
+  });
+
   group('NativeToolAgentService.supports', () {
     test('启用 function calling 的 OpenAI Agent 使用标准工具调用', () {
       final now = DateTime(2026, 1, 1);

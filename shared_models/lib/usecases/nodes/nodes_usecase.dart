@@ -233,6 +233,16 @@ class NodesUseCase {
       );
     }
 
+    final status = _parseNodeStatus(params['status']);
+    if (status == null && params['status'] != null) {
+      return Result.failure(
+        '无效的 status 参数: ${params['status']}'
+        '（可用值: 0=todo, 1=doing, 2=done, 3=none，'
+        '或字符串 todo/inProgress/done/none）',
+        code: ErrorCodes.invalidParams,
+      );
+    }
+
     try {
       final now = DateTime.now();
       final node = NodeDto(
@@ -243,9 +253,7 @@ class NodesUseCase {
                 ?.map((e) => e as String)
                 .toList() ??
             const [],
-        status: params['status'] != null
-            ? NodeStatus.values[params['status'] as int]
-            : NodeStatus.todo,
+        status: status ?? NodeStatus.todo,
         startDate: params['startDate'] != null
             ? DateTime.parse(params['startDate'] as String)
             : null,
@@ -283,6 +291,16 @@ class NodesUseCase {
       return Result.failure('缺少必需参数: id', code: ErrorCodes.invalidParams);
     }
 
+    final status = _parseNodeStatus(params['status']);
+    if (status == null && params['status'] != null) {
+      return Result.failure(
+        '无效的 status 参数: ${params['status']}'
+        '（可用值: 0=todo, 1=doing, 2=done, 3=none，'
+        '或字符串 todo/inProgress/done/none）',
+        code: ErrorCodes.invalidParams,
+      );
+    }
+
     try {
       // 获取现有数据
       final existingResult = await repository.getNodeById(id);
@@ -304,9 +322,7 @@ class NodesUseCase {
                     .toList() ??
                 existing.tags
             : existing.tags,
-        status: params['status'] != null
-            ? NodeStatus.values[params['status'] as int]
-            : existing.status,
+        status: status ?? existing.status,
         startDate: params['startDate'] != null
             ? DateTime.parse(params['startDate'] as String)
             : existing.startDate,
@@ -467,6 +483,44 @@ class NodesUseCase {
   }
 
   // ============ 辅助方法 ============
+
+  /// 解析节点状态参数，兼容数字、数字字符串与状态名（含常见别名/中文）
+  NodeStatus? _parseNodeStatus(dynamic value) {
+    if (value == null) return null;
+    if (value is num) {
+      final index = value.toInt();
+      return index >= 0 && index < NodeStatus.values.length
+          ? NodeStatus.values[index]
+          : null;
+    }
+    if (value is String) {
+      final text = value.trim().toLowerCase();
+      final index = int.tryParse(text);
+      if (index != null && index >= 0 && index < NodeStatus.values.length) {
+        return NodeStatus.values[index];
+      }
+      switch (text) {
+        case 'todo':
+        case '未开始':
+        case '待办':
+          return NodeStatus.todo;
+        case 'doing':
+        case 'inprogress':
+        case 'in_progress':
+        case '进行中':
+          return NodeStatus.doing;
+        case 'done':
+        case 'completed':
+        case '已完成':
+        case '完成':
+          return NodeStatus.done;
+        case 'none':
+        case '无':
+          return NodeStatus.none;
+      }
+    }
+    return null;
+  }
 
   PaginationParams? _extractPagination(Map<String, dynamic> params) {
     // JS/工具调用可能把 JSON 整数解码为 double，统一转换后再分页。
