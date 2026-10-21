@@ -67,6 +67,29 @@ void main() {
     expect(result, ['A', 'B']);
   });
 
+  test('complete sends thinking at the top level only when provided', () async {
+    final bodies = <Map<String, dynamic>>[];
+    final client = AgentLibClient(
+      baseUrl: 'https://example.test/v1',
+      headers: const {},
+      httpClient: MockClient((request) async {
+        bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+        return http.Response('{"choices":[{"message":{"content":"ok"}}]}', 200);
+      }),
+    );
+    await client.complete(model: 'demo', messages: const []);
+    await client.complete(
+      model: 'demo',
+      messages: const [],
+      extraBody: {
+        'thinking': {'type': 'disabled'},
+      },
+    );
+    expect(bodies.first.containsKey('thinking'), isFalse);
+    expect(bodies.last['thinking'], {'type': 'disabled'});
+    expect(bodies.last.containsKey('extra_body'), isFalse);
+  });
+
   test('non-success responses expose status and body', () async {
     final client = MockClient((_) async => http.Response('bad', 401));
     expect(

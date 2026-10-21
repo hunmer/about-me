@@ -87,7 +87,7 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
         DSListItemCard(
           title: '${index + 1}. ${step.title}',
           subtitle: createdDataTap != null
-              ? '点击查看详情'
+              ? 'agent_chat_viewCreatedDetail'.tr
               : (step.desc.isNotEmpty ? step.desc : null),
           onSubtitleTap: createdDataTap,
           // 非插件步骤（纯 run_js 等）回退到代码图标

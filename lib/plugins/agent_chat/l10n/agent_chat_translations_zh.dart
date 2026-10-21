@@ -74,6 +74,7 @@ const Map<String, String> agentChatTranslationsZh = {
   'agent_chat_confirmSaveDescription': '确定要保存配置吗?',
   'agent_chat_copyResult': '复制结果',
   'agent_chat_executeAgain': '重新执行此步骤',
+  'agent_chat_viewCreatedDetail': '点击查看详情',
 
   // 新增的硬编码文本
   'agent_chat_initializationFailed': '初始化失败: @error',

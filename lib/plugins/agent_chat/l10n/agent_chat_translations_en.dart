@@ -74,6 +74,7 @@ const Map<String, String> agentChatTranslationsEn = {
   'agent_chat_confirmSaveDescription': 'Are you sure you want to save the configuration?',
   'agent_chat_copyResult': 'Copy Result',
   'agent_chat_executeAgain': 'Execute This Step Again',
+  'agent_chat_viewCreatedDetail': 'View Details',
 
   // New hardcoded text
   'agent_chat_initializationFailed': 'Initialization failed: @error',

@@ -55,11 +55,13 @@ class AgentLibClient {
     double? temperature,
     int? maxTokens,
     Map<String, dynamic>? responseFormat,
+    Map<String, dynamic>? extraBody,
   }) async {
     final response = await _httpClient.post(
       _endpoint(),
       headers: {'Content-Type': 'application/json', ...headers},
       body: jsonEncode({
+        ...?extraBody,
         'model': model,
         'messages': messages,
         'temperature': temperature,
@@ -90,11 +92,14 @@ class AgentLibClient {
     double? temperature,
     int? maxTokens,
     Map<String, dynamic>? responseFormat,
+    Map<String, dynamic>? extraBody,
+    void Function(String)? onThinking,
   }) async* {
     final request =
         http.Request('POST', _endpoint())
           ..headers.addAll({'Content-Type': 'application/json', ...headers})
           ..body = jsonEncode({
+            ...?extraBody,
             'model': model,
             'messages': messages,
             'temperature': temperature,
@@ -127,6 +132,8 @@ class AgentLibClient {
           (choices.first as Map<String, dynamic>)['delta']
               as Map<String, dynamic>?;
       final content = delta?['content'];
+      final thinking = delta?['reasoning_content'];
+      if (thinking is String && thinking.isNotEmpty) onThinking?.call(thinking);
       if (content is String && content.isNotEmpty) yield content;
     }
   }

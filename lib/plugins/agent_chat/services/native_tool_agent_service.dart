@@ -124,7 +124,7 @@ class DeepSeekCompatClient extends http.BaseClient {
         final patched = http.Request(request.method, request.url)
           ..headers.addAll(request.headers)
           ..body = jsonEncode(body);
-        return await _inner.send(patched);
+        return _inner.send(patched);
       }
     } catch (_) {}
     return _inner.send(request);
@@ -153,10 +153,10 @@ class AppOpenAIProvider extends OpenAIProvider {
     String? name,
     List<Tool>? tools,
     double? temperature,
-    bool enableThinking = true,
+    bool? enableThinking,
     OpenAIChatOptions? options,
   }) {
-    final thinkingEnabled = _defaultEnableThinking || enableThinking;
+    final thinkingEnabled = enableThinking ?? _defaultEnableThinking;
     debugPrint(
       '[NativeTool] DeepSeek 兼容：thinking=${thinkingEnabled ? 'enabled' : 'disabled'}，'
       '捕获 reasoning_content',
@@ -170,7 +170,7 @@ class AppOpenAIProvider extends OpenAIProvider {
       headers: headers,
       client: DeepSeekCompatClient(
         http.Client(),
-        disableThinking: !_defaultEnableThinking && !enableThinking,
+        disableThinking: !thinkingEnabled,
       ),
       defaultOptions: OpenAIChatOptions(
         temperature: temperature ?? options?.temperature,
@@ -382,7 +382,10 @@ class NativeToolAgentService {
       final configuredBaseUrl = _normalizeBaseUrl(agent.baseUrl);
       final baseUrl =
           configuredBaseUrl ?? Uri.parse('https://api.openai.com/v1');
-      final provider = baseUrl.host.contains('deepseek')
+      final isDeepSeek =
+          agent.serviceProviderId == 'deepseek' ||
+          baseUrl.host.contains('deepseek');
+      final provider = isDeepSeek
           ? AppOpenAIProvider(
               apiKey: _extractApiKey(agent),
               baseUrl: baseUrl,
@@ -399,7 +402,7 @@ class NativeToolAgentService {
         chatModelName: agent.model,
         tools: tools,
         temperature: agent.temperature,
-        enableThinking: agent.enableThinking,
+        enableThinking: isDeepSeek && agent.enableThinking,
       );
     }
 

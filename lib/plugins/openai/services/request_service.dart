@@ -137,6 +137,21 @@ String _formatMessagesForLog(List<ChatCompletionMessage> messages) {
 }
 
 class RequestService {
+  static Map<String, dynamic>? _thinkingBody(AIAgent agent) {
+    if (agent.serviceProviderId != 'deepseek' &&
+        Uri.tryParse(agent.baseUrl)?.host.contains('deepseek') != true) {
+      return null;
+    }
+    final type = agent.enableThinking ? 'enabled' : 'disabled';
+    developer.log(
+      'DeepSeek 请求: model=${agent.model}, thinking=$type',
+      name: 'RequestService',
+    );
+    return {
+      'thinking': {'type': type},
+    };
+  }
+
   static AgentLibClient _agentLibClient(AIAgent agent) {
     final apiKey =
         agent.headers['Authorization']?.replaceAll('Bearer ', '') ??
@@ -359,6 +374,7 @@ class RequestService {
         messages: messages.map(_agentLibMessage).toList(),
         temperature: agent.temperature,
         maxTokens: effectiveMaxTokens,
+        extraBody: _thinkingBody(agent),
       );
       stopwatch.stop();
 
@@ -487,7 +503,7 @@ class RequestService {
   /// [responseFormat] - 响应格式（用于 Structured Outputs）
   /// [shouldCancel] - 检查是否应该取消的函数
   /// [additionalPrompts] - 额外的 prompt 部分，使用占位符替换（如 {tool_templates}, {tool_brief}）
-  /// [onThinking] - 思考内容回调（Claude thinking block）
+  /// [onThinking] - 思考内容回调（reasoning_content / Claude thinking block）
   static Future<void> streamResponse({
     required AIAgent agent,
     String? prompt,
@@ -724,12 +740,25 @@ class RequestService {
       );
 
       final stopwatch = Stopwatch()..start();
+      int thinkingChars = 0;
       final stream = _agentLibClient(agent).stream(
         model: agent.model,
         messages: messages.map(_agentLibMessage).toList(),
         temperature: agent.temperature,
         maxTokens: agent.maxLength > 0 ? agent.maxLength : null,
         responseFormat: responseFormat?.toJson(),
+        extraBody: _thinkingBody(agent),
+        onThinking: (thinking) {
+          if (shouldCancel?.call() == true) return;
+          thinkingChars += thinking.length;
+          if (thinkingChars == thinking.length) {
+            developer.log(
+              '收到 reasoning_content: ${thinking.length}字符',
+              name: 'RequestService',
+            );
+          }
+          onThinking?.call(thinking);
+        },
       );
 
       int totalChars = 0;
@@ -814,7 +843,7 @@ class RequestService {
             stopwatch.stop();
             developer.log('返回文本完成: $finalResponse', name: 'RequestService');
             developer.log(
-              '流式响应完成: 总计$totalChars字符, $chunkCount个块, 总耗时: ${stopwatch.elapsedMilliseconds}ms',
+              '流式响应完成: thinking=$thinkingChars, output=$totalChars, $chunkCount个正文块, 总耗时: ${stopwatch.elapsedMilliseconds}ms',
               name: 'RequestService',
             );
             onComplete();
