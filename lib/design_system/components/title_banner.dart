@@ -7,9 +7,9 @@ import '../tokens/typography.dart';
 /// 手绘燕尾旗标：区块标题（矩形右端切 V 形凹口的旗帜形）
 ///
 /// 旗形用 skribble `Generator.polygon` 画 rough 实底
-/// （[color].mixWhite(0.2)）+ 墨线描边；宽随文字自适应
-/// （横向内边距默认左 [DsSpacing.xl]、右 [DsSpacing.xxxl]，右侧多留以避开
-/// V 形凹口）。文字反色居中。
+/// （[color].mixWhite(0.2)）+ 墨线描边；宽随文字自适应，
+/// 右侧内边距按凹口深度反解预留（默认情况下文字与凹口尖
+/// 保持 [DsSpacing.sm] 间隙）。文字反色居中。
 ///
 /// ```dart
 /// DsTitleBanner(text: '今日手帐')
@@ -23,6 +23,9 @@ class DsTitleBanner extends StatelessWidget {
     this.fontSize = 18,
     this.padding,
   });
+
+  /// 燕尾凹口尖端的横向位置（旗宽比例），painter 与右侧内边距计算共用
+  static const double _notchTipX = 0.72;
 
   final String text;
 
@@ -45,23 +48,39 @@ class DsTitleBanner extends StatelessWidget {
         ? theme.onPrimary
         : (bg.computeLuminance() > 0.6 ? theme.ink : DsColors.white);
 
+    final style = DsTypography.heading.copyWith(
+      fontSize: fontSize,
+      color: foreground,
+    );
+
+    // 凹口尖在 _notchTipX*w、深度随旗宽增长，固定右边距对长标题不够：
+    // 由 w = 文字宽 + left + right 且 right ≥ (1-_notchTipX)*w + gap
+    // 反解 right，保证文字右缘与凹口尖恒有 gap 间隙
+    final left = theme.spacing.xl;
+    final gap = theme.spacing.sm;
+    final minRight = theme.spacing.xxxl;
+    var right = minRight;
+    if (padding == null) {
+      final textPainter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: Directionality.of(context),
+      )..layout();
+      final required =
+          ((1 - _notchTipX) * (textPainter.width + left) + gap) /
+          _notchTipX;
+      if (required > right) right = required;
+    }
+
     final content = Padding(
       padding:
           padding ??
           EdgeInsets.only(
-            left: theme.spacing.xl,
-            // 右侧多留：V 形凹口最深点在 0.72w，预留不足会侵入文字
-            right: theme.spacing.xxxl,
+            left: left,
+            right: right,
             top: theme.spacing.sm,
             bottom: theme.spacing.sm,
           ),
-      child: Text(
-        text,
-        style: DsTypography.heading.copyWith(
-          fontSize: fontSize,
-          color: foreground,
-        ),
-      ),
+      child: Text(text, style: style),
     );
 
     return CustomPaint(
@@ -102,13 +121,13 @@ class _SwallowTailPainter extends CustomPainter {
     if (_size != size || _drawing == null) {
       final w = size.width;
       final h = size.height;
-      // 右端 V 形燕尾凹口：右上(0.88w,0) → 中(0.72w,0.5h) → 右下(0.88w,h)
+      // 右端 V 形燕尾凹口：右上(0.88w,0) → 尖(_notchTipX*w,0.5h) → 右下(0.88w,h)
       drawConfig.randomizer.reset();
       final generator = Generator(drawConfig, SolidFiller());
       final drawable = generator.polygon([
         PointD(0, 0),
         PointD(w * 0.88, 0),
-        PointD(w * 0.72, h / 2),
+        PointD(w * DsTitleBanner._notchTipX, h / 2),
         PointD(w * 0.88, h),
         PointD(0, h),
       ]);

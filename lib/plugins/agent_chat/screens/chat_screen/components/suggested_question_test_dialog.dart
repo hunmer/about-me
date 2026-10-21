@@ -105,7 +105,9 @@ class _ControllerQuestionSession implements SuggestedQuestionTestSession {
   List<ChatMessage> get messages => controller.messageService.currentMessages;
   @override
   Future<void> send(String question, bool Function() shouldCancel) async {
-    controller.setInputText(question);
+    controller.setInputText(
+      '$question\n\n当前为测试环节，如果用户没有提供必要的参数，则需要自动生成，不要询问用户。',
+    );
     await controller.sendMessage(
       bypassAliveness: true,
       shouldCancel: shouldCancel,

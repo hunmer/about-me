@@ -192,18 +192,13 @@ class _MessageInputState extends State<MessageInput> {
                     ? const EdgeInsets.all(12)
                     : const EdgeInsets.only(bottom: 8),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  // 输入框与两侧图标垂直居中（多行增高时图标随中心线上浮）
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // "+"按钮：打开完整底部抽屉动作列表
-                    // bottom 8 与 DSInput 多行纵向内边距（spacing.sm）对齐，
-                    // 使图标底边与输入框文本底边平齐
                     if (widget.onOpenActionsDrawer != null)
                       Padding(
-                        padding: const EdgeInsets.only(
-                          left: 4.0,
-                          right: 8.0,
-                          bottom: 8.0,
-                        ),
+                        padding: const EdgeInsets.only(left: 4.0, right: 8.0),
                         child: DSIconButton(
                           icon: DsIconKind.plus,
                           color: theme.surfaceAlt,
@@ -229,17 +224,13 @@ class _MessageInputState extends State<MessageInput> {
                     // 语音位（长按录音等）
                     if (widget.voiceButton != null)
                       Padding(
-                        padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
+                        padding: const EdgeInsets.only(left: 4.0),
                         child: widget.voiceButton,
                       ),
 
                     // 发送按钮
                     Padding(
-                      padding: const EdgeInsets.only(
-                        left: 8.0,
-                        right: 8.0,
-                        bottom: 8.0,
-                      ),
+                      padding: const EdgeInsets.only(left: 8.0, right: 8.0),
                       child:
                           widget.sendButton ??
                           SendButton(onPressed: widget.onSend),
