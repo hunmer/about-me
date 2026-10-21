@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/widgets/picker/icon_picker_dialog.dart';
+import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
 
 /// 计时器图标网格选择器字段组件
 ///

@@ -38,12 +38,10 @@
 - **AvatarPicker**：头像选择器，圆形头像显示
 - **CircleIconPicker**：圆形图标选择器，支持图标和背景色选择
 - **ColorPickerSection**：颜色选择器，提供常用颜色
-- **GroupSelectorDialog**：分组选择器，支持增删改
-- **SimpleGroupSelector**：简单分组选择器，仅支持选择
 
-### 2.5 表单字段库（`form_fields/`，50 文件，约 9900 行，2026-09 新增）
+### 2.5 表单字段库（`form_fields/`，49 文件，约 9900 行，2026-09 新增）
 
-配置驱动的统一表单库：`FormConfig`/`FormFieldConfig`（约 30 参数，支持 visible 条件显示）→ `FormBuilderWrapper` 主入口（包裹 `flutter_form_builder`，按 `FormFieldType` **31 种枚举**分发到 `builders/` 的约 33 个 `buildXxxField` 工厂函数）。字段组件含通用输入（text/textarea/select/switch/slider）、picker 类（date/time/dateRange/calendarStrip/icon/avatar/circleIcon/image/location）、复合类（tags/customFields/eventMultiSelect 等）与插件专用类（amount/expenseType/subscriptionCycle/timerItems/reminderDate 等，最大 field_type_selector_field.dart 621 行）。基类 `FormFieldWrapper/FormFieldWrapperState` 统一 didChange/取值协议；视觉走 design_system 令牌（`base_builder.dart`）。消费方为 19 个插件的 32 个文件（bill/todo/habits/openai/scripts_center/store/timer/database/contact 等）；示例见 `screens/widgets_gallery/`。
+配置驱动的统一表单库：`FormConfig`/`FormFieldConfig`（约 30 参数，支持 visible 条件显示）→ `FormBuilderWrapper` 主入口（包裹 `flutter_form_builder`，按 `FormFieldType` **30 种枚举**分发到 `builders/` 的约 32 个 `buildXxxField` 工厂函数）。字段组件含通用输入（text/textarea/select/switch/slider）、picker 类（date/time/dateRange/calendarStrip/avatar/circleIcon/image/location）、复合类（tags/customFields/eventMultiSelect 等）与插件专用类（amount/expenseType/subscriptionCycle/timerItems/reminderDate 等，最大 field_type_selector_field.dart 621 行）。基类 `FormFieldWrapper/FormFieldWrapperState` 统一 didChange/取值协议；视觉走 design_system 令牌（`base_builder.dart`）。消费方为 19 个插件的 32 个文件（bill/todo/habits/openai/scripts_center/store/timer/database/contact 等）；示例见 `screens/widgets_gallery/`。
 
 ### 3. 对话框类
 - **TagManagerDialog**：标签管理对话框，功能强大的标签管理系统
@@ -460,7 +458,7 @@ AvatarPicker(
 #### 使用方法
 
 ```dart
-import 'package:aboutme/widgets/icon_picker_dialog.dart';
+import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
 
 // 显示图标选择器
 final IconData? selectedIcon = await showIconPickerDialog(
@@ -479,45 +477,6 @@ if (selectedIcon != null) {
 - **分页显示**：每页显示 200 个图标
 - **预定义集合**：使用 `AppIcons.predefinedIcons` 中的图标
 - **防抖搜索**：500ms 延迟搜索
-
----
-
-### GroupSelectorDialog
-
-分组选择器，支持分组的增删改查。
-
-#### 构造函数参数
-
-| 参数 | 类型 | 必需 | 说明 |
-|-----|------|-----|------|
-| groups | List&lt;String&gt; | 是 | 分组列表 |
-| onGroupRenamed | OnGroupRenamed | 是 | 分组重命名回调 |
-| onGroupDeleted | OnGroupDeleted | 是 | 分组删除回调 |
-| initialSelectedGroup | String? | 否 | 初始选中的分组 |
-
-#### 使用示例
-
-```dart
-import 'package:aboutme/widgets/group_selector_dialog.dart';
-
-final selectedGroup = await showDialog<String>(
-  context: context,
-  builder: (context) => GroupSelectorDialog(
-    groups: ['工作', '生活', '学习'],
-    initialSelectedGroup: '工作',
-    onGroupRenamed: (oldName, newName) {
-      _renameGroup(oldName, newName);
-    },
-    onGroupDeleted: (groupName) {
-      _deleteGroup(groupName);
-    },
-  ),
-);
-
-if (selectedGroup != null) {
-  print('选择的分组: $selectedGroup');
-}
-```
 
 ---
 
@@ -577,12 +536,12 @@ lib/widgets/
 ├── app_bar_widget.dart                         # 应用栏组件
 ├── app_drawer.dart                             # 应用抽屉
 │
-├── form_fields/                                # 表单字段库（50 文件，31 种 FormFieldType）
+├── form_fields/                                # 表单字段库（49 文件，30 种 FormFieldType）
 │   ├── index.dart / config.dart / types.dart   # 组件桶 / 表单与字段配置 / 字段类型枚举
 │   ├── form_builder_wrapper.dart              # 主入口：配置驱动动态生成表单
 │   ├── form_field_wrapper.dart                # 字段基类（统一 didChange/取值协议）
 │   ├── *_field.dart                            # 44 个字段组件（通用/picker/插件专用）
-│   └── builders/                               # 6 文件约 33 个 buildXxxField 工厂函数
+│   └── builders/                               # 6 文件约 32 个 buildXxxField 工厂函数
 │
 ├── rich_editor_screen.dart                     # 通用富文本编辑屏（阅读态 + 编辑态）
 ├── quill_viewer/                               # Quill 只读渲染模块
@@ -617,18 +576,12 @@ lib/widgets/
 │
 ├── tag_manager_dialog.dart                     # 标签管理对话框导出
 ├── location_picker.dart                        # 位置选择器
-├── icon_picker_dialog.dart                     # 图标选择器
 ├── image_picker_dialog.dart                    # 图片选择器
 ├── avatar_picker.dart                          # 头像选择器
-├── circle_icon_picker.dart                     # 圆形图标选择器
+├── circle_icon_picker.dart                     # 圆形图标选择器（含完整图标选择对话框）
 ├── color_picker_section.dart                   # 颜色选择器
-├── group_selector_dialog.dart                  # 分组选择器（完整功能）
-├── simple_group_selector.dart                  # 简单分组选择器
 │
 └── l10n/                                       # 本地化文件
-    ├── group_selector_localizations.dart
-    ├── group_selector_localizations_en.dart
-    ├── group_selector_localizations_zh.dart
     ├── location_picker_localizations.dart
     ├── location_picker_localizations_en.dart
     ├── location_picker_localizations_zh.dart

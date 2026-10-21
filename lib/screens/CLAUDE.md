@@ -111,24 +111,16 @@
 - `widgets_gallery_screen.dart` - 展示主页
 - `screens/` - 各组件示例页面
   - `color_picker_example.dart` - 颜色选择器示例
-  - `icon_picker_example.dart` - 图标选择器示例
   - `avatar_picker_example.dart` - 头像选择器示例
   - `circle_icon_picker_example.dart` - 圆形图标选择器示例
   - `calendar_strip_picker_example.dart` - 日历条选择器示例
   - `image_picker_example.dart` - 图片选择器示例
   - `location_picker_example.dart` - 位置选择器示例
-  - `aboutme_editor_example.dart` - 编辑器示例
   - `data_selector_example.dart` - 数据选择器示例
-  - `group_selector_example.dart` - 分组选择器示例
-  - `simple_group_selector_example.dart` - 简单分组选择器示例
   - `tag_manager_example.dart` - 标签管理器示例
   - `statistics_example.dart` - 统计组件示例
-  - `custom_dialog_example.dart` - 自定义对话框示例
   - `smooth_bottom_sheet_example.dart` - 底部面板示例
   - `file_preview_example.dart` - 文件预览示例
-  - `app_drawer_example.dart` - 抽屉示例
-  - `widget_config_editor_example.dart` - 组件配置编辑器示例
-  - `preset_edit_form_example.dart` - 预设编辑表单示例
   - `super_cupertino_navigation_example.dart` - 导航示例
 
 ---
@@ -182,7 +174,6 @@
 | 路径 | 屏幕 |
 |-----|------|
 | `/widgets_gallery/color_picker` | ColorPickerExample |
-| `/widgets_gallery/icon_picker` | IconPickerExample |
 | `/widgets_gallery/image_picker` | ImagePickerExample |
 | `/widgets_gallery/*` | 其他组件示例 |
 

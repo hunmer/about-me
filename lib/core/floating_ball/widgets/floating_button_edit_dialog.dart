@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:get/get.dart';
-import 'package:aboutme/widgets/picker/icon_picker_dialog.dart';
+import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:floating_ball_plugin/floating_ball_plugin.dart';

@@ -26,7 +26,6 @@ export 'option_selector_field.dart';
 export 'color_selector_field.dart';
 
 // Picker 选择器类字段（新增）
-export 'icon_picker_field.dart';
 export 'avatar_picker_field.dart';
 export 'circle_icon_picker_field.dart';
 export 'calendar_strip_picker_field.dart';

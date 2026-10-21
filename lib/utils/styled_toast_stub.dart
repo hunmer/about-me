@@ -72,6 +72,8 @@ void showToast(
   Offset? reverseStartOffset,
   Offset? reverseEndOffset,
   TextAlign? textAlign,
+  bool? dismissOtherToast,
+  bool? fullWidth,
 }) {
   // Web 平台空实现，实际的 Toast 应由 SnackBar 处理
 }
@@ -95,6 +97,7 @@ void showToastWidget(
   Offset? reverseStartOffset,
   Offset? reverseEndOffset,
   VoidCallback? onDismiss,
+  bool? dismissOtherToast,
 }) {
   // Web 平台空实现，实际的 Toast 应由 SnackBar 处理
 }

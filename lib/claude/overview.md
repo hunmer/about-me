@@ -9,7 +9,7 @@
 | 核心层 | `core/` | 147 Dart 文件 | 平台无关的基础设施：插件系统、存储抽象（含 http_storage 远程后端）、配置、事件总线、JS Bridge、悬浮球、动作系统、路由基础设施、services/sync 同步器等 |
 | 插件层 | `plugins/` | 26 插件 / 1071 文件 | 业务功能单元，每个插件自持 UI、Service、Controller，可向 JS Bridge/路由/数据选择器注册能力 |
 | 界面层 | `screens/` | 19 子目录 / 364 文件 | 应用级页面（jelly_home 默认首页、home_screen、设置、关于、日志、测试页）与**全部路由注册表**（`routing/routes/`） |
-| 组件层 | `widgets/` | 18 子目录 / 180 文件 | 跨插件复用的通用组件：aboutme_editor（Quill 编辑器）、enhanced_calendar、form_fields（50 文件表单字段库）、file_preview、data_selector_sheet 等 |
+| 组件层 | `widgets/` | 17 子目录 / 179 文件 | 跨插件复用的通用组件：rich_editor_screen（Quill 富文本编辑屏）、enhanced_calendar、form_fields（50 文件表单字段库）、file_preview、data_selector_sheet 等 |
 
 另有个位数文件的顶层目录：`services/`（image_service）、`models/`（file_path_converter）、`utils/`（9 个工具）、`dialogs/`、`constants/`、`l10n/`。
 

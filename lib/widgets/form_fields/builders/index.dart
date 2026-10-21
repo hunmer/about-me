@@ -13,7 +13,6 @@ export 'picker_builder.dart'
         buildDateField,
         buildTimeField,
         buildDateRangeField,
-        buildIconPickerField,
         buildAvatarPickerField,
         buildCircleIconPickerField,
         buildCalendarStripPickerField,

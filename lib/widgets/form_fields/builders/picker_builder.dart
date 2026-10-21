@@ -8,7 +8,6 @@ import '../config.dart';
 import '../date_picker_field.dart';
 import '../time_picker_field.dart';
 import '../date_range_field.dart';
-import '../icon_picker_field.dart';
 import '../avatar_picker_field.dart';
 import '../circle_icon_picker_field.dart';
 import '../calendar_strip_picker_field.dart';
@@ -125,28 +124,6 @@ Widget buildDateRangeField(FormFieldConfig config, GlobalKey fieldKey) {
         },
       );
     },
-  );
-}
-
-/// 构建图标选择器字段
-Widget buildIconPickerField(FormFieldConfig config, GlobalKey fieldKey) {
-  final extra = config.extra ?? {};
-  final enableIconToImage = extra['enableIconToImage'] as bool? ?? false;
-
-  return WrappedFormField(
-    key: fieldKey,
-    name: config.name,
-    initialValue: config.initialValue as IconData? ?? Icons.help,
-    enabled: config.enabled,
-    onChanged: config.onChanged,
-    builder:
-        (context, value, setValue) => IconPickerField(
-          currentIcon: value as IconData? ?? Icons.help,
-          labelText: config.labelText,
-          enabled: config.enabled,
-          enableIconToImage: enableIconToImage,
-          onIconChanged: setValue,
-        ),
   );
 }
 

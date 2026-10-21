@@ -30,7 +30,6 @@ enum FormFieldType {
   listAdd,
 
   // Picker 选择器类
-  iconPicker,
   avatarPicker,
   circleIconPicker,
   calendarStripPicker,

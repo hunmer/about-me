@@ -3,27 +3,19 @@ import 'package:aboutme/screens/routing/route_definition.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';
 import 'package:aboutme/screens/widgets_gallery/widgets_gallery_screen.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/color_picker_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/icon_picker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/avatar_picker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/circle_icon_picker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/calendar_strip_picker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/image_picker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/location_picker_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/aboutme_editor_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/data_selector_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/group_selector_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/simple_group_selector_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/tag_manager_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/custom_dialog_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/persona_intro_dialog_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/smooth_bottom_sheet_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/file_preview_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/app_drawer_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/home_widgets_gallery_screen.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/all_widgets_preview_page.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/half_circle_gauge_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/widget_config_editor_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/preset_edit_form_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/super_cupertino_navigation_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/run_receipt_printer_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/lucky_wheel_example.dart';
@@ -160,14 +152,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '颜色选择器示例',
     ),
     RouteDefinition(
-      path: '/widgets_gallery/icon_picker',
-      handler: (settings) => RouteHelpers.createRoute(
-        const IconPickerExample(),
-        settings: settings,
-      ),
-      description: '图标选择器示例',
-    ),
-    RouteDefinition(
       path: '/widgets_gallery/avatar_picker',
       handler: (settings) => RouteHelpers.createRoute(
         const AvatarPickerExample(),
@@ -208,14 +192,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '位置选择器示例',
     ),
     RouteDefinition(
-      path: '/widgets_gallery/aboutme_editor',
-      handler: (settings) => RouteHelpers.createRoute(
-        const AboutmeEditorExample(),
-        settings: settings,
-      ),
-      description: '编辑器示例',
-    ),
-    RouteDefinition(
       path: '/widgets_gallery/data_selector',
       handler: (settings) => RouteHelpers.createRoute(
         const DataSelectorExample(),
@@ -224,36 +200,12 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '数据选择器示例',
     ),
     RouteDefinition(
-      path: '/widgets_gallery/group_selector',
-      handler: (settings) => RouteHelpers.createRoute(
-        const GroupSelectorExample(),
-        settings: settings,
-      ),
-      description: '分组选择器示例',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/simple_group_selector',
-      handler: (settings) => RouteHelpers.createRoute(
-        const SimpleGroupSelectorExample(),
-        settings: settings,
-      ),
-      description: '简单分组选择器示例',
-    ),
-    RouteDefinition(
       path: '/widgets_gallery/tag_manager',
       handler: (settings) => RouteHelpers.createRoute(
         const TagManagerExample(),
         settings: settings,
       ),
       description: '标签管理器示例',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/custom_dialog',
-      handler: (settings) => RouteHelpers.createRoute(
-        const CustomDialogExample(),
-        settings: settings,
-      ),
-      description: '自定义对话框示例',
     ),
     RouteDefinition(
       path: '/widgets_gallery/persona_intro_dialog',
@@ -278,14 +230,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '文件预览示例',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/app_drawer',
-      handler: (settings) => RouteHelpers.createRoute(
-        const AppDrawerExample(),
-        settings: settings,
-      ),
-      description: '抽屉示例',
     ),
     RouteDefinition(
       path: '/widgets_gallery/home_widgets',
@@ -313,22 +257,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '半圆仪表盘示例',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/widget_config_editor',
-      handler: (settings) => RouteHelpers.createRoute(
-        const WidgetConfigEditorExample(),
-        settings: settings,
-      ),
-      description: '组件配置编辑器示例',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/preset_edit_form',
-      handler: (settings) => RouteHelpers.createRoute(
-        const PresetEditFormExample(),
-        settings: settings,
-      ),
-      description: '预设编辑表单示例',
     ),
     RouteDefinition(
       path: '/widgets_gallery/super_cupertino_navigation',

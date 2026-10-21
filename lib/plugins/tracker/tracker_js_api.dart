@@ -14,6 +14,9 @@ Future<dynamic> _jsQuery(Map<String, dynamic> params) async {
   final name = params['name'] as String?;
   final id = params['id'] as String?;
   final unitType = params['unitType'] as String?;
+  final filters = params['filters'] is Map
+      ? Map<String, dynamic>.from(params['filters'] as Map)
+      : const <String, dynamic>{};
   final goals = (result.dataOrNull as List).where((goal) {
     if (id != null && goal['id'] != id) return false;
     if (unitType != null && goal['unitType'] != unitType) return false;
@@ -22,6 +25,12 @@ Future<dynamic> _jsQuery(Map<String, dynamic> params) async {
       if (params['fuzzy'] == true) {
         if (!goalName.contains(name)) return false;
       } else if (goalName != name) {
+        return false;
+      }
+    }
+    for (final entry in filters.entries) {
+      final values = entry.value is List ? entry.value as List : [entry.value];
+      if (!values.any((value) => goal[entry.key]?.toString() == value.toString())) {
         return false;
       }
     }

@@ -87,8 +87,6 @@ import '../widgets/file_preview/l10n/file_preview_translations_zh.dart';
 import '../widgets/file_preview/l10n/file_preview_translations_en.dart';
 import '../widgets/l10n/image_picker_translations_zh.dart';
 import '../widgets/l10n/image_picker_translations_en.dart';
-import '../widgets/l10n/group_selector_translations_zh.dart';
-import '../widgets/l10n/group_selector_translations_en.dart';
 import '../widgets/l10n/location_picker_translations_zh.dart';
 import '../widgets/l10n/location_picker_translations_en.dart';
 
@@ -225,9 +223,6 @@ class UnifiedTranslations extends Translations {
 
     zhDict.addAll(imagePickerTranslationsZh);
     enDict.addAll(imagePickerTranslationsEn);
-
-    zhDict.addAll(groupSelectorTranslationsZh);
-    enDict.addAll(groupSelectorTranslationsEn);
 
     zhDict.addAll(locationPickerTranslationsZh);
     enDict.addAll(locationPickerTranslationsEn);

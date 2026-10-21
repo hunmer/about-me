@@ -1075,28 +1075,6 @@ void _handleInterval() {
 
 4. 更新 UI 组件以支持新类型的配置
 
-### Q5: 如何自定义分组?
-
-使用 `GroupSelectorDialog` 组件:
-
-```dart
-final selectedGroup = await showDialog<String>(
-  context: context,
-  builder: (context) => GroupSelectorDialog(
-    groups: plugin.timerController.getGroups(),
-    initialSelectedGroup: currentGroup,
-    onGroupRenamed: (oldName, newName) {
-      // 更新所有相关任务的分组名称
-      plugin.timerController.updateTaskGroups(oldName, newName);
-    },
-    onGroupDeleted: (groupName) {
-      // 将相关任务移到默认分组
-      plugin.timerController.deleteGroup(groupName);
-    },
-  ),
-);
-```
-
 ### Q6: 如何实现间隔提示功能?
 
 设置 `intervalAlertDuration` 和 `onIntervalAlert` 回调:

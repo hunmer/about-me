@@ -36,7 +36,7 @@ class MessageInput extends StatefulWidget {
   /// 输入框上方附加内容（待发送文件预览、命令选择器、搜索结果等）
   final Widget? header;
 
-  /// 输入框内嵌后缀（表情、语音、Token 统计等）
+  /// 输入框内嵌后缀（语音、Token 统计等）
   final Widget? inputSuffix;
 
   /// 输入行中位于输入框之后的按钮（长按录音等）
@@ -195,9 +195,15 @@ class _MessageInputState extends State<MessageInput> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     // "+"按钮：打开完整底部抽屉动作列表
+                    // bottom 8 与 DSInput 多行纵向内边距（spacing.sm）对齐，
+                    // 使图标底边与输入框文本底边平齐
                     if (widget.onOpenActionsDrawer != null)
                       Padding(
-                        padding: const EdgeInsets.only(left: 4.0, right: 8.0),
+                        padding: const EdgeInsets.only(
+                          left: 4.0,
+                          right: 8.0,
+                          bottom: 8.0,
+                        ),
                         child: DSIconButton(
                           icon: DsIconKind.plus,
                           color: theme.surfaceAlt,
@@ -206,7 +212,7 @@ class _MessageInputState extends State<MessageInput> {
                         ),
                       ),
 
-                    // 文本输入框（表情/语音/统计等内嵌为右侧后缀）
+                    // 文本输入框（语音/统计等内嵌为右侧后缀）
                     Expanded(
                       child: InputField(
                         controller: widget.controller,
@@ -223,7 +229,7 @@ class _MessageInputState extends State<MessageInput> {
                     // 语音位（长按录音等）
                     if (widget.voiceButton != null)
                       Padding(
-                        padding: const EdgeInsets.only(left: 4.0),
+                        padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
                         child: widget.voiceButton,
                       ),
 
@@ -232,7 +238,7 @@ class _MessageInputState extends State<MessageInput> {
                       padding: const EdgeInsets.only(
                         left: 8.0,
                         right: 8.0,
-                        bottom: 4.0,
+                        bottom: 8.0,
                       ),
                       child:
                           widget.sendButton ??

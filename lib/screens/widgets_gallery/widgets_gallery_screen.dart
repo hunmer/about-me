@@ -33,13 +33,6 @@ class WidgetsGalleryScreen extends StatelessWidget {
           ),
           _buildListItem(
             context,
-            icon: Icons.extension,
-            title: '图标选择器',
-            subtitle: 'IconPickerDialog',
-            route: '/widgets_gallery/icon_picker',
-          ),
-          _buildListItem(
-            context,
             icon: Icons.face,
             title: '头像选择器',
             subtitle: 'AvatarPicker',
@@ -76,18 +69,6 @@ class WidgetsGalleryScreen extends StatelessWidget {
 
           const Divider(),
 
-          // 编辑器类组件
-          _buildSectionHeader(context, '编辑器类'),
-          _buildListItem(
-            context,
-            icon: Icons.edit_document,
-            title: 'Aboutme 编辑器',
-            subtitle: 'AboutmeEditor',
-            route: '/widgets_gallery/aboutme_editor',
-          ),
-
-          const Divider(),
-
           // 选择器类组件
           _buildSectionHeader(context, '选择器类'),
           _buildListItem(
@@ -99,24 +80,10 @@ class WidgetsGalleryScreen extends StatelessWidget {
           ),
           _buildListItem(
             context,
-            icon: Icons.group_work,
-            title: '组选择器对话框',
-            subtitle: 'GroupSelectorDialog',
-            route: '/widgets_gallery/group_selector',
-          ),
-          _buildListItem(
-            context,
             icon: Icons.face_retouching_natural,
             title: '人格选择轮播',
             subtitle: 'PersonalityCarousel（发光小人轮播，支持自定义展示组件）',
             route: '/widgets_gallery/personality_carousel',
-          ),
-          _buildListItem(
-            context,
-            icon: Icons.group,
-            title: '简单组选择器',
-            subtitle: 'SimpleGroupSelector',
-            route: '/widgets_gallery/simple_group_selector',
           ),
 
           const Divider(),
@@ -150,17 +117,8 @@ class WidgetsGalleryScreen extends StatelessWidget {
 
           const Divider(),
 
-          const Divider(),
-
           // 对话框类
           _buildSectionHeader(context, '对话框类'),
-          _buildListItem(
-            context,
-            icon: Icons.comment,
-            title: '自定义对话框',
-            subtitle: 'CustomDialog',
-            route: '/widgets_gallery/custom_dialog',
-          ),
           _buildListItem(
             context,
             icon: Icons.portrait,
@@ -200,18 +158,6 @@ class WidgetsGalleryScreen extends StatelessWidget {
 
           const Divider(),
 
-          // 导航类
-          _buildSectionHeader(context, '导航类'),
-          _buildListItem(
-            context,
-            icon: Icons.menu,
-            title: '应用抽屉',
-            subtitle: 'AppDrawer',
-            route: '/widgets_gallery/app_drawer',
-          ),
-
-          const Divider(),
-
           // 桌面小组件
           _buildSectionHeader(context, '桌面小组件'),
           _buildListItem(
@@ -225,20 +171,6 @@ class WidgetsGalleryScreen extends StatelessWidget {
 
           // 其他组件
           _buildSectionHeader(context, '其他组件'),
-          _buildListItem(
-            context,
-            icon: Icons.apps,
-            title: '小组件配置编辑器',
-            subtitle: 'WidgetConfigEditor',
-            route: '/widgets_gallery/widget_config_editor',
-          ),
-          _buildListItem(
-            context,
-            icon: Icons.tune,
-            title: '预设编辑表单',
-            subtitle: 'PresetEditForm',
-            route: '/widgets_gallery/preset_edit_form',
-          ),
           _buildListItem(
             context,
             icon: Icons.navigation,

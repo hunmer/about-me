@@ -333,9 +333,6 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
       case FormFieldType.listAdd:
         return buildListAddField(config, fieldKey);
 
-      case FormFieldType.iconPicker:
-        return buildIconPickerField(config, fieldKey);
-
       case FormFieldType.avatarPicker:
         return buildAvatarPickerField(config, fieldKey);
 

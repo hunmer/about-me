@@ -50,47 +50,42 @@ class _DSTooltipState extends State<DSTooltip> {
     _closing = false;
     final theme = AppTheme.of(context);
     _entry = OverlayEntry(
-      builder: (context) => Stack(
-        children: [
-          // 拦截层：点击任意处关闭
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _hide,
-            ),
-          ),
-          CompositedTransformFollower(
-            link: _link,
-            targetAnchor: Alignment.topCenter,
-            followerAnchor: Alignment.bottomCenter,
-            offset: const Offset(0, -10),
-            child: AppTheme(
-              data: theme,
-              child: IgnorePointer(
-                // 退场期间禁用交互，防止重复触发
-                ignoring: _closing,
-                child: TweenAnimationBuilder<double>(
-                  // t=1 为完整态：入场 0→1 放大淡入，退场 1→0 缩小淡出（同一映射双向复用）
-                  tween: Tween(begin: 0.0, end: _closing ? 0.0 : 1.0),
-                  duration: DsMotion.fast,
-                  curve: _closing ? DsMotion.curve : DsMotion.enter,
-                  builder: (context, t, child) => Opacity(
-                    opacity: t.clamp(0, 1),
-                    child: Transform.scale(
-                      scale: 0.85 + 0.15 * t,
-                      alignment: Alignment.bottomCenter,
-                      child: child,
-                    ),
+      // 不放全屏 opaque 拦截层：它会截断鼠标命中测试，令锚点的
+      // MouseRegion 立刻 onExit → 隐藏 → 再 onEnter → 再显示，循环闪烁。
+      // 「点击任意处关闭」改由 TapRegion 全局监听（不参与命中测试）。
+      builder: (context) => CompositedTransformFollower(
+        link: _link,
+        targetAnchor: Alignment.topCenter,
+        followerAnchor: Alignment.bottomCenter,
+        offset: const Offset(0, -10),
+        child: TapRegion(
+          onTapOutside: (_) => _hide(),
+          child: AppTheme(
+            data: theme,
+            child: IgnorePointer(
+              // 退场期间禁用交互，防止重复触发
+              ignoring: _closing,
+              child: TweenAnimationBuilder<double>(
+                // t=1 为完整态：入场 0→1 放大淡入，退场 1→0 缩小淡出（同一映射双向复用）
+                tween: Tween(begin: 0.0, end: _closing ? 0.0 : 1.0),
+                duration: DsMotion.fast,
+                curve: _closing ? DsMotion.curve : DsMotion.enter,
+                builder: (context, t, child) => Opacity(
+                  opacity: t.clamp(0, 1),
+                  child: Transform.scale(
+                    scale: 0.85 + 0.15 * t,
+                    alignment: Alignment.bottomCenter,
+                    child: child,
                   ),
-                  child: _Bubble(
-                    message: widget.message,
-                    variant: widget.variant,
-                  ),
+                ),
+                child: _Bubble(
+                  message: widget.message,
+                  variant: widget.variant,
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
     Overlay.of(context, rootOverlay: true).insert(_entry!);
@@ -98,7 +93,7 @@ class _DSTooltipState extends State<DSTooltip> {
     setState(() {});
   }
 
-  /// 关闭收敛入口：barrier 点击 / 自动隐藏 / 鼠标移出 / 再次点击都走这里。
+  /// 关闭收敛入口：点击气泡外 / 自动隐藏 / 鼠标移出 / 再次点击都走这里。
   /// 先播退场（缩小淡出）再延迟移除浮层；动效减弱时跳过退场直接移除。
   void _hide() {
     _autoHide?.cancel();

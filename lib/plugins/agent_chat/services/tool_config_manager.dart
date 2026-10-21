@@ -123,6 +123,9 @@ class ToolConfigManager {
       // 老安装存储中的必填签名会在分发层拦截无参调用，需对齐为新签名
       await _syncTimerStatusOptionalArg();
 
+      // 统一各插件的查询入口，清理历史 find* 工具描述。
+      await _normalizeQueryTools();
+
       // 加载工具索引和配置
       await _loadAllConfigs();
 
@@ -209,38 +212,38 @@ class ToolConfigManager {
         // 持久化移除废弃描述，不保留旧方法或别名路由。
         final obsoleteMethods = switch (pluginId) {
           'tracker' => const [
-              'findGoalBy',
-              'findGoalById',
-              'findGoalByName',
-              'findGoalsByGroup',
-            ],
+            'findGoalBy',
+            'findGoalById',
+            'findGoalByName',
+            'findGoalsByGroup',
+          ],
           'checkin' => const [
-              'findCheckinItemBy',
-              'findCheckinItemById',
-              'findCheckinItemByName',
-              'findCheckinItemsByGroup',
-            ],
+            'findCheckinItemBy',
+            'findCheckinItemById',
+            'findCheckinItemByName',
+            'findCheckinItemsByGroup',
+          ],
           'goods' => const [
-              // find* 快捷查找从未注册实现，模型按描述调用必失败
-              'findWarehouseBy',
-              'findWarehouseById',
-              'findWarehouseByName',
-              'findGoodsItemBy',
-              'findGoodsItemById',
-              'findGoodsItemByName',
-            ],
+            // find* 快捷查找从未注册实现，模型按描述调用必失败
+            'findWarehouseBy',
+            'findWarehouseById',
+            'findWarehouseByName',
+            'findGoodsItemBy',
+            'findGoodsItemById',
+            'findGoodsItemByName',
+          ],
           _ => const [
-              // day 旧命名（getMemorialDays 等）已简化为 getDays 等，
-              // getDaysUntil 新旧同名无需清理
-              'getMemorialDays',
-              'createMemorialDay',
-              'updateMemorialDay',
-              'deleteMemorialDay',
-              'getUpcomingDays',
-              'findMemorialDayBy',
-              'findMemorialDayById',
-              'findMemorialDayByName',
-            ],
+            // day 旧命名（getMemorialDays 等）已简化为 getDays 等，
+            // getDaysUntil 新旧同名无需清理
+            'getMemorialDays',
+            'createMemorialDay',
+            'updateMemorialDay',
+            'deleteMemorialDay',
+            'getUpcomingDays',
+            'findMemorialDayBy',
+            'findMemorialDayById',
+            'findMemorialDayByName',
+          ],
         };
         for (final method in obsoleteMethods) {
           for (final key in ['${pluginId}_$method', method]) {
@@ -252,6 +255,10 @@ class ToolConfigManager {
         }
       }
       for (final entry in bundled.entries) {
+        final methodName = entry.key.startsWith('${pluginId}_')
+            ? entry.key.substring(pluginId.length + 1)
+            : entry.key;
+        if (methodName.startsWith('find')) continue;
         if (stored.containsKey(entry.key)) continue;
         stored[entry.key] = entry.value;
         changed = true;
@@ -268,6 +275,134 @@ class ToolConfigManager {
       print('⚠️ $pluginId 工具增量同步失败: $e');
     }
   }
+
+  static const Set<String> _queryPlugins = {
+    'activity',
+    'bill',
+    'calendar',
+    'calendar_album',
+    'chat',
+    'checkin',
+    'contact',
+    'database',
+    'day',
+    'diary',
+    'goods',
+    'nodes',
+    'notes',
+    'store',
+    'timer',
+    'todo',
+    'tracker',
+  };
+
+  /// 把分裂的 find* 描述收敛为插件级 query；保留现有非查询工具和用户自定义描述。
+  Future<void> _normalizeQueryTools() async {
+    var changed = false;
+    for (final pluginId in _queryPlugins) {
+      final path = '$_toolsPrefix/$pluginId.json';
+      final data = await AboutmeDataService.instance.readPath(path, null);
+      if (data is! Map<String, dynamic>) continue;
+      final normalized = Map<String, dynamic>.from(data);
+      final before = normalized.length;
+      normalized.removeWhere((key, _) {
+        final method = key.startsWith('${pluginId}_')
+            ? key.substring(pluginId.length + 1)
+            : key;
+        return method.startsWith('find');
+      });
+      var pluginChanged = normalized.length != before;
+      final queryKey = normalized.containsKey('${pluginId}_query')
+          ? '${pluginId}_query'
+          : 'query';
+      if (!normalized.containsKey(queryKey)) {
+        normalized['query'] = _queryToolJson(pluginId);
+        pluginChanged = true;
+      } else if (normalized[queryKey] is Map<String, dynamic>) {
+        final query = Map<String, dynamic>.from(
+          normalized[queryKey] as Map<String, dynamic>,
+        );
+        final parameters = List<dynamic>.from(
+          query['parameters'] as List? ?? const [],
+        );
+        if (!parameters.any((p) => p is Map && p['name'] == 'filters')) {
+          parameters.add({
+            'name': 'filters',
+            'type': 'object',
+            'optional': true,
+            'description': '多条件 AND 过滤对象；每个键为字段名，值可为单值或候选值数组',
+          });
+          query['parameters'] = parameters;
+          normalized[queryKey] = query;
+          pluginChanged = true;
+        }
+      }
+      if (pluginChanged) {
+        await AboutmeDataService.instance.writePath(
+          path,
+          const JsonEncoder.withIndent('  ').convert(normalized),
+        );
+        changed = true;
+      }
+    }
+    if (changed) await _regenerateToolIndex();
+  }
+
+  Map<String, dynamic> _queryToolJson(String pluginId) => {
+    'title': '统一查询',
+    'description': '统一查询 $pluginId 数据。支持实体、字段精确或模糊匹配、多条件 AND 过滤和分页。',
+    'parameters': [
+      {
+        'name': 'entity',
+        'type': 'string',
+        'optional': true,
+        'description': '查询实体类型，如 item、record、message',
+      },
+      {
+        'name': 'field',
+        'type': 'string',
+        'optional': true,
+        'description': '字段名',
+      },
+      {
+        'name': 'filters',
+        'type': 'object',
+        'optional': true,
+        'description': '多条件 AND 过滤对象；每个键为字段名，值可为单值或候选值数组',
+      },
+      {'name': 'value', 'type': 'any', 'optional': true, 'description': '字段值'},
+      {
+        'name': 'fuzzy',
+        'type': 'boolean',
+        'optional': true,
+        'description': '是否使用包含匹配',
+      },
+      {
+        'name': 'findAll',
+        'type': 'boolean',
+        'optional': true,
+        'description': '是否返回全部匹配项，默认 true',
+      },
+      {
+        'name': 'offset',
+        'type': 'number',
+        'optional': true,
+        'description': '分页偏移',
+      },
+      {
+        'name': 'count',
+        'type': 'number',
+        'optional': true,
+        'description': '分页数量',
+      },
+    ],
+    'returns': {
+      'type': 'Array|Object',
+      'description': '匹配结果；分页时返回 data、total、offset、count、hasMore',
+    },
+    'notes': '支持 mode、fields、excludeFields、textLengthLimits 等统一字段过滤参数。',
+    'enabled': true,
+  };
 
   /// timer.getTimerStatus 的 timerId 已改为可选（无 ID 时返回全部计时器状态概要）。
   ///

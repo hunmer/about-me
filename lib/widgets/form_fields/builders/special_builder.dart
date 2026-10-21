@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import '../form_field_wrapper.dart';
 import '../config.dart';
-import '../../picker/icon_picker_dialog.dart';
+import '../../picker/circle_icon_picker.dart';
 import 'package:aboutme/plugins/goods/models/custom_field.dart';
 import '../tags_field.dart';
 import '../icon_title_field.dart';

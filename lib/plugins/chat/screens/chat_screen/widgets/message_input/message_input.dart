@@ -1,6 +1,5 @@
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:flutter/material.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -331,13 +330,25 @@ class _MessageInputState extends State<MessageInput> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
     return common.MessageInput(
       controller: widget.controller,
       focusNode: _focusNode,
       hintText: 'chat_enterMessage'.tr,
       onChanged: (text) => widget.onSaveDraft(text),
       quickActions: _buildQuickActions(),
+      // 工具栏右组：表情/语音（原输入框内嵌后缀）
+      trailingQuickActions: [
+        common.MessageInputQuickAction(
+          icon: DsIconKind.mood,
+          tooltip: '表情',
+          onPressed: _showEmojiPicker,
+        ),
+        common.MessageInputQuickAction(
+          icon: DsIconKind.mic,
+          tooltip: _recognitionService != null ? '语音输入' : '语音输入（未配置）',
+          onPressed: _recognitionService != null ? _showVoiceInputDialog : null,
+        ),
+      ],
       onOpenActionsDrawer: _showActionsDrawer,
       header: MetadataDisplay(
         selectedFiles: selectedFiles,
@@ -345,72 +356,8 @@ class _MessageInputState extends State<MessageInput> {
         onAgentsEntryTap: _openAutoReplySettings,
         onFileRemoveAt: _removeFileAt,
       ),
-      inputSuffix: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _InlineIconAction(
-            icon: DsIconKind.mood,
-            color: theme.textSub,
-            onPressed: _showEmojiPicker,
-            tooltip: '表情',
-          ),
-          if (_recognitionService != null)
-            _InlineIconAction(
-              icon: DsIconKind.mic,
-              color: theme.textSub,
-              onPressed: _showVoiceInputDialog,
-              tooltip: '语音输入',
-            )
-          else
-            _InlineIconAction(
-              icon: DsIconKind.mic,
-              color: theme.textSub,
-              tooltip: '语音输入（未配置）',
-            ),
-        ],
-      ),
       onSend: _handleSendMessage,
       onKeyEvent: (event) => _messageInputState.handleKeyPress(event),
-    );
-  }
-}
-
-/// 输入框内嵌的无边框小图标按钮（表情/语音）
-class _InlineIconAction extends StatelessWidget {
-  const _InlineIconAction({
-    required this.icon,
-    required this.color,
-    this.onPressed,
-    this.tooltip,
-  });
-
-  final DsIconKind icon;
-  final Color color;
-  final VoidCallback? onPressed;
-  final String? tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final disabled = onPressed == null;
-    return Pressable(
-      onPressed: onPressed,
-      semanticLabel: tooltip,
-      builder: (context, states) {
-        final pressed = states.contains(WidgetState.pressed);
-        return AnimatedScale(
-          scale: pressed && !disabled ? 0.85 : 1.0,
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOut,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
-            child: DsIcon(
-              icon,
-              size: 18,
-              color: disabled ? color.withValues(alpha: 0.4) : color,
-            ),
-          ),
-        );
-      },
     );
   }
 }

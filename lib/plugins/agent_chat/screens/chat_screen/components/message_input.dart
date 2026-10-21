@@ -338,7 +338,21 @@ class _MessageInputState extends State<MessageInput> {
       showPanelStroke: widget.showPanelStroke,
       dashedPanelStroke: widget.dashedPanelStroke,
       quickActions: widget.toolbarActions,
-      trailingQuickActions: widget.trailingToolbarActions,
+      // 工具栏右组：内置"你可以问"/表情（原输入框内嵌后缀）+ 外部注入动作
+      trailingQuickActions: [
+        if (agentReady)
+          common.MessageInputQuickAction(
+            icon: DsIconKind.star,
+            tooltip: '你可以问',
+            onPressed: _showSuggestedQuestions,
+          ),
+        common.MessageInputQuickAction(
+          icon: DsIconKind.mood,
+          tooltip: '表情',
+          onPressed: _showEmojiPicker,
+        ),
+        ...widget.trailingToolbarActions,
+      ],
       // 输入框上方：工具模板搜索 / 命令选择器 / 待发送状态
       header: Column(
         mainAxisSize: MainAxisSize.min,
@@ -378,27 +392,6 @@ class _MessageInputState extends State<MessageInput> {
                   style: DsTypography.caption.copyWith(color: theme.textSub),
                 ),
               ),
-            // "你可以问"按钮
-            if (agentReady)
-              Pressable(
-                onPressed: _showSuggestedQuestions,
-                semanticLabel: '你可以问',
-                builder: (context, states) => Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: DsIcon(
-                    DsIconKind.star,
-                    size: 20,
-                    color: theme.warning,
-                  ),
-                ),
-              ),
-            // 表情：Unicode 插入光标处，内置图片表情作为附件发送
-            _InlineIconAction(
-              icon: DsIconKind.mood,
-              color: theme.textSub,
-              onPressed: _showEmojiPicker,
-              tooltip: '表情',
-            ),
             // 录音：点击开始/停止，识别结果实时写入输入框；
             // 未配置时回退为对话框输入
             if (_recognitionService != null)

@@ -160,7 +160,12 @@ class _DSPopoverState extends State<DSPopover> {
   Widget build(BuildContext context) {
     return CompositedTransformTarget(
       link: _link,
-      child: GestureDetector(onTap: _toggle, child: widget.child),
+      // opaque：child 不参与命中（如被 IgnorePointer 包裹的纯视觉按钮）时触发器自身兜底命中
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _toggle,
+        child: widget.child,
+      ),
     );
   }
 }

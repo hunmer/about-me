@@ -229,6 +229,8 @@ class ToastService implements IToastServiceWithInit {
       reverseStartOffset: reverseStartOffset,
       reverseEndOffset: reverseEndOffset,
       textAlign: textAlign ?? TextAlign.center,
+      dismissOtherToast: dismissOtherOnShow,
+      fullWidth: fullWidth,
     );
   }
 
@@ -286,6 +288,7 @@ class ToastService implements IToastServiceWithInit {
       reverseStartOffset: reverseStartOffset,
       reverseEndOffset: reverseEndOffset,
       onDismiss: onDismiss,
+      dismissOtherToast: dismissOtherOnShow,
     );
   }
 

@@ -10,6 +10,7 @@ import '../tokens/typography.dart';
 import 'focus_ring.dart';
 import 'icons.dart';
 import 'jelly_box.dart';
+import 'tooltip.dart';
 
 /// 按钮变体（对标 shadcn：primary / secondary / outline / ghost / destructive）
 /// + dashed：纸面底 + 虚线墨框（hover 时虚线换主题主色，无实线描边）
@@ -40,6 +41,7 @@ class DSButton extends StatelessWidget {
     this.expand = false,
     this.loading = false,
     this.semanticLabel,
+    this.tooltip,
   });
 
   final String label;
@@ -55,6 +57,10 @@ class DSButton extends StatelessWidget {
   /// 是否占满可用宽度
   final bool expand;
   final String? semanticLabel;
+
+  /// 悬停气泡提示（桌面悬停 / 移动端长按），无障碍标签仍由
+  /// [semanticLabel]/[label] 提供
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +84,7 @@ class DSButton extends StatelessWidget {
         font = DsTypography.button.copyWith(fontSize: 17);
     }
 
-    return Pressable(
+    final button = Pressable(
       onPressed: onPressed,
       // loading 视为 busy：阻断点击与键盘激活，但配色保持常态
       enabled: !loading,
@@ -141,7 +147,8 @@ class DSButton extends StatelessWidget {
         );
 
         // 实底类变体：错位阴影「游戏按键」按压手感
-        final solid = variant == DSButtonVariant.primary ||
+        final solid =
+            variant == DSButtonVariant.primary ||
             variant == DSButtonVariant.secondary ||
             variant == DSButtonVariant.destructive;
 
@@ -154,10 +161,9 @@ class DSButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: padH),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color:
-                  hovered && !disabled
-                      ? theme.surfaceAlt.withValues(alpha: 0.7)
-                      : DsColors.transparent,
+              color: hovered && !disabled
+                  ? theme.surfaceAlt.withValues(alpha: 0.7)
+                  : DsColors.transparent,
               borderRadius: theme.radii.lg,
             ),
             child: content,
@@ -263,6 +269,11 @@ class DSButton extends StatelessWidget {
             : ringed;
       },
     );
+
+    // 无障碍标签由 Pressable.semanticLabel 提供；这里只负责悬停气泡
+    return tooltip == null
+        ? button
+        : DSTooltip(message: tooltip!, child: button);
   }
 }
 
@@ -435,6 +446,8 @@ class DSIconButton extends StatelessWidget {
   final double size;
   final Color? color;
   final Color? iconColor;
+
+  /// 悬停气泡提示（桌面悬停 / 移动端长按），同时作为无障碍标签
   final String? tooltip;
 
   @override
@@ -448,12 +461,11 @@ class DSIconButton extends StatelessWidget {
       builder: (context, states) {
         final pressed = states.contains(WidgetState.pressed);
         final disabled = onPressed == null;
-        final effectiveBase =
-            disabled
-                ? theme.disabled
-                : pressed
-                ? base.mixBlack(0.08)
-                : base;
+        final effectiveBase = disabled
+            ? theme.disabled
+            : pressed
+            ? base.mixBlack(0.08)
+            : base;
         return AnimatedScale(
           scale: pressed && !disabled ? 0.94 : 1.0,
           duration: const Duration(milliseconds: 120),
@@ -468,20 +480,20 @@ class DSIconButton extends StatelessWidget {
             child: DsIcon(
               icon,
               size: size * 0.5,
-              color:
-                  disabled
-                      ? theme.surface
-                      : iconColor ??
-                          (color == null ? theme.onPrimary : theme.onPrimary),
+              color: disabled
+                  ? theme.surface
+                  : iconColor ??
+                        (color == null ? theme.onPrimary : theme.onPrimary),
             ),
           ),
         );
       },
     );
 
+    // 无障碍标签由 Pressable.semanticLabel 提供；这里只负责悬停气泡
     return tooltip == null
         ? button
-        : Semantics(label: tooltip, button: true, child: button);
+        : DSTooltip(message: tooltip!, child: button);
   }
 }
 
@@ -494,6 +506,7 @@ class DSFab extends StatelessWidget {
     this.size = 60,
     this.color,
     this.iconColor,
+    this.tooltip,
   });
 
   final DsIconKind icon;
@@ -506,12 +519,15 @@ class DSFab extends StatelessWidget {
   /// 覆盖图标颜色（默认主色上的前景色）
   final Color? iconColor;
 
+  /// 悬停气泡提示（桌面悬停 / 移动端长按）
+  final String? tooltip;
+
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final base = color ?? theme.primary;
     final effectiveIconColor = iconColor ?? theme.onPrimary;
-    return Pressable(
+    final button = Pressable(
       onPressed: onPressed,
       builder: (context, states) {
         final pressed = states.contains(WidgetState.pressed);
@@ -532,5 +548,10 @@ class DSFab extends StatelessWidget {
         );
       },
     );
+
+    // 无障碍标签由 Pressable.semanticLabel 提供；这里只负责悬停气泡
+    return tooltip == null
+        ? button
+        : DSTooltip(message: tooltip!, child: button);
   }
 }

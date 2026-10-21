@@ -115,11 +115,14 @@ class _ExtendedSectionState extends State<ExtendedSection> {
                       ),
                     ],
                   ),
-              child: DSButton(
-                label: '更多操作',
-                variant: DSButtonVariant.outline,
-                size: DSButtonSize.sm,
-                onPressed: () {},
+              child: IgnorePointer(
+                // 按钮仅作视觉载体：内层手势会抢走点击，触发交给外层气泡
+                child: DSButton(
+                  label: '更多操作',
+                  variant: DSButtonVariant.outline,
+                  size: DSButtonSize.sm,
+                  onPressed: () {},
+                ),
               ),
             ),
           ],

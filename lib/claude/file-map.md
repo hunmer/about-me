@@ -76,8 +76,7 @@
 
 | 路径 | 说明 |
 |------|------|
-| `aboutme_editor/` | Quill 富文本编辑器封装 |
 | `enhanced_calendar/` · `aboutme_sf_calendar/` | 日历组件 |
 | `form_fields/` · `common/` · `file_preview/` · `data_selector_sheet/` · `l10n/` | 表单字段、公共组件、文件预览、数据选择器 |
-| 根级单文件 | adaptive_image、app_bar_widget、app_drawer、custom_dialog、folder_breadcrumbs、group_selector_dialog 等 |
+| 根级单文件 | adaptive_image、app_bar_widget、app_drawer、custom_dialog、folder_breadcrumbs 等 |
 | 文档 | [widgets/CLAUDE.md](../widgets/CLAUDE.md)（旧版格式） |
