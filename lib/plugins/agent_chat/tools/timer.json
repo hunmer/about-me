@@ -1,7 +1,7 @@
 {
   "timer_getTimers": {
     "title": "获取计时器列表",
-    "description": "获取所有计时器任务列表,支持分页",
+    "description": "获取所有计时器任务列表,支持分页。需要 timerId 的操作（startTimer/getTimerStatus 等）应先通过本方法获取真实 id",
     "parameters": [
       {
         "name": "offset",
@@ -223,26 +223,30 @@
   },
   "timer_getTimerStatus": {
     "title": "获取计时器状态",
-    "description": "获取指定计时器的详细状态信息",
+    "description": "获取计时器的详细状态信息。不指定 timerId 时返回全部计时器的状态概要（适合查看计时器状态这类未指明目标的请求）",
     "parameters": [
       {
         "name": "timerId",
         "type": "String",
-        "optional": false,
-        "description": "计时器任务 ID"
+        "optional": true,
+        "description": "计时器任务 ID。必须是 getTimers 返回的真实 id（UUID 格式），不要猜测或编造；不传时返回全部计时器状态概要"
       }
     ],
     "returns": {
       "type": "Object",
-      "description": "计时器状态对象,包含任务信息、当前进度、活动子计时器等"
+      "description": "指定 timerId 时返回单个计时器状态（任务信息、当前进度、活动子计时器等）；不传 timerId 时返回 {total, runningCount, timers:[{id,name,group,isRunning}]}"
     },
     "examples": [
       {
-        "code": "const status = await Aboutme.plugins.timer.getTimerStatus({timerId: 'timer123'});\nsetResult(status);",
-        "comment": "查询计时器状态"
+        "code": "const status = await Aboutme.plugins.timer.getTimerStatus({timerId: '75806d7e-7bd7-4afc-a5c9-5ad993baec3b'});\nsetResult(status);",
+        "comment": "查询指定计时器状态（id 来自 getTimers）"
+      },
+      {
+        "code": "const overview = await Aboutme.plugins.timer.getTimerStatus({});\nsetResult(`共 ${overview.total} 个计时器，${overview.runningCount} 个运行中`);",
+        "comment": "查看全部计时器状态概要"
       }
     ],
-    "notes": "返回字段: id, name, isRunning, isCompleted, elapsedDuration, repeatCount, remainingRepeatCount, currentTimerIndex, activeTimer(当前活动的子计时器), timerItems(所有子计时器列表)",
+    "notes": "timerId 必须来自 getTimers 返回的真实 id。ID 不存在时会返回错误并提示先调用 getTimers，此时不要继续猜测其他 ID。",
     "enabled": true
   },
   "timer_getHistory": {

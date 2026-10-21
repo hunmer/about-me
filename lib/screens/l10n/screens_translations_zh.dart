@@ -433,13 +433,10 @@ final Map<String, String> screensTranslationsZh = {
   'screens_restoredDefaultBackground': '已恢复默认背景',
 
   // jelly_home assistant tab
-  'screens_assistantTitle': '聊天助手',
-  'screens_assistantSubtitle': '一句话，帮你记好',
   'screens_assistantBadgeIdle': '你的小助手',
   'screens_assistantWorking': '正在处理…',
   'screens_assistantTyping': '正在输入…',
   'screens_assistantGreeting': '嗨！想让我\n帮你记点什么？',
-  'screens_assistantReady': '速记小助手已就绪',
   'screens_assistantIdeas': '试试这些',
   'screens_assistantIdeaTodo': '记条待办：明早 9 点站会',
   'screens_assistantIdeaBill': '记笔账：午饭 25 元',

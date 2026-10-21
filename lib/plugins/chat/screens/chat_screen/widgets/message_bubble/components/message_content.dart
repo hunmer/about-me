@@ -7,6 +7,8 @@ import 'package:aboutme/widgets/quill_viewer/index.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/ask_user_questions_card.dart';
 import 'package:aboutme/plugins/chat/utils/message_content_utils.dart';
 import 'package:aboutme/plugins/chat/widgets/image_message_widget.dart';
 import 'package:aboutme/plugins/chat/widgets/image_stack_message_widget.dart';
@@ -49,6 +51,14 @@ class MessageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final questionStep = message.metadata?['askUserQuestions'];
+    if (questionStep is Map<String, dynamic>) {
+      final step = ToolCallStep.fromJson(questionStep);
+      return AskUserQuestionsCard(
+        key: ValueKey(message.id),
+        step: step,
+      );
+    }
     final theme = DSThemeBridge.resolve(context);
     // 检查消息是否处于"正在思考"状态
     final bool isThinking =

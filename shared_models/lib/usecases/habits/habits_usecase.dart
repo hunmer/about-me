@@ -79,8 +79,13 @@ class HabitsUseCase {
     }
 
     try {
+      // Agent 可能按扁平化 schema 传入空串 id，空值须回退为生成的 uuid，
+      // 否则会落库成无法更新/删除的空 ID 记录
+      final providedId = (params['id'] as String?)?.trim();
       final habit = HabitDto(
-        id: params['id'] as String? ?? _uuid.v4(),
+        id: providedId == null || providedId.isEmpty
+            ? _uuid.v4()
+            : providedId,
         title: params['title'] as String,
         notes: params['notes'] as String?,
         group: params['group'] as String?,
@@ -256,8 +261,11 @@ class HabitsUseCase {
     }
 
     try {
+      final providedId = (params['id'] as String?)?.trim();
       final skill = SkillDto(
-        id: params['id'] as String? ?? _uuid.v4(),
+        id: providedId == null || providedId.isEmpty
+            ? _uuid.v4()
+            : providedId,
         title: params['title'] as String,
         description: params['description'] as String?,
         notes: params['notes'] as String?,
@@ -441,8 +449,12 @@ class HabitsUseCase {
     }
 
     try {
+      // Agent 可能按扁平化 schema 传入空串 id，空值须回退为生成的 uuid
+      final providedId = (params['id'] as String?)?.trim();
       final record = CompletionRecordDto(
-        id: params['id'] as String? ?? _uuid.v4(),
+        id: providedId == null || providedId.isEmpty
+            ? _uuid.v4()
+            : providedId,
         parentId: params['parentId'] as String,
         date: DateTime.parse(params['date'] as String),
         durationSeconds: params['durationSeconds'] as int,

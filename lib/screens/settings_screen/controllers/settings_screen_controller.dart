@@ -1,8 +1,11 @@
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/theme_controller.dart';
 import 'package:aboutme/core/builtin_plugins.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/core/services/clipboard_service.dart';
+import 'package:aboutme/plugins/chat/events/user_events.dart';
+import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -67,13 +70,14 @@ class SettingsScreenController extends ChangeNotifier {
     _userAvatarPath = _prefs.getString('user_avatar_path');
   }
 
-  // 用户资料（设置页顶部头像/用户名）
+  // 用户资料（设置页顶部头像/用户名），聊天插件等从此数据源读取
   String _userName = '';
   String get userName => _userName.trim().isEmpty ? '用户' : _userName.trim();
   Future<void> setUserName(String value) async {
     _userName = value;
     await _prefs.setString('user_name', value);
     notifyListeners();
+    _broadcastProfileUpdated();
   }
 
   String? _userAvatarPath;
@@ -86,6 +90,17 @@ class SettingsScreenController extends ChangeNotifier {
       await _prefs.setString('user_avatar_path', value);
     }
     notifyListeners();
+    _broadcastProfileUpdated();
+  }
+
+  /// 广播用户资料更新（id 与聊天当前用户一致），刷新聊天消息气泡头像
+  void _broadcastProfileUpdated() {
+    EventManager.instance.broadcast(
+      UserEventNames.userAvatarUpdated,
+      UserAvatarUpdatedEventArgs(
+        User(id: 'default_user', username: userName, iconPath: _userAvatarPath),
+      ),
+    );
   }
 
   void toggleTheme(context) => ThemeController.toggleTheme(context);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -13,6 +14,7 @@ import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart'
 import 'package:aboutme/plugins/agent_chat/screens/agent_chat_settings_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
+import 'package:aboutme/plugins/agent_chat/screens/conversation_list_screen/test_conversation_list_screen.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
@@ -137,6 +139,11 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
       context,
       ToolTemplateScreen(templateService: _templateService),
     );
+  }
+
+  /// 打开测试会话列表页面
+  void _openTestConversations() {
+    NavigationHelper.push(context, const TestConversationListScreen());
   }
 
   /// 构建分组过滤的 FilterItem
@@ -267,8 +274,8 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasAnyConversations =
-        _controller.conversationService.conversations.isNotEmpty;
+    // 只统计主列表可见会话（临时/隐藏/测试会话不算）
+    final hasAnyConversations = _controller.allConversations.isNotEmpty;
 
     return SuperCupertinoNavigationWrapper(
       title: Text('agent_chat_aiChat'.tr),
@@ -300,6 +307,16 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
                     onPressed: _showAddChannelDialog,
                     tooltip: '添加频道',
                   ),
+                  // 测试会话列表按钮（测试入口仅在 debug 模式可见）
+                  if (kDebugMode)
+                    DSIconButton(
+                      icon: DsIconKind.science,
+                      size: 40,
+                      color: theme.surfaceAlt,
+                      iconColor: theme.textSub,
+                      onPressed: _openTestConversations,
+                      tooltip: '测试会话',
+                    ),
                   // 工具管理按钮
                   DSIconButton(
                     icon: DsIconKind.gear,

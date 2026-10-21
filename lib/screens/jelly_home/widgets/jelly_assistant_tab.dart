@@ -98,7 +98,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
         );
     conversation ??= await agentChat.conversationService
         .createTemporaryConversation(
-          title: 'screens_assistantTitle'.tr,
+          title: '聊天助手',
           routeName: ChatAssistantService.conversationRoute,
           agentId: ChatAssistantService.builtinAgentId,
         );
@@ -284,9 +284,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   Widget _buildHeader(AppThemeData theme) {
     final controller = _controller;
     final sending = controller?.isSending ?? false;
-    final subtitle = sending
-        ? (controller?.typingStatusText ?? 'screens_assistantTyping'.tr)
-        : 'screens_assistantSubtitle'.tr;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         theme.spacing.lg,
@@ -296,24 +293,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'screens_assistantTitle'.tr,
-                  style: DsTypography.title.copyWith(color: theme.text),
-                ),
-                Text(
-                  subtitle,
-                  style: DsTypography.caption.copyWith(color: theme.textSub),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
+          const Spacer(),
           if (kDebugMode)
             TextButton.icon(
               icon: const Icon(Icons.science_outlined, size: 18),
@@ -419,14 +399,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                     Text(
                       'screens_assistantGreeting'.tr,
                       style: DsTypography.heading.copyWith(color: theme.text),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'screens_assistantReady'.tr,
-                      style: DsTypography.caption.copyWith(
-                        color: theme.textSub,
-                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),

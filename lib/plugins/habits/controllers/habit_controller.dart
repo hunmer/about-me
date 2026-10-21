@@ -117,7 +117,7 @@ class HabitController {
 
       if (recordList.isNotEmpty) {
         await AboutmeDataService.instance.writePath(
-          'habits/records/$habitId.json.json',
+          'habits/records/$habitId.json',
           recordList,
         );
       }

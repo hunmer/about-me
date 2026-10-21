@@ -115,6 +115,13 @@ class ToolConfigManager {
       await _syncMissingPluginTools('openai');
       await _syncMissingPluginTools('tracker');
       await _syncMissingPluginTools('checkin');
+      // day 方法已从 getMemorialDays 等简化为 getDays 等，老安装需同步清理
+      await _syncMissingPluginTools('day');
+      // goods 旧 find* 快捷查找描述从未在 Dart 侧实现，需从老安装清理
+      await _syncMissingPluginTools('goods');
+      // timer.getTimerStatus 的 timerId 已改为可选（无 ID 时返回全部状态概要），
+      // 老安装存储中的必填签名会在分发层拦截无参调用，需对齐为新签名
+      await _syncTimerStatusOptionalArg();
 
       // 加载工具索引和配置
       await _loadAllConfigs();
@@ -195,11 +202,46 @@ class ToolConfigManager {
           ? Map<String, dynamic>.from(storedData)
           : <String, dynamic>{};
       var changed = false;
-      if (pluginId == 'tracker' || pluginId == 'checkin') {
+      if (pluginId == 'tracker' ||
+          pluginId == 'checkin' ||
+          pluginId == 'day' ||
+          pluginId == 'goods') {
         // 持久化移除废弃描述，不保留旧方法或别名路由。
-        final obsoleteMethods = pluginId == 'tracker'
-            ? const ['findGoalBy', 'findGoalById', 'findGoalByName', 'findGoalsByGroup']
-            : const ['findCheckinItemBy', 'findCheckinItemById', 'findCheckinItemByName', 'findCheckinItemsByGroup'];
+        final obsoleteMethods = switch (pluginId) {
+          'tracker' => const [
+              'findGoalBy',
+              'findGoalById',
+              'findGoalByName',
+              'findGoalsByGroup',
+            ],
+          'checkin' => const [
+              'findCheckinItemBy',
+              'findCheckinItemById',
+              'findCheckinItemByName',
+              'findCheckinItemsByGroup',
+            ],
+          'goods' => const [
+              // find* 快捷查找从未注册实现，模型按描述调用必失败
+              'findWarehouseBy',
+              'findWarehouseById',
+              'findWarehouseByName',
+              'findGoodsItemBy',
+              'findGoodsItemById',
+              'findGoodsItemByName',
+            ],
+          _ => const [
+              // day 旧命名（getMemorialDays 等）已简化为 getDays 等，
+              // getDaysUntil 新旧同名无需清理
+              'getMemorialDays',
+              'createMemorialDay',
+              'updateMemorialDay',
+              'deleteMemorialDay',
+              'getUpcomingDays',
+              'findMemorialDayBy',
+              'findMemorialDayById',
+              'findMemorialDayByName',
+            ],
+        };
         for (final method in obsoleteMethods) {
           for (final key in ['${pluginId}_$method', method]) {
             if (stored.containsKey(key)) {
@@ -224,6 +266,51 @@ class ToolConfigManager {
       print('✅ 增量同步 $pluginId 缺失工具');
     } catch (e) {
       print('⚠️ $pluginId 工具增量同步失败: $e');
+    }
+  }
+
+  /// timer.getTimerStatus 的 timerId 已改为可选（无 ID 时返回全部计时器状态概要）。
+  ///
+  /// 老安装存储中的必填签名会让分发层拒绝无参调用，这里检测到旧签名
+  /// （timerId 仍为必填）时以捆绑的新签名覆盖该条目；已是新签名则跳过，
+  /// 保留用户对描述的自定义。缺失该条目时按捆绑版本补齐。
+  Future<void> _syncTimerStatusOptionalArg() async {
+    const pluginId = 'timer';
+    final path = '$_toolsPrefix/$pluginId.json';
+    try {
+      final storedData = await AboutmeDataService.instance.readPath(path, null);
+      if (storedData is! Map<String, dynamic>) return; // 首装走全量拷贝
+      final stored = Map<String, dynamic>.from(storedData);
+
+      final entry = stored['timer_getTimerStatus'];
+      if (entry is Map<String, dynamic>) {
+        Map<dynamic, dynamic>? timerIdParam;
+        for (final p in (entry['parameters'] as List<dynamic>? ?? [])) {
+          if (p is Map && p['name'] == 'timerId') {
+            timerIdParam = p;
+            break;
+          }
+        }
+        if (timerIdParam != null && timerIdParam['optional'] == true) return;
+      }
+
+      final bundledJson = await rootBundle.loadString(
+        'lib/plugins/agent_chat/tools/$pluginId.json',
+      );
+      final bundled = jsonDecode(bundledJson);
+      if (bundled is! Map<String, dynamic>) return;
+      final bundledEntry = bundled['timer_getTimerStatus'];
+      if (bundledEntry is! Map<String, dynamic>) return;
+
+      stored['timer_getTimerStatus'] = bundledEntry;
+      await AboutmeDataService.instance.writePath(
+        path,
+        const JsonEncoder.withIndent('  ').convert(stored),
+      );
+      await _regenerateToolIndex();
+      print('✅ 同步 timer.getTimerStatus 可选参数签名');
+    } catch (e) {
+      print('⚠️ timer.getTimerStatus 签名同步失败: $e');
     }
   }
 

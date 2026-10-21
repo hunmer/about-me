@@ -9,6 +9,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
+import 'ask_user_questions_card.dart';
 
 /// 工具调用步骤展示组件
 ///
@@ -76,6 +77,14 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
 
   /// 构建单个步骤卡片
   Widget _buildStepCard(ToolCallStep step, int index, bool isExpanded) {
+    if (step.method == 'askuserquestions' &&
+        step.status != ToolCallStatus.failed) {
+      final data = jsonDecode(step.data) as Map<String, dynamic>;
+      return AskUserQuestionsCard(
+        key: ValueKey(data['requestId']),
+        step: step,
+      );
+    }
     final theme = DSThemeBridge.resolve(context);
     final plugin = _resolveStepPlugin(step);
     // 创建类步骤副标题渲染为「点击查看详情」按钮，其余展示步骤描述

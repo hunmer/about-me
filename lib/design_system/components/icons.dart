@@ -135,6 +135,7 @@ enum DsIconKind {
   shelf,
   print,
   keyboardHide,
+  science,
 }
 
 const Map<DsIconKind, IconData> _kIcons = {
@@ -267,6 +268,7 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.shelf: Icons.video_library,
   DsIconKind.print: Icons.print_outlined,
   DsIconKind.keyboardHide: Icons.keyboard_hide,
+  DsIconKind.science: Icons.science_outlined,
 };
 
 /// 图标组件：基于系统 Material Icons

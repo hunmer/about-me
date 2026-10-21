@@ -4,6 +4,7 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/plugins/chat/events/user_events.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// 聊天配置服务
 ///
@@ -17,10 +18,19 @@ class ChatConfigService {
   // ==================== 用户管理 ====================
 
   final List<User> _users = [];
-  User? _currentUser;
 
+  SharedPreferences? _prefs;
+
+  /// 当前用户资料统一来自个人主页（SharedPreferences 的 user_name/user_avatar_path），
+  /// 不再使用 chat/users 文件中的独立设置
   User get currentUser {
-    return _currentUser!;
+    final name = _prefs?.getString('user_name')?.trim();
+    final avatar = _prefs?.getString('user_avatar_path');
+    return User(
+      id: 'default_user',
+      username: (name == null || name.isEmpty) ? '用户' : name,
+      iconPath: (avatar == null || avatar.isEmpty) ? null : avatar,
+    );
   }
 
   // ==================== 设置管理 ====================
@@ -38,6 +48,7 @@ class ChatConfigService {
   // ==================== 初始化 ====================
 
   Future<void> initialize() async {
+    _prefs = await SharedPreferences.getInstance();
     await _initializeUsers();
     await _initializeSettings();
   }
@@ -62,9 +73,6 @@ class ChatConfigService {
       final user = User.fromJson(userJson as Map<String, dynamic>);
       _addOrUpdateUser(user);
     }
-
-    // 设置当前用户为默认用户
-    _currentUser = _getDefaultUser();
   }
 
   Future<void> _initializeSettings() async {
@@ -85,19 +93,6 @@ class ChatConfigService {
 
   // ==================== 用户操作 ====================
 
-  User _getDefaultUser() {
-    return _getUserById('default_user') ??
-      User(id: 'default_user', username: 'Default User');
-  }
-
-  User? _getUserById(String id) {
-    try {
-      return _users.firstWhere((user) => user.id == id);
-    } catch (e) {
-      return null;
-    }
-  }
-
   List<User> getAllUsers() {
     return List.from(_users);
   }
@@ -111,12 +106,6 @@ class ChatConfigService {
     }
   }
 
-  void setCurrentUser(User user) {
-    _currentUser = user;
-    _addOrUpdateUser(user);
-    _plugin.refresh();
-  }
-
   Future<void> _saveAllUsers() async {
     await AboutmeDataService.instance.writePath('chat/users', {
       'users': _users.map((user) => user.toJson()).toList(),
@@ -124,10 +113,6 @@ class ChatConfigService {
   }
 
   Future<void> updateUser(User user) async {
-    if (user.id == _currentUser?.id) {
-      _currentUser = user;
-    }
-
     _addOrUpdateUser(user);
     await _saveAllUsers();
 

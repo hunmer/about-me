@@ -422,8 +422,18 @@ class ConversationService extends ChangeNotifier {
 
       // 临时会话（"询问当前上下文"的路由会话）与显式隐藏的会话不进列表
       if (metadata['isTemporary'] == true) return false;
+      // 建议问题测试的会话只进测试会话列表
+      if (isTestRun(c)) return false;
       final hideInList = metadata['hideInList'] == true;
       return !hideInList;
     }).toList();
+  }
+
+  /// 判断是否为建议问题测试创建的会话
+  static bool isTestRun(Conversation c) => c.metadata?['testRunId'] != null;
+
+  /// 获取建议问题测试创建的会话（仅在测试会话列表展示）
+  List<Conversation> getTestConversations() {
+    return _conversations.where(isTestRun).toList();
   }
 }

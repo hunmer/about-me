@@ -159,12 +159,24 @@ Future<String> _jsCheckIn(Map<String, dynamic> params) async {
   if (params.containsKey('habitId')) {
     useCaseParams['parentId'] = params['habitId'];
   }
-  if (params.containsKey('durationSeconds')) {
-    useCaseParams['durationSeconds'] = params['durationSeconds'];
-  } else if (params.containsKey('durationMinutes')) {
-    // 如果传入的是分钟，转换为秒
-    useCaseParams['durationSeconds'] = (params['durationMinutes'] as int) * 60;
+
+  // 扁平化 schema 会把未用参数填成 0：非正时长视为未传，
+  // 回退到 schema 约定的"默认使用习惯的目标时长"
+  final explicitSeconds = params['durationSeconds'];
+  final explicitMinutes = params['durationMinutes'];
+  if (explicitSeconds is num && explicitSeconds > 0) {
+    useCaseParams['durationSeconds'] = explicitSeconds.toInt();
+  } else if (explicitMinutes is num && explicitMinutes > 0) {
+    useCaseParams['durationSeconds'] = explicitMinutes.toInt() * 60;
+  } else {
+    final habitId = useCaseParams['parentId'] as String? ?? '';
+    final habits = await HabitsPlugin.instance._habitController.loadHabits();
+    final habit = habits.where((h) => h.id == habitId).firstOrNull;
+    if (habit != null) {
+      useCaseParams['durationSeconds'] = habit.durationMinutes * 60;
+    }
   }
+
   if (!useCaseParams.containsKey('date')) {
     useCaseParams['date'] = DateTime.now().toIso8601String();
   }
@@ -349,10 +361,19 @@ Future<String> _jsStopTimer(Map<String, dynamic> params) async {
 
 /// 获取计时器状态
 Future<String> _jsGetTimerStatus(Map<String, dynamic> params) async {
-  // 必需参数
+  // 必需参数（扁平化 schema 会把未用参数填成空串，空串同样视为未传）
   final String? habitId = params['habitId'];
-  if (habitId == null) {
+  if (habitId == null || habitId.isEmpty) {
     return jsonEncode({'error': '缺少必需参数: habitId'});
+  }
+
+  // 校验习惯存在：不存在的 habitId 直接报错，避免把幻觉 ID 误报为"已停止"
+  final habits = await HabitsPlugin.instance._habitController.loadHabits();
+  if (!habits.any((h) => h.id == habitId)) {
+    return jsonEncode({
+      'error': '习惯不存在: $habitId（habitId 须来自 getHabits 返回的真实 id，'
+          '请先调用 getHabits 获取）',
+    });
   }
 
   final timerData = HabitsPlugin.instance._timerController.getTimerData(habitId);

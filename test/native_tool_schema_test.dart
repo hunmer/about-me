@@ -22,6 +22,18 @@ void main() {
   });
 
   group('工具执行模式', () {
+    test('提问工具在普通、JS 和内置工具模式均可用', () {
+      for (final mode in [(false, false), (true, false), (false, true)]) {
+        final tools = NativeToolAgentService.buildToolSet(
+          pluginTools: [],
+          onRunJs: (_) async => {},
+          onAskUserQuestions: (_) async => {'status': 'answered'},
+          useJsTools: mode.$1,
+          builtInOnly: mode.$2,
+        );
+        expect(tools.map((tool) => tool.name), contains('askuserquestions'));
+      }
+    });
     late Tool<Map<String, dynamic>> pluginTool;
     setUp(() {
       pluginTool = Tool<Map<String, dynamic>>(

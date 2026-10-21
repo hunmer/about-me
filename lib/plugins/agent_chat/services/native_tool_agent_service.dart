@@ -11,6 +11,8 @@ import 'package:aboutme/core/services/agent_file_space_service.dart';
 import 'package:aboutme/core/services/image_compression_service.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
+import 'package:aboutme/plugins/agent_chat/services/ask_user_questions_service.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/ask_user_questions_card.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_service.dart';
@@ -50,10 +52,14 @@ class _NativeToolRunContext {
     this.onImageDescription, {
     required this.agentId,
     required this.conversationId,
+    required this.questionsInChat,
+    required this.isCancelling,
   });
 
   final String agentId;
   final String? conversationId;
+  final bool questionsInChat;
+  final bool Function()? isCancelling;
 
   final Future<void> Function(List<ToolCallStep> steps)? onToolSteps;
   final Future<void> Function(String path, String description)?
@@ -64,7 +70,7 @@ class _NativeToolRunContext {
   int toolCallCount = 0;
   int imageToolCallCount = 0;
 
-  Future<void> notifySteps() {
+  Future<void> notifySteps({bool requireDelivery = false}) {
     final callback = onToolSteps;
     if (callback == null) return Future<void>.value();
 
@@ -79,9 +85,10 @@ class _NativeToolRunContext {
         );
       } catch (e, stack) {
         debugPrint('[NativeTool] 工具步骤状态更新失败: $e\n$stack');
+        if (requireDelivery) rethrow;
       }
     });
-    updateChain = update;
+    updateChain = update.catchError((Object _) {});
     return update;
   }
 }
@@ -243,6 +250,7 @@ class NativeToolAgentService {
   /// system 消息（活人感后缀等）会合并为首条 system 消息。
   /// [contextMessages] 上下文消息（agentlib 格式，最后一条为本轮 user 输入）
   /// [onToolSteps] 工具状态变化时回传全量步骤（写入 message.toolCall）
+  /// [questionsInChat] 仅在调用方能够渲染提问卡片时设为 true，否则使用全局弹窗。
   Future<String> runToolLoop({
     required AIAgent agent,
     required String systemPrompt,
@@ -255,6 +263,7 @@ class NativeToolAgentService {
     Future<void> Function(String path, String description)? onImageDescription,
     bool Function()? isCancelling,
     String? conversationId,
+    bool questionsInChat = false,
     bool useJsTools = false,
     bool alivenessOnlyTools = false,
     bool imageOnlyTools = false,
@@ -264,6 +273,8 @@ class NativeToolAgentService {
       onImageDescription,
       agentId: agent.id,
       conversationId: conversationId,
+      questionsInChat: questionsInChat,
+      isCancelling: isCancelling,
     );
     final (allTools, allMeta) = _buildTools(run, agent);
     if (allTools.isEmpty) {
@@ -315,6 +326,7 @@ class NativeToolAgentService {
       pluginTools: tools,
       onRunJs: (args) => _dispatchJs(run, args),
       onGetCurrentTime: (_) => _dispatchCurrentTime(run),
+      onAskUserQuestions: (args) => _dispatchAskUserQuestions(run, args),
       useJsTools: alivenessOnlyTools ? false : useJsTools,
       builtInOnly: alivenessOnlyTools,
     );
@@ -541,6 +553,8 @@ class NativeToolAgentService {
     onRunJs,
     Future<Map<String, dynamic>> Function(Map<String, dynamic>)?
     onGetCurrentTime,
+    Future<Map<String, dynamic>> Function(Map<String, dynamic>)?
+    onAskUserQuestions,
     bool useJsTools = false,
     bool builtInOnly = false,
   }) {
@@ -574,6 +588,50 @@ class NativeToolAgentService {
             onGetCurrentTime ?? (_) async => currentTimeData(DateTime.now()),
       ),
       if (!builtInOnly) jsTool,
+      if (onAskUserQuestions != null)
+        Tool<Map<String, dynamic>>(
+          name: 'askuserquestions',
+          description:
+              '向用户提出 1 至 4 个澄清问题并等待回答，支持单选、多选和自由输入。'
+              '需要用户补充信息或作出选择时使用。用户取消时尊重取消，不要重复提问。',
+          inputSchema: Schema.fromMap({
+            'type': 'object',
+            'properties': {
+              'questions': {
+                'type': 'array',
+                'minItems': 1,
+                'maxItems': 4,
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'id': {'type': 'string', 'description': '本次提问内唯一的问题 ID'},
+                    'question': {'type': 'string', 'description': '完整问题'},
+                    'header': {'type': 'string', 'description': '可选的简短标题'},
+                    'multiSelect': {
+                      'type': 'boolean',
+                      'description': '是否允许多选，默认 false',
+                    },
+                    'options': {
+                      'type': 'array',
+                      'description': '可选答案；省略或为空时使用自由输入',
+                      'items': {
+                        'type': 'object',
+                        'properties': {
+                          'label': {'type': 'string'},
+                          'description': {'type': 'string'},
+                        },
+                        'required': ['label'],
+                      },
+                    },
+                  },
+                  'required': ['id', 'question'],
+                },
+              },
+            },
+            'required': ['questions'],
+          }),
+          onCall: onAskUserQuestions,
+        ),
     ];
   }
 
@@ -1103,6 +1161,53 @@ class NativeToolAgentService {
   }
 
   // ---------- 执行分发 ----------
+
+  Future<Map<String, dynamic>> _dispatchAskUserQuestions(
+    _NativeToolRunContext run,
+    Map<String, dynamic> args,
+  ) async {
+    if (++run.toolCallCount > maxToolCallsPerLoop) {
+      return _rejectToolCall(run, 'askuserquestions', args, '工具调用次数已达上限，请直接回答');
+    }
+    final List<UserQuestion> questions;
+    try {
+      questions = UserQuestion.parse(args);
+    } on FormatException catch (e) {
+      return _rejectToolCall(run, 'askuserquestions', args, e.message);
+    }
+    final request = AskUserQuestionsService.instance.create(
+      questions,
+      isCancelling: run.isCancelling,
+    );
+    final step = ToolCallStep(
+      method: 'askuserquestions',
+      title: '向用户提问',
+      desc: questions.map((q) => q.question).join('\n'),
+      data: jsonEncode(request.toJson()),
+      status: ToolCallStatus.running,
+    );
+    run.steps.add(step);
+    try {
+      await run.notifySteps(requireDelivery: run.questionsInChat);
+      if (!run.questionsInChat || run.onToolSteps == null) {
+        await showGlobalUserQuestions(request, step);
+      }
+      final result = await request.future;
+      step
+        ..status = ToolCallStatus.success
+        ..result = jsonEncode(result);
+      await run.notifySteps();
+      return result;
+    } catch (e) {
+      request.cancel('提问展示失败');
+      step
+        ..status = ToolCallStatus.failed
+        ..error = e.toString()
+        ..result = jsonEncode({'error': e.toString()});
+      await run.notifySteps();
+      return {'error': e.toString()};
+    }
+  }
 
   /// 参数校验/调用上限错误也属于工具失败，不能只回传给模型而遗漏会话记录。
   Future<Map<String, dynamic>> _rejectToolCall(

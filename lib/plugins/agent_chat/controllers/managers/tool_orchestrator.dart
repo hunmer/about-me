@@ -62,6 +62,7 @@ class ToolOrchestrator {
         contextMessages: contextMessages,
         files: files,
         conversationId: context.conversationId,
+        questionsInChat: true,
         useJsTools: context.useJsTools?.call() ?? false,
         alivenessOnlyTools: !(enableToolCalling && agent.enableFunctionCalling),
         onUpdateMessage: onUpdateMessage,
@@ -95,6 +96,10 @@ class ToolOrchestrator {
             context.conversationId,
             aiMessageId,
           );
+          if (message == null &&
+              steps.any((s) => s.method == 'askuserquestions')) {
+            throw StateError('聊天消息已不存在，无法展示提问');
+          }
           if (message != null) {
             await context.messageService.updateMessage(
               message.copyWith(toolCall: ToolCallResponse(steps: steps)),

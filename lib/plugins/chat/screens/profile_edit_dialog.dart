@@ -1,13 +1,16 @@
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/picker/avatar_picker.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
+import 'package:aboutme/plugins/chat/events/user_events.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileEditDialog extends StatefulWidget {
   final User user;
@@ -84,8 +87,25 @@ class _ProfileEditDialogState extends State<ProfileEditDialog>
         iconPath: _avatarPath,
       );
 
-      // 使用 updateUser 方法更新用户信息
-      await widget.chatPlugin.userService.updateUser(updatedUser);
+      if (updatedUser.id == widget.chatPlugin.userService.currentUser.id) {
+        // 当前用户资料统一写入个人主页的数据源（SharedPreferences）
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_name', newUsername);
+        if (_avatarPath == null || _avatarPath!.isEmpty) {
+          await prefs.remove('user_avatar_path');
+        } else {
+          await prefs.setString('user_avatar_path', _avatarPath!);
+        }
+      } else {
+        // 非当前用户（历史消息中的其他用户）仍保存到用户列表
+        await widget.chatPlugin.userService.updateUser(updatedUser);
+      }
+
+      // 广播用户资料更新，刷新聊天消息气泡头像
+      EventManager.instance.broadcast(
+        UserEventNames.userAvatarUpdated,
+        UserAvatarUpdatedEventArgs(updatedUser),
+      );
 
       // 强制清除图片缓存
       PaintingBinding.instance.imageCache.clear();

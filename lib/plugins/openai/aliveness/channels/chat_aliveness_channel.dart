@@ -96,6 +96,7 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
     _cancelRequested = false;
     await ChatMediaService.streamResponse(
       agent: agent,
+      channelId: channelId,
       prompt: null,
       messages: [
         ...input.bufferedHandles.whereType<Message>(),

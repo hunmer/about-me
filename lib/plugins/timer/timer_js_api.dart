@@ -182,10 +182,41 @@ Future<dynamic> _jsResetTimer(Map<String, dynamic> params) async {
 }
 
 /// 获取计时器状态
+/// timerId 为空时返回全部计时器的状态概要，避免调用方凭空猜测 ID
 Future<dynamic> _jsGetTimerStatus(Map<String, dynamic> params) async {
   final String? timerId = params['timerId'];
   if (timerId == null || timerId.isEmpty) {
-    return {'error': '缺少必需参数: timerId'};
+    final result = await TimerPlugin.instance.timerUseCase.getTimerTasks({});
+
+    if (result.isFailure) {
+      return {'error': result.errorOrNull?.message};
+    }
+
+    final data = result.dataOrNull;
+    final taskList = data is List
+        ? data
+        : (data is Map<String, dynamic>
+              ? data['data'] as List<dynamic>? ?? []
+              : <dynamic>[]);
+    final timers = taskList
+        .map((task) {
+          final taskJson = task as Map<String, dynamic>;
+          return {
+            'id': taskJson['id'],
+            'name': taskJson['name'],
+            'group': taskJson['group'],
+            'isRunning': taskJson['isRunning'],
+          };
+        })
+        .toList();
+
+    return {
+      'total': timers.length,
+      'runningCount': timers
+          .where((t) => t['isRunning'] == true)
+          .length,
+      'timers': timers,
+    };
   }
 
   // 转换参数名:timerId -> id
@@ -194,14 +225,14 @@ Future<dynamic> _jsGetTimerStatus(Map<String, dynamic> params) async {
     useCaseParams,
   );
 
-  if (result.isFailure) {
-    return {'error': result.errorOrNull?.message};
+  if (result.isFailure || result.dataOrNull == null) {
+    return {
+      'error': '计时器不存在: $timerId（timerId 须来自 getTimers 返回的真实 id，'
+          '请先调用 getTimers 获取）',
+    };
   }
 
-  final data = result.dataOrNull;
-  if (data == null) {
-    return {'error': '计时器不存在'};
-  }
+  final data = result.dataOrNull!;
 
   // 将 DTO 转换为原始格式返回
   final taskJson = data;

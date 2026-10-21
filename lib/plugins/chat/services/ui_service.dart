@@ -1,13 +1,9 @@
-import 'dart:io';
 import 'package:get/get.dart';
-import 'package:aboutme/plugins/chat/models/user.dart';
-import 'package:aboutme/plugins/goods/widgets/goods_item_form/index.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/screens/channel_list/channel_list_screen.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/timeline_screen.dart';
-import 'package:aboutme/plugins/chat/screens/profile_edit_dialog.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'chat_config_service.dart';
 
@@ -172,114 +168,6 @@ class UIService {
             },
           ),
         ),
-      ),
-    );
-  }
-
-  Widget buildUserProfileCard(BuildContext context, StateSetter setState) {
-    final theme = DSThemeBridge.resolve(context);
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: JellyBox(
-        radius: theme.radii.lg,
-        raised: false,
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text(
-              'chat_profileTitle'.tr,
-              style: DsTypography.title.copyWith(color: theme.text),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                // 用户头像
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: theme.primary.mixWhite(0.85),
-                  ),
-                  child: _buildUserAvatar(context),
-                ),
-                const SizedBox(width: 16),
-                // 用户名和ID
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _configService.currentUser.username,
-                        style: DsTypography.title.copyWith(color: theme.text),
-                      ),
-                      Text(
-                        'ID: ${_configService.currentUser.id}',
-                        style: DsTypography.body.copyWith(color: theme.textSub),
-                      ),
-                    ],
-                  ),
-                ),
-                // 编辑按钮
-                DSIconButton(
-                  icon: DsIconKind.edit,
-                  onPressed: () async {
-                    final updatedUser = await showDSDialog<User>(
-                      context: context,
-                      theme: DSThemeBridge.resolve(context),
-                      builder:
-                          (context) => ProfileEditDialog(
-                            user: _configService.currentUser,
-                            chatPlugin: _plugin,
-                          ),
-                    );
-                    if (updatedUser != null) {
-                      setState(() {
-                        // 使用返回的更新后的用户对象刷新UI
-                        _configService.setCurrentUser(updatedUser);
-                      });
-                    }
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUserAvatar(BuildContext context) {
-    final currentUser = _configService.currentUser;
-    if (currentUser.iconPath != null) {
-      return FutureBuilder<String>(
-        future: ImageUtils.getAbsolutePath(currentUser.iconPath!),
-        builder: (context, snapshot) {
-          if (snapshot.hasData && snapshot.data != null) {
-            return ClipOval(
-              child: Image.file(
-                File(snapshot.data!),
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-              ),
-            );
-          }
-          return _buildDefaultAvatar(context);
-        },
-      );
-    }
-    return _buildDefaultAvatar(context);
-  }
-
-  Widget _buildDefaultAvatar(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-    return Center(
-      child: Text(
-        _configService.currentUser.username.isNotEmpty
-            ? _configService.currentUser.username[0].toUpperCase()
-            : '?',
-        style: DsTypography.title.copyWith(color: theme.text),
       ),
     );
   }

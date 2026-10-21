@@ -901,6 +901,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 }
               } else {
                 // 如果不是AI消息，显示用户资料编辑对话框
+                // （保存由对话框内部完成，统一写入个人主页数据源）
                 final chatPlugin = ChatPlugin.instance;
                 final users = chatPlugin.userService.getAllUsers();
                 final targetUser = users.firstWhere(
@@ -908,7 +909,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   orElse: () => message.user,
                 );
 
-                final updatedUser = await showDSDialog<User>(
+                await showDSDialog<User>(
                   context: context,
                   theme: DSThemeBridge.resolve(context),
                   builder: (context) => ProfileEditDialog(
@@ -916,17 +917,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     chatPlugin: chatPlugin,
                   ),
                 );
-
-                if (updatedUser != null && mounted) {
-                  // 如果是当前用户，则更新当前用户信息
-                  if (targetUser.id == chatPlugin.userService.currentUser.id) {
-                    chatPlugin.userService.setCurrentUser(updatedUser);
-                  }
-                  // 否则只更新用户列表中的用户信息
-                  else {
-                    await chatPlugin.userService.updateUser(updatedUser);
-                  }
-                }
               }
             },
             showAvatar: ChatPlugin.instance.settingsService.showAvatarInChat,

@@ -22,7 +22,8 @@ class CompletionRecordController {
     CompletionRecord record,
   ) async {
     final path = 'habits/records/$habitId.json';
-    final data = await AboutmeDataService.instance.readPath(path);
+    // readPath 对不存在的文件默认返回 {}，必须显式传 [] 才不会走单条记录分支
+    final data = await AboutmeDataService.instance.readPath(path, []);
     final records = <CompletionRecord>[];
 
     if (data != null) {
@@ -34,7 +35,7 @@ class CompletionRecordController {
             return CompletionRecord.fromMap(stringKeyMap);
           }),
         );
-      } else if (data is Map) {
+      } else if (data is Map && data.isNotEmpty) {
         // 如果是单个记录对象
         final stringKeyMap = Map<String, dynamic>.from(data);
         records.add(CompletionRecord.fromMap(stringKeyMap));
@@ -95,7 +96,7 @@ class CompletionRecordController {
                 return CompletionRecord.fromMap(stringKeyMap);
               }),
             );
-          } else if (data is Map) {
+          } else if (data is Map && data.isNotEmpty) {
             final stringKeyMap = Map<String, dynamic>.from(data);
             matchingRecords.add(CompletionRecord.fromMap(stringKeyMap));
           }
@@ -161,10 +162,11 @@ class CompletionRecordController {
   Future<List<CompletionRecord>> getHabitCompletionRecords(
     String habitId,
   ) async {
+    // readPath 对不存在的文件默认返回 {}，必须显式传 [] 才不会走单条记录分支
     final data = await AboutmeDataService.instance.readPath(
       'habits/records/$habitId.json',
+      [],
     );
-    if (data == null) return [];
 
     final records = <CompletionRecord>[];
     if (data is List) {
@@ -174,7 +176,7 @@ class CompletionRecordController {
           return CompletionRecord.fromMap(stringKeyMap);
         }),
       );
-    } else if (data is Map) {
+    } else if (data is Map && data.isNotEmpty) {
       final stringKeyMap = Map<String, dynamic>.from(data);
       records.add(CompletionRecord.fromMap(stringKeyMap));
     }

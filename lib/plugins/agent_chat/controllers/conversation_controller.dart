@@ -71,6 +71,10 @@ class ConversationController extends ChangeNotifier {
   /// 注意：只返回非临时会话，临时会话不会显示在列表中
   List<Conversation> get allConversations => conversationService.getNonTemporaryConversations();
 
+  /// 建议问题测试创建的会话（不进主列表，展示于测试会话列表）
+  List<Conversation> get testConversations =>
+      conversationService.getTestConversations();
+
   String get searchQuery => _searchQuery;
   List<String> get selectedGroupFilters => _selectedGroupFilters;
   String? get selectedAgentFilter => _selectedAgentFilter;

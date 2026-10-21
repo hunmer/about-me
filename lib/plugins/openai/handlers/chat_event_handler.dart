@@ -564,6 +564,7 @@ Future<void> _generateIntoThread(
     agent: agent,
     prompt: null,
     messages: handleMessages,
+    channelId: channelId,
     contextMessages: contextMessages,
     onToken: (token) async {
       buffer.write(token);

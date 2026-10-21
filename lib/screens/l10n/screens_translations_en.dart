@@ -459,13 +459,10 @@ final Map<String, String> screensTranslationsEn = {
   'screens_restoredDefaultBackground': 'Default background restored',
 
   // jelly_home assistant tab
-  'screens_assistantTitle': 'Chat Assistant',
-  'screens_assistantSubtitle': 'One line, all noted',
   'screens_assistantBadgeIdle': 'Your Assistant',
   'screens_assistantWorking': 'Working on it…',
   'screens_assistantTyping': 'Typing…',
   'screens_assistantGreeting': 'Hey! What can I\nnote down for you?',
-  'screens_assistantReady': 'Your quick-note assistant is ready',
   'screens_assistantIdeas': 'Try these',
   'screens_assistantIdeaTodo': 'Todo: standup at 9 am',
   'screens_assistantIdeaBill': 'Expense: lunch ¥25',
