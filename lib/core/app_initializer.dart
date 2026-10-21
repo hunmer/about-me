@@ -55,6 +55,7 @@ class AppStartupState extends ChangeNotifier {
   bool _coreReady = false; // 核心服务就绪（存储、配置）
   bool _pluginsReady = false; // 插件注册完成
   bool _fullyReady = false; // 所有初始化完成
+  final _pluginsReadyCompleter = Completer<void>();
   String _loadingMessage = '正在启动...';
 
   // 待处理的初始URI（从小组件启动时）
@@ -64,6 +65,7 @@ class AppStartupState extends ChangeNotifier {
   bool get coreReady => _coreReady;
   bool get pluginsReady => _pluginsReady;
   bool get fullyReady => _fullyReady;
+  Future<void> get whenPluginsReady => _pluginsReadyCompleter.future;
   String get loadingMessage => _loadingMessage;
   Uri? get initialWidgetUri => _initialWidgetUri;
   bool get isHandlingInitialUri => _isHandlingInitialUri;
@@ -77,6 +79,7 @@ class AppStartupState extends ChangeNotifier {
   void _setPluginsReady() {
     StartupTrace.mark('plugins_ready');
     _pluginsReady = true;
+    if (!_pluginsReadyCompleter.isCompleted) _pluginsReadyCompleter.complete();
     notifyListeners();
   }
 
@@ -288,24 +291,24 @@ Future<void> initializeApp() async {
     // === 检查是否有来自小组件的初始URI ===
     // 这必须在设置监听器之前执行，否则会错过启动时的URI
     unawaited(_handleInitialWidgetUri());
-
-    // === 后台异步初始化 ===
-    unawaited(_initializeBackgroundServices());
   } catch (e) {
     debugPrint('核心初始化失败: $e');
-    // 即使失败也标记为就绪，让用户能看到错误界面
-    AppStartupState.instance._setCoreReady();
+    // 启动壳展示失败状态，不构建依赖未初始化全局变量的应用树。
+    rethrow;
   }
 }
+
+Future<void>? _backgroundInitialization;
+
+/// 仅在真实应用首帧后调用；重复调用共用同一次初始化。
+Future<void> initializeBackgroundServices() =>
+    _backgroundInitialization ??= _initializeBackgroundServices();
 
 /// 后台服务初始化 - 在UI显示后执行
 Future<void> _initializeBackgroundServices() async {
   final startupState = AppStartupState.instance;
 
   try {
-    // 请求通知权限（在后台执行，不阻塞启动）
-    unawaited(NotificationController.requestPermission());
-
     // 初始化 ImageUtils
     unawaited(ImageUtils.initializeSync(storage: globalStorage));
 
@@ -323,17 +326,20 @@ Future<void> _initializeBackgroundServices() async {
       }),
     );
 
-    // 初始化语音识别配置服务
+    // === 注册插件（核心功能，可配置） ===
+    startupState._setLoadingMessage('正在加载插件...');
+    await StartupTrace.measure('plugins', _registerPlugins);
+    startupState._setPluginsReady();
+
+    // 先让目标页面完成一帧，低优先级服务不挤占页面首次构建。
+    await WidgetsBinding.instance.endOfFrame;
+    StartupTrace.mark('deferred_services_begin');
+    unawaited(NotificationController.requestPermission());
     unawaited(
       SpeechRecognitionConfigService.instance.initialize().catchError((e) {
         debugPrint('语音识别配置服务初始化失败: $e');
       }),
     );
-
-    // === 注册插件（核心功能，可配置） ===
-    startupState._setLoadingMessage('正在加载插件...');
-    await StartupTrace.measure('plugins', _registerPlugins);
-    startupState._setPluginsReady();
 
     // === 初始化悬浮球动作管理器 ===
     unawaited(_initializeFloatingBallActions());
@@ -421,8 +427,9 @@ Future<void> _handleInitialWidgetUri() async {
       // 将URI设置到AppStartupState中
       AppStartupState.instance.setInitialWidgetUri(initialUri);
 
-      // 延迟等待应用完全初始化
-      await Future.delayed(const Duration(milliseconds: 500));
+      // 等待实际就绪，避免首帧提前后固定延迟仍访问未初始化插件。
+      await AppStartupState.instance.whenPluginsReady;
+      await WidgetsBinding.instance.endOfFrame;
 
       // 直接导航到对应路由
       _navigateToWidgetUri(initialUri.toString());

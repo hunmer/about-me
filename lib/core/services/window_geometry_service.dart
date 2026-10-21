@@ -35,7 +35,7 @@ class WindowGeometryService with WindowListener {
   /// 仅桌面原生平台（Windows/macOS/Linux）启用；Web 端恒为 false
   bool get isSupported => UniversalPlatform.isDesktop;
 
-  /// runApp 之前调用：初始化并恢复上次的窗口几何信息
+  /// 核心配置就绪后调用：恢复上次的窗口几何信息。
   Future<void> initialize() async {
     if (!isSupported) return;
 

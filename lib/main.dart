@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/services/log_service.dart';
 import 'package:aboutme/core/services/startup_trace.dart';
 import 'package:aboutme/core/services/window_geometry_service.dart';
-import 'package:aboutme/core/services/fcm_service.dart';
-import 'package:aboutme/firebase_options.dart';
+import 'package:aboutme/core/widgets/app_bootstrap.dart';
 import 'package:procm_sdk_dart/procm_sdk_dart.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -50,30 +47,6 @@ void main() {
       WidgetsFlutterBinding.ensureInitialized();
       StartupTrace.mark('binding_ready');
 
-      // 注册 skribble 手绘图标目录（幂等；越早越好——导航栏等
-      // 第三方包里的 WiredIcon 不等 AppTheme 主题树建好就开始取图标）
-      registerSkribbleMaterialIcons();
-
-      // 注册 timeago 中文消息，避免 locale=zh 时回退英文并打印警告
-      timeago.setLocaleMessages('zh', timeago.ZhMessages());
-
-      // 0.1 初始化 Firebase（必须在其他代码之前）
-      await StartupTrace.measure(
-        'firebase',
-        () => Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        ),
-      );
-
-      // 0.2 注册 FCM 后台消息处理器（必须在 Firebase.initializeApp 之后）
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-      // 0.3 初始化 procm 房间结构化日志：仅在环境变量 PROCM_WS_URL/PROCM_ROOM_ID
-      // 存在时连接房间并双写；缺失时退化为纯 console 输出，不影响现有行为
-      setupLoggerFromEnv().info('Aboutme 启动', {
-        'platform': defaultTargetPlatform.name,
-      });
-
       // 1. 捕获 Flutter Framework 错误（如 widget build 错误）
       FlutterError.onError = (FlutterErrorDetails details) {
         // 记录到日志服务
@@ -108,17 +81,23 @@ void main() {
         }
       };
 
-      // 执行核心初始化（快速完成）
-      await StartupTrace.measure('core', initializeApp);
-
-      // 桌面端：恢复上次窗口位置与大小（非桌面平台内部跳过）
-      await StartupTrace.measure(
-        'window',
-        WindowGeometryService.instance.initialize,
-      );
-
-      // 立即启动应用，其他初始化在后台进行
-      runApp(const MyApp());
+      // 启动壳不读取全局存储/配置，首帧显示后才加载真实应用。
+      runApp(AppBootstrap(
+        initialize: () async {
+          await WidgetsBinding.instance.waitUntilFirstFrameRasterized;
+          registerSkribbleMaterialIcons();
+          timeago.setLocaleMessages('zh', timeago.ZhMessages());
+          setupLoggerFromEnv().info('Aboutme 启动', {
+            'platform': defaultTargetPlatform.name,
+          });
+          await StartupTrace.measure('core', initializeApp);
+          await StartupTrace.measure(
+            'window',
+            WindowGeometryService.instance.initialize,
+          );
+        },
+        builder: (_) => const MyApp(),
+      ));
       StartupTrace.mark('runApp');
       WidgetsBinding.instance.waitUntilFirstFrameRasterized.then((_) {
         StartupTrace.mark('first_frame_rasterized');
@@ -150,7 +129,7 @@ void main() {
 }
 
 /// 处理小组件URI的包装组件
-/// 在应用启动时，如果有初始URI，直接返回目标页面而不显示首页
+/// 在导航树上覆盖加载页，等待插件就绪后处理初始URI。
 class WidgetUriHandler extends StatelessWidget {
   final Widget child;
 
@@ -164,25 +143,26 @@ class WidgetUriHandler extends StatelessWidget {
         final startupState = AppStartupState.instance;
         final initialUri = startupState.initialWidgetUri;
 
-        // 如果有待处理的初始URI，显示加载页面
-        if (initialUri != null && startupState.isHandlingInitialUri) {
-          debugPrint('WidgetUriHandler: 显示加载页面，等待处理初始URI: $initialUri');
-          return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text('core_starting'.tr),
-                ],
+        // 始终保留导航树，避免加载期间 Navigator 被移除而无法处理 URI。
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            child!,
+            if (initialUri != null && startupState.isHandlingInitialUri)
+              Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text('core_starting'.tr),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          );
-        }
-
-        // 没有待处理的URI，正常显示子组件
-        return child!;
+          ],
+        );
       },
       child: child,
     );
@@ -217,6 +197,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // 添加生命周期观察者
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      StartupTrace.mark('app_shell_frame');
+      // 真实导航树出现后才启动插件，不和启动壳首帧争用主线程。
+      unawaited(initializeBackgroundServices());
       _setupAutoUpdate();
       // 初始化Flutter悬浮球
       await initializeFlutterFloatingBall();
@@ -238,7 +221,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     // 应用从后台恢复到前台时同步待处理的小组件变更
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed &&
+        AppStartupState.instance.pluginsReady) {
       PluginWidgetSyncHelper.instance.syncPendingTaskChangesOnStartup();
       PluginWidgetSyncHelper.instance.syncPendingCalendarEventsOnStartup();
       PluginWidgetSyncHelper.instance.syncPendingGoalChangesOnStartup();
@@ -295,8 +279,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ),
       initial: savedThemeMode ?? AdaptiveThemeMode.light,
       builder:
-          (theme, darkTheme) => WidgetUriHandler(
-            child: ListenableBuilder(
+          (theme, darkTheme) {
+            return ListenableBuilder(
               listenable: AppBackgroundController(),
               builder: (context, _) {
                 // 设置全局主题背景（背景图/纯色）后，Scaffold/AppBar 纯色背景改为透明以透出背景
@@ -343,7 +327,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                             behavior: HitTestBehavior.opaque,
                             onTap: () =>
                                 FocusManager.instance.primaryFocus?.unfocus(),
-                            child: StyledToast(child: child!),
+                            child: StyledToast(
+                              child: WidgetUriHandler(child: child!),
+                            ),
                           ),
                         ),
                       ),
@@ -357,8 +343,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   onGenerateTitle: (BuildContext context) => 'app_appTitle'.tr,
                 );
               },
-            ),
-          ),
+            );
+          },
     );
   }
 

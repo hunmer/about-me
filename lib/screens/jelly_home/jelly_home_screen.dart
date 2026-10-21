@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/core/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/home_schedule_screen.dart';
@@ -73,7 +74,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // IndexedStack 保活各页签状态（滚动位置、编辑进度等）；
+    // 页签首次访问时构建，之后保留滚动位置、编辑进度等状态；
     // 页面内容铺满全屏，底部导航悬浮其上
     return JellyBottomNav(
       current: JellyTab.values[_tabIndex],
@@ -89,20 +90,26 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
         if (_chatVisible) _live2dPanel.value = null;
       },
       live2dPanel: _live2dPanel,
-      child: IndexedStack(
+      child: LazyIndexedStack(
         index: _tabIndex,
-        children: [
-          HeroMode(
+        builders: [
+          (_) => HeroMode(
             enabled: _tabIndex == 0,
             child: _CottageTab(chatVisible: _chatVisible, panel: _live2dPanel),
           ),
-          HeroMode(enabled: _tabIndex == 1, child: const JellyAssistantTab()),
-          HeroMode(enabled: _tabIndex == 2, child: const HomeScheduleScreen()),
-          HeroMode(
+          (_) => HeroMode(
+            enabled: _tabIndex == 1,
+            child: const JellyAssistantTab(),
+          ),
+          (_) => HeroMode(
+            enabled: _tabIndex == 2,
+            child: const HomeScheduleScreen(),
+          ),
+          (_) => HeroMode(
             enabled: _tabIndex == 3,
             child: const HomeScreen(asRoot: false),
           ),
-          HeroMode(enabled: _tabIndex == 4, child: const ProfileScreen()),
+          (_) => HeroMode(enabled: _tabIndex == 4, child: const ProfileScreen()),
         ],
       ),
     );

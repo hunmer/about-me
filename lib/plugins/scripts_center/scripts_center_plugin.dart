@@ -16,6 +16,7 @@ import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/core/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/core/services/plugin_data_selector/plugin_data_selector_service.dart';
@@ -519,7 +520,7 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
   }
 
   /// 更新路由上下文，使"询问当前上下文"功能能获取到当前页签状态
-  /// （IndexedStack 常驻构建，切页签不触发子页 initState）
+  /// （页签首次访问后保活，再次切换不触发子页 initState）
   void _updateRouteContext(int index) {
     if (!mounted) return;
     const pageIds = [
@@ -591,26 +592,26 @@ class _ScriptsCenterMainViewState extends State<ScriptsCenterMainView> {
       onSearchChanged: _setSearchQuery,
       onSearchSubmitted: _setSearchQuery,
 
-      // 三个页签共用外层 header，IndexedStack 保留各页签状态。
+      // 三个页签共用外层 header，首次访问后保留各页签状态。
       // 弧形底部导航经内层 Scaffold 停靠屏幕底部（wrapper 的
       // bottomBarChild 参数实际不生效），extendBody 让内容延伸到栏下
       body: Scaffold(
         extendBody: true,
         backgroundColor: Colors.transparent,
-        body: IndexedStack(
+        body: LazyIndexedStack(
           index: _currentIndex,
-          children: [
-            ScriptsListScreen(
+          builders: [
+            (_) => ScriptsListScreen(
               scriptManager: _plugin.scriptManager,
               scriptExecutor: _plugin.scriptExecutor,
               searchQuery: _searchQuery,
             ),
-            ScriptExecutionLogScreen(
+            (_) => ScriptExecutionLogScreen(
               logger: _plugin.scriptExecutor.executionLogger,
               executor: _plugin.scriptExecutor,
               embedded: true,
             ),
-            MultiProvider(
+            (_) => MultiProvider(
               providers: [
                 ChangeNotifierProvider.value(
                   value: _plugin.scriptStoreManager,

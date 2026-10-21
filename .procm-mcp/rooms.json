@@ -13,7 +13,7 @@
         "skD_RPlA"
       ],
       "createdAt": 1791510368238,
-      "updatedAt": 1792558652831,
+      "updatedAt": 1792560557992,
       "clientHistory": [
         {
           "memberId": "GMdMbBUm:aboutme-app-windows",
@@ -52,10 +52,10 @@
         },
         {
           "memberId": "skD_RPlA:aboutme-app-windows",
-          "connectionId": "Lob2rmv9-4",
+          "connectionId": "9PUxcoieQH",
           "clientName": "aboutme-app-windows",
           "processId": "skD_RPlA",
-          "connectedAt": 1792558652830
+          "connectedAt": 1792560557992
         }
       ]
     }

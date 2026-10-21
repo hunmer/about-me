@@ -48,8 +48,11 @@ class FcmService {
     try {
       // 初始化 Firebase（如果尚未初始化）
       if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp();
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
       }
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
       _messaging = FirebaseMessaging.instance;
 

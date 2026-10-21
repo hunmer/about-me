@@ -27,7 +27,10 @@ class _StartupGateState extends State<StartupGate> {
   void _onStartupChanged() => _routeWhenReady();
 
   void _routeWhenReady() {
-    if (!mounted || _navigated || !AppStartupState.instance.pluginsReady) {
+    if (!mounted ||
+        _navigated ||
+        !AppStartupState.instance.pluginsReady ||
+        AppStartupState.instance.isHandlingInitialUri) {
       return;
     }
 
