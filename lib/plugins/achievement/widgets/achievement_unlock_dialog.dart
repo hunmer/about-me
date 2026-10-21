@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/plugins/achievement/models/achievement_definition.dart';
-import 'package:aboutme/plugins/achievement/widgets/achievement_badge.dart';
+import 'package:aboutme/widgets/pseudo_3d_flip_card.dart';
 
 /// 成就达成全局弹窗（队列式）
 ///
@@ -129,11 +129,14 @@ class _UnlockDialogBody extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // 徽章
-                  AchievementBadge(
-                    iconAsset: args.iconAsset,
-                    level: args.level,
-                    size: 104,
+                  // 徽章（伪3D 360° 旋转展示）
+                  Pseudo3DFlipCard(
+                    image: AssetImage(args.iconAsset),
+                    width: 160,
+                    height: 160,
+                    thickness: 0,
+                    embossBack: false,
+                    mode: Pseudo3DMode.spin360,
                   ),
                   const SizedBox(height: 16),
                   // 名称 + 等级

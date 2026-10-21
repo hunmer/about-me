@@ -123,6 +123,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/swatch_camera_frame_exam
 import 'package:aboutme/screens/widgets_gallery/screens/personality_carousel_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/siri_voice_assistant_orb_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/audio_ui_replica_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/pseudo_3d_flip_card_example.dart';
 
 /// 组件展示路由注册表
 class WidgetGalleryRoutes implements RouteRegistry {
@@ -1120,6 +1121,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '音频与识曲 UI 1:1 复刻（Shazam 灵动岛胶囊 + 深色语音卡片）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/pseudo_3d_flip_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const Pseudo3DFlipCardExample(),
+        settings: settings,
+      ),
+      description: '图片伪3D翻转卡片（Z轴切片堆叠 + 透视 + 流光高光）',
     ),
   ];
 }

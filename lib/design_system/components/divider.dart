@@ -95,7 +95,8 @@ class DSDivider extends StatelessWidget {
     }
 
     // 带文字：两侧（上下）各一段线，中间留出间隙；
-    // stretch 让线段随文字撑满，高度由文字行高决定
+    // 线段经 Expanded 撑满主轴，交叉轴居中对齐（不能用 stretch——
+    // 在无界交叉轴约束下会把 infinite 高度强塞给子节点）
     final gap = SizedBox(
       width: vertical ? 0 : theme.spacing.sm,
       height: vertical ? theme.spacing.sm : 0,
@@ -106,7 +107,7 @@ class DSDivider extends StatelessWidget {
     );
     if (vertical) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(child: Center(child: line)),
           gap,
@@ -117,7 +118,7 @@ class DSDivider extends StatelessWidget {
       );
     }
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(child: Center(child: line)),
         gap,

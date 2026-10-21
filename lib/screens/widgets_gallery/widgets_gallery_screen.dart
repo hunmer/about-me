@@ -288,6 +288,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
             subtitle: 'AudioUiReplicaDemoPage（Shazam 灵动岛胶囊 + 深色语音卡片）',
             route: '/widgets_gallery/audio_ui_replica',
           ),
+          _buildListItem(
+            context,
+            icon: Icons.threed_rotation,
+            title: '图片伪3D翻转卡片',
+            subtitle: 'Pseudo3DFlipCard（Z轴切片堆叠厚度 + 透视跟随 + 流光高光）',
+            route: '/widgets_gallery/pseudo_3d_flip_card',
+          ),
         ],
       ),
     );

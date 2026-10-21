@@ -1104,9 +1104,9 @@
         "windows"
       ],
       "cwd": "D:/about-me",
-      "status": "running",
+      "status": "exited",
       "pid": 16524,
-      "exitCode": null,
+      "exitCode": 1,
       "error": null,
       "desc": "Startup performance baseline and optimization",
       "group": null,
@@ -1115,7 +1115,7 @@
       "favorite": false,
       "startedAt": 1792557875154,
       "lastStartedAt": 1792562367957,
-      "stoppedAt": null,
+      "stoppedAt": 1792566815794,
       "stdoutLogPath": "D:\\about-me\\.procm-mcp\\6OPpO4(23340)\\processes\\skD_RPlA-stdout.log",
       "stderrLogPath": "D:\\about-me\\.procm-mcp\\6OPpO4(23340)\\processes\\skD_RPlA-stderr.log",
       "envs": {

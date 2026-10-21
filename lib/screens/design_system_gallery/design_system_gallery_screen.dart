@@ -10,11 +10,9 @@ import 'sections/extended_section.dart';
 import 'sections/feedback_section.dart';
 import 'sections/inputs_section.dart';
 import 'sections/navigation_section.dart';
+import 'sections/new_components_section.dart';
 import 'sections/pickers_section.dart';
-import 'sections/skribble_controls_section.dart';
-import 'sections/skribble_data_section.dart';
-import 'sections/skribble_feedback_section.dart';
-import 'sections/skribble_inputs_section.dart';
+import 'sections/variants_section.dart';
 
 /// 手绘风设计系统组件展示页
 ///
@@ -75,14 +73,10 @@ class _DesignSystemGalleryScreenState extends State<DesignSystemGalleryScreen> {
                 SizedBox(height: theme.spacing.lg),
                 const ExtendedSection(),
                 SizedBox(height: theme.spacing.lg),
-                // skribble 原生组件示例（SK-1 ~ SK-4）
-                const SkribbleControlsSection(),
+                // 新变种与新组件（对标 animal-island-ui 后补充）
+                const VariantsSection(),
                 SizedBox(height: theme.spacing.lg),
-                const SkribbleInputsSection(),
-                SizedBox(height: theme.spacing.lg),
-                const SkribbleFeedbackSection(),
-                SizedBox(height: theme.spacing.lg),
-                const SkribbleDataSection(),
+                const NewComponentsSection(),
                 SizedBox(height: theme.spacing.lg),
                 const _TokensCard(),
                 SizedBox(height: theme.spacing.xxl),

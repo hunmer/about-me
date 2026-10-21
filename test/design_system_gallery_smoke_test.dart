@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:aboutme/screens/design_system_gallery/design_system_gallery_screen.dart';
 
-/// 临时验证：skribble 示例区并入后的画廊整页可渲染
+/// 临时验证：画廊整页（含新变种/新组件区）可渲染
 void main() {
-  testWidgets('设计系统画廊（含 skribble 示例区）整页渲染不崩溃', (tester) async {
+  testWidgets('设计系统画廊（含新变种/新组件区）整页渲染不崩溃', (tester) async {
     await tester.binding.setSurfaceSize(const Size(480, 900));
     await tester.pumpWidget(
       const MaterialApp(home: DesignSystemGalleryScreen()),
@@ -13,7 +13,7 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
 
-    // 滚到底部逐屏渲染（触发 SK-1~SK-4 与懒加载内容）
+    // 滚到底部逐屏渲染（触发 09/10 新区与懒加载内容）
     for (var i = 0; i < 30; i++) {
       await tester.drag(
         find.byType(Scrollable).first,
