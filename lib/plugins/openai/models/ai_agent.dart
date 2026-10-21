@@ -88,7 +88,7 @@ class AIAgent {
     this.iconColor,
     this.avatarUrl,
     this.enableFunctionCalling = false,
-    this.enableThinking = false,
+    this.enableThinking = true,
     this.promptPresetId,
     this.enableOpeningQuestions = false,
     this.openingQuestions = const [],
@@ -183,7 +183,7 @@ class AIAgent {
           : null,
       avatarUrl: json['avatarUrl'] as String?,
       enableFunctionCalling: json['enableFunctionCalling'] as bool? ?? false,
-      enableThinking: json['enableThinking'] as bool? ?? false,
+      enableThinking: json['enableThinking'] as bool? ?? true,
       promptPresetId: json['promptPresetId'] as String?,
       enableOpeningQuestions: json['enableOpeningQuestions'] as bool? ?? false,
       openingQuestions:

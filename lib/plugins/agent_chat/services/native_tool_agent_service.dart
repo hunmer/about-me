@@ -141,7 +141,7 @@ class AppOpenAIProvider extends OpenAIProvider {
   AppOpenAIProvider({
     required String apiKey,
     required Uri baseUrl,
-    bool enableThinking = false,
+    bool enableThinking = true,
     super.headers = const {},
   }) : _defaultEnableThinking = enableThinking,
        super(apiKey: apiKey, baseUrl: baseUrl);
@@ -153,7 +153,7 @@ class AppOpenAIProvider extends OpenAIProvider {
     String? name,
     List<Tool>? tools,
     double? temperature,
-    bool enableThinking = false,
+    bool enableThinking = true,
     OpenAIChatOptions? options,
   }) {
     final thinkingEnabled = _defaultEnableThinking || enableThinking;

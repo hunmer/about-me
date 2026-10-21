@@ -282,7 +282,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       iconColor: iconAvatarData?['iconColor'] as Color?,
       avatarUrl: iconAvatarData?['avatarUrl'] as String?,
       enableFunctionCalling: values['enableFunctionCalling'] as bool? ?? false,
-      enableThinking: values['enableThinking'] as bool? ?? false,
+      enableThinking: values['enableThinking'] as bool? ?? true,
       promptPresetId: values['promptPresetId'] as String?,
       enableOpeningQuestions:
           values['enableOpeningQuestions'] as bool? ?? false,
@@ -553,7 +553,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       iconColor: iconAvatarData?['iconColor'] as Color?,
       avatarUrl: iconAvatarData?['avatarUrl'] as String?,
       enableFunctionCalling: values['enableFunctionCalling'] as bool? ?? false,
-      enableThinking: values['enableThinking'] as bool? ?? false,
+      enableThinking: values['enableThinking'] as bool? ?? true,
       promptPresetId: values['promptPresetId'] as String?,
       enableOpeningQuestions:
           values['enableOpeningQuestions'] as bool? ?? false,
@@ -902,7 +902,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
         type: FormFieldType.switchField,
         labelText: '启用深度思考',
         hintText: '启用模型的 reasoning/thinking 输出（DeepSeek 等模型支持）',
-        initialValue: _editingAgent?.enableThinking ?? false,
+        initialValue: _editingAgent?.enableThinking ?? true,
       ),
     ];
   }
@@ -1170,7 +1170,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       frequencyPenalty: 0.0,
       presencePenalty: 0.0,
       enableFunctionCalling: values['enableFunctionCalling'] as bool? ?? false,
-      enableThinking: values['enableThinking'] as bool? ?? false,
+      enableThinking: values['enableThinking'] as bool? ?? true,
       promptPresetId: values['promptPresetId'] as String?,
       enableOpeningQuestions:
           values['enableOpeningQuestions'] as bool? ?? false,
