@@ -122,23 +122,7 @@ class JSBridgeManager {
     final handlers = JSUIHandlers(context);
     handlers.register(_engine as MobileJSEngine);
     // Native Agent 工具与 JS API 共用 Dialog 实现。
-    pluginTools.register('ui', {
-      'dialog': (Map<String, dynamic> args) {
-        final rawOptions = args['options'];
-        final options = rawOptions is Map
-            ? Map<String, dynamic>.from(rawOptions)
-            : <String, dynamic>{};
-        final actions = (options['actions'] as List? ?? const [])
-            .whereType<Map>()
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
-        return handlers.handleDialog(
-          options['title']?.toString(),
-          options['content']?.toString(),
-          actions,
-        );
-      },
-    });
+    _registerNativeUIDialog(handlers);
     print('✓ UI 处理器已全局注册 (Toast/Alert/Dialog)');
   }
 
@@ -158,27 +142,32 @@ class JSBridgeManager {
     if (_engine is MobileJSEngine) {
       final handlers = JSUIHandlers(context);
       handlers.register(_engine as MobileJSEngine);
-      pluginTools.register('ui', {
-        'dialog': (Map<String, dynamic> args) {
-          final rawOptions = args['options'];
-          final options = rawOptions is Map
-              ? Map<String, dynamic>.from(rawOptions)
-              : <String, dynamic>{};
-          final actions = (options['actions'] as List? ?? const [])
-              .whereType<Map>()
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
-          return handlers.handleDialog(
-            options['title']?.toString(),
-            options['content']?.toString(),
-            actions,
-          );
-        },
-      });
+      _registerNativeUIDialog(handlers);
       print('✓ UI 处理器已注册 (Toast/Alert/Dialog)');
     } else {
       print('跳过 UI 处理器注册 (Web 平台)');
     }
+  }
+
+  /// 注册 Agent 可直接调用的 UI 对话框路由。
+  void _registerNativeUIDialog(JSUIHandlers handlers) {
+    pluginTools.register('ui', {
+      'dialog': (Map<String, dynamic> args) {
+        final rawOptions = args['options'];
+        final options = rawOptions is Map
+            ? Map<String, dynamic>.from(rawOptions)
+            : <String, dynamic>{};
+        final actions = (options['actions'] as List? ?? const [])
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+        return handlers.handleDialog(
+          options['title']?.toString(),
+          options['content']?.toString(),
+          actions,
+        );
+      },
+    });
   }
 
   /// 注册插件分析处理器（由 OpenAI 插件调用）
