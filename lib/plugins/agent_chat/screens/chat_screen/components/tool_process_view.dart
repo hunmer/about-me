@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/plugin_base.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
 import 'tool_call_steps.dart';
 
 /// 生成中思考内容的折叠入口：默认收起为"思考中..."一行，
@@ -242,6 +247,42 @@ class CollapsibleProcessSection extends StatefulWidget {
 class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
   bool _expanded = false;
 
+  /// 步骤使用的工具图标头像，图标与 ToolCallSteps 一致
+  /// （插件步骤用插件图标，run_js 等回退代码图标），按工具去重
+  List<Widget> _buildToolAvatars(List<ToolCallStep> steps, AppThemeData theme) {
+    final seenTools = <String>{};
+    final avatars = <Widget>[];
+    for (final step in steps) {
+      PluginBase? plugin;
+      if (step.method == 'plugin_tool') {
+        try {
+          final call = jsonDecode(step.data) as Map<String, dynamic>;
+          final pluginId = call['pluginId'] as String?;
+          if (pluginId != null) {
+            plugin = PluginManager.instance.getPlugin(pluginId);
+          }
+        } catch (_) {}
+      }
+      if (!seenTools.add(plugin?.id ?? step.method)) continue;
+      final color = plugin?.color ?? theme.primary;
+      avatars.add(
+        DSAvatar(
+          size: 18,
+          color: color,
+          child:
+              plugin == null
+                  ? DsIcon(DsIconKind.code, size: 10, color: theme.onPrimary)
+                  : Icon(
+                    plugin.icon ?? Icons.extension,
+                    size: 10,
+                    color: theme.onPrimary,
+                  ),
+        ),
+      );
+    }
+    return avatars;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
@@ -253,11 +294,11 @@ class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        // 入口按钮：展开/收起执行过程
+        // 入口按钮：展开/收起执行过程，工具图标头像堆叠展示使用的工具列表
         GestureDetector(
           onTap: () => setState(() => _expanded = !_expanded),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: theme.primary.mixWhite(0.9),
               borderRadius: theme.radii.sm,
@@ -266,12 +307,16 @@ class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DsIcon(
-                  _expanded ? DsIconKind.chevronUp : DsIconKind.chevronDown,
-                  size: 14,
-                  color: theme.primaryText,
-                ),
-                const SizedBox(width: 4),
+                if (steps.isNotEmpty) ...[
+                  // 聊天界面无 AppTheme 祖先，DSAvatarStack 依赖它取主题
+                  DSThemeBridge(
+                    child: DSAvatarStack(
+                      radius: 9,
+                      avatars: _buildToolAvatars(steps, theme),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 Text(
                   _expanded ? '收起执行过程' : '查看执行过程',
                   style: DsTypography.caption.copyWith(
@@ -288,6 +333,12 @@ class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
                     fontSize: 10,
                     color: theme.primaryText.withValues(alpha: 0.8),
                   ),
+                ),
+                const SizedBox(width: 2),
+                DsIcon(
+                  _expanded ? DsIconKind.chevronUp : DsIconKind.chevronDown,
+                  size: 14,
+                  color: theme.primaryText,
                 ),
               ],
             ),

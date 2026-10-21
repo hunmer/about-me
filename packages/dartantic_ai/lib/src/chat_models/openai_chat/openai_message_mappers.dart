@@ -4,7 +4,9 @@ import 'package:dartantic_interface/dartantic_interface.dart';
 import 'package:logging/logging.dart';
 import 'package:openai_dart/openai_dart.dart'
     hide ChatMessage, FinishReason, Tool;
-import 'package:openai_dart/openai_dart.dart' as oai show ChatMessage, Tool;
+import 'package:openai_dart/openai_dart.dart'
+    as oai
+    show AssistantMessage, ChatMessage, Tool;
 
 import '../../shared/openai_utils.dart';
 import '../helpers/message_part_helpers.dart';
@@ -203,7 +205,7 @@ extension MessageListToOpenAI on List<ChatMessage> {
         )
         .toList();
 
-    return oai.ChatMessage.assistant(
+    return oai.AssistantMessage(
       content: textContent.isEmpty ? null : textContent,
       toolCalls: toolCalls.isEmpty ? null : toolCalls,
       reasoningContent: message.parts.whereType<ThinkingPart>().isEmpty

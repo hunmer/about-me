@@ -282,6 +282,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       iconColor: iconAvatarData?['iconColor'] as Color?,
       avatarUrl: iconAvatarData?['avatarUrl'] as String?,
       enableFunctionCalling: values['enableFunctionCalling'] as bool? ?? false,
+      enableThinking: values['enableThinking'] as bool? ?? false,
       promptPresetId: values['promptPresetId'] as String?,
       enableOpeningQuestions:
           values['enableOpeningQuestions'] as bool? ?? false,
@@ -552,6 +553,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       iconColor: iconAvatarData?['iconColor'] as Color?,
       avatarUrl: iconAvatarData?['avatarUrl'] as String?,
       enableFunctionCalling: values['enableFunctionCalling'] as bool? ?? false,
+      enableThinking: values['enableThinking'] as bool? ?? false,
       promptPresetId: values['promptPresetId'] as String?,
       enableOpeningQuestions:
           values['enableOpeningQuestions'] as bool? ?? false,
@@ -734,7 +736,10 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
                         showSubmitButton: false,
                         showResetButton: false,
                         fieldSpacing: 16,
-                        fields: [..._basicFieldConfigs(), ..._alivenessFieldConfigs()],
+                        fields: [
+                          ..._basicFieldConfigs(),
+                          ..._alivenessFieldConfigs(),
+                        ],
                         onSubmit: (values) {
                           // 由 _saveAgent 处理
                         },
@@ -799,10 +804,9 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
         name: 'serviceProvider',
         type: FormFieldType.select,
         labelText: 'openai_serviceProvider'.tr,
-        initialValue:
-            _providers.any((p) => p.id == _selectedProviderId)
-                ? _selectedProviderId
-                : (_providers.isNotEmpty ? _providers.first.id : null),
+        initialValue: _providers.any((p) => p.id == _selectedProviderId)
+            ? _selectedProviderId
+            : (_providers.isNotEmpty ? _providers.first.id : null),
         required: true,
         items: _providers
             .map((p) => DropdownMenuItem(value: p.id, child: Text(p.label)))
@@ -892,6 +896,14 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
         hintText: 'openai_allowAICallPluginFunctions'.tr,
         initialValue: _editingAgent?.enableFunctionCalling ?? false,
       ),
+      // 启用模型深度思考
+      FormFieldConfig(
+        name: 'enableThinking',
+        type: FormFieldType.switchField,
+        labelText: '启用深度思考',
+        hintText: '启用模型的 reasoning/thinking 输出（DeepSeek 等模型支持）',
+        initialValue: _editingAgent?.enableThinking ?? false,
+      ),
     ];
   }
 
@@ -923,9 +935,9 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
         name: 'promptEditor',
         type: FormFieldType.promptEditor,
         initialValue:
-            _editingAgent?.messages
-                ?.map((p) => p.toJson())
-                .toList() as List<dynamic>? ?? [],
+            _editingAgent?.messages?.map((p) => p.toJson()).toList()
+                as List<dynamic>? ??
+            [],
       ),
       FormFieldConfig(
         name: 'temperature',
@@ -975,11 +987,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     const SizedBox(height: 8),
     _buildResourceSelector(skills: false),
     const SizedBox(height: 16),
-    DSButton(
-      label: 'openai_testAgent'.tr,
-      expand: true,
-      onPressed: _testAgent,
-    ),
+    DSButton(label: 'openai_testAgent'.tr, expand: true, onPressed: _testAgent),
   ]);
 
   /// 活人感 Tab：人设字段 + 活人感增强设置（卡片自带边距）
@@ -1162,6 +1170,7 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       frequencyPenalty: 0.0,
       presencePenalty: 0.0,
       enableFunctionCalling: values['enableFunctionCalling'] as bool? ?? false,
+      enableThinking: values['enableThinking'] as bool? ?? false,
       promptPresetId: values['promptPresetId'] as String?,
       enableOpeningQuestions:
           values['enableOpeningQuestions'] as bool? ?? false,

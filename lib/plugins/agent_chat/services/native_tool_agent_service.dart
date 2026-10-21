@@ -117,8 +117,10 @@ class DeepSeekCompatClient extends http.BaseClient {
       final body = jsonDecode(request.body) as Map<String, dynamic>;
       if (!body.containsKey('thinking') && !body.containsKey('reasoning')) {
         body['thinking'] = {'type': disableThinking ? 'disabled' : 'enabled'};
-        debugPrint('[NativeTool] DeepSeek 请求: thinking=${body['thinking']} '
-            'messages=${(body['messages'] as List?)?.length ?? 0}');
+        debugPrint(
+          '[NativeTool] DeepSeek 请求: thinking=${body['thinking']} '
+          'messages=${(body['messages'] as List?)?.length ?? 0}',
+        );
         final patched = http.Request(request.method, request.url)
           ..headers.addAll(request.headers)
           ..body = jsonEncode(body);
@@ -139,8 +141,12 @@ class AppOpenAIProvider extends OpenAIProvider {
   AppOpenAIProvider({
     required String apiKey,
     required Uri baseUrl,
+    bool enableThinking = false,
     super.headers = const {},
-  }) : super(apiKey: apiKey, baseUrl: baseUrl);
+  }) : _defaultEnableThinking = enableThinking,
+       super(apiKey: apiKey, baseUrl: baseUrl);
+
+  final bool _defaultEnableThinking;
 
   @override
   ChatModel<OpenAIChatOptions> createChatModel({
@@ -150,7 +156,11 @@ class AppOpenAIProvider extends OpenAIProvider {
     bool enableThinking = false,
     OpenAIChatOptions? options,
   }) {
-    debugPrint('[NativeTool] DeepSeek 兼容：启用 thinking，捕获 reasoning_content');
+    final thinkingEnabled = _defaultEnableThinking || enableThinking;
+    debugPrint(
+      '[NativeTool] DeepSeek 兼容：thinking=${thinkingEnabled ? 'enabled' : 'disabled'}，'
+      '捕获 reasoning_content',
+    );
     return OpenAIChatModel(
       name: name ?? defaultModelNames[ModelKind.chat]!,
       tools: tools,
@@ -160,7 +170,7 @@ class AppOpenAIProvider extends OpenAIProvider {
       headers: headers,
       client: DeepSeekCompatClient(
         http.Client(),
-        disableThinking: false,
+        disableThinking: !_defaultEnableThinking && !enableThinking,
       ),
       defaultOptions: OpenAIChatOptions(
         temperature: temperature ?? options?.temperature,
@@ -268,10 +278,14 @@ class NativeToolAgentService {
     var tools = allTools;
     if (alivenessOnlyTools) {
       tools = tools
-          .where((tool) =>
-              tool.name == 'read_image' ||
-              (tool.name == 'memory' && agent.alivenessConfig?.memoryEnabled == true) ||
-              (tool.name == 'moments' && agent.alivenessConfig?.enabled == true))
+          .where(
+            (tool) =>
+                tool.name == 'read_image' ||
+                (tool.name == 'memory' &&
+                    agent.alivenessConfig?.memoryEnabled == true) ||
+                (tool.name == 'moments' &&
+                    agent.alivenessConfig?.enabled == true),
+          )
           .toList();
     }
     if (candidates != null && allTools.length > 30) {
@@ -331,7 +345,8 @@ class NativeToolAgentService {
     final system = cleanSystemExtras.isEmpty
         ? cleanSystemPrompt
         : '$cleanSystemPrompt\n\n$cleanSystemExtras';
-    final effectiveSystem = alivenessOnlyTools && agent.alivenessConfig?.enabled == true
+    final effectiveSystem =
+        alivenessOnlyTools && agent.alivenessConfig?.enabled == true
         ? '$system\n\n[生图工具规则]\n'
               '当用户要求看你的照片、自拍、合照或某个场景的图片时，必须调用 moments.generate_image 并发送图片。'
               '用户提到的具体照片不在资产列表中，也不能因此拒绝：可以把用户描述写入 prompt，'
@@ -340,8 +355,8 @@ class NativeToolAgentService {
         : system;
     final memorySystem = agent.alivenessConfig?.memoryEnabled == true
         ? '$effectiveSystem\n\n[历史记忆检索]\n'
-            '需要回忆用户或你自己的过往、偏好、计划等信息时，调用 memory 工具按关键词检索。'
-            '当前注入的摘要只是部分记忆，未命中时应换关键词查询；不要编造，也不要仅凭摘要说没有记忆。'
+              '需要回忆用户或你自己的过往、偏好、计划等信息时，调用 memory 工具按关键词检索。'
+              '当前注入的摘要只是部分记忆，未命中时应换关键词查询；不要编造，也不要仅凭摘要说没有记忆。'
         : effectiveSystem;
 
     final isAnthropic = agent.apiFormat.toLowerCase() == 'anthropic';
@@ -372,6 +387,7 @@ class NativeToolAgentService {
               apiKey: _extractApiKey(agent),
               baseUrl: baseUrl,
               headers: agent.headers,
+              enableThinking: agent.enableThinking,
             )
           : OpenAIProvider(
               apiKey: _extractApiKey(agent),
@@ -383,6 +399,7 @@ class NativeToolAgentService {
         chatModelName: agent.model,
         tools: tools,
         temperature: agent.temperature,
+        enableThinking: agent.enableThinking,
       );
     }
 
@@ -489,7 +506,9 @@ class NativeToolAgentService {
     final zone = '${offset.isNegative ? '-' : '+'}$hoursText:$minutesText';
     return {
       'timestamp': now.millisecondsSinceEpoch,
-      'datetime': now.isUtc ? now.toIso8601String() : '${now.toIso8601String()}$zone',
+      'datetime': now.isUtc
+          ? now.toIso8601String()
+          : '${now.toIso8601String()}$zone',
       'timezone': now.timeZoneName,
       'utcOffset': zone,
       'year': now.year,
@@ -507,7 +526,8 @@ class NativeToolAgentService {
     required List<Tool<Map<String, dynamic>>> pluginTools,
     required Future<Map<String, dynamic>> Function(Map<String, dynamic>)
     onRunJs,
-    Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onGetCurrentTime,
+    Future<Map<String, dynamic>> Function(Map<String, dynamic>)?
+    onGetCurrentTime,
     bool useJsTools = false,
     bool builtInOnly = false,
   }) {
@@ -537,7 +557,8 @@ class NativeToolAgentService {
         name: 'get_current_time',
         description: '获取设备当前日期、时间和时区。处理今天、明天等相对日期前调用；日期时间参数需保留返回的时区偏移。',
         inputSchema: Schema.fromMap(ToolSchemaBuilder.buildSchemaMap([])),
-        onCall: onGetCurrentTime ?? (_) async => currentTimeData(DateTime.now()),
+        onCall:
+            onGetCurrentTime ?? (_) async => currentTimeData(DateTime.now()),
       ),
       if (!builtInOnly) jsTool,
     ];
@@ -658,10 +679,13 @@ class NativeToolAgentService {
               return {'error': '记忆检索已达工具调用上限，请基于已有结果回答'};
             }
             final results = await MemoryService.instance.searchForTool(
-              run.agentId, args['query'] as String?,
+              run.agentId,
+              args['query'] as String?,
             );
-            debugPrint('[NativeTool][记忆读取] agent=${run.agentId} '
-                'query=${args['query']} hits=${results.length}');
+            debugPrint(
+              '[NativeTool][记忆读取] agent=${run.agentId} '
+              'query=${args['query']} hits=${results.length}',
+            );
             return {'memories': results};
           },
         ),
@@ -1114,7 +1138,9 @@ class NativeToolAgentService {
       final decoded = _tryDecodeJson(result);
       final error = ToolSchemaBuilder.resultError(decoded);
       step
-        ..status = error == null ? ToolCallStatus.success : ToolCallStatus.failed
+        ..status = error == null
+            ? ToolCallStatus.success
+            : ToolCallStatus.failed
         ..error = error
         ..result = result;
       await run.notifySteps();
@@ -1145,14 +1171,16 @@ class NativeToolAgentService {
       return {'error': '工具调用次数已达上限，请直接回答'};
     }
     final result = currentTimeData(DateTime.now());
-    run.steps.add(ToolCallStep(
-      method: 'get_current_time',
-      title: '获取当前时间',
-      desc: '读取设备日期、时间和时区',
-      data: '{}',
-      status: ToolCallStatus.success,
-      result: jsonEncode(result),
-    ));
+    run.steps.add(
+      ToolCallStep(
+        method: 'get_current_time',
+        title: '获取当前时间',
+        desc: '读取设备日期、时间和时区',
+        data: '{}',
+        status: ToolCallStatus.success,
+        result: jsonEncode(result),
+      ),
+    );
     await run.notifySteps();
     return result;
   }

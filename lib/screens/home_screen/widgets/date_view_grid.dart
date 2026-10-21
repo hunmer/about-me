@@ -85,8 +85,11 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
       events: const [
         // todo / diary
         'task_added',
+        'task_updated',
         'task_deleted',
         'task_completed',
+        // 任务列表加载完成（首载/远端同步重载）后重查
+        'todo_cache_updated',
         'diary_entry_created',
         'diary_entry_updated',
         'diary_entry_deleted',

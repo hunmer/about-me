@@ -3,6 +3,7 @@ import 'package:aboutme/plugins/todo/models/models.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/event_args.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
@@ -272,6 +273,11 @@ class TaskController extends ChangeNotifier {
 
       _sortTasks();
       notifyListeners();
+      // 加载完成（首载/同步重载）后通知外部依赖方（如日期视图网格）重查
+      EventManager.instance.broadcast(
+        'todo_cache_updated',
+        Value(_tasks.length),
+      );
     }
   }
 
@@ -424,6 +430,8 @@ class TaskController extends ChangeNotifier {
 
       notifyListeners();
       await _saveTasks();
+      // 状态变更（完成/取消完成）影响日期卡片的可见性，需广播通知
+      _notifyEvent('updated', task);
       await _syncWidget();
     }
   }

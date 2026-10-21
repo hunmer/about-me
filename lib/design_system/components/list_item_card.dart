@@ -20,6 +20,7 @@ class DSListItemCard extends StatelessWidget {
     this.icon,
     this.leading,
     this.subtitle,
+    this.onSubtitleTap,
     this.iconColor,
     this.trailing,
     this.trailingText,
@@ -35,6 +36,9 @@ class DSListItemCard extends StatelessWidget {
   final Widget? leading;
 
   final String? subtitle;
+
+  /// 副标题点击回调：设置后副标题可点击（主色调 + 右箭头提示）
+  final VoidCallback? onSubtitleTap;
 
   /// 卡片底色（默认主题主色）
   final Color? iconColor;
@@ -122,12 +126,37 @@ class DSListItemCard extends StatelessWidget {
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
-                        Text(
-                          subtitle!,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
+                        if (onSubtitleTap != null)
+                          // 可点击副标题：主色调 + 右箭头提示可进入
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: onSubtitleTap,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    subtitle!,
+                                    style: DsTypography.caption.copyWith(
+                                      color: theme.primary,
+                                    ),
+                                  ),
+                                ),
+                                DsIcon(
+                                  DsIconKind.chevronRight,
+                                  size: 14,
+                                  color: theme.primary,
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Text(
+                            subtitle!,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
                           ),
-                        ),
                       ],
                     ],
                   ),

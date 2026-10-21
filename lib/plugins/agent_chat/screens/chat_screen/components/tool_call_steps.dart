@@ -9,6 +9,9 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
+import 'package:aboutme/plugins/todo/todo_plugin.dart';
+import 'package:aboutme/plugins/todo/views/todo_item_detail.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 工具调用步骤展示组件
 ///
@@ -50,6 +53,37 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
     );
   }
 
+  /// 创建类 plugin_tool 步骤：点击副标题弹出创建的数据详情
+  ///
+  /// 目前支持 todo.createTask —— 从结果 JSON 取 id，在任务控制器中
+  /// 找到最新任务弹出 [TodoItemDetail]；任务已被删除则不响应。
+  /// run_js 与非创建类工具不展示数据详情
+  VoidCallback? _resolveCreatedDataTap(ToolCallStep step) {
+    if (step.method != 'plugin_tool' || step.result == null) return null;
+    try {
+      final call = jsonDecode(step.data) as Map<String, dynamic>;
+      if (call['pluginId'] != 'todo' || call['method'] != 'createTask') {
+        return null;
+      }
+      final created = jsonDecode(step.result!) as Map<String, dynamic>;
+      final taskId = created['id'] as String?;
+      if (taskId == null) return null;
+      final task =
+          TodoPlugin.instance.taskController.tasks
+              .firstWhereOrNull((t) => t.id == taskId);
+      if (task == null) return null;
+      return () => SmoothBottomSheet.show(
+        context: context,
+        builder: (context) => TodoItemDetail(
+          task: task,
+          taskController: TodoPlugin.instance.taskController,
+        ),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 构建单个步骤卡片
   Widget _buildStepCard(ToolCallStep step, int index, bool isExpanded) {
     final theme = DSThemeBridge.resolve(context);
@@ -61,6 +95,7 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
         DSListItemCard(
           title: '${index + 1}. ${step.title}',
           subtitle: step.desc.isNotEmpty ? step.desc : null,
+          onSubtitleTap: _resolveCreatedDataTap(step),
           // 非插件步骤（纯 run_js 等）回退到代码图标
           icon: plugin == null ? DsIconKind.code : null,
           // 插件步骤使用插件图标作为水印

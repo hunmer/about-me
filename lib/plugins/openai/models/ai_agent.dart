@@ -17,6 +17,7 @@ class Prompt {
 
 class AIAgent {
   final String id;
+
   /// 定义版本号，内置或商店 Agent 更新时递增；null 表示旧数据或未版本化。
   final int? version;
   final String name;
@@ -39,6 +40,9 @@ class AIAgent {
   final Color? iconColor;
   final String? avatarUrl;
   final bool enableFunctionCalling;
+
+  /// 是否启用模型深度思考/推理输出。
+  final bool enableThinking;
   final String? promptPresetId;
   final bool enableOpeningQuestions; // 是否开启猜你想问功能
   final List<String> openingQuestions; // 预设的开场白问题列表
@@ -84,6 +88,7 @@ class AIAgent {
     this.iconColor,
     this.avatarUrl,
     this.enableFunctionCalling = false,
+    this.enableThinking = false,
     this.promptPresetId,
     this.enableOpeningQuestions = false,
     this.openingQuestions = const [],
@@ -116,23 +121,22 @@ class AIAgent {
     'iconColor': iconColor?.value,
     'avatarUrl': avatarUrl,
     'enableFunctionCalling': enableFunctionCalling,
+    'enableThinking': enableThinking,
     'promptPresetId': promptPresetId,
     'enableOpeningQuestions': enableOpeningQuestions,
     'openingQuestions': openingQuestions,
     'messages': messages?.map((msg) => msg.toJson()).toList(),
     'apiFormat': apiFormat,
     'resourceSlots': resourceSlots.toJson(),
-    if (alivenessConfig != null)
-      'alivenessConfig': alivenessConfig!.toJson(),
+    if (alivenessConfig != null) 'alivenessConfig': alivenessConfig!.toJson(),
   };
 
   factory AIAgent.fromJson(Map<String, dynamic> json) {
     // 兼容旧数据：将 systemPrompt 转换为 messages 中的 system 类型
     final legacySystemPrompt = json['systemPrompt'] as String?;
-    List<Prompt>? messages =
-        (json['messages'] as List<dynamic>?)
-            ?.map((msgJson) => Prompt.fromJson(msgJson as Map<String, dynamic>))
-            .toList();
+    List<Prompt>? messages = (json['messages'] as List<dynamic>?)
+        ?.map((msgJson) => Prompt.fromJson(msgJson as Map<String, dynamic>))
+        .toList();
 
     // 如果旧数据有 systemPrompt 且 messages 中没有 system 类型，则添加
     if (legacySystemPrompt != null && legacySystemPrompt.isNotEmpty) {
@@ -158,32 +162,28 @@ class AIAgent {
             (key, value) => MapEntry(key.toString(), value.toString()),
           ) ??
           {},
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.parse(json['createdAt'] as String)
-              : DateTime.now(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : DateTime.now(),
       temperature: (json['temperature'] as num?)?.toDouble() ?? 0.7,
       maxLength: json['maxLength'] as int? ?? 2000,
       topP: (json['topP'] as num?)?.toDouble() ?? 1.0,
       frequencyPenalty: (json['frequencyPenalty'] as num?)?.toDouble() ?? 0.0,
       presencePenalty: (json['presencePenalty'] as num?)?.toDouble() ?? 0.0,
       stop: (json['stop'] as List<dynamic>?)?.cast<String>(),
-      updatedAt:
-          json['updatedAt'] != null
-              ? DateTime.parse(json['updatedAt'] as String)
-              : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : DateTime.now(),
       model: json['model'] as String? ?? 'gpt-3.5-turbo',
-      icon:
-          json['icon'] != null
-              ? dynamicIconData(
-                json['icon'] as int,
-                fontFamily: 'MaterialIcons',
-              )
-              : null,
-      iconColor:
-          json['iconColor'] != null ? Color(json['iconColor'] as int) : null,
+      icon: json['icon'] != null
+          ? dynamicIconData(json['icon'] as int, fontFamily: 'MaterialIcons')
+          : null,
+      iconColor: json['iconColor'] != null
+          ? Color(json['iconColor'] as int)
+          : null,
       avatarUrl: json['avatarUrl'] as String?,
       enableFunctionCalling: json['enableFunctionCalling'] as bool? ?? false,
+      enableThinking: json['enableThinking'] as bool? ?? false,
       promptPresetId: json['promptPresetId'] as String?,
       enableOpeningQuestions: json['enableOpeningQuestions'] as bool? ?? false,
       openingQuestions:
@@ -194,14 +194,13 @@ class AIAgent {
       resourceSlots: AgentResourceSlots.fromJson(
         json['resourceSlots'] as Map<String, dynamic>?,
       ),
-      alivenessConfig:
-          json['alivenessConfig'] == null
-              ? null
-              : AlivenessConfig.fromJson(
-                Map<String, dynamic>.from(
-                  json['alivenessConfig'] as Map<dynamic, dynamic>,
-                ),
+      alivenessConfig: json['alivenessConfig'] == null
+          ? null
+          : AlivenessConfig.fromJson(
+              Map<String, dynamic>.from(
+                json['alivenessConfig'] as Map<dynamic, dynamic>,
               ),
+            ),
     );
   }
 
@@ -228,6 +227,7 @@ class AIAgent {
     double? presencePenalty,
     List<String>? stop,
     bool? enableFunctionCalling,
+    bool? enableThinking,
     String? promptPresetId,
     bool? enableOpeningQuestions,
     List<String>? openingQuestions,
@@ -260,6 +260,7 @@ class AIAgent {
       stop: stop ?? this.stop,
       enableFunctionCalling:
           enableFunctionCalling ?? this.enableFunctionCalling,
+      enableThinking: enableThinking ?? this.enableThinking,
       promptPresetId: promptPresetId ?? this.promptPresetId,
       enableOpeningQuestions:
           enableOpeningQuestions ?? this.enableOpeningQuestions,
