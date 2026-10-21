@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:grok_icon_study/grok_icon_study.dart';
 import 'package:skribble/skribble.dart';
@@ -16,6 +17,7 @@ import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/message_bubble.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/message_input.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/suggested_question_test_dialog.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
@@ -53,6 +55,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     state: 'idle',
   );
   bool _wasSending = false;
+  bool _questionTestOpen = false;
   Timer? _settleTimer;
 
   @override
@@ -311,6 +314,18 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
               ],
             ),
           ),
+          if (kDebugMode)
+            TextButton.icon(
+              icon: const Icon(Icons.science_outlined, size: 18),
+              label: const Text('测试'),
+              onPressed:
+                  controller == null ||
+                      sending ||
+                      controller.isThinking ||
+                      _questionTestOpen
+                  ? null
+                  : () => _openQuestionTest(controller),
+            ),
           DSIconButton(
             icon: DsIconKind.more,
             size: 38,
@@ -321,6 +336,15 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
         ],
       ),
     );
+  }
+
+  Future<void> _openQuestionTest(ChatController controller) async {
+    setState(() => _questionTestOpen = true);
+    try {
+      await showSuggestedQuestionTestDialog(context, controller);
+    } finally {
+      if (mounted) setState(() => _questionTestOpen = false);
+    }
   }
 
   void _openFullChat(ChatController? controller) {

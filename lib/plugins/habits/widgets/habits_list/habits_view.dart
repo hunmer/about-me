@@ -19,6 +19,7 @@ import 'package:aboutme/plugins/habits/widgets/habit_action_sheet.dart';
 import 'package:aboutme/plugins/habits/screens/habit_monthly_list_screen.dart';
 import 'package:aboutme/plugins/habits/models/completion_record.dart';
 import 'package:aboutme/plugins/habits/widgets/timer_dialog.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/habit_heatmap_card.dart';
@@ -98,6 +99,7 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
   String _selectedGroup = '全部'; // 当前选中的分组
   bool _isHeatmapView = false; // false=卡片网格视图, true=热力图视图
   final Map<String, List<CompletionRecord>> _records = {}; // 各习惯完成记录（热力图数据源）
+  static const _viewSettingsKey = 'habits/view_settings.json';
 
   @override
   void initState() {
@@ -114,6 +116,7 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
       _onRecordSaved,
     );
     _loadHabits();
+    _loadViewMode();
 
     // 设置路由上下文
     _updateRouteContext();
@@ -169,9 +172,29 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
   /// 切换卡片网格/热力图视图
   void _toggleView() {
     setState(() => _isHeatmapView = !_isHeatmapView);
+    _saveViewMode();
     if (_isHeatmapView) {
       _loadRecords();
     }
+  }
+
+  /// 恢复持久化的视图模式
+  Future<void> _loadViewMode() async {
+    final data = await AboutmeDataService.instance.readPath(
+      _viewSettingsKey,
+      <String, dynamic>{},
+    );
+    if (mounted && data is Map && data['heatmapView'] == true) {
+      setState(() => _isHeatmapView = true);
+      _loadRecords();
+    }
+  }
+
+  /// 持久化视图模式
+  Future<void> _saveViewMode() async {
+    await AboutmeDataService.instance.writePath(_viewSettingsKey, {
+      'heatmapView': _isHeatmapView,
+    });
   }
 
   /// 加载所有习惯的完成记录
@@ -421,6 +444,14 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
     );
   }
 
+  /// 热力图视图色板（按习惯 id 稳定分配）
+  static const _heatmapThemes = [
+    HabitHeatmapTheme.drinkWater,
+    HabitHeatmapTheme.journaling,
+    HabitHeatmapTheme.playDog,
+    HabitHeatmapTheme.read,
+  ];
+
   Widget _buildHeatmapView(List<Habit> habits) {
     return MasonryGridView.count(
       padding: EdgeInsets.fromLTRB(
@@ -450,6 +481,7 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
                     : Icons.auto_awesome,
             cells: _buildHeatmapCells(records),
             checkInCount: _todayCheckInCount(records),
+            theme: _heatmapThemes[habit.id.hashCode % _heatmapThemes.length],
             size: const Large3Size(scale: 0.8),
             onCheckIn: () => _showTimerDialog(habit),
           ),

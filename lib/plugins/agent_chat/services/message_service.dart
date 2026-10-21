@@ -59,12 +59,9 @@ class MessageService extends ChangeNotifier {
         'agent_chat/messages/$conversationId.json',
       );
       if (data is List) {
-        final messages =
-            data
-                .map(
-                  (json) => ChatMessage.fromJson(json as Map<String, dynamic>),
-                )
-                .toList();
+        final messages = data
+            .map((json) => ChatMessage.fromJson(json as Map<String, dynamic>))
+            .toList();
         _messageCache[conversationId] = messages;
       } else {
         _messageCache[conversationId] = [];
@@ -75,31 +72,43 @@ class MessageService extends ChangeNotifier {
   }
 
   /// 保存指定会话的消息
-  Future<void> _saveMessages(String conversationId) {
+  /// 等待已有写入并严格保存快照，供切换测试会话前确认持久化完成。
+  Future<void> persistConversation(String conversationId) =>
+      _saveMessages(conversationId, throwOnError: true);
+
+  Future<void> _saveMessages(
+    String conversationId, {
+    bool throwOnError = false,
+  }) {
     final previousTask = _messageSaveChains[conversationId] ?? Future.value();
 
-    final saveTask = previousTask
-        .catchError((_, __) {})
-        .then((_) async {
-          try {
-            final messages = _messageCache[conversationId] ?? [];
-            final data = messages.map((m) => m.toJson()).toList();
-            await AboutmeDataService.instance.writePath(
-              'agent_chat/messages/$conversationId.json',
-              data,
-            );
-          } catch (e) {
-            debugPrint('❌ [MessageService] 保存消息失败: $e');
-          }
-        });
+    final saveTask = previousTask.catchError((_, __) {}).then((_) async {
+      try {
+        final messages = _messageCache[conversationId] ?? [];
+        final data = messages.map((m) => m.toJson()).toList();
+        await AboutmeDataService.instance.writePath(
+          'agent_chat/messages/$conversationId.json',
+          data,
+        );
+      } catch (e) {
+        debugPrint('❌ [MessageService] 保存消息失败: $e');
+        if (throwOnError) rethrow;
+      }
+    });
 
     _messageSaveChains[conversationId] = saveTask;
-    saveTask.whenComplete(() {
+    void cleanup() {
       // 仅在任务链指针仍指向当前任务时移除，避免新的任务被误删
       if (identical(_messageSaveChains[conversationId], saveTask)) {
         _messageSaveChains.remove(conversationId);
       }
-    });
+    }
+
+    // 观察失败分支，避免 whenComplete 返回的 Future 产生未处理异常。
+    saveTask.then<void>(
+      (_) => cleanup(),
+      onError: (Object error, StackTrace stack) => cleanup(),
+    );
 
     return saveTask;
   }
@@ -214,8 +223,9 @@ class MessageService extends ChangeNotifier {
     final messages = _messageCache[conversationId];
     if (messages == null) return [];
 
-    final chainMessages =
-        messages.where((m) => m.chainExecutionId == chainExecutionId).toList();
+    final chainMessages = messages
+        .where((m) => m.chainExecutionId == chainExecutionId)
+        .toList();
 
     // 按步骤索引排序
     chainMessages.sort((a, b) {
@@ -324,7 +334,9 @@ class MessageService extends ChangeNotifier {
     String messageId,
     String thinkingContent,
   ) async {
-    debugPrint('🧠 [updateAIMessageThinking] 开始更新思考内容, 长度: ${thinkingContent.length}');
+    debugPrint(
+      '🧠 [updateAIMessageThinking] 开始更新思考内容, 长度: ${thinkingContent.length}',
+    );
     final message = getMessage(conversationId, messageId);
     if (message != null && !message.isUser) {
       final messages = _messageCache[conversationId];
@@ -332,10 +344,10 @@ class MessageService extends ChangeNotifier {
         final index = messages.indexWhere((m) => m.id == messageId);
         if (index != -1) {
           // 只更新内存，不保存到磁盘（避免频繁I/O）
-          messages[index] = message.copyWith(
-            thinkingContent: thinkingContent,
+          messages[index] = message.copyWith(thinkingContent: thinkingContent);
+          debugPrint(
+            '🧠 [updateAIMessageThinking] 更新完成, 新的 thinkingContent 长度: ${messages[index].thinkingContent?.length ?? 0}',
           );
-          debugPrint('🧠 [updateAIMessageThinking] 更新完成, 新的 thinkingContent 长度: ${messages[index].thinkingContent?.length ?? 0}');
           notifyListeners();
         } else {
           debugPrint('⚠️ [updateAIMessageThinking] 未找到消息索引');

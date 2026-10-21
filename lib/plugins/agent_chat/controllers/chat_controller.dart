@@ -442,7 +442,10 @@ class ChatController extends ChangeNotifier {
   // ========== 公共方法 ==========
 
   /// 发送消息
-  Future<void> sendMessage() async {
+  Future<void> sendMessage({
+    bool bypassAliveness = false,
+    bool Function()? shouldCancel,
+  }) async {
     // 如果正在发送，直接返回
     if (_isSending && !_isThinking) {
       // 活人感正在生成时，允许新消息进入；编排器会取消旧请求并合并重生成。
@@ -474,6 +477,8 @@ class ChatController extends ChangeNotifier {
 
     // 工具配置只在真正发送 AI 请求时加载，避免进入聊天页就扫描全部插件工具。
     await ToolService.initialize(storage: conversationService.storage);
+
+    if (shouldCancel?.call() ?? false) return;
 
     _isSending = true;
     _isCancelling = false; // 重置取消标志
@@ -543,6 +548,13 @@ class ChatController extends ChangeNotifier {
           aiMessageId: aiMessage.id,
           userMessage: userMessage,
           template: selectedTemplate,
+        );
+      } else if (bypassAliveness) {
+        // 批量测试必须等待完整工具循环，不能进入延迟触发的活人感缓冲。
+        await _agentChainExecutor.executeChain(
+          userInput: userInput,
+          files: files,
+          selectedTemplate: null,
         );
       } else {
         // 活人感接管：开启活人感的单 agent 会话先缓冲思考再生成

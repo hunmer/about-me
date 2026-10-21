@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/suggested_questions_service.dart';
+import 'package:aboutme/plugins/agent_chat/models/suggested_question.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -10,8 +11,13 @@ import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 /// 预设问题选择对话框
 class SuggestedQuestionsDialog extends StatefulWidget {
   final StorageManager storage;
+  final bool multiSelect;
 
-  const SuggestedQuestionsDialog({super.key, required this.storage});
+  const SuggestedQuestionsDialog({
+    super.key,
+    required this.storage,
+    this.multiSelect = false,
+  });
 
   @override
   State<SuggestedQuestionsDialog> createState() =>
@@ -27,6 +33,18 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
   Map<String, List<String>>? _questions;
   String? _selectedCategory;
   bool _isLoading = true;
+  final Map<String, Set<int>> _selectedQuestions = {};
+
+  List<SuggestedQuestion> get _selection => [
+    for (final entry in (_questions ?? <String, List<String>>{}).entries)
+      for (var i = 0; i < entry.value.length; i++)
+        if (_selectedQuestions[entry.key]?.contains(i) ?? false)
+          SuggestedQuestion(
+            category: entry.key,
+            categoryName: _service.getCategoryName(entry.key),
+            question: entry.value[i],
+          ),
+  ];
 
   @override
   void initState() {
@@ -49,6 +67,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
           lastCategory = null;
         }
 
+        if (!mounted) return;
         setState(() {
           _questions = questions;
           // 优先使用上次选中的分类（如果存在且有效），否则选中第一个
@@ -112,6 +131,25 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
                 ? _buildEmptyState()
                 : _buildQuestionsList(),
           ),
+          if (widget.multiSelect &&
+              !_isLoading &&
+              _questions != null &&
+              _questions!.isNotEmpty)
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: DSButton(
+                    onPressed: _selection.isEmpty
+                        ? null
+                        : () => Navigator.pop(context, _selection),
+                    label: '提交 (${_selection.length})',
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -139,7 +177,10 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
         children: [
           DsIcon(DsIconKind.star, color: theme.warning),
           const SizedBox(width: 8),
-          Text('你可以问', style: DsTypography.title.copyWith(color: theme.text)),
+          Text(
+            widget.multiSelect ? '选择测试问题' : '你可以问',
+            style: DsTypography.title.copyWith(color: theme.text),
+          ),
           const Spacer(),
           Pressable(
             onPressed: () => Navigator.pop(context),
@@ -178,7 +219,8 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: DSChipBar(
             labels: [
-              for (final key in categoryKeys) _service.getCategoryName(key),
+              for (final key in categoryKeys)
+                '${_service.getCategoryName(key)}${widget.multiSelect ? ' (${_selectedQuestions[key]?.length ?? 0}/${_questions![key]!.length})' : ''}',
             ],
             selected: categoryKeys
                 .indexOf(_selectedCategory ?? '')
@@ -210,25 +252,68 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
 
     final questions = _questions![_selectedCategory] ?? [];
 
-    return ListView.separated(
-      shrinkWrap: true,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: questions.length,
-      separatorBuilder: (context, index) => Divider(
-        color: theme.textSub.withValues(alpha: 0.2),
-        height: 1,
-        indent: 16,
-        endIndent: 16,
-      ),
-      itemBuilder: (context, index) => _buildQuestionItem(questions[index]),
+    final selected = _selectedQuestions[_selectedCategory] ?? <int>{};
+    final allSelected =
+        questions.isNotEmpty && selected.length == questions.length;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.multiSelect)
+          CheckboxListTile(
+            dense: true,
+            title: const Text('全选本分组'),
+            subtitle: const Text('按分组和列表顺序执行，问题会实际调用工具。'),
+            tristate: true,
+            value: allSelected
+                ? true
+                : selected.isEmpty
+                ? false
+                : null,
+            onChanged: (_) => setState(() {
+              if (!allSelected) {
+                _selectedQuestions[_selectedCategory!] = {
+                  for (var i = 0; i < questions.length; i++) i,
+                };
+              } else {
+                _selectedQuestions.remove(_selectedCategory);
+              }
+            }),
+          ),
+        Flexible(
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: questions.length,
+            separatorBuilder: (context, index) => Divider(
+              color: theme.textSub.withValues(alpha: 0.2),
+              height: 1,
+              indent: 16,
+              endIndent: 16,
+            ),
+            itemBuilder: (context, index) =>
+                _buildQuestionItem(questions[index], index),
+          ),
+        ),
+      ],
     );
   }
 
   /// 构建单个问题项
-  Widget _buildQuestionItem(String question) {
+  Widget _buildQuestionItem(String question, int index) {
     final theme = DSThemeBridge.resolve(context);
+    final selected =
+        _selectedQuestions[_selectedCategory]?.contains(index) ?? false;
+    void toggle() => setState(() {
+      final selectedIndices = _selectedQuestions.putIfAbsent(
+        _selectedCategory!,
+        () => <int>{},
+      );
+      if (!selectedIndices.remove(index)) selectedIndices.add(index);
+    });
     return Pressable(
-      onPressed: () => Navigator.pop(context, question),
+      onPressed: widget.multiSelect
+          ? toggle
+          : () => Navigator.pop(context, question),
       semanticLabel: question,
       builder: (context, states) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -240,11 +325,14 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
                 style: DsTypography.body.copyWith(color: theme.text),
               ),
             ),
-            DsIcon(
-              DsIconKind.chevronRight,
-              size: 14,
-              color: theme.textSub.withValues(alpha: 0.7),
-            ),
+            if (widget.multiSelect)
+              Checkbox(value: selected, onChanged: (_) => toggle())
+            else
+              DsIcon(
+                DsIconKind.chevronRight,
+                size: 14,
+                color: theme.textSub.withValues(alpha: 0.7),
+              ),
           ],
         ),
       ),
@@ -266,3 +354,14 @@ Future<String?> showSuggestedQuestionsDialog(
     ),
   );
 }
+
+/// 测试入口启用多选；普通入口继续点选填入输入框。
+Future<List<SuggestedQuestion>?> showSuggestedQuestionBatchPicker(
+  BuildContext context,
+  StorageManager storage,
+) => SmoothBottomSheet.show<List<SuggestedQuestion>>(
+  context: context,
+  builder: (context) => DSThemeBridge(
+    child: SuggestedQuestionsDialog(storage: storage, multiSelect: true),
+  ),
+);

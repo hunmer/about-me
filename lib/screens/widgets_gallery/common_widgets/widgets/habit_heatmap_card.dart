@@ -13,7 +13,13 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
-/// 旧版深色色板：手绘化后渲染不再消费，仅为兼容保留（构造参数 / props 解析）
+/// 习惯打卡热力图主题色板（浅色系）
+///
+/// 手绘纸墨风下卡片底色走 AppTheme（纸底+墨线框），本色板只承载习惯的
+/// 个性化彩色：[cellColors] 0=未打卡空格淡底、1-3=打卡档位由浅到浓，
+/// [iconColor] 头部图标与按钮主色，[outlineColor] 今日待打卡空心格描边，
+/// [checkedButtonColor] 已打卡按钮淡底。
+/// cardGradient/borderColor 为旧深色卡字段，仅为 props 兼容保留。
 class HabitHeatmapTheme {
   final List<Color> cardGradient;
   final Color borderColor;
@@ -31,60 +37,64 @@ class HabitHeatmapTheme {
     required this.checkedButtonColor,
   });
 
+  /// 蓝紫主题（Drink water）
   static const drinkWater = HabitHeatmapTheme(
     cardGradient: [Color(0xFF12131C), Color(0xFF1D1E2E)],
     borderColor: Color(0xFF28293D),
-    iconColor: Color(0xFF6972D6),
+    iconColor: Color(0xFF6C73CB),
     cellColors: [
-      Color(0xFF272838),
+      Color(0xFFE9EAF2),
+      Color(0xFFC9CDEF),
+      Color(0xFF9DA6E5),
       Color(0xFF6C73CB),
-      Color(0xFF9DA5E8),
-      Color(0xFFD0D5F7),
     ],
-    outlineColor: Color(0xFF656CC2),
-    checkedButtonColor: Color(0xFF32344A),
+    outlineColor: Color(0xFF6C73CB),
+    checkedButtonColor: Color(0xFFE2E5F7),
   );
 
+  /// 绿色主题（Journaling）
   static const journaling = HabitHeatmapTheme(
     cardGradient: [Color(0xFF0B1C0E), Color(0xFF17331A)],
     borderColor: Color(0xFF214224),
-    iconColor: Color(0xFF48E554),
+    iconColor: Color(0xFF4ECB58),
     cellColors: [
-      Color(0xFF213824),
-      Color(0xFF3FD849),
-      Color(0xFF7BEF83),
-      Color(0xFFBEF9C3),
+      Color(0xFFE9F4EA),
+      Color(0xFFC8EDCC),
+      Color(0xFF97E39E),
+      Color(0xFF4ECB58),
     ],
-    outlineColor: Color(0xFF48E554),
-    checkedButtonColor: Color(0xFF2B472D),
+    outlineColor: Color(0xFF4ECB58),
+    checkedButtonColor: Color(0xFFE0F3E2),
   );
 
+  /// 黄色主题（Play dog）
   static const playDog = HabitHeatmapTheme(
     cardGradient: [Color(0xFF211B08), Color(0xFF382E0B)],
     borderColor: Color(0xFF473B12),
-    iconColor: Color(0xFFF7C520),
+    iconColor: Color(0xFFEBBB2D),
     cellColors: [
-      Color(0xFF3C3315),
-      Color(0xFFF6C218),
-      Color(0xFFFBE069),
-      Color(0xFFFEF0A5),
+      Color(0xFFF7F2E3),
+      Color(0xFFF4E5AC),
+      Color(0xFFF2D36E),
+      Color(0xFFEBBB2D),
     ],
-    outlineColor: Color(0xFFF6C218),
-    checkedButtonColor: Color(0xFF4C4017),
+    outlineColor: Color(0xFFEBBB2D),
+    checkedButtonColor: Color(0xFFF8EFD2),
   );
 
+  /// 橙色主题（Read）
   static const read = HabitHeatmapTheme(
     cardGradient: [Color(0xFF241106), Color(0xFF3B1C0A)],
     borderColor: Color(0xFF4C2611),
-    iconColor: Color(0xFFF7630C),
+    iconColor: Color(0xFFF08130),
     cellColors: [
-      Color(0xFF3F2212),
-      Color(0xFFF06915),
-      Color(0xFFF6934C),
-      Color(0xFFFCC396),
+      Color(0xFFFAEEE3),
+      Color(0xFFF8CFAF),
+      Color(0xFFF5A96E),
+      Color(0xFFF08130),
     ],
-    outlineColor: Color(0xFFF06915),
-    checkedButtonColor: Color(0xFF502D1A),
+    outlineColor: Color(0xFFF08130),
+    checkedButtonColor: Color(0xFFFCE9DA),
   );
 
   /// 按名称获取预设主题
@@ -119,10 +129,10 @@ class HabitHeatmapCard extends StatefulWidget {
   /// 今日打卡次数：0=未打卡，1=已打卡，>1=多次打卡
   final int checkInCount;
 
-  /// 兼容保留：手绘化后颜色取自 AppTheme，不再消费
+  /// 主题色板（浅色系，格子/图标/按钮的个性化彩色）
   final HabitHeatmapTheme theme;
 
-  /// 兼容保留：未打卡按钮已改为加号图标，不再消费
+  /// 兼容保留：按钮已恒显开始图标，不再消费
   final String checkInLabel;
 
   /// 是否为内联模式（内联模式使用 double.maxFinite，非内联模式使用固定尺寸）
@@ -298,7 +308,11 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard> {
     // 小尺寸只显示热力图
     if (widget.size is SmallSize) {
       return Center(
-        child: _HeatmapGrid(cells: widget.cells, scale: widget.size.scale),
+        child: _HeatmapGrid(
+          cells: widget.cells,
+          palette: widget.theme,
+          scale: widget.size.scale,
+        ),
       );
     }
 
@@ -311,7 +325,11 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard> {
           Expanded(
             flex: 55,
             child: Center(
-              child: _HeatmapGrid(cells: widget.cells, scale: scale),
+              child: _HeatmapGrid(
+                cells: widget.cells,
+                palette: widget.theme,
+                scale: scale,
+              ),
             ),
           ),
           SizedBox(width: 16 * scale),
@@ -336,7 +354,7 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard> {
       children: [
         _buildHeader(theme),
         SizedBox(height: 14 * scale),
-        _HeatmapGrid(cells: widget.cells, scale: scale),
+        _HeatmapGrid(cells: widget.cells, palette: widget.theme, scale: scale),
         const Spacer(),
         SizedBox(height: 14 * scale),
         _buildCheckInButton(theme),
@@ -352,7 +370,7 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard> {
         WiredIcon(
           icon: widget.icon,
           size: 20 * scale,
-          color: theme.primary,
+          color: widget.theme.iconColor,
           drawConfig: theme.wired.drawConfig,
         ),
         SizedBox(width: 8 * scale),
@@ -373,52 +391,12 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard> {
     );
   }
 
-  /// 底部胶囊打卡按钮（三态：加号 / 勾 / 勾 + x N）
+  /// 底部胶囊打卡按钮：恒显开始图标（未打卡主色实底，已打卡淡底）
   Widget _buildCheckInButton(AppThemeData theme) {
     final scale = widget.size.scale;
     final buttonHeight = 47.0 * scale;
     final checked = widget.checkInCount > 0;
-
-    final Widget content;
-    if (!checked) {
-      // 未打卡：加号（触发开始习惯）
-      content = DsIcon(
-        DsIconKind.plus,
-        size: 22 * scale,
-        color: theme.onPrimary,
-      );
-    } else {
-      content = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DsIcon(DsIconKind.check, size: 22 * scale, color: theme.primary),
-          if (widget.checkInCount > 1) ...[
-            SizedBox(width: 8 * scale),
-            Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: 'x ',
-                    style: TextStyle(
-                      color: theme.textSub,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  TextSpan(
-                    text: '${widget.checkInCount}',
-                    style: TextStyle(
-                      color: theme.text,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              style: TextStyle(fontSize: 15 * scale, height: 1.0),
-            ),
-          ],
-        ],
-      );
-    }
+    final palette = widget.theme;
 
     return GestureDetector(
       onTap: widget.onCheckIn,
@@ -428,10 +406,16 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard> {
           theme: theme,
           // 大圆角被 rough 引擎自动钳制成胶囊
           radius: BorderRadius.circular(buttonHeight / 2),
-          fillColor: checked ? theme.surfaceAlt : theme.primary,
+          fillColor: checked ? palette.checkedButtonColor : palette.iconColor,
           strokeWidth: 1.6,
         ),
-        child: Center(child: content),
+        child: Center(
+          child: DsIcon(
+            DsIconKind.play,
+            size: 22 * scale,
+            color: checked ? palette.iconColor : theme.surface,
+          ),
+        ),
       ),
     );
   }
@@ -440,9 +424,10 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard> {
 /// 热力图矩阵（cell 随宽度自适应，宽高比 1:1）
 class _HeatmapGrid extends StatelessWidget {
   final List<List<int>> cells;
+  final HabitHeatmapTheme palette;
   final double scale;
 
-  const _HeatmapGrid({required this.cells, required this.scale});
+  const _HeatmapGrid({required this.cells, required this.palette, required this.scale});
 
   @override
   Widget build(BuildContext context) {
@@ -465,6 +450,7 @@ class _HeatmapGrid extends StatelessWidget {
               cells: cells,
               cell: cell,
               gap: gap,
+              palette: palette,
               theme: AppTheme.of(context),
               // 外层无 WiredDraw（或动画被禁用）时为 null = 全部直接画完
               progress: WiredDrawTransition.progressOf(context),
@@ -478,11 +464,12 @@ class _HeatmapGrid extends StatelessWidget {
 
 /// 热力图绘制器：rough 墨线格，逐格错峰描画（消费外层 WiredDraw 进度）
 ///
-/// 值 0=淡墨空格；1-3=主题色实底（透明度 0.35/0.65/1.0）；4=主题色空心待打卡格
+/// 值 0=淡底空格；1-3=色板 cellColors 由浅到浓实底；4=色板 outline 空心待打卡格
 class _HeatmapPainter extends CustomPainter {
   final List<List<int>> cells;
   final double cell;
   final double gap;
+  final HabitHeatmapTheme palette;
   final AppThemeData theme;
   final Animation<double>? progress;
 
@@ -490,6 +477,7 @@ class _HeatmapPainter extends CustomPainter {
     required this.cells,
     required this.cell,
     required this.gap,
+    required this.palette,
     required this.theme,
     required this.progress,
   }) : super(repaint: progress);
@@ -515,23 +503,27 @@ class _HeatmapPainter extends CustomPainter {
           ..strokeWidth = width
           ..color = color;
 
+    final cellColors = palette.cellColors;
+    final emptyColor = cellColors.isNotEmpty ? cellColors[0] : theme.surfaceAlt;
+
     return List.generate(rows * cols, (i) {
       final r = i ~/ cols;
       final c = i % cols;
       final value = c < cells[r].length ? cells[r][c] : 0;
       final x = c * (cell + gap);
       final y = r * (cell + gap);
-      final filled = value >= 1 && value <= 3;
+      final filled = value >= 1 && value <= 3 && cellColors.length == 4;
 
       final borderPaint = switch (value) {
         0 => stroke(1.2, theme.ink.withValues(alpha: 0.22)),
-        4 => stroke(1.8, theme.primary),
+        4 => stroke(1.8, palette.outlineColor),
         _ => stroke(1.2, theme.ink.withValues(alpha: 0.45)),
       };
       final fillPaint = switch (value) {
-        1 => stroke(1.2, theme.primary.withValues(alpha: 0.35)),
-        2 => stroke(1.2, theme.primary.withValues(alpha: 0.65)),
-        3 => stroke(1.2, theme.primary),
+        0 => stroke(1.2, emptyColor),
+        1 => stroke(1.2, cellColors[1]),
+        2 => stroke(1.2, cellColors[2]),
+        3 => stroke(1.2, cellColors[3]),
         _ => stroke(1.2, const Color(0x00000000)),
       };
 
@@ -567,6 +559,7 @@ class _HeatmapPainter extends CustomPainter {
   bool shouldRepaint(covariant _HeatmapPainter oldDelegate) {
     return oldDelegate.cells != cells ||
         oldDelegate.cell != cell ||
+        oldDelegate.palette != palette ||
         oldDelegate.theme != theme;
   }
 }

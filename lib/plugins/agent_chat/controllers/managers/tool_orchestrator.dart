@@ -63,8 +63,7 @@ class ToolOrchestrator {
         files: files,
         conversationId: context.conversationId,
         useJsTools: context.useJsTools?.call() ?? false,
-        alivenessOnlyTools:
-            !(enableToolCalling && agent.enableFunctionCalling),
+        alivenessOnlyTools: !(enableToolCalling && agent.enableFunctionCalling),
         onUpdateMessage: onUpdateMessage,
         onImageDescription: (path, description) async {
           // 以附件路径定位原始消息，避免重新生成或并发回复时写错消息。
@@ -156,7 +155,7 @@ class ToolOrchestrator {
       onThinking: onThinking,
       onError: (error) {
         debugPrint('[Request] 普通响应失败: $error');
-        onUpdateMessage(error == '已取消发送' ? '🛑 用户已取消操作' : '❌ 错误: $error', 0);
+        onError(isCancelling() ? '已取消发送' : error);
         completer.complete(null);
       },
       maxRetries: 10,

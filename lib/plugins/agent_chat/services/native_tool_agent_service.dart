@@ -682,17 +682,43 @@ class NativeToolAgentService {
           onCall: (args) async {
             run.toolCallCount++;
             if (run.toolCallCount > maxToolCallsPerLoop) {
-              return {'error': '记忆检索已达工具调用上限，请基于已有结果回答'};
+              return _rejectToolCall(
+                run,
+                'memory',
+                args,
+                '记忆检索已达工具调用上限，请基于已有结果回答',
+              );
             }
-            final results = await MemoryService.instance.searchForTool(
-              run.agentId,
-              args['query'] as String?,
+            final step = ToolCallStep(
+              method: 'memory',
+              title: '检索记忆',
+              desc: '关键词：${args['query'] ?? ''}',
+              data: jsonEncode(args),
+              status: ToolCallStatus.running,
             );
-            debugPrint(
-              '[NativeTool][记忆读取] agent=${run.agentId} '
-              'query=${args['query']} hits=${results.length}',
-            );
-            return {'memories': results};
+            run.steps.add(step);
+            await run.notifySteps();
+            try {
+              final results = await MemoryService.instance.searchForTool(
+                run.agentId,
+                args['query'] as String?,
+              );
+              step
+                ..status = ToolCallStatus.success
+                ..result = jsonEncode({'memories': results});
+              await run.notifySteps();
+              debugPrint(
+                '[NativeTool][记忆读取] agent=${run.agentId} '
+                'query=${args['query']} hits=${results.length}',
+              );
+              return {'memories': results};
+            } catch (error) {
+              step
+                ..status = ToolCallStatus.failed
+                ..error = error.toString();
+              await run.notifySteps();
+              return {'error': error.toString()};
+            }
           },
         ),
       );
@@ -721,13 +747,15 @@ class NativeToolAgentService {
         onCall: (args) async {
           run.imageToolCallCount++;
           if (run.imageToolCallCount > maxToolCallsPerLoop) {
-            return '图片解析调用次数已达上限';
+            return _rejectToolCall(run, 'read_image', args, '图片解析调用次数已达上限');
           }
           final paths = (args['paths'] as List? ?? const [])
               .map((value) => value.toString())
               .where((value) => value.isNotEmpty)
               .toList();
-          if (paths.isEmpty) return '没有提供图片路径';
+          if (paths.isEmpty) {
+            return _rejectToolCall(run, 'read_image', args, '没有提供图片路径');
+          }
           final argsJson = jsonEncode(args);
           debugPrint('[NativeTool] [read_image] 工具调用: $argsJson');
           final step = ToolCallStep(
@@ -806,7 +834,7 @@ class NativeToolAgentService {
       Future<Object?> Function() execute,
     ) async {
       if (++run.toolCallCount > maxToolCallsPerLoop) {
-        return {'error': '工具调用次数已达上限，请直接回答'};
+        return _rejectToolCall(run, method, args, '工具调用次数已达上限，请直接回答');
       }
       final argsJson = jsonEncode(args);
       final step = ToolCallStep(
@@ -820,8 +848,12 @@ class NativeToolAgentService {
       await run.notifySteps();
       try {
         final result = await execute();
+        final error = result is Map ? result['error']?.toString() : null;
         step
-          ..status = ToolCallStatus.success
+          ..status = error == null
+              ? ToolCallStatus.success
+              : ToolCallStatus.failed
+          ..error = error
           ..result = result is String ? result : jsonEncode(result);
         await run.notifySteps();
         return result;
@@ -1061,39 +1093,72 @@ class NativeToolAgentService {
 
   // ---------- 执行分发 ----------
 
+  /// 参数校验/调用上限错误也属于工具失败，不能只回传给模型而遗漏会话记录。
+  Future<Map<String, dynamic>> _rejectToolCall(
+    _NativeToolRunContext run,
+    String method,
+    Map<String, dynamic> args,
+    String error, {
+    Map<String, dynamic> extra = const {},
+  }) async {
+    final result = {'error': error, ...extra};
+    run.steps.add(
+      ToolCallStep(
+        method: method,
+        title: '$method 调用失败',
+        desc: error,
+        data: jsonEncode(args),
+        status: ToolCallStatus.failed,
+        error: error,
+        result: jsonEncode(result),
+      ),
+    );
+    await run.notifySteps();
+    return result;
+  }
+
   /// 插件 Tool 直接调用注册的 Dart 接口，结果回传 LLM。
   Future<Map<String, dynamic>> _dispatch(
     _NativeToolRunContext run,
     String pluginId,
     Map<String, dynamic> args,
   ) async {
+    Future<Map<String, dynamic>> reject(
+      String error, {
+      Map<String, dynamic> extra = const {},
+    }) => _rejectToolCall(
+      run,
+      'plugin_tool',
+      {'pluginId': pluginId, ...args},
+      error,
+      extra: extra,
+    );
     // 轮数上限保护：超限后向模型返回错误提示，促使其收敛直接作答
     run.toolCallCount++;
     if (run.toolCallCount > maxToolCallsPerLoop) {
       debugPrint('[NativeTool] ⚠️ 达到调用上限（$maxToolCallsPerLoop 次）');
-      return {
-        'error':
-            '工具调用次数已达上限（$maxToolCallsPerLoop 次），'
-            '请基于已有结果直接回答用户，不要再调用工具',
-      };
+      return reject(
+        '工具调用次数已达上限（$maxToolCallsPerLoop 次），'
+        '请基于已有结果直接回答用户，不要再调用工具',
+      );
     }
 
     final meta = run.toolMeta[pluginId];
-    if (meta == null) return {'error': 'Plugin $pluginId not found'};
+    if (meta == null) return reject('Plugin $pluginId not found');
     final methodName = args['method'];
     if (methodName is! String || methodName.isEmpty) {
-      return {'error': '参数 method 必须是非空字符串'};
+      return reject('参数 method 必须是非空字符串');
     }
     final config = meta.methods[methodName];
     if (config == null) {
-      return {
-        'error': '插件 $pluginId 不支持方法 $methodName',
-        'availableMethods': meta.methods.keys.toList(),
-      };
+      return reject(
+        '插件 $pluginId 不支持方法 $methodName',
+        extra: {'availableMethods': meta.methods.keys.toList()},
+      );
     }
     final rawArgs = args['args'];
     if (rawArgs is! Map<String, dynamic>) {
-      return {'error': 'args 必须是对象，无参数时传 {}'};
+      return reject('args 必须是对象，无参数时传 {}');
     }
     final methodArgs = rawArgs;
     if (pluginId == 'openai' &&
@@ -1107,7 +1172,7 @@ class NativeToolAgentService {
         .where((p) => !p.optional && !methodArgs.containsKey(p.name))
         .map((p) => p.name)
         .toList();
-    if (missing.isNotEmpty) return {'error': '缺少必填参数：${missing.join(', ')}'};
+    if (missing.isNotEmpty) return reject('缺少必填参数：${missing.join(', ')}');
 
     final invocationArgs = ToolSchemaBuilder.invocationArgs(config, methodArgs);
     final argsJson = jsonEncode(methodArgs);
@@ -1174,7 +1239,7 @@ class NativeToolAgentService {
     _NativeToolRunContext run,
   ) async {
     if (++run.toolCallCount > maxToolCallsPerLoop) {
-      return {'error': '工具调用次数已达上限，请直接回答'};
+      return _rejectToolCall(run, 'get_current_time', {}, '工具调用次数已达上限，请直接回答');
     }
     final result = currentTimeData(DateTime.now());
     run.steps.add(
@@ -1196,11 +1261,11 @@ class NativeToolAgentService {
     Map<String, dynamic> args,
   ) async {
     if (++run.toolCallCount > maxToolCallsPerLoop) {
-      return {'error': '工具调用次数已达上限，请直接回答'};
+      return _rejectToolCall(run, 'run_js', args, '工具调用次数已达上限，请直接回答');
     }
     final code = args['code'];
     if (code is! String || code.trim().isEmpty) {
-      return {'error': 'code 必须是非空字符串'};
+      return _rejectToolCall(run, 'run_js', args, 'code 必须是非空字符串');
     }
     final step = ToolCallStep(
       method: 'run_js',
@@ -1213,11 +1278,15 @@ class NativeToolAgentService {
     await run.notifySteps();
     try {
       final result = await ToolService.executeJsCode(code);
+      final decoded = _tryDecodeJson(result);
+      final error = ToolSchemaBuilder.resultError(decoded);
       step
-        ..status = ToolCallStatus.success
+        ..status = error == null
+            ? ToolCallStatus.success
+            : ToolCallStatus.failed
+        ..error = error
         ..result = result;
       await run.notifySteps();
-      final decoded = _tryDecodeJson(result);
       return decoded is Map<String, dynamic>
           ? decoded
           : {'result': decoded ?? result};

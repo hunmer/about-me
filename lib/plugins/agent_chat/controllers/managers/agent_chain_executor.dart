@@ -233,6 +233,7 @@ class AgentChainExecutor {
           final updated = errorMessage.copyWith(
             content: '❌ 执行失败: $e',
             isGenerating: false,
+            metadata: {...?errorMessage.metadata, 'requestError': e.toString()},
           );
           await context.messageService.updateMessage(updated);
         }
@@ -479,6 +480,20 @@ class AgentChainExecutor {
         },
         onError: (error) {
           debugPrint('❌ Agent ${agent.name} 响应错误: $error');
+
+          if (error != '已取消发送') {
+            final message = context.messageService.getMessage(
+              context.conversationId,
+              aiMessageId,
+            );
+            if (message != null) {
+              context.messageService.updateMessage(
+                message.copyWith(
+                  metadata: {...?message.metadata, 'requestError': error},
+                ),
+              );
+            }
+          }
 
           if (error == '已取消发送') {
             context.messageService.updateAIMessageContent(
