@@ -17,3 +17,15 @@ abstract final class DsShadows {
     BoxShadow(color: Color(0x264C1D95), offset: Offset(0, 12), blurRadius: 32),
   ];
 }
+
+/// 手绘错位阴影档位：同形状偏移复制的实体投影（零模糊）
+///
+/// 不是拟物光影——在手绘语言里它等价于「纸上再叠一张同形状的纸」，
+/// 呈现贴纸/游戏按键的厚度感。消费方见 [JellyBox.shadow]。
+abstract final class DsHandShadow {
+  /// 轻厚度（chip、输入框）
+  static const Offset light = Offset(0, 3);
+
+  /// 常规厚度（按钮、徽章）
+  static const Offset regular = Offset(0, 5);
+}

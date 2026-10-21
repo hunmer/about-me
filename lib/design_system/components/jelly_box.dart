@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../theme/app_theme.dart';
+import '../tokens/shadows.dart';
 
 /// 手绘墨盒：整个组件库的容器基底（前身「果冻容器」）
 ///
@@ -8,6 +9,8 @@ import '../theme/app_theme.dart';
 /// - 传入 [color]：彩色涂色块（纯色实底 + 墨线描边）
 /// - 不传 [color]：纸面（surface 实底 + 墨线描边）
 /// - [radius] 的 pill（999）会被 rough 引擎自动钳制成胶囊/正圆
+/// - [shadow]：手绘错位阴影——底层同形状偏移复制（实体、零模糊），
+///   呈现「贴纸/游戏按键」的厚度感，默认关闭
 /// - [gradient]/[shadows]/[raised] 仅保 API 兼容，手绘风格下不生效
 class JellyBox extends StatelessWidget {
   const JellyBox({
@@ -25,6 +28,8 @@ class JellyBox extends StatelessWidget {
     this.gradient,
     this.shadows,
     this.borderWidth,
+    this.shadow = false,
+    this.shadowOffset = DsHandShadow.regular,
   });
 
   final Widget? child;
@@ -36,7 +41,7 @@ class JellyBox extends StatelessWidget {
   final AlignmentGeometry? alignment;
   final BoxConstraints? constraints;
 
-  /// 兼容参数：手绘风格无彩色下坠投影
+  /// 兼容参数：手绘风格无彩色下坠投影（错位阴影改用 [shadow]）
   final bool raised;
 
   /// 覆盖描边色（默认主题墨线）
@@ -50,13 +55,19 @@ class JellyBox extends StatelessWidget {
 
   final double? borderWidth;
 
+  /// 手绘错位阴影：底层放一个同形状、偏移 [shadowOffset] 的实色rough副本
+  final bool shadow;
+
+  /// 阴影偏移量（默认 [DsHandShadow.regular]；按压时可动态切到小偏移）
+  final Offset shadowOffset;
+
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final r = radius ?? theme.radii.lg;
     final br = r.resolve(Directionality.maybeOf(context));
 
-    return Container(
+    Widget box = Container(
       width: width,
       height: height,
       padding: padding,
@@ -70,6 +81,34 @@ class JellyBox extends StatelessWidget {
         strokeWidth: borderWidth ?? 1.8,
       ),
       child: child,
+    );
+    if (!shadow) return box;
+
+    // 实体错位副本：浅色下向黑混合（纸叠纸的厚度），深色下退化为淡墨影
+    final fill = color ?? gradient?.colors.first ?? theme.surface;
+    final shadowColor = theme.isDark
+        ? theme.ink.withValues(alpha: 0.18)
+        : fill.mixBlack(0.22);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Transform.translate(
+              offset: shadowOffset,
+              child: DecoratedBox(
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillColor: shadowColor,
+                  radius: br,
+                  strokeWidth: 0.1,
+                ),
+              ),
+            ),
+          ),
+        ),
+        box,
+      ],
     );
   }
 }

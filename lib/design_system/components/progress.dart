@@ -7,7 +7,7 @@ import '../theme/app_theme.dart';
 import '../tokens/typography.dart';
 import 'jelly_box.dart';
 
-/// 线性手绘进度条：纯色填充，可选末端挂件（如星星）
+/// 线性手绘进度条：填充带竖向渐变与顶部内高光，可选末端挂件（如星星）
 class DSLinearProgress extends StatelessWidget {
   const DSLinearProgress({
     super.key,
@@ -29,6 +29,7 @@ class DSLinearProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final v = value.clamp(0.0, 1.0);
+    final fill = color ?? theme.primary;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(end: v),
@@ -56,17 +57,42 @@ class DSLinearProgress extends StatelessWidget {
                       raised: false,
                     ),
                   ),
-                  // 纯色填充（手绘风格：无渐变、无玻璃高光）
+                  // 填充：竖向渐变（上浅下深）+ 顶部 2px 内高光，
+                  // 营造体积感；动效/墨线不受影响
                   Positioned(
                     left: 0,
                     top: thumb != null ? 14 : 0,
                     child: ClipRRect(
                       borderRadius: theme.radii.pill,
-                      child: Container(
+                      child: SizedBox(
                         width: math.max((width - 2) * t + 2, 12),
                         height: height,
-                        decoration: BoxDecoration(
-                          color: color ?? theme.primary,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [fill, fill.mixBlack(0.12)],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // 顶部内高光：白色 0.45 半透明条
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              top: 0,
+                              height: 2,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: DsColors.white.withValues(alpha: 0.45),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

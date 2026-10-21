@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:skribble/skribble.dart';
 
 import '../theme/app_theme.dart';
+import '../tokens/motion.dart';
 import '../tokens/typography.dart';
 import 'button.dart';
 
@@ -158,40 +161,118 @@ class DSDialog extends StatelessWidget {
 }
 
 /// 标题上方的三颗小星星装饰（设计稿元素）
-class _SparkleRow extends StatelessWidget {
+///
+/// 三颗星按相位错开（i * 0.33）做正弦式闪烁：scale 1→1.15、
+/// opacity 0.85→1，单控制器 ≈1.6s 往复循环；
+/// 动效减弱（context.dsAnimationsDisabled）时保持静态。
+class _SparkleRow extends StatefulWidget {
   const _SparkleRow();
+
+  @override
+  State<_SparkleRow> createState() => _SparkleRowState();
+}
+
+class _SparkleRowState extends State<_SparkleRow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  /// 闪烁周期（长循环动效，超出 DsMotion 过渡档位的时长）
+  static const Duration _twinkleDuration = Duration(milliseconds: 1600);
+
+  /// 相邻星星的相位差
+  static const double _phaseStep = 0.33;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: _twinkleDuration);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 动效减弱：停表退化静态；恢复后自动续跑
+    if (context.dsAnimationsDisabled) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// 正弦式起伏值：0（最低）→ 1（最高）→ 0
+  double _wave(int i) {
+    final phase = (_controller.value + i * _phaseStep) % 1.0;
+    return 0.5 - 0.5 * math.cos(2 * math.pi * phase);
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     const colors = [Color(0xFFFCD34D), Color(0xFFF5A8D4), Color(0xFF885CF6)];
-    return Row(
+
+    Widget row(bool animated) => Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         for (var i = 0; i < colors.length; i++)
           Padding(
             padding: EdgeInsets.symmetric(horizontal: theme.spacing.xs),
-            child: _Sparkle(color: colors[i], size: 10 + i * 5.0, spin: i == 1),
+            child: _Sparkle(
+              color: colors[i],
+              size: 10 + i * 5.0,
+              spin: i == 1,
+              scale: animated ? 1 + 0.15 * _wave(i) : 1.0,
+              opacity: animated ? 0.85 + 0.15 * _wave(i) : 1.0,
+            ),
           ),
       ],
+    );
+
+    if (context.dsAnimationsDisabled) return row(false);
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => row(true),
     );
   }
 }
 
 class _Sparkle extends StatelessWidget {
-  const _Sparkle({required this.color, required this.size, required this.spin});
+  const _Sparkle({
+    required this.color,
+    required this.size,
+    required this.spin,
+    this.scale = 1,
+    this.opacity = 1,
+  });
 
   final Color color;
   final double size;
   final bool spin;
 
+  /// 闪烁缩放（1 → 1.15）
+  final double scale;
+
+  /// 闪烁透明度（0.85 → 1）
+  final double opacity;
+
   @override
   Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: spin ? 0.2 : 0,
-      child: CustomPaint(
-        size: Size.square(size),
-        painter: _SparklePainter(color),
+    return Opacity(
+      opacity: opacity,
+      child: Transform.rotate(
+        angle: spin ? 0.2 : 0,
+        child: Transform.scale(
+          scale: scale,
+          child: CustomPaint(
+            size: Size.square(size),
+            painter: _SparklePainter(color),
+          ),
+        ),
       ),
     );
   }

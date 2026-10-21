@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:skribble/skribble.dart';
 
 import '../theme/app_theme.dart';
+import '../tokens/motion.dart';
 
 /// 手绘气泡卡：点击触发，内容可交互（区别于 Tooltip 的纯提示）
 class DSPopover extends StatefulWidget {
@@ -30,6 +31,9 @@ class _DSPopoverState extends State<DSPopover> {
   bool _openUpward = false;
   double _dx = 0;
 
+  /// 是否正在播退场动画（关闭路径防重入）
+  bool _closing = false;
+
   bool get _open => _entry != null;
 
   @override
@@ -39,17 +43,29 @@ class _DSPopoverState extends State<DSPopover> {
   }
 
   void _toggle() {
-    _open ? _removeEntry() : _insertEntry();
+    _open ? _close() : _insertEntry();
     if (mounted) setState(() {});
   }
 
-  /// 供气泡内容主动关闭自己
+  /// 关闭收敛入口：barrier 点击 / 内容主动 close / 触发器再点都走这里；
+  /// 先播退场（缩小淡出）再延迟移除浮层，动效减弱时直接移除。
   void _close() {
-    _removeEntry();
-    if (mounted) setState(() {});
+    if (_closing) return;
+    _closing = true;
+    if (!mounted) return;
+    if (context.dsAnimationsDisabled) {
+      _removeEntry();
+      setState(() {});
+      return;
+    }
+    // 通知浮层重绘退场帧（tween 目标切到 0）
+    _entry?.markNeedsBuild();
+    setState(() {});
+    Future.delayed(DsMotion.fast, _removeEntry);
   }
 
   void _insertEntry() {
+    _closing = false;
     final box = context.findRenderObject() as RenderBox;
     final size = box.size;
     final topLeft = box.localToGlobal(Offset.zero);
@@ -82,7 +98,7 @@ class _DSPopoverState extends State<DSPopover> {
           Positioned.fill(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: _removeEntry,
+              onTap: _close,
             ),
           ),
           CompositedTransformFollower(
@@ -96,27 +112,32 @@ class _DSPopoverState extends State<DSPopover> {
             offset: Offset(_dx, _openUpward ? -10 : 10),
             child: AppTheme(
               data: theme,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.85, end: 1),
-                duration: const Duration(milliseconds: 160),
-                curve: Curves.easeOutBack,
-                builder: (context, t, child) => Opacity(
-                  opacity: t.clamp(0, 1),
-                  child: Transform.scale(
-                    scale: t,
-                    alignment: Alignment.topCenter,
-                    child: child,
+              child: IgnorePointer(
+                // 退场期间禁用交互，防止重复触发
+                ignoring: _closing,
+                child: TweenAnimationBuilder<double>(
+                  // t=1 为完整态：入场 0→1 放大淡入，退场 1→0 缩小淡出（同一映射双向复用）
+                  tween: Tween(begin: 0.0, end: _closing ? 0.0 : 1.0),
+                  duration: DsMotion.fast,
+                  curve: _closing ? DsMotion.curve : DsMotion.enter,
+                  builder: (context, t, child) => Opacity(
+                    opacity: t.clamp(0, 1),
+                    child: Transform.scale(
+                      scale: 0.85 + 0.15 * t,
+                      alignment: Alignment.topCenter,
+                      child: child,
+                    ),
                   ),
-                ),
-                child: WiredDraw(
-                  // 气泡缩放淡入的同时墨线描画入场（OverlayEntry 每次打开新挂载即播）
-                  child: _PopoverCard(
-                    width: widget.width,
-                    maxHeight: _availableHeight.clamp(120, viewportHeight),
-                    openUpward: _openUpward,
-                    arrowOffsetX: -_dx,
-                    contentBuilder: widget.contentBuilder,
-                    close: _close,
+                  child: WiredDraw(
+                    // 气泡缩放淡入的同时墨线描画入场（OverlayEntry 每次打开新挂载即播）
+                    child: _PopoverCard(
+                      width: widget.width,
+                      maxHeight: _availableHeight.clamp(120, viewportHeight),
+                      openUpward: _openUpward,
+                      arrowOffsetX: -_dx,
+                      contentBuilder: widget.contentBuilder,
+                      close: _close,
+                    ),
                   ),
                 ),
               ),
@@ -129,8 +150,10 @@ class _DSPopoverState extends State<DSPopover> {
   }
 
   void _removeEntry() {
-    _entry?.remove();
+    // 延迟回调触发时浮层可能已被外部移除，remove 前确认仍挂载
+    final entry = _entry;
     _entry = null;
+    if (entry != null && entry.mounted) entry.remove();
   }
 
   @override

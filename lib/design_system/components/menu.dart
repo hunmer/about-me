@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
+import '../tokens/motion.dart';
 import '../tokens/typography.dart';
 import 'icons.dart';
 
@@ -114,6 +115,9 @@ class _DSMenuState extends State<DSMenu> {
   /// 展开方向（屏幕下方空间不足时向上）
   bool _openUpward = false;
 
+  /// 是否正在播退场动画（关闭路径防重入）
+  bool _closing = false;
+
   bool get _open => _entry != null;
 
   @override
@@ -123,11 +127,12 @@ class _DSMenuState extends State<DSMenu> {
   }
 
   void _toggle() {
-    _open ? _removeEntry() : _insertEntry();
+    _open ? _close() : _insertEntry();
     if (mounted) setState(() {});
   }
 
   void _insertEntry() {
+    _closing = false;
     final box = context.findRenderObject() as RenderBox;
     final metrics = dsComputeMenuMetrics(
       box: box,
@@ -147,7 +152,7 @@ class _DSMenuState extends State<DSMenu> {
           Positioned.fill(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: _removeEntry,
+              onTap: _close,
             ),
           ),
           CompositedTransformFollower(
@@ -169,7 +174,8 @@ class _DSMenuState extends State<DSMenu> {
                   items: widget.items,
                   alignTop: _openUpward,
                   maxHeight: metrics.maxHeight,
-                  onDismiss: _removeEntry,
+                  closing: _closing,
+                  onDismiss: _close,
                 ),
               ),
             ),
@@ -180,9 +186,28 @@ class _DSMenuState extends State<DSMenu> {
     Overlay.of(context, rootOverlay: true).insert(_entry!);
   }
 
+  /// 关闭收敛入口：barrier 点击 / 选中条目 / 触发器再点都走这里；
+  /// 先播退场（缩小淡出）再延迟移除浮层，动效减弱时直接移除。
+  void _close() {
+    if (_closing) return;
+    _closing = true;
+    if (!mounted) return;
+    if (context.dsAnimationsDisabled) {
+      _removeEntry();
+      setState(() {});
+      return;
+    }
+    // 通知浮层重绘退场帧（tween 目标切到 0）
+    _entry?.markNeedsBuild();
+    setState(() {});
+    Future.delayed(DsMotion.fast, _removeEntry);
+  }
+
   void _removeEntry() {
-    _entry?.remove();
+    // 延迟回调触发时浮层可能已被外部移除，remove 前确认仍挂载
+    final entry = _entry;
     _entry = null;
+    if (entry != null && entry.mounted) entry.remove();
   }
 
   @override
@@ -201,6 +226,7 @@ class DSMenuPanel extends StatelessWidget {
     required this.items,
     this.alignTop = false,
     this.maxHeight = 280,
+    this.closing = false,
     this.onDismiss,
   });
 
@@ -212,46 +238,54 @@ class DSMenuPanel extends StatelessWidget {
   /// 高度上限（锚点到屏幕边缘的可用空间，超出后内部滚动）
   final double maxHeight;
 
+  /// 是否处于退场中（面板反向缩小淡出，由宿主组件驱动）
+  final bool closing;
+
   /// 点击可选项后、回调前的收起钩子
   final VoidCallback? onDismiss;
 
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.85, end: 1),
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOutBack,
-      builder: (context, t, child) => Opacity(
-        opacity: t.clamp(0, 1),
-        child: Transform.scale(
-          scale: t,
-          alignment: alignTop ? Alignment.bottomCenter : Alignment.topCenter,
-          child: child,
+    return IgnorePointer(
+      // 退场期间禁点，防止误触条目
+      ignoring: closing,
+      child: TweenAnimationBuilder<double>(
+        // t=1 为完整态：入场 0→1 放大淡入，退场 1→0 缩小淡出（同一映射双向复用）
+        tween: Tween(begin: 0.0, end: closing ? 0.0 : 1.0),
+        duration: DsMotion.fast,
+        curve: closing ? DsMotion.curve : DsMotion.enter,
+        builder: (context, t, child) => Opacity(
+          opacity: t.clamp(0, 1),
+          child: Transform.scale(
+            scale: 0.85 + 0.15 * t,
+            alignment: alignTop ? Alignment.bottomCenter : Alignment.topCenter,
+            child: child,
+          ),
         ),
-      ),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxHeight),
-        child: DsSketchPanel(
-          theme: theme,
-          radius: theme.radii.lg,
-          padding: EdgeInsets.all(theme.spacing.sm),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final item in items)
-                  item.isDivider
-                      ? _MenuDivider()
-                      : _MenuRow(
-                        item: item,
-                        onTap: () {
-                          onDismiss?.call();
-                          item.onTap?.call();
-                        },
-                      ),
-              ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: DsSketchPanel(
+            theme: theme,
+            radius: theme.radii.lg,
+            padding: EdgeInsets.all(theme.spacing.sm),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final item in items)
+                    item.isDivider
+                        ? _MenuDivider()
+                        : _MenuRow(
+                            item: item,
+                            onTap: () {
+                              onDismiss?.call();
+                              item.onTap?.call();
+                            },
+                          ),
+                ],
+              ),
             ),
           ),
         ),

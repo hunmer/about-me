@@ -170,11 +170,15 @@ void main() {
         ),
       );
       await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
+      // 对话框标题星星为无限闪烁动画，打开期间不能 pumpAndSettle，
+      // 用定时泵等完入场（220ms 路由 + WiredDraw 描画）
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
       expect(tester.takeException(), isNull);
       expect(find.text('删除'), findsOneWidget);
 
       await tester.tap(find.text('删除'));
+      // 关闭后闪烁控制器随路由销毁，可以正常 settle
       await tester.pumpAndSettle();
       expect(confirmed, isTrue);
     });

@@ -78,4 +78,10 @@ extension DsColorX on Color {
 
   /// 向黑色混合 [t]（0~1），用于描边/按压态
   Color mixBlack(double t) => Color.lerp(this, const Color(0xFF000000), t)!;
+
+  /// 悬停档（语义色三档中的 hover）：轻提亮
+  Color get dsHover => mixWhite(0.08);
+
+  /// 按压档（语义色三档中的 active）：轻加深
+  Color get dsActive => mixBlack(0.10);
 }

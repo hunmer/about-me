@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
+import '../tokens/motion.dart';
 import '../tokens/typography.dart';
 import 'icons.dart';
 import 'jelly_box.dart';
@@ -42,6 +43,9 @@ class _DSDropdownState extends State<DSDropdown> {
   /// 展开方向（屏幕下方空间不足时向上）
   bool _openUpward = false;
 
+  /// 是否正在播退场动画（关闭路径防重入）
+  bool _closing = false;
+
   bool get _open => _entry != null;
 
   @override
@@ -51,11 +55,12 @@ class _DSDropdownState extends State<DSDropdown> {
   }
 
   void _toggle() {
-    _open ? _removeEntry() : _insertEntry();
+    _open ? _close() : _insertEntry();
     setState(() {});
   }
 
   void _insertEntry() {
+    _closing = false;
     final box = context.findRenderObject() as RenderBox;
     final panelWidth = widget.width ?? box.size.width;
     final metrics = dsComputeMenuMetrics(
@@ -76,7 +81,7 @@ class _DSDropdownState extends State<DSDropdown> {
           Positioned.fill(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: _removeEntry,
+              onTap: _close,
             ),
           ),
           CompositedTransformFollower(
@@ -98,7 +103,8 @@ class _DSDropdownState extends State<DSDropdown> {
                   items: widget.items,
                   alignTop: _openUpward,
                   maxHeight: metrics.maxHeight,
-                  onDismiss: _removeEntry,
+                  closing: _closing,
+                  onDismiss: _close,
                 ),
               ),
             ),
@@ -109,9 +115,28 @@ class _DSDropdownState extends State<DSDropdown> {
     Overlay.of(context, rootOverlay: true).insert(_entry!);
   }
 
+  /// 关闭收敛入口：barrier 点击 / 选中条目 / 触发器再点都走这里；
+  /// 先播退场（缩小淡出）再延迟移除浮层，动效减弱时直接移除。
+  void _close() {
+    if (_closing) return;
+    _closing = true;
+    if (!mounted) return;
+    if (context.dsAnimationsDisabled) {
+      _removeEntry();
+      setState(() {});
+      return;
+    }
+    // 通知浮层重绘退场帧（tween 目标切到 0）
+    _entry?.markNeedsBuild();
+    setState(() {});
+    Future.delayed(DsMotion.fast, _removeEntry);
+  }
+
   void _removeEntry() {
-    _entry?.remove();
+    // 延迟回调触发时浮层可能已被外部移除，remove 前确认仍挂载
+    final entry = _entry;
     _entry = null;
+    if (entry != null && entry.mounted) entry.remove();
   }
 
   @override

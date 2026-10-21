@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
+import '../tokens/motion.dart';
 
 /// 手绘开关：滑块带表情（开=微笑，关=睡觉）
 ///
@@ -15,6 +16,9 @@ import '../theme/app_theme.dart';
 /// 3. 回弹到过冲的反向（位移约 94% 行程，scale 1.08×0.94）
 /// 4. 归位；轨道同步做 1.14×0.9 → 0.94×1.08 → 1 的挤压形变
 /// 5. 开启后右上方划出两条反馈短线（仅开启时播放一次）
+///
+/// [loading] 为 true 时禁用交互，滑块居中显示旋转小墨圈（≈700ms/圈）；
+/// 动效减弱时退化为静态圆。
 class DSSwitch extends StatelessWidget {
   const DSSwitch({
     super.key,
@@ -22,6 +26,7 @@ class DSSwitch extends StatelessWidget {
     required this.onChanged,
     this.activeColor,
     this.semanticLabel,
+    this.loading = false,
   });
 
   final bool value;
@@ -30,6 +35,9 @@ class DSSwitch extends StatelessWidget {
   /// 开启时轨道颜色，默认取主题辅助色（设计稿中的粉色）
   final Color? activeColor;
   final String? semanticLabel;
+
+  /// 加载态：滑块居中显示旋转小墨圈，禁用交互
+  final bool loading;
 
   /// 滑块行程：轨道宽 62 - 两侧 padding 3*2 - 滑块 30
   static const double _travel = 26;
@@ -90,7 +98,8 @@ class DSSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final trackColor = activeColor ?? theme.secondary;
-    final disabled = onChanged == null;
+    // 加载态同样禁用交互（反馈线一并隐藏）
+    final disabled = onChanged == null || loading;
 
     return Pressable(
       onPressed: disabled ? null : () => onChanged!(!value),
@@ -166,26 +175,29 @@ class DSSwitch extends StatelessWidget {
       ),
       // 裁剪到轨道圆角内：滑块过冲时顶到轨道边缘而非溢出
       clipBehavior: Clip.antiAlias,
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: _buildKnob(theme, trackColor, disabled)
-            // カチッ：滑块 squash & stretch 四段式（单个 custom 避免同名效果叠加）
-            .animate(target: value ? 1 : 0)
-            .custom(
-              duration: _toggleDuration,
-              builder: (context, t, child) {
-                final s = _knobScale.transform(t);
-                return Transform.translate(
-                  offset: Offset(_knobDx.transform(t), 0),
-                  child: Transform.scale(
-                    scaleX: s.dx,
-                    scaleY: s.dy,
-                    child: child,
+      child: loading
+          // 加载态：滑块居中（不走开关位移动画）
+          ? Center(child: _buildKnob(theme, trackColor, disabled))
+          : Align(
+              alignment: Alignment.centerLeft,
+              child: _buildKnob(theme, trackColor, disabled)
+                  // カチッ：滑块 squash & stretch 四段式（单个 custom 避免同名效果叠加）
+                  .animate(target: value ? 1 : 0)
+                  .custom(
+                    duration: _toggleDuration,
+                    builder: (context, t, child) {
+                      final s = _knobScale.transform(t);
+                      return Transform.translate(
+                        offset: Offset(_knobDx.transform(t), 0),
+                        child: Transform.scale(
+                          scaleX: s.dx,
+                          scaleY: s.dy,
+                          child: child,
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
             ),
-      ),
     );
   }
 
@@ -199,12 +211,15 @@ class DSSwitch extends StatelessWidget {
         circle: true,
         fillColor: DsColors.white,
       ),
-      child: CustomPaint(
-        painter: _SwitchFacePainter(
-          happy: value,
-          faceColor: (value ? trackColor : theme.textSub).mixBlack(0.15),
-        ),
-      ),
+      // 加载态：滑块内显示旋转小墨圈；否则显示开/关表情
+      child: loading
+          ? _LoadingInkRing(color: theme.ink)
+          : CustomPaint(
+              painter: _SwitchFacePainter(
+                happy: value,
+                faceColor: (value ? trackColor : theme.textSub).mixBlack(0.15),
+              ),
+            ),
     );
   }
 }
@@ -346,4 +361,103 @@ class _SwitchFacePainter extends CustomPainter {
   @override
   bool shouldRepaint(_SwitchFacePainter oldDelegate) =>
       oldDelegate.happy != happy || oldDelegate.faceColor != faceColor;
+}
+
+/// 加载态滑块内容：旋转的小墨圈（≈700ms 一圈，线宽 1.8）
+///
+/// 动效减弱（context.dsAnimationsDisabled）时退化为静态完整圆。
+class _LoadingInkRing extends StatefulWidget {
+  const _LoadingInkRing({required this.color});
+
+  final Color color;
+
+  @override
+  State<_LoadingInkRing> createState() => _LoadingInkRingState();
+}
+
+class _LoadingInkRingState extends State<_LoadingInkRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  /// 旋转周期（长循环动效，超出 DsMotion 过渡档位的时长）
+  static const Duration _spinDuration = Duration(milliseconds: 700);
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: _spinDuration);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 动效减弱：停表退化静态圆；恢复后自动续跑
+    if (context.dsAnimationsDisabled) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (context.dsAnimationsDisabled) {
+      return CustomPaint(
+        painter: _InkRingPainter(color: widget.color, complete: true),
+      );
+    }
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => Transform.rotate(
+        angle: _controller.value * 2 * math.pi,
+        child: CustomPaint(
+          painter: _InkRingPainter(color: widget.color, complete: false),
+        ),
+      ),
+    );
+  }
+}
+
+/// 小墨圈：带缺口的圆环弧线（旋转呈加载态），[complete] 为真时画完整圆
+class _InkRingPainter extends CustomPainter {
+  const _InkRingPainter({
+    required this.color,
+    required this.complete,
+    // ignore: unused_element_parameter
+    this.strokeWidth = 1.8,
+  });
+
+  final Color color;
+  final bool complete;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromCircle(
+      center: size.center(Offset.zero),
+      radius: size.shortestSide * 0.3,
+    );
+    canvas.drawArc(
+      rect,
+      0,
+      complete ? 2 * math.pi : math.pi * 1.4,
+      false,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..isAntiAlias = true,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_InkRingPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.complete != complete;
 }

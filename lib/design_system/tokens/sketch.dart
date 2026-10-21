@@ -637,6 +637,59 @@ class _DsSketchStickerLayer extends StatelessWidget {
   }
 }
 
+/// 波点壁纸 painter：双层规则圆点纹理（「手账贴纸」底纹）
+///
+/// 大点半径 [bigRadius]、步长 [bigStep]；小点半径 [smallRadius]、
+/// 步长 [smallStep]，相对大点网格错位 [shift]，两层叠出细密波点。
+/// 画在纸底之上、排线/内容之下（[DsSketchPanel.polka]）。
+class DsPolkaPatternPainter extends CustomPainter {
+  const DsPolkaPatternPainter({
+    required this.color,
+    this.bigRadius = 1.4,
+    this.bigStep = 28,
+    this.smallRadius = 1.0,
+    this.smallStep = 14,
+    this.shift = const Offset(7, 7),
+  });
+
+  /// 点色（透明度由调用方烘焙：浅色墨线约 0.13，深色约 0.20）
+  final Color color;
+
+  final double bigRadius;
+  final double bigStep;
+  final double smallRadius;
+  final double smallStep;
+  final Offset shift;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final big = Paint()..color = color;
+    final small = Paint()
+      ..color = color.withValues(alpha: color.a * 0.7);
+
+    for (var x = 0.0; x <= size.width; x += bigStep) {
+      for (var y = 0.0; y <= size.height; y += bigStep) {
+        canvas.drawCircle(Offset(x, y), bigRadius, big);
+      }
+    }
+    for (var x = shift.dx; x <= size.width; x += smallStep) {
+      for (var y = shift.dy; y <= size.height; y += smallStep) {
+        canvas.drawCircle(Offset(x, y), smallRadius, small);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(DsPolkaPatternPainter oldDelegate) =>
+      oldDelegate.color != color ||
+      oldDelegate.bigRadius != bigRadius ||
+      oldDelegate.bigStep != bigStep ||
+      oldDelegate.smallRadius != smallRadius ||
+      oldDelegate.smallStep != smallStep ||
+      oldDelegate.shift != shift;
+}
+
 /// 大容器手绘面板：纸底 + 淡排线 + 墨线框（内容层在排线之上）
 ///
 /// 大面积容器（卡片/对话框/浮层面板）的标准组合。
@@ -659,6 +712,8 @@ class DsSketchPanel extends StatelessWidget {
     this.seed = 1,
     this.progress,
     this.stickers = const [],
+    this.polka = false,
+    this.polkaColor,
   });
 
   final Widget? child;
@@ -690,6 +745,12 @@ class DsSketchPanel extends StatelessWidget {
 
   /// 贴纸堆：贴在边框内/外侧的装饰（图片/SVG/文字），见 [DsSketchSticker]
   final List<DsSketchSticker> stickers;
+
+  /// 波点壁纸：纸底上叠双层规则圆点（手账贴纸底纹），画在排线之下
+  final bool polka;
+
+  /// 波点颜色（null = 主题墨线低透明度，深浅模式自适应）
+  final Color? polkaColor;
 
   @override
   Widget build(BuildContext context) {
@@ -729,6 +790,13 @@ class DsSketchPanel extends StatelessWidget {
         dashedBorder: dashedStroke
             ? _DashedBorder(color: stroke ?? theme.ink, radius: radius)
             : null,
+        pattern: polka
+            ? DsPolkaPatternPainter(
+                color:
+                    polkaColor ??
+                    theme.ink.withValues(alpha: theme.isDark ? 0.20 : 0.13),
+              )
+            : null,
         child: content,
       ),
     );
@@ -756,6 +824,7 @@ class _RoughUnderlay extends StatelessWidget {
   const _RoughUnderlay({
     required this.decoration,
     this.dashedBorder,
+    this.pattern,
     this.child,
   });
 
@@ -763,6 +832,9 @@ class _RoughUnderlay extends StatelessWidget {
 
   /// 可选虚线边框（画在 rough 层之上、内容之下）
   final _DashedBorder? dashedBorder;
+
+  /// 可选底纹层（波点等，画在 rough 层之下、底色之上）
+  final CustomPainter? pattern;
 
   final Widget? child;
 
@@ -772,7 +844,7 @@ class _RoughUnderlay extends StatelessWidget {
     if (content == null) {
       // 无内容时仅描边层（尺寸由外部约束决定）
       return CustomPaint(
-        painter: _BoxPainterProxy(decoration),
+        painter: _UnderPatternPainter(pattern, _BoxPainterProxy(decoration)),
         foregroundPainter: dashedBorder == null
             ? null
             : _DashedBorderPainter(border: dashedBorder!),
@@ -780,6 +852,8 @@ class _RoughUnderlay extends StatelessWidget {
     }
     return Stack(
       children: [
+        if (pattern != null)
+          Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: pattern!))),
         Positioned.fill(
           child: IgnorePointer(
             child: CustomPaint(
@@ -871,6 +945,24 @@ class _BoxPainterProxy extends CustomPainter {
   @override
   bool shouldRepaint(_BoxPainterProxy oldDelegate) =>
       !identical(oldDelegate.decoration, decoration);
+}
+
+/// 底纹叠画：先 [pattern] 后主体（波点在墨线之下）
+class _UnderPatternPainter extends CustomPainter {
+  const _UnderPatternPainter(this.pattern, this.main);
+
+  final CustomPainter? pattern;
+  final CustomPainter main;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    pattern?.paint(canvas, size);
+    main.paint(canvas, size);
+  }
+
+  @override
+  bool shouldRepaint(_UnderPatternPainter oldDelegate) =>
+      oldDelegate.pattern != pattern || !identical(oldDelegate.main, main);
 }
 
 /// 局部墨色作用域：让某个 Wired*/自绘组件用指定描边色/标记色
