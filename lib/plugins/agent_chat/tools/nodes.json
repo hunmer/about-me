@@ -8,7 +8,7 @@
     ],
     "returns": {
       "type": "Array|Object",
-      "description": "无分页参数时返回笔记本数组；有分页参数时返回对象{items: [], total, offset, count}"
+      "description": "无分页参数时返回笔记本数组；有分页参数时返回对象{data: [], total, offset, count, hasMore}"
     },
     "examples": [
       {
@@ -17,7 +17,7 @@
       },
       {
         "title": "分页获取笔记本（前10个）",
-        "code": "const result = await Aboutme.plugins.nodes.getNotebooks({offset: 0, count: 10});\nsetResult(`共${result.total}个笔记本，返回${result.count}个：\\n${JSON.stringify(result.items, null, 2)}`);"
+        "code": "const result = await Aboutme.plugins.nodes.getNotebooks({offset: 0, count: 10});\nsetResult(`共${result.total}个笔记本，返回${result.count}个：\\n${JSON.stringify(result.data, null, 2)}`);"
       }
     ],
     "notes": "返回所有笔记本，不包含其中的节点数据。支持分页参数offset和count，未提供分页参数时返回原格式（数组）",
@@ -118,7 +118,7 @@
     ],
     "returns": {
       "type": "Array|Object",
-      "description": "无分页参数时返回节点数组；有分页参数时返回对象{items: [], total, offset, count}"
+      "description": "无分页参数时返回节点数组；有分页参数时返回对象{data: [], total, offset, count, hasMore}"
     },
     "examples": [
       {
@@ -131,7 +131,7 @@
       },
       {
         "title": "分页获取根节点（前20个）",
-        "code": "const result = await Aboutme.plugins.nodes.getNodes({notebookId: 'nb123', offset: 0, count: 20});\nsetResult(`共${result.total}个根节点，返回${result.count}个：\\n${JSON.stringify(result.items, null, 2)}`);"
+        "code": "const result = await Aboutme.plugins.nodes.getNodes({notebookId: 'nb123', offset: 0, count: 20});\nsetResult(`共${result.total}个根节点，返回${result.count}个：\\n${JSON.stringify(result.data, null, 2)}`);"
       }
     ],
     "notes": "返回扁平列表，如需树形结构请使用 getNodeTree。支持分页参数offset和count，未提供分页参数时返回原格式（数组）",

@@ -469,8 +469,9 @@ class NodesUseCase {
   // ============ 辅助方法 ============
 
   PaginationParams? _extractPagination(Map<String, dynamic> params) {
-    final offset = params['offset'] as int?;
-    final count = params['count'] as int?;
+    // JS/工具调用可能把 JSON 整数解码为 double，统一转换后再分页。
+    final offset = (params['offset'] as num?)?.toInt();
+    final count = (params['count'] as num?)?.toInt();
 
     if (offset == null && count == null) return null;
 

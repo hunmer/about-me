@@ -46,8 +46,8 @@ Future<String> _jsGetNotebooks(Map<String, dynamic> params) async {
   final data = result.dataOrNull ?? [];
 
   // 如果是分页结果,需要添加 nodeCount 字段
-  if (data is Map && data.containsKey('items')) {
-    final items = data['items'] as List;
+  if (data is Map && data.containsKey('data')) {
+    final items = data['data'] as List;
     final enrichedItems =
         items.map((item) {
           final notebookJson = Map<String, dynamic>.from(item);
@@ -57,7 +57,7 @@ Future<String> _jsGetNotebooks(Map<String, dynamic> params) async {
           return notebookJson;
         }).toList();
 
-    return jsonEncode({...data, 'items': enrichedItems});
+    return jsonEncode({...data, 'data': enrichedItems});
   }
 
   // 如果是普通列表
@@ -189,7 +189,11 @@ Future<String> _jsGetNodes(Map<String, dynamic> params) async {
   // 可选参数
   final String? parentId = params['parentId'];
 
-  final result = await NodesPlugin.instance.useCase.getNodes({'notebookId': notebookId});
+  final result = await NodesPlugin.instance.useCase.getNodes({
+    'notebookId': notebookId,
+    'offset': params['offset'],
+    'count': params['count'],
+  });
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message ?? '未知错误'});
@@ -198,15 +202,15 @@ Future<String> _jsGetNodes(Map<String, dynamic> params) async {
   final data = result.dataOrNull ?? [];
 
   // 如果是分页结果
-  if (data is Map && data.containsKey('items')) {
-    var items = data['items'] as List;
+  if (data is Map && data.containsKey('data')) {
+    var items = data['data'] as List;
 
     // 如果指定了 parentId,需要过滤子节点
     if (parentId != null && parentId.isNotEmpty) {
       items = items.where((node) => node['parentId'] == parentId).toList();
     }
 
-    return jsonEncode({...data, 'items': items});
+    return jsonEncode({...data, 'data': items});
   }
 
   // 如果是普通列表
