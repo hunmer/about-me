@@ -274,6 +274,20 @@ class WidgetsGalleryScreen extends StatelessWidget {
             subtitle: 'LuckyWheel（极简轻奢表盘 + 棘轮音效 + 金粉粒子）',
             route: '/widgets_gallery/lucky_wheel',
           ),
+          _buildListItem(
+            context,
+            icon: Icons.graphic_eq,
+            title: 'Siri 流光语音助手',
+            subtitle: 'SiriVoiceAssistantCard（流光丝带 + 地平线透镜弧光）',
+            route: '/widgets_gallery/siri_voice_assistant_orb',
+          ),
+          _buildListItem(
+            context,
+            icon: Icons.music_note,
+            title: '音频与识曲 UI 复刻',
+            subtitle: 'AudioUiReplicaDemoPage（Shazam 灵动岛胶囊 + 深色语音卡片）',
+            route: '/widgets_gallery/audio_ui_replica',
+          ),
         ],
       ),
     );

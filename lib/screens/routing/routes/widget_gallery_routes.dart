@@ -120,6 +120,8 @@ import 'package:aboutme/screens/widgets_gallery/screens/vertical_bar_chart_widge
 import 'package:aboutme/screens/widgets_gallery/screens/task_list_stat_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/swatch_camera_frame_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/personality_carousel_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/siri_voice_assistant_orb_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/audio_ui_replica_example.dart';
 
 /// 组件展示路由注册表
 class WidgetGalleryRoutes implements RouteRegistry {
@@ -1093,6 +1095,22 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '时计幸运转盘（棘轮音效 + 金粉粒子 + 擒纵指针物理）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/siri_voice_assistant_orb',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SiriVoiceAssistantOrbExample(),
+        settings: settings,
+      ),
+      description: 'Siri 流光语音助手卡片（多层流光丝带 + 地平线透镜弧光）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/audio_ui_replica',
+      handler: (settings) => RouteHelpers.createRoute(
+        const AudioUiReplicaExample(),
+        settings: settings,
+      ),
+      description: '音频与识曲 UI 1:1 复刻（Shazam 灵动岛胶囊 + 深色语音卡片）',
     ),
   ];
 }

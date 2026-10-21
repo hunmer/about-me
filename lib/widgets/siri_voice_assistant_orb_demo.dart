@@ -59,6 +59,7 @@ class _SiriVoiceAssistantCardState extends State<SiriVoiceAssistantCard>
   @override
   void dispose() {
     _ticker.dispose();
+    _orbState.dispose();
     _keyboardController.dispose();
     _keyboardFocus.dispose();
     super.dispose();
@@ -99,6 +100,7 @@ class _SiriVoiceAssistantCardState extends State<SiriVoiceAssistantCard>
     s.ribbonMix += (s.targetRibbonMix - s.ribbonMix) * 0.08;
     s.pulseBoost *= 0.91;
     s.time += 0.016 + s.energy * 0.014;
+    s.tick();
   }
 
   void _setMode(SiriOrbMode mode, [String? prompt]) {
@@ -511,13 +513,15 @@ class _CornerButtonState extends State<_CornerButton> {
 }
 
 /// 流光球渲染状态（由外部 Ticker 驱动，Painter 只读）
-class _OrbRenderState {
+class _OrbRenderState extends ChangeNotifier {
   double time = 0;
   double energy = 0.52;
   double targetEnergy = 0.52;
   double ribbonMix = 1.0;
   double targetRibbonMix = 1.0;
   double pulseBoost = 0;
+
+  void tick() => notifyListeners();
 }
 
 class _RibbonSpec {
@@ -591,7 +595,7 @@ class _SiriOrbPainter extends CustomPainter {
   /// 画布边长 162，球体半径 67，四周留 14px 给环境辉光
   static const _glowPadding = 14.0;
 
-  _SiriOrbPainter(this.s);
+  _SiriOrbPainter(this.s) : super(repaint: s);
 
   @override
   void paint(Canvas canvas, Size size) {
