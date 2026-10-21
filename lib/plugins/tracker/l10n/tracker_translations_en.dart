@@ -49,6 +49,7 @@ class TrackerTranslationsEn {
     'tracker_timerTitle': 'Timer - @goalName',
     'tracker_quickRecordTitle': 'Quick Record - @goalName',
     'tracker_recordTitle': 'Record @goalName',
+    'tracker_time': 'Time',
     'tracker_calculateDifference': 'Calculate Difference',
     'tracker_confirm': 'Confirm',
     'tracker_confirmClear': 'Confirm Clear',

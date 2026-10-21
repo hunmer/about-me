@@ -13,16 +13,19 @@ class AudioUiReplicaDemoPage extends StatefulWidget {
   State<AudioUiReplicaDemoPage> createState() => _AudioUiReplicaDemoPageState();
 }
 
+/// 语音卡片默认波形（70 根音柱高度），chat 音频消息复用同一份
+const audioUiWaveHeights = [
+  8, 10, 7, 9, 13, 15, 13, 11, 9, 8, //
+  8, 9, 11, 13, 15, 19, 17, 23, 25, 19,
+  17, 21, 17, 13, 11, 9, 15, 17, 13, 11,
+  9, 11, 9, 7, 7, 7, 7, 7, 7, 7,
+  7, 7, 7, 9, 7, 9, 13, 15, 17, 15,
+  11, 9, 11, 15, 19, 21, 17, 21, 25, 17,
+  13, 11, 9, 15, 13, 17, 15, 13, 11, 7,
+];
+
 class _AudioUiReplicaDemoPageState extends State<AudioUiReplicaDemoPage> {
-  static const waveHeights = [
-    8, 10, 7, 9, 13, 15, 13, 11, 9, 8, //
-    8, 9, 11, 13, 15, 19, 17, 23, 25, 19,
-    17, 21, 17, 13, 11, 9, 15, 17, 13, 11,
-    9, 11, 9, 7, 7, 7, 7, 7, 7, 7,
-    7, 7, 7, 9, 7, 9, 13, 15, 17, 15,
-    11, 9, 11, 15, 19, 21, 17, 21, 25, 17,
-    13, 11, 9, 15, 13, 17, 15, 13, 11, 7,
-  ];
+  static const waveHeights = audioUiWaveHeights;
 
   bool _animatedMode = true;
 
@@ -433,8 +436,12 @@ class _AudioUiReplicaDemoPageState extends State<AudioUiReplicaDemoPage> {
                 constraints: const BoxConstraints(maxWidth: 436),
                 child: Column(
                   children: [
-                    _VoiceCard(
-                      state: _players[0],
+                    VoiceMemoCard(
+                      title: 'Nick Smith',
+                      subtitle: 'Unit ABCD-1234 charging issue',
+                      progress: _players[0].progress,
+                      showPause: _players[0].showPause,
+                      bookmarked: _players[0].bookmarked,
                       onTogglePlay: () => _togglePlay(0),
                       onToggleBookmark: () => setState(() => _players[0].bookmarked = !_players[0].bookmarked),
                       onSeek: (p) => setState(() => _players[0].progress = p),
@@ -453,8 +460,12 @@ class _AudioUiReplicaDemoPageState extends State<AudioUiReplicaDemoPage> {
                         ),
                       ),
                     ),
-                    _VoiceCard(
-                      state: _players[1],
+                    VoiceMemoCard(
+                      title: 'Nick Smith',
+                      subtitle: 'Unit ABCD-1234 charging issue',
+                      progress: _players[1].progress,
+                      showPause: _players[1].showPause,
+                      bookmarked: _players[1].bookmarked,
                       onTogglePlay: () => _togglePlay(1),
                       onToggleBookmark: () => setState(() => _players[1].bookmarked = !_players[1].bookmarked),
                       onSeek: (p) => setState(() => _players[1].progress = p),
@@ -808,26 +819,51 @@ class _ShazamLogoPainter extends CustomPainter {
 // 组件二：深色语音备忘录卡片
 // ============================================================================
 
-class _VoiceCard extends StatelessWidget {
-  final _PlayerState state;
-  final VoidCallback onTogglePlay;
-  final VoidCallback onToggleBookmark;
-  final ValueChanged<int> onSeek;
+/// 深色语音备忘录卡片（demo 与 chat 音频消息共用）
+class VoiceMemoCard extends StatelessWidget {
+  /// 标题行左侧灰字（如发送者名）
+  final String title;
 
-  const _VoiceCard({
-    required this.state,
-    required this.onTogglePlay,
-    required this.onToggleBookmark,
-    required this.onSeek,
+  /// 标题行白色描述；null 时只显示 title
+  final String? subtitle;
+
+  /// 波形每根音柱高度
+  final List<int> waveHeights;
+
+  /// 已播放的音柱根数（0 ~ waveHeights.length）
+  final int progress;
+
+  /// true 显示暂停图标（播放中），false 显示播放图标
+  final bool showPause;
+
+  final bool bookmarked;
+
+  final VoidCallback? onTogglePlay;
+
+  /// null 时隐藏书签按钮
+  final VoidCallback? onToggleBookmark;
+
+  /// 点击波形按根数跳转
+  final ValueChanged<int>? onSeek;
+
+  const VoiceMemoCard({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.waveHeights = audioUiWaveHeights,
+    required this.progress,
+    required this.showPause,
+    this.bookmarked = false,
+    this.onTogglePlay,
+    this.onToggleBookmark,
+    this.onSeek,
   });
-
-  static const _waveHeights = _AudioUiReplicaDemoPageState.waveHeights;
 
   void _handleSeek(TapDownDetails details, BuildContext context) {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null) return;
     final ratio = (details.localPosition.dx / box.size.width).clamp(0.0, 1.0);
-    onSeek((ratio * _waveHeights.length).round());
+    onSeek?.call((ratio * waveHeights.length).round());
   }
 
   @override
@@ -845,57 +881,68 @@ class _VoiceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Text('Nick Smith', style: TextStyle(fontSize: 14.5, color: Color(0xFF98989D))),
-              SizedBox(width: 9),
-              Expanded(
-                child: Text(
-                  'Unit ABCD-1234 charging issue',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 14.5, color: Color(0xFFF2F2F7)),
+              Text(title, style: const TextStyle(fontSize: 14.5, color: Color(0xFF98989D))),
+              if (subtitle != null) ...[
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    subtitle!,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14.5, color: Color(0xFFF2F2F7)),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
           const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
-                child: Builder(
-                  builder: (waveContext) => GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTapDown: (d) => _handleSeek(d, waveContext),
-                    child: SizedBox(
-                      height: 28,
-                      child: Row(
-                        children: [
-                          for (var i = 0; i < _waveHeights.length; i++) ...[
-                            if (i > 0) const SizedBox(width: 2.2),
-                            Container(
-                              width: 2,
-                              height: _waveHeights[i].toDouble(),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(999),
-                                color: i < state.progress ? Colors.white : const Color(0xFF6E6E73),
+                child: LayoutBuilder(
+                  builder: (waveContext, constraints) {
+                    // 自然宽度 = 70 * 2 + 69 * 2.2，窄屏时等比缩小防止溢出
+                    final naturalWidth = waveHeights.length * 2.0 + (waveHeights.length - 1) * 2.2;
+                    final scale = constraints.maxWidth >= naturalWidth
+                        ? 1.0
+                        : constraints.maxWidth / naturalWidth;
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: onSeek == null ? null : (d) => _handleSeek(d, waveContext),
+                      child: SizedBox(
+                        height: 28,
+                        child: Row(
+                          children: [
+                            for (var i = 0; i < waveHeights.length; i++) ...[
+                              if (i > 0) SizedBox(width: 2.2 * scale),
+                              Container(
+                                width: 2 * scale,
+                                height: waveHeights[i].toDouble(),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(999),
+                                  color: i < progress ? Colors.white : const Color(0xFF6E6E73),
+                                ),
                               ),
-                            ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
+                    );
+                  },
+                ),
+              ),
+              if (onToggleBookmark != null) ...[
+                const SizedBox(width: 16),
+                GestureDetector(
+                  onTap: onToggleBookmark,
+                  child: Icon(
+                    bookmarked ? Icons.bookmark : Icons.bookmark_border,
+                    size: 18,
+                    color: Colors.white.withOpacity(0.95),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              GestureDetector(
-                onTap: onToggleBookmark,
-                child: Icon(
-                  state.bookmarked ? Icons.bookmark : Icons.bookmark_border,
-                  size: 18,
-                  color: Colors.white.withOpacity(0.95),
-                ),
-              ),
+              ],
               const SizedBox(width: 18),
               GestureDetector(
                 onTap: onTogglePlay,
@@ -903,7 +950,7 @@ class _VoiceCard extends StatelessWidget {
                   width: 20,
                   height: 20,
                   child: Icon(
-                    state.showPause ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    showPause ? Icons.pause_rounded : Icons.play_arrow_rounded,
                     size: 20,
                     color: Colors.white,
                   ),

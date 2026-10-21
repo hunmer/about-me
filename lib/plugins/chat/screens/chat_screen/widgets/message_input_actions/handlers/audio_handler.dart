@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
@@ -26,7 +27,7 @@ Future<void> handleAudioRecording({
     barrierDismissible: false,
     builder:
         (dialogContext) => RecordAudioDialog(
-          onStopBytes: (bytes, fileName, duration) async {
+          onStopBytes: (bytes, fileName, duration, amplitudes) async {
             try {
               final storagePath = await fileService.saveAudioBytes(
                 bytes,
@@ -38,6 +39,7 @@ Future<void> handleAudioRecording({
                 fileName: fileName,
                 size: bytes.length,
                 duration: duration,
+                amplitudes: amplitudes,
               );
               onFileSelected?.call(metadata);
               toastService.showToast(
@@ -48,7 +50,7 @@ Future<void> handleAudioRecording({
               toastService.showToast('${'chat_recordingFailed'.tr}: $e');
             }
           },
-          onStop: (File audioFile, Duration duration) async {
+          onStop: (File audioFile, Duration duration, List<double> amplitudes) async {
             try {
               debugPrint(
                 '音频录制完成: ${audioFile.path}, 时长: ${duration.inSeconds}秒',
@@ -74,6 +76,7 @@ Future<void> handleAudioRecording({
                 fileName: originalFileName,
                 size: fileMessage.fileSize,
                 duration: duration,
+                amplitudes: amplitudes,
               );
 
               // 调用回调函数
@@ -98,10 +101,12 @@ Map<String, dynamic> _buildAudioMetadata(
   required String fileName,
   required int size,
   required Duration duration,
+  List<double> amplitudes = const [],
 }) {
   final extension = path.extension(fileName).isEmpty
       ? '.webm'
       : path.extension(fileName);
+  final waveform = _buildWaveform(amplitudes);
   return {
     'fileInfo': {
       'id': const Uuid().v4(),
@@ -114,6 +119,7 @@ Map<String, dynamic> _buildAudioMetadata(
       'type': 'audio',
       'isAudio': true,
       'duration': duration.inSeconds,
+      if (waveform.isNotEmpty) 'waveform': waveform,
       'createdAt': DateTime.now().toIso8601String(),
     },
     'senderInfo': {
@@ -121,4 +127,22 @@ Map<String, dynamic> _buildAudioMetadata(
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     },
   };
+}
+
+/// 振幅采样（dBFS，约 -45 静音 ~ 0 最响）重采样为固定根数的波形高度（7~25），
+/// 与深色语音卡片的默认波形高度范围一致
+List<int> _buildWaveform(List<double> amplitudes, {int bars = 70}) {
+  if (amplitudes.isEmpty) return const [];
+  // 按时间均分到各桶，取桶内最大响度
+  final peaks = List<double>.filled(bars, -45.0);
+  for (var i = 0; i < amplitudes.length; i++) {
+    final b = (i * bars / amplitudes.length).floor().clamp(0, bars - 1);
+    if (amplitudes[i] > peaks[b]) peaks[b] = amplitudes[i];
+  }
+  final norms = peaks.map((db) => (((db + 45) / 45).clamp(0.0, 1.0))).toList();
+  final peak = norms.reduce(math.max);
+  // 相对峰值归一化 + 幂次压低弱音，让波形层次接近 demo 观感
+  return norms
+      .map((v) => (7 + 18 * math.pow(peak > 0 ? v / peak : 0.0, 1.4)).round())
+      .toList();
 }

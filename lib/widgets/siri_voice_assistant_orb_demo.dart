@@ -27,47 +27,140 @@ class SiriVoiceAssistantOrbDemo extends StatelessWidget {
   }
 }
 
-class SiriVoiceAssistantCard extends StatefulWidget {
-  const SiriVoiceAssistantCard({super.key});
+/// 卡片自定义动作按钮（图标 + 文案，自动换行排列，支持任意数量）
+class SiriOrbAction {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
 
-  @override
-  State<SiriVoiceAssistantCard> createState() => _SiriVoiceAssistantCardState();
+  /// 主按钮高亮样式（如"确认"）
+  final bool highlighted;
+
+  const SiriOrbAction({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.highlighted = false,
+  });
 }
 
-class _SiriVoiceAssistantCardState extends State<SiriVoiceAssistantCard>
-    with SingleTickerProviderStateMixin {
-  static const _defaultPrompt =
-      'Sorry, something went wrong. Please try again in a moment.';
+/// 卡片四角圆形按钮
+class SiriOrbCorner {
+  final Widget child;
+  final String tooltip;
+  final VoidCallback onTap;
 
+  const SiriOrbCorner({
+    required this.child,
+    required this.tooltip,
+    required this.onTap,
+  });
+}
+
+/// 键盘抽屉输入配置（传入后卡片右下角自动出现键盘切换按钮）
+class SiriOrbInput {
+  final TextEditingController controller;
+  final FocusNode? focusNode;
+  final String hint;
+  final TextInputType keyboard;
+  final ValueChanged<String> onSubmitted;
+
+  const SiriOrbInput({
+    required this.controller,
+    required this.hint,
+    required this.onSubmitted,
+    this.focusNode,
+    this.keyboard = TextInputType.text,
+  });
+}
+
+/// 供外部控制卡片：打开/收起抽屉、触发脉冲动画
+class SiriOrbCardController {
+  _SiriOrbCardState? _state;
+
+  void openInput() => _state?._setInputOpen(true);
+  void closeInput() => _state?._setInputOpen(false);
+  void pulse() => _state?._orbState.pulseBoost = 1.0;
+
+  void _attach(_SiriOrbCardState state) => _state = state;
+
+  void _detach(_SiriOrbCardState state) {
+    if (_state == state) _state = null;
+  }
+}
+
+/// 通用 Siri 流光球卡片：
+/// 黑色悬浮卡片 + 中央流光录音球 + 四角按钮 + 任意数量动作按钮 + 键盘抽屉
+class SiriOrbCard extends StatefulWidget {
+  /// 提示文案（\n 换行）
+  final String prompt;
+
+  /// 流光动画模式
+  final SiriOrbMode mode;
+
+  /// 自定义动作按钮（任意数量，自动换行，显示在提示文案与流光球之间）
+  final List<SiriOrbAction> actions;
+
+  /// 左上 / 右上 / 左下角按钮（右下角在配置 [input] 时固定为键盘切换）
+  final SiriOrbCorner? topLeft;
+  final SiriOrbCorner? topRight;
+  final SiriOrbCorner? bottomLeft;
+
+  /// 键盘抽屉输入配置
+  final SiriOrbInput? input;
+
+  /// 流光球点击回调；null 时仅播放脉冲动画
+  final VoidCallback? onOrbTap;
+
+  /// 外部控制器（打开抽屉 / 触发脉冲）
+  final SiriOrbCardController? controller;
+
+  final double width;
+  final double height;
+
+  const SiriOrbCard({
+    super.key,
+    required this.prompt,
+    this.mode = SiriOrbMode.siriListen,
+    this.actions = const [],
+    this.topLeft,
+    this.topRight,
+    this.bottomLeft,
+    this.input,
+    this.onOrbTap,
+    this.controller,
+    this.width = 500,
+    this.height = 360,
+  });
+
+  @override
+  State<SiriOrbCard> createState() => _SiriOrbCardState();
+}
+
+class _SiriOrbCardState extends State<SiriOrbCard>
+    with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
   final _orbState = _OrbRenderState();
-  final _keyboardController = TextEditingController();
-  final _keyboardFocus = FocusNode();
-
-  SiriOrbMode _mode = SiriOrbMode.siriListen;
-  String _promptText = _defaultPrompt;
-  bool _expanded = false;
-  bool _muted = false;
-  bool _keyboardOpen = false;
+  bool _inputOpen = false;
 
   @override
   void initState() {
     super.initState();
     _ticker = createTicker((_) => _tick())..start();
+    widget.controller?._attach(this);
   }
 
   @override
   void dispose() {
+    widget.controller?._detach(this);
     _ticker.dispose();
     _orbState.dispose();
-    _keyboardController.dispose();
-    _keyboardFocus.dispose();
     super.dispose();
   }
 
   void _tick() {
     final s = _orbState;
-    switch (_mode) {
+    switch (widget.mode) {
       case SiriOrbMode.siriListen:
         s.targetEnergy = 0.42 +
             0.22 * math.sin(s.time * 2.1) +
@@ -103,16 +196,263 @@ class _SiriVoiceAssistantCardState extends State<SiriVoiceAssistantCard>
     s.tick();
   }
 
+  void _setInputOpen(bool open) {
+    setState(() => _inputOpen = open);
+    final focus = widget.input?.focusNode;
+    if (open && focus != null) {
+      Future.delayed(const Duration(milliseconds: 120), focus.requestFocus);
+    }
+  }
+
+  void _handleOrbTap() {
+    _orbState.pulseBoost = 1.0;
+    widget.onOrbTap?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxW = MediaQuery.of(context).size.width - 32;
+    final width = math.min(widget.width, maxW);
+    final input = widget.input;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 450),
+      curve: const Cubic(0.22, 1, 0.36, 1),
+      width: width,
+      height: widget.height,
+      decoration: BoxDecoration(
+        color: const Color(0xFF020202),
+        borderRadius: BorderRadius.circular(44),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.42),
+            blurRadius: 72,
+            offset: const Offset(0, 34),
+            spreadRadius: -8,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.28),
+            blurRadius: 36,
+            offset: const Offset(0, 16),
+            spreadRadius: -6,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.16),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(44),
+        child: Stack(
+          children: [
+            // 提示文案
+            Positioned(
+              top: 84,
+              left: 38,
+              right: 42,
+              child: IgnorePointer(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Text(
+                    widget.prompt,
+                    key: ValueKey(widget.prompt),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 21.5,
+                      fontWeight: FontWeight.w400,
+                      height: 1.36,
+                      letterSpacing: -0.26,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // 四角按钮（右下角在启用抽屉输入时固定为键盘切换）
+            if (widget.topLeft != null)
+              Positioned(
+                top: 22,
+                left: 22,
+                child: _CornerButton(
+                  onTap: widget.topLeft!.onTap,
+                  tooltip: widget.topLeft!.tooltip,
+                  child: widget.topLeft!.child,
+                ),
+              ),
+            if (widget.topRight != null)
+              Positioned(
+                top: 22,
+                right: 22,
+                child: _CornerButton(
+                  onTap: widget.topRight!.onTap,
+                  tooltip: widget.topRight!.tooltip,
+                  child: widget.topRight!.child,
+                ),
+              ),
+            if (widget.bottomLeft != null)
+              Positioned(
+                bottom: 22,
+                left: 22,
+                child: _CornerButton(
+                  onTap: widget.bottomLeft!.onTap,
+                  tooltip: widget.bottomLeft!.tooltip,
+                  child: widget.bottomLeft!.child,
+                ),
+              ),
+            if (input != null)
+              Positioned(
+                bottom: 22,
+                right: 22,
+                child: _CornerButton(
+                  onTap: () => _setInputOpen(!_inputOpen),
+                  tooltip: '键盘输入',
+                  child: const Icon(Icons.keyboard,
+                      color: Colors.white, size: 22),
+                ),
+              ),
+            // 自定义动作按钮行（任意数量，自动换行）
+            if (widget.actions.isNotEmpty)
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: 197,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final action in widget.actions)
+                      _ActionButton(action: action),
+                  ],
+                ),
+              ),
+            // 中央录音球
+            Positioned(
+              bottom: 21,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: GestureDetector(
+                  onTap: _handleOrbTap,
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      size: const Size(162, 162),
+                      painter: _SiriOrbPainter(_orbState),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // 键盘输入抽屉
+            if (input != null)
+              Positioned(
+                bottom: 22,
+                left: 78,
+                right: 78,
+                child: IgnorePointer(
+                  ignoring: !_inputOpen,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 280),
+                    curve: const Cubic(0.22, 1, 0.36, 1),
+                    opacity: _inputOpen ? 1 : 0,
+                    child: AnimatedSlide(
+                      duration: const Duration(milliseconds: 280),
+                      curve: const Cubic(0.22, 1, 0.36, 1),
+                      offset:
+                          _inputOpen ? Offset.zero : const Offset(0, 0.25),
+                      child: AnimatedScale(
+                        duration: const Duration(milliseconds: 280),
+                        curve: const Cubic(0.22, 1, 0.36, 1),
+                        scale: _inputOpen ? 1 : 0.96,
+                        child: Container(
+                          height: 44,
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xEB212123),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.1)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.5),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: TextField(
+                            controller: input.controller,
+                            focusNode: input.focusNode,
+                            keyboardType: input.keyboard,
+                            onSubmitted: input.onSubmitted,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14),
+                            cursorColor: Colors.white70,
+                            decoration: InputDecoration(
+                              isCollapsed: true,
+                              border: InputBorder.none,
+                              hintText: input.hint,
+                              hintStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.42),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 演示用完整卡片：通用卡片 + 底部模式切换 dock
+class SiriVoiceAssistantCard extends StatefulWidget {
+  const SiriVoiceAssistantCard({super.key});
+
+  @override
+  State<SiriVoiceAssistantCard> createState() =>
+      _SiriVoiceAssistantCardState();
+}
+
+class _SiriVoiceAssistantCardState extends State<SiriVoiceAssistantCard> {
+  static const _defaultPrompt =
+      'Sorry, something went wrong. Please try again in a moment.';
+
+  final _orbController = SiriOrbCardController();
+  final _keyboardController = TextEditingController();
+  final _keyboardFocus = FocusNode();
+
+  SiriOrbMode _mode = SiriOrbMode.siriListen;
+  String _promptText = _defaultPrompt;
+  bool _expanded = false;
+  bool _muted = false;
+
+  @override
+  void dispose() {
+    _keyboardController.dispose();
+    _keyboardFocus.dispose();
+    super.dispose();
+  }
+
   void _setMode(SiriOrbMode mode, [String? prompt]) {
     setState(() {
       _mode = mode;
-      _orbState.pulseBoost = 0.65;
       if (prompt != null) _promptText = prompt;
     });
+    _orbController.pulse();
   }
 
   void _onOrbTap() {
-    _orbState.pulseBoost = 1.0;
     if (_mode == SiriOrbMode.siriListen) {
       _setMode(SiriOrbMode.speaking,
           'I’m listening closely. Go ahead whenever you’re ready.');
@@ -124,11 +464,10 @@ class _SiriVoiceAssistantCardState extends State<SiriVoiceAssistantCard>
   void _onClose() {
     setState(() {
       _expanded = false;
-      _keyboardOpen = false;
       _promptText = _defaultPrompt;
       _mode = SiriOrbMode.siriListen;
-      _orbState.pulseBoost = 0.65;
     });
+    _orbController.pulse();
   }
 
   void _onKeyboardSubmit(String value) {
@@ -136,210 +475,53 @@ class _SiriVoiceAssistantCardState extends State<SiriVoiceAssistantCard>
     if (v.isEmpty) return;
     _keyboardController.clear();
     _setMode(SiriOrbMode.speaking, v);
-    _orbState.pulseBoost = 1.1;
-    setState(() => _keyboardOpen = false);
+    _orbController.closeInput();
   }
 
   @override
   Widget build(BuildContext context) {
-    final maxW = MediaQuery.of(context).size.width - 32;
-    final width = math.min(_expanded ? 580.0 : 500.0, maxW);
-    final height = _expanded ? 430.0 : 360.0;
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 450),
-          curve: const Cubic(0.22, 1, 0.36, 1),
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: const Color(0xFF020202),
-            borderRadius: BorderRadius.circular(44),
-            border: Border.all(color: Colors.white.withOpacity(0.06)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.42),
-                blurRadius: 72,
-                offset: const Offset(0, 34),
-                spreadRadius: -8,
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.28),
-                blurRadius: 36,
-                offset: const Offset(0, 16),
-                spreadRadius: -6,
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.16),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+        SiriOrbCard(
+          controller: _orbController,
+          mode: _mode,
+          prompt: _promptText,
+          width: _expanded ? 580.0 : 500.0,
+          height: _expanded ? 430.0 : 360.0,
+          topLeft: SiriOrbCorner(
+            onTap: _onClose,
+            tooltip: 'Reset / Close',
+            child: const Icon(Icons.close,
+                color: Colors.white, size: 18),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(44),
-            child: Stack(
-              children: [
-                // 提示文案
-                Positioned(
-                  top: 86,
-                  left: 38,
-                  right: 42,
-                  child: IgnorePointer(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: Text(
-                        _promptText,
-                        key: ValueKey(_promptText),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 21.5,
-                          fontWeight: FontWeight.w400,
-                          height: 1.36,
-                          letterSpacing: -0.26,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // 四角按钮
-                Positioned(
-                  top: 22,
-                  left: 22,
-                  child: _CornerButton(
-                    onTap: _onClose,
-                    tooltip: 'Reset / Close',
-                    child: const Icon(Icons.close,
-                        color: Colors.white, size: 18),
-                  ),
-                ),
-                Positioned(
-                  top: 22,
-                  right: 22,
-                  child: _CornerButton(
-                    onTap: () => setState(() => _expanded = !_expanded),
-                    tooltip: 'Expand / Collapse',
-                    child: Icon(
-                      _expanded ? Icons.close_fullscreen : Icons.open_in_full,
-                      color: Colors.white,
-                      size: 17,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 22,
-                  left: 22,
-                  child: _CornerButton(
-                    onTap: () => setState(() => _muted = !_muted),
-                    tooltip: 'Toggle Audio Feedback',
-                    child: Icon(
-                      _muted ? Icons.volume_off : Icons.volume_up,
-                      color: _muted
-                          ? Colors.white.withOpacity(0.65)
-                          : Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 22,
-                  right: 22,
-                  child: _CornerButton(
-                    onTap: () {
-                      setState(() => _keyboardOpen = !_keyboardOpen);
-                      if (_keyboardOpen) {
-                        Future.delayed(const Duration(milliseconds: 120),
-                            _keyboardFocus.requestFocus);
-                      }
-                    },
-                    tooltip: 'Type to Assistant',
-                    child: const Icon(Icons.keyboard,
-                        color: Colors.white, size: 22),
-                  ),
-                ),
-                // 中央录音球
-                Positioned(
-                  bottom: 21,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: _onOrbTap,
-                      child: RepaintBoundary(
-                        child: CustomPaint(
-                          size: const Size(162, 162),
-                          painter: _SiriOrbPainter(_orbState),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // 键盘输入抽屉
-                Positioned(
-                  bottom: 22,
-                  left: 78,
-                  right: 78,
-                  child: IgnorePointer(
-                    ignoring: !_keyboardOpen,
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 280),
-                      curve: const Cubic(0.22, 1, 0.36, 1),
-                      opacity: _keyboardOpen ? 1 : 0,
-                      child: AnimatedSlide(
-                        duration: const Duration(milliseconds: 280),
-                        curve: const Cubic(0.22, 1, 0.36, 1),
-                        offset:
-                            _keyboardOpen ? Offset.zero : const Offset(0, 0.25),
-                        child: AnimatedScale(
-                          duration: const Duration(milliseconds: 280),
-                          curve: const Cubic(0.22, 1, 0.36, 1),
-                          scale: _keyboardOpen ? 1 : 0.96,
-                          child: Container(
-                            height: 44,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xEB212123),
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(
-                                  color: Colors.white.withOpacity(0.1)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.5),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            alignment: Alignment.center,
-                            child: TextField(
-                              controller: _keyboardController,
-                              focusNode: _keyboardFocus,
-                              onSubmitted: _onKeyboardSubmit,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 14),
-                              cursorColor: Colors.white70,
-                              decoration: InputDecoration(
-                                isCollapsed: true,
-                                border: InputBorder.none,
-                                hintText: 'Ask anything or type a message...',
-                                hintStyle: TextStyle(
-                                  color: Colors.white.withOpacity(0.42),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+          topRight: SiriOrbCorner(
+            onTap: () => setState(() => _expanded = !_expanded),
+            tooltip: 'Expand / Collapse',
+            child: Icon(
+              _expanded ? Icons.close_fullscreen : Icons.open_in_full,
+              color: Colors.white,
+              size: 17,
             ),
           ),
+          bottomLeft: SiriOrbCorner(
+            onTap: () => setState(() => _muted = !_muted),
+            tooltip: 'Toggle Audio Feedback',
+            child: Icon(
+              _muted ? Icons.volume_off : Icons.volume_up,
+              color: _muted
+                  ? Colors.white.withOpacity(0.65)
+                  : Colors.white,
+              size: 20,
+            ),
+          ),
+          input: SiriOrbInput(
+            controller: _keyboardController,
+            focusNode: _keyboardFocus,
+            hint: 'Ask anything or type a message...',
+            onSubmitted: _onKeyboardSubmit,
+          ),
+          onOrbTap: _onOrbTap,
         ),
         const SizedBox(height: 46),
         // 底部模式切换控制条
@@ -505,6 +687,81 @@ class _CornerButtonState extends State<_CornerButton> {
             ),
             alignment: Alignment.center,
             child: widget.child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 动作按钮：图标 + 文案的玻璃胶囊，highlighted 时为亮色主按钮样式
+class _ActionButton extends StatefulWidget {
+  final SiriOrbAction action;
+
+  const _ActionButton({required this.action});
+
+  @override
+  State<_ActionButton> createState() => _ActionButtonState();
+}
+
+class _ActionButtonState extends State<_ActionButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final highlighted = widget.action.highlighted;
+    return GestureDetector(
+      onTap: widget.action.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 180),
+        curve: const Cubic(0.34, 1.56, 0.64, 1),
+        scale: _pressed ? 0.94 : 1,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            color: highlighted
+                ? const Color(0xFFF5F5F7)
+                : const Color(0xE6212122),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: highlighted
+                  ? Colors.white24
+                  : Colors.white.withOpacity(0.08),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: highlighted
+                    ? Colors.white.withOpacity(0.22)
+                    : Colors.black.withOpacity(0.4),
+                blurRadius: highlighted ? 20 : 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                widget.action.icon,
+                size: 16,
+                color: highlighted ? const Color(0xFF111113) : Colors.white,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                widget.action.label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: highlighted
+                      ? const Color(0xFF111113)
+                      : Colors.white.withOpacity(0.92),
+                ),
+              ),
+            ],
           ),
         ),
       ),

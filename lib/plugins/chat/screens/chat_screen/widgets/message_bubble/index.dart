@@ -238,6 +238,20 @@ class _MessageBubbleState extends State<MessageBubble>
     return fileInfo['type'] == 'image' || fileInfo['type'] == 'video';
   }
 
+  bool _isAudioMessage() {
+    final metadata = _currentMessage.metadata;
+    if (metadata == null ||
+        !metadata.containsKey(Message.metadataKeyFileInfo)) {
+      return false;
+    }
+    final fileInfo =
+        metadata[Message.metadataKeyFileInfo] as Map<String, dynamic>;
+    return fileInfo['type'] == 'audio';
+  }
+
+  /// 自带卡片外观的消息（图片/音频），气泡不加底色与描边
+  bool get _isBareBubble => _isImageMessage() || _isAudioMessage();
+
   Color _getBackgroundColor(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     // 优先使用消息的自定义气泡颜色
@@ -458,11 +472,11 @@ class _MessageBubbleState extends State<MessageBubble>
         maxWidth: MediaQuery.sizeOf(context).width * 0.75,
       ),
       child: Container(
-        padding: _isImageMessage()
+        padding: _isBareBubble
             ? EdgeInsets.zero
             : const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        // 图片气泡透明无装饰，其余实底 + 手绘墨线描边（design.md §9）
-        decoration: _isImageMessage()
+        // 图片/音频气泡透明无装饰，其余实底 + 手绘墨线描边（design.md §9）
+        decoration: _isBareBubble
             ? null
             : dsSketchDecoration(
                 theme: theme,

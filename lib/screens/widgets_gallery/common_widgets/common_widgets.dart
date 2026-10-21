@@ -74,6 +74,7 @@ import 'package:aboutme/widgets/common/dual_value_tracker_card.dart';
 import 'package:aboutme/widgets/common/modern_rounded_balance_card.dart';
 import 'package:aboutme/plugins/activity/home_widgets/widgets/activity_last_activity.dart';
 import 'widgets/folder_notes_card.dart';
+import 'widgets/habit_daily_heatmap_card.dart';
 import 'widgets/habit_heatmap_card.dart';
 import 'widgets/points_goal_card.dart';
 import 'widgets/store_product_selector_card.dart';
@@ -213,6 +214,7 @@ enum CommonWidgetId {
   totalSalesAnalyticsCard,
   spendingOverviewCard,
   linkedTaskFlowCard,
+  habitCheckinHeatmapCard,
 }
 
 /// 公共小组件元数据
@@ -1055,6 +1057,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [Large3Size(), Wide3Size()],
     ),
+    CommonWidgetId.habitCheckinHeatmapCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.habitCheckinHeatmapCard,
+      name: '习惯打卡热力图卡片',
+      description: 'iOS 深色风格习惯打卡卡片：7x10 四档亮度热力图矩阵 + 今日待打卡空心指示格 + 底部胶囊打卡按钮（未打卡/已打卡/多次打卡三态），内置 4 套主题色板',
+      icon: Icons.grid_on,
+      defaultSize: Large3Size(),
+      supportedSizes: [MediumSize(), Wide2Size(), Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1331,6 +1341,8 @@ class CommonWidgetBuilder {
         return SpendingOverviewCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.linkedTaskFlowCard:
         return LinkedTaskFlowCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.habitCheckinHeatmapCard:
+        return HabitHeatmapCard.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

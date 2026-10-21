@@ -49,6 +49,7 @@ class TrackerTranslationsZh {
     'tracker_timerTitle': '计时 - @goalName',
     'tracker_quickRecordTitle': '快速记录 - @goalName',
     'tracker_recordTitle': '记录 @goalName',
+    'tracker_time': '时间',
     'tracker_calculateDifference': '计算差值',
     'tracker_confirm': '确认',
     'tracker_confirmClear': '确认清空',

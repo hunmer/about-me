@@ -84,6 +84,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/icon_circular_progress_c
 import 'package:aboutme/screens/widgets_gallery/screens/color_tag_task_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/donut_chart_stats_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/health_score_ring_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/habit_heatmap_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/petal_radial_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/semicircle_gauge_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/expense_tracker_card_example.dart';
@@ -793,6 +794,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '健康分数环形统计卡片',
     ),
     RouteDefinition(
+      path: '/widgets_gallery/habit_heatmap_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const HabitHeatmapCardExample(),
+        settings: settings,
+      ),
+      description: '习惯打卡热力图卡片',
+    ),
+    RouteDefinition(
       path: '/widgets_gallery/petal_radial_chart_card',
       handler: (settings) => RouteHelpers.createRoute(
         const PetalRadialChartCardExample(),
@@ -1286,6 +1295,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '周点阵追踪卡片',
     subtitle: 'WeeklyDotTrackerCard',
     route: '/widgets_gallery/weekly_dot_tracker_card',
+  ),
+  WidgetPreviewItem(
+    category: '追踪类',
+    icon: Icons.grid_on,
+    title: '习惯打卡热力图卡片',
+    subtitle: 'HabitHeatmapCard',
+    route: '/widgets_gallery/habit_heatmap_card',
   ),
   // 日历类
   WidgetPreviewItem(

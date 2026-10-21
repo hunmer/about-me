@@ -261,6 +261,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'WeeklyDotTrackerCard - 周进度点阵追踪展示卡片',
         route: '/widgets_gallery/weekly_dot_tracker_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.grid_on,
+        title: '习惯打卡热力图卡片',
+        subtitle: 'HabitHeatmapCard - 深色热力图矩阵与胶囊打卡按钮',
+        route: '/widgets_gallery/habit_heatmap_card',
+      ),
     ];
   }
 

@@ -95,11 +95,7 @@ class MessageContent extends StatelessWidget {
           isOutgoing: message.type == MessageType.sent,
         );
       } else if (type == 'audio') {
-        return AudioMessageBubble(
-          message: message,
-          isCurrentUser: message.type == MessageType.sent,
-          textColor: textColor,
-        );
+        return AudioMessageBubble(message: message);
       } else if (type == 'video') {
         // 多视频消息（fileInfo.videos >= 2）：折叠为 WalkStackCard 卡片堆
         final videos = fileInfo['videos'] as List?;

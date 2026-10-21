@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
@@ -10,10 +11,17 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/utils/blob_url.dart';
 
 class RecordAudioDialog extends StatefulWidget {
-  final Function(File audioFile, Duration duration) onStop;
+  /// amplitudes 为录音期间的振幅采样（dBFS），用于还原真实波形
+  final Function(File audioFile, Duration duration, List<double> amplitudes)
+      onStop;
 
   /// Web 平台录音回调：无本地文件，返回字节内容和文件名
-  final Function(Uint8List bytes, String fileName, Duration duration)?
+  final Function(
+    Uint8List bytes,
+    String fileName,
+    Duration duration,
+    List<double> amplitudes,
+  )?
       onStopBytes;
 
   const RecordAudioDialog({
@@ -33,6 +41,8 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
   DateTime? _startTime;
   bool _isInitialized = false;
   bool _isStarting = false;
+  final List<double> _amplitudes = [];
+  StreamSubscription<Amplitude>? _amplitudeSub;
 
   @override
   void initState() {
@@ -49,6 +59,7 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
   @override
   void dispose() {
     _stopRecording();
+    _amplitudeSub?.cancel();
     super.dispose();
   }
 
@@ -124,6 +135,11 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
 
       // 更新录音时长
       _updateDuration();
+
+      // 采集振幅（dBFS）用于生成消息波形
+      _amplitudeSub = _audioRecorder
+          .onAmplitudeChanged(const Duration(milliseconds: 100))
+          .listen((amp) => _amplitudes.add(amp.current));
     }
   }
 
@@ -140,6 +156,9 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
   Future<void> _stopRecording() async {
     if (!_isRecording) return;
 
+    _amplitudeSub?.cancel();
+    _amplitudeSub = null;
+
     try {
       final path = await _audioRecorder.stop();
       if (path != null) {
@@ -150,10 +169,10 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
           final fileName = extension.isEmpty || extension.contains('/')
               ? 'audio.webm'
               : 'audio.$extension';
-          widget.onStopBytes?.call(bytes, fileName, _duration);
+          widget.onStopBytes?.call(bytes, fileName, _duration, _amplitudes.toList());
         } else {
           final file = File(path);
-          widget.onStop(file, _duration);
+          widget.onStop(file, _duration, _amplitudes.toList());
         }
       }
     } catch (e) {
