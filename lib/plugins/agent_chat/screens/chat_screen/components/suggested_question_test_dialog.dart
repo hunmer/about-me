@@ -193,12 +193,8 @@ class _SuggestedQuestionTestDialogState
     int index,
     AppThemeData theme,
   ) {
-    final toolErrors = result['toolErrors'];
-    final hasError =
-        result['status'] == 'failed' ||
-        (toolErrors is List && toolErrors.isNotEmpty) ||
-        result['requestError'] != null ||
-        result['persistenceError'] != null;
+    // 兜底恢复的情况 runner 会判 passed（toolErrors 仍保留用于展示错误详情）。
+    final hasError = result['status'] == 'failed';
     final cancelled = result['status'] == 'cancelled';
     final status = cancelled
         ? '已中止'
@@ -211,6 +207,7 @@ class _SuggestedQuestionTestDialogState
         ? theme.danger
         : theme.success;
     String? errorText;
+    final toolErrors = result['toolErrors'];
     if (result['requestError'] != null) {
       errorText = result['requestError'].toString();
     } else if (result['persistenceError'] != null) {

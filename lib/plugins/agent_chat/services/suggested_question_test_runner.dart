@@ -47,14 +47,8 @@ class SuggestedQuestionTestRunner extends ChangeNotifier {
   String get reportPath => 'agent_chat/test_runs/$runId.json';
   int get completedCount =>
       results.where((r) => r['status'] != 'cancelled').length;
-  int get failedCount => results
-      .where(
-        (r) =>
-            (r['toolErrors'] as List).isNotEmpty ||
-            r['requestError'] != null ||
-            r['persistenceError'] != null,
-      )
-      .length;
+  int get failedCount =>
+      results.where((r) => r['status'] == 'failed').length;
 
   void stop() {
     if (!isRunning || stopRequested) return;
@@ -134,12 +128,14 @@ class SuggestedQuestionTestRunner extends ChangeNotifier {
             .toList();
         final toolErrors = <Map<String, dynamic>>[];
         var toolCallCount = 0;
+        ToolCallStatus? lastStepStatus;
         for (final message in newMessages) {
           requestError ??= message.metadata?['requestError'] as String?;
           final steps = message.toolCall?.steps ?? const <ToolCallStep>[];
           toolCallCount += steps.length;
           for (var index = 0; index < steps.length; index++) {
             final step = steps[index];
+            lastStepStatus = step.status;
             if (step.status == ToolCallStatus.failed ||
                 (step.error?.isNotEmpty ?? false)) {
               toolErrors.add({
@@ -150,10 +146,13 @@ class SuggestedQuestionTestRunner extends ChangeNotifier {
             }
           }
         }
+        // 中间步骤失败但 Agent 已兜底成功（最后一步成功）视为任务完成，
+        // 错误仍记录在 toolErrors 供排查，不再判为失败。
+        final recovered = lastStepStatus == ToolCallStatus.success;
         final failed =
-            toolErrors.isNotEmpty ||
             requestError != null ||
-            persistenceError != null;
+            persistenceError != null ||
+            (toolErrors.isNotEmpty && !recovered);
         results.add({
           'index': results.length + 1,
           ...question.toJson(),

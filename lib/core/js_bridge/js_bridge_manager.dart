@@ -18,6 +18,7 @@ import 'platform/mobile_js_engine_stub.dart'
     if (dart.library.io) 'platform/mobile_js_engine.dart';
 import 'js_ui_handlers.dart';
 import 'plugin_tool_registry.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/core/data_filter/field_filter_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -121,8 +122,8 @@ class JSBridgeManager {
 
     final handlers = JSUIHandlers(context);
     handlers.register(_engine as MobileJSEngine);
-    // Native Agent 工具与 JS API 共用 Dialog 实现。
-    _registerNativeUIDialog(handlers);
+    // Native Agent 工具与 JS API 共用 Toast/Alert/Dialog 实现。
+    _registerNativeUITools(handlers);
     print('✓ UI 处理器已全局注册 (Toast/Alert/Dialog)');
   }
 
@@ -142,16 +143,53 @@ class JSBridgeManager {
     if (_engine is MobileJSEngine) {
       final handlers = JSUIHandlers(context);
       handlers.register(_engine as MobileJSEngine);
-      _registerNativeUIDialog(handlers);
+      _registerNativeUITools(handlers);
       print('✓ UI 处理器已注册 (Toast/Alert/Dialog)');
     } else {
       print('跳过 UI 处理器注册 (Web 平台)');
     }
   }
 
-  /// 注册 Agent 可直接调用的 UI 对话框路由。
-  void _registerNativeUIDialog(JSUIHandlers handlers) {
+  /// 注册 Agent 可直接调用的 UI 路由，与 tools/ui.json 声明的工具一一对应。
+  void _registerNativeUITools(JSUIHandlers handlers) {
     pluginTools.register('ui', {
+      'toast': (Map<String, dynamic> args) {
+        final rawOptions = args['options'];
+        final options = rawOptions is Map
+            ? Map<String, dynamic>.from(rawOptions)
+            : <String, dynamic>{};
+        final durationValue = options['duration'];
+        final durationMs = durationValue is num
+            ? durationValue.toInt()
+            : durationValue?.toString().toLowerCase() == 'long'
+            ? 4000
+            : 2000;
+        final gravity = switch (options['gravity']?.toString().toLowerCase()) {
+          'top' => ToastGravity.TOP,
+          'center' => ToastGravity.CENTER,
+          _ => ToastGravity.BOTTOM,
+        };
+        Toast.show(
+          args['message']?.toString() ?? '',
+          duration: Duration(milliseconds: durationMs),
+          gravity: gravity,
+        );
+        return null;
+      },
+      'alert': (Map<String, dynamic> args) async {
+        final rawOptions = args['options'];
+        final options = rawOptions is Map
+            ? Map<String, dynamic>.from(rawOptions)
+            : <String, dynamic>{};
+        final confirmed = await handlers.handleAlert(
+          args['message']?.toString() ?? '',
+          title: options['title']?.toString(),
+          confirmText: options['confirmText']?.toString(),
+          cancelText: options['cancelText']?.toString(),
+          showCancel: options['showCancel'] == true,
+        );
+        return {'confirmed': confirmed};
+      },
       'dialog': (Map<String, dynamic> args) {
         final rawOptions = args['options'];
         final options = rawOptions is Map

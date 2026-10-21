@@ -46,6 +46,29 @@ void main() {
       },
     );
 
+    test('tool error recovered by a later success is reported as passed', () async {
+      final sent = <String>[];
+      final runner = SuggestedQuestionTestRunner(
+        questions: [
+          const SuggestedQuestion(
+            category: 'todo',
+            categoryName: '待办',
+            question: '第一题',
+          ),
+        ],
+        createSession: (index) async =>
+            _FakeSession(index, sent, recoverFromToolError: true),
+        writeReport: (_, __) async {},
+      );
+
+      await runner.run();
+
+      final result = runner.results.single;
+      expect(result['status'], 'passed');
+      expect(result['toolErrors'] as List, isNotEmpty);
+      expect(runner.failedConversations, isEmpty);
+    });
+
     test(
       'manual stop skips remaining questions and saves stopped state',
       () async {
@@ -209,12 +232,14 @@ class _FakeSession implements SuggestedQuestionTestSession {
     this.sent, {
     this.afterSend,
     this.includeToolError = true,
+    this.recoverFromToolError = false,
     this.persistError,
   });
   final int index;
   final List<String> sent;
   final void Function()? afterSend;
   final bool includeToolError;
+  final bool recoverFromToolError;
   final String? persistError;
   final _messages = <ChatMessage>[];
   bool cancelled = false;
@@ -253,6 +278,14 @@ class _FakeSession implements SuggestedQuestionTestSession {
                 status: ToolCallStatus.failed,
                 error: 'Undefined method',
               ),
+              if (recoverFromToolError)
+                ToolCallStep(
+                  method: 'run_js',
+                  title: '兜底工具',
+                  desc: '',
+                  data: 'fallback()',
+                  status: ToolCallStatus.success,
+                ),
             ],
           ),
         ),

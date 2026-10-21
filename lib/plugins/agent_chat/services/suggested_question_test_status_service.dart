@@ -33,13 +33,11 @@ SuggestedQuestionTestStatus? latestSuggestedQuestionTestStatus(
           _parseDate(rawResult['startedAt']) ??
           reportFinishedAt;
       if (testedAt == null) continue;
-      final toolErrors = rawResult['toolErrors'];
-      final hasToolError = toolErrors is List && toolErrors.isNotEmpty;
       final hasRequestError = rawResult['requestError'] != null;
       final hasPersistenceError = rawResult['persistenceError'] != null;
+      // 工具错误但最终兜底成功（status=passed）不算失败，与 runner 判定一致。
       final hasError =
           rawResult['status'] == 'failed' ||
-          hasToolError ||
           hasRequestError ||
           hasPersistenceError;
       final status = rawResult['status'];

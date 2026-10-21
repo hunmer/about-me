@@ -77,29 +77,29 @@ void main() {
     expect(status.lastTestAt, DateTime.parse('2026-01-03T10:00:40.000'));
   });
 
-  test('工具错误字段存在时即使状态异常为 passed 也标记错误', () {
-    final status = latestSuggestedQuestionTestStatus(
-      [
-        {
-          'results': [
-            {
-              'category': 'todo',
-              'question': '题目C',
-              'status': 'passed',
-              'finishedAt': '2026-01-04T10:00:00.000',
-              'toolErrors': [
-                {'method': 'run_js', 'error': '调用失败'},
-              ],
-            },
-          ],
-        },
-      ],
-      category: 'todo',
-      question: '题目C',
-    );
+    test('工具错误但状态为 passed（已兜底恢复）不标记错误', () {
+      final status = latestSuggestedQuestionTestStatus(
+        [
+          {
+            'results': [
+              {
+                'category': 'todo',
+                'question': '题目C',
+                'status': 'passed',
+                'finishedAt': '2026-01-04T10:00:00.000',
+                'toolErrors': [
+                  {'method': 'run_js', 'error': '调用失败'},
+                ],
+              },
+            ],
+          },
+        ],
+        category: 'todo',
+        question: '题目C',
+      );
 
-    expect(status!.hasError, isTrue);
-  });
+      expect(status!.hasError, isFalse);
+    });
 
   test('取消测试不会清除之前的错误标记', () {
     final status = latestSuggestedQuestionTestStatus(
