@@ -131,17 +131,25 @@ class AiThreadService {
     }
   }
 
+  /// 仅加载当前打开的频道，避免启动时扫描所有线程文件。
+  Future<void> loadChannel(String channelId) => _loadChannel(channelId);
+
   Future<void> _loadChannel(String channelId) async {
     if (_loadedChannels.contains(channelId)) return;
     _loadedChannels.add(channelId);
     try {
       final data = await AboutmeDataService.instance.readPath('chat/ai_threads/$channelId.json');
       final threadsJson = data['threads'] as Map<String, dynamic>? ?? {};
+      final loadedRootIds = <String>[];
       threadsJson.forEach((rootId, value) {
         _threads[rootId] = AiThread.fromJson(
           Map<String, dynamic>.from(value as Map),
         );
+        loadedRootIds.add(rootId);
       });
+      for (final rootId in loadedRootIds) {
+        _notify(rootId);
+      }
     } catch (e) {
       debugPrint('[AiThread] 加载频道 $channelId 线程失败: $e');
     }

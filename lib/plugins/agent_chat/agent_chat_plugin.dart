@@ -16,7 +16,6 @@ import 'controllers/conversation_controller.dart';
 import 'screens/conversation_list_screen/conversation_list_screen.dart';
 import 'screens/chat_screen/chat_screen.dart';
 import 'screens/agent_chat_settings_screen.dart';
-import 'services/tool_service.dart';
 import 'services/tool_template_service.dart';
 import 'services/widget_service.dart';
 import 'services/route_agent_config_service.dart';
@@ -65,7 +64,8 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
   ];
 
   ToolTemplateService? _templateService;
-  ToolTemplateService? get templateService => _templateService;
+  ToolTemplateService? get templateService =>
+      _templateService ??= ToolTemplateService(storage);
 
   RouteAgentConfigService? _routeConfigService;
   RouteAgentConfigService? get routeConfigService => _routeConfigService;
@@ -111,16 +111,9 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
     // 初始化 UseCase
     agentChatUseCase = AgentChatUseCase(repository);
 
-    // 初始化工具模板服务
-    _templateService = ToolTemplateService(storage);
-    await _templateService!.ensureInitialized();
-
     // 初始化路由配置服务
     _routeConfigService = RouteAgentConfigService(storage: storage);
     await _routeConfigService!.initialize();
-
-    // 初始化工具服务
-    await ToolService.initialize(storage: storage);
 
     // 初始化小组件服务
     await AgentChatWidgetService.initialize();

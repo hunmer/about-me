@@ -29,7 +29,7 @@ class _StartupGateState extends State<StartupGate> {
   void _routeWhenReady() {
     if (!mounted ||
         _navigated ||
-        !AppStartupState.instance.pluginsReady ||
+        !AppStartupState.instance.criticalPluginsReady ||
         AppStartupState.instance.isHandlingInitialUri) {
       return;
     }

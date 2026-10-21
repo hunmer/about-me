@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/plugins/openai/handlers/chat_event_handler.dart'; // 导入ValuesEventArgs
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -18,6 +19,7 @@ import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/screens/profile_edit_dialog.dart';
 import 'package:aboutme/plugins/chat/utils/message_operations.dart';
+import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
 // 移除未使用的导入
 import 'controllers/chat_screen_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -81,6 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
     eventManager.subscribe('chat_refresh', _handleSyncRefresh);
     _loadBackgroundPath();
     _loadChannelDraft();
+    unawaited(AiThreadService.instance.loadChannel(widget.channel.id));
 
     // 初始化时设置路由上下文
     WidgetsBinding.instance.addPostFrameCallback((_) {

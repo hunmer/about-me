@@ -53,9 +53,11 @@ class AppStartupState extends ChangeNotifier {
   AppStartupState._();
 
   bool _coreReady = false; // 核心服务就绪（存储、配置）
+  bool _criticalPluginsReady = false; // 当前启动目标依赖的插件就绪
   bool _pluginsReady = false; // 插件注册完成
   bool _fullyReady = false; // 所有初始化完成
   final _pluginsReadyCompleter = Completer<void>();
+  final _criticalPluginsReadyCompleter = Completer<void>();
   String _loadingMessage = '正在启动...';
 
   // 待处理的初始URI（从小组件启动时）
@@ -63,9 +65,12 @@ class AppStartupState extends ChangeNotifier {
   bool _isHandlingInitialUri = false; // 是否正在处理初始URI
 
   bool get coreReady => _coreReady;
+  bool get criticalPluginsReady => _criticalPluginsReady;
   bool get pluginsReady => _pluginsReady;
   bool get fullyReady => _fullyReady;
   Future<void> get whenPluginsReady => _pluginsReadyCompleter.future;
+  Future<void> get whenCriticalPluginsReady =>
+      _criticalPluginsReadyCompleter.future;
   String get loadingMessage => _loadingMessage;
   Uri? get initialWidgetUri => _initialWidgetUri;
   bool get isHandlingInitialUri => _isHandlingInitialUri;
@@ -80,6 +85,16 @@ class AppStartupState extends ChangeNotifier {
     StartupTrace.mark('plugins_ready');
     _pluginsReady = true;
     if (!_pluginsReadyCompleter.isCompleted) _pluginsReadyCompleter.complete();
+    notifyListeners();
+  }
+
+  void _setCriticalPluginsReady() {
+    if (_criticalPluginsReady) return;
+    StartupTrace.mark('critical_plugins_ready');
+    _criticalPluginsReady = true;
+    if (!_criticalPluginsReadyCompleter.isCompleted) {
+      _criticalPluginsReadyCompleter.complete();
+    }
     notifyListeners();
   }
 
@@ -412,6 +427,8 @@ Future<void> _initializeBackgroundServices() async {
     startupState._setFullyReady();
   } catch (e) {
     debugPrint('后台初始化失败: $e');
+    // 即使后台注册整体失败，也不要让启动闸门永久等待。
+    startupState._setCriticalPluginsReady();
     startupState._setFullyReady();
   }
 }
@@ -574,20 +591,40 @@ Future<void> _initializeFloatingBallActions() async {
 Future<void> _registerPlugins() async {
   final plugins = BuiltinPlugins.createAll();
 
-  await Future.wait(
-    plugins.map((plugin) async {
-      final isEnabled = globalConfigManager.isPluginEnabled(plugin.id);
-      if (!isEnabled) {
-        debugPrint('插件已禁用，跳过注册: ${plugin.id}');
-        return;
+  final lastPluginId = globalPluginManager.getLastOpenedPluginId;
+  final lastPluginEnabled =
+      lastPluginId != null && globalConfigManager.isPluginEnabled(lastPluginId);
+  final criticalId = globalPluginManager.autoOpenLastPlugin && lastPluginEnabled
+      ? lastPluginId
+      : 'live2d';
+  final registrations = plugins.map((plugin) async {
+    final isEnabled = globalConfigManager.isPluginEnabled(plugin.id);
+    if (!isEnabled) {
+      debugPrint('插件已禁用，跳过注册: ${plugin.id}');
+      if (plugin.id == criticalId) {
+        AppStartupState.instance._setCriticalPluginsReady();
       }
-      try {
-        await globalPluginManager.registerPlugin(plugin);
-      } catch (e) {
-        debugPrint('插件注册失败: ${plugin.id} - $e');
+      return;
+    }
+    try {
+      await globalPluginManager.registerPlugin(plugin);
+      if (plugin.id == criticalId) {
+        AppStartupState.instance._setCriticalPluginsReady();
       }
-    }),
-  );
+    } catch (e) {
+      debugPrint('插件注册失败: ${plugin.id} - $e');
+    } finally {
+      if (plugin.id == criticalId) {
+        AppStartupState.instance._setCriticalPluginsReady();
+      }
+    }
+  });
+
+  // The target plugin may be disabled or absent; do not block the gate forever.
+  if (!plugins.any((plugin) => plugin.id == criticalId)) {
+    AppStartupState.instance._setCriticalPluginsReady();
+  }
+  await Future.wait(registrations);
 }
 
 /// 保存的主题模式（公共变量，供其他模块使用）
@@ -672,11 +709,8 @@ Future<void> ensureWebStorageBackend() async {
     final saved = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder:
-          (_) => PopScope(
-            canPop: false,
-            child: const StorageBackendSettingsDialog(),
-          ),
+      builder: (_) =>
+          PopScope(canPop: false, child: const StorageBackendSettingsDialog()),
     );
     if (saved == true) {
       debugPrint('[WebStorage] 存储后端已配置，刷新页面生效');

@@ -17,6 +17,7 @@ import 'package:aboutme/plugins/agent_chat/services/conversation_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/token_counter_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/chat_task_handler.dart';
 export '../services/tool_service.dart'
@@ -471,6 +472,9 @@ class ChatController extends ChangeNotifier {
     // 每次发送前按会话绑定的 id 重读 Agent，拿到最新配置
     await _agentManager.reloadCurrentAgents();
 
+    // 工具配置只在真正发送 AI 请求时加载，避免进入聊天页就扫描全部插件工具。
+    await ToolService.initialize(storage: conversationService.storage);
+
     _isSending = true;
     _isCancelling = false; // 重置取消标志
     notifyListeners();
@@ -800,9 +804,7 @@ class ChatController extends ChangeNotifier {
   }
 
   /// 配置工具调用专用 Agent（两个阶段共用）
-  Future<void> configureToolAgents({
-    ToolAgentConfig? toolAgentConfig,
-  }) async {
+  Future<void> configureToolAgents({ToolAgentConfig? toolAgentConfig}) async {
     await _agentManager.configureToolAgents(toolAgentConfig: toolAgentConfig);
   }
 

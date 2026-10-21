@@ -38,6 +38,9 @@ class _ToolTemplateScreenState extends State<ToolTemplateScreen> {
   void initState() {
     super.initState();
     widget.templateService.addListener(_onTemplatesChanged);
+    widget.templateService.ensureInitialized().catchError((error) {
+      debugPrint('工具模板延迟初始化失败: $error');
+    });
   }
 
   @override

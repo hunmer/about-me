@@ -35,8 +35,6 @@ class ChatDataService {
 
   Future<void> initialize() async {
     await _loadChannels();
-    // AI 回复线程全量加载（入口行与 drawer 依赖内存缓存）
-    await AiThreadService.instance.loadAll();
   }
 
   /// 加载示例数据（存储为空时写入，供首次打开引导选择调用）

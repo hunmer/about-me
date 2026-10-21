@@ -61,6 +61,12 @@ flutter test "test/mobile_js_engine_test.dart" "test/startup_navigation_stack_te
 
 当前先显示的是启动界面，目标页面仍等待插件就绪；尚未把所有插件的数据初始化改成首次使用才执行。已访问页签的网络订阅或业务计时器不会被 TickerMode 自动暂停。移动端 Firebase 延后初始化的行为尚未在真机验证。
 
+## 目标插件优先（第三轮）
+
+启动闸门现在只等待当前启动目标：恢复上次插件时等待该插件，进入主页时等待 Live2D；其他插件继续并行注册，全部插件完成后才发布 `plugins_ready`。最近一次最终版本恢复聊天插件的日志为：`first_frame_rasterized=253ms`、`app_shell_frame=885ms`、`critical_plugins_ready=1372ms`、`destination_frame=1711ms`、`plugins_ready=1398ms`。关键插件就绪与全量就绪只相差 26ms；两次构建环境的目标页耗时有机器负载波动。若上次插件被禁用，闸门回退等待 Live2D，避免主页访问未初始化单例。
+
+Agent Chat 的工具配置、工具索引、默认工具模板和聊天 AI 线程改为首次发送消息、首次进入模板页面或首次打开聊天频道时加载；插件启动阶段只加载会话、路由配置和必要控制器。工具发送路径会等待一次性初始化，避免首次请求使用未准备的配置。
+
 新增测试覆盖启动壳初始化屏障、失败提示、异步完成时已卸载、页签首次构建/状态保留/参数更新/隐藏 Ticker，以及小组件加载期间保留 Navigator。共 12 项不同测试通过（11 项基础测试，以及单独运行的小组件导航补充测试；现有启动导航测试也随补充测试重新通过）。修改文件静态分析无错误或警告。
 
 复查命令在前述测试列表后添加 `"test/lazy_startup_widgets_test.dart" "test/widget_uri_handler_test.dart"`。后续优先在 release/profile 和目标移动设备复测，再评估插件初始化依赖，逐步缩小目标页面等待范围。

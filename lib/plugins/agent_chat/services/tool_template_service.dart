@@ -42,11 +42,9 @@ class ToolTemplateService extends ChangeNotifier {
 
   final StorageManager _storage;
   List<SavedToolTemplate> _templates = [];
-  late final Future<void> _initialLoadFuture;
+  Future<void>? _initialLoadFuture;
 
-  ToolTemplateService(this._storage) {
-    _initialLoadFuture = _initialize();
-  }
+  ToolTemplateService(this._storage);
 
   /// 初始化服务
   Future<void> _initialize() async {
@@ -59,7 +57,7 @@ class ToolTemplateService extends ChangeNotifier {
   List<SavedToolTemplate> get templates => List.unmodifiable(_templates);
 
   /// 确保模板已加载
-  Future<void> ensureInitialized() => _initialLoadFuture;
+  Future<void> ensureInitialized() => _initialLoadFuture ??= _initialize();
 
   /// 获取模板列表，可选关键词和标签过滤
   Future<List<SavedToolTemplate>> fetchTemplates({
