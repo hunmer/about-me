@@ -348,14 +348,18 @@ class NativeToolAgentService {
     final system = cleanSystemExtras.isEmpty
         ? cleanSystemPrompt
         : '$cleanSystemPrompt\n\n$cleanSystemExtras';
+    final toolResultSystem =
+        '$system\n\n[工具结果规则]\n'
+        '工具返回 error 或失败状态时，不得将其解释为空结果或操作成功。'
+        '可以修正参数后重试；仍失败时，应说明未能完成查询或操作，不能据此断言数据不存在。';
     final effectiveSystem =
         alivenessOnlyTools && agent.alivenessConfig?.enabled == true
-        ? '$system\n\n[生图工具规则]\n'
+        ? '$toolResultSystem\n\n[生图工具规则]\n'
               '当用户要求看你的照片、自拍、合照或某个场景的图片时，必须调用 moments.generate_image 并发送图片。'
               '用户提到的具体照片不在资产列表中，也不能因此拒绝：可以把用户描述写入 prompt，'
               '并按角色需要引用已有的「三视图」或其他资产做图生图；没有合适参考图时直接文生图。'
               '不要只回复“没有这张图”“无法生成”或解释自己是 AI。'
-        : system;
+        : toolResultSystem;
     final memorySystem = agent.alivenessConfig?.memoryEnabled == true
         ? '$effectiveSystem\n\n[历史记忆检索]\n'
               '需要回忆用户或你自己的过往、偏好、计划等信息时，调用 memory 工具按关键词检索。'
@@ -616,10 +620,13 @@ class NativeToolAgentService {
       final argsProperties = <String, Object?>{};
       final description = methods.entries
           .map((e) {
-            final parameters = e.value.parameters
+            final methodParameters = ToolSchemaBuilder.invocationParameters(
+              e.value,
+            );
+            final parameters = methodParameters
                 .map((p) => '${p.name}${p.optional ? '?' : ''}: ${p.type}')
                 .join(', ');
-            final schema = ToolSchemaBuilder.buildSchemaMap(e.value.parameters);
+            final schema = ToolSchemaBuilder.buildSchemaMap(methodParameters);
             final properties = schema['properties'];
             if (properties is Map) {
               for (final property in properties.entries) {
@@ -641,7 +648,8 @@ class NativeToolAgentService {
               }
             }
             return '${e.key}($parameters): '
-                '${ToolSchemaBuilder.buildDescription(e.value)}';
+                '${ToolSchemaBuilder.buildDescription(e.value)}\n'
+                'args schema: ${jsonEncode(schema)}';
           })
           .join('\n');
       tools.add(
@@ -1168,13 +1176,20 @@ class NativeToolAgentService {
         methodArgs.putIfAbsent('conversationId', () => run.conversationId);
       }
     }
-    final missing = config.parameters
-        .where((p) => !p.optional && !methodArgs.containsKey(p.name))
-        .map((p) => p.name)
-        .toList();
+    if (config.parameters.length == 1 &&
+        config.parameters.single.name == 'params' &&
+        config.parameters.single.type.toLowerCase() == 'object' &&
+        methodArgs.containsKey('params') &&
+        methodArgs['params'] is! Map) {
+      return reject('params 必须是对象');
+    }
+    final invocationArgs = ToolSchemaBuilder.invocationArgs(config, methodArgs);
+    final missing = ToolSchemaBuilder.missingRequiredParameters(
+      config,
+      invocationArgs,
+    );
     if (missing.isNotEmpty) return reject('缺少必填参数：${missing.join(', ')}');
 
-    final invocationArgs = ToolSchemaBuilder.invocationArgs(config, methodArgs);
     final argsJson = jsonEncode(methodArgs);
 
     final step = ToolCallStep(

@@ -4,6 +4,42 @@ import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 ///
 /// 供 dartantic_ai 的 Tool(name, description, inputSchema) 使用
 class ToolSchemaBuilder {
+  /// 单个 params 对象是 JS 的调用包装，原生工具直接展示其业务字段。
+  static List<ToolParameter> invocationParameters(ToolConfig config) {
+    if (config.parameters.length == 1 &&
+        config.parameters.single.name == 'params' &&
+        config.parameters.single.type.toLowerCase() == 'object') {
+      return config.parameters.single.properties;
+    }
+    return config.parameters;
+  }
+
+  /// 在归一化后的 Dart 实参上校验必填字段，包含嵌套对象。
+  static List<String> missingRequiredParameters(
+    ToolConfig config,
+    Map<String, dynamic> args,
+  ) {
+    List<String> missing(
+      List<ToolParameter> parameters,
+      Map values, [
+      String prefix = '',
+    ]) {
+      final result = <String>[];
+      for (final parameter in parameters) {
+        final value = values[parameter.name];
+        final name = '$prefix${parameter.name}';
+        if (value == null) {
+          if (!parameter.optional) result.add(name);
+        } else if (value is Map && parameter.properties.isNotEmpty) {
+          result.addAll(missing(parameter.properties, value, '$name.'));
+        }
+      }
+      return result;
+    }
+
+    return missing(invocationParameters(config), args);
+  }
+
   /// 配置中的 params 表示 JS API 的单个对象实参，Dart 回调直接接收其内容。
   static Map<String, dynamic> invocationArgs(
     ToolConfig config,

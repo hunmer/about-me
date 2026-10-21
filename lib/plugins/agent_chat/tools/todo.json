@@ -217,9 +217,9 @@
             "description": "优先级:'low' | 'medium' | 'high',默认 'medium'"
           },
           "tags": {
-            "type": "string",
+            "type": "array",
             "optional": true,
-            "description": "标签数组的 JSON 字符串,例如 '[\"工作\",\"紧急\"]'"
+            "description": "标签名称数组，例如 [\"工作\",\"紧急\"]"
           }
         }
       }

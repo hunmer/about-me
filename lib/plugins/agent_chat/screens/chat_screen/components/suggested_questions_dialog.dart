@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/suggested_questions_service.dart';
+import 'package:aboutme/plugins/agent_chat/services/suggested_question_test_status_service.dart';
 import 'package:aboutme/plugins/agent_chat/models/suggested_question.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -34,6 +35,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
   String? _selectedCategory;
   bool _isLoading = true;
   final Map<String, Set<int>> _selectedQuestions = {};
+  Map<String, SuggestedQuestionTestStatus> _testStatuses = {};
 
   List<SuggestedQuestion> get _selection => [
     for (final entry in (_questions ?? <String, List<String>>{}).entries)
@@ -55,6 +57,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
   Future<void> _loadQuestions() async {
     try {
       final questions = await _service.getCategorizedQuestions();
+      final testStatuses = await _loadTestStatuses();
       if (mounted) {
         // 尝试读取上次选中的分类
         String? lastCategory;
@@ -70,6 +73,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
         if (!mounted) return;
         setState(() {
           _questions = questions;
+          _testStatuses = testStatuses;
           // 优先使用上次选中的分类（如果存在且有效），否则选中第一个
           if (questions.isNotEmpty) {
             if (lastCategory != null && questions.containsKey(lastCategory)) {
@@ -89,6 +93,52 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
         toastService.showToast('加载问题失败: $e', type: ToastType.error);
       }
     }
+  }
+
+  Future<Map<String, SuggestedQuestionTestStatus>> _loadTestStatuses() async {
+    try {
+      final keys = await AboutmeDataService.instance.listPathKeys(
+        'agent_chat/test_runs',
+      );
+      final reportKeys = keys.where((key) => key.endsWith('.json')).toList();
+      final reports = await Future.wait(
+        reportKeys.map((key) async {
+          try {
+            final report = await AboutmeDataService.instance.readPath(key);
+            return report is Map ? report : null;
+          } catch (_) {
+            return null;
+          }
+        }),
+      );
+
+      final statuses = <String, SuggestedQuestionTestStatus>{};
+      for (final entry in (_questions ?? <String, List<String>>{}).entries) {
+        for (final question in entry.value) {
+          final status = latestSuggestedQuestionTestStatus(
+            reports,
+            category: entry.key,
+            question: question,
+          );
+          if (status != null) {
+            statuses[_questionKey(entry.key, question)] = status;
+          }
+        }
+      }
+      return statuses;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  String _questionKey(String category, String question) =>
+      '$category\u0000$question';
+
+  String _formatTestDate(DateTime value) {
+    final local = value.toLocal();
+    String twoDigits(int number) => number.toString().padLeft(2, '0');
+    return '${local.year}-${twoDigits(local.month)}-${twoDigits(local.day)} '
+        '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
   }
 
   /// 保存当前选中的分类
@@ -303,6 +353,8 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
     final theme = DSThemeBridge.resolve(context);
     final selected =
         _selectedQuestions[_selectedCategory]?.contains(index) ?? false;
+    final testStatus =
+        _testStatuses[_questionKey(_selectedCategory!, question)];
     void toggle() => setState(() {
       final selectedIndices = _selectedQuestions.putIfAbsent(
         _selectedCategory!,
@@ -325,6 +377,28 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
                 style: DsTypography.body.copyWith(color: theme.text),
               ),
             ),
+            if (testStatus != null) ...[
+              const SizedBox(width: 8),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _formatTestDate(testStatus.lastTestAt),
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
+                  if (testStatus.hasError)
+                    Text(
+                      '测试错误',
+                      style: DsTypography.caption.copyWith(color: theme.danger),
+                    ),
+                ],
+              ),
+              if (testStatus.hasError) ...[
+                const SizedBox(width: 4),
+                Icon(Icons.error_outline, size: 18, color: theme.danger),
+              ],
+            ],
             if (widget.multiSelect)
               Checkbox(value: selected, onChanged: (_) => toggle())
             else
