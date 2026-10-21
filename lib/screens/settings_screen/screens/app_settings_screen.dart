@@ -61,10 +61,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
 
   // 显示语音识别设置对话框
   Future<void> _showSpeechRecognitionSettings() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => const SpeechRecognitionSettingsDialog(),
-    );
+    final result = await SpeechRecognitionSettingsDialog.show(context);
 
     if (result == true && mounted) {
       setState(() {

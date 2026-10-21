@@ -147,6 +147,35 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settings_screen_editAiCorrectionAgent': 'Edit AI Correction Agent',
   'settings_screen_configureAiCorrectionAgent': 'Configure AI Correction Agent',
   'settings_screen_verifyConfiguration': 'Verify Configuration',
+  'settings_screen_speechDesc':
+      'Configure Tencent Cloud real-time speech recognition for voice input.',
+  'settings_screen_speechCredHint':
+      'Enable speech recognition in the Tencent Cloud console and get the API credentials.',
+  'settings_screen_speechAppIdHint': 'Enter the Tencent Cloud App ID',
+  'settings_screen_speechAppIdRequired': 'Please enter the App ID',
+  'settings_screen_speechSecretIdHint': 'Enter the Secret ID',
+  'settings_screen_speechSecretIdRequired': 'Please enter the Secret ID',
+  'settings_screen_speechSecretKeyHint': 'Enter the Secret Key (keep it safe)',
+  'settings_screen_speechSecretKeyRequired': 'Please enter the Secret Key',
+  'settings_screen_speechSaved': 'Settings saved',
+  'settings_screen_speechVerifyPassed': 'Configuration is valid!',
+  'settings_screen_speechInvalidConfig':
+      'Invalid configuration, please check the input',
+  'settings_screen_speechLoadFailed': 'Failed to load settings: @error',
+  'settings_screen_speechSaveFailed': 'Failed to save settings: @error',
+  'settings_screen_speechVerifyFailed': 'Verification failed: @error',
+  'settings_screen_speechAgentSaved': 'AI correction agent configured',
+  'settings_screen_speechAgentCleared': 'AI correction agent cleared',
+  'settings_screen_speechClearFailed': 'Failed to clear settings: @error',
+  'settings_screen_speechAiCorrectionTitle': 'AI Correction',
+  'settings_screen_speechAiCorrectionDesc':
+      'Configure an AI assistant to automatically correct speech recognition errors',
+  'settings_screen_speechDefaultAgentName': 'Speech Text Correction',
+  'settings_screen_speechDefaultAgentDesc':
+      'AI assistant that automatically corrects speech recognition errors',
+  'settings_screen_speechDefaultAgentTag': 'Speech Correction',
+  'settings_screen_speechDefaultAgentPrompt':
+      'You are a professional speech text correction assistant. Your task is to fix errors from speech recognition.\n\n## Workflow\n1. Analyze the input text\n2. Identify likely recognition errors (homophones, grammar, punctuation, etc.)\n3. Correct the errors while keeping the original meaning\n4. Output only the corrected text, without any explanation\n\n## Notes\n- Only fix obvious recognition errors\n- Keep the conversational tone natural and fluent\n- Add punctuation where it improves readability\n- Never change the original meaning\n- If the text has no errors, return it unchanged',
   'settings_screen_switchStorageBackend': 'Switch Storage Backend',
   'settings_screen_switchStorageBackendDesc': 'Switching neither migrates nor deletes existing data. Export your data first and make sure no writes are in progress. Restart required after saving.',
   'settings_screen_storageBackend': 'Storage Backend',

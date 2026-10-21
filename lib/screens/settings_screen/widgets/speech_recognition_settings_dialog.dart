@@ -1,15 +1,29 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/core/services/speech_recognition_config_service.dart';
-import 'package:aboutme/core/services/toast_service.dart';
-import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_config.dart';
-import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
-import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:skribble/skribble.dart';
 import 'package:uuid/uuid.dart';
 
-/// 语音识别设置对话框
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/speech_recognition_config_service.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_config.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
+
+/// 语音识别设置对话框（手绘风）
 class SpeechRecognitionSettingsDialog extends StatefulWidget {
   const SpeechRecognitionSettingsDialog({super.key});
+
+  /// 统一入口：手绘对话框（自带墨线描画入场）
+  static Future<bool?> show(BuildContext context) {
+    return showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (context) => const SpeechRecognitionSettingsDialog(),
+    );
+  }
 
   @override
   State<SpeechRecognitionSettingsDialog> createState() =>
@@ -18,7 +32,6 @@ class SpeechRecognitionSettingsDialog extends StatefulWidget {
 
 class _SpeechRecognitionSettingsDialogState
     extends State<SpeechRecognitionSettingsDialog> {
-  final _formKey = GlobalKey<FormState>();
   final _appIdController = TextEditingController();
   final _secretIdController = TextEditingController();
   final _secretKeyController = TextEditingController();
@@ -27,9 +40,12 @@ class _SpeechRecognitionSettingsDialogState
   bool _isLoading = false;
   bool _hasChanges = false;
 
+  String? _appIdError;
+  String? _secretIdError;
+  String? _secretKeyError;
+
   // AI纠错Agent相关
   AIAgent? _correctionAgent;
-  final bool _isLoadingAgent = false;
 
   @override
   void initState() {
@@ -52,9 +68,15 @@ class _SpeechRecognitionSettingsDialogState
 
   /// 文本改变回调
   void _onTextChanged() {
-    if (!_hasChanges) {
+    if (!_hasChanges ||
+        _appIdError != null ||
+        _secretIdError != null ||
+        _secretKeyError != null) {
       setState(() {
         _hasChanges = true;
+        _appIdError = null;
+        _secretIdError = null;
+        _secretKeyError = null;
       });
     }
   }
@@ -73,6 +95,12 @@ class _SpeechRecognitionSettingsDialogState
           _appIdController.text = config.appId;
           _secretIdController.text = config.secretId;
           _secretKeyController.text = config.secretKey;
+          // 回填文本会触发监听器置脏，这里复位避免保存按钮误启用
+          if (mounted) {
+            setState(() {
+              _hasChanges = false;
+            });
+          }
         });
       }
 
@@ -80,7 +108,9 @@ class _SpeechRecognitionSettingsDialogState
       _correctionAgent =
           SpeechRecognitionConfigService.instance.correctionAgent;
     } catch (e) {
-      _showError('加载设置失败: $e');
+      _showError('settings_screen_speechLoadFailed'.trParams({
+        'error': e.toString(),
+      }));
     } finally {
       setState(() {
         _isLoading = false;
@@ -89,9 +119,33 @@ class _SpeechRecognitionSettingsDialogState
     }
   }
 
+  /// 校验表单，失败时展示各输入框错误
+  bool _validate() {
+    final appIdError =
+        _appIdController.text.trim().isEmpty
+            ? 'settings_screen_speechAppIdRequired'.tr
+            : null;
+    final secretIdError =
+        _secretIdController.text.trim().isEmpty
+            ? 'settings_screen_speechSecretIdRequired'.tr
+            : null;
+    final secretKeyError =
+        _secretKeyController.text.trim().isEmpty
+            ? 'settings_screen_speechSecretKeyRequired'.tr
+            : null;
+
+    setState(() {
+      _appIdError = appIdError;
+      _secretIdError = secretIdError;
+      _secretKeyError = secretKeyError;
+    });
+
+    return appIdError == null && secretIdError == null && secretKeyError == null;
+  }
+
   /// 保存设置
   Future<void> _saveSettings() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_validate()) {
       return;
     }
 
@@ -118,11 +172,13 @@ class _SpeechRecognitionSettingsDialogState
       });
 
       if (mounted) {
-        toastService.showToast('设置保存成功');
+        toastService.showToast('settings_screen_speechSaved'.tr);
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      _showError('保存设置失败: $e');
+      _showError(
+        'settings_screen_speechSaveFailed'.trParams({'error': e.toString()}),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -132,7 +188,7 @@ class _SpeechRecognitionSettingsDialogState
 
   /// 测试配置
   Future<void> _testConnection() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_validate()) {
       return;
     }
 
@@ -144,15 +200,19 @@ class _SpeechRecognitionSettingsDialogState
       );
 
       if (!config.isValid()) {
-        _showError('配置无效，请检查输入');
+        _showError('settings_screen_speechInvalidConfig'.tr);
         return;
       }
 
       if (mounted) {
-        toastService.showToast('配置验证通过！');
+        toastService.showToast('settings_screen_speechVerifyPassed'.tr);
       }
     } catch (e) {
-      _showError('验证失败: $e');
+      _showError(
+        'settings_screen_speechVerifyFailed'.trParams({
+          'error': e.toString(),
+        }),
+      );
     }
   }
 
@@ -164,14 +224,14 @@ class _SpeechRecognitionSettingsDialogState
 
   /// 配置AI纠错Agent
   Future<void> _configureCorrectionAgent() async {
-    // 如果没有配置，创建默认的Agent
+    // 如果没有配置，创建默认的Agent（模板文案按当前语言生成快照）
     final agentToEdit =
         _correctionAgent ??
         AIAgent(
           id: const Uuid().v4(),
-          name: '语音文本纠错',
-          description: '用于自动纠正语音识别错误的AI助手',
-          tags: const ['语音纠错'],
+          name: 'settings_screen_speechDefaultAgentName'.tr,
+          description: 'settings_screen_speechDefaultAgentDesc'.tr,
+          tags: ['settings_screen_speechDefaultAgentTag'.tr],
           serviceProviderId: 'openai',
           baseUrl: '',
           headers: const {},
@@ -186,25 +246,23 @@ class _SpeechRecognitionSettingsDialogState
           messages: [
             Prompt(
               type: 'system',
-              content:
-                  '你是一个专业的语音文本纠错助手。你的任务是纠正语音识别中的错误。\n\n## 工作流程\n1. 分析用户输入的文本\n2. 识别可能的识别错误（同音字、语法错误、标点错误等）\n3. 纠正错误，保持原意不变\n4. 只输出纠正后的文本，不要添加任何解释或说明\n\n## 注意事项\n- 只处理明显的识别错误\n- 保持口语化表达的自然流畅\n- 适当添加标点符号以提高可读性\n- 不要改变原文的意思\n- 如果文本本身就没有错误，直接返回原文',
+              content: 'settings_screen_speechDefaultAgentPrompt'.tr,
             ),
           ],
         );
 
     // 使用回调模式，不保存到 agent 插件
-    final savedAgent = await Navigator.of(context).push<AIAgent>(
-      MaterialPageRoute(
-        builder:
-            (context) => AgentEditScreen(
-              agent: agentToEdit,
-              onSave: (agent) async {
-                // 保存到自定义配置文件
-                await SpeechRecognitionConfigService.instance
-                    .saveCorrectionAgent(agent);
-                return agent; // 返回保存后的 agent
-              },
-            ),
+    final savedAgent = await NavigationHelper.push<AIAgent>(
+      context,
+      AgentEditScreen(
+        agent: agentToEdit,
+        onSave: (agent) async {
+          // 保存到自定义配置文件
+          await SpeechRecognitionConfigService.instance.saveCorrectionAgent(
+            agent,
+          );
+          return agent; // 返回保存后的 agent
+        },
       ),
     );
 
@@ -213,28 +271,24 @@ class _SpeechRecognitionSettingsDialogState
       setState(() {
         _correctionAgent = savedAgent;
       });
-      toastService.showToast('AI纠错Agent设置成功');
+      toastService.showToast('settings_screen_speechAgentSaved'.tr);
     }
   }
 
   /// 清除AI纠错Agent
   Future<void> _clearCorrectionAgent() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDSDialog<bool>(
       context: context,
+      theme: AppTheme.of(context),
       builder:
-          (context) => AlertDialog(
-            title: Text('settings_screen_confirmClear'.tr),
-            content: Text('settings_screen_confirmClearAiCorrection'.tr),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text('app_cancel'.tr),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text('app_ok'.tr),
-              ),
-            ],
+          (dialogContext) => DSDialog(
+            title: 'settings_screen_confirmClear'.tr,
+            message: 'settings_screen_confirmClearAiCorrection'.tr,
+            cancelText: 'app_cancel'.tr,
+            confirmText: 'app_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onCancel: () => Navigator.of(dialogContext).pop(false),
+            onConfirm: () => Navigator.of(dialogContext).pop(true),
           ),
     );
 
@@ -244,247 +298,272 @@ class _SpeechRecognitionSettingsDialogState
         setState(() {
           _correctionAgent = null;
         });
-        toastService.showToast('已清除AI纠错Agent设置');
+        toastService.showToast('settings_screen_speechAgentCleared'.tr);
       } catch (e) {
-        _showError('清除设置失败: $e');
+        _showError(
+          'settings_screen_speechClearFailed'.trParams({
+            'error': e.toString(),
+          }),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Row(
-        children: [
-          const Icon(Icons.mic),
-          const SizedBox(width: 8),
-          Text('settings_screen_speechRecognitionSettings'.tr),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 说明文本
-            Text(
-              '配置腾讯云实时语音识别服务，用于语音输入功能。',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
+    final theme = AppTheme.of(context);
 
-            const SizedBox(height: 8),
-
-            // 获取凭证链接提示
-            Text(
-              '需要在腾讯云控制台开通语音识别服务并获取 API 凭证。',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 表单
-            if (_isLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // App ID 输入框
-                    TextFormField(
-                      controller: _appIdController,
-                      decoration: const InputDecoration(
-                        labelText: 'App ID',
-                        hintText: '请输入腾讯云应用 ID',
-                        border: OutlineInputBorder(),
-                        helperText: '在腾讯云控制台获取',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return '请输入 App ID';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Secret ID 输入框
-                    TextFormField(
-                      controller: _secretIdController,
-                      decoration: const InputDecoration(
-                        labelText: 'Secret ID',
-                        hintText: '请输入密钥 ID',
-                        border: OutlineInputBorder(),
-                        helperText: '访问密钥 ID',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return '请输入 Secret ID';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Secret Key 输入框
-                    TextFormField(
-                      controller: _secretKeyController,
-                      obscureText: _obscureSecretKey,
-                      decoration: InputDecoration(
-                        labelText: 'Secret Key',
-                        hintText: '请输入密钥 Key',
-                        border: const OutlineInputBorder(),
-                        helperText: '访问密钥 Key（请妥善保管）',
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureSecretKey
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscureSecretKey = !_obscureSecretKey;
-                            });
-                          },
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return '请输入 Secret Key';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 16),
-
-            // AI智能纠错设置
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 440),
+      // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
+      // （showDSDialog 外层已包 WiredDraw，这里消费描画进度做墨线入场）
+      child: DsSketchPanel(
+        theme: theme,
+        radius: theme.radii.xxl,
+        padding: EdgeInsets.all(theme.spacing.lg),
+        progress: WiredDrawTransition.progressOf(context),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 标题
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.auto_fix_high,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'AI智能纠错',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  DsIcon(DsIconKind.mic, color: theme.primary),
+                  SizedBox(width: theme.spacing.sm),
+                  Flexible(
+                    child: Text(
+                      'settings_screen_speechRecognitionSettings'.tr,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.title.copyWith(color: theme.text),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Card(
-                child:
-                    _isLoadingAgent
-                        ? const Padding(
-                          padding: EdgeInsets.all(24.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        )
-                        : _correctionAgent != null
-                        ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ListTile(
-                              leading: CircleAvatar(
-                                child: Text(
-                                  _correctionAgent!.name.isNotEmpty
-                                      ? _correctionAgent!.name[0]
-                                      : 'A',
-                                ),
-                              ),
-                              title: Text(_correctionAgent!.name),
-                              subtitle: Text('settings_screen_aiCorrectionConfigured'.tr),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: _clearCorrectionAgent,
-                                tooltip: '清除',
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: FilledButton.icon(
-                                      icon: const Icon(Icons.edit),
-                                      label: Text('settings_screen_editAiCorrectionAgent'.tr),
-                                      onPressed: _configureCorrectionAgent,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
-                        : Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                '配置AI助手来自动纠正语音识别中的错误',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              OutlinedButton.icon(
-                                icon: const Icon(Icons.add),
-                                label: Text('settings_screen_configureAiCorrectionAgent'.tr),
-                                onPressed: _configureCorrectionAgent,
-                              ),
-                            ],
-                          ),
-                        ),
+              SizedBox(height: theme.spacing.sm),
+
+              // 说明文本
+              Text(
+                'settings_screen_speechDesc'.tr,
+                textAlign: TextAlign.center,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
+              SizedBox(height: theme.spacing.sm),
+
+              // 获取凭证链接提示
+              Text(
+                'settings_screen_speechCredHint'.tr,
+                textAlign: TextAlign.center,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+              SizedBox(height: theme.spacing.lg),
+
+              // 表单
+              if (_isLoading)
+                const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(child: DSLoadingDots()),
+                )
+              else ...[
+                // App ID 输入框
+                DSInput(
+                  controller: _appIdController,
+                  label: 'App ID',
+                  hint: 'settings_screen_speechAppIdHint'.tr,
+                  errorText: _appIdError,
+                ),
+                SizedBox(height: theme.spacing.md),
+
+                // Secret ID 输入框
+                DSInput(
+                  controller: _secretIdController,
+                  label: 'Secret ID',
+                  hint: 'settings_screen_speechSecretIdHint'.tr,
+                  errorText: _secretIdError,
+                ),
+                SizedBox(height: theme.spacing.md),
+
+                // Secret Key 输入框
+                DSInput(
+                  controller: _secretKeyController,
+                  label: 'Secret Key',
+                  hint: 'settings_screen_speechSecretKeyHint'.tr,
+                  errorText: _secretKeyError,
+                  obscureText: _obscureSecretKey,
+                  suffix: DSIconButton(
+                    icon: _obscureSecretKey ? DsIconKind.eyeOff : DsIconKind.eye,
+                    size: 34,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    onPressed: () {
+                      setState(() {
+                        _obscureSecretKey = !_obscureSecretKey;
+                      });
+                    },
+                  ),
+                ),
+              ],
+
+              SizedBox(height: theme.spacing.lg),
+              Container(
+                height: 1,
+                color: theme.textSub.withValues(alpha: 0.25),
+              ),
+              SizedBox(height: theme.spacing.lg),
+
+              // AI智能纠错设置
+              Row(
+                children: [
+                  DsIcon(DsIconKind.sparkle, color: theme.primary),
+                  SizedBox(width: theme.spacing.sm),
+                  Text(
+                    'settings_screen_speechAiCorrectionTitle'.tr,
+                    style: DsTypography.heading.copyWith(color: theme.text),
+                  ),
+                ],
+              ),
+              SizedBox(height: theme.spacing.md),
+              _buildAgentSection(theme),
+
+              SizedBox(height: theme.spacing.xl),
+
+              // 操作按钮
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: theme.spacing.sm,
+                runSpacing: theme.spacing.sm,
+                children: [
+                  DSButton(
+                    label: 'app_cancel'.tr,
+                    variant: DSButtonVariant.ghost,
+                    size: DSButtonSize.sm,
+                    onPressed:
+                        _isLoading ? null : () => Navigator.of(context).pop(),
+                  ),
+                  DSButton(
+                    label: 'settings_screen_verifyConfiguration'.tr,
+                    variant: DSButtonVariant.outline,
+                    size: DSButtonSize.sm,
+                    onPressed: _isLoading ? null : _testConnection,
+                  ),
+                  DSButton(
+                    label: 'app_save'.tr,
+                    icon: DsIconKind.check,
+                    size: DSButtonSize.sm,
+                    onPressed:
+                        _isLoading || !_hasChanges ? null : _saveSettings,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// AI纠错Agent 配置卡片
+  Widget _buildAgentSection(AppThemeData theme) {
+    if (_correctionAgent != null) {
+      final initial =
+          _correctionAgent!.name.isNotEmpty ? _correctionAgent!.name[0] : 'A';
+
+      return Container(
+        padding: EdgeInsets.all(theme.spacing.md),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          radius: theme.radii.lg,
+          fillColor: theme.surfaceAlt,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: BorderRadius.circular(18),
+                    fillColor: theme.primary,
+                  ),
+                  child: Text(
+                    initial,
+                    style: DsTypography.body.copyWith(
+                      color: theme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                SizedBox(width: theme.spacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _correctionAgent!.name,
+                        style: DsTypography.body.copyWith(color: theme.text),
+                      ),
+                      Text(
+                        'settings_screen_aiCorrectionConfigured'.tr,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                DSIconButton(
+                  icon: DsIconKind.trash,
+                  size: 34,
+                  color: theme.surface,
+                  iconColor: theme.danger,
+                  tooltip: 'app_delete'.tr,
+                  onPressed: _clearCorrectionAgent,
+                ),
+              ],
+            ),
+            SizedBox(height: theme.spacing.md),
+            DSButton(
+              label: 'settings_screen_editAiCorrectionAgent'.tr,
+              icon: DsIconKind.edit,
+              size: DSButtonSize.sm,
+              onPressed: _configureCorrectionAgent,
             ),
           ],
         ),
+      );
+    }
+
+    // 未配置
+    return Container(
+      padding: EdgeInsets.all(theme.spacing.md),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: theme.radii.lg,
+        fillColor: theme.surfaceAlt,
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text('screens_cancel'.tr),
-        ),
-        OutlinedButton(
-          onPressed: _isLoading ? null : _testConnection,
-          child: Text('settings_screen_verifyConfiguration'.tr),
-        ),
-        FilledButton(
-          onPressed: _isLoading || !_hasChanges ? null : _saveSettings,
-          child: Text('app_save'.tr),
-        ),
-      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'settings_screen_speechAiCorrectionDesc'.tr,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+          SizedBox(height: theme.spacing.md),
+          DSButton(
+            label: 'settings_screen_configureAiCorrectionAgent'.tr,
+            icon: DsIconKind.plus,
+            variant: DSButtonVariant.outline,
+            size: DSButtonSize.sm,
+            onPressed: _configureCorrectionAgent,
+          ),
+        ],
+      ),
     );
   }
 }

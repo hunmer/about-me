@@ -35,63 +35,18 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: theme.primary.mixWhite(0.92),
-        borderRadius: theme.radii.md,
-        border: Border.all(
-          color: theme.primary.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 标题栏
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.primary.mixWhite(0.85),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(DsRadii.mdValue),
-                topRight: Radius.circular(DsRadii.mdValue),
-              ),
-            ),
-            child: Row(
-              children: [
-                DsIcon(DsIconKind.gear, size: 20, color: theme.primaryText),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '工具调用 (${widget.steps.length} 个步骤)',
-                    style: DsTypography.body.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.text,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(top: 8),
+      itemCount: widget.steps.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final step = widget.steps[index];
+        final isExpanded = _expandedSteps.contains(index);
 
-          // 步骤列表
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(8),
-            itemCount: widget.steps.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final step = widget.steps[index];
-              final isExpanded = _expandedSteps.contains(index);
-
-              return _buildStepCard(step, index, isExpanded);
-            },
-          ),
-        ],
-      ),
+        return _buildStepCard(step, index, isExpanded);
+      },
     );
   }
 

@@ -87,7 +87,6 @@ class FullBackupController {
 
       // 保存压缩文件
       final archiveData = encoder.encode(archive);
-      if (archiveData == null) throw Exception('Failed to create archive');
 
       // 确保 archiveData 是有效的字节列表
       final List<int> validBytes = List<int>.from(archiveData);
