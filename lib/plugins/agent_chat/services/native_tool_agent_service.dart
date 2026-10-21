@@ -351,7 +351,8 @@ class NativeToolAgentService {
     final toolResultSystem =
         '$system\n\n[工具结果规则]\n'
         '工具返回 error 或失败状态时，不得将其解释为空结果或操作成功。'
-        '可以修正参数后重试；仍失败时，应说明未能完成查询或操作，不能据此断言数据不存在。';
+        '可以修正参数后重试；仍失败时，应说明未能完成查询或操作，不能据此断言数据不存在。'
+        '记录或更新数据时，用户未提供实际数值必须先询问，不得用目标值代替实际完成量。';
     final effectiveSystem =
         alivenessOnlyTools && agent.alivenessConfig?.enabled == true
         ? '$toolResultSystem\n\n[生图工具规则]\n'

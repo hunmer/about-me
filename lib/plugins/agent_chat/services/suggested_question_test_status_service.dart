@@ -18,7 +18,7 @@ SuggestedQuestionTestStatus? latestSuggestedQuestionTestStatus(
   required String category,
   required String question,
 }) {
-  final records = <(DateTime, bool)>[];
+  final records = <(DateTime, bool?)>[];
   for (final report in reports.whereType<Map>()) {
     final results = report['results'];
     if (results is! List) continue;
@@ -33,16 +33,34 @@ SuggestedQuestionTestStatus? latestSuggestedQuestionTestStatus(
           _parseDate(rawResult['startedAt']) ??
           reportFinishedAt;
       if (testedAt == null) continue;
-      records.add((testedAt, rawResult['status'] == 'failed'));
+      final toolErrors = rawResult['toolErrors'];
+      final hasToolError = toolErrors is List && toolErrors.isNotEmpty;
+      final hasRequestError = rawResult['requestError'] != null;
+      final hasPersistenceError = rawResult['persistenceError'] != null;
+      final hasError =
+          rawResult['status'] == 'failed' ||
+          hasToolError ||
+          hasRequestError ||
+          hasPersistenceError;
+      final status = rawResult['status'];
+      records.add((
+        testedAt,
+        status == 'failed' || hasError
+            ? true
+            : status == 'passed'
+            ? false
+            : null,
+      ));
     }
   }
   if (records.isEmpty) return null;
   records.sort((a, b) => a.$1.compareTo(b.$1));
   final latest = records.last;
-  return SuggestedQuestionTestStatus(
-    lastTestAt: latest.$1,
-    hasError: latest.$2,
-  );
+  var hasError = false;
+  for (final record in records) {
+    if (record.$2 != null) hasError = record.$2!;
+  }
+  return SuggestedQuestionTestStatus(lastTestAt: latest.$1, hasError: hasError);
 }
 
 DateTime? _parseDate(Object? value) {

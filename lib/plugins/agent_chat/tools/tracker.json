@@ -445,5 +445,27 @@
     ],
     "notes": "全局统计包含: totalGoals, todayCompleted, monthCompleted, monthAdded, todayRecords, overallProgress, groups。单目标统计包含: goalId, goalName, totalRecords, totalValue, currentValue, targetValue, progress, isCompleted",
     "enabled": true
+  },
+  "tracker_query": {
+    "title": "查询目标",
+    "description": "统一查询目标，条件之间为 AND；返回目标数组，无匹配返回空数组。按名称、ID、分组、单位或状态查找均使用此方法。",
+    "parameters": [
+      {"name":"id","type":"string","optional":true,"description":"目标 ID，精确匹配"},
+      {"name":"name","type":"string","optional":true,"description":"目标名称，默认精确匹配"},
+      {"name":"fuzzy","type":"boolean","optional":true,"description":"true 时名称使用包含匹配"},
+      {"name":"group","type":"string","optional":true,"description":"分组，精确匹配"},
+      {"name":"unitType","type":"string","optional":true,"description":"单位，精确匹配"},
+      {"name":"status","type":"string","optional":true,"description":"active 或 completed"},
+      {"name":"offset","type":"number","optional":true,"description":"筛选后的分页偏移，默认 0"},
+      {"name":"count","type":"number","optional":true,"description":"筛选后的返回数量，默认全部"},
+      {"name":"mode","type":"string","optional":true,"description":"复用现有 filter：full、compact、summary"},
+      {"name":"fields","type":"array<string>","optional":true,"description":"复用现有 filter：字段白名单"},
+      {"name":"excludeFields","type":"array<string>","optional":true,"description":"复用现有 filter：字段黑名单"},
+      {"name":"textLengthLimits","type":"object","optional":true,"description":"复用现有 filter：字段名到最大文本长度"},
+      {"name":"generateSummary","type":"boolean","optional":true,"description":"应用输出过滤时是否附带统计摘要，默认 true"},
+      {"name":"abbreviateFieldNames","type":"boolean","optional":true,"description":"复用现有 filter：缩短字段名"}
+    ],
+    "returns":{"type":"Array|Object","description":"默认目标数组；启用 filter 时沿用现有过滤响应格式"},
+    "enabled":true
   }
 }

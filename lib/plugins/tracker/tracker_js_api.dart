@@ -2,6 +2,39 @@ part of 'tracker_plugin.dart';
 
 // ==================== JS API 实现 ====================
 
+/// 统一目标查询；输出字段过滤由 JS Bridge / PluginToolRegistry 统一处理。
+Future<dynamic> _jsQuery(Map<String, dynamic> params) async {
+  final result = await TrackerPlugin.instance._trackerUseCase.getGoals({
+    'group': params['group'],
+    'status': params['status'],
+  });
+  if (result.isFailure) {
+    return {'error': result.errorOrNull?.message ?? '查询目标失败'};
+  }
+  final name = params['name'] as String?;
+  final id = params['id'] as String?;
+  final unitType = params['unitType'] as String?;
+  final goals = (result.dataOrNull as List).where((goal) {
+    if (id != null && goal['id'] != id) return false;
+    if (unitType != null && goal['unitType'] != unitType) return false;
+    if (name != null) {
+      final goalName = goal['name'] as String;
+      if (params['fuzzy'] == true) {
+        if (!goalName.contains(name)) return false;
+      } else if (goalName != name) {
+        return false;
+      }
+    }
+    return true;
+  }).toList();
+  // 先筛选再分页，避免漏掉当前页以外的匹配目标。
+  final offset = (params['offset'] as num?)?.toInt() ?? 0;
+  final count = (params['count'] as num?)?.toInt() ?? goals.length;
+  final start = offset.clamp(0, goals.length);
+  final end = (start + count).clamp(start, goals.length);
+  return goals.sublist(start, end);
+}
+
 /// 获取所有目标
 /// 支持分页参数: offset, count
 Future<dynamic> _jsGetGoals(Map<String, dynamic> params) async {

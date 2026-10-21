@@ -57,7 +57,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
   Future<void> _loadQuestions() async {
     try {
       final questions = await _service.getCategorizedQuestions();
-      final testStatuses = await _loadTestStatuses();
+      final testStatuses = await _loadTestStatuses(questions);
       if (mounted) {
         // 尝试读取上次选中的分类
         String? lastCategory;
@@ -95,7 +95,9 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
     }
   }
 
-  Future<Map<String, SuggestedQuestionTestStatus>> _loadTestStatuses() async {
+  Future<Map<String, SuggestedQuestionTestStatus>> _loadTestStatuses(
+    Map<String, List<String>> questions,
+  ) async {
     try {
       final keys = await AboutmeDataService.instance.listPathKeys(
         'agent_chat/test_runs',
@@ -113,7 +115,7 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
       );
 
       final statuses = <String, SuggestedQuestionTestStatus>{};
-      for (final entry in (_questions ?? <String, List<String>>{}).entries) {
+      for (final entry in questions.entries) {
         for (final question in entry.value) {
           final status = latestSuggestedQuestionTestStatus(
             reports,
@@ -369,6 +371,12 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
       semanticLabel: question,
       builder: (context, states) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: testStatus?.hasError == true
+            ? BoxDecoration(
+                color: theme.danger.withValues(alpha: 0.08),
+                border: Border(left: BorderSide(color: theme.danger, width: 3)),
+              )
+            : null,
         child: Row(
           children: [
             Expanded(

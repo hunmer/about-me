@@ -433,6 +433,7 @@ class TrackerPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
     return {
       // 目标相关
       'getGoals': _jsGetGoals,
+      'query': _jsQuery,
       'getGoal': _jsGetGoal,
       'createGoal': _jsCreateGoal,
       'updateGoal': _jsUpdateGoal,

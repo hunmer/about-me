@@ -77,6 +77,54 @@ void main() {
     expect(status.lastTestAt, DateTime.parse('2026-01-03T10:00:40.000'));
   });
 
+  test('工具错误字段存在时即使状态异常为 passed 也标记错误', () {
+    final status = latestSuggestedQuestionTestStatus(
+      [
+        {
+          'results': [
+            {
+              'category': 'todo',
+              'question': '题目C',
+              'status': 'passed',
+              'finishedAt': '2026-01-04T10:00:00.000',
+              'toolErrors': [
+                {'method': 'run_js', 'error': '调用失败'},
+              ],
+            },
+          ],
+        },
+      ],
+      category: 'todo',
+      question: '题目C',
+    );
+
+    expect(status!.hasError, isTrue);
+  });
+
+  test('取消测试不会清除之前的错误标记', () {
+    final status = latestSuggestedQuestionTestStatus(
+      [
+        _report(
+          finishedAt: '2026-01-02T10:01:00.000',
+          category: 'todo',
+          question: '题目D',
+          status: 'failed',
+        ),
+        _report(
+          finishedAt: '2026-01-03T10:01:00.000',
+          category: 'todo',
+          question: '题目D',
+          status: 'cancelled',
+          resultFinishedAt: '2026-01-03T10:00:30.000',
+        ),
+      ],
+      category: 'todo',
+      question: '题目D',
+    );
+
+    expect(status!.hasError, isTrue);
+  });
+
   test('未知问题没有状态记录', () {
     final status = latestSuggestedQuestionTestStatus(
       [
