@@ -63,8 +63,7 @@ class AppStoreManager extends ChangeNotifier {
       orElse: () => _sources.first,
     );
 
-    // 获取应用列表
-    await fetchApps();
+    // 目录在商场页面打开后获取，启动只加载本地配置，避免网络阻塞插件就绪。
   }
 
   /// 添加默认源

@@ -24,6 +24,18 @@ class AppStoreScreen extends StatefulWidget {
 }
 
 class _AppStoreScreenState extends State<AppStoreScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final manager = context.read<AppStoreManager>();
+      if (!manager.isLoading && manager.apps.isEmpty) {
+        manager.fetchApps();
+      }
+    });
+  }
+
   final TextEditingController _searchController = TextEditingController();
   String _selectedTag = '';
   bool _showInstalledOnly = false;

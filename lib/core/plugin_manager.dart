@@ -8,6 +8,7 @@ import 'package:aboutme/screens/onboarding/sample_data_selection_step.dart';
 import 'package:flutter/material.dart';
 import 'plugin_base.dart';
 import 'storage/storage_manager.dart';
+import 'services/startup_trace.dart';
 
 /// 插件管理器，负责管理所有已注册的插件
 class PluginManager {
@@ -55,9 +56,15 @@ class PluginManager {
       }
       _plugins.add(plugin);
       // 初始化插件（加载数据、设置监听器等）
-      await plugin.initialize();
+      await StartupTrace.measure(
+        'plugin.${plugin.id}.initialize',
+        plugin.initialize,
+      );
       // 注册到应用程序（设置监听器等）
-      await plugin.registerToApp(this, ConfigManager(_storageManager!));
+      await StartupTrace.measure(
+        'plugin.${plugin.id}.register',
+        () => plugin.registerToApp(this, ConfigManager(_storageManager!)),
+      );
 
       // 广播插件加载完成事件
       eventManager.broadcast('plugin_loaded', Value(plugin.id));

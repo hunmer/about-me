@@ -43,6 +43,7 @@ import 'package:aboutme/utils/blob_url.dart';
 import 'global_flags.dart';
 import 'services/toast_service.dart';
 import 'services/log_service.dart';
+import 'services/startup_trace.dart';
 import 'services/speech_recognition_config_service.dart';
 import 'services/fcm_service.dart';
 
@@ -68,16 +69,19 @@ class AppStartupState extends ChangeNotifier {
   bool get isHandlingInitialUri => _isHandlingInitialUri;
 
   void _setCoreReady() {
+    StartupTrace.mark('core_ready');
     _coreReady = true;
     notifyListeners();
   }
 
   void _setPluginsReady() {
+    StartupTrace.mark('plugins_ready');
     _pluginsReady = true;
     notifyListeners();
   }
 
   void _setFullyReady() {
+    StartupTrace.mark('background_scheduled');
     _fullyReady = true;
     notifyListeners();
   }
@@ -174,35 +178,50 @@ Future<void> initializeApp() async {
   try {
     // === 核心初始化（必须同步完成） ===
     // 创建并初始化存储管理器
-    await DeviceIdentity.initialize();
+    await StartupTrace.measure('device_identity', DeviceIdentity.initialize);
     globalStorage = StorageManager();
-    await globalStorage.initialize();
+    await StartupTrace.measure('storage', globalStorage.initialize);
 
     // 初始化统一数据入口（本地直处理 / 远程 REST 自动决定）
-    await AboutmeDataService.instance.initialize();
+    await StartupTrace.measure(
+      'data_service',
+      AboutmeDataService.instance.initialize,
+    );
 
     // 初始化配置管理器
     globalConfigManager = ConfigManager(globalStorage);
-    await globalConfigManager.initialize();
+    await StartupTrace.measure('config', globalConfigManager.initialize);
 
     // 初始化全局主题背景（所有界面共用的背景图设置）
-    await AppBackgroundController().initialize();
+    await StartupTrace.measure(
+      'background_config',
+      AppBackgroundController().initialize,
+    );
 
     // 初始化主题色板（全局主题颜色选择）
-    await DsThemeColorController().initialize();
+    await StartupTrace.measure(
+      'theme_color',
+      DsThemeColorController().initialize,
+    );
 
     // 初始化墨线风格（全局手绘粗糙度档位）
-    await DsInkStyleController().initialize();
+    await StartupTrace.measure('ink_style', DsInkStyleController().initialize);
 
     // 初始化手绘便签风格（全局贴条/倾斜开关）
-    await HandDrawnStyleController().initialize();
+    await StartupTrace.measure(
+      'hand_drawn_style',
+      HandDrawnStyleController().initialize,
+    );
 
     // 初始化日志服务（根据配置决定是否启用）
     unawaited(LogService.instance.initialize(globalStorage));
 
     // 初始化插件管理器（不注册插件）
     globalPluginManager = PluginManager();
-    await globalPluginManager.setStorageManager(globalStorage);
+    await StartupTrace.measure(
+      'plugin_config',
+      () => globalPluginManager.setStorageManager(globalStorage),
+    );
     RouteRefreshManager().setPluginManager(globalPluginManager);
     final backendConfig = await LocalStorageBackendConfigStore().load();
     if (backendConfig.isHttpEnabled) {
@@ -229,12 +248,15 @@ Future<void> initializeApp() async {
     // 在初始化通知服务之前先清理历史通知和计时器状态
     // 这是防止应用重启后通知自动复原的关键步骤
     AppStartupState.instance._setLoadingMessage('正在清理历史通知...');
-    await AboutmeNotifications.instance.cancelAll();
+    await StartupTrace.measure(
+      'notifications_clear',
+      AboutmeNotifications.instance.cancelAll,
+    );
 
     // 同时清理统一计时器控制器的活动计时器，防止插件重新创建通知
     try {
       final timerController = UnifiedTimerController();
-      await timerController.clearAll();
+      await StartupTrace.measure('timers_clear', timerController.clearAll);
     } catch (e) {
       debugPrint('[AppInitializer] 清理计时器状态失败（可能尚未初始化）: $e');
     }
@@ -255,7 +277,10 @@ Future<void> initializeApp() async {
 
     // 初始化通知控制器（设置监听器和配置）
     AppStartupState.instance._setLoadingMessage('正在初始化通知服务...');
-    await NotificationController.initialize();
+    await StartupTrace.measure(
+      'notifications_init',
+      NotificationController.initialize,
+    );
 
     // 核心服务就绪，可以显示UI
     AppStartupState.instance._setCoreReady();
@@ -307,7 +332,7 @@ Future<void> _initializeBackgroundServices() async {
 
     // === 注册插件（核心功能，可配置） ===
     startupState._setLoadingMessage('正在加载插件...');
-    await _registerPlugins();
+    await StartupTrace.measure('plugins', _registerPlugins);
     startupState._setPluginsReady();
 
     // === 初始化悬浮球动作管理器 ===

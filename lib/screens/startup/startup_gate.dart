@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/services/startup_trace.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/screens/route.dart';
 
@@ -31,6 +32,7 @@ class _StartupGateState extends State<StartupGate> {
     }
 
     _navigated = true;
+    StartupTrace.mark('startup_route_ready');
     final manager = PluginManager.instance;
     final lastId = manager.getLastOpenedPluginId;
     final lastPlugin = lastId == null ? null : manager.getPlugin(lastId);
@@ -61,6 +63,9 @@ class _StartupGateState extends State<StartupGate> {
     } else {
       Navigator.of(context).pushReplacementNamed(AppRoutes.jellyHome);
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      StartupTrace.mark('destination_frame');
+    });
   }
 
   @override

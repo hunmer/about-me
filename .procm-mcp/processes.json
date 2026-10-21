@@ -1093,6 +1093,36 @@
       "stdoutLogPath": "D:\\about-me\\.procm-mcp\\6OPpO4(23340)\\processes\\ZAmtTjJ9-stdout.log",
       "stderrLogPath": "D:\\about-me\\.procm-mcp\\6OPpO4(23340)\\processes\\ZAmtTjJ9-stderr.log",
       "envs": {}
+    },
+    {
+      "id": "skD_RPlA",
+      "name": "app-windows-startup",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "running",
+      "pid": 308,
+      "exitCode": null,
+      "error": null,
+      "desc": "Startup performance baseline and optimization",
+      "group": null,
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792557875154,
+      "lastStartedAt": 1792558619821,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\6OPpO4(23340)\\processes\\skD_RPlA-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\6OPpO4(23340)\\processes\\skD_RPlA-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
     }
   ]
 }

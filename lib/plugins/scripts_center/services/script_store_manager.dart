@@ -67,8 +67,7 @@ class ScriptStoreManager extends ChangeNotifier {
       orElse: () => _sources.first,
     );
 
-    // 获取脚本列表
-    await fetchScripts();
+    // 目录在商场页面打开后获取，启动只加载本地配置，避免网络阻塞插件就绪。
   }
 
   /// 添加默认源

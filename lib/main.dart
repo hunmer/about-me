@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:aboutme/core/app_widgets/page_transitions.dart';
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/services/log_service.dart';
+import 'package:aboutme/core/services/startup_trace.dart';
 import 'package:aboutme/core/services/window_geometry_service.dart';
 import 'package:aboutme/core/services/fcm_service.dart';
 import 'package:aboutme/firebase_options.dart';
@@ -41,12 +41,14 @@ import 'screens/settings_screen/controllers/auto_update_controller.dart';
 // 从 app_initializer 导入全局变量
 
 void main() {
+  StartupTrace.start();
   // 使用 runZonedGuarded 捕获所有未处理的异步异常
   runZonedGuarded(
     () async {
       // 0. 确保 WidgetsFlutterBinding 初始化（必须在任何平台通道操作之前）
       // 必须在 runZonedGuarded 内部调用，以避免 Zone 不匹配错误
       WidgetsFlutterBinding.ensureInitialized();
+      StartupTrace.mark('binding_ready');
 
       // 注册 skribble 手绘图标目录（幂等；越早越好——导航栏等
       // 第三方包里的 WiredIcon 不等 AppTheme 主题树建好就开始取图标）
@@ -56,8 +58,11 @@ void main() {
       timeago.setLocaleMessages('zh', timeago.ZhMessages());
 
       // 0.1 初始化 Firebase（必须在其他代码之前）
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
+      await StartupTrace.measure(
+        'firebase',
+        () => Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        ),
       );
 
       // 0.2 注册 FCM 后台消息处理器（必须在 Firebase.initializeApp 之后）
@@ -104,13 +109,20 @@ void main() {
       };
 
       // 执行核心初始化（快速完成）
-      await initializeApp();
+      await StartupTrace.measure('core', initializeApp);
 
       // 桌面端：恢复上次窗口位置与大小（非桌面平台内部跳过）
-      await WindowGeometryService.instance.initialize();
+      await StartupTrace.measure(
+        'window',
+        WindowGeometryService.instance.initialize,
+      );
 
       // 立即启动应用，其他初始化在后台进行
       runApp(const MyApp());
+      StartupTrace.mark('runApp');
+      WidgetsBinding.instance.waitUntilFirstFrameRasterized.then((_) {
+        StartupTrace.mark('first_frame_rasterized');
+      });
     },
     (error, stack) {
       // 捕获所有未处理的异步异常

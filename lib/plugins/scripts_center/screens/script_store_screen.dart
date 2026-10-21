@@ -33,6 +33,18 @@ class ScriptStoreScreen extends StatefulWidget {
 }
 
 class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final manager = context.read<ScriptStoreManager>();
+      if (!manager.isLoading && manager.scripts.isEmpty) {
+        manager.fetchScripts();
+      }
+    });
+  }
+
   /// 搜索关键词
   String _searchKeyword = '';
 

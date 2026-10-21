@@ -5,6 +5,7 @@ library;
 import 'dart:io';
 import 'dart:convert';
 
+import 'package:aboutme/core/services/startup_trace.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -201,19 +202,25 @@ class ScriptsCenterPlugin extends BasePlugin {
       );
 
       // 初始化JS引擎
-      await _scriptExecutor.initialize();
+      await StartupTrace.measure('scripts.engine', _scriptExecutor.initialize);
 
       // 初始化默认文件夹
-      await _initializeDefaultFolders();
+      await StartupTrace.measure('scripts.folders', _initializeDefaultFolders);
 
       // 恢复缺失的内置脚本（assets 打包分发）
-      await _scriptLoader.syncBuiltInScripts();
+      await StartupTrace.measure(
+        'scripts.builtin_sync',
+        _scriptLoader.syncBuiltInScripts,
+      );
 
       // 加载当前文件夹的脚本
-      await _scriptManager.loadScripts();
+      await StartupTrace.measure('scripts.load', _scriptManager.loadScripts);
 
       // 初始化脚本商场
-      await _scriptStoreManager.initialize();
+      await StartupTrace.measure(
+        'scripts.store_config',
+        _scriptStoreManager.initialize,
+      );
 
       // 注册数据选择器
       registerDataSelectors();

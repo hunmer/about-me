@@ -794,6 +794,13 @@ class MobileJSEngine implements JSEngine {
         ''');
 
         _runtime.executePendingJob();
+        // 同步脚本/已完成的 Promise 不必固定等待 50 次（至少 500ms）。
+        if (_runtime.evaluate(
+              "'$executionId' in globalThis.__EVAL_RESULTS__",
+            ).stringResult ==
+            'true') {
+          break;
+        }
         await Future.delayed(Duration(milliseconds: 10));
       }
 
@@ -850,10 +857,7 @@ class MobileJSEngine implements JSEngine {
           _runtime.executePendingJob();
         }
 
-        // 3. 给 Dart 事件循环时间
-        await Future.delayed(Duration(milliseconds: 50));
-
-        // 4. 检查用户代码的结果是否已准备好
+        // 3. 先检查结果，已完成时不再额外等待一个轮询间隔。
         try {
           // 先检查键是否存在
           final existsCode = "'$executionId' in globalThis.__EVAL_RESULTS__";
@@ -872,6 +876,8 @@ class MobileJSEngine implements JSEngine {
         }
 
         retryCount++;
+        // 4. 尚未完成时给 Dart 事件循环时间。
+        await Future.delayed(Duration(milliseconds: 50));
       }
 
       // 清理结果存储

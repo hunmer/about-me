@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io' show Platform;
 
+import 'package:aboutme/core/services/startup_trace.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
@@ -168,9 +169,9 @@ class ChatPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
     uiService = UIService(configService, configService, this);
 
     // Initialize all services
-    await configService.initialize();
-    await dataService.initialize();
-    await uiService.initialize();
+    await StartupTrace.measure('chat.config', configService.initialize);
+    await StartupTrace.measure('chat.data', dataService.initialize);
+    await StartupTrace.measure('chat.ui', uiService.initialize);
 
     // Initialize prompt controller
 
