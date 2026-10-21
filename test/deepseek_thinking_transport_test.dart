@@ -22,6 +22,7 @@ void main() {
         request.response.headers.contentType = ContentType(
           'text',
           'event-stream',
+          charset: 'utf-8',
         );
         for (final delta in [
           if (enabled) {'reasoning_content': '先计算'},

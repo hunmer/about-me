@@ -113,21 +113,24 @@ class DeepSeekCompatClient extends http.BaseClient {
         !request.url.path.contains('chat/completions')) {
       return _inner.send(request);
     }
-    try {
-      final body = jsonDecode(request.body) as Map<String, dynamic>;
-      if (!body.containsKey('thinking') && !body.containsKey('reasoning')) {
-        body['thinking'] = {'type': disableThinking ? 'disabled' : 'enabled'};
-        debugPrint(
-          '[NativeTool] DeepSeek 请求: thinking=${body['thinking']} '
-          'messages=${(body['messages'] as List?)?.length ?? 0}',
-        );
-        final patched = http.Request(request.method, request.url)
-          ..headers.addAll(request.headers)
-          ..body = jsonEncode(body);
-        return _inner.send(patched);
-      }
-    } catch (_) {}
-    return _inner.send(request);
+    final body = jsonDecode(request.body) as Map<String, dynamic>;
+    body.putIfAbsent(
+      'thinking',
+      () => {'type': disableThinking ? 'disabled' : 'enabled'},
+    );
+    final messages = body['messages'] as List? ?? const [];
+    debugPrint(
+      '[NativeTool] DeepSeek 请求: model=${body['model']} '
+      'thinking=${body['thinking']} messages=${messages.length} '
+      'reasoningMessages=${messages.where((m) => m is Map && m['reasoning_content'] is String && (m['reasoning_content'] as String).isNotEmpty).length}',
+    );
+    final patched = http.Request(request.method, request.url)
+      ..headers.addAll(request.headers)
+      ..followRedirects = request.followRedirects
+      ..maxRedirects = request.maxRedirects
+      ..persistentConnection = request.persistentConnection
+      ..body = jsonEncode(body);
+    return _inner.send(patched);
   }
 
   @override

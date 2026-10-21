@@ -1,33 +1,25 @@
-/// 习惯打卡热力图卡片 - 公共小组件（iOS 深色小组件风格）
+/// 习惯打卡热力图卡片 - 公共小组件（手绘纸墨风格）
 ///
-/// 结构：彩色图标 + 标题头部 / 7x10 四档亮度热力图矩阵（值 4 为今日待打卡空心格）
-/// / 底部胶囊打卡按钮（未打卡 Check-In / 已打卡勾号 / 多次打卡勾号 + x N）。
-/// 内置 4 套主题色板（drinkWater / journaling / playDog / read）。
+/// 结构：手绘图标 + 标题头部 / 7x10 热力图矩阵（值 4 为今日待打卡空心格）
+/// / 底部胶囊打卡按钮（未打卡加号 / 已打卡勾号 + x N）。
+/// 颜色一律取 AppTheme 语义色；入场为 WiredDraw 墨线描画（格子按 index 错峰描出）。
 library;
 
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
-/// 习惯打卡热力图主题色板
+/// 旧版深色色板：手绘化后渲染不再消费，仅为兼容保留（构造参数 / props 解析）
 class HabitHeatmapTheme {
-  /// 卡片背景渐变（自上而下偏右，约 155deg）
   final List<Color> cardGradient;
-
-  /// 卡片 1px 内描边颜色
   final Color borderColor;
-
-  /// 头部图标颜色
   final Color iconColor;
-
-  /// 热力图 cell 颜色（0=未打卡暗底，1=饱和主色，2=中等亮度，3=高亮浅色）
   final List<Color> cellColors;
-
-  /// 今日待打卡空心格描边颜色
   final Color outlineColor;
-
-  /// 已打卡按钮底色（勾号为白圆底 + 该色勾）
   final Color checkedButtonColor;
 
   const HabitHeatmapTheme({
@@ -39,7 +31,6 @@ class HabitHeatmapTheme {
     required this.checkedButtonColor,
   });
 
-  /// 蓝紫主题（Drink water）
   static const drinkWater = HabitHeatmapTheme(
     cardGradient: [Color(0xFF12131C), Color(0xFF1D1E2E)],
     borderColor: Color(0xFF28293D),
@@ -54,7 +45,6 @@ class HabitHeatmapTheme {
     checkedButtonColor: Color(0xFF32344A),
   );
 
-  /// 绿色主题（Journaling）
   static const journaling = HabitHeatmapTheme(
     cardGradient: [Color(0xFF0B1C0E), Color(0xFF17331A)],
     borderColor: Color(0xFF214224),
@@ -69,7 +59,6 @@ class HabitHeatmapTheme {
     checkedButtonColor: Color(0xFF2B472D),
   );
 
-  /// 黄色主题（Play dog）
   static const playDog = HabitHeatmapTheme(
     cardGradient: [Color(0xFF211B08), Color(0xFF382E0B)],
     borderColor: Color(0xFF473B12),
@@ -84,7 +73,6 @@ class HabitHeatmapTheme {
     checkedButtonColor: Color(0xFF4C4017),
   );
 
-  /// 橙色主题（Read）
   static const read = HabitHeatmapTheme(
     cardGradient: [Color(0xFF241106), Color(0xFF3B1C0A)],
     borderColor: Color(0xFF4C2611),
@@ -131,10 +119,10 @@ class HabitHeatmapCard extends StatefulWidget {
   /// 今日打卡次数：0=未打卡，1=已打卡，>1=多次打卡
   final int checkInCount;
 
-  /// 主题色板
+  /// 兼容保留：手绘化后颜色取自 AppTheme，不再消费
   final HabitHeatmapTheme theme;
 
-  /// 未打卡按钮文字
+  /// 兼容保留：未打卡按钮已改为加号图标，不再消费
   final String checkInLabel;
 
   /// 是否为内联模式（内联模式使用 double.maxFinite，非内联模式使用固定尺寸）
@@ -142,6 +130,9 @@ class HabitHeatmapCard extends StatefulWidget {
 
   /// 组件尺寸
   final HomeWidgetSize size;
+
+  /// 打卡按钮点击回调（如触发开始习惯弹窗）
+  final VoidCallback? onCheckIn;
 
   const HabitHeatmapCard({
     super.key,
@@ -153,6 +144,7 @@ class HabitHeatmapCard extends StatefulWidget {
     this.checkInLabel = 'Check-In',
     this.inline = false,
     this.size = const Large3Size(),
+    this.onCheckIn,
   });
 
   /// 从 props 创建实例（注册器统一入口）
@@ -269,34 +261,7 @@ class HabitHeatmapCard extends StatefulWidget {
   State<HabitHeatmapCard> createState() => _HabitHeatmapCardState();
 }
 
-class _HabitHeatmapCardState extends State<HabitHeatmapCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    );
-    _animationController.addListener(() {
-      setState(() {});
-    });
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
+class _HabitHeatmapCardState extends State<HabitHeatmapCard> {
   double _defaultHeight() {
     final scale = widget.size.scale;
     if (widget.size is SmallSize) {
@@ -313,56 +278,27 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard>
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘描画入场：挂载即播一次，墨线「画出来」而非淡入
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : 384 * scale,
         height: widget.inline ? double.maxFinite : _defaultHeight(),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: widget.theme.cardGradient,
-            begin: const Alignment(-0.42, -0.91),
-            end: const Alignment(0.42, 0.91),
-          ),
-          borderRadius: BorderRadius.circular(24 * scale),
-          border: Border.all(color: widget.theme.borderColor, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 20 * scale,
-              offset: Offset(0, 4 * scale),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(16 * scale * widget.size.padding),
-          child: _buildContent(),
-        ),
+        radius: BorderRadius.circular(24 * scale),
+        padding: EdgeInsets.all(16 * scale * widget.size.padding),
+        child: _buildContent(theme),
       ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(AppThemeData theme) {
     // 小尺寸只显示热力图
     if (widget.size is SmallSize) {
       return Center(
-        child: _HeatmapGrid(
-          cells: widget.cells,
-          theme: widget.theme,
-          progress: _animation.value,
-          scale: widget.size.scale,
-        ),
+        child: _HeatmapGrid(cells: widget.cells, scale: widget.size.scale),
       );
     }
 
@@ -375,12 +311,7 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard>
           Expanded(
             flex: 55,
             child: Center(
-              child: _HeatmapGrid(
-                cells: widget.cells,
-                theme: widget.theme,
-                progress: _animation.value,
-                scale: scale,
-              ),
+              child: _HeatmapGrid(cells: widget.cells, scale: scale),
             ),
           ),
           SizedBox(width: 16 * scale),
@@ -389,9 +320,9 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildHeader(),
+                _buildHeader(theme),
                 const Spacer(),
-                _buildCheckInButton(),
+                _buildCheckInButton(theme),
               ],
             ),
           ),
@@ -403,33 +334,33 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader(),
+        _buildHeader(theme),
         SizedBox(height: 14 * scale),
-        _HeatmapGrid(
-          cells: widget.cells,
-          theme: widget.theme,
-          progress: _animation.value,
-          scale: scale,
-        ),
+        _HeatmapGrid(cells: widget.cells, scale: scale),
         const Spacer(),
         SizedBox(height: 14 * scale),
-        _buildCheckInButton(),
+        _buildCheckInButton(theme),
       ],
     );
   }
 
-  /// 头部：彩色图标 + 白色标题
-  Widget _buildHeader() {
+  /// 头部：手绘图标 + 标题
+  Widget _buildHeader(AppThemeData theme) {
     final scale = widget.size.scale;
     return Row(
       children: [
-        Icon(widget.icon, color: widget.theme.iconColor, size: 20 * scale),
+        WiredIcon(
+          icon: widget.icon,
+          size: 20 * scale,
+          color: theme.primary,
+          drawConfig: theme.wired.drawConfig,
+        ),
         SizedBox(width: 8 * scale),
         Expanded(
           child: Text(
             widget.title,
             style: TextStyle(
-              color: Colors.white,
+              color: theme.text,
               fontSize: 17.5 * scale,
               fontWeight: FontWeight.w500,
               height: 1.0,
@@ -442,36 +373,25 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard>
     );
   }
 
-  /// 底部胶囊打卡按钮（三态）
-  Widget _buildCheckInButton() {
+  /// 底部胶囊打卡按钮（三态：加号 / 勾 / 勾 + x N）
+  Widget _buildCheckInButton(AppThemeData theme) {
     final scale = widget.size.scale;
     final buttonHeight = 47.0 * scale;
-    final radius = BorderRadius.circular(buttonHeight / 2);
-
-    final buttonAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.7, 1.0, curve: Curves.easeOutBack),
-    );
+    final checked = widget.checkInCount > 0;
 
     final Widget content;
-    final Color background;
-    if (widget.checkInCount <= 0) {
-      background = const Color(0xFFA4A5AF);
-      content = Text(
-        widget.checkInLabel,
-        style: TextStyle(
-          color: const Color(0xFF23242E),
-          fontSize: 16 * scale,
-          fontWeight: FontWeight.w600,
-          height: 1.0,
-        ),
+    if (!checked) {
+      // 未打卡：加号（触发开始习惯）
+      content = DsIcon(
+        DsIconKind.plus,
+        size: 22 * scale,
+        color: theme.onPrimary,
       );
     } else {
-      background = widget.theme.checkedButtonColor;
       content = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildCheckBadge(scale),
+          DsIcon(DsIconKind.check, size: 22 * scale, color: theme.primary),
           if (widget.checkInCount > 1) ...[
             SizedBox(width: 8 * scale),
             Text.rich(
@@ -480,14 +400,14 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard>
                   TextSpan(
                     text: 'x ',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.75),
+                      color: theme.textSub,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   TextSpan(
                     text: '${widget.checkInCount}',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: theme.text,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -500,39 +420,18 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard>
       );
     }
 
-    return AnimatedBuilder(
-      animation: buttonAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: 0.85 + 0.15 * buttonAnimation.value,
-          child: Opacity(
-            opacity: buttonAnimation.value.clamp(0.0, 1.0),
-            child: child,
-          ),
-        );
-      },
+    return GestureDetector(
+      onTap: widget.onCheckIn,
       child: Container(
         height: buttonHeight,
-        decoration: BoxDecoration(color: background, borderRadius: radius),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          // 大圆角被 rough 引擎自动钳制成胶囊
+          radius: BorderRadius.circular(buttonHeight / 2),
+          fillColor: checked ? theme.surfaceAlt : theme.primary,
+          strokeWidth: 1.6,
+        ),
         child: Center(child: content),
-      ),
-    );
-  }
-
-  /// 白圆底 + 主题深色勾号
-  Widget _buildCheckBadge(double scale) {
-    final badgeSize = 22.0 * scale;
-    return Container(
-      width: badgeSize,
-      height: badgeSize,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        Icons.check_rounded,
-        color: widget.theme.checkedButtonColor,
-        size: badgeSize * 0.68,
       ),
     );
   }
@@ -541,16 +440,9 @@ class _HabitHeatmapCardState extends State<HabitHeatmapCard>
 /// 热力图矩阵（cell 随宽度自适应，宽高比 1:1）
 class _HeatmapGrid extends StatelessWidget {
   final List<List<int>> cells;
-  final HabitHeatmapTheme theme;
-  final double progress;
   final double scale;
 
-  const _HeatmapGrid({
-    required this.cells,
-    required this.theme,
-    required this.progress,
-    required this.scale,
-  });
+  const _HeatmapGrid({required this.cells, required this.scale});
 
   @override
   Widget build(BuildContext context) {
@@ -571,9 +463,11 @@ class _HeatmapGrid extends StatelessWidget {
           child: CustomPaint(
             painter: _HeatmapPainter(
               cells: cells,
-              theme: theme,
+              cell: cell,
               gap: gap,
-              progress: progress,
+              theme: AppTheme.of(context),
+              // 外层无 WiredDraw（或动画被禁用）时为 null = 全部直接画完
+              progress: WiredDrawTransition.progressOf(context),
             ),
           ),
         );
@@ -582,69 +476,97 @@ class _HeatmapGrid extends StatelessWidget {
   }
 }
 
-/// 热力图绘制器（cell 依次淡入）
+/// 热力图绘制器：rough 墨线格，逐格错峰描画（消费外层 WiredDraw 进度）
+///
+/// 值 0=淡墨空格；1-3=主题色实底（透明度 0.35/0.65/1.0）；4=主题色空心待打卡格
 class _HeatmapPainter extends CustomPainter {
   final List<List<int>> cells;
-  final HabitHeatmapTheme theme;
+  final double cell;
   final double gap;
-  final double progress;
+  final AppThemeData theme;
+  final Animation<double>? progress;
 
   _HeatmapPainter({
     required this.cells,
-    required this.theme,
+    required this.cell,
     required this.gap,
+    required this.theme,
     required this.progress,
-  });
+  }) : super(repaint: progress);
+
+  /// 每格 rough 绘图缓存（painter 随尺寸变化重建，动画帧间复用）
+  late final List<RoughDrawing> _drawings = _buildDrawings();
+
+  List<RoughDrawing> _buildDrawings() {
+    final rows = cells.length;
+    final cols = cells.first.length;
+    final radius = cell * 0.19;
+
+    final config = theme.wired.drawConfig;
+    config.randomizer.reset();
+    final solidGen = Generator(config, SolidFiller());
+    final lineGen = Generator(config, NoFiller());
+
+    Paint stroke(double width, Color color) =>
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..strokeWidth = width
+          ..color = color;
+
+    return List.generate(rows * cols, (i) {
+      final r = i ~/ cols;
+      final c = i % cols;
+      final value = c < cells[r].length ? cells[r][c] : 0;
+      final x = c * (cell + gap);
+      final y = r * (cell + gap);
+      final filled = value >= 1 && value <= 3;
+
+      final borderPaint = switch (value) {
+        0 => stroke(1.2, theme.ink.withValues(alpha: 0.22)),
+        4 => stroke(1.8, theme.primary),
+        _ => stroke(1.2, theme.ink.withValues(alpha: 0.45)),
+      };
+      final fillPaint = switch (value) {
+        1 => stroke(1.2, theme.primary.withValues(alpha: 0.35)),
+        2 => stroke(1.2, theme.primary.withValues(alpha: 0.65)),
+        3 => stroke(1.2, theme.primary),
+        _ => stroke(1.2, const Color(0x00000000)),
+      };
+
+      final gen = filled ? solidGen : lineGen;
+      return RoughDrawing(
+        gen.roundedRectangle(x, y, cell, cell, radius, radius, radius, radius),
+        borderPaint,
+        fillPaint,
+      );
+    });
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     final rows = cells.length;
     final cols = cells.first.length;
     final total = rows * cols;
-    final cell = (size.width - (cols - 1) * gap) / cols;
-    final radius = Radius.circular(cell * 0.19);
+    final p = progress?.value ?? 1;
 
     for (var r = 0; r < rows; r++) {
       for (var c = 0; c < cols && c < cells[r].length; c++) {
-        final value = cells[r][c];
         final index = r * cols + c;
-        // 依次淡入：前半段总进度用于铺开全部 cell 的起点
+        // 依次错峰描画：前半段总进度用于铺开全部 cell 的起点
         final start = 0.5 * (index / total);
-        final local = ((progress - start) / 0.5).clamp(0.0, 1.0);
+        final local = ((p - start) / 0.5).clamp(0.0, 1.0);
         if (local <= 0) continue;
-
-        final rect = Rect.fromLTWH(
-          c * (cell + gap),
-          r * (cell + gap),
-          cell,
-          cell,
-        );
-        final rrect = RRect.fromRectAndRadius(rect, radius);
-
-        final fillPaint =
-            Paint()
-              ..color = theme.cellColors[value.clamp(0, 3)].withOpacity(local)
-              ..style = PaintingStyle.fill;
-        canvas.drawRRect(rrect, fillPaint);
-
-        // 值 4：今日待打卡空心格（0 档底色 + 内描边）
-        if (value == 4) {
-          final strokeWidth = math.max(1.2, cell * 0.05);
-          final borderPaint =
-              Paint()
-                ..color = theme.outlineColor.withOpacity(local)
-                ..style = PaintingStyle.stroke
-                ..strokeWidth = strokeWidth;
-          canvas.drawRRect(rrect.deflate(strokeWidth / 2), borderPaint);
-        }
+        _drawings[index].paint(canvas, progress: local, pressure: 0);
       }
     }
   }
 
   @override
   bool shouldRepaint(covariant _HeatmapPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.cells != cells ||
+    return oldDelegate.cells != cells ||
+        oldDelegate.cell != cell ||
         oldDelegate.theme != theme;
   }
 }

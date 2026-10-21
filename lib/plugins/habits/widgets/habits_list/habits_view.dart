@@ -18,6 +18,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:aboutme/plugins/habits/widgets/habit_action_sheet.dart';
 import 'package:aboutme/plugins/habits/screens/habit_monthly_list_screen.dart';
 import 'package:aboutme/plugins/habits/models/completion_record.dart';
+import 'package:aboutme/plugins/habits/widgets/timer_dialog.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/habit_heatmap_card.dart';
@@ -89,8 +90,7 @@ class CombinedHabitsView extends StatefulWidget {
   State<CombinedHabitsView> createState() => _CombinedHabitsViewState();
 }
 
-class _CombinedHabitsViewState extends State<CombinedHabitsView>
-    with WidgetsBindingObserver {
+class _CombinedHabitsViewState extends State<CombinedHabitsView> {
   List<Habit> _habits = [];
   List<Habit> _filteredHabits = []; // 搜索过滤后的习惯列表
   final Map<String, bool> _timingStatus = {};
@@ -102,8 +102,6 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
   @override
   void initState() {
     super.initState();
-    // 添加生命周期监听
-    WidgetsBinding.instance.addObserver(this);
     final habitsPlugin =
         PluginManager.instance.getPlugin('habits') as HabitsPlugin?;
     widget.controller.addTimerModeListener(_onTimerModeChanged);
@@ -130,8 +128,6 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
 
   @override
   void dispose() {
-    // 移除生命周期监听
-    WidgetsBinding.instance.removeObserver(this);
     EventManager.instance.unsubscribe('habit_timer_started', _onTimerStarted);
     EventManager.instance.unsubscribe('habit_timer_stopped', _onTimerStopped);
     EventManager.instance.unsubscribe(
@@ -139,30 +135,6 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
       _onRecordSaved,
     );
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    // 应用从后台恢复时重新加载数据
-    if (state == AppLifecycleState.resumed) {
-      debugPrint('CombinedHabitsView: 应用恢复，重新加载习惯数据');
-      _reloadHabits();
-    }
-  }
-
-  /// 从存储重新加载习惯数据（用于应用恢复时）
-  Future<void> _reloadHabits() async {
-    // 等待同步完成
-    await Future.delayed(const Duration(milliseconds: 300));
-    // 从存储重新加载
-    final habits = await widget.controller.loadHabits();
-    if (mounted) {
-      setState(() {
-        _habits = habits;
-        _refreshKey++; // 增加 key 强制重建所有 HabitCard
-      });
-    }
   }
 
   void _onTimerStarted(EventArgs args) {
@@ -250,6 +222,25 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
           (r) => DateTime(r.date.year, r.date.month, r.date.day) == today,
         )
         .length;
+  }
+
+  /// 打开开始习惯计时弹窗（与 HabitCard 的开始按钮一致）
+  Future<void> _showTimerDialog(Habit habit) async {
+    final habitsPlugin =
+        PluginManager.instance.getPlugin('habits') as HabitsPlugin?;
+    final timerController = habitsPlugin?.timerController;
+    if (timerController == null) return;
+
+    await showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => TimerDialog(
+            habit: habit,
+            controller: widget.controller,
+            initialTimerData: timerController.getTimerData(habit.id),
+          ),
+    );
   }
 
   Future<void> _loadHabits() async {
@@ -430,46 +421,37 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView>
     );
   }
 
-  /// 热力图视图：每个习惯一张 HabitHeatmapCard（按习惯 id 稳定分配主题色）
-  static const _heatmapThemes = [
-    HabitHeatmapTheme.drinkWater,
-    HabitHeatmapTheme.journaling,
-    HabitHeatmapTheme.playDog,
-    HabitHeatmapTheme.read,
-  ];
-
   Widget _buildHeatmapView(List<Habit> habits) {
-    return ListView.builder(
+    return MasonryGridView.count(
       padding: EdgeInsets.fromLTRB(
-        16,
-        16,
-        16,
-        16 + MediaQuery.paddingOf(context).bottom,
+        8,
+        8,
+        8,
+        8 + MediaQuery.paddingOf(context).bottom,
       ),
+      crossAxisCount: 2,
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 8,
       itemCount: habits.length,
       itemBuilder: (context, index) {
         final habit = habits[index];
         final records = _records[habit.id] ?? const [];
         final codePoint = int.tryParse(habit.icon ?? '');
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: SizedBox(
-            height: 420,
-            child: HabitHeatmapCard(
-              key: ValueKey('heatmap_${habit.id}_$_refreshKey'),
-              inline: true,
-              title: habit.title,
-              icon:
-                  codePoint != null
-                      ? dynamicIconData(codePoint, fontFamily: 'MaterialIcons')
-                      : Icons.auto_awesome,
-              cells: _buildHeatmapCells(records),
-              checkInCount: _todayCheckInCount(records),
-              theme: _heatmapThemes[habit.id.hashCode % _heatmapThemes.length],
-              checkInLabel: 'habits_statsTodayCheckin'.tr,
-              size: const Large3Size(),
-            ),
+        return AspectRatio(
+          aspectRatio: 0.82,
+          child: HabitHeatmapCard(
+            key: ValueKey('heatmap_${habit.id}_$_refreshKey'),
+            inline: true,
+            title: habit.title,
+            icon:
+                codePoint != null
+                    ? dynamicIconData(codePoint, fontFamily: 'MaterialIcons')
+                    : Icons.auto_awesome,
+            cells: _buildHeatmapCells(records),
+            checkInCount: _todayCheckInCount(records),
+            size: const Large3Size(scale: 0.8),
+            onCheckIn: () => _showTimerDialog(habit),
           ),
         );
       },
