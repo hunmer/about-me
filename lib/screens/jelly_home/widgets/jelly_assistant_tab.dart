@@ -10,6 +10,7 @@ import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
@@ -18,6 +19,7 @@ import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart'
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/message_bubble.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/message_input.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/suggested_question_test_dialog.dart';
+import 'package:aboutme/plugins/agent_chat/screens/conversation_list_screen/test_conversation_list_screen.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
@@ -295,16 +297,62 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
         children: [
           const Spacer(),
           if (kDebugMode)
-            TextButton.icon(
-              icon: const Icon(Icons.science_outlined, size: 18),
-              label: const Text('测试'),
-              onPressed:
-                  controller == null ||
-                      sending ||
-                      controller.isThinking ||
-                      _questionTestOpen
-                  ? null
-                  : () => _openQuestionTest(controller),
+            DSPopover(
+              width: 190,
+              contentBuilder: (popoverContext, close) {
+                final popoverTheme = DSThemeBridge.resolve(popoverContext);
+                // 与原测试按钮一致的禁用条件：发送中/思考中/测试运行中不可开启新测试
+                final testDisabled =
+                    controller == null ||
+                    sending ||
+                    controller.isThinking ||
+                    _questionTestOpen;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _TestMenuAction(
+                      icon: DsIconKind.science,
+                      label: '选择测试',
+                      theme: popoverTheme,
+                      enabled: !testDisabled,
+                      onTap: () {
+                        close();
+                        _openQuestionTest(controller!);
+                      },
+                    ),
+                    _TestMenuAction(
+                      icon: DsIconKind.list,
+                      label: '查看测试会话记录',
+                      theme: popoverTheme,
+                      onTap: () {
+                        close();
+                        NavigationHelper.push(
+                          context,
+                          const TestConversationListScreen(),
+                        );
+                      },
+                    ),
+                  ],
+                );
+              },
+              // DSPopover 接管点击，child 不能用会吞手势的按钮
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.science_outlined, size: 18, color: theme.textSub),
+                    const SizedBox(width: 4),
+                    Text(
+                      '测试',
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           DSIconButton(
             icon: DsIconKind.more,
@@ -708,6 +756,56 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 测试弹出气泡的菜单项（结构与工具管理页 _ToolMenuAction 一致，支持禁用态）
+class _TestMenuAction extends StatelessWidget {
+  const _TestMenuAction({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final DsIconKind icon;
+  final String label;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = enabled ? theme.text : theme.textSub;
+    return Pressable(
+      onPressed: enabled ? onTap : null,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: theme.spacing.sm,
+            vertical: theme.spacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: pressed && enabled ? theme.surfaceAlt : null,
+            borderRadius: theme.radii.sm,
+          ),
+          child: Row(
+            children: [
+              DsIcon(icon, size: 16, color: accent),
+              SizedBox(width: theme.spacing.sm),
+              Expanded(
+                child: Text(
+                  label,
+                  style: DsTypography.caption.copyWith(color: accent),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

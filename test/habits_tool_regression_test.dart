@@ -138,7 +138,8 @@ void main() {
       "habitId": habitId,
       "count": 100,
     });
-    expect((records as Map)["data"], isEmpty);
+    final recordList = records is Map ? records["data"] as List : records as List;
+    expect(recordList, isEmpty);
 
     final stats = await invoke("getStats", {"habitId": habitId});
     expect(stats["completionCount"], 0);
@@ -191,6 +192,8 @@ void main() {
   });
 
   test("首次种子完成记录写入 habits/records/<id>.json（无双重后缀）", () async {
+    // createDefaultHabits 仅在习惯列表为空时写入，先清掉前面用例的残留
+    await AboutmeDataService.instance.writePath('habits/habits.json', []);
     await plugin.getHabitController().createDefaultHabits();
 
     // 修复前写入 <id>.json.json，读取路径永远找不到种子记录
@@ -204,7 +207,7 @@ void main() {
       "habitId": "habit-run-001",
       "count": 100,
     });
-    final list = (records as Map)["data"] as List;
+    final list = records is Map ? records["data"] as List : records as List;
     expect(list.length, 5);
     for (final record in list) {
       expect((record["id"] as String).isNotEmpty, isTrue);
