@@ -4,7 +4,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
-/// 03 输入控件
+/// 02 输入控件
 class InputsSection extends StatefulWidget {
   const InputsSection({super.key});
 
@@ -34,7 +34,7 @@ class _InputsSectionState extends State<InputsSection> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     return SectionCard(
-      index: '03',
+      index: '02',
       title: '输入控件',
       children: [
         Wrap(
@@ -109,6 +109,26 @@ class _InputsSectionState extends State<InputsSection> {
                 ),
               ],
             ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('尺寸三档（sm / md / lg）'),
+        Wrap(
+          spacing: theme.spacing.lg,
+          runSpacing: theme.spacing.lg,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            SizedBox(width: 180, child: DSInput(hint: 'sm 小号', size: DsInputSize.sm)),
+            SizedBox(width: 200, child: DSInput(hint: 'md 默认', size: DsInputSize.md)),
+            SizedBox(width: 220, child: DSInput(hint: 'lg 大号', size: DsInputSize.lg)),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('键盘焦点环（Tab 聚焦下列控件）'),
+        DemoFlow(
+          children: [
+            DSButton(label: '聚焦我看虚线环', onPressed: () {}),
+            DSIconButton(icon: DsIconKind.gear, onPressed: () {}),
           ],
         ),
       ],

@@ -4,7 +4,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
-/// 02 选择控件：复选框（三态）/ 单选框 / 开关
+/// 04 选择控件：复选框（三态）/ 单选框 / 开关
 class ControlsSection extends StatefulWidget {
   const ControlsSection({super.key});
 
@@ -23,7 +23,7 @@ class _ControlsSectionState extends State<ControlsSection> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     return SectionCard(
-      index: '02',
+      index: '04',
       title: '选择控件',
       children: [
         Row(
@@ -135,6 +135,16 @@ class _ControlsSectionState extends State<ControlsSection> {
                 value: _tristate,
                 onChanged: (v) => setState(() => _tristate = v),
               ),
+            ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('开关 loading'),
+        DemoFlow(
+          children: [
+            DemoBlock(
+              label: '忙碌态',
+              child: DSSwitch(value: true, loading: true, onChanged: (_) {}),
             ),
           ],
         ),

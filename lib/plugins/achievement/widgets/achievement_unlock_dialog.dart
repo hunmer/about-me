@@ -81,19 +81,6 @@ class _UnlockDialogBody extends StatelessWidget {
         // 透传 Dialog 内部的 minWidth 约束，避免内容收缩导致对话框尺寸变化
         fit: StackFit.passthrough,
         children: [
-          // 撒花动画：底边对齐对话框底边、按原始比例播放，允许超出弹窗
-          Positioned(
-            left: -100,
-            right: -100,
-            bottom: 0,
-            child: IgnorePointer(
-              child: Lottie.asset(
-                'assets/animations/Confetti.json',
-                fit: BoxFit.contain,
-                repeat: false,
-              ),
-            ),
-          ),
           ScaleInAnimation(
             child: Container(
               padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
@@ -233,6 +220,19 @@ class _UnlockDialogBody extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+          // 撒花动画：绘制在对话框内容上方，底边对齐对话框底边并允许超出弹窗
+          Positioned(
+            left: -100,
+            right: -100,
+            bottom: 0,
+            child: IgnorePointer(
+              child: Lottie.asset(
+                'assets/animations/Confetti.json',
+                fit: BoxFit.contain,
+                repeat: false,
               ),
             ),
           ),

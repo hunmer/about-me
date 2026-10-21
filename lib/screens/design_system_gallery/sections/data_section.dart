@@ -14,6 +14,8 @@ class DataSection extends StatefulWidget {
 
 class _DataSectionState extends State<DataSection> {
   double _rating = 3;
+  int _count = 42;
+  int _page = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +221,132 @@ class _DataSectionState extends State<DataSection> {
             ),
           ],
         ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('彩色卡片 accent × 波点 pattern'),
+        DemoFlow(
+          children: [
+            _accentCard(theme, DsAccentColors.teal, '青柠卡', pattern: false),
+            _accentCard(theme, DsAccentColors.pink, '波点粉卡', pattern: true),
+            _accentCard(theme, null, '纸底波点', pattern: true),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('头像贴纸与堆叠'),
+        DemoFlow(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            DSAvatar(label: '糖', size: 44, peel: true),
+            DSAvatarStack(
+              radius: 16,
+              avatars: [
+                for (final name in ['糖', '盐', '醋', '茶', '米', '豆'])
+                  DSAvatar(label: name, size: 32),
+              ],
+            ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('数字动效（果冻弹跳 + 墨点扩散）'),
+        DemoFlow(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            DSButton(
+              label: '−',
+              size: DSButtonSize.sm,
+              onPressed: () => setState(() => _count -= 7),
+            ),
+            SizedBox(
+              width: 120,
+              child: Center(
+                child: DsCountUp(
+                  value: _count,
+                  splash: true,
+                  style: DsTypography.display.copyWith(color: theme.primary),
+                ),
+              ),
+            ),
+            DSButton(
+              label: '+',
+              size: DSButtonSize.sm,
+              onPressed: () => setState(() => _count += 7),
+            ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('打字机文本'),
+        DsTypewriter(
+          text: '你好，我是手绘打字机，一个字一个字地浮现…',
+          style: DsTypography.body.copyWith(color: theme.text),
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('分页器'),
+        DsPagination(
+          total: 95,
+          current: _page,
+          onChanged: (p) => setState(() => _page = p),
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('轮播（可自动播放）'),
+        DSCarousel(
+          height: 110,
+          children: [
+            _carouselPage(theme, theme.secondary, '第 1 页'),
+            _carouselPage(theme, theme.success, '第 2 页'),
+            _carouselPage(theme, theme.warning, '第 3 页'),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('日历'),
+        DSCalendar(
+          initialMonth: DateTime.now(),
+          compact: true,
+          onSelected: (_) {},
+        ),
       ],
+    );
+  }
+
+  Widget _accentCard(
+    AppThemeData theme,
+    Color? accent,
+    String title, {
+    required bool pattern,
+  }) {
+    return SizedBox(
+      width: 168,
+      child: DSCard(
+        accent: accent,
+        pattern: pattern,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: DsTypography.heading.copyWith(
+                color: accent?.mixBlack(0.25) ?? theme.text,
+              ),
+            ),
+            SizedBox(height: theme.spacing.sm),
+            Text(
+              'accent 与 pattern 可自由组合',
+              style: DsTypography.caption.copyWith(color: theme.textSub),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _carouselPage(AppThemeData theme, Color color, String label) {
+    return JellyBox(
+      color: color,
+      radius: theme.radii.xl,
+      child: Center(
+        child: Text(
+          label,
+          style: DsTypography.heading.copyWith(color: theme.onPrimary),
+        ),
+      ),
     );
   }
 }

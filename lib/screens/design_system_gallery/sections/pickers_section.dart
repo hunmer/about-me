@@ -4,7 +4,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 import 'gallery_section.dart';
 
-/// 04 选择器与滑杆
+/// 03 选择器与滑杆
 class PickersSection extends StatefulWidget {
   const PickersSection({super.key});
 
@@ -19,6 +19,10 @@ class _PickersSectionState extends State<PickersSection> {
   double _slider = 0.75;
   int _segment = 1;
   final Set<String> _chips = {'默认标签'};
+  final Set<String> _variantChips = {};
+  String? _comboValue;
+
+  static const _comboOptions = ['布丁', '软糖', '果冻', '奶昔', '雪糕', '冰沙'];
 
   List<DSMenuItem> get _menuItems => [
     DSMenuItem(
@@ -51,7 +55,7 @@ class _PickersSectionState extends State<PickersSection> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     return SectionCard(
-      index: '04',
+      index: '03',
       title: '选择器与滑杆',
       children: [
         Wrap(
@@ -168,7 +172,74 @@ class _PickersSectionState extends State<PickersSection> {
             ),
           ],
         ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('Chip 四变种 × 强调色（点击切换选中）'),
+        DemoFlow(
+          children: [
+            for (final v in DsChipVariant.values)
+              DSChip(
+                label: v.name,
+                icon: DsIconKind.heart,
+                variant: v,
+                accent: DsAccentColors.teal,
+                selected: _variantChips.contains('${v.name}-teal'),
+                onSelected:
+                    (_) => setState(
+                      () => _toggleVariant('${v.name}-teal'),
+                    ),
+              ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.md),
+        DemoFlow(
+          children: [
+            for (final v in DsChipVariant.values)
+              DSChip(
+                label: v.name,
+                icon: DsIconKind.star,
+                variant: v,
+                accent: DsAccentColors.pink,
+                selected: _variantChips.contains('${v.name}-pink'),
+                onSelected:
+                    (_) => setState(
+                      () => _toggleVariant('${v.name}-pink'),
+                    ),
+              ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.md),
+        DemoFlow(
+          children: [
+            // 不传 accent：回落语义色（与旧外观一致）
+            for (final v in DsChipVariant.values)
+              DSChip(
+                label: v.name,
+                variant: v,
+                selected: _variantChips.contains(v.name),
+                onSelected:
+                    (_) => setState(() => _toggleVariant(v.name)),
+              ),
+          ],
+        ),
+        SizedBox(height: theme.spacing.lg),
+        const DemoSubHeader('可搜索下拉（Combobox）'),
+        SizedBox(
+          width: 220,
+          child: DSCombobox<String>(
+            hint: '选一个甜品',
+            value: _comboValue,
+            items: [
+              for (final option in _comboOptions)
+                DSSelectItem(label: option, value: option),
+            ],
+            onChanged: (v) => setState(() => _comboValue = v),
+          ),
+        ),
       ],
     );
+  }
+
+  void _toggleVariant(String key) {
+    if (!_variantChips.remove(key)) _variantChips.add(key);
   }
 }

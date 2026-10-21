@@ -90,6 +90,33 @@ class ButtonsSection extends StatelessWidget {
             DemoBlock(label: '禁用态', child: DSFab(onPressed: null)),
           ],
         ),
+        SizedBox(height: DSThemeBridge.resolve(context).spacing.lg),
+        const DemoSubHeader('新状态（loading / 虚线，实底类按压有错位阴影手感）'),
+        DemoFlow(
+          children: [
+            DemoBlock(
+              label: 'loading 态',
+              child: DSButton(label: '保存中', loading: true, onPressed: () {}),
+            ),
+            DemoBlock(
+              label: '虚线 dashed',
+              child: DSButton(
+                label: '添加习惯',
+                variant: DSButtonVariant.dashed,
+                onPressed: () {},
+              ),
+            ),
+            DemoBlock(
+              label: '危险 loading',
+              child: DSButton(
+                label: '删除中',
+                variant: DSButtonVariant.destructive,
+                loading: true,
+                onPressed: () {},
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

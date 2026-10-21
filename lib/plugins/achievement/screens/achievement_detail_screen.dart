@@ -7,7 +7,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/achievement/controllers/achievement_controller.dart';
 import 'package:aboutme/plugins/achievement/data/achievement_definitions.dart';
 import 'package:aboutme/plugins/achievement/models/achievement_definition.dart';
-import 'package:aboutme/plugins/achievement/widgets/achievement_badge.dart';
+import 'package:aboutme/widgets/pseudo_3d_flip_card.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// 成就详情页：居中大徽章 + 达成信息 + 下一里程碑卡 + 各等级达成明细
@@ -69,7 +69,14 @@ class AchievementDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
         children: [
-          AchievementBadge(iconAsset: def.iconAsset, level: level, size: 120),
+          Pseudo3DFlipCard(
+            image: AssetImage(def.iconAsset),
+            width: 160,
+            height: 160,
+            thickness: 0,
+            embossBack: false,
+            mode: Pseudo3DMode.spin360,
+          ),
           const SizedBox(height: 12),
           Text(
             level > 0 ? 'Lv$level' : 'achievement_locked'.tr,

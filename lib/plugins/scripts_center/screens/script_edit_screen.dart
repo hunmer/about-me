@@ -429,14 +429,15 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
       return;
     }
 
-    // 在新建模式下，id必填；如果没有填写，自动从name生成
-    String id = basicValues['id']?.toString().trim() ?? '';
-    if (id.isEmpty && !isEditMode) {
-      // 使用拼音或简化名称生成id（这里简化为使用小写+下划线）
+    // id 不再手动输入：编辑/导入沿用原值，新建从名称自动生成
+    String id = isEditMode
+        ? widget.script?.id ?? ''
+        : widget.initialData?['id']?.toString().trim() ?? '';
+    if (id.isEmpty) {
+      // 名称转小写，非字母数字（空格、中文、符号）统一替换为下划线
       id = name
           .toLowerCase()
-          .replaceAll(RegExp(r'[\s\u4e00-\u9fa5]+'), '_')
-          .replaceAll(RegExp(r'_+'), '_')
+          .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
           .replaceAll(RegExp(r'^_|_$'), '');
       if (id.isEmpty) {
         id = 'script_${DateTime.now().millisecondsSinceEpoch}';
@@ -609,22 +610,6 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
         initialValue: initialData?['name'] as String? ?? script?.name ?? '',
         required: true,
         validationMessage: '请输入脚本名称',
-      ),
-
-      // 脚本ID
-      FormFieldConfig(
-        name: 'id',
-        type: FormFieldType.text,
-        labelText: 'scripts_center_scriptId'.tr,
-        hintText: '例如：auto_backup',
-        prefixIcon: Icons.fingerprint,
-        initialValue: initialData?['id'] as String? ?? script?.id ?? '',
-        required: true,
-        enabled: !isEditMode, // 编辑模式下不可修改
-        validationMessage: '请输入脚本ID',
-        extra: {
-          'inputFormatters': [RegExp(r'^[a-z0-9_]+$')],
-        },
       ),
 
       // 描述

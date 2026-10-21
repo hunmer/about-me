@@ -295,6 +295,8 @@ class _ServiceEditorSheetState extends State<ServiceEditorSheet> {
                   _buildTitleBar(theme, isEditing),
                   Flexible(
                     child: SingleChildScrollView(
+                      // Join the sheet's coordinated scroll controller so form drags work.
+                      primary: true,
                       padding: EdgeInsets.fromLTRB(
                         theme.spacing.xl,
                         theme.spacing.sm,
