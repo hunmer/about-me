@@ -15,6 +15,8 @@ import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'models/timer_task.dart';
 import 'models/timer_item.dart';
 import 'views/timer_main_view.dart';
+import 'views/timer_task_details_page.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'services/timer_service.dart';
 import 'storage/timer_controller.dart';
 
@@ -106,6 +108,22 @@ class TimerPlugin extends BasePlugin with JSBridgePlugin {
 
     // 8. 注册 JS API（最后一步）
     await registerJSAPI();
+  }
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createTimer') return null;
+    // createTimer 仅返回 {success, id, message}，详情页内部按 id 查任务
+    final taskId = created['id'] as String?;
+    if (taskId == null) return null;
+    return () => SmoothBottomSheet.showScreen(
+      context: context,
+      screen: TimerTaskDetailsPage(taskId: taskId),
+    );
   }
 
   @override

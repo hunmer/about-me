@@ -127,27 +127,40 @@ class DSListItemCard extends StatelessWidget {
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
                         if (onSubtitleTap != null)
-                          // 可点击副标题：主色调 + 右箭头提示可进入
+                          // 可点击副标题：渲染为小圆角按钮（淡主色底 + 墨线描边）
                           GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: onSubtitleTap,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    subtitle!,
-                                    style: DsTypography.caption.copyWith(
-                                      color: theme.primary,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: dsSketchDecoration(
+                                theme: theme,
+                                fillColor: theme.primary.withValues(alpha: 0.12),
+                                stroke: theme.primary.withValues(alpha: 0.55),
+                                strokeWidth: 1.2,
+                                radius: theme.radii.pill,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      subtitle!,
+                                      style: DsTypography.caption.copyWith(
+                                        color: theme.primary,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                DsIcon(
-                                  DsIconKind.chevronRight,
-                                  size: 14,
-                                  color: theme.primary,
-                                ),
-                              ],
+                                  DsIcon(
+                                    DsIconKind.chevronRight,
+                                    size: 12,
+                                    color: theme.primary,
+                                  ),
+                                ],
+                              ),
                             ),
                           )
                         else

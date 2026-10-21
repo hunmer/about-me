@@ -414,6 +414,21 @@ class TrackerPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
   }
 
   @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createGoal') return null;
+    final goalId = created['id'] as String?;
+    if (goalId == null) return null;
+    return () => SmoothBottomSheet.showScreen(
+      context: context,
+      screen: GoalDetailScreen(goalId: goalId),
+    );
+  }
+
+  @override
   Map<String, Function> defineJSAPI() {
     return {
       // 目标相关

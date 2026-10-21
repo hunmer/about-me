@@ -24,6 +24,8 @@ import 'package:aboutme/plugins/webview/services/local_http_server.dart';
 
 // 主界面（同时 export 保持旧的导入路径可用）
 import 'screens/contact_main_view.dart';
+import 'screens/contact_detail_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 export 'screens/contact_main_view.dart';
 
 import 'widgets/contact_plugin_card.dart';
@@ -50,6 +52,26 @@ class ContactPlugin extends BasePlugin with JSBridgePlugin {
   // 暴露控制器和 UseCase 供外部访问
   ContactController get controller => _controller;
   ContactUseCase get useCase => _useCase;
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createContact') return null;
+    final contactId = created['id'] as String?;
+    if (contactId == null) return null;
+    return () async {
+      final contacts = await controller.getAllContacts();
+      final contact = contacts.firstWhereOrNull((c) => c.id == contactId);
+      if (contact == null || !context.mounted) return;
+      SmoothBottomSheet.showScreen(
+        context: context,
+        screen: ContactDetailScreen(contact: contact, controller: controller),
+      );
+    };
+  }
 
   @override
   Map<String, Function> defineJSAPI() {

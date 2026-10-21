@@ -9,9 +9,6 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
-import 'package:aboutme/plugins/todo/todo_plugin.dart';
-import 'package:aboutme/plugins/todo/views/todo_item_detail.dart';
-import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 工具调用步骤展示组件
 ///
@@ -55,29 +52,22 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
 
   /// 创建类 plugin_tool 步骤：点击副标题弹出创建的数据详情
   ///
-  /// 目前支持 todo.createTask —— 从结果 JSON 取 id，在任务控制器中
-  /// 找到最新任务弹出 [TodoItemDetail]；任务已被删除则不响应。
-  /// run_js 与非创建类工具不展示数据详情
+  /// 详情入口由各插件通过 [PluginBase.buildCreatedDetailOpener] 自行提供；
+  /// run_js 与插件未支持的方法不展示数据详情
   VoidCallback? _resolveCreatedDataTap(ToolCallStep step) {
     if (step.method != 'plugin_tool' || step.result == null) return null;
     try {
       final call = jsonDecode(step.data) as Map<String, dynamic>;
-      if (call['pluginId'] != 'todo' || call['method'] != 'createTask') {
-        return null;
-      }
-      final created = jsonDecode(step.result!) as Map<String, dynamic>;
-      final taskId = created['id'] as String?;
-      if (taskId == null) return null;
-      final task =
-          TodoPlugin.instance.taskController.tasks
-              .firstWhereOrNull((t) => t.id == taskId);
-      if (task == null) return null;
-      return () => SmoothBottomSheet.show(
-        context: context,
-        builder: (context) => TodoItemDetail(
-          task: task,
-          taskController: TodoPlugin.instance.taskController,
-        ),
+      final pluginId = call['pluginId'] as String?;
+      if (pluginId == null) return null;
+      final plugin = PluginManager.instance.getPlugin(pluginId);
+      if (plugin == null) return null;
+      final created = jsonDecode(step.result!);
+      if (created is! Map<String, dynamic>) return null;
+      return plugin.buildCreatedDetailOpener(
+        context,
+        (call['method'] as String?) ?? '',
+        created,
       );
     } catch (_) {
       return null;
@@ -88,14 +78,18 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
   Widget _buildStepCard(ToolCallStep step, int index, bool isExpanded) {
     final theme = DSThemeBridge.resolve(context);
     final plugin = _resolveStepPlugin(step);
+    // 创建类步骤副标题渲染为「点击查看详情」按钮，其余展示步骤描述
+    final createdDataTap = _resolveCreatedDataTap(step);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DSListItemCard(
           title: '${index + 1}. ${step.title}',
-          subtitle: step.desc.isNotEmpty ? step.desc : null,
-          onSubtitleTap: _resolveCreatedDataTap(step),
+          subtitle: createdDataTap != null
+              ? '点击查看详情'
+              : (step.desc.isNotEmpty ? step.desc : null),
+          onSubtitleTap: createdDataTap,
           // 非插件步骤（纯 run_js 等）回退到代码图标
           icon: plugin == null ? DsIconKind.code : null,
           // 插件步骤使用插件图标作为水印
@@ -360,7 +354,17 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
           child: Center(child: DSLoadingDots(size: 5)),
         );
       case ToolCallStatus.success:
-        return DsIcon(DsIconKind.check, size: 20, color: theme.success);
+        // 圆角淡色底 + 打勾，与失败/进行中状态的视觉重量对齐
+        return Container(
+          width: 20,
+          height: 20,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: theme.success.mixWhite(0.88),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: DsIcon(DsIconKind.check, size: 14, color: theme.success),
+        );
       case ToolCallStatus.failed:
         return DsIcon(DsIconKind.close, size: 20, color: theme.danger);
     }

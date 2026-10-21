@@ -10,9 +10,11 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'controllers/controllers.dart';
 import 'models/models.dart';
 import 'views/todo_bottombar_view.dart';
+import 'views/todo_item_detail.dart';
 
 // 导入 UseCase 相关
 import 'package:shared_models/shared_models.dart';
@@ -183,6 +185,24 @@ class TodoPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
     } catch (e) {
       return false;
     }
+  }
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createTask') return null;
+    final task = taskController.tasks.firstWhereOrNull(
+      (t) => t.id == created['id'],
+    );
+    if (task == null) return null;
+    return () => SmoothBottomSheet.show(
+      context: context,
+      builder: (context) =>
+          TodoItemDetail(task: task, taskController: taskController),
+    );
   }
 
   @override

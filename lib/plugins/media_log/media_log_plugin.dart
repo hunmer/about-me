@@ -13,7 +13,9 @@ import 'package:aboutme/core/config_manager.dart';
 
 import 'models/media_item.dart';
 import 'sample_data.dart';
+import 'screens/media_detail_screen.dart';
 import 'screens/media_list_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 part 'media_log_js_api.dart';
 
@@ -196,6 +198,21 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
   @override
   Widget buildMainView(BuildContext context) {
     return DSThemeBridge(child: const MediaListScreen());
+  }
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createMediaItem' && method != 'createItem') return null;
+    final itemId = created['id'] as String?;
+    if (itemId == null) return null;
+    return () => SmoothBottomSheet.showScreen(
+      context: context,
+      screen: MediaDetailScreen(itemId: itemId),
+    );
   }
 
   @override

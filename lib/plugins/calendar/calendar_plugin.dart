@@ -129,6 +129,24 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
   }
 
   @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createEvent') return null;
+    final eventId = created['id'] as String?;
+    if (eventId == null) return null;
+    return () {
+      final event = controller.events.firstWhereOrNull(
+        (e) => e.id == eventId,
+      );
+      if (event == null) return;
+      showEventDetails(context, event);
+    };
+  }
+
+  @override
   Map<String, Function> defineJSAPI() {
     return {
       // 事件查询

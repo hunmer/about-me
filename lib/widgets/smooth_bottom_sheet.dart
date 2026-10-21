@@ -125,6 +125,22 @@ class SmoothBottomSheet {
       ),
     );
   }
+
+  /// 整屏 Scaffold 页面塞进底部抽屉：隐藏拖拽指示条，
+  /// 裁剪顶部圆角贴合抽屉外形（页面自带 AppBar）
+  static Future<T?> showScreen<T>({
+    required BuildContext context,
+    required Widget screen,
+  }) {
+    return show<T>(
+      context: context,
+      showDragHandle: false,
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: screen,
+      ),
+    );
+  }
 }
 
 /// 底部抽屉内容容器

@@ -22,6 +22,9 @@ import 'models/goods_item.dart';
 import 'models/find_item_result.dart';
 import 'repositories/client_goods_repository.dart';
 import 'sample_data.dart';
+import 'screens/goods_item_detail_screen.dart';
+import 'screens/warehouse_detail_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 // HTTP 服务器导入
 import 'package:aboutme/plugins/webview/services/local_http_server.dart';
@@ -155,6 +158,41 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
       if (item != null) {
         return FindItemResult(item: item, warehouseId: warehouse.id);
       }
+    }
+    return null;
+  }
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    final id = created['id'] as String?;
+    if (id == null) return null;
+    switch (method) {
+      case 'createGoodsItem':
+      case 'createItem':
+        return () {
+          final found = findGoodsItemById(id);
+          if (found == null) return;
+          SmoothBottomSheet.showScreen(
+            context: context,
+            screen: GoodsItemDetailScreen(
+              itemId: id,
+              warehouseId: found.warehouseId,
+            ),
+          );
+        };
+      case 'createWarehouse':
+        return () {
+          final warehouse = getWarehouse(id);
+          if (warehouse == null) return;
+          SmoothBottomSheet.showScreen(
+            context: context,
+            screen: WarehouseDetailScreen(warehouse: warehouse),
+          );
+        };
     }
     return null;
   }

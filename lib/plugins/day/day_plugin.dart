@@ -8,6 +8,8 @@ import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'screens/day_home_screen_v2.dart';
+import 'screens/memorial_day_detail_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'controllers/day_controller.dart';
 import 'models/memorial_day.dart';
 import 'repositories/client_day_repository.dart';
@@ -200,6 +202,33 @@ class DayPlugin extends BasePlugin with JSBridgePlugin {
     } catch (e) {
       return null;
     }
+  }
+
+  /// 插件内部已初始化的控制器（详情视图等外部入口复用）
+  DayController get dayController => _controller;
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createDay') return null;
+    // createDay 返回 {success, data:{...}}，data 为纪念日实体
+    final data = created['data'];
+    final dayId = data is Map<String, dynamic> ? data['id'] as String? : null;
+    if (dayId == null) return null;
+    return () {
+      final day = getMemorialDayById(dayId);
+      if (day == null) return;
+      SmoothBottomSheet.showScreen(
+        context: context,
+        screen: MemorialDayDetailScreen(
+          memorialDay: day,
+          controller: dayController,
+        ),
+      );
+    };
   }
 
   /// 获取所有纪念日（供小组件使用）

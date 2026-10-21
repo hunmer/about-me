@@ -16,6 +16,9 @@ import 'package:aboutme/plugins/habits/controllers/completion_record_controller.
 import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
 import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
 import 'package:aboutme/plugins/habits/widgets/habits_bottom_bar.dart';
+import 'package:aboutme/plugins/habits/widgets/skill_detail_page.dart';
+import 'package:aboutme/plugins/habits/screens/habit_monthly_list_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/plugins/habits/repositories/client_habits_repository.dart';
 import 'package:shared_models/usecases/habits/habits_usecase.dart';
@@ -92,6 +95,38 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
   Future<void> reloadData() async {
     await _habitController.loadHabits();
     await _skillController.loadSkills();
+  }
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    final id = created['id'] as String?;
+    if (id == null) return null;
+    switch (method) {
+      case 'createSkill':
+        return () {
+          final skill = getSkillController().getSkillById(id);
+          if (skill == null) return;
+          SmoothBottomSheet.showScreen(
+            context: context,
+            screen: SkillDetailPage(
+              skill: skill,
+              skillController: getSkillController(),
+              recordController: getRecordController(),
+            ),
+          );
+        };
+      case 'createHabit':
+        final title = (created['title'] as String?) ?? '';
+        return () => SmoothBottomSheet.showScreen(
+          context: context,
+          screen: HabitMonthlyListScreen(habitId: id, habitTitle: title),
+        );
+    }
+    return null;
   }
 
   @override

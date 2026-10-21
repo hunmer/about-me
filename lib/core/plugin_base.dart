@@ -217,6 +217,18 @@ abstract class PluginBase {
     return false;
   }
 
+  /// 创建类工具数据的详情打开器（可选实现）
+  ///
+  /// agent_chat 工具步骤执行 defineJSAPI 的创建类方法后，点击步骤
+  /// 副标题时通过此方法获取详情入口。[method] 为注册的方法名，
+  /// [created] 为工具返回的 JSON 对象；返回 null 表示该数据不支持
+  /// 详情展示（副标题不可点击）。回调内自行决定弹层或路由呈现方式。
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) => null;
+
   /// 是否支持指定文件的刷新（可选实现）
   ///
   /// 子类可重写以实现更精细的文件级别刷新控制

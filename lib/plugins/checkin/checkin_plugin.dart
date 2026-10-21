@@ -19,6 +19,8 @@ import 'models/checkin_item.dart';
 import 'screens/checkin_list_screen/checkin_list_screen.dart';
 import 'screens/checkin_stats_screen/checkin_stats_screen.dart';
 import 'screens/checkin_form_screen.dart';
+import 'screens/checkin_detail_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'controllers/checkin_list_controller.dart';
 import 'repositories/client_checkin_repository.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
@@ -549,6 +551,29 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
       default:
         return CheckinCardStyle.weekly;
     }
+  }
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createCheckinItem') return null;
+    // createCheckinItem 返回 {success, message, item:{id, ...}}
+    final item = created['item'];
+    final itemId = item is Map<String, dynamic> ? item['id'] as String? : null;
+    if (itemId == null) return null;
+    return () {
+      final checkinItem = checkinItems.firstWhereOrNull(
+        (i) => i.id == itemId,
+      );
+      if (checkinItem == null) return;
+      SmoothBottomSheet.showScreen(
+        context: context,
+        screen: CheckinDetailScreen(checkinItem: checkinItem),
+      );
+    };
   }
 
   @override
