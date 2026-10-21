@@ -20,6 +20,11 @@ abstract class SpeechRecognitionService {
   /// 推送错误信息
   Stream<String> get errorStream;
 
+  /// 音量流（0.0~1.0，录音期间高频推送）
+  ///
+  /// 用于驱动 UI 能量动画；默认空流，子类可选实现
+  Stream<double> get volumeStream => const Stream.empty();
+
   /// 当前状态
   SpeechRecognitionState get currentState;
 

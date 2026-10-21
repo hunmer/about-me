@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -109,8 +110,18 @@ class SiriOrbCard extends StatefulWidget {
   /// 键盘抽屉输入配置
   final SiriOrbInput? input;
 
+  /// 真实能量流（0.0~1.0，如麦克风音量），有效时优先于模式伪随机动画
+  final Stream<double>? energyStream;
+
+  /// 提示文案下方的预览行，超出宽度时自动跑马灯滚动
+  final String? preview;
+
   /// 流光球点击回调；null 时仅播放脉冲动画
   final VoidCallback? onOrbTap;
+
+  /// 流光球长按回调（如长按录音、松开结束）
+  final GestureLongPressStartCallback? onOrbLongPressStart;
+  final GestureLongPressEndCallback? onOrbLongPressEnd;
 
   /// 外部控制器（打开抽屉 / 触发脉冲）
   final SiriOrbCardController? controller;
@@ -127,7 +138,11 @@ class SiriOrbCard extends StatefulWidget {
     this.topRight,
     this.bottomLeft,
     this.input,
+    this.energyStream,
+    this.preview,
     this.onOrbTap,
+    this.onOrbLongPressStart,
+    this.onOrbLongPressEnd,
     this.controller,
     this.width = 500,
     this.height = 360,
@@ -143,15 +158,38 @@ class _SiriOrbCardState extends State<SiriOrbCard>
   final _orbState = _OrbRenderState();
   bool _inputOpen = false;
 
+  StreamSubscription<double>? _energySub;
+  double? _liveEnergy;
+  DateTime? _liveEnergyAt;
+
   @override
   void initState() {
     super.initState();
     _ticker = createTicker((_) => _tick())..start();
     widget.controller?._attach(this);
+    _subscribeEnergy(widget.energyStream);
+  }
+
+  @override
+  void didUpdateWidget(SiriOrbCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.energyStream != widget.energyStream) {
+      _subscribeEnergy(widget.energyStream);
+    }
+  }
+
+  void _subscribeEnergy(Stream<double>? stream) {
+    _energySub?.cancel();
+    _liveEnergy = null;
+    _energySub = stream?.listen((value) {
+      _liveEnergy = value;
+      _liveEnergyAt = DateTime.now();
+    });
   }
 
   @override
   void dispose() {
+    _energySub?.cancel();
     widget.controller?._detach(this);
     _ticker.dispose();
     _orbState.dispose();
@@ -188,6 +226,15 @@ class _SiriOrbCardState extends State<SiriOrbCard>
         s.targetEnergy = (0.45 + n.abs() * 0.7).clamp(0.18, 1.15);
         s.targetRibbonMix = 0.95;
         break;
+    }
+    // 真实能量流（如麦克风音量）优先于模式伪随机
+    final liveAt = _liveEnergyAt;
+    if (_liveEnergy != null &&
+        liveAt != null &&
+        DateTime.now().difference(liveAt) <
+            const Duration(milliseconds: 250)) {
+      s.targetEnergy = _liveEnergy!.clamp(0.12, 1.15);
+      s.targetRibbonMix = math.max(s.targetRibbonMix, 0.95);
     }
     s.energy += (s.targetEnergy - s.energy) * 0.12;
     s.ribbonMix += (s.targetRibbonMix - s.ribbonMix) * 0.08;
@@ -248,25 +295,44 @@ class _SiriOrbCardState extends State<SiriOrbCard>
         borderRadius: BorderRadius.circular(44),
         child: Stack(
           children: [
-            // 提示文案
+            // 提示文案 + 可选跑马灯预览行
             Positioned(
               top: 84,
               left: 38,
               right: 42,
               child: IgnorePointer(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: Text(
-                    widget.prompt,
-                    key: ValueKey(widget.prompt),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 21.5,
-                      fontWeight: FontWeight.w400,
-                      height: 1.36,
-                      letterSpacing: -0.26,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: Text(
+                        widget.prompt,
+                        key: ValueKey(widget.prompt),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 21.5,
+                          fontWeight: FontWeight.w400,
+                          height: 1.36,
+                          letterSpacing: -0.26,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (widget.preview != null &&
+                        widget.preview!.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      _MarqueeText(
+                        text: widget.preview!,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.66),
+                          fontSize: 14,
+                          height: 1.3,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
@@ -336,6 +402,8 @@ class _SiriOrbCardState extends State<SiriOrbCard>
               child: Center(
                 child: GestureDetector(
                   onTap: _handleOrbTap,
+                  onLongPressStart: widget.onOrbLongPressStart,
+                  onLongPressEnd: widget.onOrbLongPressEnd,
                   child: RepaintBoundary(
                     child: CustomPaint(
                       size: const Size(162, 162),
@@ -765,6 +833,70 @@ class _ActionButtonState extends State<_ActionButton> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 超宽文本自动往返滚动的跑马灯；不超宽时静态显示
+class _MarqueeText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+
+  const _MarqueeText({required this.text, required this.style});
+
+  @override
+  State<_MarqueeText> createState() => _MarqueeTextState();
+}
+
+class _MarqueeTextState extends State<_MarqueeText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: widget.style),
+          maxLines: 1,
+          textDirection: TextDirection.ltr,
+        )..layout();
+        final overflow = painter.width - constraints.maxWidth;
+
+        if (overflow <= 0) {
+          if (_controller.isAnimating) _controller.stop();
+          return Text(widget.text, style: widget.style, maxLines: 1);
+        }
+
+        // 滚动时长按溢出长度伸缩；文本识别更新导致时长变化时重启滚动
+        final duration =
+            Duration(milliseconds: (overflow * 55).round() + 1400);
+        if (_controller.duration != duration) {
+          _controller.stop();
+          _controller.value = 0;
+          _controller.duration = duration;
+        }
+        if (!_controller.isAnimating) {
+          _controller.repeat(reverse: true);
+        }
+        // 两端各留 12% 缓动区间，近似阅读停顿
+        const curve = Interval(0.12, 0.88, curve: Curves.easeInOut);
+        return ClipRect(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) => Transform.translate(
+              offset: Offset(-overflow * curve.transform(_controller.value), 0),
+              child: Text(widget.text, style: widget.style, maxLines: 1),
+            ),
+          ),
+        );
+      },
     );
   }
 }

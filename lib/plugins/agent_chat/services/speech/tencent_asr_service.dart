@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 import 'package:uuid/uuid.dart';
@@ -23,6 +24,7 @@ class TencentASRService implements SpeechRecognitionService {
   final _recognitionController = StreamController<String>.broadcast();
   final _stateController = StreamController<SpeechRecognitionState>.broadcast();
   final _errorController = StreamController<String>.broadcast();
+  final _volumeController = StreamController<double>.broadcast();
 
   // 当前状态
   SpeechRecognitionState _currentState = SpeechRecognitionState.idle;
@@ -49,6 +51,9 @@ class TencentASRService implements SpeechRecognitionService {
 
   @override
   Stream<String> get errorStream => _errorController.stream;
+
+  @override
+  Stream<double> get volumeStream => _volumeController.stream;
 
   @override
   SpeechRecognitionState get currentState => _currentState;
@@ -153,6 +158,7 @@ class TencentASRService implements SpeechRecognitionService {
     _recognitionController.close();
     _stateController.close();
     _errorController.close();
+    _volumeController.close();
     _recorder.dispose();
   }
 
@@ -317,9 +323,29 @@ class TencentASRService implements SpeechRecognitionService {
       if (_webSocketChannel != null && _handshakeCompleted) {
         _webSocketChannel!.sink.add(audioData);
       }
+      _pushVolume(audioData);
     } catch (e) {
       debugPrint('发送音频数据失败: $e');
     }
+  }
+
+  /// 计算 PCM16 音量（RMS）并推送，用于驱动录音 UI 能量动画
+  void _pushVolume(Uint8List audioData) {
+    final sampleCount = audioData.lengthInBytes ~/ 2;
+    if (sampleCount == 0 || !_volumeController.hasListener) return;
+
+    final samples = audioData.buffer.asInt16List(
+      audioData.offsetInBytes,
+      sampleCount,
+    );
+    var sumSquares = 0.0;
+    for (final s in samples) {
+      final normalized = s / 32768.0;
+      sumSquares += normalized * normalized;
+    }
+    final rms = math.sqrt(sumSquares / sampleCount);
+    // 典型语音 RMS 在 0.02~0.3 区间，非线性放大到动画友好的能量值
+    _volumeController.add((rms * 6).clamp(0.0, 1.0));
   }
 
   /// 发送结束消息

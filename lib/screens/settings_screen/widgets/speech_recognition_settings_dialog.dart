@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
@@ -17,8 +19,8 @@ class SpeechRecognitionSettingsDialog extends StatefulWidget {
   const SpeechRecognitionSettingsDialog({super.key});
 
   /// 统一入口：手绘对话框（自带墨线描画入场）
-  static Future<bool?> show(BuildContext context) {
-    return showDSDialog<bool>(
+  static Future<void> show(BuildContext context) {
+    return showDSDialog<void>(
       context: context,
       theme: DSThemeBridge.resolve(context),
       builder: (context) => const SpeechRecognitionSettingsDialog(),
@@ -44,6 +46,10 @@ class _SpeechRecognitionSettingsDialogState
   String? _secretIdError;
   String? _secretKeyError;
 
+  /// 节流实时保存：输入停顿后自动持久化
+  Timer? _saveDebounce;
+  static const _autoSaveDelay = Duration(milliseconds: 800);
+
   // AI纠错Agent相关
   AIAgent? _correctionAgent;
 
@@ -60,6 +66,7 @@ class _SpeechRecognitionSettingsDialogState
 
   @override
   void dispose() {
+    _flushPendingSave();
     _appIdController.dispose();
     _secretIdController.dispose();
     _secretKeyController.dispose();
@@ -79,6 +86,10 @@ class _SpeechRecognitionSettingsDialogState
         _secretKeyError = null;
       });
     }
+
+    // 节流实时保存：输入停顿后自动持久化
+    _saveDebounce?.cancel();
+    _saveDebounce = Timer(_autoSaveDelay, _autoSave);
   }
 
   /// 加载设置
@@ -143,46 +154,55 @@ class _SpeechRecognitionSettingsDialogState
     return appIdError == null && secretIdError == null && secretKeyError == null;
   }
 
-  /// 保存设置
-  Future<void> _saveSettings() async {
-    if (!_validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final config = TencentASRConfig(
-        appId: _appIdController.text.trim(),
-        secretId: _secretIdController.text.trim(),
-        secretKey: _secretKeyController.text.trim(),
-        sampleRate: 16000,
-        engineModelType: '16k_zh',
-        needVad: false,
-        filterDirty: 0,
-        wordInfo: false,
-      );
-
-      await SpeechRecognitionConfigService.instance.saveConfig(config);
-
+  /// 节流自动保存：字段填写完整时静默保存，不完整时跳过（不打扰输入）
+  Future<void> _autoSave() async {
+    if (!mounted || !_hasChanges) return;
+    final saved = await _persistConfig();
+    if (saved && mounted) {
       setState(() {
         _hasChanges = false;
       });
+    }
+  }
 
-      if (mounted) {
-        toastService.showToast('settings_screen_speechSaved'.tr);
-        Navigator.of(context).pop(true);
-      }
+  /// 读取当前表单并保存配置；返回是否实际保存
+  Future<bool> _persistConfig() async {
+    // 同步段先取文本，避免 dispose 后访问 controller
+    final appId = _appIdController.text.trim();
+    final secretId = _secretIdController.text.trim();
+    final secretKey = _secretKeyController.text.trim();
+    if (appId.isEmpty || secretId.isEmpty || secretKey.isEmpty) {
+      return false;
+    }
+
+    final config = TencentASRConfig(
+      appId: appId,
+      secretId: secretId,
+      secretKey: secretKey,
+      sampleRate: 16000,
+      engineModelType: '16k_zh',
+      needVad: false,
+      filterDirty: 0,
+      wordInfo: false,
+    );
+
+    try {
+      await SpeechRecognitionConfigService.instance.saveConfig(config);
+      return true;
     } catch (e) {
       _showError(
         'settings_screen_speechSaveFailed'.trParams({'error': e.toString()}),
       );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      return false;
+    }
+  }
+
+  /// 弹窗关闭时立即保存尚未到期的挂起修改
+  void _flushPendingSave() {
+    final pending = _saveDebounce?.isActive ?? false;
+    _saveDebounce?.cancel();
+    if (pending) {
+      unawaited(_persistConfig());
     }
   }
 
@@ -404,6 +424,20 @@ class _SpeechRecognitionSettingsDialogState
                     },
                   ),
                 ),
+
+                // 验证配置（属于凭证表单部分）
+                SizedBox(height: theme.spacing.md),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    DSButton(
+                      label: 'settings_screen_verifyConfiguration'.tr,
+                      variant: DSButtonVariant.outline,
+                      size: DSButtonSize.sm,
+                      onPressed: _isLoading ? null : _testConnection,
+                    ),
+                  ],
+                ),
               ],
 
               SizedBox(height: theme.spacing.lg),
@@ -426,37 +460,6 @@ class _SpeechRecognitionSettingsDialogState
               ),
               SizedBox(height: theme.spacing.md),
               _buildAgentSection(theme),
-
-              SizedBox(height: theme.spacing.xl),
-
-              // 操作按钮
-              Wrap(
-                alignment: WrapAlignment.end,
-                spacing: theme.spacing.sm,
-                runSpacing: theme.spacing.sm,
-                children: [
-                  DSButton(
-                    label: 'app_cancel'.tr,
-                    variant: DSButtonVariant.ghost,
-                    size: DSButtonSize.sm,
-                    onPressed:
-                        _isLoading ? null : () => Navigator.of(context).pop(),
-                  ),
-                  DSButton(
-                    label: 'settings_screen_verifyConfiguration'.tr,
-                    variant: DSButtonVariant.outline,
-                    size: DSButtonSize.sm,
-                    onPressed: _isLoading ? null : _testConnection,
-                  ),
-                  DSButton(
-                    label: 'app_save'.tr,
-                    icon: DsIconKind.check,
-                    size: DSButtonSize.sm,
-                    onPressed:
-                        _isLoading || !_hasChanges ? null : _saveSettings,
-                  ),
-                ],
-              ),
             ],
           ),
         ),

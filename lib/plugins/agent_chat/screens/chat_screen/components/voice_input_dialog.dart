@@ -6,22 +6,20 @@ import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_st
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:aboutme/widgets/siri_voice_assistant_orb_demo.dart';
 import '../../../../../../core/services/toast_service.dart';
 import '../../../../../../core/services/speech_recognition_config_service.dart';
 import '../../../../../../plugins/openai/services/request_service.dart';
 
-/// 语音输入对话框
+/// 语音输入对话框（Siri 流光球卡片风格）
 ///
 /// 功能：
-/// - 点击或长按录音按钮开始录音
-/// - 点击停止，长按松开结束
+/// - 点击流光球开始/停止录音，长按松开结束
 /// - 连续录音自动追加文本
 /// - 标点符号替换功能（替换为空文本）
-/// - AI智能纠错（占位）
-/// - 实时显示识别文本
-/// - 显示识别状态
-/// - 支持文本编辑
-/// - 输入框内置清空按钮
+/// - AI智能纠错
+/// - 实时显示识别文本与状态
+/// - 键盘抽屉编辑文本
 /// - 确定发送，取消关闭
 class VoiceInputDialog extends StatefulWidget {
   /// 语音识别服务
@@ -40,11 +38,11 @@ class VoiceInputDialog extends StatefulWidget {
   State<VoiceInputDialog> createState() => _VoiceInputDialogState();
 }
 
-class _VoiceInputDialogState extends State<VoiceInputDialog>
-    with SingleTickerProviderStateMixin {
+class _VoiceInputDialogState extends State<VoiceInputDialog> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  final ScrollController _scrollController = ScrollController();
+  final _orbController = SiriOrbCardController();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   SpeechRecognitionState _currentState = SpeechRecognitionState.idle;
 
@@ -55,9 +53,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
   bool _isRecording = false;
   bool _isAppendMode = false; // 是否处于追加模式
   String? _savedText; // 保存的文本用于追加
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
   // 标点符号替换设置
   bool _enablePunctuationReplacement = false;
@@ -68,22 +63,9 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
   @override
   void initState() {
     super.initState();
-    _initializeAnimation();
+    // 识别文本变化时刷新提示区预览与按钮状态
+    _textController.addListener(_onTextChanged);
     _initializeService();
-  }
-
-  /// 初始化动画
-  void _initializeAnimation() {
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-
-    // 注意：不在这里启动动画，而是在开始录音时启动
   }
 
   @override
@@ -93,10 +75,12 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
     _errorSubscription?.cancel();
     _textController.dispose();
     _focusNode.dispose();
-    _scrollController.dispose();
-    _animationController.dispose();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (mounted) setState(() {});
   }
 
   /// 初始化服务
@@ -127,8 +111,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
                 _textController.text = processedText;
               }
             });
-            // 自动滚动到底部
-            _scrollToBottom();
           });
 
       // 监听状态变化
@@ -171,9 +153,7 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
       setState(() {
         _isRecording = true;
       });
-
-      // 启动循环缩放动画
-      _animationController.repeat(reverse: true);
+      _orbController.pulse();
 
       // 播放录音开始音效
       try {
@@ -189,8 +169,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
           _isAppendMode = false;
           _savedText = null;
         });
-        // 停止动画
-        _animationController.stop();
         _showErrorSnackBar('开始录音失败');
       }
     } catch (e) {
@@ -199,8 +177,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
         _isAppendMode = false;
         _savedText = null;
       });
-      // 停止动画
-      _animationController.stop();
       _showErrorSnackBar('开始录音失败: $e');
     }
   }
@@ -209,14 +185,11 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
   Future<void> _stopRecording() async {
     if (!_isRecording) return;
 
-    // 立即更新 UI 状态并停止动画
     setState(() {
       _isRecording = false;
       _isAppendMode = false;
       _savedText = null;
     });
-    _animationController.stop();
-    _animationController.reset();
 
     try {
       // 停止录音
@@ -237,26 +210,7 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
         _isRecording = false;
         _textController.clear();
       });
-      // 停止并重置动画
-      _animationController.stop();
-      _animationController.reset();
     }
-  }
-
-  /// 滚动到底部
-  void _scrollToBottom() {
-    if (!_scrollController.hasClients) return;
-
-    // 延迟执行，确保文本已更新
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
   }
 
   /// 显示错误提示
@@ -280,6 +234,29 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
     // 替换英文标点
     text = text.replaceAll(RegExp(r"[,.!?;:'''()\[\]{}<>]"), '');
     return text;
+  }
+
+  /// 切换标点符号替换
+  void _togglePunctuationReplacement() {
+    setState(() {
+      _enablePunctuationReplacement = !_enablePunctuationReplacement;
+      // 开启时立即应用替换到当前文本
+      if (_enablePunctuationReplacement &&
+          _textController.text.isNotEmpty) {
+        _textController.text = _applyPunctuationReplacement(
+          _textController.text,
+        );
+      }
+    });
+  }
+
+  /// 清空文本
+  void _clearText() {
+    _textController.clear();
+    setState(() {
+      _savedText = null;
+      _isAppendMode = false;
+    });
   }
 
   /// 执行AI智能纠错
@@ -345,7 +322,7 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
         _showErrorSnackBar('AI纠错完成');
       }
     } catch (e) {
-      _showErrorSnackBar('AI纠错失败：$e');
+      _showErrorSnackBar('AI纠错失败: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -375,298 +352,99 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
     Navigator.of(context).pop(false); // 返回 false 表示取消
   }
 
+  /// 流光球动画模式跟随识别状态
+  SiriOrbMode get _orbMode {
+    switch (_currentState) {
+      case SpeechRecognitionState.recording:
+        return SiriOrbMode.micSim;
+      case SpeechRecognitionState.processing:
+        return SiriOrbMode.speaking;
+      default:
+        return SiriOrbMode.siriListen;
+    }
+  }
+
+  /// 提示区：识别状态（空文本时附操作指引）
+  String get _promptText {
+    final status = _isRecording ? '正在录音…' : _currentState.description;
+    if (_textController.text.trim().isEmpty) {
+      return '$status\n点击流光球开始录音，长按松开结束；右下角键盘可直接输入';
+    }
+    return status;
+  }
+
+  /// 预览行：识别文本，超长时自动跑马灯滚动
+  String? get _previewText {
+    final text = _textController.text.trim();
+    return text.isEmpty ? null : text;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-    return JellyBox(
-      radius: theme.radii.xxl,
-      padding: const EdgeInsets.all(20),
-      constraints: const BoxConstraints(maxWidth: 440),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 标题
-          Text('语音识别', style: DsTypography.title.copyWith(color: theme.text)),
-          const SizedBox(height: 20),
+    final hasText = _textController.text.isNotEmpty;
+    final sendingDisabled =
+        _currentState == SpeechRecognitionState.recording;
 
-          // 状态显示
-          _buildStateIndicator(),
-          const SizedBox(height: 16),
-
-          // 文本显示区
-          _buildTextDisplay(),
-          const SizedBox(height: 20),
-
-          // 录音按钮区域
-          _buildRecordButtons(),
-          const SizedBox(height: 20),
-
-          // 操作按钮
-          _buildActionButtons(),
-        ],
-      ),
-    );
-  }
-
-  /// 构建状态指示器
-  Widget _buildStateIndicator() {
-    final theme = DSThemeBridge.resolve(context);
-    Color stateColor;
-    DsIconKind stateIcon;
-
-    switch (_currentState) {
-      case SpeechRecognitionState.idle:
-        stateColor = theme.textSub;
-        stateIcon = DsIconKind.mic;
-        break;
-      case SpeechRecognitionState.connecting:
-        stateColor = theme.warning;
-        stateIcon = DsIconKind.refresh;
-        break;
-      case SpeechRecognitionState.recording:
-        stateColor = theme.danger;
-        stateIcon = DsIconKind.mic;
-        break;
-      case SpeechRecognitionState.processing:
-        stateColor = theme.primaryText;
-        stateIcon = DsIconKind.clock;
-        break;
-      case SpeechRecognitionState.error:
-        stateColor = theme.danger;
-        stateIcon = DsIconKind.close;
-        break;
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        DsIcon(stateIcon, color: stateColor, size: 20),
-        const SizedBox(width: 8),
-        Text(
-          _currentState.description,
-          style: DsTypography.body.copyWith(
-            color: stateColor,
-            fontWeight: FontWeight.w500,
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: SiriOrbCard(
+          controller: _orbController,
+          mode: _orbMode,
+          prompt: _promptText,
+          // 识别文本预览（超长自动跑马灯）
+          preview: _previewText,
+          // 真实麦克风音量驱动流光球能量
+          energyStream: widget.recognitionService.volumeStream,
+          height: 430,
+          input: SiriOrbInput(
+            controller: _textController,
+            focusNode: _focusNode,
+            hint: '识别的文本将显示在这里，您也可以编辑...',
+            onSubmitted: (_) => _confirmSend(),
           ),
-        ),
-      ],
-    );
-  }
-
-  /// 构建文本显示区
-  Widget _buildTextDisplay() {
-    final theme = DSThemeBridge.resolve(context);
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 120, maxHeight: 200),
-      decoration: BoxDecoration(
-        color: theme.surfaceAlt,
-        borderRadius: theme.radii.md,
-        border: Border.all(color: theme.textSub.withValues(alpha: 0.2)),
-      ),
-      child: Stack(
-        children: [
-          // 文本输入框（编辑原语刻意保留 Material）
-          Scrollbar(
-            controller: _scrollController,
-            child: TextField(
-              controller: _textController,
-              focusNode: _focusNode,
-              scrollController: _scrollController,
-              maxLines: null,
-              decoration: const InputDecoration(
-                hintText: '识别的文本将显示在这里，您也可以编辑...',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.all(12),
-              ),
-              style: DsTypography.body.copyWith(color: theme.text),
-            ),
+          topLeft: SiriOrbCorner(
+            tooltip: 'agent_chat_cancel'.tr,
+            onTap: _cancel,
+            child: const Icon(Icons.close, color: Colors.white, size: 18),
           ),
-          // 清空按钮（右下角）
-          Positioned(
-            bottom: 8,
-            right: 8,
-            child: AnimatedBuilder(
-              animation: Listenable.merge([_textController]),
-              builder: (context, child) {
-                final hasText = _textController.text.isNotEmpty;
-                if (!hasText) return const SizedBox.shrink();
-                return Pressable(
-                  onPressed: () {
-                    _textController.clear();
-                    setState(() {
-                      _savedText = null;
-                      _isAppendMode = false;
-                    });
-                  },
-                  semanticLabel: '清空文本',
-                  builder: (context, states) => Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: theme.surface,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(26),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: DsIcon(
-                      DsIconKind.close,
-                      size: 16,
-                      color: theme.textSub,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建录音按钮区域
-  Widget _buildRecordButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // 标点符号替换按钮（左侧）
-        _buildIconButton(
-          icon: DsIconKind.edit,
-          tooltip: '标点符号替换',
-          isActive: _enablePunctuationReplacement,
-          onPressed: () {
-            setState(() {
-              _enablePunctuationReplacement = !_enablePunctuationReplacement;
-              // 开启时立即应用替换到当前文本
-              if (_enablePunctuationReplacement &&
-                  _textController.text.isNotEmpty) {
-                _textController.text = _applyPunctuationReplacement(
-                  _textController.text,
-                );
-              }
-            });
+          // 点击流光球：开始/停止录音；长按松开结束
+          onOrbTap: () {
+            if (_isRecording) {
+              _stopRecording();
+            } else {
+              _startRecording(isFromTap: true);
+            }
           },
-        ),
-        const SizedBox(width: 16),
-
-        // 录音按钮（中间）
-        _buildRecordButton(),
-
-        const SizedBox(width: 16),
-
-        // AI智能纠错按钮（右侧）
-        _buildIconButton(
-          icon: DsIconKind.bot,
-          tooltip: 'AI智能纠错',
-          isActive: _isCorrecting,
-          onPressed: _isCorrecting ? () {} : () => _performAICorrection(),
-        ),
-      ],
-    );
-  }
-
-  /// 构建录音按钮
-  Widget _buildRecordButton() {
-    final theme = DSThemeBridge.resolve(context);
-    return GestureDetector(
-      // 点击触发：开始或停止录音
-      onTap: () {
-        if (_isRecording) {
-          _stopRecording();
-        } else {
-          _startRecording(isFromTap: true);
-        }
-      },
-      // 长按触发：开始录音，松开结束
-      onLongPressStart: (_) => _startRecording(isFromTap: false),
-      onLongPressEnd: (_) => _stopRecording(),
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          final scale = _isRecording ? _scaleAnimation.value : 1.0;
-
-          return Transform.scale(
-            scale: scale,
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _isRecording ? theme.danger : theme.primary,
-                boxShadow: _isRecording
-                    ? [
-                        BoxShadow(
-                          color: theme.danger.withAlpha(102),
-                          blurRadius: 20,
-                          spreadRadius: 5,
-                        ),
-                      ]
-                    : [],
-              ),
-              child: DsIcon(DsIconKind.mic, color: theme.onPrimary, size: 40),
+          onOrbLongPressStart: (_) => _startRecording(isFromTap: false),
+          onOrbLongPressEnd: (_) => _stopRecording(),
+          actions: [
+            SiriOrbAction(
+              icon: Icons.spellcheck,
+              label: '标点替换',
+              highlighted: _enablePunctuationReplacement,
+              onTap: _togglePunctuationReplacement,
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  /// 构建图标按钮
-  Widget _buildIconButton({
-    required DsIconKind icon,
-    required String tooltip,
-    required bool isActive,
-    required VoidCallback onPressed,
-  }) {
-    final theme = DSThemeBridge.resolve(context);
-    return Tooltip(
-      message: tooltip,
-      child: Pressable(
-        onPressed: onPressed,
-        semanticLabel: tooltip,
-        builder: (context, states) => Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isActive ? theme.primary.mixWhite(0.88) : theme.surfaceAlt,
-            border: Border.all(
-              color: isActive ? theme.primary : Colors.transparent,
-              width: 2,
+            SiriOrbAction(
+              icon: Icons.auto_awesome,
+              label: _isCorrecting ? '纠错中…' : 'AI纠错',
+              highlighted: _isCorrecting,
+              onTap: _isCorrecting ? null : () => _performAICorrection(),
             ),
-          ),
-          child: DsIcon(
-            icon,
-            size: 24,
-            color: isActive ? theme.primaryText : theme.textSub,
-          ),
+            SiriOrbAction(
+              icon: Icons.delete_sweep_outlined,
+              label: '清空',
+              onTap: hasText ? _clearText : null,
+            ),
+            SiriOrbAction(
+              icon: Icons.send_rounded,
+              label: 'agent_chat_send'.tr,
+              highlighted: true,
+              onTap: sendingDisabled ? null : _confirmSend,
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  /// 构建操作按钮
-  Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        DSButton(
-          label: 'agent_chat_cancel'.tr,
-          variant: DSButtonVariant.ghost,
-          onPressed: _cancel,
-        ),
-        const SizedBox(width: 12),
-        DSButton(
-          label: 'agent_chat_send'.tr,
-          onPressed: _currentState == SpeechRecognitionState.recording
-              ? null
-              : _confirmSend,
-        ),
-      ],
     );
   }
 }

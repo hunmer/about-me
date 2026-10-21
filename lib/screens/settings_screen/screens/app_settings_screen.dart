@@ -59,11 +59,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     }
   }
 
-  // 显示语音识别设置对话框
+  // 显示语音识别设置对话框（配置节流实时保存，关闭后重读状态）
   Future<void> _showSpeechRecognitionSettings() async {
-    final result = await SpeechRecognitionSettingsDialog.show(context);
+    await SpeechRecognitionSettingsDialog.show(context);
 
-    if (result == true && mounted) {
+    if (mounted) {
       setState(() {
         _isSpeechRecognitionConfigured =
             SpeechRecognitionConfigService.instance.isConfigured;
