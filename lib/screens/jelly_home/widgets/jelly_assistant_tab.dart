@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -1062,7 +1063,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     return isToday ? hm : '${two(time.month)}-${two(time.day)} $hm';
   }
 
-  /// 消息「更多选项」面板：复制文本 / 删除消息
+  /// 消息「更多选项」面板：复制文本 / 复制完整消息 / 删除消息
   void _showMessageOptions(AppThemeData theme, ChatMessage message) {
     final controller = _controller;
     if (controller == null) return;
@@ -1091,6 +1092,22 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                     );
                     if (mounted) {
                       toastService.showToast('screens_assistantCopied'.tr);
+                    }
+                  },
+                ),
+                _MessageOptionRow(
+                  icon: DsIconKind.code,
+                  label: '复制完整消息',
+                  theme: sheetTheme,
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    // 完整消息 JSON（含 toolCall 的 steps 数组）
+                    final text = const JsonEncoder.withIndent(
+                      '  ',
+                    ).convert(message.toJson());
+                    await Clipboard.setData(ClipboardData(text: text));
+                    if (mounted) {
+                      toastService.showToast('已复制完整消息');
                     }
                   },
                 ),

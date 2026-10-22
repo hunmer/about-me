@@ -24,6 +24,21 @@ class ActivityUseCase {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
+  /// 活动时间是用户在本地时钟上填写的时间。
+  ///
+  /// DateTime.parse 会把带偏移的字符串转换为运行环境时区；当设备运行
+  /// 在 UTC 时，`03:00+08:00` 会变成前一天的 `19:00`，导致活动日期和
+  /// 时间显示一起偏移。活动模型不保存时区，因此这里保留输入中的墙上时间。
+  DateTime _parseActivityTime(String value) {
+    final match = RegExp(
+            r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)(?:Z|[+-]\d{2}:?\d{2})$')
+        .firstMatch(value);
+    if (match != null) {
+      return DateTime.parse(match.group(1)!);
+    }
+    return DateTime.parse(value);
+  }
+
   /// 从参数提取分页配置
   PaginationParams? _extractPagination(Map<String, dynamic> params) {
     final offset = params['offset'] as int?;
@@ -135,8 +150,8 @@ class ActivityUseCase {
     }
 
     try {
-      final startTime = DateTime.parse(params['startTime'] as String);
-      final endTime = DateTime.parse(params['endTime'] as String);
+      final startTime = _parseActivityTime(params['startTime'] as String);
+      final endTime = _parseActivityTime(params['endTime'] as String);
 
       // 验证时间逻辑
       if (endTime.isBefore(startTime) || endTime.isAtSameMomentAs(startTime)) {
@@ -225,14 +240,14 @@ class ActivityUseCase {
       if (params.containsKey('startTime')) {
         final startTimeStr = params['startTime'] as String?;
         if (startTimeStr != null && startTimeStr.isNotEmpty) {
-          startTime = DateTime.parse(startTimeStr);
+          startTime = _parseActivityTime(startTimeStr);
         }
       }
 
       if (params.containsKey('endTime')) {
         final endTimeStr = params['endTime'] as String?;
         if (endTimeStr != null && endTimeStr.isNotEmpty) {
-          endTime = DateTime.parse(endTimeStr);
+          endTime = _parseActivityTime(endTimeStr);
         }
       }
 

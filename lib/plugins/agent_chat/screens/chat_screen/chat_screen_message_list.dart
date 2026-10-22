@@ -153,6 +153,13 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
     toastService.showToast('已复制到剪贴板');
   }
 
+  /// 复制完整消息 JSON（含 toolCall 的 steps 数组）
+  void _copyFullMessage(ChatMessage source) {
+    final text = const JsonEncoder.withIndent('  ').convert(source.toJson());
+    Clipboard.setData(ClipboardData(text: text));
+    toastService.showToast('已复制完整消息');
+  }
+
   /// 切换多选模式（退出时清空选中）
   void _toggleMultiSelectMode() {
     setState(() {
@@ -260,6 +267,11 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
           mainAxisSize: MainAxisSize.min,
           children: [
             action(DsIconKind.copy, '复制', () => _copyMessage(source)),
+            action(
+              DsIconKind.code,
+              '复制完整消息',
+              () => _copyFullMessage(source),
+            ),
             // 工具调用消息不可编辑
             if (!isToolCallMessage)
               action(
