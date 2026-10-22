@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:skribble/skribble.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 
 /// 使用 smooth_sheets 实现的底部抽屉工具类
@@ -10,8 +11,9 @@ import 'package:smooth_sheets/smooth_sheets.dart';
 /// 特性：
 /// - 流畅的拖拽动画
 /// - 支持滑动关闭
-/// - 自动适配主题
-/// - 统一的拖拽指示器
+/// - 手绘风格面板（DsSketchPanel 纸底排线 + 墨线框 + 描画入场）
+/// - 手绘墨点拖拽指示器
+/// - 标题栏统一走 DSTopBar 胶囊顶栏
 class SmoothBottomSheet {
   /// 显示底部抽屉
   ///
@@ -19,8 +21,8 @@ class SmoothBottomSheet {
   /// [builder] - 内容构建器
   /// [swipeDismissible] - 是否支持滑动关闭，默认 true
   /// [barrierDismissible] - 是否点击背景关闭，默认 true
-  /// [backgroundColor] - 背景色，默认使用主题背景色
-  /// [borderRadius] - 圆角半径，默认 20
+  /// [backgroundColor] - 纸底色，默认使用主题 surface
+  /// [borderRadius] - 顶部圆角半径，默认 20
   /// [showDragHandle] - 是否显示拖拽指示器，默认 true
   /// [enableDrag] - 是否启用拖拽，默认 true
   /// [minHeight] - 内容最小高度（含拖拽指示器），内容不足时撑开，默认不限制
@@ -60,8 +62,8 @@ class SmoothBottomSheet {
   /// [title] - 标题文本
   /// [child] - 内容组件
   /// [actions] - 底部操作按钮列表（可选）
-  /// [headerActions] - 标题栏右侧操作区（可选）
-  /// [showCloseButton] - 是否显示关闭按钮，默认 false
+  /// [headerActions] - 标题栏尾部操作区（可选）
+  /// [showCloseButton] - 标题栏是否显示关闭（返回钮形式），默认 false
   /// 其他参数同 show 方法
   static Future<T?> showWithTitle<T>({
     required BuildContext context,
@@ -99,9 +101,9 @@ class SmoothBottomSheet {
 
   /// 表单底部弹层：高度贴合内容，超高可滚动
   ///
-  /// 标题栏左侧可选删除按钮；右上角为提交按钮（[onSave]）或关闭按钮。
-  /// [onSave] 为 null 表示表单自动保存，右上角仅提供关闭。
-  /// 表单自带标题头时可通过 [showTitleBar] 关闭外壳标题栏避免重复。
+  /// 标题栏尾部放删除/保存（或关闭）按钮；表单自带标题头时可通过
+  /// [showTitleBar] 关闭外壳标题栏避免重复。
+  /// [onSave] 为 null 表示表单自动保存，尾部仅提供关闭。
   static Future<T?> showForm<T>({
     required BuildContext context,
     required String title,
@@ -143,7 +145,7 @@ class SmoothBottomSheet {
   }
 }
 
-/// 底部抽屉内容容器
+/// 底部抽屉内容容器：手绘面板（纸底 + 淡排线 + 墨线框）
 class _SheetContent extends StatelessWidget {
   final Widget Function(BuildContext) builder;
   final Color? backgroundColor;
@@ -161,58 +163,61 @@ class _SheetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    // scaffold 色在全局背景生效时被透明化，sheet 作为浮层不能透明，
-    // 回退全局背景底色保持不透明
-    final bgColor =
-        backgroundColor ?? dsNonOpaqueRouteBackdrop(context);
+    // sheet 是新路由可能不在 AppTheme 树内，桥接出 DS 主题
+    return DSThemeBridge(
+      child: Material(
+        type: MaterialType.transparency,
+        // 打开即触发墨线描画入场（面板经 progressOf 消费进度）
+        child: WiredDraw(
+          child: Builder(
+            builder: (context) {
+              final theme = AppTheme.of(context);
+              return DsSketchPanel(
+                theme: theme,
+                fillColor: backgroundColor,
+                radius: BorderRadius.vertical(
+                  top: Radius.circular(borderRadius),
+                ),
+                progress: WiredDrawTransition.progressOf(context),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: minHeight ?? 0,
+                    maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 拖拽指示器
+                      if (showDragHandle) _buildDragHandle(theme),
 
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(borderRadius),
-          ),
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: minHeight ?? 0,
-            maxHeight: MediaQuery.sizeOf(context).height * 0.8,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 拖拽指示器
-              if (showDragHandle) _buildDragHandle(theme),
-
-              // 内容 - 使用 Flexible 包裹以允许动态高度
-              Flexible(
-                child: builder(context),
-              ),
-            ],
+                      // 内容 - 使用 Flexible 包裹以允许动态高度
+                      Flexible(
+                        child: builder(context),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  /// 构建拖拽指示器
-  Widget _buildDragHandle(ThemeData theme) {
-    return Container(
-      width: 40,
-      height: 4,
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.outline.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(2),
+  /// 构建拖拽指示器：五段手绘墨点线
+  Widget _buildDragHandle(AppThemeData theme) {
+    return Padding(
+      padding: EdgeInsets.only(
+        top: theme.spacing.md,
+        bottom: theme.spacing.sm,
       ),
+      child: const SizedBox(width: 60, child: DSDivider()),
     );
   }
 }
 
-/// 带标题的底部抽屉内容
+/// 带标题的底部抽屉内容：DSTopBar 胶囊标题栏
 class _SheetWithTitle extends StatelessWidget {
   final String title;
   final bool showCloseButton;
@@ -230,61 +235,47 @@ class _SheetWithTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 标题栏
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-          child: Row(
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = AppTheme.of(context);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // 标题
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              // 标题栏：手绘胶囊顶栏，返回钮即关闭
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  theme.spacing.lg,
+                  theme.spacing.sm,
+                  theme.spacing.lg,
+                  theme.spacing.xs,
+                ),
+                child: DSTopBar(
+                  title: title,
+                  onBack:
+                      showCloseButton ? () => Navigator.of(context).pop() : null,
+                  actions: headerActions,
                 ),
               ),
 
-              // 标题栏右侧操作区
-              if (headerActions != null && headerActions!.isNotEmpty) ...[
-                ...headerActions!,
-                const SizedBox(width: 8),
-              ],
+              // 内容 - Flexible 限高，超高时由内容自行滚动
+              Flexible(child: child),
 
-              // 关闭按钮
-              if (showCloseButton)
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+              // 底部操作按钮
+              if (actions != null && actions!.isNotEmpty) ...[
+                DSDivider(),
+                Padding(
+                  padding: EdgeInsets.all(theme.spacing.md),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: actions!,
+                  ),
                 ),
+              ],
             ],
-          ),
-        ),
-
-        const Divider(height: 1),
-
-        // 内容 - Flexible 限高，超高时由内容自行滚动
-        Flexible(child: child),
-
-        // 底部操作按钮
-        if (actions != null && actions!.isNotEmpty) ...[
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: actions!,
-            ),
-          ),
-        ],
-      ],
+          );
+        },
+      ),
     );
   }
 }
@@ -313,7 +304,7 @@ class _FormSheetContent extends StatelessWidget {
     return DSThemeBridge(
       child: Builder(
         builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
+          final theme = AppTheme.of(context);
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -336,33 +327,25 @@ class _FormSheetContent extends StatelessWidget {
   Widget _buildTitleBar(BuildContext context, AppThemeData theme) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        theme.spacing.md,
+        theme.spacing.lg,
         theme.spacing.sm,
-        theme.spacing.md,
-        theme.spacing.sm,
+        theme.spacing.lg,
+        theme.spacing.xs,
       ),
-      child: Row(
-        children: [
-          // 标题靠左
-          Expanded(
-            child: Text(
-              title,
-              textAlign: TextAlign.start,
-              style: DsTypography.title.copyWith(color: theme.text),
-            ),
-          ),
-          // 操作按钮统一靠右
+      child: DSTopBar(
+        title: title,
+        // 操作按钮统一放尾部：删除 + 保存/关闭
+        actions: [
           if (onDelete != null) ...[
-            SizedBox(width: theme.spacing.sm),
             DSIconButton(
               icon: DsIconKind.trash,
               size: 36,
               color: theme.surfaceAlt,
-              iconColor: theme.textSub,
+              iconColor: theme.danger,
               onPressed: onDelete,
             ),
+            SizedBox(width: theme.spacing.sm),
           ],
-          SizedBox(width: theme.spacing.sm),
           if (onSave != null)
             DSButton(
               label: 'app_save'.tr,

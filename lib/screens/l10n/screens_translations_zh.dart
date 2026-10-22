@@ -438,6 +438,7 @@ final Map<String, String> screensTranslationsZh = {
   'screens_restoredDefaultBackground': '已恢复默认背景',
 
   // jelly_home assistant tab
+  'screens_assistantTitle': '聊天助手',
   'screens_assistantBadgeIdle': '你的小助手',
   'screens_assistantWorking': '正在处理…',
   'screens_assistantTyping': '正在输入…',

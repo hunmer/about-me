@@ -254,6 +254,7 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
                 padding: const EdgeInsets.all(16),
                 child: DSTopBar(
                   title: 'live2d_editArchiveTitle'.tr,
+                  onBack: () => Navigator.maybePop(context),
                   onMenu: _showMenu,
                 ),
               ),

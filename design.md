@@ -168,7 +168,7 @@ SmoothBottomSheet.showWithTitle(
 );
 ```
 
-自带：流畅拖拽动画、下拉滑动关闭、遮罩点击关闭、拖拽把手、标题行。布局规范：**标题靠左显示，操作按钮列表在右侧**（`showWithTitle` 的 `actions` 底部右对齐；`showForm` 的删除/保存按钮在标题行右侧）。`SmoothSheetAction` 操作行（`destructive: true` 为红色危险操作）。无标题场景用 `SmoothBottomSheet.show`，表单场景用 `showForm`。
+自带：流畅拖拽动画、下拉滑动关闭、遮罩点击关闭、手绘墨点拖拽把手、手绘面板（DsSketchPanel 纸底排线 + 墨线框 + 描画入场）。标题栏统一走 `DSTopBar` 胶囊顶栏（标题居中；`showWithTitle` 的 `headerActions` 与 `showForm` 的删除/保存按钮放标题栏尾部，`showCloseButton` 以返回钮形式关闭）。`SmoothSheetAction` 操作行（`destructive: true` 为红色危险操作）。无标题场景用 `SmoothBottomSheet.show`，表单场景用 `showForm`。
 
 ## 5. 打开子页面用 hero 过渡
 

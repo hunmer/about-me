@@ -11,7 +11,7 @@ import '../message_input_types.dart';
 class MessageInputQuickToolbar extends StatelessWidget {
   final List<MessageInputQuickAction> actions;
 
-  /// 右侧动作组（贴工具栏右缘，溢出时向左滚动）
+  /// 附加动作组（dots 与收起键盘贴右缘，其余并入左组显示）
   final List<MessageInputQuickAction> trailingActions;
   final int thinkingEffortIndex;
   final ValueChanged<int>? onThinkingEffortChanged;
@@ -45,6 +45,10 @@ class MessageInputQuickToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 仅 dots（更多操作）与收起键盘贴右缘，其余动作全部并入左组
+    bool keepTrailing(MessageInputQuickAction action) =>
+        action.icon == DsIconKind.dots ||
+        action.icon == DsIconKind.keyboardHide;
     final actions = [
       ...this.actions,
       if (onThinkingEffortChanged != null)
@@ -53,6 +57,11 @@ class MessageInputQuickToolbar extends StatelessWidget {
           tooltip: '思考等级',
           onPressed: () => _showThinkingEffort(context),
         ),
+      ...trailingActions.where((action) => !keepTrailing(action)),
+    ];
+    final trailingActions = [
+      for (final action in this.trailingActions)
+        if (keepTrailing(action)) action,
     ];
     if (actions.isEmpty && trailingActions.isEmpty) return const SizedBox();
 

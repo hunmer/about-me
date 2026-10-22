@@ -31,9 +31,11 @@ class MarkdownContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     final bodyColor = textColor ?? theme.text;
-    return MarkdownBody(
+    final body = MarkdownBody(
       data: content,
-      selectable: selectable,
+      // 使用外层 SelectionArea 选择文本，避免 SelectableText 的内部滚动
+      // 在移动端抢占消息列表的纵向拖动。
+      selectable: false,
       styleSheet: MarkdownStyleSheet(
         // 极简风格配置
         p: _sketchFont.copyWith(fontSize: 15, height: 1.5, color: bodyColor),
@@ -88,6 +90,7 @@ class MarkdownContent extends StatelessWidget {
         }
       },
     );
+    return selectable ? SelectionArea(child: body) : body;
   }
 
   /// 打开链接

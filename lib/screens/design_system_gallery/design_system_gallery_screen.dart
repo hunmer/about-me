@@ -120,7 +120,12 @@ class _DesignSystemGalleryScreenState extends State<DesignSystemGalleryScreen> {
       padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
       child: Row(
         children: [
-          Expanded(child: DSTopBar(title: '手绘风 组件库', onBack: null)),
+          Expanded(
+            child: DSTopBar(
+              title: '手绘风 组件库',
+              onBack: () => Navigator.maybePop(context),
+            ),
+          ),
           DsIcon(
             DsIconKind.moon,
             size: 16,

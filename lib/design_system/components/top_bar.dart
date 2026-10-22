@@ -18,9 +18,11 @@ class DSTopBar extends StatelessWidget {
 
   final String title;
 
-  /// 默认 Navigator.maybePop；为 null 时隐藏返回按钮
+  /// 为 null 时隐藏返回按钮
   final VoidCallback? onBack;
   final VoidCallback? onMenu;
+
+  /// 尾部附加动作（替代菜单按钮的位置）
   final List<Widget>? actions;
 
   @override
@@ -35,10 +37,10 @@ class DSTopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _BarIcon(
-            icon: DsIconKind.chevronLeft,
-            onTap: onBack ?? () => Navigator.maybePop(context),
-          ),
+          if (onBack != null)
+            _BarIcon(icon: DsIconKind.chevronLeft, onTap: onBack)
+          else
+            const SizedBox(width: 36, height: 36),
           Expanded(
             child: Text(
               title,
@@ -46,10 +48,17 @@ class DSTopBar extends StatelessWidget {
               style: DsTypography.heading.copyWith(color: theme.text),
             ),
           ),
-          _BarIcon(
-            icon: DsIconKind.more,
-            onTap: onMenu,
-          ),
+          // 尾部：自定义 actions 优先，其次菜单按钮；
+          // 都没有时留与返回钮等宽的占位，保证标题恒居中
+          if (onMenu != null)
+            _BarIcon(
+              icon: DsIconKind.more,
+              onTap: onMenu,
+            )
+          else if (actions != null && actions!.isNotEmpty)
+            Row(mainAxisSize: MainAxisSize.min, children: actions!)
+          else
+            const SizedBox(width: 36, height: 36),
         ],
       ),
     );

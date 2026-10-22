@@ -314,15 +314,14 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     final controller = _controller;
     final sending = controller?.isSending ?? false;
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        theme.spacing.lg,
-        theme.spacing.sm,
-        theme.spacing.sm,
-        theme.spacing.sm,
+      padding: EdgeInsets.symmetric(
+        horizontal: theme.spacing.lg,
+        vertical: theme.spacing.sm,
       ),
-      child: Row(
-        children: [
-          const Spacer(),
+      child: DSTopBar(
+        title: 'screens_assistantTitle'.tr,
+        onMenu: () => _openFullChat(controller),
+        actions: [
           if (kDebugMode)
             DSPopover(
               width: 190,
@@ -381,13 +380,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                 ),
               ),
             ),
-          DSIconButton(
-            icon: DsIconKind.more,
-            size: 38,
-            color: theme.surface,
-            tooltip: 'screens_assistantOpenFull'.tr,
-            onPressed: () => _openFullChat(controller),
-          ),
         ],
       ),
     );
@@ -854,18 +846,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      DSLoadingDots(size: 6, color: theme.textSub),
-                      const SizedBox(width: 10),
-                      Flexible(
-                        child: Text(
-                          stepText,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      DSLoadingDots(size: 6, color: theme.textSub)
                     ],
                   ),
                 ),
