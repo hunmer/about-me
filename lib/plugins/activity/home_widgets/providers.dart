@@ -408,42 +408,6 @@ Map<String, dynamic>? _getCommonWidgetDataSync(
                 .toList(),
       };
 
-    case 'modernRoundedSpendingWidget':
-      return {
-        'title': '今日活动',
-        'currentAmount': todayDurationMinutes.toDouble(),
-        'budgetAmount': (12 * 60).toDouble(),
-        'unit': '分钟',
-        'categories':
-            tagStats.entries
-                .map(
-                  (e) => {
-                    'name': e.key,
-                    'amount': e.value.toDouble(),
-                    'color': getColorFromTag(e.key).value,
-                  },
-                )
-                .toList(),
-        'categoryItems':
-            activitiesByTag.entries
-                .map(
-                  (e) => {
-                    'categoryName': e.key,
-                    'items':
-                        e.value
-                            .take(5)
-                            .map(
-                              (a) => {
-                                'title': a.title.isEmpty ? '未命名活动' : a.title,
-                                'subtitle': '${a.durationInMinutes}分钟',
-                              },
-                            )
-                            .toList(),
-                  },
-                )
-                .toList(),
-      };
-
     case 'categoryStackWidget':
       return {
         'title': '今日活动分布',
@@ -709,42 +673,6 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgets(
                 (a) => {
                   'text': a.title.isEmpty ? '未命名活动' : a.title,
                   'isCompleted': true,
-                },
-              )
-              .toList(),
-    },
-
-    // 现代圆角消费卡片：显示活动时长
-    'modernRoundedSpendingWidget': {
-      'title': '今日活动',
-      'currentAmount': todayDurationMinutes.toDouble(),
-      'budgetAmount': (12 * 60).toDouble(), // 12小时目标
-      'unit': '分钟',
-      'categories':
-          tagStats.entries
-              .map(
-                (e) => {
-                  'name': e.key,
-                  'amount': e.value.toDouble(),
-                  'color': getColorFromTag(e.key).value,
-                },
-              )
-              .toList(),
-      'categoryItems':
-          activitiesByTag.entries
-              .map(
-                (e) => {
-                  'categoryName': e.key,
-                  'items':
-                      e.value
-                          .take(5)
-                          .map(
-                            (a) => {
-                              'title': a.title.isEmpty ? '未命名活动' : a.title,
-                              'subtitle': '${a.durationInMinutes}分钟',
-                            },
-                          )
-                          .toList(),
                 },
               )
               .toList(),

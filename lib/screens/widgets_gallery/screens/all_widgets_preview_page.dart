@@ -13,8 +13,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_progress_wi
 import 'package:aboutme/screens/widgets_gallery/screens/chart_icon_display_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/stress_level_monitor_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/sleep_duration_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/modern_egfr_health_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/hydration_tracker_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/blood_pressure_tracker_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/activity_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/weekly_steps_progress_card_example.dart';
@@ -47,7 +45,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/revenue_trend_card_examp
 import 'package:aboutme/screens/widgets_gallery/screens/task_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/color_tag_task_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/rental_preview_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/inbox_message_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_list_card_example.dart';
@@ -56,14 +53,11 @@ import 'package:aboutme/screens/widgets_gallery/screens/rounded_reminders_list_e
 import 'package:aboutme/screens/widgets_gallery/screens/earnings_trend_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/spending_trend_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/expense_comparison_chart_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/modern_rounded_spending_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/account_balance_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/category_stack_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/wallet_balance_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/modern_rounded_balance_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_bill_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/audio_waveform_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/dual_slider_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/score_card_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/storage_breakdown_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/gradient_progress_card_example.dart';
@@ -487,10 +481,6 @@ class _WidgetRegistry {
         () => const StressLevelMonitorExample(),
     '/widgets_gallery/sleep_duration_card':
         () => const SleepDurationCardExample(),
-    '/widgets_gallery/modern_egfr_health_widget':
-        () => const ModernFlipCounterCardExample(),
-    '/widgets_gallery/hydration_tracker_widget':
-        () => const HydrationTrackerWidgetExample(),
     '/widgets_gallery/blood_pressure_tracker':
         () => const BloodPressureTrackerExample(),
     '/widgets_gallery/activity_progress_card':
@@ -550,8 +540,6 @@ class _WidgetRegistry {
     '/widgets_gallery/notes_list_card': () => const NotesListCardExample(),
     '/widgets_gallery/color_tag_task_card':
         () => const ColorTagTaskCardExample(),
-    '/widgets_gallery/rental_preview_card':
-        () => const RentalPreviewCardExample(),
     '/widgets_gallery/inbox_message_card':
         () => const InboxMessageCardExample(),
     '/widgets_gallery/upcoming_tasks_widget':
@@ -569,10 +557,6 @@ class _WidgetRegistry {
         () => const SpendingTrendChartExample(),
     '/widgets_gallery/expense_comparison_chart':
         () => const ExpenseComparisonChartExample(),
-    '/widgets_gallery/modern_rounded_spending_widget':
-        () => const ModernRoundedSpendingWidgetExample(),
-    '/widgets_gallery/account_balance_card':
-        () => const AccountBalanceCardExample(),
     '/widgets_gallery/category_stack_widget':
         () => const CategoryStackWidgetExample(),
     '/widgets_gallery/wallet_balance_card':
@@ -584,8 +568,6 @@ class _WidgetRegistry {
     '/widgets_gallery/audio_waveform_widget':
         () => const AudioWaveformWidgetExample(),
     // 工具类
-    '/widgets_gallery/dual_slider_widget':
-        () => const DualSliderWidgetExample(),
     '/widgets_gallery/score_card_widget': () => const ScoreCardWidgetExample(),
     '/widgets_gallery/storage_breakdown_widget':
         () => const StorageBreakdownWidgetExample(),

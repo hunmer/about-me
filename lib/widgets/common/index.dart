@@ -19,7 +19,6 @@ export 'weekly_steps_progress_card.dart';
 export 'mood_tracker_card.dart';
 export 'trend_line_chart_card.dart';
 export 'dot_tracker_card.dart';
-export 'hydration_tracker_card.dart';
 export 'emotion_tracker_card.dart';
 export 'level_monitor_card.dart';
 export 'sleep_stage_chart_card.dart';

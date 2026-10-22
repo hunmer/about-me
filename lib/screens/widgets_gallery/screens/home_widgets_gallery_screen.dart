@@ -179,20 +179,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
-        icon: Icons.science,
-        title: 'eGFR 健康指标卡片',
-        subtitle: 'ModernEgfrHealthWidget - 肾功能指标健康监测卡片',
-        route: '/widgets_gallery/modern_egfr_health_widget',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.water_drop,
-        title: '饮水追踪器',
-        subtitle: 'HydrationTrackerWidget - 每日饮水量追踪与连续打卡',
-        route: '/widgets_gallery/hydration_tracker_widget',
-      ),
-      _buildListItem(
-        context,
         icon: Icons.favorite,
         title: '血压追踪器',
         subtitle: 'BloodPressureTracker - 血压数值与周趋势展示卡片',
@@ -508,13 +494,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
-        icon: Icons.home_work,
-        title: '租赁预览卡片',
-        subtitle: 'RentalPreviewCard - 图片+状态的租赁预览卡片',
-        route: '/widgets_gallery/rental_preview_card',
-      ),
-      _buildListItem(
-        context,
         icon: Icons.inbox,
         title: '收件箱消息卡片',
         subtitle: 'InboxMessageCard - 收件箱消息列表展示卡片',
@@ -634,20 +613,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
-        icon: Icons.payments_rounded,
-        title: '消费卡片',
-        subtitle: 'ModernRoundedSpendingWidget - 今日支出分类统计卡片',
-        route: '/widgets_gallery/modern_rounded_spending_widget',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.account_balance,
-        title: '账户余额卡片',
-        subtitle: 'AccountBalanceCard - 银行账户余额与收支统计卡片',
-        route: '/widgets_gallery/account_balance_card',
-      ),
-      _buildListItem(
-        context,
         icon: Icons.bar_chart,
         title: '分类堆叠消费卡片',
         subtitle: 'CategoryStackWidget - 堆叠柱状图与消费分类展示',
@@ -695,13 +660,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
   List<Widget> _buildUtilitySection(BuildContext context) {
     return [
       _buildSectionHeader(context, '工具类 - 通用工具组件'),
-      _buildListItem(
-        context,
-        icon: Icons.access_time,
-        title: '双滑块小组件',
-        subtitle: 'DualSliderWidget - 通用双滑块数值显示组件',
-        route: '/widgets_gallery/dual_slider_widget',
-      ),
       _buildListItem(
         context,
         icon: Icons.scoreboard,

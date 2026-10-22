@@ -25,17 +25,13 @@ import 'widgets/smooth_line_chart_card.dart';
 import 'widgets/goods_item_selector.dart';
 import 'widgets/vertical_bar_chart_card.dart';
 import 'widgets/revenue_trend_card.dart';
-import 'widgets/dual_slider_widget.dart';
 import 'widgets/daily_todo_list_widget.dart';
 import 'widgets/upcoming_tasks_widget.dart';
 import 'widgets/mini_trend_card.dart';
-import 'widgets/account_balance_card.dart';
-import 'widgets/modern_rounded_spending_widget.dart';
 import 'widgets/wallet_balance_card.dart';
 import 'widgets/score_card_widget.dart';
 import 'widgets/trend_value_card.dart';
 import 'widgets/trend_list_card.dart';
-import 'widgets/modern_flip_counter_card.dart';
 import 'widgets/chart_icon_display_card.dart';
 import 'widgets/daily_events_card.dart';
 import 'widgets/daily_reflection_card.dart';
@@ -51,7 +47,6 @@ import 'widgets/portfolio_stacked_chart.dart';
 import 'widgets/category_stack_widget.dart';
 import 'widgets/performance_bar_chart.dart';
 import 'widgets/ranked_bar_chart_card.dart';
-import 'widgets/rental_preview_card.dart';
 import 'widgets/rounded_property_card.dart';
 import 'widgets/task_list_stat_card.dart';
 import 'widgets/task_progress_list.dart';
@@ -121,7 +116,6 @@ enum CommonWidgetId {
   inboxMessageCard,
   roundedTaskListCard,
   roundedRemindersList,
-  dualSliderCard,
   earningsTrendCard,
   timerCard,
   revenueTrendCard,
@@ -133,15 +127,12 @@ enum CommonWidgetId {
   imageDisplayCard,
   weightTrendChart,
   miniTrendCard,
-  accountBalanceCard,
-  modernRoundedSpendingWidget,
   walletBalanceCard,
   scoreCardWidget,
   trendValueCard,
   trendListCard,
   moodChartCard,
   dailyEventsCard,
-  modernEgfrHealthWidget,
   dailyReflectionCard,
   monthlyBillCard,
   spendingTrendChart,
@@ -154,7 +145,6 @@ enum CommonWidgetId {
   categoryStackWidget,
   performanceBarChart,
   rankedBarChartCard,
-  rentalPreviewCard,
   roundedPropertyCard,
   taskListStatCard,
   taskProgressList,
@@ -351,14 +341,6 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
     ),
-    CommonWidgetId.dualSliderCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.dualSliderCard,
-      name: '双滑块小组件',
-      description: '通用双滑块数值显示组件，支持自定义标签和进度',
-      icon: Icons.access_time,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
     CommonWidgetId.earningsTrendCard: const CommonWidgetMetadata(
       id: CommonWidgetId.earningsTrendCard,
       name: '收益趋势卡片',
@@ -423,22 +405,6 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [MediumSize(), LargeSize()],
     ),
-    CommonWidgetId.accountBalanceCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.accountBalanceCard,
-      name: '账户余额卡片',
-      description: '显示多个账户的余额信息，包括账户名称、图标、账单数量和余额，支持正负余额显示和入场动画效果',
-      icon: Icons.account_balance,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
-    CommonWidgetId.modernRoundedSpendingWidget: const CommonWidgetMetadata(
-      id: CommonWidgetId.modernRoundedSpendingWidget,
-      name: '现代圆角消费卡片',
-      description: '显示当前消费、预算、分类进度条和分类列表，支持动画效果',
-      icon: Icons.payments_outlined,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
     CommonWidgetId.walletBalanceCard: const CommonWidgetMetadata(
       id: CommonWidgetId.walletBalanceCard,
       name: '钱包余额概览卡片',
@@ -472,15 +438,6 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [MediumSize(), LargeSize()],
     ),
-    CommonWidgetId.modernEgfrHealthWidget: const CommonWidgetMetadata(
-      id: CommonWidgetId.modernEgfrHealthWidget,
-      name: '健康指标卡片',
-      description: '通用的健康指标展示卡片，支持标题、图标、数值（带翻转动画）、单位和状态指示器',
-      icon: Icons.favorite,
-      defaultSize: Large3Size(),
-      supportedSizes: [MediumSize(), LargeSize()],
-    ),
-
     CommonWidgetId.moodChartCard: const CommonWidgetMetadata(
       id: CommonWidgetId.moodChartCard,
       name: '心情图表卡片',
@@ -592,14 +549,6 @@ class CommonWidgetsRegistry {
       icon: Icons.bar_chart,
       defaultSize: Large3Size(),
       supportedSizes: const [LargeSize()],
-    ),
-    CommonWidgetId.rentalPreviewCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.rentalPreviewCard,
-      name: '租赁预览卡片',
-      description: '显示租赁信息的卡片，包含图片、标题、评分、描述和时间',
-      icon: Icons.home_work,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
     ),
     CommonWidgetId.roundedPropertyCard: const CommonWidgetMetadata(
       id: CommonWidgetId.roundedPropertyCard,
@@ -1101,8 +1050,6 @@ class CommonWidgetBuilder {
         return RoundedTaskListCard.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.roundedRemindersList:
         return ReminderListCard.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.dualSliderCard:
-        return DualSliderWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.earningsTrendCard:
         return EarningsTrendCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.revenueTrendCard:
@@ -1123,10 +1070,6 @@ class CommonWidgetBuilder {
         return CardTrendLineChart.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.miniTrendCard:
         return MiniTrendCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.accountBalanceCard:
-        return AccountBalanceCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.modernRoundedSpendingWidget:
-        return ModernRoundedSpendingWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.walletBalanceCard:
         return WalletBalanceCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.scoreCardWidget:
@@ -1135,8 +1078,6 @@ class CommonWidgetBuilder {
         return TrendValueCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.trendListCard:
         return TrendListCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.modernEgfrHealthWidget:
-        return ModernFlipCounterCard.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.moodChartCard:
         return ChartIconDisplayCard.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.dailyEventsCard:
@@ -1165,8 +1106,6 @@ class CommonWidgetBuilder {
         return PerformanceBarChartWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.rankedBarChartCard:
         return RankedBarChartCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.rentalPreviewCard:
-        return RentalPreviewCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.roundedPropertyCard:
         return RoundedPropertyCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.taskListStatCard:

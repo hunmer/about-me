@@ -32,7 +32,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/earnings_trend_card_exam
 import 'package:aboutme/screens/widgets_gallery/screens/ranked_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/smooth_line_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/audio_waveform_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/dual_slider_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/storage_breakdown_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/route_tracking_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/bar_chart_stats_card_example.dart';
@@ -55,7 +54,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/score_card_widget_exampl
 import 'package:aboutme/screens/widgets_gallery/screens/category_stack_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/timeline_schedule_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/expense_comparison_chart_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/modern_egfr_health_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/modern_rounded_balance_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/sleep_stage_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_bill_card_example.dart';
@@ -63,12 +61,9 @@ import 'package:aboutme/screens/widgets_gallery/screens/task_list_card_example.d
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/chart_icon_display_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/modern_rounded_mood_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/modern_rounded_spending_widget_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/hydration_tracker_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/trend_value_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/sleep_duration_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/weight_trend_chart_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/account_balance_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/color_tag_task_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/donut_chart_stats_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/health_score_ring_card_example.dart';
@@ -98,7 +93,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/upcoming_tasks_widget_ex
 import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_reminders_list_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/circular_metrics_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/rental_preview_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/nutrition_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/trend_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/screen_time_chart_example.dart';
@@ -350,14 +344,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '音频波形小组件',
     ),
     RouteDefinition(
-      path: '/widgets_gallery/dual_slider_widget',
-      handler: (settings) => RouteHelpers.createRoute(
-        const DualSliderWidgetExample(),
-        settings: settings,
-      ),
-      description: '双滑块小组件',
-    ),
-    RouteDefinition(
       path: '/widgets_gallery/storage_breakdown_widget',
       handler: (settings) => RouteHelpers.createRoute(
         const StorageBreakdownWidgetExample(),
@@ -534,14 +520,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '支出对比图表',
     ),
     RouteDefinition(
-      path: '/widgets_gallery/modern_egfr_health_widget',
-      handler: (settings) => RouteHelpers.createRoute(
-        const ModernFlipCounterCardExample(),
-        settings: settings,
-      ),
-      description: 'eGFR 健康指标卡片',
-    ),
-    RouteDefinition(
       path: '/widgets_gallery/modern_rounded_balance_widget',
       handler: (settings) => RouteHelpers.createRoute(
         const ModernRoundedBalanceWidgetExample(),
@@ -606,22 +584,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '现代化圆角心情追踪小组件',
     ),
     RouteDefinition(
-      path: '/widgets_gallery/modern_rounded_spending_widget',
-      handler: (settings) => RouteHelpers.createRoute(
-        const ModernRoundedSpendingWidgetExample(),
-        settings: settings,
-      ),
-      description: '消费卡片',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/hydration_tracker_widget',
-      handler: (settings) => RouteHelpers.createRoute(
-        const HydrationTrackerWidgetExample(),
-        settings: settings,
-      ),
-      description: '饮水追踪器',
-    ),
-    RouteDefinition(
       path: '/widgets_gallery/trend_value_card',
       handler: (settings) => RouteHelpers.createRoute(
         const TrendValueCardExample(),
@@ -644,14 +606,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '体重趋势图表',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/account_balance_card',
-      handler: (settings) => RouteHelpers.createRoute(
-        const AccountBalanceCardExample(),
-        settings: settings,
-      ),
-      description: '账户余额卡片',
     ),
     RouteDefinition(
       path: '/widgets_gallery/color_tag_task_card',
@@ -868,14 +822,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '环形指标卡片',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/rental_preview_card',
-      handler: (settings) => RouteHelpers.createRoute(
-        const RentalPreviewCardExample(),
-        settings: settings,
-      ),
-      description: '租赁预览卡片',
     ),
     RouteDefinition(
       path: '/widgets_gallery/rounded_reminders_list',
@@ -1095,20 +1041,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '睡眠时长统计卡片',
     subtitle: 'SleepDurationCard',
     route: '/widgets_gallery/sleep_duration_card',
-  ),
-  WidgetPreviewItem(
-    category: '追踪类',
-    icon: Icons.science,
-    title: 'eGFR 健康指标卡片',
-    subtitle: 'ModernEgfrHealthWidget',
-    route: '/widgets_gallery/modern_egfr_health_widget',
-  ),
-  WidgetPreviewItem(
-    category: '追踪类',
-    icon: Icons.water_drop,
-    title: '饮水追踪器',
-    subtitle: 'HydrationTrackerWidget',
-    route: '/widgets_gallery/hydration_tracker_widget',
   ),
   WidgetPreviewItem(
     category: '追踪类',
@@ -1402,13 +1334,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
   ),
   WidgetPreviewItem(
     category: '内容类',
-    icon: Icons.home_work,
-    title: '租赁预览卡片',
-    subtitle: 'RentalPreviewCard',
-    route: '/widgets_gallery/rental_preview_card',
-  ),
-  WidgetPreviewItem(
-    category: '内容类',
     icon: Icons.inbox,
     title: '收件箱消息卡片',
     subtitle: 'InboxMessageCard',
@@ -1522,20 +1447,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
   ),
   WidgetPreviewItem(
     category: '财务类',
-    icon: Icons.payments_rounded,
-    title: '消费卡片',
-    subtitle: 'ModernRoundedSpendingWidget',
-    route: '/widgets_gallery/modern_rounded_spending_widget',
-  ),
-  WidgetPreviewItem(
-    category: '财务类',
-    icon: Icons.account_balance,
-    title: '账户余额卡片',
-    subtitle: 'AccountBalanceCard',
-    route: '/widgets_gallery/account_balance_card',
-  ),
-  WidgetPreviewItem(
-    category: '财务类',
     icon: Icons.bar_chart,
     title: '分类堆叠消费卡片',
     subtitle: 'CategoryStackWidget',
@@ -1571,13 +1482,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     route: '/widgets_gallery/audio_waveform_widget',
   ),
   // 工具类
-  WidgetPreviewItem(
-    category: '工具类',
-    icon: Icons.access_time,
-    title: '双滑块小组件',
-    subtitle: 'DualSliderWidget',
-    route: '/widgets_gallery/dual_slider_widget',
-  ),
   WidgetPreviewItem(
     category: '工具类',
     icon: Icons.scoreboard,

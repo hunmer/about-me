@@ -1109,57 +1109,6 @@
           "description": "操作图标名称（如 'Icons.my_location'）"
         }
       ]
-    },
-    {
-      "name": "RentalPreviewCardWidget",
-      "displayName": "租赁预览卡片",
-      "description": "显示房产图片、状态、评分和详情",
-      "category": "content",
-      "file": "rental_preview_card.dart",
-      "parameters": [
-        {
-          "name": "imageUrl",
-          "type": "String",
-          "required": true,
-          "description": "图片URL"
-        },
-        {
-          "name": "status",
-          "type": "String",
-          "required": true,
-          "description": "状态标签"
-        },
-        {
-          "name": "rating",
-          "type": "double",
-          "required": true,
-          "description": "评分"
-        },
-        {
-          "name": "title",
-          "type": "String",
-          "required": true,
-          "description": "标题"
-        },
-        {
-          "name": "description",
-          "type": "String",
-          "required": true,
-          "description": "描述文本"
-        },
-        {
-          "name": "date",
-          "type": "String",
-          "required": true,
-          "description": "日期"
-        },
-        {
-          "name": "duration",
-          "type": "String",
-          "required": true,
-          "description": "时长"
-        }
-      ]
     }
   ],
   "commonParameters": {

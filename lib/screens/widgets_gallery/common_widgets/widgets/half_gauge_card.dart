@@ -1,15 +1,13 @@
-/// 半圆仪表盘小组件（手绘纸墨风格）
+/// 半圆仪表盘小组件（条纹纸卡风格，参考 StripedWeeklyChartCard）
 ///
-/// 手绘面板（纸底 + 排线 + 墨线框）内：标题 / rough 半圆仪表盘
-/// （淡墨轨道 + 主题色马克笔进度弧 + 墨线指针）/ 0%-100% 刻度 / 底部余额。
-/// 内容整体上下居中；仪表盘尺寸同时受宽高约束，任意尺寸下不再溢出。
+/// 圆角纸卡（内白描边 + 柔影 + 淡入上移入场）：圆形图标徽章 + 标题头部 /
+/// 斜纹半圆仪表盘（灰底轨道 + 主题色斜纹进度扇环 + 深色指针）/ 0%-100% 刻度 /
+/// 底部余额。仪表盘尺寸同时受宽高约束、内容上下居中，任意尺寸不溢出。
 library;
 
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:skribble/skribble.dart';
-import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 半圆仪表盘小组件
@@ -18,6 +16,12 @@ class HalfGaugeCardWidget extends StatefulWidget {
   final double totalBudget;
   final double remaining;
   final String currency;
+
+  /// 进度弧主题色（斜纹 + 描边）
+  final Color activeColor;
+
+  /// 进度弧底色
+  final Color activeBackgroundColor;
 
   /// 组件尺寸
   final HomeWidgetSize size;
@@ -31,6 +35,8 @@ class HalfGaugeCardWidget extends StatefulWidget {
     required this.totalBudget,
     required this.remaining,
     this.currency = 'AED',
+    this.activeColor = const Color(0xFFD972F8),
+    this.activeBackgroundColor = const Color(0xFFF3C4FF),
     this.size = const MediumSize(),
     this.inline = false,
   });
@@ -45,6 +51,14 @@ class HalfGaugeCardWidget extends StatefulWidget {
       totalBudget: (props['totalBudget'] as num?)?.toDouble() ?? 0.0,
       remaining: (props['remaining'] as num?)?.toDouble() ?? 0.0,
       currency: props['currency'] as String? ?? 'AED',
+      activeColor: _parseColor(
+        props['activeColor'],
+        const Color(0xFFD972F8),
+      ),
+      activeBackgroundColor: _parseColor(
+        props['activeBackgroundColor'],
+        const Color(0xFFF3C4FF),
+      ),
       size: size,
       inline: props['inline'] as bool? ?? false,
     );
@@ -67,7 +81,7 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1100),
       vsync: this,
     );
     _progressAnimation = CurvedAnimation(
@@ -93,184 +107,282 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
     }
   }
 
+  double _defaultHeight() {
+    final scale = widget.size.scale;
+    if (widget.size is SmallSize) return 150 * scale;
+    if (widget.size is MediumSize || widget.size is WideSize) {
+      return 190 * scale;
+    }
+    if (widget.size is LargeSize || widget.size is Wide2Size) {
+      return 330 * scale;
+    }
+    return 430 * scale;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final scale = widget.size.scale;
 
-    // 手绘描画入场：挂载即播一次，墨线「画出来」而非淡入
-    return WiredDraw(
-      child: DsSketchPanel(
-        theme: theme,
-        radius: BorderRadius.circular(16 * scale),
-        padding: widget.size.getPadding(),
-        child: LayoutBuilder(
-          builder: (context, constraints) =>
-              _buildContent(theme, constraints),
+    return AnimatedBuilder(
+      animation: _progressAnimation,
+      child: Container(
+        width: widget.inline ? double.maxFinite : 384 * scale,
+        height: widget.inline ? double.maxFinite : _defaultHeight(),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF9FBFD),
+          borderRadius: BorderRadius.circular(30 * scale),
+          border: Border.all(
+            color: isDark ? Colors.white10 : Colors.white,
+            width: scale,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.28 : 0.05),
+              blurRadius: 20 * scale,
+              offset: Offset(0, 5 * scale),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: widget.size.getPadding(),
+          child: LayoutBuilder(
+            builder: (context, constraints) =>
+                _buildContent(isDark, constraints),
+          ),
         ),
       ),
+      builder: (context, child) {
+        return Opacity(
+          opacity: _progressAnimation.value,
+          child: Transform.translate(
+            offset: Offset(0, 18 * (1 - _progressAnimation.value)),
+            child: child,
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildContent(
-    AppThemeData theme,
-    BoxConstraints constraints,
-  ) {
-    final gaugeTitleFontSize = widget.size.getTitleFontSize();
+  Widget _buildContent(bool isDark, BoxConstraints constraints) {
+    final scale = widget.size.scale;
+    final titleFontSize = widget.size.getSubtitleFontSize() + 2 * scale;
     final gaugeAmountFontSize = widget.size.getSubtitleFontSize() + 2;
     final gaugeIconSize = widget.size.getIconSize();
     final gaugeLabelFontSize = widget.size.getLegendFontSize();
     final gaugeRemainLabelFontSize = widget.size.getLegendFontSize() - 2;
     final gapUnit = widget.size.getSmallSpacing() * 2;
 
+    // 头部徽章随卡片高度收敛，矮卡不挤占仪表盘空间
+    final badgeSize = constraints.maxHeight.isFinite
+        ? math.min(44 * scale, constraints.maxHeight * 0.24)
+        : 44 * scale;
+
     // 仪表盘同时受宽度与高度预算约束，杜绝小尺寸下溢出：
-    // 画布高 ≈ 宽 * 0.6（半圆 + 笔宽余量），刻度行可让位；
-    // 预算按 0.62 折算、字体按 1.6 倍行高估，给手写字体留余量
+    // 画布高 ≈ 宽 * 0.56（半圆 + 笔宽余量），刻度行可让位
     var gaugeWidth = constraints.maxWidth * 0.82;
     var showLabels = true;
     if (constraints.maxHeight.isFinite) {
       final reserved =
-          gaugeTitleFontSize * 1.6 +
-          gaugeAmountFontSize * 1.6 +
-          gapUnit * 2;
+          badgeSize + gapUnit * 2 + gaugeAmountFontSize * 1.6;
       final withLabels =
-          (constraints.maxHeight - reserved - gaugeLabelFontSize * 1.6) / 0.62;
+          (constraints.maxHeight - reserved - gaugeLabelFontSize * 1.6) / 0.6;
       if (withLabels >= 64) {
         gaugeWidth = math.min(gaugeWidth, withLabels);
       } else {
         showLabels = false;
         gaugeWidth = math.min(
           gaugeWidth,
-          (constraints.maxHeight - reserved) / 0.62,
+          (constraints.maxHeight - reserved) / 0.6,
         );
       }
     }
     gaugeWidth = math.max(gaugeWidth, 48);
     final showRemainBlock = gaugeWidth >= 96;
+    final gaugeCanvasHeight = gaugeWidth * 0.56;
 
-    final gaugeCanvasHeight = gaugeWidth * 0.6;
-
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 标题
-          Text(
-            widget.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: gaugeTitleFontSize,
-              letterSpacing: 1.2,
-              color: theme.textSub,
-            ),
-          ),
-
-          SizedBox(height: gapUnit),
-
-          // 半圆仪表盘 + 刻度
-          Column(
-            mainAxisSize: MainAxisSize.min,
+    Widget gaugeBlock = Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // 半圆仪表盘 + 中央剩余提示
+        SizedBox(
+          width: gaugeWidth,
+          height: gaugeCanvasHeight,
+          child: Stack(
             children: [
-              SizedBox(
-                width: gaugeWidth,
-                height: gaugeCanvasHeight,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: AnimatedBuilder(
-                        animation: _progressAnimation,
-                        builder: (context, child) {
-                          return CustomPaint(
-                            size: Size(gaugeWidth, gaugeCanvasHeight),
-                            painter: _HalfGaugePainter(
-                              sweep: progress * _progressAnimation.value,
-                              theme: theme,
-                              inkProgress:
-                                  WiredDrawTransition.progressOf(context),
-                            ),
-                          );
-                        },
+              Positioned.fill(
+                child: AnimatedBuilder(
+                  animation: _progressAnimation,
+                  builder: (context, child) {
+                    return CustomPaint(
+                      size: Size(gaugeWidth, gaugeCanvasHeight),
+                      painter: _StripedGaugePainter(
+                        sweep: progress * _progressAnimation.value,
+                        activeColor: widget.activeColor,
+                        activeBackgroundColor: widget.activeBackgroundColor,
+                        isDark: isDark,
+                        scale: scale,
                       ),
-                    ),
-                    if (showRemainBlock)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: gaugeCanvasHeight * 0.08,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'REMAIN',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: gaugeRemainLabelFontSize,
-                                letterSpacing: 1.5,
-                                color: theme.textSub,
-                              ),
-                            ),
-                            SizedBox(
-                              height: widget.size.getSmallSpacing() * 2,
-                            ),
-                            DsIcon(
-                              DsIconKind.cart,
-                              size: gaugeIconSize,
-                              color: theme.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
+                    );
+                  },
                 ),
               ),
-
-              // 刻度标记
-              if (showLabels)
-                SizedBox(
-                  width: gaugeWidth,
-                  height: gaugeLabelFontSize * 1.6,
-                  child: Stack(
+              if (showRemainBlock)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: gaugeCanvasHeight * 0.08,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      for (final (label, align) in const [
-                        ('0%', Alignment.centerLeft),
-                        ('50%', Alignment.center),
-                        ('100%', Alignment.centerRight),
-                      ])
-                        Align(
-                          alignment: align,
-                          child: Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: gaugeLabelFontSize,
-                              color: theme.textSub,
-                            ),
-                          ),
+                      Text(
+                        'REMAIN',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: gaugeRemainLabelFontSize,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 1.5,
+                          color: isDark
+                              ? const Color(0xFFCBD5E1)
+                              : const Color(0xFF7C8088),
                         ),
+                      ),
+                      SizedBox(height: widget.size.getSmallSpacing() * 2),
+                      Icon(
+                        Icons.shopping_bag_outlined,
+                        size: gaugeIconSize,
+                        color: isDark ? Colors.white : const Color(0xFF3B82F6),
+                      ),
                     ],
                   ),
                 ),
             ],
           ),
+        ),
 
-          SizedBox(height: gapUnit),
-
-          // 底部金额显示
-          Text(
-            '${_formatAmount(widget.remaining)}.${_getDecimalPart(widget.remaining)} / ${_formatAmount(widget.totalBudget)}.${_getDecimalPart(widget.totalBudget)} (${widget.currency})',
-            style: TextStyle(
-              fontSize: gaugeAmountFontSize,
-              color: theme.text,
+        // 刻度标记
+        if (showLabels)
+          SizedBox(
+            width: gaugeWidth,
+            height: gaugeLabelFontSize * 1.6,
+            child: Stack(
+              children: [
+                for (final (label, align) in const [
+                  ('0%', Alignment.centerLeft),
+                  ('50%', Alignment.center),
+                  ('100%', Alignment.centerRight),
+                ])
+                  Align(
+                    alignment: align,
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: gaugeLabelFontSize,
+                        fontWeight: FontWeight.w500,
+                        height: 1,
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF52555C),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
           ),
-        ],
-      ),
+
+        SizedBox(height: gapUnit),
+
+        // 底部金额显示
+        Text(
+          '${_formatAmount(widget.remaining)}.${_getDecimalPart(widget.remaining)} / ${_formatAmount(widget.totalBudget)}.${_getDecimalPart(widget.totalBudget)} (${widget.currency})',
+          style: TextStyle(
+            fontSize: gaugeAmountFontSize,
+            fontWeight: FontWeight.w700,
+            height: 1.15,
+            color: isDark ? Colors.white : const Color(0xFF141414),
+          ),
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+      ],
+    );
+    if (constraints.maxHeight.isFinite) {
+      gaugeBlock = Expanded(child: Center(child: gaugeBlock));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildHeader(isDark, badgeSize, titleFontSize),
+        SizedBox(height: gapUnit),
+        gaugeBlock,
+      ],
+    );
+  }
+
+  /// 头部：圆形图标徽章 + 标题（+ 币种副标题）
+  Widget _buildHeader(bool isDark, double badgeSize, double titleFontSize) {
+    final scale = widget.size.scale;
+    return Row(
+      children: [
+        Container(
+          width: badgeSize,
+          height: badgeSize,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFDCE4EC),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isDark ? Colors.white24 : const Color(0xFF222222),
+              width: scale,
+            ),
+          ),
+          child: Icon(
+            Icons.shopping_bag_outlined,
+            size: badgeSize * 0.55,
+            color: isDark ? Colors.white : const Color(0xFF3B82F6),
+          ),
+        ),
+        SizedBox(width: 12 * scale),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.title,
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF141414),
+                  fontSize: titleFontSize,
+                  fontWeight: FontWeight.w800,
+                  height: 1.15,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (widget.currency.isNotEmpty) ...[
+                SizedBox(height: 3 * scale),
+                Text(
+                  widget.currency,
+                  style: TextStyle(
+                    color: isDark
+                        ? const Color(0xFFCBD5E1)
+                        : const Color(0xFF7C8088),
+                    fontSize: widget.size.getLegendFontSize(),
+                    fontWeight: FontWeight.w500,
+                    height: 1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -288,107 +400,177 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
   }
 }
 
-/// 仪表盘绘制器：淡墨 rough 轨道 + 主题色马克笔进度弧 + 墨线指针
+/// 斜纹半圆仪表盘绘制器
 ///
-/// [sweep] 为已消费进度（0~1，含入场动画插值）；[inkProgress] 消费外层
-/// WiredDraw 的描画进度（null = 立即全画）。
-class _HalfGaugePainter extends CustomPainter {
+/// 灰底轨道扇环（淡灰斜纹 + 灰描边）垫底，主题色进度扇环（浅色底 +
+/// 浓斜纹 + 主题色描边）按 [sweep]（0~1，含入场动画插值）扫过，
+/// 指针为径向深色实心小三角。
+class _StripedGaugePainter extends CustomPainter {
   final double sweep;
-  final AppThemeData theme;
-  final Animation<double>? inkProgress;
+  final Color activeColor;
+  final Color activeBackgroundColor;
+  final bool isDark;
+  final double scale;
 
-  _HalfGaugePainter({
+  const _StripedGaugePainter({
     required this.sweep,
-    required this.theme,
-    this.inkProgress,
-  }) : super(repaint: inkProgress);
-
-  (double cx, double cy, double radius, double strokeWidth, double inset)
-  _geometry(Size size) {
-    final strokeWidth = math.max(3.0, size.width * 0.1);
-    final cx = size.width / 2;
-    final cy = size.height - strokeWidth * 0.9;
-    final radius = size.width / 2 - strokeWidth / 2 - 1;
-    final inset = math.asin(math.min(1.0, strokeWidth / (2 * radius)));
-    return (cx, cy, radius, strokeWidth, inset);
-  }
-
-  Paint _inkPaint(double width, Color color) =>
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..isAntiAlias = true
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = width
-        ..color = color;
+    required this.activeColor,
+    required this.activeBackgroundColor,
+    required this.isDark,
+    required this.scale,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final drawConfig = theme.wired.drawConfig;
-    final inkProgressValue = inkProgress?.value ?? 1;
-    final (cx, cy, radius, strokeWidth, inset) = _geometry(size);
+    if (size.isEmpty) return;
+    final thickness = math.max(10.0, size.width * 0.11);
+    final center = Offset(size.width / 2, size.height - thickness * 0.35);
+    final rOut = size.width / 2 - 2;
+    final rIn = rOut - thickness;
+    final inset = math.asin(
+      math.min(1.0, thickness * 0.6 / ((rIn + rOut) / 2)),
+    );
     final start = math.pi + inset;
     final span = math.pi - 2 * inset;
 
-    // 淡墨轨道：留给马克笔「涂色」的底稿
-    drawConfig.randomizer.reset();
-    final trackGen = Generator(drawConfig, NoFiller());
-    final trackPaint = _inkPaint(
-      strokeWidth,
-      theme.ink.withValues(alpha: 0.18),
+    // 轨道扇环
+    final trackPath = _sector(center, rIn, rOut, start, start + span);
+    canvas.drawPath(
+      trackPath,
+      Paint()
+        ..color = isDark ? const Color(0xFF334155) : const Color(0xFFE4E6E9),
     );
-    RoughDrawing(
-      trackGen.arc(cx, cy, radius * 2, radius * 2, start, start + span),
-      trackPaint,
-      trackPaint,
-    ).paint(canvas, progress: inkProgressValue, pressure: 0);
+    _paintStripes(
+      canvas,
+      trackPath,
+      size,
+      (isDark ? const Color(0xFF94A3B8) : const Color(0xFF9BA0A8))
+          .withOpacity(0.45),
+      1.5 * scale,
+    );
+    canvas.drawPath(
+      trackPath,
+      Paint()
+        ..color = isDark ? const Color(0xFF64748B) : const Color(0xFF595959)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
 
     final s = sweep.clamp(0.0, 1.0);
     if (s <= 0.004) return;
 
-    // 主题色进度弧：马克笔笔触
-    drawConfig.randomizer.reset();
-    final progressGen = Generator(drawConfig, NoFiller());
-    final progressPaint = _inkPaint(strokeWidth, theme.primary);
-    RoughDrawing(
-      progressGen.arc(cx, cy, radius * 2, radius * 2, start, start + span * s),
-      progressPaint,
-      progressPaint,
-    ).paint(canvas, progress: inkProgressValue, pressure: 0);
-
-    // 指针：径向墨线小三角
-    final pointerAngle = start + span * s;
-    final dir = Offset(
-      math.cos(pointerAngle),
-      math.sin(pointerAngle),
+    // 进度扇环
+    final progressPath = _sector(center, rIn, rOut, start, start + span * s);
+    canvas.drawPath(progressPath, Paint()..color = activeBackgroundColor);
+    _paintStripes(
+      canvas,
+      progressPath,
+      size,
+      activeColor.withOpacity(0.9),
+      3 * scale,
     );
+    canvas.drawPath(
+      progressPath,
+      Paint()
+        ..color = activeColor.withOpacity(0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+
+    // 指针：径向深色小三角
+    final angle = start + span * s;
+    final dir = Offset(math.cos(angle), math.sin(angle));
     final tang = Offset(-dir.dy, dir.dx);
-    final ps = math.max(3.0, strokeWidth * 0.38);
-    final tipR = radius + strokeWidth * 0.55;
-    final baseR = radius - strokeWidth * 0.55;
-    Offset polar(double r, double t) =>
-        Offset(cx, cy) + dir * r + tang * t;
-    drawConfig.randomizer.reset();
-    final pointerGen = Generator(drawConfig, SolidFiller());
-    final fill =
+    final ps = thickness * 0.42;
+    final tip = center + dir * (rOut - thickness * 0.06);
+    final base = center + dir * (rIn + thickness * 0.06);
+    final pointer =
+        Path()
+          ..moveTo(tip.dx, tip.dy)
+          ..lineTo(base.dx + tang.dx * ps, base.dy + tang.dy * ps)
+          ..lineTo(base.dx - tang.dx * ps, base.dy - tang.dy * ps)
+          ..close();
+    canvas.drawPath(
+      pointer,
+      Paint()..color = isDark ? Colors.white : const Color(0xFF222222),
+    );
+  }
+
+  /// 在 [clip] 内铺斜纹（与 StripedWeeklyChartCard 柱纹同款：右上斜率 0.85）
+  void _paintStripes(
+    Canvas canvas,
+    Path clip,
+    Size size,
+    Color color,
+    double strokeWidth,
+  ) {
+    canvas.save();
+    canvas.clipPath(clip);
+    final paint =
         Paint()
-          ..style = PaintingStyle.fill
-          ..isAntiAlias = true
-          ..color = theme.ink;
-    final outline = _inkPaint(1.4, theme.ink);
-    RoughDrawing(
-      pointerGen.polygon([
-        PointD(polar(tipR, 0).dx, polar(tipR, 0).dy),
-        PointD(polar(baseR, ps).dx, polar(baseR, ps).dy),
-        PointD(polar(baseR, -ps).dx, polar(baseR, -ps).dy),
-      ]),
-      outline,
-      fill,
-    ).paint(canvas, progress: inkProgressValue, pressure: 0);
+          ..color = color
+          ..strokeWidth = strokeWidth
+          ..style = PaintingStyle.stroke;
+    final spacing = 6.5 * scale;
+    final h = size.height + 4;
+    for (var x = -h; x < size.width + h; x += spacing) {
+      canvas.drawLine(
+        Offset(x, size.height + 2),
+        Offset(x + h * 0.85, -2),
+        paint,
+      );
+    }
+    canvas.restore();
+  }
+
+  Path _sector(Offset c, double rIn, double rOut, double a0, double a1) {
+    final largeArc = (a1 - a0) > math.pi;
+    final path = Path();
+    path.moveTo(c.dx + rOut * math.cos(a0), c.dy + rOut * math.sin(a0));
+    path.arcToPoint(
+      Offset(c.dx + rOut * math.cos(a1), c.dy + rOut * math.sin(a1)),
+      radius: Radius.circular(rOut),
+      largeArc: largeArc,
+      clockwise: true,
+    );
+    path.lineTo(c.dx + rIn * math.cos(a1), c.dy + rIn * math.sin(a1));
+    path.arcToPoint(
+      Offset(c.dx + rIn * math.cos(a0), c.dy + rIn * math.sin(a0)),
+      radius: Radius.circular(rIn),
+      largeArc: largeArc,
+      clockwise: false,
+    );
+    path.close();
+    return path;
   }
 
   @override
-  bool shouldRepaint(covariant _HalfGaugePainter oldDelegate) {
-    return oldDelegate.sweep != sweep || oldDelegate.theme != theme;
+  bool shouldRepaint(covariant _StripedGaugePainter oldDelegate) {
+    return oldDelegate.sweep != sweep ||
+        oldDelegate.activeColor != activeColor ||
+        oldDelegate.activeBackgroundColor != activeBackgroundColor ||
+        oldDelegate.isDark != isDark ||
+        oldDelegate.scale != scale;
   }
+}
+
+Color _parseColor(dynamic value, Color fallback) {
+  if (value is Color) return value;
+  if (value is int) return Color(value);
+  if (value is String) {
+    try {
+      final hex = value.startsWith('#')
+          ? value.substring(1)
+          : value.startsWith('0x')
+          ? value.substring(2)
+          : '';
+      if (hex.length == 6) {
+        return Color(0xFF000000 | int.parse(hex, radix: 16));
+      }
+      if (hex.length == 8) return Color(int.parse(hex, radix: 16));
+    } catch (_) {
+      return fallback;
+    }
+  }
+  return fallback;
 }

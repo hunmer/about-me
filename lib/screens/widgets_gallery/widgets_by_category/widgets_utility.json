@@ -9,64 +9,6 @@
   },
   "widgets": [
     {
-      "name": "DualSliderWidget",
-      "displayName": "双滑块小组件",
-      "description": "通用双滑块数值显示组件，适用于时区对比等场景",
-      "category": "utility",
-      "file": "dual_slider_widget.dart",
-      "parameters": [
-        {
-          "name": "label1",
-          "type": "String",
-          "required": true,
-          "description": "第一个标签 (主标题，如地点名称)"
-        },
-        {
-          "name": "label2",
-          "type": "String",
-          "required": true,
-          "description": "第二个标签 (副标题，如偏移量)"
-        },
-        {
-          "name": "label3",
-          "type": "String",
-          "required": true,
-          "description": "第三个标签 (日期或附加信息)"
-        },
-        {
-          "name": "value1",
-          "type": "int",
-          "required": true,
-          "description": "第一个数值 (如小时的十位)"
-        },
-        {
-          "name": "value2",
-          "type": "int",
-          "required": true,
-          "description": "第二个数值 (如小时的个位或分钟)"
-        },
-        {
-          "name": "isPM",
-          "type": "bool",
-          "required": true,
-          "description": "是否为下午 (PM)"
-        },
-        {
-          "name": "badgeText",
-          "type": "String",
-          "required": true,
-          "description": "徽章文本 (如时差信息)"
-        },
-        {
-          "name": "progress",
-          "type": "double",
-          "required": false,
-          "defaultValue": 0.67,
-          "description": "进度值 (0.0 到 1.0)"
-        }
-      ]
-    },
-    {
       "name": "ScoreCardWidget",
       "displayName": "分数卡片",
       "description": "显示分数、等级和行为列表",
@@ -218,64 +160,6 @@
               "description": "时间标签列表"
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "DualSliderWidget",
-      "displayName": "双滑块小组件",
-      "description": "显示双滑块进度条，适用于时区对比、进度追踪等场景",
-      "category": "utility",
-      "file": "dual_slider_widget.dart",
-      "parameters": [
-        {
-          "name": "label1",
-          "type": "String",
-          "required": true,
-          "description": "第一个标签（主标题）"
-        },
-        {
-          "name": "label2",
-          "type": "String",
-          "required": true,
-          "description": "第二个标签（副标题）"
-        },
-        {
-          "name": "label3",
-          "type": "String",
-          "required": true,
-          "description": "第三个标签（日期或附加信息）"
-        },
-        {
-          "name": "value1",
-          "type": "int",
-          "required": true,
-          "description": "第一个数值（小时的十位）"
-        },
-        {
-          "name": "value2",
-          "type": "int",
-          "required": true,
-          "description": "第二个数值（小时的个位或分钟）"
-        },
-        {
-          "name": "isPM",
-          "type": "bool",
-          "required": true,
-          "description": "是否为下午（PM）"
-        },
-        {
-          "name": "badgeText",
-          "type": "String",
-          "required": true,
-          "description": "徽章文本（如时差信息）"
-        },
-        {
-          "name": "progress",
-          "type": "double",
-          "required": false,
-          "defaultValue": "0.67",
-          "description": "进度值（0.0 - 1.0）"
         }
       ]
     }

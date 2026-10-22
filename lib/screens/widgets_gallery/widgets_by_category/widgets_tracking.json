@@ -293,66 +293,6 @@
       ]
     },
     {
-      "name": "ModernFlipCounterCard",
-      "displayName": "现代 eGFR 健康指标卡片",
-      "description": "通用健康指标展示卡片，支持数值、单位和状态指示器",
-      "category": "tracking",
-      "file": "modern_egfr_health_widget.dart",
-      "parameters": [
-        {
-          "name": "title",
-          "type": "String",
-          "required": true,
-          "description": "标题"
-        },
-        {
-          "name": "value",
-          "type": "double",
-          "required": true,
-          "description": "数值"
-        },
-        {
-          "name": "unit",
-          "type": "String",
-          "required": true,
-          "description": "单位"
-        },
-        {
-          "name": "date",
-          "type": "String",
-          "required": true,
-          "description": "日期"
-        },
-        {
-          "name": "status",
-          "type": "String",
-          "required": true,
-          "description": "状态标签"
-        },
-        {
-          "name": "icon",
-          "type": "IconData",
-          "required": false,
-          "default": "Icons.science",
-          "description": "图标（codePoint 格式）"
-        },
-        {
-          "name": "primaryColor",
-          "type": "Color",
-          "required": false,
-          "default": "null",
-          "description": "主色调"
-        },
-        {
-          "name": "statusColor",
-          "type": "Color",
-          "required": false,
-          "default": "null",
-          "description": "状态指示颜色"
-        }
-      ]
-    },
-    {
       "name": "WatchProgressCardWidget",
       "displayName": "观看进度卡片",
       "description": "显示媒体观看进度和项目列表",
@@ -540,64 +480,6 @@
               "description": "标签"
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "ModernFlipCounterCard",
-      "displayName": "eGFR健康指标卡片",
-      "description": "显示健康指标数值、单位、日期和状态指示器",
-      "category": "tracking",
-      "file": "modern_egfr_health_widget.dart",
-      "parameters": [
-        {
-          "name": "title",
-          "type": "String",
-          "required": true,
-          "description": "标题"
-        },
-        {
-          "name": "value",
-          "type": "double",
-          "required": true,
-          "description": "数值"
-        },
-        {
-          "name": "unit",
-          "type": "String",
-          "required": true,
-          "description": "单位"
-        },
-        {
-          "name": "date",
-          "type": "String",
-          "required": true,
-          "description": "日期"
-        },
-        {
-          "name": "status",
-          "type": "String",
-          "required": true,
-          "description": "状态标签"
-        },
-        {
-          "name": "icon",
-          "type": "int",
-          "required": false,
-          "defaultValue": "Icons.science codePoint",
-          "description": "图标codePoint"
-        },
-        {
-          "name": "primaryColor",
-          "type": "Color",
-          "required": false,
-          "description": "主色调"
-        },
-        {
-          "name": "statusColor",
-          "type": "Color",
-          "required": false,
-          "description": "状态指示颜色"
         }
       ]
     },
