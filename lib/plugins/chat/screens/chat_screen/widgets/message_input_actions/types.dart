@@ -11,12 +11,16 @@ class MessageInputAction {
   /// 长按动作（可选，如图片按钮长按进入多选）
   final VoidCallback? onLongPress;
 
+  /// 稳定标识（快捷栏显隐配置以此持久化），默认取 title
+  final String id;
+
   MessageInputAction({
     required this.title,
     required this.icon,
     required this.onTap,
     this.onLongPress,
-  });
+    String? id,
+  }) : id = id ?? title;
 }
 
 /// 文件选择回调

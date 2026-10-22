@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'app_store/app_store_screen.dart';
+import 'components/webview_add_card_sheet.dart';
 import 'webview_cards_screen.dart';
 
 /// WebView 主界面 - 已安装 / 商店 双页签宿主页
@@ -64,7 +65,7 @@ class _WebViewMainScreenState extends State<WebViewMainScreen> {
                     size: 16,
                     color: theme.primary,
                   ),
-                  onTrailingTap: () => showAddCardDialog(context),
+                  onTrailingTap: () => showAddCardSheet(context),
                   subBarBehavior: RadialSubBarBehavior.never,
                   items: [
                     DSNavItem(

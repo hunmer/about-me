@@ -482,4 +482,6 @@ final Map<String, String> screensTranslationsEn = {
   'screens_assistantClearConfirm':
       'Clear all messages in this conversation? This cannot be undone.',
   'screens_assistantCleared': 'Chat history cleared',
+  'screens_assistantCopied': 'Copied',
+  'screens_assistantDeleteMessage': 'Delete message',
 };

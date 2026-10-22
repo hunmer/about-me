@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:grok_icon_study/grok_icon_study.dart';
 import 'package:skribble/skribble.dart';
 
@@ -25,7 +26,9 @@ import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart'
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/openai/services/chat_assistant_service.dart';
+import 'package:aboutme/screens/jelly_home/widgets/jelly_status_panel_settings.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/marquee_button_list_card.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:aboutme/widgets/message_input/message_input.dart'
     show MessageInputQuickAction;
 import 'package:get/get.dart' hide Value;
@@ -46,6 +49,10 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   final ScrollController _scrollController = ScrollController();
 
   final GrokBotStyleController _botStyle = GrokBotStyleController();
+
+  /// 用户头像/昵称（与状态面板共用），更换头像后消息头像同步刷新
+  final JellyStatusPanelSettings _userSettings =
+      JellyStatusPanelSettings.instance;
 
   /// 首页大角色与消息流头像各用独立实例：共享实例在 36px/176px 间切换时，
   /// 位置弹簧会按新宽度放大旧偏移（清空消息出现闪现/侧滑回归）。
@@ -74,6 +81,13 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     super.initState();
     eventManager.subscribe('plugin_loaded', _onPluginLoaded);
     _botStyle.addListener(_onBotStyleChanged);
+    _userSettings.load();
+    _userSettings.addListener(_onUserSettingsChanged);
+  }
+
+  /// 头像/昵称变化：重建消息头像
+  void _onUserSettingsChanged() {
+    if (mounted) setState(() {});
   }
 
   /// 外观设置变化：同步应用到两个角色实例
@@ -201,6 +215,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   void dispose() {
     eventManager.unsubscribe('plugin_loaded', _onPluginLoaded);
     _botStyle.removeListener(_onBotStyleChanged);
+    _userSettings.removeListener(_onUserSettingsChanged);
     _settleTimer?.cancel();
     _controller?.removeListener(_onControllerChanged);
     _messageService?.removeListener(_onControllerChanged);
@@ -282,7 +297,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                                 ),
                                 child: MessageInput(
                                   controller: controller,
-                                  showSuggestedQuestions: true,
                                   showPanelStroke: true,
                                   dashedPanelStroke: true,
                                   trailingToolbarActions: [
@@ -766,51 +780,71 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     // 占位期间动态头像挂到占位行，上一条 AI 消息转静态图标
     final showPlaceholder =
         controller.isSending && (messages.isEmpty || messages.last.isUser);
-    return ListView.builder(
-      controller: _scrollController,
-      padding: EdgeInsets.fromLTRB(
-        theme.spacing.lg,
-        theme.spacing.md,
-        theme.spacing.lg,
-        theme.spacing.md,
-      ),
-      itemCount: messages.length + (showPlaceholder ? 1 : 0),
-      itemBuilder: (context, index) {
-        final isLast = index == messages.length + (showPlaceholder ? 1 : 0) - 1;
-        if (showPlaceholder && index == messages.length) {
-          return _buildPlaceholderRow(theme, controller, isLast: isLast);
-        }
-        final message = messages[index];
-        if (message.isSessionDivider) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Center(
-              child: Text(
-                message.content,
-                style: DsTypography.caption.copyWith(color: theme.textSub),
-              ),
-            ),
-          );
-        }
-        return Padding(
-          padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: message.isUser
-                ? [
-                    Expanded(child: _buildUserBubble(theme, message)),
-                    SizedBox(width: theme.spacing.sm),
-                    _buildUserAvatar(theme),
-                  ]
-                : [
-                    _buildBotAvatar(
-                      theme,
-                      live: !showPlaceholder && message.id == lastAiId,
-                    ),
-                    SizedBox(width: theme.spacing.sm),
-                    Expanded(child: _buildAiBubble(theme, controller, message)),
-                  ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 气泡最大宽度：列表可视宽度的 80%，余量留给头像与留白
+        final bubbleMaxWidth = constraints.maxWidth * 0.8;
+        return ListView.builder(
+          controller: _scrollController,
+          padding: EdgeInsets.fromLTRB(
+            theme.spacing.lg,
+            theme.spacing.md,
+            theme.spacing.lg,
+            theme.spacing.md,
           ),
+          itemCount: messages.length + (showPlaceholder ? 1 : 0),
+          itemBuilder: (context, index) {
+            final isLast =
+                index == messages.length + (showPlaceholder ? 1 : 0) - 1;
+            if (showPlaceholder && index == messages.length) {
+              return _buildPlaceholderRow(theme, controller, isLast: isLast);
+            }
+            final message = messages[index];
+            if (message.isSessionDivider) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Center(
+                  child: Text(
+                    message.content,
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
+                ),
+              );
+            }
+            return Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: message.isUser
+                    ? [
+                        Expanded(
+                          child: _buildUserBubble(
+                            theme,
+                            message,
+                            maxWidth: bubbleMaxWidth,
+                          ),
+                        ),
+                        SizedBox(width: theme.spacing.sm),
+                        _buildUserAvatar(theme),
+                      ]
+                    : [
+                        _buildBotAvatar(
+                          theme,
+                          live: !showPlaceholder && message.id == lastAiId,
+                        ),
+                        SizedBox(width: theme.spacing.sm),
+                        Expanded(
+                          child: _buildAiBubble(
+                            theme,
+                            controller,
+                            message,
+                            maxWidth: bubbleMaxWidth,
+                          ),
+                        ),
+                      ],
+              ),
+            );
+          },
         );
       },
     );
@@ -860,16 +894,29 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   }
 
   Widget _buildUserAvatar(AppThemeData theme) {
-    return Container(
+    // 用户真实头像（与状态面板共用同一数据源），未设置回退默认头像；
+    // 圆形裁剪打底，手绘圆框叠上层（同状态面板 _AvatarFrame）
+    final avatarPath = _userSettings.avatarPath;
+    return SizedBox(
       width: 36,
       height: 36,
-      decoration: dsSketchDecoration(
-        theme: theme,
-        fillColor: theme.surface,
-        circle: true,
-      ),
-      child: Center(
-        child: DsIcon(DsIconKind.user, size: 18, color: theme.primary),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipOval(
+            child: avatarPath == null
+                ? Image.asset(
+                    'assets/images/default_avatar.jpg',
+                    fit: BoxFit.cover,
+                  )
+                : AdaptiveImage(imagePath: avatarPath, fit: BoxFit.cover),
+          ),
+          IgnorePointer(
+            child: DecoratedBox(
+              decoration: dsSketchDecoration(theme: theme, circle: true),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -902,51 +949,226 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     );
   }
 
-  Widget _buildUserBubble(AppThemeData theme, ChatMessage message) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Container(
-        constraints: BoxConstraints(maxWidth: 460, maxHeight: _bubbleMaxHeight),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: theme.primary,
-          radius: BorderRadius.circular(18),
-        ),
-        // 超长内容（粘贴大段文本）在气泡内滚动，不撑满整屏
-        child: SingleChildScrollView(
-          child: Text(
-            message.content,
-            style: DsTypography.body.copyWith(color: theme.onPrimary),
+  Widget _buildUserBubble(
+    AppThemeData theme,
+    ChatMessage message, {
+    required double maxWidth,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 长按气泡弹出更多选项（与脚注 ⋯ 入口一致）
+        GestureDetector(
+          onLongPress: () => _showMessageOptions(theme, message),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: maxWidth,
+              maxHeight: _bubbleMaxHeight,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: dsSketchDecoration(
+              theme: theme,
+              fillColor: theme.primary,
+              radius: BorderRadius.circular(18),
+            ),
+            // 超长内容（粘贴大段文本）在气泡内滚动，不撑满整屏
+            child: SingleChildScrollView(
+              child: Text(
+                message.content,
+                style: DsTypography.body.copyWith(color: theme.onPrimary),
+              ),
+            ),
           ),
         ),
-      ),
+        _buildBubbleFooter(theme, message),
+      ],
     );
   }
 
   Widget _buildAiBubble(
     AppThemeData theme,
     ChatController controller,
-    ChatMessage message,
-  ) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        constraints: BoxConstraints(maxWidth: 520, maxHeight: _bubbleMaxHeight),
-        child: DsSketchPanel(
-          theme: theme,
-          hachure: false,
-          radius: BorderRadius.circular(18),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: SingleChildScrollView(
-            child: AgentMessageContent(
-              message: message,
-              textColor: theme.text,
-              messageService: _messageService,
-              getAgentName: (_) => controller.currentAgent?.name,
+    ChatMessage message, {
+    required double maxWidth,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 长按气泡弹出更多选项（与脚注 ⋯ 入口一致）
+        GestureDetector(
+          onLongPress: () => _showMessageOptions(theme, message),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: maxWidth,
+              maxHeight: _bubbleMaxHeight,
+            ),
+            child: DsSketchPanel(
+              theme: theme,
+              hachure: false,
+              radius: BorderRadius.circular(18),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: SingleChildScrollView(
+                child: AgentMessageContent(
+                  message: message,
+                  textColor: theme.text,
+                  messageService: _messageService,
+                  getAgentName: (_) => controller.currentAgent?.name,
+                ),
+              ),
             ),
           ),
         ),
+        _buildBubbleFooter(theme, message),
+      ],
+    );
+  }
+
+  /// 气泡脚注：消息时间 + 更多选项入口（⋯）
+  Widget _buildBubbleFooter(AppThemeData theme, ChatMessage message) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _formatMessageTime(message.timestamp),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          ),
+          SizedBox(
+            width: 26,
+            height: 22,
+            child: Pressable(
+              onPressed: () => _showMessageOptions(theme, message),
+              builder: (context, states) => Center(
+                child: DsIcon(DsIconKind.more, size: 15, color: theme.textSub),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 消息时间：当天 HH:mm，跨天 MM-dd HH:mm
+  String _formatMessageTime(DateTime time) {
+    final now = DateTime.now();
+    String two(int v) => v.toString().padLeft(2, '0');
+    final hm = '${two(time.hour)}:${two(time.minute)}';
+    final isToday = time.year == now.year &&
+        time.month == now.month &&
+        time.day == now.day;
+    return isToday ? hm : '${two(time.month)}-${two(time.day)} $hm';
+  }
+
+  /// 消息「更多选项」面板：复制文本 / 删除消息
+  void _showMessageOptions(AppThemeData theme, ChatMessage message) {
+    final controller = _controller;
+    if (controller == null) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: theme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        final sheetTheme = DSThemeBridge.resolve(sheetContext);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _MessageOptionRow(
+                  icon: DsIconKind.copy,
+                  label: 'app_copy'.tr,
+                  theme: sheetTheme,
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await Clipboard.setData(
+                      ClipboardData(text: message.content),
+                    );
+                    if (mounted) {
+                      toastService.showToast('screens_assistantCopied'.tr);
+                    }
+                  },
+                ),
+                _MessageOptionRow(
+                  icon: DsIconKind.trash,
+                  label: 'screens_assistantDeleteMessage'.tr,
+                  theme: sheetTheme,
+                  danger: true,
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    try {
+                      await controller.deleteMessage(message.id);
+                    } catch (e) {
+                      if (mounted) toastService.showToast('$e');
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 消息选项面板行（复制/删除等，结构与 _TestMenuAction 一致，支持危险态）
+class _MessageOptionRow extends StatelessWidget {
+  const _MessageOptionRow({
+    required this.icon,
+    required this.label,
+    required this.theme,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final DsIconKind icon;
+  final String label;
+  final AppThemeData theme;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Pressable(
+        onPressed: onTap,
+        builder: (context, states) {
+          final pressed = states.contains(WidgetState.pressed);
+          return Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: theme.spacing.md,
+              vertical: theme.spacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: pressed ? theme.surfaceAlt : null,
+              borderRadius: theme.radii.sm,
+            ),
+            child: Row(
+              children: [
+                DsIcon(
+                  icon,
+                  size: 18,
+                  color: danger ? theme.danger : theme.primary,
+                ),
+                SizedBox(width: theme.spacing.md),
+                Text(
+                  label,
+                  style: DsTypography.body.copyWith(
+                    color: danger ? theme.danger : theme.text,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

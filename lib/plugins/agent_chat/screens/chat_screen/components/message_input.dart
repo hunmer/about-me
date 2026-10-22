@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -29,6 +30,7 @@ import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 import 'package:aboutme/plugins/openai/services/agentlib_resource_service.dart';
 import 'package:agentlib/agent_slots.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/message_input/message_input.dart' as common;
@@ -52,9 +54,6 @@ class MessageInput extends StatefulWidget {
   /// 工具栏右侧动作组（贴右缘排布）
   final List<common.MessageInputQuickAction> trailingToolbarActions;
 
-  /// 是否在工具栏显示"你可以问"（建议问题）入口
-  final bool showSuggestedQuestions;
-
   /// 素描面板是否画墨线描边（透传通用输入框；false = 无边框）
   final bool showPanelStroke;
 
@@ -67,7 +66,6 @@ class MessageInput extends StatefulWidget {
     this.extraQuickActions = const [],
     this.toolbarActions = const [],
     this.trailingToolbarActions = const [],
-    this.showSuggestedQuestions = false,
     this.showPanelStroke = true,
     this.dashedPanelStroke = false,
   });
@@ -96,6 +94,34 @@ class _MessageInputState extends State<MessageInput> {
   // 语音识别服务
   TencentASRService? _recognitionService;
 
+  /// 快捷工具栏常驻动作 id（持久化，勾选入口见动作抽屉 header）
+  static const String _quickActionIdsKey = 'agent_chat/quick_toolbar_actions';
+  static const Set<String> _defaultQuickActionIds = {
+    'image',
+    'video',
+    'skill',
+    'mcp',
+  };
+  Set<String> _quickActionIds = _defaultQuickActionIds;
+
+  Future<void> _loadQuickActionIds() async {
+    try {
+      final text = await AboutmeDataService.instance
+          .readPathText(_quickActionIdsKey);
+      final list = jsonDecode(text);
+      if (list is List && list.every((e) => e is String)) {
+        if (mounted) setState(() => _quickActionIds = {...list.cast<String>()});
+      }
+    } catch (_) {
+      // 无配置或解析失败时保持默认集合
+    }
+  }
+
+  void _setQuickActionIds(Set<String> ids) {
+    setState(() => _quickActionIds = ids);
+    AboutmeDataService.instance.writePath(_quickActionIdsKey, ids.toList());
+  }
+
   @override
   void initState() {
     super.initState();
@@ -106,6 +132,7 @@ class _MessageInputState extends State<MessageInput> {
       '[ChatClear] initState controller=#${identityHashCode(widget.controller)}',
     );
     _initializeVoiceRecognition();
+    _loadQuickActionIds();
   }
 
   @override
@@ -272,37 +299,50 @@ class _MessageInputState extends State<MessageInput> {
     final agentReady = controller.currentAgent != null;
     return [
       MessageInputAction(
+        id: 'suggested',
+        title: '你可以问',
+        icon: DsIconKind.star,
+        onTap: _showSuggestedQuestions,
+      ),
+      MessageInputAction(
+        id: 'image',
         title: 'agent_chat_image'.tr,
         icon: DsIconKind.image,
         onTap: () => controller.pickImages(),
       ),
       MessageInputAction(
+        id: 'document',
         title: 'agent_chat_document'.tr,
         icon: DsIconKind.copy,
         onTap: () => controller.pickDocuments(),
       ),
       MessageInputAction(
+        id: 'video',
         title: '选择视频',
         icon: DsIconKind.video,
         onTap: _pickVideos,
       ),
       MessageInputAction(
+        id: 'agent_edit',
         title: '编辑Agent',
         icon: DsIconKind.bot,
         onTap: agentReady ? _openAgentEdit : () {},
       ),
       MessageInputAction(
+        id: 'skill',
         title: '选择Skill',
         icon: DsIconKind.book,
         onTap: () => _showResourceMenu(skills: true),
       ),
       MessageInputAction(
+        id: 'mcp',
         title: '选择MCP',
         icon: DsIconKind.block,
         onTap: () => _showResourceMenu(skills: false),
       ),
-      // 仅使用 JS 工具切换（发送中禁用）
+      // 仅使用 JS 工具切换（发送中禁用）；title 含开关状态，必须用固定 id
       MessageInputAction(
+        id: 'js_tools',
         title: '仅使用JS${controller.useJsTools ? '（开）' : '（关）'}',
         icon: DsIconKind.code,
         onTap: controller.isSending
@@ -345,28 +385,16 @@ class _MessageInputState extends State<MessageInput> {
       useSketchPanel: true,
       showPanelStroke: widget.showPanelStroke,
       dashedPanelStroke: widget.dashedPanelStroke,
-      // 工具栏常驻快捷动作：图片/视频/Skill/MCP（完整列表见"+"抽屉）
+      // 快捷栏常驻动作：抽屉动作按持久化配置过滤（勾选入口在抽屉 header）
       quickActions: [
-        common.MessageInputQuickAction(
-          icon: DsIconKind.image,
-          tooltip: 'agent_chat_image'.tr,
-          onPressed: () => widget.controller.pickImages(),
-        ),
-        common.MessageInputQuickAction(
-          icon: DsIconKind.video,
-          tooltip: '选择视频',
-          onPressed: _pickVideos,
-        ),
-        common.MessageInputQuickAction(
-          icon: DsIconKind.book,
-          tooltip: '选择Skill',
-          onPressed: () => _showResourceMenu(skills: true),
-        ),
-        common.MessageInputQuickAction(
-          icon: DsIconKind.block,
-          tooltip: '选择MCP',
-          onPressed: () => _showResourceMenu(skills: false),
-        ),
+        for (final action in _buildDrawerActions())
+          if (_quickActionIds.contains(action.id))
+            common.MessageInputQuickAction(
+              icon: action.icon,
+              tooltip: action.title,
+              onPressed: action.onTap,
+              onLongPress: action.onLongPress,
+            ),
         ...widget.toolbarActions,
       ],
       thinkingEffortIndex:
@@ -374,14 +402,8 @@ class _MessageInputState extends State<MessageInput> {
       onThinkingEffortChanged: agentReady
           ? (index) => _updateThinkingEffort(agentId!, index)
           : null,
-      // 工具栏右组：表情 + 外部注入动作（"你可以问"按需开启，见 [showSuggestedQuestions]）
+      // 工具栏右组：表情 + 外部注入动作（"你可以问"已移入抽屉动作列表）
       trailingQuickActions: [
-        if (agentReady && widget.showSuggestedQuestions)
-          common.MessageInputQuickAction(
-            icon: DsIconKind.star,
-            tooltip: '你可以问',
-            onPressed: _showSuggestedQuestions,
-          ),
         common.MessageInputQuickAction(
           icon: DsIconKind.mood,
           tooltip: '表情',
@@ -690,6 +712,8 @@ class _MessageInputState extends State<MessageInput> {
           builder: (context) => SafeArea(
             child: MessageInputActionsDrawer(
               actions: _buildDrawerActions(),
+              quickActionIds: _quickActionIds,
+              onQuickActionIdsChanged: _setQuickActionIds,
             ),
           ),
         ),

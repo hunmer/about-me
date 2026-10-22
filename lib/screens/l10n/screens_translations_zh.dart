@@ -455,4 +455,6 @@ final Map<String, String> screensTranslationsZh = {
   'screens_assistantClearMessages': '清空消息',
   'screens_assistantClearConfirm': '确定要清空当前会话的所有消息吗？此操作不可恢复。',
   'screens_assistantCleared': '聊天记录已清空',
+  'screens_assistantCopied': '已复制',
+  'screens_assistantDeleteMessage': '删除消息',
 };
