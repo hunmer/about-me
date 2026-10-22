@@ -822,8 +822,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     ChatController controller, {
     required bool isLast,
   }) {
-    final stepText =
-        controller.typingStatusText ?? 'screens_assistantTyping'.tr;
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
       child: Row(

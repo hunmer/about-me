@@ -110,6 +110,7 @@ class _SuperScaffoldState extends State<SuperScaffold> {
   late FocusNode _focusNode;
   late ScrollController _scrollController;
   late NavigationBarStaticComponentsKeys keys;
+  String? _lastSafeAreaDebugInfo;
 
   @override
   void initState() {
@@ -196,12 +197,23 @@ class _SuperScaffoldState extends State<SuperScaffold> {
       large: true,
     );
 
-    // 弹层路由（bottom sheet / dialog 等 opaque=false 的路由）顶部不处于
-    // 状态栏下方，header 若仍叠加状态栏高度会残留一条空白占位：
-    // top inset 归零，并让子树（含 body 的 SafeArea）读到已消费的值
-    final bool inModalRoute = ModalRoute.of(context)?.opaque == false;
+    // 仅弹层消费顶部 inset。OpenContainer 等全屏 PageRoute 也可能
+    // opaque=false，不能据此当作弹层，否则沉浸式下导航栏会进入状态栏。
+    final route = ModalRoute.of(context);
+    final bool inModalRoute = route is PopupRoute;
     double topPadding =
         inModalRoute ? 0 : MediaQuery.of(context).padding.top;
+    assert(() {
+      final info = 'route=${route.runtimeType} name=${route?.settings.name} '
+          'opaque=${route?.opaque} popup=$inModalRoute '
+          'paddingTop=${MediaQuery.paddingOf(context).top} '
+          'effectiveTop=$topPadding';
+      if (_lastSafeAreaDebugInfo != info) {
+        debugPrint('[SuperScaffold.safeArea] $info');
+        _lastSafeAreaDebugInfo = info;
+      }
+      return true;
+    }());
 
     final Widget tree = PopScope(
       canPop: !Store.instance.searchBarHasFocus.value,
