@@ -5,6 +5,9 @@ const Map<String, String> floatingBallTranslationsEn = {
   'floating_ball_pageRefreshed': 'Page refreshed',
   'floating_ball_floatingBallSettings': 'Floating Ball Settings',
   'floating_ball_enableFloatingBall': 'Enable Floating Ball',
+  'floating_ball_edgeDock': 'Edge Docking',
+  'floating_ball_edgeDockDesc':
+      'Dock to screen edge after dragging; tap the visible part to expand temporarily',
   'floating_ball_small': 'Small',
   'floating_ball_large': 'Large',
   'floating_ball_positionReset': 'Floating ball position has been reset',

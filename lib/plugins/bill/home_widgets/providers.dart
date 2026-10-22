@@ -149,19 +149,6 @@ Future<Map<String, Map<String, dynamic>>> provideBillStatsWidgets(
           }).toList(),
     },
 
-    // 圆形进度卡片：显示收入/支出比例
-    'circularProgressCard': {
-      'title': '收支比例',
-      'subtitle': dateRangeLabel,
-      'progress':
-          totalIncome > 0 ? (totalExpense / totalIncome).clamp(0.0, 1.0) : 0.0,
-      'percentage':
-          totalIncome > 0
-              ? (totalExpense / totalIncome * 100).clamp(0.0, 100.0)
-              : 0.0,
-      'progressColor': const Color(0xFFF44336).value,
-    },
-
     // 营养进度卡片：显示收支进度
     'nutritionProgressCard': {
       'leftData': {'current': currentValue, 'total': targetAmount, 'unit': '¥'},

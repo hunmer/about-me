@@ -21,14 +21,6 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgets(
   final title = (data['title'] as String?) ?? '频道';
 
   return {
-    // 圆形进度卡片：显示消息完成度（假设 100 条消息为满）
-    'circularProgressCard': {
-      'title': title,
-      'subtitle': '$messageCount 条消息',
-      'percentage': (messageCount / 100 * 100).clamp(0, 100).toDouble(),
-      'progress': (messageCount / 100).clamp(0.0, 1.0),
-    },
-
     // 活动进度卡片：显示消息统计
     'activityProgressCard': {
       'title': title,
@@ -136,14 +128,6 @@ Map<String, dynamic> getLiveCommonWidgetProps(
 
   // 根据 commonWidgetId 返回对应的实时数据
   switch (commonWidgetId) {
-    case 'circularProgressCard':
-      return {
-        'title': title,
-        'subtitle': '$messageCount 条消息',
-        'percentage': (messageCount / 100 * 100).clamp(0, 100).toDouble(),
-        'progress': (messageCount / 100).clamp(0.0, 1.0),
-      };
-
     case 'activityProgressCard':
       return {
         'title': title,

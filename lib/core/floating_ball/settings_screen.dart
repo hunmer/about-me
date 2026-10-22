@@ -25,6 +25,7 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
   final ActionManager _actionManager = ActionManager();
   double _sizeScale = 1.0;
   bool _isEnabled = false;
+  bool _edgeDockEnabled = false;
   final Map<FloatingBallGesture, GestureActionConfig?> _selectedActions = {};
 
   @override
@@ -49,6 +50,9 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
     // 加载悬浮球启用状态
     final enabled = await _manager.isEnabled();
 
+    // 加载贴边收纳开关
+    final edgeDockEnabled = await _manager.isEdgeDockEnabled();
+
     // 从 ActionManager 加载手势动作配置
     for (var gesture in FloatingBallGesture.values) {
       final config = _actionManager.getGestureAction(gesture);
@@ -59,6 +63,7 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
       setState(() {
         _sizeScale = scale;
         _isEnabled = enabled;
+        _edgeDockEnabled = edgeDockEnabled;
       });
     }
   }
@@ -101,6 +106,22 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
                           if (value) {
                             FloatingBallService().show(context);
                           }
+                        },
+                      ),
+                    ),
+                    SettingsTile(
+                      icon: DsIconKind.gesture,
+                      iconColor: DsAccentColors.blue,
+                      title: 'floating_ball_edgeDock'.tr,
+                      subtitle: 'floating_ball_edgeDockDesc'.tr,
+                      showChevron: false,
+                      trailing: DSSwitch(
+                        value: _edgeDockEnabled,
+                        onChanged: (value) async {
+                          setState(() {
+                            _edgeDockEnabled = value;
+                          });
+                          await _manager.setEdgeDockEnabled(value);
                         },
                       ),
                     ),

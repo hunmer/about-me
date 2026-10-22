@@ -54,6 +54,8 @@ class MessageInputState {
 
     if (hasFiles || hasMessage) {
       Map<String, dynamic>? metadata = {};
+      // 图文发送时，将图片元数据附加到文字消息，避免拆成两条气泡。
+      Map<String, dynamic>? textFileMetadata;
 
       if (hasFiles) {
         // 图片/视频与其它类型分组：多张图片、多段视频各自合并为一条
@@ -62,8 +64,7 @@ class MessageInputState {
         final videoFiles = <Map<String, dynamic>>[];
         final otherFiles = <Map<String, dynamic>>[];
         for (final selectedFile in selectedFiles) {
-          final fileInfo =
-              selectedFile['fileInfo'] as Map<String, dynamic>?;
+          final fileInfo = selectedFile['fileInfo'] as Map<String, dynamic>?;
           if (fileInfo == null) {
             debugPrint('文件信息无效，跳过该文件');
             continue;
@@ -79,8 +80,8 @@ class MessageInputState {
 
         List<String> pathsOf(List<Map<String, dynamic>> files) => files
             .map(
-              (f) => ((f['fileInfo'] as Map<String, dynamic>)['path']
-                  as String?),
+              (f) =>
+                  ((f['fileInfo'] as Map<String, dynamic>)['path'] as String?),
             )
             .whereType<String>()
             .where((p) => p.isNotEmpty)
@@ -106,21 +107,24 @@ class MessageInputState {
             },
             'senderInfo': imageFiles.first['senderInfo'],
           };
-          onSendMessage(
-            images.first,
-            type: 'image',
-            metadata: merged,
-          );
+          if (hasMessage) {
+            textFileMetadata = merged;
+          } else {
+            onSendMessage(images.first, type: 'image', metadata: merged);
+          }
         } else {
-          // 单张图片照旧独立成一条
+          // 单张图片在图文发送时并入文字消息，否则独立发送。
           for (final selectedFile in imageFiles) {
-            final fileInfo =
-                selectedFile['fileInfo'] as Map<String, dynamic>;
-            onSendMessage(
-              fileInfo['path'] as String,
-              type: fileInfo['type'] as String,
-              metadata: selectedFile,
-            );
+            final fileInfo = selectedFile['fileInfo'] as Map<String, dynamic>;
+            if (hasMessage) {
+              textFileMetadata = selectedFile;
+            } else {
+              onSendMessage(
+                fileInfo['path'] as String,
+                type: fileInfo['type'] as String,
+                metadata: selectedFile,
+              );
+            }
           }
         }
 
@@ -143,16 +147,11 @@ class MessageInputState {
             },
             'senderInfo': videoFiles.first['senderInfo'],
           };
-          onSendMessage(
-            videos.first,
-            type: 'video',
-            metadata: merged,
-          );
+          onSendMessage(videos.first, type: 'video', metadata: merged);
         } else {
           // 单段视频照旧独立成一条
           for (final selectedFile in videoFiles) {
-            final fileInfo =
-                selectedFile['fileInfo'] as Map<String, dynamic>;
+            final fileInfo = selectedFile['fileInfo'] as Map<String, dynamic>;
             onSendMessage(
               fileInfo['path'] as String,
               type: fileInfo['type'] as String,
@@ -174,6 +173,9 @@ class MessageInputState {
 
       // 如果有消息文本，再发送消息
       if (hasMessage) {
+        if (textFileMetadata != null) {
+          metadata.addAll(textFileMetadata);
+        }
         // 如果有预设的元数据，先添加
         if (this.metadata != null) {
           metadata.addAll(this.metadata!);

@@ -29,10 +29,6 @@ export 'timeline_schedule_card.dart';
 export 'rounded_task_list_card.dart';
 export 'notes_list_card.dart';
 export 'modern_rounded_balance_card.dart';
-export 'activity_rings_card.dart';
-
-// 导出活动圆环卡片数据模型
-export 'activity_rings_card.dart' show RingCardData;
 
 // 导出点阵追踪卡片数据模型
 export 'dot_tracker_card.dart' show DotTrackerCardData;

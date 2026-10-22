@@ -5,14 +5,9 @@ import 'package:flutter/services.dart';
 // 导入所有 example widgets
 import 'package:aboutme/screens/widgets_gallery/screens/half_circle_gauge_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/segmented_progress_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/circular_progress_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/multi_metric_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/task_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/circular_metrics_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/curve_progress_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/activity_rings_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_progress_with_dots_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/icon_circular_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/nutrition_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_task_progress_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/chart_icon_display_card_example.dart';
@@ -71,6 +66,28 @@ import 'package:aboutme/screens/widgets_gallery/screens/audio_waveform_widget_ex
 import 'package:aboutme/screens/widgets_gallery/screens/dual_slider_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/score_card_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/storage_breakdown_widget_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/gradient_progress_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/period_score_gauge_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/habit_heatmap_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/health_score_ring_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/petal_radial_chart_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/semicircle_gauge_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/expense_tracker_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/total_sales_analytics_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/spending_overview_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/striped_weekly_chart_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/monthly_capsule_chart_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/stacked_folder_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/stacked_accordion_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/cute_notepad_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/scrapbook_canvas_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/illustrated_metric_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/cutout_stat_grid_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/sparkle_stat_grid_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/linked_task_flow_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/arc_rotary_wheel_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/walk_stack_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/marquee_button_list_card_example.dart';
 
 /// 小组件预览项数据模型
 class WidgetPreviewItem {
@@ -453,22 +470,12 @@ class _WidgetRegistry {
         () => const HalfCircleGaugeWidgetExample(),
     '/widgets_gallery/segmented_progress_card':
         () => const SegmentedProgressCardExample(),
-    '/widgets_gallery/circular_progress_card':
-        () => const CircularProgressCardExample(),
-    '/widgets_gallery/multi_metric_progress_card':
-        () => const MultiMetricProgressCardExample(),
     '/widgets_gallery/task_progress_card':
         () => const TaskProgressCardExample(),
     '/widgets_gallery/circular_metrics_card':
         () => const CircularMetricsCardExample(),
-    '/widgets_gallery/curve_progress_card':
-        () => const CurveProgressCardExample(),
-    '/widgets_gallery/activity_rings_card':
-        () => const ActivityRingsCardExample(),
     '/widgets_gallery/monthly_progress_with_dots_card':
         () => const MonthlyProgressWithDotsCardExample(),
-    '/widgets_gallery/icon_circular_progress_card':
-        () => const IconCircularProgressCardExample(),
     '/widgets_gallery/nutrition_progress_card':
         () => const NutritionProgressCardExample(),
     '/widgets_gallery/rounded_task_progress_widget':
@@ -582,6 +589,49 @@ class _WidgetRegistry {
     '/widgets_gallery/score_card_widget': () => const ScoreCardWidgetExample(),
     '/widgets_gallery/storage_breakdown_widget':
         () => const StorageBreakdownWidgetExample(),
+    // 创意类
+    '/widgets_gallery/gradient_progress_card':
+        () => const GradientProgressCardExample(),
+    '/widgets_gallery/period_score_gauge_card':
+        () => const PeriodScoreGaugeCardExample(),
+    '/widgets_gallery/habit_heatmap_card':
+        () => const HabitHeatmapCardExample(),
+    '/widgets_gallery/health_score_ring_card':
+        () => const HealthScoreRingCardExample(),
+    '/widgets_gallery/petal_radial_chart_card':
+        () => const PetalRadialChartCardExample(),
+    '/widgets_gallery/semicircle_gauge_card':
+        () => const SemicircleGaugeCardExample(),
+    '/widgets_gallery/expense_tracker_card':
+        () => const ExpenseTrackerCardExample(),
+    '/widgets_gallery/total_sales_analytics_card':
+        () => const TotalSalesAnalyticsCardExample(),
+    '/widgets_gallery/spending_overview_card':
+        () => const SpendingOverviewCardExample(),
+    '/widgets_gallery/striped_weekly_chart_card':
+        () => const StripedWeeklyChartCardExample(),
+    '/widgets_gallery/monthly_capsule_chart_card':
+        () => const MonthlyCapsuleChartCardExample(),
+    '/widgets_gallery/stacked_folder_card':
+        () => const StackedFolderCardExample(),
+    '/widgets_gallery/stacked_accordion_card':
+        () => const StackedAccordionCardExample(),
+    '/widgets_gallery/cute_notepad_card': () => const CuteNotepadCardExample(),
+    '/widgets_gallery/scrapbook_canvas_card':
+        () => const ScrapbookCanvasCardExample(),
+    '/widgets_gallery/illustrated_metric_card':
+        () => const IllustratedMetricCardExample(),
+    '/widgets_gallery/cutout_stat_grid_card':
+        () => const CutoutStatGridCardExample(),
+    '/widgets_gallery/sparkle_stat_grid_card':
+        () => const SparkleStatGridCardExample(),
+    '/widgets_gallery/linked_task_flow_card':
+        () => LinkedTaskFlowCardExample(),
+    '/widgets_gallery/arc_rotary_wheel_card':
+        () => const ArcRotaryWheelCardExample(),
+    '/widgets_gallery/walk_stack_card': () => const WalkStackCardExample(),
+    '/widgets_gallery/marquee_button_list_card':
+        () => const MarqueeButtonListCardExample(),
   };
 
   static Widget? getWidget(String route) {

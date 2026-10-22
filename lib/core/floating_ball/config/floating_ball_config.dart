@@ -25,11 +25,15 @@ class FloatingBallConfig {
   final Offset position;
   final bool enabled;
 
+  /// 贴边收纳：拖动结束后吸附到屏幕边缘半隐藏
+  final bool edgeDockEnabled;
+
   const FloatingBallConfig({
     this.actionMappings = defaultGestureMappings,
     this.sizeScale = defaultSizeScale,
     this.position = defaultPosition,
     this.enabled = true,
+    this.edgeDockEnabled = false,
   });
 
   /// 从JSON创建配置
@@ -58,6 +62,7 @@ class FloatingBallConfig {
         sizeScale: (json['size_scale'] as num?)?.toDouble() ?? defaultSizeScale,
         position: position,
         enabled: json['enabled'] as bool? ?? true,
+        edgeDockEnabled: json['edge_dock_enabled'] as bool? ?? false,
       );
     } catch (e) {
       debugPrint('Error parsing FloatingBallConfig: $e');
@@ -81,6 +86,7 @@ class FloatingBallConfig {
         'y': position.dy,
       },
       'enabled': enabled,
+      'edge_dock_enabled': edgeDockEnabled,
     };
   }
 
@@ -106,12 +112,14 @@ class FloatingBallConfig {
     double? sizeScale,
     Offset? position,
     bool? enabled,
+    bool? edgeDockEnabled,
   }) {
     return FloatingBallConfig(
       actionMappings: actionMappings ?? this.actionMappings,
       sizeScale: sizeScale ?? this.sizeScale,
       position: position ?? this.position,
       enabled: enabled ?? this.enabled,
+      edgeDockEnabled: edgeDockEnabled ?? this.edgeDockEnabled,
     );
   }
 

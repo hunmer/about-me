@@ -22,9 +22,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/lucky_wheel_example.dart
 import 'package:aboutme/screens/widgets_gallery/screens/moments_nyc_map_example.dart';
 
 import 'package:aboutme/screens/widgets_gallery/screens/segmented_progress_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/circular_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_progress_with_dots_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/multi_metric_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/line_chart_trend_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/vertical_bar_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/trend_line_chart_widget_example.dart';
@@ -57,7 +55,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/score_card_widget_exampl
 import 'package:aboutme/screens/widgets_gallery/screens/category_stack_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/timeline_schedule_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/expense_comparison_chart_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/activity_rings_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/modern_egfr_health_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/modern_rounded_balance_widget_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/sleep_stage_chart_example.dart';
@@ -72,7 +69,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/trend_value_card_example
 import 'package:aboutme/screens/widgets_gallery/screens/sleep_duration_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/weight_trend_chart_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/account_balance_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/icon_circular_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/color_tag_task_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/donut_chart_stats_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/health_score_ring_card_example.dart';
@@ -103,7 +99,6 @@ import 'package:aboutme/screens/widgets_gallery/screens/notes_list_card_example.
 import 'package:aboutme/screens/widgets_gallery/screens/rounded_reminders_list_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/circular_metrics_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/rental_preview_card_example.dart';
-import 'package:aboutme/screens/widgets_gallery/screens/curve_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/nutrition_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/trend_list_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/screen_time_chart_example.dart';
@@ -275,28 +270,12 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '分段进度条统计卡片',
     ),
     RouteDefinition(
-      path: '/widgets_gallery/circular_progress_card',
-      handler: (settings) => RouteHelpers.createRoute(
-        const CircularProgressCardExample(),
-        settings: settings,
-      ),
-      description: '圆形进度卡片',
-    ),
-    RouteDefinition(
       path: '/widgets_gallery/monthly_progress_with_dots_card',
       handler: (settings) => RouteHelpers.createRoute(
         const MonthlyProgressWithDotsCardExample(),
         settings: settings,
       ),
       description: '月度进度圆点卡片',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/multi_metric_progress_card',
-      handler: (settings) => RouteHelpers.createRoute(
-        const MultiMetricProgressCardExample(),
-        settings: settings,
-      ),
-      description: '多指标进度卡片',
     ),
     RouteDefinition(
       path: '/widgets_gallery/line_chart_trend_card',
@@ -555,14 +534,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '支出对比图表',
     ),
     RouteDefinition(
-      path: '/widgets_gallery/activity_rings_card',
-      handler: (settings) => RouteHelpers.createRoute(
-        const ActivityRingsCardExample(),
-        settings: settings,
-      ),
-      description: '活动圆环卡片',
-    ),
-    RouteDefinition(
       path: '/widgets_gallery/modern_egfr_health_widget',
       handler: (settings) => RouteHelpers.createRoute(
         const ModernFlipCounterCardExample(),
@@ -681,22 +652,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '账户余额卡片',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/multi_metric_progress_card',
-      handler: (settings) => RouteHelpers.createRoute(
-        const MultiMetricProgressCardExample(),
-        settings: settings,
-      ),
-      description: '多指标进度跟踪卡片',
-    ),
-    RouteDefinition(
-      path: '/widgets_gallery/icon_circular_progress_card',
-      handler: (settings) => RouteHelpers.createRoute(
-        const IconCircularProgressCardExample(),
-        settings: settings,
-      ),
-      description: '图标圆形进度卡片',
     ),
     RouteDefinition(
       path: '/widgets_gallery/color_tag_task_card',
@@ -931,14 +886,6 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '圆角提醒事项列表卡片',
     ),
     RouteDefinition(
-      path: '/widgets_gallery/curve_progress_card',
-      handler: (settings) => RouteHelpers.createRoute(
-        const CurveProgressCardExample(),
-        settings: settings,
-      ),
-      description: '曲线进度卡片',
-    ),
-    RouteDefinition(
       path: '/widgets_gallery/nutrition_progress_card',
       handler: (settings) => RouteHelpers.createRoute(
         const NutritionProgressCardExample(),
@@ -1080,20 +1027,6 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
   ),
   WidgetPreviewItem(
     category: '进度类',
-    icon: Icons.donut_large,
-    title: '圆形进度卡片',
-    subtitle: 'CircularProgressCard',
-    route: '/widgets_gallery/circular_progress_card',
-  ),
-  WidgetPreviewItem(
-    category: '进度类',
-    icon: Icons.dashboard,
-    title: '多指标进度卡片',
-    subtitle: 'MultiMetricProgressCard',
-    route: '/widgets_gallery/multi_metric_progress_card',
-  ),
-  WidgetPreviewItem(
-    category: '进度类',
     icon: Icons.pie_chart,
     title: '任务进度卡片',
     subtitle: 'TaskProgressCard',
@@ -1108,31 +1041,10 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
   ),
   WidgetPreviewItem(
     category: '进度类',
-    icon: Icons.show_chart,
-    title: '曲线进度卡片',
-    subtitle: 'CurveProgressCard',
-    route: '/widgets_gallery/curve_progress_card',
-  ),
-  WidgetPreviewItem(
-    category: '进度类',
-    icon: Icons.all_inclusive,
-    title: '活动圆环卡片',
-    subtitle: 'ActivityRingsCard',
-    route: '/widgets_gallery/activity_rings_card',
-  ),
-  WidgetPreviewItem(
-    category: '进度类',
     icon: Icons.calendar_month,
     title: '月度进度圆点卡片',
     subtitle: 'MonthlyProgressWithDotsCard',
     route: '/widgets_gallery/monthly_progress_with_dots_card',
-  ),
-  WidgetPreviewItem(
-    category: '进度类',
-    icon: Icons.trip_origin,
-    title: '图标圆形进度卡片',
-    subtitle: 'IconCircularProgressCard',
-    route: '/widgets_gallery/icon_circular_progress_card',
   ),
   WidgetPreviewItem(
     category: '进度类',

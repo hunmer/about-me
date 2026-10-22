@@ -5,6 +5,8 @@ const Map<String, String> floatingBallTranslationsZh = {
   'floating_ball_pageRefreshed': '页面已刷新',
   'floating_ball_floatingBallSettings': '悬浮球设置',
   'floating_ball_enableFloatingBall': '启用悬浮球',
+  'floating_ball_edgeDock': '贴边收纳',
+  'floating_ball_edgeDockDesc': '拖动后自动吸附屏幕边缘半隐藏，点击露出部分临时展开',
   'floating_ball_small': '小',
   'floating_ball_large': '大',
   'floating_ball_positionReset': '悬浮球位置已重置',

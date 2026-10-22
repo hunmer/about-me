@@ -240,7 +240,6 @@ Future<Map<String, Map<String, dynamic>>> provideActivityStatsWidgets(
             ? (stat.totalMinutes / habit.durationMinutes * 100).clamp(0, 100)
             : 0.0;
 
-    // MultiMetricProgressCard 数据
     trackersData.add({
       'emoji': habit.icon ?? '58353', // 使用 MaterialIcons codePoint，默认为 star
       'progress': progress,
@@ -311,9 +310,6 @@ Future<Map<String, Map<String, dynamic>>> provideActivityStatsWidgets(
   }
 
   return {
-    // MultiMetricProgressCard - 多指标进度卡片
-    'multiMetricProgressCard': {'trackers': trackersData},
-
     // CircularMetricsCard - 环形指标卡片
     'circularMetricsCard': {
       'title': '$dateRangeLabel习惯统计',

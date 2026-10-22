@@ -242,35 +242,71 @@ class _SplitColumnProgressBarCardState extends State<SplitColumnProgressBarCard>
                   ),
                 ],
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _LeftSection(
-                      data: leftData,
-                      config: leftConfig,
-                      animation: _animation,
-                      size: widget.size,
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    margin: EdgeInsets.symmetric(
-                      horizontal: widget.size.getPadding().horizontal / 2,
-                    ),
-                    color:
-                        isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : const Color(0xFFE5E7EB),
-                  ),
-                  Expanded(
-                    child: _RightSection(
-                      items: rightItems,
-                      animation: _animation,
-                      size: widget.size,
-                    ),
-                  ),
-                ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // 宽度不足时分栏过窄，改为上下布局
+                  final isCompact = constraints.maxWidth < 260;
+                  if (isCompact) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _LeftSection(
+                          data: leftData,
+                          config: leftConfig,
+                          animation: _animation,
+                          size: widget.size,
+                        ),
+                        Container(
+                          height: 1,
+                          margin: EdgeInsets.symmetric(
+                            vertical: widget.size.getPadding().vertical / 2,
+                          ),
+                          color:
+                              isDark
+                                  ? Colors.white.withOpacity(0.1)
+                                  : const Color(0xFFE5E7EB),
+                        ),
+                        Expanded(
+                          child: _RightSection(
+                            items: rightItems,
+                            animation: _animation,
+                            size: widget.size,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _LeftSection(
+                          data: leftData,
+                          config: leftConfig,
+                          animation: _animation,
+                          size: widget.size,
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        margin: EdgeInsets.symmetric(
+                          horizontal: widget.size.getPadding().horizontal / 2,
+                        ),
+                        color:
+                            isDark
+                                ? Colors.white.withOpacity(0.1)
+                                : const Color(0xFFE5E7EB),
+                      ),
+                      Expanded(
+                        child: _RightSection(
+                          items: rightItems,
+                          animation: _animation,
+                          size: widget.size,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -317,15 +353,17 @@ class _LeftSection extends StatelessWidget {
           children: [
             _renderIcon(config.icon, size: iconSize),
             SizedBox(width: smallSpacing),
-            Text(
-              config.label,
-              style: TextStyle(
-                fontSize: labelFontSize,
-                fontWeight: FontWeight.w500,
-                color: isDark ? Colors.grey.shade400 : const Color(0xFF9CA3AF),
+            Expanded(
+              child: Text(
+                config.label,
+                style: TextStyle(
+                  fontSize: labelFontSize,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.grey.shade400 : const Color(0xFF9CA3AF),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

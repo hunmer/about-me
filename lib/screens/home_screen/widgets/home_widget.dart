@@ -70,12 +70,6 @@ typedef SelectorDataSelector =
 /// ```dart
 /// commonWidgetsProvider: (data) {
 ///   return {
-///     'circularProgressCard': {
-///       'title': data['title'],
-///       'subtitle': '${data['count']} 条消息',
-///       'percentage': (data['count'] / 100 * 100).clamp(0, 100),
-///       'progress': (data['count'] / 100).clamp(0.0, 1.0),
-///     },
 ///     'activityProgressCard': {
 ///       'title': data['title'],
 ///       'subtitle': '今日活动',

@@ -102,20 +102,6 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
-        icon: Icons.donut_large,
-        title: '圆形进度卡片',
-        subtitle: 'CircularProgressCard - 圆形进度展示卡片',
-        route: '/widgets_gallery/circular_progress_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.dashboard,
-        title: '多指标进度卡片',
-        subtitle: 'MultiMetricProgressCard - 多指标进度展示卡片',
-        route: '/widgets_gallery/multi_metric_progress_card',
-      ),
-      _buildListItem(
-        context,
         icon: Icons.pie_chart,
         title: '任务进度卡片',
         subtitle: 'TaskProgressCard - 任务完成进度与待办事项卡片',
@@ -130,31 +116,10 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
       ),
       _buildListItem(
         context,
-        icon: Icons.show_chart,
-        title: '曲线进度卡片',
-        subtitle: 'CurveProgressCard - 带曲线图的进度统计卡片',
-        route: '/widgets_gallery/curve_progress_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.all_inclusive,
-        title: '活动圆环卡片',
-        subtitle: 'ActivityRingsCard - 活动进度圆环展示卡片',
-        route: '/widgets_gallery/activity_rings_card',
-      ),
-      _buildListItem(
-        context,
         icon: Icons.calendar_month,
         title: '月度进度圆点卡片',
         subtitle: 'MonthlyProgressWithDotsCard - 圆点矩阵月度进度卡片',
         route: '/widgets_gallery/monthly_progress_with_dots_card',
-      ),
-      _buildListItem(
-        context,
-        icon: Icons.trip_origin,
-        title: '图标圆形进度卡片',
-        subtitle: 'IconCircularProgressCard - 带图标和通知点的圆形进度卡片',
-        route: '/widgets_gallery/icon_circular_progress_card',
       ),
       _buildListItem(
         context,

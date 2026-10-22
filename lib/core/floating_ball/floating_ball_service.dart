@@ -20,8 +20,11 @@ class FloatingBallService {
       StreamController<double>.broadcast();
   final StreamController<Offset> _positionChangeController =
       StreamController<Offset>.broadcast();
+  final StreamController<void> _configChangeController =
+      StreamController<void>.broadcast();
   Stream<double> get sizeChangeStream => _sizeChangeController.stream;
   Stream<Offset> get positionChangeStream => _positionChangeController.stream;
+  Stream<void> get configChangeStream => _configChangeController.stream;
 
   /// 初始化悬浮球
   Future<void> initialize(BuildContext context) async {
@@ -110,9 +113,15 @@ class FloatingBallService {
     }
   }
 
+  /// 通知悬浮球配置变化（如贴边收纳开关）
+  void notifyConfigChange() {
+    _configChangeController.add(null);
+  }
+
   /// 释放资源
   void dispose() {
     _sizeChangeController.close();
     _positionChangeController.close();
+    _configChangeController.close();
   }
 }

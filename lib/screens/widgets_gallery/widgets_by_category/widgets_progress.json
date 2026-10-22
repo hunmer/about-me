@@ -101,103 +101,6 @@
       ]
     },
     {
-      "name": "CircularProgressCardWidget",
-      "displayName": "圆形进度卡片",
-      "description": "圆形进度展示卡片，带进度环和百分比",
-      "category": "progress",
-      "file": "circular_progress_card.dart",
-      "parameters": [
-        {
-          "name": "title",
-          "type": "String",
-          "required": true,
-          "description": "卡片标题"
-        },
-        {
-          "name": "subtitle",
-          "type": "String",
-          "required": true,
-          "description": "副标题，显示天数等信息"
-        },
-        {
-          "name": "percentage",
-          "type": "double",
-          "required": true,
-          "description": "百分比数值 (0-100)"
-        },
-        {
-          "name": "progress",
-          "type": "double",
-          "required": true,
-          "description": "进度值 (0.0-1.0)"
-        },
-        {
-          "name": "progressColor",
-          "type": "Color?",
-          "required": false,
-          "description": "进度条颜色，默认使用主题色"
-        }
-      ]
-    },
-    {
-      "name": "MultiMetricProgressCardWidget",
-      "displayName": "多指标进度卡片",
-      "description": "多个指标进度展示卡片，支持 emoji 图标和进度环",
-      "category": "progress",
-      "file": "multi_metric_progress_card.dart",
-      "parameters": [
-        {
-          "name": "trackers",
-          "type": "List<MetricProgressData>",
-          "required": true,
-          "description": "追踪器数据列表",
-          "subParameters": [
-            {
-              "name": "emoji",
-              "type": "String",
-              "description": "Emoji 图标"
-            },
-            {
-              "name": "progress",
-              "type": "double",
-              "description": "进度值 0-100"
-            },
-            {
-              "name": "progressColor",
-              "type": "Color",
-              "description": "进度条颜色"
-            },
-            {
-              "name": "title",
-              "type": "String",
-              "description": "标题"
-            },
-            {
-              "name": "subtitle",
-              "type": "String",
-              "description": "副标题"
-            },
-            {
-              "name": "value",
-              "type": "double",
-              "description": "数值"
-            },
-            {
-              "name": "unit",
-              "type": "String",
-              "description": "单位"
-            }
-          ]
-        },
-        {
-          "name": "backgroundColor",
-          "type": "Color",
-          "required": true,
-          "description": "卡片背景颜色"
-        }
-      ]
-    },
-    {
       "name": "TaskProgressCardWidget",
       "displayName": "任务进度卡片",
       "description": "任务进度展示卡片，显示已完成/总数和待办列表",
@@ -286,67 +189,6 @@
       ]
     },
     {
-      "name": "CurveProgressCardWidget",
-      "displayName": "曲线进度卡片",
-      "description": "曲线进度展示卡片，含数值动画和曲线图",
-      "category": "progress",
-      "file": "curve_progress_card.dart",
-      "parameters": [
-        {
-          "name": "value",
-          "type": "double",
-          "required": true,
-          "description": "主数值"
-        },
-        {
-          "name": "label",
-          "type": "String",
-          "required": true,
-          "description": "数值标签"
-        },
-        {
-          "name": "change",
-          "type": "double",
-          "required": true,
-          "description": "变化量"
-        },
-        {
-          "name": "changePercent",
-          "type": "double",
-          "required": true,
-          "description": "变化百分比"
-        },
-        {
-          "name": "unit",
-          "type": "String",
-          "required": false,
-          "defaultValue": "",
-          "description": "单位"
-        },
-        {
-          "name": "icon",
-          "type": "int",
-          "required": false,
-          "defaultValue": "Icons.schedule",
-          "description": "图标代码点 (IconData.codePoint)"
-        },
-        {
-          "name": "categoryLabel",
-          "type": "String",
-          "required": false,
-          "defaultValue": "Progress",
-          "description": "分类标签"
-        },
-        {
-          "name": "lastUpdated",
-          "type": "String",
-          "required": false,
-          "defaultValue": "",
-          "description": "更新时间文本"
-        }
-      ]
-    },
-    {
       "name": "CardDotProgressDisplay",
       "displayName": "活动进度卡片",
       "description": "显示数值、单位、活动数和进度点",
@@ -398,61 +240,6 @@
       ]
     },
     {
-      "name": "ActivityRingsCardWidget",
-      "displayName": "活动圆环卡片",
-      "description": "显示日期、步数、状态和圆环进度",
-      "category": "progress",
-      "file": "activity_rings_card.dart",
-      "parameters": [
-        {
-          "name": "date",
-          "type": "String",
-          "required": true,
-          "description": "日期标签"
-        },
-        {
-          "name": "steps",
-          "type": "int",
-          "required": true,
-          "description": "步数"
-        },
-        {
-          "name": "status",
-          "type": "String",
-          "required": true,
-          "description": "状态文本"
-        },
-        {
-          "name": "rings",
-          "type": "List<RingData>",
-          "required": true,
-          "description": "圆环数据列表",
-          "subParameters": [
-            {
-              "name": "value",
-              "type": "double",
-              "description": "数值（0-100）"
-            },
-            {
-              "name": "color",
-              "type": "Color",
-              "description": "颜色（ARGB int）"
-            },
-            {
-              "name": "iconCodePoint",
-              "type": "int?",
-              "description": "图标 codePoint（可选）"
-            },
-            {
-              "name": "isDiamond",
-              "type": "bool",
-              "description": "是否菱形样式"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "CircularMetricsCardWidget",
       "displayName": "环形指标卡片",
       "description": "4个环形指标网格，每个带图标、数值、标签和进度",
@@ -497,45 +284,6 @@
               "description": "颜色（ARGB int）"
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "CircularProgressCardWidget",
-      "displayName": "圆形进度卡片",
-      "description": "显示圆形进度环和百分比数值",
-      "category": "progress",
-      "file": "circular_progress_card.dart",
-      "parameters": [
-        {
-          "name": "title",
-          "type": "String",
-          "required": true,
-          "description": "卡片标题"
-        },
-        {
-          "name": "subtitle",
-          "type": "String",
-          "required": true,
-          "description": "副标题（显示天数等信息）"
-        },
-        {
-          "name": "percentage",
-          "type": "double",
-          "required": true,
-          "description": "百分比数值（0-100）"
-        },
-        {
-          "name": "progress",
-          "type": "double",
-          "required": true,
-          "description": "进度值（0.0-1.0）"
-        },
-        {
-          "name": "progressColor",
-          "type": "Color",
-          "required": false,
-          "description": "进度颜色（可选，默认使用主题色）"
         }
       ]
     },
@@ -838,65 +586,6 @@
       ]
     },
     {
-      "name": "MultiMetricProgressCardWidget",
-      "displayName": "多指标进度卡片",
-      "description": "显示多个带进度环的指标",
-      "category": "progress",
-      "file": "multi_metric_progress_card.dart",
-      "parameters": [
-        {
-          "name": "trackers",
-          "type": "List<MetricProgressData>",
-          "required": true,
-          "description": "追踪器数据列表",
-          "subParameters": [
-            {
-              "name": "emoji",
-              "type": "String",
-              "description": "Emoji图标"
-            },
-            {
-              "name": "progress",
-              "type": "double",
-              "description": "进度值（0-100）"
-            },
-            {
-              "name": "progressColor",
-              "type": "Color",
-              "description": "进度条颜色"
-            },
-            {
-              "name": "title",
-              "type": "String",
-              "description": "标题"
-            },
-            {
-              "name": "subtitle",
-              "type": "String",
-              "description": "副标题"
-            },
-            {
-              "name": "value",
-              "type": "double",
-              "description": "数值"
-            },
-            {
-              "name": "unit",
-              "type": "String",
-              "description": "单位"
-            }
-          ]
-        },
-        {
-          "name": "backgroundColor",
-          "type": "Color",
-          "required": true,
-          "defaultValue": "0xFF007AFF",
-          "description": "卡片背景色"
-        }
-      ]
-    },
-    {
       "name": "MonthlyProgressWithDotsCardWidget",
       "displayName": "月度进度圆点卡片",
       "description": "显示月份进度和圆点矩阵（3x11=33天）",
@@ -946,52 +635,6 @@
           "type": "Color",
           "required": false,
           "description": "未过日期的颜色"
-        }
-      ]
-    },
-    {
-      "name": "IconCircularProgressCardWidget",
-      "displayName": "图标圆形进度卡片",
-      "description": "显示带圆形进度条的卡片，支持图标、通知点、标题和副标题",
-      "category": "progress",
-      "file": "icon_circular_progress_card.dart",
-      "parameters": [
-        {
-          "name": "progress",
-          "type": "double",
-          "required": true,
-          "description": "进度值（0.0 - 1.0）"
-        },
-        {
-          "name": "icon",
-          "type": "int",
-          "required": true,
-          "description": "中心图标codePoint"
-        },
-        {
-          "name": "title",
-          "type": "String",
-          "required": true,
-          "description": "标题"
-        },
-        {
-          "name": "subtitle",
-          "type": "String",
-          "required": true,
-          "description": "副标题"
-        },
-        {
-          "name": "showNotification",
-          "type": "bool",
-          "required": false,
-          "defaultValue": "false",
-          "description": "是否显示通知点"
-        },
-        {
-          "name": "progressColor",
-          "type": "Color",
-          "required": false,
-          "description": "进度颜色（可选）"
         }
       ]
     }

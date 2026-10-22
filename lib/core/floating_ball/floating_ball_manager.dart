@@ -204,7 +204,6 @@ class FloatingBallManager {
     final config = await FloatingBallConfigManager.loadConfig();
     return config.enabled;
   }
-
   // 保存悬浮球启用状态
   Future<void> setEnabled(bool enabled) async {
     await _ensureInitialized();
@@ -217,6 +216,25 @@ class FloatingBallManager {
     if (!enabled) {
       FloatingBallService().hide();
     }
+  }
+
+  // 获取贴边收纳开关
+  Future<bool> isEdgeDockEnabled() async {
+    await _ensureInitialized();
+    final config = await FloatingBallConfigManager.loadConfig();
+    return config.edgeDockEnabled;
+  }
+
+  // 保存贴边收纳开关
+  Future<void> setEdgeDockEnabled(bool value) async {
+    await _ensureInitialized();
+    final config = await FloatingBallConfigManager.loadConfig();
+    await FloatingBallConfigManager.saveConfig(
+      config.copyWith(edgeDockEnabled: value),
+    );
+
+    // 通知悬浮球组件配置变化
+    FloatingBallService().notifyConfigChange();
   }
 
   // 获取保存的位置

@@ -83,14 +83,6 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgets(
   final percentage = (progress * 100).toInt();
 
   return {
-    // 圆形进度卡片：显示目标完成度
-    'circularProgressCard': {
-      'title': name,
-      'subtitle': '已完 $currentValue / $targetValue $unitType',
-      'percentage': percentage.toDouble(),
-      'progress': progress,
-    },
-
     // 活动进度卡片：显示目标统计
     'activityProgressCard': {
       'title': name,
@@ -100,15 +92,6 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgets(
       'activities': 1,
       'totalProgress': 10,
       'completedProgress': (percentage / 10).clamp(0, 10).toInt(),
-    },
-
-    // 图标圆形进度卡片
-    'iconCircularProgressCard': {
-      'progress': progress,
-      'icon': 0xe25b, // Icons.track_changes codePoint
-      'title': name,
-      'subtitle': '已完 $currentValue / $targetValue $unitType',
-      'showNotification': false,
     },
 
     // 半仪表盘卡片

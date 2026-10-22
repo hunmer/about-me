@@ -534,7 +534,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
                             debugPrint(
                               '[CommonWidgetSelectorPage] 未找到匹配的 CommonWidgetId: $widgetId',
                             );
-                            return CommonWidgetId.circularProgressCard; // 使用默认值
+                            return CommonWidgetId.activityProgressCard; // 使用默认值
                           },
                         );
                         final metadata = CommonWidgetsRegistry.getMetadata(
@@ -559,7 +559,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
                                 '[CommonWidgetSelectorPage] 未找到匹配的 CommonWidgetId: $widgetId',
                               );
                               return CommonWidgetId
-                                  .circularProgressCard; // 使用默认值
+                                  .activityProgressCard; // 使用默认值
                             },
                           );
                           final metadata = CommonWidgetsRegistry.getMetadata(
@@ -611,12 +611,12 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
           debugPrint(
             '[CommonWidgetSelectorPage] 未找到匹配的 CommonWidgetId: $widgetId',
           );
-          return CommonWidgetId.circularProgressCard; // 使用默认值
+          return CommonWidgetId.activityProgressCard; // 使用默认值
         },
       );
     } catch (e) {
       debugPrint('[CommonWidgetSelectorPage] 查找 CommonWidgetId 失败: $e');
-      matchingWidget = CommonWidgetId.circularProgressCard;
+      matchingWidget = CommonWidgetId.activityProgressCard;
     }
 
     // 构建小组件预览的辅助方法

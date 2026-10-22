@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
-import 'widgets/circular_progress_card.dart';
 import 'widgets/card_dot_progress_display.dart';
 import 'widgets/half_gauge_card.dart';
 import 'widgets/task_progress_card.dart';
@@ -21,7 +20,6 @@ import 'package:aboutme/widgets/common/rounded_task_list_card.dart';
 import 'package:aboutme/widgets/common/rounded_reminders_list_card.dart';
 import 'package:aboutme/widgets/common/timer_card_widget.dart';
 import 'widgets/monthly_progress_with_dots_card.dart';
-import 'widgets/multi_metric_progress_card.dart';
 import 'widgets/circular_metrics_card.dart';
 import 'widgets/smooth_line_chart_card.dart';
 import 'widgets/goods_item_selector.dart';
@@ -41,7 +39,6 @@ import 'widgets/modern_flip_counter_card.dart';
 import 'widgets/chart_icon_display_card.dart';
 import 'widgets/daily_events_card.dart';
 import 'widgets/daily_reflection_card.dart';
-import 'widgets/icon_circular_progress_card.dart';
 import 'widgets/monthly_bill_card.dart';
 import 'widgets/color_tag_task_card.dart';
 import 'widgets/spending_trend_chart.dart';
@@ -51,7 +48,6 @@ import 'widgets/rounded_task_progress_widget.dart';
 import 'widgets/daily_bar_chart_card.dart';
 import 'widgets/split_column_progress_bar_card.dart';
 import 'widgets/portfolio_stacked_chart.dart';
-import 'widgets/activity_rings_card.dart';
 import 'widgets/category_stack_widget.dart';
 import 'widgets/performance_bar_chart.dart';
 import 'widgets/ranked_bar_chart_card.dart';
@@ -110,8 +106,6 @@ import 'widgets/linked_task_flow_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
-  circularProgressCard,
-  iconCircularProgressCard,
   colorTagTaskCard,
   activityProgressCard,
   halfGaugeCard,
@@ -120,7 +114,6 @@ enum CommonWidgetId {
   audioWaveformCard,
   segmentedProgressCard,
   monthlyProgressDotsCard,
-  multiMetricProgressCard,
   circularMetricsCard,
   smoothLineChartCard,
   lineChartTrendCard,
@@ -158,7 +151,6 @@ enum CommonWidgetId {
   dailyBarChartCard,
   nutritionProgressCard,
   portfolioStackedChart,
-  activityRingsCard,
   categoryStackWidget,
   performanceBarChart,
   rankedBarChartCard,
@@ -239,22 +231,6 @@ class CommonWidgetMetadata {
 /// 公共小组件注册表
 class CommonWidgetsRegistry {
   static final Map<CommonWidgetId, CommonWidgetMetadata> metadata = {
-    CommonWidgetId.circularProgressCard: CommonWidgetMetadata(
-      id: CommonWidgetId.circularProgressCard,
-      name: '圆形进度卡片',
-      description: '显示百分比进度，带圆形进度环',
-      icon: Icons.circle_outlined,
-      defaultSize: Large3Size(),
-      supportedSizes: [const MediumSize(), const LargeSize()],
-    ),
-    CommonWidgetId.iconCircularProgressCard: CommonWidgetMetadata(
-      id: CommonWidgetId.iconCircularProgressCard,
-      name: '图标圆形进度卡片',
-      description: '显示带圆形进度条的卡片，支持图标、通知点、标题和副标题',
-      icon: Icons.control_point_duplicate,
-      defaultSize: Large3Size(),
-      supportedSizes: [const MediumSize(), const LargeSize()],
-    ),
     CommonWidgetId.colorTagTaskCard: CommonWidgetMetadata(
       id: CommonWidgetId.colorTagTaskCard,
       name: '彩色标签任务列表卡片',
@@ -316,14 +292,6 @@ class CommonWidgetsRegistry {
       name: '月度进度圆点卡片',
       description: '圆点矩阵月度进度卡片',
       icon: Icons.calendar_month,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
-    CommonWidgetId.multiMetricProgressCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.multiMetricProgressCard,
-      name: '多指标进度卡片',
-      description: '多指标进度展示卡片，带圆形进度环',
-      icon: Icons.dashboard,
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
     ),
@@ -598,14 +566,6 @@ class CommonWidgetsRegistry {
       name: '投资组合堆叠图',
       description: '显示投资组合的堆叠柱状图，支持多种资产类型和月度数据展示',
       icon: Icons.show_chart,
-      defaultSize: Large3Size(),
-      supportedSizes: [LargeSize()],
-    ),
-    CommonWidgetId.activityRingsCard: const CommonWidgetMetadata(
-      id: CommonWidgetId.activityRingsCard,
-      name: '活动圆环卡片',
-      description: '显示活动圆环（步数、卡路里等），支持日期和状态显示',
-      icon: Icons.fitness_center,
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize()],
     ),
@@ -1108,13 +1068,6 @@ class CommonWidgetBuilder {
         : size;
 
     switch (widgetId) {
-      case CommonWidgetId.circularProgressCard:
-        return CircularProgressCardWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.iconCircularProgressCard:
-        return IconCircularProgressCardWidget.fromProps(
-          finalProps,
-          effectiveSize,
-        );
       case CommonWidgetId.colorTagTaskCard:
         return ColorTagTaskCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.activityProgressCard:
@@ -1131,11 +1084,6 @@ class CommonWidgetBuilder {
         return SegmentedProgressCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.monthlyProgressDotsCard:
         return MonthlyProgressWithDotsCardWidget.fromProps(
-          finalProps,
-          effectiveSize,
-        );
-      case CommonWidgetId.multiMetricProgressCard:
-        return MultiMetricProgressCardWidget.fromProps(
           finalProps,
           effectiveSize,
         );
@@ -1211,8 +1159,6 @@ class CommonWidgetBuilder {
         return SplitColumnProgressBarCard.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.portfolioStackedChart:
         return PortfolioStackedChartWidget.fromProps(finalProps, effectiveSize);
-      case CommonWidgetId.activityRingsCard:
-        return ActivityRingsCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.categoryStackWidget:
         return CategoryStackWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.performanceBarChart:

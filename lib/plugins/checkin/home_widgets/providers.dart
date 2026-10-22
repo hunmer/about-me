@@ -282,32 +282,6 @@ Future<Map<String, Map<String, dynamic>>> provideCommonWidgetsForMultiple(
   }
 
   return {
-    // MultiMetricProgressCard - 多指标进度卡片
-    'multiMetricProgressCard': {
-      'trackers':
-          checkinItemCards.map((card) {
-            final consecutiveDays =
-                card['isCheckedToday']
-                    ? (plugin?.checkinItems
-                            .firstWhere(
-                              (i) => i.id == card['id'],
-                              orElse: () => throw Exception(''),
-                            )
-                            .getConsecutiveDays() ??
-                        0)
-                    : 0;
-            return {
-              'emoji': String.fromCharCode(card['iconCodePoint'] as int),
-              'progress': (consecutiveDays / 30 * 100).clamp(0, 100).toDouble(),
-              'progressColor': card['color'],
-              'title': card['title'],
-              'subtitle': card['subtitle'],
-              'value': consecutiveDays.toDouble(),
-              'unit': '天',
-            };
-          }).toList(),
-    },
-
     // TaskProgressCard - 任务进度卡片
     'taskProgressCard': {
       'title': '打卡进度',

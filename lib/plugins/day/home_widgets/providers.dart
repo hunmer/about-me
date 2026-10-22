@@ -131,39 +131,18 @@ Future<Map<String, Map<String, dynamic>>> provideMemorialDayCommonWidgets(
   final backgroundColor = data['backgroundColor'] as int?;
   final daysRemaining = data['daysRemaining'] as int? ?? 0;
   final daysPassed = data['daysPassed'] as int? ?? 0;
-  final isToday = data['isToday'] as bool? ?? false;
   final isExpired = data['isExpired'] as bool? ?? false;
 
   // 计算进度（基于一年365天，取反数作为进度）
   int effectiveDays = isExpired ? daysPassed : daysRemaining;
   final percentage =
       ((365 - effectiveDays) / 365 * 100).clamp(0, 100).toDouble();
-  final progress = ((365 - effectiveDays) / 365).clamp(0.0, 1.0);
 
   // 格式化日期
   final formattedDate =
       targetDate != null ? formatDateLocalized(targetDate) : '';
 
-  // 状态文本
-  String statusText;
-  if (isToday) {
-    statusText = '就是今天！';
-  } else if (isExpired) {
-    statusText = '已过 $daysPassed 天';
-  } else {
-    statusText = '剩余 $daysRemaining 天';
-  }
-
   return {
-    // 圆形进度卡片：显示纪念日进度
-    'circularProgressCard': {
-      'title': title,
-      'subtitle': statusText,
-      'percentage': percentage,
-      'progress': progress,
-      'progressColor': backgroundColor,
-    },
-
     // 月度进度圆点卡片：显示日期进度
     'monthlyProgressDotsCard': {
       'title': title,
@@ -172,16 +151,6 @@ Future<Map<String, Map<String, dynamic>>> provideMemorialDayCommonWidgets(
       'totalDays': 365,
       'percentage': percentage.toInt(),
       'backgroundColor': backgroundColor ?? const Color(0xFF148690).value,
-    },
-
-    // 图标圆形进度卡片：显示倒计时
-    'iconCircularProgressCard': {
-      'progress': progress,
-      'icon': Icons.celebration,
-      'title': title,
-      'subtitle': statusText,
-      'showNotification': isToday,
-      'progressColor': backgroundColor,
     },
 
   };

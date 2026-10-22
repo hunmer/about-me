@@ -238,13 +238,6 @@ class _GoalSelectorStatefulWidgetState extends State<_GoalSelectorStatefulWidget
 
       // 返回对应公共小组件的数据
       switch (commonWidgetId) {
-        case 'circularProgressCard':
-          return {
-            'title': name,
-            'subtitle': '已完 $currentValue / $targetValue $unitType',
-            'percentage': percentage.toDouble(),
-            'progress': progress,
-          };
         case 'activityProgressCard':
           return {
             'title': name,
@@ -254,14 +247,6 @@ class _GoalSelectorStatefulWidgetState extends State<_GoalSelectorStatefulWidget
             'activities': 1,
             'totalProgress': 10,
             'completedProgress': (percentage / 10).clamp(0, 10).toInt(),
-          };
-        case 'iconCircularProgressCard':
-          return {
-            'progress': progress,
-            'icon': 0xe25b, // Icons.track_changes codePoint
-            'title': name,
-            'subtitle': '已完 $currentValue / $targetValue $unitType',
-            'showNotification': false,
           };
         case 'halfGaugeCard':
           return {

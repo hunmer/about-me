@@ -80,6 +80,21 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
   // 监听大小和位置变化的订阅
   StreamSubscription<double>? _sizeSubscription;
   StreamSubscription<Offset>? _positionSubscription;
+  StreamSubscription<void>? _configSubscription;
+
+  // 贴边收纳状态
+  bool _edgeDockEnabled = false;
+  bool _isDocked = false;
+  Timer? _dockTimer;
+
+  /// 展开后无操作恢复收纳的时长
+  static const Duration _undockTimeout = Duration(seconds: 5);
+
+  /// 收纳时露出屏幕外的比例（0.3 = 露出 30%）
+  static const double _dockVisibleRatio = 0.3;
+
+  /// 收纳/展开位移动画时长
+  static const Duration _dockAnimDuration = Duration(milliseconds: 250);
 
   @override
   void initState() {
@@ -105,7 +120,26 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
         final newPosition = await _manager.getPosition();
         setState(() {
           _position = _clampPosition(newPosition);
+          _isDocked = false;
         });
+        _cancelDockTimer();
+      }
+    });
+
+    // 监听配置变化（如贴边收纳开关）
+    _configSubscription = FloatingBallService().configChangeStream.listen((
+      _
+    ) async {
+      if (!mounted || _isDragging) return;
+      final enabled = await _manager.isEdgeDockEnabled();
+      if (!mounted || _isDragging) return;
+      setState(() {
+        _edgeDockEnabled = enabled;
+      });
+      if (enabled && _position != null) {
+        _dock();
+      } else if (!enabled && _isDocked) {
+        _undock();
       }
     });
   }
@@ -121,9 +155,13 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
     // 加载大小缩放
     final scale = await _manager.getSizeScale();
 
+    // 加载贴边收纳开关
+    final edgeDockEnabled = await _manager.isEdgeDockEnabled();
+
     if (mounted) {
       setState(() {
         _sizeScale = scale;
+        _edgeDockEnabled = edgeDockEnabled;
       });
     }
 
@@ -167,13 +205,21 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
       final maxX = math.max(0.0, screenSize.width - _currentSize);
       final maxY = math.max(0.0, screenSize.height - _currentSize);
 
-      final safePosition = Offset(
-        position.dx.clamp(0, maxX),
-        position.dy.clamp(0, maxY),
-      );
+      // 贴边收纳开启时，超出左右边界的存储位置视为收纳态，保持原样
+      final isDockedPosition =
+          _edgeDockEnabled && (position.dx < 0 || position.dx > maxX);
+
+      Offset safePosition = position;
+      if (!isDockedPosition) {
+        safePosition = Offset(
+          position.dx.clamp(0, maxX),
+          position.dy.clamp(0, maxY),
+        );
+      }
 
       setState(() {
         _position = safePosition;
+        _isDocked = isDockedPosition;
         _isLoading = false;
       });
 
@@ -193,12 +239,78 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
 
   double get _currentSize => widget.baseSize * _sizeScale;
 
+  // ==================== 贴边收纳 ====================
+
+  /// 收纳位置：吸附到距离较近的左右边缘，露出一部分在屏幕内
+  Offset _computeDockPosition() {
+    final screenSize = _adapter.getScreenSize(context);
+    final visible = _currentSize * _dockVisibleRatio;
+    final dockToLeft =
+        (_position!.dx + _currentSize / 2) < screenSize.width / 2;
+    final x = dockToLeft
+        ? -(_currentSize - visible)
+        : screenSize.width - visible;
+    final maxY = math.max(0.0, screenSize.height - _currentSize);
+    return Offset(x, _position!.dy.clamp(0.0, maxY));
+  }
+
+  /// 收纳到屏幕边缘
+  void _dock({bool save = true}) {
+    if (_position == null || _isDocked) return;
+    final dockPosition = _computeDockPosition();
+    _cancelDockTimer();
+    setState(() {
+      _position = dockPosition;
+      _isDocked = true;
+    });
+    if (save) {
+      widget.onPositionChanged?.call(dockPosition);
+    }
+  }
+
+  /// 展开（短暂取消收纳），并启动无操作恢复收纳的计时
+  void _undock() {
+    if (_position == null) return;
+    final screenSize = _adapter.getScreenSize(context);
+    final fromLeft = _position!.dx < 0;
+    final expandX = fromLeft
+        ? 4.0
+        : math.max(0.0, screenSize.width - _currentSize - 4.0);
+    setState(() {
+      _position = Offset(expandX, _position!.dy);
+      _isDocked = false;
+    });
+    _restartDockTimer();
+  }
+
+  /// 重置无操作计时（有交互时调用）
+  void _restartDockTimer() {
+    _cancelDockTimer();
+    if (!_edgeDockEnabled) return;
+    _dockTimer = Timer(_undockTimeout, () {
+      if (!mounted) return;
+      // 正在交互时顺延，等操作结束后再恢复收纳
+      if (_pointerDown || _isDragging) {
+        _restartDockTimer();
+        return;
+      }
+      _dock(save: false);
+    });
+  }
+
+  void _cancelDockTimer() {
+    _dockTimer?.cancel();
+    _dockTimer = null;
+  }
+
   @override
   void dispose() {
     _longPressTimer?.cancel();
     _doubleTapTimer?.cancel();
+    _dockTimer?.cancel();
     _sizeSubscription?.cancel();
     _positionSubscription?.cancel();
+    _configSubscription?.cancel();
     _adapter.dispose();
     super.dispose();
   }
@@ -315,6 +427,11 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
           _handleSwipe(dragVector);
         }
       }
+
+      // 贴边收纳开启时，拖动结束后吸附到屏幕边缘
+      if (_edgeDockEnabled && !_isDocked) {
+        _dock();
+      }
     }
 
     setState(() {
@@ -366,6 +483,12 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
 
   // 处理点击和双击（使用 TapUp 避免与长按拖动冲突）
   void _handleTapUp(TapUpDetails details) {
+    // 收纳态点击仅展开，不触发手势动作
+    if (_isDocked) {
+      _undock();
+      return;
+    }
+
     // 如果刚刚结束拖动，忽略此次点击
     if (_isDragging || _canDrag) {
       return;
@@ -436,15 +559,24 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
       );
     }
 
-    return Positioned(
+    // 拖动时零时长保证跟手，收纳/展开时平滑滑动
+    return AnimatedPositioned(
       left: _position!.dx,
       top: _position!.dy,
+      duration: _isDragging ? Duration.zero : _dockAnimDuration,
+      curve: Curves.easeOutCubic,
       child: _buildMainBall(),
     );
   }
 
   Widget _buildMainBall() {
     return Listener(
+      onPointerDown: (event) {
+        // 展开状态下任何按下都重置恢复收纳的计时
+        if (_edgeDockEnabled && !_isDocked) {
+          _restartDockTimer();
+        }
+      },
       onPointerUp: (event) {
         // 只清除按下状态；_canDrag/_isDragging 必须留给 _handleLongPressEnd
         // 清理并保存位置——原始指针事件先于手势回调执行，这里提前清空
