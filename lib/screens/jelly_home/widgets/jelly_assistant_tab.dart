@@ -9,6 +9,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
+import 'package:aboutme/core/services/grok_bot_style_controller.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -44,17 +45,24 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   MessageService? _messageService;
   final ScrollController _scrollController = ScrollController();
 
+  final GrokBotStyleController _botStyle = GrokBotStyleController();
+
   /// 首页大角色与消息流头像各用独立实例：共享实例在 36px/176px 间切换时，
   /// 位置弹簧会按新宽度放大旧偏移（清空消息出现闪现/侧滑回归）。
   /// 两实例同步同一套表情状态：处理中 thinking / 完成 happy 片刻 /
-  /// 待机（首页 curious 张望、头像 idle 眨眼），点击跳一下
+  /// 待机（首页 curious 张望、头像 idle 眨眼），点击跳一下；
+  /// 身形/墨色取自外观设置（启动时已加载完成）
   final GrokCharacter _heroCharacter = GrokCharacter(
     mode: 'hold',
     state: 'curious',
+    shapeName: GrokBotStyleController().shapeId,
+    colorId: GrokBotStyleController().colorId,
   );
   final GrokCharacter _avatarCharacter = GrokCharacter(
     mode: 'hold',
     state: 'idle',
+    shapeName: GrokBotStyleController().shapeId,
+    colorId: GrokBotStyleController().colorId,
   );
   bool _wasSending = false;
   bool _questionTestOpen = false;
@@ -64,6 +72,16 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   void initState() {
     super.initState();
     eventManager.subscribe('plugin_loaded', _onPluginLoaded);
+    _botStyle.addListener(_onBotStyleChanged);
+  }
+
+  /// 外观设置变化：同步应用到两个角色实例
+  /// （setShape 走弹簧变形动画，setColor 每帧自绘即时生效）
+  void _onBotStyleChanged() {
+    _heroCharacter.setShape(_botStyle.shapeId);
+    _avatarCharacter.setShape(_botStyle.shapeId);
+    _heroCharacter.setColor(_botStyle.colorId);
+    _avatarCharacter.setColor(_botStyle.colorId);
   }
 
   void _onPluginLoaded(EventArgs args) {
@@ -175,6 +193,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   @override
   void dispose() {
     eventManager.unsubscribe('plugin_loaded', _onPluginLoaded);
+    _botStyle.removeListener(_onBotStyleChanged);
     _settleTimer?.cancel();
     _controller?.removeListener(_onControllerChanged);
     _messageService?.removeListener(_onControllerChanged);
@@ -194,8 +213,9 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
     // setColor 不触发重建，角色每帧自绘，可在 build 中安全同步墨色
     final scheme = theme.isDark ? 'dark' : 'light';
     if (_heroCharacter.scheme != scheme) {
-      _heroCharacter.setColor('black', scheme);
-      _avatarCharacter.setColor('black', scheme);
+      // 主题明暗切换只换 scheme，墨色保留外观设置的选择
+      _heroCharacter.setColor(_botStyle.colorId, scheme);
+      _avatarCharacter.setColor(_botStyle.colorId, scheme);
     }
     _controllerFuture ??= _initialize();
 
@@ -432,12 +452,47 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Center(
-                      child: GestureDetector(
-                        onTap: _heroCharacter.bounceOnce,
-                        child: GrokCharacterView(
-                          character: _heroCharacter,
-                          sizePx: 176,
-                          pointerFollow: true,
+                      child: SizedBox(
+                        width: 176,
+                        height: 176,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned.fill(
+                              child: GestureDetector(
+                                onTap: _heroCharacter.bounceOnce,
+                                child: GrokCharacterView(
+                                  character: _heroCharacter,
+                                  sizePx: 176,
+                                  pointerFollow: true,
+                                ),
+                              ),
+                            ),
+                            // 右上角外观设置入口（身形/墨色）
+                            Positioned(
+                              top: -2,
+                              right: -2,
+                              child: GestureDetector(
+                                onTap: _openBotStyleSheet,
+                                child: Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: dsSketchDecoration(
+                                    theme: theme,
+                                    fillColor: theme.surface,
+                                    circle: true,
+                                  ),
+                                  child: Center(
+                                    child: DsIcon(
+                                      DsIconKind.gear,
+                                      size: 15,
+                                      color: theme.textSub,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -514,6 +569,154 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 首页角色右上角设置：选择身形/墨色，即时应用到当前角色并持久化
+  void _openBotStyleSheet() {
+    final theme = DSThemeBridge.resolve(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: theme.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final sheetTheme = DSThemeBridge.resolve(sheetContext);
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(sheetContext).size.height * 0.7,
+            ),
+            child: AnimatedBuilder(
+              animation: _botStyle,
+              builder: (context, _) {
+                final selectedShape = _botStyle.shapeId;
+                final selectedColor = _botStyle.colorId;
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: sheetTheme.textSub.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        '角色外观',
+                        style: DsTypography.title.copyWith(
+                          color: sheetTheme.text,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '外形',
+                        style: DsTypography.caption.copyWith(
+                          color: sheetTheme.textSub,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final entry in GrokGeometry.shapes.entries)
+                            _buildSheetShapeChip(
+                              sheetTheme,
+                              id: entry.key,
+                              label: entry.value.label,
+                              selected: entry.key == selectedShape,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '颜色',
+                        style: DsTypography.caption.copyWith(
+                          color: sheetTheme.textSub,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          for (final entry in GrokGeometry.palette.entries)
+                            _buildSheetColorDot(
+                              sheetTheme,
+                              id: entry.key,
+                              colorValue: entry.value.$1,
+                              selected: entry.key == selectedColor,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSheetShapeChip(
+    AppThemeData theme, {
+    required String id,
+    required String label,
+    required bool selected,
+  }) {
+    return GestureDetector(
+      onTap: () => _botStyle.setShape(id),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: selected ? theme.primary : theme.surface,
+          radius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: DsTypography.caption.copyWith(
+            color: selected ? theme.onPrimary : theme.textSub,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSheetColorDot(
+    AppThemeData theme, {
+    required String id,
+    required int colorValue,
+    required bool selected,
+  }) {
+    return GestureDetector(
+      onTap: () => _botStyle.setColor(id),
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: Color(colorValue),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: selected ? theme.primary : theme.textSub,
+            width: selected ? 3 : 1.5,
+          ),
         ),
       ),
     );

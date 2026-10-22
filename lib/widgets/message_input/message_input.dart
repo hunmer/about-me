@@ -13,7 +13,7 @@ export 'message_input_types.dart';
 /// 通用消息输入框（chat / agent_chat 共用）
 ///
 /// 结构：header 附加区 → 顶部图标工具栏（底部抽屉动作的快捷方式，
-/// 固定图片/视频等常用项）→ 输入行（"+"抽屉入口 / 输入框 / 语音位 / 发送）。
+/// 固定图片/视频等常用项，最右 dots 打开抽屉）→ 输入行（输入框 / 语音位 / 发送）。
 /// 业务差异（发送编排、文件管理、命令模式等）由调用方通过回调和插槽注入。
 class MessageInput extends StatefulWidget {
   final TextEditingController controller;
@@ -30,7 +30,7 @@ class MessageInput extends StatefulWidget {
   /// 工具栏右侧动作组（贴右缘排布）
   final List<MessageInputQuickAction> trailingQuickActions;
 
-  /// "+"按钮回调：打开完整的底部抽屉动作列表（null 隐藏按钮）
+  /// 工具栏最右 dots 按钮回调：打开完整的底部抽屉动作列表（null 隐藏按钮）
   final VoidCallback? onOpenActionsDrawer;
 
   /// 输入框上方附加内容（待发送文件预览、命令选择器、搜索结果等）
@@ -162,7 +162,8 @@ class _MessageInputState extends State<MessageInput> {
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
-          // 移动端键盘弹出时，右组末尾（最右缘）追加"收起键盘"动作
+          // 移动端键盘弹出时，右组末尾追加"收起键盘"动作；
+          // drawer 入口（dots）固定追加在最右
           var trailingActions = widget.trailingQuickActions;
           if (PlatformUtils.isMobile && _keyboardVisible) {
             trailingActions = [
@@ -171,6 +172,16 @@ class _MessageInputState extends State<MessageInput> {
                 icon: DsIconKind.keyboardHide,
                 tooltip: '收起键盘',
                 onPressed: () => _focusNode.unfocus(),
+              ),
+            ];
+          }
+          if (widget.onOpenActionsDrawer != null) {
+            trailingActions = [
+              ...trailingActions,
+              MessageInputQuickAction(
+                icon: DsIconKind.dots,
+                tooltip: '更多操作',
+                onPressed: widget.onOpenActionsDrawer,
               ),
             ];
           }
@@ -195,18 +206,6 @@ class _MessageInputState extends State<MessageInput> {
                   // 输入框与两侧图标垂直居中（多行增高时图标随中心线上浮）
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // "+"按钮：打开完整底部抽屉动作列表
-                    if (widget.onOpenActionsDrawer != null)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4.0, right: 8.0),
-                        child: DSIconButton(
-                          icon: DsIconKind.plus,
-                          color: theme.surfaceAlt,
-                          iconColor: theme.textSub,
-                          onPressed: widget.onOpenActionsDrawer,
-                        ),
-                      ),
-
                     // 文本输入框（语音/统计等内嵌为右侧后缀）
                     Expanded(
                       child: InputField(

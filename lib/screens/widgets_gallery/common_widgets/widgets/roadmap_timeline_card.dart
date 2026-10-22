@@ -246,9 +246,7 @@ class _RoadmapTimelineCardWidgetState extends State<RoadmapTimelineCardWidget>
       final bounded = constraints.maxHeight.isFinite;
       Widget timeline = _buildTimeline(theme, compact: !_showSubtitle);
       if (bounded) {
-        timeline = Expanded(
-          child: SingleChildScrollView(child: timeline),
-        );
+        timeline = SingleChildScrollView(child: timeline);
       }
       return Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
