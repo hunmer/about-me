@@ -131,6 +131,7 @@ const Map<String, String> webviewTranslationsEn = {
   'webview_confirm_install': 'Confirm Installation',
   'webview_confirm_uninstall': 'Confirm Uninstall',
   'webview_installing': 'Installing',
+  'webview_install_failed': 'Install Failed',
   'webview_downloading_files': 'Downloading files',
   'webview_verifying_files': 'Verifying files',
 

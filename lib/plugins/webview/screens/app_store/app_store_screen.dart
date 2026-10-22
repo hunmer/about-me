@@ -396,6 +396,7 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
     return Builder(
       builder: (context) {
         final theme = DSThemeBridge.resolve(context);
+        final isFailed = task.status == InstallTaskStatus.failed;
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -409,38 +410,61 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      '${_getStatusText(task.status)} ${task.appName}...',
+                      isFailed
+                          ? '${_getStatusText(task.status)} ${task.appName}'
+                          : '${_getStatusText(task.status)} ${task.appName}...',
                       style: DsTypography.body.copyWith(
-                        color: theme.text,
+                        color: isFailed ? theme.danger : theme.text,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Text(
-                    '${(task.progress * 100).toStringAsFixed(0)}%',
-                    style: DsTypography.body.copyWith(color: theme.text),
-                  ),
+                  if (!isFailed)
+                    Text(
+                      '${(task.progress * 100).toStringAsFixed(0)}%',
+                      style: DsTypography.body.copyWith(color: theme.text),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
-              DSLinearProgress(value: task.progress),
+              DSLinearProgress(
+                value: task.progress,
+                color: isFailed ? theme.danger : null,
+              ),
               const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '${task.completedFiles}/${task.totalFiles} files • ${_formatBytes(task.downloadedBytes)}/${_formatBytes(task.totalBytes)}',
-                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  Expanded(
+                    child: Text(
+                      isFailed
+                          ? (task.error ?? '')
+                          : '${task.completedFiles}/${task.totalFiles} files • ${_formatBytes(task.downloadedBytes)}/${_formatBytes(task.totalBytes)}',
+                      style: DsTypography.caption.copyWith(
+                        color: isFailed ? theme.danger : theme.textSub,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   if (task.status == InstallTaskStatus.downloading)
                     DSButton(
-                      label: 'cancel'.tr,
+                      label: 'app_cancel'.tr,
                       variant: DSButtonVariant.ghost,
                       size: DSButtonSize.sm,
                       onPressed: () {
                         context.read<DownloadManager>().cancelInstall();
+                      },
+                    ),
+                  if (isFailed)
+                    DSButton(
+                      label: 'app_close'.tr,
+                      variant: DSButtonVariant.ghost,
+                      size: DSButtonSize.sm,
+                      onPressed: () {
+                        context.read<DownloadManager>().dismissInstall();
                       },
                     ),
                 ],
@@ -503,7 +527,7 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
       case InstallTaskStatus.completed:
         return 'Completed';
       case InstallTaskStatus.failed:
-        return 'Failed';
+        return 'webview_install_failed'.tr;
     }
   }
 

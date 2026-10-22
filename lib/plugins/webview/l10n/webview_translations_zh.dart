@@ -131,6 +131,7 @@ const Map<String, String> webviewTranslationsZh = {
   'webview_confirm_install': '确认安装',
   'webview_confirm_uninstall': '确认卸载',
   'webview_installing': '安装中',
+  'webview_install_failed': '安装失败',
   'webview_downloading_files': '正在下载文件',
   'webview_verifying_files': '正在校验文件',
 

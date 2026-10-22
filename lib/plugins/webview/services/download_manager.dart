@@ -10,6 +10,7 @@ import '../models/app_store_models.dart';
 import '../models/webview_card.dart';
 import '../services/card_manager.dart';
 import '../services/app_store_manager.dart';
+import '../services/local_http_server.dart';
 
 /// 下载管理器
 ///
@@ -23,6 +24,7 @@ class DownloadManager extends ChangeNotifier {
   final StorageManager _storage;
   final CardManager _cardManager;
   final AppStoreManager _appStoreManager;
+  final LocalHttpServer _httpServer;
   final http.Client _httpClient;
 
   // 当前安装任务（仅支持单任务）
@@ -35,9 +37,11 @@ class DownloadManager extends ChangeNotifier {
     required StorageManager storage,
     required CardManager cardManager,
     required AppStoreManager appStoreManager,
+    required LocalHttpServer httpServer,
   })  : _storage = storage,
         _cardManager = cardManager,
         _appStoreManager = appStoreManager,
+        _httpServer = httpServer,
         _httpClient = http.Client();
 
   /// 开始安装应用
@@ -136,6 +140,14 @@ class DownloadManager extends ChangeNotifier {
         _currentTask!.status = InstallTaskStatus.failed;
         _currentTask!.error = e.toString();
         notifyListeners();
+
+        // 延迟清空任务，让 UI 短暂展示失败状态后自动收起
+        Future.delayed(const Duration(seconds: 3), () {
+          if (_currentTask?.status == InstallTaskStatus.failed) {
+            _currentTask = null;
+            notifyListeners();
+          }
+        });
       }
       rethrow;
     }
@@ -322,8 +334,14 @@ class DownloadManager extends ChangeNotifier {
 
       debugPrint('✅ [DownloadManager] 入口文件存在');
 
-      // 创建卡片
-      final cardUrl = 'http://localhost:8899/${app.id}/index.html';
+      // 服务器根目录是 app_data，项目在 webview/http_server 子目录下，
+      // URL 必须带完整前缀，否则 LocalHttpServer 会 404
+      final appDataDir = await _storage.getApplicationDataDirectory();
+      final cardUrl = LocalHttpServer.getHttpUrl(
+        port: _httpServer.port,
+        appDataRoot: appDataDir.path,
+        filePath: indexFile.path,
+      );
       debugPrint('🃏 [DownloadManager] 创建卡片，URL: $cardUrl');
 
       final card = await _cardManager.addCard(
@@ -348,6 +366,14 @@ class DownloadManager extends ChangeNotifier {
     if (_currentTask != null) {
       _currentTask!.status = InstallTaskStatus.failed;
       _currentTask!.error = 'Cancelled by user';
+      _currentTask = null;
+      notifyListeners();
+    }
+  }
+
+  /// 手动关闭失败的安装任务进度条
+  void dismissInstall() {
+    if (_currentTask?.status == InstallTaskStatus.failed) {
       _currentTask = null;
       notifyListeners();
     }

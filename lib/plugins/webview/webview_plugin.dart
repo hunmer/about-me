@@ -118,6 +118,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
       storage: storage,
       cardManager: cardManager,
       appStoreManager: appStoreManager,
+      httpServer: localHttpServer,
     );
 
     // 检查 proxy 支持

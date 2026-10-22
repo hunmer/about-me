@@ -49,6 +49,10 @@ class MessageInputQuickToolbar extends StatelessWidget {
     bool keepTrailing(MessageInputQuickAction action) =>
         action.icon == DsIconKind.dots ||
         action.icon == DsIconKind.keyboardHide;
+    final trailingActions = [
+      for (final action in this.trailingActions)
+        if (keepTrailing(action)) action,
+    ];
     final actions = [
       ...this.actions,
       if (onThinkingEffortChanged != null)
@@ -58,10 +62,6 @@ class MessageInputQuickToolbar extends StatelessWidget {
           onPressed: () => _showThinkingEffort(context),
         ),
       ...trailingActions.where((action) => !keepTrailing(action)),
-    ];
-    final trailingActions = [
-      for (final action in this.trailingActions)
-        if (keepTrailing(action)) action,
     ];
     if (actions.isEmpty && trailingActions.isEmpty) return const SizedBox();
 

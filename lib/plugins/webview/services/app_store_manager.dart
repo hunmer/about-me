@@ -23,6 +23,8 @@ class AppStoreManager extends ChangeNotifier {
 
   // 存储键
   static const String _sourcesKey = 'configs/webview_app_sources.json';
+  static const String _currentSourceKey =
+      'configs/webview_app_source_current.json';
 
   // 状态
   List<AppStoreSource> _sources = [];
@@ -57,11 +59,27 @@ class AppStoreManager extends ChangeNotifier {
       await _addDefaultSource();
     }
 
-    // 设置当前源为默认源或第一个源
-    _currentSource = _sources.firstWhere(
-      (s) => s.isDefault,
-      orElse: () => _sources.first,
-    );
+    // 优先恢复上次使用的源，其次默认源，最后第一个源
+    String? savedId;
+    try {
+      savedId =
+          await AboutmeDataService.instance.readPath(_currentSourceKey)
+              as String?;
+    } catch (e) {
+      debugPrint('Failed to load current source: $e');
+    }
+    AppStoreSource? saved;
+    if (savedId != null) {
+      for (var s in _sources) {
+        if (s.id == savedId) {
+          saved = s;
+          break;
+        }
+      }
+    }
+    _currentSource =
+        saved ??
+        _sources.firstWhere((s) => s.isDefault, orElse: () => _sources.first);
 
     // 目录在商场页面打开后获取，启动只加载本地配置，避免网络阻塞插件就绪。
   }
@@ -122,6 +140,7 @@ class AppStoreManager extends ChangeNotifier {
     // 如果删除的是当前源，切换到其他源
     if (_currentSource?.id == sourceId) {
       _currentSource = _sources.isNotEmpty ? _sources.first : null;
+      await _saveCurrentSourceId();
       if (_currentSource != null) {
         await fetchApps();
       } else {
@@ -136,6 +155,7 @@ class AppStoreManager extends ChangeNotifier {
   Future<void> switchSource(String sourceId) async {
     final source = _sources.firstWhere((s) => s.id == sourceId);
     _currentSource = source;
+    await _saveCurrentSourceId();
     await fetchApps();
     notifyListeners();
   }
@@ -354,6 +374,18 @@ class AppStoreManager extends ChangeNotifier {
       await AboutmeDataService.instance.writePath(_sourcesKey, jsonList);
     } catch (e) {
       debugPrint('Failed to save sources: $e');
+    }
+  }
+
+  /// 保存当前使用的源 ID
+  Future<void> _saveCurrentSourceId() async {
+    try {
+      await AboutmeDataService.instance.writePath(
+        _currentSourceKey,
+        _currentSource?.id,
+      );
+    } catch (e) {
+      debugPrint('Failed to save current source: $e');
     }
   }
 
