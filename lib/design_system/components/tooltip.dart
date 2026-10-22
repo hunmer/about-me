@@ -125,10 +125,11 @@ class _DSTooltipState extends State<DSTooltip> {
       child: MouseRegion(
         onEnter: (_) => _show(),
         onExit: (_) => _hide(),
-        child: GestureDetector(
-          onLongPress: _show,
-          onTap: _open ? _hide : null,
-          child: widget.child,
+        // 点击锚点收起提示：走原始指针事件，不进手势竞技场，
+        // 否则会抢在外层触发器（DSMenu/DSPopover 的 onTap）之前胜出
+        child: Listener(
+          onPointerDown: (_) => _hide(),
+          child: GestureDetector(onLongPress: _show, child: widget.child),
         ),
       ),
     );

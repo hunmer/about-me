@@ -1,10 +1,10 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/widgets/photo_editor_history.dart';
 import 'package:aboutme/widgets/photo_editor_screen.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -37,10 +37,13 @@ class _PhotoEditorHomeScreenState extends State<PhotoEditorHomeScreen> {
   }
 
   Future<void> _pickImage() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    final file = result?.files.single;
-    if (file == null || file.path == null) return;
-    await _openEditor(file.path!);
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(context);
+    if (result == null) return;
+    // 表情（emoji: 前缀）与 SVG 不适合进照片编辑器，静默跳过
+    final url = result['url'] as String?;
+    if (url == null || url.isEmpty || url.startsWith('emoji:')) return;
+    if (result.containsKey('svg')) return;
+    await _openEditor(url);
   }
 
   Future<void> _openEditor(String url) async {

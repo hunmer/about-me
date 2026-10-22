@@ -75,7 +75,8 @@ const Map<String, String> toolboxTranslationsEn = {
   'toolbox_photo_editor_desc':
       'Paint / crop / filters / AI edit / pixel eraser, with recent-open history',
   'toolbox_photoEditor_pickImage': 'Pick an image to edit',
-  'toolbox_photoEditor_pickDesc': 'Choose a local image and open the editor',
+  'toolbox_photoEditor_pickDesc':
+      'Album / camera / online URL / image search, then open the editor',
   'toolbox_photoEditor_history': 'Recently opened',
   'toolbox_photoEditor_historyEmpty':
       'No open history yet. Pick an image to start editing.',

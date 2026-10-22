@@ -72,7 +72,7 @@ const Map<String, String> toolboxTranslationsZh = {
   'toolbox_photo_editor_desc':
       '涂鸦 / 裁剪 / 滤镜 / AI 修图 / 像素橡皮擦，自动记录最近打开',
   'toolbox_photoEditor_pickImage': '选择图片开始编辑',
-  'toolbox_photoEditor_pickDesc': '从本地选择一张图片进入编辑器',
+  'toolbox_photoEditor_pickDesc': '相册 / 拍照 / 在线图片 / 图片搜索，选择后进入编辑器',
   'toolbox_photoEditor_history': '最近打开',
   'toolbox_photoEditor_historyEmpty': '还没有打开记录，选择一张图片开始编辑',
   'toolbox_photoEditor_clearConfirm': '仅清空打开记录，不会删除图片文件',
