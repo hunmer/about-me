@@ -6,6 +6,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/toolbox/screens/ai_image_screen.dart';
 import 'package:aboutme/plugins/toolbox/screens/image_search_screen.dart';
+import 'package:aboutme/widgets/photo_editor_home_screen.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// 工具箱内的小工具条目
@@ -40,6 +41,12 @@ class ToolboxHomeScreen extends StatelessWidget {
       icon: Icons.auto_awesome,
       color: const Color(0xFFB98CD6),
       builder: (context) => const AiImageScreen(),
+    ),
+    ToolboxTool(
+      id: 'photo_editor',
+      icon: Icons.edit,
+      color: const Color(0xFF6CBFA5),
+      builder: (context) => const PhotoEditorHomeScreen(),
     ),
   ];
 

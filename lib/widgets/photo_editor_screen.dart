@@ -8,6 +8,7 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
 import 'package:aboutme/plugins/toolbox/services/ai_image_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/photo_editor_history.dart';
 import 'package:aboutme/widgets/pixel_eraser_page.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter/material.dart';
@@ -117,6 +118,8 @@ Future<PhotoEditorResult?> showPhotoEditor(
         // 擦除产物为 PNG（保留透明），按魔数判断扩展名
         extension: _looksLikePng(edited) ? '.png' : '.jpg',
       );
+      // 副本入打开历史，主界面可继续编辑
+      unawaited(PhotoEditorHistory.record(savedPath));
       if (context.mounted) {
         Toast.success('${'app_photoEditSavedCopy'.tr}: $savedPath');
       }
@@ -364,6 +367,8 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
       setState(() => _loadFailed = true);
       Toast.error('app_photoEditLoadFailed'.tr);
     } else {
+      // 记录打开历史（编辑器主界面"最近打开"用）
+      unawaited(PhotoEditorHistory.record(widget.imageUrl));
       setState(() => _bytes = bytes);
     }
   }

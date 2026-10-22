@@ -474,7 +474,7 @@ class _HabitsStatsViewState extends State<HabitsStatsView> {
     final isToday = i == 6;
     final selected = _selectedDay == i;
     final maxCount = counts.fold<int>(0, (a, b) => a > b ? a : b);
-    final ratio = maxCount == 0 ? 0.06 : (counts[i] / maxCount).clamp(0.06, 1.0);
+    final ratio = counts[i] == 0 ? 0.0 : (counts[i] / maxCount).clamp(0.06, 1.0);
 
     final accent = theme.colorScheme.primary;
 

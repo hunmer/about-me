@@ -89,6 +89,7 @@ class CalendarAlbumTranslationsEn {
         'The selected photos span multiple dates (@dates). Split them into separate records?',
     'calendar_album_split_by_date_split': 'Split',
     'calendar_album_split_by_date_merge': 'Merge',
+    'calendar_album_date_photo_count': '@date · @count photos',
     'calendar_album_save': 'Save',
     'calendar_album_whats_on_mind': "What's on your mind?",
     'calendar_album_select_mood': 'Select Mood',

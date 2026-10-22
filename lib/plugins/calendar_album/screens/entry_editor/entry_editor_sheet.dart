@@ -132,6 +132,10 @@ class _EntryEditorSheetBodyState extends State<_EntryEditorSheetBody> {
         for (final r in widget.initialImages ?? const <Map<String, dynamic>>[])
           r['liveVideoUrl'] as String? ?? '',
       ],
+      initialImageDates: [
+        for (final r in widget.initialImages ?? const <Map<String, dynamic>>[])
+          r['date'] as DateTime?,
+      ],
     );
     widget.onStateReady(this);
   }

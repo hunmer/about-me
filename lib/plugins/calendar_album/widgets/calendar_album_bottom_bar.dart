@@ -113,13 +113,14 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
     );
     if (results == null || results.isEmpty || !mounted) return;
 
-    // 读取每张照片的拍摄日期，按天分组（保持选择顺序）
+    // 读取每张照片的拍摄日期，按天分组（保持选择顺序），
+    // 分组日期随照片带入表单（驱动顶部日期按钮与保存日期）
     final groups = <DateTime, List<Map<String, dynamic>>>{};
     for (final result in results) {
       if (result['url'] == null) continue;
       final date = await _resolvePhotoDate(result);
       final day = DateTime(date.year, date.month, date.day);
-      groups.putIfAbsent(day, () => []).add(result);
+      groups.putIfAbsent(day, () => []).add({...result, 'date': day});
     }
     if (groups.isEmpty || !mounted) return;
 

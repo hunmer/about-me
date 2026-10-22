@@ -7,7 +7,10 @@ import 'package:aboutme/core/services/toast_service.dart';
 class EntryEditorController {
   final CalendarEntry? entry;
   final bool isEditing;
-  final DateTime? initialDate;
+
+  /// 新建模式的初始日期（如"从照片创建"带入的分组日期）；
+  /// 对应日期照片组被删除时置空，保存回退当前时间
+  DateTime? initialDate;
 
   /// 新建模式的初始图片（如"从照片创建"带入），编辑模式忽略
   final List<String>? initialImageUrls;
@@ -26,6 +29,10 @@ class EntryEditorController {
   List<String> imageUrls = [];
   List<String> thumbUrls = [];
   List<String> liveVideoUrls = [];
+
+  /// 各图片的拍摄日期（与 [imageUrls] 平行，手动添加的为 null），
+  /// 驱动表单顶部按日期分组的照片管理按钮
+  List<DateTime?> imageDates = [];
   bool isPreview = false;
 
   EntryEditorController({
@@ -35,6 +42,7 @@ class EntryEditorController {
     this.initialImageUrls,
     this.initialThumbUrls,
     this.initialLiveVideoUrls,
+    List<DateTime?>? initialImageDates,
   }) {
     titleController = TextEditingController(text: entry?.title ?? '');
     contentController = TextEditingController(text: entry?.content ?? '');
@@ -46,6 +54,48 @@ class EntryEditorController {
     thumbUrls = entry?.thumbUrls.toList() ?? initialThumbUrls?.toList() ?? [];
     liveVideoUrls =
         entry?.liveVideoUrls.toList() ?? initialLiveVideoUrls?.toList() ?? [];
+    imageDates = List<DateTime?>.generate(
+      imageUrls.length,
+      (i) =>
+          (initialImageDates != null && i < initialImageDates.length)
+          ? initialImageDates[i]
+          : null,
+    );
+  }
+
+  /// 按天分组的照片数（日期升序），供表单顶部日期按钮渲染
+  List<MapEntry<DateTime, int>> get dateGroupCounts {
+    final counts = <DateTime, int>{};
+    for (final date in imageDates) {
+      if (date == null) continue;
+      final day = DateTime(date.year, date.month, date.day);
+      counts[day] = (counts[day] ?? 0) + 1;
+    }
+    return counts.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+  }
+
+  /// 删除某天的照片组（同步移除四条平行列表的对应项）；
+  /// [initialDate] 落在该天时一并清空，保存日期回退当前时间
+  void removeImagesOfDate(DateTime day) {
+    for (var i = imageDates.length - 1; i >= 0; i--) {
+      final date = imageDates[i];
+      if (date == null) continue;
+      if (date.year == day.year &&
+          date.month == day.month &&
+          date.day == day.day) {
+        imageUrls.removeAt(i);
+        thumbUrls.removeAt(i);
+        liveVideoUrls.removeAt(i);
+        imageDates.removeAt(i);
+      }
+    }
+    final initial = initialDate;
+    if (initial != null &&
+        initial.year == day.year &&
+        initial.month == day.month &&
+        initial.day == day.day) {
+      initialDate = null;
+    }
   }
 
   void dispose() {
@@ -92,7 +142,10 @@ class EntryEditorController {
         imageUrls: imageUrls,
         thumbUrls: thumbUrls,
         liveVideoUrls: liveVideoUrls,
-        createdAt: initialDate ?? DateTime.now(),
+        // 日期优先取剩余照片组中最早的一天（删除日期组后自动回退）
+        createdAt: dateGroupCounts.isNotEmpty
+            ? dateGroupCounts.first.key
+            : initialDate ?? DateTime.now(),
       );
       calendarController.addEntry(newEntry);
       return newEntry;

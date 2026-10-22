@@ -41,7 +41,28 @@ class _WaveFillState extends State<WaveFill>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 4800),
-  )..repeat();
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _syncAnimation();
+  }
+
+  @override
+  void didUpdateWidget(WaveFill oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncAnimation();
+  }
+
+  /// 无填充（progress <= 0 或 NaN）时停表，避免动画空转
+  void _syncAnimation() {
+    if (widget.progress > 0) {
+      if (!_controller.isAnimating) _controller.repeat();
+    } else if (_controller.isAnimating) {
+      _controller.stop();
+    }
+  }
 
   @override
   void dispose() {
@@ -99,7 +120,8 @@ class _WavePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (progress <= 0 || fillPhase <= 0) return;
+    // NaN（调用方 0/0）会穿透 <= 0 判断，一并跳过
+    if (progress <= 0 || progress.isNaN || fillPhase <= 0) return;
     if (horizontal) {
       _paintHorizontal(canvas, size);
     } else {

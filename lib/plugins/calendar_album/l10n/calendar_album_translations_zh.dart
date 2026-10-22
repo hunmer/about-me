@@ -86,6 +86,7 @@ class CalendarAlbumTranslationsZh {
     'calendar_album_split_by_date_message': '所选照片的拍摄日期不同（@dates），是否按日期分开记录？',
     'calendar_album_split_by_date_split': '分开记录',
     'calendar_album_split_by_date_merge': '合并记录',
+    'calendar_album_date_photo_count': '@date · @count张',
     'calendar_album_save': '保存',
     'calendar_album_whats_on_mind': '你在想什么？',
     'calendar_album_select_mood': '选择心情',

@@ -556,9 +556,9 @@ class _TimerStatsViewState extends State<TimerStatsView> {
         .map(_durationOf)
         .map((d) => d.inMinutes)
         .fold<int>(0, (a, b) => a > b ? a : b);
-    // 高度比例相对本周最长的一天；全周无记录时给最小可见高度
-    final ratio = maxMinutes == 0
-        ? 0.06
+    // 高度比例相对本周最长的一天；无记录的天不画波纹
+    final ratio = minutes == 0
+        ? 0.0
         : (minutes / maxMinutes).clamp(0.06, 1.0);
 
     final accent = theme.colorScheme.primary;

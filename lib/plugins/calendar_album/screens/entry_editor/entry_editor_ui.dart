@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -42,6 +43,7 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildDateGroupBar(),
         EntryEditorImageHandler(
           imageUrls: controller.imageUrls,
           thumbUrls: controller.thumbUrls,
@@ -51,6 +53,7 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
             controller.imageUrls.add(url);
             controller.thumbUrls.add(thumbUrl ?? '');
             controller.liveVideoUrls.add(liveVideoUrl ?? '');
+            controller.imageDates.add(null);
           },
           onImageRemoved: (index) {
             // 列表变更必须触发重建，否则界面残留已删图片，再次点击会越界
@@ -64,6 +67,9 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
               if (index < controller.liveVideoUrls.length) {
                 controller.liveVideoUrls.removeAt(index);
               }
+              if (index < controller.imageDates.length) {
+                controller.imageDates.removeAt(index);
+              }
             });
           },
         ),
@@ -75,6 +81,36 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
         _buildMetadataForm(),
         const SizedBox(height: 40),
       ],
+    );
+  }
+
+  /// 表单顶部的日期分组按钮：每条 = 拍摄日期 + 该组照片数，
+  /// 点 × 移除该日期的全部照片（只读模式下仅展示不带删除）
+  Widget _buildDateGroupBar() {
+    final groups = controller.dateGroupCounts;
+    if (groups.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final group in groups)
+            DSChip(
+              icon: DsIconKind.calendar,
+              label: 'calendar_album_date_photo_count'.trParams({
+                'date': DateFormat('yyyy/MM/dd').format(group.key),
+                'count': '${group.value}',
+              }),
+              onDeleted: readOnly
+                  ? null
+                  : () => setState(() {
+                        controller.removeImagesOfDate(group.key);
+                      }),
+            ),
+        ],
+      ),
     );
   }
 

@@ -479,8 +479,8 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
     final selected = _selectedDay == i;
     final counts = days.map((d) => _messagesOf(d).length).toList();
     final maxCount = counts.fold<int>(0, (a, b) => a > b ? a : b);
-    // 高度比例相对本周最多的一天；全周无消息时给最小可见高度
-    final ratio = maxCount == 0 ? 0.06 : (counts[i] / maxCount).clamp(0.06, 1.0);
+    // 高度比例相对本周最多的一天；无消息的天不画波纹
+    final ratio = counts[i] == 0 ? 0.0 : (counts[i] / maxCount).clamp(0.06, 1.0);
 
     final accent = theme.colorScheme.primary;
 
