@@ -95,7 +95,7 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
   List<Habit> _habits = [];
   List<Habit> _filteredHabits = []; // 搜索过滤后的习惯列表
   final Map<String, bool> _timingStatus = {};
-  int _refreshKey = 0; // 用于强制刷新 HabitCard
+  final int _refreshKey = 0; // 用于强制刷新 HabitCard
   String _selectedGroup = '全部'; // 当前选中的分组
   bool _isHeatmapView = false; // false=卡片网格视图, true=热力图视图
   final Map<String, List<CompletionRecord>> _records = {}; // 各习惯完成记录（热力图数据源）

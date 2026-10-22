@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:aboutme/core/floating_ball/adapters/floating_ball_platform_adapter.dart';
@@ -213,6 +214,9 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
   // 长按确认（500ms 后），进入可拖动状态
   void _handleLongPressStart(LongPressStartDetails details) {
     if (!_adapter.supportsDragging || _position == null) return;
+
+    // 震动反馈，提示已进入移动模式
+    HapticFeedback.mediumImpact();
 
     setState(() {
       _pointerDown = true;

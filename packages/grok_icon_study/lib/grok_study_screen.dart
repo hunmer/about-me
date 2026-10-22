@@ -132,7 +132,9 @@ class _GrokStudyScreenState extends State<GrokStudyScreen> {
                 selected: _emphasis,
                 onSelected: (v) {
                   setState(() => _emphasis = v);
-                  [bot, bot64].forEach((b) => b.setEmphasis(v));
+                  for (var b in [bot, bot64]) {
+                    b.setEmphasis(v);
+                  }
                 },
               ),
             ],

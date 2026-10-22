@@ -2,7 +2,7 @@
 ///
 /// 移植自 https://github.com/blessonism/grok-icon-study（学习性复刻，
 /// 素材版权归 xAI，仅供学习，禁止商用或再分发）。
-library grok_icon_study;
+library;
 
 export 'src/grok_character.dart';
 export 'src/grok_eyes.dart' show EyesResult, EyeRender, BadgeRender;
