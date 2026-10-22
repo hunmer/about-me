@@ -109,17 +109,11 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
           // 插件步骤使用插件图标作为水印
           leading: plugin == null ? null : Icon(plugin.icon),
           iconColor: plugin?.color ?? theme.primary,
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildStatusIcon(step.status),
-              const SizedBox(width: 8),
-              DsIcon(
-                isExpanded ? DsIconKind.chevronUp : DsIconKind.chevronDown,
-                size: 20,
-                color: theme.textSub,
-              ),
-            ],
+          titleSuffix: _buildStatusIcon(step.status),
+          trailing: DsIcon(
+            isExpanded ? DsIconKind.chevronUp : DsIconKind.chevronDown,
+            size: 20,
+            color: theme.textSub,
           ),
           onTap: () {
             setState(() {
@@ -350,39 +344,26 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
     }
   }
 
-  /// 构建状态图标
+  /// 构建标题右侧的状态圆点：颜色区分状态，运行中呼吸闪烁
   Widget _buildStatusIcon(ToolCallStatus status) {
     final theme = DSThemeBridge.resolve(context);
     switch (status) {
       case ToolCallStatus.pending:
-        return DsIcon(
-          DsIconKind.minus,
-          size: 20,
-          color: theme.textSub.withValues(alpha: 0.6),
-        );
+        return _statusDot(theme.textSub.withValues(alpha: 0.6));
       case ToolCallStatus.running:
-        return SizedBox(
-          width: 20,
-          height: 20,
-          // DSLoadingDots 内部画布为 size*4，取 5 才能放进 20x20
-          child: Center(child: DSLoadingDots(size: 5)),
-        );
+        return _PulsingDot(color: theme.primary);
       case ToolCallStatus.success:
-        // 圆角淡色底 + 打勾，与失败/进行中状态的视觉重量对齐
-        return Container(
-          width: 20,
-          height: 20,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: theme.success.mixWhite(0.88),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: DsIcon(DsIconKind.check, size: 14, color: theme.success),
-        );
+        return _statusDot(theme.success);
       case ToolCallStatus.failed:
-        return DsIcon(DsIconKind.close, size: 20, color: theme.danger);
+        return _statusDot(theme.danger);
     }
   }
+
+  Widget _statusDot(Color color) => Container(
+    width: 8,
+    height: 8,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
 
   /// 构建信息行
   Widget _buildInfoRow(String label, String value) {
@@ -407,6 +388,47 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 运行中状态圆点：呼吸闪烁动画
+class _PulsingDot extends StatefulWidget {
+  const _PulsingDot({required this.color});
+
+  final Color color;
+
+  @override
+  State<_PulsingDot> createState() => _PulsingDotState();
+}
+
+class _PulsingDotState extends State<_PulsingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: Tween(begin: 0.35, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+      ),
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: widget.color,
+          shape: BoxShape.circle,
+        ),
+      ),
     );
   }
 }

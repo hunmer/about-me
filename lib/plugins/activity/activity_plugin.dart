@@ -35,6 +35,7 @@ import 'repositories/client_activity_repository.dart';
 import 'package:shared_models/shared_models.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 part 'activity_js_api.dart';
 part 'activity_data_selectors.dart';
@@ -195,6 +196,33 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   IconData get icon => Icons.timeline;
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createActivity') return null;
+
+    // createActivity 返回 {success: true, activity: {...}}。
+    final activityData = created['activity'];
+    if (activityData is! Map<String, dynamic>) return null;
+
+    final activity = ActivityRecord.fromJson(activityData);
+    return () {
+      SmoothBottomSheet.show(
+        context: context,
+        builder: (sheetContext) => SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * 0.85,
+          child: ActivityEditScreen(
+            activity: activity,
+            showAsBottomSheet: true,
+          ),
+        ),
+      );
+    };
+  }
 
   @override
   Map<String, Function> defineJSAPI() {

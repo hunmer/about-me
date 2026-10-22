@@ -349,6 +349,12 @@ class _MessageInputState extends State<MessageInput> {
             ? () {}
             : () => controller.setUseJsTools(!controller.useJsTools),
       ),
+      MessageInputAction(
+        id: 'clear_messages',
+        title: '清空消息',
+        icon: DsIconKind.trash,
+        onTap: _confirmClearMessages,
+      ),
       ...widget.extraQuickActions.map(
         (action) => MessageInputAction(
           title: action.tooltip,
@@ -703,9 +709,36 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
+  /// 清空当前会话消息（确认后执行）
+  Future<void> _confirmClearMessages() async {
+    final confirm = await showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (ctx) => DSDialog(
+            title: '清空消息',
+            message: '确定要清空当前会话的所有消息吗？此操作不可撤销。',
+            cancelText: 'agent_chat_cancel'.tr,
+            confirmText: '清空',
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () => Navigator.pop(dialogContext, true),
+            onCancel: () => Navigator.pop(dialogContext, false),
+          ),
+        ),
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await widget.controller.clearAllMessages();
+      if (mounted) toastService.showToast('已清空消息');
+    } catch (e) {
+      if (mounted) toastService.showToast('清空失败: $e');
+    }
+  }
+
   /// 显示附件菜单（"+"按钮：完整动作列表，网格展示）
-  void _showAttachmentMenu() {
-    SmoothBottomSheet.show(
+  void _showAttachmentMenu() {    SmoothBottomSheet.show(
       context: context,
       builder: (context) => DSThemeBridge(
         child: Builder(

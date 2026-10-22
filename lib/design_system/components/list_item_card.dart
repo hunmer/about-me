@@ -17,6 +17,7 @@ class DSListItemCard extends StatelessWidget {
   const DSListItemCard({
     super.key,
     required this.title,
+    this.titleSuffix,
     this.icon,
     this.leading,
     this.subtitle,
@@ -28,6 +29,9 @@ class DSListItemCard extends StatelessWidget {
   });
 
   final String title;
+
+  /// 标题右侧附加内容（如状态圆点）
+  final Widget? titleSuffix;
 
   /// 右上角水印图标（与 [leading] 二选一）
   final DsIconKind? icon;
@@ -120,9 +124,23 @@ class DSListItemCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        title,
-                        style: DsTypography.heading.copyWith(color: theme.text),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              title,
+                              style: DsTypography.heading.copyWith(
+                                color: theme.text,
+                              ),
+                            ),
+                          ),
+                          if (titleSuffix != null) ...[
+                            const SizedBox(width: 6),
+                            titleSuffix!,
+                          ],
+                        ],
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
