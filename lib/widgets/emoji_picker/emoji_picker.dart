@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as path;
+import 'package:universal_platform/universal_platform.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -297,30 +298,15 @@ class _EmojiPickerState extends ConsumerState<EmojiPicker> {
         const SizedBox(height: 8),
         SizedBox(
           height: 60,
-          child: Scrollbar(
-            controller: _categoryScrollController,
-            child: ListView(
-              padding: const EdgeInsets.only(bottom: 12),
-              scrollDirection: Axis.horizontal,
-              controller: _categoryScrollController,
-              children: [
-                for (var i = 0; i < _combined.length; i++)
-                  Padding(
-                    key: _chipKeys[i],
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: DSChip(
-                      label: _combined[i].name,
-                      leading: SizedBox.square(
-                        dimension: 18,
-                        child: FittedBox(child: _combined[i].icon),
-                      ),
-                      selected: _selectedCategory == i,
-                      onSelected: (_) => _selectCategory(i),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          // 移动端不包 Scrollbar：横向滚动条在移动端绘制位置错误
+          // （iOS 安全区 bug flutter/flutter#57920 未修复），
+          // 且移动端本就靠手势横滑，桌面端保留滚动条作可滚动指示
+          child: UniversalPlatform.isDesktop
+              ? Scrollbar(
+                  controller: _categoryScrollController,
+                  child: _buildCategoryChips(),
+                )
+              : _buildCategoryChips(),
         ),
         Expanded(
           child: CustomScrollView(
@@ -332,6 +318,30 @@ class _EmojiPickerState extends ConsumerState<EmojiPicker> {
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryChips() {
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 12),
+      scrollDirection: Axis.horizontal,
+      controller: _categoryScrollController,
+      children: [
+        for (var i = 0; i < _combined.length; i++)
+          Padding(
+            key: _chipKeys[i],
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: DSChip(
+              label: _combined[i].name,
+              leading: SizedBox.square(
+                dimension: 18,
+                child: FittedBox(child: _combined[i].icon),
+              ),
+              selected: _selectedCategory == i,
+              onSelected: (_) => _selectCategory(i),
+            ),
+          ),
       ],
     );
   }

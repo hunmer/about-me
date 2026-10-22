@@ -1,9 +1,7 @@
 import 'dart:core';
 import 'dart:async';
-import 'package:aboutme/core/app_initializer.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'floating_ball_service.dart';
@@ -15,6 +13,7 @@ import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
 import 'models/floating_ball_gesture.dart';
+import 'config/floating_ball_config.dart';
 import 'package:aboutme/widgets/route_viewer_dialog.dart';
 
 /// 动作信息类，包含动作标题和回调函数
@@ -38,17 +37,10 @@ class FloatingBallManager {
 
   final Map<FloatingBallGesture, ActionInfo> _actions = {};
   // 默认位置
-  Offset _position = const Offset(20, 100);
-  // 默认大小比例 (100%)
-  // 默认启用状态
-  // 存储键名
-  static const String _storageKey = 'floating_ball_config.json';
+  Offset _position = FloatingBallConfig.defaultPosition;
 
   // 初始化完成器，确保数据加载完成
   final Completer<void> _initCompleter = Completer<void>();
-
-  // 写入锁，防止并发写入导致数据覆盖
-  bool _isWriting = false;
 
   // 大小变化回调列表
   final List<SizeChangeCallback> _sizeChangeCallbacks = [];
@@ -163,118 +155,12 @@ class FloatingBallManager {
     }
   }
 
-  // 获取默认配置
-  Map<String, dynamic> _getDefaultConfig() {
-    return {
-      'actions': {},
-      'size_scale': 0.6,
-      'position': {'x': 21.0, 'y': 99.0},
-      'enabled': false,
-    };
-  }
-
-  // 验证配置完整性
-  bool _isConfigValid(Map<String, dynamic> config) {
-    return config.containsKey('actions') &&
-        config.containsKey('size_scale') &&
-        config.containsKey('position') &&
-        config.containsKey('enabled');
-  }
-
-  // 合并配置与默认值
-  Map<String, dynamic> _mergeWithDefaults(Map<String, dynamic> config) {
-    final defaults = _getDefaultConfig();
-    return {
-      'actions': config['actions'] ?? defaults['actions'],
-      'size_scale': config['size_scale'] ?? defaults['size_scale'],
-      'position': config['position'] ?? defaults['position'],
-      'enabled': config['enabled'] ?? defaults['enabled'],
-    };
-  }
-
-  // 安全写入数据，带锁机制防止竞态条件
-  Future<void> _writeDataSafe(Map<String, dynamic> data) async {
-    // 等待其他写入操作完成
-    while (_isWriting) {
-      await Future.delayed(const Duration(milliseconds: 10));
-    }
-
-    _isWriting = true;
-    try {
-      // 使用 StorageManager 保存配置
-      await globalStorage.write(_storageKey, data);
-    } finally {
-      _isWriting = false;
-    }
-  }
-
-  // 读取数据
-  Future<Map<String, dynamic>> _readData() async {
-    try {
-      // 使用 StorageManager 读取配置
-      final data = await globalStorage.read(_storageKey);
-
-      if (data == null) {
-        return _getDefaultConfig();
-      }
-
-      // Web 平台返回 LinkedMap，需要转换为 Map<String, dynamic>
-      Map<String, dynamic> result;
-      if (data is Map<String, dynamic>) {
-        result = data;
-      } else if (data is Map) {
-        // 将 Map<dynamic, dynamic> 或 LinkedMap 转换为 Map<String, dynamic>
-        result = Map<String, dynamic>.from(data);
-      } else {
-        debugPrint('Invalid config type detected: ${data.runtimeType}');
-        return _getDefaultConfig();
-      }
-
-      // 验证配置完整性
-      if (!_isConfigValid(result)) {
-        debugPrint('Invalid config detected, merging with defaults');
-        return _mergeWithDefaults(result);
-      }
-
-      return result;
-    } catch (e) {
-      debugPrint('Error reading floating ball data: $e');
-
-      // 尝试备份损坏的配置（仅在非 Web 平台）
-      if (!kIsWeb) {
-        try {
-          final data = await globalStorage.read(_storageKey);
-          if (data != null) {
-            // 在实际文件系统中备份（如果可用）
-            debugPrint('Corrupted config detected');
-          }
-        } catch (backupError) {
-          debugPrint('Failed to backup corrupted config: $backupError');
-        }
-      }
-
-      // 返回默认配置
-      return _getDefaultConfig();
-    }
-  }
-
   // 加载保存的动作
   Future<void> _loadActions() async {
-    final data = await _readData();
-    final actionsData = data['actions'];
-    final Map<String, dynamic> actions =
-        actionsData is Map<String, dynamic>
-            ? actionsData
-            : (actionsData is Map
-                ? Map<String, dynamic>.from(actionsData)
-                : {});
-
-    for (var gesture in FloatingBallGesture.values) {
-      final actionTitle = actions[gesture.name];
-      if (actionTitle != null) {
-        _actions[gesture] = ActionInfo(actionTitle.toString(), () {});
-      }
-    }
+    final config = await FloatingBallConfigManager.loadConfig();
+    config.actionMappings.forEach((gesture, title) {
+      _actions[gesture] = ActionInfo(title, () {});
+    });
   }
 
   // 保存动作
@@ -283,36 +169,27 @@ class FloatingBallManager {
     String? actionTitle,
   ) async {
     await _ensureInitialized();
-    final data = await _readData();
-    final actionsData = data['actions'];
-    final Map<String, dynamic> actions =
-        actionsData is Map<String, dynamic>
-            ? actionsData
-            : (actionsData is Map
-                ? Map<String, dynamic>.from(actionsData)
-                : {});
-    if (actionTitle != null) {
-      actions[gesture.name] = actionTitle;
-    } else {
-      actions.remove(gesture.name);
-    }
-    data['actions'] = actions;
-    await _writeDataSafe(data);
+    final config = await FloatingBallConfigManager.loadConfig();
+    final newConfig = actionTitle != null
+        ? config.setAction(gesture, actionTitle)
+        : config.clearAction(gesture);
+    await FloatingBallConfigManager.saveConfig(newConfig);
   }
 
   // 获取悬浮球大小比例
   Future<double> getSizeScale() async {
     await _ensureInitialized();
-    final data = await _readData();
-    return (data['size_scale'] as num?)?.toDouble() ?? 1.0;
+    final config = await FloatingBallConfigManager.loadConfig();
+    return config.sizeScale;
   }
 
   // 保存悬浮球大小比例
   Future<void> saveSizeScale(double scale) async {
     await _ensureInitialized();
-    final data = await _readData();
-    data['size_scale'] = scale;
-    await _writeDataSafe(data);
+    final config = await FloatingBallConfigManager.loadConfig();
+    await FloatingBallConfigManager.saveConfig(
+      config.copyWith(sizeScale: scale),
+    );
 
     // 通知悬浮球大小变化
     FloatingBallService().notifySizeChange(scale);
@@ -324,16 +201,17 @@ class FloatingBallManager {
   // 获取悬浮球启用状态
   Future<bool> isEnabled() async {
     await _ensureInitialized();
-    final data = await _readData();
-    return (data['enabled'] as bool?) ?? false;
+    final config = await FloatingBallConfigManager.loadConfig();
+    return config.enabled;
   }
 
   // 保存悬浮球启用状态
   Future<void> setEnabled(bool enabled) async {
     await _ensureInitialized();
-    final data = await _readData();
-    data['enabled'] = enabled;
-    await _writeDataSafe(data);
+    final config = await FloatingBallConfigManager.loadConfig();
+    await FloatingBallConfigManager.saveConfig(
+      config.copyWith(enabled: enabled),
+    );
 
     // 如果禁用，直接隐藏悬浮球
     if (!enabled) {
@@ -344,17 +222,8 @@ class FloatingBallManager {
   // 获取保存的位置
   Future<Offset> getPosition() async {
     await _ensureInitialized();
-    final data = await _readData();
-    final positionData = data['position'];
-    final Map<String, dynamic> position =
-        positionData is Map<String, dynamic>
-            ? positionData
-            : (positionData is Map
-                ? Map<String, dynamic>.from(positionData)
-                : {});
-    final double x = (position['x'] as num?)?.toDouble() ?? 20;
-    final double y = (position['y'] as num?)?.toDouble() ?? 100;
-    _position = Offset(x, y);
+    final config = await FloatingBallConfigManager.loadConfig();
+    _position = config.position;
     return _position;
   }
 
@@ -362,9 +231,10 @@ class FloatingBallManager {
   Future<void> savePosition(Offset position) async {
     await _ensureInitialized();
     _position = position;
-    final data = await _readData();
-    data['position'] = {'x': position.dx, 'y': position.dy};
-    await _writeDataSafe(data);
+    final config = await FloatingBallConfigManager.loadConfig();
+    await FloatingBallConfigManager.saveConfig(
+      config.copyWith(position: position),
+    );
   }
 
   // 设置动作
@@ -429,11 +299,12 @@ class FloatingBallManager {
   // 重置悬浮球位置到默认值
   Future<void> resetPosition() async {
     await _ensureInitialized();
-    const defaultPosition = Offset(20, 100);
+    final defaultPosition = FloatingBallConfig.defaultPosition;
     _position = defaultPosition;
-    final data = await _readData();
-    data['position'] = {'x': defaultPosition.dx, 'y': defaultPosition.dy};
-    await _writeDataSafe(data);
+    final config = await FloatingBallConfigManager.loadConfig();
+    await FloatingBallConfigManager.saveConfig(
+      config.copyWith(position: defaultPosition),
+    );
 
     // 通知悬浮球服务更新位置
     FloatingBallService().updatePosition(defaultPosition);

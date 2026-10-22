@@ -65,6 +65,10 @@ class _ChatScreenState extends State<ChatScreen> {
   final MultiFilterState _filterState = MultiFilterState();
   List<Message> _filteredMessages = [];
 
+  // 上一次 FutureBuilder 成功返回的消息项：每次通知都会生成新 Future，
+  // waiting 窗口内沿用旧数据，避免列表被清空重建导致气泡入场动画重播
+  List<dynamic>? _lastMessageItems;
+
   @override
   void initState() {
     super.initState();
@@ -685,7 +689,11 @@ class _ChatScreenState extends State<ChatScreen> {
             _controller.selectedDate,
           ),
           builder: (context, snapshot) {
-            final messageItems = snapshot.data ?? [];
+            if (snapshot.hasData) {
+              _lastMessageItems = snapshot.data;
+            }
+            // 新 Future 未完成时沿用上次数据，防止列表清空导致气泡 State 重建
+            final messageItems = snapshot.data ?? _lastMessageItems ?? [];
             final messageIndexMap = <String, int>{};
             for (var i = 0; i < displayMessages.length; i++) {
               messageIndexMap[displayMessages[i].id] = i;

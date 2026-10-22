@@ -8,6 +8,7 @@ import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/widgets/emoji_picker/index.dart';
 import 'package:aboutme/plugins/chat/services/sticker_service.dart';
+import 'package:aboutme/plugins/chat/screens/sticker_manager_screen.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/emoji_handler.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_drawer.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
@@ -676,22 +677,43 @@ class _MessageInputState extends State<MessageInput> {
         height: sheetHeight,
         width: double.infinity,
         child: ProviderScope(
-          child: EmojiPicker(
-            types: const [kEmojiPickerTypeEmoji, kEmojiPickerTypeImage],
-            appendCategories: buildStickerCategories(stickerCollections),
-            onSelection: (value, isFreeText) {
-              if (value.startsWith(kStickerPrefix)) {
-                Navigator.of(sheetContext).pop();
-                _attachSticker(value.substring(kStickerPrefix.length));
-              } else if (value.startsWith(kBuiltInEmojiPrefix)) {
-                Navigator.of(sheetContext).pop();
-                _attachEmojiAsset(
-                  value.substring(kBuiltInEmojiPrefix.length),
-                );
-              } else {
-                _insertTextAtCursor(value);
-              }
-            },
+          child: Column(
+            children: [
+              // 顶部工具条：贴图管理入口（与 chat 插件表情抽屉保持一致）
+              Align(
+                alignment: Alignment.centerRight,
+                child: DSButton(
+                  label: 'chat_stickerManager'.tr,
+                  variant: DSButtonVariant.outline,
+                  size: DSButtonSize.sm,
+                  icon: DsIconKind.gear,
+                  onPressed:
+                      () => NavigationHelper.push(
+                        sheetContext,
+                        const StickerManagerScreen(),
+                      ),
+                ),
+              ),
+              Expanded(
+                child: EmojiPicker(
+                  types: const [kEmojiPickerTypeEmoji, kEmojiPickerTypeImage],
+                  appendCategories: buildStickerCategories(stickerCollections),
+                  onSelection: (value, isFreeText) {
+                    if (value.startsWith(kStickerPrefix)) {
+                      Navigator.of(sheetContext).pop();
+                      _attachSticker(value.substring(kStickerPrefix.length));
+                    } else if (value.startsWith(kBuiltInEmojiPrefix)) {
+                      Navigator.of(sheetContext).pop();
+                      _attachEmojiAsset(
+                        value.substring(kBuiltInEmojiPrefix.length),
+                      );
+                    } else {
+                      _insertTextAtCursor(value);
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),

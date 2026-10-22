@@ -1,23 +1,35 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/app_initializer.dart' show globalStorage;
 import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
 
 /// 悬浮球配置数据模型
 class FloatingBallConfig {
+  /// 默认大小比例
+  static const double defaultSizeScale = 0.6;
+
+  /// 默认位置
+  static const Offset defaultPosition = Offset(21, 99);
+
+  /// 默认手势动作映射
+  static const Map<FloatingBallGesture, String> defaultGestureMappings = {
+    FloatingBallGesture.tap: '打开上次插件',
+    FloatingBallGesture.swipeUp: '返回上一页',
+    FloatingBallGesture.swipeDown: '选择打开插件',
+    FloatingBallGesture.swipeLeft: '选择打开插件小窗口',
+    FloatingBallGesture.swipeRight: '刷新页面',
+  };
+
   final Map<FloatingBallGesture, String> actionMappings;
   final double sizeScale;
   final Offset position;
   final bool enabled;
-  final Color color;
-  final String iconPath;
 
   const FloatingBallConfig({
-    this.actionMappings = const {},
-    this.sizeScale = 1.0,
-    this.position = Offset.zero,
+    this.actionMappings = defaultGestureMappings,
+    this.sizeScale = defaultSizeScale,
+    this.position = defaultPosition,
     this.enabled = true,
-    this.color = Colors.blue,
-    this.iconPath = 'assets/icon/icon.png',
   });
 
   /// 从JSON创建配置
@@ -37,27 +49,15 @@ class FloatingBallConfig {
       // 解析位置
       final positionJson = json['position'] as Map<String, dynamic>? ?? {};
       final position = Offset(
-        (positionJson['x'] as num?)?.toDouble() ?? 0.0,
-        (positionJson['y'] as num?)?.toDouble() ?? 0.0,
+        (positionJson['x'] as num?)?.toDouble() ?? defaultPosition.dx,
+        (positionJson['y'] as num?)?.toDouble() ?? defaultPosition.dy,
       );
-
-      // 解析颜色
-      Color color = Colors.blue;
-      if (json['color'] != null) {
-        if (json['color'] is String) {
-          color = Color(int.parse(json['color'] as String));
-        } else if (json['color'] is int) {
-          color = Color(json['color'] as int);
-        }
-      }
 
       return FloatingBallConfig(
         actionMappings: actionMappings,
-        sizeScale: (json['size_scale'] as num?)?.toDouble() ?? 1.0,
+        sizeScale: (json['size_scale'] as num?)?.toDouble() ?? defaultSizeScale,
         position: position,
         enabled: json['enabled'] as bool? ?? true,
-        color: color,
-        iconPath: json['icon_path'] as String? ?? 'assets/icon/icon.png',
       );
     } catch (e) {
       debugPrint('Error parsing FloatingBallConfig: $e');
@@ -81,8 +81,6 @@ class FloatingBallConfig {
         'y': position.dy,
       },
       'enabled': enabled,
-      'color': color.value.toString(),
-      'icon_path': iconPath,
     };
   }
 
@@ -108,36 +106,23 @@ class FloatingBallConfig {
     double? sizeScale,
     Offset? position,
     bool? enabled,
-    Color? color,
-    String? iconPath,
   }) {
     return FloatingBallConfig(
       actionMappings: actionMappings ?? this.actionMappings,
       sizeScale: sizeScale ?? this.sizeScale,
       position: position ?? this.position,
       enabled: enabled ?? this.enabled,
-      color: color ?? this.color,
-      iconPath: iconPath ?? this.iconPath,
     );
   }
 
   /// 获取默认配置
   static FloatingBallConfig get defaultConfig => FloatingBallConfig(
-    sizeScale: 1.0,
-    position: const Offset(21, 99),
+    sizeScale: defaultSizeScale,
+    position: defaultPosition,
     enabled: true,
-    color: Color(0xFF2196F3), // 与全局保持一致的Material Blue
-    iconPath: 'assets/icon/icon.png',
-    actionMappings: {
-      FloatingBallGesture.tap: '打开上次插件',
-      FloatingBallGesture.swipeUp: '返回上一页',
-      FloatingBallGesture.swipeDown: '选择打开插件',
-      FloatingBallGesture.swipeLeft: '选择打开插件小窗口',
-      FloatingBallGesture.swipeRight: '刷新页面',
-    },
+    actionMappings: defaultGestureMappings,
   );
 
-  
   /// 配置迁移：从旧版本升级
   static FloatingBallConfig migrateFromOldConfig(Map<String, dynamic> oldConfig) {
     try {
@@ -221,9 +206,7 @@ class FloatingBallConfig {
     return other is FloatingBallConfig &&
            other.sizeScale == sizeScale &&
            other.position == position &&
-           other.enabled == enabled &&
-           other.color == color &&
-           other.iconPath == iconPath;
+           other.enabled == enabled;
   }
 
   @override
@@ -237,20 +220,51 @@ class FloatingBallConfig {
   }
 }
 
-/// 悬浮球配置管理器
+/// 悬浮球配置管理器：悬浮球配置存储读写的唯一入口
 class FloatingBallConfigManager {
+  /// 存储键名（沿用历史键名，兼容已有数据）
+  static const String storageKey = 'floating_ball_config.json';
 
-  /// 读取配置
+  /// 写入锁，防止并发写入导致数据覆盖
+  static bool _isWriting = false;
+
+  /// 读取配置（无数据或损坏时返回默认配置）
   static Future<FloatingBallConfig> loadConfig() async {
-    // TODO: 实现存储读取逻辑
-    // 暂时返回默认配置
-    return FloatingBallConfig.defaultConfig;
+    try {
+      final data = await globalStorage.read(storageKey);
+      if (data == null) {
+        return FloatingBallConfig.defaultConfig;
+      }
+
+      // Web 平台返回 LinkedMap，需要转换为 Map<String, dynamic>
+      if (data is Map<String, dynamic>) {
+        return FloatingBallConfig.fromJson(data);
+      } else if (data is Map) {
+        return FloatingBallConfig.fromJson(
+          Map<String, dynamic>.from(data),
+        );
+      }
+
+      debugPrint('Invalid floating ball config type: ${data.runtimeType}');
+      return FloatingBallConfig.defaultConfig;
+    } catch (e) {
+      debugPrint('Error loading FloatingBallConfig: $e');
+      return FloatingBallConfig.defaultConfig;
+    }
   }
 
-  /// 保存配置
+  /// 保存配置（带锁机制防止竞态条件）
   static Future<void> saveConfig(FloatingBallConfig config) async {
-    // TODO: 实现存储保存逻辑
-    debugPrint('Saving FloatingBallConfig: ${config.toString()}');
+    while (_isWriting) {
+      await Future.delayed(const Duration(milliseconds: 10));
+    }
+
+    _isWriting = true;
+    try {
+      await globalStorage.write(storageKey, config.toJson());
+    } finally {
+      _isWriting = false;
+    }
   }
 
   /// 重置为默认配置
