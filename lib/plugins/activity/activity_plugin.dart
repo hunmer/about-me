@@ -292,6 +292,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> initialize() async {
+    // 加载插件配置（视图模式等持久化设置依赖此步读回）
+    await loadSettings(const {});
+
     // 确保活动记录数据目录存在
     await storage.createDirectory('activity');
     _activityService = ActivityService(storage, 'activity');

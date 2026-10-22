@@ -7,6 +7,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/chat/widgets/message_options_dialog.dart';
 import 'components/avatar.dart';
 import 'components/favorite_icon.dart';
 import 'components/fixed_symbol.dart';
@@ -394,14 +395,10 @@ class _MessageBubbleState extends State<MessageBubble>
                             ],
                           ),
                         ),
-                      _buildBubble(theme, backgroundColor, textColor),
+                      _buildBubbleWithBadge(theme, backgroundColor, textColor),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (_currentMessage.fixedSymbol != null)
-                            FixedSymbolWidget(
-                              symbol: _currentMessage.fixedSymbol!,
-                            ),
                           if (widget.onToggleFavorite != null &&
                               _currentMessage.metadata?['isFavorite'] == true)
                             FavoriteIcon(
@@ -457,6 +454,39 @@ class _MessageBubbleState extends State<MessageBubble>
           ),
         ),
       ),
+    );
+  }
+
+  /// 气泡 + 固定符号角标：自己的消息（靠右）角标在左上角、他人消息（靠左）在右上角，
+  /// 中心压在气泡角点上（一半在气泡内一半在外），点击弹出符号编辑弹层
+  Widget _buildBubbleWithBadge(
+    AppThemeData theme,
+    Color backgroundColor,
+    Color textColor,
+  ) {
+    final bubble = _buildBubble(theme, backgroundColor, textColor);
+    final symbol = _currentMessage.fixedSymbol;
+    if (symbol == null) return bubble;
+
+    final half = FixedSymbolWidget.badgeSize / 2;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        bubble,
+        Positioned(
+          top: -half,
+          left: _isCurrentUser ? -half : null,
+          right: _isCurrentUser ? null : -half,
+          child: FixedSymbolWidget(
+            symbol: symbol,
+            onTap: () => MessageOptionsDialog.showFixedSymbolDialog(
+              context,
+              message: _currentMessage,
+              onSetFixedSymbol: (_, symbol) => widget.onSetFixedSymbol(symbol),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

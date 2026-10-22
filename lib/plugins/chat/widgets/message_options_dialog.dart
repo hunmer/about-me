@@ -226,14 +226,17 @@ class MessageOptionsDialog extends StatelessWidget {
   }
 
   // 获取最近使用的符号列表
-  Future<List<String>> _getRecentSymbols() async {
+  static Future<List<String>> _getRecentSymbols(bool useRecentSymbols) async {
     if (!useRecentSymbols) return [];
     final prefs = await SharedPreferences.getInstance();
     return prefs.getStringList('recentSymbols') ?? [];
   }
 
   // 添加新使用的符号到列表
-  Future<void> _addRecentSymbol(String symbol) async {
+  static Future<void> _addRecentSymbol(
+    bool useRecentSymbols,
+    String symbol,
+  ) async {
     if (!useRecentSymbols) return;
     final prefs = await SharedPreferences.getInstance();
     List<String> recentSymbols = prefs.getStringList('recentSymbols') ?? [];
@@ -250,8 +253,24 @@ class MessageOptionsDialog extends StatelessWidget {
     await prefs.setStringList('recentSymbols', recentSymbols);
   }
 
-  void _showFixedSymbolDialog(BuildContext context) async {
-    final List<String> recentSymbols = await _getRecentSymbols();
+  void _showFixedSymbolDialog(BuildContext context) {
+    showFixedSymbolDialog(
+      context,
+      message: message,
+      onSetFixedSymbol: onSetFixedSymbol,
+      useRecentSymbols: useRecentSymbols,
+    );
+  }
+
+  /// 弹出固定符号编辑弹层（EmojiPicker，文本/图像符号），
+  /// 消息气泡角标等入口直接复用
+  static Future<void> showFixedSymbolDialog(
+    BuildContext context, {
+    required Message message,
+    required void Function(Message, String?) onSetFixedSymbol,
+    bool useRecentSymbols = true,
+  }) async {
+    final List<String> recentSymbols = await _getRecentSymbols(useRecentSymbols);
     if (!context.mounted) return;
 
     // 最近使用分组：文本与图像符号统一为可选项
@@ -303,7 +322,7 @@ class MessageOptionsDialog extends StatelessWidget {
                     onSelection: (value, isFreeText) {
                       final symbol = value.trim();
                       if (symbol.isEmpty) return;
-                      _addRecentSymbol(symbol);
+                      _addRecentSymbol(useRecentSymbols, symbol);
                       onSetFixedSymbol(message, symbol);
                       Navigator.pop(sheetContext);
                     },
