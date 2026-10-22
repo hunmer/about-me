@@ -577,25 +577,14 @@ class _BillListScreenSupercupertinoState
                   SmoothBottomSheet.show(
                     context: context,
                     backgroundColor: sheetTheme.surface,
-                    builder: (context) => Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 标题/返回由 BillEditScreen 的 DSTopBar 提供
-                        // 固定高度：BillEditScreen 内部 Expanded 布局需要
-                        // 有界高度约束
-                        SizedBox(
-                          height: MediaQuery.sizeOf(context).height * 0.82,
-                          child: BillEditScreen(
-                            billPlugin: widget.billPlugin,
-                            accountId: widget.accountId,
-                            initialDate: _selectedDay ?? DateTime.now(),
-                            onSaved: () {
-                              _loadMonthBills();
-                            },
-                          ),
-                        ),
-                      ],
+                    // sheet 的 Flexible 提供有界高度约束，Scaffold 自动占满
+                    builder: (context) => BillEditScreen(
+                      billPlugin: widget.billPlugin,
+                      accountId: widget.accountId,
+                      initialDate: _selectedDay ?? DateTime.now(),
+                      onSaved: () {
+                        _loadMonthBills();
+                      },
                     ),
                   );
                 },
@@ -882,22 +871,12 @@ class _BillListScreenSupercupertinoState
     SmoothBottomSheet.show(
       context: context,
       backgroundColor: theme.surface,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 标题/返回由 BillEditScreen 的 DSTopBar 提供
-          // 固定高度：BillEditScreen 内部 Expanded 布局需要有界高度约束
-          SizedBox(
-            height: MediaQuery.sizeOf(context).height * 0.82,
-            child: BillEditScreen(
-              billPlugin: widget.billPlugin,
-              accountId: widget.accountId,
-              bill: billObject,
-              onSaved: _loadMonthBills,
-            ),
-          ),
-        ],
+      // sheet 的 Flexible 提供有界高度约束，Scaffold 自动占满
+      builder: (context) => BillEditScreen(
+        billPlugin: widget.billPlugin,
+        accountId: widget.accountId,
+        bill: billObject,
+        onSaved: _loadMonthBills,
       ),
     );
   }

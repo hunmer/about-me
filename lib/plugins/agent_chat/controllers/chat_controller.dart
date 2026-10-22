@@ -159,6 +159,12 @@ class ChatController extends ChangeNotifier {
   /// 当前 Agent (通过 AgentManager 获取)
   AIAgent? get currentAgent => _agentManager.currentAgent;
 
+  /// 配置保存后刷新当前会话，避免输入栏仍展示旧值。
+  Future<void> reloadCurrentAgents() async {
+    await _agentManager.reloadCurrentAgents();
+    notifyListeners();
+  }
+
   /// Agent 链 (通过 AgentManager 获取)
   List<AIAgent> get agentChain => _agentManager.agentChain;
 

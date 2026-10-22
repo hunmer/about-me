@@ -281,26 +281,15 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
     SmoothBottomSheet.show(
       context: context,
       backgroundColor: theme.surface,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 标题/返回由 BillEditScreen 的 DSTopBar 提供
-          // 固定高度：BillEditScreen 内部 Expanded 布局需要
-          // 有界高度约束
-          SizedBox(
-            height: MediaQuery.sizeOf(context).height * 0.82,
-            child: bill_edit.BillEditScreen(
-              billPlugin: widget.billPlugin,
-              accountId: _currentAccount.id,
-              bill: bill,
-              onSaved: () {
-                // 强制更新列表
-                _refreshAccountData();
-              },
-            ),
-          ),
-        ],
+      // sheet 的 Flexible 提供有界高度约束，Scaffold 自动占满
+      builder: (context) => bill_edit.BillEditScreen(
+        billPlugin: widget.billPlugin,
+        accountId: _currentAccount.id,
+        bill: bill,
+        onSaved: () {
+          // 强制更新列表
+          _refreshAccountData();
+        },
       ),
     );
   }

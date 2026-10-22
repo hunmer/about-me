@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:agentlib/agent_slots.dart';
 import '../aliveness/models/aliveness_config.dart';
+import 'thinking_effort.dart';
 
 class Prompt {
   String type; // system, user, assistant
@@ -43,6 +44,7 @@ class AIAgent {
 
   /// 是否启用模型深度思考/推理输出。
   final bool enableThinking;
+  final ThinkingEffort thinkingEffort;
   final String? promptPresetId;
   final bool enableOpeningQuestions; // 是否开启猜你想问功能
   final List<String> openingQuestions; // 预设的开场白问题列表
@@ -89,6 +91,7 @@ class AIAgent {
     this.avatarUrl,
     this.enableFunctionCalling = false,
     this.enableThinking = true,
+    this.thinkingEffort = ThinkingEffort.medium,
     this.promptPresetId,
     this.enableOpeningQuestions = false,
     this.openingQuestions = const [],
@@ -122,6 +125,7 @@ class AIAgent {
     'avatarUrl': avatarUrl,
     'enableFunctionCalling': enableFunctionCalling,
     'enableThinking': enableThinking,
+    'thinkingEffort': thinkingEffort.name,
     'promptPresetId': promptPresetId,
     'enableOpeningQuestions': enableOpeningQuestions,
     'openingQuestions': openingQuestions,
@@ -184,6 +188,7 @@ class AIAgent {
       avatarUrl: json['avatarUrl'] as String?,
       enableFunctionCalling: json['enableFunctionCalling'] as bool? ?? false,
       enableThinking: json['enableThinking'] as bool? ?? true,
+      thinkingEffort: ThinkingEffort.fromJson(json['thinkingEffort']),
       promptPresetId: json['promptPresetId'] as String?,
       enableOpeningQuestions: json['enableOpeningQuestions'] as bool? ?? false,
       openingQuestions:
@@ -228,6 +233,7 @@ class AIAgent {
     List<String>? stop,
     bool? enableFunctionCalling,
     bool? enableThinking,
+    ThinkingEffort? thinkingEffort,
     String? promptPresetId,
     bool? enableOpeningQuestions,
     List<String>? openingQuestions,
@@ -261,6 +267,7 @@ class AIAgent {
       enableFunctionCalling:
           enableFunctionCalling ?? this.enableFunctionCalling,
       enableThinking: enableThinking ?? this.enableThinking,
+      thinkingEffort: thinkingEffort ?? this.thinkingEffort,
       promptPresetId: promptPresetId ?? this.promptPresetId,
       enableOpeningQuestions:
           enableOpeningQuestions ?? this.enableOpeningQuestions,

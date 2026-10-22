@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:http/http.dart' as http;
+import 'thinking_config.dart';
 import 'dart:developer' as developer;
 
 /// Anthropic API 请求服务
@@ -110,15 +111,25 @@ class AnthropicRequestService {
       );
 
       // 构建请求体
+      final effectiveMaxTokens =
+          maxTokens ?? (agent.maxLength > 0 ? agent.maxLength : 4096);
+      final thinkingConfig = ThinkingConfig.anthropic(
+        agent,
+        effectiveMaxTokens,
+      );
+      final hasThinking =
+          thinkingConfig['thinking'] is Map &&
+          (thinkingConfig['thinking'] as Map)['type'] != 'disabled';
       final requestBody = {
         'model': agent.model,
         'messages': anthropicMessages,
-        'max_tokens':
-            maxTokens ?? (agent.maxLength > 0 ? agent.maxLength : 4096),
+        'max_tokens': effectiveMaxTokens,
         'stream': true,
         if (systemPrompt.isNotEmpty) 'system': systemPrompt,
-        if (agent.temperature > 0) 'temperature': agent.temperature,
-        if (agent.topP > 0) 'top_p': agent.topP,
+        if (!hasThinking && agent.temperature > 0)
+          'temperature': agent.temperature,
+        if (!hasThinking && agent.topP > 0) 'top_p': agent.topP,
+        ...thinkingConfig,
         if (agent.stop != null && agent.stop!.isNotEmpty)
           'stop_sequences': agent.stop,
       };

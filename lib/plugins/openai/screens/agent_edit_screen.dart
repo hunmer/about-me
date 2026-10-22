@@ -11,6 +11,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/models/thinking_effort.dart';
 import 'package:aboutme/plugins/openai/models/api_format.dart';
 import 'package:agentlib/agent_slots.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
@@ -283,6 +284,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       avatarUrl: iconAvatarData?['avatarUrl'] as String?,
       enableFunctionCalling: values['enableFunctionCalling'] as bool? ?? false,
       enableThinking: values['enableThinking'] as bool? ?? true,
+      thinkingEffort:
+          values['thinkingEffort'] as ThinkingEffort? ?? ThinkingEffort.medium,
       promptPresetId: values['promptPresetId'] as String?,
       enableOpeningQuestions:
           values['enableOpeningQuestions'] as bool? ?? false,
@@ -554,6 +557,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       avatarUrl: iconAvatarData?['avatarUrl'] as String?,
       enableFunctionCalling: values['enableFunctionCalling'] as bool? ?? false,
       enableThinking: values['enableThinking'] as bool? ?? true,
+      thinkingEffort:
+          values['thinkingEffort'] as ThinkingEffort? ?? ThinkingEffort.medium,
       promptPresetId: values['promptPresetId'] as String?,
       enableOpeningQuestions:
           values['enableOpeningQuestions'] as bool? ?? false,
@@ -904,6 +909,17 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
         hintText: '启用模型的 reasoning/thinking 输出（DeepSeek 等模型支持）',
         initialValue: _editingAgent?.enableThinking ?? true,
       ),
+      FormFieldConfig(
+        name: 'thinkingEffort',
+        type: FormFieldType.select,
+        labelText: '思考等级',
+        hintText: '按模型支持的等级生效，需开启深度思考',
+        initialValue: _editingAgent?.thinkingEffort ?? ThinkingEffort.medium,
+        items: [
+          for (final effort in ThinkingEffort.values)
+            DropdownMenuItem(value: effort, child: Text(effort.label)),
+        ],
+      ),
     ];
   }
 
@@ -1171,6 +1187,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       presencePenalty: 0.0,
       enableFunctionCalling: values['enableFunctionCalling'] as bool? ?? false,
       enableThinking: values['enableThinking'] as bool? ?? true,
+      thinkingEffort:
+          values['thinkingEffort'] as ThinkingEffort? ?? ThinkingEffort.medium,
       promptPresetId: values['promptPresetId'] as String?,
       enableOpeningQuestions:
           values['enableOpeningQuestions'] as bool? ?? false,

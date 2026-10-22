@@ -30,6 +30,9 @@ class MessageInput extends StatefulWidget {
   /// 工具栏右侧动作组（贴右缘排布）
   final List<MessageInputQuickAction> trailingQuickActions;
 
+  final int thinkingEffortIndex;
+  final ValueChanged<int>? onThinkingEffortChanged;
+
   /// 工具栏最右 dots 按钮回调：打开完整的底部抽屉动作列表（null 隐藏按钮）
   final VoidCallback? onOpenActionsDrawer;
 
@@ -69,6 +72,8 @@ class MessageInput extends StatefulWidget {
     this.onChanged,
     this.quickActions = const [],
     this.trailingQuickActions = const [],
+    this.thinkingEffortIndex = 1,
+    this.onThinkingEffortChanged,
     this.onOpenActionsDrawer,
     this.header,
     this.inputSuffix,
@@ -195,6 +200,8 @@ class _MessageInputState extends State<MessageInput> {
               MessageInputQuickToolbar(
                 actions: widget.quickActions,
                 trailingActions: trailingActions,
+                thinkingEffortIndex: widget.thinkingEffortIndex,
+                onThinkingEffortChanged: widget.onThinkingEffortChanged,
               ),
 
               // 输入行（素描面板风格带内边距，悬浮卡片风格仅留底部间距）

@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/models/api_format.dart';
 import 'prompt_preset_service.dart';
 import 'anthropic_request_service.dart';
+import 'thinking_config.dart';
 import 'dart:developer' as developer;
 
 /// 统一的错误消息提取和修复方法
@@ -138,18 +139,7 @@ String _formatMessagesForLog(List<ChatCompletionMessage> messages) {
 
 class RequestService {
   static Map<String, dynamic>? _thinkingBody(AIAgent agent) {
-    if (agent.serviceProviderId != 'deepseek' &&
-        Uri.tryParse(agent.baseUrl)?.host.contains('deepseek') != true) {
-      return null;
-    }
-    final type = agent.enableThinking ? 'enabled' : 'disabled';
-    developer.log(
-      'DeepSeek 请求: model=${agent.model}, thinking=$type',
-      name: 'RequestService',
-    );
-    return {
-      'thinking': {'type': type},
-    };
+    return ThinkingConfig.openAI(agent);
   }
 
   static AgentLibClient _agentLibClient(AIAgent agent) {
@@ -369,12 +359,17 @@ class RequestService {
       );
 
       final stopwatch = Stopwatch()..start();
+      final usesReasoning = ThinkingConfig.usesOpenAIReasoning(agent);
       final responseContent = await _agentLibClient(agent).complete(
         model: agent.model,
         messages: messages.map(_agentLibMessage).toList(),
-        temperature: agent.temperature,
-        maxTokens: effectiveMaxTokens,
-        extraBody: _thinkingBody(agent),
+        temperature: usesReasoning ? null : agent.temperature,
+        maxTokens: usesReasoning ? null : effectiveMaxTokens,
+        extraBody: {
+          ...?_thinkingBody(agent),
+          if (usesReasoning && effectiveMaxTokens != null)
+            'max_completion_tokens': effectiveMaxTokens,
+        },
       );
       stopwatch.stop();
 
@@ -741,13 +736,20 @@ class RequestService {
 
       final stopwatch = Stopwatch()..start();
       int thinkingChars = 0;
+      final usesReasoning = ThinkingConfig.usesOpenAIReasoning(agent);
       final stream = _agentLibClient(agent).stream(
         model: agent.model,
         messages: messages.map(_agentLibMessage).toList(),
-        temperature: agent.temperature,
-        maxTokens: agent.maxLength > 0 ? agent.maxLength : null,
+        temperature: usesReasoning ? null : agent.temperature,
+        maxTokens: !usesReasoning && agent.maxLength > 0
+            ? agent.maxLength
+            : null,
         responseFormat: responseFormat?.toJson(),
-        extraBody: _thinkingBody(agent),
+        extraBody: {
+          ...?_thinkingBody(agent),
+          if (usesReasoning && agent.maxLength > 0)
+            'max_completion_tokens': agent.maxLength,
+        },
         onThinking: (thinking) {
           if (shouldCancel?.call() == true) return;
           thinkingChars += thinking.length;

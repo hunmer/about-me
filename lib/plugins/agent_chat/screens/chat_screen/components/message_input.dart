@@ -24,6 +24,8 @@ import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_hel
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/models/thinking_effort.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 import 'package:aboutme/plugins/openai/services/agentlib_resource_service.dart';
 import 'package:agentlib/agent_slots.dart';
@@ -328,6 +330,7 @@ class _MessageInputState extends State<MessageInput> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     final agentReady = widget.controller.currentAgent != null;
+    final agentId = widget.controller.currentAgent?.id;
 
     return common.MessageInput(
       controller: _textController,
@@ -339,6 +342,11 @@ class _MessageInputState extends State<MessageInput> {
       showPanelStroke: widget.showPanelStroke,
       dashedPanelStroke: widget.dashedPanelStroke,
       quickActions: widget.toolbarActions,
+      thinkingEffortIndex:
+          widget.controller.currentAgent?.thinkingEffort.index ?? 1,
+      onThinkingEffortChanged: agentReady
+          ? (index) => _updateThinkingEffort(agentId!, index)
+          : null,
       // 工具栏右组：内置"你可以问"/表情（原输入框内嵌后缀）+ 外部注入动作
       trailingQuickActions: [
         if (agentReady)
@@ -782,6 +790,28 @@ class _MessageInputState extends State<MessageInput> {
       text: newText,
       selection: TextSelection.collapsed(offset: selection.start + text.length),
     );
+  }
+
+  Future<void> _updateThinkingEffort(String agentId, int index) async {
+    if (!mounted) return;
+    try {
+      final agents = AgentController();
+      final agent = await agents.getAgent(agentId);
+      if (agent == null) return;
+      final updated = agent.copyWith(
+        thinkingEffort: ThinkingEffort.values[index],
+        updatedAt: DateTime.now(),
+      );
+      if (agents.temporaryAgents.any((entry) => entry.id == agentId)) {
+        agents.addTemporaryAgent(updated);
+      } else {
+        await agents.updateAgent(updated);
+      }
+      if (!mounted) return;
+      await widget.controller.reloadCurrentAgents();
+    } catch (e) {
+      ToastService.instance.showToast('保存思考等级失败: $e');
+    }
   }
 
   /// 打开当前 Agent 编辑页

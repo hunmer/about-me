@@ -564,21 +564,11 @@ class _BillMainViewState extends State<BillMainView>
           SmoothBottomSheet.show(
             context: context,
             backgroundColor: theme.surface,
-            builder: (context) => Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 标题/返回由 BillEditScreen 的 DSTopBar 提供
-                // 固定高度：BillEditScreen 内部 Expanded 布局需要
-                // 有界高度约束
-                SizedBox(
-                  height: MediaQuery.sizeOf(context).height * 0.82,
-                  child: BillEditScreen(
-                    billPlugin: billPlugin,
-                    accountId: billPlugin.selectedAccount?.id ?? '',
-                  ),
-                ),
-              ],
+            // sheet 的 Flexible 提供有界高度约束（上限 80% 屏高），
+            // Scaffold 自动占满，无需调用方固定高度
+            builder: (context) => BillEditScreen(
+              billPlugin: billPlugin,
+              accountId: billPlugin.selectedAccount?.id ?? '',
             ),
           );
         },

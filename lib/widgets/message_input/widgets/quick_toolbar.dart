@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/effort_slider.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import '../message_input_types.dart';
 
 /// 输入框顶部的图标工具栏：底部抽屉工具栏（完整动作列表）的快捷方式行
@@ -11,15 +13,47 @@ class MessageInputQuickToolbar extends StatelessWidget {
 
   /// 右侧动作组（贴工具栏右缘，溢出时向左滚动）
   final List<MessageInputQuickAction> trailingActions;
+  final int thinkingEffortIndex;
+  final ValueChanged<int>? onThinkingEffortChanged;
 
   const MessageInputQuickToolbar({
     super.key,
     required this.actions,
     this.trailingActions = const [],
+    this.thinkingEffortIndex = 1,
+    this.onThinkingEffortChanged,
   });
+
+  Future<void> _showThinkingEffort(BuildContext context) async {
+    var selected = thinkingEffortIndex;
+    await SmoothBottomSheet.showWithTitle<void>(
+      context: context,
+      title: '思考等级',
+      showCloseButton: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        child: EffortSlider(
+          initialIndex: selected,
+          onChanged: (index) => selected = index,
+        ),
+      ),
+    );
+    if (selected != thinkingEffortIndex) {
+      onThinkingEffortChanged?.call(selected);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final actions = [
+      ...this.actions,
+      if (onThinkingEffortChanged != null)
+        MessageInputQuickAction(
+          icon: DsIconKind.speed,
+          tooltip: '思考等级',
+          onPressed: () => _showThinkingEffort(context),
+        ),
+    ];
     if (actions.isEmpty && trailingActions.isEmpty) return const SizedBox();
 
     final theme = DSThemeBridge.resolve(context);
