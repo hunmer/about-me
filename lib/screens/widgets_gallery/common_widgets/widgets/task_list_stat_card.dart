@@ -1,5 +1,13 @@
+/// 任务统计列表小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 数据色圆形图标徽章 + 翻牌计数 / 任务列表（墨线分隔线、逐项错峰浮现）。
+library;
+
 import 'package:flutter/material.dart';
 import 'package:animated_flip_counter/animated_flip_counter.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 任务数据模型
@@ -96,7 +104,6 @@ class _TaskListStatCardWidgetState extends State<TaskListStatCardWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _slideAnimation;
 
   @override
   void initState() {
@@ -107,18 +114,9 @@ class _TaskListStatCardWidgetState extends State<TaskListStatCardWidget>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-      ),
-    );
-
-    _slideAnimation = Tween<double>(begin: 20.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-      ),
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
     );
 
     _animationController.forward();
@@ -132,53 +130,38 @@ class _TaskListStatCardWidgetState extends State<TaskListStatCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = widget.primaryColor ?? Theme.of(context).colorScheme.primary;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
+    // 数据色：props 优先，缺省走主题主色
+    final primaryColor = widget.primaryColor ?? theme.primary;
 
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, _slideAnimation.value),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
-        width: widget.inline ? double.maxFinite : 380,
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
         constraints: widget.size.getHeightConstraints(),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        padding: widget.size.getPadding(),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 左侧：图标和统计
-            _buildLeftSection(context, isDark, primaryColor),
-            SizedBox(width: widget.size.getTitleSpacing()),
-            // 右侧：任务列表
-            Expanded(
-              child: _buildRightSection(context, isDark, primaryColor),
-            ),
-          ],
+        child: DsSketchPanel(
+          theme: theme,
+          width: widget.inline ? double.maxFinite : 380,
+          height: widget.inline ? double.maxFinite : null,
+          radius: BorderRadius.circular(24 * scale),
+          padding: widget.size.getPadding(),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 左侧：图标和统计
+              _buildLeftSection(theme, primaryColor),
+              SizedBox(width: widget.size.getTitleSpacing()),
+              // 右侧：任务列表
+              Expanded(child: _buildRightSection(primaryColor)),
+            ],
+          ),
         ),
       ),
     );
   }
 
   /// 左侧区域
-  Widget _buildLeftSection(BuildContext context, bool isDark, Color primaryColor) {
+  Widget _buildLeftSection(AppThemeData theme, Color primaryColor) {
     final iconSize = widget.size.getIconSize();
     final containerSize = iconSize * 2;
     final fontSize = widget.size.getLargeFontSize();
@@ -187,25 +170,22 @@ class _TaskListStatCardWidgetState extends State<TaskListStatCardWidget>
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 图标
+        // 图标徽章：数据色实底 + 墨线描边（大圆角被 rough 引擎钳成圆）
         Container(
           width: containerSize,
           height: containerSize,
-          decoration: BoxDecoration(
-            color: primaryColor,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(containerSize / 2),
+            fillColor: primaryColor,
           ),
-          child: Icon(
-            widget.icon,
-            color: Colors.white,
-            size: iconSize,
+          child: Center(
+            child: WiredIcon(
+              icon: widget.icon,
+              size: iconSize,
+              color: theme.onPrimary,
+              drawConfig: theme.wired.drawConfig,
+            ),
           ),
         ),
 
@@ -216,14 +196,19 @@ class _TaskListStatCardWidgetState extends State<TaskListStatCardWidget>
           children: [
             SizedBox(
               height: fontSize + 8,
-              child: AnimatedFlipCounter(
-                value: widget.count * _fadeAnimation.value,
-                textStyle: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
-                  height: 1.0,
-                ),
+              child: AnimatedBuilder(
+                animation: _fadeAnimation,
+                builder: (context, child) {
+                  return AnimatedFlipCounter(
+                    value: widget.count * _fadeAnimation.value,
+                    textStyle: TextStyle(
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w500,
+                      color: theme.text,
+                      height: 1.0,
+                    ),
+                  );
+                },
               ),
             ),
             SizedBox(
@@ -233,7 +218,7 @@ class _TaskListStatCardWidgetState extends State<TaskListStatCardWidget>
                 style: TextStyle(
                   fontSize: widget.size.getSubtitleFontSize(),
                   fontWeight: FontWeight.w500,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF9CA3AF),
+                  color: theme.textSub,
                   height: 1.0,
                 ),
               ),
@@ -245,7 +230,7 @@ class _TaskListStatCardWidgetState extends State<TaskListStatCardWidget>
   }
 
   /// 右侧区域
-  Widget _buildRightSection(BuildContext context, bool isDark, Color primaryColor) {
+  Widget _buildRightSection(Color primaryColor) {
     final displayTasks = widget.tasks.take(4).toList();
 
     return Column(
@@ -259,7 +244,6 @@ class _TaskListStatCardWidgetState extends State<TaskListStatCardWidget>
             isLast: index == displayTasks.length - 1,
             animation: _animationController,
             index: index,
-            isDark: isDark,
             size: widget.size,
           );
         }),
@@ -281,13 +265,12 @@ class _TaskListStatCardWidgetState extends State<TaskListStatCardWidget>
   }
 }
 
-/// 任务列表项
+/// 任务列表项（墨线分隔线、逐项错峰浮现）
 class _TaskListItem extends StatelessWidget {
   final String task;
   final bool isLast;
   final Animation<double> animation;
   final int index;
-  final bool isDark;
   final HomeWidgetSize size;
 
   const _TaskListItem({
@@ -295,12 +278,12 @@ class _TaskListItem extends StatelessWidget {
     required this.isLast,
     required this.animation,
     required this.index,
-    required this.isDark,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final itemAnimation = CurvedAnimation(
       parent: animation,
       curve: Interval(
@@ -335,7 +318,7 @@ class _TaskListItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: size.getSubtitleFontSize() - 1,
                 fontWeight: FontWeight.w600,
-                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
+                color: theme.text,
                 height: 1.2,
               ),
               maxLines: 2,
@@ -343,11 +326,7 @@ class _TaskListItem extends StatelessWidget {
             ),
           ),
           if (!isLast)
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-            ),
+            Container(height: 1, color: theme.ink.withValues(alpha: 0.18)),
         ],
       ),
     );

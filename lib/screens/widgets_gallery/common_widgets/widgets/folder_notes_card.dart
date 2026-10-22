@@ -1,4 +1,13 @@
+/// 文件夹笔记卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 数据色手绘文件夹图标 + 路径 / 数据色笔记数量徽章 / 笔记列表
+/// （手绘便签图标 + 标题 + 相对时间）。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
@@ -125,7 +134,7 @@ class FolderNotesCardWidget extends StatefulWidget {
 class _FolderNotesCardWidgetState extends State<FolderNotesCardWidget> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
 
     final folderIcon =
         dynamicIconData(widget.iconCodePoint, fontFamily: 'MaterialIcons');
@@ -135,6 +144,7 @@ class _FolderNotesCardWidgetState extends State<FolderNotesCardWidget> {
     final widgetSize = context.findAncestorStateOfType<_FolderNotesCardWidgetParentState>()
             ?.widgetSize ??
         const LargeSize();
+    final scale = widgetSize.scale;
     final isMediumSize = widgetSize == const MediumSize();
 
     // 根据尺寸限制显示的笔记数量
@@ -143,119 +153,116 @@ class _FolderNotesCardWidgetState extends State<FolderNotesCardWidget> {
         ? widget.notesCount - displayNotes.length
         : 0;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 顶部文件夹信息
-              Row(
-                children: [
-                  Icon(folderIcon, size: 20, color: folderColor),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.folderPath.isNotEmpty ? widget.folderPath : widget.folderName,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widgetSize.getPadding(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 顶部文件夹信息
+            Row(
+              children: [
+                WiredIcon(
+                  icon: folderIcon,
+                  size: 20,
+                  color: folderColor,
+                  drawConfig: theme.wired.drawConfig,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.folderPath.isNotEmpty ? widget.folderPath : widget.folderName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: theme.textSub,
                     ),
-                  ),
-                  // 笔记数量徽章
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: folderColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${widget.notesCount}',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: folderColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // 笔记列表（使用滚动容器防止溢出）
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (displayNotes.isNotEmpty) ...[
-                        ...displayNotes.map(
-                          (note) => Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: _buildNoteItem(context, theme, note, folderColor),
-                              ),
-                        ),
-                        if (moreCount > 0)
-                          Text(
-                            '还有 $moreCount 条笔记',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer
-                                  .withOpacity(0.5),
-                            ),
-                          ),
-                      ] else
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Center(
-                            child: Text(
-                              '空文件夹',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onPrimaryContainer
-                                    .withOpacity(0.5),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                // 笔记数量徽章：数据色浅底 + 墨线描边
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: BorderRadius.circular(12),
+                    fillColor: folderColor.withValues(alpha: 0.28),
+                  ),
+                  child: Text(
+                    '${widget.notesCount}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: folderColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // 笔记列表（使用滚动容器防止溢出）
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (displayNotes.isNotEmpty) ...[
+                      ...displayNotes.map(
+                        (note) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _buildNoteItem(theme, note),
+                        ),
+                      ),
+                      if (moreCount > 0)
+                        Text(
+                          '还有 $moreCount 条笔记',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.textSub,
+                          ),
+                        ),
+                    ] else
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: Text(
+                            '空文件夹',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   /// 构建笔记项
-  Widget _buildNoteItem(
-    BuildContext context,
-    ThemeData theme,
-    NoteItemData note,
-    Color folderColor,
-  ) {
+  Widget _buildNoteItem(AppThemeData theme, NoteItemData note) {
     return Row(
       children: [
-        Icon(
-          Icons.note_alt_outlined,
-          size: 14,
-          color: theme.colorScheme.onPrimaryContainer.withOpacity(0.5),
-        ),
+        DsIcon(DsIconKind.stickyNote, size: 14, color: theme.textSub),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             note.title,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
+            style: TextStyle(fontSize: 12, color: theme.text),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -263,9 +270,7 @@ class _FolderNotesCardWidgetState extends State<FolderNotesCardWidget> {
         const SizedBox(width: 8),
         Text(
           _formatNoteTime(note.updatedAt),
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onPrimaryContainer.withOpacity(0.5),
-          ),
+          style: TextStyle(fontSize: 12, color: theme.textSub),
         ),
       ],
     );

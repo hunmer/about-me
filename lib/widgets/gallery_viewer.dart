@@ -5,6 +5,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/utils/blob_url.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/photo_editor_screen.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -118,6 +119,7 @@ class GalleryViewer extends StatefulWidget {
     this.onInfoTap,
     this.entranceAnimation = false,
     this.showFileActions = false,
+    this.showEditAction = true,
   });
 
   final List<GalleryPhoto> photos;
@@ -136,6 +138,10 @@ class GalleryViewer extends StatefulWidget {
   /// 顶栏是否显示文件操作按钮（分享 / 定位本地文件），
   /// 操作针对当前页媒体，仅需传入媒体路径即可执行
   final bool showFileActions;
+
+  /// 顶栏是否显示编辑照片入口（仅图片页显示，编辑结果写回原位，
+  /// 无法写回的网络/Asset 图片保存副本到应用存储）
+  final bool showEditAction;
 
   /// 单文件预览便捷入口（替代原 FilePreviewScreen）：
   /// 按 mimeType/扩展名自动判定图片、视频（推导伴生封面 `<name>.thumb.jpg`）
@@ -483,6 +489,15 @@ class _GalleryViewerState extends State<GalleryViewer>
             ),
           ),
           const SizedBox(width: 12),
+          // 编辑照片入口：仅图片页显示（视频/音频/文件/Live Photo 不可编辑）
+          if (_isEditablePhoto(current)) ...[
+            _buildHeaderIconButton(
+              Icons.edit,
+              'app_editPhoto'.tr,
+              () => _openPhotoEditor(current),
+            ),
+            const SizedBox(width: 8),
+          ],
           // 文件操作：仅传媒体路径即可分享 / 保存 / 定位（针对当前页）
           if (widget.showFileActions) ...[
             _buildHeaderIconButton(
@@ -528,6 +543,23 @@ class _GalleryViewerState extends State<GalleryViewer>
         ],
       ),
     );
+  }
+
+  /// 是否可进入照片编辑器：仅普通图片页（视频/音频/文件/Live Photo 排除）
+  bool _isEditablePhoto(GalleryPhoto photo) =>
+      widget.showEditAction &&
+      !photo.isVideo &&
+      !photo.isAudio &&
+      !photo.isFile &&
+      (photo.liveVideoUrl == null || photo.liveVideoUrl!.isEmpty);
+
+  /// 打开照片编辑器；编辑结果写回原位时 url 不变，
+  /// evict 图片缓存后重建当前页以显示新内容
+  Future<void> _openPhotoEditor(GalleryPhoto current) async {
+    final edited = await showPhotoEditor(context, imageUrl: current.url);
+    if (edited == null || !mounted) return;
+    await GalleryImageResolver.cached(current.url)?.evict();
+    if (mounted) setState(() {});
   }
 
   Widget _buildCloseButton() {

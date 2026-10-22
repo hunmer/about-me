@@ -1,4 +1,13 @@
+/// 情绪追踪卡片（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题行（Emotion / Today 手绘箭头）/ 当前情绪文本（弹性入场动画保留）/
+/// 已记录天数 / 周情绪按钮（手绘圆形徽章：已记录主题色实底 + 墨线描边）。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
@@ -77,7 +86,7 @@ enum EmotionType {
   terrible,
 }
 
-class EmotionTrackerCard extends StatefulWidget {
+class EmotionTrackerCard extends StatelessWidget {
   /// 当前情绪文本
   final String currentEmotionText;
 
@@ -115,86 +124,40 @@ class EmotionTrackerCard extends StatefulWidget {
   });
 
   @override
-  State<EmotionTrackerCard> createState() => _EmotionTrackerCardState();
-}
-
-class _EmotionTrackerCardState extends State<EmotionTrackerCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
-
-    _fadeController.forward();
-  }
-
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final size = widget.size;
-    return FadeTransition(
-      opacity: _fadeAnimation,
+    final theme = AppTheme.of(context);
+    final size = this.size;
+    final scale = size.scale;
+    final padding = size.getPadding();
+
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
       child: Container(
         margin: EdgeInsets.symmetric(
-          horizontal: size.getPadding().horizontal / 2 * 1.2,
+          horizontal: padding.horizontal / 2 * 1.2,
         ),
         constraints: BoxConstraints(
-          maxWidth: widget.inline ? double.maxFinite : 400,
+          maxWidth: inline ? double.maxFinite : 400,
         ),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            decoration: BoxDecoration(
-              color:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF1F2937)
-                      : Colors.white,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            padding: size.getPadding().copyWith(
-              top: size.getPadding().top * 1.2,
-              bottom: size.getPadding().bottom * 1.2,
-              left: size.getPadding().left * 1.2,
-              right: size.getPadding().right * 1.2,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 标题行
-                _buildHeader(context),
-                SizedBox(height: size.getTitleSpacing() * 1.2),
+        child: DsSketchPanel(
+          theme: theme,
+          radius: BorderRadius.circular(24 * scale),
+          padding: padding.copyWith(
+            top: padding.top * 1.2,
+            bottom: padding.bottom * 1.2,
+            left: padding.left * 1.2,
+            right: padding.right * 1.2,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题行
+              _buildHeader(context, theme),
+              SizedBox(height: size.getTitleSpacing() * 1.2),
 
-                // 主要内容区
-                _buildMainContent(context),
-              ],
-            ),
+              // 主要内容区
+              _buildMainContent(theme),
+            ],
           ),
         ),
       ),
@@ -202,28 +165,25 @@ class _EmotionTrackerCardState extends State<EmotionTrackerCard>
   }
 
   /// 构建标题行
-  Widget _buildHeader(BuildContext context) {
-    final size = widget.size;
+  Widget _buildHeader(BuildContext context, AppThemeData theme) {
+    final size = this.size;
     final iconSize = size.getIconSize();
     final titleFontSize = size.getTitleFontSize();
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Text(
-              'Emotion',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                fontSize: titleFontSize * 0.67,
-              ),
-            ),
-          ],
+        Text(
+          'Emotion',
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: titleFontSize * 0.67,
+            color: theme.text,
+          ),
         ),
         InkWell(
           onTap:
-              widget.onHistoryTap ??
+              onHistoryTap ??
               () {
                 ScaffoldMessenger.of(
                   context,
@@ -234,18 +194,16 @@ class _EmotionTrackerCardState extends State<EmotionTrackerCard>
             children: [
               Text(
                 'Today',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
+                style: TextStyle(
+                  color: theme.textSub,
                   fontWeight: FontWeight.w300,
                   fontSize: size.getSubtitleFontSize(),
                 ),
               ),
               SizedBox(width: size.getSmallSpacing()),
-              Icon(
-                Icons.chevron_right,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              DsIcon(
+                DsIconKind.chevronRight,
+                color: theme.textSub,
                 size: iconSize,
               ),
             ],
@@ -256,8 +214,8 @@ class _EmotionTrackerCardState extends State<EmotionTrackerCard>
   }
 
   /// 构建主要内容区
-  Widget _buildMainContent(BuildContext context) {
-    final size = widget.size;
+  Widget _buildMainContent(AppThemeData theme) {
+    final size = this.size;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -267,14 +225,14 @@ class _EmotionTrackerCardState extends State<EmotionTrackerCard>
             mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedEmotionText(
-                emotionText: widget.currentEmotionText,
+                emotionText: currentEmotionText,
                 size: size,
               ),
               SizedBox(height: size.getItemSpacing() / 2),
               Text(
-                'Logged ${widget.loggedCount}/${widget.totalCount}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                'Logged $loggedCount/$totalCount',
+                style: TextStyle(
+                  color: theme.textSub,
                   fontWeight: FontWeight.w300,
                   fontSize: size.getSubtitleFontSize(),
                 ),
@@ -290,9 +248,9 @@ class _EmotionTrackerCardState extends State<EmotionTrackerCard>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                for (int i = 0; i < widget.weekEmotions.length; i += 1) ...[
+                for (int i = 0; i < weekEmotions.length; i += 1) ...[
                   if (i > 0) SizedBox(width: size.getItemSpacing()),
-                  _buildDayButton(context, i),
+                  _buildDayButton(theme, i),
                 ],
               ],
             ),
@@ -302,10 +260,10 @@ class _EmotionTrackerCardState extends State<EmotionTrackerCard>
     );
   }
 
-  /// 构建日期按钮
-  Widget _buildDayButton(BuildContext context, int index) {
-    final size = widget.size;
-    final day = widget.weekEmotions[index];
+  /// 构建日期按钮（手绘圆形徽章：已记录主题色实底，未记录 surfaceAlt 底）
+  Widget _buildDayButton(AppThemeData theme, int index) {
+    final size = this.size;
+    final day = weekEmotions[index];
     final isSelected = day.isLogged;
 
     final iconSize = size.getIconSize();
@@ -313,61 +271,36 @@ class _EmotionTrackerCardState extends State<EmotionTrackerCard>
     final dayFontSize = size.getLegendFontSize();
 
     return InkWell(
-      onTap: () => widget.onDayTapped(index),
+      onTap: () => onDayTapped(index),
       borderRadius: BorderRadius.circular(16),
       child: Column(
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          Container(
             width: containerSize,
             height: containerSize,
-            decoration: BoxDecoration(
-              color:
-                  isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : (Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFF374151)
-                          : const Color(0xFFE5E7EB)),
-              shape: BoxShape.circle,
-              boxShadow:
-                  isSelected
-                      ? [
-                        BoxShadow(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                      : null,
+            // 大圆角被 rough 引擎自动钳制成圆
+            decoration: dsSketchDecoration(
+              theme: theme,
+              radius: BorderRadius.circular(containerSize / 2),
+              fillColor: isSelected ? theme.primary : theme.surfaceAlt,
             ),
-            child: Icon(day.icon, color: Colors.white, size: iconSize * 0.8),
+            child: Center(
+              child: WiredIcon(
+                icon: day.icon,
+                size: iconSize * 0.8,
+                color: isSelected ? theme.onPrimary : theme.textSub,
+                drawConfig: theme.wired.drawConfig,
+              ),
+            ),
           ),
           SizedBox(height: size.getSmallSpacing()),
           AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 200),
-            style:
-                Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  fontSize: dayFontSize,
-                  color:
-                      isSelected
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
-                ) ??
-                TextStyle(
-                  fontSize: dayFontSize,
-                  fontWeight: FontWeight.w500,
-                  color:
-                      isSelected
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
-                ),
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: dayFontSize,
+              color: isSelected ? theme.text : theme.textSub,
+            ),
             child: Text(day.day),
           ),
         ],
@@ -431,6 +364,7 @@ class _AnimatedEmotionTextState extends State<AnimatedEmotionText>
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final size = widget.size;
     final emotionFontSize = size.getLargeFontSize() * 0.35;
 
@@ -438,12 +372,11 @@ class _AnimatedEmotionTextState extends State<AnimatedEmotionText>
       scale: _scaleAnimation,
       child: Text(
         widget.emotionText,
-        style:
-            Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontSize: emotionFontSize,
-              fontWeight: FontWeight.w700,
-            ) ??
-            TextStyle(fontSize: emotionFontSize, fontWeight: FontWeight.w700),
+        style: TextStyle(
+          fontSize: emotionFontSize,
+          fontWeight: FontWeight.w700,
+          color: theme.text,
+        ),
       ),
     );
   }

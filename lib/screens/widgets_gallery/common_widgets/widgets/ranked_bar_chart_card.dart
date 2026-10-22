@@ -1,6 +1,17 @@
+/// 排名条形图卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题 / 副标题 / 计数 / 斜纹排名条（数据色浅底 + 数据色浓斜纹 +
+/// 数据色描边，右端圆角，条内标签 + 翻牌数值）。
+/// 条宽生长与数值翻牌动画保留。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 排名条目数据模型
 class RankedBarItem {
@@ -76,7 +87,6 @@ class RankedBarChartCardWidget extends StatefulWidget {
 class _RankedBarChartCardWidgetState extends State<RankedBarChartCardWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -84,10 +94,6 @@ class _RankedBarChartCardWidgetState extends State<RankedBarChartCardWidget>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
     );
     _animationController.forward();
   }
@@ -100,125 +106,99 @@ class _RankedBarChartCardWidgetState extends State<RankedBarChartCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 360,
-              constraints:
-                  widget.inline ? null : const BoxConstraints(maxWidth: 360),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 360,
+        height: widget.inline ? double.maxFinite : null,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            Text(
+              widget.title,
+              style: TextStyle(
+                fontSize: widget.size.getTitleFontSize(),
+                fontWeight: FontWeight.bold,
+                color: theme.text,
+                height: 1.2,
               ),
-              child: Padding(
-                padding: widget.size.getPadding(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Text(
-                      widget.title,
-                      style: TextStyle(
-                        fontSize: widget.size.getTitleFontSize(),
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
-                        height: 1.2,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                      maxLines: 1,
-                    ),
-                    SizedBox(height: widget.size.getItemSpacing()),
-                    Text(
-                      widget.subtitle,
-                      style: TextStyle(
-                        fontSize: widget.size.getSubtitleFontSize(),
-                        color:
-                            isDark
-                                ? const Color(0xFF94A3B8)
-                                : const Color(0xFF64748B),
-                        height: 1.5,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                      maxLines: 1,
-                    ),
-                    SizedBox(height: widget.size.getTitleSpacing()),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          widget.itemCount,
-                          style: TextStyle(
-                            fontSize: widget.size.getLegendFontSize(),
-                            fontWeight: FontWeight.w500,
-                            color:
-                                isDark
-                                    ? const Color(0xFF64748B)
-                                    : const Color(0xFF94A3B8),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: widget.size.getItemSpacing()),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final maxValue = widget.items.first.value;
-                            final maxWidth = constraints.maxWidth;
-                            return Column(
-                              children:
-                                  widget.items.asMap().entries.map((entry) {
-                                    final index = entry.key;
-                                    final item = entry.value;
-                                    final step = 0.05;
-                                    final start = index * step;
-                                    final end = (0.6 + index * step).clamp(0.0, 1.0);
-                                    final itemAnimation = CurvedAnimation(
-                                      parent: _animationController,
-                                      curve: Interval(
-                                        start,
-                                        end,
-                                        curve: Curves.easeOutCubic,
-                                      ),
-                                    );
-                                    return _RankedBarWidget(
-                                      item: item,
-                                      animation: itemAnimation,
-                                      isLast: index == widget.items.length - 1,
-                                      size: widget.size,
-                                      maxValue: maxValue,
-                                      maxWidth: maxWidth,
-                                    );
-                                  }).toList(),
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              maxLines: 1,
+            ),
+            SizedBox(height: widget.size.getItemSpacing()),
+            Text(
+              widget.subtitle,
+              style: TextStyle(
+                fontSize: widget.size.getSubtitleFontSize(),
+                color: theme.textSub,
+                height: 1.5,
+              ),
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              maxLines: 1,
+            ),
+            SizedBox(height: widget.size.getTitleSpacing()),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.itemCount,
+                  style: TextStyle(
+                    fontSize: widget.size.getLegendFontSize(),
+                    fontWeight: FontWeight.w500,
+                    color: theme.textSub,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: widget.size.getItemSpacing()),
+            Expanded(
+              child: SingleChildScrollView(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxValue = widget.items.first.value;
+                    final maxWidth = constraints.maxWidth;
+                    return Column(
+                      children:
+                          widget.items.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final item = entry.value;
+                            final step = 0.05;
+                            final start = index * step;
+                            final end = (0.6 + index * step).clamp(0.0, 1.0);
+                            final itemAnimation = CurvedAnimation(
+                              parent: _animationController,
+                              curve: Interval(
+                                start,
+                                end,
+                                curve: Curves.easeOutCubic,
+                              ),
                             );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
+                            return _RankedBarWidget(
+                              item: item,
+                              animation: itemAnimation,
+                              isLast: index == widget.items.length - 1,
+                              size: widget.size,
+                              maxValue: maxValue,
+                              maxWidth: maxWidth,
+                            );
+                          }).toList(),
+                    );
+                  },
                 ),
               ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }
@@ -242,8 +222,7 @@ class _RankedBarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor =
-        item.value >= 0.64 ? Colors.white : const Color(0xFF0F172A);
+    final theme = AppTheme.of(context);
 
     return AnimatedBuilder(
       animation: animation,
@@ -257,16 +236,15 @@ class _RankedBarWidget extends StatelessWidget {
           height: size.getRankedBarItemHeight(),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(6),
-                  bottomRight: Radius.circular(6),
+              // 斜纹排名条：数据色浅底 + 数据色浓斜纹 + 数据色描边（右端圆角）
+              CustomPaint(
+                painter: _RankBarPainter(
+                  color: item.color,
+                  scale: size.scale,
                 ),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
+                child: SizedBox(
                   width: width,
                   height: size.getRankedBarItemHeight(),
-                  decoration: BoxDecoration(color: item.color),
                   child: ClipRect(
                     child: Padding(
                       padding: EdgeInsets.symmetric(
@@ -280,7 +258,7 @@ class _RankedBarWidget extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: size.getLegendFontSize(),
                                 fontWeight: FontWeight.w600,
-                                color: textColor,
+                                color: theme.text,
                                 letterSpacing: 0.5,
                               ),
                               overflow: TextOverflow.fade,
@@ -294,7 +272,7 @@ class _RankedBarWidget extends StatelessWidget {
                             textStyle: TextStyle(
                               fontSize: size.getLegendFontSize(),
                               fontWeight: FontWeight.w600,
-                              color: textColor,
+                              color: theme.text,
                             ),
                           ),
                         ],
@@ -308,5 +286,50 @@ class _RankedBarWidget extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+/// 排名条绘制器：数据色浅底（0.28）+ 数据色浓斜纹（0.9）+ 数据色描边（0.85）
+///
+/// 平直几何（右端圆角，无 rough 抖动），保证读数清晰（§9.5 统计图表规范）。
+class _RankBarPainter extends CustomPainter {
+  final Color color;
+  final double scale;
+
+  const _RankBarPainter({required this.color, required this.scale});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndCorners(
+      rect,
+      topLeft: Radius.circular(2 * scale),
+      bottomLeft: Radius.circular(2 * scale),
+      topRight: Radius.circular(6 * scale),
+      bottomRight: Radius.circular(6 * scale),
+    );
+
+    canvas.drawRRect(rrect, Paint()..color = color.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(rrect),
+      rect,
+      color: color.withValues(alpha: 0.9),
+      strokeWidth: 3 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = color.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _RankBarPainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.scale != scale;
   }
 }

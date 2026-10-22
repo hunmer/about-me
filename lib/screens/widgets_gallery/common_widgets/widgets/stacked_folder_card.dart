@@ -1,7 +1,16 @@
+/// 堆叠文件夹卡片（手绘纸卡风格）
+///
+/// 上方为层叠内容（照片 / 便签 / 文档，均为手绘纸卡，各自带旋转角度），
+/// 底部为口袋卡片（纸底 + 淡排线 + rough 墨线框）。整卡 WiredDraw 描画
+/// 入场；点击卡片或悬停时层叠内容扇出展开（fan-out），交互与参考一致。
+library;
+
 import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 堆叠文件夹卡片变体
@@ -18,7 +27,7 @@ const List<(String?, List<double>)> _microGroups = [
 
 /// 堆叠文件夹卡片
 ///
-/// 上方为层叠内容（照片 / 便签 / 文档，各自带旋转角度与阴影），
+/// 上方为层叠内容（照片 / 便签 / 文档，各自带旋转角度），
 /// 底部为白色口袋卡片（标题 + 副标题 + 圆形箭头按钮）。
 /// 点击卡片或悬停时层叠内容扇出展开（fan-out），与参考 HTML 的交互一致。
 class StackedFolderCardWidget extends StatefulWidget {
@@ -178,22 +187,12 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final content =
-        widget.size is SmallSize ? _buildCompact(isDark) : _buildFull(isDark);
+        widget.size is SmallSize ? _buildCompact(theme) : _buildFull(theme);
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final t = Curves.easeOutCubic.transform(_controller.value);
-        return Opacity(
-          opacity: t,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - t)),
-            child: child,
-          ),
-        );
-      },
+    // 手绘纸卡：WiredDraw 描画入场（层叠逐项浮现动画保留）
+    return WiredDraw(
       child: SizedBox(
         width: widget.inline ? double.maxFinite : 320 * widget.size.scale,
         height: widget.inline ? double.maxFinite : _defaultHeight(),
@@ -203,7 +202,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
   }
 
   /// 完整设计稿：320x410 内按绝对定位摆放层叠内容与口袋卡片
-  Widget _buildFull(bool isDark) {
+  Widget _buildFull(AppThemeData theme) {
     return Center(
       child: FittedBox(
         fit: BoxFit.contain,
@@ -225,10 +224,10 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                ..._buildLayers(isDark),
+                ..._buildLayers(theme),
                 if (widget.variant == StackedFolderVariant.gallery)
-                  _galleryRing(),
-                _pocket(isDark),
+                  _galleryRing(theme),
+                _pocket(theme),
               ],
             ),
           ),
@@ -239,7 +238,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
   }
 
   /// 小尺寸精简版：仅保留口袋卡片
-  Widget _buildCompact(bool isDark) {
+  Widget _buildCompact(AppThemeData theme) {
     final scale = widget.size.scale;
     return Center(
       child: GestureDetector(
@@ -251,15 +250,12 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
             setState(() => _active = !_active);
           }
         },
-        child: Container(
+        child: DsSketchPanel(
+          theme: theme,
           width: 170 * scale,
           height: 96 * scale,
+          radius: BorderRadius.circular(24 * scale),
           padding: EdgeInsets.all(14 * scale),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(24 * scale),
-            boxShadow: _pocketShadows(isDark),
-          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,7 +267,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
                   fontWeight: FontWeight.w600,
                   letterSpacing: -0.3,
                   height: 1.15,
-                  color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0E0E12),
+                  color: theme.text,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -284,14 +280,18 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
                       style: TextStyle(
                         fontSize: 10.5 * scale,
                         fontWeight: FontWeight.w400,
-                        color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF1F1F26),
+                        color: theme.textSub,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   SizedBox(width: 6 * scale),
-                  _chevronButton(isDark, dimension: 26 * scale, iconSize: 14 * scale),
+                  _chevronButton(
+                    theme,
+                    dimension: 26 * scale,
+                    iconSize: 14 * scale,
+                  ),
                 ],
               ),
             ],
@@ -301,17 +301,17 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
     );
   }
 
-  List<Widget> _buildLayers(bool isDark) {
+  List<Widget> _buildLayers(AppThemeData theme) {
     return switch (widget.variant) {
-      StackedFolderVariant.gallery => _buildGalleryLayers(isDark),
-      StackedFolderVariant.notes => _buildNotesLayers(isDark),
-      StackedFolderVariant.drafts => _buildDraftsLayers(isDark),
+      StackedFolderVariant.gallery => _buildGalleryLayers(theme),
+      StackedFolderVariant.notes => _buildNotesLayers(theme),
+      StackedFolderVariant.drafts => _buildDraftsLayers(theme),
     };
   }
 
   // ============ Gallery：三张照片扇形堆叠 ============
 
-  List<Widget> _buildGalleryLayers(bool isDark) {
+  List<Widget> _buildGalleryLayers(AppThemeData theme) {
     String? photo(int i) =>
         widget.photos.length > i ? widget.photos[i] : null;
     return [
@@ -324,17 +324,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
         fanOffset: const Offset(12, -18),
         fanAngle: 13 * _deg,
         index: 0,
-        child: _photoCard(
-          photo(0),
-          isDark,
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black.withOpacity(0.35) : const Color(0x1F000000),
-              offset: const Offset(0, 12),
-              blurRadius: 28,
-            ),
-          ],
-        ),
+        child: _photoCard(photo(0), theme),
       ),
       _layer(
         width: 222,
@@ -345,17 +335,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
         fanOffset: const Offset(0, -22),
         fanAngle: -3.5 * _deg,
         index: 1,
-        child: _photoCard(
-          photo(1),
-          isDark,
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black.withOpacity(0.35) : const Color(0x24000000),
-              offset: const Offset(-4, 10),
-              blurRadius: 26,
-            ),
-          ],
-        ),
+        child: _photoCard(photo(1), theme),
       ),
       _layer(
         width: 215,
@@ -366,37 +346,24 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
         fanOffset: const Offset(-10, -14),
         fanAngle: -7.5 * _deg,
         index: 2,
-        child: _photoCard(
-          photo(2),
-          isDark,
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black.withOpacity(0.4) : const Color(0x29000000),
-              offset: const Offset(-6, 12),
-              blurRadius: 26,
-            ),
-          ],
-        ),
+        child: _photoCard(photo(2), theme),
       ),
     ];
   }
 
-  Widget _photoCard(String? url, bool isDark, {required List<BoxShadow> boxShadow}) {
+  Widget _photoCard(String? url, AppThemeData theme) {
     Widget placeholder() => Container(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E5EA),
+          color: theme.surfaceAlt,
           alignment: Alignment.center,
-          child: Icon(
-            Icons.image_outlined,
+          child: WiredIcon(
+            icon: Icons.image_outlined,
             size: 36,
-            color: isDark ? const Color(0xFF64748B) : const Color(0xFFA8A8B3),
+            color: theme.textSub,
+            drawConfig: theme.wired.drawConfig,
           ),
         );
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: boxShadow,
-      ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(26),
       child: url != null ? _buildImage(url, placeholder()) : placeholder(),
     );
   }
@@ -436,8 +403,8 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
     );
   }
 
-  /// Gallery 口袋外围的粉彩渐变描边
-  Widget _galleryRing() {
+  /// Gallery 口袋外围的手绘墨线装饰环（替代原粉彩渐变描边）
+  Widget _galleryRing(AppThemeData theme) {
     return Positioned(
       left: -9,
       right: -9,
@@ -446,30 +413,11 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
       child: IgnorePointer(
         child: Container(
           padding: const EdgeInsets.all(2.5),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [Color(0xFFD7BDFA), Color(0xFFC6D5FA), Color(0xFFBBE3F0)],
-            ),
-            borderRadius: BorderRadius.circular(45),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(45),
           ),
-          child: SizedBox.expand(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    const Color(0xFFD7C0FC).withOpacity(0.35),
-                    const Color(0xFFD2E0FA).withOpacity(0.25),
-                    const Color(0xFFBEE8F5).withOpacity(0.35),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(42.5),
-              ),
-            ),
-          ),
+          child: const SizedBox.expand(),
         ),
       ),
     );
@@ -477,7 +425,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
 
   // ============ Notes：两张等宽便签 ============
 
-  List<Widget> _buildNotesLayers(bool isDark) {
+  List<Widget> _buildNotesLayers(AppThemeData theme) {
     final backLines = widget.noteBackLines.isNotEmpty
         ? widget.noteBackLines
         : const ['Ideas for story:', 'Once upon a time in a...', 'Characters...'];
@@ -503,7 +451,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
         index: 0,
         child: _noteCard(
           backLines,
-          isDark,
+          theme,
           radius: 30,
           padding: const EdgeInsets.fromLTRB(24, 25, 24, 25),
           fontSize: 17.5,
@@ -523,7 +471,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
               (size) => setState(() => _frontNoteHeight = size.height),
           child: _noteCard(
             frontLines,
-            isDark,
+            theme,
             radius: 36,
             padding: const EdgeInsets.fromLTRB(26, 28, 26, 28),
             fontSize: 17.2,
@@ -537,33 +485,18 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
 
   Widget _noteCard(
     List<String> lines,
-    bool isDark, {
+    AppThemeData theme, {
     required double radius,
     required EdgeInsets padding,
     required double fontSize,
     required double lineHeight,
     bool tinted = false,
   }) {
-    return Container(
+    return DsSketchPanel(
+      theme: theme,
+      fillColor: tinted ? theme.surfaceAlt : theme.surface,
+      radius: BorderRadius.circular(radius),
       padding: padding,
-      decoration: BoxDecoration(
-        color: isDark
-            ? (tinted ? const Color(0xFF263449) : const Color(0xFF334155))
-            : (tinted ? const Color(0xFFEAEBF2) : Colors.white),
-        borderRadius: BorderRadius.circular(radius),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.3) : const Color(0x0B0F0F19),
-            offset: const Offset(0, 10),
-            blurRadius: 30,
-          ),
-          BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.2) : const Color(0x060F0F19),
-            offset: const Offset(0, 2),
-            blurRadius: 8,
-          ),
-        ],
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -576,7 +509,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
                 fontWeight: FontWeight.w400,
                 height: lineHeight,
                 letterSpacing: -0.4,
-                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF16161C),
+                color: theme.text,
               ),
               overflow: TextOverflow.clip,
             ),
@@ -587,7 +520,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
 
   // ============ Drafts：两张文档 ============
 
-  List<Widget> _buildDraftsLayers(bool isDark) {
+  List<Widget> _buildDraftsLayers(AppThemeData theme) {
     return [
       _layer(
         width: 248,
@@ -598,7 +531,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
         fanOffset: const Offset(12, -18),
         fanAngle: 12.5 * _deg,
         index: 0,
-        child: _docBackCard(isDark),
+        child: _docBackCard(theme),
       ),
       _layer(
         width: 250,
@@ -609,39 +542,25 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
         fanOffset: const Offset(-8, -15),
         fanAngle: -6.8 * _deg,
         index: 1,
-        child: _docFrontCard(isDark),
+        child: _docFrontCard(theme),
       ),
     ];
   }
 
-  /// 背面文档：灰紫色边框 + 内嵌微型规格页
-  Widget _docBackCard(bool isDark) {
-    return Container(
+  /// 背面文档：灰纸底 + 内嵌微型规格页
+  Widget _docBackCard(AppThemeData theme) {
+    return DsSketchPanel(
+      theme: theme,
+      fillColor: theme.surfaceAlt,
+      radius: BorderRadius.circular(26),
       padding: const EdgeInsets.fromLTRB(19, 21, 19, 0),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF475569) : const Color(0xFFCBCCD6),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.35) : const Color(0x0F0F0F19),
-            offset: const Offset(0, 12),
-            blurRadius: 28,
-          ),
-        ],
-      ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFF7F7FA),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black.withOpacity(0.15) : const Color(0x08000000),
-              offset: const Offset(0, 1),
-              blurRadius: 4,
-            ),
-          ],
+        decoration: dsSketchDecoration(
+          theme: theme,
+          radius: const BorderRadius.vertical(top: Radius.circular(4)),
+          fillColor: theme.surface,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -656,17 +575,14 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
                     fontSize: 7.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.08,
-                    color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF232329),
+                    color: theme.text,
                   ),
                 ),
                 Container(
                   margin: const EdgeInsets.only(top: 2),
                   width: 28,
                   height: 2,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF64748B) : const Color(0xFFB5B6C2),
-                    borderRadius: BorderRadius.circular(1),
-                  ),
+                  color: theme.ink.withValues(alpha: 0.4),
                 ),
               ],
             ),
@@ -685,9 +601,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
                             fontSize: 4.3,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.13,
-                            color: isDark
-                                ? const Color(0xFF94A3B8)
-                                : const Color(0xFF454552),
+                            color: theme.textSub,
                           ),
                         ),
                       ),
@@ -696,12 +610,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
                         margin: const EdgeInsets.only(top: 3),
                         width: w,
                         height: 1.8,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF64748B)
-                              : const Color(0xFFB8B9C4),
-                          borderRadius: BorderRadius.circular(1),
-                        ),
+                        color: theme.ink.withValues(alpha: 0.35),
                       ),
                     const SizedBox(height: 12),
                   ],
@@ -715,7 +624,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
   }
 
   /// 正面文档：Creative Brief
-  Widget _docFrontCard(bool isDark) {
+  Widget _docFrontCard(AppThemeData theme) {
     final metaLines = widget.docMetaLines.isNotEmpty
         ? widget.docMetaLines
         : const ['Project: Brand Update', 'Goals: Increase engagement'];
@@ -738,27 +647,13 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
       fontSize: 13.2,
       fontWeight: FontWeight.w400,
       letterSpacing: -0.26,
-      color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF18181F),
+      color: theme.text,
     );
-    return Container(
+    return DsSketchPanel(
+      theme: theme,
+      fillColor: theme.surface,
+      radius: BorderRadius.circular(24),
       padding: const EdgeInsets.fromLTRB(21, 23, 20, 18),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.35) : const Color(0x0E0F0F19),
-            offset: const Offset(-6, 8),
-            blurRadius: 24,
-          ),
-          BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.2) : const Color(0x080F0F19),
-            offset: const Offset(0, 4),
-            blurRadius: 10,
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -786,11 +681,9 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
                   fontWeight: FontWeight.w400,
                   height: 1.44,
                   letterSpacing: -0.03,
-                  color: isDark
-                      ? const Color(0xFF94A3B8).withOpacity(
-                          i == bodyParagraphs.length - 1 ? 0.75 : 1)
-                      : const Color(0xFF383842).withOpacity(
-                          i == bodyParagraphs.length - 1 ? 0.75 : 1),
+                  color: theme.textSub.withValues(
+                    alpha: i == bodyParagraphs.length - 1 ? 0.75 : 1,
+                  ),
                 ),
               ),
             ),
@@ -801,25 +694,10 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
 
   // ============ 公共部分：口袋卡片 / 层叠动画 ============
 
-  List<BoxShadow> _pocketShadows(bool isDark) {
-    return [
-      BoxShadow(
-        color: isDark ? Colors.black.withOpacity(0.3) : const Color(0x110F0F19),
-        offset: const Offset(0, 18),
-        blurRadius: 38,
-      ),
-      BoxShadow(
-        color: isDark ? Colors.black.withOpacity(0.2) : const Color(0x090F0F19),
-        offset: const Offset(0, 4),
-        blurRadius: 12,
-      ),
-    ];
-  }
-
-  /// 底部口袋卡片：标题 + 副标题 + 圆形箭头按钮。
+  /// 底部口袋卡片：标题 + 副标题 + 圆形箭头按钮（纸底 + 淡排线 + 墨线框）。
   /// notes 变体时跟随正面便签底边（top 锚定，保持 _pocketOverlap 插入深度），
   /// 其余变体固定贴底
-  Widget _pocket(bool isDark) {
+  Widget _pocket(AppThemeData theme) {
     final double? pocketTop =
         widget.variant == StackedFolderVariant.notes
         ? 43 + _frontNoteHeight - _pocketOverlap
@@ -830,13 +708,10 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
       bottom: pocketTop != null ? null : 0,
       width: 320,
       height: 172,
-      child: Container(
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(36),
         padding: const EdgeInsets.fromLTRB(32, 32, 26, 28),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(36),
-          boxShadow: _pocketShadows(isDark),
-        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -848,7 +723,7 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
                 fontWeight: FontWeight.w600,
                 letterSpacing: -0.64,
                 height: 1.15,
-                color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0E0E12),
+                color: theme.text,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -862,14 +737,14 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
                       fontSize: 20.5,
                       fontWeight: FontWeight.w400,
                       letterSpacing: -0.25,
-                      color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF1F1F26),
+                      color: theme.textSub,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
-                _chevronButton(isDark),
+                _chevronButton(theme),
               ],
             ),
           ],
@@ -878,8 +753,12 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
     );
   }
 
-  /// 圆形箭头按钮（悬停/扇出时加深底色、图标右移）
-  Widget _chevronButton(bool isDark, {double dimension = 48, double iconSize = 18}) {
+  /// 圆形箭头按钮（手绘圆底徽章，悬停/扇出时图标右移并加深）
+  Widget _chevronButton(
+    AppThemeData theme, {
+    double dimension = 48,
+    double iconSize = 18,
+  }) {
     final hovered = _btnHover || _fanned;
     return MouseRegion(
       onEnter: (_) => setState(() => _btnHover = true),
@@ -893,28 +772,23 @@ class _StackedFolderCardWidgetState extends State<StackedFolderCardWidget>
             setState(() => _active = !_active);
           }
         },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+        child: Container(
           width: dimension,
           height: dimension,
-          decoration: BoxDecoration(
-            color: isDark
-                ? (hovered ? const Color(0xFF475569) : const Color(0xFF334155))
-                : (hovered ? const Color(0xFFE2E2EA) : const Color(0xFFEBEBF0)),
-            shape: BoxShape.circle,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(dimension / 2),
+            fillColor: theme.surfaceAlt,
           ),
           child: Center(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOut,
               transform: Matrix4.translationValues(hovered ? 2.0 : 0.0, 0, 0),
-              child: Icon(
-                Icons.chevron_right,
+              child: DsIcon(
+                DsIconKind.chevronRight,
                 size: iconSize,
-                color: isDark
-                    ? (hovered ? const Color(0xFFCBD5E1) : const Color(0xFF94A3B8))
-                    : (hovered ? const Color(0xFF555562) : const Color(0xFF8C8C96)),
+                color: hovered ? theme.text : theme.textSub,
               ),
             ),
           ),

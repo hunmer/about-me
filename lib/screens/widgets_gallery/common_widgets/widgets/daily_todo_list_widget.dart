@@ -1,4 +1,13 @@
+/// 每日待办事项小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 日期 + 时间徽章（墨线实底）/ 待办列表（手绘勾选框，逐项错峰浮现）/
+/// 底部提醒（墨线分隔线 + 标签徽章）。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 待办任务数据模型
@@ -149,103 +158,64 @@ class _DailyTodoListWidgetState extends State<DailyTodoListWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _fadeAnimation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 360,
-              height: widget.inline ? double.maxFinite : 600,
-              constraints: widget.size.getHeightConstraints(),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF18181B) : Colors.white,
-                borderRadius: BorderRadius.circular(
-                  widget.size is SmallSize ? 16 : 24,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 25,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-                border: Border.all(
-                  color:
-                      isDark
-                          ? const Color(0xFF27272A)
-                          : const Color(0xFFE4E4E7),
-                  width: widget.size.getSmallSpacing() * 0.25,
-                ),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    // （各分区自带 padding，面板层不再叠加）
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: widget.size.getHeightConstraints(),
+        child: DsSketchPanel(
+          theme: theme,
+          width: widget.inline ? double.maxFinite : 360,
+          height: widget.inline ? double.maxFinite : 600,
+          radius: BorderRadius.circular(24 * scale),
+          padding: EdgeInsets.zero,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 顶部日期区域
+              _HeaderSection(date: widget.date, time: widget.time, size: widget.size),
+              // 任务列表
+              _TasksSection(
+                tasks: _tasks,
+                onToggle: _toggleTask,
+                animation: _fadeAnimation,
+                size: widget.size,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 顶部日期区域
-                  _HeaderSection(
-                    date: widget.date,
-                    time: widget.time,
-                    primaryColor: primaryColor,
-                    isDark: isDark,
-                    size: widget.size,
-                  ),
-                  // 任务列表
-                  _TasksSection(
-                    tasks: _tasks,
-                    onToggle: _toggleTask,
-                    animation: _fadeAnimation,
-                    isDark: isDark,
-                    size: widget.size,
-                  ),
-                  // 底部提醒
-                  _ReminderSection(
-                    reminder: widget.reminder,
-                    animation: _fadeAnimation,
-                    isDark: isDark,
-                    size: widget.size,
-                  ),
-                ],
+              // 底部提醒
+              _ReminderSection(
+                reminder: widget.reminder,
+                animation: _fadeAnimation,
+                size: widget.size,
               ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-/// 顶部日期区域
+/// 顶部日期区域：日期 + 时间徽章（主题色实底 + 墨线描边）
 class _HeaderSection extends StatelessWidget {
   final String date;
   final String time;
-  final Color primaryColor;
-  final bool isDark;
   final HomeWidgetSize size;
 
   const _HeaderSection({
     required this.date,
     required this.time,
-    required this.primaryColor,
-    required this.isDark,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final theme = AppTheme.of(context);
+
+    return Padding(
       padding: size.getPadding(),
-      decoration: BoxDecoration(
-        color: primaryColor.withOpacity(0.9),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(size is SmallSize ? 16 : 24),
-          topRight: Radius.circular(size is SmallSize ? 16 : 24),
-        ),
-      ),
       child: Row(
         children: [
           Expanded(
@@ -257,7 +227,7 @@ class _HeaderSection extends StatelessWidget {
                   style: TextStyle(
                     fontSize: size.getTitleFontSize() * 0.8,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.black87 : Colors.black87,
+                    color: theme.text,
                     height: 1.2,
                   ),
                 ),
@@ -267,18 +237,17 @@ class _HeaderSection extends StatelessWidget {
                     horizontal: size.getSmallSpacing() * 2,
                     vertical: size.getSmallSpacing() * 0.5,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(
-                      size.getSmallSpacing() * 1.5,
-                    ),
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: BorderRadius.circular(size.getSmallSpacing() * 1.5),
+                    fillColor: theme.primary,
                   ),
                   child: Text(
                     time,
                     style: TextStyle(
                       fontSize: size.getLegendFontSize(),
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.black87 : Colors.black87,
+                      color: theme.onPrimary,
                     ),
                   ),
                 ),
@@ -296,30 +265,20 @@ class _TasksSection extends StatelessWidget {
   final List<TodoTask> tasks;
   final Function(int) onToggle;
   final Animation<double> animation;
-  final bool isDark;
   final HomeWidgetSize size;
 
   const _TasksSection({
     required this.tasks,
     required this.onToggle,
     required this.animation,
-    required this.isDark,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
+      child: Padding(
         padding: size.getPadding(),
-        decoration: BoxDecoration(
-          // 点阵网格背景
-          color: isDark ? const Color(0xFF18181B) : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(size is SmallSize ? 20 : 32),
-            topRight: Radius.circular(size is SmallSize ? 20 : 32),
-          ),
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -337,7 +296,6 @@ class _TasksSection extends StatelessWidget {
                     onTap: () => onToggle(index),
                     animation: animation,
                     index: index,
-                    isDark: isDark,
                     size: size,
                   );
                 },
@@ -350,13 +308,12 @@ class _TasksSection extends StatelessWidget {
   }
 }
 
-/// 单个任务项
+/// 单个任务项（逐项错峰浮现）
 class _TaskItem extends StatelessWidget {
   final TodoTask task;
   final VoidCallback onTap;
   final Animation<double> animation;
   final int index;
-  final bool isDark;
   final HomeWidgetSize size;
 
   const _TaskItem({
@@ -364,12 +321,12 @@ class _TaskItem extends StatelessWidget {
     required this.onTap,
     required this.animation,
     required this.index,
-    required this.isDark,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final itemAnimation = CurvedAnimation(
       parent: animation,
       curve: Interval(
@@ -390,11 +347,7 @@ class _TaskItem extends StatelessWidget {
               onTap: onTap,
               child: Row(
                 children: [
-                  _Checkbox(
-                    isChecked: task.isCompleted,
-                    isDark: isDark,
-                    size: size,
-                  ),
+                  _Checkbox(isChecked: task.isCompleted, size: size),
                   SizedBox(width: size.getItemSpacing()),
                   Expanded(
                     child: Text(
@@ -402,14 +355,7 @@ class _TaskItem extends StatelessWidget {
                       style: TextStyle(
                         fontSize: size.getSubtitleFontSize(),
                         fontWeight: FontWeight.w400,
-                        color:
-                            task.isCompleted
-                                ? (isDark
-                                    ? const Color(0xFF71717A)
-                                    : const Color(0xFFA1A1AA))
-                                : (isDark
-                                    ? const Color(0xFFE4E4E7)
-                                    : const Color(0xFF27272A)),
+                        color: task.isCompleted ? theme.textSub : theme.text,
                         decoration:
                             task.isCompleted
                                 ? TextDecoration.lineThrough
@@ -428,74 +374,59 @@ class _TaskItem extends StatelessWidget {
   }
 }
 
-/// 复选框组件
+/// 复选框组件：勾选主题色实底 + 手绘勾号，未勾选浅底空格
 class _Checkbox extends StatelessWidget {
   final bool isChecked;
-  final bool isDark;
   final HomeWidgetSize size;
 
-  const _Checkbox({
-    required this.isChecked,
-    required this.isDark,
-    required this.size,
-  });
+  const _Checkbox({required this.isChecked, required this.size});
 
   @override
   Widget build(BuildContext context) {
-    // 根据尺寸调整复选框大小和边框
+    final theme = AppTheme.of(context);
+    // 根据尺寸调整复选框大小
     final checkboxSize = size.getThumbnailIconSize() * 0.8;
     final iconSize = checkboxSize * 0.67;
     final borderRadius = checkboxSize * 0.25;
-    final borderWidth = size.getSmallSpacing() * 0.5;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: checkboxSize,
       height: checkboxSize,
-      decoration: BoxDecoration(
-        color:
-            isChecked
-                ? (isDark ? Colors.white : const Color(0xFF18181B))
-                : (isDark ? const Color(0xFF27272A) : Colors.white),
-        border: Border.all(
-          color:
-              isChecked
-                  ? (isDark ? Colors.white : const Color(0xFF18181B))
-                  : (isDark
-                      ? const Color(0xFF3F3F46)
-                      : const Color(0xFFD4D4D8)),
-          width: borderWidth.clamp(1.0, 3.0),
-        ),
-        borderRadius: BorderRadius.circular(borderRadius),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(borderRadius),
+        fillColor: isChecked ? theme.primary : theme.surfaceAlt,
       ),
       child:
           isChecked
-              ? Icon(
-                Icons.check,
-                size: iconSize,
-                color: isDark ? const Color(0xFF18181B) : Colors.white,
+              ? Center(
+                child: DsIcon(
+                  DsIconKind.check,
+                  size: iconSize,
+                  color: theme.onPrimary,
+                ),
               )
               : null,
     );
   }
 }
 
-/// 底部提醒区域
+/// 底部提醒区域：墨线分隔线 + 提醒文本 + 标签徽章
 class _ReminderSection extends StatelessWidget {
   final TodoReminder reminder;
   final Animation<double> animation;
-  final bool isDark;
   final HomeWidgetSize size;
 
   const _ReminderSection({
     required this.reminder,
     required this.animation,
-    required this.isDark,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final reminderAnimation = CurvedAnimation(
       parent: animation,
       curve: const Interval(0.7, 1.0, curve: Curves.easeOutCubic),
@@ -508,79 +439,69 @@ class _ReminderSection extends StatelessWidget {
           opacity: reminderAnimation.value,
           child: Transform.translate(
             offset: Offset(0, 10 * (1 - reminderAnimation.value)),
-            child: Container(
+            child: Padding(
               padding: size.getPadding(),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color:
-                        isDark
-                            ? const Color(0xFF27272A)
-                            : const Color(0xFFF4F4F5),
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          reminder.text,
-                          style: TextStyle(
-                            fontSize: size.getSubtitleFontSize() + 1,
-                            fontWeight: FontWeight.w400,
-                            color:
-                                isDark
-                                    ? const Color(0xFFE4E4E7)
-                                    : const Color(0xFF27272A),
-                            height: 1.2,
+                  // 墨线分隔线
+                  Container(height: 1, color: theme.ink.withValues(alpha: 0.18)),
+                  SizedBox(height: size.getSmallSpacing()),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: size.getSmallSpacing()),
+                          child: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                reminder.text,
+                                style: TextStyle(
+                                  fontSize: size.getSubtitleFontSize() + 1,
+                                  fontWeight: FontWeight.w400,
+                                  color: theme.text,
+                                  height: 1.2,
+                                ),
+                              ),
+                              SizedBox(width: size.getSmallSpacing()),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: size.getSmallSpacing(),
+                                  vertical: size.getSmallSpacing() * 0.5,
+                                ),
+                                decoration: dsSketchDecoration(
+                                  theme: theme,
+                                  radius: BorderRadius.circular(
+                                    size.getSmallSpacing() * 1.5,
+                                  ),
+                                  fillColor: theme.surfaceAlt,
+                                ),
+                                child: Text(
+                                  reminder.hashtag,
+                                  style: TextStyle(
+                                    fontSize: size.getSubtitleFontSize() + 1,
+                                    fontWeight: FontWeight.w500,
+                                    color: theme.primary,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: size.getSmallSpacing()),
+                              Text(
+                                reminder.hashtagEmoji,
+                                style: TextStyle(
+                                  fontSize: size.getSubtitleFontSize() + 1,
+                                  fontWeight: FontWeight.w400,
+                                  color: theme.text,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(width: size.getSmallSpacing()),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: size.getSmallSpacing(),
-                            vertical: size.getSmallSpacing() * 0.5,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                isDark
-                                    ? const Color(0xFF831843).withOpacity(0.4)
-                                    : const Color(0xFFFDF2F8),
-                            borderRadius: BorderRadius.circular(
-                              size.getSmallSpacing() * 1.5,
-                            ),
-                          ),
-                          child: Text(
-                            reminder.hashtag,
-                            style: TextStyle(
-                              fontSize: size.getSubtitleFontSize() + 1,
-                              fontWeight: FontWeight.w500,
-                              color:
-                                  isDark
-                                      ? const Color(0xFFF472B6)
-                                      : const Color(0xFFDB2777),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: size.getSmallSpacing()),
-                        Text(
-                          reminder.hashtagEmoji,
-                          style: TextStyle(
-                            fontSize: size.getSubtitleFontSize() + 1,
-                            fontWeight: FontWeight.w400,
-                            color:
-                                isDark
-                                    ? const Color(0xFFE4E4E7)
-                                    : const Color(0xFF27272A),
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),

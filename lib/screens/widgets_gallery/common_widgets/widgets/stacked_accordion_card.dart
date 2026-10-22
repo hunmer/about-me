@@ -1,8 +1,18 @@
+/// 堆叠手风琴卡片组（手绘纸卡风格）
+///
+/// 手绘纸卡层叠（后一张覆盖前一张底部，卡片为数据色纸底 + rough 墨线框，
+/// WiredDraw 描画入场）：点击卡片展开手风琴面板（互斥）：斜纹进度条从 0
+/// 生长到目标值，条目列表交错渐入，箭头旋转 90°。
+library;
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// CSS var(--spring-easing): cubic-bezier(0.22, 1, 0.36, 1)
 const Cubic _springCurve = Cubic(0.22, 1, 0.36, 1);
@@ -106,7 +116,7 @@ const List<StackedAccordionCardData> kStackedAccordionDemoItems = [
       ),
       StackedAccordionEntryData(
         term: 'Artifact',
-        subtitle: 'noun · /ˈɑːtɪfækt/',
+        subtitle: 'noun · /ˈɑːrtɪfækt/',
       ),
       StackedAccordionEntryData(
         term: 'Antiquity',
@@ -134,7 +144,7 @@ const List<StackedAccordionCardData> kStackedAccordionDemoItems = [
       StackedAccordionEntryData(term: 'Chore', subtitle: 'noun · /tʃɔːr/'),
       StackedAccordionEntryData(
         term: 'Neighborhood',
-        subtitle: 'noun · /ˈneɪbərhʊd/',
+        subtitle: 'noun · /ˈnɛɪbərˌhʊd/',
       ),
     ],
     backgroundColor: Color(0xFF3B50D6),
@@ -277,28 +287,14 @@ class StackedAccordionCardWidget extends StatefulWidget {
       _StackedAccordionCardWidgetState();
 }
 
-class _StackedAccordionCardWidgetState
-    extends State<StackedAccordionCardWidget>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _entrance;
-
+class _StackedAccordionCardWidgetState extends State<StackedAccordionCardWidget> {
   /// 当前展开的卡片下标（手风琴互斥）
   int? _expandedIndex;
 
   @override
   void initState() {
     super.initState();
-    _entrance = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..forward();
     _expandedIndex = widget.initiallyExpandedIndex;
-  }
-
-  @override
-  void dispose() {
-    _entrance.dispose();
-    super.dispose();
   }
 
   void _handleTap(int index) {
@@ -318,14 +314,14 @@ class _StackedAccordionCardWidgetState
       widget.size is SmallSize,
     );
 
+    // 手绘纸卡层叠：WiredDraw 描画入场（墨线画上纸面）
     return SizedBox(
       width: widget.inline ? double.maxFinite : 348 * metrics.scale,
-      child: _ShiftedColumn(
-        overlap: metrics.overlap,
-        children: [
-          for (int i = 0; i < widget.items.length; i++)
-            _entranceWrapped(
-              i,
+      child: WiredDraw(
+        child: _ShiftedColumn(
+          overlap: metrics.overlap,
+          children: [
+            for (int i = 0; i < widget.items.length; i++)
               _AccordionCard(
                 data: widget.items[i],
                 expanded: _expandedIndex == i,
@@ -337,35 +333,9 @@ class _StackedAccordionCardWidgetState
                         ? null
                         : () => widget.onCardLongPress!(i),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-
-  /// 入场动画：卡片依次淡入上浮
-  Widget _entranceWrapped(int index, Widget child) {
-    final start = math.min(0.05 + index * 0.07, 0.5);
-    final animation = CurvedAnimation(
-      parent: _entrance,
-      curve: Interval(
-        start,
-        math.min(start + 0.5, 1.0),
-        curve: Curves.easeOutCubic,
-      ),
-    );
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 24 * (1 - animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: child,
     );
   }
 }
@@ -455,13 +425,14 @@ class _AccordionCardState extends State<_AccordionCard>
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final m = widget.metrics;
     final data = widget.data;
     final light = data.useLightText;
+    // 前景色为数据底色的对比色（随背景亮度），不属于主题色
     final fg = light ? Colors.white : const Color(0xFF19191B);
     final subFg = fg.withValues(alpha: light ? 0.72 : 0.62);
     final dividerColor = fg.withValues(alpha: light ? 0.18 : 0.12);
-    final trackColor = fg.withValues(alpha: light ? 0.2 : 0.12);
     final itemBg = fg.withValues(alpha: light ? 0.12 : 0.06);
     final hovered = _hover && !widget.expanded;
 
@@ -469,104 +440,21 @@ class _AccordionCardState extends State<_AccordionCard>
       duration: _springDuration,
       curve: _springCurve,
       transform: Matrix4.translationValues(0, hovered ? -3.0 : 0.0, 0),
-      decoration: BoxDecoration(
-        color: data.backgroundColor,
-        borderRadius: BorderRadius.circular(m.radius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: hovered ? 0.07 : 0.04),
-            offset: const Offset(0, -4),
-            blurRadius: hovered ? 22 : 18,
-          ),
-        ],
-      ),
-      padding: EdgeInsets.fromLTRB(
-        m.paddingH,
-        m.paddingV,
-        m.paddingH,
-        widget.isLast
-            ? m.bottomPadLast
-            : (widget.expanded ? m.bottomPadExpanded : m.bottomPadCovered),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 标题行：标题 + 百分比
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Expanded(
-                child: Text(
-                  data.title,
-                  style: TextStyle(
-                    fontSize: m.titleSize,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: -0.025 * m.titleSize,
-                    height: 1.15,
-                    color: fg,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (data.percentage.isNotEmpty) ...[
-                SizedBox(width: 8 * m.scale),
-                Text(
-                  data.percentage,
-                  style: TextStyle(
-                    fontSize: m.percentageSize,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: -0.01 * m.percentageSize,
-                    color: fg.withValues(alpha: 0.88),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          SizedBox(height: m.sectionSpacing),
-          // 标签行：胶囊标签组 + 圆形箭头按钮
-          Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 6 * m.scale,
-                  runSpacing: 6 * m.scale,
-                  children: [
-                    for (final tag in data.tags)
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 13 * m.scale,
-                          vertical: 5.5 * m.scale,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: fg,
-                            width: m.pillBorderWidth,
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          tag,
-                          style: TextStyle(
-                            fontSize: m.pillSize,
-                            fontWeight: FontWeight.w400,
-                            height: 1.15,
-                            letterSpacing: -0.01 * m.pillSize,
-                            color: fg,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 8 * m.scale),
-              _arrowButton(m, fg),
-            ],
-          ),
-          _accordionBody(m, fg, subFg, dividerColor, trackColor, itemBg),
-        ],
+      // 手绘纸卡：数据色纸底 + rough 墨线框（无柔影）
+      child: DsSketchPanel(
+        theme: theme,
+        fillColor: data.backgroundColor,
+        hachure: false,
+        radius: BorderRadius.circular(m.radius),
+        padding: EdgeInsets.fromLTRB(
+          m.paddingH,
+          m.paddingV,
+          m.paddingH,
+          widget.isLast
+              ? m.bottomPadLast
+              : (widget.expanded ? m.bottomPadExpanded : m.bottomPadCovered),
+        ),
+        child: _cardContent(m, theme, data, fg, subFg, dividerColor, itemBg),
       ),
     );
 
@@ -584,22 +472,118 @@ class _AccordionCardState extends State<_AccordionCard>
     return wrapped;
   }
 
-  /// 圆形箭头按钮（展开时旋转 90°）
-  Widget _arrowButton(_AccordionMetrics m, Color fg) {
+  Widget _cardContent(
+    _AccordionMetrics m,
+    AppThemeData theme,
+    StackedAccordionCardData data,
+    Color fg,
+    Color subFg,
+    Color dividerColor,
+    Color itemBg,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 标题行：标题 + 百分比
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Expanded(
+              child: Text(
+                data.title,
+                style: TextStyle(
+                  fontSize: m.titleSize,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.025 * m.titleSize,
+                  height: 1.15,
+                  color: fg,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (data.percentage.isNotEmpty) ...[
+              SizedBox(width: 8 * m.scale),
+              Text(
+                data.percentage,
+                style: TextStyle(
+                  fontSize: m.percentageSize,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.01 * m.percentageSize,
+                  color: fg.withValues(alpha: 0.88),
+                ),
+              ),
+            ],
+          ],
+        ),
+        SizedBox(height: m.sectionSpacing),
+        // 标签行：手绘胶囊标签组 + 圆形箭头按钮
+        Row(
+          children: [
+            Expanded(
+              child: Wrap(
+                spacing: 6 * m.scale,
+                runSpacing: 6 * m.scale,
+                children: [
+                  for (final tag in data.tags)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 13 * m.scale,
+                        vertical: 5.5 * m.scale,
+                      ),
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        radius: BorderRadius.circular(999),
+                        stroke: fg,
+                        strokeWidth: m.pillBorderWidth,
+                      ),
+                      child: Text(
+                        tag,
+                        style: TextStyle(
+                          fontSize: m.pillSize,
+                          fontWeight: FontWeight.w400,
+                          height: 1.15,
+                          letterSpacing: -0.01 * m.pillSize,
+                          color: fg,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8 * m.scale),
+            _arrowButton(m, theme),
+          ],
+        ),
+        _accordionBody(m, theme, fg, subFg, dividerColor, itemBg),
+      ],
+    );
+  }
+
+  /// 圆形箭头按钮（墨底纸色图标，展开时旋转 90°）
+  Widget _arrowButton(_AccordionMetrics m, AppThemeData theme) {
     return AnimatedBuilder(
       animation: _expand,
       builder: (context, _) {
         return Container(
           width: m.btnSize,
           height: m.btnSize,
-          decoration: const BoxDecoration(
-            color: Color(0xFF262626),
-            shape: BoxShape.circle,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(m.btnSize / 2),
+            fillColor: theme.ink,
           ),
           child: Center(
             child: Transform.rotate(
               angle: _expand.value * math.pi / 2,
-              child: Icon(Icons.arrow_forward, size: m.iconSize, color: fg),
+              child: WiredIcon(
+                icon: Icons.arrow_forward,
+                size: m.iconSize,
+                color: theme.surface,
+                drawConfig: theme.wired.drawConfig,
+              ),
             ),
           ),
         );
@@ -610,10 +594,10 @@ class _AccordionCardState extends State<_AccordionCard>
   /// 手风琴面板：高度裁切 + 淡入 + 上移三者并行（对应 CSS grid 0fr→1fr）
   Widget _accordionBody(
     _AccordionMetrics m,
+    AppThemeData theme,
     Color fg,
     Color subFg,
     Color dividerColor,
-    Color trackColor,
     Color itemBg,
   ) {
     return ClipRect(
@@ -634,17 +618,17 @@ class _AccordionCardState extends State<_AccordionCard>
             ),
           );
         },
-        child: _bodyContent(m, fg, subFg, dividerColor, trackColor, itemBg),
+        child: _bodyContent(m, theme, fg, subFg, dividerColor, itemBg),
       ),
     );
   }
 
   Widget _bodyContent(
     _AccordionMetrics m,
+    AppThemeData theme,
     Color fg,
     Color subFg,
     Color dividerColor,
-    Color trackColor,
     Color itemBg,
   ) {
     final data = widget.data;
@@ -687,7 +671,7 @@ class _AccordionCardState extends State<_AccordionCard>
               ],
             ),
             SizedBox(height: 7 * m.scale),
-            _progressTrack(m, fg, trackColor),
+            _progressTrack(m, theme, fg),
           ],
         ),
         // 条目列表（交错渐入）
@@ -703,9 +687,11 @@ class _AccordionCardState extends State<_AccordionCard>
                 horizontal: 13 * m.scale,
                 vertical: 9 * m.scale,
               ),
-              decoration: BoxDecoration(
-                color: itemBg,
-                borderRadius: BorderRadius.circular(14 * m.scale),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: BorderRadius.circular(14 * m.scale),
+                fillColor: itemBg,
+                stroke: fg.withValues(alpha: 0.3),
               ),
               child: Row(
                 children: [
@@ -746,30 +732,26 @@ class _AccordionCardState extends State<_AccordionCard>
     );
   }
 
-  /// 进度条：展开时从 0 生长到目标值（0.72s + 0.08s 延迟）
-  Widget _progressTrack(_AccordionMetrics m, Color fg, Color trackColor) {
+  /// 斜纹进度条：展开时从 0 生长到目标值（0.72s + 0.08s 延迟）
+  ///
+  /// 轨道 surfaceAlt 底 + 淡墨斜纹，进度段数据色（卡片前景色）浅底 +
+  /// 浓斜纹 + 数据色描边。
+  Widget _progressTrack(_AccordionMetrics m, AppThemeData theme, Color dataColor) {
     return TweenAnimationBuilder<double>(
       key: ValueKey('progress-${widget.expanded}-${widget.data.progress}'),
       tween: Tween(begin: 0, end: widget.expanded ? widget.data.progress : 0),
       duration: const Duration(milliseconds: 720),
       curve: const Interval(0.11, 1.0, curve: _springCurve),
       builder: (context, value, _) {
-        return Container(
+        return SizedBox(
           height: m.trackHeight,
-          decoration: BoxDecoration(
-            color: trackColor,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          clipBehavior: Clip.hardEdge,
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: value.clamp(0.0, 1.0),
-            child: Container(
-              height: m.trackHeight,
-              decoration: BoxDecoration(
-                color: fg,
-                borderRadius: BorderRadius.circular(999),
-              ),
+          child: CustomPaint(
+            size: Size(double.infinity, m.trackHeight),
+            painter: _StripedMiniTrackPainter(
+              value: value.clamp(0.0, 1.0),
+              dataColor: dataColor,
+              theme: theme,
+              scale: m.scale,
             ),
           ),
         );
@@ -801,6 +783,81 @@ class _AccordionCardState extends State<_AccordionCard>
       },
       child: child,
     );
+  }
+}
+
+/// 斜纹迷你进度条绘制器（胶囊轨道 + 数据色斜纹进度段）
+class _StripedMiniTrackPainter extends CustomPainter {
+  final double value;
+  final Color dataColor;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StripedMiniTrackPainter({
+    required this.value,
+    required this.dataColor,
+    required this.theme,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(size.height / 2),
+    );
+
+    // 轨道：surfaceAlt 底 + 淡墨斜纹 + 淡墨描边
+    final trackPath = Path()..addRRect(rrect);
+    canvas.drawRRect(rrect, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      trackPath,
+      Offset.zero & size,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2 * scale,
+    );
+
+    if (value <= 0) return;
+    final w = size.width * value;
+    final fillRect = Rect.fromLTWH(0, 0, w, size.height);
+    final fillRRect = RRect.fromRectAndRadius(
+      fillRect,
+      Radius.circular(size.height / 2),
+    );
+    canvas.drawRRect(fillRRect, Paint()..color = dataColor.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(fillRRect),
+      fillRect,
+      color: dataColor.withValues(alpha: 0.9),
+      strokeWidth: 3 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      fillRRect,
+      Paint()
+        ..color = dataColor.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2 * scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedMiniTrackPainter oldDelegate) {
+    return oldDelegate.value != value ||
+        oldDelegate.dataColor != dataColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }
 

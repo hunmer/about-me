@@ -1,6 +1,16 @@
+/// 水平监测卡片（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘圆形图标徽章 + 标题 + Today 入口 / 当前分数 + 状态描述 /
+/// 每周斜纹柱（主题色浓斜纹，逐柱错峰生长）。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 每周水平数据模型
 ///
@@ -118,7 +128,6 @@ class LevelMonitorCard extends StatefulWidget {
 class _LevelMonitorCardState extends State<LevelMonitorCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
   late Animation<double> _scoreAnimation;
   late List<Animation<double>> _barAnimations;
 
@@ -128,10 +137,6 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
 
     _scoreAnimation = Tween<double>(
@@ -173,71 +178,46 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _fadeAnimation.value)),
-            child: _buildContent(isDark),
-          ),
-        );
-      },
-    );
-  }
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 380,
+        height: widget.inline ? double.maxFinite : 380,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 标题栏
+            _buildHeader(theme),
+            SizedBox(height: widget.size.getTitleSpacing()),
 
-  Widget _buildContent(bool isDark) {
-    final backgroundColor = isDark ? const Color(0xFF27272A) : Colors.white;
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    final surfaceColor =
-        isDark ? primaryColor.withOpacity(0.15) : primaryColor.withOpacity(0.1);
-
-    return Container(
-      width: widget.inline ? double.maxFinite : 380,
-      height: widget.inline ? double.maxFinite : 380,
-      padding: widget.size.getPadding(),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 标题栏
-          _buildHeader(isDark, primaryColor, surfaceColor),
-          SizedBox(height: widget.size.getTitleSpacing()),
-
-          // 分数和进度条在同一行
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // 当前分数和状态
-              Flexible(
-                flex: 6,
-                child: _buildScoreSection(isDark, primaryColor),
-              ),
-              const SizedBox(width: 8),
-              // 每周进度条靠右
-              Flexible(flex: 7, child: _buildWeeklyBars(isDark, primaryColor)),
-            ],
-          ),
-        ],
+            // 分数和进度条在同一行
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // 当前分数和状态
+                Flexible(
+                  flex: 6,
+                  child: _buildScoreSection(theme),
+                ),
+                const SizedBox(width: 8),
+                // 每周进度条靠右
+                Flexible(flex: 7, child: _buildWeeklyBars(theme)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(bool isDark, Color primaryColor, Color surfaceColor) {
+  Widget _buildHeader(AppThemeData theme) {
     final iconSize = widget.size.getIconSize();
     final containerSize = iconSize * widget.size.iconContainerScale;
 
@@ -247,14 +227,23 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
         Expanded(
           child: Row(
             children: [
+              // 手绘圆形图标徽章
               Container(
                 width: containerSize,
                 height: containerSize,
-                decoration: BoxDecoration(
-                  color: surfaceColor,
-                  shape: BoxShape.circle,
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: BorderRadius.circular(containerSize / 2),
+                  fillColor: theme.surfaceAlt,
                 ),
-                child: Icon(widget.icon, color: primaryColor, size: iconSize),
+                child: Center(
+                  child: WiredIcon(
+                    icon: widget.icon,
+                    size: iconSize,
+                    color: theme.primary,
+                    drawConfig: theme.wired.drawConfig,
+                  ),
+                ),
               ),
               SizedBox(width: widget.size.getItemSpacing()),
               Flexible(
@@ -263,7 +252,7 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
                   style: TextStyle(
                     fontSize: widget.size.getTitleFontSize(),
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.grey.shade900,
+                    color: theme.text,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -288,14 +277,14 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
                   style: TextStyle(
                     fontSize: widget.size.getLegendFontSize(),
                     fontWeight: FontWeight.w400,
-                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    color: theme.textSub,
                   ),
                 ),
                 SizedBox(width: widget.size.getItemSpacing()),
-                Icon(
-                  Icons.chevron_right,
+                DsIcon(
+                  DsIconKind.chevronRight,
                   size: iconSize * 0.8,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  color: theme.textSub,
                 ),
               ],
             ),
@@ -305,7 +294,7 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
     );
   }
 
-  Widget _buildScoreSection(bool isDark, Color primaryColor) {
+  Widget _buildScoreSection(AppThemeData theme) {
     final scoreFontSize = widget.size.getLargeFontSize() * 0.7;
     final unitFontSize = widget.size.getLargeFontSize() * 0.35;
 
@@ -325,7 +314,7 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
                   textStyle: TextStyle(
                     fontSize: scoreFontSize,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.grey.shade900,
+                    color: theme.text,
                   ),
                 );
               },
@@ -337,7 +326,7 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
                 style: TextStyle(
                   fontSize: unitFontSize,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white : Colors.grey.shade900,
+                  color: theme.text,
                 ),
               ),
             ),
@@ -350,7 +339,7 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
             style: TextStyle(
               fontSize: widget.size.getSubtitleFontSize(),
               fontWeight: FontWeight.w400,
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              color: theme.textSub,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -360,7 +349,7 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
     );
   }
 
-  Widget _buildWeeklyBars(bool isDark, Color primaryColor) {
+  Widget _buildWeeklyBars(AppThemeData theme) {
     // 计算所有柱子的总宽度
     final barWidth = widget.size.getBarWidth();
     final barSpacing = widget.size.getItemSpacing();
@@ -383,8 +372,7 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
                   value: data.value,
                   animation: _barAnimations[index],
                   isSelected: data.isSelected,
-                  primaryColor: primaryColor,
-                  isDark: isDark,
+                  theme: theme,
                   onTap: () => widget.onBarTap?.call(index, data),
                   size: widget.size,
                 );
@@ -409,8 +397,7 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
                     value: data.value,
                     animation: _barAnimations[index],
                     isSelected: data.isSelected,
-                    primaryColor: primaryColor,
-                    isDark: isDark,
+                    theme: theme,
                     onTap: () => widget.onBarTap?.call(index, data),
                     size: widget.size,
                   );
@@ -424,14 +411,13 @@ class _LevelMonitorCardState extends State<LevelMonitorCard>
   }
 }
 
-/// 每周进度条单项
+/// 每周进度条单项（斜纹柱：主题色浓斜纹生长于淡墨斜纹轨道）
 class _WeeklyBar extends StatelessWidget {
   final String day;
   final double value;
   final Animation<double> animation;
   final bool isSelected;
-  final Color primaryColor;
-  final bool isDark;
+  final AppThemeData theme;
   final VoidCallback? onTap;
   final HomeWidgetSize size;
 
@@ -440,16 +426,13 @@ class _WeeklyBar extends StatelessWidget {
     required this.value,
     required this.animation,
     required this.isSelected,
-    required this.primaryColor,
-    required this.isDark,
+    required this.theme,
     this.onTap,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor =
-        isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
     final barWidth = size.getBarWidth();
     final barHeight = size.getLargeFontSize() * 1.15;
 
@@ -464,24 +447,13 @@ class _WeeklyBar extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: barWidth,
-                  height: barHeight,
-                  decoration: BoxDecoration(
-                    color: backgroundColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Container(
-                      width: double.infinity,
-                      height: barHeight * animation.value,
-                      decoration: BoxDecoration(
-                        color: primaryColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                CustomPaint(
+                  size: Size(barWidth, barHeight),
+                  painter: _StripedWeeklyBarPainter(
+                    fillRatio: animation.value.clamp(0.0, 1.0),
+                    dataColor: theme.primary,
+                    theme: theme,
+                    scale: size.scale,
                   ),
                 ),
                 SizedBox(height: size.getItemSpacing()),
@@ -490,12 +462,7 @@ class _WeeklyBar extends StatelessWidget {
                   style: TextStyle(
                     fontSize: size.getLegendFontSize(),
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color:
-                        isSelected
-                            ? (isDark ? Colors.white : Colors.grey.shade900)
-                            : (isDark
-                                ? Colors.grey.shade400
-                                : Colors.grey.shade600),
+                    color: isSelected ? theme.text : theme.textSub,
                   ),
                 ),
               ],
@@ -504,5 +471,80 @@ class _WeeklyBar extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+/// 斜纹周柱绘制器：胶囊轨道（surfaceAlt 底 + 淡墨斜纹 + 淡墨描边），
+/// 数据色浅底 + 浓斜纹 + 数据色描边自底部生长。
+class _StripedWeeklyBarPainter extends CustomPainter {
+  final double fillRatio;
+  final Color dataColor;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StripedWeeklyBarPainter({
+    required this.fillRatio,
+    required this.dataColor,
+    required this.theme,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final radius = Radius.circular(size.width / 2);
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(rect, radius);
+
+    // 轨道
+    canvas.drawRRect(rrect, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(rrect),
+      rect,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+
+    final h = size.height * fillRatio;
+    if (h > 0.5) {
+      final fillRect = Rect.fromLTWH(0, size.height - h, size.width, h);
+      final fillRRect = RRect.fromRectAndRadius(fillRect, radius);
+      canvas.drawRRect(
+        fillRRect,
+        Paint()..color = dataColor.withValues(alpha: 0.28),
+      );
+      paintDiagonalStripes(
+        canvas,
+        Path()..addRRect(fillRRect),
+        fillRect,
+        color: dataColor.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawRRect(
+        fillRRect,
+        Paint()
+          ..color = dataColor.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedWeeklyBarPainter oldDelegate) {
+    return oldDelegate.fillRatio != fillRatio ||
+        oldDelegate.dataColor != dataColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }

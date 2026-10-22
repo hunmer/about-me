@@ -1,13 +1,20 @@
+/// 健康分数环形统计卡片（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 顶部为分段斜纹圆环统计图（每段带数据色手绘图标徽章，中心显示总分数），
+/// 底部为对应的统计项目列表（图标徽章 + 斜纹进度条 + 分数，逐项错峰入场）。
+library;
+
 import 'dart:math' as math;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
-/// 健康分数环形统计卡片
-///
-/// 顶部为分段圆环统计图（每段带图标，中心显示总分数），
-/// 底部为对应的统计项目列表（图标 + 进度条 + 分数）。
 class HealthScoreRingCardWidget extends StatefulWidget {
   /// 中心总分数（如 8.8）
   final double score;
@@ -81,9 +88,9 @@ class HealthScoreRingCardWidget extends StatefulWidget {
                   iconValue is IconData
                       ? iconValue
                       : dynamicIconData(
-                          (iconValue as num?)?.toInt() ?? Icons.circle.codePoint,
-                          fontFamily: 'MaterialIcons',
-                        ),
+                        (iconValue as num?)?.toInt() ?? Icons.circle.codePoint,
+                        fontFamily: 'MaterialIcons',
+                      ),
               color: parseColor(item['color']),
               score: (item['score'] as num?)?.toDouble() ?? 0.0,
               maxScore: (item['maxScore'] as num?)?.toDouble() ?? 10.0,
@@ -160,42 +167,22 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : 384 * widget.size.scale,
         height: widget.inline ? double.maxFinite : _defaultHeight(),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF7F3EB),
-          borderRadius: BorderRadius.circular(24 * widget.size.scale),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-              blurRadius: 20 * widget.size.scale,
-              offset: Offset(0, 4 * widget.size.scale),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: widget.size.getPadding(),
-          child: _buildContent(isDark),
-        ),
+        radius: BorderRadius.circular(24 * widget.size.scale),
+        padding: widget.size.getPadding(),
+        child: _buildContent(theme),
       ),
     );
   }
 
-  Widget _buildContent(bool isDark) {
+  Widget _buildContent(AppThemeData theme) {
     // 小尺寸只显示圆环
     if (widget.size is SmallSize) {
       return Center(
@@ -204,7 +191,7 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
           items: widget.items,
           progress: _animation.value,
           size: widget.size,
-          isDark: isDark,
+          theme: theme,
         ),
       );
     }
@@ -222,31 +209,31 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
               items: widget.items,
               progress: _animation.value,
               size: widget.size,
-              isDark: isDark,
+              theme: theme,
             ),
           ),
         ),
         Expanded(
           flex: 45,
-          child: _buildItemList(isDark),
+          child: _buildItemList(theme),
         ),
       ],
     );
   }
 
-  Widget _buildItemList(bool isDark) {
+  Widget _buildItemList(AppThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
         if (widget.title != null || widget.filterLabel != null)
-          _buildListHeader(isDark),
+          _buildListHeader(theme),
         SizedBox(height: widget.size.getItemSpacing() * 1.5),
         Expanded(
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: _buildItems(isDark),
+              children: _buildItems(theme),
             ),
           ),
         ),
@@ -254,14 +241,15 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
     );
   }
 
-  Widget _buildListHeader(bool isDark) {
+  Widget _buildListHeader(AppThemeData theme) {
+    final scale = widget.size.scale;
     return Row(
       children: [
         Expanded(
           child: Text(
             widget.title ?? '',
             style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF211D15),
+              color: theme.text,
               fontSize: widget.size.getTitleFontSize(),
               fontWeight: FontWeight.w700,
               height: 1.0,
@@ -271,14 +259,17 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
           ),
         ),
         if (widget.filterLabel != null)
+          // 手绘墨线实底筛选胶囊
           Container(
             padding: EdgeInsets.symmetric(
-              horizontal: 12 * widget.size.scale,
-              vertical: 6 * widget.size.scale,
+              horizontal: 12 * scale,
+              vertical: 6 * scale,
             ),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white : const Color(0xFF211D15),
-              borderRadius: BorderRadius.circular(20 * widget.size.scale),
+            decoration: dsSketchDecoration(
+              theme: theme,
+              // 大圆角被 rough 引擎自动钳制成胶囊
+              radius: BorderRadius.circular(20 * scale),
+              fillColor: theme.ink,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -286,17 +277,17 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
                 Text(
                   widget.filterLabel!,
                   style: TextStyle(
-                    color: isDark ? const Color(0xFF211D15) : Colors.white,
+                    color: theme.surface,
                     fontSize: widget.size.getLegendFontSize(),
                     fontWeight: FontWeight.w600,
                     height: 1.0,
                   ),
                 ),
-                SizedBox(width: 4 * widget.size.scale),
-                Icon(
-                  Icons.keyboard_arrow_down,
-                  color: isDark ? const Color(0xFF211D15) : Colors.white,
+                SizedBox(width: 4 * scale),
+                DsIcon(
+                  DsIconKind.chevronDown,
                   size: widget.size.getLegendFontSize() + 2,
+                  color: theme.surface,
                 ),
               ],
             ),
@@ -305,7 +296,7 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
     );
   }
 
-  List<Widget> _buildItems(bool isDark) {
+  List<Widget> _buildItems(AppThemeData theme) {
     final items = <Widget>[];
     final step = 0.6 / math.max(widget.items.length, 1);
 
@@ -343,7 +334,7 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
             _StatItemRow(
               item: item,
               size: widget.size,
-              isDark: isDark,
+              theme: theme,
               animatedScore: item.score * itemAnimation.value,
             ),
             i,
@@ -366,20 +357,20 @@ class _HealthScoreRingCardWidgetState extends State<HealthScoreRingCardWidget>
   }
 }
 
-/// 分段圆环统计图（中心显示总分数，每段带图标）
+/// 分段圆环统计图（中心显示总分数，每段带数据色图标徽章）
 class _RingChart extends StatelessWidget {
   final double score;
   final List<HealthRingItemData> items;
   final double progress;
   final HomeWidgetSize size;
-  final bool isDark;
+  final AppThemeData theme;
 
   const _RingChart({
     required this.score,
     required this.items,
     required this.progress,
     required this.size,
-    required this.isDark,
+    required this.theme,
   });
 
   @override
@@ -403,9 +394,11 @@ class _RingChart extends StatelessWidget {
                   segments: segments,
                   progress: progress,
                   strokeWidth: strokeWidth,
+                  theme: theme,
+                  scale: size.scale,
                 ),
               ),
-              // 每段中间的图标圆
+              // 每段中间的图标徽章（数据色手绘圆底）
               for (final segment in segments)
                 Positioned(
                   left:
@@ -421,14 +414,18 @@ class _RingChart extends StatelessWidget {
                   child: Container(
                     width: iconCircleRadius * 2,
                     height: iconCircleRadius * 2,
-                    decoration: BoxDecoration(
-                      color: segment.item.color,
-                      shape: BoxShape.circle,
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      radius: BorderRadius.circular(iconCircleRadius),
+                      fillColor: segment.item.color,
                     ),
-                    child: Icon(
-                      segment.item.icon,
-                      size: iconCircleRadius * 1.1,
-                      color: isDark ? Colors.white : const Color(0xFF2B271E),
+                    child: Center(
+                      child: WiredIcon(
+                        icon: segment.item.icon,
+                        size: iconCircleRadius * 1.1,
+                        color: theme.ink,
+                        drawConfig: theme.wired.drawConfig,
+                      ),
                     ),
                   ),
                 ),
@@ -438,7 +435,7 @@ class _RingChart extends StatelessWidget {
                   value: score * progress,
                   fractionDigits: 1,
                   textStyle: TextStyle(
-                    color: isDark ? Colors.white : const Color(0xFF211D15),
+                    color: theme.text,
                     fontSize: ringRadius * 0.62,
                     fontWeight: FontWeight.w800,
                     height: 1.0,
@@ -471,7 +468,7 @@ class _RingSegment {
 /// 圆环分段之间的间隙占比（总间隙 = 2π × 该值 × 段数）
 const _ringGapFraction = 0.025;
 
-/// 计算每段的起止角度（顶部开始，顺时针，段之间留间隙）
+/// 计算每段的起止角度（顶部开始，逆时针，段之间留间隙）
 List<_RingSegment> _computeSegments(List<HealthRingItemData> items) {
   if (items.isEmpty) return [];
 
@@ -502,52 +499,98 @@ List<_RingSegment> _computeSegments(List<HealthRingItemData> items) {
   return segments;
 }
 
-/// 圆环绘制器
+/// 圆环绘制器（平直几何 + 斜纹）
+///
+/// 每段扇环铺数据色浅底 + 数据色浓斜纹 + 数据色描边，
+/// 所有段同步生长（每段扫角 = 满幅 × progress）。
 class _RingChartPainter extends CustomPainter {
   final List<_RingSegment> segments;
   final double progress;
   final double strokeWidth;
+  final AppThemeData theme;
+  final double scale;
 
   _RingChartPainter({
     required this.segments,
     required this.progress,
     required this.strokeWidth,
+    required this.theme,
+    required this.scale,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - strokeWidth / 2;
-    // 圆头线帽会从弧端点沿切线延伸 strokeWidth/2，绘制时两端内缩该角度，
-    // 使线帽末端正好落在段边界，保证段间间隙可见
-    final capInset = (strokeWidth / 2) / radius;
+    final rOut = size.width / 2;
+    final rIn = rOut - strokeWidth;
+    final bounds = Offset.zero & size;
 
-    // 所有段同步生长：每段扫角 = 满幅 × progress
     for (final segment in segments) {
-      final paint =
-          Paint()
-            ..color = segment.item.color
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = strokeWidth
-            ..strokeCap = StrokeCap.round;
-
       final sweep = segment.sweepAngle * progress;
-      if (sweep > 2 * capInset) {
-        canvas.drawArc(
-          Rect.fromCircle(center: center, radius: radius),
-          segment.startAngle + capInset,
-          sweep - 2 * capInset,
-          false,
-          paint,
-        );
-      }
+      if (sweep <= 0.01) continue;
+      final path = _sector(
+        center,
+        rIn,
+        rOut,
+        segment.startAngle,
+        segment.startAngle + sweep,
+      );
+      canvas.drawPath(
+        path,
+        Paint()..color = segment.item.color.withValues(alpha: 0.28),
+      );
+      paintDiagonalStripes(
+        canvas,
+        path,
+        bounds,
+        color: segment.item.color.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = segment.item.color.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
     }
+  }
+
+  /// 平直扇环路径（与 half_gauge_card 的 _sector 同款；支持逆时针小段）
+  Path _sector(Offset c, double rIn, double rOut, double a0, double a1) {
+    final clockwise = a1 > a0;
+    final largeArc = (a1 - a0).abs() > math.pi;
+    final path = Path();
+    final startRad = clockwise ? a0 : a1;
+    final endRad = clockwise ? a1 : a0;
+    path.moveTo(
+      c.dx + rOut * math.cos(startRad),
+      c.dy + rOut * math.sin(startRad),
+    );
+    path.arcToPoint(
+      Offset(c.dx + rOut * math.cos(endRad), c.dy + rOut * math.sin(endRad)),
+      radius: Radius.circular(rOut),
+      largeArc: largeArc,
+      clockwise: clockwise,
+    );
+    path.lineTo(c.dx + rIn * math.cos(endRad), c.dy + rIn * math.sin(endRad));
+    path.arcToPoint(
+      Offset(c.dx + rIn * math.cos(startRad), c.dy + rIn * math.sin(startRad)),
+      radius: Radius.circular(rIn),
+      largeArc: largeArc,
+      clockwise: !clockwise,
+    );
+    path.close();
+    return path;
   }
 
   @override
   bool shouldRepaint(covariant _RingChartPainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale ||
         oldDelegate.segments.length != segments.length;
   }
 }
@@ -556,13 +599,13 @@ class _RingChartPainter extends CustomPainter {
 class _StatItemRow extends StatelessWidget {
   final HealthRingItemData item;
   final HomeWidgetSize size;
-  final bool isDark;
+  final AppThemeData theme;
   final double animatedScore;
 
   const _StatItemRow({
     required this.item,
     required this.size,
-    required this.isDark,
+    required this.theme,
     required this.animatedScore,
   });
 
@@ -574,99 +617,166 @@ class _StatItemRow extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 2 * size.scale),
       child: Row(
-      children: [
-        // 图标圆
-        Container(
-          width: iconSize,
-          height: iconSize,
-          decoration: BoxDecoration(
-            color: item.color,
-            shape: BoxShape.circle,
+        children: [
+          // 图标徽章（数据色手绘圆底）
+          Container(
+            width: iconSize,
+            height: iconSize,
+            decoration: dsSketchDecoration(
+              theme: theme,
+              radius: BorderRadius.circular(iconSize / 2),
+              fillColor: item.color,
+            ),
+            child: Center(
+              child: WiredIcon(
+                icon: item.icon,
+                size: iconSize * 0.55,
+                color: theme.ink,
+                drawConfig: theme.wired.drawConfig,
+              ),
+            ),
           ),
-          child: Icon(
-            item.icon,
-            size: iconSize * 0.55,
-            color: isDark ? Colors.white : const Color(0xFF2B271E),
+          SizedBox(width: 12 * size.scale),
+          // 名称 + 斜纹进度条
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  item.label,
+                  style: TextStyle(
+                    color: theme.text,
+                    fontSize: size.getSubtitleFontSize(),
+                    fontWeight: FontWeight.w600,
+                    height: 1.0,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                SizedBox(height: size.getSmallSpacing() + 2),
+                SizedBox(
+                  height: barHeight,
+                  child: CustomPaint(
+                    painter: _StripedItemBarPainter(
+                      fraction:
+                          (item.score / item.maxScore).clamp(0.0, 1.0).toDouble(),
+                      color: item.color,
+                      theme: theme,
+                      scale: size.scale,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        SizedBox(width: 12 * size.scale),
-        // 名称 + 进度条
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+          SizedBox(width: 12 * size.scale),
+          // 分数
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
-                item.label,
-                style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF211D15),
-                  fontSize: size.getSubtitleFontSize(),
-                  fontWeight: FontWeight.w600,
+              AnimatedFlipCounter(
+                value: animatedScore,
+                fractionDigits: 1,
+                textStyle: TextStyle(
+                  color: theme.text,
+                  fontSize: size.getTitleFontSize() * 0.9,
+                  fontWeight: FontWeight.w800,
                   height: 1.0,
                 ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
               ),
-              SizedBox(height: size.getSmallSpacing() + 2),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(barHeight),
-                child: Stack(
-                  children: [
-                    Container(
-                      height: barHeight,
-                      color: isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFEAE3D5),
-                    ),
-                    FractionallySizedBox(
-                      widthFactor:
-                          (item.score / item.maxScore).clamp(0.0, 1.0).toDouble(),
-                      child: Container(
-                        height: barHeight,
-                        decoration: BoxDecoration(
-                          color: item.color,
-                          borderRadius: BorderRadius.circular(barHeight),
-                        ),
-                      ),
-                    ),
-                  ],
+              Text(
+                ' /${item.maxScore.toStringAsFixed(0)}',
+                style: TextStyle(
+                  color: theme.textSub,
+                  fontSize: size.getLegendFontSize(),
+                  fontWeight: FontWeight.w500,
+                  height: 1.0,
                 ),
               ),
             ],
           ),
-        ),
-        SizedBox(width: 12 * size.scale),
-        // 分数
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            AnimatedFlipCounter(
-              value: animatedScore,
-              fractionDigits: 1,
-              textStyle: TextStyle(
-                color: isDark ? Colors.white : const Color(0xFF211D15),
-                fontSize: size.getTitleFontSize() * 0.9,
-                fontWeight: FontWeight.w800,
-                height: 1.0,
-              ),
-            ),
-            Text(
-              ' /${item.maxScore.toStringAsFixed(0)}',
-              style: TextStyle(
-                color: isDark
-                    ? const Color(0xFFCBD5E1)
-                    : const Color(0xFF8A8474),
-                fontSize: size.getLegendFontSize(),
-                fontWeight: FontWeight.w500,
-                height: 1.0,
-              ),
-            ),
-          ],
-        ),
-      ],
+        ],
       ),
     );
+  }
+}
+
+/// 统计项斜纹进度条绘制器
+///
+/// 胶囊轨道（surfaceAlt 底 + 淡墨斜纹 + 淡描边）+ 按占比铺
+/// 数据色浅底 + 浓斜纹 + 描边的填充段。
+class _StripedItemBarPainter extends CustomPainter {
+  final double fraction;
+  final Color color;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StripedItemBarPainter({
+    required this.fraction,
+    required this.color,
+    required this.theme,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(size.height / 2),
+    );
+
+    // 轨道
+    final trackPath = Path()..addRRect(rrect);
+    canvas.drawPath(trackPath, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      trackPath,
+      Offset.zero & size,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawPath(
+      trackPath,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+
+    // 数据填充段
+    final f = fraction.clamp(0.0, 1.0);
+    if (f > 0.02) {
+      final fillRect = Rect.fromLTWH(0, 0, size.width * f, size.height);
+      canvas.clipRRect(rrect);
+      canvas.drawRect(fillRect, Paint()..color = color.withValues(alpha: 0.28));
+      paintDiagonalStripes(
+        canvas,
+        Path()..addRect(fillRect),
+        Offset.zero & size,
+        color: color.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawRect(
+        fillRect,
+        Paint()
+          ..color = color.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedItemBarPainter oldDelegate) {
+    return oldDelegate.fraction != fraction ||
+        oldDelegate.color != color ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }
 

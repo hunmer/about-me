@@ -1,5 +1,14 @@
+/// 日历事件小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 翻牌日期 + 周历（今日 = 主题强调色浅底圆徽章）/ 事件列表
+/// （数据色竖条 + 手绘日历图标，逐项错峰浮现）/ 底部提醒。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 事件数据模型
@@ -142,46 +151,30 @@ class _EventCalendarWidgetState extends State<EventCalendarWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor =
-        isDark ? const Color(0xFFEF4444) : const Color(0xFFEF4444);
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
+    // 日历强调色（原红色点缀，走主题语义色）
+    final primaryColor = theme.danger;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 420,
-              height: widget.inline ? double.maxFinite : 220,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1F2937) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              padding: widget.size.getPadding(),
-              child:
-                  widget.size.category == SizeCategory.large ||
-                          widget.size.category == SizeCategory.xlarge
-                      ? _buildLargeLayout(isDark, primaryColor)
-                      : _buildCompactLayout(isDark, primaryColor),
-            ),
-          ),
-        );
-      },
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 420,
+        height: widget.inline ? double.maxFinite : 220,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child:
+            widget.size.category == SizeCategory.large ||
+                    widget.size.category == SizeCategory.xlarge
+                ? _buildLargeLayout(primaryColor)
+                : _buildCompactLayout(primaryColor),
+      ),
     );
   }
 
   /// 大尺寸布局：横向布局，日期+周历在左，事件列表在右
-  Widget _buildLargeLayout(bool isDark, Color primaryColor) {
+  Widget _buildLargeLayout(Color primaryColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -209,7 +202,6 @@ class _EventCalendarWidgetState extends State<EventCalendarWidget>
                       currentDay: widget.day,
                       weekStartDay: widget.weekStartDay,
                       primaryColor: primaryColor,
-                      isDark: isDark,
                       size: widget.size,
                       isScrollable: false,
                     ),
@@ -251,7 +243,7 @@ class _EventCalendarWidgetState extends State<EventCalendarWidget>
   }
 
   /// 紧凑布局：纵向布局，日期在上方，周历横向滚动，事件列表单独一行
-  Widget _buildCompactLayout(bool isDark, Color primaryColor) {
+  Widget _buildCompactLayout(Color primaryColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -271,7 +263,6 @@ class _EventCalendarWidgetState extends State<EventCalendarWidget>
           currentDay: widget.day,
           weekStartDay: widget.weekStartDay,
           primaryColor: primaryColor,
-          isDark: isDark,
           size: widget.size,
           isScrollable: true,
         ),
@@ -330,7 +321,7 @@ class _DateSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,7 +354,7 @@ class _DateSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: size.getSubtitleFontSize(),
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.grey.shade900,
+                  color: theme.text,
                   height: 1.2,
                 ),
               ),
@@ -376,7 +367,7 @@ class _DateSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: size.getLegendFontSize(),
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade400,
+                  color: theme.textSub,
                   height: 1.2,
                 ),
               ),
@@ -393,7 +384,6 @@ class _WeekCalendar extends StatelessWidget {
   final int currentDay;
   final int weekStartDay;
   final Color primaryColor;
-  final bool isDark;
   final HomeWidgetSize size;
   final bool isScrollable;
 
@@ -402,13 +392,14 @@ class _WeekCalendar extends StatelessWidget {
     required this.currentDay,
     required this.weekStartDay,
     required this.primaryColor,
-    required this.isDark,
     required this.size,
     this.isScrollable = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
@@ -428,7 +419,13 @@ class _WeekCalendar extends StatelessWidget {
             // 星期标题行
             SizedBox(
               height: cellHeight * 0.7,
-              child: Row(children: _buildWeekdayHeaders(columns, fontSize)),
+              child: Row(
+                children: _buildWeekdayHeaders(
+                  columns,
+                  fontSize,
+                  theme,
+                ),
+              ),
             ),
             SizedBox(height: size.getItemSpacing() / 4),
             // 日期网格
@@ -447,6 +444,7 @@ class _WeekCalendar extends StatelessWidget {
                       cellHeight,
                       fontSize,
                       circleSize,
+                      theme,
                     ),
                   ),
                 ),
@@ -459,7 +457,11 @@ class _WeekCalendar extends StatelessWidget {
   }
 
   /// 构建星期标题
-  List<Widget> _buildWeekdayHeaders(int columns, double fontSize) {
+  List<Widget> _buildWeekdayHeaders(
+    int columns,
+    double fontSize,
+    AppThemeData theme,
+  ) {
     final weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     return List.generate(columns, (index) {
@@ -470,7 +472,7 @@ class _WeekCalendar extends StatelessWidget {
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: FontWeight.w400,
-              color: Colors.grey.shade400,
+              color: theme.textSub,
             ),
           ),
         ),
@@ -486,6 +488,7 @@ class _WeekCalendar extends StatelessWidget {
     double cellHeight,
     double fontSize,
     double circleSize,
+    AppThemeData theme,
   ) {
     return List.generate(columns, (col) {
       final index = row * columns + col;
@@ -501,10 +504,10 @@ class _WeekCalendar extends StatelessWidget {
               day,
               isCurrent,
               isPast,
-              isDark,
               primaryColor,
               fontSize,
               circleSize,
+              theme,
             ),
           ),
         );
@@ -519,22 +522,20 @@ class _WeekCalendar extends StatelessWidget {
     int day,
     bool isCurrent,
     bool isPast,
-    bool isDark,
     Color primaryColor,
     double fontSize,
     double circleSize,
+    AppThemeData theme,
   ) {
     if (isCurrent) {
+      // 今日：强调色浅底圆徽章 + 墨线描边
       return Container(
         width: circleSize,
         height: circleSize,
-        decoration: BoxDecoration(
-          color:
-              isDark ? primaryColor.withOpacity(0.15) : const Color(0xFFFEE2E2),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(color: primaryColor.withOpacity(0.2), blurRadius: 4),
-          ],
+        decoration: dsSketchDecoration(
+          theme: theme,
+          circle: true,
+          fillColor: primaryColor.withValues(alpha: 0.28),
         ),
         child: Center(
           child: Text(
@@ -554,10 +555,7 @@ class _WeekCalendar extends StatelessWidget {
       style: TextStyle(
         fontSize: fontSize,
         fontWeight: isPast ? FontWeight.w400 : FontWeight.w500,
-        color:
-            isPast
-                ? Colors.grey.shade400
-                : (isDark ? Colors.grey.shade200 : Colors.grey.shade900),
+        color: isPast ? theme.textSub : theme.text,
       ),
     );
   }
@@ -578,7 +576,7 @@ class _ReminderItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
 
     return Row(
       children: [
@@ -596,7 +594,7 @@ class _ReminderItem extends StatelessWidget {
             style: TextStyle(
               fontSize: size.getLegendFontSize(),
               fontWeight: FontWeight.w500,
-              color: isDark ? Colors.grey.shade200 : Colors.grey.shade800,
+              color: theme.textSub,
               height: 1.2,
             ),
           ),
@@ -621,7 +619,7 @@ class _EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final itemAnimation = CurvedAnimation(
       parent: animation,
       curve: Interval(
@@ -638,11 +636,24 @@ class _EventCard extends StatelessWidget {
           opacity: itemAnimation.value,
           child: Transform.translate(
             offset: Offset(10 * (1 - itemAnimation.value), 0),
-            child: Container(
-              padding: EdgeInsets.only(left: size.getPadding().left),
+            child: child,
+          ),
+        );
+      },
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 数据色竖条（事件分类色）
+            Container(
+              width: 4,
               decoration: BoxDecoration(
-                border: Border(left: BorderSide(color: event.color, width: 3)),
+                color: event.color,
+                borderRadius: BorderRadius.circular(2),
               ),
+            ),
+            SizedBox(width: size.getPadding().left * 0.5),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -653,25 +664,21 @@ class _EventCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: size.getSubtitleFontSize(),
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : Colors.grey.shade900,
+                      color: theme.text,
                       height: 1.3,
                     ),
                   ),
                   SizedBox(height: size.getItemSpacing() / 4),
                   Row(
                     children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 14,
-                        color: event.iconColor,
-                      ),
+                      DsIcon(DsIconKind.calendar, size: 14, color: event.iconColor),
                       SizedBox(width: size.getItemSpacing() / 3),
                       Expanded(
                         child: Text(
                           '${event.time} · ${event.duration}${event.location != null ? ' · ${event.location}' : ''}',
                           style: TextStyle(
                             fontSize: size.getLegendFontSize(),
-                            color: Colors.grey.shade500,
+                            color: theme.textSub,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -688,12 +695,11 @@ class _EventCard extends StatelessWidget {
                           horizontal: 12,
                           vertical: 6,
                         ),
-                        decoration: BoxDecoration(
-                          color:
-                              isDark
-                                  ? event.color.withOpacity(0.2)
-                                  : event.color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                        // 数据色浅底徽章 + 墨线描边
+                        decoration: dsSketchDecoration(
+                          theme: theme,
+                          radius: BorderRadius.circular(8),
+                          fillColor: event.color.withValues(alpha: 0.28),
                         ),
                         child: Text(
                           event.buttonLabel!,
@@ -709,9 +715,9 @@ class _EventCard extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }

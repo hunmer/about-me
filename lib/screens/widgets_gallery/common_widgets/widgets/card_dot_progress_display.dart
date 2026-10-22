@@ -1,5 +1,14 @@
+/// 活动进度小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题/副标题 + 圆形图标徽章 / 翻牌数值 + 单位 + 活动数 /
+/// 圆点进度（完成点数据色实底 + 淡墨格描边，逐点错峰入场）。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 活动进度小组件
@@ -80,8 +89,7 @@ class _CardDotProgressDisplayState extends State<CardDotProgressDisplay>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final theme = AppTheme.of(context);
 
     // 根据尺寸计算各元素大小
     final iconSize = widget.size.getIconSize() * 0.7;
@@ -92,157 +100,146 @@ class _CardDotProgressDisplayState extends State<CardDotProgressDisplay>
     final valueFontSize = widget.size.getLargeFontSize() * 0.6;
     final unitFontSize = widget.size.getSubtitleFontSize();
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Container(
-            width: widget.inline ? double.maxFinite : null,
-            height: widget.inline ? double.maxFinite : null,
-            constraints:
-                widget.inline ? null : widget.size.getHeightConstraints(),
-            padding: widget.size.getPadding(),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    Widget card = WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : null,
+        height: widget.inline ? double.maxFinite : null,
+        radius: BorderRadius.circular(24 * widget.size.scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 标题和图标
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 标题和图标
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.title,
-                            style: TextStyle(
-                              fontSize: titleFontSize,
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  isDark ? Colors.white : Colors.grey.shade900,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (widget.subtitle.isNotEmpty)
-                            Text(
-                              widget.subtitle,
-                              style: TextStyle(
-                                fontSize: subtitleFontSize,
-                                fontWeight: FontWeight.w500,
-                                color:
-                                    isDark
-                                        ? Colors.grey.shade400
-                                        : Colors.grey.shade500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      width: iconContainerSize,
-                      height: iconContainerSize,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.directions_run,
-                          color: Colors.white,
-                          size: iconSize,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: widget.size.getTitleSpacing()),
-
-                // 数值和活动数
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    AnimatedFlipCounter(
-                      value: widget.value * _animation.value,
-                      fractionDigits: 1,
-                      textStyle: TextStyle(
-                        fontSize: valueFontSize,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.grey.shade900,
-                      ),
-                    ),
-                    SizedBox(width: widget.size.getSmallSpacing()),
-                    SizedBox(
-                      height: unitFontSize * 1.5,
-                      child: Text(
-                        widget.unit,
-                        style: TextStyle(
-                          fontSize: unitFontSize,
-                          fontWeight: FontWeight.w500,
-                          color:
-                              isDark
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade500,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    if (widget.activities > 0)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        '${widget.activities} 活动',
+                        widget.title,
                         style: TextStyle(
-                          fontSize: subtitleFontSize,
-                          fontWeight: FontWeight.w500,
-                          color:
-                              isDark
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade500,
+                          fontSize: titleFontSize,
+                          fontWeight: FontWeight.w600,
+                          color: theme.text,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                  ],
+                      if (widget.subtitle.isNotEmpty)
+                        Text(
+                          widget.subtitle,
+                          style: TextStyle(
+                            fontSize: subtitleFontSize,
+                            fontWeight: FontWeight.w500,
+                            color: theme.textSub,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
                 ),
-
-                SizedBox(height: widget.size.getItemSpacing()),
-
-                // 进度点
-                _ProgressDots(
-                  total: widget.totalProgress,
-                  completed: widget.completedProgress,
-                  color: primaryColor,
-                  animation: _animation,
-                  size: widget.size,
+                // 圆形图标徽章：surfaceAlt 实底 + 墨线描边
+                Container(
+                  width: iconContainerSize,
+                  height: iconContainerSize,
+                  // 大圆角被 rough 引擎自动钳制成圆
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: BorderRadius.circular(iconContainerSize / 2),
+                    fillColor: theme.surfaceAlt,
+                  ),
+                  child: Center(
+                    child: WiredIcon(
+                      icon: Icons.directions_run,
+                      size: iconSize,
+                      color: theme.primary,
+                      drawConfig: theme.wired.drawConfig,
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-        );
-      },
+
+            SizedBox(height: widget.size.getTitleSpacing()),
+
+            // 数值和活动数
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                AnimatedFlipCounter(
+                  value: widget.value * _animation.value,
+                  fractionDigits: 1,
+                  textStyle: TextStyle(
+                    fontSize: valueFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: theme.text,
+                  ),
+                ),
+                SizedBox(width: widget.size.getSmallSpacing()),
+                SizedBox(
+                  height: unitFontSize * 1.5,
+                  child: Text(
+                    widget.unit,
+                    style: TextStyle(
+                      fontSize: unitFontSize,
+                      fontWeight: FontWeight.w500,
+                      color: theme.textSub,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                if (widget.activities > 0)
+                  Text(
+                    '${widget.activities} 活动',
+                    style: TextStyle(
+                      fontSize: subtitleFontSize,
+                      fontWeight: FontWeight.w500,
+                      color: theme.textSub,
+                    ),
+                  ),
+              ],
+            ),
+
+            SizedBox(height: widget.size.getItemSpacing()),
+
+            // 进度点
+            _ProgressDots(
+              total: widget.totalProgress,
+              completed: widget.completedProgress,
+              color: theme.primary,
+              animation: _animation,
+              theme: theme,
+              size: widget.size,
+            ),
+          ],
+        ),
+      ),
     );
+
+    // 非 inline 模式用尺寸档高度约束
+    if (!widget.inline) {
+      card = ConstrainedBox(
+        constraints: widget.size.getHeightConstraints(),
+        child: card,
+      );
+    }
+    return card;
   }
 }
 
-/// 进度点组件
+/// 进度点组件（参照 habit_heatmap_card：档位色实底 + 淡墨格描边）
 class _ProgressDots extends StatelessWidget {
   final int total;
   final int completed;
   final Color color;
   final Animation<double> animation;
+  final AppThemeData theme;
   final HomeWidgetSize size;
 
   const _ProgressDots({
@@ -250,6 +247,7 @@ class _ProgressDots extends StatelessWidget {
     required this.completed,
     required this.color,
     required this.animation,
+    required this.theme,
     required this.size,
   });
 
@@ -296,8 +294,15 @@ class _ProgressDots extends StatelessWidget {
                         width: dotSize,
                         height: dotSize,
                         decoration: BoxDecoration(
-                          color: isCompleted ? color : color.withOpacity(0.4),
+                          // 完成点数据色实底 / 未完成淡底 + 淡墨格描边
+                          color: isCompleted ? color : theme.surfaceAlt,
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: theme.ink.withValues(
+                              alpha: isCompleted ? 0.45 : 0.22,
+                            ),
+                            width: size.scale,
+                          ),
                         ),
                       ),
                     ),

@@ -1,6 +1,16 @@
+/// 收入趋势小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 周期筛选 / 金额（翻牌计数器）/ 折线图（数据色平直折线 + 斜纹面积
+/// 填充 + 高亮纸底圆点）/ 日期标签。折线描画与数值动画保留。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 收入趋势小组件
 class RevenueTrendCardWidget extends StatefulWidget {
@@ -99,74 +109,42 @@ class _RevenueTrendCardWidgetState extends State<RevenueTrendCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    final backgroundColor = isDark ? const Color(0xFF27272A) : Colors.white;
-    final textColor =
-        isDark ? const Color(0xFFF3F4F6) : const Color(0xFF111827);
-    final subTextColor = const Color(0xFF9CA3AF);
-    final primaryColor = const Color(0xFF6B4EFF);
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 340,
+        height: widget.inline ? double.maxFinite : 400,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          children: [
+            // 时间筛选按钮
+            _PeriodSelector(period: widget.period, size: widget.size),
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 340,
-              height: widget.inline ? double.maxFinite : 400,
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: widget.size.getPadding(),
-                child: Column(
-                  children: [
-                    // 时间筛选按钮
-                    _PeriodSelector(
-                      period: widget.period,
-                      animation: _animation,
-                      size: widget.size,
-                    ),
-
-                    // 金额和百分比
-                    _ValueSection(
-                      currency: widget.currency,
-                      value: widget.value,
-                      percentage: widget.percentage,
-                      animation: _animation,
-                      textColor: textColor,
-                      subTextColor: subTextColor,
-                      size: widget.size,
-                    ),
-
-                    // 曲线图和日期标签（支持横向滚动）
-                    _ScrollableChartSection(
-                      chartData: widget.chartData,
-                      dates: widget.dates,
-                      highlightIndex: widget.highlightIndex,
-                      primaryColor: primaryColor,
-                      textColor: textColor,
-                      animation: _animation,
-                      size: widget.size,
-                    ),
-                  ],
-                ),
-              ),
+            // 金额和百分比
+            _ValueSection(
+              currency: widget.currency,
+              value: widget.value,
+              percentage: widget.percentage,
+              animation: _animation,
+              size: widget.size,
             ),
-          ),
-        );
-      },
+
+            // 曲线图和日期标签（支持横向滚动）
+            _ScrollableChartSection(
+              chartData: widget.chartData,
+              dates: widget.dates,
+              highlightIndex: widget.highlightIndex,
+              animation: _animation,
+              size: widget.size,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -174,66 +152,45 @@ class _RevenueTrendCardWidgetState extends State<RevenueTrendCardWidget>
 /// 时间周期选择器
 class _PeriodSelector extends StatelessWidget {
   final String period;
-  final Animation<double> animation;
   final HomeWidgetSize size;
 
-  const _PeriodSelector({
-    required this.period,
-    required this.animation,
-    required this.size,
-  });
+  const _PeriodSelector({required this.period, required this.size});
 
   @override
   Widget build(BuildContext context) {
-    final textColor = const Color(0xFF9CA3AF);
+    final theme = AppTheme.of(context);
 
-    final selectorAnimation = CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.0, 0.4, curve: Curves.easeOutCubic),
-    );
-
-    return AnimatedBuilder(
-      animation: selectorAnimation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: selectorAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, 10 * (1 - selectorAnimation.value)),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: InkWell(
-                onTap: () {},
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: size.getItemSpacing(),
-                    vertical: size.getItemSpacing() / 2,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        period,
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: size.getSubtitleFontSize(),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(width: size.getItemSpacing() / 2),
-                      Icon(
-                        Icons.expand_more,
-                        color: textColor,
-                        size: size.getIconSize() * 0.7,
-                      ),
-                    ],
-                  ),
+    return Align(
+      alignment: Alignment.centerRight,
+      child: InkWell(
+        onTap: () {},
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: size.getItemSpacing(),
+            vertical: size.getItemSpacing() / 2,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                period,
+                style: TextStyle(
+                  color: theme.textSub,
+                  fontSize: size.getSubtitleFontSize(),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
+              SizedBox(width: size.getItemSpacing() / 2),
+              DsIcon(
+                DsIconKind.chevronDown,
+                size: size.getIconSize() * 0.7,
+                color: theme.textSub,
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -244,8 +201,6 @@ class _ValueSection extends StatelessWidget {
   final double value;
   final int percentage;
   final Animation<double> animation;
-  final Color textColor;
-  final Color subTextColor;
   final HomeWidgetSize size;
 
   const _ValueSection({
@@ -253,13 +208,12 @@ class _ValueSection extends StatelessWidget {
     required this.value,
     required this.percentage,
     required this.animation,
-    required this.textColor,
-    required this.subTextColor,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final valueAnimation = CurvedAnimation(
       parent: animation,
       curve: const Interval(0.1, 0.6, curve: Curves.easeOutCubic),
@@ -271,61 +225,56 @@ class _ValueSection extends StatelessWidget {
     return AnimatedBuilder(
       animation: valueAnimation,
       builder: (context, child) {
-        return Opacity(
-          opacity: valueAnimation.value,
-          child: Column(
-            children: [
-              // 金额显示
-              SizedBox(
-                height: valueSectionHeight,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      height: currencyHeight,
-                      child: Text(
-                        currency,
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: size.getLargeFontSize() * 0.6,
-                          fontWeight: FontWeight.bold,
-                          height: 1.0,
-                        ),
+        return Column(
+          children: [
+            // 金额显示
+            SizedBox(
+              height: valueSectionHeight,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: currencyHeight,
+                    child: Text(
+                      currency,
+                      style: TextStyle(
+                        color: theme.text,
+                        fontSize: size.getLargeFontSize() * 0.6,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
                       ),
                     ),
-                    SizedBox(
-                      height: valueSectionHeight,
-                      child: AnimatedFlipCounter(
-                        value: value * valueAnimation.value,
-                        fractionDigits: 2,
-                        textStyle: TextStyle(
-                          color: textColor,
-                          fontSize: size.getLargeFontSize() * 0.8,
-                          fontWeight: FontWeight.bold,
-                          height: 1.0,
-                        ),
+                  ),
+                  SizedBox(
+                    height: valueSectionHeight,
+                    child: AnimatedFlipCounter(
+                      value: value * valueAnimation.value,
+                      fractionDigits: 2,
+                      textStyle: TextStyle(
+                        color: theme.text,
+                        fontSize: size.getLargeFontSize() * 0.8,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
   }
 }
 
-/// 曲线图表（含日期标签）
+/// 折线图表（含日期标签）
 class _CurveChart extends StatelessWidget {
   final List<double> data;
   final List<int> dates;
   final Animation<double> animation;
   final int highlightIndex;
-  final Color primaryColor;
-  final Color textColor;
   final HomeWidgetSize size;
   final bool isScrollable;
   final double contentWidth;
@@ -336,8 +285,6 @@ class _CurveChart extends StatelessWidget {
     required this.dates,
     required this.animation,
     required this.highlightIndex,
-    required this.primaryColor,
-    required this.textColor,
     required this.size,
     this.isScrollable = false,
     this.contentWidth = double.infinity,
@@ -346,7 +293,7 @@ class _CurveChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final chartAnimation = CurvedAnimation(
       parent: animation,
       curve: const Interval(0.3, 0.9, curve: Curves.easeOutCubic),
@@ -366,14 +313,15 @@ class _CurveChart extends StatelessWidget {
             dates: dates,
             progress: chartAnimation.value,
             labelsProgress: labelsAnimation.value,
-            primaryColor: primaryColor,
-            textColor: textColor,
+            lineColor: theme.primary,
+            labelColor: theme.textSub,
+            surfaceColor: theme.surface,
             highlightIndex: highlightIndex,
-            isDark: isDark,
             strokeWidth: size.getStrokeWidth() * size.progressStrokeScale,
-            glowRadius: size.getIconSize(),
+            haloRadius: size.getIconSize(),
             highlightRadius: size.getIconSize() * 0.35,
             legendFontSize: size.getLegendFontSize(),
+            scale: size.scale,
           ),
         );
       },
@@ -381,34 +329,39 @@ class _CurveChart extends StatelessWidget {
   }
 }
 
-/// 曲线图画笔（含日期标签）
+/// 折线图绘制器（含日期标签）
+///
+/// 数据色平直折线（无 rough 抖动），线下面积用数据色浅底 + 淡斜纹填充
+/// （§9.5，替代原渐变），高亮点为淡色平涂光环 + 纸底圆 + 数据色描边圈。
 class _CurveChartPainter extends CustomPainter {
   final List<double> data;
   final List<int> dates;
   final double progress;
   final double labelsProgress;
-  final Color primaryColor;
-  final Color textColor;
+  final Color lineColor;
+  final Color labelColor;
+  final Color surfaceColor;
   final int highlightIndex;
-  final bool isDark;
   final double strokeWidth;
-  final double glowRadius;
+  final double haloRadius;
   final double highlightRadius;
   final double legendFontSize;
+  final double scale;
 
   _CurveChartPainter({
     required this.data,
     required this.dates,
     required this.progress,
     required this.labelsProgress,
-    required this.primaryColor,
-    required this.textColor,
+    required this.lineColor,
+    required this.labelColor,
+    required this.surfaceColor,
     required this.highlightIndex,
-    required this.isDark,
     required this.strokeWidth,
-    required this.glowRadius,
+    required this.haloRadius,
     required this.highlightRadius,
     required this.legendFontSize,
+    required this.scale,
   });
 
   @override
@@ -420,7 +373,8 @@ class _CurveChartPainter extends CustomPainter {
     final padding = 10.0;
     final chartWidth = size.width;
     final chartHeight = size.height - labelsHeight - padding;
-    final stepX = chartWidth / (data.length - 1);
+    final denom = data.length > 1 ? data.length - 1 : 1;
+    final stepX = chartWidth / denom;
 
     // 计算数据点位置
     final points = <Offset>[];
@@ -431,91 +385,65 @@ class _CurveChartPainter extends CustomPainter {
       points.add(Offset(x, y));
     }
 
-    // 创建平滑曲线路径（从左侧外部开始）
+    // 平直折线（数据色，两侧向外出血）
     final linePath = Path();
     linePath.moveTo(-10, points[0].dy);
-
     for (int i = 0; i < points.length; i++) {
-      if (i == 0) {
-        linePath.lineTo(points[i].dx, points[i].dy);
-      } else {
-        final previousPoint = points[i - 1];
-        final currentPoint = points[i];
-
-        // 使用三次贝塞尔曲线创建平滑连接
-        final controlPoint1 = Offset(
-          previousPoint.dx + (currentPoint.dx - previousPoint.dx) * 0.5,
-          previousPoint.dy,
-        );
-        final controlPoint2 = Offset(
-          previousPoint.dx + (currentPoint.dx - previousPoint.dx) * 0.5,
-          currentPoint.dy,
-        );
-
-        linePath.cubicTo(
-          controlPoint1.dx,
-          controlPoint1.dy,
-          controlPoint2.dx,
-          controlPoint2.dy,
-          currentPoint.dx,
-          currentPoint.dy,
-        );
-      }
+      linePath.lineTo(points[i].dx, points[i].dy);
     }
-
-    // 延伸到右侧外部
     linePath.lineTo(size.width + 10, points.last.dy);
 
-    // 绘制渐变线条
+    // 线下斜纹面积（数据色浅底 + 淡斜纹，底部止于标签行上沿）
+    final chartBottom = size.height - labelsHeight;
+    final fillPath = Path.from(linePath);
+    fillPath.lineTo(size.width + 10, chartBottom);
+    fillPath.lineTo(-10, chartBottom);
+    fillPath.close();
+
+    // 描线动画：按进度裁剪
+    canvas.save();
+    canvas.clipRect(Rect.fromLTWH(0, 0, size.width * progress, size.height));
+
+    canvas.drawPath(
+      fillPath,
+      Paint()..color = lineColor.withValues(alpha: 0.28),
+    );
+    paintDiagonalStripes(
+      canvas,
+      fillPath,
+      fillPath.getBounds(),
+      color: lineColor.withValues(alpha: 0.45),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+
     final linePaint =
         Paint()
+          ..color = lineColor
           ..style = PaintingStyle.stroke
           ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round;
-
-    // 创建渐变（从主色到灰色）
-    final gradient = LinearGradient(
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-      colors: [primaryColor, primaryColor, primaryColor.withOpacity(0.5)],
-      stops: const [0.0, 0.7, 1.0],
-    );
-
-    linePaint.shader = gradient.createShader(
-      Rect.fromLTWH(0, 0, size.width, chartHeight),
-    );
-
-    // 应用裁剪以实现动画
-    canvas.save();
-    canvas.clipRect(Rect.fromLTWH(0, 0, size.width * progress, chartHeight));
-
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
     canvas.drawPath(linePath, linePaint);
 
-    // 绘制高亮点
+    // 绘制高亮点：淡色平涂光环 + 纸底圆 + 数据色描边圈
     if (highlightIndex >= 0 && highlightIndex < points.length) {
       final highlightPoint = points[highlightIndex];
 
-      // 外圈光晕
-      final glowPaint =
-          Paint()
-            ..color = primaryColor.withOpacity(0.2)
-            ..style = PaintingStyle.fill;
-      canvas.drawCircle(highlightPoint, glowRadius, glowPaint);
-
-      // 内圈（背景色）
-      final bgPaint =
-          Paint()
-            ..color = isDark ? const Color(0xFF27272A) : Colors.white
-            ..style = PaintingStyle.fill;
-      canvas.drawCircle(highlightPoint, highlightRadius, bgPaint);
-
-      // 边框圈
-      final borderPaint =
-          Paint()
-            ..color = primaryColor
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = strokeWidth;
-      canvas.drawCircle(highlightPoint, highlightRadius, borderPaint);
+      canvas.drawCircle(
+        highlightPoint,
+        haloRadius,
+        Paint()..color = lineColor.withValues(alpha: 0.28),
+      );
+      canvas.drawCircle(highlightPoint, highlightRadius, Paint()..color = surfaceColor);
+      canvas.drawCircle(
+        highlightPoint,
+        highlightRadius,
+        Paint()
+          ..color = lineColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth * 0.8,
+      );
     }
 
     canvas.restore();
@@ -531,7 +459,7 @@ class _CurveChartPainter extends CustomPainter {
       final textSpan = TextSpan(
         text: dates[i].toString(),
         style: TextStyle(
-          color: isHighlighted ? primaryColor : textColor,
+          color: isHighlighted ? lineColor : labelColor,
           fontSize: legendFontSize,
           fontWeight: FontWeight.w600,
         ),
@@ -551,19 +479,21 @@ class _CurveChartPainter extends CustomPainter {
     return oldDelegate.progress != progress ||
         oldDelegate.labelsProgress != labelsProgress ||
         oldDelegate.strokeWidth != strokeWidth ||
-        oldDelegate.glowRadius != glowRadius ||
+        oldDelegate.haloRadius != haloRadius ||
         oldDelegate.highlightRadius != highlightRadius ||
-        oldDelegate.legendFontSize != legendFontSize;
+        oldDelegate.legendFontSize != legendFontSize ||
+        oldDelegate.lineColor != lineColor ||
+        oldDelegate.labelColor != labelColor ||
+        oldDelegate.surfaceColor != surfaceColor ||
+        oldDelegate.scale != scale;
   }
 }
 
-/// 可滚动的图表区域（曲线图 + 日期标签）
+/// 可滚动的图表区域（折线图 + 日期标签）
 class _ScrollableChartSection extends StatelessWidget {
   final List<double> chartData;
   final List<int> dates;
   final int highlightIndex;
-  final Color primaryColor;
-  final Color textColor;
   final Animation<double> animation;
   final HomeWidgetSize size;
 
@@ -571,8 +501,6 @@ class _ScrollableChartSection extends StatelessWidget {
     required this.chartData,
     required this.dates,
     required this.highlightIndex,
-    required this.primaryColor,
-    required this.textColor,
     required this.animation,
     required this.size,
   });
@@ -605,8 +533,6 @@ class _ScrollableChartSection extends StatelessWidget {
                 dates: dates,
                 animation: animation,
                 highlightIndex: highlightIndex,
-                primaryColor: primaryColor,
-                textColor: textColor,
                 size: size,
                 isScrollable: true,
                 contentWidth: contentWidth,

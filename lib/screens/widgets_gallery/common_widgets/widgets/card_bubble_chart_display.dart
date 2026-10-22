@@ -1,4 +1,14 @@
+/// 睡眠阶段气泡图小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘时间范围选择器（surfaceAlt 底 + 选中纸底块）/ 淡墨网格与时间标签 /
+/// 睡眠阶段气泡（核心视觉保留：数据色圆角气泡逐个浮现，仅去柔影）/
+/// 图例（数据色手绘色块）。气泡错峰入场动画保留。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 睡眠阶段类型
@@ -111,7 +121,6 @@ class CardBubbleChartDisplay extends StatefulWidget {
 class _CardBubbleChartDisplayState extends State<CardBubbleChartDisplay>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _animation;
   int _selectedTab = 1;
 
   @override
@@ -121,10 +130,6 @@ class _CardBubbleChartDisplayState extends State<CardBubbleChartDisplay>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
     );
     _animationController.forward();
   }
@@ -137,64 +142,42 @@ class _CardBubbleChartDisplayState extends State<CardBubbleChartDisplay>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : null,
-              padding: widget.size.getPadding(),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF404040) : Colors.white,
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 时间范围选择器
-                  _buildTabSelector(context),
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  // 睡眠阶段图表
-                  _buildChart(context),
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  // 图例
-                  _buildLegend(context),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : null,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 时间范围选择器
+            _buildTabSelector(theme),
+            SizedBox(height: widget.size.getTitleSpacing()),
+            // 睡眠阶段图表
+            _buildChart(theme),
+            SizedBox(height: widget.size.getTitleSpacing()),
+            // 图例
+            _buildLegend(theme),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildTabSelector(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildTabSelector(AppThemeData theme) {
     final tabs = ['1 Day', '1 Week', '1 Month', '1 Year', 'All Time'];
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF3A3A3C).withOpacity(0.5)
-            : const Color(0xFFF8F5F2),
-        borderRadius: BorderRadius.circular(16),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(16),
+        fillColor: theme.surfaceAlt,
       ),
       child: Row(
         children: List.generate(tabs.length, (index) {
@@ -207,33 +190,21 @@ class _CardBubbleChartDisplayState extends State<CardBubbleChartDisplay>
                   horizontal: 8,
                   vertical: 6,
                 ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? (isDark ? const Color(0xFF3A3A3C) : Colors.white)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                          ),
-                        ]
-                      : null,
-                ),
+                // 选中项：手绘纸底小卡
+                decoration: isSelected
+                    ? dsSketchDecoration(
+                        theme: theme,
+                        radius: BorderRadius.circular(12),
+                        fillColor: theme.surface,
+                      )
+                    : null,
                 child: Text(
                   tabs[index],
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: isSelected
-                        ? (isDark
-                            ? const Color(0xFF5D4037)
-                            : const Color(0xFF5D4037))
-                        : (isDark
-                            ? Colors.grey.shade600
-                            : const Color(0xFF5D4037).withOpacity(0.6)),
+                    color: isSelected ? theme.text : theme.textSub,
                   ),
                 ),
               ),
@@ -244,8 +215,7 @@ class _CardBubbleChartDisplayState extends State<CardBubbleChartDisplay>
     );
   }
 
-  Widget _buildChart(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildChart(AppThemeData theme) {
     final chartWidth = 280.0;
     final chartHeight = 200.0;
 
@@ -254,7 +224,7 @@ class _CardBubbleChartDisplayState extends State<CardBubbleChartDisplay>
       width: chartWidth,
       child: Stack(
         children: [
-          // 网格线
+          // 淡墨网格线
           ...List.generate(5, (index) {
             final x = (chartWidth / 4) * index;
             return Positioned(
@@ -263,9 +233,7 @@ class _CardBubbleChartDisplayState extends State<CardBubbleChartDisplay>
               bottom: 24,
               child: Container(
                 width: 1,
-                color: isDark
-                    ? const Color(0xFF404040)
-                    : const Color(0xFFE5E7EB),
+                color: theme.ink.withValues(alpha: 0.18),
               ),
             );
           }),
@@ -282,9 +250,7 @@ class _CardBubbleChartDisplayState extends State<CardBubbleChartDisplay>
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? const Color(0xFF6B7280)
-                        : const Color(0xFF9CA3AF),
+                    color: theme.textSub,
                   ),
                 );
               }).toList(),
@@ -315,31 +281,29 @@ class _CardBubbleChartDisplayState extends State<CardBubbleChartDisplay>
     );
   }
 
-  Widget _buildLegend(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _buildLegend(AppThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _LegendItem(
+          theme: theme,
           color: const Color(0xFF9CB573),
           label: 'Core',
-          isDark: isDark,
         ),
         _LegendItem(
+          theme: theme,
           color: const Color(0xFF8D6E63),
           label: 'REM',
-          isDark: isDark,
         ),
         _LegendItem(
+          theme: theme,
           color: const Color(0xFFF4CD26),
           label: 'Post-REM',
-          isDark: isDark,
         ),
         _LegendItem(
+          theme: theme,
           color: const Color(0xFFC8B6F9),
           label: 'Deep',
-          isDark: isDark,
         ),
       ],
     );
@@ -347,6 +311,8 @@ class _CardBubbleChartDisplayState extends State<CardBubbleChartDisplay>
 }
 
 /// 睡眠阶段气泡组件
+///
+/// 核心视觉保留：数据色圆角气泡 + 错峰生长动画，仅去除柔影。
 class _SleepStageBubble extends StatelessWidget {
   final SleepStageData stage;
   final double chartWidth;
@@ -392,13 +358,6 @@ class _SleepStageBubble extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(width / 2),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
           ),
         );
@@ -407,16 +366,16 @@ class _SleepStageBubble extends StatelessWidget {
   }
 }
 
-/// 图例项组件
+/// 图例项组件（数据色手绘色块 + 标签）
 class _LegendItem extends StatelessWidget {
+  final AppThemeData theme;
   final Color color;
   final String label;
-  final bool isDark;
 
   const _LegendItem({
+    required this.theme,
     required this.color,
     required this.label,
-    required this.isDark,
   });
 
   @override
@@ -427,7 +386,11 @@ class _LegendItem extends StatelessWidget {
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(6),
+            fillColor: color,
+          ),
         ),
         const SizedBox(width: 6),
         Text(
@@ -435,7 +398,7 @@ class _LegendItem extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.grey.shade200 : const Color(0xFF5D4037),
+            color: theme.text,
           ),
         ),
       ],

@@ -1,9 +1,14 @@
-/// 习惯每日热力图卡片 - 公共小组件
+/// 习惯每日热力图卡片 - 公共小组件（手绘纸卡风格）
 ///
-/// 显示习惯的每日热力图，支持过去7天和当月两种视图模式
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘方形图标徽章 + 标题 / 数据色时长徽章 / 每日热力图格子
+/// （习惯色档位透明度实底 + 淡墨格描边，不做斜纹），
+/// 支持过去7天和当月两种视图模式。
 library;
 
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
@@ -93,53 +98,56 @@ class HabitHeatmapCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
     final isMedium = viewMode == 'week';
     final showNumbers = !isMedium;
 
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant,
-            width: 1,
+      child: WiredDraw(
+        child: DsSketchPanel(
+          theme: theme,
+          radius: BorderRadius.circular(24),
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(theme),
+              const SizedBox(height: 8),
+              Expanded(child: _buildHeatmapGrid(theme, isMedium, showNumbers)),
+            ],
           ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, theme),
-            const SizedBox(height: 8),
-            Expanded(child: _buildHeatmapGrid(context, isMedium, showNumbers)),
-          ],
         ),
       ),
     );
   }
 
   /// 构建头部
-  Widget _buildHeader(BuildContext context, ThemeData theme) {
+  Widget _buildHeader(AppThemeData theme) {
+    final icon =
+        iconCode != null
+            ? dynamicIconData(int.parse(iconCode!), fontFamily: 'MaterialIcons')
+            : Icons.auto_awesome;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 32,
           height: 32,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(6),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(8),
+            fillColor: theme.surfaceAlt,
           ),
-          child:
-              iconCode != null
-                  ? Icon(
-                    dynamicIconData(int.parse(iconCode!), fontFamily: 'MaterialIcons'),
-                    color: color,
-                    size: 18,
-                  )
-                  : Icon(Icons.auto_awesome, color: color, size: 18),
+          child: Center(
+            child: WiredIcon(
+              icon: icon,
+              size: 18,
+              color: color,
+              drawConfig: theme.wired.drawConfig,
+            ),
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -148,8 +156,10 @@ class HabitHeatmapCardWidget extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: theme.textTheme.bodyMedium?.copyWith(
+                style: TextStyle(
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: theme.text,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -157,8 +167,9 @@ class HabitHeatmapCardWidget extends StatelessWidget {
               if (group != null)
                 Text(
                   group!,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.outline,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: theme.textSub,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -169,16 +180,18 @@ class HabitHeatmapCardWidget extends StatelessWidget {
         // 统计信息
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: Colors.amber.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.amber.withOpacity(0.3), width: 1),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(6),
+            fillColor: theme.surfaceAlt,
           ),
           child: Text(
             '$totalMinutes分钟',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.amber,
+            style: TextStyle(
+              color: color,
               fontSize: 10,
+              fontWeight: FontWeight.w600,
+              height: 1.2,
             ),
           ),
         ),
@@ -186,9 +199,9 @@ class HabitHeatmapCardWidget extends StatelessWidget {
     );
   }
 
-  /// 构建热力图网格
+  /// 构建热力图网格：习惯色档位透明度实底 + 淡墨格描边（不做斜纹）
   Widget _buildHeatmapGrid(
-    BuildContext context,
+    AppThemeData theme,
     bool isMedium,
     bool showNumbers,
   ) {
@@ -228,7 +241,7 @@ class HabitHeatmapCardWidget extends StatelessWidget {
             runAlignment: WrapAlignment.end,
             children:
                 dailyData.map((item) {
-                  // 根据时长计算透明度
+                  // 根据时长计算档位透明度（数据色保留）
                   final double opacity;
                   if (maxMinutes > 0) {
                     opacity = 0.1 + (item.minutes / maxMinutes) * 0.7;
@@ -240,15 +253,19 @@ class HabitHeatmapCardWidget extends StatelessWidget {
                     return SizedBox(width: cellSize, height: cellSize);
                   }
 
+                  final active = item.minutes > 0;
                   return SizedBox(
                     width: cellSize,
                     height: cellSize,
                     child: Container(
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(
-                          item.minutes > 0 ? opacity.clamp(0.2, 0.9) : 0.08,
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        radius: BorderRadius.circular(cellSize / 3),
+                        fillColor: color.withValues(
+                          alpha: active ? opacity.clamp(0.2, 0.9) : 0.08,
                         ),
-                        borderRadius: BorderRadius.circular(cellSize / 3),
+                        stroke: theme.ink.withValues(alpha: active ? 0.4 : 0.2),
+                        strokeWidth: 1,
                       ),
                       child:
                           showNumbers
@@ -257,12 +274,9 @@ class HabitHeatmapCardWidget extends StatelessWidget {
                                   '${item.day}',
                                   style: TextStyle(
                                     fontSize: fontSize,
-                                    color:
-                                        item.minutes > 0
-                                            ? Colors.black54
-                                            : Colors.black26,
+                                    color: active ? theme.text : theme.textSub,
                                     fontWeight:
-                                        item.minutes > 0
+                                        active
                                             ? FontWeight.w500
                                             : FontWeight.normal,
                                   ),

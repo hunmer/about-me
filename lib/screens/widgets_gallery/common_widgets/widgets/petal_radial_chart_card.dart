@@ -1,11 +1,18 @@
-import 'dart:math' as math;
-import 'package:flutter/material.dart';
-import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
-
-/// 花瓣径向统计卡片
+/// 花瓣径向统计卡片（手绘纸卡风格）
 ///
-/// 将圆等分为若干扇形花瓣：底层为满幅的圆角扇形（track），
-/// 上层按数值比例填充彩色花瓣，每个花瓣沿分角线标注数值与标签。
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 将圆等分为若干扇形花瓣：底层为满幅淡墨斜纹轨道花瓣，
+/// 上层按数值比例填充数据色斜纹花瓣，每个花瓣沿分角线标注数值与标签。
+library;
+
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
+
 class PetalRadialChartCardWidget extends StatefulWidget {
   /// 花瓣数据列表
   final List<PetalChartItemData> items;
@@ -99,8 +106,7 @@ class PetalRadialChartCardWidget extends StatefulWidget {
       _PetalRadialChartCardWidgetState();
 }
 
-class _PetalRadialChartCardWidgetState
-    extends State<PetalRadialChartCardWidget>
+class _PetalRadialChartCardWidgetState extends State<PetalRadialChartCardWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
@@ -152,94 +158,83 @@ class _PetalRadialChartCardWidgetState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: 0.3 + 0.7 * _animation.value,
-          child: child,
-        );
-      },
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : 384 * widget.size.scale,
         height: widget.inline ? double.maxFinite : _defaultHeight(),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF191919) : Colors.white,
-          borderRadius: BorderRadius.circular(24 * widget.size.scale),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-              blurRadius: 20 * widget.size.scale,
-              offset: Offset(0, 4 * widget.size.scale),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: widget.size.getPadding(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (widget.title != null)
-                Padding(
-                  padding: EdgeInsets.only(
-                    bottom: widget.size.getItemSpacing() * 1.5,
-                  ),
-                  child: Text(
-                    widget.title!,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF211D15),
-                      fontSize: widget.size.getTitleFontSize(),
-                      fontWeight: FontWeight.w700,
-                      height: 1.0,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+        radius: BorderRadius.circular(24 * widget.size.scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.title != null)
+              Padding(
+                padding: EdgeInsets.only(
+                  bottom: widget.size.getItemSpacing() * 1.5,
                 ),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final side = math.min(
-                      constraints.maxWidth,
-                      constraints.maxHeight,
-                    );
-                    return Center(
-                      child: SizedBox(
-                        width: side,
-                        height: side,
-                        child: CustomPaint(
-                          painter: _PetalRadialChartPainter(
-                            items: widget.items,
-                            maxValue: _effectiveMaxValue,
-                            progress: _animation.value,
-                            fractionDigits: widget.fractionDigits,
-                            showText: widget.size is! SmallSize,
-                            isDark: isDark,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+                child: Text(
+                  widget.title!,
+                  style: TextStyle(
+                    color: theme.text,
+                    fontSize: widget.size.getTitleFontSize(),
+                    fontWeight: FontWeight.w700,
+                    height: 1.0,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
-            ],
-          ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final side = math.min(
+                    constraints.maxWidth,
+                    constraints.maxHeight,
+                  );
+                  return Center(
+                    child: SizedBox(
+                      width: side,
+                      height: side,
+                      child: CustomPaint(
+                        painter: _PetalRadialChartPainter(
+                          items: widget.items,
+                          maxValue: _effectiveMaxValue,
+                          progress: _animation.value,
+                          fractionDigits: widget.fractionDigits,
+                          showText: widget.size is! SmallSize,
+                          theme: theme,
+                          scale: widget.size.scale,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// 花瓣径向统计图绘制器
+/// 花瓣径向统计图绘制器（平直几何 + 斜纹）
+///
+/// 底瓣为满幅轨道（surfaceAlt 底 + 淡墨斜纹 + 淡描边），
+/// 填充花瓣为数据色浅底 + 浓斜纹 + 数据色描边，按 [progress] 径向生长；
+/// 文字颜色一律取 [theme] 语义色。
 class _PetalRadialChartPainter extends CustomPainter {
   final List<PetalChartItemData> items;
   final double maxValue;
   final double progress;
   final int fractionDigits;
   final bool showText;
-  final bool isDark;
+  final AppThemeData theme;
+  final double scale;
 
   _PetalRadialChartPainter({
     required this.items,
@@ -247,7 +242,8 @@ class _PetalRadialChartPainter extends CustomPainter {
     required this.progress,
     required this.fractionDigits,
     required this.showText,
-    required this.isDark,
+    required this.theme,
+    required this.scale,
   });
 
   @override
@@ -264,12 +260,9 @@ class _PetalRadialChartPainter extends CustomPainter {
     final startAngle = -math.pi / 2 - sweep / 2;
     // 花瓣之间的角间隙
     final gapAngle = math.min(sweep * 0.12, 2 * math.pi * 0.02);
+    final bounds = Offset.zero & size;
 
-    // 底瓣（满幅 track）
-    final trackPaint =
-        Paint()
-          ..color = isDark ? const Color(0xFF4A4A4A) : const Color(0xFFE9E6E0)
-          ..style = PaintingStyle.fill;
+    // 底瓣（满幅轨道：淡墨底 + 低透明度斜纹 + 淡描边）
     for (int i = 0; i < n; i++) {
       final path = _petalPath(
         center: center,
@@ -278,10 +271,25 @@ class _PetalRadialChartPainter extends CustomPainter {
         a1: startAngle + i * sweep + gapAngle / 2,
         a2: startAngle + (i + 1) * sweep - gapAngle / 2,
       );
-      canvas.drawPath(path, trackPaint);
+      canvas.drawPath(path, Paint()..color = theme.surfaceAlt);
+      paintDiagonalStripes(
+        canvas,
+        path,
+        bounds,
+        color: theme.ink.withValues(alpha: 0.28),
+        strokeWidth: 1.5 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = theme.ink.withValues(alpha: 0.45)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
     }
 
-    // 填充花瓣
+    // 填充花瓣（数据色浅底 + 浓斜纹 + 描边）
     for (int i = 0; i < n; i++) {
       final item = items[i];
       final fraction = (item.value / maxValue).clamp(0.0, 1.0).toDouble();
@@ -300,9 +308,22 @@ class _PetalRadialChartPainter extends CustomPainter {
       );
       canvas.drawPath(
         path,
+        Paint()..color = item.color.withValues(alpha: 0.28),
+      );
+      paintDiagonalStripes(
+        canvas,
+        path,
+        bounds,
+        color: item.color.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawPath(
+        path,
         Paint()
-          ..color = item.color
-          ..style = PaintingStyle.fill,
+          ..color = item.color.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
       );
     }
 
@@ -319,19 +340,21 @@ class _PetalRadialChartPainter extends CustomPainter {
       fontSize: numberFontSize,
       fontWeight: FontWeight.w800,
       height: 1.1,
+      color: theme.text,
     );
     final labelStyle = TextStyle(
       fontSize: labelFontSize,
       fontWeight: FontWeight.w500,
       height: 1.15,
+      color: theme.textSub,
     );
 
     // 以原始字号测量两行文字块的高度，文字块最内侧半径处的弦宽为收缩基准
     final measureTp = TextPainter(
       text: TextSpan(children: [
-        const TextSpan(text: '0'),
-        const TextSpan(text: '\nA', style: TextStyle(height: 1.15)),
-      ], style: numberStyle),
+        TextSpan(text: '0', style: numberStyle),
+        TextSpan(text: '\nA', style: labelStyle),
+      ]),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
     )..layout();
@@ -358,30 +381,20 @@ class _PetalRadialChartPainter extends CustomPainter {
           ) *
           textScale;
 
-      final trackNumberColor =
-          isDark ? Colors.white : const Color(0xFF333333);
-      final trackLabelColor = isDark
-          ? const Color(0xFFBFBFBF)
-          : const Color(0xFF777777);
-      // 填充花瓣为浅色，其上文字统一用深色
-      const onFillColor = Color(0xFF1C1C1C);
-
       final tp = TextPainter(
         text: TextSpan(children: [
           TextSpan(
             text: number,
             style: numberStyle.copyWith(
               fontSize: numberFontSize * scale,
-              color: onFill ? onFillColor : trackNumberColor,
+              color: onFill ? theme.ink : theme.text,
             ),
           ),
           TextSpan(
             text: '\n${item.label}',
             style: labelStyle.copyWith(
               fontSize: labelFontSize * scale,
-              color: onFill
-                  ? onFillColor.withOpacity(0.8)
-                  : trackLabelColor,
+              color: theme.textSub,
             ),
           ),
         ]),
@@ -513,7 +526,8 @@ class _PetalRadialChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _PetalRadialChartPainter oldDelegate) {
     return oldDelegate.progress != progress ||
-        oldDelegate.isDark != isDark ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale ||
         oldDelegate.items.length != items.length;
   }
 }

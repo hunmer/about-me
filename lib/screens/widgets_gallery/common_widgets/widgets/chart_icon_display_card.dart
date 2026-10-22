@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 图表图标数据模型
 class ChartIconEntry {
@@ -54,7 +57,11 @@ extension ChartIconTypeExtension on ChartIconType {
   }
 }
 
-/// 图标展示图表卡片小组件
+/// 图标展示图表卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题头部 / 柱状图（color 型数据柱走数据色斜纹填充 §9.5，
+/// emoji 型走淡墨轨道底保证 emoji 干净可读）/ 轴刻度与标签。
 class ChartIconDisplayCard extends StatefulWidget {
   /// 标题
   final String title;
@@ -147,56 +154,36 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 320,
-              constraints: BoxConstraints(
-                minWidth: 280,
-                minHeight: widget.size.getHeightConstraints().minHeight,
-              ),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.black : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  if (!isDark)
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 40,
-                      offset: const Offset(0, 12),
-                    ),
-                ],
-                border:
-                    isDark
-                        ? Border.all(color: Colors.white.withOpacity(0.1))
-                        : null,
-              ),
-              padding: widget.size.getPadding(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 标题和副标题
-                  _buildHeader(isDark),
-                  // 心情图表
-                  Expanded(child: _buildMoodChart(isDark)),
-                ],
-              ),
-            ),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: 280,
+          minHeight: widget.size.getHeightConstraints().minHeight,
+        ),
+        child: DsSketchPanel(
+          theme: theme,
+          width: widget.inline ? double.maxFinite : 320,
+          radius: BorderRadius.circular(24 * widget.size.scale),
+          padding: widget.size.getPadding(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题和副标题
+              _buildHeader(theme),
+              // 心情图表
+              Expanded(child: _buildMoodChart(theme)),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   /// 构建标题区域
-  Widget _buildHeader(bool isDark) {
+  Widget _buildHeader(AppThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -204,7 +191,7 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
         Text(
           widget.title,
           style: TextStyle(
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+            color: theme.textSub,
             fontSize: widget.size.getSubtitleFontSize(),
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
@@ -213,7 +200,7 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
         Text(
           widget.subtitle,
           style: TextStyle(
-            color: isDark ? Colors.white : Colors.grey.shade900,
+            color: theme.text,
             fontSize: widget.size.getTitleFontSize(),
             fontWeight: FontWeight.bold,
           ),
@@ -223,7 +210,7 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
   }
 
   /// 构建心情图表
-  Widget _buildMoodChart(bool isDark) {
+  Widget _buildMoodChart(AppThemeData theme) {
     // 计算最大值用于缩放
     int maxValue = 0;
     for (var mood in widget.moods) {
@@ -292,9 +279,7 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
                         child: Text(
                           value.toString(),
                           style: TextStyle(
-                            color: isDark
-                                ? Colors.grey.shade600
-                                : Colors.grey.shade400,
+                            color: theme.textSub,
                             fontSize: axisFontSize,
                           ),
                           textAlign: TextAlign.center,
@@ -313,7 +298,7 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: _buildMoodBars(
                   maxValue,
-                  isDark,
+                  theme,
                   barWidth,
                   barSpacing,
                   chartHeight,
@@ -326,10 +311,10 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
               height: axisLabelFontSize * 1.5,
               child: Row(
                 children: _buildAxisLabels(
+                  theme,
                   axisLabelFontSize,
                   barWidth,
                   barSpacing,
-                  isDark,
                 ),
               ),
             ),
@@ -342,7 +327,7 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
   /// 构建柱子列表
   List<Widget> _buildMoodBars(
     int maxValue,
-    bool isDark,
+    AppThemeData theme,
     double barWidth,
     double barSpacing,
     double chartHeight,
@@ -371,7 +356,7 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
             animation: barAnimation,
             displayType: widget.displayType,
             primaryColor: widget.primaryColor,
-            isDark: isDark,
+            theme: theme,
             size: widget.size,
             maxHeight: chartHeight,
           ),
@@ -382,10 +367,10 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
 
   /// 构建X轴标签列表
   List<Widget> _buildAxisLabels(
+    AppThemeData theme,
     double fontSize,
     double barWidth,
     double barSpacing,
-    bool isDark,
   ) {
     return List.generate(widget.moods.length, (index) {
       final mood = widget.moods[index];
@@ -398,10 +383,7 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
           width: barWidth,
           child: Text(
             mood.label,
-            style: TextStyle(
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-              fontSize: fontSize,
-            ),
+            style: TextStyle(color: theme.textSub, fontSize: fontSize),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -413,13 +395,17 @@ class _ChartIconDisplayCardState extends State<ChartIconDisplayCard>
 }
 
 /// 单个心情柱
+///
+/// color 型：数据色斜纹填充柱（数据色浅底 + 浓斜纹 + 数据色描边，§9.5）；
+/// emoji 型：淡墨轨道底（surfaceAlt + 淡墨描边），保证 emoji 干净可读。
+/// 柱体保持平直几何，不上 rough 墨线，读数清晰。
 class _MoodBar extends StatelessWidget {
   final ChartIconEntry mood;
   final int maxValue;
   final Animation<double> animation;
   final ChartIconType displayType;
   final Color primaryColor;
-  final bool isDark;
+  final AppThemeData theme;
   final HomeWidgetSize size;
   final double maxHeight;
 
@@ -429,7 +415,7 @@ class _MoodBar extends StatelessWidget {
     required this.animation,
     required this.displayType,
     required this.primaryColor,
-    required this.isDark,
+    required this.theme,
     required this.size,
     required this.maxHeight,
   });
@@ -451,30 +437,100 @@ class _MoodBar extends StatelessWidget {
         AnimatedBuilder(
           animation: animation,
           builder: (context, child) {
-            return Container(
+            return SizedBox(
+              width: double.infinity,
               height: barHeight * animation.value,
-              decoration: BoxDecoration(
-                color:
-                    displayType == ChartIconType.color
-                        ? primaryColor.withOpacity(0.7)
-                        : isDark
-                        ? Colors.grey.shade700
-                        : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(borderRadius),
+              child: CustomPaint(
+                painter: _MoodBarPainter(
+                  displayType: displayType,
+                  dataColor: primaryColor,
+                  theme: theme,
+                  scale: size.scale,
+                  radius: borderRadius,
+                ),
+                child:
+                    displayType == ChartIconType.emoji
+                        ? Center(
+                            child: Text(
+                              mood.emoji,
+                              style: TextStyle(fontSize: actualEmojiSize),
+                            ),
+                          )
+                        : null,
               ),
-              child:
-                  displayType == ChartIconType.emoji
-                      ? Center(
-                        child: Text(
-                          mood.emoji,
-                          style: TextStyle(fontSize: actualEmojiSize),
-                        ),
-                      )
-                      : null,
             );
           },
         ),
       ],
     );
+  }
+}
+
+/// 心情柱绘制器
+///
+/// color 型数据柱：数据色浅底（0.28）+ 数据色浓斜纹（0.9）+
+/// 数据色描边（0.85）；emoji 型轨道柱：surfaceAlt 底 + 淡墨描边（0.45）。
+class _MoodBarPainter extends CustomPainter {
+  final ChartIconType displayType;
+  final Color dataColor;
+  final AppThemeData theme;
+  final double scale;
+  final double radius;
+
+  const _MoodBarPainter({
+    required this.displayType,
+    required this.dataColor,
+    required this.theme,
+    required this.scale,
+    required this.radius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+
+    if (displayType == ChartIconType.color) {
+      // 数据柱：数据色斜纹填充
+      canvas.drawRRect(
+        rrect,
+        Paint()..color = dataColor.withValues(alpha: 0.28),
+      );
+      paintDiagonalStripes(
+        canvas,
+        Path()..addRRect(rrect),
+        rect,
+        color: dataColor.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawRRect(
+        rrect,
+        Paint()
+          ..color = dataColor.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
+    } else {
+      // emoji 轨道柱：淡墨底 + 淡墨描边（emoji 需干净底色）
+      canvas.drawRRect(rrect, Paint()..color = theme.surfaceAlt);
+      canvas.drawRRect(
+        rrect,
+        Paint()
+          ..color = theme.ink.withValues(alpha: 0.45)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _MoodBarPainter oldDelegate) {
+    return oldDelegate.displayType != displayType ||
+        oldDelegate.dataColor != dataColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale ||
+        oldDelegate.radius != radius;
   }
 }

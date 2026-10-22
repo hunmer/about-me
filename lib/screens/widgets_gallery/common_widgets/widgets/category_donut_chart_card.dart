@@ -1,7 +1,18 @@
+/// 分类环形图卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 顶部手绘徽章 + 周期说明 / 斜纹分段圆环（各分类数据色斜纹扇环，
+/// 中心显示总额）/ 分类列表（手绘色块指示器 + 标签 + 百分比，逐项错峰入场）。
+library;
+
 import 'dart:math' as math;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 分类数据模型
 class CategoryChartData {
@@ -127,65 +138,50 @@ class _CategoryDonutChartCardWidgetState extends State<CategoryDonutChartCardWid
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
     final primaryColor = widget.primaryColor ?? const Color(0xFFD8F57E);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 340,
-              height: widget.inline ? double.maxFinite : 500,
-              padding: widget.size.getPadding(),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                borderRadius: BorderRadius.circular(40),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 顶部标签
-                  _buildHeaderSection(primaryColor, isDark),
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  // 环形图
-                  Center(
-                    child: SizedBox(
-                      width: 220,
-                      height: 220,
-                      child: _DonutChart(
-                        categories: widget.categories,
-                        totalAmount: widget.totalAmount,
-                        totalUnit: widget.totalUnit,
-                        animation: _animation,
-                        size: widget.size,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  // 分类列表
-                  _buildCategoryList(isDark),
-                ],
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 340,
+        height: widget.inline ? double.maxFinite : 500,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 顶部标签
+            _buildHeaderSection(theme, primaryColor),
+            SizedBox(height: widget.size.getTitleSpacing()),
+            // 环形图
+            Center(
+              child: SizedBox(
+                width: 220,
+                height: 220,
+                child: _DonutChart(
+                  categories: widget.categories,
+                  totalAmount: widget.totalAmount,
+                  totalUnit: widget.totalUnit,
+                  animation: _animation,
+                  size: widget.size,
+                  theme: theme,
+                ),
               ),
             ),
-          ),
-        );
-      },
+            SizedBox(height: widget.size.getTitleSpacing()),
+            // 分类列表
+            _buildCategoryList(theme),
+          ],
+        ),
+      ),
     );
   }
 
-  /// 构建头部区域
-  Widget _buildHeaderSection(Color primaryColor, bool isDark) {
+  /// 构建头部区域（数据色手绘徽章 + 周期说明）
+  Widget _buildHeaderSection(AppThemeData theme, Color primaryColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,9 +190,11 @@ class _CategoryDonutChartCardWidgetState extends State<CategoryDonutChartCardWid
             horizontal: widget.size.getItemSpacing() * 1.5,
             vertical: widget.size.getItemSpacing() * 0.5,
           ),
-          decoration: BoxDecoration(
-            color: primaryColor,
-            borderRadius: BorderRadius.circular(20),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            // 大圆角被 rough 引擎自动钳制成胶囊
+            radius: BorderRadius.circular(20),
+            fillColor: primaryColor,
           ),
           child: Text(
             widget.badgeLabel,
@@ -204,7 +202,7 @@ class _CategoryDonutChartCardWidgetState extends State<CategoryDonutChartCardWid
               fontSize: widget.size.getLegendFontSize(),
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
-              color: Colors.black,
+              color: theme.ink,
             ),
           ),
         ),
@@ -214,7 +212,7 @@ class _CategoryDonutChartCardWidgetState extends State<CategoryDonutChartCardWid
           style: TextStyle(
             fontSize: widget.size.getSubtitleFontSize(),
             fontWeight: FontWeight.w500,
-            color: Colors.grey.shade500,
+            color: theme.textSub,
           ),
         ),
       ],
@@ -222,7 +220,7 @@ class _CategoryDonutChartCardWidgetState extends State<CategoryDonutChartCardWid
   }
 
   /// 构建分类列表
-  Widget _buildCategoryList(bool isDark) {
+  Widget _buildCategoryList(AppThemeData theme) {
     return Column(
       children: List.generate(
         widget.categories.length,
@@ -245,6 +243,7 @@ class _CategoryDonutChartCardWidgetState extends State<CategoryDonutChartCardWid
               color: category.color,
               animation: itemAnimation,
               size: widget.size,
+              theme: theme,
             ),
           );
         },
@@ -260,6 +259,7 @@ class _DonutChart extends StatelessWidget {
   final String totalUnit;
   final Animation<double> animation;
   final HomeWidgetSize size;
+  final AppThemeData theme;
 
   const _DonutChart({
     required this.categories,
@@ -267,12 +267,11 @@ class _DonutChart extends StatelessWidget {
     required this.totalUnit,
     required this.animation,
     required this.size,
+    required this.theme,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
@@ -281,74 +280,124 @@ class _DonutChart extends StatelessWidget {
           painter: _DonutChartPainter(
             categories: categories,
             animation: animation.value,
-            isDark: isDark,
+            theme: theme,
+            scale: size.scale,
           ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedFlipCounter(
-                  value: totalAmount * animation.value,
-                  fractionDigits: 0,
-                  suffix: totalUnit,
-                  duration: const Duration(milliseconds: 800),
-                  textStyle: TextStyle(
-                    fontSize: size.getLargeFontSize(),
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.grey.shade900,
-                    height: 1.0,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          child: child,
         );
       },
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedFlipCounter(
+              value: totalAmount * animation.value,
+              fractionDigits: 0,
+              suffix: totalUnit,
+              duration: const Duration(milliseconds: 800),
+              textStyle: TextStyle(
+                fontSize: size.getLargeFontSize(),
+                fontWeight: FontWeight.w700,
+                color: theme.text,
+                height: 1.0,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-/// 环形图绘制器
+/// 环形图绘制器（平直几何 + 斜纹）
+///
+/// 从顶部起按占比切分扇环（段间留小间隙便于读数）：每段铺
+/// 数据色浅底 + 浓斜纹 + 数据色描边，随 [animation] 同步生长。
 class _DonutChartPainter extends CustomPainter {
   final List<CategoryChartData> categories;
   final double animation;
-  final bool isDark;
+  final AppThemeData theme;
+  final double scale;
 
   _DonutChartPainter({
     required this.categories,
     required this.animation,
-    required this.isDark,
+    required this.theme,
+    required this.scale,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 20;
-    const strokeWidth = 8.0;
+    final rOuter = size.width / 2 - 20;
+    // 斜纹需要足够的环宽承载（原细描边环加厚为 12px 数据带）
+    final rInner = rOuter - 12;
+    final bounds = Offset.zero & size;
+    // 段间小间隙（占总弧比例）
+    final gapAngle = 2 * math.pi * 0.012;
 
-    double startAngle = -math.pi / 2; // 从顶部开始
+    double cursor = -math.pi / 2; // 从顶部开始
 
     for (final category in categories) {
-      final sweepAngle = (category.percentage / 100) * 2 * math.pi * animation;
-      final pathColor = category.color;
+      final sweepAngle =
+          (category.percentage / 100) * 2 * math.pi * animation - gapAngle;
+      if (sweepAngle <= 0.01) {
+        cursor += (category.percentage / 100) * 2 * math.pi * animation;
+        continue;
+      }
 
-      final rect = Rect.fromCircle(center: center, radius: radius);
+      final path = _sector(center, rInner, rOuter, cursor, cursor + sweepAngle);
+      canvas.drawPath(
+        path,
+        Paint()..color = category.color.withValues(alpha: 0.28),
+      );
+      paintDiagonalStripes(
+        canvas,
+        path,
+        bounds,
+        color: category.color.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = category.color.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
 
-      final paint = Paint()
-        ..color = pathColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
-
-      canvas.drawArc(rect, startAngle, sweepAngle, false, paint);
-
-      startAngle += sweepAngle;
+      cursor += sweepAngle + gapAngle;
     }
+  }
+
+  /// 平直扇环路径（与 half_gauge_card 的 _sector 同款）
+  Path _sector(Offset c, double rIn, double rOut, double a0, double a1) {
+    final largeArc = (a1 - a0) > math.pi;
+    final path = Path();
+    path.moveTo(c.dx + rOut * math.cos(a0), c.dy + rOut * math.sin(a0));
+    path.arcToPoint(
+      Offset(c.dx + rOut * math.cos(a1), c.dy + rOut * math.sin(a1)),
+      radius: Radius.circular(rOut),
+      largeArc: largeArc,
+      clockwise: true,
+    );
+    path.lineTo(c.dx + rIn * math.cos(a1), c.dy + rIn * math.sin(a1));
+    path.arcToPoint(
+      Offset(c.dx + rIn * math.cos(a0), c.dy + rIn * math.sin(a0)),
+      radius: Radius.circular(rIn),
+      largeArc: largeArc,
+      clockwise: false,
+    );
+    path.close();
+    return path;
   }
 
   @override
   bool shouldRepaint(covariant _DonutChartPainter oldDelegate) {
-    return oldDelegate.animation != animation;
+    return oldDelegate.animation != animation ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }
 
@@ -359,6 +408,7 @@ class _CategoryItem extends StatelessWidget {
   final Color color;
   final Animation<double> animation;
   final HomeWidgetSize size;
+  final AppThemeData theme;
 
   const _CategoryItem({
     required this.label,
@@ -366,12 +416,11 @@ class _CategoryItem extends StatelessWidget {
     required this.color,
     required this.animation,
     required this.size,
+    required this.theme,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
@@ -384,12 +433,14 @@ class _CategoryItem extends StatelessWidget {
               children: [
                 Row(
                   children: [
+                    // 手绘色块指示器：数据色实底 + 墨线描边
                     Container(
                       width: 10,
                       height: 10,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        radius: BorderRadius.circular(3),
+                        fillColor: color,
                       ),
                     ),
                     SizedBox(width: size.getItemSpacing() * 1.5),
@@ -398,7 +449,7 @@ class _CategoryItem extends StatelessWidget {
                       style: TextStyle(
                         fontSize: size.getSubtitleFontSize(),
                         fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                        color: theme.text,
                       ),
                     ),
                   ],
@@ -411,7 +462,7 @@ class _CategoryItem extends StatelessWidget {
                   textStyle: TextStyle(
                     fontSize: size.getSubtitleFontSize(),
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.grey.shade900,
+                    color: theme.text,
                     height: 1.0,
                   ),
                 ),

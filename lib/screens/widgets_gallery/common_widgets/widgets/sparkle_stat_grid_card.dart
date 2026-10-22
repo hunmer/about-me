@@ -1,4 +1,12 @@
+/// 闪光统计网格卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 闪光水印与斜放书页水印保留（内容层装饰），数据色实底 + 墨线描边。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
@@ -18,7 +26,7 @@ class SparkleStatItemData {
   });
 }
 
-class SparkleStatGridCardWidget extends StatefulWidget {
+class SparkleStatGridCardWidget extends StatelessWidget {
   final List<SparkleStatItemData> items;
   final bool inline;
   final HomeWidgetSize size;
@@ -62,80 +70,24 @@ class SparkleStatGridCardWidget extends StatefulWidget {
   }
 
   @override
-  State<SparkleStatGridCardWidget> createState() =>
-      _SparkleStatGridCardWidgetState();
-}
-
-class _SparkleStatGridCardWidgetState extends State<SparkleStatGridCardWidget>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 850),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final scale = widget.size.scale;
-    final height = (widget.size is Large3Size ? 300.0 : 220.0) * scale;
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) => Opacity(
-        opacity: _animation.value,
-        child: Transform.translate(
-          offset: Offset(0, 18 * (1 - _animation.value)),
-          child: child,
-        ),
-      ),
-      child: Container(
-        width: widget.inline ? double.maxFinite : 384 * scale,
-        height: widget.inline ? double.maxFinite : height,
-        padding: EdgeInsets.all(14 * scale),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : null,
-          gradient: isDark
-              ? null
-              : const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFE3E8E8),
-                    Color(0xFFEEF1F3),
-                    Color(0xFFF7F8FA),
-                  ],
-                ),
-          borderRadius: BorderRadius.circular(36 * scale),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.28 : 0.08),
-              blurRadius: 24 * scale,
-              offset: Offset(0, 8 * scale),
-            ),
-          ],
-        ),
+    final theme = AppTheme.of(context);
+    final scale = size.scale;
+    final height = (size is Large3Size ? 300.0 : 220.0) * scale;
+
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: inline ? double.maxFinite : 384 * scale,
+        height: inline ? double.maxFinite : height,
+        radius: BorderRadius.circular(24 * scale),
+        padding: size.getPadding(),
         child: Row(
           children: [
-            for (var index = 0; index < widget.items.length; index++) ...[
+            for (var index = 0; index < items.length; index++) ...[
               if (index > 0) SizedBox(width: 12 * scale),
-              Expanded(child: _SparkleStatItem(data: widget.items[index])),
+              Expanded(child: _SparkleStatItem(data: items[index])),
             ],
           ],
         ),
@@ -151,83 +103,97 @@ class _SparkleStatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: Container(
-        color: data.backgroundColor,
-        padding: const EdgeInsets.all(16),
+    final theme = AppTheme.of(context);
+    return Container(
+      // 数据色实底 + 墨线描边（小控件档）
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(30),
+        fillColor: data.backgroundColor,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
         child: Stack(
           children: [
+            // 闪光水印（核心装饰，保留）
             Positioned.fill(
               child: CustomPaint(
-                painter: _SparklePainter(color: Colors.white.withOpacity(0.32)),
+                painter: _SparklePainter(
+                  color: theme.surface.withValues(alpha: 0.32),
+                ),
               ),
             ),
+            // 斜放书页水印（核心装饰，保留）
             Positioned(
               right: -14,
               bottom: -16,
               child: Transform.rotate(
                 angle: -0.24,
-                child: Icon(
-                  Icons.auto_stories_outlined,
+                child: WiredIcon(
+                  icon: Icons.auto_stories_outlined,
                   size: 88,
-                  color: Colors.white.withOpacity(0.25),
+                  color: theme.surface.withValues(alpha: 0.25),
+                  drawConfig: theme.wired.drawConfig,
                 ),
               ),
             ),
-            Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: data.iconBackgroundColor,
-                        shape: BoxShape.circle,
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black12, blurRadius: 2),
-                        ],
-                      ),
-                      child: Icon(
-                        data.icon,
-                        size: 22,
-                        color: const Color(0xFF1B2428),
-                      ),
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: Text(
-                        data.label,
-                        style: const TextStyle(
-                          color: Color(0xFF1A2225),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          height: 1.15,
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: dsSketchDecoration(
+                          theme: theme,
+                          circle: true,
+                          fillColor: data.iconBackgroundColor,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        child: Center(
+                          child: WiredIcon(
+                            icon: data.icon,
+                            size: 22,
+                            color: theme.text,
+                            drawConfig: theme.wired.drawConfig,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    data.value,
-                    style: const TextStyle(
-                      color: Color(0xFF1A2225),
-                      fontSize: 36,
-                      fontWeight: FontWeight.w800,
-                      height: 1,
-                      letterSpacing: -1,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          data.label,
+                          style: TextStyle(
+                            color: theme.text,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.15,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const Spacer(),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      data.value,
+                      style: TextStyle(
+                        color: theme.text,
+                        fontSize: 36,
+                        fontWeight: FontWeight.w800,
+                        height: 1,
+                        letterSpacing: -1,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

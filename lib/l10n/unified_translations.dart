@@ -49,7 +49,9 @@ import '../plugins/notes/l10n/notes_translations_zh.dart';
 import '../plugins/notes/l10n/notes_translations_en.dart';
 import '../plugins/openai/l10n/openai_translations_zh.dart';
 import '../plugins/openai/l10n/openai_translations_en.dart';
+import '../plugins/toolbox/l10n/toolbox_translations_zh.dart';
 import '../plugins/scripts_center/l10n/scripts_center_translations_zh.dart';
+import '../plugins/toolbox/l10n/toolbox_translations_en.dart';
 import '../plugins/scripts_center/l10n/scripts_center_translations_en.dart';
 import '../plugins/store/l10n/store_translations_zh.dart';
 import '../plugins/store/l10n/store_translations_en.dart';
@@ -173,6 +175,9 @@ class UnifiedTranslations extends Translations {
     // === 朋友圈插件 ===
     zhDict.addAll(momentsTranslationsZh);
     enDict.addAll(momentsTranslationsEn);
+
+    zhDict.addAll(toolboxTranslationsZh);
+    enDict.addAll(toolboxTranslationsEn);
 
     zhDict.addAll(scriptsCenterTranslationsZh);
     enDict.addAll(scriptsCenterTranslationsEn);

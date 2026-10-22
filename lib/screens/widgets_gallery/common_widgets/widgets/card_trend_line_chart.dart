@@ -1,6 +1,17 @@
+/// 体重趋势图表小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘圆形图标徽章 + 数值（翻牌计数器）/ 时间范围筛选标签（墨线圆底）/
+/// 折线图（数据色平直折线 + 斜纹面积填充 + 淡墨虚线网格 + 纸底圆点）。
+/// 折线描画与数值动画保留。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 体重趋势图表小组件
 ///
@@ -8,11 +19,9 @@ import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 /// 适用于体重趋势、温度变化、价格波动等带有时间趋势的数据展示。
 ///
 /// 特性：
-/// - 入场动画（渐入+向上位移）
 /// - 数值滚动动画
 /// - 时间范围筛选标签
 /// - 交互式图表工具提示
-/// - 深色模式适配
 /// - 可配置颜色和尺寸
 class CardTrendLineChart extends StatefulWidget {
   /// 卡片标题
@@ -48,7 +57,7 @@ class CardTrendLineChart extends StatefulWidget {
   /// 是否显示数据点
   final bool showDots;
 
-  /// 是否显示渐变填充
+  /// 是否显示面积填充
   final bool showGradient;
 
   /// 是否为内联模式（内联模式使用 double.maxFinite，非内联模式使用固定尺寸）
@@ -142,93 +151,42 @@ class _CardTrendLineChartState extends State<CardTrendLineChart>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor =
-        widget.primaryColor ?? Theme.of(context).colorScheme.primary;
-    final textColor =
-        isDark ? const Color(0xFFF3F4F6) : const Color(0xFF1F2937);
-    final mutedColor =
-        isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final backgroundColor =
-        isDark ? const Color(0xFF111827) : const Color(0xFFF9FAFB);
-    final borderColor =
-        isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
+    final primaryColor = widget.primaryColor ?? theme.primary;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border.all(color: borderColor, width: 1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          // 主内容区
-          Expanded(
-            child: AnimatedBuilder(
-              animation: _animation,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _animation.value,
-                  child: Transform.translate(
-                    offset: Offset(0, 20 * (1 - _animation.value)),
-                    child: Padding(
-                      padding: widget.size.getPadding().copyWith(bottom: 0),
-                      child: Column(
-                        children: [
-                          SizedBox(height: widget.size.getSmallSpacing()),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding().copyWith(bottom: 0),
+        child: Column(
+          children: [
+            SizedBox(height: widget.size.getSmallSpacing()),
 
-                          // 数值显示区
-                          _buildValueDisplay(
-                            isDark,
-                            primaryColor,
-                            textColor,
-                            mutedColor,
-                          ),
+            // 数值显示区
+            _buildValueDisplay(theme, primaryColor),
 
-                          SizedBox(height: widget.size.getSmallSpacing()),
+            SizedBox(height: widget.size.getSmallSpacing()),
 
-                          // 时间范围筛选标签
-                          if (widget.timeFilters != null &&
-                              widget.timeFilters!.isNotEmpty)
-                            _buildTimeFilterTabs(
-                              isDark,
-                              primaryColor,
-                              textColor,
-                              mutedColor,
-                            ),
+            // 时间范围筛选标签
+            if (widget.timeFilters != null &&
+                widget.timeFilters!.isNotEmpty) ...[
+              _buildTimeFilterTabs(theme),
+              SizedBox(height: widget.size.getSmallSpacing()),
+            ],
 
-                          if (widget.timeFilters != null &&
-                              widget.timeFilters!.isNotEmpty)
-                            SizedBox(height: widget.size.getSmallSpacing()),
-
-                          // 图表区域
-                          Expanded(
-                            child: _buildChart(
-                              isDark,
-                              primaryColor,
-                              mutedColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+            // 图表区域
+            Expanded(child: _buildChart(theme, primaryColor)),
+          ],
+        ),
       ),
     );
   }
 
   /// 数值显示区
-  Widget _buildValueDisplay(
-    bool isDark,
-    Color primaryColor,
-    Color textColor,
-    Color mutedColor,
-  ) {
+  Widget _buildValueDisplay(AppThemeData theme, Color primaryColor) {
     // 根据尺寸计算图标容器大小
     final iconContainerSize = widget.size.getIconSize() * 1.6;
     final iconRadius = iconContainerSize * 0.3;
@@ -236,26 +194,23 @@ class _CardTrendLineChartState extends State<CardTrendLineChart>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // 图标
+        // 图标徽章（墨线圆底）
         if (widget.icon != null) ...[
           Container(
             width: iconContainerSize,
             height: iconContainerSize,
-            decoration: BoxDecoration(
-              color: primaryColor,
-              borderRadius: BorderRadius.circular(iconRadius),
-              boxShadow: [
-                BoxShadow(
-                  color: primaryColor.withOpacity(0.3),
-                  blurRadius: widget.size.getItemSpacing() * 1.5,
-                  offset: Offset(0, widget.size.getItemSpacing() / 2),
-                ),
-              ],
+            decoration: dsSketchDecoration(
+              theme: theme,
+              radius: BorderRadius.circular(iconRadius),
+              fillColor: theme.surfaceAlt,
             ),
-            child: Icon(
-              widget.icon,
-              color: Colors.white,
-              size: widget.size.getIconSize() * 0.8,
+            child: Center(
+              child: WiredIcon(
+                icon: widget.icon!,
+                size: widget.size.getIconSize() * 0.8,
+                color: primaryColor,
+                drawConfig: theme.wired.drawConfig,
+              ),
             ),
           ),
           SizedBox(width: widget.size.getSmallSpacing()),
@@ -275,7 +230,7 @@ class _CardTrendLineChartState extends State<CardTrendLineChart>
                   textStyle: TextStyle(
                     fontSize: widget.size.getLargeFontSize() * 0.8,
                     fontWeight: FontWeight.bold,
-                    color: textColor,
+                    color: theme.text,
                     height: 1.0,
                   ),
                 ),
@@ -288,7 +243,7 @@ class _CardTrendLineChartState extends State<CardTrendLineChart>
                   style: TextStyle(
                     fontSize: widget.size.getSubtitleFontSize(),
                     fontWeight: FontWeight.w500,
-                    color: mutedColor,
+                    color: theme.textSub,
                     height: 1.0,
                   ),
                 ),
@@ -300,18 +255,14 @@ class _CardTrendLineChartState extends State<CardTrendLineChart>
     );
   }
 
-  /// 时间范围筛选标签
-  Widget _buildTimeFilterTabs(
-    bool isDark,
-    Color primaryColor,
-    Color textColor,
-    Color mutedColor,
-  ) {
+  /// 时间范围筛选标签（墨线圆底胶囊）
+  Widget _buildTimeFilterTabs(AppThemeData theme) {
     return Container(
       padding: EdgeInsets.all(widget.size.getSmallSpacing()),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(widget.size.getSmallSpacing() * 3),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(widget.size.getSmallSpacing() * 3),
+        fillColor: theme.surfaceAlt,
       ),
       child: Row(
         children: List.generate(widget.timeFilters!.length, (index) {
@@ -329,35 +280,24 @@ class _CardTrendLineChartState extends State<CardTrendLineChart>
                 padding: EdgeInsets.symmetric(
                   vertical: widget.size.getSmallSpacing() * 1.5,
                 ),
-                decoration: BoxDecoration(
-                  color:
-                      isSelected
-                          ? (isDark ? const Color(0xFF4B5563) : Colors.white)
-                          : Colors.transparent,
-                  borderRadius: BorderRadius.circular(
-                    widget.size.getSmallSpacing() * 2.5,
-                  ),
-                  boxShadow:
-                      isSelected
-                          ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: widget.size.getSmallSpacing(),
-                              offset: Offset(
-                                0,
-                                widget.size.getSmallSpacing() * 0.5,
-                              ),
-                            ),
-                          ]
-                          : null,
-                ),
+                decoration:
+                    isSelected
+                        ? dsSketchDecoration(
+                          // 选中态：纸底墨线实块（无柔影）
+                          theme: theme,
+                          radius: BorderRadius.circular(
+                            widget.size.getSmallSpacing() * 2.5,
+                          ),
+                          fillColor: theme.surface,
+                        )
+                        : null,
                 child: Text(
                   widget.timeFilters![index],
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: widget.size.getLegendFontSize(),
                     fontWeight: FontWeight.w500,
-                    color: isSelected ? textColor : mutedColor,
+                    color: isSelected ? theme.text : theme.textSub,
                   ),
                 ),
               ),
@@ -369,11 +309,13 @@ class _CardTrendLineChartState extends State<CardTrendLineChart>
   }
 
   /// 图表区域
-  Widget _buildChart(bool isDark, Color primaryColor, Color mutedColor) {
+  Widget _buildChart(AppThemeData theme, Color primaryColor) {
     // 计算最小和最大值以设置 Y 轴范围
     final values = widget.dataPoints.map((p) => p.value).toList();
     if (values.isEmpty) {
-      return const Expanded(child: Center(child: Text('无数据')));
+      return Center(
+        child: Text('无数据', style: TextStyle(color: theme.textSub)),
+      );
     }
 
     final minValue = values.reduce((a, b) => a < b ? a : b) - 0.5;
@@ -393,8 +335,9 @@ class _CardTrendLineChartState extends State<CardTrendLineChart>
           dataPoints: widget.dataPoints,
           animation: _animation,
           primaryColor: primaryColor,
-          mutedColor: mutedColor,
-          isDark: isDark,
+          gridColor: theme.ink.withValues(alpha: 0.18),
+          labelColor: theme.textSub,
+          dotFillColor: theme.surface,
           minValue: minValue,
           maxValue: maxValue,
           xInterval: xInterval,
@@ -409,12 +352,17 @@ class _CardTrendLineChartState extends State<CardTrendLineChart>
 }
 
 /// 趋势折线图画笔
+///
+/// 淡墨虚线网格，数据色平直折线（无 rough 抖动），线下面积用数据色
+/// 浅底 + 淡斜纹填充（§9.5，替代原渐变），数据点为数据色实心圆 +
+/// 纸底内圈。
 class _TrendLineChartPainter extends CustomPainter {
   final List<TrendDataPoint> dataPoints;
   final Animation<double> animation;
   final Color primaryColor;
-  final Color mutedColor;
-  final bool isDark;
+  final Color gridColor;
+  final Color labelColor;
+  final Color dotFillColor;
   final double minValue;
   final double maxValue;
   final double xInterval;
@@ -427,8 +375,9 @@ class _TrendLineChartPainter extends CustomPainter {
     required this.dataPoints,
     required this.animation,
     required this.primaryColor,
-    required this.mutedColor,
-    required this.isDark,
+    required this.gridColor,
+    required this.labelColor,
+    required this.dotFillColor,
     required this.minValue,
     required this.maxValue,
     required this.xInterval,
@@ -442,13 +391,14 @@ class _TrendLineChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size canvasSize) {
     if (dataPoints.isEmpty) return;
 
+    final scale = size.scale;
     final padding = size.getPadding().left;
     final chartWidth = canvasSize.width - padding * 2;
     final chartHeight = canvasSize.height - padding * 2;
 
     // 绘制网格线
     if (showGrid) {
-      _drawGrid(canvas, canvasSize, padding);
+      _drawGrid(canvas, canvasSize, padding, scale);
     }
 
     // 计算点的位置
@@ -462,9 +412,9 @@ class _TrendLineChartPainter extends CustomPainter {
       points.add(Offset(x, y));
     }
 
-    // 绘制渐变填充
+    // 绘制斜纹面积填充
     if (showGradient) {
-      _drawGradientFill(canvas, points, canvasSize);
+      _drawStripedFill(canvas, points, canvasSize, scale);
     }
 
     // 绘制折线
@@ -481,75 +431,60 @@ class _TrendLineChartPainter extends CustomPainter {
     }
   }
 
-  /// 绘制网格线
-  void _drawGrid(Canvas canvas, Size canvasSize, double padding) {
+  /// 绘制网格线（淡墨虚线）
+  void _drawGrid(Canvas canvas, Size canvasSize, double padding, double scale) {
     final gridPaint =
         Paint()
-          ..color = mutedColor.withOpacity(0.2)
+          ..color = gridColor
           ..strokeWidth = size.getStrokeWidth() * 0.1;
 
     // 水平网格线
     for (int i = 0; i <= 4; i++) {
       final y = padding + (canvasSize.height - padding * 2) * (i / 4);
-      canvas.drawLine(
-        Offset(padding, y),
-        Offset(canvasSize.width - padding, y),
-        gridPaint,
-      );
+      for (var x = padding; x < canvasSize.width - padding; x += 10 * scale) {
+        final endX = x + 5 * scale;
+        canvas.drawLine(
+          Offset(x, y),
+          Offset(
+            endX < canvasSize.width - padding ? endX : canvasSize.width - padding,
+            y,
+          ),
+          gridPaint,
+        );
+      }
     }
   }
 
-  /// 绘制渐变填充
-  void _drawGradientFill(Canvas canvas, List<Offset> points, Size size) {
+  /// 绘制斜纹面积填充（数据色浅底 + 淡斜纹）
+  void _drawStripedFill(
+    Canvas canvas,
+    List<Offset> points,
+    Size canvasSize,
+    double scale,
+  ) {
     if (points.isEmpty) return;
-
-    final gradient = LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [
-        primaryColor.withOpacity(0.3 * animation.value),
-        primaryColor.withOpacity(0.0),
-      ],
-    ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final fillPaint =
-        Paint()
-          ..shader = gradient
-          ..style = PaintingStyle.fill;
 
     final path = Path();
     path.moveTo(points.first.dx, points.first.dy);
-
-    // 使用贝塞尔曲线连接点
-    for (int i = 0; i < points.length - 1; i++) {
-      final currentPoint = points[i];
-      final nextPoint = points[i + 1];
-      final controlPoint1 = Offset(
-        currentPoint.dx + (nextPoint.dx - currentPoint.dx) / 2,
-        currentPoint.dy,
-      );
-      final controlPoint2 = Offset(
-        currentPoint.dx + (nextPoint.dx - currentPoint.dx) / 2,
-        nextPoint.dy,
-      );
-      path.cubicTo(
-        controlPoint1.dx,
-        controlPoint1.dy,
-        controlPoint2.dx,
-        controlPoint2.dy,
-        nextPoint.dx,
-        nextPoint.dy,
-      );
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
     }
-
-    path.lineTo(points.last.dx, size.height);
-    path.lineTo(points.first.dx, size.height);
+    path.lineTo(points.last.dx, canvasSize.height);
+    path.lineTo(points.first.dx, canvasSize.height);
     path.close();
 
-    canvas.drawPath(path, fillPaint);
+    canvas.drawPath(path, Paint()..color = primaryColor.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      path,
+      path.getBounds(),
+      color: primaryColor.withValues(alpha: 0.45),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
   }
 
-  /// 绘制折线
+  /// 绘制折线（平直干净的数据色描边）
   void _drawLine(Canvas canvas, List<Offset> points) {
     if (points.isEmpty) return;
 
@@ -558,37 +493,19 @@ class _TrendLineChartPainter extends CustomPainter {
           ..color = primaryColor
           ..strokeWidth = size.getStrokeWidth() * 0.3
           ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round;
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
 
     final path = Path();
     path.moveTo(points.first.dx, points.first.dy);
-
-    // 使用贝塞尔曲线连接点
-    for (int i = 0; i < points.length - 1; i++) {
-      final currentPoint = points[i];
-      final nextPoint = points[i + 1];
-      final controlPoint1 = Offset(
-        currentPoint.dx + (nextPoint.dx - currentPoint.dx) / 2,
-        currentPoint.dy,
-      );
-      final controlPoint2 = Offset(
-        currentPoint.dx + (nextPoint.dx - currentPoint.dx) / 2,
-        nextPoint.dy,
-      );
-      path.cubicTo(
-        controlPoint1.dx,
-        controlPoint1.dy,
-        controlPoint2.dx,
-        controlPoint2.dy,
-        nextPoint.dx,
-        nextPoint.dy,
-      );
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
     }
 
     canvas.drawPath(path, linePaint);
   }
 
-  /// 绘制数据点
+  /// 绘制数据点（数据色实心圆 + 纸底内圈）
   void _drawDots(Canvas canvas, List<Offset> points) {
     final dotRadius = size.getSmallSpacing() * animation.value;
     final dotStrokeWidth = size.getSmallSpacing() * 0.5;
@@ -604,7 +521,7 @@ class _TrendLineChartPainter extends CustomPainter {
       // 内圈
       final innerDotPaint =
           Paint()
-            ..color = isDark ? const Color(0xFF111827) : Colors.white
+            ..color = dotFillColor
             ..style = PaintingStyle.fill;
       canvas.drawCircle(point, dotRadius - dotStrokeWidth / 2, innerDotPaint);
     }
@@ -613,7 +530,7 @@ class _TrendLineChartPainter extends CustomPainter {
   /// 绘制X轴标签
   void _drawXLabels(Canvas canvas, List<Offset> points, Size canvasSize) {
     final textStyle = TextStyle(
-      color: mutedColor,
+      color: labelColor,
       fontSize: size.getLegendFontSize(),
       fontWeight: FontWeight.w500,
     );
@@ -638,7 +555,11 @@ class _TrendLineChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _TrendLineChartPainter oldDelegate) {
     return oldDelegate.animation.value != animation.value ||
-        oldDelegate.dataPoints != dataPoints;
+        oldDelegate.dataPoints != dataPoints ||
+        oldDelegate.primaryColor != primaryColor ||
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.labelColor != labelColor ||
+        oldDelegate.dotFillColor != dotFillColor;
   }
 }
 

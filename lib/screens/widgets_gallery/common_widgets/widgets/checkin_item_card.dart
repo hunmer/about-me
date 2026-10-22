@@ -1,4 +1,12 @@
+/// 签到项目卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 数据色图标徽章 + 打卡状态徽章（墨线描边）/ 周·月热力图（数据色格）。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
@@ -33,7 +41,8 @@ class CheckinItemCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
+    final scale = size.scale;
 
     // 从 props 获取数据
     final name = props['title'] as String? ??
@@ -50,135 +59,164 @@ class CheckinItemCardWidget extends StatelessWidget {
     final itemColor = Color(colorValue);
     final showHeatmap = size.isAtLeast(const MediumSize());
 
-    return Container(
-      padding: size.getPadding(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 习惯图标和标题
-          Row(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: size.getHeightConstraints(),
+        child: DsSketchPanel(
+          theme: theme,
+          width: inline ? double.maxFinite : null,
+          height: inline ? double.maxFinite : null,
+          radius: BorderRadius.circular(24 * scale),
+          padding: size.getPadding(),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: size.getIconSize() * 1.6,
-                height: size.getIconSize() * 1.6,
-                decoration: BoxDecoration(
-                  color: itemColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(size.getIconSize() * 0.3),
-                ),
-                child: Icon(
-                  dynamicIconData(iconCode, fontFamily: 'MaterialIcons'),
-                  color: itemColor,
-                  size: size.getIconSize(),
-                ),
-              ),
-              SizedBox(width: size.getItemSpacing() * 1.5),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              // 习惯图标和标题
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 图标徽章：数据色浅底 + 墨线描边
+                  Container(
+                    width: size.getIconSize() * 1.6,
+                    height: size.getIconSize() * 1.6,
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      radius: BorderRadius.circular(size.getIconSize() * 0.3),
+                      fillColor: itemColor.withValues(alpha: 0.15),
                     ),
-                    if (group != null)
-                      Text(
-                        group,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.outline,
+                    child: Center(
+                      child: WiredIcon(
+                        icon: dynamicIconData(
+                          iconCode,
+                          fontFamily: 'MaterialIcons',
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        size: size.getIconSize(),
+                        color: itemColor,
+                        drawConfig: theme.wired.drawConfig,
                       ),
-                  ],
-                ),
-              ),
-              // 右上角打卡状态
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: size.getSmallSpacing() * 2,
-                  vertical: size.getSmallSpacing(),
-                ),
-                decoration: BoxDecoration(
-                  color: isCheckedToday
-                      ? Colors.green.withOpacity(0.15)
-                      : Colors.grey.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(size.getSmallSpacing() * 1.5),
-                  border: Border.all(
-                    color: isCheckedToday
-                        ? Colors.green.withOpacity(0.3)
-                        : Colors.grey.withOpacity(0.2),
-                    width: 1,
+                    ),
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isCheckedToday ? Icons.check_circle : Icons.circle_outlined,
-                      size: size.getLegendFontSize(),
-                      color: isCheckedToday ? Colors.green : Colors.grey,
+                  SizedBox(width: size.getItemSpacing() * 1.5),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: theme.text,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (group != null)
+                          Text(
+                            group,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.textSub,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
                     ),
-                    SizedBox(width: size.getSmallSpacing()),
-                    Text(
-                      isCheckedToday ? '已打卡' : '未打卡',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: isCheckedToday ? Colors.green : Colors.grey,
-                        fontSize: size.getLegendFontSize() - 1,
-                      ),
+                  ),
+                  // 右上角打卡状态徽章
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: size.getSmallSpacing() * 2,
+                      vertical: size.getSmallSpacing(),
                     ),
-                  ],
-                ),
+                    decoration: dsSketchDecoration(
+                      // 大圆角被 rough 引擎自动钳制成胶囊
+                      theme: theme,
+                      radius: BorderRadius.circular(999),
+                      fillColor: (isCheckedToday
+                              ? theme.success
+                              : theme.textSub)
+                          .withValues(alpha: 0.14),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        WiredIcon(
+                          icon: isCheckedToday
+                              ? Icons.check_circle
+                              : Icons.circle_outlined,
+                          size: size.getLegendFontSize(),
+                          color: isCheckedToday
+                              ? theme.success
+                              : theme.textSub,
+                          drawConfig: theme.wired.drawConfig,
+                        ),
+                        SizedBox(width: size.getSmallSpacing()),
+                        Text(
+                          isCheckedToday ? '已打卡' : '未打卡',
+                          style: TextStyle(
+                            color: isCheckedToday
+                                ? theme.success
+                                : theme.textSub,
+                            fontSize: size.getLegendFontSize() - 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+              // 热力图（根据卡片大小显示不同范围）
+              if (showHeatmap) ...[
+                SizedBox(height: size.getItemSpacing() * 1.5),
+                _buildHeatmapGrid(theme, itemColor),
+              ],
             ],
           ),
-          // 热力图（根据卡片大小显示不同范围）
-          if (showHeatmap) ...[
-            SizedBox(height: size.getItemSpacing() * 1.5),
-            _buildHeatmapGrid(itemColor),
-          ],
-        ],
+        ),
       ),
     );
   }
 
   /// 构建热力图网格
-  Widget _buildHeatmapGrid(Color itemColor) {
+  Widget _buildHeatmapGrid(AppThemeData theme, Color itemColor) {
     // 从 props 获取热力图数据
     final weekData = props['weekData'] as List<dynamic>?;
     final daysData = props['daysData'] as List<dynamic>?;
 
     // 根据尺寸决定使用哪个数据
     // large(2,2) 或更高尺寸：优先显示月数据
-    if (size.isAtLeast(
-          const LargeSize(),
-          
-          
-        ) &&
+    if (size.isAtLeast(const LargeSize()) &&
         daysData != null &&
         daysData.isNotEmpty) {
-      return _buildMonthHeatmap(daysData.cast<Map<String, dynamic>>(), itemColor);
+      return _buildMonthHeatmap(
+        theme,
+        daysData.cast<Map<String, dynamic>>(),
+        itemColor,
+      );
     }
     // medium(2,1) 或更高尺寸：显示周数据
-    else if (size.isAtLeast(
-          const MediumSize(),
-          
-          
-        ) &&
+    else if (size.isAtLeast(const MediumSize()) &&
         weekData != null &&
         weekData.isNotEmpty) {
-      return _buildWeekHeatmap(weekData.cast<Map<String, dynamic>>(), itemColor);
+      return _buildWeekHeatmap(
+        theme,
+        weekData.cast<Map<String, dynamic>>(),
+        itemColor,
+      );
     }
 
     return const SizedBox.shrink();
   }
 
   /// 构建周热力图
-  Widget _buildWeekHeatmap(List<Map<String, dynamic>> weekData, Color itemColor) {
+  Widget _buildWeekHeatmap(
+    AppThemeData theme,
+    List<Map<String, dynamic>> weekData,
+    Color itemColor,
+  ) {
     const crossAxisCount = 7;
     const spacing = 4.0;
 
@@ -196,12 +234,14 @@ class CheckinItemCardWidget extends StatelessWidget {
             return SizedBox(
               width: cellSize,
               height: cellSize,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isChecked
-                      ? itemColor.withOpacity(0.6)
-                      : itemColor.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(cellSize / 3),
+              child: DecoratedBox(
+                // 数据色格 + 墨线描边
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: BorderRadius.circular(cellSize / 3),
+                  fillColor: isChecked
+                      ? itemColor.withValues(alpha: 0.6)
+                      : itemColor.withValues(alpha: 0.08),
                 ),
               ),
             );
@@ -212,7 +252,11 @@ class CheckinItemCardWidget extends StatelessWidget {
   }
 
   /// 构建月热力图
-  Widget _buildMonthHeatmap(List<Map<String, dynamic>> daysData, Color itemColor) {
+  Widget _buildMonthHeatmap(
+    AppThemeData theme,
+    List<Map<String, dynamic>> daysData,
+    Color itemColor,
+  ) {
     const crossAxisCount = 7;
     const spacing = 3.0;
 
@@ -246,23 +290,26 @@ class CheckinItemCardWidget extends StatelessWidget {
               return SizedBox(
                 width: cellSize,
                 height: cellSize,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isChecked
-                        ? itemColor.withOpacity(0.6)
-                        : itemColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(cellSize / 3),
-                    border: isToday
-                        ? Border.all(color: itemColor, width: 1.5)
-                        : null,
+                child: DecoratedBox(
+                  // 数据色格 + 墨线描边；今日格用数据色描边强调
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: BorderRadius.circular(cellSize / 3),
+                    fillColor: isChecked
+                        ? itemColor.withValues(alpha: 0.6)
+                        : itemColor.withValues(alpha: 0.08),
+                    stroke: isToday ? itemColor : null,
+                    strokeWidth: 1.5,
                   ),
                   child: Center(
                     child: Text(
                       '$day',
                       style: TextStyle(
                         fontSize: cellSize * 0.35,
-                        color: Colors.black54,
-                        fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                        color: isToday ? theme.text : theme.textSub,
+                        fontWeight: isToday
+                            ? FontWeight.bold
+                            : FontWeight.w500,
                       ),
                     ),
                   ),

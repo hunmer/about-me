@@ -1,7 +1,18 @@
+/// 连线任务流卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（数据色实底 + rough 排线 + 墨线框，WiredDraw 描画入场）：
+/// 交错任务卡（墨线描边）由贝塞尔曲线依次相连，入场「卡片浮现 ->
+/// 连线生长 -> 下一张卡片」编排保留，连线带循环流光与端点圆点；
+/// 进度胶囊按 9.5 斜纹（数据色浓纹 + 轨道淡墨纹）。
+library;
+
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 连线任务流卡片条目数据
 class LinkedTaskItemData {
@@ -78,10 +89,10 @@ class LinkedTaskFlowCardWidget extends StatefulWidget {
   /// 任务条目列表（相邻两张卡片之间自动连线）
   final List<LinkedTaskItemData> items;
 
-  /// 背景渐变起始色（默认 #F87941）
+  /// 背景色（默认 #F87941，实底 + rough 排线替代旧渐变）
   final Color backgroundFrom;
 
-  /// 背景渐变结束色（默认 #F47238）
+  /// 背景排线色（默认 #F47238，渐变结束色转为排线派生）
   final Color backgroundTo;
 
   /// 卡片底色（默认 #FDA882）
@@ -287,7 +298,7 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final boxWidth = widget.inline ? null : 384 * widget.size.scale;
 
     return LayoutBuilder(
@@ -312,94 +323,75 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
           visibleCount = math.max(1, math.min(visibleCount, budget.floor()));
         }
 
-        final bgFrom = isDark
-            ? Color.lerp(widget.backgroundFrom, Colors.black, 0.45)!
-            : widget.backgroundFrom;
-        final bgTo = isDark
-            ? Color.lerp(widget.backgroundTo, Colors.black, 0.45)!
-            : widget.backgroundTo;
-
-        return Container(
-          width: width,
-          height: widget.inline
-              ? double.maxFinite
-              : _computeHeight(width),
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24 * widget.size.scale),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
-                blurRadius: 20 * widget.size.scale,
-                offset: Offset(0, 4 * widget.size.scale),
-              ),
-            ],
-          ),
-          child: CustomPaint(
-            painter: _BackgroundPainter(
-              gradientColors: [bgFrom, bgTo],
-              stripeColor: const Color(0xFFC64814).withValues(alpha: 0.24),
-              stripeSpacing: 25 * k,
-              stripeWidth: 1.3 * k,
-              showStripes: widget.showStripes,
-            ),
-            child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
-                child: Center(
-                  child: SizedBox(
-                    width: stageW,
-                    height: visibleCount * cardH + (visibleCount - 1) * gap,
-                    child: Stack(
-                      children: [
-                        // 连线层（置于卡片底层）
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _ConnectorsPainter(
-                              itemCount: visibleCount,
-                              widthFactors: List.generate(
-                                visibleCount,
-                                _widthFactor,
-                              ),
-                              cardHeight: cardH,
-                              gap: gap,
-                              scale: k,
-                              color: widget.connectorColor,
-                              sequence: _sequence,
-                              flow: _flow,
-                              lineProgress: (i) =>
-                                  _phase(_t(i) + _lineDelay, _lineGrowMs),
-                              flowOpacity: () => _phase(
-                                _t(visibleCount - 1) + 300,
-                                400,
-                              ),
-                            ),
+        // 手绘纸卡：数据色实底 + rough 排线（showStripes）+ 墨线框
+        return WiredDraw(
+          child: DsSketchPanel(
+            theme: theme,
+            width: width,
+            height: widget.inline ? double.maxFinite : _computeHeight(width),
+            radius: BorderRadius.circular(24 * widget.size.scale),
+            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+            fillColor: widget.backgroundFrom,
+            hachure: widget.showStripes,
+            hachureColor: Color.lerp(
+              widget.backgroundTo,
+              theme.ink,
+              0.4,
+            )!.withValues(alpha: 0.4),
+            child: Center(
+              child: SizedBox(
+                width: stageW,
+                height: visibleCount * cardH + (visibleCount - 1) * gap,
+                child: Stack(
+                  children: [
+                    // 连线层（置于卡片底层）
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _ConnectorsPainter(
+                          itemCount: visibleCount,
+                          widthFactors: List.generate(
+                            visibleCount,
+                            _widthFactor,
+                          ),
+                          cardHeight: cardH,
+                          gap: gap,
+                          scale: k,
+                          color: widget.connectorColor,
+                          sequence: _sequence,
+                          flow: _flow,
+                          lineProgress: (i) =>
+                              _phase(_t(i) + _lineDelay, _lineGrowMs),
+                          flowOpacity: () => _phase(
+                            _t(visibleCount - 1) + 300,
+                            400,
                           ),
                         ),
-                        // 卡片层
-                        Column(
-                          children: List.generate(visibleCount, (i) {
-                            final left = _isLeftAligned(i);
-                            return Padding(
-                              padding: EdgeInsets.only(top: i > 0 ? gap : 0),
-                              child: Align(
-                                alignment: left
-                                    ? Alignment.centerLeft
-                                    : Alignment.centerRight,
-                                child: SizedBox(
-                                  width: stageW * _widthFactor(i),
-                                  height: cardH,
-                                  child: _buildCard(i, k),
-                                ),
-                              ),
-                            );
-                          }),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    // 卡片层
+                    Column(
+                      children: List.generate(visibleCount, (i) {
+                        final left = _isLeftAligned(i);
+                        return Padding(
+                          padding: EdgeInsets.only(top: i > 0 ? gap : 0),
+                          child: Align(
+                            alignment: left
+                                ? Alignment.centerLeft
+                                : Alignment.centerRight,
+                            child: SizedBox(
+                              width: stageW * _widthFactor(i),
+                              height: cardH,
+                              child: _buildCard(i, k),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
                 ),
               ),
             ),
+          ),
         );
       },
     );
@@ -436,18 +428,14 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
   }
 
   Widget _buildCardBody(int index, double k, double fill) {
+    final theme = AppTheme.of(context);
     final item = widget.items[index];
+    // 数据色实底 + 墨线描边（小控件档）
     return Container(
-      decoration: BoxDecoration(
-        color: widget.cardColor,
-        borderRadius: BorderRadius.circular(25 * k),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFAD380A).withValues(alpha: 0.28),
-            blurRadius: 24 * k,
-            offset: Offset(0, 10 * k),
-          ),
-        ],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(25 * k),
+        fillColor: widget.cardColor,
       ),
       padding: EdgeInsets.all(15 * k),
       child: Column(
@@ -457,52 +445,54 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
             children: [
               // 头像 + 进度胶囊
               Expanded(
-                child: Container(
+                child: SizedBox(
                   height: 38 * k,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFD3BE).withValues(alpha: 0.55),
+                  child: ClipRRect(
                     borderRadius: BorderRadius.circular(999),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    children: [
-                      // 白色半透明进度填充层（进度关闭时不占槽位）
-                      if (item.showProgress)
-                        FractionallySizedBox(
-                          widthFactor: (fill * item.progress / 100).clamp(
-                            0.0,
-                            1.0,
-                          ),
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            color: Colors.white.withValues(alpha: 0.42),
+                    child: Stack(
+                      children: [
+                        // 9.5 斜纹进度胶囊（进度关闭时仅画轨道）
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: _StripedProgressPainter(
+                              progress: item.showProgress
+                                  ? (fill * item.progress / 100).clamp(
+                                      0.0,
+                                      1.0,
+                                    )
+                                  : 0,
+                              dataColor: widget.backgroundFrom,
+                              theme: theme,
+                              scale: k,
+                            ),
                           ),
                         ),
-                      Padding(
-                        padding: EdgeInsets.only(right: 12 * k),
-                        child: Row(
-                          children: [
-                            _buildAvatar(item, index, k),
-                            SizedBox(width: 8 * k),
-                            Expanded(
-                              child: Text(
-                                item.showProgress
-                                    ? '${(fill * item.progress).round()}% Done'
-                                    : (item.badgeText ?? ''),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: const Color(0xFF121212),
-                                  fontSize: 11.5 * k,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
+                        Padding(
+                          padding: EdgeInsets.only(right: 12 * k),
+                          child: Row(
+                            children: [
+                              _buildAvatar(theme, item, index, k),
+                              SizedBox(width: 8 * k),
+                              Expanded(
+                                child: Text(
+                                  item.showProgress
+                                      ? '${(fill * item.progress).round()}% Done'
+                                      : (item.badgeText ?? ''),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: theme.text,
+                                    fontSize: 11.5 * k,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.0,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -524,14 +514,17 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
                 Container(
                   width: 36 * k,
                   height: 36 * k,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFEC2A6),
-                    shape: BoxShape.circle,
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    circle: true,
+                    fillColor: Color.lerp(
+                      widget.cardColor,
+                      theme.surface,
+                      0.4,
+                    )!,
                   ),
-                  child: Icon(
-                    Icons.edit_outlined,
-                    size: 15 * k,
-                    color: const Color(0xFF121212),
+                  child: Center(
+                    child: DsIcon(DsIconKind.edit, size: 15 * k, color: theme.text),
                   ),
                 ),
                 index,
@@ -545,7 +538,7 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: const Color(0xFF121212),
+                color: theme.text,
                 fontSize: 19.5 * k,
                 fontWeight: FontWeight.w800,
                 height: 1.15,
@@ -553,7 +546,7 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
             ),
             SizedBox(height: 3 * k),
           ],
-          _buildBottomRow(item, k),
+          _buildBottomRow(theme, item, k),
           // 图片堆叠槽：占满剩余卡面，内容自适应缩放
           if (item.photoStack != null)
             Expanded(
@@ -568,7 +561,11 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
   }
 
   /// 底部行：chips 槽位与内容行（原 "Assign to" 负责人）可共存
-  Widget _buildBottomRow(LinkedTaskItemData item, double k) {
+  Widget _buildBottomRow(
+    AppThemeData theme,
+    LinkedTaskItemData item,
+    double k,
+  ) {
     final chips =
         (item.chips == null || item.chips!.isEmpty) ? null : item.chips;
     final showContent = item.assignee.isNotEmpty;
@@ -589,16 +586,18 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
                     horizontal: 9 * k,
                     vertical: 3 * k,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.42),
-                    borderRadius: BorderRadius.circular(999),
+                  decoration: dsSketchDecoration(
+                    // 大圆角被 rough 引擎自动钳制成胶囊
+                    theme: theme,
+                    radius: BorderRadius.circular(999),
+                    fillColor: Color.lerp(widget.cardColor, theme.surface, 0.6)!,
                   ),
                   child: Text(
                     chip,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: const Color(0xFF121212),
+                      color: theme.text,
                       fontSize: 11 * k,
                       fontWeight: FontWeight.w600,
                       height: 1.2,
@@ -615,14 +614,14 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
                 TextSpan(
                   text: item.assignLabel ?? 'Assign to: ',
                   style: TextStyle(
-                    color: const Color(0xFF8E4728),
+                    color: Color.lerp(widget.backgroundFrom, theme.ink, 0.45)!,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 TextSpan(
                   text: item.assignee,
                   style: TextStyle(
-                    color: const Color(0xFF121212),
+                    color: theme.text,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -636,7 +635,12 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
     );
   }
 
-  Widget _buildAvatar(LinkedTaskItemData item, int index, double k) {
+  Widget _buildAvatar(
+    AppThemeData theme,
+    LinkedTaskItemData item,
+    int index,
+    double k,
+  ) {
     // 头像槽：自定义 Widget 优先（FittedBox 保证任意尺寸都不溢出）
     if (item.avatar != null) {
       return SizedBox(
@@ -650,14 +654,23 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
     return Container(
       width: 38 * k,
       height: 38 * k,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        circle: true,
+        fillColor: color,
+      ),
       alignment: Alignment.center,
       child: item.avatarIcon != null
-          ? Icon(item.avatarIcon, size: 18 * k, color: Colors.white)
+          ? WiredIcon(
+              icon: item.avatarIcon!,
+              size: 18 * k,
+              color: theme.surface,
+              drawConfig: theme.wired.drawConfig,
+            )
           : Text(
               item.assignee.isEmpty ? '?' : item.assignee[0].toUpperCase(),
               style: TextStyle(
-                color: Colors.white,
+                color: theme.surface,
                 fontSize: 14 * k,
                 fontWeight: FontWeight.w700,
                 height: 1.0,
@@ -674,6 +687,79 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
       onTap: () => widget.onItemTap!.call(index),
       child: child,
     );
+  }
+}
+
+/// 9.5 斜纹进度胶囊：进度段数据色浅底 0.28 + 浓斜纹 0.9 + 描边 0.85；
+/// 轨道 surfaceAlt 底 + 淡墨斜纹 0.28 + 淡墨描边 0.45
+class _StripedProgressPainter extends CustomPainter {
+  final double progress;
+  final Color dataColor;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StripedProgressPainter({
+    required this.progress,
+    required this.dataColor,
+    required this.theme,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final radius = Radius.circular(size.height / 2);
+    final trackRect = Offset.zero & size;
+    final track = RRect.fromRectAndRadius(trackRect, radius);
+
+    // 轨道
+    canvas.drawRRect(track, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(track),
+      trackRect,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      track,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+
+    // 进度段
+    if (progress <= 0) return;
+    final fillWidth = (trackRect.width * progress)
+        .clamp(size.height, trackRect.width);
+    final fillRect = Rect.fromLTWH(0, 0, fillWidth, size.height);
+    final fill = RRect.fromRectAndRadius(fillRect, radius);
+    canvas.drawRRect(fill, Paint()..color = dataColor.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(fill),
+      fillRect,
+      color: dataColor.withValues(alpha: 0.9),
+      strokeWidth: 3 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      fill,
+      Paint()
+        ..color = dataColor.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.dataColor != dataColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }
 
@@ -819,58 +905,4 @@ class _ConnectorsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ConnectorsPainter oldDelegate) => true;
-}
-
-/// 卡片背景绘制器：竖直渐变 + 斜向细纹理（纹理位于渐变之上、卡片之下）
-class _BackgroundPainter extends CustomPainter {
-  final List<Color> gradientColors;
-  final Color stripeColor;
-  final double stripeSpacing;
-  final double stripeWidth;
-  final bool showStripes;
-
-  _BackgroundPainter({
-    required this.gradientColors,
-    required this.stripeColor,
-    required this.stripeSpacing,
-    required this.stripeWidth,
-    required this.showStripes,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: gradientColors,
-        ).createShader(rect),
-    );
-
-    if (!showStripes || stripeSpacing <= 0) return;
-
-    // 原效果图约 -65° 的斜向等距细线：旋转画布后画竖线
-    canvas.save();
-    canvas.translate(size.width / 2, size.height / 2);
-    canvas.rotate(-65 * math.pi / 180);
-    final extent = size.width + size.height;
-    final paint = Paint()
-      ..color = stripeColor
-      ..strokeWidth = stripeWidth
-      ..strokeCap = StrokeCap.butt;
-    for (var x = -extent; x <= extent; x += stripeSpacing) {
-      canvas.drawLine(Offset(x, -extent), Offset(x, extent), paint);
-    }
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _BackgroundPainter oldDelegate) =>
-      oldDelegate.gradientColors != gradientColors ||
-      oldDelegate.stripeColor != stripeColor ||
-      oldDelegate.stripeSpacing != stripeSpacing ||
-      oldDelegate.showStripes != showStripes;
 }

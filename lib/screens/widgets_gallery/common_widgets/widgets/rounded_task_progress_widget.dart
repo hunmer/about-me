@@ -1,5 +1,15 @@
+/// 圆角任务进度小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题/副标题 / 斜纹进度条（主题色斜纹数据段 + 淡墨轨道）/
+/// 待办列表（淡墨分隔线）/ 评论附件计数 + 团队头像。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 圆角任务进度小组件
 class RoundedTaskProgressWidget extends StatefulWidget {
@@ -83,77 +93,60 @@ class _RoundedTaskProgressWidgetState extends State<RoundedTaskProgressWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final progress = (widget.completedTasks / widget.totalTasks).clamp(
       0.0,
       1.0,
     );
 
-    return AnimatedBuilder(
-      animation: _progressAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: 0.95 + 0.05 * _progressAnimation.value,
-          child: Opacity(
-            opacity: _progressAnimation.value,
-            child: Container(
-              width: widget.inline ? double.maxFinite : 380,
-              constraints: widget.size.getHeightConstraints(),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 40 * widget.size.scale,
-                    offset: Offset(0, 20 * widget.size.scale),
-                  ),
-                ],
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return ConstrainedBox(
+      constraints: widget.size.getHeightConstraints(),
+      child: WiredDraw(
+        child: DsSketchPanel(
+          theme: theme,
+          width: widget.inline ? double.maxFinite : 380,
+          radius: BorderRadius.circular(24 * widget.size.scale),
+          padding: widget.size.getPadding(),
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _HeaderSection(
+                title: widget.title,
+                subtitle: widget.subtitle,
+                theme: theme,
+                size: widget.size,
               ),
-              child: Padding(
-                padding: widget.size.getPadding(),
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _HeaderSection(
-                      title: widget.title,
-                      subtitle: widget.subtitle,
-                      isDark: isDark,
-                      size: widget.size,
-                    ),
-                    SizedBox(height: widget.size.getTitleSpacing() * 0.5),
-                    _ProgressSection(
-                      completedTasks: widget.completedTasks,
-                      totalTasks: widget.totalTasks,
-                      progress: progress,
-                      animation: _progressAnimation,
-                      isDark: isDark,
-                      size: widget.size,
-                    ),
-                    SizedBox(height: widget.size.getTitleSpacing() * 0.5),
-                    Expanded(
-                      child: _PendingTasksSection(
-                        tasks: widget.pendingTasks,
-                        isDark: isDark,
-                        size: widget.size,
-                      ),
-                    ),
-                    SizedBox(height: widget.size.getTitleSpacing()),
-                    _FooterSection(
-                      commentCount: widget.commentCount,
-                      attachmentCount: widget.attachmentCount,
-                      teamAvatars: widget.teamAvatars,
-                      isDark: isDark,
-                      size: widget.size,
-                    ),
-                  ],
+              SizedBox(height: widget.size.getTitleSpacing() * 0.5),
+              _ProgressSection(
+                completedTasks: widget.completedTasks,
+                totalTasks: widget.totalTasks,
+                progress: progress,
+                animation: _progressAnimation,
+                theme: theme,
+                size: widget.size,
+              ),
+              SizedBox(height: widget.size.getTitleSpacing() * 0.5),
+              Expanded(
+                child: _PendingTasksSection(
+                  tasks: widget.pendingTasks,
+                  theme: theme,
+                  size: widget.size,
                 ),
               ),
-            ),
+              SizedBox(height: widget.size.getTitleSpacing()),
+              _FooterSection(
+                commentCount: widget.commentCount,
+                attachmentCount: widget.attachmentCount,
+                teamAvatars: widget.teamAvatars,
+                theme: theme,
+                size: widget.size,
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -161,13 +154,13 @@ class _RoundedTaskProgressWidgetState extends State<RoundedTaskProgressWidget>
 class _HeaderSection extends StatelessWidget {
   final String title;
   final String subtitle;
-  final bool isDark;
+  final AppThemeData theme;
   final HomeWidgetSize size;
 
   const _HeaderSection({
     required this.title,
     required this.subtitle,
-    required this.isDark,
+    required this.theme,
     required this.size,
   });
 
@@ -181,7 +174,7 @@ class _HeaderSection extends StatelessWidget {
           style: TextStyle(
             fontSize: size.getTitleFontSize(),
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF1F2937),
+            color: theme.text,
             height: 1.2,
           ),
         ),
@@ -191,7 +184,7 @@ class _HeaderSection extends StatelessWidget {
           style: TextStyle(
             fontSize: size.getSubtitleFontSize(),
             fontWeight: FontWeight.w500,
-            color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF),
+            color: theme.textSub,
           ),
         ),
       ],
@@ -204,7 +197,7 @@ class _ProgressSection extends StatelessWidget {
   final int totalTasks;
   final double progress;
   final Animation<double> animation;
-  final bool isDark;
+  final AppThemeData theme;
   final HomeWidgetSize size;
 
   const _ProgressSection({
@@ -212,7 +205,7 @@ class _ProgressSection extends StatelessWidget {
     required this.totalTasks,
     required this.progress,
     required this.animation,
-    required this.isDark,
+    required this.theme,
     required this.size,
   });
 
@@ -225,13 +218,10 @@ class _ProgressSection extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.format_list_bulleted,
+                DsIcon(
+                  DsIconKind.list,
                   size: size.getIconSize() * 0.75,
-                  color:
-                      isDark
-                          ? const Color(0xFF9CA3AF)
-                          : const Color(0xFF9CA3AF),
+                  color: theme.textSub,
                 ),
                 SizedBox(width: size.getSmallSpacing() * 2),
                 Text(
@@ -239,10 +229,7 @@ class _ProgressSection extends StatelessWidget {
                   style: TextStyle(
                     fontSize: size.getSubtitleFontSize(),
                     fontWeight: FontWeight.w500,
-                    color:
-                        isDark
-                            ? const Color(0xFF9CA3AF)
-                            : const Color(0xFF9CA3AF),
+                    color: theme.textSub,
                   ),
                 ),
               ],
@@ -252,40 +239,26 @@ class _ProgressSection extends StatelessWidget {
               style: TextStyle(
                 fontSize: size.getSubtitleFontSize(),
                 fontWeight: FontWeight.w500,
-                color:
-                    isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF),
+                color: theme.textSub,
               ),
             ),
           ],
         ),
         SizedBox(height: size.getSmallSpacing() * 2),
+        // 斜纹进度条（见 design.md §9.5），随入场动画生长
         AnimatedBuilder(
           animation: animation,
           builder: (context, child) {
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(4 * size.scale),
-              child: Stack(
-                children: [
-                  Container(
-                    height: size.getStrokeWidth(),
-                    decoration: BoxDecoration(
-                      color:
-                          isDark
-                              ? const Color(0xFF374151)
-                              : const Color(0xFFF3F4F6),
-                    ),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: progress * animation.value,
-                    child: Container(
-                      height: size.getStrokeWidth(),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFBBF24),
-                        borderRadius: BorderRadius.circular(4 * size.scale),
-                      ),
-                    ),
-                  ),
-                ],
+            return SizedBox(
+              height: size.getStrokeWidth(),
+              width: double.infinity,
+              child: CustomPaint(
+                painter: _StripedBarPainter(
+                  fill: progress * animation.value,
+                  barColor: theme.primary,
+                  theme: theme,
+                  scale: size.scale,
+                ),
               ),
             );
           },
@@ -297,12 +270,12 @@ class _ProgressSection extends StatelessWidget {
 
 class _PendingTasksSection extends StatefulWidget {
   final List<String> tasks;
-  final bool isDark;
+  final AppThemeData theme;
   final HomeWidgetSize size;
 
   const _PendingTasksSection({
     required this.tasks,
-    required this.isDark,
+    required this.theme,
     required this.size,
   });
 
@@ -335,10 +308,7 @@ class _PendingTasksSectionState extends State<_PendingTasksSection> {
           style: TextStyle(
             fontSize: widget.size.getSubtitleFontSize(),
             fontWeight: FontWeight.w500,
-            color:
-                widget.isDark
-                    ? const Color(0xFF9CA3AF)
-                    : const Color(0xFF9CA3AF),
+            color: widget.theme.textSub,
           ),
         ),
         SizedBox(height: widget.size.getSmallSpacing() * 2),
@@ -364,10 +334,7 @@ class _PendingTasksSectionState extends State<_PendingTasksSection> {
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color:
-                                widget.isDark
-                                    ? const Color(0xFF374151)
-                                    : const Color(0xFFF3F4F6),
+                            color: widget.theme.ink.withValues(alpha: 0.15),
                             width: 1 * widget.size.scale,
                           ),
                         ),
@@ -377,10 +344,7 @@ class _PendingTasksSectionState extends State<_PendingTasksSection> {
                         style: TextStyle(
                           fontSize: widget.size.getSubtitleFontSize(),
                           fontWeight: FontWeight.w600,
-                          color:
-                              widget.isDark
-                                  ? const Color(0xFFE5E7EB)
-                                  : const Color(0xFF1F2937),
+                          color: widget.theme.text,
                           height: 1.3,
                         ),
                       ),
@@ -400,14 +364,14 @@ class _FooterSection extends StatelessWidget {
   final int commentCount;
   final int attachmentCount;
   final List<String> teamAvatars;
-  final bool isDark;
+  final AppThemeData theme;
   final HomeWidgetSize size;
 
   const _FooterSection({
     required this.commentCount,
     required this.attachmentCount,
     required this.teamAvatars,
-    required this.isDark,
+    required this.theme,
     required this.size,
   });
 
@@ -420,16 +384,18 @@ class _FooterSection extends StatelessWidget {
           children: [
             _ActionButton(
               icon: Icons.chat_bubble_outline,
+              kind: DsIconKind.chat,
               count: commentCount,
-              isDark: isDark,
+              theme: theme,
               size: size,
             ),
             SizedBox(width: size.getSmallSpacing() * 5),
             _ActionButton(
               icon: Icons.attach_file,
+              kind: null,
               count: attachmentCount,
               rotate: true,
-              isDark: isDark,
+              theme: theme,
               size: size,
             ),
           ],
@@ -447,7 +413,7 @@ class _FooterSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    color: theme.surface,
                     width: 2 * size.scale,
                   ),
                 ),
@@ -456,18 +422,13 @@ class _FooterSection extends StatelessWidget {
                     teamAvatars[index],
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
+                      // 加载失败兜底：纸底圆形徽章 + 用户图标
                       return Container(
-                        color:
-                            isDark
-                                ? const Color(0xFF374151)
-                                : const Color(0xFFE5E7EB),
-                        child: Icon(
-                          Icons.person,
+                        color: theme.surfaceAlt,
+                        child: DsIcon(
+                          DsIconKind.user,
                           size: 16 * size.scale,
-                          color:
-                              isDark
-                                  ? const Color(0xFF9CA3AF)
-                                  : const Color(0xFF6B7280),
+                          color: theme.textSub,
                         ),
                       );
                     },
@@ -483,19 +444,24 @@ class _FooterSection extends StatelessWidget {
 }
 
 class _ActionButton extends StatefulWidget {
-  final IconData icon;
+  /// 静态图标枚举（DsIconKind 有对应枚举时优先使用）
+  final DsIconKind? kind;
+
+  /// 未收录进 DsIconKind 的 Material 图标（WiredIcon 手绘回退）
+  final IconData? icon;
   final int count;
   final bool rotate;
-  final bool isDark;
+  final AppThemeData theme;
   final HomeWidgetSize size;
 
   const _ActionButton({
-    required this.icon,
+    this.kind,
+    this.icon,
     required this.count,
     this.rotate = false,
-    required this.isDark,
+    required this.theme,
     required this.size,
-  });
+  }) : assert(kind != null || icon != null);
 
   @override
   State<_ActionButton> createState() => _ActionButtonState();
@@ -506,6 +472,20 @@ class _ActionButtonState extends State<_ActionButton> {
 
   @override
   Widget build(BuildContext context) {
+    final color = _isHovered ? widget.theme.text : widget.theme.textSub;
+
+    Widget iconView = widget.kind != null
+        ? DsIcon(widget.kind!, size: widget.size.getIconSize() * 0.75, color: color)
+        : WiredIcon(
+            icon: widget.icon!,
+            size: widget.size.getIconSize() * 0.75,
+            color: color,
+            drawConfig: widget.theme.wired.drawConfig,
+          );
+    if (widget.rotate) {
+      iconView = Transform.rotate(angle: 45 * 3.14159 / 180, child: iconView);
+    }
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -513,40 +493,101 @@ class _ActionButtonState extends State<_ActionButton> {
         onTap: () {},
         child: Row(
           children: [
-            Transform.rotate(
-              angle: widget.rotate ? 45 * 3.14159 / 180 : 0,
-              child: Icon(
-                widget.icon,
-                size: widget.size.getIconSize() * 0.75,
-                color:
-                    _isHovered
-                        ? (widget.isDark
-                            ? const Color(0xFFD1D5DB)
-                            : const Color(0xFF4B5563))
-                        : (widget.isDark
-                            ? const Color(0xFF9CA3AF)
-                            : const Color(0xFF9CA3AF)),
-              ),
-            ),
+            iconView,
             SizedBox(width: widget.size.getSmallSpacing()),
             Text(
               widget.count.toString(),
               style: TextStyle(
                 fontSize: widget.size.getLegendFontSize(),
                 fontWeight: FontWeight.w600,
-                color:
-                    _isHovered
-                        ? (widget.isDark
-                            ? const Color(0xFFD1D5DB)
-                            : const Color(0xFF4B5563))
-                        : (widget.isDark
-                            ? const Color(0xFF9CA3AF)
-                            : const Color(0xFF9CA3AF)),
+                color: color,
               ),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+/// 斜纹进度条绘制器（见 design.md §9.5）
+///
+/// 轨道：surfaceAlt 底 + 淡墨斜纹（0.28）+ 淡墨描边（0.45）；
+/// 数据段：主题色浅底（0.28）+ 浓斜纹（0.9）+ 描边（0.85）。
+class _StripedBarPainter extends CustomPainter {
+  final double fill;
+  final Color barColor;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StripedBarPainter({
+    required this.fill,
+    required this.barColor,
+    required this.theme,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(size.height / 2),
+    );
+
+    // 轨道
+    canvas.drawRRect(rrect, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(rrect),
+      Offset.zero & size,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+
+    // 数据段
+    final f = fill.clamp(0.0, 1.0);
+    if (f > 0.004) {
+      final fillRect = Rect.fromLTWH(0, 0, size.width * f, size.height);
+      final fillRRect = RRect.fromRectAndRadius(
+        fillRect,
+        Radius.circular(size.height / 2),
+      );
+      canvas.drawRRect(
+        fillRRect,
+        Paint()..color = barColor.withValues(alpha: 0.28),
+      );
+      paintDiagonalStripes(
+        canvas,
+        Path()..addRRect(fillRRect),
+        fillRect,
+        color: barColor.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawRRect(
+        fillRRect,
+        Paint()
+          ..color = barColor.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedBarPainter oldDelegate) {
+    return oldDelegate.fill != fill ||
+        oldDelegate.barColor != barColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }

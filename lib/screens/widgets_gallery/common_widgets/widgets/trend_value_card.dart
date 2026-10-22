@@ -1,6 +1,16 @@
+/// 趋势数值卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 折线图（数据色平直折线 + 斜纹面积填充 + 纸底圆点）/
+/// 数值（翻牌计数器）+ 单位 + 手绘箭头。数值动画保留。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 趋势数据点
 class TrendDataPoint {
@@ -30,7 +40,7 @@ class TrendDataPoint {
 ///
 /// 通用的数值展示卡片，支持：
 /// - 数值和单位显示（带翻转动画）
-/// - 曲线图表（带渐变填充）
+/// - 折线图（带斜纹面积填充）
 class TrendValueCardWidget extends StatefulWidget {
   /// 当前数值
   final double value;
@@ -89,7 +99,7 @@ class TrendValueCardWidget extends StatefulWidget {
 class _TrendValueCardWidgetState extends State<TrendValueCardWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _fadeInAnimation;
+  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -99,7 +109,7 @@ class _TrendValueCardWidgetState extends State<TrendValueCardWidget>
       vsync: this,
     );
 
-    _fadeInAnimation = CurvedAnimation(
+    _animation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeOutCubic,
     );
@@ -115,52 +125,40 @@ class _TrendValueCardWidgetState extends State<TrendValueCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = widget.primaryColor ?? const Color(0xFFF59E0B);
-    final backgroundColor = isDark ? const Color(0xFF1F2937) : Colors.white;
-    final textColor =
-        isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
-    final subTextColor =
-        isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
+    final primaryColor = widget.primaryColor ?? theme.primary;
 
     // 根据 size 计算各种尺寸
     final valueFontSize = widget.size.getLargeFontSize() * 0.35;
     final unitFontSize = widget.size.getSubtitleFontSize();
     final strokeWidth = widget.size.getStrokeWidth() * 0.3;
 
-    return AnimatedBuilder(
-      animation: _fadeInAnimation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeInAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _fadeInAnimation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : null,
-              padding: widget.size.getPadding(),
-              constraints: widget.size.getHeightConstraints(),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场；
+    // 高度沿用尺寸档位的高度约束
+    return ConstrainedBox(
+      constraints: widget.size.getHeightConstraints(),
+      child: WiredDraw(
+        child: DsSketchPanel(
+          theme: theme,
+          width: widget.inline ? double.maxFinite : null,
+          radius: BorderRadius.circular(24 * scale),
+          padding: widget.size.getPadding(),
+          child: AnimatedBuilder(
+            animation: _animation,
+            builder: (context, child) {
+              return Column(
                 mainAxisSize: MainAxisSize.max,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 图表区域
                   Expanded(
                     child: _buildChart(
-                      context,
+                      theme,
                       primaryColor,
-                      _fadeInAnimation.value,
+                      _animation.value,
                       strokeWidth,
+                      scale,
                     ),
                   ),
                   SizedBox(height: widget.size.getItemSpacing()),
@@ -179,10 +177,11 @@ class _TrendValueCardWidgetState extends State<TrendValueCardWidget>
                             SizedBox(
                               height: valueFontSize * 1.2,
                               child: AnimatedFlipCounter(
-                                value: widget.value * _fadeInAnimation.value,
-                                fractionDigits: widget.value % 1 != 0 ? 1 : 0,
+                                value: widget.value * _animation.value,
+                                fractionDigits:
+                                    widget.value % 1 != 0 ? 1 : 0,
                                 textStyle: TextStyle(
-                                  color: textColor,
+                                  color: theme.text,
                                   fontSize: valueFontSize,
                                   fontWeight: FontWeight.w700,
                                   height: 1.0,
@@ -195,7 +194,7 @@ class _TrendValueCardWidgetState extends State<TrendValueCardWidget>
                               child: Text(
                                 widget.unit,
                                 style: TextStyle(
-                                  color: subTextColor,
+                                  color: theme.textSub,
                                   fontSize: unitFontSize,
                                   fontWeight: FontWeight.w500,
                                   height: 1.0,
@@ -208,8 +207,10 @@ class _TrendValueCardWidgetState extends State<TrendValueCardWidget>
 
                       // 右侧箭头按钮
                       IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        color: subTextColor,
+                        icon: DsIcon(
+                          DsIconKind.chevronRight,
+                          color: theme.textSub,
+                        ),
                         onPressed: () {},
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -217,20 +218,21 @@ class _TrendValueCardWidgetState extends State<TrendValueCardWidget>
                     ],
                   ),
                 ],
-              ),
-            ),
+              );
+            },
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  /// 构建曲线图表
+  /// 构建折线图表
   Widget _buildChart(
-    BuildContext context,
+    AppThemeData theme,
     Color primaryColor,
     double animationValue,
     double strokeWidth,
+    double scale,
   ) {
     return SizedBox(
       width: double.infinity,
@@ -238,8 +240,10 @@ class _TrendValueCardWidgetState extends State<TrendValueCardWidget>
         painter: _TrendChartPainter(
           data: widget.chartData,
           primaryColor: primaryColor,
+          dotFillColor: theme.surface,
           animationValue: animationValue,
           strokeWidth: strokeWidth,
+          scale: scale,
         ),
       ),
     );
@@ -247,17 +251,24 @@ class _TrendValueCardWidgetState extends State<TrendValueCardWidget>
 }
 
 /// 趋势图表绘制器
+///
+/// 数据色平直折线（无 rough 抖动），线下面积用数据色浅底 + 淡斜纹填充
+/// （§9.5，替代原渐变），数据点为纸底圆 + 数据色描边。
 class _TrendChartPainter extends CustomPainter {
   final List<double> data;
   final Color primaryColor;
+  final Color dotFillColor;
   final double animationValue;
   final double strokeWidth;
+  final double scale;
 
   _TrendChartPainter({
     required this.data,
     required this.primaryColor,
+    required this.dotFillColor,
     required this.animationValue,
     required this.strokeWidth,
+    required this.scale,
   });
 
   @override
@@ -266,68 +277,41 @@ class _TrendChartPainter extends CustomPainter {
 
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     final pointRadius = strokeWidth * 1.5;
+    final denom = data.length > 1 ? data.length - 1 : 1;
+    final pointDistance = size.width / denom;
 
-    // 绘制渐变填充
-    final fillGradient = LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [
-        primaryColor.withOpacity(0.2 * animationValue),
-        primaryColor.withOpacity(0),
-      ],
+    Offset pointAt(int i) => Offset(
+      i * pointDistance,
+      size.height - (data[i] / 100 * size.height * animationValue),
     );
 
+    // 线下斜纹面积（数据色浅底 + 淡斜纹）
     final path = Path();
-    final pointDistance = size.width / (data.length - 1);
-
-    // 移动到第一个点
     path.moveTo(0, size.height);
-
     for (int i = 0; i < data.length; i++) {
-      final x = i * pointDistance;
-      final y = size.height - (data[i] / 100 * size.height * animationValue);
-
-      if (i == 0) {
-        path.lineTo(x, y);
-      } else {
-        // 使用二次贝塞尔曲线平滑连接
-        final prevX = (i - 1) * pointDistance;
-        final prevY =
-            size.height - (data[i - 1] / 100 * size.height * animationValue);
-        final cpX = (prevX + x) / 2;
-
-        path.quadraticBezierTo(cpX, prevY, cpX, (prevY + y) / 2);
-        path.quadraticBezierTo(cpX, y, x, y);
-      }
+      path.lineTo(pointAt(i).dx, pointAt(i).dy);
     }
-
     path.lineTo(size.width, size.height);
     path.close();
 
-    final fillPaint =
-        Paint()
-          ..shader = fillGradient.createShader(rect)
-          ..style = PaintingStyle.fill;
+    canvas.drawPath(path, Paint()..color = primaryColor.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      path,
+      rect,
+      color: primaryColor.withValues(alpha: 0.45),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
 
-    canvas.drawPath(path, fillPaint);
-
-    // 绘制曲线
+    // 绘制折线（平直干净的数据色描边）
     final linePath = Path();
-
     for (int i = 0; i < data.length; i++) {
-      final x = i * pointDistance;
-      final y = size.height - (data[i] / 100 * size.height * animationValue);
-
+      final point = pointAt(i);
       if (i == 0) {
-        linePath.moveTo(x, y);
+        linePath.moveTo(point.dx, point.dy);
       } else {
-        final prevX = (i - 1) * pointDistance;
-        final prevY =
-            size.height - (data[i - 1] / 100 * size.height * animationValue);
-        final cpX = (prevX + x) / 2;
-
-        linePath.quadraticBezierTo(cpX, prevY, cpX, (prevY + y) / 2);
-        linePath.quadraticBezierTo(cpX, y, x, y);
+        linePath.lineTo(point.dx, point.dy);
       }
     }
 
@@ -336,15 +320,15 @@ class _TrendChartPainter extends CustomPainter {
           ..color = primaryColor
           ..style = PaintingStyle.stroke
           ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round;
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
 
     canvas.drawPath(linePath, linePaint);
 
-    // 绘制数据点
-    final isDark = primaryColor.computeLuminance() < 0.5;
+    // 绘制数据点（纸底圆 + 数据色描边）
     final pointPaint =
         Paint()
-          ..color = isDark ? const Color(0xFF1F2937) : Colors.white
+          ..color = dotFillColor
           ..style = PaintingStyle.fill;
 
     final pointStrokePaint =
@@ -354,11 +338,9 @@ class _TrendChartPainter extends CustomPainter {
           ..strokeWidth = strokeWidth * 0.7;
 
     for (int i = 0; i < data.length; i++) {
-      final x = i * pointDistance;
-      final y = size.height - (data[i] / 100 * size.height * animationValue);
-
-      canvas.drawCircle(Offset(x, y), pointRadius, pointPaint);
-      canvas.drawCircle(Offset(x, y), pointRadius, pointStrokePaint);
+      final point = pointAt(i);
+      canvas.drawCircle(point, pointRadius, pointPaint);
+      canvas.drawCircle(point, pointRadius, pointStrokePaint);
     }
   }
 
@@ -366,6 +348,8 @@ class _TrendChartPainter extends CustomPainter {
   bool shouldRepaint(covariant _TrendChartPainter oldDelegate) {
     return oldDelegate.animationValue != animationValue ||
         oldDelegate.primaryColor != primaryColor ||
-        oldDelegate.strokeWidth != strokeWidth;
+        oldDelegate.dotFillColor != dotFillColor ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.scale != scale;
   }
 }

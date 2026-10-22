@@ -1,14 +1,33 @@
+/// 左右分栏进度条卡片（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 左侧数值 + 斜纹主进度条（主题色斜纹），右侧进度项列表
+/// （各项数据色斜纹进度条 + 手绘图标，逐项错峰生长）。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
-/// 渲染图标，支持 emoji 字符串和 MaterialIcons codePoint
-Widget _renderIcon(String icon, {required double size}) {
+/// 渲染图标，支持 emoji 字符串和 MaterialIcons codePoint（Material 走手绘图标）
+Widget _renderIcon(
+  String icon, {
+  required double size,
+  required AppThemeData theme,
+}) {
   // 尝试解析为 MaterialIcons codePoint
   final codePoint = int.tryParse(icon);
   if (codePoint != null) {
-    return Icon(dynamicIconData(codePoint, fontFamily: 'MaterialIcons'), size: size);
+    return WiredIcon(
+      icon: dynamicIconData(codePoint, fontFamily: 'MaterialIcons'),
+      size: size,
+      color: theme.text,
+      drawConfig: theme.wired.drawConfig,
+    );
   }
   // 否则作为普通 emoji 字符串处理
   return Text(icon, style: TextStyle(fontSize: size));
@@ -212,7 +231,8 @@ class _SplitColumnProgressBarCardState extends State<SplitColumnProgressBarCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
     final leftData =
         widget.leftData ??
@@ -220,98 +240,75 @@ class _SplitColumnProgressBarCardState extends State<SplitColumnProgressBarCard>
     final leftConfig = widget.leftConfig ?? const LeftSectionConfig();
     final rightItems = widget.rightItems ?? const [];
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 360,
-              height: widget.inline ? double.maxFinite : 180,
-              padding: widget.size.getPadding(),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF374151) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 360,
+        height: widget.inline ? double.maxFinite : 180,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // 宽度不足时分栏过窄，改为上下布局
+            final isCompact = constraints.maxWidth < 260;
+            if (isCompact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _LeftSection(
+                    data: leftData,
+                    config: leftConfig,
+                    animation: _animation,
+                    size: widget.size,
+                  ),
+                  Container(
+                    height: 1,
+                    margin: EdgeInsets.symmetric(
+                      vertical: widget.size.getPadding().vertical / 2,
+                    ),
+                    color: theme.ink.withValues(alpha: 0.12),
+                  ),
+                  Expanded(
+                    child: _RightSection(
+                      items: rightItems,
+                      animation: _animation,
+                      size: widget.size,
+                    ),
                   ),
                 ],
-              ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // 宽度不足时分栏过窄，改为上下布局
-                  final isCompact = constraints.maxWidth < 260;
-                  if (isCompact) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _LeftSection(
-                          data: leftData,
-                          config: leftConfig,
-                          animation: _animation,
-                          size: widget.size,
-                        ),
-                        Container(
-                          height: 1,
-                          margin: EdgeInsets.symmetric(
-                            vertical: widget.size.getPadding().vertical / 2,
-                          ),
-                          color:
-                              isDark
-                                  ? Colors.white.withOpacity(0.1)
-                                  : const Color(0xFFE5E7EB),
-                        ),
-                        Expanded(
-                          child: _RightSection(
-                            items: rightItems,
-                            animation: _animation,
-                            size: widget.size,
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _LeftSection(
-                          data: leftData,
-                          config: leftConfig,
-                          animation: _animation,
-                          size: widget.size,
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        margin: EdgeInsets.symmetric(
-                          horizontal: widget.size.getPadding().horizontal / 2,
-                        ),
-                        color:
-                            isDark
-                                ? Colors.white.withOpacity(0.1)
-                                : const Color(0xFFE5E7EB),
-                      ),
-                      Expanded(
-                        child: _RightSection(
-                          items: rightItems,
-                          animation: _animation,
-                          size: widget.size,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _LeftSection(
+                    data: leftData,
+                    config: leftConfig,
+                    animation: _animation,
+                    size: widget.size,
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  margin: EdgeInsets.symmetric(
+                    horizontal: widget.size.getPadding().horizontal / 2,
+                  ),
+                  color: theme.ink.withValues(alpha: 0.12),
+                ),
+                Expanded(
+                  child: _RightSection(
+                    items: rightItems,
+                    animation: _animation,
+                    size: widget.size,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -331,8 +328,8 @@ class _LeftSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final theme = AppTheme.of(context);
+    final primaryColor = theme.primary;
 
     // 根据 size 计算各种尺寸
     final iconSize = size.getIconSize();
@@ -345,120 +342,113 @@ class _LeftSection extends StatelessWidget {
     final subtextFontSize = labelFontSize * subtextFontSizeScale; // 约 9/10.5/12
     final smallSpacing = size.getSmallSpacing();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            _renderIcon(config.icon, size: iconSize),
-            SizedBox(width: smallSpacing),
-            Expanded(
-              child: Text(
-                config.label,
-                style: TextStyle(
-                  fontSize: labelFontSize,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.grey.shade400 : const Color(0xFF9CA3AF),
+            Row(
+              children: [
+                _renderIcon(config.icon, size: iconSize, theme: theme),
+                SizedBox(width: smallSpacing),
+                Expanded(
+                  child: Text(
+                    config.label,
+                    style: TextStyle(
+                      fontSize: labelFontSize,
+                      fontWeight: FontWeight.w500,
+                      color: theme.textSub,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              ],
+            ),
+            SizedBox(height: size.getItemSpacing()),
+            SizedBox(
+              height: valueFontSize * 1.4, // 根据字体大小计算容器高度
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: valueFontSize * 1.3,
+                    child: AnimatedFlipCounter(
+                      value: data.current * animation.value,
+                      fractionDigits: 0,
+                      textStyle: TextStyle(
+                        fontSize: valueFontSize,
+                        fontWeight: FontWeight.w700,
+                        color: theme.text,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: smallSpacing * 0.7),
+                  SizedBox(
+                    height: unitFontSize * 1.3,
+                    child: Text(
+                      data.unit,
+                      style: TextStyle(
+                        fontSize: unitFontSize,
+                        fontWeight: FontWeight.w500,
+                        color: theme.text,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-        SizedBox(height: size.getItemSpacing()),
-        SizedBox(
-          height: valueFontSize * 1.4, // 根据字体大小计算容器高度
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
+            SizedBox(height: size.getItemSpacing()),
+            // 主进度条：主题色斜纹（数据区）+ surfaceAlt 斜纹轨道
+            CustomPaint(
+              size: Size(double.infinity, progressBarHeight),
+              painter: _StripedTrackPainter(
+                value:
+                    (data.total > 0 ? data.current / data.total : 0) *
+                    animation.value,
+                dataColor: primaryColor,
+                theme: theme,
+                scale: size.scale,
+              ),
+            ),
+            if (config.subtext != null) ...[
+              SizedBox(height: size.getItemSpacing()),
               SizedBox(
-                height: valueFontSize * 1.3,
-                child: AnimatedFlipCounter(
-                  value: data.current * animation.value,
-                  fractionDigits: 0,
-                  textStyle: TextStyle(
-                    fontSize: valueFontSize,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF111827),
+                height: subtextFontSize * 1.4,
+                child: Text(
+                  config.subtext!,
+                  style: TextStyle(
+                    fontSize: subtextFontSize,
+                    fontWeight: FontWeight.w600,
+                    color: primaryColor,
                     height: 1.0,
                   ),
                 ),
               ),
-              SizedBox(width: smallSpacing * 0.7),
+            ] else ...[
+              SizedBox(height: size.getItemSpacing()),
               SizedBox(
-                height: unitFontSize * 1.3,
+                height: subtextFontSize * 1.4,
                 child: Text(
-                  data.unit,
+                  '${(data.total - data.current).toInt()} ${data.unit} remaining',
                   style: TextStyle(
-                    fontSize: unitFontSize,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white : const Color(0xFF111827),
+                    fontSize: subtextFontSize,
+                    fontWeight: FontWeight.w600,
+                    color: primaryColor,
                     height: 1.0,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
-          ),
-        ),
-        SizedBox(height: size.getItemSpacing()),
-        Container(
-          height: progressBarHeight,
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF4B5563) : const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(progressBarHeight / 2),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(progressBarHeight / 2),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: FractionallySizedBox(
-                widthFactor:
-                    (data.total > 0 ? data.current / data.total : 0) *
-                    animation.value,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    borderRadius: BorderRadius.circular(progressBarHeight / 2),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        if (config.subtext != null) ...[
-          SizedBox(height: size.getItemSpacing()),
-          SizedBox(
-            height: subtextFontSize * 1.4,
-            child: Text(
-              config.subtext!,
-              style: TextStyle(
-                fontSize: subtextFontSize,
-                fontWeight: FontWeight.w600,
-                color: primaryColor,
-                height: 1.0,
-              ),
-            ),
-          ),
-        ] else ...[
-          SizedBox(height: size.getItemSpacing()),
-          SizedBox(
-            height: subtextFontSize * 1.4,
-            child: Text(
-              '${(data.total - data.current).toInt()} ${data.unit} remaining',
-              style: TextStyle(
-                fontSize: subtextFontSize,
-                fontWeight: FontWeight.w600,
-                color: primaryColor,
-                height: 1.0,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ],
+          ],
+        );
+      },
     );
   }
 }
@@ -513,7 +503,7 @@ class _ProgressItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final step = 0.08;
     final end = (0.6 + index * step).clamp(0.0, 1.0);
     final itemAnimation = CurvedAnimation(
@@ -532,102 +522,171 @@ class _ProgressItem extends StatelessWidget {
         size.getStrokeWidth() * size.progressStrokeScale * 1.5; // 约 3.6/4.8/6
     final smallSpacing = size.getSmallSpacing();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return AnimatedBuilder(
+      animation: itemAnimation,
+      builder: (context, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _renderIcon(data.icon, size: iconSize),
-                      SizedBox(width: smallSpacing),
-                      Expanded(
-                        child: Text(
-                          data.name,
-                          style: TextStyle(
-                            fontSize: nameFontSize,
-                            fontWeight: FontWeight.w600,
-                            color:
-                                isDark
-                                    ? Colors.grey.shade100
-                                    : const Color(0xFF111827),
+                      Row(
+                        children: [
+                          _renderIcon(data.icon, size: iconSize, theme: theme),
+                          SizedBox(width: smallSpacing),
+                          Expanded(
+                            child: Text(
+                              data.name,
+                              style: TextStyle(
+                                fontSize: nameFontSize,
+                                fontWeight: FontWeight.w600,
+                                color: theme.text,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        ],
                       ),
+                      if (data.subtitle != null) ...[
+                        SizedBox(height: size.getItemSpacing() / 4),
+                        Padding(
+                          padding: EdgeInsets.only(
+                            left: iconSize + smallSpacing,
+                          ), // Align with name (icon width + spacing)
+                          child: Text(
+                            data.subtitle!,
+                            style: TextStyle(
+                              fontSize: subtitleFontSize,
+                              fontWeight: FontWeight.w400,
+                              color: theme.textSub,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
-                  if (data.subtitle != null) ...[
-                    SizedBox(height: size.getItemSpacing() / 4),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        left: iconSize + smallSpacing,
-                      ), // Align with name (icon width + spacing)
-                      child: Text(
-                        data.subtitle!,
-                        style: TextStyle(
-                          fontSize: subtitleFontSize,
-                          fontWeight: FontWeight.w400,
-                          color:
-                              isDark
-                                  ? Colors.grey.shade500
-                                  : const Color(0xFF6B7280),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            SizedBox(
-              height: valueFontSize * 1.4,
-              child: AnimatedFlipCounter(
-                value: data.current * itemAnimation.value,
-                fractionDigits: data.current % 1 != 0 ? 1 : 0,
-                textStyle: TextStyle(
-                  fontSize: valueFontSize,
-                  fontWeight: FontWeight.w700,
-                  color: data.color,
-                  height: 1.0,
                 ),
+                SizedBox(
+                  height: valueFontSize * 1.4,
+                  child: AnimatedFlipCounter(
+                    value: data.current * itemAnimation.value,
+                    fractionDigits: data.current % 1 != 0 ? 1 : 0,
+                    textStyle: TextStyle(
+                      fontSize: valueFontSize,
+                      fontWeight: FontWeight.w700,
+                      color: data.color,
+                      height: 1.0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: size.getItemSpacing() / 2),
+            // 各项进度条：数据色斜纹（数据区）+ surfaceAlt 斜纹轨道
+            CustomPaint(
+              size: Size(double.infinity, progressBarHeight),
+              painter: _StripedTrackPainter(
+                value: progress * itemAnimation.value,
+                dataColor: data.color,
+                theme: theme,
+                scale: size.scale,
               ),
             ),
           ],
-        ),
-        SizedBox(height: size.getItemSpacing() / 2),
-        Container(
-          height: progressBarHeight,
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF4B5563) : const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(progressBarHeight / 2),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(progressBarHeight / 2),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: FractionallySizedBox(
-                widthFactor: progress * itemAnimation.value,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: data.color,
-                    borderRadius: BorderRadius.circular(progressBarHeight / 2),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
+  }
+}
+
+/// 斜纹横向进度条绘制器（胶囊轨道 + 数据色斜纹进度段）
+///
+/// 轨道 surfaceAlt 底 + 淡墨斜纹（0.28）+ 淡墨描边（0.45）；
+/// 进度段数据色浅底（0.28）+ 数据色浓斜纹（0.9）+ 数据色描边（0.85），
+/// 纹样与分段进度条/条纹柱同款（右上斜率 0.85、6.5 间距）。
+class _StripedTrackPainter extends CustomPainter {
+  final double value;
+  final Color dataColor;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StripedTrackPainter({
+    required this.value,
+    required this.dataColor,
+    required this.theme,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(size.height / 2),
+    );
+
+    // 轨道
+    final trackPath = Path()..addRRect(rrect);
+    canvas.drawRRect(rrect, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      trackPath,
+      Offset.zero & size,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+
+    final v = value.clamp(0.0, 1.0);
+    if (v <= 0) return;
+    final fillRect = Rect.fromLTWH(0, 0, size.width * v, size.height);
+    final fillRRect = RRect.fromRectAndRadius(
+      fillRect,
+      Radius.circular(size.height / 2),
+    );
+    canvas.drawRRect(
+      fillRRect,
+      Paint()..color = dataColor.withValues(alpha: 0.28),
+    );
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(fillRRect),
+      fillRect,
+      color: dataColor.withValues(alpha: 0.9),
+      strokeWidth: 3 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      fillRRect,
+      Paint()
+        ..color = dataColor.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedTrackPainter oldDelegate) {
+    return oldDelegate.value != value ||
+        oldDelegate.dataColor != dataColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }

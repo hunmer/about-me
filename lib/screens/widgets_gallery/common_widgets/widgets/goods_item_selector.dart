@@ -1,17 +1,19 @@
-/// 物品选择器公共小组件
+/// 物品选择器公共小组件（手绘纸卡风格）
 ///
-/// 支持单个或多个物品展示，响应不同尺寸
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 单物品卡（图片整幅 + rough 墨线框，或纸底面板）/ 物品列表
+/// （数据色图标徽章 + 墨线箭头）。
 library;
 
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
-
-const Color _goodsColor = Color.fromARGB(255, 207, 77, 116);
 
 /// 物品选择器公共小组件
 ///
@@ -75,7 +77,7 @@ class GoodsItemSelectorWidget extends StatefulWidget {
 class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
 
     // 获取插件
     final plugin = PluginManager.instance.getPlugin('goods') as GoodsPlugin?;
@@ -141,58 +143,79 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
   /// 构建单个物品布局
   Widget _buildSingleItemLayout(
     BuildContext context,
-    ThemeData theme,
+    AppThemeData theme,
     GoodsItemData itemData,
   ) {
     final item = itemData.item;
     final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
     final isLarge = widget.size is LargeSize;
+    final radius = BorderRadius.circular(16 * widget.size.scale);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap:
-            () => _navigateToItemDetail(
-              context,
-              item.id,
-              itemData.warehouseId,
-              item.title,
-            ),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            image:
-                hasImage
-                    ? DecorationImage(
-                      image: ImageUtils.createImageProvider(item.imageUrl),
-                      fit: BoxFit.cover,
-                    )
-                    : null,
-            gradient:
-                !hasImage
-                    ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        _goodsColor.withAlpha(30),
-                        _goodsColor.withAlpha(10),
-                      ],
-                    )
-                    : null,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: hasImage ? Colors.black.withOpacity(0.3) : null,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            padding: const EdgeInsets.all(16),
-            child:
-                isLarge
-                    ? _buildLargeItemContent(context, theme, item, hasImage)
-                    : _buildMediumItemContent(context, theme, item, hasImage),
-          ),
+    final content =
+        isLarge
+            ? _buildLargeItemContent(context, theme, item, hasImage)
+            : _buildMediumItemContent(context, theme, item, hasImage);
+
+    // 手绘纸卡：有图走整幅图片 + rough 墨线框，无图走纸底面板
+    return WiredDraw(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: radius,
+          onTap:
+              () => _navigateToItemDetail(
+                context,
+                item.id,
+                itemData.warehouseId,
+                item.title,
+              ),
+          child:
+              hasImage
+                  ? _buildImageCard(theme, radius, item, content)
+                  : DsSketchPanel(
+                    theme: theme,
+                    radius: radius,
+                    padding: const EdgeInsets.all(16),
+                    child: content,
+                  ),
         ),
+      ),
+    );
+  }
+
+  /// 图片卡：整幅图片 + 压暗蒙层（保证白字可读）+ rough 墨线框
+  Widget _buildImageCard(
+    AppThemeData theme,
+    BorderRadius radius,
+    GoodsItem item,
+    Widget content,
+  ) {
+    return ClipRRect(
+      borderRadius: radius,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image(
+              image: ImageUtils.createImageProvider(item.imageUrl),
+              fit: BoxFit.cover,
+            ),
+          ),
+          // 压暗蒙层（图片展示逻辑保留）
+          Positioned.fill(
+            child: ColoredBox(color: Colors.black.withValues(alpha: 0.3)),
+          ),
+          Positioned.fill(
+            child: Padding(padding: const EdgeInsets.all(16), child: content),
+          ),
+          // rough 墨线框叠在图片之上
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: dsSketchDecoration(theme: theme, radius: radius),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -200,7 +223,7 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
   /// 构建大尺寸物品内容
   Widget _buildLargeItemContent(
     BuildContext context,
-    ThemeData theme,
+    AppThemeData theme,
     GoodsItem item,
     bool hasImage,
   ) {
@@ -208,14 +231,17 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // 物品图片或图标（居中）
-        Center(child: _buildItemImageWidget(item, hasImage: hasImage)),
+        Center(
+          child: _buildItemImageWidget(theme, item, hasImage: hasImage),
+        ),
         const SizedBox(height: 16),
         // 标题（居中）
         Text(
           item.title,
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: hasImage ? Colors.white : null,
+            fontSize: 16,
+            color: hasImage ? Colors.white : theme.text,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -226,9 +252,10 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
           // 价格（居中）
           Text(
             '¥${item.purchasePrice!.toStringAsFixed(2)}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: hasImage ? Colors.white : theme.colorScheme.primary,
+            style: TextStyle(
+              color: hasImage ? Colors.white : theme.primary,
               fontWeight: FontWeight.w600,
+              fontSize: 14,
             ),
             textAlign: TextAlign.center,
           ),
@@ -240,7 +267,7 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
   /// 构建中等尺寸物品内容
   Widget _buildMediumItemContent(
     BuildContext context,
-    ThemeData theme,
+    AppThemeData theme,
     GoodsItem item,
     bool hasImage,
   ) {
@@ -251,7 +278,7 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 物品图片或图标
-            _buildItemImageWidget(item, hasImage: hasImage),
+            _buildItemImageWidget(theme, item, hasImage: hasImage),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -259,9 +286,10 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
                 children: [
                   Text(
                     item.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: hasImage ? Colors.white : null,
+                      fontSize: 16,
+                      color: hasImage ? Colors.white : theme.text,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -270,10 +298,10 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
                     const SizedBox(height: 4),
                     Text(
                       '¥${item.purchasePrice!.toStringAsFixed(2)}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color:
-                            hasImage ? Colors.white : theme.colorScheme.primary,
+                      style: TextStyle(
+                        color: hasImage ? Colors.white : theme.primary,
                         fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -287,80 +315,97 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
   }
 
   /// 构建物品图片组件
-  Widget _buildItemImageWidget(GoodsItem item, {bool hasImage = false}) {
-    final effectiveColor = item.iconColor ?? _goodsColor;
+  Widget _buildItemImageWidget(
+    AppThemeData theme,
+    GoodsItem item, {
+    bool hasImage = false,
+  }) {
+    final effectiveColor = item.iconColor ?? theme.primary;
     final icon = item.icon ?? Icons.inventory_2;
 
+    // 数据色图标徽章：实底 + 墨线描边
     return Container(
       width: 64,
       height: 64,
-      decoration: BoxDecoration(
-        color: (hasImage ? Colors.white : effectiveColor).withAlpha(
-          hasImage ? 200 : 50,
-        ),
-        borderRadius: BorderRadius.circular(12),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(12),
+        fillColor: effectiveColor,
       ),
-      child: Icon(icon, size: 32, color: effectiveColor),
+      child: WiredIcon(
+        icon: icon,
+        size: 32,
+        color: theme.onPrimary,
+        drawConfig: theme.wired.drawConfig,
+      ),
     );
   }
 
   /// 构建列表布局（多个物品）
   Widget _buildListLayout(
     BuildContext context,
-    ThemeData theme,
+    AppThemeData theme,
     List<GoodsItemData> items,
   ) {
     final title = widget.title ?? '物品列表';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 标题
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(
-                Icons.inventory_2,
-                color: theme.colorScheme.primary,
-                size: 20,
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(16 * widget.size.scale),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 标题
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  WiredIcon(
+                    icon: Icons.inventory_2,
+                    color: theme.primary,
+                    size: 20,
+                    drawConfig: theme.wired.drawConfig,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: theme.text,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${items.length}个物品',
+                    style: TextStyle(fontSize: 12, color: theme.textSub),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            ),
+            // 物品列表
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final itemData = items[index];
+                  return _buildListItem(context, theme, itemData);
+                },
               ),
-              const Spacer(),
-              Text(
-                '${items.length}个物品',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        // 物品列表
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 16),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final itemData = items[index];
-              return _buildListItem(context, theme, itemData);
-            },
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   /// 构建列表项
   Widget _buildListItem(
     BuildContext context,
-    ThemeData theme,
+    AppThemeData theme,
     GoodsItemData itemData,
   ) {
     final item = itemData.item;
@@ -377,18 +422,20 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
-            // 图标
+            // 图标：数据色徽章
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
-                color: (item.iconColor ?? _goodsColor).withAlpha(50),
-                borderRadius: BorderRadius.circular(8),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: BorderRadius.circular(8),
+                fillColor: item.iconColor ?? theme.primary,
               ),
-              child: Icon(
-                item.icon ?? Icons.inventory_2,
-                color: item.iconColor ?? _goodsColor,
+              child: WiredIcon(
+                icon: item.icon ?? Icons.inventory_2,
+                color: theme.onPrimary,
                 size: 20,
+                drawConfig: theme.wired.drawConfig,
               ),
             ),
             const SizedBox(width: 12),
@@ -399,8 +446,10 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
                 children: [
                   Text(
                     item.title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: TextStyle(
                       fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      color: theme.text,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -408,17 +457,15 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
                   if (item.purchasePrice != null)
                     Text(
                       '¥${item.purchasePrice!.toStringAsFixed(2)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.primary,
                       ),
                     ),
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            DsIcon(DsIconKind.chevronRight, color: theme.textSub),
           ],
         ),
       ),
@@ -427,21 +474,26 @@ class _GoodsItemSelectorWidgetState extends State<GoodsItemSelectorWidget> {
 
   /// 构建错误小组件
   Widget _buildErrorWidget(BuildContext context, String message) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.red.withAlpha(20),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.red.withAlpha(50)),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, color: Colors.red),
-            const SizedBox(width: 8),
-            Text(message, style: const TextStyle(color: Colors.red)),
-          ],
+    final theme = AppTheme.of(context);
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(16),
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              WiredIcon(
+                icon: Icons.error_outline,
+                color: theme.danger,
+                size: 24,
+                drawConfig: theme.wired.drawConfig,
+              ),
+              const SizedBox(width: 8),
+              Text(message, style: TextStyle(color: theme.danger)),
+            ],
+          ),
         ),
       ),
     );

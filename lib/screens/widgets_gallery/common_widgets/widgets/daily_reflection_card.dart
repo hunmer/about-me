@@ -1,4 +1,14 @@
+/// 每日反思卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 星期几 + 蝴蝶装饰插画（保留）/ 中央引导性问题（逐项浮现）/
+/// 数据色墨线按钮组（New / Sync，逐项错峰浮现）。
+/// darkBackgroundColor 为旧深色卡字段，仅为 props 兼容保留。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import '../models/daily_reflection_card_data.dart';
 
@@ -16,7 +26,7 @@ class DailyReflectionCardWidget extends StatefulWidget {
   /// 引导性问题
   final String question;
 
-  /// 卡片背景色（深色模式）
+  /// 卡片背景色（深色模式）——旧深色卡字段，仅为 props 兼容保留
   final Color? darkBackgroundColor;
 
   /// 主色调（按钮颜色）
@@ -93,127 +103,81 @@ class _DailyReflectionCardWidgetState extends State<DailyReflectionCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    // 根据原型使用深色背景
-    final backgroundColor =
-        widget.darkBackgroundColor ?? const Color(0xFF2A2D45);
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    // 主色调
-    final primaryColor = widget.primaryColor ?? const Color(0xFF626D9E);
+    // 主色调（数据色 props，缺省回落主题色）
+    final primaryColor = widget.primaryColor ?? theme.primary;
 
     // 悬停颜色
-    final hoverColor = primaryColor.withOpacity(0.8);
+    final hoverColor = primaryColor.withValues(alpha: 0.8);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : widget.size.width * 80.0 + 100,
         height: widget.inline ? double.maxFinite : widget.size.height * 80.0 + 100,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 背景装饰（可选的渐变叠加）
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.03,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        const Color(0xFF8E9AFF),
-                        const Color(0xFFFF8EA9),
-                      ],
+            // 顶部行：星期几 + 蝴蝶图标
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.dayOfWeek,
+                  style: TextStyle(
+                    color: theme.textSub,
+                    fontSize: widget.size.getSubtitleFontSize(),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                _ButterflyIcon(animation: _animation, size: widget.size.width == 1 ? 24 : 32),
+              ],
+            ),
+            SizedBox(height: widget.size.getTitleSpacing()),
+            // 中间：引导性问题
+            Expanded(
+              child: Center(
+                child: TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 800),
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 10 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Text(
+                    widget.question,
+                    style: TextStyle(
+                      color: theme.text,
+                      fontSize: widget.size.getLargeFontSize() - 16,
+                      fontWeight: FontWeight.bold,
+                      height: 1.2,
+                      letterSpacing: -0.5,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
             ),
-            // 主要内容
-            Padding(
-              padding: widget.size.getPadding(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 顶部行：星期几 + 蝴蝶图标
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.dayOfWeek,
-                        style: TextStyle(
-                          color: const Color(0xFFD1D5DB),
-                          fontSize: widget.size.getSubtitleFontSize(),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      _ButterflyIcon(animation: _animation, size: widget.size.width == 1 ? 24 : 32),
-                    ],
-                  ),
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  // 中间：引导性问题
-                  Expanded(
-                    child: Center(
-                      child: TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 800),
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, value, child) {
-                          return Opacity(
-                            opacity: value,
-                            child: Transform.translate(
-                              offset: Offset(0, 10 * (1 - value)),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: Text(
-                          widget.question,
-                          style: TextStyle(
-                            color: const Color(0xFF9FA8DA),
-                            fontSize: widget.size.getLargeFontSize() - 16,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
-                            letterSpacing: -0.5,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  // 底部：按钮组
-                  _ButtonGroup(
-                    animation: _animation,
-                    primaryColor: primaryColor,
-                    hoverColor: hoverColor,
-                    size: widget.size,
-                  ),
-                ],
-              ),
+            SizedBox(height: widget.size.getTitleSpacing()),
+            // 底部：按钮组
+            _ButtonGroup(
+              animation: _animation,
+              primaryColor: primaryColor,
+              hoverColor: hoverColor,
+              size: widget.size,
             ),
-            // 底部标签（在卡片外层显示）
           ],
         ),
       ),
@@ -389,6 +353,8 @@ class _AnimatedButtonState extends State<_AnimatedButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+
     // 计算延迟动画
     final step = 0.1;
     final itemAnimation = CurvedAnimation(
@@ -413,27 +379,38 @@ class _AnimatedButtonState extends State<_AnimatedButton> {
         onExit: (_) => setState(() => _isHovered = false),
         child: GestureDetector(
           onTap: widget.onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          child: Container(
             height: 56,
             width: 80,
-            decoration: BoxDecoration(
-              color: _isHovered ? widget.hoverColor : widget.color,
-              borderRadius: BorderRadius.circular(28),
+            // 胶囊徽章：数据色实底 + 墨线描边（大圆角被 rough 引擎钳成胶囊）
+            decoration: dsSketchDecoration(
+              theme: theme,
+              radius: BorderRadius.circular(28),
+              fillColor: _isHovered ? widget.hoverColor : widget.color,
             ),
             child: widget.isIconOnly
                 ? Center(
-                    child: Icon(widget.icon, color: Colors.white, size: 24),
+                    child: WiredIcon(
+                      icon: widget.icon,
+                      size: 24,
+                      color: theme.onPrimary,
+                      drawConfig: theme.wired.drawConfig,
+                    ),
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(widget.icon, color: Colors.white, size: 20),
+                      WiredIcon(
+                        icon: widget.icon,
+                        size: 20,
+                        color: theme.onPrimary,
+                        drawConfig: theme.wired.drawConfig,
+                      ),
                       SizedBox(width: widget.size.getItemSpacing()),
                       Text(
                         widget.label!,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: theme.onPrimary,
                           fontSize: widget.size.getSubtitleFontSize(),
                           fontWeight: FontWeight.w600,
                         ),

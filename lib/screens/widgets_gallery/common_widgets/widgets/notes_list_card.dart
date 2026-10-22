@@ -1,4 +1,13 @@
+/// 笔记列表卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 主题色"Notes"图标徽章 / 墨线分隔的笔记列表（标题 + 时间预览 + 缩略图，
+/// 逐项错峰浮现）。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 笔记数据模型
@@ -78,7 +87,6 @@ class NotesListCardWidget extends StatefulWidget {
 class _NotesListCardWidgetState extends State<NotesListCardWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -86,10 +94,6 @@ class _NotesListCardWidgetState extends State<NotesListCardWidget>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
     );
     _animationController.forward();
   }
@@ -102,85 +106,74 @@ class _NotesListCardWidgetState extends State<NotesListCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : null,
-              constraints: widget.size.getHeightConstraints(),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: widget.size.getHeightConstraints(),
+        child: DsSketchPanel(
+          theme: theme,
+          width: widget.inline ? double.maxFinite : null,
+          height: widget.inline ? double.maxFinite : null,
+          radius: BorderRadius.circular(24 * scale),
+          padding: widget.size.getPadding(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(theme),
+              _buildDivider(theme),
+              Flexible(
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (int i = 0; i < widget.notes.length; i++)
+                        _buildNoteItem(
+                          theme,
+                          widget.notes[i],
+                          i,
+                          hasDivider: i < widget.notes.length - 1,
+                        ),
+                    ],
                   ),
-                ],
+                ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildHeader(context, isDark),
-                  _buildDivider(isDark),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(widget.notes.length, (index) {
-                          return _buildNoteItem(
-                            context,
-                            widget.notes[index],
-                            index,
-                            hasDivider: true,
-                            isDark: isDark,
-                          );
-                        }),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark) {
+  /// 头部：主题色实底"Notes"图标徽章（墨线描边）
+  Widget _buildHeader(AppThemeData theme) {
+    final scale = widget.size.scale;
     return Container(
-      padding: widget.size.getPadding().copyWith(
-        top: widget.size.getPadding().top * 0.625,
-        bottom: widget.size.getPadding().bottom * 0.625,
+      padding: EdgeInsets.symmetric(
+        horizontal: 10 * scale,
+        vertical: 5 * scale,
       ),
-      decoration: const BoxDecoration(
-        color: Color(0xFFFFC107),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
-        ),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(10 * scale),
+        fillColor: theme.primary,
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.folder_open,
-            color: Colors.white,
-            size: widget.size.getIconSize(),
+          DsIcon(
+            DsIconKind.folder,
+            size: widget.size.getIconSize() * 0.8,
+            color: theme.onPrimary,
           ),
-          SizedBox(width: widget.size.getItemSpacing()),
+          SizedBox(width: widget.size.getItemSpacing() * 0.6),
           Text(
             'Notes',
             style: TextStyle(
-              color: Colors.white,
+              color: theme.onPrimary,
               fontSize: widget.size.getTitleFontSize() * 0.8,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.5,
@@ -191,34 +184,22 @@ class _NotesListCardWidgetState extends State<NotesListCardWidget>
     );
   }
 
-  Widget _buildDivider(bool isDark) {
+  /// 分隔线：淡墨细线
+  Widget _buildDivider(AppThemeData theme) {
     return Container(
-      height: widget.size.getSmallSpacing(),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-            width: widget.size.getSmallSpacing(),
-          ),
-        ),
-      ),
-      child: CustomPaint(
-        painter: _DashedLinePainter(
-          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-          strokeWidth: widget.size.getSmallSpacing(),
-        ),
-      ),
+      height: 1,
+      margin: EdgeInsets.symmetric(vertical: widget.size.getSmallSpacing()),
+      color: theme.ink.withValues(alpha: 0.18),
     );
   }
 
   Widget _buildNoteItem(
-    BuildContext context,
+    AppThemeData theme,
     NoteItem note,
     int index, {
     required bool hasDivider,
-    required bool isDark,
   }) {
-    // 计算每个元素的延迟动画
+    // 计算每个元素的延迟动画（逐项错峰浮现）
     final itemAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Interval(
@@ -235,144 +216,84 @@ class _NotesListCardWidgetState extends State<NotesListCardWidget>
           opacity: itemAnimation.value,
           child: Transform.translate(
             offset: Offset(0, 10 * (1 - itemAnimation.value)),
-            child: Container(
-              padding: widget.size.getPadding().copyWith(
-                top: widget.size.getPadding().top * 0.5,
-                bottom: widget.size.getPadding().bottom * 0.5,
-              ),
-              decoration: BoxDecoration(
-                border:
-                    hasDivider
-                        ? Border(
-                          bottom: BorderSide(
-                            color:
-                                isDark
-                                    ? Colors.grey.shade800.withOpacity(0.5)
-                                    : Colors.grey.shade200,
-                            width: 1,
-                          ),
-                        )
-                        : null,
-              ),
-              child: InkWell(
-                onTap: () {
-                  // 点击处理
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            note.title,
-                            style: TextStyle(
-                              color:
-                                  isDark
-                                      ? Colors.grey.shade100
-                                      : Colors.grey.shade900,
-                              fontSize: widget.size.getSubtitleFontSize(),
-                              fontWeight: FontWeight.bold,
-                              height: 1.2,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: widget.size.getItemSpacing() / 2),
-                          Text(
-                            '${note.time} ${note.preview}',
-                            style: TextStyle(
-                              color:
-                                  isDark
-                                      ? Colors.grey.shade400
-                                      : Colors.grey.shade500,
-                              fontSize: widget.size.getLegendFontSize(),
-                              height: 1.4,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (note.imageUrl != null) ...[
-                      SizedBox(width: widget.size.getItemSpacing()),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          note.imageUrl!,
-                          width: widget.size.getThumbnailImageSize(),
-                          height: widget.size.getThumbnailImageSize(),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: widget.size.getThumbnailImageSize(),
-                              height: widget.size.getThumbnailImageSize(),
-                              decoration: BoxDecoration(
-                                color:
-                                    isDark
-                                        ? Colors.grey.shade800
-                                        : Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.image,
-                                size: widget.size.getIconSize() - 4,
-                                color:
-                                    isDark
-                                        ? Colors.grey.shade600
-                                        : Colors.grey.shade400,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+            child: child,
           ),
         );
       },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: widget.size.getItemSpacing() * 0.75,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        note.title,
+                        style: TextStyle(
+                          color: theme.text,
+                          fontSize: widget.size.getSubtitleFontSize(),
+                          fontWeight: FontWeight.bold,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: widget.size.getItemSpacing() / 2),
+                      Text(
+                        '${note.time} ${note.preview}',
+                        style: TextStyle(
+                          color: theme.textSub,
+                          fontSize: widget.size.getLegendFontSize(),
+                          height: 1.4,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                if (note.imageUrl != null) ...[
+                  SizedBox(width: widget.size.getItemSpacing()),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      note.imageUrl!,
+                      width: widget.size.getThumbnailImageSize(),
+                      height: widget.size.getThumbnailImageSize(),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: widget.size.getThumbnailImageSize(),
+                          height: widget.size.getThumbnailImageSize(),
+                          decoration: dsSketchDecoration(
+                            theme: theme,
+                            radius: BorderRadius.circular(8),
+                            fillColor: theme.surfaceAlt,
+                          ),
+                          child: DsIcon(
+                            DsIconKind.image,
+                            size: widget.size.getIconSize() - 4,
+                            color: theme.textSub,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (hasDivider)
+            Container(height: 1, color: theme.ink.withValues(alpha: 0.18)),
+        ],
+      ),
     );
-  }
-}
-
-/// 虚线绘制器
-class _DashedLinePainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-
-  _DashedLinePainter({required this.color, this.strokeWidth = 2});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = color
-          ..strokeWidth = strokeWidth
-          ..style = PaintingStyle.stroke;
-
-    final dashWidth = 5.0;
-    final dashSpace = 5.0;
-    double startX = 0;
-
-    while (startX < size.width) {
-      canvas.drawLine(
-        Offset(startX, size.height / 2),
-        Offset(startX + dashWidth, size.height / 2),
-        paint,
-      );
-      startX += dashWidth + dashSpace;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) {
-    return oldDelegate.color != color ||
-        oldDelegate.strokeWidth != strokeWidth;
   }
 }

@@ -1,5 +1,13 @@
+/// 即将到来的任务小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 翻牌计数 + 标题 / 任务列表（数据色竖条 + 标题 + 标签，逐项错峰浮现）。
+library;
+
 import 'package:flutter/material.dart';
 import 'package:animated_flip_counter/animated_flip_counter.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 任务项数据模型
@@ -102,65 +110,57 @@ class _UpcomingTasksWidgetState extends State<UpcomingTasksWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - _animation.value)),
-          child: Opacity(
-            opacity: _animation.value,
-            child: Container(
-              constraints: widget.inline
-                  ? null
-                  : widget.size.getHeightConstraints(),
-              width: widget.inline ? double.maxFinite : null,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1F2937) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              padding: widget.size.getPadding(),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 左侧：任务计数
-                  _buildTaskCounter(isDark),
-                  SizedBox(width: widget.size.getTitleSpacing()),
-                  // 右侧：任务列表
-                  Expanded(child: _buildTaskList(isDark)),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    Widget panel = DsSketchPanel(
+      theme: theme,
+      width: widget.inline ? double.maxFinite : null,
+      height: widget.inline ? double.maxFinite : null,
+      radius: BorderRadius.circular(24 * scale),
+      padding: widget.size.getPadding(),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 左侧：任务计数
+          _buildTaskCounter(theme),
+          SizedBox(width: widget.size.getTitleSpacing()),
+          // 右侧：任务列表
+          Expanded(child: _buildTaskList(theme)),
+        ],
+      ),
     );
+    if (!widget.inline) {
+      panel = ConstrainedBox(
+        constraints: widget.size.getHeightConstraints(),
+        child: panel,
+      );
+    }
+    return WiredDraw(child: panel);
   }
 
   /// 构建任务计数区域
-  Widget _buildTaskCounter(bool isDark) {
+  Widget _buildTaskCounter(AppThemeData theme) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 添加顶部 padding 以与右侧对齐
         SizedBox(height: widget.size.getItemSpacing()),
-        AnimatedFlipCounter(
-          value: widget.taskCount.toDouble() * _animation.value,
-          textStyle: TextStyle(
-            fontSize: widget.size.getLargeFontSize(),
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF111827),
-            height: 1.0,
-          ),
+        AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) {
+            return AnimatedFlipCounter(
+              value: widget.taskCount.toDouble() * _animation.value,
+              textStyle: TextStyle(
+                fontSize: widget.size.getLargeFontSize(),
+                fontWeight: FontWeight.bold,
+                color: theme.text,
+                height: 1.0,
+              ),
+            );
+          },
         ),
         SizedBox(height: widget.size.getItemSpacing()),
         SizedBox(
@@ -170,7 +170,7 @@ class _UpcomingTasksWidgetState extends State<UpcomingTasksWidget>
             style: TextStyle(
               fontSize: widget.size.getSubtitleFontSize() * 0.85,
               fontWeight: FontWeight.w500,
-              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF),
+              color: theme.textSub,
               height: 1.2,
             ),
           ),
@@ -180,7 +180,7 @@ class _UpcomingTasksWidgetState extends State<UpcomingTasksWidget>
   }
 
   /// 构建任务列表
-  Widget _buildTaskList(bool isDark) {
+  Widget _buildTaskList(AppThemeData theme) {
     return Flexible(
       child: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
@@ -198,7 +198,6 @@ class _UpcomingTasksWidgetState extends State<UpcomingTasksWidget>
                 ),
                 child: _TaskItemWidget(
                   task: widget.tasks[index],
-                  isDark: isDark,
                   animation: _animation,
                   index: index,
                   size: widget.size,
@@ -222,7 +221,7 @@ class _UpcomingTasksWidgetState extends State<UpcomingTasksWidget>
                   style: TextStyle(
                     fontSize: widget.size.getSubtitleFontSize(),
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF3B82F6),
+                    color: theme.primary,
                   ),
                 ),
               ),
@@ -234,17 +233,15 @@ class _UpcomingTasksWidgetState extends State<UpcomingTasksWidget>
   }
 }
 
-/// 单个任务项组件
+/// 单个任务项组件（数据色竖条 + 标题 + 标签，逐项错峰浮现）
 class _TaskItemWidget extends StatelessWidget {
   final TaskItem task;
-  final bool isDark;
   final Animation<double> animation;
   final int index;
   final HomeWidgetSize size;
 
   const _TaskItemWidget({
     required this.task,
-    required this.isDark,
     required this.animation,
     required this.index,
     required this.size,
@@ -252,6 +249,7 @@ class _TaskItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
@@ -281,13 +279,14 @@ class _TaskItemWidget extends StatelessWidget {
                 },
                 child: Row(
                   children: [
-                    // 彩色指示条
+                    // 彩色指示条：数据色实底 + 墨线描边
                     Container(
                       width: size.getSmallSpacing() * 1.5,
                       height: size.getSubtitleFontSize(),
-                      decoration: BoxDecoration(
-                        color: task.color,
-                        borderRadius: BorderRadius.circular(2),
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        radius: BorderRadius.circular(2),
+                        fillColor: task.color,
                       ),
                     ),
                     SizedBox(width: size.getItemSpacing()),
@@ -298,10 +297,7 @@ class _TaskItemWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: size.getSubtitleFontSize() * 1.03,
                           fontWeight: FontWeight.w500,
-                          color:
-                              isDark
-                                  ? const Color(0xFFE5E7EB)
-                                  : const Color(0xFF374151),
+                          color: theme.text,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -315,10 +311,7 @@ class _TaskItemWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: size.getSubtitleFontSize() * 0.85,
                           fontWeight: FontWeight.w400,
-                          color:
-                              isDark
-                                  ? const Color(0xFF9CA3AF)
-                                  : const Color(0xFF9CA3AF),
+                          color: theme.textSub,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

@@ -1,6 +1,16 @@
+/// 支出对比图表卡片（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题 + 翻牌金额 + 手绘图例（色块指示器）/ 变化百分比徽章（危险色斜纹底）/
+/// 双数据系列斜纹柱状图（上月淡墨斜纹 vs 本月主题色浓斜纹）/ X 轴刻度。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 支出对比图表卡片
 ///
@@ -8,7 +18,6 @@ import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 /// - 本月支出金额显示（带动画计数）
 /// - 变化百分比徽章
 /// - 双数据系列柱状图（上月 vs 本月）
-/// - 深色/浅色主题适配
 class ExpenseComparisonChartCardWidget extends StatefulWidget {
   /// 标题文本
   final String title;
@@ -116,8 +125,8 @@ class _ExpenseComparisonChartCardWidgetState
     super.dispose();
   }
 
-  /// 构建图例行
-  Widget _buildLegendRow(bool isDark, Color primaryColor) {
+  /// 构建图例行（手绘色块指示器 + 标签）
+  Widget _buildLegendRow(AppThemeData theme) {
     return Row(
       children: [
         Row(
@@ -126,10 +135,12 @@ class _ExpenseComparisonChartCardWidgetState
               width: widget.size.getLegendIndicatorWidth(),
               height: widget.size.getLegendIndicatorHeight(),
               margin: EdgeInsets.only(right: widget.size.getSmallSpacing()),
-              decoration: BoxDecoration(
-                color:
-                    isDark ? const Color(0xFF475569) : const Color(0xFFDBEAFE),
-                shape: BoxShape.circle,
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: BorderRadius.circular(
+                  widget.size.getLegendIndicatorHeight() / 2,
+                ),
+                fillColor: theme.surfaceAlt,
               ),
             ),
             Text(
@@ -137,7 +148,7 @@ class _ExpenseComparisonChartCardWidgetState
               style: TextStyle(
                 fontSize: widget.size.getLegendFontSize() * 0.8,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF9CA3AF),
+                color: theme.textSub,
               ),
             ),
           ],
@@ -149,9 +160,12 @@ class _ExpenseComparisonChartCardWidgetState
               width: widget.size.getLegendIndicatorWidth(),
               height: widget.size.getLegendIndicatorHeight(),
               margin: EdgeInsets.only(right: widget.size.getSmallSpacing()),
-              decoration: BoxDecoration(
-                color: primaryColor,
-                shape: BoxShape.circle,
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: BorderRadius.circular(
+                  widget.size.getLegendIndicatorHeight() / 2,
+                ),
+                fillColor: theme.primary,
               ),
             ),
             Text(
@@ -159,8 +173,7 @@ class _ExpenseComparisonChartCardWidgetState
               style: TextStyle(
                 fontSize: widget.size.getLegendFontSize(),
                 fontWeight: FontWeight.w500,
-                color:
-                    isDark ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280),
+                color: theme.textSub,
               ),
             ),
           ],
@@ -169,25 +182,27 @@ class _ExpenseComparisonChartCardWidgetState
     );
   }
 
-  /// 构建变化百分比徽章
-  Widget _buildChangePercentBadge(bool isDark) {
+  /// 构建变化百分比徽章（危险色浅底 + 墨线描边 + 手绘箭头）
+  Widget _buildChangePercentBadge(AppThemeData theme) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: widget.size.getSmallSpacing() * 2,
         vertical: widget.size.getSmallSpacing() / 2,
       ),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0x33EF4444) : const Color(0xFFFEE2E2),
-        borderRadius: BorderRadius.circular(99),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(99),
+        fillColor: theme.danger.withValues(alpha: 0.15),
       ),
       child: Row(
         children: [
           Transform.rotate(
             angle: -0.785, // -45度
-            child: Icon(
-              Icons.arrow_forward,
+            child: WiredIcon(
+              icon: Icons.arrow_forward,
               size: widget.size.getSubtitleFontSize(),
-              color: isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+              color: theme.danger,
+              drawConfig: theme.wired.drawConfig,
             ),
           ),
           SizedBox(width: widget.size.getItemSpacing() / 4),
@@ -196,7 +211,7 @@ class _ExpenseComparisonChartCardWidgetState
             style: TextStyle(
               fontSize: widget.size.getSubtitleFontSize(),
               fontWeight: FontWeight.bold,
-              color: isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+              color: theme.danger,
             ),
           ),
         ],
@@ -206,135 +221,121 @@ class _ExpenseComparisonChartCardWidgetState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 400,
-              padding: widget.size.getPadding(),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 30,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 标题和金额
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.title,
-                            style: TextStyle(
-                              fontSize: widget.size.getTitleFontSize(),
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  isDark
-                                      ? const Color(0xFFE2E8F0)
-                                      : const Color(0xFF1F2937),
-                            ),
-                          ),
-                          SizedBox(height: widget.size.getItemSpacing() * 0.5),
-                          SizedBox(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                AnimatedFlipCounter(
-                                  value:
-                                      widget.currentAmount * _animation.value,
-                                  fractionDigits: 2,
-                                  textStyle: TextStyle(
-                                    fontSize:
-                                        widget.size.getLargeFontSize() * 0.6,
-                                    fontWeight: FontWeight.w600,
-                                    color: primaryColor,
-                                    height: 1.0,
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: widget.size.getItemSpacing() / 2,
-                                ),
-                                Text(
-                                  widget.unit,
-                                  style: TextStyle(
-                                    fontSize: widget.size.getSubtitleFontSize(),
-                                    fontWeight: FontWeight.w500,
-                                    color:
-                                        isDark
-                                            ? const Color(0xFF9CA3AF)
-                                            : const Color(0xFF6B7280),
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Wide size: 图例和变化百分比在右侧
-                      if (widget.size is WideSize ||
-                          widget.size is Wide2Size ||
-                          widget.size is Wide3Size)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            _buildLegendRow(isDark, primaryColor),
-                            SizedBox(height: widget.size.getItemSpacing()),
-                            _buildChangePercentBadge(isDark),
-                          ],
-                        ),
-                    ],
-                  ),
-                  // 非 wide size: 图例和变化百分比在新的一行横向展示
-                  if (!(widget.size is WideSize ||
-                      widget.size is Wide2Size ||
-                      widget.size is Wide3Size)) ...[
-                    SizedBox(height: widget.size.getItemSpacing()),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 400,
+        height: widget.inline ? double.maxFinite : null,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: AnimatedBuilder(
+          animation: _animation,
+          builder: (context, _) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 标题和金额
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildLegendRow(isDark, primaryColor),
-                        _buildChangePercentBadge(isDark),
+                        Text(
+                          widget.title,
+                          style: TextStyle(
+                            fontSize: widget.size.getTitleFontSize(),
+                            fontWeight: FontWeight.bold,
+                            color: theme.text,
+                          ),
+                        ),
+                        SizedBox(
+                          height: widget.size.getItemSpacing() * 0.5,
+                        ),
+                        SizedBox(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              AnimatedFlipCounter(
+                                value:
+                                    widget.currentAmount * _animation.value,
+                                fractionDigits: 2,
+                                textStyle: TextStyle(
+                                  fontSize:
+                                      widget.size.getLargeFontSize() * 0.6,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.primary,
+                                  height: 1.0,
+                                ),
+                              ),
+                              SizedBox(
+                                width: widget.size.getItemSpacing() / 2,
+                              ),
+                              Text(
+                                widget.unit,
+                                style: TextStyle(
+                                  fontSize:
+                                      widget.size.getSubtitleFontSize(),
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.textSub,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
+                    // Wide size: 图例和变化百分比在右侧
+                    if (widget.size is WideSize ||
+                        widget.size is Wide2Size ||
+                        widget.size is Wide3Size)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _buildLegendRow(theme),
+                          SizedBox(height: widget.size.getItemSpacing()),
+                          _buildChangePercentBadge(theme),
+                        ],
+                      ),
                   ],
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  // 柱状图
-                  Flexible(
-                    child: _BarChartWidget(
-                      data: widget.dailyData,
-                      maxValue: widget.maxValue,
-                      labels: widget.labels,
-                      animation: _animation,
-                      isDark: isDark,
-                      primaryColor: primaryColor,
-                      size: widget.size,
-                    ),
+                ),
+                // 非 wide size: 图例和变化百分比在新的一行横向展示
+                if (!(widget.size is WideSize ||
+                    widget.size is Wide2Size ||
+                    widget.size is Wide3Size)) ...[
+                  SizedBox(height: widget.size.getItemSpacing()),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildLegendRow(theme),
+                      _buildChangePercentBadge(theme),
+                    ],
                   ),
                 ],
-              ),
-            ),
-          ),
-        );
-      },
+                SizedBox(height: widget.size.getTitleSpacing()),
+                // 柱状图
+                Flexible(
+                  child: _BarChartWidget(
+                    data: widget.dailyData,
+                    maxValue: widget.maxValue,
+                    labels: widget.labels,
+                    animation: _animation,
+                    theme: theme,
+                    size: widget.size,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -369,8 +370,7 @@ class _BarChartWidget extends StatelessWidget {
   final double maxValue;
   final List<String> labels;
   final Animation<double> animation;
-  final bool isDark;
-  final Color primaryColor;
+  final AppThemeData theme;
   final HomeWidgetSize size;
 
   /// 柱子最小宽度
@@ -384,8 +384,7 @@ class _BarChartWidget extends StatelessWidget {
     required this.maxValue,
     required this.labels,
     required this.animation,
-    required this.isDark,
-    required this.primaryColor,
+    required this.theme,
     required this.size,
   });
 
@@ -424,8 +423,7 @@ class _BarChartWidget extends StatelessWidget {
                       currentMonth: data[index].currentMonth,
                       maxValue: maxValue,
                       animation: barAnimation,
-                      isDark: isDark,
-                      primaryColor: primaryColor,
+                      theme: theme,
                       size: size,
                       minWidth: minBarWidth,
                     ),
@@ -448,8 +446,7 @@ class _BarChartWidget extends StatelessWidget {
                         : List.generate(labels.length, (i) => i),
                 totalDataCount: data.length,
                 fontSize: size.getLegendFontSize(),
-                color:
-                    isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+                color: theme.textSub,
                 barWidth: barWidth,
                 barSpacing: barSpacing,
               ),
@@ -521,14 +518,13 @@ class _XAxisLabelPainter extends CustomPainter {
   }
 }
 
-/// 单个柱状图项
+/// 单个柱状图项（上月柱垫底 + 本月柱覆盖，斜纹数据区）
 class _BarItemWidget extends StatelessWidget {
   final double lastMonth;
   final double currentMonth;
   final double maxValue;
   final Animation<double> animation;
-  final bool isDark;
-  final Color primaryColor;
+  final AppThemeData theme;
   final HomeWidgetSize size;
   final double minWidth;
 
@@ -537,8 +533,7 @@ class _BarItemWidget extends StatelessWidget {
     required this.currentMonth,
     required this.maxValue,
     required this.animation,
-    required this.isDark,
-    required this.primaryColor,
+    required this.theme,
     required this.size,
     this.minWidth = 10.0,
   });
@@ -568,46 +563,15 @@ class _BarItemWidget extends StatelessWidget {
 
             return SizedBox(
               width: barWidth,
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: SizedBox(
-                  width: barWidth,
-                  child: Stack(
-                    alignment: Alignment.bottomCenter,
-                    children: [
-                      // 上月柱（背景）
-                      Positioned(
-                        bottom: 0,
-                        child: Container(
-                          width: barWidth,
-                          height: lastMonthHeight,
-                          decoration: BoxDecoration(
-                            color:
-                                isDark
-                                    ? const Color(0xFF334155)
-                                    : const Color(0xFFDBEAFE),
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // 本月柱（前景）
-                      Positioned(
-                        bottom: 0,
-                        child: Container(
-                          width: barWidth,
-                          height: currentMonthHeight,
-                          decoration: BoxDecoration(
-                            color: primaryColor,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+              height: availableHeight,
+              child: CustomPaint(
+                size: Size(barWidth, availableHeight),
+                painter: _StripedCompareColumnPainter(
+                  lastHeight: lastMonthHeight,
+                  currentHeight: currentMonthHeight,
+                  dataColor: theme.primary,
+                  theme: theme,
+                  scale: size.scale,
                 ),
               ),
             );
@@ -615,5 +579,105 @@ class _BarItemWidget extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+/// 双柱对比绘制器：上月柱淡墨斜纹（surfaceAlt 底）垫底，
+/// 本月柱数据色浅底 + 浓斜纹 + 数据色描边覆盖其上，顶部微圆角。
+class _StripedCompareColumnPainter extends CustomPainter {
+  final double lastHeight;
+  final double currentHeight;
+  final Color dataColor;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StripedCompareColumnPainter({
+    required this.lastHeight,
+    required this.currentHeight,
+    required this.dataColor,
+    required this.theme,
+    required this.scale,
+  });
+
+  void _paintColumn(Canvas canvas, Rect rect, Color fillColor) {
+    final rrect = RRect.fromRectAndCorners(
+      rect,
+      topLeft: const Radius.circular(4),
+      topRight: const Radius.circular(4),
+    );
+    final path = Path()..addRRect(rrect);
+    canvas.drawRRect(rrect, Paint()..color = fillColor.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      path,
+      rect,
+      color: fillColor.withValues(alpha: 0.9),
+      strokeWidth: 3 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = fillColor.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    // 上月柱：轨道配色（surfaceAlt 底 + 淡墨斜纹 + 淡墨描边）
+    if (lastHeight > 0.5) {
+      final rect = Rect.fromLTWH(
+        0,
+        size.height - lastHeight,
+        size.width,
+        lastHeight,
+      );
+      final rrect = RRect.fromRectAndCorners(
+        rect,
+        topLeft: const Radius.circular(4),
+        topRight: const Radius.circular(4),
+      );
+      canvas.drawRRect(rrect, Paint()..color = theme.surfaceAlt);
+      paintDiagonalStripes(
+        canvas,
+        Path()..addRRect(rrect),
+        rect,
+        color: theme.ink.withValues(alpha: 0.28),
+        strokeWidth: 1.5 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawRRect(
+        rrect,
+        Paint()
+          ..color = theme.ink.withValues(alpha: 0.45)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
+    }
+    // 本月柱：数据色斜纹覆盖
+    if (currentHeight > 0.5) {
+      _paintColumn(
+        canvas,
+        Rect.fromLTWH(
+          0,
+          size.height - currentHeight,
+          size.width,
+          currentHeight,
+        ),
+        dataColor,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedCompareColumnPainter oldDelegate) {
+    return oldDelegate.lastHeight != lastHeight ||
+        oldDelegate.currentHeight != currentHeight ||
+        oldDelegate.dataColor != dataColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }

@@ -1,5 +1,14 @@
+/// 圆角属性卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 照片核心视觉保留（墨线像框画在照片之上）/ 标题 / 手绘元数据行
+/// （日历、时钟、云朵）/ 主色操作行。
+library;
+
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 属性元数据项
@@ -101,8 +110,7 @@ class RoundedPropertyCardWidget extends StatefulWidget {
 class _RoundedPropertyCardWidgetState extends State<RoundedPropertyCardWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _slideAnimation;
+  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -111,21 +119,10 @@ class _RoundedPropertyCardWidgetState extends State<RoundedPropertyCardWidget>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-      ),
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
     );
-
-    _slideAnimation = Tween<double>(begin: 20.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-      ),
-    );
-
     _animationController.forward();
   }
 
@@ -137,145 +134,106 @@ class _RoundedPropertyCardWidgetState extends State<RoundedPropertyCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
 
-    // 使用主题颜色
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    final cardBackgroundColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    const secondaryTextColor = Color(0xFF9CA3AF);
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 340,
+        height: widget.inline ? double.maxFinite : 520,
+        radius: BorderRadius.circular(24 * widget.size.scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 顶部图片区域（照片核心视觉保留，墨线像框画在照片之上）
+            _buildImageSection(theme),
 
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, _slideAnimation.value),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 340,
-              height: widget.inline ? double.maxFinite : 520,
-              decoration: BoxDecoration(
-                color: cardBackgroundColor,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 40,
-                    offset: const Offset(0, 20),
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 顶部图片区域
-                    _buildImageSection(isDark),
+            SizedBox(height: widget.size.getItemSpacing()),
 
-                    // 内容区域
-                    _buildContentSection(
-                      context,
-                      isDark,
-                      primaryColor,
-                      textColor,
-                      secondaryTextColor,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+            // 内容区域
+            _buildContentSection(theme),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildImageSection(bool isDark) {
+  Widget _buildImageSection(AppThemeData theme) {
+    final frameRadius = BorderRadius.circular(12 * widget.size.scale);
     return Container(
       height: 240,
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7),
+      foregroundDecoration: dsSketchDecoration(
+        theme: theme,
+        radius: frameRadius,
       ),
-      child: FadeInImage(
-        placeholder: MemoryImage(kTransparentImage),
-        image: NetworkImage(widget.imageUrl),
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        imageErrorBuilder: (context, error, stackTrace) {
-          return Container(
-            color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF5F5F7),
-            child: Icon(
-              Icons.image_outlined,
-              size: 64,
-              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildContentSection(
-    BuildContext context,
-    bool isDark,
-    Color primaryColor,
-    Color textColor,
-    Color secondaryTextColor,
-  ) {
-    return Container(
-      padding: widget.size.getPadding(),
-      color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 标题
-          Text(
-            widget.title,
-            style: TextStyle(
-              fontSize: widget.size.getTitleFontSize(),
-              fontWeight: FontWeight.w700,
-              color: textColor,
-              height: 1.2,
-            ),
-          ),
-          SizedBox(height: widget.size.getTitleSpacing()),
-
-          // 元数据行
-          _buildMetadataRow(isDark, secondaryTextColor),
-          SizedBox(height: widget.size.getItemSpacing()),
-
-          // 描述文本
-          Text(
-            widget.description,
-            style: TextStyle(
-              fontSize: widget.size.getSubtitleFontSize(),
-              fontWeight: FontWeight.w400,
-              color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280),
-              height: 1.6,
-            ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(height: widget.size.getTitleSpacing()),
-
-          // 操作按钮
-          _buildActionButton(primaryColor),
-        ],
+      child: ClipRRect(
+        borderRadius: frameRadius,
+        child: FadeInImage(
+          placeholder: MemoryImage(kTransparentImage),
+          image: NetworkImage(widget.imageUrl),
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          imageErrorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: theme.surfaceAlt,
+              child: DsIcon(
+                DsIconKind.image,
+                size: 64,
+                color: theme.textSub,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildMetadataRow(bool isDark, Color secondaryTextColor) {
+  Widget _buildContentSection(AppThemeData theme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 标题
+        Text(
+          widget.title,
+          style: TextStyle(
+            fontSize: widget.size.getTitleFontSize(),
+            fontWeight: FontWeight.w700,
+            color: theme.text,
+            height: 1.2,
+          ),
+        ),
+        SizedBox(height: widget.size.getTitleSpacing()),
+
+        // 元数据行
+        _buildMetadataRow(),
+        SizedBox(height: widget.size.getItemSpacing()),
+
+        // 描述文本
+        Text(
+          widget.description,
+          style: TextStyle(
+            fontSize: widget.size.getSubtitleFontSize(),
+            fontWeight: FontWeight.w400,
+            color: theme.textSub,
+            height: 1.6,
+          ),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+        SizedBox(height: widget.size.getTitleSpacing()),
+
+        // 操作按钮
+        _buildActionButton(theme),
+      ],
+    );
+  }
+
+  Widget _buildMetadataRow() {
     final metadataItems = [
       PropertyMetadataItem(icon: Icons.calendar_today, label: widget.date),
       PropertyMetadataItem(icon: Icons.schedule, label: widget.time),
@@ -289,16 +247,14 @@ class _RoundedPropertyCardWidgetState extends State<RoundedPropertyCardWidget>
         return _MetadataItemWidget(
           icon: item.icon,
           label: item.label,
-          isDark: isDark,
-          textColor: secondaryTextColor,
-          animation: _animationController,
+          animation: _animation,
           size: widget.size,
         );
       }).toList(),
     );
   }
 
-  Widget _buildActionButton(Color primaryColor) {
+  Widget _buildActionButton(AppThemeData theme) {
     return InkWell(
       onTap: () {
         // TODO: 实现导航逻辑
@@ -307,10 +263,11 @@ class _RoundedPropertyCardWidgetState extends State<RoundedPropertyCardWidget>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            widget.actionIcon,
+          WiredIcon(
+            icon: widget.actionIcon,
             size: widget.size.getIconSize() * 0.8,
-            color: primaryColor,
+            color: theme.primary,
+            drawConfig: theme.wired.drawConfig,
           ),
           SizedBox(width: widget.size.getItemSpacing()),
           Text(
@@ -318,7 +275,7 @@ class _RoundedPropertyCardWidgetState extends State<RoundedPropertyCardWidget>
             style: TextStyle(
               fontSize: widget.size.getSubtitleFontSize(),
               fontWeight: FontWeight.w600,
-              color: primaryColor,
+              color: theme.primary,
             ),
           ),
         ],
@@ -331,29 +288,27 @@ class _RoundedPropertyCardWidgetState extends State<RoundedPropertyCardWidget>
 class _MetadataItemWidget extends StatelessWidget {
   final IconData icon;
   final String label;
-  final bool isDark;
-  final Color textColor;
   final Animation<double> animation;
   final HomeWidgetSize size;
 
   const _MetadataItemWidget({
     required this.icon,
     required this.label,
-    required this.isDark,
-    required this.textColor,
     required this.animation,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
+        WiredIcon(
+          icon: icon,
           size: size.getIconSize() * 0.7,
-          color: textColor,
+          color: theme.textSub,
+          drawConfig: theme.wired.drawConfig,
         ),
         SizedBox(width: size.getSmallSpacing()),
         Text(
@@ -361,7 +316,7 @@ class _MetadataItemWidget extends StatelessWidget {
           style: TextStyle(
             fontSize: size.getLegendFontSize() + 1,
             fontWeight: FontWeight.w500,
-            color: textColor,
+            color: theme.textSub,
             letterSpacing: 0.5,
           ),
         ),

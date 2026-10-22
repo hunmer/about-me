@@ -1,15 +1,21 @@
+/// 支出追踪卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题 / 斜纹半圆弧段仪表（每段分类数据色斜纹扇环，中心显示总额）/
+/// 月份胶囊选择条（两侧渐隐遮罩）/ 分类列表
+/// （圆形图标徽章 + 名称/金额 + 32 格刻度条）。
+/// 点击分类行可高亮对应弧段并在中心显示该分类金额。
+library;
+
 import 'dart:math' as math;
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
-/// 支出追踪卡片（深色）
-///
-/// 顶部为标题与半圆彩色弧段仪表（每段对应一个支出分类，中心显示总额），
-/// 中部为月份胶囊选择条（两侧渐隐遮罩），底部为分类列表
-/// （圆形图标徽章 + 名称/金额 + 32 格刻度条）。
-/// 点击分类行可高亮对应弧段并在中心显示该分类金额。
 class ExpenseTrackerCardWidget extends StatefulWidget {
   /// 卡片标题（如 'Expense Tracker'）
   final String title;
@@ -94,10 +100,10 @@ class ExpenseTrackerCardWidget extends StatefulWidget {
                   iconValue is IconData
                       ? iconValue
                       : dynamicIconData(
-                          (iconValue as num?)?.toInt() ??
-                              Icons.category.codePoint,
-                          fontFamily: 'MaterialIcons',
-                        ),
+                        (iconValue as num?)?.toInt() ??
+                            Icons.category.codePoint,
+                        fontFamily: 'MaterialIcons',
+                      ),
               color: parseColor(item['color'], const Color(0xFF6170F8)),
             ),
           );
@@ -145,13 +151,6 @@ class ExpenseTrackerCardWidget extends StatefulWidget {
 
 class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
     with TickerProviderStateMixin {
-  static const _cardColor = Color(0xFF151419);
-  static const _badgeColor = Color(0xFF1F1E25);
-  static const _tickInactiveColor = Color(0xFF26252E);
-  static const _labelColor = Color(0xFFECECEF);
-  static const _monthInactiveColor = Color(0xFF75757E);
-  static const _totalLabelColor = Color(0xFF7E7E87);
-  static const _monthActiveColor = Color(0xFF6826F6);
   static const _totalTicks = 32;
 
   late AnimationController _entranceController;
@@ -282,51 +281,28 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final s = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _entrance,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _entrance.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _entrance.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : 384 * s,
         height: widget.inline ? double.maxFinite : _defaultHeight(),
-        decoration: BoxDecoration(
-          color: _cardColor,
-          borderRadius: BorderRadius.circular(34 * s),
-          boxShadow: [
-            BoxShadow(
-              color: _cardColor.withOpacity(0.35),
-              blurRadius: 60 * s,
-              offset: Offset(0, 28 * s),
-              spreadRadius: -15 * s,
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(34 * s),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(24 * s, 22 * s, 24 * s, 18 * s),
-            child: _buildContent(s),
-          ),
-        ),
+        radius: BorderRadius.circular(24 * s),
+        padding: EdgeInsets.fromLTRB(24 * s, 22 * s, 24 * s, 18 * s),
+        child: _buildContent(theme, s),
       ),
     );
   }
 
-  Widget _buildContent(double s) {
+  Widget _buildContent(AppThemeData theme, double s) {
     // 矮尺寸只显示弧段仪表
     if (widget.size is SmallSize ||
         widget.size is MediumSize ||
         widget.size is WideSize) {
-      return Center(child: _buildGauge(s));
+      return Center(child: _buildGauge(theme, s));
     }
 
     final showMonthBar = widget.months.length > 1;
@@ -335,7 +311,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
         Text(
           widget.title,
           style: TextStyle(
-            color: Colors.white,
+            color: theme.text,
             fontSize: 21 * s,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.01 * s,
@@ -345,17 +321,17 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
           maxLines: 1,
         ),
         SizedBox(height: 10 * s),
-        _buildGauge(s),
+        _buildGauge(theme, s),
         if (showMonthBar) ...[
           SizedBox(height: 14 * s),
-          _buildMonthBar(s),
+          _buildMonthBar(theme, s),
         ],
         SizedBox(height: 16 * s),
         Expanded(
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: _buildCategoryRows(s),
+              children: _buildCategoryRows(theme, s),
             ),
           ),
         ),
@@ -364,7 +340,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
   }
 
   /// 半圆弧段仪表 + 中心读数
-  Widget _buildGauge(double s) {
+  Widget _buildGauge(AppThemeData theme, double s) {
     final stroke = 15.5 * s;
     final glowPad = 8 * s;
     final shares = _currentShares();
@@ -382,7 +358,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
     final centerLabelColor =
         highlight != null && highlight < widget.categories.length
             ? widget.categories[highlight].color
-            : _totalLabelColor;
+            : theme.textSub;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -403,10 +379,10 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
                 size: Size(w, h),
                 painter: _ArcGaugePainter(
                   shares: shares,
-                  colors:
-                      widget.categories.map((c) => c.color).toList(),
+                  colors: widget.categories.map((c) => c.color).toList(),
                   progress: _entrance.value,
                   highlightIndex: highlight,
+                  theme: theme,
                   scale: s,
                 ),
               ),
@@ -423,7 +399,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
                       fractionDigits: 0,
                       prefix: widget.currencyPrefix,
                       textStyle: TextStyle(
-                        color: Colors.white,
+                        color: theme.text,
                         fontSize: 34 * s,
                         fontWeight: FontWeight.w500,
                         letterSpacing: -0.5 * s,
@@ -453,20 +429,22 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
   }
 
   /// 月份胶囊选择条（两侧水平渐隐遮罩）
-  Widget _buildMonthBar(double s) {
+  Widget _buildMonthBar(AppThemeData theme, double s) {
     return ShaderMask(
       blendMode: BlendMode.dstIn,
       shaderCallback: (rect) {
-        return const LinearGradient(
+        // 渐隐遮罩取纸底色，与卡片纸面融合
+        final fade = theme.surface.withValues(alpha: 0.4);
+        return LinearGradient(
           colors: [
             Colors.transparent,
-            Color(0x40FFFFFF),
-            Colors.white,
-            Colors.white,
-            Color(0x40FFFFFF),
+            fade,
+            theme.surface,
+            theme.surface,
+            fade,
             Colors.transparent,
           ],
-          stops: [0.0, 0.07, 0.2, 0.8, 0.93, 1.0],
+          stops: const [0.0, 0.07, 0.2, 0.8, 0.93, 1.0],
         ).createShader(rect);
       },
       child: Row(
@@ -476,33 +454,28 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () => _onMonthTap(i),
-            child: AnimatedContainer(
+            // 墨线装饰不可补间，动效只作用于 padding
+            child: AnimatedPadding(
               duration: const Duration(milliseconds: 200),
               padding: EdgeInsets.symmetric(
                 horizontal: (active ? 15 : 8) * s,
                 vertical: 6 * s,
               ),
-              decoration: BoxDecoration(
-                color: active ? _monthActiveColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(999),
-                boxShadow:
-                    active
-                        ? [
-                          BoxShadow(
-                            color: _monthActiveColor.withOpacity(0.45),
-                            blurRadius: 14 * s,
-                            offset: Offset(0, 4 * s),
-                          ),
-                        ]
-                        : null,
-              ),
-              child: Text(
-                widget.months[i].label,
-                style: TextStyle(
-                  color: active ? Colors.white : _monthInactiveColor,
-                  fontSize: 13.5 * s,
-                  fontWeight: active ? FontWeight.w500 : FontWeight.w400,
-                  height: 1.0,
+              child: Container(
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  // 大圆角被 rough 引擎自动钳制成胶囊
+                  radius: BorderRadius.circular(999),
+                  fillColor: active ? theme.primary : Colors.transparent,
+                ),
+                child: Text(
+                  widget.months[i].label,
+                  style: TextStyle(
+                    color: active ? theme.onPrimary : theme.textSub,
+                    fontSize: 13.5 * s,
+                    fontWeight: active ? FontWeight.w500 : FontWeight.w400,
+                    height: 1.0,
+                  ),
                 ),
               ),
             ),
@@ -512,7 +485,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
     );
   }
 
-  List<Widget> _buildCategoryRows(double s) {
+  List<Widget> _buildCategoryRows(AppThemeData theme, double s) {
     final amounts = _amountsFor(_selectedMonth);
     final filledList = _currentFilled();
     final rows = <Widget>[];
@@ -536,15 +509,24 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
             opacity: dimmed ? 0.4 : 1.0,
             child: Row(
               children: [
-                // 圆形图标徽章
+                // 圆形图标徽章：surfaceAlt 实底 + 墨线描边
                 Container(
                   width: 42 * s,
                   height: 42 * s,
-                  decoration: const BoxDecoration(
-                    color: _badgeColor,
-                    shape: BoxShape.circle,
+                  // 大圆角被 rough 引擎自动钳制成圆
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: BorderRadius.circular(21 * s),
+                    fillColor: theme.surfaceAlt,
                   ),
-                  child: Icon(category.icon, size: 20 * s, color: category.color),
+                  child: Center(
+                    child: WiredIcon(
+                      icon: category.icon,
+                      size: 20 * s,
+                      color: category.color,
+                      drawConfig: theme.wired.drawConfig,
+                    ),
+                  ),
                 ),
                 SizedBox(width: 14 * s),
                 Expanded(
@@ -559,7 +541,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
                             child: Text(
                               category.label,
                               style: TextStyle(
-                                color: _labelColor,
+                                color: theme.text,
                                 fontSize: 15 * s,
                                 fontWeight: FontWeight.w400,
                                 letterSpacing: 0.01 * s,
@@ -572,7 +554,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
                           Text(
                             '${widget.currencyPrefix}${amount.round()}',
                             style: TextStyle(
-                              color: _labelColor,
+                              color: theme.text,
                               fontSize: 15 * s,
                               fontWeight: FontWeight.w400,
                               height: 1.0,
@@ -581,7 +563,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
                         ],
                       ),
                       SizedBox(height: 8 * s),
-                      // 32 格刻度条（填充数插值 + 每格颜色渐变）
+                      // 32 格刻度条（数据色实底 + 淡墨格描边，填充数插值）
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: List.generate(_totalTicks, (t) {
@@ -593,8 +575,12 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
                               color:
                                   t < filled
                                       ? category.color
-                                      : _tickInactiveColor,
+                                      : theme.surfaceAlt,
                               borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: theme.ink.withValues(alpha: 0.2),
+                                width: s,
+                              ),
                             ),
                           );
                         }),
@@ -612,7 +598,11 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
   }
 }
 
-/// 半圆弧段仪表绘制器
+/// 半圆弧段仪表绘制器（斜纹扇环，见 design.md §9.5）
+///
+/// 每段按占比扫过扇环：数据色浅底（0.28）+ 数据色浓斜纹（0.9）+
+/// 数据色描边（0.85）；高亮段加粗、其余段整体淡出（alpha 0.35）；
+/// 扇环 Path 参照 half_gauge_card 的 `_sector`（平直几何，不上 rough 墨线）。
 class _ArcGaugePainter extends CustomPainter {
   /// 各分类占比（已按月份切换动画插值）
   final List<double> shares;
@@ -621,8 +611,9 @@ class _ArcGaugePainter extends CustomPainter {
   /// 入场生长进度 0..1
   final double progress;
 
-  /// 高亮分类下标（其余弧段淡出变细，高亮段加粗带辉光）
+  /// 高亮分类下标（其余弧段淡出变细，高亮段加粗）
   final int? highlightIndex;
+  final AppThemeData theme;
   final double scale;
 
   _ArcGaugePainter({
@@ -630,6 +621,7 @@ class _ArcGaugePainter extends CustomPainter {
     required this.colors,
     required this.progress,
     required this.highlightIndex,
+    required this.theme,
     required this.scale,
   });
 
@@ -642,7 +634,6 @@ class _ArcGaugePainter extends CustomPainter {
     final glowPad = 8 * s;
     final radius = size.width / 2 - strokeBase / 2 - glowPad;
     final center = Offset(size.width / 2, radius + strokeBase / 2 + glowPad);
-    final rect = Rect.fromCircle(center: center, radius: radius);
 
     // 段间固定间隙角（参考效果图约 12°），只在相邻段之间留缝
     final gapRad = shares.length > 1 ? 12 * math.pi / 180 : 0.0;
@@ -656,43 +647,60 @@ class _ArcGaugePainter extends CustomPainter {
       final highlighted = highlightIndex == i;
       final dimmed = highlightIndex != null && !highlighted;
       final stroke = (highlighted ? 17.5 : (dimmed ? 14.5 : 15.5)) * s;
-      // 圆头线帽会沿切线吃掉间隙，两端内缩使线帽末端正好落在段边界
+      // 两端内缩留出段间隙
       final capInset = (stroke / 2) / radius;
 
       if (sweep > 2 * capInset) {
-        final color = colors[i % colors.length];
-        final paint =
-            Paint()
-              ..color = color.withOpacity(dimmed ? 0.28 : 1.0)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = stroke
-              ..strokeCap = StrokeCap.round;
+        final color = colors[i % colors.length].withValues(
+          alpha: dimmed ? 0.35 : 1.0,
+        );
+        final a0 = cursor + capInset;
+        final a1 = cursor + sweep - capInset;
+        final rOut = radius + stroke / 2;
+        final rIn = radius - stroke / 2;
+        final sector = _sector(center, rIn, rOut, a0, a1);
 
-        if (highlighted) {
-          // 辉光底层
-          canvas.drawArc(
-            rect,
-            cursor + capInset,
-            sweep - 2 * capInset,
-            false,
-            Paint()
-              ..color = color.withOpacity(0.55)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = stroke
-              ..strokeCap = StrokeCap.round
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4 * s),
-          );
-        }
-        canvas.drawArc(
-          rect,
-          cursor + capInset,
-          sweep - 2 * capInset,
-          false,
-          paint,
+        canvas.drawPath(sector, Paint()..color = color.withValues(alpha: 0.28));
+        paintDiagonalStripes(
+          canvas,
+          sector,
+          Offset.zero & size,
+          color: color.withValues(alpha: 0.9),
+          strokeWidth: 3 * s,
+          spacing: 6.5 * s,
+        );
+        canvas.drawPath(
+          sector,
+          Paint()
+            ..color = color.withValues(alpha: 0.85)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5 * s,
         );
       }
       cursor += fullSweep + gapRad;
     }
+  }
+
+  /// 扇环 Path（外弧顺时针 + 内弧逆时针，参照 half_gauge_card）
+  Path _sector(Offset c, double rIn, double rOut, double a0, double a1) {
+    final largeArc = (a1 - a0) > math.pi;
+    final path = Path();
+    path.moveTo(c.dx + rOut * math.cos(a0), c.dy + rOut * math.sin(a0));
+    path.arcToPoint(
+      Offset(c.dx + rOut * math.cos(a1), c.dy + rOut * math.sin(a1)),
+      radius: Radius.circular(rOut),
+      largeArc: largeArc,
+      clockwise: true,
+    );
+    path.lineTo(c.dx + rIn * math.cos(a1), c.dy + rIn * math.sin(a1));
+    path.arcToPoint(
+      Offset(c.dx + rIn * math.cos(a0), c.dy + rIn * math.sin(a0)),
+      radius: Radius.circular(rIn),
+      largeArc: largeArc,
+      clockwise: false,
+    );
+    path.close();
+    return path;
   }
 
   @override
@@ -700,6 +708,7 @@ class _ArcGaugePainter extends CustomPainter {
     return oldDelegate.progress != progress ||
         oldDelegate.highlightIndex != highlightIndex ||
         oldDelegate.scale != scale ||
+        oldDelegate.theme != theme ||
         oldDelegate.shares.length != shares.length ||
         !_listEquals(oldDelegate.shares, shares);
   }

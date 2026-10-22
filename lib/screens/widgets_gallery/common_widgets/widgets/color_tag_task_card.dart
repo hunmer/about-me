@@ -1,5 +1,13 @@
+/// 彩色标签任务列表卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 翻牌计数 + 标签 / 任务列表（数据色竖条 + 标题 + 标签，逐项错峰浮现）。
+library;
+
 import 'package:flutter/material.dart';
 import 'package:animated_flip_counter/animated_flip_counter.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import '../models/color_tag_task_card_data.dart';
 
@@ -70,63 +78,34 @@ class _ColorTagTaskCardWidgetState extends State<ColorTagTaskCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
-    final secondaryTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF);
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : 320,
         height: widget.inline ? double.maxFinite : 320,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 标题区域
+            _buildHeader(theme),
+            SizedBox(height: widget.size.getTitleSpacing()),
+            // 任务列表
+            Flexible(child: _buildTaskList()),
+            // 底部更多按钮
+            if (widget.data.moreCount > 0) _buildMoreButton(theme),
           ],
-        ),
-        child: Padding(
-          padding: widget.size.getPadding(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 标题区域
-              _buildHeader(textColor, secondaryTextColor, primaryColor),
-              SizedBox(height: widget.size.getTitleSpacing()),
-              // 任务列表
-              Flexible(
-                child: _buildTaskList(),
-              ),
-              // 底部更多按钮
-              if (widget.data.moreCount > 0) _buildMoreButton(primaryColor),
-            ],
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(
-    Color textColor,
-    Color secondaryTextColor,
-    Color primaryColor,
-  ) {
+  Widget _buildHeader(AppThemeData theme) {
     final valueFontSize = widget.size.getLargeFontSize();
     final labelFontSize = widget.size.getSubtitleFontSize();
     final spacing = widget.size.getSmallSpacing();
@@ -140,7 +119,7 @@ class _ColorTagTaskCardWidgetState extends State<ColorTagTaskCardWidget>
             return AnimatedFlipCounter(
               value: widget.data.taskCount.toDouble() * _countAnimation.value,
               textStyle: TextStyle(
-                color: textColor,
+                color: theme.text,
                 fontSize: valueFontSize,
                 fontWeight: FontWeight.w500,
                 height: 1.0,
@@ -152,7 +131,7 @@ class _ColorTagTaskCardWidgetState extends State<ColorTagTaskCardWidget>
         Text(
           widget.data.label,
           style: TextStyle(
-            color: secondaryTextColor,
+            color: theme.textSub,
             fontSize: labelFontSize,
             fontWeight: FontWeight.w500,
             height: 1.0,
@@ -181,7 +160,7 @@ class _ColorTagTaskCardWidgetState extends State<ColorTagTaskCardWidget>
     );
   }
 
-  Widget _buildMoreButton(Color primaryColor) {
+  Widget _buildMoreButton(AppThemeData theme) {
     final fontSize = widget.size.getSubtitleFontSize();
 
     return Padding(
@@ -191,7 +170,7 @@ class _ColorTagTaskCardWidgetState extends State<ColorTagTaskCardWidget>
         child: Text(
           '+${widget.data.moreCount} more',
           style: TextStyle(
-            color: primaryColor,
+            color: theme.primary,
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
           ),
@@ -201,7 +180,7 @@ class _ColorTagTaskCardWidgetState extends State<ColorTagTaskCardWidget>
   }
 }
 
-/// 彩色标签任务项组件
+/// 彩色标签任务项组件（数据色竖条 + 标题 + 标签，逐项错峰浮现）
 class _ColorTagTaskItemWidget extends StatelessWidget {
   final ColorTagTaskItem task;
   final Animation<double> animation;
@@ -217,8 +196,7 @@ class _ColorTagTaskItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
+    final theme = AppTheme.of(context);
 
     final indicatorHeight = size.getLegendIndicatorHeight();
     final indicatorWidth = size.getLegendIndicatorWidth() * 0.2;
@@ -254,13 +232,14 @@ class _ColorTagTaskItemWidget extends StatelessWidget {
         onTap: () {},
         child: Row(
           children: [
-            // 彩色竖条标签
+            // 彩色竖条标签：数据色实底 + 墨线描边
             Container(
               width: indicatorWidth,
               height: indicatorHeight,
-              decoration: BoxDecoration(
-                color: Color(task.color),
-                borderRadius: BorderRadius.circular(2),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: BorderRadius.circular(2),
+                fillColor: Color(task.color),
               ),
             ),
             SizedBox(width: spacing),
@@ -269,7 +248,7 @@ class _ColorTagTaskItemWidget extends StatelessWidget {
               child: Text(
                 task.title,
                 style: TextStyle(
-                  color: textColor,
+                  color: theme.text,
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.w500,
                   height: 1.2,
@@ -283,7 +262,7 @@ class _ColorTagTaskItemWidget extends StatelessWidget {
               Text(
                 task.tag,
                 style: TextStyle(
-                  color: textColor,
+                  color: theme.textSub,
                   fontSize: tagFontSize,
                   fontWeight: FontWeight.w400,
                   height: 1.2,

@@ -23,7 +23,8 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/utils/network.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/plugins/scripts_center/scripts_center_plugin.dart';
+import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
+import 'package:aboutme/plugins/toolbox/services/image_search_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/utils/platform_utils.dart';
 import 'package:aboutme/widgets/emoji_picker/index.dart';
@@ -1440,7 +1441,7 @@ class _UrlInputSheetState extends State<_UrlInputSheet> {
 
 /// 图片搜索的二级底部弹窗
 ///
-/// 调用 scripts_center 的 image_search 内置脚本按关键词搜网络图片（图源可选），
+/// 调用工具箱插件的图片搜索小工具按关键词搜网络图片（图源可选），
 /// 选中单张 pop `{'url', 'bytes': null}`（与在线 URL 入口同构）；
 /// multiple 时多选，确认后 pop 同结构列表。
 /// 缩略图直连各引擎 CDN（无代理），加载失败时显示占位图标。
@@ -1454,28 +1455,14 @@ class _ImageSearchSheet extends StatefulWidget {
 }
 
 class _ImageSearchSheetState extends State<_ImageSearchSheet> {
-  static const _scriptId = 'image_search';
-
-  /// 图源选项的进程内缓存（从脚本 metadata 读取，脚本升级后重启生效）
-  static List<String>? _cachedProviders;
-
-  /// 兜底图源列表（脚本元数据不可用时）
-  static const _fallbackProviders = [
-    'unsplash',
-    'pixabay',
-    'google',
-    'bing',
-    'yahoo',
-    'yandex',
-  ];
 
   late final TextEditingController _controller;
-  List<String> _providers = _fallbackProviders;
+  final List<String> _providers = ImageSearchService.providers;
   String _provider = 'unsplash';
   bool _searching = false;
   bool _searched = false;
   String? _error;
-  List<Map> _images = [];
+  List<SearchedImage> _images = [];
 
   /// 多选模式下已选中的图片下标
   final List<int> _selected = [];
@@ -1490,7 +1477,6 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
   void initState() {
     super.initState();
     _controller = TextEditingController();
-    _loadProviderOptions();
   }
 
   @override
@@ -1499,46 +1485,6 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
     _thumbClient?.close();
     super.dispose();
   }
-
-  /// 从 image_search 脚本元数据读取 provider 选项与默认值，
-  /// 脚本侧增删图源时 Dart 端自动跟随（读取失败回退内置列表）
-  Future<void> _loadProviderOptions() async {
-    if (_cachedProviders == null) {
-      var providers = _fallbackProviders.toList();
-      var defaultProvider = 'unsplash';
-      try {
-        final scripts = await ScriptsCenterPlugin.instance.scriptManager
-            .loadAllScripts();
-        for (final script in scripts) {
-          if (script.id != _scriptId) continue;
-          for (final input in script.inputs) {
-            if (input.key != 'provider') continue;
-            final options = input.options;
-            if (options != null && options.isNotEmpty) {
-              providers = options;
-              final def = input.defaultValue;
-              if (def is String && options.contains(def)) {
-                defaultProvider = def;
-              }
-            }
-          }
-        }
-      } catch (_) {
-        /* 脚本中心不可用等情况，回退默认列表 */
-      }
-      _cachedProviders = providers;
-      _cachedProviderDefault = defaultProvider;
-    }
-    if (!mounted) return;
-    setState(() {
-      _providers = _cachedProviders!;
-      if (!_providers.contains(_provider)) {
-        _provider = _cachedProviderDefault;
-      }
-    });
-  }
-
-  static String _cachedProviderDefault = 'unsplash';
 
   /// 下载缩略图字节（带系统代理，成功后 setState 刷新对应格子）
   Future<void> _loadThumb(String url) async {
@@ -1573,15 +1519,10 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
       _error = null;
     });
     try {
-      final result = await ScriptsCenterPlugin.instance.scriptExecutor.execute(
-        _scriptId,
-        args: {
-          'query': query,
-          'provider': _provider,
-          'perPage': 30,
-          // 内嵌场景不弹脚本自带的结果页，仅取返回数据
-          'showUi': false,
-        },
+      final result = await ImageSearchService.instance.search(
+        query: query,
+        provider: _provider,
+        perPage: 30,
       );
       if (!mounted) return;
       if (!result.success) {
@@ -1593,13 +1534,9 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
         });
         return;
       }
-      // 脚本返回值：{success, message, data: {images: [{url, thumb, ...}]}}
-      final data = result.result is Map ? (result.result as Map)['data'] : null;
-      final images = (data is Map && data['images'] is List)
-          ? (data['images'] as List).whereType<Map>().toList()
-          : <Map>[];
+      // 服务返回：{success, message, data: {images: [SearchedImage...]}}
       setState(() {
-        _images = images;
+        _images = List<SearchedImage>.from(result.data?['images'] ?? []);
         _selected.clear();
         _searched = true;
       });
@@ -1618,7 +1555,7 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
   }
 
   void _onTapImage(int index) {
-    final url = _images[index]['url'] as String? ?? '';
+    final url = _images[index].url;
     if (url.isEmpty) return;
     if (!widget.multiple) {
       Navigator.of(context).pop(<String, dynamic>{'url': url, 'bytes': null});
@@ -1634,8 +1571,7 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
   void _confirmMultiple() {
     final results = <Map<String, dynamic>>[
       for (final i in _selected)
-        if ((_images[i]['url'] as String? ?? '').isNotEmpty)
-          {'url': _images[i]['url'], 'bytes': null},
+        if (_images[i].url.isNotEmpty) {'url': _images[i].url, 'bytes': null},
     ];
     if (results.isNotEmpty) Navigator.of(context).pop(results);
   }
@@ -1788,9 +1724,7 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
 
   Widget _buildResultTile(AppThemeData theme, int index) {
     final img = _images[index];
-    final thumb = (img['thumb'] as String? ?? '').isNotEmpty
-        ? img['thumb'] as String
-        : img['url'] as String? ?? '';
+    final thumb = img.thumb.isNotEmpty ? img.thumb : img.url;
     final isSelected = _selected.contains(index);
     final selectedIndex = _selected.indexOf(index) + 1;
 
@@ -1864,9 +1798,7 @@ class _ImageSearchSheetState extends State<_ImageSearchSheet> {
                 itemBuilder: (context, index) {
                   final imgIndex = _selected[index];
                   final img = _images[imgIndex];
-                  final thumbUrl = (img['thumb'] as String? ?? '').isNotEmpty
-                      ? img['thumb'] as String
-                      : img['url'] as String? ?? '';
+                  final thumbUrl = img.thumb.isNotEmpty ? img.thumb : img.url;
                   return Padding(
                     key: ValueKey(imgIndex),
                     padding: const EdgeInsets.symmetric(horizontal: 4),

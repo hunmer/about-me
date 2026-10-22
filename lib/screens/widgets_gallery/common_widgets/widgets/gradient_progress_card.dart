@@ -1,7 +1,18 @@
+/// 渐变进度卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 圆形图标徽章 + 标题 / 标签与百分比 / 斜纹进度条
+/// （accent 数据色斜纹数据段 + 淡墨轨道胶囊 + 纸底指示圆点，可拖动）。
+/// [gradientColors] 为旧渐变轨道字段，仅为 props 兼容保留。
+library;
+
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 class GradientProgressCardWidget extends StatefulWidget {
   final String title;
@@ -67,25 +78,13 @@ class GradientProgressCardWidget extends StatefulWidget {
       _GradientProgressCardWidgetState();
 }
 
-class _GradientProgressCardWidgetState extends State<GradientProgressCardWidget>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _animation;
+class _GradientProgressCardWidgetState extends State<GradientProgressCardWidget> {
   late double _progress;
 
   @override
   void initState() {
     super.initState();
     _progress = widget.progress.clamp(0.0, 1.0).toDouble();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 900),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    );
-    _controller.forward();
   }
 
   @override
@@ -94,12 +93,6 @@ class _GradientProgressCardWidgetState extends State<GradientProgressCardWidget>
     if (oldWidget.progress != widget.progress) {
       _progress = widget.progress.clamp(0.0, 1.0).toDouble();
     }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   double get _height {
@@ -120,126 +113,102 @@ class _GradientProgressCardWidgetState extends State<GradientProgressCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 18 * (1 - _animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : 384 * scale,
         height: widget.inline ? double.maxFinite : _height,
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF9FBFD),
-          borderRadius: BorderRadius.circular(30 * scale),
-          border: Border.all(
-            color: isDark ? Colors.white10 : Colors.white,
-            width: scale,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.28 : 0.05),
-              blurRadius: 20 * scale,
-              offset: Offset(0, 5 * scale),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: widget.size.getPadding(),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 44 * scale,
-                    height: 44 * scale,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFDCE4EC),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDark
-                            ? Colors.white24
-                            : const Color(0xFF222222),
-                        width: scale,
-                      ),
-                    ),
-                    child: Icon(
-                      widget.icon,
-                      size: 24 * scale,
-                      color: isDark ? Colors.white : const Color(0xFF2563EB),
-                    ),
-                  ),
-                  SizedBox(width: 12 * scale),
-                  Expanded(
-                    child: Text(
-                      widget.title,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : const Color(0xFF141414),
-                        fontSize: widget.size.getSubtitleFontSize() + 2 * scale,
-                        fontWeight: FontWeight.w700,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.label,
-                      style: TextStyle(
-                        color: isDark
-                            ? const Color(0xFFCBD5E1)
-                            : const Color(0xFF7C8088),
-                        fontSize: widget.size.getSubtitleFontSize(),
-                        fontWeight: FontWeight.w500,
-                        height: 1,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Text(
-                    '${(_progress * 100).round()}%',
-                    key: const Key('gradient-progress-value'),
-                    style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF111111),
-                      fontSize: widget.size is Wide2Size
-                          ? 30 * scale
-                          : 26 * scale,
-                      fontWeight: FontWeight.w800,
-                      height: 1,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8 * scale),
-              _buildTrack(isDark),
-            ],
-          ),
-        ),
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: _buildContent(theme),
       ),
     );
   }
 
-  Widget _buildTrack(bool isDark) {
+  Widget _buildContent(AppThemeData theme) {
+    final scale = widget.size.scale;
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            // 圆形图标徽章：surfaceAlt 实底 + 墨线描边
+            Container(
+              width: 44 * scale,
+              height: 44 * scale,
+              // 大圆角被 rough 引擎自动钳制成圆
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: BorderRadius.circular(22 * scale),
+                fillColor: theme.surfaceAlt,
+              ),
+              child: Center(
+                child: WiredIcon(
+                  icon: widget.icon,
+                  size: 24 * scale,
+                  color: theme.primary,
+                  drawConfig: theme.wired.drawConfig,
+                ),
+              ),
+            ),
+            SizedBox(width: 12 * scale),
+            Expanded(
+              child: Text(
+                widget.title,
+                style: TextStyle(
+                  color: theme.text,
+                  fontSize: widget.size.getSubtitleFontSize() + 2 * scale,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        const Spacer(),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Expanded(
+              child: Text(
+                widget.label,
+                style: TextStyle(
+                  color: theme.textSub,
+                  fontSize: widget.size.getSubtitleFontSize(),
+                  fontWeight: FontWeight.w500,
+                  height: 1,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              '${(_progress * 100).round()}%',
+              key: const Key('gradient-progress-value'),
+              style: TextStyle(
+                color: theme.text,
+                fontSize: widget.size is Wide2Size ? 30 * scale : 26 * scale,
+                fontWeight: FontWeight.w800,
+                height: 1,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8 * scale),
+        _buildTrack(theme),
+      ],
+    );
+  }
+
+  Widget _buildTrack(AppThemeData theme) {
     final scale = widget.size.scale;
     final trackHeight = 40 * scale;
     final thumbSize = 32 * scale;
@@ -249,7 +218,8 @@ class _GradientProgressCardWidgetState extends State<GradientProgressCardWidget>
         final width = constraints.maxWidth;
         final travel = math.max(0.0, width - thumbSize);
         final thumbLeft = travel * _progress;
-        final hatchWidth = (thumbLeft + thumbSize / 2)
+        // 数据段宽度跟随指示圆点中心（含拖动中的实时位置）
+        final fillWidth = (thumbLeft + thumbSize / 2)
             .clamp(0.0, width)
             .toDouble();
 
@@ -264,57 +234,15 @@ class _GradientProgressCardWidgetState extends State<GradientProgressCardWidget>
               _updateProgress(details.localPosition.dx, width, thumbSize),
           child: SizedBox(
             height: trackHeight,
-            child: Stack(
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    height: 20 * scale,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: widget.gradientColors),
-                      borderRadius: BorderRadius.circular(20 * scale),
-                    ),
-                  ),
-                ),
-                if (hatchWidth > 0)
-                  Positioned(
-                    left: 0,
-                    top: 4 * scale,
-                    bottom: 4 * scale,
-                    width: hatchWidth,
-                    child: CustomPaint(
-                      painter: _DiagonalHatchPainter(
-                        color: isDark
-                            ? const Color(0xFFCBD5E1)
-                            : const Color(0xFF9CA3AF),
-                        scale: scale,
-                      ),
-                    ),
-                  ),
-                Positioned(
-                  left: thumbLeft,
-                  top: (trackHeight - thumbSize) / 2,
-                  child: Container(
-                    width: thumbSize,
-                    height: thumbSize,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: widget.accentColor,
-                        width: 4.5 * scale,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: widget.accentColor.withOpacity(0.28),
-                          blurRadius: 10 * scale,
-                          offset: Offset(0, 3 * scale),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+            child: CustomPaint(
+              painter: _StripedTrackPainter(
+                fillWidth: fillWidth,
+                thumbLeft: thumbLeft,
+                thumbSize: thumbSize,
+                accentColor: widget.accentColor,
+                theme: theme,
+                scale: scale,
+              ),
             ),
           ),
         );
@@ -323,39 +251,107 @@ class _GradientProgressCardWidgetState extends State<GradientProgressCardWidget>
   }
 }
 
-class _DiagonalHatchPainter extends CustomPainter {
-  final Color color;
+/// 斜纹进度条绘制器（见 design.md §9.5）
+///
+/// 轨道胶囊：surfaceAlt 底 + 淡墨斜纹（0.28）+ 淡墨描边（0.45）；
+/// 数据段：accent 数据色浅底（0.28）+ 浓斜纹（0.9）+ 描边（0.85）；
+/// 指示圆点：纸底实心 + accent 描边平直几何（数据区不上 rough 墨线）。
+class _StripedTrackPainter extends CustomPainter {
+  final double fillWidth;
+  final double thumbLeft;
+  final double thumbSize;
+  final Color accentColor;
+  final AppThemeData theme;
   final double scale;
 
-  const _DiagonalHatchPainter({required this.color, required this.scale});
+  const _StripedTrackPainter({
+    required this.fillWidth,
+    required this.thumbLeft,
+    required this.thumbSize,
+    required this.accentColor,
+    required this.theme,
+    required this.scale,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final radius = Radius.circular(size.height / 2);
-    canvas.clipRRect(
-      RRect.fromRectAndCorners(
-        Offset.zero & size,
-        topLeft: radius,
-        bottomLeft: radius,
-      ),
+    if (size.isEmpty) return;
+    final barHeight = 20 * scale;
+    final barTop = (size.height - barHeight) / 2;
+    final trackRect = Rect.fromLTWH(0, barTop, size.width, barHeight);
+    final trackRRect = RRect.fromRectAndRadius(
+      trackRect,
+      Radius.circular(barHeight / 2),
     );
-    final paint = Paint()
-      ..color = color.withOpacity(0.72)
-      ..strokeWidth = 1.5 * scale
-      ..style = PaintingStyle.stroke;
-    final spacing = 6.5 * scale;
-    for (var x = -size.height; x < size.width + size.height; x += spacing) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x + size.height * 0.8, size.height),
-        paint,
+
+    // 轨道胶囊
+    canvas.drawRRect(trackRRect, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(trackRRect),
+      trackRect,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      trackRRect,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+
+    // 数据段：accent 数据色斜纹填充
+    if (fillWidth > 0.5) {
+      final fillRect = Rect.fromLTWH(0, barTop, fillWidth, barHeight);
+      final fillRRect = RRect.fromRectAndRadius(
+        fillRect,
+        Radius.circular(barHeight / 2),
+      );
+      canvas.drawRRect(
+        fillRRect,
+        Paint()..color = accentColor.withValues(alpha: 0.28),
+      );
+      paintDiagonalStripes(
+        canvas,
+        Path()..addRRect(fillRRect),
+        fillRect,
+        color: accentColor.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawRRect(
+        fillRRect,
+        Paint()
+          ..color = accentColor.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
       );
     }
+
+    // 指示圆点
+    final center = Offset(thumbLeft + thumbSize / 2, size.height / 2);
+    final knobRadius = thumbSize / 2 - 2.25 * scale;
+    canvas.drawCircle(center, knobRadius, Paint()..color = theme.surface);
+    canvas.drawCircle(
+      center,
+      knobRadius,
+      Paint()
+        ..color = accentColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.5 * scale,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _DiagonalHatchPainter oldDelegate) {
-    return oldDelegate.color != color || oldDelegate.scale != scale;
+  bool shouldRepaint(covariant _StripedTrackPainter oldDelegate) {
+    return oldDelegate.fillWidth != fillWidth ||
+        oldDelegate.thumbLeft != thumbLeft ||
+        oldDelegate.thumbSize != thumbSize ||
+        oldDelegate.accentColor != accentColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }
 

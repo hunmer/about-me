@@ -1,5 +1,15 @@
+/// 时间线日程卡片（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 今明两日双列时间线，星期标题 danger 墨色 + 翻牌日期 /
+/// 特殊事件徽章（surfaceAlt 实底墨线描边）/ 数据色事件小卡
+/// （事件色描边）/ "+N more" 数据色指示条。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
@@ -320,117 +330,93 @@ class _TimelineScheduleCardState extends State<TimelineScheduleCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.error;
+    final theme = AppTheme.of(context);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              constraints: BoxConstraints(
-                maxHeight: widget.inline ? double.infinity : 500,
-              ),
-              width: widget.inline ? double.maxFinite : 500,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              padding: widget.size.getPadding(),
-              child: SingleChildScrollView(
-                child: _isWideSize()
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 今天的日程
-                          Expanded(
-                            child: _DayColumn(
-                              size: widget.size,
-                              weekday: widget.todayWeekday,
-                              day: widget.todayDay,
-                              events: widget.todayEvents,
-                              animation: _animation,
-                              primaryColor: primaryColor,
-                              isDark: isDark,
-                              isToday: true,
-                              moreEventsCount: widget.todayMoreEventsCount ?? 0,
-                              moreEventsColors: widget.todayMoreEventsColors ?? [],
-                            ),
-                          ),
-                          SizedBox(width: widget.size.getItemSpacing()),
-                          // 明天的日程
-                          Expanded(
-                            child: _DayColumn(
-                              size: widget.size,
-                              weekday: widget.tomorrowWeekday,
-                              day: widget.tomorrowDay,
-                              events: widget.tomorrowEvents,
-                              animation: _animation,
-                              primaryColor: primaryColor,
-                              isDark: isDark,
-                              isToday: false,
-                              specialEvent: widget.tomorrowSpecialEvent,
-                              moreEventsCount: widget.tomorrowMoreEventsCount ?? 0,
-                              moreEventsColors:
-                                  widget.tomorrowMoreEventsColors ?? [],
-                            ),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // 今天的日程
-                          Flexible(
-                            child: _DayColumn(
-                              size: widget.size,
-                              weekday: widget.todayWeekday,
-                              day: widget.todayDay,
-                              events: widget.todayEvents,
-                              animation: _animation,
-                              primaryColor: primaryColor,
-                              isDark: isDark,
-                              isToday: true,
-                              moreEventsCount: widget.todayMoreEventsCount ?? 0,
-                              moreEventsColors: widget.todayMoreEventsColors ?? [],
-                            ),
-                          ),
-                          SizedBox(height: widget.size.getItemSpacing()),
-                          // 明天的日程
-                          Flexible(
-                            child: _DayColumn(
-                              size: widget.size,
-                              weekday: widget.tomorrowWeekday,
-                              day: widget.tomorrowDay,
-                              events: widget.tomorrowEvents,
-                              animation: _animation,
-                              primaryColor: primaryColor,
-                              isDark: isDark,
-                              isToday: false,
-                              specialEvent: widget.tomorrowSpecialEvent,
-                              moreEventsCount: widget.tomorrowMoreEventsCount ?? 0,
-                              moreEventsColors:
-                                  widget.tomorrowMoreEventsColors ?? [],
-                            ),
-                          ),
-                        ],
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: widget.inline ? double.infinity : 500,
+        ),
+        child: DsSketchPanel(
+          theme: theme,
+          width: widget.inline ? double.maxFinite : 500,
+          radius: BorderRadius.circular(24 * widget.size.scale),
+          padding: widget.size.getPadding(),
+          child: SingleChildScrollView(
+            child: _isWideSize()
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 今天的日程
+                      Expanded(
+                        child: _DayColumn(
+                          size: widget.size,
+                          weekday: widget.todayWeekday,
+                          day: widget.todayDay,
+                          events: widget.todayEvents,
+                          animation: _animation,
+                          isToday: true,
+                          moreEventsCount: widget.todayMoreEventsCount ?? 0,
+                          moreEventsColors: widget.todayMoreEventsColors ?? [],
+                        ),
                       ),
-              ),
-            ),
+                      SizedBox(width: widget.size.getItemSpacing()),
+                      // 明天的日程
+                      Expanded(
+                        child: _DayColumn(
+                          size: widget.size,
+                          weekday: widget.tomorrowWeekday,
+                          day: widget.tomorrowDay,
+                          events: widget.tomorrowEvents,
+                          animation: _animation,
+                          isToday: false,
+                          specialEvent: widget.tomorrowSpecialEvent,
+                          moreEventsCount: widget.tomorrowMoreEventsCount ?? 0,
+                          moreEventsColors:
+                              widget.tomorrowMoreEventsColors ?? [],
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 今天的日程
+                      Flexible(
+                        child: _DayColumn(
+                          size: widget.size,
+                          weekday: widget.todayWeekday,
+                          day: widget.todayDay,
+                          events: widget.todayEvents,
+                          animation: _animation,
+                          isToday: true,
+                          moreEventsCount: widget.todayMoreEventsCount ?? 0,
+                          moreEventsColors: widget.todayMoreEventsColors ?? [],
+                        ),
+                      ),
+                      SizedBox(height: widget.size.getItemSpacing()),
+                      // 明天的日程
+                      Flexible(
+                        child: _DayColumn(
+                          size: widget.size,
+                          weekday: widget.tomorrowWeekday,
+                          day: widget.tomorrowDay,
+                          events: widget.tomorrowEvents,
+                          animation: _animation,
+                          isToday: false,
+                          specialEvent: widget.tomorrowSpecialEvent,
+                          moreEventsCount: widget.tomorrowMoreEventsCount ?? 0,
+                          moreEventsColors:
+                              widget.tomorrowMoreEventsColors ?? [],
+                        ),
+                      ),
+                    ],
+                  ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -442,8 +428,6 @@ class _DayColumn extends StatelessWidget {
   final int day;
   final List<TimelineEvent> events;
   final Animation<double> animation;
-  final Color primaryColor;
-  final bool isDark;
   final bool isToday;
   final SpecialEvent? specialEvent;
   final int moreEventsCount;
@@ -455,8 +439,6 @@ class _DayColumn extends StatelessWidget {
     required this.day,
     required this.events,
     required this.animation,
-    required this.primaryColor,
-    required this.isDark,
     required this.isToday,
     this.specialEvent,
     this.moreEventsCount = 0,
@@ -465,6 +447,7 @@ class _DayColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -476,7 +459,7 @@ class _DayColumn extends StatelessWidget {
             Text(
               weekday,
               style: TextStyle(
-                color: primaryColor,
+                color: theme.danger,
                 fontSize: size.getSubtitleFontSize(),
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.0,
@@ -490,7 +473,7 @@ class _DayColumn extends StatelessWidget {
                 wholeDigits: 1,
                 fractionDigits: 0,
                 textStyle: TextStyle(
-                  color: isDark ? Colors.white : Colors.black,
+                  color: theme.text,
                   fontSize: size.getLargeFontSize() * 0.8,
                   fontWeight: FontWeight.w300,
                   height: 1.0,
@@ -509,35 +492,32 @@ class _DayColumn extends StatelessWidget {
               Text(
                 isToday ? 'Today' : 'Tomorrow',
                 style: TextStyle(
-                  color: isDark
-                      ? const Color(0xFF8E8E93)
-                      : const Color(0xFF8E8E93),
+                  color: theme.textSub,
                   fontSize: size.getSubtitleFontSize(),
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
                 ),
               ),
               SizedBox(height: size.getSmallSpacing()),
+              // 特殊事件徽章：surfaceAlt 实底 + 墨线描边
               Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: size.getSmallSpacing() * 2,
                   vertical: size.getSmallSpacing(),
                 ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF3F3F46)
-                      : const Color(0xFFE4E4E7),
-                  borderRadius: BorderRadius.circular(12),
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: BorderRadius.circular(12 * size.scale),
+                  fillColor: theme.surfaceAlt,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      specialEvent!.icon,
+                    WiredIcon(
+                      icon: specialEvent!.icon,
                       size: size.getIconSize() * 0.6,
-                      color: isDark
-                          ? const Color(0xFFD4D4D8)
-                          : const Color(0xFF71717A),
+                      color: theme.textSub,
+                      drawConfig: theme.wired.drawConfig,
                     ),
                     SizedBox(width: size.getSmallSpacing()),
                     Flexible(
@@ -546,9 +526,7 @@ class _DayColumn extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: isDark
-                              ? const Color(0xFF3F3F46)
-                              : const Color(0xFF3A3A3C),
+                          color: theme.text,
                           fontSize: size.getSubtitleFontSize(),
                           fontWeight: FontWeight.w600,
                         ),
@@ -574,7 +552,6 @@ class _DayColumn extends StatelessWidget {
                   size: size,
                   event: event,
                   animation: animation,
-                  isDark: isDark,
                 );
               }),
               // 更多事件提示
@@ -583,7 +560,6 @@ class _DayColumn extends StatelessWidget {
                   size: size,
                   count: moreEventsCount,
                   colors: moreEventsColors,
-                  isDark: isDark,
                   animation: animation,
                 ),
             ],
@@ -595,21 +571,24 @@ class _DayColumn extends StatelessWidget {
 }
 
 /// 时间线事件项组件
+///
+/// 事件小卡：数据色实底 + 数据色墨线描边（事件深浅色对为 props 数据色，
+/// 按主题深浅模式取用，非硬编码）。
 class _TimelineEventItem extends StatelessWidget {
   final HomeWidgetSize size;
   final TimelineEvent event;
   final Animation<double> animation;
-  final bool isDark;
 
   const _TimelineEventItem({
     required this.size,
     required this.event,
     required this.animation,
-    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+    final isDark = theme.isDark;
     return Padding(
       padding: EdgeInsets.only(bottom: size.getSmallSpacing()),
       child: Row(
@@ -621,9 +600,7 @@ class _TimelineEventItem extends StatelessWidget {
             child: Text(
               '${event.hour}',
               style: TextStyle(
-                color: isDark
-                    ? const Color(0xFF98989D)
-                    : const Color(0xFF8E8E93),
+                color: theme.textSub,
                 fontSize: size.getLegendFontSize(),
                 fontWeight: FontWeight.w500,
               ),
@@ -638,17 +615,13 @@ class _TimelineEventItem extends StatelessWidget {
                 horizontal: size.getSmallSpacing() * 2,
                 vertical: size.getSmallSpacing(),
               ),
-              decoration: BoxDecoration(
-                color: isDark
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: BorderRadius.circular(8 * size.scale),
+                fillColor: isDark
                     ? event.backgroundColorDark
                     : event.backgroundColorLight,
-                borderRadius: BorderRadius.circular(6),
-                border: Border(
-                  left: BorderSide(
-                    color: event.color,
-                    width: size.getStrokeWidth() * 0.3,
-                  ),
-                ),
+                stroke: event.color,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -691,19 +664,18 @@ class _MoreEventsIndicator extends StatelessWidget {
   final HomeWidgetSize size;
   final int count;
   final List<Color> colors;
-  final bool isDark;
   final Animation<double> animation;
 
   const _MoreEventsIndicator({
     required this.size,
     required this.count,
     required this.colors,
-    required this.isDark,
     required this.animation,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return Padding(
       padding: EdgeInsets.only(top: size.getSmallSpacing()),
       child: Row(
@@ -711,6 +683,7 @@ class _MoreEventsIndicator extends StatelessWidget {
           SizedBox(width: size.getIconSize() * 1.5),
           Row(
             children: [
+              // 数据色指示条（数据几何保持平直干净）
               Row(
                 children: List.generate(
                   colors.length,
@@ -731,9 +704,7 @@ class _MoreEventsIndicator extends StatelessWidget {
               Text(
                 '$count more events',
                 style: TextStyle(
-                  color: isDark
-                      ? const Color(0xFF98989D)
-                      : const Color(0xFF8E8E93),
+                  color: theme.textSub,
                   fontSize: size.getSubtitleFontSize(),
                 ),
               ),

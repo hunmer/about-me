@@ -58,7 +58,6 @@ Future<String> _jsGenerateImage(Map<String, dynamic> params) async {
       refImageAbsolutePaths: refPaths,
       aspectRatio: params['aspectRatio'] as String?,
       n: int.tryParse('${params['n'] ?? 1}') ?? 1,
-      calledFrom: 'agent_tool',
     );
 
     var sent = false;
@@ -125,7 +124,6 @@ Future<String> _jsPostMoment(Map<String, dynamic> params) async {
           prompt: imagePrompt,
           refImageAbsolutePaths: refPaths,
           aspectRatio: params['aspectRatio'] as String?,
-          calledFrom: 'agent_tool',
         ),
       );
       // 可选：配图同时发到聊天

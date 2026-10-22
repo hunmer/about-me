@@ -16,8 +16,13 @@ class ScriptLoader {
 
   /// 内置脚本 ID 列表（assets/scripts/{id}/ 下的脚本）
   static const List<String> builtInScriptIds = [
-    'ai_image',
     'line_sticker',
+  ];
+
+  /// 已下线的内置脚本（2026-10 迁入工具箱插件成为原生小工具）：
+  /// 本地残留目录在 syncBuiltInScripts 时清理，用户配置迁移由工具箱服务负责
+  static const List<String> _retiredBuiltInScriptIds = [
+    'ai_image',
     'image_search',
   ];
 
@@ -93,6 +98,33 @@ class ScriptLoader {
         print('✅ 内置脚本已恢复: $scriptId v$assetsVersion');
       } catch (e) {
         print('❌ 同步内置脚本失败: $scriptId, 错误: $e');
+      }
+    }
+
+    // 清理已下线内置脚本的本地残留（其配置已由工具箱服务迁移，
+    // 本地被用户改过的脚本目录也一并移除——功能已由原生小工具替代）
+    for (final scriptId in _retiredBuiltInScriptIds) {
+      try {
+        final scriptPath = path.join(scriptsPath, scriptId);
+        final metadataPath = path.join(scriptPath, 'metadata.json');
+        final metadata =
+            await AboutmeDataService.instance.readPath(metadataPath);
+        // 仅删除带 builtIn 标记的（用户自建同名脚本不受影响）
+        if (metadata is Map && metadata['builtIn'] == true) {
+          if (kIsWeb) {
+            await AboutmeDataService.instance.deletePath(metadataPath);
+            await AboutmeDataService.instance.deletePath(
+              path.join(scriptPath, 'script.js'),
+            );
+            await _removeFromWebIndex(scriptId);
+          } else {
+            final dir = Directory(scriptPath);
+            if (await dir.exists()) await dir.delete(recursive: true);
+          }
+          print('🧹 已清理下线内置脚本: $scriptId');
+        }
+      } catch (e) {
+        print('⚠️ 清理下线内置脚本失败: $scriptId, 错误: $e');
       }
     }
   }

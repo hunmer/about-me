@@ -1,4 +1,12 @@
+/// 笔记本列表卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 笔记本列表（数据色手绘图标 + 展开节点子列表 + 数据色竖条指示）。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
@@ -79,60 +87,52 @@ class NotebookListCardWidget extends StatefulWidget {
 class _NotebookListCardWidgetState extends State<NotebookListCardWidget> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B);
-    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6);
+    final theme = AppTheme.of(context);
 
-    return Container(
-      height: widget.inline ? double.maxFinite : null,
-      width: widget.inline ? double.maxFinite : null,
-      constraints: widget.size.getHeightConstraints(),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: borderColor,
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: widget.size.getPadding(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题
-            Padding(
-              padding: EdgeInsets.only(bottom: widget.size.getItemSpacing()),
-              child: Text(
-                '${widget.notebookCount} 笔记本',
-                style: TextStyle(
-                  fontSize: widget.size.getSubtitleFontSize(),
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: widget.size.getHeightConstraints(),
+        child: DsSketchPanel(
+          theme: theme,
+          width: widget.inline ? double.maxFinite : null,
+          height: widget.inline ? double.maxFinite : null,
+          radius: BorderRadius.circular(24 * widget.size.scale),
+          padding: widget.size.getPadding(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题
+              Padding(
+                padding: EdgeInsets.only(bottom: widget.size.getItemSpacing()),
+                child: Text(
+                  '${widget.notebookCount} 笔记本',
+                  style: TextStyle(
+                    fontSize: widget.size.getSubtitleFontSize(),
+                    fontWeight: FontWeight.w600,
+                    color: theme.text,
+                  ),
                 ),
               ),
-            ),
-            // 笔记本列表
-            Expanded(
-              child: ListView.separated(
-                itemCount: widget.items.length,
-                separatorBuilder: (context, index) => Divider(
-                  height: 1,
-                  color: theme.dividerColor.withOpacity(0.3),
+              // 笔记本列表
+              Expanded(
+                child: ListView.separated(
+                  itemCount: widget.items.length,
+                  separatorBuilder: (context, index) => Container(
+                    height: 1,
+                    color: theme.ink.withValues(alpha: 0.18),
+                  ),
+                  itemBuilder: (context, index) {
+                    final notebook = widget.items[index];
+                    return _NotebookItemWidget(
+                      notebook: notebook,
+                      size: widget.size,
+                    );
+                  },
                 ),
-                itemBuilder: (context, index) {
-                  final notebook = widget.items[index];
-                  return _NotebookItemWidget(
-                    notebook: notebook,
-                    size: widget.size,
-                    textColor: textColor,
-                  );
-                },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -142,12 +142,10 @@ class _NotebookListCardWidgetState extends State<NotebookListCardWidget> {
 class _NotebookItemWidget extends StatefulWidget {
   final NotebookItemData notebook;
   final HomeWidgetSize size;
-  final Color textColor;
 
   const _NotebookItemWidget({
     required this.notebook,
     required this.size,
-    required this.textColor,
   });
 
   @override
@@ -165,7 +163,8 @@ class _NotebookItemWidgetState extends State<_NotebookItemWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
+    final notebook = widget.notebook;
 
     return InkWell(
       onTap: _toggleExpanded,
@@ -177,47 +176,47 @@ class _NotebookItemWidgetState extends State<_NotebookItemWidget> {
             // 笔记本标题行
             Row(
               children: [
-                Icon(
-                  widget.notebook.icon,
+                WiredIcon(
+                  icon: notebook.icon,
                   size: widget.size.getIconSize(),
-                  color: widget.notebook.color ?? theme.colorScheme.primary,
+                  color: notebook.color ?? theme.primary,
+                  drawConfig: theme.wired.drawConfig,
                 ),
                 SizedBox(width: widget.size.getItemSpacing()),
                 Expanded(
                   child: Text(
-                    widget.notebook.title,
+                    notebook.title,
                     style: TextStyle(
                       fontSize: widget.size.getSubtitleFontSize(),
                       fontWeight: FontWeight.w500,
-                      color: widget.textColor,
+                      color: theme.text,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Text(
-                  '${widget.notebook.nodeCount} 节点',
+                  '${notebook.nodeCount} 节点',
                   style: TextStyle(
                     fontSize: widget.size.getSubtitleFontSize() * 0.85,
-                    color: widget.textColor.withOpacity(0.6),
+                    color: theme.textSub,
                   ),
                 ),
               ],
             ),
             // 节点列表（展开时显示）
-            if (_isExpanded && widget.notebook.nodes.isNotEmpty)
+            if (_isExpanded && notebook.nodes.isNotEmpty)
               Padding(
                 padding: EdgeInsets.only(
                   left: widget.size.getIconSize() + widget.size.getItemSpacing(),
                   top: widget.size.getItemSpacing(),
                 ),
                 child: Column(
-                  children: widget.notebook.nodes.map((node) {
+                  children: notebook.nodes.map((node) {
                     return _NodeItemWidget(
                       node: node,
                       depth: node.depth,
                       size: widget.size,
-                      textColor: widget.textColor,
                     );
                   }).toList(),
                 ),
@@ -233,17 +232,16 @@ class _NodeItemWidget extends StatelessWidget {
   final NodeData node;
   final int depth;
   final HomeWidgetSize size;
-  final Color textColor;
 
   const _NodeItemWidget({
     required this.node,
     required this.depth,
     required this.size,
-    required this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final indent = depth * 16.0;
     return Padding(
       padding: EdgeInsets.only(
@@ -252,12 +250,12 @@ class _NodeItemWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // 颜色竖条
+          // 数据色竖条（节点分类色）
           Container(
             width: 3,
             height: size.getSubtitleFontSize() * 1.2,
             decoration: BoxDecoration(
-              color: node.color ?? Colors.grey,
+              color: node.color ?? theme.textSub,
               borderRadius: BorderRadius.circular(1.5),
             ),
           ),
@@ -268,7 +266,7 @@ class _NodeItemWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: (size.getSubtitleFontSize() * (1.0 - depth * 0.05)).clamp(10.0, size.getSubtitleFontSize()),
                 fontWeight: FontWeight.w400,
-                color: textColor,
+                color: theme.text,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

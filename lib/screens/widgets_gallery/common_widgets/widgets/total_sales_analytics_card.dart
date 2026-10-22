@@ -1,13 +1,19 @@
+/// 总销售分析卡片（手绘纸卡风格，深底核心视觉保留）
+///
+/// 手绘深色纸卡（深底 + rough 墨线框，WiredDraw 描画入场）：
+/// 顶部为品牌圆标 + 标题 + 三个手绘圆形操作按钮（筛选 / 通知带红点 / 展开），
+/// 中部为大号总额指标，底部为多列柱状图：激活柱为石灰黄滑动斜纹 +
+/// 顶部圆点 + 悬浮石灰黄数值胶囊，点击柱子切换激活态。
+/// 存在多个周期数据集时，筛选按钮弹出周期切换菜单，展开按钮循环切换。
+library;
+
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
-/// 总销售分析卡片（深色）
-///
-/// 顶部为品牌圆标 + 标题 + 三个圆形操作按钮（筛选 / 通知带红点 / 展开），
-/// 中部为大号总额指标，底部为多列柱状图：激活柱为斜纹（缓慢滑动）+
-/// 顶部圆点光环 + 悬浮石灰黄数值胶囊，点击柱子切换激活态。
-/// 存在多个周期数据集时，筛选按钮弹出周期切换菜单，展开按钮循环切换。
 class TotalSalesAnalyticsCardWidget extends StatefulWidget {
   /// 卡片标题（如 'Total sales'）
   final String title;
@@ -105,14 +111,18 @@ class TotalSalesAnalyticsCardWidget extends StatefulWidget {
 class _TotalSalesAnalyticsCardWidgetState
     extends State<TotalSalesAnalyticsCardWidget>
     with TickerProviderStateMixin {
+  /// 深底核心视觉：近黑纸底 + 配套深灰描边/轨道（原型设计保留）
   static const _cardColor = Color(0xFF171717);
   static const _buttonColor = Color(0xFF2C2C2C);
+  static const _strokeSubtle = Color(0xFF3A3A3A);
   static const _barColor = Color(0xFF2B2B2B);
   static const _pillColor = Color(0xFFEFFA87);
   static const _pillTextMain = Color(0xFF171717);
   static const _pillTextMuted = Color(0xFF6D7342);
   static const _badgeRed = Color(0xFFE53935);
   static const _mutedText = Color(0xFF7E7E7E);
+  static const _labelActive = Color(0xFF9E9E9E);
+  static const _labelMuted = Color(0xFF7C7C7C);
 
   late AnimationController _entranceController;
   late Animation<double> _entrance;
@@ -146,6 +156,7 @@ class _TotalSalesAnalyticsCardWidgetState
       parent: _entranceController,
       curve: Curves.easeOutCubic,
     );
+    // 柱高生长动画（整卡淡入已交由 WiredDraw 描画入场）
     _entranceController.addListener(() {
       setState(() {});
     });
@@ -240,46 +251,26 @@ class _TotalSalesAnalyticsCardWidgetState
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final s = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _entrance,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _entrance.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _entrance.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘深色纸卡：深底 + 淡灰排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : 384 * s,
         height: widget.inline ? double.maxFinite : _defaultHeight(),
-        decoration: BoxDecoration(
-          color: _cardColor,
-          borderRadius: BorderRadius.circular(40 * s),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF121822).withOpacity(0.22),
-              blurRadius: 60 * s,
-              offset: Offset(0, 28 * s),
-              spreadRadius: -15 * s,
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(40 * s),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(26 * s, 24 * s, 26 * s, 20 * s),
-            child: _buildContent(s),
-          ),
-        ),
+        radius: BorderRadius.circular(24 * s),
+        padding: EdgeInsets.fromLTRB(26 * s, 24 * s, 26 * s, 20 * s),
+        fillColor: _cardColor,
+        hachureColor: _barColor,
+        stroke: _strokeSubtle,
+        child: _buildContent(theme, s),
       ),
     );
   }
 
-  Widget _buildContent(double s) {
+  Widget _buildContent(AppThemeData theme, double s) {
     // 矮尺寸只显示柱状图
     if (widget.size is SmallSize ||
         widget.size is MediumSize ||
@@ -292,7 +283,7 @@ class _TotalSalesAnalyticsCardWidgetState
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(s),
+            _buildHeader(theme, s),
             SizedBox(height: 16 * s),
             _buildMetric(s),
             SizedBox(height: 8 * s),
@@ -308,24 +299,25 @@ class _TotalSalesAnalyticsCardWidgetState
               child: const SizedBox.shrink(),
             ),
           ),
-          Positioned(top: 62 * s, right: 0, child: _buildPopover(s)),
+          Positioned(top: 62 * s, right: 0, child: _buildPopover(theme, s)),
         ],
       ],
     );
   }
 
   /// 头部：品牌圆标 + 标题 + 三个圆形操作按钮
-  Widget _buildHeader(double s) {
+  Widget _buildHeader(AppThemeData theme, double s) {
     return Row(
       children: [
-        // 品牌圆标（双圆角柱线框）
+        // 品牌圆标（手绘圆底 + 双圆角柱线框）
         Container(
           width: 48 * s,
           height: 48 * s,
-          decoration: BoxDecoration(
-            color: _cardColor,
-            shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFF343434), width: 1),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(48 * s / 2),
+            fillColor: _cardColor,
+            stroke: const Color(0xFF343434),
           ),
           child: Center(
             child: CustomPaint(
@@ -350,6 +342,7 @@ class _TotalSalesAnalyticsCardWidgetState
           ),
         ),
         _buildActionButton(
+          theme,
           s,
           icon: Icons.tune,
           onTap: _onFilterTap,
@@ -357,18 +350,20 @@ class _TotalSalesAnalyticsCardWidgetState
         ),
         SizedBox(width: 8 * s),
         _buildActionButton(
+          theme,
           s,
           icon: Icons.chat_bubble_outline,
           onTap: _onNotificationTap,
           badgeCount: _badgeVisible ? widget.notificationCount : null,
         ),
         SizedBox(width: 8 * s),
-        _buildActionButton(s, icon: Icons.arrow_outward, onTap: _onExpandTap),
+        _buildActionButton(theme, s, icon: Icons.arrow_outward, onTap: _onExpandTap),
       ],
     );
   }
 
   Widget _buildActionButton(
+    AppThemeData theme,
     double s, {
     required IconData icon,
     required VoidCallback onTap,
@@ -384,23 +379,21 @@ class _TotalSalesAnalyticsCardWidgetState
         child: Stack(
           clipBehavior: Clip.none,
           children: [
+            // 手绘圆底操作按钮（深底核心视觉保留，柔影删除）
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               transform:
                   pressed ? (Matrix4.identity()..scale(0.95)) : Matrix4.identity(),
               transformAlignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: pressed ? const Color(0xFF3A3A3A) : _buttonColor,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
-                    blurRadius: 6 * s,
-                    offset: Offset(0, 2 * s),
-                  ),
-                ],
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: BorderRadius.circular(48 * s / 2),
+                fillColor: pressed ? _strokeSubtle : _buttonColor,
+                stroke: _strokeSubtle,
               ),
-              child: Icon(icon, size: 21 * s, color: Colors.white),
+              child: Center(
+                child: _buildActionIcon(theme, icon, 21 * s),
+              ),
             ),
             if (badgeCount != null && badgeCount > 0)
               Positioned(
@@ -409,16 +402,10 @@ class _TotalSalesAnalyticsCardWidgetState
                 child: Container(
                   width: 18 * s,
                   height: 18 * s,
-                  decoration: BoxDecoration(
-                    color: _badgeRed,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
-                        blurRadius: 5 * s,
-                        offset: Offset(0, 2 * s),
-                      ),
-                    ],
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: BorderRadius.circular(18 * s / 2),
+                    fillColor: _badgeRed,
                   ),
                   child: Center(
                     child: Text(
@@ -436,6 +423,22 @@ class _TotalSalesAnalyticsCardWidgetState
           ],
         ),
       ),
+    );
+  }
+
+  /// 操作按钮图标：DsIconKind 收录的走手绘目录，其余走 WiredIcon 兜底
+  Widget _buildActionIcon(AppThemeData theme, IconData icon, double size) {
+    if (icon == Icons.tune) {
+      return DsIcon(DsIconKind.tune, size: size, color: Colors.white);
+    }
+    if (icon == Icons.chat_bubble_outline) {
+      return DsIcon(DsIconKind.chat, size: size, color: Colors.white);
+    }
+    return WiredIcon(
+      icon: icon,
+      size: size,
+      color: Colors.white,
+      drawConfig: theme.wired.drawConfig,
     );
   }
 
@@ -540,38 +543,12 @@ class _TotalSalesAnalyticsCardWidgetState
                           ),
                         ),
                       ),
-                      // 顶部圆点
+                      // 顶部圆点（激活态外圈光环改实心小圆环，柔影删除）
                       AnimatedPositioned(
                         duration: const Duration(milliseconds: 450),
                         curve: Curves.easeOutCubic,
                         bottom: barHeight - 3 * s,
-                        child: Container(
-                          width: 6 * s,
-                          height: 6 * s,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow:
-                                active
-                                    ? [
-                                      BoxShadow(
-                                        color: Colors.white.withOpacity(0.2),
-                                        spreadRadius: 5 * s,
-                                      ),
-                                      BoxShadow(
-                                        color: Colors.white.withOpacity(0.18),
-                                        blurRadius: 12 * s,
-                                        spreadRadius: 2 * s,
-                                      ),
-                                    ]
-                                    : [
-                                      BoxShadow(
-                                        color: const Color(0xFF1F1F1F),
-                                        spreadRadius: 3.5 * s,
-                                      ),
-                                    ],
-                          ),
-                        ),
+                        child: _buildTopDot(s, active),
                       ),
                     ],
                   ),
@@ -579,8 +556,7 @@ class _TotalSalesAnalyticsCardWidgetState
                   Text(
                     bar.label,
                     style: TextStyle(
-                      color:
-                          active ? const Color(0xFF9E9E9E) : const Color(0xFF7C7C7C),
+                      color: active ? _labelActive : _labelMuted,
                       fontSize: 13 * s,
                       fontWeight: FontWeight.w400,
                       letterSpacing: 0.1 * s,
@@ -598,10 +574,37 @@ class _TotalSalesAnalyticsCardWidgetState
     );
   }
 
-  /// 柱子：非激活为深灰 + 顶部渐变描边，激活为滑动斜纹
-  Widget _buildBarPillar(double s, double height, bool active) {
-    final radius = BorderRadius.circular(18 * s);
+  /// 顶部圆点：激活为白点 + 淡白光环（平直小圆几何，无柔影）
+  Widget _buildTopDot(double s, bool active) {
+    if (!active) {
+      return Container(
+        width: 6 * s,
+        height: 6 * s,
+        decoration: BoxDecoration(color: _labelMuted, shape: BoxShape.circle),
+      );
+    }
+    return Container(
+      width: 14 * s,
+      height: 14 * s,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.22),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Container(
+          width: 6 * s,
+          height: 6 * s,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    );
+  }
 
+  /// 柱子：非激活为深灰轨道段，激活为石灰黄滑动斜纹（数据色 §9.5）
+  Widget _buildBarPillar(double s, double height, bool active) {
     if (active) {
       return AnimatedBuilder(
         animation: _stripeController,
@@ -612,17 +615,10 @@ class _TotalSalesAnalyticsCardWidgetState
             width: double.infinity,
             height: height,
             margin: EdgeInsets.symmetric(horizontal: 2 * s),
-            decoration: BoxDecoration(
-              color: const Color(0xFF212121),
-              borderRadius: radius,
-            ),
-            child: ClipRRect(
-              borderRadius: radius,
-              child: CustomPaint(
-                painter: _StripesPainter(
-                  offset: _stripeController.value,
-                  scale: s,
-                ),
+            child: CustomPaint(
+              painter: _ActiveBarPainter(
+                offset: _stripeController.value,
+                scale: s,
               ),
             ),
           );
@@ -630,50 +626,29 @@ class _TotalSalesAnalyticsCardWidgetState
       );
     }
 
-    // 非激活：外层渐变（模拟顶部弧光描边）+ 内层深灰
+    // 非激活：深灰轨道段（深底卡片语言：淡白斜纹 + 淡白描边）
     return AnimatedContainer(
       duration: const Duration(milliseconds: 450),
       curve: Curves.easeOutCubic,
       width: double.infinity,
       height: height,
       margin: EdgeInsets.symmetric(horizontal: 2 * s),
-      padding: EdgeInsets.all(1.2 * s),
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF767676),
-            Color(0x73767676),
-            Color(0x0AFFFFFF),
-            Colors.transparent,
-          ],
-          stops: [0.0, 0.12, 0.28, 0.6],
-        ),
-      ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: _barColor, borderRadius: radius),
+      child: CustomPaint(
+        painter: _InactiveBarPainter(scale: s),
       ),
     );
   }
 
-  /// 石灰黄数值胶囊（主段深色 + 千分位副段灰绿）
+  /// 石灰黄数值胶囊（主段深色 + 千分位副段灰绿，手绘墨线框）
   Widget _buildValuePill(double s, double value) {
+    final theme = AppTheme.of(context);
     final (main, dec) = _splitAmount(value);
     return Container(
       padding: EdgeInsets.fromLTRB(13 * s, 9 * s, 13 * s, 10 * s),
-      decoration: BoxDecoration(
-        color: _pillColor,
-        borderRadius: BorderRadius.circular(20 * s),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.45),
-            blurRadius: 20 * s,
-            offset: Offset(0, 8 * s),
-            spreadRadius: -4 * s,
-          ),
-        ],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(20 * s),
+        fillColor: _pillColor,
       ),
       child: RichText(
         text: TextSpan(
@@ -704,21 +679,15 @@ class _TotalSalesAnalyticsCardWidgetState
     );
   }
 
-  /// 周期筛选弹层
-  Widget _buildPopover(double s) {
+  /// 周期筛选弹层（手绘深底面板）
+  Widget _buildPopover(AppThemeData theme, double s) {
     return Container(
       padding: EdgeInsets.all(6 * s),
-      decoration: BoxDecoration(
-        color: const Color(0xFF242424),
-        borderRadius: BorderRadius.circular(18 * s),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 32 * s,
-            offset: Offset(0, 16 * s),
-          ),
-        ],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(18 * s),
+        fillColor: const Color(0xFF242424),
+        stroke: Colors.white.withValues(alpha: 0.25),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -738,7 +707,7 @@ class _TotalSalesAnalyticsCardWidgetState
               decoration: BoxDecoration(
                 color:
                     selected
-                        ? _pillColor.withOpacity(0.12)
+                        ? _pillColor.withValues(alpha: 0.12)
                         : Colors.transparent,
                 borderRadius: BorderRadius.circular(12 * s),
               ),
@@ -810,49 +779,92 @@ class _LogoMarkPainter extends CustomPainter {
       oldDelegate.scale != scale;
 }
 
-/// 激活柱斜纹绘制（-45° 深浅交替条纹，offset 0..1 循环滑动）
-class _StripesPainter extends CustomPainter {
+/// 激活柱绘制：石灰黄数据色浅底 + 滑动斜纹 + 描边（§9.5，公共斜纹工具）
+///
+/// 斜纹沿 offset 0..1 循环滑动（平移画布 + 反向平移裁剪路径实现，
+/// 条纹本体仍统一走 paintDiagonalStripes）。
+class _ActiveBarPainter extends CustomPainter {
   final double offset;
   final double scale;
 
-  _StripesPainter({required this.offset, required this.scale});
+  _ActiveBarPainter({required this.offset, required this.scale});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final s = scale;
-    final stripeW = 7.5 * s;
-    // background-size 21.21px = 15px × √2，一个循环周期
-    final period = 15 * s * math.sqrt2;
-    final shift = offset * period;
+    if (size.isEmpty) return;
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(18 * scale),
+    );
+    final rect = Offset.zero & size;
 
+    canvas.drawRRect(
+      rrect,
+      Paint()..color = const Color(0xFFEFFA87).withValues(alpha: 0.28),
+    );
+    final spacing = 6.5 * scale;
+    final dx = offset * spacing;
     canvas.save();
-    canvas.translate(size.width / 2, size.height / 2);
-    canvas.rotate(-math.pi / 4);
-    final extent = (size.width + size.height);
-    final dark =
-        Paint()
-          ..color = const Color(0xFF2C2C2C)
-          ..strokeWidth = stripeW;
-    final light =
-        Paint()
-          ..color = const Color(0xFF1E1E1E)
-          ..strokeWidth = stripeW;
-    var i = 0;
-    for (double x = -extent - period + (shift % period);
-        x < extent;
-        x += stripeW, i++) {
-      canvas.drawLine(
-        Offset(x, -extent),
-        Offset(x, extent),
-        i.isEven ? dark : light,
-      );
-    }
+    canvas.translate(-dx, 0);
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(rrect.shift(Offset(dx, 0))),
+      rect.shift(Offset(dx, 0)),
+      color: const Color(0xFFEFFA87).withValues(alpha: 0.9),
+      strokeWidth: 3 * scale,
+      spacing: spacing,
+    );
     canvas.restore();
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = const Color(0xFFEFFA87).withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _StripesPainter oldDelegate) =>
+  bool shouldRepaint(covariant _ActiveBarPainter oldDelegate) =>
       oldDelegate.offset != offset || oldDelegate.scale != scale;
+}
+
+/// 非激活柱绘制：深灰轨道底 + 淡白斜纹 + 淡白描边（§9.5 轨道语言，深底适配）
+class _InactiveBarPainter extends CustomPainter {
+  final double scale;
+
+  _InactiveBarPainter({required this.scale});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(18 * scale),
+    );
+    final rect = Offset.zero & size;
+
+    canvas.drawRRect(rrect, Paint()..color = const Color(0xFF2B2B2B));
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(rrect),
+      rect,
+      color: Colors.white.withValues(alpha: 0.10),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.22)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _InactiveBarPainter oldDelegate) =>
+      oldDelegate.scale != scale;
 }
 
 /// 柱状图条目数据模型

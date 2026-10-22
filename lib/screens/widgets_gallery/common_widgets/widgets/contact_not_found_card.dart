@@ -1,4 +1,12 @@
+/// 联系人未找到卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// danger 手绘人形图标 + 姓名（danger 墨色）/ 未找到消息。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 联系人未找到卡片小组件
@@ -38,25 +46,23 @@ class ContactNotFoundCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
 
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
     return SizedBox.expand(
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
+      child: WiredDraw(
+        child: DsSketchPanel(
+          theme: theme,
           width: inline ? double.maxFinite : null,
           height: inline ? double.maxFinite : null,
+          radius: BorderRadius.circular(24 * size.scale),
           padding: size.getPadding(),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.errorContainer.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(16),
-          ),
           child: Row(
             children: [
-              Icon(
-                Icons.person_off,
+              DsIcon(
+                DsIconKind.personOff,
                 size: size.getIconSize(),
-                color: theme.colorScheme.error,
+                color: theme.danger,
               ),
               SizedBox(width: size.getItemSpacing()),
               Expanded(
@@ -66,9 +72,10 @@ class ContactNotFoundCardWidget extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.error,
+                      style: TextStyle(
+                        color: theme.danger,
                         fontSize: size.getTitleFontSize(),
+                        fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -76,8 +83,8 @@ class ContactNotFoundCardWidget extends StatelessWidget {
                     SizedBox(height: size.getItemSpacing() / 2),
                     Text(
                       message,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onErrorContainer,
+                      style: TextStyle(
+                        color: theme.textSub,
                         fontSize: size.getSubtitleFontSize(),
                       ),
                       maxLines: 1,

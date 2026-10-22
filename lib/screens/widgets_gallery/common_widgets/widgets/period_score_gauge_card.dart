@@ -1,6 +1,17 @@
+/// 周期评分仪表盘卡片（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 周期切换手绘分段胶囊 / 手绘圆底图标徽章 + 标题 / 马蹄形斜纹仪表盘
+///（主题色斜纹进度扇环 + 淡墨轨道 + 内圈墨线虚刻度）+ 中心分数。
+library;
+
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 class ScorePeriodData {
   final String label;
@@ -111,128 +122,103 @@ class _PeriodScoreGaugeCardWidgetState extends State<PeriodScoreGaugeCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final scale = widget.size.scale;
     final height = (widget.size is Wide2Size ? 360.0 : 430.0) * scale;
-    final selected =
-        _selectedIndex >= 0 && _selectedIndex < widget.periods.length
-        ? widget.periods[_selectedIndex]
-        : null;
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 18 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 384 * scale,
-              height: widget.inline ? double.maxFinite : height,
-              padding: EdgeInsets.all(16 * scale),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : null,
-                gradient: isDark
-                    ? null
-                    : const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFE3E8E8),
-                          Color(0xFFEEF1F3),
-                          Color(0xFFF7F8FA),
-                        ],
-                      ),
-                borderRadius: BorderRadius.circular(36 * scale),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.28 : 0.08),
-                    blurRadius: 24 * scale,
-                    offset: Offset(0, 8 * scale),
-                  ),
-                ],
-              ),
+
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 384 * scale,
+        height: widget.inline ? double.maxFinite : height,
+        radius: BorderRadius.circular(24 * scale),
+        padding: EdgeInsets.all(16 * scale),
+        child: Column(
+          children: [
+            _buildPeriodSwitcher(theme),
+            SizedBox(height: 16 * scale),
+            Expanded(
               child: Column(
                 children: [
-                  _buildPeriodSwitcher(isDark),
-                  SizedBox(height: 16 * scale),
+                  _buildHeader(theme),
+                  SizedBox(height: 8 * scale),
                   Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(16 * scale),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF4C4460)
-                            : const Color(0xFFD9CEE8),
-                        borderRadius: BorderRadius.circular(34 * scale),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 44 * scale,
-                                height: 44 * scale,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFEDF2F3),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.pie_chart_outline_rounded,
-                                  size: 22 * scale,
-                                  color: const Color(0xFF1A2225),
-                                ),
-                              ),
-                              SizedBox(width: 12 * scale),
-                              Expanded(
-                                child: Text(
-                                  widget.title,
-                                  style: TextStyle(
-                                    color: isDark
-                                        ? Colors.white
-                                        : const Color(0xFF1A2125),
-                                    fontSize: 19 * scale,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8 * scale),
-                          Expanded(
-                            child: selected == null
-                                ? const SizedBox.shrink()
-                                : _ScoreGauge(
-                                    data: selected,
-                                    label: widget.scoreLabel,
-                                    progress: _animation.value,
-                                    isDark: isDark,
-                                    scale: scale,
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: _selectedIndex >= 0 &&
+                            _selectedIndex < widget.periods.length
+                        ? AnimatedBuilder(
+                            animation: _animation,
+                            builder: (context, _) => _ScoreGauge(
+                              data: widget.periods[_selectedIndex],
+                              label: widget.scoreLabel,
+                              progress: _animation.value,
+                              theme: theme,
+                              scale: scale,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ],
               ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildPeriodSwitcher(bool isDark) {
+  /// 头部：手绘圆底图标徽章 + 标题
+  Widget _buildHeader(AppThemeData theme) {
+    final scale = widget.size.scale;
+    final badgeSize = 44 * scale;
+    return Row(
+      children: [
+        Container(
+          width: badgeSize,
+          height: badgeSize,
+          // 大圆角被 rough 引擎自动钳制成圆
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(badgeSize / 2),
+            fillColor: theme.surfaceAlt,
+          ),
+          child: Center(
+            child: WiredIcon(
+              icon: Icons.pie_chart_outline_rounded,
+              size: 22 * scale,
+              color: theme.text,
+              drawConfig: theme.wired.drawConfig,
+            ),
+          ),
+        ),
+        SizedBox(width: 12 * scale),
+        Expanded(
+          child: Text(
+            widget.title,
+            style: TextStyle(
+              color: theme.text,
+              fontSize: 19 * scale,
+              fontWeight: FontWeight.w700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 周期切换：手绘分段胶囊（选中墨线实底，未选中透明淡字）
+  Widget _buildPeriodSwitcher(AppThemeData theme) {
     final scale = widget.size.scale;
     return Container(
       height: 48 * scale,
       padding: EdgeInsets.all(4 * scale),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FBFC),
-        borderRadius: BorderRadius.circular(30 * scale),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.white),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        // 大圆角被 rough 引擎自动钳制成胶囊
+        radius: BorderRadius.circular(24 * scale),
+        fillColor: theme.surfaceAlt,
       ),
       child: Row(
         children: [
@@ -245,23 +231,22 @@ class _PeriodScoreGaugeCardWidgetState extends State<PeriodScoreGaugeCardWidget>
                   setState(() => _selectedIndex = index);
                   widget.onSelected?.call(index);
                 },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                child: Container(
+                  height: double.infinity,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: index == _selectedIndex
-                        ? const Color(0xFF1A2125)
-                        : (isDark
-                              ? const Color(0xFF334155)
-                              : const Color(0xFFECEFF0)),
-                    borderRadius: BorderRadius.circular(24 * scale),
-                  ),
+                  decoration: index == _selectedIndex
+                      ? dsSketchDecoration(
+                          theme: theme,
+                          radius: BorderRadius.circular(20 * scale),
+                          fillColor: theme.ink,
+                        )
+                      : null,
                   child: Text(
                     widget.periods[index].label,
                     style: TextStyle(
                       color: index == _selectedIndex
-                          ? Colors.white
-                          : (isDark ? Colors.white70 : const Color(0xFF1A2125)),
+                          ? theme.surface
+                          : theme.textSub,
                       fontSize: 13 * scale,
                       fontWeight: FontWeight.w600,
                     ),
@@ -282,14 +267,14 @@ class _ScoreGauge extends StatelessWidget {
   final ScorePeriodData data;
   final String label;
   final double progress;
-  final bool isDark;
+  final AppThemeData theme;
   final double scale;
 
   const _ScoreGauge({
     required this.data,
     required this.label,
     required this.progress,
-    required this.isDark,
+    required this.theme,
     required this.scale,
   });
 
@@ -302,6 +287,7 @@ class _ScoreGauge extends StatelessWidget {
             child: CustomPaint(
               painter: _HorseshoeGaugePainter(
                 progress: data.progress.clamp(0.0, 1.0).toDouble() * progress,
+                theme: theme,
                 scale: scale,
               ),
             ),
@@ -314,7 +300,7 @@ class _ScoreGauge extends StatelessWidget {
                 Text(
                   data.score,
                   style: TextStyle(
-                    color: isDark ? Colors.white : const Color(0xFF1A2125),
+                    color: theme.text,
                     fontSize: 40 * scale,
                     fontWeight: FontWeight.w800,
                     height: 1,
@@ -325,7 +311,7 @@ class _ScoreGauge extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    color: isDark ? Colors.white70 : const Color(0xFF4A4857),
+                    color: theme.textSub,
                     fontSize: 13 * scale,
                     fontWeight: FontWeight.w500,
                   ),
@@ -339,11 +325,20 @@ class _ScoreGauge extends StatelessWidget {
   }
 }
 
+/// 马蹄形仪表盘绘制器（平直几何 + 斜纹）
+///
+/// 淡墨轨道扇环（270° 马蹄）垫底，主题色进度扇环（浅底 + 浓斜纹 +
+/// 描边）自末端回扫生长，内圈保留墨线虚线刻度环。
 class _HorseshoeGaugePainter extends CustomPainter {
   final double progress;
+  final AppThemeData theme;
   final double scale;
 
-  const _HorseshoeGaugePainter({required this.progress, required this.scale});
+  const _HorseshoeGaugePainter({
+    required this.progress,
+    required this.theme,
+    required this.scale,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -353,35 +348,67 @@ class _HorseshoeGaugePainter extends CustomPainter {
     final strokeWidth = 24 * scale;
     final radius = math.min(size.width * 0.36, size.height * 0.4);
     final center = Offset(size.width / 2, size.height * 0.52);
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    final track = Paint()
-      ..color = const Color(0xFFFAF9F5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(rect, startAngle, sweepAngle, false, track);
+    final rOut = radius + strokeWidth / 2;
+    final rIn = radius - strokeWidth / 2;
+    final bounds = Offset.zero & size;
 
-    if (progress > 0) {
+    // 轨道：淡墨底 + 低透明度斜纹 + 淡描边
+    final trackPath = _sector(center, rIn, rOut, startAngle, startAngle + sweepAngle);
+    canvas.drawPath(trackPath, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      trackPath,
+      bounds,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawPath(
+      trackPath,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+
+    // 进度扇环：主题色浅底 + 浓斜纹 + 描边（自末端回扫生长）
+    if (progress > 0.004) {
       final activeSweep = sweepAngle * progress;
-      canvas.drawArc(
-        rect,
+      final activePath = _sector(
+        center,
+        rIn,
+        rOut,
         startAngle + sweepAngle - activeSweep,
-        activeSweep,
-        false,
+        startAngle + sweepAngle,
+      );
+      canvas.drawPath(
+        activePath,
+        Paint()..color = theme.primary.withValues(alpha: 0.28),
+      );
+      paintDiagonalStripes(
+        canvas,
+        activePath,
+        bounds,
+        color: theme.primary.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawPath(
+        activePath,
         Paint()
-          ..color = const Color(0xFFFBE59B)
+          ..color = theme.primary.withValues(alpha: 0.85)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round,
+          ..strokeWidth = 1.5 * scale,
       );
     }
 
+    // 内圈墨线虚线刻度环
     final innerRect = Rect.fromCircle(
       center: center,
       radius: math.max(0.0, radius - 25 * scale),
     );
     final dashPaint = Paint()
-      ..color = const Color(0xFFFAF9F5)
+      ..color = theme.ink.withValues(alpha: 0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5.5 * scale
       ..strokeCap = StrokeCap.round;
@@ -397,7 +424,31 @@ class _HorseshoeGaugePainter extends CustomPainter {
     }
   }
 
+  /// 平直扇环路径（与 half_gauge_card 的 _sector 同款）
+  Path _sector(Offset c, double rIn, double rOut, double a0, double a1) {
+    final largeArc = (a1 - a0) > math.pi;
+    final path = Path();
+    path.moveTo(c.dx + rOut * math.cos(a0), c.dy + rOut * math.sin(a0));
+    path.arcToPoint(
+      Offset(c.dx + rOut * math.cos(a1), c.dy + rOut * math.sin(a1)),
+      radius: Radius.circular(rOut),
+      largeArc: largeArc,
+      clockwise: true,
+    );
+    path.lineTo(c.dx + rIn * math.cos(a1), c.dy + rIn * math.sin(a1));
+    path.arcToPoint(
+      Offset(c.dx + rIn * math.cos(a0), c.dy + rIn * math.sin(a0)),
+      radius: Radius.circular(rIn),
+      largeArc: largeArc,
+      clockwise: false,
+    );
+    path.close();
+    return path;
+  }
+
   @override
   bool shouldRepaint(covariant _HorseshoeGaugePainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.scale != scale;
+      oldDelegate.progress != progress ||
+      oldDelegate.theme != theme ||
+      oldDelegate.scale != scale;
 }

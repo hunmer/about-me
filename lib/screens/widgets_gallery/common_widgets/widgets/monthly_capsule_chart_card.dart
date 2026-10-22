@@ -1,5 +1,15 @@
+/// 月度胶囊图小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘圆形图标徽章 + 标题 / 内层淡底面板 / 斜纹胶囊柱阵（轨道淡墨斜纹、
+/// 进度段数据色浅底 + 浓斜纹 + 描边，生长动画保留）/ 墨底徽章。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 class MonthlyCapsuleData {
   final String label;
@@ -93,120 +103,90 @@ class _MonthlyCapsuleChartCardWidgetState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final scale = widget.size.scale;
     final height = (widget.size is Wide2Size ? 350.0 : 430.0) * scale;
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 18 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 384 * scale,
-              height: widget.inline ? double.maxFinite : height,
-              padding: EdgeInsets.all(16 * scale),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : null,
-                gradient: isDark
-                    ? null
-                    : const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFE3E8E8),
-                          Color(0xFFEEF1F3),
-                          Color(0xFFF7F8FA),
-                        ],
-                      ),
-                borderRadius: BorderRadius.circular(36 * scale),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.28 : 0.08),
-                    blurRadius: 24 * scale,
-                    offset: Offset(0, 8 * scale),
+
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 384 * scale,
+        height: widget.inline ? double.maxFinite : height,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 52 * scale,
+                  height: 52 * scale,
+                  // 大圆角被 rough 引擎自动钳制成圆
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: BorderRadius.circular(52 * scale / 2),
+                    fillColor: theme.surfaceAlt,
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 52 * scale,
-                        height: 52 * scale,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF334155)
-                              : const Color(0xFFEAEEEF),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isDark ? Colors.white10 : Colors.white,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.pie_chart_outline_rounded,
-                          size: 24 * scale,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF1A2125),
-                        ),
-                      ),
-                      SizedBox(width: 14 * scale),
-                      Expanded(
-                        child: Text(
-                          widget.title,
-                          style: TextStyle(
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF1A2125),
-                            fontSize: 22 * scale,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16 * scale),
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(16 * scale),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF4C4460)
-                            : const Color(0xFFD9CEE8),
-                        borderRadius: BorderRadius.circular(36 * scale),
-                      ),
-                      child: Row(
-                        children: [
-                          for (
-                            var index = 0;
-                            index < widget.items.length;
-                            index++
-                          ) ...[
-                            if (index > 0) SizedBox(width: 12 * scale),
-                            Expanded(
-                              child: _MonthlyCapsuleColumn(
-                                data: widget.items[index],
-                                progress: _animation.value,
-                                isDark: isDark,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+                  child: Center(
+                    child: WiredIcon(
+                      icon: Icons.pie_chart_outline_rounded,
+                      size: 24 * scale,
+                      color: theme.text,
+                      drawConfig: theme.wired.drawConfig,
                     ),
                   ),
-                ],
+                ),
+                SizedBox(width: 14 * scale),
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: TextStyle(
+                      color: theme.text,
+                      fontSize: 22 * scale,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16 * scale),
+            // 胶囊生长动画：仅重建数据区驱动填充高度（非整卡淡入）
+            Expanded(
+              child: AnimatedBuilder(
+                animation: _animation,
+                builder: (context, _) => DsSketchPanel(
+                  theme: theme,
+                  width: double.infinity,
+                  // 纯淡底 + 墨线框（不叠排线，衬托胶囊数据区）
+                  fillColor: theme.surfaceAlt,
+                  hachure: false,
+                  radius: BorderRadius.circular(24 * scale),
+                  padding: EdgeInsets.all(16 * scale),
+                  child: Row(
+                    children: [
+                      for (var index = 0;
+                          index < widget.items.length;
+                          index++) ...[
+                        if (index > 0) SizedBox(width: 12 * scale),
+                        Expanded(
+                          child: _MonthlyCapsuleColumn(
+                            data: widget.items[index],
+                            progress: _animation.value,
+                            scale: scale,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }
@@ -214,16 +194,17 @@ class _MonthlyCapsuleChartCardWidgetState
 class _MonthlyCapsuleColumn extends StatelessWidget {
   final MonthlyCapsuleData data;
   final double progress;
-  final bool isDark;
+  final double scale;
 
   const _MonthlyCapsuleColumn({
     required this.data,
     required this.progress,
-    required this.isDark,
+    required this.scale,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return Column(
       children: [
         Expanded(
@@ -236,52 +217,55 @@ class _MonthlyCapsuleColumn extends StatelessWidget {
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
+                  // 胶囊轨道：淡底 + 淡墨斜纹 + 淡墨描边
                   Positioned.fill(
                     child: CustomPaint(
-                      painter: _MonthlyTrackPainter(isDark: isDark),
+                      painter: _CapsuleTrackPainter(theme: theme, scale: scale),
                     ),
                   ),
+                  // 进度段：数据色浅底 + 浓斜纹 + 数据色描边
                   Positioned(
                     left: 0,
                     right: 0,
                     bottom: 0,
                     height: fillHeight,
-                    child: Container(
-                      decoration: BoxDecoration(
+                    child: CustomPaint(
+                      painter: _CapsuleFillPainter(
                         color: data.color,
-                        borderRadius: BorderRadius.circular(100),
+                        scale: scale,
                       ),
-                      child: fillHeight < 44
-                          ? null
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  data.value,
-                                  style: const TextStyle(
-                                    color: Color(0xFF182026),
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1,
-                                  ),
-                                  maxLines: 1,
-                                ),
-                                if (data.unit.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
+                      child:
+                          fillHeight < 44
+                              ? null
+                              : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
                                   Text(
-                                    data.unit,
-                                    style: const TextStyle(
-                                      color: Color(0xFF3B3A35),
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
+                                    data.value,
+                                    style: TextStyle(
+                                      color: theme.text,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
                                       height: 1,
                                     ),
                                     maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
+                                  if (data.unit.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      data.unit,
+                                      style: TextStyle(
+                                        color: theme.textSub,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                        height: 1,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ],
-                              ],
-                            ),
+                              ),
                     ),
                   ),
                   if (data.badge.isNotEmpty && fillHeight > 30)
@@ -295,15 +279,16 @@ class _MonthlyCapsuleColumn extends StatelessWidget {
                             horizontal: 12,
                             vertical: 4,
                           ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF182026),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white, width: 1.5),
+                          decoration: dsSketchDecoration(
+                            theme: theme,
+                            // 大圆角被 rough 引擎自动钳制成胶囊
+                            radius: BorderRadius.circular(20),
+                            fillColor: theme.ink,
                           ),
                           child: Text(
                             data.badge,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: theme.surface,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               height: 1,
@@ -321,7 +306,7 @@ class _MonthlyCapsuleColumn extends StatelessWidget {
         Text(
           data.label,
           style: TextStyle(
-            color: isDark ? Colors.white : const Color(0xFF182026),
+            color: theme.text,
             fontSize: 15,
             fontWeight: FontWeight.w600,
             height: 1,
@@ -334,10 +319,12 @@ class _MonthlyCapsuleColumn extends StatelessWidget {
   }
 }
 
-class _MonthlyTrackPainter extends CustomPainter {
-  final bool isDark;
+/// 胶囊轨道：surfaceAlt 底 + 淡墨斜纹（ink 0.28）+ 淡墨描边（ink 0.45）
+class _CapsuleTrackPainter extends CustomPainter {
+  final AppThemeData theme;
+  final double scale;
 
-  const _MonthlyTrackPainter({required this.isDark});
+  const _CapsuleTrackPainter({required this.theme, required this.scale});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -347,29 +334,71 @@ class _MonthlyTrackPainter extends CustomPainter {
       rect,
       Radius.circular(size.width / 2),
     );
-    canvas.save();
-    canvas.clipRRect(rrect);
-    canvas.drawRect(
+    final path = Path()..addRRect(rrect);
+    canvas.drawRRect(rrect, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      path,
       rect,
-      Paint()
-        ..color = isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC),
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
     );
-    final stripe = Paint()
-      ..color = isDark ? const Color(0xFF64748B) : const Color(0xFFE4E7EC)
-      ..strokeWidth = 6;
-    for (var x = -size.height; x < size.width + size.height; x += 13) {
-      canvas.drawLine(
-        Offset(x, size.height),
-        Offset(x + size.height, 0),
-        stripe,
-      );
-    }
-    canvas.restore();
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _MonthlyTrackPainter oldDelegate) =>
-      oldDelegate.isDark != isDark;
+  bool shouldRepaint(covariant _CapsuleTrackPainter oldDelegate) =>
+      oldDelegate.theme != theme || oldDelegate.scale != scale;
+}
+
+/// 胶囊进度段：数据色浅底（0.28）+ 数据色浓斜纹（0.9）+ 数据色描边（0.85）
+class _CapsuleFillPainter extends CustomPainter {
+  final Color color;
+  final double scale;
+
+  const _CapsuleFillPainter({required this.color, required this.scale});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rect = Offset.zero & size;
+    final radius = Radius.circular(size.width / 2);
+    final rrect = RRect.fromRectAndCorners(
+      rect,
+      topLeft: radius,
+      topRight: radius,
+      bottomLeft: radius,
+      bottomRight: radius,
+    );
+    final path = Path()..addRRect(rrect);
+    canvas.drawRRect(rrect, Paint()..color = color.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      path,
+      rect,
+      color: color.withValues(alpha: 0.9),
+      strokeWidth: 3 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = color.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CapsuleFillPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.scale != scale;
 }
 
 Color _parseColor(dynamic value, Color fallback) {

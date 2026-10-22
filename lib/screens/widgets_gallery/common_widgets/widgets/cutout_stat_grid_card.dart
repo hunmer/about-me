@@ -1,4 +1,12 @@
+/// 切角统计网格卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 左上液体切角装饰与圆形图标徽章保留（数据色实底 + 墨线描边）。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
@@ -81,31 +89,7 @@ class CutoutStatGridCardWidget extends StatefulWidget {
       _CutoutStatGridCardWidgetState();
 }
 
-class _CutoutStatGridCardWidgetState extends State<CutoutStatGridCardWidget>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 900),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _CutoutStatGridCardWidgetState extends State<CutoutStatGridCardWidget> {
   double get _height {
     final scale = widget.size.scale;
     if (widget.size is Large3Size) return 340 * scale;
@@ -114,79 +98,58 @@ class _CutoutStatGridCardWidgetState extends State<CutoutStatGridCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final scale = widget.size.scale;
-    final backgroundColor =
-        widget.backgroundColor ??
-        (isDark ? const Color(0xFF1E293B) : const Color(0xFFEEF2F5));
+    // 切角装饰颜色 = 实际卡底色（props 数据色可空 → 纸底）
+    final backgroundColor = widget.backgroundColor ?? theme.surface;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 18 * (1 - _animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : 384 * scale,
         height: widget.inline ? double.maxFinite : _height,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(30 * scale),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.28 : 0.05),
-              blurRadius: 20 * scale,
-              offset: Offset(0, 5 * scale),
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        fillColor: widget.backgroundColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (widget.title.isNotEmpty) ...[
+              Text(
+                widget.title,
+                style: TextStyle(
+                  color: theme.text,
+                  fontSize: widget.size.getTitleFontSize(),
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: 14 * scale),
+            ],
+            Expanded(
+              child: Row(
+                children: [
+                  for (
+                    var index = 0;
+                    index < widget.items.length;
+                    index++
+                  ) ...[
+                    if (index > 0) SizedBox(width: 9 * scale),
+                    Expanded(
+                      child: _CutoutStatItem(
+                        data: widget.items[index],
+                        cutoutColor: backgroundColor,
+                        size: widget.size,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
-        ),
-        child: Padding(
-          padding: widget.size.getPadding(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (widget.title.isNotEmpty) ...[
-                Text(
-                  widget.title,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : const Color(0xFF121212),
-                    fontSize: widget.size.getTitleFontSize(),
-                    fontWeight: FontWeight.w800,
-                    height: 1.1,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 14 * scale),
-              ],
-              Expanded(
-                child: Row(
-                  children: [
-                    for (
-                      var index = 0;
-                      index < widget.items.length;
-                      index++
-                    ) ...[
-                      if (index > 0) SizedBox(width: 9 * scale),
-                      Expanded(
-                        child: _CutoutStatItem(
-                          data: widget.items[index],
-                          cutoutColor: backgroundColor,
-                          size: widget.size,
-                          isDark: isDark,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -197,34 +160,29 @@ class _CutoutStatItem extends StatelessWidget {
   final CutoutStatItemData data;
   final Color cutoutColor;
   final HomeWidgetSize size;
-  final bool isDark;
 
   const _CutoutStatItem({
     required this.data,
     required this.cutoutColor,
     required this.size,
-    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final scale = size.scale;
+    // 数据色实底 + 墨线描边（小控件档）
     return Container(
-      decoration: BoxDecoration(
-        color: data.backgroundColor,
-        borderRadius: BorderRadius.circular(26 * scale),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.18 : 0.04),
-            blurRadius: 12 * scale,
-            offset: Offset(0, 3 * scale),
-          ),
-        ],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(26 * scale),
+        fillColor: data.backgroundColor,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(26 * scale),
         child: Stack(
           children: [
+            // 液体切角装饰（内容层，保留）
             Positioned(
               top: 0,
               left: 0,
@@ -245,15 +203,19 @@ class _CutoutStatItem extends StatelessWidget {
               child: Container(
                 width: 43 * scale,
                 height: 43 * scale,
-                decoration: BoxDecoration(
-                  color: data.iconBackgroundColor,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.28),
-                    width: 2 * scale,
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  circle: true,
+                  fillColor: data.iconBackgroundColor,
+                ),
+                child: Center(
+                  child: WiredIcon(
+                    icon: data.icon,
+                    size: 23 * scale,
+                    color: data.iconColor,
+                    drawConfig: theme.wired.drawConfig,
                   ),
                 ),
-                child: Icon(data.icon, color: data.iconColor, size: 23 * scale),
               ),
             ),
             Positioned.fill(
@@ -270,7 +232,7 @@ class _CutoutStatItem extends StatelessWidget {
                     Text(
                       data.label,
                       style: TextStyle(
-                        color: const Color(0xFF18181B),
+                        color: theme.text,
                         fontSize: size.getSubtitleFontSize(),
                         fontWeight: FontWeight.w600,
                         height: 1.25,
@@ -285,7 +247,7 @@ class _CutoutStatItem extends StatelessWidget {
                           TextSpan(
                             text: data.value,
                             style: TextStyle(
-                              color: const Color(0xFF111111),
+                              color: theme.text,
                               fontSize: size.getTitleFontSize() * 1.15,
                               fontWeight: FontWeight.w800,
                               height: 1,
@@ -295,9 +257,7 @@ class _CutoutStatItem extends StatelessWidget {
                             TextSpan(
                               text: ' ${data.unit}',
                               style: TextStyle(
-                                color: const Color(
-                                  0xFF18181B,
-                                ).withOpacity(0.55),
+                                color: theme.textSub,
                                 fontSize: size.getLegendFontSize(),
                                 fontWeight: FontWeight.w500,
                                 height: 1,

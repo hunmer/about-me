@@ -17,6 +17,7 @@ import 'package:aboutme/core/services/app_background_controller.dart';
 
 // 第三方库国际化
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:syncfusion_localizations/syncfusion_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
@@ -301,6 +302,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                     GlobalWidgetsLocalizations.delegate,
                     GlobalCupertinoLocalizations.delegate,
                     FlutterQuillLocalizations.delegate,
+                    // pro_image_editor v14 基于 material_ui，需要其本地化
+                    //（否则编辑器内弹窗/按钮报 No MaterialLocalizations found）
+                    ...material_ui.GlobalMaterialLocalizations.delegates,
                   ],
                   supportedLocales: const [
                     Locale('zh', 'CN'), // 中文

@@ -1,12 +1,19 @@
-import 'dart:math' as math;
-import 'package:flutter/material.dart';
-import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
-
-/// 半圆仪表盘统计卡片
+/// 半圆仪表盘统计卡片（手绘纸卡风格）
 ///
-/// 上半圆三段式扇环：纯白进度段 + 斜纹段 + 半透明剩余段，
-/// 进度段与斜纹段之间以哑铃状指针（两端圆点 + 连杆）分割，
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 上半圆三段式扇环（斜纹数据段 + 浅色目标斜纹段 + 淡墨轨道段），
+/// 进度段与斜纹段之间以哑铃状墨线指针（两端圆点 + 连杆）分割，
 /// 环内中心显示当前数值与总量。支持拖拽指针调节数值（interactive）。
+library;
+
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
+
 class SemicircleGaugeCardWidget extends StatefulWidget {
   /// 当前值（如 1250）
   final double value;
@@ -20,10 +27,10 @@ class SemicircleGaugeCardWidget extends StatefulWidget {
   /// 单位文本（如 'kcal'），为空时不显示
   final String unit;
 
-  /// 卡片背景色
+  /// 旧深色卡的卡片底色；手绘纸卡下改作仪表盘数据色（斜纹 + 描边）
   final Color backgroundColor;
 
-  /// 主色（进度段、指针、数值文字；斜纹/剩余段由其派生透明度）
+  /// 旧深色卡的对比色（纸底上不可读），仅为 props 兼容保留，不再消费
   final Color activeColor;
 
   /// 是否可拖拽指针调节数值
@@ -176,40 +183,23 @@ class _SemicircleGaugeCardWidgetState extends State<SemicircleGaugeCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
-        width: widget.inline ? double.maxFinite : 384 * widget.size.scale,
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
+
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 384 * scale,
         height: widget.inline ? double.maxFinite : _defaultHeight(),
-        decoration: BoxDecoration(
-          color: widget.backgroundColor,
-          borderRadius: BorderRadius.circular(24 * widget.size.scale),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20 * widget.size.scale,
-              offset: Offset(0, 4 * widget.size.scale),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: widget.size.getPadding(),
-          child: Center(child: _buildGauge()),
-        ),
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Center(child: _buildGauge(theme)),
       ),
     );
   }
 
-  Widget _buildGauge() {
+  Widget _buildGauge(AppThemeData theme) {
     return LayoutBuilder(
       builder: (context, constraints) {
         // 指针外圆点超出外圈约 14%，几何基准与 HTML 版一致（rOut=196）
@@ -227,7 +217,9 @@ class _SemicircleGaugeCardWidgetState extends State<SemicircleGaugeCardWidget>
           painter: _SemicircleGaugePainter(
             progress: _displayFraction,
             hatchedEnd: _hatchedEndFraction,
-            activeColor: widget.activeColor,
+            activeColor: widget.backgroundColor,
+            theme: theme,
+            scale: widget.size.scale,
           ),
         );
 
@@ -262,7 +254,7 @@ class _SemicircleGaugeCardWidgetState extends State<SemicircleGaugeCardWidget>
                     Text(
                       _displayValue.round().toString(),
                       style: TextStyle(
-                        color: widget.activeColor,
+                        color: theme.text,
                         fontSize: rOut * 0.27,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.8 * k,
@@ -275,7 +267,7 @@ class _SemicircleGaugeCardWidgetState extends State<SemicircleGaugeCardWidget>
                           ? 'of $maxText'
                           : 'of $maxText ${widget.unit}',
                       style: TextStyle(
-                        color: widget.activeColor.withOpacity(0.82),
+                        color: theme.textSub,
                         fontSize: rOut * 0.11,
                         fontWeight: FontWeight.w400,
                         height: 1.0,
@@ -292,7 +284,12 @@ class _SemicircleGaugeCardWidgetState extends State<SemicircleGaugeCardWidget>
   }
 }
 
-/// 半圆仪表盘绘制器
+/// 半圆仪表盘绘制器（平直几何 + 斜纹）
+///
+/// 淡墨轨道扇环垫底；进度扇环为数据色浅底 + 浓斜纹 + 数据色描边；
+/// 指针与斜纹段之间的目标区为数据色浅斜纹（次档），指针为墨线哑铃
+/// （两端圆点 + 径向连杆）。颜色一律取 [theme] 语义色，
+/// 数据色 [activeColor]（原卡片底色 props）。
 class _SemicircleGaugePainter extends CustomPainter {
   /// 当前进度占比 0..1（动画/拖拽后的值）
   final double progress;
@@ -301,11 +298,15 @@ class _SemicircleGaugePainter extends CustomPainter {
   final double hatchedEnd;
 
   final Color activeColor;
+  final AppThemeData theme;
+  final double scale;
 
   _SemicircleGaugePainter({
     required this.progress,
     required this.hatchedEnd,
     required this.activeColor,
+    required this.theme,
+    required this.scale,
   });
 
   static const double _gapDeg = 2.0;
@@ -316,9 +317,9 @@ class _SemicircleGaugePainter extends CustomPainter {
     final k = rOut / 196;
     final rIn = rOut * (142 / 196);
     final center = Offset(size.width / 2, size.height - 2 * k);
-    final rc = 15 * k;
     final gap = _gapDeg * math.pi / 180;
     final minSpan = 3 * math.pi / 180;
+    final bounds = Offset.zero & size;
 
     // 角度定义：-π 为正左方，0 为正右方（上半圆）
     const startAngle = -math.pi;
@@ -327,74 +328,76 @@ class _SemicircleGaugePainter extends CustomPainter {
     final hatchedEndAngle =
         hatchedEnd > 0 ? startAngle + math.pi * hatchedEnd : pinAngle;
 
-    // 第三段：右下角半透明剩余段（先画，垫在最底层）
-    final seg3Start = hatchedEnd > 0
-        ? math.max(pinAngle + gap, hatchedEndAngle + gap)
-        : pinAngle + gap;
-    if (endAngle > seg3Start + minSpan) {
-      final path3 = _roundedAnnularSector(
-        center: center,
-        rIn: rIn,
-        rOut: rOut,
-        startRad: seg3Start,
-        endRad: endAngle,
-        rc: rc - 1 * k,
-      );
-      canvas.drawPath(path3, Paint()..color = activeColor.withOpacity(0.25));
-    }
+    // 轨道：淡墨底 + 低透明度斜纹 + 淡描边（先画，垫在最底层）
+    final trackPath = _sector(center, rIn, rOut, startAngle, endAngle);
+    canvas.drawPath(trackPath, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      trackPath,
+      bounds,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawPath(
+      trackPath,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
 
-    // 第二段：斜纹段（底色 + 斜线纹理 + 细描边）
+    // 第二段：目标区浅斜纹段（数据色次档：更淡的底/纹/描边）
     final seg2Start = pinAngle + gap;
     if (hatchedEnd > 0 && hatchedEndAngle > seg2Start + minSpan) {
-      final path2 = _roundedAnnularSector(
-        center: center,
-        rIn: rIn,
-        rOut: rOut,
-        startRad: seg2Start,
-        endRad: hatchedEndAngle,
-        rc: rc - 1 * k,
+      final path2 = _sector(center, rIn, rOut, seg2Start, hatchedEndAngle);
+      canvas.drawPath(
+        path2,
+        Paint()..color = activeColor.withValues(alpha: 0.18),
       );
-      canvas.drawPath(path2, Paint()..color = activeColor.withOpacity(0.23));
-
-      // 斜线纹理：方向与指针保持平行（绕圆心旋转 pinAngle + 90°）
-      canvas.save();
-      canvas.clipPath(path2);
-      canvas.translate(center.dx, center.dy);
-      canvas.rotate(pinAngle + math.pi / 2);
-      final stripePaint =
-          Paint()
-            ..color = activeColor.withOpacity(0.58)
-            ..strokeWidth = 1.65 * k;
-      final extent = rOut * 1.5;
-      final step = 7.2 * k;
-      for (double x = -extent; x <= extent; x += step) {
-        canvas.drawLine(Offset(x, -extent), Offset(x, extent), stripePaint);
-      }
-      canvas.restore();
-
-      // 外圈细描边
+      paintDiagonalStripes(
+        canvas,
+        path2,
+        bounds,
+        color: activeColor.withValues(alpha: 0.5),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
       canvas.drawPath(
         path2,
         Paint()
-          ..color = activeColor.withOpacity(0.68)
+          ..color = activeColor.withValues(alpha: 0.6)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.6 * k,
+          ..strokeWidth = 1.5 * scale,
       );
     }
 
-    // 第一段：纯白主进度段
+    // 第一段：数据色主进度段（浅底 + 浓斜纹 + 描边）
     final seg1End = math.max(startAngle + 4 * math.pi / 180, pinAngle - gap);
-    final path1 = _roundedAnnularSector(
-      center: center,
-      rIn: rIn,
-      rOut: rOut,
-      startRad: startAngle,
-      endRad: seg1End,
-      rc: rc,
-    );
-    canvas.drawPath(path1, Paint()..color = activeColor);
+    if (seg1End > startAngle + minSpan) {
+      final path1 = _sector(center, rIn, rOut, startAngle, seg1End);
+      canvas.drawPath(
+        path1,
+        Paint()..color = activeColor.withValues(alpha: 0.28),
+      );
+      paintDiagonalStripes(
+        canvas,
+        path1,
+        bounds,
+        color: activeColor.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawPath(
+        path1,
+        Paint()
+          ..color = activeColor.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
+    }
 
-    // 哑铃分割指针（两端圆点 + 径向连杆）
+    // 哑铃分割指针（两端墨线圆点 + 径向连杆）
     final innerPt = Offset(
       center.dx + (rIn - 16.5 * k) * math.cos(pinAngle),
       center.dy + (rIn - 16.5 * k) * math.sin(pinAngle),
@@ -403,12 +406,12 @@ class _SemicircleGaugePainter extends CustomPainter {
       center.dx + (rOut + 16.5 * k) * math.cos(pinAngle),
       center.dy + (rOut + 16.5 * k) * math.sin(pinAngle),
     );
-    final pinPaint = Paint()..color = activeColor;
+    final pinPaint = Paint()..color = theme.ink;
     canvas.drawLine(
       innerPt,
       outerPt,
       Paint()
-        ..color = activeColor
+        ..color = theme.ink
         ..strokeWidth = 3.2 * k
         ..strokeCap = StrokeCap.round,
     );
@@ -416,76 +419,24 @@ class _SemicircleGaugePainter extends CustomPainter {
     canvas.drawCircle(outerPt, 10.5 * k, pinPaint);
   }
 
-  /// 生成带真实圆角的扇环路径（精确欧氏几何切点计算，端面平直、四角圆润）
-  static Path _roundedAnnularSector({
-    required Offset center,
-    required double rIn,
-    required double rOut,
-    required double startRad,
-    required double endRad,
-    required double rc,
-  }) {
+  /// 平直扇环路径（与 half_gauge_card 的 _sector 同款）
+  Path _sector(Offset c, double rIn, double rOut, double a0, double a1) {
+    final largeArc = (a1 - a0) > math.pi;
     final path = Path();
-    final span = endRad - startRad;
-    if (span <= 0.8 * math.pi / 180) return path;
-
-    final thickness = rOut - rIn;
-    final midR = (rIn + rOut) / 2;
-    // 圆角半径不超过环宽一半以及扇环弧长可容纳范围
-    final rCorner = math.max(
-      1.0,
-      math.min(rc, math.min(thickness / 2 - 0.5, (midR * span) / 2.2)),
+    path.moveTo(c.dx + rOut * math.cos(a0), c.dy + rOut * math.sin(a0));
+    path.arcToPoint(
+      Offset(c.dx + rOut * math.cos(a1), c.dy + rOut * math.sin(a1)),
+      radius: Radius.circular(rOut),
+      largeArc: largeArc,
+      clockwise: true,
     );
-
-    // 外/内圈圆角切点角偏移与径向切点距离
-    final dThetaOut = math.asin((rCorner / (rOut - rCorner)).clamp(-1.0, 1.0));
-    final rOutTan = math.sqrt(
-      math.max(0, math.pow(rOut - rCorner, 2) - math.pow(rCorner, 2)),
+    path.lineTo(c.dx + rIn * math.cos(a1), c.dy + rIn * math.sin(a1));
+    path.arcToPoint(
+      Offset(c.dx + rIn * math.cos(a0), c.dy + rIn * math.sin(a0)),
+      radius: Radius.circular(rIn),
+      largeArc: largeArc,
+      clockwise: false,
     );
-    final dThetaIn = math.asin((rCorner / (rIn + rCorner)).clamp(-1.0, 1.0));
-    final rInTan = math.sqrt(
-      math.max(0, math.pow(rIn + rCorner, 2) - math.pow(rCorner, 2)),
-    );
-
-    Offset polar(double r, double a) =>
-        Offset(center.dx + r * math.cos(a), center.dy + r * math.sin(a));
-
-    // 8 个关键切点
-    final p1 = polar(rInTan, startRad);
-    final p2 = polar(rOutTan, startRad);
-    final p3 = polar(rOut, startRad + dThetaOut);
-    final p4 = polar(rOut, endRad - dThetaOut);
-    final p5 = polar(rOutTan, endRad);
-    final p6 = polar(rInTan, endRad);
-    final p7 = polar(rIn, endRad - dThetaIn);
-    final p8 = polar(rIn, startRad + dThetaIn);
-
-    final outerArcSpan = (endRad - dThetaOut) - (startRad + dThetaOut);
-    final innerArcSpan = (endRad - dThetaIn) - (startRad + dThetaIn);
-
-    path.moveTo(p1.dx, p1.dy);
-    path.lineTo(p2.dx, p2.dy);
-    path.arcToPoint(p3, radius: Radius.circular(rCorner), clockwise: true);
-    if (outerArcSpan > 0) {
-      path.arcToPoint(
-        p4,
-        radius: Radius.circular(rOut),
-        largeArc: outerArcSpan > math.pi,
-        clockwise: true,
-      );
-    }
-    path.arcToPoint(p5, radius: Radius.circular(rCorner), clockwise: true);
-    path.lineTo(p6.dx, p6.dy);
-    path.arcToPoint(p7, radius: Radius.circular(rCorner), clockwise: true);
-    if (innerArcSpan > 0) {
-      path.arcToPoint(
-        p8,
-        radius: Radius.circular(rIn),
-        largeArc: innerArcSpan > math.pi,
-        clockwise: false,
-      );
-    }
-    path.arcToPoint(p1, radius: Radius.circular(rCorner), clockwise: true);
     path.close();
     return path;
   }
@@ -494,6 +445,8 @@ class _SemicircleGaugePainter extends CustomPainter {
   bool shouldRepaint(covariant _SemicircleGaugePainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.hatchedEnd != hatchedEnd ||
-        oldDelegate.activeColor != activeColor;
+        oldDelegate.activeColor != activeColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }

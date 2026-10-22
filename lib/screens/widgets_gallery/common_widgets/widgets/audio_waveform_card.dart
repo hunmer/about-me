@@ -1,10 +1,14 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
-/// 音频波形小组件
+/// 音频波形小组件（手绘纸卡风格）
 ///
-/// 用于显示音频录制信息，包括标题、日期、时长和波形可视化
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题/日期 / 波形条（数据色实底细条，逐条错峰生长，动画保留）/
+/// 翻牌时间 + 数据色墨线播放按钮。
 class AudioWaveformCardWidget extends StatefulWidget {
   /// 音频标题
   final String title;
@@ -87,54 +91,35 @@ class _AudioWaveformCardWidgetState extends State<AudioWaveformCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final effectivePrimaryColor =
-        widget.primaryColor ?? Theme.of(context).colorScheme.primary;
+    final theme = AppTheme.of(context);
+    // 数据色 props 保留，缺省走主题
+    final effectivePrimaryColor = widget.primaryColor ?? theme.primary;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              padding: widget.size.getPadding(),
-              child: Column(
-                children: [
-                  // 顶部：标题和设置按钮
-                  _buildHeader(isDark),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : null,
+        radius: BorderRadius.circular(24 * widget.size.scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          children: [
+            // 顶部：标题和设置按钮
+            _buildHeader(theme),
 
-                  // 中间：波形动画
-                  Expanded(
-                    child: _buildWaveform(effectivePrimaryColor, isDark),
-                  ),
+            // 中间：波形动画
+            Expanded(child: _buildWaveform(effectivePrimaryColor, theme)),
 
-                  // 底部：时间和播放按钮
-                  _buildFooter(effectivePrimaryColor, isDark),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+            // 底部：时间和播放按钮
+            _buildFooter(effectivePrimaryColor, theme),
+          ],
+        ),
+      ),
     );
   }
 
   /// 构建顶部标题区域
-  Widget _buildHeader(bool isDark) {
+  Widget _buildHeader(AppThemeData theme) {
     final titleAnimation = CurvedAnimation(
       parent: _animation,
       curve: const Interval(0, 0.4, curve: Curves.easeOutCubic),
@@ -153,7 +138,7 @@ class _AudioWaveformCardWidgetState extends State<AudioWaveformCardWidget>
                 style: TextStyle(
                   fontSize: widget.size.getTitleFontSize(),
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.grey.shade900,
+                  color: theme.text,
                   letterSpacing: -0.5,
                 ),
                 maxLines: 1,
@@ -165,7 +150,7 @@ class _AudioWaveformCardWidgetState extends State<AudioWaveformCardWidget>
                 style: TextStyle(
                   fontSize: widget.size.getSubtitleFontSize(),
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                  color: theme.textSub,
                 ),
               ),
             ],
@@ -176,7 +161,7 @@ class _AudioWaveformCardWidgetState extends State<AudioWaveformCardWidget>
   }
 
   /// 构建波形动画
-  Widget _buildWaveform(Color primaryColor, bool isDark) {
+  Widget _buildWaveform(Color primaryColor, AppThemeData theme) {
     final waveformAnimation = CurvedAnimation(
       parent: _animation,
       curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
@@ -188,7 +173,7 @@ class _AudioWaveformCardWidgetState extends State<AudioWaveformCardWidget>
         return _WaveformBars(
           size: widget.size,
           primaryColor: primaryColor,
-          isDark: isDark,
+          theme: theme,
           animation: waveformAnimation,
         );
       },
@@ -196,7 +181,7 @@ class _AudioWaveformCardWidgetState extends State<AudioWaveformCardWidget>
   }
 
   /// 构建底部时间和播放按钮
-  Widget _buildFooter(Color primaryColor, bool isDark) {
+  Widget _buildFooter(Color primaryColor, AppThemeData theme) {
     final footerAnimation = CurvedAnimation(
       parent: _animation,
       curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
@@ -214,7 +199,6 @@ class _AudioWaveformCardWidgetState extends State<AudioWaveformCardWidget>
                 size: widget.size,
                 duration: widget.duration,
                 animation: footerAnimation,
-                isDark: isDark,
               ),
               _PlayPauseButton(
                 size: widget.size,
@@ -230,16 +214,19 @@ class _AudioWaveformCardWidgetState extends State<AudioWaveformCardWidget>
 }
 
 /// 波形条组件
+///
+/// 细条用手绘数据色实底（不适合斜纹）：
+/// 已播放淡轨道底、未播放淡墨底、播放位数据色加宽。
 class _WaveformBars extends StatelessWidget {
   final HomeWidgetSize size;
   final Color primaryColor;
-  final bool isDark;
+  final AppThemeData theme;
   final Animation<double> animation;
 
   const _WaveformBars({
     required this.size,
     required this.primaryColor,
-    required this.isDark,
+    required this.theme,
     required this.animation,
   });
 
@@ -299,13 +286,12 @@ class _WaveformBars extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: barSpacing),
           child: _WaveformBar(
             height: baseHeight * itemAnimation.value,
-            color: isPlayingPosition
-                ? primaryColor
-                : isPlayed
-                    ? (isDark ? Colors.grey.shade800 : Colors.grey.shade200)
-                    : (isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.grey.shade300),
+            color:
+                isPlayingPosition
+                    ? primaryColor
+                    : isPlayed
+                    ? theme.surfaceAlt
+                    : theme.ink.withValues(alpha: 0.12),
             width: isPlayingPosition ? playingBarWidth : barWidth,
             isPlayingPosition: isPlayingPosition,
             primaryColor: primaryColor,
@@ -350,70 +336,45 @@ class _TimeDisplay extends StatelessWidget {
   final HomeWidgetSize size;
   final Duration duration;
   final Animation<double> animation;
-  final bool isDark;
 
   const _TimeDisplay({
     required this.size,
     required this.duration,
     required this.animation,
-    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
     final seconds = duration.inSeconds.remainder(60);
 
     // 根据 size 计算时间字体大小
     final timeFontSize = size.getLargeFontSize() * 0.5; // 约 18/24/28
+    final timeStyle = TextStyle(
+      fontSize: timeFontSize,
+      fontWeight: FontWeight.w500,
+      color: theme.text,
+    );
 
     return Row(
       children: [
         AnimatedFlipCounter(
           value: hours * animation.value,
-          textStyle: TextStyle(
-            fontSize: timeFontSize,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : Colors.grey.shade900,
-            letterSpacing: 1,
-          ),
+          textStyle: timeStyle.copyWith(letterSpacing: 1),
           padding: EdgeInsets.symmetric(horizontal: size.getSmallSpacing()),
         ),
-        Text(
-          ':',
-          style: TextStyle(
-            fontSize: timeFontSize,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : Colors.grey.shade900,
-          ),
-        ),
+        Text(':', style: timeStyle),
         AnimatedFlipCounter(
           value: minutes * animation.value,
-          textStyle: TextStyle(
-            fontSize: timeFontSize,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : Colors.grey.shade900,
-            letterSpacing: 1,
-          ),
+          textStyle: timeStyle.copyWith(letterSpacing: 1),
           padding: EdgeInsets.symmetric(horizontal: size.getSmallSpacing()),
         ),
-        Text(
-          ':',
-          style: TextStyle(
-            fontSize: timeFontSize,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : Colors.grey.shade900,
-          ),
-        ),
+        Text(':', style: timeStyle),
         AnimatedFlipCounter(
           value: seconds * animation.value,
-          textStyle: TextStyle(
-            fontSize: timeFontSize,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : Colors.grey.shade900,
-            letterSpacing: 1,
-          ),
+          textStyle: timeStyle.copyWith(letterSpacing: 1),
           padding: EdgeInsets.symmetric(horizontal: size.getSmallSpacing()),
         ),
       ],
@@ -443,6 +404,7 @@ class _PlayPauseButtonState extends State<_PlayPauseButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     // 根据 size 计算按钮大小和图标大小
     final iconSize = widget.size.getIconSize();
     final buttonSize = iconSize * widget.size.iconContainerScale;
@@ -454,24 +416,20 @@ class _PlayPauseButtonState extends State<_PlayPauseButton> {
         onTapUp: (_) => setState(() => _isPressed = false),
         onTapCancel: () => setState(() => _isPressed = false),
         onTap: () => setState(() => _isPlaying = !_isPlaying),
+        // 数据色实底圆形徽章 + 墨线描边
         child: Container(
           width: buttonSize,
           height: buttonSize,
-          decoration: BoxDecoration(
-            color: widget.primaryColor,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: widget.primaryColor.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+          // 大圆角被 rough 引擎自动钳制成圆
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(buttonSize / 2),
+            fillColor: widget.primaryColor,
           ),
-          child: Icon(
-            _isPlaying ? Icons.pause : Icons.play_arrow,
+          child: DsIcon(
+            _isPlaying ? DsIconKind.pause : DsIconKind.play,
             size: iconSize,
-            color: Colors.white,
+            color: theme.onPrimary,
           ),
         ),
       ),

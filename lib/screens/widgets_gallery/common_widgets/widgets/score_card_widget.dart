@@ -1,5 +1,13 @@
+/// 分数卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 翻牌计数 / 行为列表（逐项错峰浮现，涨跌色走主题 success/danger）。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 分数卡片小组件
@@ -84,148 +92,102 @@ class _ScoreCardWidgetState extends State<ScoreCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final theme = AppTheme.of(context);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 288,
-              height: widget.inline ? double.maxFinite : 288,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.black : const Color(0xFF1C1C1E),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color:
-                      isDark
-                          ? const Color(0xFF27272A)
-                          : const Color(0xFF3F3F46),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 32,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Stack(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 288,
+        height: widget.inline ? double.maxFinite : 288,
+        radius: BorderRadius.circular(24 * widget.size.scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          children: [
+            // 分数显示
+            SizedBox(
+              height: widget.size.getHeightConstraints().maxHeight * 0.18,
+              child: Row(
                 children: [
-                  // 径向渐变背景
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        gradient: RadialGradient(
-                          center: const Alignment(0, -1.2),
-                          radius: 1.5,
-                          colors: [
-                            primaryColor.withOpacity(0.4),
-                            primaryColor.withOpacity(0.1),
-                            Colors.transparent,
-                          ],
-                          stops: const [0.0, 0.45, 0.7],
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: SizedBox(
+                        height:
+                            widget.size.getHeightConstraints().maxHeight * 0.18,
+                        child: AnimatedBuilder(
+                          animation: _animation,
+                          builder: (context, _) => AnimatedFlipCounter(
+                            value:
+                                widget.score.toDouble() * _animation.value,
+                            wholeDigits: 3,
+                            fractionDigits: 0,
+                            textStyle: TextStyle(
+                              color: theme.text,
+                              fontSize:
+                                  widget.size.getLargeFontSize() * 0.85,
+                              fontWeight: FontWeight.bold,
+                              height: 1.0,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  // 内容
-                  Padding(
-                    padding: widget.size.getPadding(),
-                    child: Column(
-                      children: [
-                        // 分数显示
-                        SizedBox(
-                          height: widget.size.getHeightConstraints().maxHeight * 0.18,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: SizedBox(
-                                    height: widget.size.getHeightConstraints().maxHeight * 0.18,
-                                    child: AnimatedFlipCounter(
-                                      value:
-                                          widget.score.toDouble() *
-                                          _animation.value,
-                                      wholeDigits: 3,
-                                      fractionDigits: 0,
-                                      textStyle: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: widget.size.getLargeFontSize() * 0.85,
-                                        fontWeight: FontWeight.bold,
-                                        height: 1.0,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: widget.size.getItemSpacing() * 0.5),
-                              Expanded(
-                                child: Text(
-                                  widget.grade,
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                    color: primaryColor,
-                                    fontSize: widget.size.getLargeFontSize() * 0.85,
-                                    fontWeight: FontWeight.bold,
-                                    height: 1.0,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: widget.size.getTitleSpacing() * 0.25),
-                        Text(
-                          'Last Actions',
-                          style: TextStyle(
-                            color: const Color(0xFF71717A),
-                            fontSize: widget.size.getSubtitleFontSize(),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: widget.size.getItemSpacing()),
-                        // 行为列表
-                        Expanded(
-                          child: ListView.builder(
-                            padding: EdgeInsets.zero,
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            itemCount: widget.actions.length,
-                            itemBuilder: (context, index) {
-                              final action = widget.actions[index];
-                              final itemAnimation = CurvedAnimation(
-                                parent: _animationController,
-                                curve: Interval(
-                                  0.2 + index * 0.08,
-                                  0.7 + index * 0.08,
-                                  curve: Curves.easeOutCubic,
-                                ),
-                              );
-
-                              return _ActionItem(
-                                action: action,
-                                animation: itemAnimation,
-                                size: widget.size,
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+                  SizedBox(width: widget.size.getItemSpacing() * 0.5),
+                  Expanded(
+                    child: Text(
+                      widget.grade,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: theme.primary,
+                        fontSize: widget.size.getLargeFontSize() * 0.85,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        );
-      },
+            SizedBox(height: widget.size.getTitleSpacing() * 0.25),
+            Text(
+              'Last Actions',
+              style: TextStyle(
+                color: theme.textSub,
+                fontSize: widget.size.getSubtitleFontSize(),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: widget.size.getItemSpacing()),
+            // 行为列表
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: widget.actions.length,
+                itemBuilder: (context, index) {
+                  final action = widget.actions[index];
+                  final itemAnimation = CurvedAnimation(
+                    parent: _animationController,
+                    curve: Interval(
+                      0.2 + index * 0.08,
+                      0.7 + index * 0.08,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  );
+
+                  return _ActionItem(
+                    action: action,
+                    animation: itemAnimation,
+                    size: widget.size,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -244,6 +206,7 @@ class _ActionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
@@ -258,7 +221,7 @@ class _ActionItem extends StatelessWidget {
                 child: Text(
                   action.label,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: theme.text,
                     fontSize: size.getSubtitleFontSize(),
                     fontWeight: FontWeight.w400,
                   ),
@@ -269,10 +232,9 @@ class _ActionItem extends StatelessWidget {
                   Text(
                     action.isPositive ? '+' : '-',
                     style: TextStyle(
-                      color:
-                          action.isPositive
-                              ? const Color(0xFF22C55E)
-                              : const Color(0xFFEF4444),
+                      color: action.isPositive
+                          ? theme.success
+                          : theme.danger,
                       fontSize: size.getSubtitleFontSize(),
                       fontWeight: FontWeight.w500,
                       letterSpacing: 1.0,
@@ -287,10 +249,9 @@ class _ActionItem extends StatelessWidget {
                       wholeDigits: 2,
                       fractionDigits: 0,
                       textStyle: TextStyle(
-                        color:
-                            action.isPositive
-                                ? const Color(0xFF22C55E)
-                                : const Color(0xFFEF4444),
+                        color: action.isPositive
+                            ? theme.success
+                            : theme.danger,
                         fontSize: size.getSubtitleFontSize(),
                         fontWeight: FontWeight.w500,
                         letterSpacing: 1.0,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:aboutme/screens/home_screen/home_screen.dart';
 
 class RebuildController {
@@ -50,6 +51,8 @@ class RebuildController {
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
+            // pro_image_editor v14 基于 material_ui，需要其本地化
+            ...material_ui.GlobalMaterialLocalizations.delegates,
           ],
           supportedLocales: const [Locale('zh', ''), Locale('en', '')],
         ),

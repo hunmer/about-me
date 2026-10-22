@@ -346,6 +346,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.9"
+  cupertino_ui:
+    dependency: transitive
+    description:
+      name: cupertino_ui
+      sha256: a47c4e7c66fd7444a063a602597fceb238f705c3f6b1322bc0053d0a2638ee6e
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.4"
   dart_date:
     dependency: "direct main"
     description:
@@ -1675,6 +1683,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
+  material_ui:
+    dependency: "direct main"
+    description:
+      name: material_ui
+      sha256: e4031746f96c8316864d9b92bce375f1320a36ed56e166307e1e1bda9d90b4ab
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.8.0"
   maybe_just_nothing:
     dependency: transitive
     description:
@@ -2003,6 +2019,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.2"
+  pro_image_editor:
+    dependency: "direct main"
+    description:
+      name: pro_image_editor
+      sha256: bc36694142eaf2e7458d084ccfb53a4facf8c2113d56926880f74c8c9a366d8a
+      url: "https://pub.dev"
+    source: hosted
+    version: "14.15.0"
   process:
     dependency: transitive
     description:

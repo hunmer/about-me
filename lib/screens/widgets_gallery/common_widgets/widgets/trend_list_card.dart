@@ -1,5 +1,14 @@
+/// 趋势列表卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘圆形图标徽章 + 标题头部 / 趋势条目列表（手绘涨跌箭头 +
+/// 翻牌计数器 + 主题语义色涨跌）。数值动画保留。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import '../models/trend_list_card_data.dart';
 
@@ -65,59 +74,37 @@ class _TrendListCardWidgetState extends State<TrendListCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF161618) : Colors.white;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 340,
-              padding: widget.size.getPadding(),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        isDark
-                            ? Colors.black.withOpacity(0.5)
-                            : Colors.black.withOpacity(0.1),
-                    offset: const Offset(0, 20),
-                    blurRadius: 40,
-                    spreadRadius: -10,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildHeader(context, isDark),
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: _buildItems(context, isDark),
-                      ),
-                    ),
-                  ),
-                ],
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 340,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(theme),
+            SizedBox(height: widget.size.getTitleSpacing()),
+            Flexible(
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: _buildItems(),
+                ),
               ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark) {
-    final primaryColor = Theme.of(context).colorScheme.primary.withOpacity(0.4);
+  Widget _buildHeader(AppThemeData theme) {
     final iconData = _getIconData(widget.data.iconName);
 
     return Row(
@@ -125,14 +112,19 @@ class _TrendListCardWidgetState extends State<TrendListCardWidget>
         Container(
           width: 32,
           height: 32,
-          decoration: BoxDecoration(
-            color: primaryColor,
-            shape: BoxShape.circle,
+          // 大圆角被 rough 引擎自动钳制成圆
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(16),
+            fillColor: theme.surfaceAlt,
           ),
-          child: Icon(
-            iconData,
-            size: 20,
-            color: isDark ? Colors.green.shade900 : Colors.green.shade700,
+          child: Center(
+            child: WiredIcon(
+              icon: iconData,
+              size: 20,
+              color: theme.primary,
+              drawConfig: theme.wired.drawConfig,
+            ),
           ),
         ),
         SizedBox(width: widget.size.getItemSpacing()),
@@ -142,7 +134,7 @@ class _TrendListCardWidgetState extends State<TrendListCardWidget>
             style: TextStyle(
               fontSize: widget.size.getTitleFontSize(),
               fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : Colors.grey.shade900,
+              color: theme.text,
               letterSpacing: -0.5,
             ),
             overflow: TextOverflow.ellipsis,
@@ -153,7 +145,7 @@ class _TrendListCardWidgetState extends State<TrendListCardWidget>
     );
   }
 
-  List<Widget> _buildItems(BuildContext context, bool isDark) {
+  List<Widget> _buildItems() {
     final List<Widget> widgets = [];
 
     for (int i = 0; i < widget.data.items.length; i++) {
@@ -214,7 +206,7 @@ class _TrendItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final itemAnimation = CurvedAnimation(
       parent: animation,
       curve: Interval(
@@ -224,19 +216,18 @@ class _TrendItemWidget extends StatelessWidget {
       ),
     );
 
-    final trendColor =
-        data.isPositive
-            ? (isDark ? Colors.green.shade400 : Colors.green.shade600)
-            : (isDark ? Colors.red.shade400 : Colors.red.shade500);
+    // 涨跌语义色
+    final trendColor = data.isPositive ? theme.success : theme.danger;
 
     return Row(
       children: [
         SizedBox(
           width: 32,
-          child: Icon(
-            data.isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+          child: WiredIcon(
+            icon: data.isPositive ? Icons.arrow_upward : Icons.arrow_downward,
             size: 24,
             color: trendColor,
+            drawConfig: theme.wired.drawConfig,
           ),
         ),
         Expanded(
@@ -248,7 +239,7 @@ class _TrendItemWidget extends StatelessWidget {
                 style: TextStyle(
                   fontSize: size.getSubtitleFontSize() * 0.8,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                  color: theme.textSub,
                   letterSpacing: 0.5,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -263,7 +254,7 @@ class _TrendItemWidget extends StatelessWidget {
                   textStyle: TextStyle(
                     fontSize: size.getSubtitleFontSize(),
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.grey.shade900,
+                    color: theme.text,
                     height: 1.0,
                   ),
                 ),
@@ -292,7 +283,7 @@ class _TrendItemWidget extends StatelessWidget {
                 style: TextStyle(
                   fontSize: size.getSubtitleFontSize(),
                   fontWeight: FontWeight.w500,
-                  color: trendColor.withOpacity(0.8),
+                  color: trendColor.withValues(alpha: 0.8),
                   height: 1.0,
                 ),
                 overflow: TextOverflow.ellipsis,

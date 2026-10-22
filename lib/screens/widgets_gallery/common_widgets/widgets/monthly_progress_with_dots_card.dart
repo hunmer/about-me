@@ -1,8 +1,16 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
-/// 月度进度圆点小组件
+/// 月度进度圆点小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 33 格圆点矩阵（已过日期数据色实底墨线圆点 / 未过日期淡底圆点，
+/// 逐点错峰生长）/ 标题与百分比翻牌计数。
+/// [backgroundColor] 为旧卡底色字段，仅为 props 兼容保留，
+/// 现作为激活圆点的默认数据色。
 class MonthlyProgressWithDotsCardWidget extends StatefulWidget {
   /// 标题（如习惯名称）
   final String title;
@@ -109,59 +117,44 @@ class _MonthlyProgressWithDotsCardWidgetState
 
   @override
   Widget build(BuildContext context) {
-    // 颜色定义
-    final defaultActiveDotColor = Theme.of(context).colorScheme.primary;
-    const defaultInactiveDotColor = Color(0x33FFFFFF);
-    final textColor = Theme.of(context).colorScheme.onPrimary;
-    final subtitleColor = Theme.of(
-      context,
-    ).colorScheme.onPrimary.withOpacity(0.6);
+    final theme = AppTheme.of(context);
 
+    // 数据色（props）：激活点默认回落旧卡底色字段，未激活点回落主题淡底
     final effectiveActiveDotColor =
-        widget.activeDotColor ?? defaultActiveDotColor;
+        widget.activeDotColor ?? widget.backgroundColor;
     final effectiveInactiveDotColor =
-        widget.inactiveDotColor ?? defaultInactiveDotColor;
+        widget.inactiveDotColor ?? theme.surfaceAlt;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 250,
-              height: widget.inline ? double.maxFinite : 250,
-              decoration: BoxDecoration(
-                color: widget.backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: widget.size.getPadding(),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 圆点矩阵（3行，每行11个点，代表33天）
-                  _DotMatrixGrid(
-                    currentDay: widget.currentDay,
-                    activeDotColor: effectiveActiveDotColor,
-                    inactiveDotColor: effectiveInactiveDotColor,
-                    animation: _animation,
-                    size: widget.size,
-                  ),
-
-                  // 底部信息
-                  _buildBottomInfo(textColor, subtitleColor),
-                ],
-              ),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 250,
+        height: widget.inline ? double.maxFinite : 250,
+        radius: BorderRadius.circular(24 * widget.size.scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 圆点矩阵（3行，每行11个点，代表33天）
+            _DotMatrixGrid(
+              currentDay: widget.currentDay,
+              activeDotColor: effectiveActiveDotColor,
+              inactiveDotColor: effectiveInactiveDotColor,
+              animation: _animation,
+              size: widget.size,
             ),
-          ),
-        );
-      },
+
+            // 底部信息
+            _buildBottomInfo(theme),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildBottomInfo(Color textColor, Color subtitleColor) {
+  Widget _buildBottomInfo(AppThemeData theme) {
     final infoAnimation = CurvedAnimation(
       parent: _animation,
       curve: const Interval(0.3, 1.0, curve: Curves.easeOutCubic),
@@ -182,7 +175,7 @@ class _MonthlyProgressWithDotsCardWidgetState
                   style: TextStyle(
                     fontSize: widget.size.getLargeFontSize() * 0.5,
                     fontWeight: FontWeight.w600,
-                    color: textColor,
+                    color: theme.text,
                     height: 1.2,
                     letterSpacing: -0.5,
                   ),
@@ -194,7 +187,7 @@ class _MonthlyProgressWithDotsCardWidgetState
                   style: TextStyle(
                     fontSize: widget.size.getLargeFontSize() * 0.29,
                     fontWeight: FontWeight.w500,
-                    color: subtitleColor,
+                    color: theme.textSub,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -210,7 +203,7 @@ class _MonthlyProgressWithDotsCardWidgetState
                       textStyle: TextStyle(
                         fontSize: widget.size.getLargeFontSize(),
                         fontWeight: FontWeight.w800,
-                        color: textColor,
+                        color: theme.text,
                         height: 1,
                         letterSpacing: -1.5,
                       ),
@@ -281,7 +274,7 @@ class _DotMatrixGrid extends StatelessWidget {
   }
 }
 
-/// 单个圆点
+/// 单个圆点：手绘墨线圆（数据色实底 + 淡墨描边，逐点错峰生长）
 class _Dot extends StatelessWidget {
   final bool isActive;
   final Color activeColor;
@@ -301,6 +294,7 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final dotAnimation = CurvedAnimation(
       parent: animation,
       curve: Interval(
@@ -318,9 +312,12 @@ class _Dot extends StatelessWidget {
           child: Container(
             width: size.getIconSize() * 0.42,
             height: size.getIconSize() * 0.42,
-            decoration: BoxDecoration(
-              color: isActive ? activeColor : inactiveColor,
-              shape: BoxShape.circle,
+            decoration: dsSketchDecoration(
+              theme: theme,
+              circle: true,
+              fillColor: isActive ? activeColor : inactiveColor,
+              stroke: theme.ink.withValues(alpha: isActive ? 0.45 : 0.22),
+              strokeWidth: 1.2,
             ),
           ),
         );

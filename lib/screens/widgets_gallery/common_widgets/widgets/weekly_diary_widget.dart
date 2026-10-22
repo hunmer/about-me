@@ -1,7 +1,13 @@
-/// 七日周报小组件 - 公共组件
+/// 七日周报小组件 - 公共组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题 + 七天便签卡（今日 = 数据色浅底徽章 + 数据色描边，
+/// 其余 surfaceAlt 底；星期 / 日期数字 / 心情 emoji / 标题）。
 library;
 
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:intl/intl.dart';
 
@@ -44,37 +50,45 @@ class WeeklyDiaryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
+    // 主色调（数据色 props，缺省回落主题色）
     final primaryColor = primaryColorValue != null
         ? Color(primaryColorValue!)
-        : theme.colorScheme.primary;
+        : theme.primary;
 
     final days = daysData ?? _getDefaultDaysData();
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (showTitle) ...[
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(24),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (showTitle) ...[
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: theme.text,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            // 七天卡片
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: days.map((dayData) {
+                  return _buildDayCard(context, theme, dayData, primaryColor);
+                }).toList(),
               ),
             ),
-            const SizedBox(height: 16),
           ],
-          // 七天卡片
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: days.map((dayData) {
-                return _buildDayCard(context, dayData, primaryColor);
-              }).toList(),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -82,6 +96,7 @@ class WeeklyDiaryWidget extends StatelessWidget {
   /// 构建周报中的单日卡片组件
   Widget _buildDayCard(
     BuildContext context,
+    AppThemeData theme,
     dynamic dayData,
     Color primaryColor,
   ) {
@@ -97,14 +112,14 @@ class WeeklyDiaryWidget extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 2),
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        decoration: BoxDecoration(
-          color: isToday
-              ? primaryColor.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: isToday
-              ? Border.all(color: primaryColor, width: 1.5)
-              : null,
+        // 今日 = 数据色浅底徽章 + 数据色描边；其余次级纸底
+        decoration: dsSketchDecoration(
+          theme: theme,
+          radius: BorderRadius.circular(8),
+          fillColor: isToday
+              ? primaryColor.withValues(alpha: 0.28)
+              : theme.surfaceAlt,
+          stroke: isToday ? primaryColor : null,
         ),
         child: InkWell(
           onTap: () => _openDiaryEditor(context, dateStr),
@@ -117,8 +132,9 @@ class WeeklyDiaryWidget extends StatelessWidget {
                 // 星期几
                 Text(
                   weekday,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: isToday ? primaryColor : Colors.grey,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isToday ? primaryColor : theme.textSub,
                     fontWeight:
                         isToday ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -126,9 +142,10 @@ class WeeklyDiaryWidget extends StatelessWidget {
                 // 日期数字
                 Text(
                   dayNumber,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isToday ? primaryColor : Colors.black87,
+                    color: isToday ? primaryColor : theme.text,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -143,9 +160,9 @@ class WeeklyDiaryWidget extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: hasEntry ? Colors.black87 : Colors.grey[400],
+                    color: hasEntry ? theme.text : theme.textSub,
                   ),
                 ),
               ],

@@ -1,5 +1,21 @@
+/// 心情追踪圆角柱状小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 图例（数据色手绘色块）/ 手绘胶囊日期徽章 / 斜纹心情柱（数据色浅底 +
+/// 浓斜纹 + 描边，淡墨轨道胶囊）/ 手绘表情脸（特殊装饰，CustomPaint 保留）。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
+
+/// 正向情绪数据色
+const Color _kPositiveColor = Color(0xFF9DB36D);
+
+/// 负向情绪数据色
+const Color _kNegativeColor = Color(0xFFE88D3E);
 
 /// 柱状图标数据模型
 class BarIconEntry {
@@ -147,66 +163,64 @@ class ModernRoundedBarIconCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = size.scale;
 
-    return Container(
-      width: inline ? double.maxFinite : 380,
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : Colors.white,
-        borderRadius: BorderRadius.circular(40),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-            blurRadius: 40,
-            offset: const Offset(0, 20),
-          ),
-        ],
-      ),
-      padding: size.getPadding(),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(context, isDark),
-          SizedBox(height: size.getTitleSpacing()),
-          _buildWeeklyChart(context, isDark),
-          const SizedBox(height: 8),
-          _buildDayLabels(context, isDark),
-          SizedBox(height: size.getItemSpacing()),
-          Container(
-            height: 1,
-            color: isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6),
-          ),
-          SizedBox(height: size.getItemSpacing()),
-          _buildMoodHistory(context, isDark),
-        ],
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: inline ? double.maxFinite : 380,
+        radius: BorderRadius.circular(24 * scale),
+        padding: size.getPadding(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(theme),
+            SizedBox(height: size.getTitleSpacing()),
+            _buildWeeklyChart(theme),
+            const SizedBox(height: 8),
+            _buildDayLabels(theme),
+            SizedBox(height: size.getItemSpacing()),
+            // 淡墨分隔线
+            Container(
+              height: 1,
+              color: theme.ink.withValues(alpha: 0.18),
+            ),
+            SizedBox(height: size.getItemSpacing()),
+            _buildMoodHistory(theme),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark) {
+  Widget _buildHeader(AppThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            _buildLegend(context, color: const Color(0xFF9DB36D), label: 'Positive', isDark: isDark),
+            _buildLegend(theme, color: _kPositiveColor, label: 'Positive'),
             SizedBox(width: size.getItemSpacing()),
-            _buildLegend(context, color: const Color(0xFFE88D3E), label: 'Negative', isDark: isDark),
+            _buildLegend(theme, color: _kNegativeColor, label: 'Negative'),
           ],
         ),
+        // 手绘胶囊日期徽章
         Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF374151) : const Color(0xFFF8F6F4),
-            borderRadius: BorderRadius.circular(16),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(16),
+            fillColor: theme.surfaceAlt,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: Row(
             children: [
-              Icon(Icons.calendar_today, size: 16, color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280)),
+              DsIcon(DsIconKind.calendar, size: 16, color: theme.textSub),
               const SizedBox(width: 8),
-              Text('Monthly', style: TextStyle(color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4A3B32), fontWeight: FontWeight.bold, fontSize: 14)),
+              Text('Monthly', style: TextStyle(color: theme.text, fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(width: 4),
-              Icon(Icons.expand_more, size: 16, color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280)),
+              DsIcon(DsIconKind.chevronDown, size: 16, color: theme.textSub),
             ],
           ),
         ),
@@ -214,17 +228,26 @@ class ModernRoundedBarIconCard extends StatelessWidget {
     );
   }
 
-  Widget _buildLegend(BuildContext context, {required Color color, required String label, required bool isDark}) {
+  Widget _buildLegend(AppThemeData theme, {required Color color, required String label}) {
     return Row(
       children: [
-        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        // 手绘图例色块：数据色实底 + 墨线描边
+        Container(
+          width: 12,
+          height: 12,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(6),
+            fillColor: color,
+          ),
+        ),
         SizedBox(width: size.getItemSpacing()),
-        Text(label, style: TextStyle(color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4A3B32), fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(label, style: TextStyle(color: theme.text, fontWeight: FontWeight.bold, fontSize: 14)),
       ],
     );
   }
 
-  Widget _buildWeeklyChart(BuildContext context, bool isDark) {
+  Widget _buildWeeklyChart(AppThemeData theme) {
     return SizedBox(
       height: 160,
       child: Row(
@@ -232,7 +255,7 @@ class ModernRoundedBarIconCard extends StatelessWidget {
           return Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: _buildMoodBar(context, mood, isDark),
+              child: _buildMoodBar(theme, mood),
             ),
           );
         }).toList(),
@@ -240,34 +263,31 @@ class ModernRoundedBarIconCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMoodBar(BuildContext context, BarIconEntry mood, bool isDark) {
-    final primaryColor = const Color(0xFF9DB36D);
-    final secondaryColor = const Color(0xFFE88D3E);
-    final trackColor = isDark ? const Color(0xFF374151) : const Color(0xFFF2F4EF);
-
-    return Container(
-      height: 160,
-      decoration: BoxDecoration(color: trackColor, borderRadius: BorderRadius.circular(9999)),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          if (mood.positiveValue > 0)
-            Positioned(bottom: 0, left: 0, right: 0, height: 160 * mood.positiveValue, child: Container(decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(9999)))),
-          if (mood.negativeValue > 0)
-            Positioned(bottom: 0, left: 0, right: 0, height: 160 * mood.negativeValue, child: Container(decoration: BoxDecoration(color: secondaryColor, borderRadius: BorderRadius.circular(9999)))),
-        ],
+  /// 斜纹心情柱（§9.5：数据色浅底 + 浓斜纹 + 描边，淡墨轨道胶囊）
+  Widget _buildMoodBar(AppThemeData theme, BarIconEntry mood) {
+    final scale = size.scale;
+    return SizedBox.expand(
+      child: CustomPaint(
+        painter: _StripedMoodBarPainter(
+          positiveValue: mood.positiveValue,
+          negativeValue: mood.negativeValue,
+          positiveColor: _kPositiveColor,
+          negativeColor: _kNegativeColor,
+          theme: theme,
+          scale: scale,
+        ),
       ),
     );
   }
 
-  Widget _buildDayLabels(BuildContext context, bool isDark) {
+  Widget _buildDayLabels(AppThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3),
       child: Row(
         children: weekMoods.map((mood) {
           return Expanded(
             child: Center(
-              child: Text(mood.dayLabel, style: TextStyle(color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), fontWeight: FontWeight.bold, fontSize: 12)),
+              child: Text(mood.dayLabel, style: TextStyle(color: theme.textSub, fontWeight: FontWeight.bold, fontSize: 12)),
             ),
           );
         }).toList(),
@@ -275,51 +295,54 @@ class ModernRoundedBarIconCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMoodHistory(BuildContext context, bool isDark) {
+  Widget _buildMoodHistory(AppThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Mood History', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF4A3B32), fontWeight: FontWeight.bold, fontSize: 20)),
-            Icon(Icons.more_horiz, color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF)),
+            Text('Mood History', style: TextStyle(color: theme.text, fontWeight: FontWeight.bold, fontSize: 20)),
+            DsIcon(DsIconKind.more, color: theme.textSub),
           ],
         ),
         SizedBox(height: size.getTitleSpacing()),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildMoodIcon(context, dayLabel: 'Mon', moodType: MoodIconType.happy, isToday: false, isDark: isDark),
-            _buildMoodIcon(context, dayLabel: 'Tue', moodType: MoodIconType.neutralHappy, isToday: false, isDark: isDark),
-            _buildMoodIcon(context, dayLabel: 'Wed', moodType: MoodIconType.neutral, isToday: false, isDark: isDark),
-            _buildMoodIcon(context, dayLabel: 'Thu', moodType: MoodIconType.happy, isToday: false, isDark: isDark),
-            _buildMoodIcon(context, dayLabel: 'Fri', moodType: MoodIconType.neutralSad, isToday: true, isDark: isDark),
-            _buildMoodIcon(context, dayLabel: 'Sat', moodType: MoodIconType.neutralFlat, isToday: false, isDark: isDark),
-            _buildMoodIcon(context, dayLabel: 'Sun', moodType: MoodIconType.happy, isToday: false, isDark: isDark),
+            _buildMoodIcon(theme, dayLabel: 'Mon', moodType: MoodIconType.happy, isToday: false),
+            _buildMoodIcon(theme, dayLabel: 'Tue', moodType: MoodIconType.neutralHappy, isToday: false),
+            _buildMoodIcon(theme, dayLabel: 'Wed', moodType: MoodIconType.neutral, isToday: false),
+            _buildMoodIcon(theme, dayLabel: 'Thu', moodType: MoodIconType.happy, isToday: false),
+            _buildMoodIcon(theme, dayLabel: 'Fri', moodType: MoodIconType.neutralSad, isToday: true),
+            _buildMoodIcon(theme, dayLabel: 'Sat', moodType: MoodIconType.neutralFlat, isToday: false),
+            _buildMoodIcon(theme, dayLabel: 'Sun', moodType: MoodIconType.happy, isToday: false),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildMoodIcon(BuildContext context, {required String dayLabel, required MoodIconType moodType, required bool isToday, required bool isDark}) {
+  Widget _buildMoodIcon(AppThemeData theme, {required String dayLabel, required MoodIconType moodType, required bool isToday}) {
     final colors = _getMoodIconColors(moodType);
+    final badgeSize = 12 + size.getSmallSpacing() * 2;
 
     return Column(
       children: [
         Container(
           padding: isToday ? const EdgeInsets.symmetric(horizontal: 6, vertical: 6) : EdgeInsets.zero,
+          // 手绘胶囊「今日」高亮
           decoration: isToday
-              ? BoxDecoration(
-                  color: isDark ? const Color(0xFF374151).withOpacity(0.5) : const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(9999),
-                  border: Border.all(color: isDark ? const Color(0xFF4B5563) : const Color(0xFFE5E7EB), width: 1),
+              ? dsSketchDecoration(
+                  theme: theme,
+                  radius: BorderRadius.circular(999),
+                  fillColor: theme.surfaceAlt,
                 )
               : null,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              // 手绘表情脸：特殊装饰保留
               CustomPaint(
                 size: const Size(40, 40),
                 painter: _MoodIconPainter(faceColor: colors.faceColor, eyeColor: colors.eyeColor, mouthType: moodType),
@@ -329,16 +352,29 @@ class ModernRoundedBarIconCard extends StatelessWidget {
                   bottom: -4,
                   right: -10,
                   child: Container(
-                    decoration: BoxDecoration(color: isDark ? Colors.white : const Color(0xFF1F2937), shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]),
+                    width: badgeSize,
+                    height: badgeSize,
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      radius: BorderRadius.circular(badgeSize / 2),
+                      fillColor: theme.surfaceAlt,
+                    ),
                     padding: EdgeInsets.all(size.getSmallSpacing()),
-                    child: Icon(Icons.thumb_up, size: 12, color: isDark ? const Color(0xFF1F2937) : Colors.white),
+                    child: Center(
+                      child: WiredIcon(
+                        icon: Icons.thumb_up,
+                        size: 12,
+                        color: theme.ink,
+                        drawConfig: theme.wired.drawConfig,
+                      ),
+                    ),
                   ),
                 ),
             ],
           ),
         ),
         SizedBox(height: size.getItemSpacing()),
-        Text(dayLabel, style: TextStyle(color: isToday ? (isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151)) : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)), fontWeight: isToday ? FontWeight.bold : FontWeight.normal, fontSize: 12)),
+        Text(dayLabel, style: TextStyle(color: isToday ? theme.text : theme.textSub, fontWeight: isToday ? FontWeight.bold : FontWeight.normal, fontSize: 12)),
       ],
     );
   }
@@ -366,6 +402,115 @@ class _MoodIconColors {
   const _MoodIconColors({required this.faceColor, required this.eyeColor});
 }
 
+/// 斜纹心情柱绘制器
+///
+/// 淡墨轨道胶囊（surfaceAlt 底 + 淡墨斜纹 + 淡墨描边）垫底，
+/// 数据段自底部铺数据色浅底 + 数据色浓斜纹（0.9）+ 数据色描边（0.85），
+/// 正负值同锚底部、负值叠上层，几何保持平直（§9.5）。
+class _StripedMoodBarPainter extends CustomPainter {
+  final double positiveValue;
+  final double negativeValue;
+  final Color positiveColor;
+  final Color negativeColor;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StripedMoodBarPainter({
+    required this.positiveValue,
+    required this.negativeValue,
+    required this.positiveColor,
+    required this.negativeColor,
+    required this.theme,
+    required this.scale,
+  });
+
+  void _paintSegment(Canvas canvas, Rect rect, Color color) {
+    if (rect.height <= 0.5) return;
+    canvas.drawRect(rect, Paint()..color = color.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRect(rect),
+      rect,
+      color: color.withValues(alpha: 0.9),
+      strokeWidth: 3 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..color = color.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final capsule = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Offset.zero & size,
+          Radius.circular(size.width / 2),
+        ),
+      );
+
+    // 轨道胶囊：surfaceAlt 底 + 淡墨斜纹 + 淡墨描边
+    canvas.drawPath(capsule, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      capsule,
+      Offset.zero & size,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawPath(
+      capsule,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+
+    // 数据段（胶囊内裁剪）
+    canvas.save();
+    canvas.clipPath(capsule);
+    _paintSegment(
+      canvas,
+      Rect.fromLTWH(
+        0,
+        size.height * (1 - positiveValue),
+        size.width,
+        size.height * positiveValue,
+      ),
+      positiveColor,
+    );
+    _paintSegment(
+      canvas,
+      Rect.fromLTWH(
+        0,
+        size.height * (1 - negativeValue),
+        size.width,
+        size.height * negativeValue,
+      ),
+      negativeColor,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedMoodBarPainter oldDelegate) {
+    return oldDelegate.positiveValue != positiveValue ||
+        oldDelegate.negativeValue != negativeValue ||
+        oldDelegate.positiveColor != positiveColor ||
+        oldDelegate.negativeColor != negativeColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
+  }
+}
+
+/// 手绘表情脸绘制器（特殊装饰，保留原始几何）
 class _MoodIconPainter extends CustomPainter {
   final Color faceColor;
   final Color eyeColor;

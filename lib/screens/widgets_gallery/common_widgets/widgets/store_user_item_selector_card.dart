@@ -1,10 +1,14 @@
-/// 用户物品选择器公共小组件
+/// 用户物品选择器公共小组件（手绘纸卡风格）
 ///
-/// 显示用户物品列表，支持单个或多个物品展示
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 单物品卡（图片整幅 + rough 墨线框，或纸底面板）/ 物品列表
+/// （图标徽章 + 剩余次数徽章 + 过期状态）。
 library;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
@@ -96,10 +100,11 @@ class StoreUserItemSelectorCardWidget extends StatefulWidget {
       _StoreUserItemSelectorCardWidgetState();
 }
 
-class _StoreUserItemSelectorCardWidgetState extends State<StoreUserItemSelectorCardWidget> {
+class _StoreUserItemSelectorCardWidgetState
+    extends State<StoreUserItemSelectorCardWidget> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.of(context);
     final items = widget.items;
 
     if (items.isEmpty) {
@@ -117,11 +122,9 @@ class _StoreUserItemSelectorCardWidgetState extends State<StoreUserItemSelectorC
   /// 构建单个物品布局
   Widget _buildSingleItem(
     BuildContext context,
-    ThemeData theme,
+    AppThemeData theme,
     UserItemData item,
   ) {
-    final expireColor = _getExpireColor(item);
-
     return FutureBuilder<String?>(
       future: _getImagePath(item.productImage),
       builder: (context, imageSnapshot) {
@@ -129,190 +132,240 @@ class _StoreUserItemSelectorCardWidgetState extends State<StoreUserItemSelectorC
             imageSnapshot.hasData &&
             imageSnapshot.data != null &&
             imageSnapshot.data!.isNotEmpty;
+        final radius = BorderRadius.circular(16 * widget.size.scale);
 
-        return Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300, width: 1),
-              image: hasImage
-                  ? DecorationImage(
-                      image: ImageUtils.createImageProvider(imageSnapshot.data),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-            ),
-            child: Stack(
-              children: [
-                // 半透明遮罩
-                if (hasImage)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: Colors.black.withOpacity(0.4),
-                      ),
-                    ),
-                  ),
-                // 内容区域
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 物品名称和剩余次数（在同一行）
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+        // 手绘纸卡：有图走整幅图片 + rough 墨线框，无图走纸底面板
+        return WiredDraw(
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: radius,
+            child:
+                hasImage
+                    ? ClipRRect(
+                      borderRadius: radius,
+                      child: Stack(
                         children: [
-                          Expanded(
-                            child: Text(
-                              item.productName,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: hasImage ? Colors.white : theme.colorScheme.onSurface,
+                          Positioned.fill(
+                            child: Image(
+                              image: ImageUtils.createImageProvider(
+                                imageSnapshot.data,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              fit: BoxFit.cover,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          // 剩余次数（标题右侧）
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                          // 压暗蒙层（图片展示逻辑保留）
+                          Positioned.fill(
+                            child: ColoredBox(
+                              color: Colors.black.withValues(alpha: 0.4),
                             ),
-                            decoration: BoxDecoration(
-                              color: (hasImage
-                                      ? Colors.white.withOpacity(0.2)
-                                      : Colors.pinkAccent.withOpacity(0.2)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${item.remaining} ${'store_times'.tr}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: hasImage ? Colors.white : Colors.pinkAccent,
-                                fontWeight: FontWeight.bold,
+                          ),
+                          Positioned.fill(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: _buildSingleItemContent(
+                                theme,
+                                item,
+                                hasImage: true,
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                      const Spacer(),
-                      // 底部区域：价格（左）和过期信息（右）
-                      Row(
-                        children: [
-                          // 价格信息
-                          Row(
-                            children: [
-                              Icon(Icons.monetization_on, size: 16, color: Colors.orange),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${item.purchasePrice} ${'store_points'.tr}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.orange,
+                          // rough 墨线框叠在图片之上
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: DecoratedBox(
+                                decoration: dsSketchDecoration(
+                                  theme: theme,
+                                  radius: radius,
                                 ),
                               ),
-                            ],
-                          ),
-                          const Spacer(),
-                          // 过期信息（右下角）
-                          Text(
-                            item.isExpired
-                                ? 'store_itemExpired'.tr
-                                : '${'store_expireIn'.tr} ${item.remainingDays} ${'store_days'.tr}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: expireColor,
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                    )
+                    : DsSketchPanel(
+                      theme: theme,
+                      radius: radius,
+                      padding: const EdgeInsets.all(16),
+                      child: _buildSingleItemContent(
+                        theme,
+                        item,
+                        hasImage: false,
+                      ),
+                    ),
           ),
         );
       },
     );
   }
 
-  /// 构建物品列表布局
-  Widget _buildItemList(
-    BuildContext context,
-    ThemeData theme,
-    List<UserItemData> items,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1),
-      ),
-      child: Column(
+  /// 单个物品内容
+  Widget _buildSingleItemContent(
+    AppThemeData theme,
+    UserItemData item, {
+    required bool hasImage,
+  }) {
+    final expireColor = _getExpireColor(theme, item);
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 标题
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(Icons.inventory_2, color: theme.colorScheme.primary, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                '我的物品',
-                style: theme.textTheme.titleMedium?.copyWith(
+        // 物品名称和剩余次数（在同一行）
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                item.productName,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                  color: hasImage ? Colors.white : theme.text,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            // 剩余次数（标题右侧）
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: dsSketchDecoration(
+                theme: theme,
+                radius: BorderRadius.circular(8),
+                fillColor:
+                    hasImage ? Colors.white.withValues(alpha: 0.2) : null,
+              ),
+              child: Text(
+                '${item.remaining} ${'store_times'.tr}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: hasImage ? Colors.white : theme.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const Spacer(),
-              Text(
-                '${items.length}个物品',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        // 物品列表
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 16),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              return _buildItemListItem(context, theme, items[index]);
-            },
-          ),
+        const Spacer(),
+        // 底部区域：价格（左）和过期信息（右）
+        Row(
+          children: [
+            // 价格信息
+            Row(
+              children: [
+                WiredIcon(
+                  icon: Icons.monetization_on,
+                  size: 16,
+                  color: theme.warning,
+                  drawConfig: theme.wired.drawConfig,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${item.purchasePrice} ${'store_points'.tr}',
+                  style: TextStyle(fontSize: 12, color: theme.warning),
+                ),
+              ],
+            ),
+            const Spacer(),
+            // 过期信息（右下角）
+            Text(
+              item.isExpired
+                  ? 'store_itemExpired'.tr
+                  : '${'store_expireIn'.tr} ${item.remainingDays} ${'store_days'.tr}',
+              style: TextStyle(fontSize: 12, color: expireColor),
+            ),
+          ],
         ),
       ],
-    ),
+    );
+  }
+
+  /// 构建物品列表布局
+  Widget _buildItemList(
+    BuildContext context,
+    AppThemeData theme,
+    List<UserItemData> items,
+  ) {
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(16 * widget.size.scale),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 标题
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  WiredIcon(
+                    icon: Icons.inventory_2,
+                    color: theme.primary,
+                    size: 20,
+                    drawConfig: theme.wired.drawConfig,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '我的物品',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: theme.text,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${items.length}个物品',
+                    style: TextStyle(fontSize: 12, color: theme.textSub),
+                  ),
+                ],
+              ),
+            ),
+            // 物品列表
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  return _buildItemListItem(context, theme, items[index]);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   /// 构建物品列表项
   Widget _buildItemListItem(
     BuildContext context,
-    ThemeData theme,
+    AppThemeData theme,
     UserItemData item,
   ) {
-    final expireColor = _getExpireColor(item);
+    final expireColor = _getExpireColor(theme, item);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // 物品图标/图片
+          // 物品图标：墨线徽章
           Container(
             width: 48,
             height: 48,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
+            decoration: dsSketchDecoration(
+              theme: theme,
+              radius: BorderRadius.circular(8),
+              fillColor: theme.surfaceAlt,
             ),
-            child: Icon(Icons.inventory_2, color: theme.colorScheme.primary),
+            child: WiredIcon(
+              icon: Icons.inventory_2,
+              color: theme.primary,
+              size: 24,
+              drawConfig: theme.wired.drawConfig,
+            ),
           ),
           const SizedBox(width: 12),
           // 物品信息
@@ -325,23 +378,31 @@ class _StoreUserItemSelectorCardWidgetState extends State<StoreUserItemSelectorC
                     Expanded(
                       child: Text(
                         item.productName,
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: TextStyle(
                           fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: theme.text,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    // 剩余次数徽章
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.pinkAccent.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        radius: BorderRadius.circular(6),
+                        fillColor: theme.surfaceAlt,
                       ),
                       child: Text(
                         '${item.remaining}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.pinkAccent,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -350,12 +411,18 @@ class _StoreUserItemSelectorCardWidgetState extends State<StoreUserItemSelectorC
                 ),
                 Row(
                   children: [
-                    Icon(Icons.monetization_on, size: 14, color: Colors.orange),
+                    WiredIcon(
+                      icon: Icons.monetization_on,
+                      size: 14,
+                      color: theme.warning,
+                      drawConfig: theme.wired.drawConfig,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${item.purchasePrice} ${'store_points'.tr}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.orange,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.warning,
                       ),
                     ),
                     const Spacer(),
@@ -363,7 +430,10 @@ class _StoreUserItemSelectorCardWidgetState extends State<StoreUserItemSelectorC
                       item.isExpired
                           ? 'store_itemExpired'.tr
                           : '${item.remainingDays} ${'store_days'.tr}',
-                      style: theme.textTheme.bodySmall?.copyWith(color: expireColor),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: expireColor,
+                      ),
                     ),
                   ],
                 ),
@@ -376,38 +446,41 @@ class _StoreUserItemSelectorCardWidgetState extends State<StoreUserItemSelectorC
   }
 
   /// 构建空状态
-  Widget _buildEmptyWidget(BuildContext context, ThemeData theme) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inventory_2, size: 48, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(height: 8),
-            Text(
-              '暂无物品',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+  Widget _buildEmptyWidget(BuildContext context, AppThemeData theme) {
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(16 * widget.size.scale),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              WiredIcon(
+                icon: Icons.inventory_2,
+                size: 48,
+                color: theme.textSub,
+                drawConfig: theme.wired.drawConfig,
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                '暂无物品',
+                style: TextStyle(fontSize: 14, color: theme.textSub),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   /// 获取过期颜色
-  Color _getExpireColor(UserItemData item) {
+  Color _getExpireColor(AppThemeData theme, UserItemData item) {
     if (item.isExpired) {
-      return Colors.red;
+      return theme.danger;
     } else if (item.isExpiringSoon) {
-      return Colors.orange;
+      return theme.warning;
     } else {
-      return Colors.green;
+      return theme.success;
     }
   }
 

@@ -1,15 +1,26 @@
+/// 支出趋势折线图小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 日期栏（手绘日历图标）/ 内容区（小控件档墨线卡底）：标题 + 图例 /
+/// 当月折线（数据色平直折线 + 斜纹面积）+ 上月淡色虚线 + 预算线 /
+/// X/Y 轴标签。折线描画与当前点动画保留。
+library;
+
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 支出趋势折线图小组件
 ///
 /// 用于显示支出趋势对比的卡片组件，支持：
 /// - 当前月与上月对比
 /// - 预算线显示
-/// - 平滑曲线动画
-/// - 渐变填充效果
-/// - 深色/浅色主题适配
+/// - 折线描画动画
+/// - 斜纹填充效果
 class SpendingTrendChartWidget extends StatefulWidget {
   /// 日期范围文本
   final String dateRange;
@@ -160,151 +171,130 @@ class _SpendingTrendChartWidgetState extends State<SpendingTrendChartWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFFf06431);
-    final headerColor =
-        isDark ? const Color(0xFF2d302e) : const Color(0xFFccd3ce);
-    final cardColor = isDark ? const Color(0xFF242624) : Colors.white;
-    final textColor =
-        isDark ? const Color(0xFFe3e3e3) : const Color(0xFF1c1c1c);
-    final mutedColor =
-        isDark ? const Color(0xFFa0a0a0) : const Color(0xFF717171);
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
+    final primaryColor = theme.primary;
+    final mutedColor = theme.textSub;
+    final textColor = theme.text;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 320,
-              height: widget.inline ? double.maxFinite : 320,
-              decoration: BoxDecoration(
-                color: headerColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 320,
+        height: widget.inline ? double.maxFinite : 320,
+        radius: BorderRadius.circular(24 * scale),
+        child: Column(
+          children: [
+            // 顶部标题栏
+            Padding(
+              padding: widget.size.getPadding().copyWith(
+                bottom:
+                    (widget.size.getPadding().bottom * 0.75).roundToDouble(),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // 顶部标题栏
-                  Padding(
-                    padding: widget.size.getPadding().copyWith(
-                      bottom:
-                          (widget.size.getPadding().bottom * 0.75)
-                              .roundToDouble(),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          widget.dateRange,
-                          style: TextStyle(
-                            fontSize: widget.size.getSubtitleFontSize(),
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                          ),
-                        ),
-                        Icon(
-                          Icons.calendar_today,
-                          size: widget.size.getIconSize(),
-                          color: textColor,
-                        ),
-                      ],
+                  Text(
+                    widget.dateRange,
+                    style: TextStyle(
+                      fontSize: widget.size.getSubtitleFontSize(),
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
                     ),
                   ),
-                  // 内容区域
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: widget.size.getPadding(),
-                      child: Column(
-                        children: [
-                          // 标题和图例
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  widget.title,
-                                  style: TextStyle(
-                                    fontSize: widget.size.getTitleFontSize(),
-                                    fontWeight: FontWeight.w700,
-                                    color: textColor,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                              SizedBox(width: widget.size.getItemSpacing()),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  _LegendItem(
-                                    color: primaryColor,
-                                    label: widget.currentMonthLabel,
-                                    isDashed: false,
-                                    size: widget.size,
-                                  ),
-                                  SizedBox(
-                                    height: widget.size.getItemSpacing(),
-                                  ),
-                                  _LegendItem(
-                                    color: mutedColor,
-                                    label: widget.previousMonthLabel,
-                                    isDashed: true,
-                                    size: widget.size,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: widget.size.getTitleSpacing()),
-                          // 图表区域
-                          Expanded(
-                            child: _TrendLineChart(
-                              currentMonthData: widget.currentMonthData,
-                              previousMonthData: widget.previousMonthData,
-                              currentPoint: widget.currentPoint,
-                              budgetAmount: widget.budgetAmount,
-                              maxAmount: widget.maxAmount,
-                              primaryColor: primaryColor,
-                              mutedColor: mutedColor,
-                              animation: _animation,
-                              pointAnimation: _pointAnimation,
-                              budgetLabel: widget.budgetLabel,
-                              textColor: textColor,
-                              startLabel: widget.startLabel,
-                              middleLabel: widget.middleLabel,
-                              endLabel: widget.endLabel,
-                              size: widget.size,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  DsIcon(
+                    DsIconKind.calendar,
+                    size: widget.size.getIconSize(),
+                    color: textColor,
                   ),
                 ],
               ),
             ),
-          ),
-        );
-      },
+            // 内容区域（小控件档墨线卡底）
+            Expanded(
+              child: Container(
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: BorderRadius.circular(12 * scale),
+                  fillColor: theme.surfaceAlt,
+                ),
+                padding: widget.size.getPadding(),
+                child: Column(
+                  children: [
+                    // 标题和图例
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.title,
+                            style: TextStyle(
+                              fontSize: widget.size.getTitleFontSize(),
+                              fontWeight: FontWeight.w700,
+                              color: textColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                        SizedBox(width: widget.size.getItemSpacing()),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            _LegendItem(
+                              color: primaryColor,
+                              label: widget.currentMonthLabel,
+                              isDashed: false,
+                              size: widget.size,
+                            ),
+                            SizedBox(
+                              height: widget.size.getItemSpacing(),
+                            ),
+                            _LegendItem(
+                              color: mutedColor,
+                              label: widget.previousMonthLabel,
+                              isDashed: true,
+                              size: widget.size,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: widget.size.getTitleSpacing()),
+                    // 图表区域
+                    Expanded(
+                      child: _TrendLineChart(
+                        currentMonthData: widget.currentMonthData,
+                        previousMonthData: widget.previousMonthData,
+                        currentPoint: widget.currentPoint,
+                        budgetAmount: widget.budgetAmount,
+                        maxAmount: widget.maxAmount,
+                        primaryColor: primaryColor,
+                        mutedColor: mutedColor,
+                        animation: _animation,
+                        pointAnimation: _pointAnimation,
+                        budgetLabel: widget.budgetLabel,
+                        textColor: textColor,
+                        startLabel: widget.startLabel,
+                        middleLabel: widget.middleLabel,
+                        endLabel: widget.endLabel,
+                        size: widget.size,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-/// 图例项
+/// 图例项（实心为墨线圆底色块，虚线为淡色虚线圈）
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
@@ -320,26 +310,26 @@ class _LegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+    final indicatorWidth = size.getLegendIndicatorWidth() / 2;
+    final indicatorHeight = size.getLegendIndicatorHeight() / 2;
+
     return Row(
       children: [
-        Container(
-          width: size.getLegendIndicatorWidth() / 2,
-          height: size.getLegendIndicatorHeight() / 2,
-          decoration: BoxDecoration(
-            color: isDashed ? Colors.transparent : color,
-            shape: BoxShape.circle,
-            border: isDashed ? Border.all(color: color, width: 1) : null,
-          ),
+        SizedBox(
+          width: indicatorWidth,
+          height: indicatorHeight,
           child:
               isDashed
-                  ? CustomPaint(
-                    size: Size(
-                      size.getLegendIndicatorWidth() / 2,
-                      size.getLegendIndicatorHeight() / 2,
+                  ? CustomPaint(painter: _DashedCirclePainter(color: color))
+                  : Container(
+                    // 大圆角被 rough 引擎自动钳制成圆
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      radius: BorderRadius.circular(indicatorWidth / 2),
+                      fillColor: color,
                     ),
-                    painter: _DashedCirclePainter(color: color),
-                  )
-                  : null,
+                  ),
         ),
         SizedBox(width: size.getSmallSpacing()),
         Text(
@@ -428,7 +418,7 @@ class _TrendLineChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
 
     // 计算Y轴标签
     final yLabels = [
@@ -465,13 +455,10 @@ class _TrendLineChart extends StatelessWidget {
               budgetAmount: budgetAmount,
               budgetLabel: budgetLabel,
               fontSize: size.getLegendFontSize(),
-              textColor: textColor,
-              backgroundColor:
-                  isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-              borderColor:
-                  isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.05),
+              textColor: theme.text,
+              fillColor: theme.surfaceAlt,
+              strokeColor: theme.ink.withValues(alpha: 0.45),
+              lineColor: theme.ink.withValues(alpha: 0.18),
               itemSpacing: size.getItemSpacing(),
               lineWidth: 200,
             ),
@@ -489,6 +476,7 @@ class _TrendLineChart extends StatelessWidget {
             maxAmount: maxAmount,
             primaryColor: primaryColor,
             mutedColor: mutedColor,
+            gridColor: theme.ink.withValues(alpha: 0.18),
             animation: animation,
             pointAnimation: pointAnimation,
             size: size,
@@ -566,14 +554,15 @@ class _YAxisLabelPainter extends CustomPainter {
   }
 }
 
-/// 预算标签绘制器
+/// 预算标签绘制器（纸底圆角小签 + 淡墨虚线基线）
 class _BudgetLabelPainter extends CustomPainter {
   final double budgetAmount;
   final String budgetLabel;
   final double fontSize;
   final Color textColor;
-  final Color backgroundColor;
-  final Color borderColor;
+  final Color fillColor;
+  final Color strokeColor;
+  final Color lineColor;
   final double itemSpacing;
   final double lineWidth;
 
@@ -582,8 +571,9 @@ class _BudgetLabelPainter extends CustomPainter {
     required this.budgetLabel,
     required this.fontSize,
     required this.textColor,
-    required this.backgroundColor,
-    required this.borderColor,
+    required this.fillColor,
+    required this.strokeColor,
+    required this.lineColor,
     required this.itemSpacing,
     required this.lineWidth,
   });
@@ -612,12 +602,12 @@ class _BudgetLabelPainter extends CustomPainter {
       const Radius.circular(10),
     );
 
-    final bgPaint = Paint()..color = backgroundColor;
+    final bgPaint = Paint()..color = fillColor;
     canvas.drawRRect(bgRect, bgPaint);
 
     final borderPaint =
         Paint()
-          ..color = borderColor
+          ..color = strokeColor
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1;
     canvas.drawRRect(bgRect, borderPaint);
@@ -625,13 +615,10 @@ class _BudgetLabelPainter extends CustomPainter {
     // 绘制文本
     textPainter.paint(canvas, Offset(itemSpacing, itemSpacing / 4));
 
-    // 绘制线条
+    // 绘制线条（淡墨基线）
     final linePaint =
         Paint()
-          ..color =
-              backgroundColor == Colors.grey.shade800
-                  ? Colors.grey.shade700
-                  : Colors.grey.shade300
+          ..color = lineColor
           ..strokeWidth = 1;
     canvas.drawLine(
       Offset(bgWidth + itemSpacing, bgHeight / 2),
@@ -646,7 +633,7 @@ class _BudgetLabelPainter extends CustomPainter {
         oldDelegate.budgetLabel != budgetLabel ||
         oldDelegate.fontSize != fontSize ||
         oldDelegate.textColor != textColor ||
-        oldDelegate.backgroundColor != backgroundColor;
+        oldDelegate.fillColor != fillColor;
   }
 }
 
@@ -729,6 +716,7 @@ class _LineChartPainterWidget extends StatelessWidget {
   final double maxAmount;
   final Color primaryColor;
   final Color mutedColor;
+  final Color gridColor;
   final Animation<double> animation;
   final Animation<double> pointAnimation;
   final HomeWidgetSize size;
@@ -741,6 +729,7 @@ class _LineChartPainterWidget extends StatelessWidget {
     required this.maxAmount,
     required this.primaryColor,
     required this.mutedColor,
+    required this.gridColor,
     required this.animation,
     required this.pointAnimation,
     required this.size,
@@ -763,6 +752,7 @@ class _LineChartPainterWidget extends StatelessWidget {
                 maxAmount: maxAmount,
                 primaryColor: primaryColor,
                 mutedColor: mutedColor,
+                gridColor: gridColor,
                 animation: animation.value,
                 pointAnimation: pointAnimation.value,
                 size: size,
@@ -776,6 +766,9 @@ class _LineChartPainterWidget extends StatelessWidget {
 }
 
 /// 折线图绘制器
+///
+/// 当月：数据色平直折线（无 rough 抖动）+ 斜纹面积（§9.5，替代原渐变）；
+/// 上月：淡色虚线；底线为淡墨虚线网格色。
 class _LineChartPainter extends CustomPainter {
   final List<double> currentMonthData;
   final List<double> previousMonthData;
@@ -784,6 +777,7 @@ class _LineChartPainter extends CustomPainter {
   final double maxAmount;
   final Color primaryColor;
   final Color mutedColor;
+  final Color gridColor;
   final double animation;
   final double pointAnimation;
   final HomeWidgetSize size;
@@ -796,6 +790,7 @@ class _LineChartPainter extends CustomPainter {
     required this.maxAmount,
     required this.primaryColor,
     required this.mutedColor,
+    required this.gridColor,
     required this.animation,
     required this.pointAnimation,
     required this.size,
@@ -818,8 +813,8 @@ class _LineChartPainter extends CustomPainter {
       canvasSize,
     );
 
-    // 绘制当前月份渐变填充
-    _drawGradientFill(
+    // 绘制当前月份斜纹填充
+    _drawStripedFill(
       canvas,
       currentMonthData,
       chartWidth,
@@ -851,20 +846,17 @@ class _LineChartPainter extends CustomPainter {
       canvasSize,
     );
 
-    // 绘制底线
+    // 绘制底线（淡墨）
     final linePaint =
         Paint()
-          ..color = const Color(0xFFe5e7eb)
+          ..color = gridColor
           ..strokeWidth = size.getStrokeWidth() * 0.1;
 
-    final isDark = primaryColor == const Color(0xFFf06431);
-    if (!isDark) {
-      canvas.drawLine(
-        Offset(padding, canvasSize.height - 8),
-        Offset(canvasSize.width - padding, canvasSize.height - 8),
-        linePaint,
-      );
-    }
+    canvas.drawLine(
+      Offset(padding, canvasSize.height - 8),
+      Offset(canvasSize.width - padding, canvasSize.height - 8),
+      linePaint,
+    );
   }
 
   void _drawDashedLine(
@@ -888,7 +880,7 @@ class _LineChartPainter extends CustomPainter {
     canvas.drawPath(dashPath, paint);
   }
 
-  void _drawGradientFill(
+  void _drawStripedFill(
     Canvas canvas,
     List<double> data,
     double width,
@@ -929,19 +921,16 @@ class _LineChartPainter extends CustomPainter {
     fillPath.lineTo(firstPoint.dx, canvasSize.height - 8);
     fillPath.close();
 
-    final gradient = LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [color.withOpacity(0.2 * animation), color.withOpacity(0)],
+    // 数据色浅底 + 淡斜纹（§9.5，替代原渐变）
+    canvas.drawPath(fillPath, Paint()..color = color.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      fillPath,
+      fillPath.getBounds(),
+      color: color.withValues(alpha: 0.45),
+      strokeWidth: 1.5 * size.scale,
+      spacing: 6.5 * size.scale,
     );
-
-    final paint =
-        Paint()
-          ..shader = gradient.createShader(
-            Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height),
-          );
-
-    canvas.drawPath(fillPath, paint);
   }
 
   void _drawSolidLine(
@@ -994,15 +983,15 @@ class _LineChartPainter extends CustomPainter {
     final scale = pointAnimation.clamp(0.0, 1.0);
 
     // 基于尺寸的圆点半径
-    final glowRadius = size.getStrokeWidth() * scale;
+    final haloRadius = size.getStrokeWidth() * scale;
     final dotRadius = size.getStrokeWidth() * 0.6 * scale;
 
-    // 外圈光晕
-    final glowPaint =
+    // 外圈平涂光环（无柔影）
+    final haloPaint =
         Paint()
-          ..color = color.withOpacity(0.3 * scale)
+          ..color = color.withValues(alpha: 0.28 * scale)
           ..style = PaintingStyle.fill;
-    canvas.drawCircle(point, glowRadius, glowPaint);
+    canvas.drawCircle(point, haloRadius, haloPaint);
 
     // 内圈实心点
     final dotPaint =
@@ -1012,6 +1001,7 @@ class _LineChartPainter extends CustomPainter {
     canvas.drawCircle(point, dotRadius, dotPaint);
   }
 
+  /// 平直折线路径（无 rough 抖动，§9.5 数据几何保持平直干净）
   Path _createPath(
     List<double> data,
     double width,
@@ -1041,31 +1031,7 @@ class _LineChartPainter extends CustomPainter {
         padding,
         canvasSize,
       );
-      // 使用二次贝塞尔曲线平滑连接
-      final previousPoint = _getPointAtIndex(
-        data,
-        i - 1,
-        width,
-        height,
-        padding,
-        canvasSize,
-      );
-      final controlPoint1 = Offset(
-        previousPoint.dx + (point.dx - previousPoint.dx) / 2,
-        previousPoint.dy,
-      );
-      final controlPoint2 = Offset(
-        previousPoint.dx + (point.dx - previousPoint.dx) / 2,
-        point.dy,
-      );
-      path.cubicTo(
-        controlPoint1.dx,
-        controlPoint1.dy,
-        controlPoint2.dx,
-        controlPoint2.dy,
-        point.dx,
-        point.dy,
-      );
+      path.lineTo(point.dx, point.dy);
     }
 
     return path;
@@ -1115,6 +1081,9 @@ class _LineChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _LineChartPainter oldDelegate) {
     return oldDelegate.animation != animation ||
-        oldDelegate.pointAnimation != pointAnimation;
+        oldDelegate.pointAnimation != pointAnimation ||
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.primaryColor != primaryColor ||
+        oldDelegate.mutedColor != mutedColor;
   }
 }

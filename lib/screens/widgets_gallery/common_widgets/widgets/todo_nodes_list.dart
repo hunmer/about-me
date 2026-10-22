@@ -1,5 +1,13 @@
+/// 待办节点列表小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘图标 + 标题 + 翻牌计数 / 待办节点列表（数据色竖条、逐项错峰浮现）。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 待办节点列表小组件
@@ -97,90 +105,90 @@ class _TodoNodesListWidgetState extends State<TodoNodesListWidget>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B);
-    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6);
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return Container(
-      height: widget.inline ? double.maxFinite : null,
-      width: widget.inline ? double.maxFinite : null,
-      constraints: widget.size.getHeightConstraints(),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: borderColor,
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: widget.size.getPadding(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题行
-            Row(
-              children: [
-                Icon(
-                  Icons.check_circle_outline,
-                  size: widget.size.getIconSize(),
-                  color: Colors.orange,
-                ),
-                SizedBox(width: widget.size.getItemSpacing()),
-                Text(
-                  '待办节点',
-                  style: TextStyle(
-                    fontSize: widget.size.getSubtitleFontSize(),
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: widget.size.getHeightConstraints(),
+        child: DsSketchPanel(
+          theme: theme,
+          width: widget.inline ? double.maxFinite : null,
+          height: widget.inline ? double.maxFinite : null,
+          radius: BorderRadius.circular(24 * scale),
+          padding: widget.size.getPadding(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题行
+              Row(
+                children: [
+                  WiredIcon(
+                    icon: Icons.check_circle_outline,
+                    size: widget.size.getIconSize(),
+                    color: theme.primary,
+                    drawConfig: theme.wired.drawConfig,
                   ),
-                ),
-                const Spacer(),
-                AnimatedFlipCounter(
-                  value: widget.todoCount.toDouble() * _animation.value,
-                  textStyle: TextStyle(
-                    fontSize: widget.size.getSubtitleFontSize(),
-                    fontWeight: FontWeight.w700,
-                    color: Colors.orange,
+                  SizedBox(width: widget.size.getItemSpacing()),
+                  Text(
+                    '待办节点',
+                    style: TextStyle(
+                      fontSize: widget.size.getSubtitleFontSize(),
+                      fontWeight: FontWeight.w600,
+                      color: theme.text,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: widget.size.getItemSpacing()),
-            // 待办节点列表
-            Expanded(
-              child: ListView.separated(
-                itemCount: widget.items.length + (widget.moreCount > 0 ? 1 : 0),
-                separatorBuilder: (context, index) => Divider(
-                  height: 1,
-                  color: theme.dividerColor.withOpacity(0.3),
-                ),
-                itemBuilder: (context, index) {
-                  if (index < widget.items.length) {
-                    final todoNode = widget.items[index];
-                    return _TodoNodeItemWidget(
-                      todoNode: todoNode,
-                      index: index,
-                      animation: _animation,
-                      size: widget.size,
-                      textColor: textColor,
-                    );
-                  } else {
-                    // 更多链接
-                    return _MoreLinkWidget(
-                      count: widget.moreCount,
-                      animation: _animation,
-                      index: widget.items.length,
-                      color: Colors.orange,
-                      size: widget.size,
-                    );
-                  }
-                },
+                  const Spacer(),
+                  AnimatedBuilder(
+                    animation: _animation,
+                    builder: (context, child) {
+                      return AnimatedFlipCounter(
+                        value: widget.todoCount.toDouble() * _animation.value,
+                        textStyle: TextStyle(
+                          fontSize: widget.size.getSubtitleFontSize(),
+                          fontWeight: FontWeight.w700,
+                          color: theme.primary,
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-            ),
-          ],
+              SizedBox(height: widget.size.getItemSpacing()),
+              // 待办节点列表
+              Expanded(
+                child: ListView.separated(
+                  itemCount: widget.items.length + (widget.moreCount > 0 ? 1 : 0),
+                  separatorBuilder:
+                      (context, index) => Container(
+                        height: 1,
+                        color: theme.ink.withValues(alpha: 0.18),
+                      ),
+                  itemBuilder: (context, index) {
+                    if (index < widget.items.length) {
+                      final todoNode = widget.items[index];
+                      return _TodoNodeItemWidget(
+                        todoNode: todoNode,
+                        index: index,
+                        animation: _animation,
+                        size: widget.size,
+                      );
+                    } else {
+                      // 更多链接
+                      return _MoreLinkWidget(
+                        count: widget.moreCount,
+                        animation: _animation,
+                        index: widget.items.length,
+                        color: theme.primary,
+                        size: widget.size,
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -192,14 +200,12 @@ class _TodoNodeItemWidget extends StatelessWidget {
   final int index;
   final Animation<double> animation;
   final HomeWidgetSize size;
-  final Color textColor;
 
   const _TodoNodeItemWidget({
     required this.todoNode,
     required this.index,
     required this.animation,
     required this.size,
-    required this.textColor,
   });
 
   double _getDelayedAnimationValue(double value) {
@@ -214,6 +220,7 @@ class _TodoNodeItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
@@ -226,13 +233,14 @@ class _TodoNodeItemWidget extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: size.getItemSpacing()),
               child: Row(
                 children: [
-                  // 颜色竖条
+                  // 颜色竖条：数据色实底 + 墨线描边
                   Container(
-                    width: 3,
+                    width: 4,
                     height: size.getSubtitleFontSize() * 1.2,
-                    decoration: BoxDecoration(
-                      color: todoNode.color ?? Colors.grey,
-                      borderRadius: BorderRadius.circular(1.5),
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      radius: BorderRadius.circular(2),
+                      fillColor: todoNode.color ?? theme.surfaceAlt,
                     ),
                   ),
                   SizedBox(width: size.getItemSpacing()),
@@ -245,7 +253,7 @@ class _TodoNodeItemWidget extends StatelessWidget {
                           style: TextStyle(
                             fontSize: size.getSubtitleFontSize(),
                             fontWeight: FontWeight.w500,
-                            color: textColor,
+                            color: theme.text,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -255,7 +263,7 @@ class _TodoNodeItemWidget extends StatelessWidget {
                           todoNode.path,
                           style: TextStyle(
                             fontSize: size.getSubtitleFontSize() * 0.75,
-                            color: textColor.withOpacity(0.5),
+                            color: theme.textSub,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

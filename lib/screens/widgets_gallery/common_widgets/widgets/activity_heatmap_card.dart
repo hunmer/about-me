@@ -1,10 +1,19 @@
+/// 活动热力图小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题 + 手绘箭头 / 24 小时热力图格子（标签档位色实底 + 淡墨格描边，
+/// 细粒度模式逐格错峰描画，不做斜纹）/ 手绘色块图例 / 统计信息。
+/// 支持不同时间粒度（5/10/15/30/60分钟），颜色深浅表示活动密集程度。
+library;
+
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 活动热力图小组件
-///
-/// 展示今日24小时的活动热力图，支持不同时间粒度（5/10/15/30/60分钟）
-/// 颜色深浅表示活动密集程度，根据标签显示不同颜色
 class ActivityHeatmapCardWidget extends StatefulWidget {
   /// 时间粒度（分钟）：5, 10, 15, 30, 60
   final int timeGranularity;
@@ -38,7 +47,8 @@ class ActivityHeatmapCardWidget extends StatefulWidget {
     final timeGranularity = props['timeGranularity'] as int? ?? 60;
 
     // 解析时间槽数据
-    final timeSlotsList = (props['timeSlots'] as List<dynamic>?)
+    final timeSlotsList =
+        (props['timeSlots'] as List<dynamic>?)
             ?.map((e) => TimeSlotData.fromMap(e as Map<String, dynamic>))
             .toList() ??
         [];
@@ -60,119 +70,137 @@ class ActivityHeatmapCardWidget extends StatefulWidget {
 class _ActivityHeatmapCardWidgetState extends State<ActivityHeatmapCardWidget> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: widget.size.getPadding(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 标题
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '今日活动热力图',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.pink,
-                    ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: Colors.pink.withOpacity(0.6),
-              ),
-            ],
-          ),
-          SizedBox(height: widget.size.getTitleSpacing()),
+    final theme = AppTheme.of(context);
 
-          // 24小时热力图网格
-          Expanded(child: _buildHeatmap()),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(24 * widget.size.scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 标题
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '今日活动热力图',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: theme.text,
+                    fontSize: widget.size.getSubtitleFontSize(),
+                  ),
+                ),
+                DsIcon(
+                  DsIconKind.chevronRight,
+                  size: 18,
+                  color: theme.primary.withValues(alpha: 0.6),
+                ),
+              ],
+            ),
+            SizedBox(height: widget.size.getTitleSpacing()),
 
-          SizedBox(height: widget.size.getItemSpacing()),
+            // 24小时热力图网格
+            Expanded(child: _buildHeatmap(theme)),
 
-          // 图例
-          _buildLegend(),
+            SizedBox(height: widget.size.getItemSpacing()),
 
-          SizedBox(height: widget.size.getSmallSpacing()),
+            // 图例
+            _buildLegend(theme),
 
-          // 统计信息
-          _buildStats(),
-        ],
+            SizedBox(height: widget.size.getSmallSpacing()),
+
+            // 统计信息
+            _buildStats(theme),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeatmap() {
+  Widget _buildHeatmap(AppThemeData theme) {
     final granularity = widget.timeGranularity;
 
     switch (granularity) {
       case 5:
-        return _buildGranularHeatmap(5);
+        return _buildGranularHeatmap(theme, 5);
       case 10:
-        return _buildGranularHeatmap(10);
+        return _buildGranularHeatmap(theme, 10);
       case 15:
-        return _buildGranularHeatmap(15);
+        return _buildGranularHeatmap(theme, 15);
       case 30:
-        return _buildGranularHeatmap(30);
+        return _buildGranularHeatmap(theme, 30);
       case 60:
       default:
-        return _build60MinHeatmap();
+        return _build60MinHeatmap(theme);
     }
   }
 
-  // 通用的细粒度热力图构建方法（5/10/15/30分钟）
-  Widget _buildGranularHeatmap(int granularity) {
+  // 通用的细粒度热力图（5/10/15/30分钟）：单 painter 逐格错峰描画
+  Widget _buildGranularHeatmap(AppThemeData theme, int granularity) {
     final columns = 12;
     final rows = (widget.timeSlots.length / columns).ceil();
 
     // 确保至少有1行
     final actualRows = rows > 0 ? rows : 1;
 
-    return Column(
-      mainAxisSize: MainAxisSize.max,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: List.generate(actualRows, (row) {
-        return Expanded(
-          flex: 1,
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: List.generate(columns, (col) {
-              final index = row * columns + col;
-              if (index >= widget.timeSlots.length) {
-                return const Expanded(child: SizedBox());
-              }
-              final data = widget.timeSlots[index];
-              return Expanded(
-                flex: 1,
-                child: _buildHeatmapCell(
-                  hour: data.hour,
-                  durationMinutes: data.durationMinutes,
-                  label: '',
-                  showLabel: false,
-                  tagDurations: data.tagDurations,
-                ),
-              );
-            }),
+    // 预计算每格档位色（null = 无数据格，不画）
+    final cellColors = List<Color?>.generate(actualRows * columns, (index) {
+      if (index >= widget.timeSlots.length) return null;
+      final data = widget.timeSlots[index];
+      return _getSlotColor(
+        theme,
+        data.durationMinutes,
+        granularity,
+        data.tagDurations,
+      );
+    });
+    final cellActive = List<bool>.generate(actualRows * columns, (index) {
+      return index < widget.timeSlots.length &&
+          widget.timeSlots[index].durationMinutes > 0;
+    });
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cw = constraints.maxWidth / columns;
+        final ch = constraints.maxHeight / math.max(actualRows, 1);
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: CustomPaint(
+            painter: _GranularHeatmapPainter(
+              cells: cellColors,
+              active: cellActive,
+              columns: columns,
+              cellWidth: cw,
+              cellHeight: ch,
+              theme: theme,
+              // 外层无 WiredDraw（或动画被禁用）时为 null = 全部直接画完
+              progress: WiredDrawTransition.progressOf(context),
+            ),
           ),
         );
-      }),
+      },
     );
   }
 
   // 60分钟粒度（24小时，4行6列）- 显示文本
-  Widget _build60MinHeatmap() {
+  Widget _build60MinHeatmap(AppThemeData theme) {
     return Column(
       children: List.generate(4, (row) {
         return Expanded(
           child: Row(
             children: List.generate(6, (col) {
               final index = row * 6 + col;
-              final data = index < widget.timeSlots.length
-                  ? widget.timeSlots[index]
-                  : TimeSlotData(hour: col + row * 6, minute: 0, durationMinutes: 0);
+              final data =
+                  index < widget.timeSlots.length
+                      ? widget.timeSlots[index]
+                      : TimeSlotData(hour: col + row * 6, minute: 0, durationMinutes: 0);
               return Expanded(
                 child: _buildHeatmapCell(
+                  theme,
                   hour: data.hour,
                   durationMinutes: data.durationMinutes,
                   label: '${data.hour}',
@@ -187,46 +215,51 @@ class _ActivityHeatmapCardWidgetState extends State<ActivityHeatmapCardWidget> {
     );
   }
 
-  Widget _buildHeatmapCell({
+  Widget _buildHeatmapCell(
+    AppThemeData theme, {
     required int hour,
     required int durationMinutes,
     required String label,
     bool showLabel = true,
     Map<String, int> tagDurations = const {},
   }) {
-    final color = _getSlotColor(durationMinutes, widget.timeGranularity, tagDurations);
+    final color = _getSlotColor(
+      theme,
+      durationMinutes,
+      widget.timeGranularity,
+      tagDurations,
+    );
     final isActive = durationMinutes > 0;
 
     return Container(
       margin: const EdgeInsets.all(1),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(2),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 0.5,
-        ),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(4),
+        fillColor: color,
+        stroke: theme.ink.withValues(alpha: isActive ? 0.4 : 0.2),
+        strokeWidth: 1,
       ),
-      child: showLabel
+      child:
+          showLabel
           ? Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (label.isNotEmpty)
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: widget.size.getLegendFontSize(),
-                      fontWeight: FontWeight.w500,
-                      color: _getTextColor(color),
-                    ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: widget.size.getLegendFontSize(),
+                    fontWeight: FontWeight.w500,
+                    color: _getTextColor(theme, color),
                   ),
+                ),
                 if (isActive) ...[
                   SizedBox(height: widget.size.getSmallSpacing()),
                   Text(
                     _formatMinutes(durationMinutes),
                     style: TextStyle(
                       fontSize: widget.size.getLegendFontSize() - 2,
-                      color: _getTextColor(color),
+                      color: _getTextColor(theme, color),
                     ),
                   ),
                 ],
@@ -237,15 +270,16 @@ class _ActivityHeatmapCardWidgetState extends State<ActivityHeatmapCardWidget> {
   }
 
   Color _getSlotColor(
+    AppThemeData theme,
     int minutes,
     int granularity,
     Map<String, int> tagDurations,
   ) {
     if (minutes == 0) {
-      return Colors.grey.withOpacity(0.1);
+      return theme.surfaceAlt;
     }
 
-    // 如果有标签，使用主要标签的颜色
+    // 如果有标签，使用主要标签的颜色（数据色：由标签名派生，保留）
     if (tagDurations.isNotEmpty) {
       final primaryTag = tagDurations.entries
           .reduce((a, b) => a.value > b.value ? a : b)
@@ -256,13 +290,13 @@ class _ActivityHeatmapCardWidgetState extends State<ActivityHeatmapCardWidget> {
       final ratio = minutes / granularity;
       final alpha = _getAlphaFromRatio(ratio);
 
-      return tagColor.withOpacity(alpha);
+      return tagColor.withValues(alpha: alpha);
     }
 
-    // 没有标签时，使用默认粉色
+    // 没有标签时，使用主题色（档位透明度）
     final ratio = minutes / granularity;
     final alpha = _getAlphaFromRatio(ratio);
-    return Colors.pink.withOpacity(alpha);
+    return theme.primary.withValues(alpha: alpha);
   }
 
   double _getAlphaFromRatio(double ratio) {
@@ -277,11 +311,11 @@ class _ActivityHeatmapCardWidgetState extends State<ActivityHeatmapCardWidget> {
     }
   }
 
-  Color _getTextColor(Color background) {
-    if (background == Colors.grey.withOpacity(0.1)) {
-      return Colors.grey.withOpacity(0.7);
+  Color _getTextColor(AppThemeData theme, Color background) {
+    if (background == theme.surfaceAlt) {
+      return theme.textSub;
     }
-    return background.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
+    return background.computeLuminance() > 0.5 ? theme.text : theme.surface;
   }
 
   String _formatMinutes(int minutes) {
@@ -294,7 +328,7 @@ class _ActivityHeatmapCardWidgetState extends State<ActivityHeatmapCardWidget> {
     }
   }
 
-  Widget _buildLegend() {
+  Widget _buildLegend(AppThemeData theme) {
     // 收集所有标签
     final allTags = <String>{};
     for (final slot in widget.timeSlots) {
@@ -317,24 +351,34 @@ class _ActivityHeatmapCardWidgetState extends State<ActivityHeatmapCardWidget> {
     return Wrap(
       spacing: 8,
       runSpacing: 4,
-      children: displayTags.map((entry) {
-        final color = _getColorFromTag(entry.key);
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(entry.key, style: TextStyle(fontSize: widget.size.getLegendFontSize())),
-          ],
-        );
-      }).toList(),
+      children:
+          displayTags.map((entry) {
+            final color = _getColorFromTag(entry.key);
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 手绘色块指示器：数据色实底 + 墨线描边
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: BorderRadius.circular(2),
+                    fillColor: color,
+                    strokeWidth: 1,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  entry.key,
+                  style: TextStyle(
+                    fontSize: widget.size.getLegendFontSize(),
+                    color: theme.textSub,
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
     );
   }
 
@@ -343,13 +387,13 @@ class _ActivityHeatmapCardWidgetState extends State<ActivityHeatmapCardWidget> {
     return HSLColor.fromAHSL(1.0, baseHue, 0.6, 0.5).toColor();
   }
 
-  Widget _buildStats() {
+  Widget _buildStats(AppThemeData theme) {
     if (widget.timeSlots.isEmpty) {
       return Text(
         '今日暂无活动',
         style: TextStyle(
           fontSize: widget.size.getLegendFontSize(),
-          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+          color: theme.textSub,
         ),
       );
     }
@@ -361,18 +405,113 @@ class _ActivityHeatmapCardWidgetState extends State<ActivityHeatmapCardWidget> {
           '总时长: ${_formatMinutes(widget.totalMinutes)}',
           style: TextStyle(
             fontSize: widget.size.getLegendFontSize(),
-            color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+            color: theme.textSub,
           ),
         ),
         Text(
           '活跃: ${widget.activeHours}小时',
           style: TextStyle(
             fontSize: widget.size.getLegendFontSize(),
-            color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+            color: theme.textSub,
           ),
         ),
       ],
     );
+  }
+}
+
+/// 细粒度热力图绘制器：rough 墨线格，逐格错峰描画（消费外层 WiredDraw 进度）
+///
+/// 每格档位色实底 + 淡墨描边（热力图格子不做斜纹）；
+/// cells 中 null 表示无数据格（不画）。
+class _GranularHeatmapPainter extends CustomPainter {
+  final List<Color?> cells;
+  final List<bool> active;
+  final int columns;
+  final double cellWidth;
+  final double cellHeight;
+  final AppThemeData theme;
+  final Animation<double>? progress;
+
+  _GranularHeatmapPainter({
+    required this.cells,
+    required this.active,
+    required this.columns,
+    required this.cellWidth,
+    required this.cellHeight,
+    required this.theme,
+    required this.progress,
+  }) : super(repaint: progress);
+
+  /// 每格 rough 绘图缓存（painter 随尺寸变化重建，动画帧间复用）
+  late final List<RoughDrawing?> _drawings = _buildDrawings();
+
+  List<RoughDrawing?> _buildDrawings() {
+    final cw = cellWidth;
+    final ch = cellHeight;
+    final inset = math.min(1.0, math.min(cw, ch) * 0.08);
+
+    final config = theme.wired.drawConfig;
+    config.randomizer.reset();
+    final solidGen = Generator(config, SolidFiller());
+
+    Paint stroke(double width, Color color) =>
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..strokeWidth = width
+          ..color = color;
+
+    return List.generate(cells.length, (i) {
+      final color = cells[i];
+      if (color == null) return null;
+      final r = i ~/ columns;
+      final c = i % columns;
+      final x = c * cw + inset;
+      final y = r * ch + inset;
+      final w = cw - inset * 2;
+      final h = ch - inset * 2;
+      final radius = math.min(2.0, math.min(w, h) * 0.12);
+
+      final borderPaint = stroke(
+        1,
+        theme.ink.withValues(alpha: active[i] ? 0.45 : 0.22),
+      );
+      final fillPaint = stroke(1, color);
+      return RoughDrawing(
+        solidGen.roundedRectangle(x, y, w, h, radius, radius, radius, radius),
+        borderPaint,
+        fillPaint,
+      );
+    });
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || cells.isEmpty) return;
+
+    final total = cells.length;
+    final p = progress?.value ?? 1;
+    for (var i = 0; i < total; i++) {
+      final drawing = _drawings[i];
+      if (drawing == null) continue;
+      // 依次错峰描画：前半段总进度用于铺开全部格子的起点
+      final start = 0.5 * (i / total);
+      final local = ((p - start) / 0.5).clamp(0.0, 1.0);
+      if (local <= 0) continue;
+      drawing.paint(canvas, progress: local, pressure: 0);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GranularHeatmapPainter oldDelegate) {
+    return oldDelegate.cells != cells ||
+        oldDelegate.active != active ||
+        oldDelegate.columns != columns ||
+        oldDelegate.cellWidth != cellWidth ||
+        oldDelegate.cellHeight != cellHeight ||
+        oldDelegate.theme != theme;
   }
 }
 

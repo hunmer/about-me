@@ -1,14 +1,19 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
-/// 支出概览卡片（磨砂浅灰）
+/// 支出概览卡片（手绘纸卡风格）
 ///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
 /// 顶部为标题与周期下拉，中部为大号总额与趋势，左侧为分类列表
-/// （圆形图标徽章 + 名称/百分比 + 金额），右侧为被卡片右缘垂直平切的
-/// 甜甜圈图：沿弧顺序为分类列表逆序，首尾两段外凸（投影 + 右缘平切），
-/// 中间段基础半径并带斜纹质感。支持任意数量分类。
+/// （数据色手绘圆底图标徽章 + 名称/百分比 + 金额），右侧为被卡片右缘
+/// 垂直平切的甜甜圈图：沿弧顺序为分类列表逆序，首尾两段外凸（右缘平切），
+/// 每段数据色斜纹填充。支持任意数量分类。
 class SpendingOverviewCardWidget extends StatefulWidget {
   /// 卡片标题（如 'Spending Overview'）
   final String title;
@@ -286,71 +291,45 @@ class _SpendingOverviewCardWidgetState
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final s = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _entrance,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _entrance.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _entrance.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : 384 * s,
         height: widget.inline ? double.maxFinite : _defaultHeight(),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xF0E9EBF0), Color(0xEBDFE2E8)],
-          ),
-          borderRadius: BorderRadius.circular(36 * s),
-          border: Border.all(color: Colors.white.withOpacity(0.55), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF2D3444).withOpacity(0.16),
-              blurRadius: 48 * s,
-              offset: Offset(0, 24 * s),
-              spreadRadius: -12 * s,
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 6 * s,
-              offset: Offset(0, 2 * s),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(36 * s),
-          child: _buildBody(s),
-        ),
+        radius: BorderRadius.circular(24 * s),
+        padding: widget.size.getPadding(),
+        child: _buildBody(theme, s),
       ),
     );
   }
 
-  Widget _buildBody(double s) {
+  Widget _buildBody(AppThemeData theme, double s) {
     final shares = _currentShares();
     final pcts = normalizePercents(shares);
 
-    // 矮尺寸：仅甜甜圈图 + 内圆中心总额
+    // 矮尺寸：仅甜甜圈图 + 内圆中心总额（裁剪到卡片圆角内）
     if (widget.size is SmallSize ||
         widget.size is MediumSize ||
         widget.size is WideSize) {
       final (whole, cents) = _splitCurrency(_period.total);
-      return CustomPaint(
-        size: Size.infinite,
-        painter: _ClippedDonutPainter(
-          shares: shares,
-          percents: pcts,
-          colors: widget.categories.map((c) => c.color).toList(),
-          progress: _entrance.value,
-          highlightIndex: _highlightIndex,
-          centerWhole: whole,
-          centerCents: cents,
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(24 * s),
+        child: CustomPaint(
+          size: Size.infinite,
+          painter: _ClippedDonutPainter(
+            shares: shares,
+            percents: pcts,
+            colors: widget.categories.map((c) => c.color).toList(),
+            progress: _entrance.value,
+            highlightIndex: _highlightIndex,
+            centerWhole: whole,
+            centerCents: cents,
+            theme: theme,
+          ),
         ),
       );
     }
@@ -364,20 +343,26 @@ class _SpendingOverviewCardWidgetState
         colors: widget.categories.map((c) => c.color).toList(),
         progress: _entrance.value,
         highlightIndex: _highlightIndex,
+        theme: theme,
       ),
     );
 
     return Stack(
       children: [
-        Positioned.fill(child: chart),
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24 * s),
+            child: chart,
+          ),
+        ),
         Padding(
-          padding: EdgeInsets.all(24 * s),
+          padding: EdgeInsets.all(8 * s),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildHeader(s),
+              _buildHeader(theme, s),
               SizedBox(height: 8 * s),
-              _buildTotalBlock(s),
+              _buildTotalBlock(theme, s),
               SizedBox(height: 12 * s),
               Expanded(
                 child: Align(
@@ -387,7 +372,7 @@ class _SpendingOverviewCardWidgetState
                     child: SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
-                        children: _buildCategoryRows(s, pcts),
+                        children: _buildCategoryRows(theme, s, pcts),
                       ),
                     ),
                   ),
@@ -405,14 +390,14 @@ class _SpendingOverviewCardWidgetState
               child: const SizedBox.shrink(),
             ),
           ),
-          Positioned(top: 48 * s, right: 20 * s, child: _buildPeriodMenu(s)),
+          Positioned(top: 48 * s, right: 20 * s, child: _buildPeriodMenu(theme, s)),
         ],
       ],
     );
   }
 
   /// 头部：标题 + 周期下拉按钮
-  Widget _buildHeader(double s) {
+  Widget _buildHeader(AppThemeData theme, double s) {
     final hasMenu = widget.periods.length > 1;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -420,7 +405,7 @@ class _SpendingOverviewCardWidgetState
         Text(
           widget.title,
           style: TextStyle(
-            color: const Color(0xFF666970),
+            color: theme.textSub,
             fontSize: 16.5 * s,
             fontWeight: FontWeight.w400,
             letterSpacing: -0.01 * 16.5 * s,
@@ -440,7 +425,7 @@ class _SpendingOverviewCardWidgetState
                 Text(
                   _period.label,
                   style: TextStyle(
-                    color: const Color(0xFF666970),
+                    color: theme.textSub,
                     fontSize: 16 * s,
                     fontWeight: FontWeight.w400,
                     height: 1.0,
@@ -451,10 +436,10 @@ class _SpendingOverviewCardWidgetState
                   AnimatedRotation(
                     duration: const Duration(milliseconds: 200),
                     turns: _menuOpen ? 0.5 : 0,
-                    child: Icon(
-                      Icons.keyboard_arrow_down,
+                    child: DsIcon(
+                      DsIconKind.chevronDown,
                       size: 16 * s,
-                      color: const Color(0xFF666970),
+                      color: theme.textSub,
                     ),
                   ),
                 ],
@@ -467,10 +452,9 @@ class _SpendingOverviewCardWidgetState
   }
 
   /// 大号总额 + 趋势行
-  Widget _buildTotalBlock(double s) {
+  Widget _buildTotalBlock(AppThemeData theme, double s) {
     final (whole, cents) = _splitCurrency(_period.total);
-    final trendColor =
-        _period.trendUp ? const Color(0xFF148550) : const Color(0xFFD64545);
+    final trendColor = _period.trendUp ? theme.success : theme.danger;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -481,7 +465,7 @@ class _SpendingOverviewCardWidgetState
               TextSpan(
                 text: whole,
                 style: TextStyle(
-                  color: const Color(0xFF111317),
+                  color: theme.text,
                   fontSize: 42 * s,
                   fontWeight: FontWeight.w400,
                   letterSpacing: -0.02 * 42 * s,
@@ -491,7 +475,7 @@ class _SpendingOverviewCardWidgetState
               TextSpan(
                 text: cents,
                 style: TextStyle(
-                  color: const Color(0xFF6D7078),
+                  color: theme.textSub,
                   fontSize: 42 * s,
                   fontWeight: FontWeight.w300,
                   letterSpacing: -0.02 * 42 * s,
@@ -506,10 +490,11 @@ class _SpendingOverviewCardWidgetState
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                _period.trendUp ? Icons.trending_up : Icons.trending_down,
+              WiredIcon(
+                icon: _period.trendUp ? Icons.trending_up : Icons.trending_down,
                 size: 15 * s,
                 color: trendColor,
+                drawConfig: theme.wired.drawConfig,
               ),
               SizedBox(width: 6 * s),
               Text(
@@ -526,7 +511,7 @@ class _SpendingOverviewCardWidgetState
                 child: Text(
                   widget.compareLabel,
                   style: TextStyle(
-                    color: const Color(0xFF696C73),
+                    color: theme.textSub,
                     fontSize: 13.5 * s,
                     fontWeight: FontWeight.w400,
                     height: 1.0,
@@ -542,7 +527,7 @@ class _SpendingOverviewCardWidgetState
     );
   }
 
-  List<Widget> _buildCategoryRows(double s, List<int> pcts) {
+  List<Widget> _buildCategoryRows(AppThemeData theme, double s, List<int> pcts) {
     final amounts = _amountsFor(_periodIndex);
     final rows = <Widget>[];
 
@@ -564,25 +549,22 @@ class _SpendingOverviewCardWidgetState
             opacity: dimmed ? 0.45 : 1.0,
             child: Row(
               children: [
-                // 圆形图标徽章
+                // 手绘圆底图标徽章（数据色图标）
                 Container(
                   width: 48 * s,
                   height: 48 * s,
-                  decoration: BoxDecoration(
-                    color: const Color(0xB8F4F5F8),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
-                        blurRadius: 3 * s,
-                        offset: Offset(0, 1 * s),
-                      ),
-                    ],
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    radius: BorderRadius.circular(24 * s),
+                    fillColor: theme.surfaceAlt,
                   ),
-                  child: Icon(
-                    category.icon,
-                    size: 22 * s,
-                    color: category.color,
+                  child: Center(
+                    child: WiredIcon(
+                      icon: category.icon,
+                      size: 22 * s,
+                      color: category.color,
+                      drawConfig: theme.wired.drawConfig,
+                    ),
                   ),
                 ),
                 SizedBox(width: 14 * s),
@@ -597,14 +579,12 @@ class _SpendingOverviewCardWidgetState
                             TextSpan(text: '${category.label} '),
                             TextSpan(
                               text: '($pct%)',
-                              style: const TextStyle(
-                                color: Color(0xFF888B93),
-                              ),
+                              style: TextStyle(color: theme.textSub),
                             ),
                           ],
                         ),
                         style: TextStyle(
-                          color: const Color(0xFF70737B),
+                          color: theme.text,
                           fontSize: 13 * s,
                           fontWeight: FontWeight.w400,
                           height: 1.0,
@@ -619,7 +599,7 @@ class _SpendingOverviewCardWidgetState
                             TextSpan(
                               text: whole,
                               style: TextStyle(
-                                color: const Color(0xFF141619),
+                                color: theme.text,
                                 fontSize: 21 * s,
                                 fontWeight: FontWeight.w400,
                                 letterSpacing: -0.02 * 21 * s,
@@ -629,7 +609,7 @@ class _SpendingOverviewCardWidgetState
                             TextSpan(
                               text: cents,
                               style: TextStyle(
-                                color: const Color(0xFF797C84),
+                                color: theme.textSub,
                                 fontSize: 21 * s,
                                 fontWeight: FontWeight.w300,
                                 letterSpacing: -0.02 * 21 * s,
@@ -651,22 +631,15 @@ class _SpendingOverviewCardWidgetState
     return rows;
   }
 
-  /// 周期下拉菜单
-  Widget _buildPeriodMenu(double s) {
+  /// 周期下拉菜单（手绘纸底浮层）
+  Widget _buildPeriodMenu(AppThemeData theme, double s) {
     return Container(
       width: 144 * s,
       padding: EdgeInsets.symmetric(vertical: 6 * s),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(16 * s),
-        border: Border.all(color: Colors.white.withOpacity(0.8), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.12),
-            blurRadius: 24 * s,
-            offset: Offset(0, 8 * s),
-          ),
-        ],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        radius: BorderRadius.circular(16 * s),
+        fillColor: theme.surface,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -684,10 +657,7 @@ class _SpendingOverviewCardWidgetState
               child: Text(
                 widget.periods[i].label,
                 style: TextStyle(
-                  color:
-                      selected
-                          ? const Color(0xFF5B50E6)
-                          : const Color(0xFF373A40),
+                  color: selected ? theme.primary : theme.text,
                   fontSize: 13.5 * s,
                   fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
                   height: 1.2,
@@ -703,12 +673,13 @@ class _SpendingOverviewCardWidgetState
   }
 }
 
-/// 右缘平切甜甜圈绘制器
+/// 右缘平切甜甜圈绘制器（平直几何 + 斜纹）
 ///
 /// 角度约定（顺时针）：0° = 正上方，90° = 正右方（被竖直平面裁切），
 /// 180° = 正下方，270° = 正左方（可见弧区中心）。
 /// 沿弧顺序为分类列表逆序：首段（底部）与末段（顶部）外凸并在
-/// x = 卡片右缘处垂直平切，中间段使用基础半径。
+/// x = 卡片右缘处垂直平切，中间段使用基础半径；每段数据色斜纹填充，
+/// 内圆底井为淡墨轨道纹样。
 class _ClippedDonutPainter extends CustomPainter {
   final List<double> shares;
   final List<int> percents;
@@ -717,6 +688,7 @@ class _ClippedDonutPainter extends CustomPainter {
   /// 入场生长进度 0..1
   final double progress;
   final int? highlightIndex;
+  final AppThemeData theme;
 
   /// 内圆中心总额（矮尺寸模式；null 不绘制）
   final String? centerWhole;
@@ -728,6 +700,7 @@ class _ClippedDonutPainter extends CustomPainter {
     required this.colors,
     required this.progress,
     required this.highlightIndex,
+    required this.theme,
     this.centerWhole,
     this.centerCents,
   });
@@ -754,12 +727,26 @@ class _ClippedDonutPainter extends CustomPainter {
 
     canvas.save();
     canvas.clipRect(Offset.zero & size);
+    final bounds = Offset.zero & size;
 
-    // 内圆凹陷底井
-    canvas.drawCircle(
-      Offset(cx, cy),
-      rInner,
-      Paint()..color = const Color(0xC7CFD3DC),
+    // 内圆凹陷底井（淡墨轨道纹样）
+    final wellPath = Path()
+      ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: rInner));
+    canvas.drawPath(wellPath, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      wellPath,
+      bounds,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * k,
+      spacing: 6.5 * k,
+    );
+    canvas.drawPath(
+      wellPath,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * k,
     );
 
     // 沿弧边界（含入场生长），首/末段边界做平切保护钳制
@@ -820,7 +807,7 @@ class _ClippedDonutPainter extends CustomPainter {
       );
     }
 
-    // 先画基础段，再画外凸段（带投影）
+    // 先画基础段，再画外凸段
     for (final popped in [false, true]) {
       for (final slice in slices) {
         if (slice.popped != popped) continue;
@@ -845,43 +832,26 @@ class _ClippedDonutPainter extends CustomPainter {
             highlightIndex != null && highlightIndex != slice.categoryIndex;
         final opacity = dimmed ? 0.55 : 1.0;
 
-        if (slice.popped) {
-          // 外凸段：投影 + 对角渐变
-          canvas.drawShadow(path, const Color(0xFF1E222D), 2.5, false);
-          final lighter = HSLColor.fromColor(
-            color,
-          ).withLightness(
-            (HSLColor.fromColor(color).lightness + 0.04).clamp(0.0, 1.0),
-          ).toColor();
-          canvas.drawPath(
-            path,
-            Paint()
-              ..shader = LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  lighter.withOpacity(opacity),
-                  color.withOpacity(opacity),
-                ],
-              ).createShader(Offset.zero & size),
-          );
-        } else {
-          // 基础段：纯色 + 斜纹质感
-          canvas.drawPath(path, Paint()..color = color.withOpacity(opacity));
-          canvas.save();
-          canvas.clipPath(path);
-          canvas.translate(cx, cy);
-          canvas.rotate(42 * math.pi / 180);
-          final stripePaint =
-              Paint()
-                ..color = Colors.white.withOpacity(0.085 * opacity)
-                ..strokeWidth = 2.6 * k;
-          final extent = rBase * 2.2;
-          for (double x = -extent; x <= extent; x += 7 * k) {
-            canvas.drawLine(Offset(x, -extent), Offset(x, extent), stripePaint);
-          }
-          canvas.restore();
-        }
+        // 数据色斜纹段：浅底 + 浓斜纹 + 描边（高亮变淡时整体降透明度）
+        canvas.drawPath(
+          path,
+          Paint()..color = color.withValues(alpha: 0.28 * opacity),
+        );
+        paintDiagonalStripes(
+          canvas,
+          path,
+          bounds,
+          color: color.withValues(alpha: 0.9 * opacity),
+          strokeWidth: 3 * k,
+          spacing: 6.5 * k,
+        );
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = color.withValues(alpha: 0.85 * opacity)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5 * k,
+        );
       }
     }
 
@@ -906,9 +876,9 @@ class _ClippedDonutPainter extends CustomPainter {
         text: TextSpan(
           text: '($pct%)',
           style: TextStyle(
-            color: Colors.white,
+            color: theme.text,
             fontSize: 13.5 * k,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
             letterSpacing: 0.01 * 13.5 * k,
           ),
         ),
@@ -929,7 +899,7 @@ class _ClippedDonutPainter extends CustomPainter {
             TextSpan(
               text: centerWhole,
               style: TextStyle(
-                color: const Color(0xFF111317),
+                color: theme.text,
                 fontSize: rInner * 0.34,
                 fontWeight: FontWeight.w500,
                 letterSpacing: -0.02 * rInner * 0.34,
@@ -940,7 +910,7 @@ class _ClippedDonutPainter extends CustomPainter {
               TextSpan(
                 text: centerCents,
                 style: TextStyle(
-                  color: const Color(0xFF6D7078),
+                  color: theme.textSub,
                   fontSize: rInner * 0.28,
                   fontWeight: FontWeight.w300,
                   height: 1.0,
@@ -1146,6 +1116,7 @@ class _ClippedDonutPainter extends CustomPainter {
         oldDelegate.highlightIndex != highlightIndex ||
         oldDelegate.centerWhole != centerWhole ||
         oldDelegate.centerCents != centerCents ||
+        oldDelegate.theme != theme ||
         oldDelegate.shares.length != shares.length ||
         !_listEquals(oldDelegate.shares, shares);
   }
