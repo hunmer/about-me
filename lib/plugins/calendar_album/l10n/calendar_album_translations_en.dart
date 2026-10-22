@@ -58,6 +58,11 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_map_empty': 'No located photos yet',
     'calendar_album_map_empty_hint':
         'Pick a location in a diary entry to see its photos on the map',
+    'calendar_album_map_key_missing': 'AMap key not configured',
+    'calendar_album_map_key_missing_hint':
+        'Set your AMap key under "Location API Key" in Settings and retry',
+    'calendar_album_map_load_failed':
+        'Failed to load map. Check network or key configuration',
     'calendar_album_no_photos': 'No Photos',
     'calendar_album_calendar_diary': 'Calendar Diary',
     'calendar_album_album': 'Album',

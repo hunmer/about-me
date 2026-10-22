@@ -590,6 +590,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'LinkedTaskFlowCard - 交错卡片与贝塞尔连线流光任务流',
         route: '/widgets_gallery/linked_task_flow_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.folder_copy,
+        title: '文件夹卡片堆叠',
+        subtitle: 'FolderDeckCard - 3D 文件夹堆叠切换与标题联动',
+        route: '/widgets_gallery/folder_deck_card',
+      ),
     ];
   }
 

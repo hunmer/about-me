@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
-import 'package:latlong2/latlong.dart' show LatLng;
+import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -13,74 +14,45 @@ import 'package:aboutme/plugins/calendar_album/screens/album_photo_query.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
-/// 解析 GCJ-02 "lat,lng" 字符串并转 WGS84（OSM 瓦片坐标系），失败返回 null
-LatLng? parseGcj02ToWgs84(String? latLng) {
+/// Web 墨卡托世界边长（zoom 0 时 256px，高德瓦片同规格）
+double _worldSize(double zoom) => 256.0 * math.pow(2.0, zoom);
+
+/// GCJ-02 经纬度 → zoom 级世界像素坐标（高德静态图/瓦片同投影）
+(double, double) _latLngToWorld(LatLng p, double zoom) {
+  final size = _worldSize(zoom);
+  final x = (p.longitude + 180.0) / 360.0 * size;
+  final sinLat = math.sin(p.latitude * math.pi / 180.0);
+  final y =
+      (0.5 - math.log((1.0 + sinLat) / (1.0 - sinLat)) / (4.0 * math.pi)) *
+      size;
+  return (x, y);
+}
+
+/// zoom 级世界像素坐标 → GCJ-02 经纬度
+LatLng _worldToLatLng(double x, double y, double zoom) {
+  final size = _worldSize(zoom);
+  final lng = x / size * 360.0 - 180.0;
+  final n = math.pi - 2.0 * math.pi * y / size;
+  final lat = 180.0 / math.pi * math.atan(0.5 * (math.exp(n) - math.exp(-n)));
+  return LatLng(lat, lng);
+}
+
+/// 解析 "lat,lng" 字符串为原始 GCJ-02 LatLng，失败返回 null
+LatLng? parseRawLatLng(String? latLng) {
   if (latLng == null || latLng.isEmpty) return null;
   final parts = latLng.split(',');
   if (parts.length != 2) return null;
   final lat = double.tryParse(parts[0].trim());
   final lng = double.tryParse(parts[1].trim());
   if (lat == null || lng == null) return null;
-
-  // GCJ-02 → WGS84 标准近似逆变换（国内偏移约数百米）
-  const a = 6378245.0;
-  const ee = 0.00669342162296594323;
-
-  double transformLat(double x, double y) {
-    var ret = -100.0 +
-        2.0 * x +
-        3.0 * y +
-        0.2 * y * y +
-        0.1 * x * y +
-        0.2 * math.sqrt(x.abs());
-    ret += (20.0 * math.sin(6.0 * x * math.pi) +
-            20.0 * math.sin(2.0 * x * math.pi)) *
-        2.0 /
-        3.0;
-    ret += (20.0 * math.sin(y * math.pi) + 40.0 * math.sin(y / 3.0 * math.pi)) *
-        2.0 /
-        3.0;
-    ret += (160.0 * math.sin(y / 12.0 * math.pi) +
-            320.0 * math.sin(y * math.pi / 30.0)) *
-        2.0 /
-        3.0;
-    return ret;
-  }
-
-  double transformLng(double x, double y) {
-    var ret = 300.0 +
-        x +
-        2.0 * y +
-        0.1 * x * x +
-        0.1 * x * y +
-        0.1 * math.sqrt(x.abs());
-    ret += (20.0 * math.sin(6.0 * x * math.pi) +
-            20.0 * math.sin(2.0 * x * math.pi)) *
-        2.0 /
-        3.0;
-    ret += (20.0 * math.sin(x * math.pi) + 40.0 * math.sin(x / 3.0 * math.pi)) *
-        2.0 /
-        3.0;
-    ret += (150.0 * math.sin(x / 12.0 * math.pi) +
-            300.0 * math.sin(x / 30.0 * math.pi)) *
-        2.0 /
-        3.0;
-    return ret;
-  }
-
-  var dLat = transformLat(lng - 105.0, lat - 35.0);
-  var dLng = transformLng(lng - 105.0, lat - 35.0);
-  final radLat = lat / 180.0 * math.pi;
-  var magic = math.sin(radLat);
-  magic = 1 - ee * magic * magic;
-  final sqrtMagic = math.sqrt(magic);
-  dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * math.pi);
-  dLng = (dLng * 180.0) / (a / sqrtMagic * math.cos(radLat) * math.pi);
-  return LatLng(lat - dLat, lng - dLng);
+  return LatLng(lat, lng);
 }
 
-/// 照片地图：带定位信息的日记照片以照片大头针形式标记在 OSM 地图上，
-/// 同一坐标的多张照片堆叠成一组。视觉参考 lib/widgets/moments_nyc_map_demo.dart。
+/// 照片地图：带定位信息的日记照片以照片大头针形式标记在高德静态地图上，
+/// 同一坐标的多张照片堆叠成一组。地图底图来自高德静态图 API
+/// （https://lbs.amap.com/api/webservice/guide/api/staticmaps/），
+/// 平移/捏合/滚轮结束后按新中心点与缩放级重新请求；
+/// 大头针按 Web 墨卡托投影本地叠加（GCJ-02 坐标直接使用）。
 /// 与相册页共用多条件过滤栏与搜索，过滤条件变化时大头针实时增减
 class AlbumMapScreen extends StatefulWidget {
   const AlbumMapScreen({
@@ -106,7 +78,14 @@ class AlbumMapScreen extends StatefulWidget {
 
 /// 同一坐标的照片分组（同一日记条目的照片共享 latLng）
 class _PinGroup {
-  const _PinGroup({required this.point, required this.indices});
+  const _PinGroup({
+    required this.latLng,
+    required this.point,
+    required this.indices,
+  });
+
+  /// 分组原始坐标串（GCJ-02 "lat,lng"）
+  final String latLng;
 
   final LatLng point;
 
@@ -119,20 +98,49 @@ const _monthLabels = [
   'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
 ];
 
-class _AlbumMapScreenState extends State<AlbumMapScreen> {
-  final _mapController = MapController();
+/// 高德静态图 zoom 范围 [1,17]，过低无街道细节
+const _minZoom = 3;
+const _maxZoom = 17;
 
+class _AlbumMapScreenState extends State<AlbumMapScreen> {
   late AlbumPhotoQuery _query =
       widget.initialQuery ?? const AlbumPhotoQuery();
 
   /// 当前过滤结果（build 时更新，供大头针点击回调使用）
   List<AlbumMapPhoto> _records = const [];
 
-  bool _mapReady = false;
+  /// 高德 Web 服务 key：null=读取中，''=未配置；与设置页「定位 API Key」共用
+  String? _apiKey;
 
-  /// 待适配的视野坐标集合；地图就绪后或坐标集合变化时消费
-  List<LatLng>? _pendingFitPoints;
+  /// 当前地图中心（GCJ-02）与缩放级
+  LatLng? _center;
+  int _zoom = 13;
+
+  /// 最近一次已知的地图视口尺寸（请求静态图尺寸与投影定位用）
+  Size? _viewportSize;
+
+  /// 手势期间的本地变换（平移/捏合即时反馈），交互结束提交后重置
+  final _transformController = TransformationController();
+
   String? _lastFitSignature;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadApiKey();
+  }
+
+  @override
+  void dispose() {
+    _transformController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadApiKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() => _apiKey = prefs.getString('location_api_key') ?? '');
+  }
 
   /// 过滤条件变化 → 重建大头针；坐标集合变化 → 重新适配视野
   void _applyFilters(Map<String, dynamic> filters) {
@@ -149,34 +157,99 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
     });
   }
 
-  /// 坐标集合签名变化时安排一次视野适配（签名相同不重置，避免打断用户平移）
+  /// 坐标集合签名变化时适配一次中心/缩放（签名相同不重置，避免打断用户浏览）
   void _maybeScheduleFit(List<_PinGroup> groups) {
-    final points = groups.map((g) => g.point).toList();
-    final signature =
-        points.map((p) => '${p.latitude},${p.longitude}').join('|');
+    final signature = groups.map((g) => g.latLng).join('|');
     if (signature == _lastFitSignature) return;
     _lastFitSignature = signature;
-    _pendingFitPoints = points;
-    if (!_mapReady) return; // onMapReady 兜底消费
-    WidgetsBinding.instance.addPostFrameCallback((_) => _consumePendingFit());
+    _fitToPoints(groups.map((g) => g.point).toList());
   }
 
-  void _consumePendingFit() {
-    if (!mounted) return;
-    final points = _pendingFitPoints;
-    if (points == null || points.isEmpty) return;
-    _pendingFitPoints = null;
+  /// 按坐标集合估算中心与缩放级（bbox → Web 墨卡托跨度反推）
+  void _fitToPoints(List<LatLng> points) {
+    if (points.isEmpty) return;
     if (points.length == 1) {
-      _mapController.move(points.first, 15);
-    } else {
-      _mapController.fitCamera(
-        CameraFit.coordinates(
-          coordinates: points,
-          // 上下留出导航栏/过滤栏与底部安全区
-          padding: const EdgeInsets.fromLTRB(60, 180, 60, 140),
-        ),
-      );
+      _center = points.first;
+      _zoom = 15;
+      return;
     }
+    final viewport =
+        _viewportSize ??
+        (mounted ? MediaQuery.sizeOf(context) : const Size(600, 400));
+    // 上下留出导航栏/过滤栏与底部安全区的近似余量
+    final usableW = math.max(120.0, viewport.width - 120);
+    final usableH = math.max(120.0, viewport.height - 320);
+    var minLat = 90.0, maxLat = -90.0, minLng = 180.0, maxLng = -180.0;
+    for (final p in points) {
+      minLat = math.min(minLat, p.latitude);
+      maxLat = math.max(maxLat, p.latitude);
+      minLng = math.min(minLng, p.longitude);
+      maxLng = math.max(maxLng, p.longitude);
+    }
+    final (minX, minY) = _latLngToWorld(LatLng(maxLat, minLng), 0);
+    final (maxX, maxY) = _latLngToWorld(LatLng(minLat, maxLng), 0);
+    final ratio = math.max(
+      (maxX - minX) / usableW,
+      (maxY - minY) / usableH,
+    );
+    // zoom 0 世界边长 256：span(256)/256=ratio → 目标边长 256/ratio
+    _zoom = ratio <= 0
+        ? _maxZoom
+        // -1 留一级余量，避免大头针贴边
+        : (math.log(256.0 / ratio) / math.ln2).floor() - 1;
+    _zoom = _zoom.clamp(_minZoom, _maxZoom);
+    _center = _worldToLatLng((minX + maxX) / 2, (minY + maxY) / 2, 0);
+  }
+
+  /// 手势结束：按本地变换反算新中心/缩放级并重新请求静态图
+  void _commitTransform() {
+    final center = _center;
+    if (center == null) return;
+    final viewport = _viewportSize ?? MediaQuery.sizeOf(context);
+    final matrix = _transformController.value;
+    final scale = matrix.getMaxScaleOnAxis();
+    // 视口中心在图片坐标系中的位置（图片未变换时与视口重合）
+    final inv = Matrix4.inverted(matrix);
+    final dx = viewport.width / 2;
+    final dy = viewport.height / 2;
+    final px = inv.entry(0, 0) * dx + inv.entry(0, 1) * dy + inv.entry(0, 3);
+    final py = inv.entry(1, 0) * dx + inv.entry(1, 1) * dy + inv.entry(1, 3);
+    final (cx, cy) = _latLngToWorld(center, _zoom.toDouble());
+    final newCenter = _worldToLatLng(
+      cx + px - viewport.width / 2,
+      cy + py - viewport.height / 2,
+      _zoom.toDouble(),
+    );
+    final newZoom = (_zoom + math.log(scale) / math.ln2)
+        .round()
+        .clamp(_minZoom, _maxZoom);
+    setState(() {
+      _center = newCenter;
+      _zoom = newZoom;
+      _transformController.value = Matrix4.identity();
+    });
+  }
+
+  /// 直接调整缩放级（桌面滚轮 / 双击放大），中心点不变
+  void _zoomBy(int delta) {
+    if (_center == null) return;
+    final next = (_zoom + delta).clamp(_minZoom, _maxZoom);
+    if (next == _zoom) return;
+    setState(() {
+      _zoom = next;
+      _transformController.value = Matrix4.identity();
+    });
+  }
+
+  /// 高德静态图请求 URL（key/中心/zoom/尺寸，scale=2 高清）
+  String _staticMapUrl(Size size) {
+    final w = size.width.round().clamp(1, 1024);
+    final h = size.height.round().clamp(1, 1024);
+    final loc =
+        '${_center!.longitude.toStringAsFixed(6)},'
+        '${_center!.latitude.toStringAsFixed(6)}';
+    return 'https://restapi.amap.com/v3/staticmap'
+        '?key=$_apiKey&location=$loc&zoom=$_zoom&size=$w*$h&scale=2';
   }
 
   /// 坐标 → 照片索引分组（保持插入顺序，同一条目的照片共享坐标）
@@ -184,14 +257,14 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
     final groups = <String, _PinGroup>{};
     for (var i = 0; i < records.length; i++) {
       final photo = records[i];
-      final point = parseGcj02ToWgs84(photo.entry.latLng);
+      final point = parseRawLatLng(photo.entry.latLng);
       if (point == null) continue;
       final key = photo.entry.latLng!;
       final group = groups[key];
       if (group != null) {
         group.indices.add(i);
       } else {
-        groups[key] = _PinGroup(point: point, indices: [i]);
+        groups[key] = _PinGroup(latLng: key, point: point, indices: [i]);
       }
     }
     return groups.values.toList();
@@ -236,46 +309,112 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
                     ),
                   ),
                 )
-              : FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    // 初始视野先取首组坐标，就绪后按全部坐标适配
-                    initialCenter: groups.first.point,
-                    initialZoom: 13,
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                    ),
-                    onMapReady: () {
-                      _mapReady = true;
-                      _consumePendingFit();
-                    },
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'github.hunmer.aboutme',
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        for (final group in groups)
-                          Marker(
-                            point: group.point,
-                            width: group.indices.length > 1 ? 150 : 76,
-                            height: group.indices.length > 1 ? 132 : 96,
-                            alignment: Alignment.center,
-                            child: GestureDetector(
-                              onTap: () => widget.onOpenGallery
-                                  ?.call(_records, group.indices.first),
-                              child: _buildPin(group),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+              : _buildAmapBody(groups),
         );
       },
+    );
+  }
+
+  // ------------------------------ 高德静态图 ------------------------------
+
+  Widget _buildAmapBody(List<_PinGroup> groups) {
+    final key = _apiKey;
+    if (key == null) {
+      return Center(
+        child: DSLoadingDots(color: AppTheme.of(context).primary),
+      );
+    }
+    if (key.isEmpty) {
+      return Center(
+        child: DSThemeBridge(
+          child: DSEmptyState(
+            emoji: '🔑',
+            title: 'calendar_album_map_key_missing'.tr,
+            message: 'calendar_album_map_key_missing_hint'.tr,
+          ),
+        ),
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _viewportSize = constraints.biggest;
+        return Listener(
+          // 桌面滚轮缩放
+          onPointerSignal: (event) {
+            if (event is PointerScrollEvent) {
+              _zoomBy(event.scrollDelta.dy < 0 ? 1 : -1);
+            }
+          },
+          child: GestureDetector(
+            // 双击放大
+            onDoubleTap: () => _zoomBy(1),
+            child: InteractiveViewer(
+              transformationController: _transformController,
+              minScale: 0.5,
+              maxScale: 4,
+              boundaryMargin: const EdgeInsets.all(double.infinity),
+              onInteractionEnd: (_) => _commitTransform(),
+              child: SizedBox.fromSize(
+                size: constraints.biggest,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      _staticMapUrl(constraints.biggest),
+                      fit: BoxFit.cover,
+                      // 交互结束重请求期间保持旧图，避免闪烁
+                      gaplessPlayback: true,
+                      errorBuilder: (_, __, ___) => _buildMapError(),
+                    ),
+                    _buildPinsLayer(groups, constraints.biggest),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 静态图加载失败兜底（key 无效/网络异常时高德返回非图片内容）
+  Widget _buildMapError() {
+    final theme = AppTheme.of(context);
+    return Container(
+      color: const Color(0xFFE7E2D6),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(24),
+      child: Text(
+        'calendar_album_map_load_failed'.tr,
+        textAlign: TextAlign.center,
+        style: DsTypography.caption.copyWith(color: theme.textSub),
+      ),
+    );
+  }
+
+  /// 大头针层：按与中心的像素偏移叠加在静态图上
+  Widget _buildPinsLayer(List<_PinGroup> groups, Size size) {
+    final (cx, cy) = _latLngToWorld(_center!, _zoom.toDouble());
+    return Stack(
+      children: [
+        for (final group in groups)
+          () {
+            final (x, y) = _latLngToWorld(group.point, _zoom.toDouble());
+            final w = group.indices.length > 1 ? 150.0 : 76.0;
+            final h = group.indices.length > 1 ? 132.0 : 96.0;
+            return Positioned(
+              left: x - cx + size.width / 2 - w / 2,
+              top: y - cy + size.height / 2 - h / 2,
+              width: w,
+              height: h,
+              child: GestureDetector(
+                onTap: () => widget.onOpenGallery
+                    ?.call(_records, group.indices.first),
+                child: _buildPin(group),
+              ),
+            );
+          }(),
+      ],
     );
   }
 

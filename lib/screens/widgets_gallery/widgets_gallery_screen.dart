@@ -227,6 +227,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
             subtitle: 'Pseudo3DFlipCard（Z轴切片堆叠厚度 + 透视跟随 + 流光高光）',
             route: '/widgets_gallery/pseudo_3d_flip_card',
           ),
+          _buildListItem(
+            context,
+            icon: Icons.psychology,
+            title: 'Effort 推理强度滑块',
+            subtitle: 'EffortSlider（脑图标滑块 + Galaxy 星尘像素特效）',
+            route: '/widgets_gallery/effort_slider',
+          ),
         ],
       ),
     );

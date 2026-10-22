@@ -304,7 +304,7 @@ class _RoadmapTimelineCardWidgetState extends State<RoadmapTimelineCardWidget>
             bottom: 0,
             right: 0,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(

@@ -99,6 +99,7 @@ import 'widgets/total_sales_analytics_card.dart';
 import 'widgets/spending_overview_card.dart';
 import 'widgets/linked_task_flow_card.dart';
 import 'widgets/roadmap_timeline_card.dart';
+import 'widgets/folder_deck_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -199,6 +200,7 @@ enum CommonWidgetId {
   linkedTaskFlowCard,
   habitCheckinHeatmapCard,
   roadmapTimelineCard,
+  folderDeckCard,
 }
 
 /// 公共小组件元数据
@@ -984,6 +986,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [MediumSize(), Wide2Size(), Large3Size()],
     ),
+    CommonWidgetId.folderDeckCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.folderDeckCard,
+      name: '文件夹卡片堆叠',
+      description: '3D 文件夹卡片堆：扇形堆叠循环切换、封面 3D 翻开窥视、顶部标题纵向联动滚动、底部呼吸状态 pill 与自动轮播',
+      icon: Icons.folder_copy,
+      defaultSize: Large3Size(),
+      supportedSizes: [MediumSize(), Wide2Size(), Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1240,6 +1250,8 @@ class CommonWidgetBuilder {
         return HabitHeatmapCard.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.roadmapTimelineCard:
         return RoadmapTimelineCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.folderDeckCard:
+        return FolderDeckCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

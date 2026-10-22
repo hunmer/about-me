@@ -20,6 +20,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/super_cupertino_navigati
 import 'package:aboutme/screens/widgets_gallery/screens/run_receipt_printer_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/lucky_wheel_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/moments_nyc_map_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/effort_slider_example.dart';
 
 import 'package:aboutme/screens/widgets_gallery/screens/segmented_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_progress_with_dots_card_example.dart';
@@ -106,6 +107,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/siri_voice_assistant_orb
 import 'package:aboutme/screens/widgets_gallery/screens/audio_ui_replica_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/pseudo_3d_flip_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/roadmap_timeline_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/folder_deck_card_example.dart';
 
 /// 组件展示路由注册表
 class WidgetGalleryRoutes implements RouteRegistry {
@@ -960,6 +962,22 @@ class WidgetGalleryRoutes implements RouteRegistry {
       ),
       description: '路线图时间轴卡片',
     ),
+    RouteDefinition(
+      path: '/widgets_gallery/effort_slider',
+      handler: (settings) => RouteHelpers.createRoute(
+        const EffortSliderExample(),
+        settings: settings,
+      ),
+      description: 'Effort 推理强度滑块（脑图标 + Galaxy 星尘像素特效）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/folder_deck_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const FolderDeckCardExample(),
+        settings: settings,
+      ),
+      description: '文件夹卡片堆叠',
+    ),
   ];
 }
 
@@ -1438,6 +1456,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '连线任务流卡片',
     subtitle: 'LinkedTaskFlowCard',
     route: '/widgets_gallery/linked_task_flow_card',
+  ),
+  WidgetPreviewItem(
+    category: '内容类',
+    icon: Icons.folder_copy,
+    title: '文件夹卡片堆叠',
+    subtitle: 'FolderDeckCard - 3D 文件夹堆叠切换与标题联动',
+    route: '/widgets_gallery/folder_deck_card',
   ),
   // 财务类
   WidgetPreviewItem(
