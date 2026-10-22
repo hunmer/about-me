@@ -58,7 +58,7 @@
 | `shared_models/` | 共享 Dart 模型包（46 个 Dart 文件：repositories 20 / usecases 20 / sync / auth / utils） |
 | `docs/`（70 篇） | 按主题：小组件（WIDGET_*、TODO_QUADRANT_*、CHECKIN_WIDGET_*）、快捷方式（SHORTCUTS_*）、统一计时器（UNIFIED_TIMER_*、README_UNIFIED_TIMER）、Live Activities（live_activities* 5 篇）、原生插件实现（NFC_PLUGIN_*、ABOUTME_INTENT_*、NATIVE_SERVICE_*）、导航（SUPER_CUPERTINO_* 2 篇）、成就系统（ACHIEVEMENT_ICONS/ACHIEVEMENT_SYSTEM_PLAN）、架构（USECASE_MIGRATION_GUIDE、WIDGET_ARCHITECTURE_UNIFIED、bidirectional_sync_implementation、event、http_storage_backend_plan、floating_window）、AI（AI_PROMPT_GUIDE、PROMPT_*、agent_chat_chain_feature）、三方库笔记（openai_dart、fs_shim 等）、`script_examples/`、切图资产（emoji_sheet/、jelly_icons/、achievement_icons/） |
 | `online/` | `apps/`（4 个小程序 + apps.json）、`scripts/`（在线脚本 + ai_encouragement_bot + ai_image）、`agents.json`；`assets/scripts/` 为 ai_image 内置副本（随 APK 打包，版本升级时覆盖本地） |
-| `scripts/` | build.sh、release.sh、build_apk.sh、deploy_to_vercel.sh、fix_ios_build.sh、copy_models.dart 等（有独立 CLAUDE.md） |
+| `scripts/` | build.sh、release.sh、deploy_to_vercel.sh、copy_models.dart、sync_built_in_scripts.js 等（有独立 CLAUDE.md） |
 | `tool_templates/` | bill / calendar_album / store 三份工具 JSON 模板（随 assets 打包） |
 | `android/ ios/ macos/ linux/ windows/ web/ webview/` | 平台宿主工程；`webview/http_server` 为本地 HTTP 服务 |
 | `.github/workflows/` | 5 个平台构建工作流 |

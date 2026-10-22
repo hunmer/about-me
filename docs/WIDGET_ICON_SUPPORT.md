@@ -13,10 +13,7 @@
 
 ### 1. 图标资源管理
 
-**Python脚本**: `scripts/copy_icons.py`
-- 自动将`png/black/baseline-4x.png`文件复制到`assets/icons/material/`
-- 重命名为对应的图标名称（如`star.png`, `home.png`等）
-- 复制了1136个Material Icons
+**图标资产**: `assets/icons/material/`（1136 个 Material Icons，由历史脚本一次性生成，脚本已移除）
 
 **Flutter配置**: `pubspec.yaml`
 ```yaml
@@ -130,9 +127,6 @@ if (iconBitmap != null) {
 ### 1. 首次设置
 
 ```bash
-# 复制图标到Flutter assets
-python scripts/copy_icons.py
-
 # 运行Flutter应用
 flutter run
 ```
@@ -244,7 +238,7 @@ W/HabitGroupListFactory: Failed to load icon 'non_existent': ...
 
 ## 相关文件
 
-- `scripts/copy_icons.py` - 图标复制脚本
+- `assets/icons/material/` - Material Icons 图标资产
 - `pubspec.yaml` - Flutter资源声明
 - `aboutme_widgets/android/src/main/res/layout/widget_habit_group_item.xml` - 分组布局
 - `aboutme_widgets/android/src/main/res/layout/widget_habit_list_item.xml` - 习惯布局
