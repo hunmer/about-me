@@ -1,5 +1,13 @@
+/// 任务列表卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 数据色圆形图标徽章 + 翻牌计数 / 任务列表（墨线分隔线、逐项错峰浮现）。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
@@ -69,8 +77,8 @@ class TaskListCardWidget extends StatefulWidget {
               : (props['icon'] as IconData? ?? Icons.format_list_bulleted),
       iconBackgroundColor:
           props['iconBackgroundColor'] != null
-              ? Color(props['iconBackgroundColor'] as int)
-              : const Color(0xFF5A72EA),
+          ? Color(props['iconBackgroundColor'] as int)
+          : const Color(0xFF5A72EA),
       count: props['count'] as int? ?? 0,
       countLabel: props['countLabel'] as String? ?? 'Tasks',
       items: items,
@@ -125,75 +133,35 @@ class _TaskListCardWidgetState extends State<TaskListCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final borderColor =
-        isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6);
-    final textColor =
-        isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B);
-    final subtitleColor =
-        isDark ? const Color(0xFF94A3B8) : const Color(0xFF9CA3AF);
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              height: widget.inline ? double.maxFinite : null,
-              width: widget.inline ? double.maxFinite : null,
-              constraints: widget.size.getHeightConstraints(),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: widget.size.getPadding(),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 左侧：图标和计数
-                    _buildLeftSection(
-                      context,
-                      isDark,
-                      textColor,
-                      subtitleColor,
-                    ),
-                    SizedBox(width: widget.size.getTitleSpacing()),
-                    // 右侧：任务列表
-                    Expanded(
-                      child: _buildRightSection(
-                        context,
-                        isDark,
-                        textColor,
-                        borderColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: widget.size.getHeightConstraints(),
+        child: DsSketchPanel(
+          theme: theme,
+          width: widget.inline ? double.maxFinite : null,
+          height: widget.inline ? double.maxFinite : null,
+          radius: BorderRadius.circular(24 * scale),
+          padding: widget.size.getPadding(),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 左侧：图标和计数
+              _buildLeftSection(theme),
+              SizedBox(width: widget.size.getTitleSpacing()),
+              // 右侧：任务列表
+              Expanded(child: _buildRightSection(theme)),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildLeftSection(
-    BuildContext context,
-    bool isDark,
-    Color textColor,
-    Color subtitleColor,
-  ) {
+  Widget _buildLeftSection(AppThemeData theme) {
     final iconContainerSize =
         widget.size.getIconSize() * widget.size.iconContainerScale;
     final leftSectionWidth = iconContainerSize + 8;
@@ -204,25 +172,22 @@ class _TaskListCardWidgetState extends State<TaskListCardWidget>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 图标
+          // 图标徽章：数据色实底 + 墨线描边（大圆角被 rough 引擎钳成圆）
           Container(
             width: iconContainerSize,
             height: iconContainerSize,
-            decoration: BoxDecoration(
-              color: widget.iconBackgroundColor,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: widget.iconBackgroundColor.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+            decoration: dsSketchDecoration(
+              theme: theme,
+              radius: BorderRadius.circular(iconContainerSize / 2),
+              fillColor: widget.iconBackgroundColor,
             ),
-            child: Icon(
-              widget.icon,
-              color: Colors.white,
-              size: widget.size.getIconSize(),
+            child: Center(
+              child: WiredIcon(
+                icon: widget.icon,
+                size: widget.size.getIconSize(),
+                color: theme.onPrimary,
+                drawConfig: theme.wired.drawConfig,
+              ),
             ),
           ),
           SizedBox(height: widget.size.getItemSpacing()),
@@ -232,14 +197,19 @@ class _TaskListCardWidgetState extends State<TaskListCardWidget>
             children: [
               SizedBox(
                 height: widget.size.getLargeFontSize() * 0.9,
-                child: AnimatedFlipCounter(
-                  value: widget.count.toDouble() * _animation.value,
-                  textStyle: TextStyle(
-                    fontSize: widget.size.getLargeFontSize() * 0.6,
-                    fontWeight: FontWeight.w500,
-                    color: textColor,
-                    height: 1.0,
-                  ),
+                child: AnimatedBuilder(
+                  animation: _animation,
+                  builder: (context, child) {
+                    return AnimatedFlipCounter(
+                      value: widget.count.toDouble() * _animation.value,
+                      textStyle: TextStyle(
+                        fontSize: widget.size.getLargeFontSize() * 0.6,
+                        fontWeight: FontWeight.w500,
+                        color: theme.text,
+                        height: 1.0,
+                      ),
+                    );
+                  },
                 ),
               ),
               SizedBox(height: widget.size.getItemSpacing()),
@@ -250,7 +220,7 @@ class _TaskListCardWidgetState extends State<TaskListCardWidget>
                   style: TextStyle(
                     fontSize: widget.size.getSubtitleFontSize(),
                     fontWeight: FontWeight.w500,
-                    color: subtitleColor,
+                    color: theme.textSub,
                     height: 1.0,
                   ),
                 ),
@@ -262,15 +232,10 @@ class _TaskListCardWidgetState extends State<TaskListCardWidget>
     );
   }
 
-  Widget _buildRightSection(
-    BuildContext context,
-    bool isDark,
-    Color textColor,
-    Color borderColor,
-  ) {
+  Widget _buildRightSection(AppThemeData theme) {
     // 空状态：当没有任务项时显示提示
     if (widget.items.isEmpty) {
-      return _buildEmptyState(context, textColor);
+      return _buildEmptyState(theme);
     }
 
     return Column(
@@ -291,13 +256,13 @@ class _TaskListCardWidgetState extends State<TaskListCardWidget>
                       margin: EdgeInsets.symmetric(
                         vertical: widget.size.getItemSpacing(),
                       ),
-                      color: borderColor,
+                      color: theme.ink.withValues(alpha: 0.18),
                     ),
                   _TaskItemWidget(
                     title: widget.items[i],
                     animation: _animation,
                     index: i,
-                    textColor: textColor,
+                    textColor: theme.text,
                     size: widget.size,
                   ),
                 ],
@@ -319,7 +284,7 @@ class _TaskListCardWidgetState extends State<TaskListCardWidget>
   }
 
   /// 构建空状态提示
-  Widget _buildEmptyState(BuildContext context, Color textColor) {
+  Widget _buildEmptyState(AppThemeData theme) {
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -348,17 +313,18 @@ class _TaskListCardWidgetState extends State<TaskListCardWidget>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.check_circle_outline,
+                    WiredIcon(
+                      icon: Icons.check_circle_outline,
                       size: widget.size.getFeaturedIconSize(),
-                      color: textColor.withOpacity(0.3),
+                      color: theme.textSub,
+                      drawConfig: theme.wired.drawConfig,
                     ),
                     SizedBox(height: widget.size.getItemSpacing()),
                     Text(
                       '暂无已完成项目',
                       style: TextStyle(
                         fontSize: widget.size.getSubtitleFontSize(),
-                        color: textColor.withOpacity(0.5),
+                        color: theme.textSub,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

@@ -1,6 +1,16 @@
+/// 分段进度条统计小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题 + 翻牌计数器 / 斜纹分段进度条（各分段数据色斜纹 + 墨线胶囊框）/
+/// 图例列表（手绘色块指示器 + 标签 + 数值，逐项错峰入场）。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 分段数据模型
 class SegmentData {
@@ -131,46 +141,26 @@ class _SegmentedProgressCardWidgetState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
-        width: widget.inline ? double.maxFinite : 340,
-        height: widget.inline ? double.maxFinite : 340,
-        decoration: BoxDecoration(
-          color: isDark ? Colors.black : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 40,
-                offset: const Offset(0, 12),
-              ),
-          ],
-          border:
-              isDark ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
-        ),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 340 * scale,
+        height: widget.inline ? double.maxFinite : 340 * scale,
+        radius: BorderRadius.circular(24 * scale),
         padding: widget.size.getPadding(),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 标题和数值
-            _buildHeader(context, isDark),
+            _buildHeader(theme),
             SizedBox(height: widget.size.getTitleSpacing()),
             // 分段进度条
-            _buildProgressBar(context, isDark),
+            _buildProgressBar(theme),
             SizedBox(height: widget.size.getTitleSpacing()),
             // 分段列表（支持滚动）
             Flexible(
@@ -179,7 +169,7 @@ class _SegmentedProgressCardWidgetState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _buildSegmentList(context, isDark),
+                  children: _buildSegmentList(theme),
                 ),
               ),
             ),
@@ -190,7 +180,7 @@ class _SegmentedProgressCardWidgetState
   }
 
   /// 构建标题和数值部分
-  Widget _buildHeader(BuildContext context, bool isDark) {
+  Widget _buildHeader(AppThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -198,7 +188,7 @@ class _SegmentedProgressCardWidgetState
         Text(
           widget.title,
           style: TextStyle(
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+            color: theme.textSub,
             fontSize: widget.size.getSubtitleFontSize(),
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
@@ -219,7 +209,7 @@ class _SegmentedProgressCardWidgetState
                     value: widget.currentValue * _animation.value,
                     fractionDigits: 0,
                     textStyle: TextStyle(
-                      color: isDark ? Colors.white : Colors.grey.shade900,
+                      color: theme.text,
                       fontSize: widget.size.getLargeFontSize(),
                       fontWeight: FontWeight.bold,
                       height: 1.0,
@@ -229,8 +219,7 @@ class _SegmentedProgressCardWidgetState
                   Text(
                     '/ ${widget.targetValue.toInt()}',
                     style: TextStyle(
-                      color:
-                          isDark ? Colors.grey.shade600 : Colors.grey.shade400,
+                      color: theme.textSub,
                       fontSize: widget.size.getLargeFontSize() * 0.5,
                       fontWeight: FontWeight.w500,
                       height: 1.0,
@@ -245,42 +234,24 @@ class _SegmentedProgressCardWidgetState
     );
   }
 
-  /// 构建分段进度条
-  Widget _buildProgressBar(BuildContext context, bool isDark) {
-    final totalValue = widget.segments.fold<double>(
-      0,
-      (sum, seg) => sum + seg.value,
-    );
-
-    return Container(
+  /// 构建分段进度条（斜纹分段 + 墨线胶囊框）
+  Widget _buildProgressBar(AppThemeData theme) {
+    final scale = widget.size.scale;
+    return SizedBox(
       height: widget.size.getLegendIndicatorHeight(),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(
-          widget.size.getLegendIndicatorHeight() / 2,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(
-          widget.size.getLegendIndicatorHeight() / 2,
-        ),
-        child: Row(
-          children:
-              widget.segments.map((segment) {
-                final percentage =
-                    totalValue > 0 ? segment.value / totalValue : 0;
-                return Expanded(
-                  flex: (percentage * 100).toInt(),
-                  child: Container(color: segment.color),
-                );
-              }).toList(),
+      width: double.infinity,
+      child: CustomPaint(
+        painter: _StripedSegmentBarPainter(
+          segments: widget.segments,
+          theme: theme,
+          scale: scale,
         ),
       ),
     );
   }
 
   /// 构建分段列表
-  List<Widget> _buildSegmentList(BuildContext context, bool isDark) {
+  List<Widget> _buildSegmentList(AppThemeData theme) {
     final List<Widget> items = [];
 
     for (int i = 0; i < widget.segments.length; i++) {
@@ -308,7 +279,7 @@ class _SegmentedProgressCardWidgetState
                 offset: Offset(0, 10 * (1 - itemAnimation.value)),
                 child: _SegmentItem(
                   segment: segment,
-                  isDark: isDark,
+                  theme: theme,
                   animation: itemAnimation,
                   unit: widget.unit,
                   size: widget.size,
@@ -327,14 +298,14 @@ class _SegmentedProgressCardWidgetState
 /// 单个分段项
 class _SegmentItem extends StatelessWidget {
   final SegmentData segment;
-  final bool isDark;
+  final AppThemeData theme;
   final Animation<double> animation;
   final String unit;
   final HomeWidgetSize size;
 
   const _SegmentItem({
     required this.segment,
-    required this.isDark,
+    required this.theme,
     required this.animation,
     required this.unit,
     required this.size,
@@ -346,20 +317,14 @@ class _SegmentItem extends StatelessWidget {
 
     return Row(
       children: [
-        // 颜色指示器
+        // 手绘色块指示器：数据色实底 + 墨线描边
         Container(
           width: indicatorSize,
           height: indicatorSize,
-          decoration: BoxDecoration(
-            color: segment.color,
-            borderRadius: BorderRadius.circular(indicatorSize / 4),
-            boxShadow: [
-              BoxShadow(
-                color: segment.color.withOpacity(0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(indicatorSize / 4),
+            fillColor: segment.color,
           ),
         ),
         SizedBox(width: size.getItemSpacing()),
@@ -367,7 +332,7 @@ class _SegmentItem extends StatelessWidget {
         Text(
           segment.label,
           style: TextStyle(
-            color: isDark ? Colors.grey.shade200 : Colors.grey.shade700,
+            color: theme.text,
             fontSize: size.getSubtitleFontSize(),
             fontWeight: FontWeight.w500,
           ),
@@ -383,7 +348,7 @@ class _SegmentItem extends StatelessWidget {
                     ? '${segment.value.toInt()}'
                     : '$unit${segment.value.toInt()}'),
             style: TextStyle(
-              color: isDark ? Colors.white : Colors.grey.shade900,
+              color: theme.text,
               fontSize: size.getSubtitleFontSize(),
               fontWeight: FontWeight.w600,
               height: 1.0,
@@ -392,5 +357,71 @@ class _SegmentItem extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// 斜纹分段进度条绘制器
+///
+/// 胶囊内按占比切分：每段铺数据色浅底 + 数据色斜纹（0.9 透明度，
+/// 与半圆仪表盘/条纹柱同款：右上斜率 0.85、6.5 间距），外框淡墨描边。
+class _StripedSegmentBarPainter extends CustomPainter {
+  final List<SegmentData> segments;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StripedSegmentBarPainter({
+    required this.segments,
+    required this.theme,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || segments.isEmpty) return;
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(size.height / 2),
+    );
+
+    canvas.save();
+    canvas.clipRRect(rrect);
+    final total = segments.fold<double>(0, (sum, seg) => sum + seg.value);
+    var x = 0.0;
+    for (final segment in segments) {
+      final w = total > 0 ? size.width * (segment.value / total) : 0.0;
+      if (w > 0.5) {
+        final rect = Rect.fromLTWH(x, 0, w, size.height);
+        canvas.drawRect(
+          rect,
+          Paint()..color = segment.color.withValues(alpha: 0.28),
+        );
+        paintDiagonalStripes(
+          canvas,
+          Path()..addRect(rect),
+          rect,
+          color: segment.color.withValues(alpha: 0.9),
+          strokeWidth: 3 * scale,
+          spacing: 6.5 * scale,
+        );
+      }
+      x += w;
+    }
+    canvas.restore();
+
+    // 墨线胶囊描边
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedSegmentBarPainter oldDelegate) {
+    return oldDelegate.segments != segments ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }

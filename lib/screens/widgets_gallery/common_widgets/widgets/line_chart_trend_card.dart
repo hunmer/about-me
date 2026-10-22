@@ -1,6 +1,19 @@
+/// 折线图趋势小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 数值（翻牌计数器）+ 单位 / 标签 + 涨跌变化率（主题语义色）/
+/// 折线图（数据色平直折线 + 斜纹面积填充 + 淡墨虚线网格与基线）。
+/// 折线描画与数值动画保留。
+library;
+
+import 'dart:math' as math;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 折线图趋势小组件
 class LineChartTrendCardWidget extends StatefulWidget {
@@ -88,96 +101,57 @@ class _LineChartTrendCardWidgetState extends State<LineChartTrendCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1F2937) : Colors.white;
-    final primaryColor =
-        isDark ? const Color(0xFFFB7185) : const Color(0xFFF43F5E);
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final secondaryTextColor =
-        isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF);
-    final gridColor =
-        isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
-    final axisColor =
-        isDark ? const Color(0xFF4B5563) : const Color(0xFFD1D5DB);
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : null,
-              constraints: widget.size.getHeightConstraints(),
-              padding: widget.size.getPadding(),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // 计算图表可用高度：总高度 - padding(上下) - header高度 - titleSpacing
-                  final padding = widget.size.getPadding();
-                  final titleSpacing = widget.size.getTitleSpacing();
-                  // 估算 header 高度：数值行高度 + 小间距 + 标签行高度
-                  final valueFontSize = widget.size.getLargeFontSize();
-                  final labelFontSize = widget.size.getLegendFontSize();
-                  final headerHeight =
-                      valueFontSize * 1.2 + // 数值行（含 line height）
-                      widget.size.getSmallSpacing() + // 数值和标签之间
-                      labelFontSize * 1.2; // 标签行
-                  final chartHeight = (constraints.maxHeight -
-                          padding.top -
-                          padding.bottom -
-                          headerHeight -
-                          titleSpacing)
-                      .clamp(40.0, double.infinity);
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场；
+    // 高度沿用尺寸档位的最大高度约束
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 384 * scale,
+        height: widget.size.getHeightConstraints().maxHeight,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // 计算图表可用高度：总高度 - padding(上下) - header高度 - titleSpacing
+            final padding = widget.size.getPadding();
+            final titleSpacing = widget.size.getTitleSpacing();
+            // 估算 header 高度：数值行高度 + 小间距 + 标签行高度
+            final valueFontSize = widget.size.getLargeFontSize();
+            final labelFontSize = widget.size.getLegendFontSize();
+            final headerHeight =
+                valueFontSize * 1.2 + // 数值行（含 line height）
+                widget.size.getSmallSpacing() + // 数值和标签之间
+                labelFontSize * 1.2; // 标签行
+            final chartHeight = (constraints.maxHeight -
+                    padding.top -
+                    padding.bottom -
+                    headerHeight -
+                    titleSpacing)
+                .clamp(40.0, double.infinity);
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 数值和标签区域
-                      _buildHeader(
-                        textColor,
-                        secondaryTextColor,
-                        primaryColor,
-                        axisColor,
-                      ),
-                      SizedBox(height: titleSpacing),
-                      // 折线图区域
-                      _buildChart(
-                        primaryColor,
-                        gridColor,
-                        axisColor,
-                        chartHeight,
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 数值和标签区域
+                _buildHeader(theme),
+                SizedBox(height: titleSpacing),
+                // 折线图区域
+                _buildChart(theme, chartHeight),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader(
-    Color textColor,
-    Color secondaryTextColor,
-    Color primaryColor,
-    Color axisColor,
-  ) {
+  /// 数值 + 单位 / 标签 + 涨跌变化率
+  Widget _buildHeader(AppThemeData theme) {
     final isPositive = widget.changePercent >= 0;
-    final changeColor = isPositive ? const Color(0xFF10B981) : primaryColor;
+    final changeColor = isPositive ? theme.success : theme.danger;
 
     // 根据尺寸计算字体大小
     final valueFontSize = widget.size.getLargeFontSize();
@@ -199,7 +173,7 @@ class _LineChartTrendCardWidgetState extends State<LineChartTrendCardWidget>
               textStyle: TextStyle(
                 fontSize: valueFontSize,
                 fontWeight: FontWeight.w700,
-                color: textColor,
+                color: theme.text,
                 height: 1.2,
                 letterSpacing: -0.5,
               ),
@@ -212,7 +186,7 @@ class _LineChartTrendCardWidgetState extends State<LineChartTrendCardWidget>
               style: TextStyle(
                 fontSize: unitFontSize,
                 fontWeight: FontWeight.w700,
-                color: textColor,
+                color: theme.text,
                 height: 1.2,
               ),
             ),
@@ -228,7 +202,7 @@ class _LineChartTrendCardWidgetState extends State<LineChartTrendCardWidget>
               style: TextStyle(
                 fontSize: labelFontSize,
                 fontWeight: FontWeight.w600,
-                color: secondaryTextColor,
+                color: theme.textSub,
                 letterSpacing: 1.5,
               ),
             ),
@@ -240,7 +214,7 @@ class _LineChartTrendCardWidgetState extends State<LineChartTrendCardWidget>
                     '▼',
                     style: TextStyle(
                       fontSize: arrowFontSize,
-                      color: const Color(0xFFF43F5E),
+                      color: theme.danger,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -262,12 +236,9 @@ class _LineChartTrendCardWidgetState extends State<LineChartTrendCardWidget>
     );
   }
 
-  Widget _buildChart(
-    Color primaryColor,
-    Color gridColor,
-    Color axisColor,
-    double availableHeight,
-  ) {
+  /// 折线图区域
+  Widget _buildChart(AppThemeData theme, double availableHeight) {
+    final scale = widget.size.scale;
     // 根据尺寸计算线条粗细
     final lineStrokeWidth = widget.size.getStrokeWidth() * 0.375; // ~2.25-3.75
     final gridStrokeWidth =
@@ -281,12 +252,13 @@ class _LineChartTrendCardWidgetState extends State<LineChartTrendCardWidget>
         painter: _LineChartPainter(
           dataPoints: widget.dataPoints,
           progress: _animation.value,
-          lineColor: primaryColor,
-          gridColor: gridColor,
-          axisColor: axisColor,
+          lineColor: theme.primary,
+          gridColor: theme.ink.withValues(alpha: 0.18),
+          axisColor: theme.ink.withValues(alpha: 0.35),
           lineStrokeWidth: lineStrokeWidth,
           gridStrokeWidth: gridStrokeWidth,
           axisStrokeWidth: axisStrokeWidth,
+          scale: scale,
         ),
       ),
     );
@@ -294,6 +266,9 @@ class _LineChartTrendCardWidgetState extends State<LineChartTrendCardWidget>
 }
 
 /// 折线图绘制器
+///
+/// 淡墨虚线网格 + 淡墨细基线，数据色平直折线（无 rough 抖动），
+/// 线下面积用数据色浅底 + 淡斜纹填充（§9.5，替代原渐变）。
 class _LineChartPainter extends CustomPainter {
   final List<double> dataPoints;
   final double progress;
@@ -303,6 +278,7 @@ class _LineChartPainter extends CustomPainter {
   final double lineStrokeWidth;
   final double gridStrokeWidth;
   final double axisStrokeWidth;
+  final double scale;
 
   _LineChartPainter({
     required this.dataPoints,
@@ -310,6 +286,7 @@ class _LineChartPainter extends CustomPainter {
     required this.lineColor,
     required this.gridColor,
     required this.axisColor,
+    required this.scale,
     this.lineStrokeWidth = 3,
     this.gridStrokeWidth = 1.5,
     this.axisStrokeWidth = 2,
@@ -320,7 +297,7 @@ class _LineChartPainter extends CustomPainter {
     final width = size.width;
     final height = size.height;
 
-    // 绘制Y轴线
+    // 绘制Y轴线（淡墨细实线基线）
     final axisPaint =
         Paint()
           ..color = axisColor
@@ -329,7 +306,7 @@ class _LineChartPainter extends CustomPainter {
 
     canvas.drawLine(Offset(0, 0), Offset(0, height), axisPaint);
 
-    // 绘制水平网格线
+    // 绘制水平网格线（淡墨虚线）
     final gridPaint =
         Paint()
           ..color = gridColor
@@ -338,7 +315,13 @@ class _LineChartPainter extends CustomPainter {
     const gridLines = 4;
     for (int i = 1; i <= gridLines; i++) {
       final y = (height / gridLines) * i;
-      canvas.drawLine(Offset(8, y), Offset(width, y), gridPaint);
+      for (var x = 8.0; x < width; x += 10 * scale) {
+        canvas.drawLine(
+          Offset(x, y),
+          Offset(math.min(x + 5 * scale, width), y),
+          gridPaint,
+        );
+      }
     }
 
     if (dataPoints.length < 2) return;
@@ -354,13 +337,13 @@ class _LineChartPainter extends CustomPainter {
       points.add(Offset(x, y));
     }
 
-    // 绘制填充区域（渐变）
-    final fillPath = Path();
-    fillPath.moveTo(points.first.dx, points.first.dy);
-
     // 只绘制到进度位置
     final maxIndex = ((points.length - 1) * progress).floor();
     final partialProgress = ((points.length - 1) * progress) - maxIndex;
+
+    // 绘制斜纹面积填充（数据色浅底 + 数据色淡斜纹）
+    final fillPath = Path();
+    fillPath.moveTo(points.first.dx, points.first.dy);
 
     for (int i = 1; i <= maxIndex; i++) {
       fillPath.lineTo(points[i].dx, points[i].dy);
@@ -380,20 +363,17 @@ class _LineChartPainter extends CustomPainter {
     fillPath.lineTo(points.first.dx, height);
     fillPath.close();
 
-    final gradient = LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [
-        lineColor.withOpacity(0.25 * progress),
-        lineColor.withOpacity(0),
-      ],
+    canvas.drawPath(fillPath, Paint()..color = lineColor.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      fillPath,
+      fillPath.getBounds(),
+      color: lineColor.withValues(alpha: 0.5),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
     );
 
-    final fillPaint =
-        Paint()..shader = gradient.createShader(fillPath.getBounds());
-    canvas.drawPath(fillPath, fillPaint);
-
-    // 绘制折线
+    // 绘制折线（平直干净的数据色描边）
     final linePath = Path();
     linePath.moveTo(points.first.dx, points.first.dy);
 
@@ -430,6 +410,8 @@ class _LineChartPainter extends CustomPainter {
         oldDelegate.axisColor != axisColor ||
         oldDelegate.lineStrokeWidth != lineStrokeWidth ||
         oldDelegate.gridStrokeWidth != gridStrokeWidth ||
-        oldDelegate.axisStrokeWidth != axisStrokeWidth;
+        oldDelegate.axisStrokeWidth != axisStrokeWidth ||
+        oldDelegate.dataPoints != dataPoints ||
+        oldDelegate.scale != scale;
   }
 }

@@ -289,6 +289,30 @@ SuperCupertinoNavigationWrapper(
 - 墨线粗糙度三档全局可切（设置 → 界面 → Ink style）：Gentle / Playful（默认）/ Expressive；由 `DsInkStyle.level` 驱动，`theme.wired.drawConfig` 自动跟随，新 UI 无需关心
 - `seed` 保持默认即可（rebuild 墨迹不抖变）；列表项可传 `seed: index` 让墨迹有变化
 
+### 9.5 统计图表（小组件）：斜纹数据填充，清晰优先
+
+小组件里的统计图表（仪表盘 / 进度条 / 柱图 / 分段占比等）在纸墨风下取"清晰"与"手绘感"的平衡点：**数据区不用 rough 抖动墨线**（太潦草，读数困难），**也不用纯色实底填充**（丢失手绘气质），统一用平直几何 + 数据色斜纹填充——当前这套风格是标准，勿再加粗抖动或退回纯色块。
+
+| 元素 | 用法 |
+|---|---|
+| 数据区（进度弧 / 柱 / 分段） | 数据色浅底（alpha 0.28）+ 数据色斜纹（alpha 0.9）+ 数据色描边（alpha 0.85） |
+| 轨道 / 未选中段 | `theme.surfaceAlt` 底 + 淡墨斜纹（ink alpha 0.28）+ 淡墨描边（ink alpha 0.45） |
+| 卡片容器 | `WiredDraw` + `DsSketchPanel`（§9.1 大容器档），禁柔影 |
+| 图例色块 | `dsSketchDecoration(fillColor: 数据色)`（§9.1 小控件档），禁彩色柔影 |
+| 指针 / 刻度 / 文字 | 指针 `theme.ink` 实心小几何；刻度与文字 `theme.text / textSub` |
+
+斜纹标准纹样（全局一致，勿各自发明参数）：
+
+- 右上斜线：水平/垂直斜率 `0.85`；横向间距 `6.5 × scale`
+- 浓纹（数据区）宽 `3 × scale`，淡纹（轨道）宽 `1.5 × scale`
+- 一律调公共 `paintDiagonalStripes`（`lib/screens/widgets_gallery/common_widgets/utils/striped_fill.dart`），接受任意裁剪 Path（扇环 / 胶囊 / 矩形通用），勿在组件里手写条纹循环
+
+要点：
+
+- rough 墨线只上容器边框、徽章等装饰层；图表数据几何（弧段、柱形、扇环）保持平直干净，保证读数清晰
+- 数据色走 props（如 `activeColor` / 分段 `color`，支持 hex 解析），属数据不属于主题；其余颜色一律走主题
+- 参考实现：`lib/screens/widgets_gallery/common_widgets/widgets/half_gauge_card.dart`（斜纹半圆仪表盘）、`segmented_progress_card.dart`（斜纹分段进度条）、`striped_weekly_chart_card.dart`（斜纹柱状图）
+
 ## 10. 手绘入场动画（ink 描画，skribble motion）
 
 新内容挂载时让墨线"画出来"：描边先描（0–65%），排线/图案填充随后浮现（30–100%），纸底、实底填充、文字、图标与布局全程稳定。默认 650ms `easeInOutCubic`。参考实现：`lib/plugins/nodes/widgets/node_item.dart`（节点展开）、`node_card.dart`（卡片墨线消费进度）。
@@ -387,3 +411,4 @@ HandDrawnStickyItem(tiltKey: item.id, child: ItemCard(item: item))
 10. 手绘风格统一：容器用 DS 组件或 `dsSketchDecoration`/`DsSketchPanel`（小控件纯色实底、大容器纸底排线）；无 boxShadow/渐变；图标走 `DsIcon`；颜色走 `theme.ink/paper/hatch`，不硬编码
 11. 展开/折叠、新增列表项等**新内容挂载**场景用 `WiredDraw` 包裹子树做墨线描画入场（见第 10 节）；静态常驻内容不加动画
 12. 页面主体的内容浏览列表/网格用 `HandDrawnListView` / `HandDrawnStickyItem` 便签化（倾斜 + 贴条 + 悬浮，见第 11 节）：`tiltKey` 传数据稳定 id、纵向间距 ≥ 16；时间对齐视图/聊天流/弹层列表/设置表单不套用
+13. 统计图表类小组件：数据区用平直几何 + 数据色斜纹（`paintDiagonalStripes` 标准纹样），rough 墨线只上容器/徽章，禁纯色块填充数据区（见第 9.5 节）

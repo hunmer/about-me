@@ -1,6 +1,17 @@
+/// 迷你趋势卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘圆形图标徽章 + 标题头部 / 当前数值（翻牌计数器）+ 单位 + 副标题 /
+/// 趋势折线图（数据色平直折线 + 斜纹面积填充）/ 星期标签。
+/// 折线描画与数值动画保留。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 迷你趋势卡片小组件
 ///
@@ -112,89 +123,72 @@ class _MiniTrendCardWidgetState extends State<MiniTrendCardWidget>
     super.dispose();
   }
 
+  double _defaultHeight() {
+    final scale = widget.size.scale;
+    if (widget.size is SmallSize) return 150 * scale;
+    if (widget.size is MediumSize || widget.size is WideSize) {
+      return 190 * scale;
+    }
+    if (widget.size is LargeSize || widget.size is Wide2Size) {
+      return 330 * scale;
+    }
+    return 430 * scale;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF27272A) : Colors.white;
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    final surfaceColor =
-        isDark ? primaryColor.withOpacity(0.15) : primaryColor.withOpacity(0.1);
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
     // 判断是否为 wide 类型
     final isWide = widget.size.width == 4;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 380,
-              padding: widget.size.getPadding(),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 标题栏
-                  _buildHeader(
-                    context,
-                    isDark,
-                    primaryColor,
-                    surfaceColor,
-                  ),
-                  SizedBox(height: widget.size.getTitleSpacing()),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 380 * scale,
+        height: widget.inline ? double.maxFinite : _defaultHeight(),
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 标题栏
+            _buildHeader(theme),
+            SizedBox(height: widget.size.getTitleSpacing()),
 
-                  // 主要内容
-                  Expanded(
-                    child: isWide
-                        ? // wide 类型：数值显示 + 趋势图
-                        Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              // 数值显示
-                              Flexible(
-                                flex: 6,
-                                child: _buildValueDisplay(isDark),
-                              ),
-                              const SizedBox(width: 8),
-                              // 趋势迷你图靠右
-                              Flexible(
-                                flex: 7,
-                                child: _buildMiniTrendChart(primaryColor),
-                              ),
-                            ],
-                          )
-                        : // 非 wide 类型：只显示趋势图（占满宽度）
-                        _buildMiniTrendChart(primaryColor),
-                  ),
-                ],
-              ),
+            // 主要内容
+            Expanded(
+              child: isWide
+                  ? // wide 类型：数值显示 + 趋势图
+                  Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // 数值显示
+                        Flexible(
+                          flex: 6,
+                          child: _buildValueDisplay(theme),
+                        ),
+                        const SizedBox(width: 8),
+                        // 趋势迷你图靠右
+                        Flexible(
+                          flex: 7,
+                          child: _buildMiniTrendChart(theme),
+                        ),
+                      ],
+                    )
+                  : // 非 wide 类型：只显示趋势图（占满宽度）
+                  _buildMiniTrendChart(theme),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    bool isDark,
-    Color primaryColor,
-    Color surfaceColor,
-  ) {
+  /// 头部：手绘圆形图标徽章 + 标题 + Today 入口
+  Widget _buildHeader(AppThemeData theme) {
     final iconSize = widget.size.getIconSize();
     final containerSize = iconSize * widget.size.iconContainerScale;
 
@@ -207,11 +201,20 @@ class _MiniTrendCardWidgetState extends State<MiniTrendCardWidget>
               Container(
                 width: containerSize,
                 height: containerSize,
-                decoration: BoxDecoration(
-                  color: surfaceColor,
-                  shape: BoxShape.circle,
+                // 大圆角被 rough 引擎自动钳制成圆
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: BorderRadius.circular(containerSize / 2),
+                  fillColor: theme.surfaceAlt,
                 ),
-                child: Icon(widget.icon, color: primaryColor, size: iconSize),
+                child: Center(
+                  child: WiredIcon(
+                    icon: widget.icon,
+                    size: iconSize,
+                    color: theme.primary,
+                    drawConfig: theme.wired.drawConfig,
+                  ),
+                ),
               ),
               SizedBox(width: widget.size.getItemSpacing()),
               Flexible(
@@ -220,7 +223,7 @@ class _MiniTrendCardWidgetState extends State<MiniTrendCardWidget>
                   style: TextStyle(
                     fontSize: widget.size.getTitleFontSize(),
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.grey.shade900,
+                    color: theme.text,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -245,14 +248,15 @@ class _MiniTrendCardWidgetState extends State<MiniTrendCardWidget>
                   style: TextStyle(
                     fontSize: widget.size.getLegendFontSize(),
                     fontWeight: FontWeight.w400,
-                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    color: theme.textSub,
                   ),
                 ),
                 SizedBox(width: widget.size.getItemSpacing()),
-                Icon(
-                  Icons.chevron_right,
+                WiredIcon(
+                  icon: Icons.chevron_right,
                   size: iconSize * 0.8,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  color: theme.textSub,
+                  drawConfig: theme.wired.drawConfig,
                 ),
               ],
             ),
@@ -262,7 +266,8 @@ class _MiniTrendCardWidgetState extends State<MiniTrendCardWidget>
     );
   }
 
-  Widget _buildValueDisplay(bool isDark) {
+  /// 数值（翻牌计数器）+ 单位 + 副标题
+  Widget _buildValueDisplay(AppThemeData theme) {
     final scoreFontSize = widget.size.getLargeFontSize() * 0.7;
     final unitFontSize = widget.size.getLargeFontSize() * 0.35;
 
@@ -278,7 +283,7 @@ class _MiniTrendCardWidgetState extends State<MiniTrendCardWidget>
               textStyle: TextStyle(
                 fontSize: scoreFontSize,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.grey.shade900,
+                color: theme.text,
               ),
             ),
             Padding(
@@ -288,7 +293,7 @@ class _MiniTrendCardWidgetState extends State<MiniTrendCardWidget>
                 style: TextStyle(
                   fontSize: unitFontSize,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white : Colors.grey.shade900,
+                  color: theme.text,
                 ),
               ),
             ),
@@ -301,7 +306,7 @@ class _MiniTrendCardWidgetState extends State<MiniTrendCardWidget>
             style: TextStyle(
               fontSize: widget.size.getSubtitleFontSize(),
               fontWeight: FontWeight.w400,
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              color: theme.textSub,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -311,18 +316,19 @@ class _MiniTrendCardWidgetState extends State<MiniTrendCardWidget>
     );
   }
 
-  Widget _buildMiniTrendChart(Color primaryColor) {
+  /// 趋势迷你图 + 星期标签
+  Widget _buildMiniTrendChart(AppThemeData theme) {
     final chartHeight = widget.size.getLargeFontSize() * 1.15;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       children: [
         Expanded(
           child: _AnimatedTrendLine(
             data: widget.trendData,
-            color: primaryColor,
+            color: theme.primary,
             animation: _animation,
             chartHeight: chartHeight,
+            scale: widget.size.scale,
           ),
         ),
         SizedBox(height: widget.size.getItemSpacing()),
@@ -336,7 +342,7 @@ class _MiniTrendCardWidgetState extends State<MiniTrendCardWidget>
                   style: TextStyle(
                     fontSize: widget.size.getLegendFontSize(),
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    color: theme.textSub,
                   ),
                 );
               }).toList(),
@@ -352,12 +358,14 @@ class _AnimatedTrendChart extends StatelessWidget {
   final Color color;
   final Animation<double> animation;
   final double chartHeight;
+  final double scale;
 
   const _AnimatedTrendChart({
     required this.data,
     required this.color,
     required this.animation,
     required this.chartHeight,
+    required this.scale,
   });
 
   @override
@@ -369,6 +377,7 @@ class _AnimatedTrendChart extends StatelessWidget {
           color: color,
           progress: animation.value,
           chartHeight: chartHeight,
+          scale: scale,
         ),
       ),
     );
@@ -376,17 +385,22 @@ class _AnimatedTrendChart extends StatelessWidget {
 }
 
 /// 趋势折线画笔
+///
+/// 数据色平直折线（无 rough 抖动），线下面积用数据色浅底 + 淡斜纹填充
+/// （§9.5 斜纹数据填充，替代原渐变）。
 class _TrendLinePainter extends CustomPainter {
   final List<double> data;
   final Color color;
   final double progress;
   final double chartHeight;
+  final double scale;
 
   _TrendLinePainter({
     required this.data,
     required this.color,
     required this.progress,
     required this.chartHeight,
+    required this.scale,
   });
 
   @override
@@ -394,40 +408,34 @@ class _TrendLinePainter extends CustomPainter {
     if (data.isEmpty) return;
 
     final chartWidth = size.width;
-    final maxHeight = data.isEmpty ? 1.0 : data.reduce((a, b) => a > b ? a : b).toDouble();
+    final maxHeight =
+        data.isEmpty ? 1.0 : data.reduce((a, b) => a > b ? a : b).toDouble();
     final stepX = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
 
-    // 绘制渐变填充
-    final gradientPath = Path();
-    final fillGradient = LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [color.withOpacity(0.2 * progress), color.withOpacity(0)],
-    );
-
-    gradientPath.moveTo(0, chartHeight);
+    // 绘制斜纹面积填充（数据色浅底 + 数据色淡斜纹）
+    final areaPath = Path();
+    areaPath.moveTo(0, chartHeight);
     for (int i = 0; i < data.length * progress; i++) {
       final x = i * stepX;
       final y = chartHeight - (data[i] / maxHeight) * chartHeight * progress;
-      if (i == 0) {
-        gradientPath.lineTo(x, y);
-      } else {
-        gradientPath.lineTo(x, y);
-      }
+      areaPath.lineTo(x, y);
     }
     final lastX =
         (data.length * progress - 1).clamp(0, data.length - 1).toInt() * stepX;
-    gradientPath.lineTo(lastX, chartHeight);
-    gradientPath.close();
+    areaPath.lineTo(lastX, chartHeight);
+    areaPath.close();
 
-    final fillPaint =
-        Paint()
-          ..shader = fillGradient.createShader(
-            Rect.fromLTWH(0, 0, chartWidth, chartHeight),
-          );
-    canvas.drawPath(gradientPath, fillPaint);
+    canvas.drawPath(areaPath, Paint()..color = color.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      areaPath,
+      areaPath.getBounds(),
+      color: color.withValues(alpha: 0.45),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
 
-    // 绘制折线
+    // 绘制折线（平直干净的数据色描边）
     final linePath = Path();
     for (int i = 0; i < data.length * progress; i++) {
       final x = i * stepX;
@@ -452,7 +460,10 @@ class _TrendLinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TrendLinePainter oldDelegate) {
-    return oldDelegate.progress != progress;
+    return oldDelegate.progress != progress ||
+        oldDelegate.color != color ||
+        oldDelegate.data != data ||
+        oldDelegate.scale != scale;
   }
 }
 
@@ -462,12 +473,14 @@ class _AnimatedTrendLine extends StatelessWidget {
   final Color color;
   final Animation<double> animation;
   final double chartHeight;
+  final double scale;
 
   const _AnimatedTrendLine({
     required this.data,
     required this.color,
     required this.animation,
     required this.chartHeight,
+    required this.scale,
   });
 
   @override
@@ -480,6 +493,7 @@ class _AnimatedTrendLine extends StatelessWidget {
           color: color,
           animation: animation,
           chartHeight: chartHeight,
+          scale: scale,
         );
       },
     );

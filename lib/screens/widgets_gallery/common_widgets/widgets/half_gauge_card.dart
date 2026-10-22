@@ -1,14 +1,18 @@
-/// 半圆仪表盘小组件（条纹纸卡风格，参考 StripedWeeklyChartCard）
+/// 半圆仪表盘小组件（条纹 + 手绘纸卡风格）
 ///
-/// 圆角纸卡（内白描边 + 柔影 + 淡入上移入场）：圆形图标徽章 + 标题头部 /
-/// 斜纹半圆仪表盘（灰底轨道 + 主题色斜纹进度扇环 + 深色指针）/ 0%-100% 刻度 /
-/// 底部余额。仪表盘尺寸同时受宽高约束、内容上下居中，任意尺寸不溢出。
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘圆形图标徽章 + 标题头部 / 斜纹半圆仪表盘（主题色斜纹进度扇环 +
+/// 淡墨轨道 + 墨线指针）/ 0%-100% 刻度 / 底部余额。
+/// 仪表盘尺寸同时受宽高约束、内容上下居中，任意尺寸不溢出。
 library;
 
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 半圆仪表盘小组件
 class HalfGaugeCardWidget extends StatefulWidget {
@@ -121,50 +125,26 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
     final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _progressAnimation,
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.inline ? double.maxFinite : 384 * scale,
         height: widget.inline ? double.maxFinite : _defaultHeight(),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF9FBFD),
-          borderRadius: BorderRadius.circular(30 * scale),
-          border: Border.all(
-            color: isDark ? Colors.white10 : Colors.white,
-            width: scale,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.28 : 0.05),
-              blurRadius: 20 * scale,
-              offset: Offset(0, 5 * scale),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: widget.size.getPadding(),
-          child: LayoutBuilder(
-            builder: (context, constraints) =>
-                _buildContent(isDark, constraints),
-          ),
+        radius: BorderRadius.circular(30 * scale),
+        padding: widget.size.getPadding(),
+        child: LayoutBuilder(
+          builder: (context, constraints) =>
+              _buildContent(theme, constraints),
         ),
       ),
-      builder: (context, child) {
-        return Opacity(
-          opacity: _progressAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, 18 * (1 - _progressAnimation.value)),
-            child: child,
-          ),
-        );
-      },
     );
   }
 
-  Widget _buildContent(bool isDark, BoxConstraints constraints) {
+  Widget _buildContent(AppThemeData theme, BoxConstraints constraints) {
     final scale = widget.size.scale;
     final titleFontSize = widget.size.getSubtitleFontSize() + 2 * scale;
     final gaugeAmountFontSize = widget.size.getSubtitleFontSize() + 2;
@@ -222,7 +202,7 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
                         sweep: progress * _progressAnimation.value,
                         activeColor: widget.activeColor,
                         activeBackgroundColor: widget.activeBackgroundColor,
-                        isDark: isDark,
+                        theme: theme,
                         scale: scale,
                       ),
                     );
@@ -245,16 +225,14 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
                           fontSize: gaugeRemainLabelFontSize,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 1.5,
-                          color: isDark
-                              ? const Color(0xFFCBD5E1)
-                              : const Color(0xFF7C8088),
+                          color: theme.textSub,
                         ),
                       ),
                       SizedBox(height: widget.size.getSmallSpacing() * 2),
-                      Icon(
-                        Icons.shopping_bag_outlined,
+                      DsIcon(
+                        DsIconKind.cart,
                         size: gaugeIconSize,
-                        color: isDark ? Colors.white : const Color(0xFF3B82F6),
+                        color: widget.activeColor,
                       ),
                     ],
                   ),
@@ -283,9 +261,7 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
                         fontSize: gaugeLabelFontSize,
                         fontWeight: FontWeight.w500,
                         height: 1,
-                        color: isDark
-                            ? const Color(0xFF94A3B8)
-                            : const Color(0xFF52555C),
+                        color: theme.textSub,
                       ),
                     ),
                   ),
@@ -302,7 +278,7 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
             fontSize: gaugeAmountFontSize,
             fontWeight: FontWeight.w700,
             height: 1.15,
-            color: isDark ? Colors.white : const Color(0xFF141414),
+            color: theme.text,
           ),
           softWrap: false,
           overflow: TextOverflow.ellipsis,
@@ -317,33 +293,33 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader(isDark, badgeSize, titleFontSize),
+        _buildHeader(theme, badgeSize, titleFontSize),
         SizedBox(height: gapUnit),
         gaugeBlock,
       ],
     );
   }
 
-  /// 头部：圆形图标徽章 + 标题（+ 币种副标题）
-  Widget _buildHeader(bool isDark, double badgeSize, double titleFontSize) {
+  /// 头部：手绘圆形图标徽章 + 标题（+ 币种副标题）
+  Widget _buildHeader(AppThemeData theme, double badgeSize, double titleFontSize) {
     final scale = widget.size.scale;
     return Row(
       children: [
         Container(
           width: badgeSize,
           height: badgeSize,
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFDCE4EC),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark ? Colors.white24 : const Color(0xFF222222),
-              width: scale,
-            ),
+          // 大圆角被 rough 引擎自动钳制成圆
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(badgeSize / 2),
+            fillColor: theme.surfaceAlt,
           ),
-          child: Icon(
-            Icons.shopping_bag_outlined,
-            size: badgeSize * 0.55,
-            color: isDark ? Colors.white : const Color(0xFF3B82F6),
+          child: Center(
+            child: DsIcon(
+              DsIconKind.cart,
+              size: badgeSize * 0.55,
+              color: widget.activeColor,
+            ),
           ),
         ),
         SizedBox(width: 12 * scale),
@@ -355,7 +331,7 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
               Text(
                 widget.title,
                 style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF141414),
+                  color: theme.text,
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.w800,
                   height: 1.15,
@@ -368,9 +344,7 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
                 Text(
                   widget.currency,
                   style: TextStyle(
-                    color: isDark
-                        ? const Color(0xFFCBD5E1)
-                        : const Color(0xFF7C8088),
+                    color: theme.textSub,
                     fontSize: widget.size.getLegendFontSize(),
                     fontWeight: FontWeight.w500,
                     height: 1,
@@ -402,21 +376,22 @@ class _HalfGaugeCardWidgetState extends State<HalfGaugeCardWidget>
 
 /// 斜纹半圆仪表盘绘制器
 ///
-/// 灰底轨道扇环（淡灰斜纹 + 灰描边）垫底，主题色进度扇环（浅色底 +
-/// 浓斜纹 + 主题色描边）按 [sweep]（0~1，含入场动画插值）扫过，
-/// 指针为径向深色实心小三角。
+/// 淡墨轨道扇环（低透明度墨线斜纹 + 淡描边）垫底，主题色进度扇环
+/// （浅色底 + 浓斜纹 + 主题色描边）按 [sweep]（0~1，含入场动画插值）扫过，
+/// 指针为径向墨线实心小三角；颜色一律取 [theme] 语义色，
+/// 进度色 [activeColor]/[activeBackgroundColor] 为数据色 props。
 class _StripedGaugePainter extends CustomPainter {
   final double sweep;
   final Color activeColor;
   final Color activeBackgroundColor;
-  final bool isDark;
+  final AppThemeData theme;
   final double scale;
 
   const _StripedGaugePainter({
     required this.sweep,
     required this.activeColor,
     required this.activeBackgroundColor,
-    required this.isDark,
+    required this.theme,
     required this.scale,
   });
 
@@ -433,94 +408,61 @@ class _StripedGaugePainter extends CustomPainter {
     final start = math.pi + inset;
     final span = math.pi - 2 * inset;
 
-    // 轨道扇环
+    // 轨道扇环：淡墨底 + 低透明度斜纹
     final trackPath = _sector(center, rIn, rOut, start, start + span);
-    canvas.drawPath(
-      trackPath,
-      Paint()
-        ..color = isDark ? const Color(0xFF334155) : const Color(0xFFE4E6E9),
-    );
-    _paintStripes(
+    canvas.drawPath(trackPath, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
       canvas,
       trackPath,
-      size,
-      (isDark ? const Color(0xFF94A3B8) : const Color(0xFF9BA0A8))
-          .withOpacity(0.45),
-      1.5 * scale,
+      Offset.zero & size,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
     );
     canvas.drawPath(
       trackPath,
       Paint()
-        ..color = isDark ? const Color(0xFF64748B) : const Color(0xFF595959)
+        ..color = theme.ink.withValues(alpha: 0.45)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5 * scale,
     );
 
     final s = sweep.clamp(0.0, 1.0);
-    if (s <= 0.004) return;
-
-    // 进度扇环
-    final progressPath = _sector(center, rIn, rOut, start, start + span * s);
-    canvas.drawPath(progressPath, Paint()..color = activeBackgroundColor);
-    _paintStripes(
-      canvas,
-      progressPath,
-      size,
-      activeColor.withOpacity(0.9),
-      3 * scale,
-    );
-    canvas.drawPath(
-      progressPath,
-      Paint()
-        ..color = activeColor.withOpacity(0.85)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5 * scale,
-    );
-
-    // 指针：径向深色小三角
-    final angle = start + span * s;
-    final dir = Offset(math.cos(angle), math.sin(angle));
-    final tang = Offset(-dir.dy, dir.dx);
-    final ps = thickness * 0.42;
-    final tip = center + dir * (rOut - thickness * 0.06);
-    final base = center + dir * (rIn + thickness * 0.06);
-    final pointer =
-        Path()
-          ..moveTo(tip.dx, tip.dy)
-          ..lineTo(base.dx + tang.dx * ps, base.dy + tang.dy * ps)
-          ..lineTo(base.dx - tang.dx * ps, base.dy - tang.dy * ps)
-          ..close();
-    canvas.drawPath(
-      pointer,
-      Paint()..color = isDark ? Colors.white : const Color(0xFF222222),
-    );
-  }
-
-  /// 在 [clip] 内铺斜纹（与 StripedWeeklyChartCard 柱纹同款：右上斜率 0.85）
-  void _paintStripes(
-    Canvas canvas,
-    Path clip,
-    Size size,
-    Color color,
-    double strokeWidth,
-  ) {
-    canvas.save();
-    canvas.clipPath(clip);
-    final paint =
-        Paint()
-          ..color = color
-          ..strokeWidth = strokeWidth
-          ..style = PaintingStyle.stroke;
-    final spacing = 6.5 * scale;
-    final h = size.height + 4;
-    for (var x = -h; x < size.width + h; x += spacing) {
-      canvas.drawLine(
-        Offset(x, size.height + 2),
-        Offset(x + h * 0.85, -2),
-        paint,
+    if (s > 0.004) {
+      // 进度扇环：数据色底 + 浓斜纹
+      final progressPath = _sector(center, rIn, rOut, start, start + span * s);
+      canvas.drawPath(progressPath, Paint()..color = activeBackgroundColor);
+      paintDiagonalStripes(
+        canvas,
+        progressPath,
+        Offset.zero & size,
+        color: activeColor.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
       );
+      canvas.drawPath(
+        progressPath,
+        Paint()
+          ..color = activeColor.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
+
+      // 指针：径向墨线小三角
+      final angle = start + span * s;
+      final dir = Offset(math.cos(angle), math.sin(angle));
+      final tang = Offset(-dir.dy, dir.dx);
+      final ps = thickness * 0.42;
+      final tip = center + dir * (rOut - thickness * 0.06);
+      final base = center + dir * (rIn + thickness * 0.06);
+      final pointer =
+          Path()
+            ..moveTo(tip.dx, tip.dy)
+            ..lineTo(base.dx + tang.dx * ps, base.dy + tang.dy * ps)
+            ..lineTo(base.dx - tang.dx * ps, base.dy - tang.dy * ps)
+            ..close();
+      canvas.drawPath(pointer, Paint()..color = theme.ink);
     }
-    canvas.restore();
   }
 
   Path _sector(Offset c, double rIn, double rOut, double a0, double a1) {
@@ -549,7 +491,7 @@ class _StripedGaugePainter extends CustomPainter {
     return oldDelegate.sweep != sweep ||
         oldDelegate.activeColor != activeColor ||
         oldDelegate.activeBackgroundColor != activeBackgroundColor ||
-        oldDelegate.isDark != isDark ||
+        oldDelegate.theme != theme ||
         oldDelegate.scale != scale;
   }
 }

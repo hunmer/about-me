@@ -1,5 +1,16 @@
+/// 柱状图统计小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘圆形图标徽章 + 标题头部 / 平均值 / 淡墨横网格 + 斜纹柱状图
+/// （数据色浅底 + 数据色浓斜纹 + 数据色描边）/ Y 轴刻度与 X 轴标签。
+/// 柱高生长与逐项错峰入场动画保留。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 柱状图统计小组件
 class BarChartStatsCardWidget extends StatefulWidget {
@@ -18,7 +29,7 @@ class BarChartStatsCardWidget extends StatefulWidget {
   /// 图标
   final IconData icon;
 
-  /// 图标颜色
+  /// 图标颜色（数据色，斜纹柱同色系）
   final Color iconColor;
 
   /// 数据点列表
@@ -133,14 +144,12 @@ class BarChartStatsCardWidget extends StatefulWidget {
   }
 
   @override
-  State<BarChartStatsCardWidget> createState() =>
-      _BarChartStatsCardWidgetState();
+  State<BarChartStatsCardWidget> createState() => _BarChartStatsCardWidgetState();
 }
 
 class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _animation;
   static const double _baseEnd = 0.6;
 
   @override
@@ -149,10 +158,6 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
     );
     _animationController.forward();
   }
@@ -165,60 +170,38 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1F2937) : Colors.white;
-    final gridColor = isDark ? Colors.grey.shade700 : Colors.grey.shade200;
-    final textColor = isDark ? Colors.grey.shade400 : Colors.grey.shade500;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
     final elementCount = widget.data.length + 2;
     final maxStep = (1.0 - _baseEnd) / (elementCount - 1);
     final step = maxStep * 0.9;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : 320,
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              padding: widget.size.getPadding(),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                  _buildHeader(isDark, textColor, 0, step),
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  _buildAverageSection(isDark, 1, step),
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  _buildChart(gridColor, textColor, step),
-                ],
-              ),
-            ),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.inline ? double.maxFinite : 320 * scale,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(theme, 0, step),
+              SizedBox(height: widget.size.getTitleSpacing()),
+              _buildAverageSection(theme, 1, step),
+              SizedBox(height: widget.size.getTitleSpacing()),
+              _buildChart(theme, step),
+            ],
           ),
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader(bool isDark, Color textColor, int index, double step) {
+  Widget _buildHeader(AppThemeData theme, int index, double step) {
     final itemAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Interval(
@@ -227,6 +210,9 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
         curve: Curves.easeOutCubic,
       ),
     );
+
+    final badgeSize =
+        widget.size.getIconSize() * widget.size.iconContainerScale;
 
     return Opacity(
       opacity: itemAnimation.value,
@@ -240,55 +226,51 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                Flexible(
-                  child: Text(
-                    widget.title,
-                    style: TextStyle(
-                      fontSize: widget.size.getTitleFontSize() * 0.8,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : Colors.grey.shade900,
+                  Flexible(
+                    child: Text(
+                      widget.title,
+                      style: TextStyle(
+                        fontSize: widget.size.getTitleFontSize() * 0.8,
+                        fontWeight: FontWeight.w700,
+                        color: theme.text,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
-                ),
-                SizedBox(height: widget.size.getItemSpacing()),
-                Flexible(
-                  child: Text(
-                    widget.dateRange,
-                    style: TextStyle(
-                      fontSize: widget.size.getSubtitleFontSize(),
-                      fontWeight: FontWeight.w500,
-                      color: textColor,
+                  SizedBox(height: widget.size.getItemSpacing()),
+                  Flexible(
+                    child: Text(
+                      widget.dateRange,
+                      style: TextStyle(
+                        fontSize: widget.size.getSubtitleFontSize(),
+                        fontWeight: FontWeight.w500,
+                        color: theme.textSub,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          if (widget.size is! SmallSize)
+            if (widget.size is! SmallSize)
               Container(
-                width:
-                    widget.size.getIconSize() * widget.size.iconContainerScale,
-                height:
-                    widget.size.getIconSize() * widget.size.iconContainerScale,
-                decoration: BoxDecoration(
-                  color: widget.iconColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.iconColor.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                width: badgeSize,
+                height: badgeSize,
+                // 大圆角被 rough 引擎自动钳制成圆
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: BorderRadius.circular(badgeSize / 2),
+                  fillColor: theme.surfaceAlt,
                 ),
-                child: Icon(
-                  widget.icon,
-                  color: Colors.white,
-                  size: widget.size.getIconSize(),
+                child: Center(
+                  child: WiredIcon(
+                    icon: widget.icon,
+                    size: widget.size.getIconSize(),
+                    color: widget.iconColor,
+                    drawConfig: theme.wired.drawConfig,
+                  ),
                 ),
               ),
           ],
@@ -297,7 +279,7 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
     );
   }
 
-  Widget _buildAverageSection(bool isDark, int index, double step) {
+  Widget _buildAverageSection(AppThemeData theme, int index, double step) {
     final itemAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Interval(
@@ -323,7 +305,7 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
                   style: TextStyle(
                     fontSize: widget.size.getLargeFontSize() * 0.8,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.grey.shade900,
+                    color: theme.text,
                     letterSpacing: -2,
                   ),
                 ),
@@ -333,7 +315,7 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
                   style: TextStyle(
                     fontSize: widget.size.getTitleFontSize() - 4,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.grey.shade900,
+                    color: theme.text,
                   ),
                 ),
               ],
@@ -344,7 +326,7 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
     );
   }
 
-  Widget _buildChart(Color gridColor, Color textColor, double step) {
+  Widget _buildChart(AppThemeData theme, double step) {
     // 根据尺寸动态计算图表高度
     final chartHeight =
         widget.size is SmallSize
@@ -361,21 +343,20 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
           height: chartHeight,
           child: Row(
             children: [
-              _buildYAxis(textColor, gridColor, step, yAxisWidth),
+              _buildYAxis(theme, step, yAxisWidth),
               SizedBox(width: widget.size.getItemSpacing()),
-              Expanded(child: _buildBars(gridColor, step, chartHeight)),
+              Expanded(child: _buildBars(theme, step, chartHeight)),
             ],
           ),
         ),
         SizedBox(height: widget.size.getItemSpacing()),
-        _buildXLabels(textColor, step),
+        _buildXLabels(theme, step),
       ],
     );
   }
 
   Widget _buildYAxis(
-    Color textColor,
-    Color gridColor,
+    AppThemeData theme,
     double step,
     double yAxisWidth,
   ) {
@@ -396,7 +377,7 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
               style: TextStyle(
                 fontSize: widget.size.getLegendFontSize(),
                 fontWeight: FontWeight.w500,
-                color: textColor,
+                color: theme.textSub,
               ),
               textAlign: TextAlign.right,
             ),
@@ -406,24 +387,27 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
     );
   }
 
-  Widget _buildBars(Color gridColor, double step, double chartHeight) {
+  Widget _buildBars(AppThemeData theme, double step, double chartHeight) {
     return Stack(
-      children: [_buildGridLines(gridColor), _buildDataBars(step, chartHeight)],
+      children: [_buildGridLines(theme), _buildDataBars(step, chartHeight)],
     );
   }
 
-  Widget _buildGridLines(Color gridColor) {
+  /// 横网格：淡墨细线，底行 X 轴墨线稍浓（平直几何，保证读数清晰）
+  Widget _buildGridLines(AppThemeData theme) {
     return Positioned.fill(
       child: Column(
         children: List.generate(
           6,
           (index) => Expanded(
-            child: Container(
+            child: DecoratedBox(
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: index < 5 ? gridColor.withOpacity(0.5) : gridColor,
-                    width: index < 5 ? 1 : 1,
+                    color: theme.ink.withValues(
+                      alpha: index < 5 ? 0.15 : 0.45,
+                    ),
+                    width: 1,
                     style: BorderStyle.solid,
                   ),
                 ),
@@ -449,21 +433,27 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
           ),
         );
 
-        final height = (widget.data[index] / widget.maxValue);
+        final ratio = (widget.data[index] / widget.maxValue);
+        final fullBarHeight = chartHeight * ratio;
 
         return Expanded(
           child: Container(
             height: chartHeight,
             alignment: Alignment.bottomCenter,
-            child: Container(
-              width: widget.size.getBarWidth(),
-              height: chartHeight * height * barAnimation.value,
-              decoration: BoxDecoration(
-                color: widget.iconColor,
-                borderRadius: BorderRadius.circular(
-                  widget.size is SmallSize ? 2 : 4,
-                ),
-              ),
+            child: AnimatedBuilder(
+              animation: barAnimation,
+              builder: (context, child) {
+                return CustomPaint(
+                  size: Size(
+                    widget.size.getBarWidth(),
+                    fullBarHeight * barAnimation.value,
+                  ),
+                  painter: _StripedBarPainter(
+                    color: widget.iconColor,
+                    scale: widget.size.scale,
+                  ),
+                );
+              },
             ),
           ),
         );
@@ -471,7 +461,7 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
     );
   }
 
-  Widget _buildXLabels(Color textColor, double step) {
+  Widget _buildXLabels(AppThemeData theme, double step) {
     final labelsAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Interval(0.5, 1.0, curve: Curves.easeOutCubic),
@@ -492,7 +482,7 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
                   style: TextStyle(
                     fontSize: widget.size.getLegendFontSize(),
                     fontWeight: FontWeight.w500,
-                    color: textColor,
+                    color: theme.textSub,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -502,5 +492,45 @@ class _BarChartStatsCardWidgetState extends State<BarChartStatsCardWidget>
         ),
       ),
     );
+  }
+}
+
+/// 斜纹柱绘制器：数据色浅底（0.28）+ 数据色浓斜纹（0.9）+ 数据色描边（0.85）
+///
+/// 平直胶囊几何（无 rough 抖动），保证读数清晰（§9.5 统计图表规范）。
+class _StripedBarPainter extends CustomPainter {
+  final Color color;
+  final double scale;
+
+  const _StripedBarPainter({required this.color, required this.scale});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final radius = Radius.circular(size.width / 2);
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(rect, radius);
+
+    canvas.drawRRect(rrect, Paint()..color = color.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(rrect),
+      rect,
+      color: color.withValues(alpha: 0.9),
+      strokeWidth: 3 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = color.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedBarPainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.scale != scale;
   }
 }
