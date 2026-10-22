@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
+import 'package:aboutme/plugins/toolbox/services/ai_image_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter/material.dart';
@@ -142,10 +146,30 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
   Uint8List? _bytes;
   bool _loadFailed = false;
 
+  /// AI 修图替换画布计数：编辑器无中途换图 API，
+  /// 通过变更 key 整体重建以加载新图（编辑历史随之重置）
+  int _canvasGeneration = 0;
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  /// AI 修图：以当前画布为参考图生成新图，替换后重建编辑器
+  Future<void> _openAiEdit() async {
+    final bytes = _bytes;
+    if (bytes == null) return;
+    final generated = await showDialog<Uint8List>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _AiEditDialog(imageBytes: bytes),
+    );
+    if (generated == null || !mounted) return;
+    setState(() {
+      _bytes = generated;
+      _canvasGeneration++;
+    });
   }
 
   Future<void> _load() async {
@@ -205,7 +229,30 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
       backgroundColor: Colors.black,
       body: ProImageEditor.memory(
         bytes,
-        configs: ProImageEditorConfigs(i18n: _buildI18n()),
+        key: ValueKey('photo-editor-canvas-$_canvasGeneration'),
+        configs: ProImageEditorConfigs(
+          i18n: _buildI18n(),
+          mainEditor: MainEditorConfigs(
+            widgets: MainEditorWidgets(
+              // AI 修图浮动入口：子编辑器（裁剪/滤镜等）打开时隐藏
+              wrapBody: (editor, rebuildStream, content) => Stack(
+                children: [
+                  content,
+                  Positioned(
+                    right: 14,
+                    bottom: 96,
+                    child: ReactiveWidget(
+                      stream: rebuildStream,
+                      builder: (_) => editor.isSubEditorOpen
+                          ? const SizedBox.shrink()
+                          : _buildAiFab(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
         callbacks: ProImageEditorCallbacks(
           // 编辑器导出期间保持自带 loading 遮罩，pop 后由 showPhotoEditor 持久化
           onImageEditingComplete: (editedBytes) async {
@@ -215,6 +262,19 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
           onCloseEditor: (mode) => Navigator.of(context).pop(),
         ),
       ),
+    );
+  }
+
+  /// AI 修图浮动按钮（Web 无本地文件供服务上传，点击仅提示）
+  Widget _buildAiFab() {
+    return FloatingActionButton.small(
+      backgroundColor: Colors.black.withValues(alpha: 0.55),
+      foregroundColor: Colors.white,
+      tooltip: 'app_aiEdit'.tr,
+      onPressed: kIsWeb
+          ? () => Toast.error('app_aiEditWebUnsupported'.tr)
+          : _openAiEdit,
+      child: const Icon(Icons.auto_fix_high, size: 20),
     );
   }
 
@@ -341,6 +401,313 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
         categoryFlags: '旗帜',
       ),
       stickerEditor: I18nStickerEditor(bottomNavigationBarText: '贴纸'),
+    );
+  }
+}
+
+/// AI 修图对话框：输入修改指令，复用工具箱图生图服务
+/// （当前画布落临时文件作为参考图），成功后 pop 返回新图字节
+class _AiEditDialog extends StatefulWidget {
+  const _AiEditDialog({required this.imageBytes});
+
+  final Uint8List imageBytes;
+
+  @override
+  State<_AiEditDialog> createState() => _AiEditDialogState();
+}
+
+class _AiEditDialogState extends State<_AiEditDialog> {
+  /// 自定义预设与上次 prompt 的持久化位置（随本地/远端存储）
+  static const _configPath = 'configs/photo_editor/ai_edit_config.json';
+
+  /// 内置快捷指令预设键（文案在 zh/en 翻译文件，跟随界面语言）
+  static const _builtinPresetKeys = [
+    'app_aiEditPreset_deblur',
+    'app_aiEditPreset_denoise',
+    'app_aiEditPreset_recolor',
+    'app_aiEditPreset_colorize',
+    'app_aiEditPreset_restore',
+    'app_aiEditPreset_removePeople',
+    'app_aiEditPreset_anime',
+    'app_aiEditPreset_bgClean',
+  ];
+
+  final TextEditingController _input = TextEditingController();
+
+  /// 用户自定义预设（原文保存，跨语言直接使用）
+  final List<String> _customPresets = [];
+
+  bool _running = false;
+  String? _status;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConfig();
+  }
+
+  Future<void> _loadConfig() async {
+    try {
+      final data = await AboutmeDataService.instance.readPath(_configPath);
+      if (!mounted || data is! Map<String, dynamic>) return;
+      final presets =
+          (data['presets'] as List?)?.whereType<String>().toList() ?? [];
+      final last = data['lastPrompt'] as String?;
+      setState(() {
+        _customPresets.addAll(presets);
+        if (last != null && last.isNotEmpty && _input.text.isEmpty) {
+          _input.text = last;
+        }
+      });
+    } catch (_) {
+      /* 配置读取失败走纯内置预设 */
+    }
+  }
+
+  Future<void> _saveConfig() async {
+    try {
+      await AboutmeDataService.instance.writePath(_configPath, {
+        'presets': _customPresets,
+        'lastPrompt': _input.text.trim(),
+      });
+    } catch (_) {
+      /* 保存失败不影响主流程 */
+    }
+  }
+
+  /// 把输入框当前指令保存为自定义预设
+  void _addCustomPreset() {
+    final text = _input.text.trim();
+    if (text.isEmpty) {
+      Toast.error('app_aiEditPresetEmpty'.tr);
+      return;
+    }
+    final exists = _customPresets.contains(text) ||
+        _builtinPresetKeys.any((k) => k.tr == text);
+    if (exists) {
+      Toast.error('app_aiEditPresetExists'.tr);
+      return;
+    }
+    setState(() => _customPresets.add(text));
+    unawaited(_saveConfig());
+    Toast.success('app_aiEditPresetAdded'.tr);
+  }
+
+  void _removeCustomPreset(String preset) {
+    setState(() => _customPresets.remove(preset));
+    unawaited(_saveConfig());
+  }
+
+  /// 预设填入输入框（光标移到末尾，便于追加细节）
+  void _applyPreset(String prompt) {
+    if (_running) return;
+    _input.text = prompt;
+    _input.selection = TextSelection.collapsed(offset: prompt.length);
+  }
+
+  @override
+  void dispose() {
+    _input.dispose();
+    super.dispose();
+  }
+
+  Future<void> _generate() async {
+    final prompt = _input.text.trim();
+    if (prompt.isEmpty || _running) return;
+    setState(() {
+      _running = true;
+      _error = null;
+      _status = null;
+    });
+    File? refFile;
+    try {
+      // 服务仅接受本地绝对路径/URL，画布字节先落临时文件
+      refFile = File(
+        '${Directory.systemTemp.path}'
+        '/photo_editor_ai_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await refFile.writeAsBytes(widget.imageBytes, flush: true);
+
+      final result = await AiImageService.instance.generate(
+        prompt: prompt,
+        refImages: [refFile.path],
+        aspectRatio: await _closestAspectRatio(widget.imageBytes),
+        returnBytes: true,
+        onStatus: (s) {
+          if (mounted) setState(() => _status = s);
+        },
+      );
+      if (!result.success) {
+        throw Exception(result.error ?? result.message ?? '未知错误');
+      }
+      final images = result.data?['images'] as List?;
+      final bytes = images != null && images.isNotEmpty
+          ? (images.first as GeneratedImage).bytes
+          : null;
+      if (bytes == null || bytes.isEmpty) throw Exception('未返回图片字节');
+      // 记住这次成功的指令，下次打开对话框预填
+      unawaited(_saveConfig());
+      if (mounted) Navigator.of(context).pop(bytes);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceFirst('Exception: ', '');
+          _running = false;
+        });
+      }
+    } finally {
+      try {
+        await refFile?.delete();
+      } catch (_) {
+        /* 临时文件清理失败忽略 */
+      }
+    }
+  }
+
+  /// 依据原图宽高比选择服务预设中最接近的比例，避免修图后画布变形
+  Future<String?> _closestAspectRatio(Uint8List bytes) async {
+    try {
+      // 此处 decodeImageFromList 为 pro_image_editor 导出的 Future 版本
+      final image = await decodeImageFromList(
+        bytes,
+      ).timeout(const Duration(seconds: 5));
+      final target = image.width / image.height;
+      const presets = {
+        '1:1': 1.0,
+        '16:9': 16 / 9,
+        '9:16': 9 / 16,
+        '4:3': 4 / 3,
+        '3:4': 3 / 4,
+        '3:2': 1.5,
+        '2:3': 2 / 3,
+      };
+      var best = '1:1';
+      var bestDiff = double.infinity;
+      presets.forEach((name, value) {
+        final diff = (value - target).abs();
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          best = name;
+        }
+      });
+      return best;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      // 生成中禁止关闭（结果即回，取消会浪费一次生成）
+      canPop: !_running,
+      child: AlertDialog(
+        title: Text('app_aiEdit'.tr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _input,
+              enabled: !_running,
+              maxLines: 3,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'app_aiEditHint'.tr,
+                border: const OutlineInputBorder(),
+              ),
+              onSubmitted: (_) => _generate(),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final key in _builtinPresetKeys)
+                  ActionChip(
+                    label: Text(
+                      key.tr,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _running ? null : () => _applyPreset(key.tr),
+                  ),
+                // 自定义预设：带 x 可删除
+                for (final preset in _customPresets)
+                  InputChip(
+                    label: Text(
+                      preset,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _running ? null : () => _applyPreset(preset),
+                    onDeleted:
+                        _running ? null : () => _removeCustomPreset(preset),
+                  ),
+                ActionChip(
+                  avatar: const Icon(Icons.add, size: 16),
+                  label: Text(
+                    'app_aiEditPresetAdd'.tr,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _running ? null : _addCustomPreset,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'app_aiEditNote'.tr,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.orange),
+            ),
+            if (_status != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _status!,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                style: const TextStyle(fontSize: 12, color: Colors.red),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: _running ? null : () => Navigator.of(context).pop(),
+            child: Text('app_cancel'.tr),
+          ),
+          FilledButton(
+            onPressed: _running ? null : _generate,
+            child: _running
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text('app_aiEditGenerate'.tr),
+          ),
+        ],
+      ),
     );
   }
 }

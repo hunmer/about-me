@@ -302,7 +302,11 @@ class _SpendingOverviewCardWidgetState
         height: widget.inline ? double.maxFinite : _defaultHeight(),
         radius: BorderRadius.circular(24 * s),
         padding: widget.size.getPadding(),
-        child: _buildBody(theme, s),
+        // AnimatedBuilder 驱动甜甜圈生长 rebuild，否则 progress 恒为首帧 0
+        child: AnimatedBuilder(
+          animation: _entrance,
+          builder: (context, _) => _buildBody(theme, s),
+        ),
       ),
     );
   }

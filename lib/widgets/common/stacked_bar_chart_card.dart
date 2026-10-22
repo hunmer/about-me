@@ -1,5 +1,17 @@
+/// 堆叠柱状图卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题 + 手绘筛选按钮 / 斜纹堆叠柱（各分段数据色浅底 + 数据色浓斜纹 +
+/// 数据色描边，自底向上逐柱错峰生长）/ 底部图例（手绘色块指示器）。
+library;
+
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 图表分类数据
 class ChartCategory {
@@ -144,7 +156,6 @@ class StackedBarChartCard extends StatefulWidget {
 class _StackedBarChartCardState extends State<StackedBarChartCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -152,10 +163,6 @@ class _StackedBarChartCardState extends State<StackedBarChartCard>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
     );
     _animationController.forward();
   }
@@ -168,241 +175,265 @@ class _StackedBarChartCardState extends State<StackedBarChartCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : null,
-              height: widget.inline ? double.maxFinite : null,
-              constraints:
-                  widget.inline ? null : widget.size.getHeightConstraints(),
-              padding: widget.size.getPadding(),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    final Widget panel = DsSketchPanel(
+      theme: theme,
+      width: widget.inline ? double.maxFinite : null,
+      height: widget.inline ? double.maxFinite : null,
+      radius: BorderRadius.circular(24 * scale),
+      padding: widget.size.getPadding(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 标题栏 - 固定高度
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontSize: widget.size.getTitleFontSize(),
+                    fontWeight: FontWeight.bold,
+                    color: theme.text,
                   ),
-                ],
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 标题栏 - 固定高度
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.title,
-                          style: TextStyle(
-                            fontSize: widget.size.getTitleFontSize(),
-                            fontWeight: FontWeight.bold,
-                            color:
-                                isDark
-                                    ? const Color(0xFFF3F4F6)
-                                    : const Color(0xFF111827),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                      if (widget.showFilterButton)
-                        _FilterButton(
-                          isDark: isDark,
-                          onPressed: widget.onFilterPressed,
-                          size: widget.size,
-                        ),
-                    ],
-                  ),
-                  SizedBox(height: widget.size.getTitleSpacing()),
+              if (widget.showFilterButton)
+                _FilterButton(
+                  onPressed: widget.onFilterPressed,
+                  size: widget.size,
+                ),
+            ],
+          ),
+          SizedBox(height: widget.size.getTitleSpacing()),
 
-                  // 堆叠柱状图 - 使用 Expanded 填充可用高度
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: List.generate(widget.data.length, (
-                        columnIndex,
-                      ) {
-                        final start = (columnIndex * 0.04).clamp(0.0, 0.5);
-                        final end = (start + 0.5).clamp(0.0, 1.0);
-                        final columnAnimation = CurvedAnimation(
-                          parent: _animationController,
-                          curve: Interval(
-                            start,
-                            end,
-                            curve: Curves.easeOutCubic,
-                          ),
-                        );
-                        return Expanded(
-                          child: _StackedBarColumn(
-                            segments: widget.data[columnIndex],
-                            categories: widget.categories,
-                            isDark: isDark,
-                            animation: columnAnimation,
-                            size: widget.size,
-                          ),
-                        );
-                      }),
-                    ),
+          // 堆叠柱状图 - 使用 Expanded 填充可用高度
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(widget.data.length, (columnIndex) {
+                final start = (columnIndex * 0.04).clamp(0.0, 0.5);
+                final end = (start + 0.5).clamp(0.0, 1.0);
+                final columnAnimation = CurvedAnimation(
+                  parent: _animationController,
+                  curve: Interval(
+                    start,
+                    end,
+                    curve: Curves.easeOutCubic,
                   ),
-
-                  // 分类图例 - 固定在卡片底部
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: List.generate(widget.categories.length, (
-                        index,
-                      ) {
-                        final category = widget.categories[index];
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            right:
-                                index < widget.categories.length - 1
-                                    ? widget.size.getItemSpacing()
-                                    : 0,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: widget.size.getLegendIndicatorWidth(),
-                                height: widget.size.getLegendIndicatorHeight(),
-                                decoration: BoxDecoration(
-                                  color: category.color,
-                                  borderRadius: BorderRadius.circular(
-                                    widget.size.getLegendIndicatorHeight() / 2,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: widget.size.getSmallSpacing()),
-                              Text(
-                                category.name,
-                                style: TextStyle(
-                                  fontSize: widget.size.getSubtitleFontSize(),
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      isDark
-                                          ? const Color(0xFFF3F4F6)
-                                          : const Color(0xFF111827),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ),
+                );
+                return Expanded(
+                  child: _StackedBarColumn(
+                    segments: widget.data[columnIndex],
+                    categories: widget.categories,
+                    animation: columnAnimation,
+                    size: widget.size,
                   ),
-                ],
-              ),
+                );
+              }),
             ),
           ),
-        );
-      },
+
+          // 分类图例 - 固定在卡片底部
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(widget.categories.length, (index) {
+                final category = widget.categories[index];
+                return Padding(
+                  padding: EdgeInsets.only(
+                    right:
+                        index < widget.categories.length - 1
+                            ? widget.size.getItemSpacing()
+                            : 0,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 手绘图例色块：数据色实底 + 墨线描边
+                      Container(
+                        width: widget.size.getLegendIndicatorWidth(),
+                        height: widget.size.getLegendIndicatorHeight(),
+                        decoration: dsSketchDecoration(
+                          theme: theme,
+                          radius: BorderRadius.circular(
+                            widget.size.getLegendIndicatorHeight() / 2,
+                          ),
+                          fillColor: category.color,
+                        ),
+                      ),
+                      SizedBox(width: widget.size.getSmallSpacing()),
+                      Text(
+                        category.name,
+                        style: TextStyle(
+                          fontSize: widget.size.getSubtitleFontSize(),
+                          fontWeight: FontWeight.w600,
+                          color: theme.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return WiredDraw(
+      child: widget.inline
+          ? panel
+          : ConstrainedBox(
+              constraints: widget.size.getHeightConstraints(),
+              child: panel,
+            ),
     );
   }
 }
 
-/// 堆叠柱子组件
+/// 堆叠柱子组件：整柱一个 CustomPaint 绘制斜纹堆叠段
+/// （SizedBox.expand 给紧约束，防止无 child 的 CustomPaint 塌缩）
 class _StackedBarColumn extends StatelessWidget {
   final List<ChartSegmentValue> segments;
   final List<ChartCategory> categories;
-  final bool isDark;
   final Animation<double> animation;
   final HomeWidgetSize size;
 
   const _StackedBarColumn({
     required this.segments,
     required this.categories,
-    required this.isDark,
     required this.animation,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
-    final barSpacing = size.getSmallSpacing();
-    final borderRadius = size.getBarWidth() / 2;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: segments.asMap().entries.map((entry) {
-        final index = entry.key;
-        final segment = entry.value;
-
-        if (segment.value == 0) {
-          return const SizedBox.shrink();
-        }
-
-        final color = categories[segment.categoryIndex].color;
-        final isLast = index == segments.length - 1;
-        final isFirst = index == 0;
-        final weight = (segment.value * 10).round();
-
-        return Flexible(
-          flex: weight > 0 ? weight : 1,
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: isLast ? 0 : barSpacing,
-            ),
-            child: AnimatedBuilder(
-              animation: animation,
-              builder: (context, child) {
-                return Container(
-                  width: double.infinity,
-                  margin: EdgeInsets.symmetric(
-                    horizontal: size.getBarSpacing(),
-                  ),
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.vertical(
-                      top: isFirst ? Radius.circular(borderRadius) : Radius.zero,
-                      bottom: isLast ? Radius.circular(borderRadius) : Radius.zero,
-                    ),
-                  ),
-                );
-              },
-            ),
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) => SizedBox.expand(
+        child: CustomPaint(
+          painter: _StackedBarColumnPainter(
+            segments: segments,
+            categories: categories,
+            progress: animation.value,
+            horizontalMargin: size.getBarSpacing(),
+            gap: size.getSmallSpacing(),
+            scale: size.scale,
           ),
-        );
-      }).toList(),
+        ),
+      ),
     );
   }
 }
 
-/// 筛选按钮组件
-class _FilterButton extends StatelessWidget {
-  final bool isDark;
-  final VoidCallback? onPressed;
-  final HomeWidgetSize size;
+/// 斜纹堆叠柱绘制器
+///
+/// 各分段铺数据色浅底（0.28）+ 数据色斜纹（0.9）+ 数据色描边（0.85），
+/// 首段顶/尾段底胶囊圆角，整柱按 [progress]（逐柱错峰）自底向上生长。
+class _StackedBarColumnPainter extends CustomPainter {
+  final List<ChartSegmentValue> segments;
+  final List<ChartCategory> categories;
+  final double progress;
+  final double horizontalMargin;
+  final double gap;
+  final double scale;
 
-  const _FilterButton({
-    required this.isDark,
-    this.onPressed,
-    required this.size,
+  const _StackedBarColumnPainter({
+    required this.segments,
+    required this.categories,
+    required this.progress,
+    required this.horizontalMargin,
+    required this.gap,
+    required this.scale,
   });
 
   @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || progress <= 0 || segments.isEmpty) return;
+    final visible = segments.where((s) => s.value > 0).toList();
+    if (visible.isEmpty || categories.isEmpty) return;
+    final total = visible.fold<double>(0, (sum, s) => sum + s.value);
+    if (total <= 0) return;
+
+    final barWidth = math.max(0.0, size.width - horizontalMargin * 2);
+    if (barWidth <= 0) return;
+    final gapTotal = gap * (visible.length - 1);
+    final availableHeight = math.max(0.0, size.height - gapTotal);
+    final capsule = Radius.circular(barWidth / 2);
+
+    var y = size.height;
+    for (var i = visible.length - 1; i >= 0; i--) {
+      final segment = visible[i];
+      final height = availableHeight * (segment.value / total) * progress;
+      y -= height;
+      if (height > 0.5) {
+        final rect = Rect.fromLTWH(horizontalMargin, y, barWidth, height);
+        final rrect = RRect.fromRectAndCorners(
+          rect,
+          topLeft: i == 0 ? capsule : Radius.zero,
+          topRight: i == 0 ? capsule : Radius.zero,
+          bottomLeft: i == visible.length - 1 ? capsule : Radius.zero,
+          bottomRight: i == visible.length - 1 ? capsule : Radius.zero,
+        );
+        final color = categories[segment.categoryIndex].color;
+        canvas.drawRRect(rrect, Paint()..color = color.withValues(alpha: 0.28));
+        paintDiagonalStripes(
+          canvas,
+          Path()..addRRect(rrect),
+          rect,
+          color: color.withValues(alpha: 0.9),
+          strokeWidth: 3 * scale,
+          spacing: 6.5 * scale,
+        );
+        canvas.drawRRect(
+          rrect,
+          Paint()
+            ..color = color.withValues(alpha: 0.85)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5 * scale,
+        );
+      }
+      y -= gap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StackedBarColumnPainter oldDelegate) {
+    return oldDelegate.segments != segments ||
+        oldDelegate.categories != categories ||
+        oldDelegate.progress != progress ||
+        oldDelegate.horizontalMargin != horizontalMargin ||
+        oldDelegate.gap != gap ||
+        oldDelegate.scale != scale;
+  }
+}
+
+/// 筛选按钮组件（手绘图标）
+class _FilterButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final HomeWidgetSize size;
+
+  const _FilterButton({this.onPressed, required this.size});
+
+  @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(20),
-      child: Container(
+      child: Padding(
         padding: EdgeInsets.all(size.getSmallSpacing()),
-        child: Icon(
-          Icons.tune,
+        child: DsIcon(
+          DsIconKind.tune,
           size: size.getIconSize(),
-          color: isDark ? const Color(0xFFF3F4F6) : const Color(0xFF111827),
+          color: theme.textSub,
         ),
       ),
     );

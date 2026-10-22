@@ -139,7 +139,12 @@ class _LineChartTrendCardWidgetState extends State<LineChartTrendCardWidget>
                 _buildHeader(theme),
                 SizedBox(height: titleSpacing),
                 // 折线图区域
-                _buildChart(theme, chartHeight),
+                // 折线图区域：AnimatedBuilder 驱动描线进度 rebuild，
+                // 否则 painter 拿到的 progress 恒为首帧 0
+                AnimatedBuilder(
+                  animation: _animation,
+                  builder: (context, _) => _buildChart(theme, chartHeight),
+                ),
               ],
             );
           },

@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
@@ -130,7 +133,9 @@ class DotTrackerCardData {
 /// 点阵追踪卡片小组件
 ///
 /// 用于展示周度点阵追踪进度，例如每日目标完成情况、习惯打卡等。
-/// 支持自定义标题、图标、数值、单位和点阵状态。
+/// 手绘纸墨风（纸底 + 淡排线 + rough 墨线框，WiredDraw 墨线描画入场）：
+/// 点阵参照 habit_heatmap（档位色实底 + 淡墨描边，不做斜纹），
+/// 逐点错峰弹入与数值翻牌动画保留。
 /// 根据尺寸自动调整所有元素大小。
 class DotTrackerCardWidget extends StatefulWidget {
   /// 卡片标题
@@ -226,7 +231,6 @@ class DotTrackerCardWidget extends StatefulWidget {
 class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _animation;
   late int _displayValue;
 
   @override
@@ -236,10 +240,6 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
     );
     if (widget.enableAnimation) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -252,6 +252,7 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
       });
     } else {
       _displayValue = widget.currentValue;
+      _animationController.value = 1.0;
     }
   }
 
@@ -270,6 +271,7 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
       setState(() {
         _displayValue = widget.currentValue;
       });
+      _animationController.value = 1.0;
     }
   }
 
@@ -281,71 +283,36 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1F2937) : Colors.white;
-    final textColor =
-        isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
-    final mutedColor =
-        isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-
-    final primaryColor = Theme.of(context).colorScheme.secondary;
-    final primaryLight =
-        isDark ? primaryColor.withOpacity(0.3) : primaryColor.withOpacity(0.4);
-
+    final theme = AppTheme.of(context);
     final size = widget.size;
 
-    // 数值显示（使用 Positioned 定位在右上角）
+    // 数据色：激活点档位色（无 props 数据色时取主题色）
+    final primaryColor = theme.secondary;
+    final primaryLight = primaryColor.withValues(alpha: 0.3);
+
+    // 数值显示（使用 Positioned 定位在右上角，不受 padding 影响）
     final valueDisplay = Positioned(
       top: size.getSmallSpacing() * 4,
       right: size.getSmallSpacing() * 6,
-      child: _buildValueDisplay(textColor, mutedColor, size),
+      child: _buildValueDisplay(theme, size),
     );
 
-    final animatedChild = AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: widget.enableAnimation ? _animation.value : 1.0,
-          child: Transform.translate(
-            offset: Offset(
-              0,
-              widget.enableAnimation ? 20 * (1 - _animation.value) : 0,
-            ),
-            child: child,
-          ),
-        );
-      },
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 墨线描画入场
+    final card = WiredDraw(
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Container(
+          DsSketchPanel(
+            theme: theme,
             height: widget.inline ? double.maxFinite : (widget.height ?? 250),
+            radius: BorderRadius.circular(24 * size.scale),
             padding: size.getPadding(),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 标题栏（包含 status 作为副标题）
-                _buildHeader(
-                  context,
-                  isDark,
-                  primaryColor,
-                  textColor,
-                  mutedColor,
-                  size,
-                ),
+                _buildHeader(theme, size),
                 SizedBox(height: size.getTitleSpacing()),
                 // 点阵进度（占满剩余空间）
                 Expanded(
@@ -354,7 +321,6 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
               ],
             ),
           ),
-          // 数值显示在左上角（使用 Positioned，不受 padding 影响）
           valueDisplay,
         ],
       ),
@@ -364,21 +330,14 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
       return InkWell(
         onTap: widget.onTap,
         borderRadius: BorderRadius.circular(28),
-        child: animatedChild,
+        child: card,
       );
     }
 
-    return animatedChild;
+    return card;
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    bool isDark,
-    Color primaryColor,
-    Color textColor,
-    Color mutedColor,
-    HomeWidgetSize size,
-  ) {
+  Widget _buildHeader(AppThemeData theme, HomeWidgetSize size) {
     final titleFontSize = size.getTitleFontSize() * 0.75;
     final subtitleFontSize = size.getSubtitleFontSize();
 
@@ -394,7 +353,7 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
               style: TextStyle(
                 fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
-                color: textColor,
+                color: theme.text,
                 letterSpacing: -0.5,
               ),
             ),
@@ -404,7 +363,7 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
               style: TextStyle(
                 fontSize: subtitleFontSize,
                 fontWeight: FontWeight.w500,
-                color: mutedColor,
+                color: theme.textSub,
               ),
             ),
           ],
@@ -413,11 +372,7 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
     );
   }
 
-  Widget _buildValueDisplay(
-    Color textColor,
-    Color mutedColor,
-    HomeWidgetSize size,
-  ) {
+  Widget _buildValueDisplay(AppThemeData theme, HomeWidgetSize size) {
     final valueFontSize = size.getLargeFontSize() * 0.6;
     final unitFontSize = size.getSubtitleFontSize() * 0.7;
 
@@ -432,7 +387,7 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
           textStyle: TextStyle(
             fontSize: valueFontSize,
             fontWeight: FontWeight.w800,
-            color: textColor,
+            color: theme.text,
             height: 1.0,
             letterSpacing: -1,
           ),
@@ -443,7 +398,7 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
           style: TextStyle(
             fontSize: unitFontSize,
             fontWeight: FontWeight.w600,
-            color: textColor.withOpacity(0.8),
+            color: theme.textSub,
             height: 1.0,
           ),
         ),
@@ -451,15 +406,7 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
     );
   }
 
-  Widget _buildDotsGrid(
-    Color primaryColor,
-    Color primaryLight,
-    HomeWidgetSize size,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final emptyDotColor =
-        isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
-
+  Widget _buildDotsGrid(Color primaryColor, Color primaryLight, HomeWidgetSize size) {
     final dayCount = widget.weekDays.length;
 
     // 计算列数：根据天数决定
@@ -499,18 +446,14 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
               );
 
               return _DayDotColumn(
-                day: widget.weekDays[index],
                 dotStates: widget.dotStates[index],
                 primaryColor: primaryColor,
                 primaryLight: primaryLight,
-                emptyDotColor: emptyDotColor,
                 animation:
                     widget.enableAnimation
                         ? itemAnimation
                         : AlwaysStoppedAnimation(1.0),
-                totalDays: dayCount,
                 dotSize: dotSize,
-                dotSpacing: dotSpacing * 0.5,
               );
             },
           ),
@@ -521,58 +464,101 @@ class _DotTrackerCardWidgetState extends State<DotTrackerCardWidget>
 }
 
 /// 每日点阵列组件
+///
+/// 点阵为平直几何：激活档数据色实底 + 淡墨描边，空档 surfaceAlt 实底 +
+/// 更淡墨描边（参照 habit_heatmap 的档位格，不做斜纹）；
+/// 激活点随 [animation] 逐点弹入。
 class _DayDotColumn extends StatelessWidget {
-  final String day;
   final List<bool> dotStates;
   final Color primaryColor;
   final Color primaryLight;
-  final Color emptyDotColor;
   final Animation<double> animation;
-  final int totalDays;
   final double dotSize;
-  final double dotSpacing;
 
   const _DayDotColumn({
-    required this.day,
     required this.dotStates,
     required this.primaryColor,
     required this.primaryLight,
-    required this.emptyDotColor,
     required this.animation,
-    this.totalDays = 7,
     required this.dotSize,
-    required this.dotSpacing,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(dotStates.length, (index) {
-        final isEnabled = dotStates[index];
-        return AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: isEnabled ? animation.value : 1.0,
-              child: Container(
-                width: dotSize,
-                height: dotSize,
-                decoration: BoxDecoration(
-                  color:
-                      isEnabled
-                          ? (index == 0 && dotStates.every((s) => !s)
-                              ? primaryLight
-                              : primaryColor)
-                          : emptyDotColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            );
-          },
-        );
-      }),
+    final theme = AppTheme.of(context);
+    // CustomPaint 无 child：GridView cell 给紧宽紧高，显式撑满防塌缩
+    return CustomPaint(
+      size: const Size(double.infinity, double.infinity),
+      painter: _DotColumnPainter(
+        dotStates: dotStates,
+        primaryColor: primaryColor,
+        primaryLight: primaryLight,
+        theme: theme,
+        animation: animation,
+        dotSize: dotSize,
+      ),
     );
+  }
+}
+
+/// 点阵列绘制器：档位色实底 + 淡墨描边（habit_heatmap 同款手法）
+class _DotColumnPainter extends CustomPainter {
+  final List<bool> dotStates;
+  final Color primaryColor;
+  final Color primaryLight;
+  final AppThemeData theme;
+  final Animation<double> animation;
+  final double dotSize;
+
+  _DotColumnPainter({
+    required this.dotStates,
+    required this.primaryColor,
+    required this.primaryLight,
+    required this.theme,
+    required this.animation,
+    required this.dotSize,
+  }) : super(repaint: animation);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || dotStates.isEmpty) return;
+    final n = dotStates.length;
+    final cellHeight = size.height / n;
+    final radius = math.min(dotSize, cellHeight) / 2;
+    final center = Offset(size.width / 2, 0);
+    final allEmpty = dotStates.every((s) => !s);
+
+    for (var i = 0; i < n; i++) {
+      final enabled = dotStates[i];
+      // 激活档：数据色实底 + 淡墨描边，逐点弹入（半径随错峰动画生长）
+      final fill =
+          enabled
+              ? primaryColor
+              : (i == 0 && allEmpty ? primaryLight : theme.surfaceAlt);
+      var r = radius;
+      if (enabled) {
+        r *= animation.value;
+      }
+      if (r <= 0.1) continue;
+      final cy = cellHeight * (i + 0.5);
+      canvas.drawCircle(center.translate(0, cy), r, Paint()..color = fill);
+      canvas.drawCircle(
+        center.translate(0, cy),
+        r,
+        Paint()
+          ..color = theme.ink.withValues(alpha: enabled ? 0.45 : 0.22)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DotColumnPainter oldDelegate) {
+    return oldDelegate.dotStates != dotStates ||
+        oldDelegate.primaryColor != primaryColor ||
+        oldDelegate.primaryLight != primaryLight ||
+        oldDelegate.theme != theme ||
+        oldDelegate.dotSize != dotSize;
   }
 }

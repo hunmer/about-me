@@ -188,13 +188,16 @@ class _PetalRadialChartCardWidgetState extends State<PetalRadialChartCardWidget>
                   maxLines: 1,
                 ),
               ),
+            // AnimatedBuilder 驱动花瓣径向生长 rebuild，否则 progress 恒为首帧 0
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final side = math.min(
-                    constraints.maxWidth,
-                    constraints.maxHeight,
-                  );
+              child: AnimatedBuilder(
+                animation: _animation,
+                builder: (context, _) => LayoutBuilder(
+                  builder: (context, constraints) {
+                    final side = math.min(
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    );
                   return Center(
                     child: SizedBox(
                       width: side,
@@ -212,7 +215,8 @@ class _PetalRadialChartCardWidgetState extends State<PetalRadialChartCardWidget>
                       ),
                     ),
                   );
-                },
+                  },
+                ),
               ),
             ),
           ],

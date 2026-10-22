@@ -1,5 +1,7 @@
-import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 路线点数据模型
 class RoutePoint {
@@ -36,7 +38,9 @@ class RoutePoint {
 /// 路线状态追踪卡片小组件
 ///
 /// 用于显示运输路线、行程追踪等场景，包含起点、终点和当前状态的卡片。
-/// 支持入场动画、深色模式和根据尺寸自动调整所有元素大小。
+/// 手绘纸墨风（纸底 + 淡排线 + rough 墨线框，WiredDraw 墨线描画入场）：
+/// 时间轴节点为 ink 平直小几何（刻度档，见 design.md §9.5），
+/// 虚线路线 + 手绘飞机图标，颜色一律走 AppTheme 语义色。
 class RouteTrackingCardWidget extends StatefulWidget {
   /// 日期标签（如 "Wed, 8 Aug"）
   final String date;
@@ -83,85 +87,19 @@ class RouteTrackingCardWidget extends StatefulWidget {
       _RouteTrackingCardWidgetState();
 }
 
-class _RouteTrackingCardWidgetState extends State<RouteTrackingCardWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    );
-
-    if (widget.enableAnimation) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _animationController.forward();
-        }
-      });
-    } else {
-      _animationController.value = 1.0;
-    }
-  }
-
-  @override
-  void didUpdateWidget(RouteTrackingCardWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 当关键数据变化时重新播放动画
-    if (oldWidget.origin != widget.origin ||
-        oldWidget.destination != widget.destination ||
-        oldWidget.status != widget.status) {
-      _animationController.reset();
-      if (widget.enableAnimation) {
-        _animationController.forward();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
+class _RouteTrackingCardWidgetState extends State<RouteTrackingCardWidget> {
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF18181B) : Colors.white;
+    final theme = AppTheme.of(context);
     final size = widget.size;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 墨线描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
         width: widget.width,
         height: widget.height,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.5 : 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+        radius: BorderRadius.circular(24 * size.scale),
         padding: size.getPadding(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,7 +109,7 @@ class _RouteTrackingCardWidgetState extends State<RouteTrackingCardWidget>
               style: TextStyle(
                 fontSize: size.getSubtitleFontSize(),
                 fontWeight: FontWeight.w500,
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                color: theme.textSub,
                 letterSpacing: -0.2,
               ),
             ),
@@ -179,7 +117,7 @@ class _RouteTrackingCardWidgetState extends State<RouteTrackingCardWidget>
             Expanded(
               child: Row(
                 children: [
-                  _buildTimeline(isDark, size),
+                  _buildTimeline(theme, size),
                   SizedBox(width: size.getSmallSpacing() * 3),
                   Expanded(
                     child: Column(
@@ -187,18 +125,16 @@ class _RouteTrackingCardWidgetState extends State<RouteTrackingCardWidget>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildPoint(
+                          theme,
                           widget.origin.city,
                           widget.origin.date,
-                          isDark,
-                          widget.origin.isCompleted,
                           size,
                         ),
-                        _buildStatus(isDark, size),
+                        _buildStatus(theme, size),
                         _buildPoint(
+                          theme,
                           widget.destination.city,
                           widget.destination.date,
-                          isDark,
-                          widget.destination.isCompleted,
                           size,
                         ),
                       ],
@@ -214,55 +150,48 @@ class _RouteTrackingCardWidgetState extends State<RouteTrackingCardWidget>
   }
 
   /// 构建时间轴线
-  Widget _buildTimeline(bool isDark, HomeWidgetSize size) {
+  ///
+  /// 节点为平直 ink 小几何（空心起点 / 实心终点），路线为淡墨虚线。
+  Widget _buildTimeline(AppThemeData theme, HomeWidgetSize size) {
     final iconSize = size.getIconSize();
     final dotSize = iconSize * 0.4; // 约 7.2/9.6/11.2
     final strokeWidth = size.getStrokeWidth() * 0.25; // 约 1.5/2/2.5
 
     return Column(
       children: [
-        Container(
+        // 起点节点：空心墨圈
+        SizedBox(
           width: dotSize,
           height: dotSize,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
-              width: strokeWidth,
+          child: CustomPaint(
+            painter: _RouteDotPainter(
+              filled: false,
+              color: theme.ink.withValues(alpha: 0.7),
+              strokeWidth: strokeWidth,
             ),
-            color: Colors.transparent,
           ),
         ),
         Expanded(
           child: Container(
             width: 1,
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(
-                  color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
-                  width: strokeWidth,
-                  style: BorderStyle.solid,
-                ),
-              ),
-            ),
             margin: EdgeInsets.symmetric(vertical: size.getSmallSpacing()),
             child: CustomPaint(
               painter: _DashedLinePainter(
-                color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+                color: theme.ink.withValues(alpha: 0.45),
                 strokeWidth: strokeWidth,
               ),
             ),
           ),
         ),
-        Container(
+        // 终点节点：实心墨点
+        SizedBox(
           width: dotSize,
           height: dotSize,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isDark ? Colors.white : Colors.grey.shade800,
-            border: Border.all(
-              color: isDark ? Colors.grey.shade500 : Colors.grey.shade300,
-              width: strokeWidth,
+          child: CustomPaint(
+            painter: _RouteDotPainter(
+              filled: true,
+              color: theme.ink,
+              strokeWidth: strokeWidth,
             ),
           ),
         ),
@@ -272,10 +201,9 @@ class _RouteTrackingCardWidgetState extends State<RouteTrackingCardWidget>
 
   /// 构建路线点信息
   Widget _buildPoint(
+    AppThemeData theme,
     String city,
     String date,
-    bool isDark,
-    bool isCompleted,
     HomeWidgetSize size,
   ) {
     final cityFontSize = size.getTitleFontSize() * 0.6; // 约 9.6/14.4/16.8
@@ -290,24 +218,21 @@ class _RouteTrackingCardWidgetState extends State<RouteTrackingCardWidget>
           style: TextStyle(
             fontSize: cityFontSize,
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.grey.shade900,
+            color: theme.text,
             height: 1.2,
           ),
         ),
         SizedBox(height: size.getSmallSpacing()),
         Text(
           date,
-          style: TextStyle(
-            fontSize: dateFontSize,
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
-          ),
+          style: TextStyle(fontSize: dateFontSize, color: theme.textSub),
         ),
       ],
     );
   }
 
   /// 构建状态显示
-  Widget _buildStatus(bool isDark, HomeWidgetSize size) {
+  Widget _buildStatus(AppThemeData theme, HomeWidgetSize size) {
     final statusFontSize = size.getSubtitleFontSize();
     final iconSize = size.getIconSize() * 0.6; // 约 10.8/14.4/16.8
 
@@ -318,20 +243,53 @@ class _RouteTrackingCardWidgetState extends State<RouteTrackingCardWidget>
           style: TextStyle(
             fontSize: statusFontSize,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.grey.shade200 : Colors.grey.shade800,
+            color: theme.text,
           ),
         ),
         SizedBox(width: size.getSmallSpacing() * 1.5),
         Transform.rotate(
           angle: 45 * 3.14159 / 180,
-          child: Icon(
-            Icons.flight,
+          child: WiredIcon(
+            icon: Icons.flight,
             size: iconSize,
-            color: isDark ? Colors.grey.shade200 : Colors.grey.shade800,
+            color: theme.text,
+            drawConfig: theme.wired.drawConfig,
           ),
         ),
       ],
     );
+  }
+}
+
+/// 时间轴节点绘制器：ink 平直小圆（空心/实心，刻度档几何）
+class _RouteDotPainter extends CustomPainter {
+  final bool filled;
+  final Color color;
+  final double strokeWidth;
+
+  const _RouteDotPainter({
+    required this.filled,
+    required this.color,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - strokeWidth / 2;
+    final paint =
+        Paint()
+          ..color = color
+          ..style = filled ? PaintingStyle.fill : PaintingStyle.stroke
+          ..strokeWidth = strokeWidth;
+    canvas.drawCircle(center, radius, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RouteDotPainter oldDelegate) {
+    return oldDelegate.filled != filled ||
+        oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth;
   }
 }
 

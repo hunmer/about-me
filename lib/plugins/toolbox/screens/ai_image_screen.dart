@@ -7,9 +7,11 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/toolbox/controllers/ai_image_controller.dart';
+import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
 import 'package:aboutme/plugins/toolbox/screens/ai_image_history_screen.dart';
 import 'package:aboutme/plugins/toolbox/services/ai_image_service.dart';
 import 'package:aboutme/plugins/toolbox/widgets/toolbox_config_sheet.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
@@ -191,12 +193,19 @@ class _AiImageScreenState extends State<AiImageScreen> {
                 style: DsTypography.body.copyWith(color: theme.textSub),
               ),
               SizedBox(height: theme.spacing.sm),
-              for (final img in c.results)
+              for (var i = 0; i < c.results.length; i++)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _resultImage(img),
+                  child: GestureDetector(
+                    onTap: () => _openResultViewer(i),
+                    // 与查看器当前页大图同 tag，形成飞行转场
+                    child: Hero(
+                      tag: _heroTag(c.results[i]),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _resultImage(c.results[i]),
+                      ),
+                    ),
                   ),
                 ),
               Text(
@@ -207,6 +216,26 @@ class _AiImageScreenState extends State<AiImageScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// 点击结果图：GalleryViewer 全屏查看本批图片
+  /// Hero/查看器共用的图片标识（与 GalleryPhoto.url 保持一致）
+  static String _heroTag(GeneratedImage img) =>
+      img.relativePath.isNotEmpty ? img.relativePath : img.absolutePath;
+
+  /// 点击结果图：GalleryViewer 全屏查看本批图片（Hero 飞行转场）
+  void _openResultViewer(int index) {
+    NavigationHelper.push(
+      context,
+      GalleryViewer(
+        title: 'toolbox_aiImage_name'.tr,
+        photos: [
+          for (final img in _controller.results)
+            GalleryPhoto(url: _heroTag(img), caption: img.relativePath),
+        ],
+        initialIndex: index,
       ),
     );
   }

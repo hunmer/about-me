@@ -1,6 +1,16 @@
+/// 每周步数进度卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘圆徽标（主题色底 + 手绘图标）+ 标题/日期范围 / 总步数翻牌计数器 /
+/// 斜纹步数柱（选中柱主题色浓斜纹、未选中柱淡墨轨道纹，逐柱错峰生长）。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 每日步数数据模型
 ///
@@ -56,13 +66,11 @@ class DailyStepData {
 /// 每周步数进度卡片组件
 ///
 /// 显示一周内的每日步数统计，包含总步数、平均值、
-/// 日期范围以及带有平均值参考线的柱状图。
+/// 日期范围以及柱状图。
 ///
 /// 特性：
 /// - 动画数字计数器（使用 AnimatedFlipCounter）
 /// - 柱状图独立延迟动画
-/// - 平均值参考线
-/// - 深色模式适配
 /// - 可选某一天查看详情
 /// - 根据尺寸自动调整所有元素大小
 ///
@@ -192,64 +200,35 @@ class _WeeklyStepsProgressCardState extends State<WeeklyStepsProgressCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    final size = widget.size;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _fadeAnimation.value)),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF111827) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Padding(
-                    padding: size.getPadding(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 标题栏
-                        _buildHeader(context, isDark, primaryColor, size),
-                        SizedBox(height: size.getTitleSpacing()),
-                        // 总步数和时间切换
-                        _buildTotalSection(context, isDark, primaryColor, size),
-                        SizedBox(height: size.getTitleSpacing()),
-                        // 柱状图区域（不含平均值参考线）
-                        _buildChartSection(context, isDark, primaryColor, size),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(24 * scale),
+        padding: widget.size.getPadding(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 标题栏
+            _buildHeader(theme),
+            SizedBox(height: widget.size.getTitleSpacing()),
+            // 总步数和时间切换
+            _buildTotalSection(theme),
+            SizedBox(height: widget.size.getTitleSpacing()),
+            // 柱状图区域
+            _buildChartSection(theme),
+          ],
+        ),
+      ),
     );
   }
 
   /// 构建标题栏
-  Widget _buildHeader(
-    BuildContext context,
-    bool isDark,
-    Color primaryColor,
-    HomeWidgetSize size,
-  ) {
+  Widget _buildHeader(AppThemeData theme) {
+    final size = widget.size;
     final iconSize = size.getIconSize();
     final containerSize = iconSize * size.iconContainerScale;
     final titleFontSize = size.getTitleFontSize();
@@ -262,24 +241,22 @@ class _WeeklyStepsProgressCardState extends State<WeeklyStepsProgressCard>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // 手绘圆徽标：主题色实底 + 墨线描边 + 手绘图标
               Container(
                 width: containerSize,
                 height: containerSize,
-                decoration: BoxDecoration(
-                  color: primaryColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryColor.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: BorderRadius.circular(containerSize / 2),
+                  fillColor: theme.primary,
                 ),
-                child: Icon(
-                  widget.icon ?? Icons.directions_walk,
-                  color: Colors.white,
-                  size: iconSize,
+                child: Center(
+                  child: WiredIcon(
+                    icon: widget.icon ?? Icons.directions_walk,
+                    size: iconSize,
+                    color: theme.onPrimary,
+                    drawConfig: theme.wired.drawConfig,
+                  ),
                 ),
               ),
               SizedBox(width: size.getSmallSpacing() * 3),
@@ -289,10 +266,7 @@ class _WeeklyStepsProgressCardState extends State<WeeklyStepsProgressCard>
                   style: TextStyle(
                     fontSize: titleFontSize,
                     fontWeight: FontWeight.w600,
-                    color:
-                        isDark
-                            ? const Color(0xFFF3F4F6)
-                            : const Color(0xFF111827),
+                    color: theme.text,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
@@ -310,10 +284,7 @@ class _WeeklyStepsProgressCardState extends State<WeeklyStepsProgressCard>
                 style: TextStyle(
                   fontSize: labelFontSize,
                   fontWeight: FontWeight.w500,
-                  color:
-                      isDark
-                          ? const Color(0xFF9CA3AF)
-                          : const Color(0xFF6B7280),
+                  color: theme.textSub,
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
@@ -322,13 +293,7 @@ class _WeeklyStepsProgressCardState extends State<WeeklyStepsProgressCard>
             if (widget.onMenuPressed != null) ...[
               SizedBox(width: size.getSmallSpacing()),
               IconButton(
-                icon: Icon(
-                  Icons.more_horiz,
-                  color:
-                      isDark
-                          ? const Color(0xFF9CA3AF)
-                          : const Color(0xFF6B7280),
-                ),
+                icon: DsIcon(DsIconKind.more, color: theme.textSub),
                 onPressed: widget.onMenuPressed,
               ),
             ],
@@ -339,64 +304,60 @@ class _WeeklyStepsProgressCardState extends State<WeeklyStepsProgressCard>
   }
 
   /// 构建总数区域
-  Widget _buildTotalSection(
-    BuildContext context,
-    bool isDark,
-    Color primaryColor,
-    HomeWidgetSize size,
-  ) {
+  ///
+  /// 翻牌计数器消费 _counterAnimation.value，
+  /// 需 AnimatedBuilder 逐帧 rebuild 驱动。
+  Widget _buildTotalSection(AppThemeData theme) {
+    final size = widget.size;
     final valueFontSize = size.getLargeFontSize() * 0.75; // 约 27/36/42
     final labelFontSize = size.getSubtitleFontSize();
 
-    return SizedBox(
-      height: valueFontSize,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: valueFontSize * 4,
-            height: valueFontSize,
-            child: OverflowBox(
-              maxWidth: valueFontSize * 4,
-              child: Center(
-                child: AnimatedFlipCounter(
-                  value: widget.totalSteps.toDouble() * _counterAnimation.value,
-                  fractionDigits: 0,
-                  textStyle: TextStyle(
-                    fontSize: valueFontSize,
-                    fontWeight: FontWeight.bold,
-                    color:
-                        isDark
-                            ? const Color(0xFFF3F4F6)
-                            : const Color(0xFF111827),
-                    letterSpacing: -0.5,
-                    height: 1.0,
+    return AnimatedBuilder(
+      animation: _counterAnimation,
+      builder: (context, _) => SizedBox(
+        height: valueFontSize,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: valueFontSize * 4,
+              height: valueFontSize,
+              child: OverflowBox(
+                maxWidth: valueFontSize * 4,
+                child: Center(
+                  child: AnimatedFlipCounter(
+                    value:
+                        widget.totalSteps.toDouble() * _counterAnimation.value,
+                    fractionDigits: 0,
+                    textStyle: TextStyle(
+                      fontSize: valueFontSize,
+                      fontWeight: FontWeight.bold,
+                      color: theme.text,
+                      letterSpacing: -0.5,
+                      height: 1.0,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Text(
-            'steps',
-            style: TextStyle(
-              fontSize: labelFontSize,
-              fontWeight: FontWeight.w500,
-              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-              height: 1.0,
+            Text(
+              'steps',
+              style: TextStyle(
+                fontSize: labelFontSize,
+                fontWeight: FontWeight.w500,
+                color: theme.textSub,
+                height: 1.0,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   /// 构建柱状图区域
-  Widget _buildChartSection(
-    BuildContext context,
-    bool isDark,
-    Color primaryColor,
-    HomeWidgetSize size,
-  ) {
+  Widget _buildChartSection(AppThemeData theme) {
+    final size = widget.size;
     final maxSteps = widget.dailyData
         .map((d) => d.steps)
         .reduce((a, b) => a > b ? a : b);
@@ -417,8 +378,8 @@ class _WeeklyStepsProgressCardState extends State<WeeklyStepsProgressCard>
               maxSteps: maxSteps,
               averageSteps: widget.averageSteps,
               onTap: _selectDay,
-              isDark: isDark,
-              primaryColor: primaryColor,
+              theme: theme,
+              accentColor: theme.primary,
               availableHeight: chartHeight,
               size: size,
             ),
@@ -437,8 +398,8 @@ class _StepsBars extends StatelessWidget {
   final int maxSteps;
   final int averageSteps;
   final Function(int) onTap;
-  final bool isDark;
-  final Color primaryColor;
+  final AppThemeData theme;
+  final Color accentColor;
   final double availableHeight;
   final HomeWidgetSize size;
 
@@ -449,8 +410,8 @@ class _StepsBars extends StatelessWidget {
     required this.maxSteps,
     required this.averageSteps,
     required this.onTap,
-    required this.isDark,
-    required this.primaryColor,
+    required this.theme,
+    required this.accentColor,
     required this.availableHeight,
     required this.size,
   });
@@ -481,8 +442,6 @@ class _StepsBars extends StatelessWidget {
               barWidth,
               legendFontSize,
               showBottomText,
-              isDark,
-              primaryColor,
             ),
           ),
           if (index < dailyData.length - 1) const SizedBox(width: 5),
@@ -498,8 +457,6 @@ class _StepsBars extends StatelessWidget {
     double barWidth,
     double legendFontSize,
     bool showBottomText,
-    bool isDark,
-    Color primaryColor,
   ) {
     final barHeight = (data.steps / maxSteps) * maxHeight;
     final isSelected = index == selectedIndex;
@@ -524,48 +481,22 @@ class _StepsBars extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 柱子使用 Flexible，会自动适应可用空间
+            // 斜纹步数柱：AnimatedBuilder 逐帧驱动柱高生长
             Flexible(
               child: AnimatedBuilder(
                 animation: barAnimation,
-                builder: (context, child) {
-                  return Container(
-                    constraints: BoxConstraints(maxHeight: maxHeight),
-                    height: barHeight * barAnimation.value,
+                builder: (context, _) {
+                  final height = barHeight * barAnimation.value;
+                  return SizedBox(
                     width: barWidth,
-                    decoration: BoxDecoration(
-                      gradient:
-                          isSelected
-                              ? null
-                              : LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors:
-                                    isDark
-                                        ? [
-                                          const Color(0xFFFFD89E),
-                                          const Color(0xFFA66C1E),
-                                        ]
-                                        : [
-                                          const Color(0xFFFFD89E),
-                                          const Color(0xFFFFF0D9),
-                                        ],
-                              ),
-                      color: isSelected ? primaryColor : null,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(barWidth / 2),
-                        topRight: Radius.circular(barWidth / 2),
+                    height: height,
+                    child: CustomPaint(
+                      painter: _StepsBarPainter(
+                        selected: isSelected,
+                        accentColor: accentColor,
+                        theme: theme,
+                        scale: size.scale,
                       ),
-                      boxShadow:
-                          isSelected
-                              ? [
-                                BoxShadow(
-                                  color: primaryColor.withOpacity(0.3),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                              : null,
                     ),
                   );
                 },
@@ -581,19 +512,75 @@ class _StepsBars extends StatelessWidget {
                 style: TextStyle(
                   fontSize: legendFontSize,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color:
-                      isSelected
-                          ? isDark
-                              ? const Color(0xFFF3F4F6)
-                              : const Color(0xFF111827)
-                          : isDark
-                          ? const Color(0xFF9CA3AF)
-                          : const Color(0xFF6B7280),
+                  color: isSelected ? theme.text : theme.textSub,
                 ),
               ),
           ],
         ),
       ),
     );
+  }
+}
+
+/// 斜纹步数柱绘制器
+///
+/// 选中柱：主题色浅底 + 主题色浓斜纹 + 主题色描边；
+/// 未选中柱：surfaceAlt 底 + 淡墨斜纹 + 淡墨描边（轨道语言）。
+/// 顶部胶囊圆角，与条纹柱状图卡片同款纹样。
+class _StepsBarPainter extends CustomPainter {
+  final bool selected;
+  final Color accentColor;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StepsBarPainter({
+    required this.selected,
+    required this.accentColor,
+    required this.theme,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final capsule = Radius.circular(size.width / 2);
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndCorners(
+      rect,
+      topLeft: capsule,
+      topRight: capsule,
+    );
+    final background = selected ? accentColor.withValues(alpha: 0.28) : theme.surfaceAlt;
+    final stripe = selected
+        ? accentColor.withValues(alpha: 0.9)
+        : theme.ink.withValues(alpha: 0.28);
+    final border = selected
+        ? accentColor.withValues(alpha: 0.85)
+        : theme.ink.withValues(alpha: 0.45);
+
+    canvas.drawRRect(rrect, Paint()..color = background);
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(rrect),
+      rect,
+      color: stripe,
+      strokeWidth: (selected ? 3 : 1.5) * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = border
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _StepsBarPainter oldDelegate) {
+    return oldDelegate.selected != selected ||
+        oldDelegate.accentColor != accentColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }

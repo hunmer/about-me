@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/utils/network.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/toolbox/controllers/image_search_controller.dart';
 import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
 import 'package:aboutme/plugins/toolbox/services/image_search_service.dart';
 import 'package:aboutme/plugins/toolbox/widgets/toolbox_config_sheet.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// 图片搜索小工具独立界面
@@ -452,8 +459,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
           child: ListView.builder(
             padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
             itemCount: c.images.length,
-            itemBuilder: (context, index) =>
-                _buildImageItem(theme, c.images[index]),
+            itemBuilder: (context, index) => _buildImageItem(theme, index),
           ),
         ),
         if (c.canPaging)
@@ -488,8 +494,41 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
     );
   }
 
-  /// 以图搜图/搜索引擎结果：缩略图横排；图库结果：大图竖排
-  Widget _buildImageItem(AppThemeData theme, SearchedImage img) {
+  /// 点击搜索结果：GalleryViewer 全屏查看本批图片（Hero 飞行转场）
+  void _openImageViewer(int index) {
+    final images = _controller.images;
+    NavigationHelper.push(
+      context,
+      GalleryViewer(
+        title: 'toolbox_image_search_name'.tr,
+        photos: [
+          for (final img in images)
+            GalleryPhoto(url: img.url, caption: img.credit),
+        ],
+        initialIndex: index,
+        // 搜索引擎图源原图直链多被墙，查看器内走系统代理下载
+        networkViaProxy: true,
+      ),
+    );
+  }
+
+  /// 长按搜索结果：保存图片 / 复制图片 URL / 复制落地页 URL
+  void _onLongPressImage(SearchedImage img) {
+    SmoothBottomSheet.show(
+      context: context,
+      builder: (context) => _ImageActionsSheet(
+        imageUrl: img.url,
+        // pixabay 的 large 为 1280px 原图，保存优先用大图
+        downloadUrl: img.large.isNotEmpty ? img.large : img.url,
+        pageUrl: img.pageUrl,
+      ),
+    );
+  }
+
+  /// 以图搜图/搜索引擎结果：缩略图横排；图库结果：大图竖排。
+  /// 两种布局的图片区均可点击进查看器（Hero tag 与查看器同 url）。
+  Widget _buildImageItem(AppThemeData theme, int index) {
+    final img = _controller.images[index];
     final compact =
         img.source == 'google_lens' ||
         ImageSearchService.isSerpProvider(img.source);
@@ -508,7 +547,17 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(borderRadius: BorderRadius.circular(8), child: image),
+            GestureDetector(
+              onTap: () => _openImageViewer(index),
+              onLongPress: () => _onLongPressImage(img),
+              child: Hero(
+                tag: img.url,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: image,
+                ),
+              ),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -547,9 +596,16 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: _proxyImage(img.url, bigFit: true),
+          GestureDetector(
+            onTap: () => _openImageViewer(index),
+            onLongPress: () => _onLongPressImage(img),
+            child: Hero(
+              tag: img.url,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: _proxyImage(img.url, bigFit: true),
+              ),
+            ),
           ),
           const SizedBox(height: 6),
           if (img.credit.isNotEmpty)
@@ -600,4 +656,96 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
 
   static String _clip(String text, int max) =>
       text.length > max ? text.substring(0, max) : text;
+}
+
+/// 搜索结果长按操作单：保存图片（走系统代理下载）/ 复制图片 URL / 复制落地页
+class _ImageActionsSheet extends StatelessWidget {
+  final String imageUrl;
+
+  /// 保存用的直链（pixabay 优先 1280px 原图）
+  final String downloadUrl;
+  final String pageUrl;
+
+  const _ImageActionsSheet({
+    required this.imageUrl,
+    required this.downloadUrl,
+    required this.pageUrl,
+  });
+
+  Future<void> _saveImage(BuildContext context) async {
+    Navigator.of(context).pop();
+    if (downloadUrl.isEmpty) {
+      Toast.warning('toolbox_saveFailed'.tr);
+      return;
+    }
+    Toast.info('toolbox_saving'.tr);
+    try {
+      final client = await createClientWithSystemProxy();
+      try {
+        final resp = await client
+            .get(Uri.parse(downloadUrl))
+            .timeout(const Duration(seconds: 60));
+        if (resp.statusCode != 200 || resp.bodyBytes.isEmpty) {
+          throw Exception('HTTP ${resp.statusCode}');
+        }
+        final rel = await ImageUtils.saveBytesToAppDirectory(
+          resp.bodyBytes,
+          'toolbox/image_search',
+        );
+        Toast.success('${'toolbox_savedTo'.tr} $rel');
+      } finally {
+        client.close();
+      }
+    } catch (e) {
+      Toast.error('${'toolbox_saveFailed'.tr}: $e');
+    }
+  }
+
+  Future<void> _copy(BuildContext context, String text, String label) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (context.mounted) Navigator.of(context).pop();
+    Toast.success(label);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    return SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(height: theme.spacing.md),
+          ListTile(
+            leading: const Icon(Icons.download_outlined),
+            title: Text('toolbox_saveImage'.tr),
+            onTap: () => _saveImage(context),
+          ),
+          if (imageUrl.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.link),
+              title: Text('toolbox_copyImageUrl'.tr),
+              subtitle: Text(
+                imageUrl,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              onTap: () => _copy(context, imageUrl, 'toolbox_copied'.tr),
+            ),
+          if (pageUrl.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.open_in_new),
+              title: Text('toolbox_copyPageUrl'.tr),
+              subtitle: Text(
+                pageUrl,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              onTap: () => _copy(context, pageUrl, 'toolbox_copied'.tr),
+            ),
+          SizedBox(height: theme.spacing.sm),
+        ],
+      ),
+    );
+  }
 }

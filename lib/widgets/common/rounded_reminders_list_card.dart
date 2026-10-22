@@ -1,5 +1,14 @@
+/// 提醒列表卡片（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 翻牌计数 + danger 标题 / danger 实底操作圆钮（墨线描边）/
+/// 手绘勾选框列表（墨线分隔线、逐项错峰浮现）。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 提醒事项数据模型
@@ -143,14 +152,7 @@ class _ReminderListCardState extends State<ReminderListCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.error;
-    final backgroundColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final borderColor =
-        isDark ? const Color(0xFF38383A) : const Color(0xFFC6C6C8);
-    final dividerColor =
-        isDark ? const Color(0xFF38383A) : const Color(0xFFD1D1D6);
+    final theme = AppTheme.of(context);
 
     // 根据 size 计算尺寸
     final padding = widget.size.getPadding();
@@ -159,216 +161,157 @@ class _ReminderListCardState extends State<ReminderListCard>
     final iconSize = widget.size.getIconSize();
     final smallSpacing = widget.size.getSmallSpacing();
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.width,
-              height: widget.height,
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 24,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: DsSketchPanel(
+        theme: theme,
+        width: widget.width,
+        height: widget.height,
+        radius: BorderRadius.circular(24 * widget.size.scale),
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            // 标题区域
+            Padding(
+              padding: padding,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 标题区域
-                  Padding(
-                    padding: padding,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: largeFontSize + smallSpacing * 2,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            SizedBox(
-                              height: largeFontSize + smallSpacing * 2,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  AnimatedFlipCounter(
-                                    value:
-                                        widget.itemCount.toDouble() *
-                                        _animation.value,
-                                    textStyle: TextStyle(
-                                      color: textColor,
-                                      fontSize: largeFontSize,
-                                      fontWeight: FontWeight.bold,
-                                      height: 1.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: smallSpacing),
-                            SizedBox(
-                              height: subtitleFontSize + smallSpacing,
-                              child: Text(
-                                widget.title ?? 'Reminders',
-                                style: TextStyle(
-                                  color: primaryColor,
-                                  fontSize: subtitleFontSize,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.0,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Material(
-                          color: primaryColor,
-                          borderRadius: BorderRadius.circular(iconSize * 0.8),
-                          child: InkWell(
-                            onTap: widget.onActionTap,
-                            borderRadius: BorderRadius.circular(iconSize * 0.8),
-                            child: Container(
-                              width: iconSize * 1.8,
-                              height: iconSize * 1.8,
-                              alignment: Alignment.center,
-                              child: Icon(
-                                Icons.format_list_bulleted_rounded,
-                                color: Colors.white,
-                                size: iconSize,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 分隔线
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: padding.left),
-                    child: Container(
-                      height: smallSpacing * 0.5,
-                      color: dividerColor,
-                    ),
-                  ),
-                  // 列表区域
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        ListView.separated(
-                          padding: EdgeInsets.fromLTRB(
-                            padding.left,
-                            smallSpacing,
-                            padding.right,
-                            smallSpacing,
-                          ),
-                          itemCount: widget.items.length,
-                          separatorBuilder:
-                              (context, index) => Padding(
-                                padding: EdgeInsets.only(
-                                  left: iconSize * 2 + smallSpacing * 2,
-                                  top: 0,
-                                  bottom: 0,
-                                ),
-                                child: Container(
-                                  height: smallSpacing * 0.5,
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color:
-                                            isDark
-                                                ? const Color(0xFF48484A)
-                                                : const Color(0xFFE5E5EA),
-                                        width: 1,
-                                        style: BorderStyle.solid,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          itemBuilder: (context, index) {
-                            final item = widget.items[index];
-                            final itemAnimation = CurvedAnimation(
-                              parent: _animationController,
-                              curve: Interval(
-                                index * 0.08,
-                                0.4 + index * 0.08,
-                                curve: Curves.easeOutCubic,
-                              ),
-                            );
-
-                            return AnimatedBuilder(
-                              animation: itemAnimation,
-                              builder: (context, child) {
-                                return Opacity(
-                                  opacity: itemAnimation.value,
-                                  child: Transform.translate(
-                                    offset: Offset(
-                                      0,
-                                      10 * (1 - itemAnimation.value),
-                                    ),
-                                    child: _ReminderItemTile(
-                                      item: item,
-                                      size: widget.size,
-                                      textColor: textColor,
-                                      borderColor: borderColor,
-                                      primaryColor: primaryColor,
-                                      onTap:
-                                          widget.onItemTap != null
-                                              ? () => widget.onItemTap!(item)
-                                              : null,
-                                      onCheckboxChanged:
-                                          widget.onCheckboxChanged != null
-                                              ? (completed) => widget
-                                                  .onCheckboxChanged!(index)
-                                              : null,
-                                    ),
+                            // 翻牌计数：AnimatedBuilder 驱动每 tick rebuild
+                            AnimatedBuilder(
+                              animation: _animation,
+                              builder: (context, _) {
+                                return AnimatedFlipCounter(
+                                  value:
+                                      widget.itemCount.toDouble() *
+                                      _animation.value,
+                                  textStyle: TextStyle(
+                                    color: theme.text,
+                                    fontSize: largeFontSize,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.0,
                                   ),
                                 );
                               },
-                            );
-                          },
+                            ),
+                          ],
                         ),
-                        // 底部渐变遮罩
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              bottomLeft: Radius.circular(12),
-                              bottomRight: Radius.circular(12),
-                            ),
-                            child: Container(
-                              height: iconSize * 2,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    backgroundColor.withOpacity(0),
-                                    backgroundColor,
-                                  ],
-                                ),
-                              ),
-                            ),
+                      ),
+                      SizedBox(height: smallSpacing),
+                      SizedBox(
+                        height: subtitleFontSize + smallSpacing,
+                        child: Text(
+                          widget.title ?? 'Reminders',
+                          style: TextStyle(
+                            color: theme.danger,
+                            fontSize: subtitleFontSize,
+                            fontWeight: FontWeight.w600,
+                            height: 1.0,
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  // 操作按钮：danger 实底 + 墨线描边（大圆角被 rough 引擎钳成圆）
+                  GestureDetector(
+                    onTap: widget.onActionTap,
+                    child: Container(
+                      width: iconSize * 1.8,
+                      height: iconSize * 1.8,
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        radius: BorderRadius.circular(iconSize * 0.9),
+                        fillColor: theme.danger,
+                      ),
+                      child: Center(
+                        child: DsIcon(
+                          DsIconKind.list,
+                          color: theme.onDanger,
+                          size: iconSize,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        );
-      },
+            // 墨线分隔线
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: padding.left),
+              child: Container(height: 1, color: theme.ink.withValues(alpha: 0.18)),
+            ),
+            // 列表区域
+            Expanded(
+              child: ListView.separated(
+                padding: EdgeInsets.fromLTRB(
+                  padding.left,
+                  smallSpacing,
+                  padding.right,
+                  smallSpacing,
+                ),
+                itemCount: widget.items.length,
+                separatorBuilder:
+                    (context, index) => Padding(
+                      padding: EdgeInsets.only(
+                        left: iconSize * 2 + smallSpacing * 2,
+                      ),
+                      child: Container(
+                        height: 1,
+                        color: theme.ink.withValues(alpha: 0.18),
+                      ),
+                    ),
+                itemBuilder: (context, index) {
+                  final item = widget.items[index];
+                  final itemAnimation = CurvedAnimation(
+                    parent: _animationController,
+                    curve: Interval(
+                      index * 0.08,
+                      0.4 + index * 0.08,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  );
+
+                  return AnimatedBuilder(
+                    animation: itemAnimation,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: itemAnimation.value,
+                        child: Transform.translate(
+                          offset: Offset(0, 10 * (1 - itemAnimation.value)),
+                          child: _ReminderItemTile(
+                            item: item,
+                            size: widget.size,
+                            onTap:
+                                widget.onItemTap != null
+                                    ? () => widget.onItemTap!(item)
+                                    : null,
+                            onCheckboxChanged:
+                                widget.onCheckboxChanged != null
+                                    ? (completed) => widget
+                                        .onCheckboxChanged!(index)
+                                    : null,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -377,18 +320,12 @@ class _ReminderListCardState extends State<ReminderListCard>
 class _ReminderItemTile extends StatefulWidget {
   final ReminderItem item;
   final HomeWidgetSize size;
-  final Color textColor;
-  final Color borderColor;
-  final Color primaryColor;
   final VoidCallback? onTap;
   final ValueChanged<bool>? onCheckboxChanged;
 
   const _ReminderItemTile({
     required this.item,
     required this.size,
-    required this.textColor,
-    required this.borderColor,
-    required this.primaryColor,
     this.onTap,
     this.onCheckboxChanged,
   });
@@ -402,6 +339,8 @@ class _ReminderItemTileState extends State<_ReminderItemTile> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+
     // 根据 size 计算尺寸
     final iconSize = widget.size.getIconSize();
     final checkboxSize = iconSize * 0.9;
@@ -410,14 +349,14 @@ class _ReminderItemTileState extends State<_ReminderItemTile> {
     final spacingBetween = iconSize * 0.7;
     final isCompleted = widget.item.isCompleted;
 
-    return InkWell(
+    return GestureDetector(
       onTap: widget.onTap,
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: smallSpacing * 2),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 圆形复选框
+            // 圆形复选框：勾选 danger 实底 + 手绘勾号，未勾选浅底空格
             Padding(
               padding: EdgeInsets.only(top: smallSpacing),
               child: MouseRegion(
@@ -429,31 +368,28 @@ class _ReminderItemTileState extends State<_ReminderItemTile> {
                       widget.onCheckboxChanged!(!isCompleted);
                     }
                   },
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
                     width: checkboxSize,
                     height: checkboxSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:
-                          isCompleted
-                              ? widget.primaryColor
-                              : Colors.transparent,
-                      border: Border.all(
-                        color:
-                            _isHoveringCheckbox
-                                ? widget.primaryColor
-                                : (isCompleted
-                                    ? widget.primaryColor
-                                    : widget.borderColor),
-                        width: 1.5,
-                      ),
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      radius: BorderRadius.circular(checkboxSize / 2),
+                      fillColor:
+                          isCompleted ? theme.danger : theme.surfaceAlt,
+                      // 悬停时墨线换成 danger，保留原悬停反馈
+                      stroke: _isHoveringCheckbox && !isCompleted
+                          ? theme.danger
+                          : null,
                     ),
                     child:
                         isCompleted
-                            ? Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: checkboxSize * 0.6,
+                            ? Center(
+                              child: DsIcon(
+                                DsIconKind.check,
+                                color: theme.onDanger,
+                                size: checkboxSize * 0.6,
+                              ),
                             )
                             : null,
                   ),
@@ -468,10 +404,7 @@ class _ReminderItemTileState extends State<_ReminderItemTile> {
                 child: Text(
                   widget.item.text,
                   style: TextStyle(
-                    color:
-                        isCompleted
-                            ? widget.textColor.withOpacity(0.5)
-                            : widget.textColor,
+                    color: isCompleted ? theme.textSub : theme.text,
                     fontSize: fontSize,
                     fontWeight: FontWeight.w500,
                     height: 1.3,

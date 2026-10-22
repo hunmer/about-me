@@ -153,10 +153,14 @@ class _DonutChartStatsCardWidgetState extends State<DonutChartStatsCardWidget>
         height: widget.inline ? double.maxFinite : 200 * scale,
         radius: BorderRadius.circular(24 * scale),
         padding: widget.size.getPadding(),
-        child:
-            widget.size is SmallSize || widget.size is MediumSize
-                ? _buildCompactLayout(theme)
-                : _buildWideLayout(theme),
+        // AnimatedBuilder 驱动环形扫描 rebuild，否则 progress 恒为首帧 0
+        child: AnimatedBuilder(
+          animation: _animation,
+          builder: (context, _) =>
+              widget.size is SmallSize || widget.size is MediumSize
+              ? _buildCompactLayout(theme)
+              : _buildWideLayout(theme),
+        ),
       ),
     );
   }

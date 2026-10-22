@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/utils/network.dart';
 import 'package:aboutme/utils/blob_url.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/photo_editor_screen.dart';
@@ -82,14 +83,18 @@ class GalleryImageResolver {
   static final Map<String, ImageProvider?> _resolved = {};
 
   /// 同步读取已解析的 provider（未解析或解析失败返回 null）
-  static ImageProvider? cached(String url) => _resolved[url];
+  static ImageProvider? cached(String url, {bool viaProxy = false}) =>
+      _resolved[_cacheKey(url, viaProxy)];
 
-  /// 解析 url（网络 URL / assets 路径 / 本地相对路径），结果写入缓存
-  static Future<ImageProvider?> resolve(String url) {
-    return _futures.putIfAbsent(url, () async {
+  /// 解析 url（网络 URL / assets 路径 / 本地相对路径），结果写入缓存。
+  /// [viaProxy] 仅对网络 URL 生效：走系统代理下载字节用 MemoryImage 渲染
+  ///（Image.network/NetworkImage 不走代理，被墙图源需此开关）。
+  static Future<ImageProvider?> resolve(String url, {bool viaProxy = false}) {
+    return _futures.putIfAbsent(_cacheKey(url, viaProxy), () async {
       ImageProvider? provider;
       if (url.startsWith('http://') || url.startsWith('https://')) {
-        provider = NetworkImage(url);
+        provider = viaProxy ? await _downloadViaProxy(url) : null;
+        provider ??= NetworkImage(url);
       } else if (url.startsWith('assets/')) {
         provider = AssetImage(url);
       } else {
@@ -99,9 +104,32 @@ class GalleryImageResolver {
           if (file.existsSync()) provider = FileImage(file);
         }
       }
-      _resolved[url] = provider;
+      _resolved[_cacheKey(url, viaProxy)] = provider;
       return provider;
     });
+  }
+
+  static String _cacheKey(String url, bool viaProxy) =>
+      viaProxy ? '$url#proxy' : url;
+
+  /// 走系统代理下载网络图片（失败返回 null，调用方回退直连）
+  static Future<ImageProvider?> _downloadViaProxy(String url) async {
+    try {
+      final client = await createClientWithSystemProxy();
+      try {
+        final resp = await client
+            .get(Uri.parse(url))
+            .timeout(const Duration(seconds: 30));
+        if (resp.statusCode == 200 && resp.bodyBytes.isNotEmpty) {
+          return MemoryImage(resp.bodyBytes);
+        }
+      } finally {
+        client.close();
+      }
+    } catch (_) {
+      /* 代理下载失败回退 NetworkImage 直连 */
+    }
+    return null;
   }
 }
 
@@ -118,6 +146,7 @@ class GalleryViewer extends StatefulWidget {
     this.title = 'Gallery',
     this.onInfoTap,
     this.entranceAnimation = false,
+    this.networkViaProxy = false,
     this.showFileActions = false,
     this.showEditAction = true,
     this.onImageEdited,
@@ -135,6 +164,9 @@ class GalleryViewer extends StatefulWidget {
   /// 打开时大图区域缩放淡入入场（无 Hero 飞行的入口使用，
   /// 与 Hero 转场同开会产生飞行结束后二次跳变）
   final bool entranceAnimation;
+
+  /// 网络 URL 走系统代理下载渲染（搜索引擎图源等被墙原图入口开启）
+  final bool networkViaProxy;
 
   /// 顶栏是否显示文件操作按钮（分享 / 定位本地文件），
   /// 操作针对当前页媒体，仅需传入媒体路径即可执行
@@ -416,7 +448,10 @@ class _GalleryViewerState extends State<GalleryViewer>
                                 disableGestures: true,
                               );
                             }
-                            final image = _GalleryImage(url: photo.url);
+                            final image = _GalleryImage(
+                              url: photo.url,
+                              viaProxy: widget.networkViaProxy,
+                            );
                             return PhotoViewGalleryPageOptions.customChild(
                               // 单击大图切换沉浸模式；opaque 让图片周围空白也可点击
                               child: GestureDetector(
@@ -786,17 +821,20 @@ class _ChromeSection extends StatelessWidget {
 
 /// 大图渲染：优先同步读取解析缓存（Hero 首帧出图），未命中时异步解析
 class _GalleryImage extends StatelessWidget {
-  const _GalleryImage({required this.url});
+  const _GalleryImage({required this.url, this.viaProxy = false});
 
   final String url;
 
+  /// 网络 URL 走系统代理下载（被墙图源入口开启）
+  final bool viaProxy;
+
   @override
   Widget build(BuildContext context) {
-    final provider = GalleryImageResolver.cached(url);
+    final provider = GalleryImageResolver.cached(url, viaProxy: viaProxy);
     if (provider != null) return _buildImage(provider);
 
     return FutureBuilder<ImageProvider?>(
-      future: GalleryImageResolver.resolve(url),
+      future: GalleryImageResolver.resolve(url, viaProxy: viaProxy),
       builder: (context, snapshot) {
         final resolved = snapshot.data;
         if (resolved != null) return _buildImage(resolved);

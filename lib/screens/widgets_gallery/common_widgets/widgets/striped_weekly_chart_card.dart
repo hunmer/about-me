@@ -158,7 +158,14 @@ class _StripedWeeklyChartCardWidgetState
           children: [
             _buildHeader(theme),
             SizedBox(height: 14 * scale),
-            Expanded(child: _buildChart(theme, _animation.value)),
+            // AnimatedBuilder 驱动柱高生长（入场 Opacity/translate 删除后
+            // 仍需 rebuild 来源，否则 _animation.value 恒为首帧 0）
+            Expanded(
+              child: AnimatedBuilder(
+                animation: _animation,
+                builder: (context, _) => _buildChart(theme, _animation.value),
+              ),
+            ),
           ],
         ),
       ),

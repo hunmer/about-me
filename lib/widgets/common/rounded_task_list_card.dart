@@ -1,4 +1,13 @@
+/// 圆角任务列表卡片（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 主题色圆点徽章 + 大写标题 / 任务列表（标题 + 副标题 + 日期、
+/// 墨线分隔线、逐项错峰浮现）。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 
 /// 任务列表项数据模型
@@ -115,7 +124,6 @@ class RoundedTaskListCard extends StatefulWidget {
 class _RoundedTaskListCardState extends State<RoundedTaskListCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -123,10 +131,6 @@ class _RoundedTaskListCardState extends State<RoundedTaskListCard>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
     );
     _animationController.forward();
   }
@@ -139,80 +143,60 @@ class _RoundedTaskListCardState extends State<RoundedTaskListCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final primaryColor = Theme.of(context).colorScheme.tertiary;
-    final subtextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF9CA3AF);
+    final theme = AppTheme.of(context);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - _animation.value)),
-          child: Opacity(
-            opacity: _animation.value,
-            child: Container(
-              width: 344,
-              constraints: widget.size.getHeightConstraints(),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(
-                  widget.size is SmallSize ? 6 : 8,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              padding: (widget.size.getPadding() * 0.7).copyWith(
-                top: widget.size.getPadding().top * 0.8,
-                bottom: widget.size.getPadding().bottom * 0.8,
-                left: widget.size.getPadding().left * 0.8,
-                right: widget.size.getPadding().right * 0.8,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 标题栏
-                  _buildHeader(context, primaryColor, subtextColor),
-                  SizedBox(height: widget.size.getTitleSpacing() * 1.4),
-                  // 任务列表 - 支持滚动
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: _buildTaskList(
-                          context,
-                          primaryColor,
-                          subtextColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: widget.size.getHeightConstraints(),
+        child: DsSketchPanel(
+          theme: theme,
+          width: 344,
+          radius: BorderRadius.circular(24 * widget.size.scale),
+          padding: (widget.size.getPadding() * 0.7).copyWith(
+            top: widget.size.getPadding().top * 0.8,
+            bottom: widget.size.getPadding().bottom * 0.8,
+            left: widget.size.getPadding().left * 0.8,
+            right: widget.size.getPadding().right * 0.8,
           ),
-        );
-      },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题栏
+              _buildHeader(theme),
+              SizedBox(height: widget.size.getTitleSpacing() * 1.4),
+              // 任务列表 - 支持滚动
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: _buildTaskList(theme),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   /// 构建标题栏
-  Widget _buildHeader(BuildContext context, Color primaryColor, Color subtextColor) {
+  Widget _buildHeader(AppThemeData theme) {
+    final dotSize = widget.size.getSmallSpacing() * 3;
+
     return Row(
       children: [
+        // 主题色圆点徽章：实底 + 墨线描边（大圆角被 rough 引擎钳成圆）
         Container(
-          width: widget.size.getSmallSpacing() * 3,
-          height: widget.size.getSmallSpacing() * 3,
-          decoration: BoxDecoration(
-            color: primaryColor,
-            shape: BoxShape.circle,
+          width: dotSize,
+          height: dotSize,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(dotSize / 2),
+            fillColor: theme.primary,
           ),
         ),
         SizedBox(width: widget.size.getSmallSpacing() * 2),
@@ -221,7 +205,7 @@ class _RoundedTaskListCardState extends State<RoundedTaskListCard>
           style: TextStyle(
             fontSize: widget.size.getSubtitleFontSize(),
             fontWeight: FontWeight.w500,
-            color: subtextColor,
+            color: theme.textSub,
             letterSpacing: 1.0,
           ),
         ),
@@ -230,7 +214,7 @@ class _RoundedTaskListCardState extends State<RoundedTaskListCard>
   }
 
   /// 构建任务列表
-  List<Widget> _buildTaskList(BuildContext context, Color primaryColor, Color subtextColor) {
+  List<Widget> _buildTaskList(AppThemeData theme) {
     final widgets = <Widget>[];
     final elementCount = widget.tasks.length;
     const baseStart = 0.0;
@@ -254,8 +238,6 @@ class _RoundedTaskListCardState extends State<RoundedTaskListCard>
         _TaskListItem(
           task: task,
           animation: itemAnimation,
-          primaryColor: primaryColor,
-          subtextColor: subtextColor,
           isLast: i == widget.tasks.length - 1,
           isSmallSize: widget.size is SmallSize,
           size: widget.size,
@@ -271,8 +253,6 @@ class _RoundedTaskListCardState extends State<RoundedTaskListCard>
 class _TaskListItem extends StatelessWidget {
   final TaskListItem task;
   final Animation<double> animation;
-  final Color primaryColor;
-  final Color subtextColor;
   final bool isLast;
   final bool isSmallSize;
   final HomeWidgetSize size;
@@ -280,8 +260,6 @@ class _TaskListItem extends StatelessWidget {
   const _TaskListItem({
     required this.task,
     required this.animation,
-    required this.primaryColor,
-    required this.subtextColor,
     required this.isLast,
     required this.isSmallSize,
     required this.size,
@@ -289,8 +267,7 @@ class _TaskListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6);
+    final theme = AppTheme.of(context);
 
     return AnimatedBuilder(
       animation: animation,
@@ -305,16 +282,18 @@ class _TaskListItem extends StatelessWidget {
                 bottom: size.getPadding().bottom * 0.8,
               ),
               decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: borderColor,
-                    width: size.getSmallSpacing() * 0.25,
-                  ),
-                ),
+                border: isLast
+                    ? null
+                    : Border(
+                        bottom: BorderSide(
+                          color: theme.ink.withValues(alpha: 0.18),
+                          width: 1,
+                        ),
+                      ),
               ),
               child: isSmallSize
-                  ? _buildSmallSizeLayout(isDark)
-                  : _buildNormalLayout(isDark),
+                  ? _buildSmallSizeLayout(theme)
+                  : _buildNormalLayout(theme),
             ),
           ),
         );
@@ -323,7 +302,7 @@ class _TaskListItem extends StatelessWidget {
   }
 
   /// 小尺寸布局：日期在新行
-  Widget _buildSmallSizeLayout(bool isDark) {
+  Widget _buildSmallSizeLayout(AppThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -334,7 +313,7 @@ class _TaskListItem extends StatelessWidget {
           style: TextStyle(
             fontSize: size.getSubtitleFontSize() + 1,
             fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : const Color(0xFF111827),
+            color: theme.text,
             height: 1.3,
           ),
         ),
@@ -344,7 +323,7 @@ class _TaskListItem extends StatelessWidget {
           style: TextStyle(
             fontSize: size.getSubtitleFontSize() - 1,
             fontWeight: FontWeight.w500,
-            color: subtextColor,
+            color: theme.textSub,
             height: 1.2,
           ),
         ),
@@ -356,7 +335,7 @@ class _TaskListItem extends StatelessWidget {
             style: TextStyle(
               fontSize: size.getSubtitleFontSize() - 1,
               fontWeight: FontWeight.w700,
-              color: primaryColor,
+              color: theme.primary,
               height: 1.2,
             ),
           ),
@@ -366,7 +345,7 @@ class _TaskListItem extends StatelessWidget {
   }
 
   /// 正常布局：日期在右侧
-  Widget _buildNormalLayout(bool isDark) {
+  Widget _buildNormalLayout(AppThemeData theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -380,7 +359,7 @@ class _TaskListItem extends StatelessWidget {
                 style: TextStyle(
                   fontSize: size.getSubtitleFontSize() + 1,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF111827),
+                  color: theme.text,
                   height: 1.3,
                 ),
               ),
@@ -390,7 +369,7 @@ class _TaskListItem extends StatelessWidget {
                 style: TextStyle(
                   fontSize: size.getSubtitleFontSize() - 1,
                   fontWeight: FontWeight.w500,
-                  color: subtextColor,
+                  color: theme.textSub,
                   height: 1.2,
                 ),
               ),
@@ -404,7 +383,7 @@ class _TaskListItem extends StatelessWidget {
             style: TextStyle(
               fontSize: size.getSubtitleFontSize() - 1,
               fontWeight: FontWeight.w700,
-              color: primaryColor,
+              color: theme.primary,
               height: 1.2,
             ),
           ),

@@ -370,14 +370,18 @@ class _AnimatedTrendChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: CustomPaint(
-        painter: _TrendLinePainter(
-          data: data,
-          color: color,
-          progress: animation.value,
-          chartHeight: chartHeight,
-          scale: scale,
+    // AnimatedBuilder 驱动描线进度 rebuild，否则 progress 恒为首帧 0
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) => SizedBox.expand(
+        child: CustomPaint(
+          painter: _TrendLinePainter(
+            data: data,
+            color: color,
+            progress: animation.value,
+            chartHeight: chartHeight,
+            scale: scale,
+          ),
         ),
       ),
     );

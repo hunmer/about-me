@@ -1,6 +1,9 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 分段分类数据模型
 ///
@@ -58,7 +61,10 @@ class SegmentedCategory {
 
 /// 分段统计卡片小组件
 ///
-/// 用于展示分段使用情况的卡片组件，支持动画效果和主题适配。
+/// 手绘纸墨风（纸底 + 淡排线 + rough 墨线框，WiredDraw 墨线描画入场）：
+/// 分段占比条按 design.md §9.5 斜纹填充（数据色浅底 + 浓斜纹 + 描边，
+/// 未指定数据色的段走淡墨轨道档）；图例色块为墨线描边实底小圆；
+/// 翻牌计数与逐项错峰动画保留。
 /// 适用于展示设备存储、云存储、预算分类、时间分段等多种分段统计场景。
 ///
 /// 使用示例：
@@ -167,92 +173,66 @@ class _StorageBreakdownCardState extends State<StorageBreakdownCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final borderRadius = widget.size.getThumbnailImageSize() * 0.2;
+    final theme = AppTheme.of(context);
     final padding = widget.size.getPadding();
     final titleSpacing = widget.size.getTitleSpacing();
     final itemSpacing = widget.size.getItemSpacing();
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              width: widget.inline ? double.maxFinite : widget.size.getWidthForChart(),
-              constraints: widget.size.getHeightConstraints(),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(borderRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.white.withOpacity(0.5),
-                  width: 1,
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 墨线描画入场
+    return ConstrainedBox(
+      constraints: widget.size.getHeightConstraints(),
+      child: WiredDraw(
+        child: DsSketchPanel(
+          theme: theme,
+          width:
+              widget.inline ? double.maxFinite : widget.size.getWidthForChart(),
+          radius: BorderRadius.circular(24 * widget.size.scale),
+          padding: padding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题和容量显示
+              _HeaderSection(
+                title: widget.title,
+                used: widget.used,
+                total: widget.total,
+                animation: _animation,
+                size: widget.size,
+              ),
+              SizedBox(height: titleSpacing),
+
+              // 分段进度条
+              _StorageBar(
+                categories: widget.categories,
+                total: widget.total,
+                animation: _animation,
+                size: widget.size,
+              ),
+              SizedBox(height: itemSpacing),
+
+              // 图例
+              Expanded(
+                child: _LegendSection(
+                  categories: widget.categories,
+                  animation: _animation,
+                  size: widget.size,
                 ),
               ),
-              padding: padding,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 标题和容量显示
-                  _HeaderSection(
-                    title: widget.title,
-                    used: widget.used,
-                    total: widget.total,
-                    animation: _animation,
-                    isDark: isDark,
-                    size: widget.size,
-                  ),
-                  SizedBox(height: titleSpacing),
-
-                  // 分段进度条
-                  _StorageBar(
-                    categories: widget.categories,
-                    total: widget.total,
-                    isDark: isDark,
-                    animation: _animation,
-                    size: widget.size,
-                  ),
-                  SizedBox(height: itemSpacing),
-
-                  // 图例
-                  Expanded(
-                    child: _LegendSection(
-                      categories: widget.categories,
-                      animation: _animation,
-                      isDark: isDark,
-                      size: widget.size,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-/// 头部信息区域
+/// 头部信息区域（翻牌计数 + 错峰入场动画保留）
 class _HeaderSection extends StatelessWidget {
   final String title;
   final double used;
   final double total;
   final Animation<double> animation;
-  final bool isDark;
   final HomeWidgetSize size;
 
   const _HeaderSection({
@@ -260,12 +240,12 @@ class _HeaderSection extends StatelessWidget {
     required this.used,
     required this.total,
     required this.animation,
-    required this.isDark,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final itemAnimation = CurvedAnimation(
       parent: animation,
       curve: const Interval(0, 0.5, curve: Curves.easeOutCubic),
@@ -292,7 +272,7 @@ class _HeaderSection extends StatelessWidget {
                   style: TextStyle(
                     fontSize: titleFontSize,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                    color: theme.textSub,
                   ),
                 ),
                 SizedBox(height: smallSpacing),
@@ -304,7 +284,7 @@ class _HeaderSection extends StatelessWidget {
                       textStyle: TextStyle(
                         fontSize: valueFontSize,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.grey.shade900,
+                        color: theme.text,
                         letterSpacing: -1,
                       ),
                       padding: EdgeInsets.zero,
@@ -317,9 +297,7 @@ class _HeaderSection extends StatelessWidget {
                         style: TextStyle(
                           fontSize: unitFontSize,
                           fontWeight: FontWeight.w500,
-                          color: isDark
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade500,
+                          color: theme.textSub,
                         ),
                       ),
                     ),
@@ -331,9 +309,7 @@ class _HeaderSection extends StatelessWidget {
                         style: TextStyle(
                           fontSize: unitFontSize,
                           fontWeight: FontWeight.w500,
-                          color: isDark
-                              ? Colors.grey.shade500
-                              : Colors.grey.shade400,
+                          color: theme.textSub.withValues(alpha: 0.75),
                         ),
                       ),
                     ),
@@ -348,94 +324,87 @@ class _HeaderSection extends StatelessWidget {
   }
 }
 
-/// 存储分段进度条
+/// 分段占比条（design.md §9.5：斜纹数据填充 + 逐段生长动画）
 class _StorageBar extends StatelessWidget {
   final List<SegmentedCategory> categories;
   final double total;
-  final bool isDark;
   final Animation<double> animation;
   final HomeWidgetSize size;
 
   const _StorageBar({
     required this.categories,
     required this.total,
-    required this.isDark,
     required this.animation,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final itemAnimation = CurvedAnimation(
       parent: animation,
       curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
     );
 
-    // 根据 size 计算高度和圆角
+    // 根据 size 计算高度
     final barHeight = size.getLegendIndicatorHeight() * 3;
-    final borderRadius = size.getBarWidth() / 2;
     final gap = size.getBarSpacing();
 
     return AnimatedBuilder(
-      animation: itemAnimation,
+      animation: animation,
       builder: (context, child) {
         return Opacity(
           opacity: itemAnimation.value,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final barWidth = constraints.maxWidth;
+          child: SizedBox(
+            // CustomPaint 无 child 时取 constraints.smallest，须显式撑宽
+            width: double.infinity,
+            height: barHeight,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final barWidth = constraints.maxWidth;
 
-              // 计算每段的累积位置
-              double currentLeft = 0;
-              final segments = <Widget>[];
+                // 计算每段的累积位置与逐段生长宽度
+                double currentLeft = 0;
+                final segments = <_BarSegment>[];
 
-              for (int index = 0; index < categories.length; index++) {
-                final category = categories[index];
-                final width = (category.value / total) * barWidth;
+                for (int index = 0; index < categories.length; index++) {
+                  final category = categories[index];
+                  final width = (category.value / total) * barWidth;
 
-                // 计算每个段的延迟动画
-                const step = 0.08;
-                final start = (index * step).clamp(0.0, 0.5);
-                final end = (0.4 + index * step).clamp(0.0, 1.0);
-                final segmentAnimation = CurvedAnimation(
-                  parent: animation,
-                  curve: Interval(start, end, curve: Curves.easeOutCubic),
-                );
+                  // 计算每个段的延迟动画
+                  const step = 0.08;
+                  final start = (index * step).clamp(0.0, 0.5);
+                  final end = (0.4 + index * step).clamp(0.0, 1.0);
+                  final segmentAnimation = CurvedAnimation(
+                    parent: animation,
+                    curve: Interval(start, end, curve: Curves.easeOutCubic),
+                  );
 
-                final animatedWidth =
-                    (width - (index < categories.length - 1 ? gap : 0)) *
-                        segmentAnimation.value;
+                  final animatedWidth =
+                      (width - (index < categories.length - 1 ? gap : 0)) *
+                          segmentAnimation.value;
 
-                segments.add(
-                  Positioned(
-                    left: currentLeft,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
+                  segments.add(
+                    _BarSegment(
+                      color: category.color,
+                      left: currentLeft,
                       width: animatedWidth,
-                      margin: EdgeInsets.only(
-                        right: index < categories.length - 1 ? gap / 2 : 0,
-                      ),
-                      decoration: BoxDecoration(
-                        color: category.color ??
-                            (isDark
-                                ? Colors.grey.shade700
-                                : Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(borderRadius),
-                      ),
                     ),
+                  );
+
+                  currentLeft += width;
+                }
+
+                return CustomPaint(
+                  size: Size(barWidth, barHeight),
+                  painter: _StorageBarPainter(
+                    segments: segments,
+                    theme: theme,
+                    scale: size.scale,
                   ),
                 );
-
-                currentLeft += width;
-              }
-
-              return SizedBox(
-                height: barHeight,
-                width: barWidth,
-                child: Stack(children: segments),
-              );
-            },
+              },
+            ),
           ),
         );
       },
@@ -443,22 +412,107 @@ class _StorageBar extends StatelessWidget {
   }
 }
 
-/// 图例区域
+/// 单个分段（left/width 为生长动画插值后的绘制值）
+class _BarSegment {
+  final Color? color;
+  final double left;
+  final double width;
+
+  const _BarSegment({required this.color, required this.left, required this.width});
+}
+
+/// 分段占比条绘制器：平直胶囊几何 + 斜纹填充（design.md §9.5）
+///
+/// 有数据色的段：数据色浅底（0.28）+ 数据色浓斜纹（0.9）+ 数据色描边（0.85）；
+/// 未指定数据色的段走轨道档：surfaceAlt 底 + 淡墨斜纹（0.28）+ 淡墨描边（0.45）。
+class _StorageBarPainter extends CustomPainter {
+  final List<_BarSegment> segments;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StorageBarPainter({
+    required this.segments,
+    required this.theme,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final radius = Radius.circular(size.height / 2);
+
+    for (final segment in segments) {
+      if (segment.width <= 0.5) continue;
+      final rect = Rect.fromLTWH(segment.left, 0, segment.width, size.height);
+      final rrect = RRect.fromRectAndRadius(rect, radius);
+      final path = Path()..addRRect(rrect);
+
+      if (segment.color != null) {
+        // 数据段：数据色浅底 + 浓斜纹 + 描边
+        canvas.drawRRect(
+          rrect,
+          Paint()..color = segment.color!.withValues(alpha: 0.28),
+        );
+        paintDiagonalStripes(
+          canvas,
+          path,
+          rect,
+          color: segment.color!.withValues(alpha: 0.9),
+          strokeWidth: 3 * scale,
+          spacing: 6.5 * scale,
+        );
+        canvas.drawRRect(
+          rrect,
+          Paint()
+            ..color = segment.color!.withValues(alpha: 0.85)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5 * scale,
+        );
+      } else {
+        // 未指定数据色的段走轨道档：surfaceAlt 底 + 淡墨斜纹 + 淡墨描边
+        canvas.drawRRect(rrect, Paint()..color = theme.surfaceAlt);
+        paintDiagonalStripes(
+          canvas,
+          path,
+          rect,
+          color: theme.ink.withValues(alpha: 0.28),
+          strokeWidth: 1.5 * scale,
+          spacing: 6.5 * scale,
+        );
+        canvas.drawRRect(
+          rrect,
+          Paint()
+            ..color = theme.ink.withValues(alpha: 0.45)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5 * scale,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StorageBarPainter oldDelegate) {
+    return oldDelegate.segments != segments ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
+  }
+}
+
+/// 图例区域（逐项错峰入场动画保留）
 class _LegendSection extends StatelessWidget {
   final List<SegmentedCategory> categories;
   final Animation<double> animation;
-  final bool isDark;
   final HomeWidgetSize size;
 
   const _LegendSection({
     required this.categories,
     required this.animation,
-    required this.isDark,
     required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     final itemAnimation = CurvedAnimation(
       parent: animation,
       curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
@@ -491,8 +545,7 @@ class _LegendSection extends StatelessWidget {
 
               return _LegendItem(
                 name: category.name,
-                color: category.color ??
-                    (isDark ? Colors.grey.shade600 : Colors.grey.shade200),
+                color: category.color ?? theme.surfaceAlt,
                 animation: legendAnimation,
                 size: size,
               );
@@ -505,6 +558,8 @@ class _LegendSection extends StatelessWidget {
 }
 
 /// 单个图例项
+///
+/// 色块为 dsSketchDecoration 实底小圆 + 墨线描边（禁彩色柔影）。
 class _LegendItem extends StatelessWidget {
   final String name;
   final Color color;
@@ -520,6 +575,7 @@ class _LegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
     // 根据 size 计算尺寸
     final indicatorSize = size.getLegendIndicatorWidth() * 0.75;
     final indicatorHeight = size.getLegendIndicatorHeight() * 0.75;
@@ -538,12 +594,10 @@ class _LegendItem extends StatelessWidget {
                 child: Container(
                   width: indicatorSize,
                   height: indicatorHeight,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(color: color.withOpacity(0.3), blurRadius: 1.5),
-                    ],
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    circle: true,
+                    fillColor: color,
                   ),
                 ),
               ),
@@ -557,7 +611,7 @@ class _LegendItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: fontSize,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF6B7280),
+                      color: theme.textSub,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,

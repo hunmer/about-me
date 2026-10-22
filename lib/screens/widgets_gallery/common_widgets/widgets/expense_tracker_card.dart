@@ -360,13 +360,16 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
             ? widget.categories[highlight].color
             : theme.textSub;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final radius = math.min(
-          constraints.maxWidth / 2 - stroke / 2 - glowPad,
-          constraints.maxHeight - stroke - glowPad - 2 * s,
-        );
-        if (radius <= 0) return const SizedBox.shrink();
+    // AnimatedBuilder 驱动弧段仪表生长 rebuild，否则 progress 恒为首帧 0
+    return AnimatedBuilder(
+      animation: _entrance,
+      builder: (context, _) => LayoutBuilder(
+        builder: (context, constraints) {
+          final radius = math.min(
+            constraints.maxWidth / 2 - stroke / 2 - glowPad,
+            constraints.maxHeight - stroke - glowPad - 2 * s,
+          );
+          if (radius <= 0) return const SizedBox.shrink();
         final w = 2 * (radius + stroke / 2 + glowPad);
         final h = radius + stroke + glowPad + 2 * s;
 
@@ -425,6 +428,7 @@ class _ExpenseTrackerCardWidgetState extends State<ExpenseTrackerCardWidget>
           ),
         );
       },
+      ),
     );
   }
 

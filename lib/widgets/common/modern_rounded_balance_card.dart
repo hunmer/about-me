@@ -1,6 +1,16 @@
+/// 余额卡片（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 标题 + 翻牌余额 + 可用额度 / 每周斜纹柱状图
+/// （主题色浓斜纹数据柱 + 淡墨斜纹轨道胶囊，逐柱错峰生长）。
+library;
+
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 余额卡片数据模型
 ///
@@ -157,13 +167,7 @@ class _ModernRoundedBalanceCardState extends State<ModernRoundedBalanceCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF2C2C2E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF000000);
-    final secondaryTextColor =
-        isDark ? const Color(0xFFAEAEB2) : const Color(0xFF8E8E93);
-    final barBgColor =
-        isDark ? const Color(0xFF3A3A3C) : const Color(0xFFEFEFF4);
+    final theme = AppTheme.of(context);
 
     final weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -176,48 +180,39 @@ class _ModernRoundedBalanceCardState extends State<ModernRoundedBalanceCard>
     final titleSpacing = widget.size.getTitleSpacing();
     final barWidth = widget.size.getBarWidth();
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 30,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              padding: padding,
-              constraints: widget.size.getHeightConstraints(),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: widget.size.getHeightConstraints(),
+        child: DsSketchPanel(
+          theme: theme,
+          radius: BorderRadius.circular(24 * widget.size.scale),
+          padding: padding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题和余额
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 标题和余额
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.title,
-                        style: TextStyle(
-                          fontSize: titleFontSize * 0.45, // 约 7-13px
-                          fontWeight: FontWeight.w500,
-                          color: textColor,
-                          height: 1.0,
-                        ),
-                      ),
-                      SizedBox(height: smallSpacing * 2),
-                      SizedBox(
-                        height: valueFontSize * 1.2,
-                        child: AnimatedFlipCounter(
+                  Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: titleFontSize * 0.45, // 约 7-13px
+                      fontWeight: FontWeight.w500,
+                      color: theme.text,
+                      height: 1.0,
+                    ),
+                  ),
+                  SizedBox(height: smallSpacing * 2),
+                  SizedBox(
+                    height: valueFontSize * 1.2,
+                    // 翻牌余额：AnimatedBuilder 驱动每 tick rebuild
+                    child: AnimatedBuilder(
+                      animation: _animation,
+                      builder: (context, _) {
+                        return AnimatedFlipCounter(
                           value: widget.balance * _animation.value,
                           prefix: '\$',
                           fractionDigits: 2,
@@ -225,109 +220,117 @@ class _ModernRoundedBalanceCardState extends State<ModernRoundedBalanceCard>
                           textStyle: TextStyle(
                             fontSize: valueFontSize,
                             fontWeight: FontWeight.bold,
-                            color: textColor,
+                            color: theme.text,
                             height: 1.0,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: smallSpacing),
-                      Text(
-                        '\$${widget.available.toStringAsFixed(2)} Available',
-                        style: TextStyle(
-                          fontSize: subtitleFontSize,
-                          fontWeight: FontWeight.w500,
-                          color: secondaryTextColor,
-                          height: 1.0,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: titleSpacing * 0.8),
-
-                  // 每周柱状图 - 支持横向滚动
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final availableHeight = constraints.maxHeight;
-                        final labelHeight =
-                            widget.size.getLegendFontSize() * 1.2 +
-                            smallSpacing * 3;
-                        final barHeight = (availableHeight - labelHeight).clamp(
-                          0.0,
-                          availableHeight,
-                        );
-
-                        return Align(
-                          alignment: Alignment.topCenter,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: smallSpacing,
-                            ),
-                            child: SizedBox(
-                              height: barHeight + labelHeight,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: List.generate(
-                                  widget.weeklyData.length,
-                                  (index) {
-                                  final value = widget.weeklyData[index];
-                                  // 计算动画区间，确保 end 不超过 1.0
-                                  final totalItems = widget.weeklyData.length;
-                                  final animationStart =
-                                      index / totalItems * 0.5;
-                                  final animationEnd =
-                                      (index + 1) / totalItems * 0.9;
-                                  final itemAnimation = CurvedAnimation(
-                                    parent: _animationController,
-                                    curve: Interval(
-                                      animationStart.clamp(0.0, 1.0),
-                                      animationEnd.clamp(0.0, 1.0),
-                                      curve: Curves.easeOutCubic,
-                                    ),
-                                  );
-
-                                  return Padding(
-                                    padding: EdgeInsets.only(
-                                      right:
-                                          index < widget.weeklyData.length - 1
-                                              ? barWidth * 0.5
-                                              : 0,
-                                    ),
-                                    child: _WeeklyBar(
-                                      label: weekDays[index % weekDays.length],
-                                      value: value * itemAnimation.value,
-                                      backgroundColor: barBgColor,
-                                      size: widget.size,
-                                      barWidth: barWidth,
-                                      barHeight: barHeight,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            ),
                           ),
                         );
                       },
                     ),
                   ),
+                  SizedBox(height: smallSpacing),
+                  Text(
+                    '\$${widget.available.toStringAsFixed(2)} Available',
+                    style: TextStyle(
+                      fontSize: subtitleFontSize,
+                      fontWeight: FontWeight.w500,
+                      color: theme.textSub,
+                      height: 1.0,
+                    ),
+                  ),
                 ],
               ),
-            ),
+
+              SizedBox(height: titleSpacing * 0.8),
+
+              // 每周柱状图 - 支持横向滚动
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final availableHeight = constraints.maxHeight;
+                    final labelHeight =
+                        widget.size.getLegendFontSize() * 1.2 +
+                        smallSpacing * 3;
+                    final barHeight = (availableHeight - labelHeight).clamp(
+                      0.0,
+                      availableHeight,
+                    );
+
+                    return Align(
+                      alignment: Alignment.topCenter,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: smallSpacing,
+                        ),
+                        child: SizedBox(
+                          height: barHeight + labelHeight,
+                          // 柱高逐柱错峰生长：AnimatedBuilder 驱动每 tick rebuild
+                          child: AnimatedBuilder(
+                            animation: _animation,
+                            builder: (context, _) {
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: List.generate(
+                                  widget.weeklyData.length,
+                                  (index) {
+                                    final value = widget.weeklyData[index];
+                                    // 计算动画区间，确保 end 不超过 1.0
+                                    final totalItems = widget.weeklyData.length;
+                                    final animationStart =
+                                        index / totalItems * 0.5;
+                                    final animationEnd =
+                                        (index + 1) / totalItems * 0.9;
+                                    final itemAnimation = CurvedAnimation(
+                                      parent: _animationController,
+                                      curve: Interval(
+                                        animationStart.clamp(0.0, 1.0),
+                                        animationEnd.clamp(0.0, 1.0),
+                                        curve: Curves.easeOutCubic,
+                                      ),
+                                    );
+
+                                    return Padding(
+                                      padding: EdgeInsets.only(
+                                        right:
+                                            index < widget.weeklyData.length - 1
+                                                ? barWidth * 0.5
+                                                : 0,
+                                      ),
+                                      child: _WeeklyBar(
+                                        label: weekDays[index % weekDays.length],
+                                        value: value * itemAnimation.value,
+                                        barColor: theme.primary,
+                                        theme: theme,
+                                        size: widget.size,
+                                        barWidth: barWidth,
+                                        barHeight: barHeight,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-/// 每周柱状条
+/// 每周柱状条：胶囊轨道 + 斜纹数据柱（§9.5）
 class _WeeklyBar extends StatelessWidget {
   final String label;
   final double value;
-  final Color backgroundColor;
+  final Color barColor;
+  final AppThemeData theme;
   final HomeWidgetSize size;
   final double barWidth;
   final double barHeight;
@@ -335,37 +338,12 @@ class _WeeklyBar extends StatelessWidget {
   const _WeeklyBar({
     required this.label,
     required this.value,
-    required this.backgroundColor,
+    required this.barColor,
+    required this.theme,
     required this.size,
     required this.barWidth,
     required this.barHeight,
   });
-
-  // 渐变色配置
-  List<Color> get _gradients {
-    // 根据数值大小生成不同的渐变
-    if (value > 0.8) {
-      return [
-        const Color(0xFFFB923C),
-        const Color(0xFF3B82F6),
-      ]; // orange -> blue
-    } else if (value > 0.6) {
-      return [
-        const Color(0xFFEF4444),
-        const Color(0xFF8B5CF6),
-      ]; // red -> purple
-    } else if (value > 0.4) {
-      return [
-        const Color(0xFFFACC15),
-        const Color(0xFF3B82F6),
-      ]; // yellow -> blue
-    } else {
-      return [
-        const Color(0xFFEF4444),
-        const Color(0xFFA78BFA),
-      ]; // red -> purple
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -373,39 +351,19 @@ class _WeeklyBar extends StatelessWidget {
     final legendFontSize = size.getLegendFontSize();
     final smallSpacing = size.getSmallSpacing();
 
-    // 圆角为 barWidth 的一半
-    final borderRadius = barWidth / 2;
-
-    // 填充高度基于 barHeight
-    final filledHeight = barHeight * value.clamp(0.0, 1.0);
-
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Container(
+        // CustomPaint 无 child 时取 constraints.smallest，须显式撑紧宽高
+        SizedBox(
           width: barWidth,
           height: barHeight,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              width: barWidth,
-              height: filledHeight,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: _gradients,
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(borderRadius),
-                  bottomRight: Radius.circular(borderRadius),
-                ),
-              ),
+          child: CustomPaint(
+            painter: _StripedBarPainter(
+              fill: value.clamp(0.0, 1.0),
+              barColor: barColor,
+              theme: theme,
+              scale: size.scale,
             ),
           ),
         ),
@@ -417,14 +375,97 @@ class _WeeklyBar extends StatelessWidget {
             style: TextStyle(
               fontSize: legendFontSize,
               fontWeight: FontWeight.w500,
-              color:
-                  backgroundColor == const Color(0xFF3A3A3C)
-                      ? const Color(0xFFAEAEB2)
-                      : const Color(0xFF8E8E93),
+              color: theme.textSub,
             ),
           ),
         ),
       ],
     );
+  }
+}
+
+/// 斜纹柱绘制器
+///
+/// 胶囊轨道：surfaceAlt 底 + 淡墨斜纹（0.28）+ 淡墨描边（0.45）；
+/// 数据柱（自底向上生长）：主题色浅底（0.28）+ 主题色浓斜纹（0.9，
+/// 与斜纹进度条/条纹柱同款：右上斜率 0.85、6.5 间距）+ 主题色描边（0.85）；
+/// 数据几何保持平直干净（数据区不上 rough 墨线）。
+class _StripedBarPainter extends CustomPainter {
+  /// 填充比例 0~1（含入场动画插值）
+  final double fill;
+  final Color barColor;
+  final AppThemeData theme;
+  final double scale;
+
+  const _StripedBarPainter({
+    required this.fill,
+    required this.barColor,
+    required this.theme,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final radius = Radius.circular(size.width / 2);
+
+    // 轨道胶囊
+    final trackRect = Offset.zero & size;
+    final trackRRect = RRect.fromRectAndRadius(trackRect, radius);
+    canvas.drawRRect(trackRRect, Paint()..color = theme.surfaceAlt);
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(trackRRect),
+      trackRect,
+      color: theme.ink.withValues(alpha: 0.28),
+      strokeWidth: 1.5 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      trackRRect,
+      Paint()
+        ..color = theme.ink.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+
+    // 数据柱：自底向上生长的主题色斜纹填充
+    final f = fill.clamp(0.0, 1.0);
+    if (f > 0.004) {
+      final fillRect = Rect.fromLTWH(
+        0,
+        size.height * (1 - f),
+        size.width,
+        size.height * f,
+      );
+      final fillRRect = RRect.fromRectAndRadius(fillRect, radius);
+      canvas.drawRRect(
+        fillRRect,
+        Paint()..color = barColor.withValues(alpha: 0.28),
+      );
+      paintDiagonalStripes(
+        canvas,
+        Path()..addRRect(fillRRect),
+        fillRect,
+        color: barColor.withValues(alpha: 0.9),
+        strokeWidth: 3 * scale,
+        spacing: 6.5 * scale,
+      );
+      canvas.drawRRect(
+        fillRRect,
+        Paint()
+          ..color = barColor.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 * scale,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedBarPainter oldDelegate) {
+    return oldDelegate.fill != fill ||
+        oldDelegate.barColor != barColor ||
+        oldDelegate.theme != theme ||
+        oldDelegate.scale != scale;
   }
 }

@@ -293,15 +293,19 @@ class _SmoothLineChartCardWidgetState extends State<SmoothLineChartCardWidget>
               width: chartWidth,
               child: Column(
                 children: [
-                  // 图表（使用 Expanded 占据剩余空间）
+                  // 图表（使用 Expanded 占据剩余空间）；
+                  // AnimatedBuilder 驱动描线进度 rebuild，否则 progress 恒为首帧 0
                   Expanded(
-                    child: _SmoothLineChart(
-                      dataPoints: widget.dataPoints,
-                      maxValue: widget.maxValue,
-                      primaryColor: widget.primaryColor,
+                    child: AnimatedBuilder(
                       animation: _animation,
-                      widgetSize: widget.size,
-                      chartWidth: chartWidth,
+                      builder: (context, _) => _SmoothLineChart(
+                        dataPoints: widget.dataPoints,
+                        maxValue: widget.maxValue,
+                        primaryColor: widget.primaryColor,
+                        animation: _animation,
+                        widgetSize: widget.size,
+                        chartWidth: chartWidth,
+                      ),
                     ),
                   ),
                   SizedBox(height: widget.size.getItemSpacing()),

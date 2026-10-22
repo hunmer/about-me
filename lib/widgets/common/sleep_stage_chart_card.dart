@@ -1,5 +1,17 @@
+/// 睡眠阶段图表卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 斜纹睡眠阶段胶囊（阶段数据色浅底 + 浓斜纹 + 描边，逐个错峰弹出）+
+/// 淡墨虚线竖向网格 + 时间标签 / 底部图例（手绘色块指示器）。
+library;
+
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 睡眠阶段类型
 ///
@@ -127,7 +139,6 @@ class SleepStageChartCard extends StatefulWidget {
 class _SleepStageChartCardState extends State<SleepStageChartCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -135,10 +146,6 @@ class _SleepStageChartCardState extends State<SleepStageChartCard>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
     );
     _animationController.forward();
   }
@@ -151,54 +158,34 @@ class _SleepStageChartCardState extends State<SleepStageChartCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: Container(
-              padding: widget.size.getPadding(),
-              constraints: widget.size.getHeightConstraints(),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF404040) : Colors.white,
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 睡眠阶段图表
-                  _buildChart(context),
-                  SizedBox(height: widget.size.getTitleSpacing()),
-                  // 图例
-                  _buildLegend(context),
-                ],
-              ),
-            ),
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    return WiredDraw(
+      child: ConstrainedBox(
+        constraints: widget.size.getHeightConstraints(),
+        child: DsSketchPanel(
+          theme: theme,
+          radius: BorderRadius.circular(24 * scale),
+          padding: widget.size.getPadding(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 睡眠阶段图表
+              _buildChart(theme),
+              SizedBox(height: widget.size.getTitleSpacing()),
+              // 图例
+              _buildLegend(theme),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   /// 构建睡眠阶段图表
-  Widget _buildChart(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _buildChart(AppThemeData theme) {
     // 根据尺寸计算图表高度
     final chartHeight = widget.size.getHeightForChart();
     // 使用更大的内容宽度支持横向滚动
@@ -220,22 +207,19 @@ class _SleepStageChartCardState extends State<SleepStageChartCard>
               width: scrollableWidth,
               height: chartHeight,
               child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  // 网格线
-                  ...List.generate(5, (index) {
-                    final x = (scrollableWidth / 4) * index;
-                    return Positioned(
-                      left: x,
-                      top: 0,
-                      bottom: widget.size.getLegendFontSize() * 2.5,
-                      child: Container(
-                        width: 1,
-                        color: isDark
-                            ? const Color(0xFF404040)
-                            : const Color(0xFFE5E7EB),
+                  // 淡墨虚线竖向网格
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _DashedVerticalGridPainter(
+                        color: theme.ink.withValues(alpha: 0.18),
+                        count: 5,
+                        bottomInset: widget.size.getLegendFontSize() * 2.5,
+                        scale: widget.size.scale,
                       ),
-                    );
-                  }),
+                    ),
+                  ),
                   // 时间标签
                   Positioned(
                     left: widget.size.getSmallSpacing(),
@@ -249,9 +233,7 @@ class _SleepStageChartCardState extends State<SleepStageChartCard>
                           style: TextStyle(
                             fontSize: widget.size.getLegendFontSize(),
                             fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? const Color(0xFF6B7280)
-                                : const Color(0xFF9CA3AF),
+                            color: theme.textSub,
                           ),
                         );
                       }).toList(),
@@ -289,9 +271,7 @@ class _SleepStageChartCardState extends State<SleepStageChartCard>
   }
 
   /// 构建图例
-  Widget _buildLegend(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _buildLegend(AppThemeData theme) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -299,28 +279,28 @@ class _SleepStageChartCardState extends State<SleepStageChartCard>
           _LegendItem(
             color: const Color(0xFF9CB573),
             label: 'Core',
-            isDark: isDark,
+            theme: theme,
             size: widget.size,
           ),
           SizedBox(width: widget.size.getItemSpacing()),
           _LegendItem(
             color: const Color(0xFF8D6E63),
             label: 'REM',
-            isDark: isDark,
+            theme: theme,
             size: widget.size,
           ),
           SizedBox(width: widget.size.getItemSpacing()),
           _LegendItem(
             color: const Color(0xFFF4CD26),
             label: 'Post-REM',
-            isDark: isDark,
+            theme: theme,
             size: widget.size,
           ),
           SizedBox(width: widget.size.getItemSpacing()),
           _LegendItem(
             color: const Color(0xFFC8B6F9),
             label: 'Deep',
-            isDark: isDark,
+            theme: theme,
             size: widget.size,
           ),
         ],
@@ -331,7 +311,8 @@ class _SleepStageChartCardState extends State<SleepStageChartCard>
 
 /// 睡眠阶段气泡组件
 ///
-/// 显示单个睡眠阶段的可视化气泡，带有动画效果
+/// 显示单个睡眠阶段的斜纹胶囊，带错峰弹出动画
+/// （AnimatedBuilder 逐帧 rebuild 驱动宽高变化）。
 class _SleepStageBubble extends StatelessWidget {
   final SleepStageData stage;
   final double chartWidth;
@@ -347,7 +328,7 @@ class _SleepStageBubble extends StatelessWidget {
     required this.size,
   });
 
-  /// 获取当前阶段类型的颜色
+  /// 获取当前阶段类型的颜色（数据色）
   Color _getColor() {
     switch (stage.type) {
       case SleepStageType.core:
@@ -399,26 +380,18 @@ class _SleepStageBubble extends StatelessWidget {
 
     return AnimatedBuilder(
       animation: animation,
-      builder: (context, child) {
+      builder: (context, _) {
         final width = (chartWidth * stage.widthPercent / 100) * animation.value;
         final height = bubbleHeight * animation.value;
 
         return Positioned(
           left: (chartWidth * stage.left / 100),
           top: (chartHeight * stage.topPercent / 100),
-          child: Container(
+          child: SizedBox(
             width: width,
             height: height,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(height / 2),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.3),
-                  blurRadius: size is SmallSize ? 4 : 8,
-                  offset: Offset(0, size is SmallSize ? 1 : 2),
-                ),
-              ],
+            child: CustomPaint(
+              painter: _StageBubblePainter(color: color, scale: size.scale),
             ),
           ),
         );
@@ -427,19 +400,103 @@ class _SleepStageBubble extends StatelessWidget {
   }
 }
 
+/// 斜纹睡眠阶段胶囊绘制器
+///
+/// 阶段数据色浅底（0.28）+ 数据色浓斜纹（0.9）+ 数据色描边（0.85），
+/// 胶囊圆角（高的一半）。
+class _StageBubblePainter extends CustomPainter {
+  final Color color;
+  final double scale;
+
+  const _StageBubblePainter({required this.color, required this.scale});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(size.height / 2),
+    );
+    canvas.drawRRect(rrect, Paint()..color = color.withValues(alpha: 0.28));
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(rrect),
+      Offset.zero & size,
+      color: color.withValues(alpha: 0.9),
+      strokeWidth: 3 * scale,
+      spacing: 6.5 * scale,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = color.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _StageBubblePainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.scale != scale;
+  }
+}
+
+/// 淡墨虚线竖向网格绘制器
+class _DashedVerticalGridPainter extends CustomPainter {
+  final Color color;
+  final int count;
+  final double bottomInset;
+  final double scale;
+
+  const _DashedVerticalGridPainter({
+    required this.color,
+    required this.count,
+    required this.bottomInset,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || count <= 0) return;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.2 * scale;
+    final stepX = count > 1 ? size.width / (count - 1) : 0.0;
+    final gridBottom = math.max(0.0, size.height - bottomInset);
+    for (var i = 0; i < count; i++) {
+      final x = stepX * i;
+      for (var y = 0.0; y < gridBottom; y += 10 * scale) {
+        canvas.drawLine(
+          Offset(x, y),
+          Offset(x, math.min(y + 5 * scale, gridBottom)),
+          paint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedVerticalGridPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.count != count ||
+        oldDelegate.bottomInset != bottomInset ||
+        oldDelegate.scale != scale;
+  }
+}
+
 /// 图例项组件
 ///
-/// 显示单个图例项，包含颜色点和标签
+/// 显示单个图例项，包含手绘色块和标签
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
-  final bool isDark;
+  final AppThemeData theme;
   final HomeWidgetSize size;
 
   const _LegendItem({
     required this.color,
     required this.label,
-    required this.isDark,
+    required this.theme,
     required this.size,
   });
 
@@ -448,10 +505,15 @@ class _LegendItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // 手绘图例色块：数据色实底 + 墨线描边
         Container(
           width: size.getLegendIndicatorWidth(),
           height: size.getLegendIndicatorHeight(),
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            radius: BorderRadius.circular(size.getLegendIndicatorHeight() / 2),
+            fillColor: color,
+          ),
         ),
         SizedBox(width: size.getSmallSpacing()),
         Text(
@@ -459,7 +521,7 @@ class _LegendItem extends StatelessWidget {
           style: TextStyle(
             fontSize: size.getLegendFontSize(),
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.grey.shade200 : const Color(0xFF5D4037),
+            color: theme.text,
           ),
         ),
       ],
