@@ -270,7 +270,8 @@ class AlbumPhotoQuery {
           builder: (context, currentValue, onChanged) {
             return _buildEnumSingleFilter(
               values: locations,
-              labelOf: (v) => v,
+              // 地址可能很长，chip 只展示截断文本；过滤值仍为完整地址
+              labelOf: (v) => v.length > 12 ? '${v.substring(0, 12)}…' : v,
               currentValue: currentValue,
               onChanged: onChanged,
             );

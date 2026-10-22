@@ -152,7 +152,6 @@ class CalendarAlbumTranslationsZh {
     'calendar_album_no_matching_diaries': '没有找到匹配的日记',
     'calendar_album_try_other_keywords': '试试其他关键词',
     'calendar_album_tag': '标签',
-    'calendar_album_back_to_current_month': '回到当前月份',
     'calendar_album_switch_photo_view': '照片视图',
     'calendar_album_switch_calendar_view': '日历视图',
     'calendar_album_select_month': '选择年月',
