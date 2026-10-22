@@ -316,7 +316,7 @@ class PluginManager {
     } else {
       NavigationHelper.push(context, page, routeName: '/plugin/${plugin.id}');
     }
-    _maybeShowOnboarding(context, plugin);
+    maybeShowOnboarding(context, plugin);
   }
 
   /// 首次打开插件时弹出引导页
@@ -324,7 +324,7 @@ class PluginManager {
   /// 弹出即记录（含跳过场景），后续不再重复弹出；
   /// 引导完成时由引导页自行调用 plugin.onOnboardingComplete，
   /// 声明了示例数据分组的插件会在引导步骤末尾附加「示例数据选择」
-  void _maybeShowOnboarding(BuildContext context, PluginBase plugin) {
+  void maybeShowOnboarding(BuildContext context, PluginBase plugin) {
     if (_onboardingShownPlugins.contains(plugin.id)) return;
     final steps = plugin.getOnboardingSteps(context);
     final sampleGroups = plugin.getSampleDataGroups();

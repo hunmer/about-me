@@ -123,7 +123,7 @@ class PermissionController {
     // 添加日历权限（iOS 和 Android 通用）
     requirements.add(
       PermissionRequirement(
-        permission: Permission.calendar,
+        permission: _calendarPermission,
         titleKey: 'app_permission_calendarTitle',
         descriptionKey: 'app_permission_calendarDescription',
         icon: Icons.calendar_today,
@@ -153,7 +153,7 @@ class PermissionController {
       }
 
       // 先请求权限
-      final status = await Permission.calendar.request();
+      final status = await _calendarPermission.request();
 
       if (status.isGranted) {
         // 权限申请结果与同步管理器初始化结果分开处理。
@@ -184,7 +184,7 @@ class PermissionController {
   }
 
   Future<PermissionStatus> _getPermissionStatus(Permission permission) async {
-    if (permission == Permission.calendar &&
+    if (permission == _calendarPermission &&
         (UniversalPlatform.isIOS || UniversalPlatform.isAndroid)) {
       try {
         final result = await DeviceCalendarPlugin().hasPermissions();
@@ -198,6 +198,10 @@ class PermissionController {
     }
     return permission.status;
   }
+
+  Permission get _calendarPermission => UniversalPlatform.isIOS
+      ? Permission.calendarFullAccess
+      : Permission.calendar;
 
   String _getPermissionName(Permission permission) {
     switch (permission) {

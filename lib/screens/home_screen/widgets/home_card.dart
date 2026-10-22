@@ -443,6 +443,8 @@ class _HomeCardState extends State<HomeCard> {
           borderRadius: BorderRadius.all(Radius.circular(12.0)),
         ),
       );
+      // 该入口使用自定义 Hero 导航，补充触发插件首次打开引导。
+      globalPluginManager.maybeShowOnboarding(context, plugin);
     }
   }
 

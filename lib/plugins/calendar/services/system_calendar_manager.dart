@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:device_calendar/device_calendar.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:universal_platform/universal_platform.dart';
 import '../models/event.dart';
@@ -33,7 +34,12 @@ class SystemCalendarManager {
 
       // 检查日历权限是否已授予
       final permissionsGranted = await _deviceCalendar.hasPermissions();
-      if (permissionsGranted.data != true) {
+      final permissionHandlerStatus = UniversalPlatform.isIOS
+          ? await Permission.calendarFullAccess.status
+          : await Permission.calendar.status;
+      final hasCalendarPermission =
+          permissionsGranted.data == true || permissionHandlerStatus.isGranted;
+      if (!hasCalendarPermission) {
         debugPrint('SystemCalendarManager: 日历权限未授予');
         return false;
       }
@@ -114,13 +120,12 @@ class SystemCalendarManager {
         title: event.title,
         description: event.description.isEmpty ? null : event.description,
         start: tz.TZDateTime.from(event.startTime, tz.local),
-        end:
-            event.endTime != null
-                ? tz.TZDateTime.from(event.endTime!, tz.local)
-                : tz.TZDateTime.from(
-                  event.startTime.add(const Duration(hours: 1)),
-                  tz.local,
-                ),
+        end: event.endTime != null
+            ? tz.TZDateTime.from(event.endTime!, tz.local)
+            : tz.TZDateTime.from(
+                event.startTime.add(const Duration(hours: 1)),
+                tz.local,
+              ),
         allDay: false,
       );
 
@@ -161,10 +166,7 @@ class SystemCalendarManager {
       }
 
       debugPrint('SystemCalendarManager: 尝试删除系统事件，ID: $eventId');
-      final result = await _deviceCalendar.deleteEvent(
-        _calendarId!,
-        eventId,
-      );
+      final result = await _deviceCalendar.deleteEvent(_calendarId!, eventId);
 
       if (result != null && result.isSuccess) {
         debugPrint('SystemCalendarManager: 从系统日历删除事件成功');
@@ -216,8 +218,12 @@ class SystemCalendarManager {
 
     try {
       final permissionsGranted = await _deviceCalendar.hasPermissions();
-      return permissionsGranted.isSuccess == true &&
-          permissionsGranted.data == true;
+      final permissionHandlerStatus = UniversalPlatform.isIOS
+          ? await Permission.calendarFullAccess.status
+          : await Permission.calendar.status;
+      return (permissionsGranted.isSuccess == true &&
+              permissionsGranted.data == true) ||
+          permissionHandlerStatus.isGranted;
     } catch (e) {
       debugPrint('SystemCalendarManager: 检查权限异常: $e');
       return false;

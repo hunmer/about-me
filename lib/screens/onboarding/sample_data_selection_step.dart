@@ -46,8 +46,10 @@ class _SampleDataSelectionViewState extends State<_SampleDataSelectionView> {
     if (stored is List) {
       return stored.whereType<String>().toSet();
     }
-    // 默认全选
-    return widget.groups.map((g) => g.id).toSet();
+    // 默认全选，同时写入共享 values，确保用户不手动切换时完成引导也会应用示例数据。
+    final selected = widget.groups.map((g) => g.id).toSet();
+    widget.values[kSampleDataGroupIdsKey] = selected.toList();
+    return selected;
   }
 
   void _toggle(String id, bool checked) {
