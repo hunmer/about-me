@@ -959,6 +959,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
+        _buildBubbleFooter(theme, message),
         // 长按气泡弹出更多选项（与脚注 ⋯ 入口一致）
         GestureDetector(
           onLongPress: () => _showMessageOptions(theme, message),
@@ -982,7 +983,6 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
             ),
           ),
         ),
-        _buildBubbleFooter(theme, message),
       ],
     );
   }
@@ -997,6 +997,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        _buildBubbleFooter(theme, message),
         // 长按气泡弹出更多选项（与脚注 ⋯ 入口一致）
         GestureDetector(
           onLongPress: () => _showMessageOptions(theme, message),
@@ -1021,15 +1022,14 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
             ),
           ),
         ),
-        _buildBubbleFooter(theme, message),
       ],
     );
   }
 
-  /// 气泡脚注：消息时间 + 更多选项入口（⋯）
+  /// 气泡脚注：消息时间 + 更多选项入口（⋯），置于消息上方
   Widget _buildBubbleFooter(AppThemeData theme, ChatMessage message) {
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -33,7 +33,11 @@ Future<String> _jsGetActivities(Map<String, dynamic> params) async {
 /// }
 Future<String> _jsCreateActivity(Map<String, dynamic> params) async {
   try {
+    debugPrint('[ActivityTime] create input=${params['startTime']}..${params['endTime']} '
+        'deviceOffset=${DateTime.now().timeZoneOffset}');
     final result = await ActivityPlugin.instance._activityUseCase.createActivity(params);
+    debugPrint('[ActivityTime] create result=${jsonEncode(result.dataOrNull)} '
+        'error=${result.errorOrNull?.message}');
 
     if (result.isFailure) {
       return jsonEncode({
@@ -73,8 +77,9 @@ Future<String> _jsUpdateActivity(Map<String, dynamic> params) async {
     // 如果没有 date，从 startTime 推断
     if (!updatedParams.containsKey('date') && updatedParams.containsKey('startTime')) {
       final startTimeStr = updatedParams['startTime'] as String;
-      // 保留用户输入的本地日期，避免 DateTime.parse 受时区偏移影响而落到前一天。
-      updatedParams['date'] = startTimeStr.split('T').first;
+      final startTime = DateTime.parse(startTimeStr).toLocal();
+      updatedParams['date'] =
+          '${startTime.year}-${startTime.month.toString().padLeft(2, '0')}-${startTime.day.toString().padLeft(2, '0')}';
     }
 
     final result = await ActivityPlugin.instance._activityUseCase.updateActivity(updatedParams);

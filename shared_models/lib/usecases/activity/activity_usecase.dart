@@ -24,19 +24,9 @@ class ActivityUseCase {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
-  /// 活动时间是用户在本地时钟上填写的时间。
-  ///
-  /// DateTime.parse 会把带偏移的字符串转换为运行环境时区；当设备运行
-  /// 在 UTC 时，`03:00+08:00` 会变成前一天的 `19:00`，导致活动日期和
-  /// 时间显示一起偏移。活动模型不保存时区，因此这里保留输入中的墙上时间。
+  /// ISO 偏移表示真实时刻；转为本地时间后再进行日期分组。
   DateTime _parseActivityTime(String value) {
-    final match = RegExp(
-            r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)(?:Z|[+-]\d{2}:?\d{2})$')
-        .firstMatch(value);
-    if (match != null) {
-      return DateTime.parse(match.group(1)!);
-    }
-    return DateTime.parse(value);
+    return DateTime.parse(value).toLocal();
   }
 
   /// 从参数提取分页配置

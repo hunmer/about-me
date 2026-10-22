@@ -36,6 +36,28 @@ class MessageInputActionsDrawer extends StatefulWidget {
 class _MessageInputActionsDrawerState extends State<MessageInputActionsDrawer> {
   bool _editing = false;
 
+  /// 抽屉经 bottom sheet 弹出为独立路由，外部 setState 不会重建它，
+  /// 编辑期间的勾选状态在内部维护并同步通知外部
+  late Set<String> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = {...?widget.quickActionIds};
+  }
+
+  @override
+  void didUpdateWidget(covariant MessageInputActionsDrawer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final ids = widget.quickActionIds;
+    if (ids != null && !_sameIds(ids, _selected)) {
+      _selected = {...ids};
+    }
+  }
+
+  bool _sameIds(Set<String> a, Set<String> b) =>
+      a.length == b.length && a.containsAll(b);
+
   bool get _editable =>
       widget.quickActionIds != null && widget.onQuickActionIdsChanged != null;
 
@@ -122,7 +144,7 @@ class _MessageInputActionsDrawerState extends State<MessageInputActionsDrawer> {
       itemCount: actions.length,
       itemBuilder: (context, index) {
         final action = actions[index];
-        final checked = widget.quickActionIds!.contains(action.id);
+        final checked = _selected.contains(action.id);
         return Pressable(
           onPressed: () => _toggle(action.id, checked),
           semanticLabel: action.title,
@@ -160,9 +182,10 @@ class _MessageInputActionsDrawerState extends State<MessageInputActionsDrawer> {
   }
 
   void _toggle(String id, bool currentlyChecked) {
-    final ids = {...widget.quickActionIds!};
-    currentlyChecked ? ids.remove(id) : ids.add(id);
-    widget.onQuickActionIdsChanged!(ids);
+    setState(() {
+      currentlyChecked ? _selected.remove(id) : _selected.add(id);
+    });
+    widget.onQuickActionIdsChanged!({..._selected});
   }
 
   Widget _buildActionItem(BuildContext context, MessageInputAction action) {

@@ -13,14 +13,16 @@ class ActivityRecord {
 
   ActivityRecord({
     String? id,
-    required this.startTime,
-    required this.endTime,
+    required DateTime startTime,
+    required DateTime endTime,
     required this.title,
     this.tags = const [],
     this.description,
     this.mood, // 心情emoji
     this.color, // 活动颜色
-  }) : id = id ?? const Uuid().v4();
+  }) : id = id ?? const Uuid().v4(),
+       startTime = startTime.toLocal(),
+       endTime = endTime.toLocal();
 
   // 计算持续时间（分钟）
   int get durationInMinutes {

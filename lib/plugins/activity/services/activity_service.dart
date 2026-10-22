@@ -35,6 +35,8 @@ class ActivityService {
     try {
       final date = activity.startTime;
       final filePath = _getActivityFilePath(date);
+      debugPrint('[ActivityTime] save id=${activity.id} path=$filePath '
+          'start=${activity.startTime.toIso8601String()} end=${activity.endTime.toIso8601String()}');
 
       // 读取现有活动
       List<ActivityRecord> activities = await getActivitiesForDate(date);
@@ -100,7 +102,16 @@ class ActivityService {
           ? jsonData
           : (jsonData as Map<String, dynamic>)['activities'] as List<dynamic>? ?? [];
 
-      return jsonList.map((json) => ActivityRecord.fromJson(json)).toList();
+      return jsonList.map((json) {
+        final activity = ActivityRecord.fromJson(json);
+        if (DateTime.parse(json['startTime']).isUtc ||
+            DateTime.parse(json['endTime']).isUtc) {
+          debugPrint('[ActivityTime] read id=${activity.id} path=$filePath '
+              'raw=${json['startTime']}..${json['endTime']} '
+              'local=${activity.startTime.toIso8601String()}..${activity.endTime.toIso8601String()}');
+        }
+        return activity;
+      }).toList();
     } catch (e) {
       debugPrint('Error loading activities: $e');
       return [];
