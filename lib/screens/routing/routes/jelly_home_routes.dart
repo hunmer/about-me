@@ -14,6 +14,7 @@ class JellyHomeRoutes implements RouteRegistry {
           handler: (settings) => RouteHelpers.createRoute(
             const JellyHomeScreen(),
             settings: settings,
+            useAnimation: false,
           ),
       description: '果冻小屋主页（手绘风布局还原）',
         ),

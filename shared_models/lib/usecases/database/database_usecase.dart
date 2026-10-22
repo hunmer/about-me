@@ -150,7 +150,7 @@ class DatabaseUseCase {
     }
 
     try {
-      return repository.deleteDatabase(id);
+      return await repository.deleteDatabase(id);
     } catch (e) {
       return Result.failure('删除数据库失败: $e', code: ErrorCodes.serverError);
     }
@@ -318,7 +318,7 @@ class DatabaseUseCase {
     }
 
     try {
-      return repository.deleteRecord(id);
+      return await repository.deleteRecord(id);
     } catch (e) {
       return Result.failure('删除记录失败: $e', code: ErrorCodes.serverError);
     }

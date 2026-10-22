@@ -60,7 +60,7 @@ class TimerStorage {
           'Timer storage version mismatch. Current: $_storageVersion, Saved: $version',
         );
         await _migrateStorage(version);
-        return loadActiveTimers(); // 递归调用重新加载
+        return await loadActiveTimers(); // 递归调用重新加载
       }
 
       final timersJson = data['timers'] as List;

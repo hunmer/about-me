@@ -149,6 +149,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'PeriodScoreGaugeCard - 周期切换与马蹄形分数仪表',
         route: '/widgets_gallery/period_score_gauge_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.alt_route,
+        title: '路线图时间轴卡片',
+        subtitle: 'RoadmapTimelineCard - S 曲线头部 + 里程碑时间轴生长动画',
+        route: '/widgets_gallery/roadmap_timeline_card',
+      ),
     ];
   }
 

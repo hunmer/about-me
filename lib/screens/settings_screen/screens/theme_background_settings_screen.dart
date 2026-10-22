@@ -856,6 +856,113 @@ class _ThemeBackgroundSettingsScreenState
     );
   }
 
+  /// 贴条样式选择:全局默认样式,点击即时生效
+  Widget _buildTapeStylePicker(AppThemeData theme) {
+    return Wrap(
+      spacing: theme.spacing.md,
+      runSpacing: theme.spacing.sm,
+      children: [
+        for (final style in const [
+          HandDrawnTapeStyle.centerTape,
+          HandDrawnTapeStyle.washiTape,
+          HandDrawnTapeStyle.cornerTapes,
+          HandDrawnTapeStyle.staple,
+        ])
+          _buildTapeStyleChip(theme, style),
+      ],
+    );
+  }
+
+  /// 样式 chip:迷你贴条示意 + 名称,墨线边框选中态与描边风格选择一致
+  Widget _buildTapeStyleChip(AppThemeData theme, HandDrawnTapeStyle style) {
+    final controller = HandDrawnStyleController();
+    final selected = controller.tapeStyle == style;
+    return GestureDetector(
+      onTap: () => controller.setTapeStyle(style),
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        alignment: Alignment.center,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          radius: BorderRadius.circular(12),
+          stroke: selected ? theme.primary : theme.ink,
+          strokeWidth: selected ? 2.6 : 1.6,
+          seed: 90 + style.index,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildTapeStyleMiniPreview(theme, style),
+            const SizedBox(width: 8),
+            Text(
+              style.labelKey.tr,
+              style: DsTypography.caption.copyWith(
+                color: selected ? theme.text : theme.textSub,
+                fontWeight: selected ? FontWeight.w600 : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 迷你贴条示意:形态与真实贴条对应,便于直观选择
+  Widget _buildTapeStyleMiniPreview(
+    AppThemeData theme,
+    HandDrawnTapeStyle style,
+  ) {
+    // 与 HandDrawnListView.defaultTapeColor 同源(避免为取色引入 widget 导入)
+    Widget bar(Color color, double width) => Container(
+      width: width,
+      height: 7,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(color: theme.ink, width: 0.8),
+      ),
+    );
+    const paperColor = Color(0xFFF8F3E6);
+    const washiColor = Color(0xCCDFC79A);
+    const metalColor = Color(0xFFB7BCC6);
+    return switch (style) {
+      HandDrawnTapeStyle.centerTape => bar(paperColor, 22),
+      HandDrawnTapeStyle.washiTape => bar(washiColor, 26),
+      HandDrawnTapeStyle.cornerTapes => SizedBox(
+        width: 26,
+        height: 10,
+        child: Stack(
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Transform.rotate(
+                angle: -0.35,
+                child: bar(paperColor, 14),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Transform.rotate(
+                angle: 0.35,
+                child: bar(paperColor, 14),
+              ),
+            ),
+          ],
+        ),
+      ),
+      HandDrawnTapeStyle.staple => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          bar(metalColor, 9),
+          const SizedBox(width: 3),
+          bar(metalColor, 9),
+        ],
+      ),
+      HandDrawnTapeStyle.folderTab => const SizedBox.shrink(),
+    };
+  }
+
   /// 完整主题选择：色板 × 墨线档位成套切换，点击即全局生效
   Widget _buildThemePicker() {
     final theme = DSThemeBridge.resolve(context);
@@ -1096,6 +1203,16 @@ class _ThemeBackgroundSettingsScreenState
                                 onChanged: style.setTapeEnabled,
                               ),
                             ),
+                            SizedBox(height: theme.spacing.md),
+                            // 贴条样式：全局默认样式即时切换（folderTab 为特定场景专用不进选择）
+                            Text(
+                              'settings_screen_tapeStyle'.tr,
+                              style: DsTypography.heading.copyWith(
+                                color: theme.text,
+                              ),
+                            ),
+                            SizedBox(height: theme.spacing.sm),
+                            _buildTapeStylePicker(theme),
                             SettingsTile(
                               icon: DsIconKind.rotateRight,
                               iconColor: DsAccentColors.pink,

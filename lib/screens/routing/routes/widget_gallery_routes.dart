@@ -105,6 +105,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/personality_carousel_exa
 import 'package:aboutme/screens/widgets_gallery/screens/siri_voice_assistant_orb_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/audio_ui_replica_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/pseudo_3d_flip_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/roadmap_timeline_card_example.dart';
 
 /// 组件展示路由注册表
 class WidgetGalleryRoutes implements RouteRegistry {
@@ -951,6 +952,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
       ),
       description: '图片伪3D翻转卡片（Z轴切片堆叠 + 透视 + 流光高光）',
     ),
+    RouteDefinition(
+      path: '/widgets_gallery/roadmap_timeline_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const RoadmapTimelineCardExample(),
+        settings: settings,
+      ),
+      description: '路线图时间轴卡片',
+    ),
   ];
 }
 
@@ -1019,6 +1028,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '周期分数仪表卡片',
     subtitle: 'PeriodScoreGaugeCard',
     route: '/widgets_gallery/period_score_gauge_card',
+  ),
+  WidgetPreviewItem(
+    category: '进度类',
+    icon: Icons.alt_route,
+    title: '路线图时间轴卡片',
+    subtitle: 'RoadmapTimelineCard',
+    route: '/widgets_gallery/roadmap_timeline_card',
   ),
   // 追踪类
   WidgetPreviewItem(

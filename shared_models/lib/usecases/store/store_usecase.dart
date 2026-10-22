@@ -167,7 +167,7 @@ class StoreUseCase {
     }
 
     try {
-      return repository.deleteProduct(id);
+      return await repository.deleteProduct(id);
     } catch (e) {
       return Result.failure('删除商品失败: $e', code: ErrorCodes.serverError);
     }
@@ -181,7 +181,7 @@ class StoreUseCase {
     }
 
     try {
-      return repository.archiveProduct(id);
+      return await repository.archiveProduct(id);
     } catch (e) {
       return Result.failure('归档商品失败: $e', code: ErrorCodes.serverError);
     }
@@ -195,7 +195,7 @@ class StoreUseCase {
     }
 
     try {
-      return repository.restoreProduct(id);
+      return await repository.restoreProduct(id);
     } catch (e) {
       return Result.failure('恢复商品失败: $e', code: ErrorCodes.serverError);
     }
@@ -308,7 +308,7 @@ class StoreUseCase {
   /// 清空积分记录
   Future<Result<bool>> clearPointsLogs(Map<String, dynamic> params) async {
     try {
-      return repository.clearPointsLogs();
+      return await repository.clearPointsLogs();
     } catch (e) {
       return Result.failure('清空积分记录失败: $e', code: ErrorCodes.serverError);
     }
@@ -418,7 +418,7 @@ class StoreUseCase {
   /// 清空用户物品
   Future<Result<bool>> clearUserItems(Map<String, dynamic> params) async {
     try {
-      return repository.clearUserItems();
+      return await repository.clearUserItems();
     } catch (e) {
       return Result.failure('清空用户物品失败: $e', code: ErrorCodes.serverError);
     }
@@ -481,7 +481,7 @@ class StoreUseCase {
   /// 获取商品总数
   Future<Result<int>> getProductsCount(Map<String, dynamic> params) async {
     try {
-      return repository.getProductsCount();
+      return await repository.getProductsCount();
     } catch (e) {
       return Result.failure('获取商品总数失败: $e', code: ErrorCodes.serverError);
     }
@@ -490,7 +490,7 @@ class StoreUseCase {
   /// 获取用户物品总数
   Future<Result<int>> getUserItemsCount(Map<String, dynamic> params) async {
     try {
-      return repository.getUserItemsCount();
+      return await repository.getUserItemsCount();
     } catch (e) {
       return Result.failure('获取用户物品总数失败: $e', code: ErrorCodes.serverError);
     }
@@ -499,7 +499,7 @@ class StoreUseCase {
   /// 获取七天内到期的物品数量
   Future<Result<int>> getExpiringItemsCount(Map<String, dynamic> params) async {
     try {
-      return repository.getExpiringItemsCount();
+      return await repository.getExpiringItemsCount();
     } catch (e) {
       return Result.failure('获取到期物品数量失败: $e', code: ErrorCodes.serverError);
     }

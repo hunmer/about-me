@@ -171,7 +171,7 @@ class SystemCalendarManager {
         return true;
       }
 
-      final errorMsg = result != null ? result.errors.join(', ') : '未知错误';
+      final errorMsg = result.errors.join(', ');
       debugPrint('SystemCalendarManager: 删除事件失败: $errorMsg');
       return false;
     } catch (e) {
@@ -216,9 +216,6 @@ class SystemCalendarManager {
 
     try {
       final permissionsGranted = await _deviceCalendar.hasPermissions();
-      if (permissionsGranted == null) {
-        return false;
-      }
       return permissionsGranted.isSuccess == true &&
           permissionsGranted.data == true;
     } catch (e) {

@@ -246,7 +246,7 @@ class OpenAIUseCase {
     }
 
     try {
-      return repository.deleteAgent(id);
+      return await repository.deleteAgent(id);
     } catch (e) {
       return Result.failure('删除 AI 助手失败: $e', code: ErrorCodes.serverError);
     }
@@ -423,7 +423,7 @@ class OpenAIUseCase {
     }
 
     try {
-      return repository.deleteServiceProvider(id);
+      return await repository.deleteServiceProvider(id);
     } catch (e) {
       return Result.failure('删除服务商失败: $e', code: ErrorCodes.serverError);
     }
@@ -584,7 +584,7 @@ class OpenAIUseCase {
     }
 
     try {
-      return repository.deleteToolApp(id);
+      return await repository.deleteToolApp(id);
     } catch (e) {
       return Result.failure('删除工具应用失败: $e', code: ErrorCodes.serverError);
     }

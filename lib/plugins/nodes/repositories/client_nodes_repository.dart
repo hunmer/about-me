@@ -58,11 +58,8 @@ class ClientNodesRepository extends INodesRepository {
   Future<Result<NotebookDto>> createNotebook(NotebookDto dto) async {
     try {
       // 将 DTO 转换为 Notebook
-      final icon =
-          dto.icon != null
-              ? dynamicIconData(dto.icon, fontFamily: 'MaterialIcons')
-              : Icons.book;
-      final color = dto.color != null ? Color(dto.color) : Colors.blue;
+      final icon = dynamicIconData(dto.icon, fontFamily: 'MaterialIcons');
+      final color = Color(dto.color);
 
       await controller.addNotebook(dto.title, icon, id: dto.id, color: color);
 
@@ -88,12 +85,8 @@ class ClientNodesRepository extends INodesRepository {
       }
 
       // 将 DTO 转换为 Notebook
-      final icon =
-          dto.icon != null
-              ? dynamicIconData(dto.icon, fontFamily: 'MaterialIcons')
-              : existingNotebook.icon;
-      final color =
-          dto.color != null ? Color(dto.color) : existingNotebook.color;
+      final icon = dynamicIconData(dto.icon, fontFamily: 'MaterialIcons');
+      final color = Color(dto.color);
 
       final updatedNotebook = Notebook(
         id: existingNotebook.id,

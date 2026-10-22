@@ -144,7 +144,7 @@ class BillUseCase {
     }
 
     try {
-      return repository.deleteAccount(id);
+      return await repository.deleteAccount(id);
     } catch (e) {
       return Result.failure('删除账户失败: $e', code: ErrorCodes.serverError);
     }
@@ -327,7 +327,7 @@ class BillUseCase {
     }
 
     try {
-      return repository.deleteBill(id);
+      return await repository.deleteBill(id);
     } catch (e) {
       return Result.failure('删除账单失败: $e', code: ErrorCodes.serverError);
     }

@@ -109,15 +109,27 @@ class _GrokStudyScreenState extends State<GrokStudyScreen> {
             children: [
               ActionChip(
                 label: const Text('转一圈'),
-                onPressed: () => [bot, bot64].forEach((b) => b.spinOnce(1)),
+                onPressed: () {
+                  for (final b in [bot, bot64]) {
+                    b.spinOnce(1);
+                  }
+                },
               ),
               ActionChip(
                 label: const Text('跳一下'),
-                onPressed: () => [bot, bot64].forEach((b) => b.bounceOnce()),
+                onPressed: () {
+                  for (final b in [bot, bot64]) {
+                    b.bounceOnce();
+                  }
+                },
               ),
               ActionChip(
                 label: const Text('粒子'),
-                onPressed: () => [bot, bot64].forEach((b) => b.burstOnce()),
+                onPressed: () {
+                  for (final b in [bot, bot64]) {
+                    b.burstOnce();
+                  }
+                },
               ),
               FilterChip(
                 label: const Text('跟随指针'),

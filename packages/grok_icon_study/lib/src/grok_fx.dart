@@ -1,3 +1,4 @@
+// ignore_for_file: library_private_types_in_public_api
 // Ported from grok-icon-study replica/src/fx.js — overlay glyphs + particle ribbons.
 // Source symbols: E_t I_t za/$a/Ms/oi/_r/ua/No/Eo/Ho/hl/cd/Bt.
 import 'dart:math' as math;

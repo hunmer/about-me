@@ -362,7 +362,7 @@ class ActivityUseCase {
   Future<Result<List<String>>> getRecentTags(
       Map<String, dynamic> params) async {
     try {
-      return repository.getRecentTags();
+      return await repository.getRecentTags();
     } catch (e) {
       return Result.failure('获取最近标签失败: $e', code: ErrorCodes.serverError);
     }

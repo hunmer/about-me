@@ -165,7 +165,7 @@ class TimerUseCase {
     }
 
     try {
-      return repository.deleteTimerTask(id);
+      return await repository.deleteTimerTask(id);
     } catch (e) {
       return Result.failure('删除任务失败: $e', code: ErrorCodes.serverError);
     }
@@ -358,7 +358,7 @@ class TimerUseCase {
     }
 
     try {
-      return repository.deleteTimerItem(id);
+      return await repository.deleteTimerItem(id);
     } catch (e) {
       return Result.failure('删除计时器项失败: $e', code: ErrorCodes.serverError);
     }
@@ -369,7 +369,7 @@ class TimerUseCase {
   /// 获取任务总数
   Future<Result<int>> getTotalTaskCount(Map<String, dynamic> params) async {
     try {
-      return repository.getTotalTaskCount();
+      return await repository.getTotalTaskCount();
     } catch (e) {
       return Result.failure('获取任务总数失败: $e', code: ErrorCodes.serverError);
     }
@@ -378,7 +378,7 @@ class TimerUseCase {
   /// 获取正在运行的任务数
   Future<Result<int>> getRunningTaskCount(Map<String, dynamic> params) async {
     try {
-      return repository.getRunningTaskCount();
+      return await repository.getRunningTaskCount();
     } catch (e) {
       return Result.failure('获取运行任务数失败: $e', code: ErrorCodes.serverError);
     }
@@ -392,7 +392,7 @@ class TimerUseCase {
     }
 
     try {
-      return repository.getTaskCountByGroup(group);
+      return await repository.getTaskCountByGroup(group);
     } catch (e) {
       return Result.failure('获取分组任务数失败: $e', code: ErrorCodes.serverError);
     }

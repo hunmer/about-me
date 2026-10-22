@@ -137,7 +137,7 @@ class NodesUseCase {
     }
 
     try {
-      return repository.deleteNotebook(id);
+      return await repository.deleteNotebook(id);
     } catch (e) {
       return Result.failure('删除笔记本失败: $e', code: ErrorCodes.serverError);
     }
@@ -363,7 +363,7 @@ class NodesUseCase {
     }
 
     try {
-      return repository.deleteNode(id);
+      return await repository.deleteNode(id);
     } catch (e) {
       return Result.failure('删除节点失败: $e', code: ErrorCodes.serverError);
     }
@@ -451,7 +451,7 @@ class NodesUseCase {
     }
 
     try {
-      return repository.getNodePath(notebookId, nodeId);
+      return await repository.getNodePath(notebookId, nodeId);
     } catch (e) {
       return Result.failure('获取节点路径失败: $e', code: ErrorCodes.serverError);
     }

@@ -177,12 +177,6 @@ class WatchConnectivityManager extends ChangeNotifier {
   Future<Map<String, dynamic>> _getChatChannels() async {
     try {
       final chatPlugin = ChatPlugin.instance;
-      if (chatPlugin == null) {
-        return {
-          'success': false,
-          'error': 'Chat plugin not initialized',
-        };
-      }
 
       // 使用 channels getter 而不是 getChannels() 方法
       final channels = chatPlugin.channelService.channels;
@@ -219,12 +213,6 @@ class WatchConnectivityManager extends ChangeNotifier {
   Future<Map<String, dynamic>> _getChatMessages(String channelId) async {
     try {
       final chatPlugin = ChatPlugin.instance;
-      if (chatPlugin == null) {
-        return {
-          'success': false,
-          'error': 'Chat plugin not initialized',
-        };
-      }
 
       // 使用 channels getter 并手动查找频道
       Channel? channel;

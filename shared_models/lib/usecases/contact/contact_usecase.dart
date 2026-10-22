@@ -188,7 +188,7 @@ class ContactUseCase {
       // 先删除所有相关的交互记录
       await repository.deleteInteractionRecordsByContactId(id);
 
-      return repository.deleteContact(id);
+      return await repository.deleteContact(id);
     } catch (e) {
       return Result.failure('删除联系人失败: $e', code: ErrorCodes.serverError);
     }
@@ -379,7 +379,7 @@ class ContactUseCase {
     }
 
     try {
-      return repository.deleteInteractionRecord(id);
+      return await repository.deleteInteractionRecord(id);
     } catch (e) {
       return Result.failure('删除交互记录失败: $e', code: ErrorCodes.serverError);
     }
@@ -398,7 +398,7 @@ class ContactUseCase {
     }
 
     try {
-      return repository.deleteInteractionRecordsByContactId(contactId);
+      return await repository.deleteInteractionRecordsByContactId(contactId);
     } catch (e) {
       return Result.failure('删除交互记录失败: $e', code: ErrorCodes.serverError);
     }
@@ -524,7 +524,7 @@ class ContactUseCase {
   /// 获取所有标签
   Future<Result<List<String>>> getAllTags(Map<String, dynamic> params) async {
     try {
-      return repository.getAllTags();
+      return await repository.getAllTags();
     } catch (e) {
       return Result.failure('获取标签列表失败: $e', code: ErrorCodes.serverError);
     }
@@ -537,7 +537,7 @@ class ContactUseCase {
     Map<String, dynamic> params,
   ) async {
     try {
-      return repository.getRecentlyContactedCount();
+      return await repository.getRecentlyContactedCount();
     } catch (e) {
       return Result.failure('获取最近联系人数量失败: $e', code: ErrorCodes.serverError);
     }
@@ -556,7 +556,7 @@ class ContactUseCase {
     }
 
     try {
-      return repository.getContactInteractionCount(contactId);
+      return await repository.getContactInteractionCount(contactId);
     } catch (e) {
       return Result.failure('获取交互记录数量失败: $e', code: ErrorCodes.serverError);
     }
@@ -567,7 +567,7 @@ class ContactUseCase {
     Map<String, dynamic> params,
   ) async {
     try {
-      return repository.getTotalContactCount();
+      return await repository.getTotalContactCount();
     } catch (e) {
       return Result.failure('获取总联系人数失败: $e', code: ErrorCodes.serverError);
     }

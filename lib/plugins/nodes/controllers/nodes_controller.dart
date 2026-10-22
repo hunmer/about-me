@@ -10,7 +10,7 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 
 class NodesController extends ChangeNotifier {
-  final StorageManager _storageManager;
+  final StorageManager _storageManager; // ignore: unused_field
   List<Notebook> _notebooks = [];
   Notebook? _selectedNotebook;
 

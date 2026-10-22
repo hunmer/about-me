@@ -78,7 +78,7 @@ class HabitStatsWidget extends LiveSelectorWidget {
         data['commonWidgetProps'] = parsedConfig.commonWidgetProps!;
       }
 
-      return provideHabitStatsWidgets(data);
+      return await provideHabitStatsWidgets(data);
     } catch (e) {
       debugPrint('[HabitStatsWidget] 获取数据失败: $e');
       debugPrint('[HabitStatsWidget] config: $config');

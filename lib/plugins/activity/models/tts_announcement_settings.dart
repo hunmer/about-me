@@ -89,7 +89,7 @@ class TTSAnnouncementSettings {
 
 /// TTS 播报设置管理器
 class TTSAnnouncementSettingsManager {
-  final StorageManager _storage;
+  final StorageManager _storage; // ignore: unused_field
   final String _settingsFileName;
 
   TTSAnnouncementSettingsManager({

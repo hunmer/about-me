@@ -186,18 +186,15 @@ class PluginCommonRoutes implements RouteRegistry {
             final initialSelectorConfig = arguments?['initialSelectorConfig'] as SelectorWidgetConfig?;
             final originalSize = arguments?['originalSize'] as HomeWidgetSize?;
             final originalConfig = arguments?['originalConfig'] as Map<String, dynamic>?;
-            if (pluginWidget != null) {
-              return RouteHelpers.createRoute(CommonWidgetSelectorPage(
-                pluginWidget: pluginWidget,
-                folderId: folderId,
-                replaceWidgetItemId: replaceWidgetItemId,
-                initialCommonWidgetId: initialCommonWidgetId,
-                initialSelectorConfig: initialSelectorConfig,
-                originalSize: originalSize,
-                originalConfig: originalConfig,
-              ));
-            }
-            return RouteHelpers.createRoute(const SizedBox.shrink());
+            return RouteHelpers.createRoute(CommonWidgetSelectorPage(
+              pluginWidget: pluginWidget,
+              folderId: folderId,
+              replaceWidgetItemId: replaceWidgetItemId,
+              initialCommonWidgetId: initialCommonWidgetId,
+              initialSelectorConfig: initialSelectorConfig,
+              originalSize: originalSize,
+              originalConfig: originalConfig,
+            ));
           },
           description: '公共小组件选择页面',
         ),
@@ -212,18 +209,15 @@ class PluginCommonRoutes implements RouteRegistry {
             final initialSelectorConfig = arguments?['initialSelectorConfig'] as SelectorWidgetConfig?;
             final originalSize = arguments?['originalSize'] as HomeWidgetSize?;
             final originalConfig = arguments?['originalConfig'] as Map<String, dynamic>?;
-            if (pluginWidget != null) {
-              return RouteHelpers.createRoute(CommonWidgetSelectorPage(
-                pluginWidget: pluginWidget,
-                folderId: folderId,
-                replaceWidgetItemId: replaceWidgetItemId,
-                initialCommonWidgetId: initialCommonWidgetId,
-                initialSelectorConfig: initialSelectorConfig,
-                originalSize: originalSize,
-                originalConfig: originalConfig,
-              ));
-            }
-            return RouteHelpers.createRoute(const SizedBox.shrink());
+            return RouteHelpers.createRoute(CommonWidgetSelectorPage(
+              pluginWidget: pluginWidget,
+              folderId: folderId,
+              replaceWidgetItemId: replaceWidgetItemId,
+              initialCommonWidgetId: initialCommonWidgetId,
+              initialSelectorConfig: initialSelectorConfig,
+              originalSize: originalSize,
+              originalConfig: originalConfig,
+            ));
           },
           description: '公共小组件选择页面（别名）',
         ),

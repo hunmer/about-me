@@ -98,6 +98,7 @@ import 'widgets/expense_tracker_card.dart';
 import 'widgets/total_sales_analytics_card.dart';
 import 'widgets/spending_overview_card.dart';
 import 'widgets/linked_task_flow_card.dart';
+import 'widgets/roadmap_timeline_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -197,6 +198,7 @@ enum CommonWidgetId {
   spendingOverviewCard,
   linkedTaskFlowCard,
   habitCheckinHeatmapCard,
+  roadmapTimelineCard,
 }
 
 /// 公共小组件元数据
@@ -974,6 +976,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [MediumSize(), Wide2Size(), Large3Size()],
     ),
+    CommonWidgetId.roadmapTimelineCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.roadmapTimelineCard,
+      name: '路线图时间轴卡片',
+      description: 'S 曲线头部 + 垂直里程碑时间轴：激活线逐段向下生长、节点弹入、文字淡入，支持当前步数与自定义进度色',
+      icon: Icons.alt_route,
+      defaultSize: Large3Size(),
+      supportedSizes: [MediumSize(), Wide2Size(), Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1228,6 +1238,8 @@ class CommonWidgetBuilder {
         return LinkedTaskFlowCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.habitCheckinHeatmapCard:
         return HabitHeatmapCard.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.roadmapTimelineCard:
+        return RoadmapTimelineCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

@@ -98,7 +98,7 @@ class ChatUseCase {
     }
 
     try {
-      return repository.deleteChannel(id);
+      return await repository.deleteChannel(id);
     } catch (e) {
       return Result.failure('删除频道失败: $e', code: ErrorCodes.serverError);
     }
@@ -296,7 +296,7 @@ class ChatUseCase {
     }
 
     try {
-      return repository.deleteMessage(
+      return await repository.deleteMessage(
         params['channelId'] as String,
         params['messageId'] as String,
       );

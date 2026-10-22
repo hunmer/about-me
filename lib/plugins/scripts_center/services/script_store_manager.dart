@@ -17,7 +17,7 @@ import 'package:aboutme/plugins/scripts_center/services/script_loader.dart';
 /// - 搜索与过滤
 /// - 已安装脚本状态追踪
 class ScriptStoreManager extends ChangeNotifier {
-  final StorageManager _storage;
+  final StorageManager _storage; // ignore: unused_field
   final ScriptLoader _scriptLoader;
   final http.Client _httpClient;
 

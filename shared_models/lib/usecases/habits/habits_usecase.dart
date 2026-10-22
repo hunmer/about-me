@@ -172,7 +172,7 @@ class HabitsUseCase {
     }
 
     try {
-      return repository.deleteHabit(id);
+      return await repository.deleteHabit(id);
     } catch (e) {
       return Result.failure('删除习惯失败: $e', code: ErrorCodes.serverError);
     }
@@ -333,7 +333,7 @@ class HabitsUseCase {
     }
 
     try {
-      return repository.deleteSkill(id);
+      return await repository.deleteSkill(id);
     } catch (e) {
       return Result.failure('删除技能失败: $e', code: ErrorCodes.serverError);
     }
@@ -477,7 +477,7 @@ class HabitsUseCase {
     }
 
     try {
-      return repository.deleteCompletionRecord(id);
+      return await repository.deleteCompletionRecord(id);
     } catch (e) {
       return Result.failure('删除完成记录失败: $e', code: ErrorCodes.serverError);
     }
@@ -537,7 +537,7 @@ class HabitsUseCase {
     }
 
     try {
-      return repository.getHabitTotalDuration(habitId);
+      return await repository.getHabitTotalDuration(habitId);
     } catch (e) {
       return Result.failure('获取总时长失败: $e', code: ErrorCodes.serverError);
     }
@@ -555,7 +555,7 @@ class HabitsUseCase {
     }
 
     try {
-      return repository.getHabitCompletionCount(habitId);
+      return await repository.getHabitCompletionCount(habitId);
     } catch (e) {
       return Result.failure('获取完成次数失败: $e', code: ErrorCodes.serverError);
     }
@@ -572,7 +572,7 @@ class HabitsUseCase {
     }
 
     try {
-      return repository.getSkillTotalDuration(skillId);
+      return await repository.getSkillTotalDuration(skillId);
     } catch (e) {
       return Result.failure('获取技能总时长失败: $e', code: ErrorCodes.serverError);
     }
@@ -590,7 +590,7 @@ class HabitsUseCase {
     }
 
     try {
-      return repository.getSkillCompletionCount(skillId);
+      return await repository.getSkillCompletionCount(skillId);
     } catch (e) {
       return Result.failure('获取技能完成次数失败: $e', code: ErrorCodes.serverError);
     }

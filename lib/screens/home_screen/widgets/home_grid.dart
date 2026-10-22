@@ -837,11 +837,6 @@ class _HomeGridState extends State<HomeGrid> {
     );
 
     final draggedId = details.data;
-    if (draggedId == null) {
-      debugPrint('[HomeGrid] ⚠️ draggedId is null');
-      _resetPreviewStateAfterDrop();
-      return;
-    }
 
     final orderedItems = _buildOrderedItems();
     if (targetIndex < 0 || targetIndex >= orderedItems.length) {

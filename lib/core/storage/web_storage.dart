@@ -63,7 +63,7 @@ class WebStorage implements StorageInterface {
     try {
       final file = fs.file(join(_rootDir, key));
       if (await file.exists()) {
-        return file.readAsString();
+        return await file.readAsString();
       }
       return null;
     } catch (e) {

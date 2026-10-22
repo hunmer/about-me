@@ -161,7 +161,7 @@ class AgentChatUseCase {
     try {
       // 同时删除会话的所有消息
       await repository.deleteMessagesByConversation(id);
-      return repository.deleteConversation(id);
+      return await repository.deleteConversation(id);
     } catch (e) {
       return Result.failure('删除会话失败: $e', code: ErrorCodes.serverError);
     }
@@ -307,7 +307,7 @@ class AgentChatUseCase {
     }
 
     try {
-      return repository.deleteGroup(id);
+      return await repository.deleteGroup(id);
     } catch (e) {
       return Result.failure('删除分组失败: $e', code: ErrorCodes.serverError);
     }
@@ -490,7 +490,7 @@ class AgentChatUseCase {
     }
 
     try {
-      return repository.deleteMessage(id);
+      return await repository.deleteMessage(id);
     } catch (e) {
       return Result.failure('删除消息失败: $e', code: ErrorCodes.serverError);
     }
@@ -691,7 +691,7 @@ class AgentChatUseCase {
     }
 
     try {
-      return repository.deleteToolTemplate(id);
+      return await repository.deleteToolTemplate(id);
     } catch (e) {
       return Result.failure('删除工具模板失败: $e', code: ErrorCodes.serverError);
     }
@@ -767,7 +767,7 @@ class AgentChatUseCase {
   /// 获取会话数量
   Future<Result<int>> getConversationCount(Map<String, dynamic> params) async {
     try {
-      return repository.getConversationCount();
+      return await repository.getConversationCount();
     } catch (e) {
       return Result.failure('获取会话数量失败: $e', code: ErrorCodes.serverError);
     }
@@ -784,7 +784,7 @@ class AgentChatUseCase {
     }
 
     try {
-      return repository.getMessageCount(conversationId);
+      return await repository.getMessageCount(conversationId);
     } catch (e) {
       return Result.failure('获取消息数量失败: $e', code: ErrorCodes.serverError);
     }
@@ -795,7 +795,7 @@ class AgentChatUseCase {
     Map<String, dynamic> params,
   ) async {
     try {
-      return repository.getTemplateUsageStats();
+      return await repository.getTemplateUsageStats();
     } catch (e) {
       return Result.failure('获取模板使用统计失败: $e', code: ErrorCodes.serverError);
     }

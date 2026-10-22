@@ -107,10 +107,6 @@ class CalendarRoutes implements RouteRegistry {
     }
 
     final calendarPlugin = CalendarPlugin.instance;
-    if (calendarPlugin == null) {
-      debugPrint('CalendarPlugin 未初始化，回退到主视图');
-      return RouteHelpers.createRoute(const CalendarMainView());
-    }
 
     final calendarController = calendarPlugin.controller;
     List<CalendarEvent> allEvents = calendarController.getAllEvents();

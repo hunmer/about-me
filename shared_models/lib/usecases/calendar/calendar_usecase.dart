@@ -163,7 +163,7 @@ class CalendarUseCase {
     }
 
     try {
-      return repository.deleteEvent(id);
+      return await repository.deleteEvent(id);
     } catch (e) {
       return Result.failure('删除事件失败: $e', code: ErrorCodes.serverError);
     }
@@ -287,7 +287,7 @@ class CalendarUseCase {
     }
 
     try {
-      return repository.deleteCompletedEvent(id);
+      return await repository.deleteCompletedEvent(id);
     } catch (e) {
       return Result.failure('删除已完成事件失败: $e', code: ErrorCodes.serverError);
     }

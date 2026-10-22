@@ -8,6 +8,10 @@ import 'package:aboutme/core/services/hand_drawn_style_controller.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
+// 贴条样式枚举已迁移至控制器（随配置持久化），此处转发导出保持原引用不变
+export 'package:aboutme/core/services/hand_drawn_style_controller.dart'
+    show HandDrawnTapeStyle;
+
 /// 单个 item 的姿态:倾斜角度(度)与水平偏移(px)
 @immutable
 class StickyPose {
@@ -30,15 +34,7 @@ double handDrawnUnitRandom(String source) {
 double stickyTapeBleed([double tapeHeight = 24]) =>
     HandDrawnStyleController().tapeEnabled ? tapeHeight / 2 + 4 : 0.0;
 
-/// 贴条样式
-enum HandDrawnTapeStyle {
-  /// 顶部居中胶带:skribble 墨线 + 不透明纸底 + 三个圆孔
-  centerTape,
-
-  /// 左上角文件夹标签页:墨线纸底(或传入的主题色实底)叠在卡体上沿,
-  /// 可显示标题文字(源自 nodes 笔记本卡)
-  folderTab,
-}
+/// 贴条样式见 [HandDrawnTapeStyle]（定义于 hand_drawn_style_controller）。
 
 /// 手绘便签风列表:按索引循环固定姿态表(参考 nth-child(4n+k) 取样),
 /// item 顶部带半透明胶带贴条,鼠标悬浮时角度归零、放大并轻微上移,
@@ -56,7 +52,7 @@ class HandDrawnListView extends StatelessWidget {
     this.tapeHeight = 24,
     this.tapeColor,
     this.holeColor,
-    this.tapeStyle = HandDrawnTapeStyle.centerTape,
+    this.tapeStyle,
     this.tapeTitleOf,
     this.tapeLabelColorOf,
     this.controller,
@@ -109,8 +105,9 @@ class HandDrawnListView extends StatelessWidget {
   /// 圆孔颜色,默认深色半透明;传页面背景色可获得"真打孔"效果
   final Color? holeColor;
 
-  /// 贴条样式,默认顶部居中胶带
-  final HandDrawnTapeStyle tapeStyle;
+  /// 贴条样式;null(默认)跟随全局设置 HandDrawnStyleController.tapeStyle,
+  /// 特定场景(如 nodes 标签页)可显式指定 folderTab
+  final HandDrawnTapeStyle? tapeStyle;
 
   /// 按索引返回贴条标题文字(folderTab 标签页显示)
   final String? Function(int index)? tapeTitleOf;
@@ -200,7 +197,7 @@ class HandDrawnStickyItem extends StatefulWidget {
     this.tapeColor,
     this.holeColor,
     this.showTape = true,
-    this.tapeStyle = HandDrawnTapeStyle.centerTape,
+    this.tapeStyle,
     this.tapeTitle,
     this.tapeLabelColor,
     this.seed,
@@ -229,8 +226,8 @@ class HandDrawnStickyItem extends StatefulWidget {
   /// 是否绘制顶部贴条;卡片自带贴条样式时置 false 只保留倾斜与悬浮
   final bool showTape;
 
-  /// 贴条样式
-  final HandDrawnTapeStyle tapeStyle;
+  /// 贴条样式;null(默认)跟随全局设置
+  final HandDrawnTapeStyle? tapeStyle;
 
   /// 贴条标题文字(folderTab 标签页显示)
   final String? tapeTitle;
@@ -275,6 +272,10 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
   int get _seed =>
       widget.seed ?? widget.tiltKey.hashCode & 0x7fffffff;
 
+  /// 生效贴条样式:显式指定优先,否则跟随全局设置
+  HandDrawnTapeStyle get _effectiveTapeStyle =>
+      widget.tapeStyle ?? HandDrawnStyleController().tapeStyle;
+
   @override
   Widget build(BuildContext context) {
     // 监听全局开关:贴条/倾斜/入场动画状态变化时本 item 即时重建
@@ -315,8 +316,8 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
     // 全局贴条开关关闭时视为 showTape=false
     final showTape =
         widget.showTape && HandDrawnStyleController().tapeEnabled;
-    final folderTab =
-        showTape && widget.tapeStyle == HandDrawnTapeStyle.folderTab;
+    final style = _effectiveTapeStyle;
+    final folderTab = showTape && style == HandDrawnTapeStyle.folderTab;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -328,7 +329,7 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
               )
             : widget.child,
         if (showTape)
-          switch (widget.tapeStyle) {
+          switch (style) {
             // 顶部胶带:横跨卡片顶边,一半露出卡片外
             HandDrawnTapeStyle.centerTape => Positioned(
               top: -widget.tapeHeight / 2,
@@ -341,6 +342,27 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
               left: 4,
               top: 0,
               child: _buildFolderTab(),
+            ),
+            // 半透明和纸胶带:居中压顶,微倾斜、无孔
+            HandDrawnTapeStyle.washiTape => Positioned(
+              top: -widget.tapeHeight / 2 + 2,
+              left: 0,
+              right: 0,
+              child: Center(child: _buildWashiTape()),
+            ),
+            // 双角斜贴:两条短胶带分别压住左上/右上角
+            HandDrawnTapeStyle.cornerTapes => Positioned(
+              top: -widget.tapeHeight / 2 + 4,
+              left: 0,
+              right: 0,
+              child: _buildCornerTapes(),
+            ),
+            // 订书钉:顶部两枚钉扣骑缝固定
+            HandDrawnTapeStyle.staple => Positioned(
+              top: -3,
+              left: 0,
+              right: 0,
+              child: Center(child: _buildStaples()),
             ),
           },
       ],
@@ -411,9 +433,84 @@ class _HandDrawnStickyItemState extends State<HandDrawnStickyItem> {
     );
   }
 
-  /// 左上角文件夹标签页贴条:墨线纸底(或传入色实底)+ 标题文字
-  Widget _buildFolderTab() {
+  /// 半透明和纸胶带:米黄透色、无孔、微倾斜(与居中胶带反向摆)
+  Widget _buildWashiTape() {
     final theme = DSThemeBridge.resolve(context);
+    final tapeAngle = _pose.angleDegrees > 0 ? -2.5 : 3.0;
+    return Transform.rotate(
+      angle: tapeAngle * math.pi / 180,
+      child: Container(
+        width: widget.tapeWidth * 1.15,
+        height: widget.tapeHeight,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          // 半透明米黄:卡体透色呈现和纸质感
+          fillColor: widget.tapeColor ?? const Color(0xCCDFC79A),
+          radius: BorderRadius.circular(2),
+          strokeWidth: 1.2,
+          seed: _seed + 2,
+        ),
+      ),
+    );
+  }
+
+  /// 双角斜贴:左上/右上两条短胶带,反向微斜压住卡角
+  Widget _buildCornerTapes() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Transform.rotate(
+          angle: -22 * math.pi / 180,
+          child: _buildCornerTape(-1),
+        ),
+        Transform.rotate(
+          angle: 22 * math.pi / 180,
+          child: _buildCornerTape(1),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCornerTape(int side) {
+    final theme = DSThemeBridge.resolve(context);
+    return Container(
+      width: widget.tapeWidth * 0.62,
+      height: widget.tapeHeight,
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: widget.tapeColor ?? HandDrawnListView.defaultTapeColor,
+        radius: BorderRadius.circular(2),
+        strokeWidth: 1.3,
+        seed: _seed + 3 + side,
+      ),
+    );
+  }
+
+  /// 订书钉:两枚金属灰钉扣骑缝压在顶边
+  Widget _buildStaples() {
+    final theme = DSThemeBridge.resolve(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(2, (i) {
+        return Container(
+          width: 24,
+          height: 7,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: dsSketchDecoration(
+            theme: theme,
+            fillColor: const Color(0xFFB7BCC6),
+            radius: BorderRadius.circular(3),
+            strokeWidth: 1.1,
+            seed: _seed + 5 + i,
+          ),
+        );
+      }),
+    );
+  }
+
+  /// 左上角文件夹标签页贴条:墨线纸底(或传入色实底)+ 标题文字
+  Widget _buildFolderTab() {    final theme = DSThemeBridge.resolve(context);
     return ConstrainedBox(
       // Positioned 无右约束,长标题需限宽避免溢出屏幕
       constraints: BoxConstraints(

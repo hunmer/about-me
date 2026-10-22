@@ -154,7 +154,7 @@ class NotesUseCase {
     }
 
     try {
-      return repository.deleteNote(id);
+      return await repository.deleteNote(id);
     } catch (e) {
       return Result.failure('删除笔记失败: $e', code: ErrorCodes.serverError);
     }
@@ -338,7 +338,7 @@ class NotesUseCase {
     }
 
     try {
-      return repository.deleteFolder(id);
+      return await repository.deleteFolder(id);
     } catch (e) {
       return Result.failure('删除文件夹失败: $e', code: ErrorCodes.serverError);
     }

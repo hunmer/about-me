@@ -1,4 +1,4 @@
-include: package:all_lint_rules_community/all.yaml
+# include: package:all_lint_rules_community/all.yaml  # 未 vendored，根项目分析时无法解析
 
 analyzer:
   exclude:

@@ -642,8 +642,6 @@ class HomeLayoutManager extends ChangeNotifier {
       return;
     }
 
-    if (item == null) return;
-
     // 从文件夹移除
     final updatedFolder = folder.copyWith(
       children: folder.children.where((child) => child.id != itemId).toList(),

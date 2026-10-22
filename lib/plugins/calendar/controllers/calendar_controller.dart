@@ -10,7 +10,7 @@ import 'package:aboutme/plugins/calendar/services/calendar_mapping_manager.dart'
 
 /// 日历总控制器，负责管理日历的所有状态和服务
 class CalendarController extends ChangeNotifier {
-  final StorageManager _storage;
+  final StorageManager _storage; // ignore: unused_field
   final List<CalendarEvent> _events = [];
   final List<CalendarEvent> _completedEvents = [];
   List<CalendarEvent> _systemEvents = []; // 系统日历事件缓存

@@ -121,27 +121,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
         );
         final result = await widget.pluginWidget.commonWidgetsProvider!(data);
         // 验证返回值类型并过滤无效配置
-        if (result is Map<String, Map<String, dynamic>>) {
-          availableWidgets = result;
-        } else if (result is Map) {
-          // 如果返回的是普通 Map，尝试安全转换
-          debugPrint(
-            '[CommonWidgetSelectorPage] commonWidgetsProvider 返回了非标准 Map 类型',
-          );
-          for (final entry in result.entries) {
-            final key = entry.key.toString();
-            final value = entry.value;
-            if (value is Map<String, dynamic>) {
-              availableWidgets[key] = value;
-            } else if (value is Map) {
-              availableWidgets[key] = Map<String, dynamic>.from(value);
-            } else {
-              debugPrint(
-                '[CommonWidgetSelectorPage] 跳过无效配置: $key = $value (${value.runtimeType})',
-              );
-            }
-          }
-        }
+        availableWidgets = result;
       } catch (e) {
         debugPrint('[CommonWidgetSelectorPage] 加载组件失败: $e');
         availableWidgets = {};
@@ -245,27 +225,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
         );
         final result = await widget.pluginWidget.commonWidgetsProvider!(data);
         // 验证返回值类型并过滤无效配置
-        if (result is Map<String, Map<String, dynamic>>) {
-          availableWidgets = result;
-        } else if (result is Map) {
-          // 如果返回的是普通 Map，尝试安全转换
-          debugPrint(
-            '[CommonWidgetSelectorPage] commonWidgetsProvider 返回了非标准 Map 类型',
-          );
-          for (final entry in result.entries) {
-            final key = entry.key.toString();
-            final value = entry.value;
-            if (value is Map<String, dynamic>) {
-              availableWidgets[key] = value;
-            } else if (value is Map) {
-              availableWidgets[key] = Map<String, dynamic>.from(value);
-            } else {
-              debugPrint(
-                '[CommonWidgetSelectorPage] 跳过无效配置: $key = $value (${value.runtimeType})',
-              );
-            }
-          }
-        }
+        availableWidgets = result;
       } catch (e) {
         debugPrint('[CommonWidgetSelectorPage] 加载组件失败: $e');
         availableWidgets = {};
@@ -595,13 +555,6 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
       return const Center(child: Text('组件配置错误'));
     }
 
-    if (props is! Map<String, dynamic>) {
-      debugPrint(
-        '[CommonWidgetSelectorPage] 组件配置类型错误: $widgetId, expected Map<String, dynamic> but got ${props.runtimeType}',
-      );
-      return Center(child: Text('配置类型错误: ${props.runtimeType}'));
-    }
-
     // 安全地查找匹配的 CommonWidgetId
     CommonWidgetId matchingWidget;
     try {
@@ -766,30 +719,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
           '[CommonWidgetSelectorPage] commonWidgetsProvider 返回的键: ${result.keys.toList()}',
         );
         // 验证返回值类型并过滤无效配置
-        if (result is Map<String, Map<String, dynamic>>) {
-          availableWidgets = result;
-        } else if (result is Map) {
-          // 如果返回的是普通 Map，尝试安全转换
-          debugPrint(
-            '[CommonWidgetSelectorPage] commonWidgetsProvider 返回了非标准 Map 类型',
-          );
-          for (final entry in result.entries) {
-            final key = entry.key.toString();
-            final value = entry.value;
-            debugPrint(
-              '[CommonWidgetSelectorPage] 处理键值对: $key = $value (${value.runtimeType})',
-            );
-            if (value is Map<String, dynamic>) {
-              availableWidgets[key] = value;
-            } else if (value is Map) {
-              availableWidgets[key] = Map<String, dynamic>.from(value);
-            } else {
-              debugPrint(
-                '[CommonWidgetSelectorPage] 跳过无效配置: $key = $value (${value.runtimeType})',
-              );
-            }
-          }
-        }
+        availableWidgets = result;
       } catch (e) {
         debugPrint('[CommonWidgetSelectorPage] 加载组件失败: $e');
         availableWidgets = {};

@@ -281,7 +281,7 @@ class TrackerUseCase {
   /// 获取所有分组
   Future<Result<List<String>>> getAllGroups(Map<String, dynamic> params) async {
     try {
-      return repository.getAllGroups();
+      return await repository.getAllGroups();
     } catch (e) {
       return Result.failure('获取分组列表失败: $e', code: ErrorCodes.serverError);
     }

@@ -37,7 +37,7 @@ class FixedSymbolWidget extends StatelessWidget {
   final VoidCallback? onTap;
 
   /// 角标边长（父级 Stack 以其一半作偏移实现半进半出）
-  static const double badgeSize = 30;
+  static const double badgeSize = 45;
 
   const FixedSymbolWidget({
     super.key,
@@ -61,11 +61,11 @@ class FixedSymbolWidget extends StatelessWidget {
         child: buildFixedSymbolChild(
           symbol,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
             color: Colors.amber.shade800,
           ),
-          imageSize: 22,
+          imageSize: 33,
         ),
       ),
     );

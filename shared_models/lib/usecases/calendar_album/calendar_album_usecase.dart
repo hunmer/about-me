@@ -314,7 +314,7 @@ class CalendarAlbumUseCase {
     }
 
     try {
-      return repository.deleteEntry(id);
+      return await repository.deleteEntry(id);
     } catch (e) {
       return Result.failure('删除日记失败: $e', code: ErrorCodes.serverError);
     }
@@ -378,7 +378,7 @@ class CalendarAlbumUseCase {
     }
 
     try {
-      return repository.deleteTag(tag);
+      return await repository.deleteTag(tag);
     } catch (e) {
       return Result.failure('删除标签失败: $e', code: ErrorCodes.serverError);
     }

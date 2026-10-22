@@ -17,6 +17,8 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    # vendored 上游包的示例代码，依赖未 vendored 的 example 辅助包
+    - packages/dartantic_ai/example/**
   errors:
     avoid_print: ignore
     constant_identifier_names: ignore

@@ -245,7 +245,7 @@ class DiaryUseCase {
   /// 获取今日字数
   Future<Result<int>> getTodayWordCount(Map<String, dynamic> params) async {
     try {
-      return repository.getTodayWordCount();
+      return await repository.getTodayWordCount();
     } catch (e) {
       return Result.failure('获取今日字数失败: $e', code: ErrorCodes.serverError);
     }
@@ -254,7 +254,7 @@ class DiaryUseCase {
   /// 获取本月字数
   Future<Result<int>> getMonthWordCount(Map<String, dynamic> params) async {
     try {
-      return repository.getMonthWordCount();
+      return await repository.getMonthWordCount();
     } catch (e) {
       return Result.failure('获取本月字数失败: $e', code: ErrorCodes.serverError);
     }
@@ -264,7 +264,7 @@ class DiaryUseCase {
   Future<Result<Map<String, int>>> getMonthProgress(
       Map<String, dynamic> params) async {
     try {
-      return repository.getMonthProgress();
+      return await repository.getMonthProgress();
     } catch (e) {
       return Result.failure('获取本月进度失败: $e', code: ErrorCodes.serverError);
     }

@@ -9,7 +9,7 @@ import 'package:aboutme/plugins/activity/sample_data.dart';
 import 'package:aboutme/widgets/tags_dialog/models/models.dart';
 
 class ActivityService {
-  final StorageManager _storage;
+  final StorageManager _storage; // ignore: unused_field
   final String _pluginDir;
 
   ActivityService(this._storage, this._pluginDir);

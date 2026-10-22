@@ -76,12 +76,6 @@ class ClientCalendarRepository extends ICalendarRepository {
     CalendarEventDto dto,
   ) async {
     try {
-      final existingEvent =
-          controller.events.where((e) => e.id == id).firstOrNull;
-      if (existingEvent == null) {
-        return Result.failure('事件不存在', code: ErrorCodes.notFound);
-      }
-
       final updatedEvent = _dtoToEvent(dto);
       controller.updateEvent(updatedEvent);
       return Result.success(_eventToDto(updatedEvent));

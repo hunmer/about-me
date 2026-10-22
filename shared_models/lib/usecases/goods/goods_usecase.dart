@@ -154,7 +154,7 @@ class GoodsUseCase {
     }
 
     try {
-      return repository.deleteWarehouse(id);
+      return await repository.deleteWarehouse(id);
     } catch (e) {
       return Result.failure('删除仓库失败: $e', code: ErrorCodes.serverError);
     }
@@ -325,7 +325,7 @@ class GoodsUseCase {
     }
 
     try {
-      return repository.deleteItem(warehouseId, id);
+      return await repository.deleteItem(warehouseId, id);
     } catch (e) {
       return Result.failure('删除物品失败: $e', code: ErrorCodes.serverError);
     }
@@ -379,7 +379,7 @@ class GoodsUseCase {
   Future<Result<Map<String, dynamic>>> getStats(
       Map<String, dynamic> params) async {
     try {
-      return repository.getStats();
+      return await repository.getStats();
     } catch (e) {
       return Result.failure('获取统计失败: $e', code: ErrorCodes.serverError);
     }
