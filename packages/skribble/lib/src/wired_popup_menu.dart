@@ -1,0 +1,71 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'generated/skribble_glyphs.g.dart';
+import 'motion/wired_draw.dart';
+import 'motion/wired_ink_response.dart';
+import 'rough/skribble_rough.dart';
+import 'wired_base.dart';
+import 'wired_icon.dart';
+import 'wired_theme.dart';
+
+/// A popup menu item for [WiredPopupMenuButton].
+class WiredPopupMenuItem<T> {
+  final T value;
+  final Widget child;
+
+  const WiredPopupMenuItem({required this.value, required this.child});
+}
+
+/// A popup menu button with hand-drawn menu items.
+class WiredPopupMenuButton<T> extends HookWidget {
+  final List<WiredPopupMenuItem<T>> items;
+  final void Function(T)? onSelected;
+  final Widget? icon;
+
+  const WiredPopupMenuButton({
+    super.key,
+    required this.items,
+    this.onSelected,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    return buildWiredElement(
+      child: PopupMenuButton<T>(
+        icon:
+            icon ??
+            WiredSvgIcon(
+              data: SkribbleGlyphs.moreVertical,
+              color: theme.textColor,
+            ),
+        onSelected: onSelected,
+        color: theme.fillColor,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: theme.borderColor, width: 1.5),
+        ),
+        itemBuilder: (context) => items.map((item) {
+          return PopupMenuItem<T>(
+            value: item.value,
+            child: Container(
+              decoration: RoughBoxDecoration(
+                progress: WiredDrawTransition.progressOf(context),
+                pressure: WiredInkResponse.pressureOf(context),
+                drawConfig: theme.drawConfig,
+                shape: RoughBoxShape.rectangle,
+                borderStyle: RoughDrawingStyle(
+                  width: theme.strokeWidth,
+                  color: theme.borderColor,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: item.child,
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}

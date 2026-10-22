@@ -1,0 +1,98 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'canvas/wired_canvas.dart';
+import 'generated/skribble_glyphs.g.dart';
+import 'wired_base.dart';
+import 'wired_icon.dart';
+import 'wired_theme.dart';
+
+/// A chip with a hand-drawn rounded rectangle border.
+///
+/// The chip is wrapped in [Semantics] for accessibility, providing
+/// screen readers with the label and delete action when applicable.
+class WiredChip extends HookWidget {
+  final Widget label;
+  final Widget? avatar;
+  final VoidCallback? onDeleted;
+
+  /// <!-- {=dartSemanticLabelOptional|trim|linePrefix:"  /// "} -->
+  /// Optional semantic label for accessibility.
+  /// <!-- {/dartSemanticLabelOptional} -->
+  final String? semanticLabel;
+
+  const WiredChip({
+    super.key,
+    required this.label,
+    this.avatar,
+    this.onDeleted,
+    this.semanticLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      onTap: onDeleted,
+      child: buildWiredElement(
+        child: IntrinsicWidth(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: kWiredChipHeight),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned.fill(
+                  child: WiredCanvas(
+                    painter: WiredRoundedRectangleBase(
+                      strokeWidth: theme.strokeWidth,
+                      borderRadius: BorderRadius.circular(16),
+                      borderColor: theme.borderColor,
+                    ),
+                    fillerType: RoughFilter.noFiller,
+                  ),
+                ),
+                Padding(
+                  padding: kWiredInkPadding,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (avatar != null) ...[
+                        avatar!,
+                        const SizedBox(width: 8),
+                      ],
+                      Flexible(
+                        child: DefaultTextStyle.merge(
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: theme.textColor,
+                            fontSize: 13,
+                          ),
+                          child: label,
+                        ),
+                      ),
+                      if (onDeleted != null) ...[
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: onDeleted,
+                          child: WiredSvgIcon(
+                            data: SkribbleGlyphs.close,
+                            size: 16,
+                            color: theme.textColor,
+                            weight: 300,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

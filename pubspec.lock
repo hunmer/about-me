@@ -2428,10 +2428,9 @@ packages:
   skribble:
     dependency: "direct main"
     description:
-      name: skribble
-      sha256: "18817860494d246c4d5f138d387dfe7dcb24e54557e64fb7a3c85ed62d5c804a"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/skribble"
+      relative: true
+    source: path
     version: "0.3.1"
   skribble_icons_material:
     dependency: "direct main"

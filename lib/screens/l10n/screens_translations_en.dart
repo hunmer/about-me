@@ -94,6 +94,11 @@ final Map<String, String> screensTranslationsEn = {
   'screens_strokeMarker': 'Marker',
   'screens_strokeFountain': 'Fine Brush',
 
+  // 手绘入场动画时长
+  'screens_inkMotionDuration': 'Entrance Animation Duration',
+  'screens_inkMotionOff': 'Off',
+  'screens_inkMotionPreview': 'Preview',
+
   // create_folder_dialog
   'screens_selectIcon': 'Select Icon',
   'screens_selectColor': 'Select Color',

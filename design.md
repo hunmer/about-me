@@ -268,6 +268,7 @@ SuperCupertinoNavigationWrapper(
 要点：
 
 - `dsSketchDecoration` 返回 `RoughBoxDecoration`（`Decoration` 子类），直接给 `Container.decoration`；描边贴容器真实边界，padding 只作用于内容（勿在外层再包 padding 压描边层）
+- **数据/深色实底卡陷阱**：`DsSketchPanel(fillColor: 数据色)` 若同时 `hachure: false`，装饰层走 solid 实底且色值取 `hachureColor ?? theme.hatch`——必须把同一数据色同时传 `hachureColor`，否则所有卡被统一刷成主题排线色
 - 优先直接用现成 DS 组件（`DSButton`/`DSCard`/`DSInput`/`DSSelect`/`showDSDialog`/`showDSToast`…），API 与旧版完全一致，视觉已全局手绘化；底部 sheet 统一用 `SmoothBottomSheet`（`lib/widgets/smooth_bottom_sheet.dart`，见第 4 节）
 
 ### 9.2 颜色 / 字体 / 图标
@@ -345,6 +346,7 @@ RoughDrawing(d, paint, paint).paint(canvas, progress: progress?.value ?? 1, pres
 - 只做**入场**描画；收起/退出不播反向动画（直接卸载）
 - 不要用内容淡入淡出替代——skribble 的形态就是"纸面已在，笔迹画上"
 - 自动遵守 `WiredMotion(enabled: false)` 边界与系统"减弱动态效果"，无需额外处理
+- 全局时长/开关由根节点 `WiredMotion(enabled / drawDuration)` 统一下发（`packages/skribble` 为本地 vendor 副本，补丁加了 drawDuration 级联）；设置页「入场动画时长」可调，0 = 关闭，调用点不传 `duration` 自动跟随
 - 弹层（`showDSDialog`/`DSPopover`）如需描画，应在其**组件内部**统一包 `WiredDraw`，一处生效全 app 复用
 
 ## 11. 手绘便签列表/网格（随机倾斜 + 贴条）

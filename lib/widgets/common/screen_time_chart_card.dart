@@ -1,5 +1,16 @@
+/// 屏幕时间堆叠柱状图卡片小组件（手绘纸卡风格）
+///
+/// 手绘纸卡（纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场）：
+/// 手绘圆框头像徽章 + 总时长 / 淡墨网格线与垂直虚线 /
+/// 斜纹堆叠柱（各分段数据色浅底 + 数据色浓斜纹 + 数据色描边，
+/// 逐柱错峰自底向上生长）/ X 轴刻度。
+library;
+
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 /// 屏幕时间数据分段
 class ScreenTimeSegment {
@@ -134,89 +145,75 @@ class _ScreenTimeChartCardWidgetState extends State<ScreenTimeChartCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final padding = widget.size.getPadding();
-    final titleSpacing = widget.size.getTitleSpacing();
+    final theme = AppTheme.of(context);
+    final scale = widget.size.scale;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - _animation.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Container(
+    // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
+    final Widget panel = DsSketchPanel(
+      theme: theme,
+      radius: BorderRadius.circular(24 * scale),
+      padding: widget.size.getPadding(),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // 顶部区域：头像 + 时间
+          _buildHeader(theme),
+          SizedBox(height: widget.size.getTitleSpacing()),
+          // 中间区域：图表
+          Expanded(child: _buildChart(theme)),
+          SizedBox(height: widget.size.getTitleSpacing() * 0.6),
+        ],
+      ),
+    );
+
+    return WiredDraw(
+      child: ConstrainedBox(
         constraints: widget.size.getHeightConstraints(),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 40,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: padding,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // 顶部区域：头像 + 时间
-              _buildHeader(isDark),
-              SizedBox(height: titleSpacing),
-              // 中间区域：图表
-              Expanded(child: _buildChart(isDark)),
-              SizedBox(height: titleSpacing * 0.6),
-            ],
-          ),
-        ),
+        child: panel,
       ),
     );
   }
 
   /// 构建头部区域
-  Widget _buildHeader(bool isDark) {
+  Widget _buildHeader(AppThemeData theme) {
     final iconSize = widget.size.getIconSize();
     final containerSize = iconSize * widget.size.iconContainerScale;
     final smallSpacing = widget.size.getSmallSpacing();
     final valueFontSize = widget.size.getLargeFontSize() * 0.85;
+    final scale = widget.size.scale;
 
     return Row(
       children: [
-        // 头像
+        // 头像：手绘圆框徽章（surfaceAlt 底 + 墨线描边）
         if (widget.avatarUrl != null)
           Container(
             width: containerSize,
             height: containerSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                width: 2,
-              ),
+            decoration: dsSketchDecoration(
+              theme: theme,
+              radius: BorderRadius.circular(containerSize / 2),
+              fillColor: theme.surfaceAlt,
             ),
-            child: ClipOval(
-              child: Image.network(
-                widget.avatarUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color:
-                        isDark ? const Color(0xFF2C2C2E) : Colors.grey.shade300,
-                    child: Icon(
-                      Icons.person,
-                      size: iconSize * 0.8,
-                      color:
-                          isDark ? Colors.grey.shade600 : Colors.grey.shade500,
-                    ),
-                  );
-                },
+            // 内缩留出墨线描边（描边贴容器真实边界）
+            child: Padding(
+              padding: EdgeInsets.all(1.5 * scale),
+              child: ClipOval(
+                child: Image.network(
+                  widget.avatarUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: theme.surfaceAlt,
+                      alignment: Alignment.center,
+                      child: WiredIcon(
+                        icon: Icons.person,
+                        size: iconSize * 0.8,
+                        color: theme.textSub,
+                        drawConfig: theme.wired.drawConfig,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -228,7 +225,7 @@ class _ScreenTimeChartCardWidgetState extends State<ScreenTimeChartCardWidget>
             fontSize: valueFontSize * 0.7,
             fontWeight: FontWeight.w400,
             letterSpacing: -0.5,
-            color: isDark ? Colors.white : Colors.black,
+            color: theme.text,
             height: 1.0,
           ),
         ),
@@ -237,7 +234,7 @@ class _ScreenTimeChartCardWidgetState extends State<ScreenTimeChartCardWidget>
   }
 
   /// 构建图表区域
-  Widget _buildChart(bool isDark) {
+  Widget _buildChart(AppThemeData theme) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final xLabelHeight = widget.size.getLegendFontSize() * 1.5;
@@ -251,14 +248,14 @@ class _ScreenTimeChartCardWidgetState extends State<ScreenTimeChartCardWidget>
                 right: 0,
                 top: 0,
                 bottom: xLabelHeight,
-                child: _buildGridLines(isDark),
+                child: _buildGridLines(theme),
               ),
               // 垂直虚线
-              _buildVerticalDashedLines(isDark, constraints.maxWidth),
+              _buildVerticalDashedLines(theme),
               // 柱状图
-              _buildBars(isDark, constraints.maxHeight),
+              _buildBars(theme, constraints.maxHeight),
               // X轴标签
-              _buildXAxisLabels(isDark, constraints.maxWidth),
+              _buildXAxisLabels(theme),
             ],
           ),
         );
@@ -267,39 +264,38 @@ class _ScreenTimeChartCardWidgetState extends State<ScreenTimeChartCardWidget>
   }
 
   /// 构建背景网格线
-  Widget _buildGridLines(bool isDark) {
+  Widget _buildGridLines(AppThemeData theme) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildGridLine(isDark, '60m', Alignment.topRight),
-        _buildGridLine(isDark, '30m', Alignment.topRight),
-        _buildGridLine(isDark, '0m', Alignment.topRight),
+        _buildGridLine(theme, '60m', Alignment.topRight),
+        _buildGridLine(theme, '30m', Alignment.topRight),
+        _buildGridLine(theme, '0m', Alignment.topRight),
       ],
     );
   }
 
-  Widget _buildGridLine(bool isDark, String label, Alignment alignment) {
+  Widget _buildGridLine(AppThemeData theme, String label, Alignment alignment) {
     final legendFontSize = widget.size.getLegendFontSize();
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
 
     return Stack(
       children: [
+        // 淡墨网格线
         Container(
           height: 1,
-          color: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E5EA),
+          color: theme.ink.withValues(alpha: 0.18),
         ),
         Align(
           alignment: alignment,
           child: Container(
             padding: EdgeInsets.only(left: widget.size.getSmallSpacing() * 2),
-            color: cardColor,
+            color: theme.surface,
             child: Text(
               label,
               style: TextStyle(
                 fontSize: legendFontSize,
                 fontWeight: FontWeight.w500,
-                color:
-                    isDark ? const Color(0xFF636366) : const Color(0xFF8E8E93),
+                color: theme.textSub,
               ),
             ),
           ),
@@ -309,34 +305,27 @@ class _ScreenTimeChartCardWidgetState extends State<ScreenTimeChartCardWidget>
   }
 
   /// 构建垂直虚线
-  Widget _buildVerticalDashedLines(bool isDark, double width) {
+  Widget _buildVerticalDashedLines(AppThemeData theme) {
     return Positioned.fill(
       child: Row(
         children: [
-          _buildVerticalDashedLine(isDark),
+          _buildVerticalDashedLine(theme),
           Expanded(child: Container()),
-          _buildVerticalDashedLine(isDark),
+          _buildVerticalDashedLine(theme),
         ],
       ),
     );
   }
 
-  Widget _buildVerticalDashedLine(bool isDark) {
+  Widget _buildVerticalDashedLine(AppThemeData theme) {
     return Container(
       width: 1,
-      decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(
-            color: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFD1D1D6),
-            width: 1,
-          ),
-        ),
-      ),
+      color: theme.ink.withValues(alpha: 0.14),
     );
   }
 
   /// 构建柱状图
-  Widget _buildBars(bool isDark, double maxHeight) {
+  Widget _buildBars(AppThemeData theme, double maxHeight) {
     final barWidth = widget.size.getBarWidth();
     final smallSpacing = widget.size.getSmallSpacing();
     final xLabelHeight = widget.size.getLegendFontSize() * 1.5;
@@ -368,7 +357,7 @@ class _ScreenTimeChartCardWidgetState extends State<ScreenTimeChartCardWidget>
   }
 
   /// 构建X轴标签
-  Widget _buildXAxisLabels(bool isDark, double width) {
+  Widget _buildXAxisLabels(AppThemeData theme) {
     final legendFontSize = widget.size.getLegendFontSize();
     final smallSpacing = widget.size.getSmallSpacing();
     final xLabelHeight = legendFontSize * 1.5;
@@ -384,53 +373,34 @@ class _ScreenTimeChartCardWidgetState extends State<ScreenTimeChartCardWidget>
         children: [
           Align(
             alignment: Alignment.bottomLeft,
-            child: Text(
-              '6 AM',
-              style: TextStyle(
-                fontSize: legendFontSize,
-                fontWeight: FontWeight.w500,
-                color:
-                    isDark
-                        ? const Color(0xFF636366)
-                        : const Color(0xFF8E8E93),
-              ),
-            ),
+            child: Text('6 AM', style: _xLabelStyle(theme, legendFontSize)),
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: Text(
-              '12 PM',
-              style: TextStyle(
-                fontSize: legendFontSize,
-                fontWeight: FontWeight.w500,
-                color:
-                    isDark
-                        ? const Color(0xFF636366)
-                        : const Color(0xFF8E8E93),
-              ),
-            ),
+            child: Text('12 PM', style: _xLabelStyle(theme, legendFontSize)),
           ),
           Align(
             alignment: Alignment.bottomRight,
-            child: Text(
-              '6 PM',
-              style: TextStyle(
-                fontSize: legendFontSize,
-                fontWeight: FontWeight.w500,
-                color:
-                    isDark
-                        ? const Color(0xFF636366)
-                        : const Color(0xFF8E8E93),
-              ),
-            ),
+            child: Text('6 PM', style: _xLabelStyle(theme, legendFontSize)),
           ),
         ],
       ),
     );
   }
+
+  TextStyle _xLabelStyle(AppThemeData theme, double legendFontSize) {
+    return TextStyle(
+      fontSize: legendFontSize,
+      fontWeight: FontWeight.w500,
+      color: theme.textSub,
+    );
+  }
 }
 
 /// 单个柱状图条
+///
+/// AnimatedBuilder 逐帧驱动柱高生长；SizedBox 给紧宽高，
+/// 防止无 child 的 CustomPaint 塌缩。
 class _Bar extends StatelessWidget {
   final List<ScreenTimeSegment> segments;
   final double heightPercentage;
@@ -468,51 +438,98 @@ class _Bar extends StatelessWidget {
       ),
     );
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderRadius = size.getSmallSpacing() * 0.5;
-
     return AnimatedBuilder(
       animation: itemAnimation,
-      builder: (context, child) {
+      builder: (context, _) {
         final barHeight = maxHeight * heightPercentage * itemAnimation.value;
-        return Container(
+        return SizedBox(
           width: barWidth,
           height: barHeight,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-          clipBehavior: Clip.antiAlias,
           child: barHeight > 0
-              ? Column(
-                  verticalDirection: VerticalDirection.up,
-                  children: segments.map((segment) {
-                    final color = _getSegmentColor(segment.category, isDark);
-                    final height = barHeight * segment.percentage;
-                    return Container(
-                      height: height,
-                      width: double.infinity,
-                      color: color,
-                    );
-                  }).toList(),
+              ? CustomPaint(
+                  painter: _StripedStackedBarPainter(
+                    segments: segments,
+                    scale: size.scale,
+                  ),
                 )
               : null,
         );
       },
     );
   }
+}
 
-  Color _getSegmentColor(String category, bool isDark) {
-    switch (category) {
-      case 'blue':
-        return const Color(0xFF007AFF);
-      case 'teal':
-        return const Color(0xFF5AC8FA);
-      case 'orange':
-        return const Color(0xFFFF9500);
-      case 'gray':
-        return isDark ? const Color(0xFF636366) : const Color(0xFFC7C7CC);
-      default:
-        return Colors.grey;
+/// 分段类别对应的数据色（随数据走，非主题色）
+Color _segmentColor(String category) {
+  switch (category) {
+    case 'blue':
+      return const Color(0xFF007AFF);
+    case 'teal':
+      return const Color(0xFF5AC8FA);
+    case 'orange':
+      return const Color(0xFFFF9500);
+    case 'gray':
+    default:
+      return const Color(0xFF98989D);
+  }
+}
+
+/// 斜纹堆叠柱绘制器
+///
+/// 各分段（按 segments 顺序自底向上）铺数据色浅底（0.28）+
+/// 数据色斜纹（0.9）+ 数据色描边（0.85），
+/// 首段底 / 尾段顶胶囊圆角；柱高由外层 SizedBox 随动画撑起。
+class _StripedStackedBarPainter extends CustomPainter {
+  final List<ScreenTimeSegment> segments;
+  final double scale;
+
+  const _StripedStackedBarPainter({
+    required this.segments,
+    required this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || segments.isEmpty) return;
+    final capsule = Radius.circular(size.width / 2);
+    var y = size.height;
+    for (var i = 0; i < segments.length; i++) {
+      final height = size.height * segments[i].percentage;
+      y -= height;
+      if (height > 0.5) {
+        final rect = Rect.fromLTWH(0, y, size.width, height);
+        final isBottom = i == 0;
+        final isTop = i == segments.length - 1;
+        final rrect = RRect.fromRectAndCorners(
+          rect,
+          topLeft: isTop ? capsule : Radius.zero,
+          topRight: isTop ? capsule : Radius.zero,
+          bottomLeft: isBottom ? capsule : Radius.zero,
+          bottomRight: isBottom ? capsule : Radius.zero,
+        );
+        final color = _segmentColor(segments[i].category);
+        canvas.drawRRect(rrect, Paint()..color = color.withValues(alpha: 0.28));
+        paintDiagonalStripes(
+          canvas,
+          Path()..addRRect(rrect),
+          rect,
+          color: color.withValues(alpha: 0.9),
+          strokeWidth: 3 * scale,
+          spacing: 6.5 * scale,
+        );
+        canvas.drawRRect(
+          rrect,
+          Paint()
+            ..color = color.withValues(alpha: 0.85)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5 * scale,
+        );
+      }
     }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedStackedBarPainter oldDelegate) {
+    return oldDelegate.segments != segments || oldDelegate.scale != scale;
   }
 }

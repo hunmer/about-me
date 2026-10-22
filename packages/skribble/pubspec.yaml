@@ -1,0 +1,28 @@
+name: skribble
+description: |
+  Hand-drawn UI components for Flutter. 80+ sketchy widgets with familiar Material and Cupertino APIs — buttons, inputs, navigation, dialogs, and more, all with a hand-drawn aesthetic.
+
+  本地 vendor 副本（基于 pub.dev 0.3.1）：仅给 WiredMotion 增加了
+  drawDuration 环境级时长（WiredDraw 未显式传时长时跟随最近边界），
+  供设置页全局控制手绘入场动画时长（0 = 关闭）。升级包时需重放此补丁。
+version: 0.3.1
+homepage: https://github.com/openbudgetfun/skribble
+repository: https://github.com/openbudgetfun/skribble/tree/main/packages/skribble
+documentation: https://openbudgetfun.github.io/skribble/
+issue_tracker: https://github.com/openbudgetfun/skribble/issues
+topics:
+  - ui
+  - widgets
+  - hand-drawn
+  - design-system
+  - sketch
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_hooks: ^0.21.3
+  path_parsing: ^1.1.0
+flutter:
+  uses-material-design: true

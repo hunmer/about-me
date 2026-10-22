@@ -27,7 +27,9 @@ import 'utils/styled_toast_stub.dart'
     if (dart.library.io) 'package:flutter_styled_toast/flutter_styled_toast.dart';
 
 import 'package:flutter/material.dart';
+import 'package:skribble/skribble.dart';
 import 'package:skribble_icons_material/skribble_icons_material.dart';
+import 'package:aboutme/core/services/ds_ink_motion_controller.dart';
 import 'core/services/plugin_widget_sync_helper.dart';
 import 'core/services/clipboard_service.dart';
 import 'core/services/app_usage_service.dart';
@@ -316,29 +318,46 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                       hasCustomBackground
                           ? _transparentSurfaces(darkTheme)
                           : darkTheme,
-                  builder: (context, child) {
-                    // 确保字体大小不受系统设置影响
-                    // 根部全局包一层 DS 桥:根 Overlay/残留 Material 屏幕里的 DS 组件
-                    // 不再因缺 AppTheme 祖树而 Null check 崩溃(幂等,已有桥处就近生效)
-                    return DSThemeBridge(
-                      // 全局主题背景：垫在根 Navigator 之下，所有界面共用
-                      child: AppBackground(
-                        child: MediaQuery(
-                          data: MediaQuery.of(
-                            context,
-                          ).copyWith(textScaler: const TextScaler.linear(1.0)),
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () =>
-                                FocusManager.instance.primaryFocus?.unfocus(),
-                            child: StyledToast(
-                              child: WidgetUriHandler(child: child!),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+                      builder: (context, child) {
+                        // 确保字体大小不受系统设置影响
+                        // 根部全局包一层 DS 桥:根 Overlay/残留 Material 屏幕里的 DS 组件
+                        // 不再因缺 AppTheme 祖树而 Null check 崩溃(幂等,已有桥处就近生效)
+                        return ListenableBuilder(
+                          // 全局墨线入场动画时长/开关（设置页可调，0 = 关闭）
+                          listenable: DsInkMotionController(),
+                          builder: (context, _) {
+                            final motion = DsInkMotionController();
+                            return WiredMotion(
+                              enabled: motion.enabled,
+                              drawDuration: Duration(
+                                milliseconds: motion.durationMs,
+                              ),
+                              child: DSThemeBridge(
+                                // 全局主题背景：垫在根 Navigator 之下，所有界面共用
+                                child: AppBackground(
+                                  child: MediaQuery(
+                                    data: MediaQuery.of(
+                                      context,
+                                    ).copyWith(
+                                      textScaler: const TextScaler.linear(1.0),
+                                    ),
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () => FocusManager
+                                          .instance
+                                          .primaryFocus
+                                          ?.unfocus(),
+                                      child: StyledToast(
+                                        child: WidgetUriHandler(child: child!),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
                   initialRoute: AppRoutes.initialRoute,
                   onGenerateInitialRoutes: AppRoutes.generateInitialRoutes,
                   routes: AppRoutes.routes,

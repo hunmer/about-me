@@ -92,6 +92,11 @@ final Map<String, String> screensTranslationsZh = {
   'screens_strokeMarker': '马克笔',
   'screens_strokeFountain': '秀丽笔',
 
+  // 手绘入场动画时长
+  'screens_inkMotionDuration': '入场动画时长',
+  'screens_inkMotionOff': '关闭',
+  'screens_inkMotionPreview': '预览效果',
+
   // create_folder_dialog
   'screens_selectIcon': '选择图标',
   'screens_selectColor': '选择颜色',

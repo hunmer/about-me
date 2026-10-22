@@ -1,0 +1,143 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'canvas/wired_canvas.dart';
+import 'generated/skribble_glyphs.g.dart';
+import 'rough/skribble_rough.dart';
+import 'wired_base.dart';
+import 'wired_icon.dart';
+import 'wired_theme.dart';
+
+/// A hand-drawn avatar corresponding to Flutter's [CircleAvatar].
+///
+/// Displays an image, icon, or initials inside a sketchy hand-drawn circle.
+class WiredAvatar extends HookWidget {
+  /// The background image to display.
+  final ImageProvider? backgroundImage;
+
+  /// A foreground image to display on top.
+  final ImageProvider? foregroundImage;
+
+  /// Background color when no image is provided.
+  final Color? backgroundColor;
+
+  /// Foreground color for text/icon.
+  final Color? foregroundColor;
+
+  /// The radius of the avatar. Defaults to 20.
+  final double radius;
+
+  /// The child widget, typically a [Text] with initials or an [Icon].
+  final Widget? child;
+
+  /// Minimum radius constraint.
+  final double? minRadius;
+
+  /// Maximum radius constraint.
+  final double? maxRadius;
+
+  const WiredAvatar({
+    super.key,
+    this.backgroundImage,
+    this.foregroundImage,
+    this.backgroundColor,
+    this.foregroundColor,
+    this.radius = 20,
+    this.child,
+    this.minRadius,
+    this.maxRadius,
+  }) : assert(radius >= 0),
+       assert(minRadius == null || minRadius >= 0),
+       assert(maxRadius == null || maxRadius >= 0),
+       assert(minRadius == null || maxRadius == null || minRadius <= maxRadius);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    final resolvedMinRadius = minRadius ?? 0;
+    final resolvedMaxRadius = maxRadius ?? double.infinity;
+    final effectiveRadius = radius.clamp(resolvedMinRadius, resolvedMaxRadius);
+    final size = effectiveRadius * 2;
+    final bgColor =
+        backgroundColor ?? theme.borderColor.withValues(alpha: 0.15);
+    final fgColor = foregroundColor ?? theme.textColor;
+
+    return buildWiredElement(
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Hand-drawn circle border
+            Positioned.fill(
+              child: WiredCanvas(
+                painter: WiredCircleBase(
+                  strokeWidth: theme.strokeWidth,
+                  fillColor: bgColor,
+                  borderColor: theme.borderColor,
+                ),
+                fillerType: backgroundImage != null
+                    ? RoughFilter.noFiller
+                    : RoughFilter.hachureFiller,
+                fillerConfig: FillerConfig.build(hachureGap: 2.5),
+              ),
+            ),
+            // Background image
+            if (backgroundImage != null)
+              ClipOval(
+                child: SizedBox(
+                  width: size - 4,
+                  height: size - 4,
+                  child: Image(
+                    image: backgroundImage!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => _buildFallback(fgColor),
+                  ),
+                ),
+              ),
+            // Foreground image
+            if (foregroundImage != null)
+              ClipOval(
+                child: SizedBox(
+                  width: size - 4,
+                  height: size - 4,
+                  child: Image(image: foregroundImage!, fit: BoxFit.cover),
+                ),
+              ),
+            // Child (initials or icon)
+            if (backgroundImage == null && child != null)
+              DefaultTextStyle.merge(
+                style: TextStyle(
+                  color: fgColor,
+                  fontSize: effectiveRadius * 0.6,
+                  fontWeight: FontWeight.w600,
+                ),
+                child: IconTheme(
+                  data: IconThemeData(color: fgColor, size: effectiveRadius),
+                  // Initials shrink to stay inside the circle, even with
+                  // the platform's text scaling turned up.
+                  child: Padding(
+                    padding: EdgeInsets.all(effectiveRadius * .5),
+                    child: FittedBox(fit: BoxFit.scaleDown, child: child),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallback(Color fgColor) {
+    return Center(
+      child:
+          child ??
+          WiredSvgIcon(
+            data: SkribbleGlyphs.user,
+            color: fgColor,
+            size: radius,
+          ),
+    );
+  }
+}

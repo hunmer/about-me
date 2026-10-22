@@ -249,8 +249,11 @@ class _MessageBubbleState extends State<MessageBubble>
     return fileInfo['type'] == 'audio';
   }
 
-  /// 自带卡片外观的消息（图片/音频），气泡不加底色与描边
-  bool get _isBareBubble => _isImageMessage() || _isAudioMessage();
+  /// 纯图片/音频消息自带卡片外观，气泡不加底色与描边；
+  /// 图片附带正文时使用普通气泡背景，保证正文文字有足够对比度。
+  bool get _isBareBubble =>
+      (_isImageMessage() && _currentMessage.content.trim().isEmpty) ||
+      _isAudioMessage();
 
   Color _getBackgroundColor(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
@@ -308,9 +311,7 @@ class _MessageBubbleState extends State<MessageBubble>
           child: ScaleTransition(
             scale: _entranceScale,
             // 自己的消息自右上角、他人消息自左上角放大复原
-            alignment: _isCurrentUser
-                ? Alignment.topRight
-                : Alignment.topLeft,
+            alignment: _isCurrentUser ? Alignment.topRight : Alignment.topLeft,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: _isCurrentUser

@@ -1,0 +1,104 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'canvas/wired_canvas.dart';
+import 'generated/skribble_glyphs.g.dart';
+import 'rough/skribble_rough.dart';
+import 'wired_base.dart';
+import 'wired_icon.dart';
+import 'wired_theme.dart';
+
+/// A filter chip with a hand-drawn border and optional checkmark.
+///
+/// The filter chip is wrapped in [Semantics] for accessibility, providing
+/// screen readers with the selected state information.
+class WiredFilterChip extends HookWidget {
+  final Widget label;
+  final bool selected;
+  final ValueChanged<bool>? onSelected;
+
+  /// <!-- {=dartSemanticLabelOptional|trim|linePrefix:"  /// "} -->
+  /// Optional semantic label for accessibility.
+  /// <!-- {/dartSemanticLabelOptional} -->
+  final String? semanticLabel;
+
+  const WiredFilterChip({
+    super.key,
+    required this.label,
+    this.selected = false,
+    this.onSelected,
+    this.semanticLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    return Semantics(
+      label: semanticLabel,
+      selected: selected,
+      button: true,
+      onTap: () => onSelected?.call(!selected),
+      child: buildWiredElement(
+        child: GestureDetector(
+          onTap: () => onSelected?.call(!selected),
+          child: IntrinsicWidth(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: kWiredChipHeight),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned.fill(
+                    child: WiredCanvas(
+                      painter: WiredRoundedRectangleBase(
+                        strokeWidth: theme.strokeWidth,
+                        borderRadius: BorderRadius.circular(16),
+                        fillColor: selected
+                            ? theme.borderColor
+                            : theme.fillColor,
+                        borderColor: theme.borderColor,
+                      ),
+                      fillerType: selected
+                          ? RoughFilter.solidFiller
+                          : RoughFilter.noFiller,
+                      fillerConfig: FillerConfig.build(hachureGap: 3.0),
+                    ),
+                  ),
+                  Padding(
+                    padding: kWiredInkPadding,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (selected) ...[
+                          WiredSvgIcon(
+                            data: SkribbleGlyphs.check,
+                            size: 16,
+                            color: theme.fillColor,
+                            weight: 300,
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        Flexible(
+                          child: DefaultTextStyle.merge(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: selected
+                                  ? theme.fillColor
+                                  : theme.textColor,
+                              fontSize: 13,
+                            ),
+                            child: label,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

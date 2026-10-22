@@ -1,0 +1,139 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'canvas/wired_canvas.dart';
+import 'wired_base.dart';
+import 'wired_icon.dart';
+import 'wired_theme.dart';
+
+/// A navigation bar destination.
+class WiredNavigationDestination {
+  final IconData icon;
+  final IconData? selectedIcon;
+  final String label;
+
+  const WiredNavigationDestination({
+    required this.icon,
+    this.selectedIcon,
+    required this.label,
+  });
+}
+
+/// Material 3 style navigation bar with hand-drawn rounded rect indicators.
+///
+/// The navigation bar is wrapped in [Semantics] for accessibility, providing
+/// screen readers with the selected destination information.
+class WiredNavigationBar extends HookWidget {
+  final List<WiredNavigationDestination> destinations;
+  final int selectedIndex;
+  final ValueChanged<int>? onDestinationSelected;
+
+  /// <!-- {=dartSemanticLabelOptional|trim|linePrefix:"  /// "} -->
+  /// Optional semantic label for accessibility.
+  /// <!-- {/dartSemanticLabelOptional} -->
+  final String? semanticLabel;
+
+  const WiredNavigationBar({
+    super.key,
+    required this.destinations,
+    this.selectedIndex = 0,
+    this.onDestinationSelected,
+    this.semanticLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    return Semantics(
+      label: semanticLabel ?? 'Navigation bar',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: theme.inkExtent,
+            child: WiredCanvas(
+              painter: WiredLineBase(
+                strokeWidth: theme.strokeWidth,
+                x1: 0,
+                y1: 0,
+                x2: double.infinity,
+                y2: 0,
+                borderColor: theme.borderColor,
+              ),
+              fillerType: RoughFilter.noFiller,
+            ),
+          ),
+          SizedBox(
+            height: 80,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                for (int i = 0; i < destinations.length; i++)
+                  _buildDestination(
+                    destinations[i],
+                    i == selectedIndex,
+                    () => onDestinationSelected?.call(i),
+                    theme,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDestination(
+    WiredNavigationDestination dest,
+    bool selected,
+    VoidCallback onTap,
+    WiredThemeData theme,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 72,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                if (selected)
+                  SizedBox(
+                    width: 64,
+                    height: 34,
+                    child: WiredCanvas(
+                      painter: WiredRoundedRectangleBase(
+                        strokeWidth: theme.strokeWidth,
+                        borderRadius: BorderRadius.circular(17),
+                        fillColor: theme.markerColor,
+                        borderColor: theme.borderColor,
+                      ),
+                      fillerType: RoughFilter.solidFiller,
+                    ),
+                  ),
+                WiredIcon(
+                  icon: selected ? (dest.selectedIcon ?? dest.icon) : dest.icon,
+                  color: selected ? theme.textColor : theme.disabledTextColor,
+                  size: 24,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              dest.label,
+              style: TextStyle(
+                fontSize: 12,
+                color: selected ? theme.textColor : theme.disabledTextColor,
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

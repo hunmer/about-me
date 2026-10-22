@@ -440,10 +440,14 @@ class _AccordionCardState extends State<_AccordionCard>
       duration: _springDuration,
       curve: _springCurve,
       transform: Matrix4.translationValues(0, hovered ? -3.0 : 0.0, 0),
-      // 手绘纸卡：数据色纸底 + rough 墨线框（无柔影）
+      // 手绘纸卡：数据色纸底 + rough 墨线框（无柔影）。
+      // hachureColor 必须同步传数据色——hachure:false 时装饰层走
+      // solid 实底（色值取 hachureColor ?? theme.hatch），
+      // 不传会把所有卡盖成统一的主题排线色
       child: DsSketchPanel(
         theme: theme,
         fillColor: data.backgroundColor,
+        hachureColor: data.backgroundColor,
         hachure: false,
         radius: BorderRadius.circular(m.radius),
         padding: EdgeInsets.fromLTRB(

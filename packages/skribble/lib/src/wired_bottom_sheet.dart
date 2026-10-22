@@ -1,0 +1,80 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'canvas/wired_canvas.dart';
+import 'rough/skribble_rough.dart';
+import 'wired_base.dart';
+import 'wired_theme.dart';
+
+/// A bottom sheet with a hand-drawn top border and rounded corners.
+///
+/// The bottom sheet is wrapped in [Semantics] for accessibility, providing
+/// screen readers with the sheet label and content.
+class WiredBottomSheet extends HookWidget {
+  final Widget child;
+
+  /// <!-- {=dartSemanticLabelOptional|trim|linePrefix:"  /// "} -->
+  /// Optional semantic label for accessibility.
+  /// <!-- {/dartSemanticLabelOptional} -->
+  final String? semanticLabel;
+
+  const WiredBottomSheet({super.key, required this.child, this.semanticLabel});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    return Semantics(
+      label: semanticLabel ?? 'Bottom sheet',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: theme.inkExtent,
+            child: WiredCanvas(
+              painter: WiredLineBase(
+                x1: 0,
+                y1: 0,
+                x2: double.infinity,
+                y2: 0,
+                strokeWidth: theme.strokeWidth,
+                borderColor: theme.borderColor,
+              ),
+              fillerType: RoughFilter.noFiller,
+            ),
+          ),
+          // Drag handle
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Center(
+              child: SizedBox(
+                width: 40,
+                height: 4,
+                child: WiredCanvas(
+                  painter: WiredRoundedRectangleBase(
+                    strokeWidth: theme.strokeWidth,
+                    borderRadius: BorderRadius.circular(2),
+                    borderColor: theme.borderColor,
+                  ),
+                  fillerType: RoughFilter.hachureFiller,
+                  fillerConfig: FillerConfig.build(hachureGap: 1.0),
+                ),
+              ),
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Shows a modal bottom sheet with hand-drawn styling.
+Future<T?> showWiredBottomSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+}) {
+  return showModalBottomSheet<T>(
+    context: context,
+    builder: (context) => WiredBottomSheet(child: builder(context)),
+  );
+}

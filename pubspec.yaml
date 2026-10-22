@@ -179,6 +179,9 @@ dev_dependencies:
   flutter_native_splash: ^2.4.6
 
 dependency_overrides:
+  # 本地 vendor 副本：WiredMotion 支持 drawDuration，设置页可全局调入场动画时长
+  skribble:
+    path: packages/skribble
   # Waiting for https://github.com/Lyokone/flutterlocation/issues/1031
   location_web:
     git:

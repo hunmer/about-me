@@ -104,6 +104,12 @@ const Map<String, String> appTranslationsEn = {
   'app_undo': 'Undo',
   'app_redo': 'Redo',
   'app_pixelEraserReset': 'Reset view',
+  'app_photoEditorSwitchTitle': 'Switch image?',
+  'app_photoEditorSwitchMessage':
+      'The current image has unsubmitted edits that will be lost after switching.',
+  'app_photoEditorExportAll': 'Export all',
+  'app_photoEditorExportNone': 'Nothing to export',
+  'app_photoEditorExported': 'Exported @n images',
   'app_stickerSavedAlbum': 'Saved to album',
   'app_stickerNoPermission': 'Album permission denied',
   'app_stickerSaveFailed': 'Save failed: @e',

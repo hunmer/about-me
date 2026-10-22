@@ -4,9 +4,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/services/app_background_controller.dart';
+import 'package:aboutme/core/services/ds_ink_motion_controller.dart';
 import 'package:aboutme/core/services/ds_ink_style_controller.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -788,6 +790,71 @@ class _ThemeBackgroundSettingsScreenState
     'screens_inkStyleExpressive',
   ];
 
+  /// 手绘入场动画时长：滑条即时全局生效（0 = 关闭），
+  /// 预览框随时长变化重挂载重播，直观感受描画速度
+  Widget _buildInkMotionSetting(AppThemeData theme) {
+    return ListenableBuilder(
+      listenable: DsInkMotionController(),
+      builder: (context, _) {
+        final controller = DsInkMotionController();
+        final ms = controller.durationMs;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: DSSlider(
+                    value: ms / DsInkMotionController.maxDurationMs,
+                    // 50ms 步进，拖到最左（round 后为 0）即关闭动画
+                    onChanged:
+                        (value) => controller.setDurationMs(
+                          ((value * DsInkMotionController.maxDurationMs) / 50)
+                                  .round() *
+                              50,
+                        ),
+                  ),
+                ),
+                SizedBox(
+                  width: 60,
+                  child: Text(
+                    ms == 0 ? 'screens_inkMotionOff'.tr : '$ms ms',
+                    style: DsTypography.body.copyWith(color: theme.text),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: theme.spacing.md),
+            Center(
+              child: WiredDraw(
+                key: ValueKey('ink_motion_preview_$ms'),
+                child: Builder(
+                  builder: (context) => Container(
+                    height: 36,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    alignment: Alignment.center,
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      radius: BorderRadius.circular(12),
+                      stroke: theme.ink,
+                      seed: 99,
+                      progress: WiredDrawTransition.progressOf(context),
+                    ),
+                    child: Text(
+                      'screens_inkMotionPreview'.tr,
+                      style: DsTypography.caption.copyWith(color: theme.text),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// 完整主题选择：色板 × 墨线档位成套切换，点击即全局生效
   Widget _buildThemePicker() {
     final theme = DSThemeBridge.resolve(context);
@@ -996,6 +1063,14 @@ class _ThemeBackgroundSettingsScreenState
                     SettingsGroup(
                       title: 'screens_strokeStyle'.tr,
                       children: [_buildStrokeStylePicker()],
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
+                    // 手绘入场动画时长：全局墨线描画速度，0 = 关闭
+                    SettingsGroup(
+                      title: 'screens_inkMotionDuration'.tr,
+                      children: [_buildInkMotionSetting(theme)],
                     ),
 
                     SizedBox(height: theme.spacing.lg),

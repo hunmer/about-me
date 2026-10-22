@@ -64,4 +64,12 @@ const Map<String, String> imagePickerTranslationsZh = {
   'video_picker_noVideos': '暂无视频，可从相册选择或录制',
   'video_picker_takeVideo': '录制视频',
   'video_picker_onlineVideo': '在线视频',
+
+  // 网格图片长按 / 批量菜单（删除复用 image_picker_deleteImage）
+  'image_picker_editImage': '编辑图片',
+  'image_picker_deleteConfirm': '将删除该图片及其缩略图，不可恢复',
+  'image_picker_deleteBatchConfirm': '将删除选中的 @n 张图片及其缩略图，不可恢复',
+  'image_picker_deleted': '已删除',
+  'image_picker_multiSelect': '多选',
+  'image_picker_batchActions': '批量操作',
 };

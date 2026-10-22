@@ -1,0 +1,46 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'motion/wired_draw.dart';
+import 'motion/wired_ink_response.dart';
+import 'rough/skribble_rough.dart';
+import 'wired_theme.dart';
+
+/// A tooltip with a hand-drawn border.
+class WiredTooltip extends HookWidget {
+  final Widget child;
+  final String message;
+  final Duration? waitDuration;
+  final Duration? showDuration;
+
+  const WiredTooltip({
+    super.key,
+    required this.child,
+    required this.message,
+    this.waitDuration,
+    this.showDuration,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    return Tooltip(
+      message: message,
+      waitDuration: waitDuration,
+      showDuration: showDuration,
+      decoration: RoughBoxDecoration(
+        progress: WiredDrawTransition.progressOf(context),
+        pressure: WiredInkResponse.pressureOf(context),
+        drawConfig: theme.drawConfig,
+        shape: RoughBoxShape.rectangle,
+        borderStyle: RoughDrawingStyle(
+          width: theme.strokeWidth,
+          color: theme.borderColor,
+        ),
+        fillStyle: RoughDrawingStyle(color: theme.fillColor),
+      ),
+      textStyle: TextStyle(color: theme.textColor, fontSize: 12),
+      child: child,
+    );
+  }
+}

@@ -28,6 +28,7 @@ import 'package:aboutme/plugins/toolbox/services/image_search_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/utils/platform_utils.dart';
 import 'package:aboutme/widgets/emoji_picker/index.dart';
+import 'package:aboutme/widgets/photo_editor_screen.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/multi_filter_bar.dart';
@@ -350,15 +351,6 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
         'bytes': bytes,
       });
     }
-  }
-
-  /// 长按图片：单选模式切入多选并选中该图；已是多选则忽略
-  void _longPressImage(String key) {
-    if (_multiple) return;
-    setState(() {
-      _multiple = true;
-      _selected.add(key);
-    });
   }
 
   /// 取消多选：退回单选模式并清空已选
@@ -783,74 +775,233 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
     final isSelected = _selected.contains(key);
     final selectedIndex = _selected.indexOf(key) + 1;
 
+    // 点击选图；长按弹菜单（编辑 / 删除）
     return GestureDetector(
       onTap: () => _selectImage(key),
-      onLongPress: () => _longPressImage(key),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: theme.radii.md,
-          border: isSelected
-              ? Border.all(color: theme.primary, width: 2)
-              : null,
-        ),
-        child: ClipRRect(
-          borderRadius: theme.radii.md,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image(
-                image: ImageUtils.createImageProvider('./$key'),
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  color: theme.stroke,
-                  child: Center(
-                    child: DsIcon(
-                      DsIconKind.image,
-                      size: 22,
-                      color: theme.textSub,
-                    ),
-                  ),
-                ),
-              ),
-              if (_multiple)
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isSelected
-                          ? theme.primary
-                          : Colors.black.withValues(alpha: 0.25),
-                      border: isSelected
-                          ? null
-                          : Border.all(color: Colors.white70),
-                    ),
+      child: DSPopover(
+        activateOnLongPress: true,
+        width: 168,
+        contentBuilder: (popoverContext, close) =>
+            _imageMenu(popoverContext, close, [key]),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: theme.radii.md,
+            border: isSelected
+                ? Border.all(color: theme.primary, width: 2)
+                : null,
+          ),
+          child: ClipRRect(
+            borderRadius: theme.radii.md,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image(
+                  image: ImageUtils.createImageProvider('./$key'),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    color: theme.stroke,
                     child: Center(
-                      // 未选中时角标为空圈，不显示序号（避免 indexOf(-1)+1 显示 0）
-                      child: isSelected
-                          ? Text(
-                              '$selectedIndex',
-                              style: DsTypography.caption.copyWith(
-                                color: Colors.white,
-                                fontSize: 11,
-                              ),
-                            )
-                          : const SizedBox.shrink(),
+                      child: DsIcon(
+                        DsIconKind.image,
+                        size: 22,
+                        color: theme.textSub,
+                      ),
                     ),
                   ),
                 ),
-            ],
+                if (_multiple)
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected
+                            ? theme.primary
+                            : Colors.black.withValues(alpha: 0.25),
+                        border: isSelected
+                            ? null
+                            : Border.all(color: Colors.white70),
+                      ),
+                      child: Center(
+                        // 未选中时角标为空圈，不显示序号（避免 indexOf(-1)+1 显示 0）
+                        child: isSelected
+                            ? Text(
+                                '$selectedIndex',
+                                style: DsTypography.caption.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  /// 图片长按 / 多选 dots 菜单：编辑图片（批量进编辑器）/ 删除图片
+  Widget _imageMenu(
+    BuildContext popoverContext,
+    VoidCallback close,
+    List<String> keys,
+  ) {
+    final theme = DSThemeBridge.resolve(popoverContext);
+    final batch = keys.length > 1;
+
+    Widget menuRow(
+      String label,
+      DsIconKind icon,
+      VoidCallback onTap, {
+      Color? color,
+    }) {
+      return Pressable(
+        onPressed: () {
+          close();
+          onTap();
+        },
+        builder: (context, states) {
+          final pressed = states.contains(WidgetState.pressed);
+          return Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: theme.spacing.md,
+              vertical: theme.spacing.sm,
+            ),
+            color: pressed
+                ? theme.surfaceAlt.withValues(alpha: 0.7)
+                : null,
+            child: Row(
+              children: [
+                DsIcon(icon, size: 18, color: color ?? theme.text),
+                SizedBox(width: theme.spacing.sm),
+                Text(
+                  label,
+                  style: DsTypography.body.copyWith(
+                    color: color ?? theme.text,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 单选模式下的单张菜单提供"多选"入口（原长按切多选由菜单承接）
+        if (!batch && !_multiple)
+          menuRow(
+            'image_picker_multiSelect'.tr,
+            DsIconKind.check,
+            () => setState(() {
+              _multiple = true;
+              _selected.addAll(keys);
+            }),
+          ),
+        menuRow(
+          batch
+              ? '${'image_picker_editImage'.tr} (${keys.length})'
+              : 'image_picker_editImage'.tr,
+          DsIconKind.edit,
+          () => _editImages(keys),
+        ),
+        menuRow(
+          'image_picker_deleteImage'.tr,
+          DsIconKind.trash,
+          () => _deleteImages(keys),
+          color: theme.danger,
+        ),
+      ],
+    );
+  }
+
+  /// 编辑图片：单张直接进编辑器，多张批量进（缩略图条切换）；
+  /// savePath 指向原图（写回原位），完成后失效缓存并刷新网格
+  Future<void> _editImages(List<String> keys) async {
+    final urls = [for (final k in keys) './$k'];
+    if (urls.length == 1) {
+      await showPhotoEditor(
+        context,
+        imageUrl: urls.first,
+        savePath: urls.first,
+      );
+    } else {
+      await showPhotoEditorList(
+        context,
+        items: [
+          for (final u in urls) PhotoEditorItem(url: u, savePath: u),
+        ],
+      );
+    }
+    for (final u in urls) {
+      try {
+        await ImageUtils.createImageProvider(u).evict();
+      } catch (_) {}
+    }
+    if (mounted) _loadImages();
+  }
+
+  /// 删除图片（连同伴生缩略图），从网格与已选中移除
+  Future<void> _deleteImages(List<String> keys) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('image_picker_deleteImage'.tr),
+        content: Text(
+          keys.length > 1
+              ? 'image_picker_deleteBatchConfirm'.trParams({
+                  'n': '${keys.length}',
+                })
+              : 'image_picker_deleteConfirm'.tr,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('app_cancel'.tr),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('app_confirm'.tr),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    for (final key in keys) {
+      // 伴生缩略图（dirname/name.thumb.ext）一并清理
+      final dir = path.dirname(key);
+      final name = path.basenameWithoutExtension(key);
+      final ext = path.extension(key);
+      final thumbKey = '$dir/$name.thumb$ext';
+      try {
+        await globalStorage.deleteFile(key);
+        await globalStorage.deleteFile(thumbKey);
+      } catch (e) {
+        debugPrint('删除图片失败: $key, $e');
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _allInfos.removeWhere((e) => keys.contains(e.path));
+      _imageKeySet.removeAll(keys);
+      _selected.removeWhere(keys.contains);
+    });
+    Toast.success('image_picker_deleted'.tr);
+  }
+
   /// 多选确认栏：左侧已选缩略图横滑条（右上 × 移除、长按拖拽排序）
-  /// + 右侧确认按钮
+  /// + 右侧 dots 菜单（批量编辑 / 删除）+ 确认按钮
   Widget _buildConfirmBar(AppThemeData theme) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
@@ -874,6 +1025,23 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
                   );
                 },
               ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // 批量操作菜单：编辑全部已选 / 删除全部已选
+          DSPopover(
+            width: 168,
+            contentBuilder: (popoverContext, close) => _imageMenu(
+              popoverContext,
+              close,
+              List<String>.of(_selected),
+            ),
+            child: DSIconButton(
+              icon: DsIconKind.dots,
+              size: 36,
+              color: theme.surfaceAlt,
+              iconColor: theme.textSub,
+              tooltip: 'image_picker_batchActions'.tr,
             ),
           ),
           const SizedBox(width: 8),

@@ -1,0 +1,65 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'wired_base.dart';
+import 'wired_theme.dart';
+
+/// A theme-aware compatibility wrapper for Flutter's [AnimatedIcon].
+///
+/// Uses skribble's text colour while preserving Material's smooth morph.
+/// Use `WiredDraw` with rough icon geometry for a hand-drawn reveal.
+class WiredAnimatedIcon extends HookWidget {
+  /// The animated icon data (e.g. [AnimatedIcons.menu_arrow]).
+  final AnimatedIconData icon;
+
+  /// The animation progress (0.0 to 1.0).
+  final Animation<double> progress;
+
+  /// The color of the icon.
+  final Color? color;
+
+  /// The size of the icon.
+  final double? size;
+
+  /// Semantic label.
+  final String? semanticLabel;
+
+  /// Text direction for the icon.
+  final TextDirection? textDirection;
+
+  const WiredAnimatedIcon({
+    super.key,
+    required this.icon,
+    required this.progress,
+    this.color,
+    this.size,
+    this.semanticLabel,
+    this.textDirection,
+  });
+
+  /// Creates the menu-to-close compatibility animation using Flutter progress.
+  /// This preserves Material's smooth morph; use `WiredDraw` for rough pen traces.
+  const WiredAnimatedIcon.menuClose({
+    super.key,
+    required this.progress,
+    this.color,
+    this.size,
+    this.semanticLabel,
+    this.textDirection,
+  }) : icon = AnimatedIcons.menu_close;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    return buildWiredElement(
+      child: AnimatedIcon(
+        icon: icon,
+        progress: progress,
+        color: color ?? theme.textColor,
+        size: size,
+        semanticLabel: semanticLabel,
+        textDirection: textDirection,
+      ),
+    );
+  }
+}

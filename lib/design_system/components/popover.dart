@@ -11,6 +11,7 @@ class DSPopover extends StatefulWidget {
     required this.contentBuilder,
     required this.child,
     this.width = 220,
+    this.activateOnLongPress = false,
   });
 
   /// 气泡内容（按钮、列表等可交互元素均可）；
@@ -19,6 +20,9 @@ class DSPopover extends StatefulWidget {
   contentBuilder;
   final Widget child;
   final double width;
+
+  /// true 时改为长按触发（点击留给 child 外层手势，如列表项选中）
+  final bool activateOnLongPress;
 
   @override
   State<DSPopover> createState() => _DSPopoverState();
@@ -163,7 +167,8 @@ class _DSPopoverState extends State<DSPopover> {
       // opaque：child 不参与命中（如被 IgnorePointer 包裹的纯视觉按钮）时触发器自身兜底命中
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: _toggle,
+        onTap: widget.activateOnLongPress ? null : _toggle,
+        onLongPress: widget.activateOnLongPress ? _toggle : null,
         child: widget.child,
       ),
     );

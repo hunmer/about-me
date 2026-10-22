@@ -1,0 +1,119 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'canvas/wired_canvas.dart';
+import 'generated/skribble_glyphs.g.dart';
+import 'wired_base.dart';
+import 'wired_icon.dart';
+import 'wired_theme.dart';
+
+/// An expandable tile with a hand-drawn border.
+///
+/// The expansion tile is wrapped in [Semantics] for accessibility, providing
+/// screen readers with the expanded state information.
+class WiredExpansionTile extends HookWidget {
+  final Widget title;
+  final Widget? subtitle;
+  final Widget? leading;
+  final List<Widget> children;
+  final bool initiallyExpanded;
+
+  /// <!-- {=dartSemanticLabelOptional|trim|linePrefix:"  /// "} -->
+  /// Optional semantic label for accessibility.
+  /// <!-- {/dartSemanticLabelOptional} -->
+  final String? semanticLabel;
+
+  const WiredExpansionTile({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.leading,
+    this.children = const [],
+    this.initiallyExpanded = false,
+    this.semanticLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    final isExpanded = useState(initiallyExpanded);
+
+    return Semantics(
+      label: semanticLabel,
+      expanded: isExpanded.value,
+      onTap: () => isExpanded.value = !isExpanded.value,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: () => isExpanded.value = !isExpanded.value,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  if (leading != null) ...[leading!, const SizedBox(width: 16)],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DefaultTextStyle.merge(
+                          style: TextStyle(
+                            color: theme.textColor,
+                            fontSize: 16,
+                          ),
+                          child: title,
+                        ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          DefaultTextStyle.merge(
+                            style: TextStyle(
+                              color: theme.disabledTextColor,
+                              fontSize: 14,
+                            ),
+                            child: subtitle!,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: isExpanded.value ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: WiredSvgIcon(
+                      data: SkribbleGlyphs.chevronDown,
+                      color: theme.textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(
+            height: theme.inkExtent,
+            child: WiredCanvas(
+              painter: WiredLineBase(
+                strokeWidth: theme.strokeWidth,
+                x1: 0,
+                y1: 0,
+                x2: double.infinity,
+                y2: 0,
+                borderColor: theme.borderColor,
+              ),
+              fillerType: RoughFilter.noFiller,
+            ),
+          ),
+          if (isExpanded.value)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: children,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

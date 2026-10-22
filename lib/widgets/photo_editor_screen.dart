@@ -56,6 +56,40 @@ class _EditorExit {
   final String? savedPath;
 }
 
+/// 多图编辑项：每张图独立的 url 与保存配置
+class PhotoEditorItem {
+  const PhotoEditorItem({required this.url, this.savePath, this.name});
+
+  final String url;
+
+  /// 目标保存路径（空=提交时弹保存询问，保存到 app_data/editor/）
+  final String? savePath;
+
+  /// 显示名（默认取 url basename）
+  final String? name;
+}
+
+/// 多图批量编辑：底部缩略图条切换实例，每张图独立编辑。
+/// 多图模式下提交导出（编辑器右上完成）立即保存该图
+/// （savePath 直写或弹保存目标询问），编辑器不关闭可继续下一张；
+/// 切换图片时未提交的编辑丢弃（有确认提示）。
+Future<void> showPhotoEditorList(
+  BuildContext context, {
+  required List<PhotoEditorItem> items,
+  int initialIndex = 0,
+}) async {
+  if (items.isEmpty) return;
+  await NavigationHelper.push(
+    context,
+    _PhotoEditorScreen(
+      imageUrl: items.first.url,
+      savePath: items.first.savePath,
+      items: items,
+      initialIndex: initialIndex,
+    ),
+  );
+}
+
 /// 照片编辑器组件（包装 pro_image_editor）：
 /// 解析任意来源图片（网络 URL / assets / 本地文件 / 应用存储相对路径）
 /// 为字节后打开内置编辑器。
@@ -296,41 +330,70 @@ Future<Uint8List?> _loadImageBytes(String url) async {
 
 /// 编辑器全屏页：进入时加载图片字节（loading/错误占位），完成后交给 ProImageEditor
 class _PhotoEditorScreen extends StatefulWidget {
-  const _PhotoEditorScreen({required this.imageUrl, this.savePath});
+  const _PhotoEditorScreen({
+    required this.imageUrl,
+    this.savePath,
+    this.items,
+    this.initialIndex = 0,
+  });
 
   final String imageUrl;
 
   /// 目标保存路径（空=提交/返回时弹保存询问，保存到默认 app_data/editor/）
   final String? savePath;
 
+  /// 多图编辑项（空=单图模式，仅 imageUrl/savePath）
+  final List<PhotoEditorItem>? items;
+
+  /// 多图初始索引
+  final int initialIndex;
+
   @override
   State<_PhotoEditorScreen> createState() => _PhotoEditorScreenState();
 }
 
-class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
-  Uint8List? _bytes;
-  bool _loadFailed = false;
+/// 单张图的画布状态（多图时每张独立）
+class _CanvasState {
+  Uint8List? bytes;
+  bool loadFailed = false;
+  bool hasAlpha = false;
 
-  /// 编辑器 state 引用（返回时导出画布用）；
-  /// AI 修图替换画布时换新实例整体重建（编辑历史随之重置）
-  GlobalKey<ProImageEditorState> _editorKey = GlobalKey<ProImageEditorState>();
+  /// 字节被修改过（切换烘焙 / AI 修图 / 橡皮擦 / 提交保存），
+  /// "全部导出"据此挑选待保存画布
+  bool touched = false;
+
+  /// 本次会话已保存到目标（提交导出或全部导出处理过）
+  bool saved = false;
+  GlobalKey<ProImageEditorState> editorKey = GlobalKey<ProImageEditorState>();
+}
+
+class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
+  late final List<PhotoEditorItem> _items = widget.items ??
+      [PhotoEditorItem(url: widget.imageUrl, savePath: widget.savePath)];
+  late final List<_CanvasState> _canvases = List.generate(
+    _items.length,
+    (_) => _CanvasState(),
+  );
+  late int _index = widget.initialIndex.clamp(0, _items.length - 1);
+
+  /// 多图导出保存进行中（防重复触发提交）
+  bool _savingExport = false;
+
+  _CanvasState get _canvas => _canvases[_index];
+  bool get _isMulti => _items.length > 1;
 
   /// 返回时选择"保存"的暂存结果（onCloseEditor pop 带出）
   _EditorExit? _closeExit;
 
-  /// 画布是否含透明像素（橡皮擦擦除后置 true）：
-  /// 编辑器导出格式随之切 PNG，避免透明被 JPG 压黑
-  bool _canvasHasAlpha = false;
-
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadCurrent();
   }
 
   /// AI 修图：以当前画布为参考图生成新图，替换后重建编辑器
   Future<void> _openAiEdit() async {
-    final bytes = _bytes;
+    final bytes = _canvas.bytes;
     if (bytes == null) return;
     final generated = await showDialog<Uint8List>(
       context: context,
@@ -339,14 +402,15 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
     );
     if (generated == null || !mounted) return;
     setState(() {
-      _bytes = generated;
-      _editorKey = GlobalKey<ProImageEditorState>();
+      _canvas.bytes = generated;
+      _canvas.editorKey = GlobalKey<ProImageEditorState>();
+      _canvas.touched = true;
     });
   }
 
   /// 像素橡皮擦：涂抹擦除图片本体为透明，完成后替换画布
   Future<void> _openPixelEraser() async {
-    final bytes = _bytes;
+    final bytes = _canvas.bytes;
     if (bytes == null) return;
     final erased = await NavigationHelper.push<Uint8List>(
       context,
@@ -354,28 +418,191 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
     );
     if (erased == null || !mounted) return;
     setState(() {
-      _bytes = erased;
-      _editorKey = GlobalKey<ProImageEditorState>();
-      _canvasHasAlpha = true;
+      _canvas.bytes = erased;
+      _canvas.editorKey = GlobalKey<ProImageEditorState>();
+      _canvas.hasAlpha = true;
+      _canvas.touched = true;
     });
   }
 
-  Future<void> _load() async {
-    final bytes = await _loadImageBytes(widget.imageUrl);
+  Future<void> _loadCurrent() async {
+    final canvas = _canvas;
+    final bytes = await _loadImageBytes(_items[_index].url);
     if (!mounted) return;
     if (bytes == null || bytes.isEmpty) {
-      setState(() => _loadFailed = true);
+      setState(() => canvas.loadFailed = true);
       Toast.error('app_photoEditLoadFailed'.tr);
     } else {
       // 记录打开历史（编辑器主界面"最近打开"用）
-      unawaited(PhotoEditorHistory.record(widget.imageUrl));
-      setState(() => _bytes = bytes);
+      unawaited(PhotoEditorHistory.record(_items[_index].url));
+      setState(() => canvas.bytes = bytes);
     }
+  }
+
+  /// 把当前编辑器中未提交的编辑烘焙进画布字节：
+  /// 效果保留（切回可见），编辑历史随实例重建重置。
+  /// 无编辑返回 true；导出失败返回 false（调用方走丢弃确认）。
+  Future<bool> _bakeCurrent() async {
+    final editor = _canvas.editorKey.currentState;
+    if (editor == null || !editor.canUndo) return true;
+    try {
+      final bytes = await editor.captureEditorImage();
+      if (bytes.isEmpty) throw Exception('导出为空');
+      _canvas.bytes = bytes;
+      _canvas.touched = true;
+      return true;
+    } catch (e) {
+      debugPrint('烘焙当前画布失败: $e');
+      return false;
+    }
+  }
+
+  /// 切换当前编辑的图片；未提交的编辑先烘焙进画布（不丢失），
+  /// 烘焙失败才弹丢弃确认。
+  Future<void> _switchTo(int index) async {
+    if (index == _index || index < 0 || index >= _items.length) return;
+    final baked = await _bakeCurrent();
+    if (!baked) {
+      final discard = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('app_photoEditorSwitchTitle'.tr),
+          content: Text('app_photoEditorSwitchMessage'.tr),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('app_cancel'.tr),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text('app_confirm'.tr),
+            ),
+          ],
+        ),
+      );
+      if (discard != true) return;
+    }
+    setState(() => _index = index);
+    final target = _canvases[index];
+    if (target.bytes == null && !target.loadFailed) await _loadCurrent();
+  }
+
+  /// 多图模式提交导出：立即保存该图（savePath 直写或询问目标），
+  /// 保存后重置当前画布继续编辑；询问"继续编辑"则不动。
+  Future<void> _saveCurrentExport(Uint8List bytes) async {
+    if (_savingExport) return;
+    _savingExport = true;
+    var resetCanvas = true;
+    try {
+      final item = _items[_index];
+      if (item.savePath != null && item.savePath!.isNotEmpty) {
+        await _writeToSavePath(item.savePath!, bytes);
+        if (mounted) Toast.success('app_photoEditSaved'.tr);
+      } else {
+        final target = await _chooseSaveTarget(context, allowCancel: true);
+        if (target == null || target == _SaveTarget.cancel) {
+          resetCanvas = false;
+          return;
+        }
+        if (target == _SaveTarget.internal) {
+          final rel = await ImageUtils.saveBytesToAppDirectory(
+            bytes,
+            'editor',
+            extension: _looksLikePng(bytes) ? '.png' : '.jpg',
+          );
+          unawaited(PhotoEditorHistory.record(rel));
+          if (mounted) {
+            Toast.success('${'app_photoEditSavedCopy'.tr}: $rel');
+          }
+        } else if (target == _SaveTarget.album) {
+          await _saveToAlbum(context, bytes);
+        }
+        // discard：不保存，仅重置画布
+      }
+      _canvas.saved = true;
+      _canvas.touched = true;
+    } catch (e) {
+      debugPrint('照片编辑保存失败: $e');
+      if (mounted) Toast.error('app_photoEditSaveFailed'.tr);
+    } finally {
+      _savingExport = false;
+      if (mounted && resetCanvas) {
+        // 保存完成重置当前画布编辑历史（画布内容 = 已保存结果）
+        setState(() => _canvas.editorKey = GlobalKey<ProImageEditorState>());
+      }
+    }
+  }
+
+  /// 全部导出：烘焙当前画布后，把所有被修改过且未保存的画布
+  /// 逐张保存（savePath 直写；无 savePath 的统一弹一次保存目标询问）。
+  Future<void> _exportAll() async {
+    if (_savingExport) return;
+    await _bakeCurrent();
+    final targets = <int>[
+      for (var i = 0; i < _canvases.length; i++)
+        if (_canvases[i].bytes != null &&
+            _canvases[i].touched &&
+            !_canvases[i].saved)
+          i,
+    ];
+    if (targets.isEmpty) {
+      Toast.info('app_photoEditorExportNone'.tr);
+      return;
+    }
+
+    // 存在无 savePath 的目标时统一询问一次保存目标
+    final needAsk = targets.any(
+      (i) => _items[i].savePath == null || _items[i].savePath!.isEmpty,
+    );
+    _SaveTarget? target;
+    if (needAsk) {
+      target = await _chooseSaveTarget(context, allowCancel: true);
+      if (target == null || target == _SaveTarget.cancel) return;
+      if (target == _SaveTarget.discard) return;
+    }
+
+    _savingExport = true;
+    var ok = 0;
+    try {
+      for (final i in targets) {
+        final item = _items[i];
+        final canvas = _canvases[i];
+        final bytes = canvas.bytes!;
+        try {
+          if (item.savePath != null && item.savePath!.isNotEmpty) {
+            await _writeToSavePath(item.savePath!, bytes);
+          } else if (target == _SaveTarget.internal) {
+            final rel = await ImageUtils.saveBytesToAppDirectory(
+              bytes,
+              'editor',
+              extension: _looksLikePng(bytes) ? '.png' : '.jpg',
+            );
+            unawaited(PhotoEditorHistory.record(rel));
+          } else if (target == _SaveTarget.album) {
+            await _saveToAlbum(context, bytes);
+          }
+          canvas.saved = true;
+          ok++;
+        } catch (e) {
+          debugPrint('全部导出第 ${i + 1} 张失败: $e');
+        }
+      }
+    } finally {
+      _savingExport = false;
+    }
+    if (!mounted) return;
+    setState(() {
+      // 当前画布已导出：重置编辑历史
+      if (_canvases[_index].saved) {
+        _canvas.editorKey = GlobalKey<ProImageEditorState>();
+      }
+    });
+    Toast.success('app_photoEditorExported'.trParams({'n': '$ok'}));
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loadFailed) {
+    if (_canvas.loadFailed) {
       return Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
@@ -398,7 +625,7 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
       );
     }
 
-    final bytes = _bytes;
+    final bytes = _canvas.bytes;
     if (bytes == null) {
       return Scaffold(
         backgroundColor: Colors.black,
@@ -419,16 +646,18 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
       backgroundColor: Colors.black,
       body: ProImageEditor.memory(
         bytes,
-        key: _editorKey,
+        key: _canvas.editorKey,
         configs: ProImageEditorConfigs(
           i18n: _buildI18n(),
           // 擦除后画布含透明，导出必须 PNG（JPG 无 alpha 会压黑）
           imageGeneration: ImageGenerationConfigs(
-            outputFormat: _canvasHasAlpha ? OutputFormat.png : OutputFormat.jpg,
+            outputFormat:
+                _canvas.hasAlpha ? OutputFormat.png : OutputFormat.jpg,
           ),
           mainEditor: MainEditorConfigs(
             widgets: MainEditorWidgets(
-              // AI 修图 / 像素橡皮擦浮动入口：子编辑器（裁剪/滤镜等）打开时隐藏
+              // AI 修图 / 像素橡皮擦浮动入口 + 多图缩略图条：
+              // 子编辑器（裁剪/滤镜等）打开时隐藏
               wrapBody: (editor, rebuildStream, content) => Stack(
                 children: [
                   content,
@@ -449,24 +678,176 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
                             ),
                     ),
                   ),
+                  if (_isMulti)
+                    Positioned(
+                      left: 12,
+                      right: 84,
+                      bottom: 14,
+                      child: ReactiveWidget(
+                        stream: rebuildStream,
+                        builder: (_) => editor.isSubEditorOpen
+                            ? const SizedBox.shrink()
+                            : _buildThumbBar(),
+                      ),
+                    ),
                 ],
               ),
               // 未指定保存路径：返回时的关闭警告替换为保存询问
-              //（保存=导出存副本；指定了路径的调用方保留编辑器自带警告）
-              closeWarningDialog: widget.savePath == null
+              //（保存=导出存副本；多图模式走编辑器自带丢弃警告，
+              //  保存已在每张图提交导出时完成）
+              closeWarningDialog:
+                  !_isMulti && widget.savePath == null
                   ? _customCloseWarning
                   : null,
             ),
           ),
         ),
         callbacks: ProImageEditorCallbacks(
-          // 编辑器导出期间保持自带 loading 遮罩，pop 后由 showPhotoEditor 持久化
+          // 单图：导出即关闭，由 showPhotoEditor 走保存流程；
+          // 多图：导出立即保存当前图，留在编辑器继续
           onImageEditingComplete: (editedBytes) async {
-            Navigator.of(context).pop(_EditorExit(bytes: editedBytes));
+            if (!_isMulti) {
+              Navigator.of(context).pop(_EditorExit(bytes: editedBytes));
+              return;
+            }
+            unawaited(_saveCurrentExport(editedBytes));
           },
           // 设置了该回调时编辑器不会自行 pop，由这里统一关闭
           onCloseEditor: (mode) => Navigator.of(context).pop(_closeExit),
         ),
+      ),
+    );
+  }
+
+  /// 多图缩略图条：横向切换当前编辑的图片（当前项白框高亮，
+  /// 已保存绿勾 / 待导出橙点角标），尾部"全部导出"
+  Widget _buildThumbBar() {
+    return SizedBox(
+      height: 60,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _items.length + 1,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          // 尾部：全部导出
+          if (index == _items.length) {
+            return GestureDetector(
+              onTap: _exportAll,
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white38),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.done_all, color: Colors.white70, size: 18),
+                    const SizedBox(height: 2),
+                    Text(
+                      'app_photoEditorExportAll'.tr,
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 9,
+                      ),
+                      maxLines: 1,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          final selected = index == _index;
+          final canvas = _canvases[index];
+          return GestureDetector(
+            onTap: () => _switchTo(index),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: selected ? Colors.white : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              padding: const EdgeInsets.all(2),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox.square(
+                  dimension: 52,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image(
+                        image: ImageUtils.createImageProvider(
+                          _items[index].url,
+                        ),
+                        fit: BoxFit.cover,
+                        gaplessPlayback: true,
+                        errorBuilder: (_, _, _) => const ColoredBox(
+                          color: Colors.white24,
+                          child: Center(
+                            child: Icon(
+                              Icons.broken_image,
+                              color: Colors.white38,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 3,
+                        top: 3,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${index + 1}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // 已保存绿勾 / 待导出橙点
+                      if (canvas.saved)
+                        const Positioned(
+                          right: 3,
+                          top: 3,
+                          child: Icon(
+                            Icons.check_circle,
+                            size: 14,
+                            color: Colors.greenAccent,
+                          ),
+                        )
+                      else if (canvas.touched)
+                        const Positioned(
+                          right: 5,
+                          top: 5,
+                          child: SizedBox.square(
+                            dimension: 8,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.orange,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

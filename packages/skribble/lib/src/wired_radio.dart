@@ -1,0 +1,95 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'canvas/wired_canvas.dart';
+import 'rough/skribble_rough.dart';
+import 'wired_base.dart';
+import 'wired_theme.dart';
+
+/// A hand-drawn radio button, corresponding to Flutter's `Radio`.
+///
+/// Draws a sketchy circle border. When [value] equals [groupValue],
+/// the interior is filled with a hachure pattern.
+///
+/// The radio button is wrapped in [Semantics] for accessibility, providing
+/// screen readers with the selected state.
+///
+/// See also:
+///  * `WiredRadioListTile`, which combines this with a label.
+class WiredRadio<T> extends HookWidget {
+  final T value;
+  final T? groupValue;
+  final bool Function(T? value)? onChanged;
+
+  /// <!-- {=dartSemanticLabelOptional|trim|linePrefix:"  /// "} -->
+  /// Optional semantic label for accessibility.
+  /// <!-- {/dartSemanticLabelOptional} -->
+  final String? semanticLabel;
+
+  const WiredRadio({
+    super.key,
+    required this.value,
+    required this.groupValue,
+    required this.onChanged,
+    this.semanticLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    final isSelected = value == groupValue;
+
+    return Semantics(
+      label: semanticLabel,
+      checked: isSelected,
+      enabled: onChanged != null,
+      onTap: onChanged == null ? null : () => onChanged?.call(value),
+      child: buildWiredElement(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              height: 48.0,
+              width: 48.0,
+              child: WiredCanvas(
+                painter: WiredCircleBase(
+                  strokeWidth: theme.strokeWidth,
+                  diameterRatio: .7,
+                  borderColor: theme.borderColor,
+                ),
+                fillerType: RoughFilter.noFiller,
+              ),
+            ),
+            if (isSelected)
+              SizedBox(
+                height: 24.0,
+                width: 24.0,
+                child: WiredCanvas(
+                  painter: WiredCircleBase(
+                    strokeWidth: theme.strokeWidth,
+                    diameterRatio: .7,
+                    fillColor: theme.textColor,
+                    borderColor: theme.borderColor,
+                  ),
+                  fillerType: RoughFilter.hachureFiller,
+                  fillerConfig: FillerConfig.build(hachureGap: 1.0),
+                ),
+              ),
+            SizedBox(
+              height: 48.0,
+              width: 48.0,
+              child: Radio<T>(
+                value: value,
+                groupValue: groupValue,
+                fillColor: WidgetStateProperty.all(Colors.transparent),
+                onChanged: (newValue) {
+                  onChanged?.call(newValue);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -65,4 +65,12 @@ const Map<String, String> imagePickerTranslationsEn = {
   'video_picker_noVideos': 'No videos yet. Pick from gallery or record one',
   'video_picker_takeVideo': 'Record Video',
   'video_picker_onlineVideo': 'Online Video',
+
+  // Grid image long-press / batch menu
+  'image_picker_editImage': 'Edit image',
+  'image_picker_deleteConfirm': 'This deletes the image and its thumbnail. This cannot be undone.',
+  'image_picker_deleteBatchConfirm': 'This deletes the @n selected images and their thumbnails. This cannot be undone.',
+  'image_picker_deleted': 'Deleted',
+  'image_picker_multiSelect': 'Select multiple',
+  'image_picker_batchActions': 'Batch actions',
 };

@@ -1,0 +1,134 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'canvas/wired_canvas.dart';
+import 'wired_base.dart';
+import 'wired_theme.dart';
+
+/// A column definition for [WiredDataTable].
+class WiredDataColumn {
+  final Widget label;
+  final double? width;
+
+  const WiredDataColumn({required this.label, this.width});
+}
+
+/// A row of data for [WiredDataTable].
+class WiredDataRow {
+  final List<Widget> cells;
+  final VoidCallback? onTap;
+
+  const WiredDataRow({required this.cells, this.onTap});
+}
+
+/// A data table with hand-drawn grid lines.
+class WiredDataTable extends HookWidget {
+  final List<WiredDataColumn> columns;
+  final List<WiredDataRow> rows;
+
+  const WiredDataTable({super.key, required this.columns, required this.rows});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = WiredTheme.of(context);
+    return buildWiredElement(
+      child: IntrinsicHeight(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: WiredCanvas(
+                painter: WiredRectangleBase(
+                  strokeWidth: theme.strokeWidth,
+                  fillColor: theme.fillColor,
+                  borderColor: theme.borderColor,
+                ),
+                fillerType: RoughFilter.noFiller,
+              ),
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header row
+                _buildHeaderRow(theme),
+                SizedBox(
+                  height: theme.inkExtent,
+                  child: WiredCanvas(
+                    painter: WiredLineBase(
+                      x1: 0,
+                      y1: 0,
+                      x2: double.infinity,
+                      y2: 0,
+                      strokeWidth: theme.strokeWidth,
+                      borderColor: theme.borderColor,
+                    ),
+                    fillerType: RoughFilter.noFiller,
+                  ),
+                ),
+                // Data rows
+                for (int i = 0; i < rows.length; i++) ...[
+                  _buildDataRow(rows[i], theme),
+                  if (i < rows.length - 1)
+                    SizedBox(
+                      height: theme.inkExtent,
+                      child: WiredCanvas(
+                        painter: WiredLineBase(
+                          strokeWidth: theme.strokeWidth,
+                          x1: 0,
+                          y1: 0,
+                          x2: double.infinity,
+                          y2: 0,
+                          borderColor: theme.borderColor,
+                        ),
+                        fillerType: RoughFilter.noFiller,
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderRow(WiredThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Row(
+        children: [
+          for (int i = 0; i < columns.length; i++)
+            Expanded(
+              child: DefaultTextStyle.merge(
+                style: TextStyle(
+                  color: theme.textColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                child: columns[i].label,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDataRow(WiredDataRow row, WiredThemeData theme) {
+    return InkWell(
+      onTap: row.onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        child: Row(
+          children: [
+            for (int i = 0; i < row.cells.length && i < columns.length; i++)
+              Expanded(
+                child: DefaultTextStyle.merge(
+                  style: TextStyle(color: theme.textColor, fontSize: 14),
+                  child: row.cells[i],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -16,6 +16,7 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/system_widget_service.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/services/app_background_controller.dart';
+import 'package:aboutme/core/services/ds_ink_motion_controller.dart';
 import 'package:aboutme/core/services/ds_ink_style_controller.dart';
 import 'package:aboutme/core/services/hand_drawn_style_controller.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
@@ -224,6 +225,9 @@ Future<void> initializeApp() async {
 
     // 初始化墨线风格（全局手绘粗糙度档位）
     await StartupTrace.measure('ink_style', DsInkStyleController().initialize);
+
+    // 初始化墨线入场动画时长（0 = 关闭描画动画）
+    await StartupTrace.measure('ink_motion', DsInkMotionController().initialize);
 
     // 初始化手绘便签风格（全局贴条/倾斜开关）
     await StartupTrace.measure(

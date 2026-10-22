@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
 class ActivityGridView extends StatefulWidget {
   final List<ActivityRecord> activities;
@@ -212,10 +215,10 @@ class _ActivityGridViewState extends State<ActivityGridView> {
     return null;
   }
 
-  // 获取时间对应的网格颜色
-  Color _getGridColor(DateTime time) {
+  // 获取时间对应的网格颜色（纸墨风：空槽=轨道底色，未来=淡墨罩，拖选=主色浅底）
+  Color _getGridColor(DateTime time, AppThemeData theme) {
     if (time.isAfter(DateTime.now())) {
-      return Colors.grey.withValues(alpha: 0.3);
+      return theme.ink.withValues(alpha: 0.16);
     }
 
     if (_isDragging && _selectionStart != null && _lastEnteredTime != null) {
@@ -225,7 +228,7 @@ class _ActivityGridViewState extends State<ActivityGridView> {
           (time.isAfter(endTime) && time.isBefore(startTime)) ||
           time.isAtSameMomentAs(startTime) ||
           time.isAtSameMomentAs(endTime)) {
-        return Colors.lightBlue.withValues(alpha: 0.3);
+        return theme.primary.withValues(alpha: 0.28);
       }
     }
 
@@ -234,15 +237,11 @@ class _ActivityGridViewState extends State<ActivityGridView> {
       return Colors.transparent;
     }
 
-    return Colors.grey.withValues(alpha: 0.1);
+    return theme.surfaceAlt;
   }
 
   Color _resolveActivityColor(ActivityRecord activity) {
     return activity.color ?? _getColorFromTags(activity.tags);
-  }
-
-  Color _getContrastingTextColor(Color background) {
-    return background.computeLuminance() > 0.5 ? Colors.black : Colors.white;
   }
 
   String _buildActivityLabel(ActivityRecord activity) {
@@ -398,6 +397,12 @@ class _ActivityGridViewState extends State<ActivityGridView> {
 
   @override
   Widget build(BuildContext context) {
+    // 手绘纸墨风：桥接 DS 主题，底格与活动条配色统一走主题 token
+    return DSThemeBridge(child: Builder(builder: _buildGrid));
+  }
+
+  Widget _buildGrid(BuildContext context) {
+    final theme = AppTheme.of(context);
     return Listener(
       onPointerDown: (PointerDownEvent event) {
         setState(() {
@@ -456,7 +461,10 @@ class _ActivityGridViewState extends State<ActivityGridView> {
                             2,
                             '0',
                           ), // 显示从05开始，但在创建活动时会向前调整5分钟
-                          style: const TextStyle(fontSize: 12),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.textSub,
+                          ),
                         ),
                       ),
                     );
@@ -485,7 +493,10 @@ class _ActivityGridViewState extends State<ActivityGridView> {
                               child: Center(
                                 child: Text(
                                   '$hourIndex',
-                                  style: const TextStyle(fontSize: 12),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.textSub,
+                                  ),
                                 ),
                               ),
                             ),
@@ -516,15 +527,12 @@ class _ActivityGridViewState extends State<ActivityGridView> {
                                             ),
                                             margin: const EdgeInsets.all(1.0),
                                             decoration: BoxDecoration(
-                                              color: _getGridColor(time),
+                                              color: _getGridColor(
+                                                time,
+                                                theme,
+                                              ),
                                               borderRadius:
                                                   BorderRadius.circular(4.0),
-                                              border: Border.all(
-                                                color: Colors.grey.withValues(
-                                                  alpha: 0.2,
-                                                ),
-                                                width: 0.5,
-                                              ),
                                             ),
                                           ),
                                         ),
@@ -560,9 +568,6 @@ class _ActivityGridViewState extends State<ActivityGridView> {
                                     final color = _resolveActivityColor(
                                       segment.activity,
                                     );
-                                    final textColor = _getContrastingTextColor(
-                                      color,
-                                    );
                                     bars.add(
                                       Positioned(
                                         left:
@@ -572,41 +577,33 @@ class _ActivityGridViewState extends State<ActivityGridView> {
                                         top: 1,
                                         bottom: 1,
                                         width: barWidth,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: color,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
+                                        child: CustomPaint(
+                                          painter: _StripedBarPainter(
+                                            dataColor: color,
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
                                             ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: color.withValues(
-                                                  alpha: 0.25,
-                                                ),
-                                                blurRadius: 4,
-                                                offset: const Offset(0, 1),
-                                              ),
-                                            ],
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                          ),
-                                          child: Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: ClipRect(
-                                              child: FittedBox(
-                                                alignment: Alignment.centerLeft,
-                                                fit: BoxFit.scaleDown,
-                                                child: Text(
-                                                  _buildActivityLabel(
-                                                    segment.activity,
-                                                  ),
-                                                  maxLines: 1,
-                                                  softWrap: false,
-                                                  style: TextStyle(
-                                                    color: textColor,
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 12,
+                                            child: Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: ClipRect(
+                                                child: FittedBox(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  fit: BoxFit.scaleDown,
+                                                  child: Text(
+                                                    _buildActivityLabel(
+                                                      segment.activity,
+                                                    ),
+                                                    maxLines: 1,
+                                                    softWrap: false,
+                                                    style: TextStyle(
+                                                      color: theme.text,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 12,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
@@ -651,4 +648,42 @@ class _ActivityBarSegment {
   final ActivityRecord activity;
   final int startMinuteIndex;
   final int endMinuteIndex;
+}
+
+/// 活动条斜纹绘制器（§9.5 数据区：数据色浅底 + 数据色斜纹 + 数据色描边，平直几何禁抖动）
+class _StripedBarPainter extends CustomPainter {
+  _StripedBarPainter({required this.dataColor});
+
+  final Color dataColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(6));
+
+    canvas.drawRRect(
+      rrect,
+      Paint()..color = dataColor.withValues(alpha: 0.28),
+    );
+    paintDiagonalStripes(
+      canvas,
+      Path()..addRRect(rrect),
+      rect,
+      color: dataColor.withValues(alpha: 0.9),
+      strokeWidth: 3,
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = dataColor.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _StripedBarPainter oldDelegate) {
+    return oldDelegate.dataColor != dataColor;
+  }
 }
