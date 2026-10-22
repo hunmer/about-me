@@ -87,13 +87,35 @@ class AlbumPhotoQuery {
       }
     }
 
-    // 3. 心情过滤
+    // 3. 标题关键词过滤
+    final title = multiFilters['title'];
+    if (title is String &&
+        title.isNotEmpty &&
+        !entry.title.toLowerCase().contains(title.toLowerCase())) {
+      return false;
+    }
+
+    // 4. 注释关键词过滤（剔除 markdown 内联图语法，避免命中图片路径）
+    final content = multiFilters['content'];
+    if (content is String && content.isNotEmpty) {
+      final plain = entry.content.replaceAll(
+        RegExp(r'!\[.*?\]\(.*?\)'),
+        '',
+      );
+      if (!plain.toLowerCase().contains(content.toLowerCase())) return false;
+    }
+
+    // 5. 心情过滤
     final mood = multiFilters['mood'];
     if (mood is String && entry.mood != mood) return false;
 
-    // 4. 天气过滤
+    // 6. 天气过滤
     final weather = multiFilters['weather'];
     if (weather is String && entry.weather != weather) return false;
+
+    // 7. 位置过滤
+    final location = multiFilters['location'];
+    if (location is String && entry.location != location) return false;
 
     return true;
   }
@@ -137,6 +159,7 @@ class AlbumPhotoQuery {
     final availableTags = controller.getAllTags();
     final moods = _getDistinctEntryValues(controller, (e) => e.mood);
     final weathers = _getDistinctEntryValues(controller, (e) => e.weather);
+    final locations = _getDistinctEntryValues(controller, (e) => e.location);
 
     return [
       // 1. 标签多选
@@ -172,7 +195,37 @@ class AlbumPhotoQuery {
         getBadge: FilterBuilders.dateRangeBadge,
       ),
 
-      // 3. 心情单选
+      // 3. 标题关键词输入
+      FilterItem(
+        id: 'title',
+        title: 'calendar_album_title'.tr,
+        type: FilterType.input,
+        builder: (context, currentValue, onChanged) {
+          return FilterBuilders.buildKeywordFilter(
+            context: context,
+            currentValue: currentValue,
+            onChanged: onChanged,
+          );
+        },
+        getBadge: FilterBuilders.keywordBadge,
+      ),
+
+      // 4. 注释（日记内容）关键词输入
+      FilterItem(
+        id: 'content',
+        title: 'calendar_album_content'.tr,
+        type: FilterType.input,
+        builder: (context, currentValue, onChanged) {
+          return FilterBuilders.buildKeywordFilter(
+            context: context,
+            currentValue: currentValue,
+            onChanged: onChanged,
+          );
+        },
+        getBadge: FilterBuilders.keywordBadge,
+      ),
+
+      // 5. 心情单选
       if (moods.isNotEmpty)
         FilterItem(
           id: 'mood',
@@ -190,7 +243,7 @@ class AlbumPhotoQuery {
               value is String ? enumLabel('mood', value) : null,
         ),
 
-      // 4. 天气单选
+      // 6. 天气单选
       if (weathers.isNotEmpty)
         FilterItem(
           id: 'weather',
@@ -206,6 +259,23 @@ class AlbumPhotoQuery {
           },
           getBadge: (value) =>
               value is String ? enumLabel('weather', value) : null,
+        ),
+
+      // 7. 位置单选（日记实际出现过的地址）
+      if (locations.isNotEmpty)
+        FilterItem(
+          id: 'location',
+          title: 'calendar_album_location'.tr,
+          type: FilterType.tagsSingle,
+          builder: (context, currentValue, onChanged) {
+            return _buildEnumSingleFilter(
+              values: locations,
+              labelOf: (v) => v,
+              currentValue: currentValue,
+              onChanged: onChanged,
+            );
+          },
+          getBadge: FilterBuilders.keywordBadge,
         ),
     ];
   }

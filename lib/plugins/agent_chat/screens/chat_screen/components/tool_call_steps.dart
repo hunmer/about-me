@@ -56,7 +56,11 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
   /// 详情入口由各插件通过 [PluginBase.buildCreatedDetailOpener] 自行提供；
   /// run_js 与插件未支持的方法不展示数据详情
   VoidCallback? _resolveCreatedDataTap(ToolCallStep step) {
-    if (step.method != 'plugin_tool' || step.result == null) return null;
+    if (step.method != 'plugin_tool' ||
+        step.status != ToolCallStatus.success ||
+        step.result == null) {
+      return null;
+    }
     try {
       final call = jsonDecode(step.data) as Map<String, dynamic>;
       final pluginId = call['pluginId'] as String?;
@@ -65,6 +69,7 @@ class _ToolCallStepsState extends State<ToolCallSteps> {
       if (plugin == null) return null;
       final created = jsonDecode(step.result!);
       if (created is! Map<String, dynamic>) return null;
+      if (created['success'] == false || created['error'] != null) return null;
       return plugin.buildCreatedDetailOpener(
         context,
         (call['method'] as String?) ?? '',

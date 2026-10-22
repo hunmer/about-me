@@ -14,6 +14,7 @@ import 'controllers/calendar_controller.dart';
 import 'controllers/tag_controller.dart';
 import 'repositories/client_calendar_album_repository.dart';
 import 'models/calendar_entry.dart';
+import 'screens/entry_editor/entry_editor_sheet.dart';
 
 // HTTP 服务器导入
 import 'package:aboutme/plugins/webview/services/local_http_server.dart';
@@ -68,6 +69,29 @@ class CalendarAlbumPlugin extends BasePlugin with JSBridgePlugin {
 
   CalendarController? _calendarController;
   CalendarController? get calendarController => _calendarController;
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'addEntry' && method != 'createPhoto') return null;
+    final id = created['id'];
+    if (id is! String || id.isEmpty) return null;
+    return () {
+      final calendar = calendarController;
+      final tags = tagController;
+      final entry = calendar?.getEntryById(id);
+      if (calendar == null || tags == null || entry == null) return;
+      EntryEditorSheet.show(
+        context,
+        entry: entry,
+        calendarController: calendar,
+        tagController: tags,
+      );
+    };
+  }
 
   @override
   List<PluginSampleDataGroup> getSampleDataGroups() => [

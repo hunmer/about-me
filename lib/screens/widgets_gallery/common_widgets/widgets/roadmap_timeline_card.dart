@@ -1,10 +1,10 @@
 /// 路线图时间轴卡片（手绘纸墨风）
 ///
 /// 由 visa_roadmap_interactive_ui.html 的 roadmap 部分转换：
-/// S 形曲线头部（起点圆点 + 两行大标题，rough 墨线描画入场）+
+/// S 形曲线头部（起点圆点 + 两行大标题，斜纹管道从起点延伸入场）+
 /// 垂直里程碑时间轴（淡墨轨道 + 数据色斜纹激活线逐段向下生长，
 /// 每到达一步节点 scale pop 弹入、文字淡入上移）。
-/// 入场编排：S 曲线描画 → 激活线生长 → 节点/文字依次入场 → 未来步收尾。
+/// 入场编排：S 曲线管道延伸 → 激活线生长 → 节点/文字依次入场 → 未来步收尾。
 library;
 
 import 'package:flutter/material.dart';
@@ -597,10 +597,12 @@ class _RoadmapMetrics {
 }
 
 /// S 形曲线绘制器（rough 墨线装饰线，非数据几何）
+/// S 形曲线绘制器（管道样式，与时间轴段视觉一致）
 ///
 /// 从起点圆点 ([startX], 0.3H) 出发，左-下-右-下绕 S 弯，
-/// 于 ([exitX], H) 出口接入时间轴轴线；采样后交给 skribble
-/// rough 引擎按 [progress] 逐段描画。
+/// 于 ([exitX], H) 出口接入时间轴轴线。轨道管道全程可见
+/// （surfaceAlt 内芯 + 淡墨两侧边线），激活管道（数据色浅底 +
+/// 浓斜纹 + 数据色边线）按 [progress] 沿路径长度向出口延伸。
 class _SCurvePainter extends CustomPainter {
   _SCurvePainter({
     required this.exitX,
@@ -619,6 +621,17 @@ class _SCurvePainter extends CustomPainter {
   final Color activeColor;
   final AppThemeData theme;
   final double scale;
+
+  /// 管道笔：圆头圆接（转弯处圆润）
+  Paint _pipe(Color color, double width) {
+    return Paint()
+      ..style = PaintingStyle.stroke
+      ..isAntiAlias = true
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = width
+      ..color = color;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -641,7 +654,59 @@ class _SCurvePainter extends CustomPainter {
       ..quadraticBezierTo(exitX, y1, exitX, y1 + r)
       ..lineTo(exitX, size.height);
 
-    // 起点圆点：数据色实底 + 纸色内点，先于曲线弹入
+    // 管道宽度与时间轴线宽一致（同 _TimelineSegmentPainter）
+    final barW = 5 * scale;
+    final edgeW = 1.2 * scale;
+
+    // 轨道管道：粗描淡墨描边 + surfaceAlt 内芯，叠出两侧边线
+    canvas.drawPath(
+      path,
+      _pipe(theme.ink.withValues(alpha: 0.45), barW + 2 * edgeW),
+    );
+    canvas.drawPath(path, _pipe(theme.surfaceAlt, barW));
+
+    if (progress > 0.01) {
+      // 激活管道：按路径长度裁剪到描画头部
+      final metrics = path.computeMetrics().toList();
+      final total = metrics.fold<double>(0, (sum, m) => sum + m.length);
+      var remaining = total * progress.clamp(0.0, 1.0);
+      final activePath = Path();
+      for (final m in metrics) {
+        if (remaining <= 0) break;
+        final end = remaining < m.length ? remaining : m.length;
+        activePath.addPath(m.extractPath(0, end), Offset.zero);
+        remaining -= end;
+      }
+      final bounds = activePath.getBounds().inflate(barW + 2 * edgeW);
+      if (!bounds.isEmpty) {
+        // 数据色边线（粗描）+ 浅底内芯
+        canvas.drawPath(
+          activePath,
+          _pipe(activeColor.withValues(alpha: 0.85), barW + 2 * edgeW),
+        );
+        canvas.drawPath(
+          activePath,
+          _pipe(activeColor.withValues(alpha: 0.28), barW),
+        );
+        // 浓斜纹：铺满包围盒后用激活管道作 dstIn 蒙版裁出
+        canvas.saveLayer(bounds, Paint());
+        paintDiagonalStripes(
+          canvas,
+          Path()..addRect(bounds),
+          bounds,
+          color: activeColor.withValues(alpha: 0.9),
+          strokeWidth: 1.6 * scale,
+          spacing: 4.5 * scale,
+        );
+        canvas.drawPath(
+          activePath,
+          _pipe(activeColor, barW)..blendMode = BlendMode.dstIn,
+        );
+        canvas.restore();
+      }
+    }
+
+    // 起点圆点：数据色实底 + 纸色内点，先于曲线弹入（压在管道上）
     final dotT = Curves.easeOutBack.transform(dotProgress.clamp(0.0, 1.0));
     if (dotT > 0.01) {
       final dotR = 8 * scale * dotT;
@@ -656,38 +721,6 @@ class _SCurvePainter extends CustomPainter {
         Paint()..color = theme.paper,
       );
     }
-
-    if (progress <= 0.01) return;
-
-    // 采样为点列后由 rough 引擎描画（手绘抖动墨线）
-    final points = <PointD>[];
-    for (final metric in path.computeMetrics()) {
-      final n = (metric.length / (6 * scale)).ceil().clamp(8, 72);
-      for (var k = 0; k <= n; k++) {
-        final tangent = metric.getTangentForOffset(metric.length * k / n);
-        if (tangent != null) {
-          points.add(PointD(tangent.position.dx, tangent.position.dy));
-        }
-      }
-    }
-    if (points.length < 2) return;
-
-    final drawConfig = theme.wired.drawConfig;
-    drawConfig.randomizer.reset();
-    final generator = Generator(drawConfig, NoFiller());
-    final ink =
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..isAntiAlias = true
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round
-          ..strokeWidth = 1.8 * scale
-          ..color = activeColor;
-    RoughDrawing(
-      generator.curvePath(points),
-      ink,
-      ink,
-    ).paint(canvas, progress: progress, pressure: 0);
   }
 
   @override

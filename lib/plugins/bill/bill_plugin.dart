@@ -32,6 +32,7 @@ import 'screens/bill_scan_sheet.dart';
 import 'screens/subscription_list_screen.dart';
 import 'screens/account_list_screen.dart';
 import 'screens/bill_edit_screen.dart';
+import 'screens/account_edit_screen.dart';
 import 'models/account.dart';
 import 'models/bill.dart';
 import 'models/bill_statistics.dart';
@@ -76,6 +77,44 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
 
   // 暴露账单控制器
   BillController get controller => _billController;
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    final id = created['id'];
+    if (id is! String || id.isEmpty) return null;
+    switch (method) {
+      case 'createAccount':
+        return () {
+          final account = accounts.firstWhereOrNull((a) => a.id == id);
+          if (account == null) return;
+          SmoothBottomSheet.show(
+            context: context,
+            builder: (_) => AccountEditScreen(billPlugin: this, account: account),
+          );
+        };
+      case 'createBill':
+        return () {
+          for (final account in accounts) {
+            final bill = account.bills.firstWhereOrNull((b) => b.id == id);
+            if (bill == null) continue;
+            SmoothBottomSheet.showScreen(
+              context: context,
+              screen: BillEditScreen(
+                billPlugin: this,
+                accountId: account.id,
+                bill: bill,
+              ),
+            );
+            return;
+          }
+        };
+    }
+    return null;
+  }
 
   @override
   List<PluginSampleDataGroup> getSampleDataGroups() => [

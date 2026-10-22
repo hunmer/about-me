@@ -323,7 +323,7 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
           visibleCount = math.max(1, math.min(visibleCount, budget.floor()));
         }
 
-        // 手绘纸卡：数据色实底 + rough 排线（showStripes）+ 墨线框
+        // 手绘纸卡：无实底（透明）+ rough 排线（showStripes）+ 墨线框
         return WiredDraw(
           child: DsSketchPanel(
             theme: theme,
@@ -331,7 +331,7 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
             height: widget.inline ? double.maxFinite : _computeHeight(width),
             radius: BorderRadius.circular(24 * widget.size.scale),
             padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
-            fillColor: widget.backgroundFrom,
+            fillColor: Colors.transparent,
             hachure: widget.showStripes,
             hachureColor: Color.lerp(
               widget.backgroundTo,

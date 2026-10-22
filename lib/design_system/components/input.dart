@@ -226,9 +226,10 @@ class _DSInputState extends State<DSInput>
                   strokeWidth: 1.6,
                 ),
                 child: Row(
-                  crossAxisAlignment: widget.maxLines == 1
-                      ? CrossAxisAlignment.center
-                      : CrossAxisAlignment.start,
+                  // 始终垂直居中：suffix 比一行文本高时（如录音按钮），
+                  // 顶部对齐会让文字偏上、图标偏下；多行增高时 suffix
+                  // 随中心线移动，与外层 message_input 图标行为一致
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     if (widget.prefix != null)
                       Padding(

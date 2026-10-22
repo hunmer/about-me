@@ -193,32 +193,6 @@ class _CalendarScreenState extends State<CalendarScreen>
         // 搜索结果页面
         searchBody: _buildSearchResults(calendarController, tagController),
         actions: [
-          // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
-          DSThemeBridge(
-            child: Builder(
-              builder: (buildContext) {
-                final theme = DSThemeBridge.resolve(buildContext);
-                return DSIconButton(
-                  icon: DsIconKind.calendar,
-                  size: 36,
-                  color: theme.surfaceAlt,
-                  iconColor: theme.textSub,
-                  tooltip: 'calendar_album_back_to_current_month'.tr,
-                  onPressed: () {
-                    setState(() {
-                      _focusedDay = DateTime.now();
-                      Provider.of<CalendarController>(
-                        context,
-                        listen: false,
-                      ).selectDate(DateTime.now());
-                    });
-                    // 更新路由上下文
-                    _updateRouteContext(DateTime.now());
-                  },
-                );
-              },
-            ),
-          ),
           // 切换 日历视图 / 照片视图
           DSThemeBridge(
             child: Builder(

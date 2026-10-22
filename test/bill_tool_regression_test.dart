@@ -8,6 +8,11 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/plugins/bill/screens/account_edit_screen.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/tool_call_steps.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -98,6 +103,50 @@ void main() {
 
     // 清理，避免影响后续用例的账户选择
     expect((await invoke('deleteAccount', {'accountId': result['id']}))['success'], isTrue);
+  });
+
+  testWidgets('点击创建账户步骤打开已有账户表单，失败结果不显示入口', (tester) async {
+    late Map<String, dynamic> created;
+    await tester.runAsync(() async {
+      created = await invoke('createAccount', {'title': '弹层回归账户'});
+    });
+    final step = ToolCallStep(
+      method: 'plugin_tool',
+      title: '创建账户',
+      desc: '创建失败或暂不支持详情',
+      data: jsonEncode({'pluginId': 'bill', 'method': 'createAccount', 'args': {}}),
+      status: ToolCallStatus.success,
+      result: jsonEncode(created),
+    );
+    Future<void> pumpStep() => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: DSThemeBridge(child: ToolCallSteps(steps: [step]))),
+      ),
+    );
+    await pumpStep();
+    await tester.tap(find.text('agent_chat_viewCreatedDetail'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AccountEditScreen), findsOneWidget);
+    expect(find.text('弹层回归账户'), findsOneWidget);
+    Navigator.of(tester.element(find.byType(AccountEditScreen))).pop();
+    await tester.pumpAndSettle();
+
+    for (final result in [
+      {'success': false, 'id': created['id']},
+      {'error': '创建失败', 'id': created['id']},
+    ]) {
+      step.result = jsonEncode(result);
+      await pumpStep();
+      expect(find.text('agent_chat_viewCreatedDetail'), findsNothing);
+    }
+    step.result = jsonEncode(created);
+    step.status = ToolCallStatus.failed;
+    await pumpStep();
+    expect(find.text('agent_chat_viewCreatedDetail'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(() async {
+      await invoke('deleteAccount', {'accountId': created['id']});
+    });
   });
 
   test('UseCase 原生参数名(name)同样可用', () async {

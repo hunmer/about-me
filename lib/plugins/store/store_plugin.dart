@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/store/widgets/store_bottom_bar.dart';
+import 'package:aboutme/plugins/store/widgets/add_product_page.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -97,6 +99,25 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
 
   /// 获取 UseCase 实例
   StoreUseCase get useCase => _useCase;
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createProduct') return null;
+    final id = created['id'];
+    if (id is! String || id.isEmpty) return null;
+    return () {
+      final product = controller.products.firstWhereOrNull((p) => p.id == id);
+      if (product == null) return;
+      SmoothBottomSheet.showScreen(
+        context: context,
+        screen: AddProductPage(controller: controller, product: product),
+      );
+    };
+  }
 
   @override
   Map<String, Function> defineJSAPI() {

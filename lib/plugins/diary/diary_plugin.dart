@@ -13,6 +13,7 @@ import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/lazy_indexed_stack.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:get/get.dart';
 import 'screens/diary_calendar_screen.dart';
 import 'screens/diary_editor_screen.dart';
@@ -542,6 +543,32 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
       'findDiaryBy': _jsFindDiaryBy,
       'findDiaryByDate': _jsFindDiaryByDate,
       'findDiaryByTitle': _jsFindDiaryByTitle,
+    };
+  }
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'saveDiary' && method != 'saveDiaryEntry') return null;
+    final dateValue = created['date'];
+    final date = dateValue is String ? DateTime.tryParse(dateValue) : null;
+    if (date == null) return null;
+    return () async {
+      final entry = await DiaryUtils.loadDiaryEntry(date);
+      if (entry == null || !context.mounted) return;
+      SmoothBottomSheet.showScreen(
+        context: context,
+        screen: DiaryEditorScreen(
+          date: date,
+          storage: storage,
+          initialTitle: entry.title,
+          initialContent: entry.content,
+          initialMood: entry.mood,
+        ),
+      );
     };
   }
 

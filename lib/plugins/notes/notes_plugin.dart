@@ -11,6 +11,10 @@ import 'package:aboutme/core/plugin_base.dart';
 import 'package:intl/intl.dart';
 import 'controllers/notes_controller.dart';
 import 'screens/notes_screen.dart';
+import 'screens/note_edit_screen.dart';
+import 'screens/todo_edit_screen.dart';
+import 'models/todo_item.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'models/folder.dart';
 
 // UseCase 相关导入
@@ -39,6 +43,54 @@ class NotesPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   }
 
   late NotesController controller;
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createNote') return null;
+    final id = created['id'];
+    if (id is! String || id.isEmpty) return null;
+    return () {
+      final note = controller.getNoteById(id);
+      if (note == null) return;
+      if (note.isTodo) {
+        TodoEditSheet.show(
+          context: context,
+          note: note,
+          onSave: (title, items, meta, style) async {
+            note.title = title;
+            note.content = TodoItem.encodeList(items);
+            note.meta = meta.toJson();
+            note.color = style.color;
+            note.bgStyle = style.bgStyle;
+            note.icon = style.icon;
+            note.updatedAt = DateTime.now();
+            await controller.updateNote(note);
+          },
+        );
+        return;
+      }
+      SmoothBottomSheet.showScreen(
+        context: context,
+        screen: NoteEditScreen(
+          note: note,
+          onSave: (title, content, tags) async {
+            await controller.updateNote(
+              note.copyWith(
+                title: title,
+                content: content,
+                tags: tags,
+                updatedAt: DateTime.now(),
+              ),
+            );
+          },
+        ),
+      );
+    };
+  }
 
   @override
   List<PluginSampleDataGroup> getSampleDataGroups() => [

@@ -9,6 +9,9 @@ import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'controllers/nodes_controller.dart';
 import 'screens/notebooks_screen.dart';
+import 'screens/nodes_screen.dart';
+import 'screens/node_edit_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'models/node.dart';
 import 'repositories/client_nodes_repository.dart';
 import 'package:shared_models/usecases/nodes/nodes_usecase.dart';
@@ -84,6 +87,38 @@ class NodesPlugin extends PluginBase with JSBridgePlugin {
 
   NodesController get controller => _controller;
   NodesUseCase get useCase => _useCase;
+
+  @override
+  VoidCallback? buildCreatedDetailOpener(
+    BuildContext context,
+    String method,
+    Map<String, dynamic> created,
+  ) {
+    if (method != 'createNotebook' && method != 'createNode') return null;
+    final id = created['id'];
+    if (id is! String || id.isEmpty) return null;
+    return () {
+      // createNode 的返回值没有 notebookId，按新建节点 id 查找所属笔记本。
+      for (final notebook in controller.notebooks) {
+        final node = method == 'createNode'
+            ? controller.findNodeById(notebook.id, id)
+            : null;
+        if (method == 'createNotebook' ? notebook.id != id : node == null) {
+          continue;
+        }
+        SmoothBottomSheet.showScreen(
+          context: context,
+          screen: ChangeNotifierProvider.value(
+            value: controller,
+            child: node == null
+                ? NodesScreen(notebook: notebook)
+                : NodeEditScreen(notebookId: notebook.id, node: node),
+          ),
+        );
+        return;
+      }
+    };
+  }
 
   @override
   List<PluginSampleDataGroup> getSampleDataGroups() => [
