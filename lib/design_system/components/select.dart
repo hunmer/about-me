@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../primitives/haptics.dart';
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
 import '../tokens/motion.dart';
@@ -65,6 +66,7 @@ class _DSSelectState<T> extends State<DSSelect<T>> {
 
   void _insertEntry() {
     _closing = false;
+    DsHaptics.popup();
     // 依据触发框在屏幕中的位置决定展开方向，并让面板宽度跟随触发框
     final box = context.findRenderObject() as RenderBox;
     final size = box.size;

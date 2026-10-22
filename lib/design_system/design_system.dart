@@ -20,6 +20,7 @@ export 'tokens/typography.dart';
 export 'theme/app_theme.dart';
 
 // 行为原语
+export 'primitives/haptics.dart';
 export 'primitives/pressable.dart';
 
 // 组件

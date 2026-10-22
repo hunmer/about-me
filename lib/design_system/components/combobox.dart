@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../primitives/haptics.dart';
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
 import '../tokens/motion.dart';
@@ -57,6 +58,7 @@ class _DSComboboxState<T> extends State<DSCombobox<T>> {
 
   void _insertEntry() {
     _closing = false;
+    DsHaptics.popup();
     final box = context.findRenderObject() as RenderBox;
     final size = box.size;
     final top = box.localToGlobal(Offset.zero).dy;

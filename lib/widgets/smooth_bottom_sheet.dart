@@ -39,6 +39,7 @@ class SmoothBottomSheet {
     bool enableDrag = true,
     double? minHeight,
   }) {
+    DsHaptics.surface();
     return Navigator.of(context).push<T>(
       ModalSheetRoute(
         swipeDismissible: swipeDismissible,

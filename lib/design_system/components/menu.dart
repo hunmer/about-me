@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../primitives/haptics.dart';
 import '../primitives/pressable.dart';
 import '../theme/app_theme.dart';
 import '../tokens/motion.dart';
@@ -133,6 +134,7 @@ class _DSMenuState extends State<DSMenu> {
 
   void _insertEntry() {
     _closing = false;
+    DsHaptics.popup();
     final box = context.findRenderObject() as RenderBox;
     final metrics = dsComputeMenuMetrics(
       box: box,

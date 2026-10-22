@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:skribble/skribble.dart';
 
+import '../primitives/haptics.dart';
 import '../theme/app_theme.dart';
 import '../tokens/motion.dart';
 
@@ -70,6 +71,7 @@ class _DSPopoverState extends State<DSPopover> {
 
   void _insertEntry() {
     _closing = false;
+    DsHaptics.popup();
     final box = context.findRenderObject() as RenderBox;
     final size = box.size;
     final topLeft = box.localToGlobal(Offset.zero);

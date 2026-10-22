@@ -6,6 +6,7 @@ import 'package:skribble/skribble.dart';
 import '../theme/app_theme.dart';
 import '../tokens/motion.dart';
 import '../tokens/typography.dart';
+import '../primitives/haptics.dart';
 import 'button.dart';
 
 /// 手绘对话框：缩放淡入 + 遮罩
@@ -19,6 +20,7 @@ Future<T?> showDSDialog<T>({
   AppThemeData? theme,
 }) {
   final effectiveTheme = theme ?? AppTheme.of(context);
+  DsHaptics.surface();
   return Navigator.of(context, rootNavigator: true).push(
     PageRouteBuilder<T>(
       opaque: false,
