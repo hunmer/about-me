@@ -1080,7 +1080,7 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
     child: DsIcon(DsIconKind.image, size: 16, color: theme.textSub),
   );
 
-  /// 首图缩略图：白底 + 手绘墨线描边 + 左右随机小角度倾斜（拍立得效果）。
+  /// 首图缩略图：白底 + 左右随机小角度倾斜（拍立得效果）。
   /// 倾斜角按日期哈希稳定取值，同一格 rebuild 不抖变
   Widget _buildTiltedImage(String imagePath, DateTime day, AppThemeData theme) =>
       _buildTiledSlot(
@@ -1108,13 +1108,10 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
       angle: angle,
       child: Container(
         padding: const EdgeInsets.all(2),
-        // 小控件分档：纯色实底 + 墨线抖动描边（手绘风无柔影）
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: theme.surface,
-          radius: BorderRadius.circular(8),
-          strokeWidth: 1.2,
-          seed: day.day,
+        // 纯色实底白边，无描边
+        decoration: BoxDecoration(
+          color: theme.surface,
+          borderRadius: BorderRadius.circular(8),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(6),

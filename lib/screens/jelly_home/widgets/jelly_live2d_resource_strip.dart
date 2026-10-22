@@ -115,26 +115,16 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
     );
   }
 
-  /// 打开 Live2D 模型列表；选中模型后应用到当前档案（无档案时新建）
+  /// 打开 Live2D 主界面（存档管理）；返回后刷新资源条，
+  /// 选中档案的模型被改动时重载模型
   Future<void> _openModelList() async {
-    final model = await Navigator.of(context).push<Live2DModelDefinition>(
-      MaterialPageRoute(builder: (_) => const Live2DOnlineModelPage()),
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const Live2DMainScreen()),
     );
-    if (!mounted || model == null) return;
-    final plugin = Live2DPlugin.instance;
-    final archive =
-        plugin.selected ??
-        Live2DArchive.create(
-          modelLabel: model.label,
-          modelDir: model.modelDir,
-          modelFile: model.modelFile,
-        );
-    archive
-      ..modelLabel = model.label
-      ..modelDir = model.modelDir
-      ..modelFile = model.modelFile;
-    await plugin.upsert(archive);
-    if (mounted) await _selectModel(model);
+    if (!mounted) return;
+    setState(() {});
+    final model = modelDefinitionForArchive(Live2DPlugin.instance.selected);
+    if (model != null) await _selectModel(model);
   }
 
   Widget _archiveTile(AppThemeData theme, Live2DArchive archive) {

@@ -8,6 +8,7 @@ import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/live2d/screens/live2d_archive_form_screen.dart';
+import 'package:aboutme/plugins/live2d/screens/live2d_main_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -17,7 +18,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
-import '../live2d_online_model_page.dart';
 import '../live2d_online_models.dart';
 import 'bubble_region_editor.dart';
 import 'jelly_configurable_image.dart';

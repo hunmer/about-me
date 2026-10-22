@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:aboutme/core/app_initializer.dart' show globalStorage;
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/utils/network.dart';
@@ -111,6 +112,19 @@ class GalleryImageResolver {
 
   static String _cacheKey(String url, bool viaProxy) =>
       viaProxy ? '$url#proxy' : url;
+
+  /// 失效 url 的显示缓存（底层文件内容已变化，如编辑器写回）：
+  /// evict 图片缓存并清除已解析 provider，下次 build 会以新 provider
+  /// 实例重新解析——Image widget 对相同 provider 实例不会重新加载，
+  /// 仅 evict 不清缓存时界面仍显示旧图
+  static Future<void> invalidate(String url) async {
+    for (final viaProxy in [false, true]) {
+      final key = _cacheKey(url, viaProxy);
+      await _resolved[key]?.evict();
+      _resolved.remove(key);
+      _futures.remove(key);
+    }
+  }
 
   /// 走系统代理下载网络图片（失败返回 null，调用方回退直连）
   static Future<ImageProvider?> _downloadViaProxy(String url) async {
@@ -305,6 +319,14 @@ class _GalleryViewerState extends State<GalleryViewer>
   /// 沉浸模式：单击大图隐藏/恢复顶部与底部区域
   bool _chromeVisible = true;
 
+  /// 编辑副本覆盖显示（index → 副本路径）：http/Asset 原图无法写回时，
+  /// 编辑结果保存为副本，查看器内当前页改为显示副本内容
+  final Map<int, String> _overrideUrls = {};
+
+  /// 页面显示 url（编辑副本后跟随副本，二次编辑/分享等也作用于它）
+  String _urlOf(int index) =>
+      _overrideUrls[index] ?? widget.photos[index].url;
+
   /// 入场动画（仅 entranceAnimation 时创建）：缩放 0.72→1 + 淡入
   AnimationController? _entranceController;
   Animation<double>? _entranceScale;
@@ -448,8 +470,9 @@ class _GalleryViewerState extends State<GalleryViewer>
                                 disableGestures: true,
                               );
                             }
+                            final displayUrl = _urlOf(index);
                             final image = _GalleryImage(
-                              url: photo.url,
+                              url: displayUrl,
                               viaProxy: widget.networkViaProxy,
                             );
                             return PhotoViewGalleryPageOptions.customChild(
@@ -458,8 +481,10 @@ class _GalleryViewerState extends State<GalleryViewer>
                                 behavior: HitTestBehavior.opaque,
                                 onTap: _toggleChrome,
                                 // 仅当前页挂 Hero：避免相邻页与来源页出现多重飞行
+                                //（tag 跟随显示 url，编辑副本后返回来源页无匹配
+                                //  退化为普通转场，但内容是编辑后的）
                                 child: index == _index
-                                    ? Hero(tag: photos[index].url, child: image)
+                                    ? Hero(tag: displayUrl, child: image)
                                     : image,
                               ),
                               minScale: PhotoViewComputedScale.contained,
@@ -493,9 +518,11 @@ class _GalleryViewerState extends State<GalleryViewer>
     );
   }
 
-  /// 顶栏：标题 + 当前照片日期 + 文件操作（分享/定位）+ 关闭按钮
+  /// 顶栏：标题 + 当前照片日期 + 文件操作（分享/定位）+ 关闭按钮。
+  /// 文件操作作用于当前显示 url（编辑副本后为副本路径）。
   Widget _buildHeader(GalleryPhoto current) {
     final dateText = current.dateText;
+    final displayUrl = _urlOf(_index);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
       child: Row(
@@ -546,7 +573,7 @@ class _GalleryViewerState extends State<GalleryViewer>
               'file_preview_share_file'.tr,
               () => GalleryFileActions.share(
                 context,
-                current.url,
+                displayUrl,
                 text: current.caption,
               ),
             ),
@@ -563,17 +590,17 @@ class _GalleryViewerState extends State<GalleryViewer>
                 UniversalPlatform.isAndroid || UniversalPlatform.isIOS
                     ? 'app_saveToAlbum'.tr
                     : 'app_saveToFile'.tr,
-                () => GalleryFileActions.saveToAlbum(context, current.url),
+                () => GalleryFileActions.saveToAlbum(context, displayUrl),
               ),
               const SizedBox(width: 8),
             ],
-            if (!kIsWeb) ...[
+            if (!kIsWeb && _hasLocalFileUrl(displayUrl)) ...[
               _buildHeaderIconButton(
                 Icons.folder_open,
                 'file_preview_open_file_location'.tr,
                 () => GalleryFileActions.locate(
                   context,
-                  current.url,
+                  displayUrl,
                   fileName: current.caption,
                 ),
               ),
@@ -594,13 +621,20 @@ class _GalleryViewerState extends State<GalleryViewer>
       !photo.isFile &&
       (photo.liveVideoUrl == null || photo.liveVideoUrl!.isEmpty);
 
-  /// 打开照片编辑器；编辑结果写回原位时 url 不变，
-  /// evict 图片缓存后重建当前页以显示新内容；
-  /// 副本场景交由 onImageEdited 回调（photos 数据归调用方）
+  /// 是否有用户语义的本地文件路径（决定是否显示"打开文件夹"定位按钮）：
+  /// http 外链 / assets / 远端存储相对路径（仅有服务端文件与临时物化缓存）无
+  bool _hasLocalFileUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) return false;
+    if (url.startsWith('assets/')) return false;
+    if (url.startsWith('./') && globalStorage.isRemote) return false;
+    return true;
+  }
+
+  /// 打开照片编辑器（作用于当前显示 url，编辑副本后即在副本上继续编辑）：
+  /// - 可写回来源（应用存储/本地文件/已编辑副本）：覆盖原位，失效缓存刷新显示
+  /// - http/Asset 原图：保存为副本后当前页切换显示副本内容
   Future<void> _openPhotoEditor(GalleryPhoto current) async {
-    final url = current.url;
-    // 本地/应用存储图：传原 url 覆盖写回原位（保持原行为，不弹询问）；
-    // 网络/Asset 无法写回：不传路径，提交/返回时弹保存询问
+    final url = _urlOf(_index);
     final canOverwrite = !url.startsWith('http') && !url.startsWith('assets/');
     final result = await showPhotoEditor(
       context,
@@ -609,8 +643,15 @@ class _GalleryViewerState extends State<GalleryViewer>
     );
     if (result == null || !mounted) return;
     widget.onImageEdited?.call(_index, result);
-    if (!result.overwroteOriginal) return;
-    await GalleryImageResolver.cached(current.url)?.evict();
+    if (result.overwroteOriginal) {
+      // 写回原位：失效解析缓存（新 provider 实例触发重载）后刷新显示
+      await GalleryImageResolver.invalidate(url);
+    } else if (result.savedPath.isNotEmpty) {
+      // 原图无法覆盖（http/Asset）：当前页改为显示编辑后副本
+      _overrideUrls[_index] = result.savedPath;
+      // 预解析副本，首帧即能渲染
+      unawaited(GalleryImageResolver.resolve(result.savedPath));
+    }
     if (mounted) setState(() {});
   }
 
@@ -739,8 +780,11 @@ class _GalleryViewerState extends State<GalleryViewer>
               child: _thumbRing(
                 selected,
                 _GalleryThumbImage(
-                  // 视频缩略图优先用封面，无封面时不解析视频本体（图标占位）
-                  url: photo.isVideo ? (photo.thumbUrl ?? '') : photo.url,
+                  // 视频缩略图优先用封面，无封面时不解析视频本体（图标占位）；
+                  // 图片页跟随编辑副本覆盖
+                  url: photo.isVideo
+                      ? (photo.thumbUrl ?? '')
+                      : _urlOf(index),
                   isVideo: photo.isVideo,
                   isAudio: photo.isAudio,
                   isFile: photo.isFile,
@@ -1583,6 +1627,31 @@ class GalleryFileActions {
   static bool _isHttpUrl(String url) =>
       url.startsWith('http://') || url.startsWith('https://');
 
+  static const _imageExts = {
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.webp',
+    '.bmp',
+    '.heic',
+  };
+
+  /// 依据字节魔数推断图片扩展名（未知格式回退 .jpg）
+  static String _extFromBytes(Uint8List bytes) {
+    bool at(int i, List<int> magic) =>
+        bytes.length > i + magic.length - 1 &&
+        List.generate(
+          magic.length,
+          (j) => bytes[i + j] == magic[j],
+        ).every((ok) => ok);
+    if (at(0, [0x89, 0x50, 0x4E, 0x47])) return '.png';
+    if (at(0, [0xFF, 0xD8, 0xFF])) return '.jpg';
+    if (at(0, [0x47, 0x49, 0x46])) return '.gif';
+    if (at(8, [0x57, 0x45, 0x42, 0x50])) return '.webp'; // RIFF....WEBP
+    return '.jpg';
+  }
+
   /// 分享媒体：本地/相对路径（远端模式自动物化）走系统文件分享，
   /// 在线 URL 降级分享链接文本
   static Future<void> share(
@@ -1638,6 +1707,12 @@ class GalleryFileActions {
         if (context.mounted) Toast.error('file_preview_fileNotExist'.tr);
         return;
       }
+      // 名称缺有效图片扩展名时按字节魔数补全（http 外链 basename 常无后缀，
+      // 保存对话框默认名与保存产物都需要正确扩展名）
+      final ext = _imageExts.contains(path.extension(name).toLowerCase())
+          ? path.extension(name).toLowerCase()
+          : _extFromBytes(bytes);
+      if (!name.toLowerCase().endsWith(ext)) name = '$name$ext';
 
       if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
         final state = await PhotoManager.requestPermissionExtend();
