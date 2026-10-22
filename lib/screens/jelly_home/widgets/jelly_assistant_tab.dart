@@ -66,6 +66,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   );
   bool _wasSending = false;
   bool _questionTestOpen = false;
+  bool _controllerUpdateScheduled = false;
   Timer? _settleTimer;
 
   @override
@@ -169,12 +170,18 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
   }
 
   void _onControllerChanged() {
-    if (!mounted) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted || _controllerUpdateScheduled) return;
+    _controllerUpdateScheduled = true;
+    // 主动请求下一帧，并合并同一帧内的流式更新；仅注册帧末回调不会触发重绘。
+    WidgetsBinding.instance.scheduleFrameCallback((_) {
+      _controllerUpdateScheduled = false;
       if (!mounted) return;
       _syncCharacterState(_controller?.isSending ?? false);
       setState(() {});
-      _scrollToBottom();
+      // 等消息内容完成布局后再读取最新的滚动范围。
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToBottom();
+      });
     });
   }
 

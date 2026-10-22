@@ -93,7 +93,8 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
           if (account == null) return;
           SmoothBottomSheet.show(
             context: context,
-            builder: (_) => AccountEditScreen(billPlugin: this, account: account),
+            builder: (_) =>
+                AccountEditScreen(billPlugin: this, account: account),
           );
         };
       case 'createBill':
@@ -567,7 +568,7 @@ class _BillMainViewState extends State<BillMainView>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 标题与保存按钮由 BillEditScreen 的 DSLightHeader 提供
+                // 标题/返回由 BillEditScreen 的 DSTopBar 提供
                 // 固定高度：BillEditScreen 内部 Expanded 布局需要
                 // 有界高度约束
                 SizedBox(
@@ -575,7 +576,6 @@ class _BillMainViewState extends State<BillMainView>
                   child: BillEditScreen(
                     billPlugin: billPlugin,
                     accountId: billPlugin.selectedAccount?.id ?? '',
-                    embeddedInSheet: true,
                   ),
                 ),
               ],

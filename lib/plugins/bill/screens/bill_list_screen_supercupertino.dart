@@ -274,7 +274,8 @@ class _BillListScreenSupercupertinoState
 
   RunReceiptData _buildReceiptData() {
     final day = _selectedDay ?? DateTime.now();
-    final bills = [..._selectedDayBills]..sort((a, b) => a.date.compareTo(b.date));
+    final bills = [..._selectedDayBills]
+      ..sort((a, b) => a.date.compareTo(b.date));
     final accountName =
         widget.billPlugin.accounts
             .where((a) => a.id == widget.accountId)
@@ -331,16 +332,16 @@ class _BillListScreenSupercupertinoState
         ('bill_receiptBills'.tr, '${bills.length}'),
         ('bill_receiptBalance'.tr, _formatCurrency(balance)),
       ],
-      paceRangeText:
-          '${'bill_receiptBalance'.tr} ${_formatCurrency(balance)}',
+      paceRangeText: '${'bill_receiptBalance'.tr} ${_formatCurrency(balance)}',
       chartStartLabel: '00:00',
       chartEndLabel: '23:59',
       totalLabel: (balance < 0 ? '-' : '+') + _formatCurrency(balance.abs()),
       description: 'bill_receiptDescription'.tr,
       footerOffice: 'ABOUT ME',
-      footerDate: DateFormat('EEE-MMM HH:mm', 'en_US')
-          .format(DateTime.now())
-          .toUpperCase(),
+      footerDate: DateFormat(
+        'EEE-MMM HH:mm',
+        'en_US',
+      ).format(DateTime.now()).toUpperCase(),
       slogan: 'bill_receiptSlogan'.tr,
       generatedBy: 'GENERATED LOCALLY VIA ABOUT ME.',
     );
@@ -358,9 +359,9 @@ class _BillListScreenSupercupertinoState
           GalleryPhoto(
             url: filePath,
             caption: 'bill_receiptTitle'.tr,
-            dateText: DateFormat('yyyy-MM-dd').format(
-              _selectedDay ?? DateTime.now(),
-            ),
+            dateText: DateFormat(
+              'yyyy-MM-dd',
+            ).format(_selectedDay ?? DateTime.now()),
           ),
         ],
       ),
@@ -420,7 +421,9 @@ class _BillListScreenSupercupertinoState
         gradient: background,
         border: isToday
             ? Border.all(color: _primaryColor, width: 2)
-            : (isSelected ? Border.all(color: _primaryColor, width: 1.5) : null),
+            : (isSelected
+                  ? Border.all(color: _primaryColor, width: 1.5)
+                  : null),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -578,7 +581,7 @@ class _BillListScreenSupercupertinoState
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 标题与保存按钮由 BillEditScreen 的 DSLightHeader 提供
+                        // 标题/返回由 BillEditScreen 的 DSTopBar 提供
                         // 固定高度：BillEditScreen 内部 Expanded 布局需要
                         // 有界高度约束
                         SizedBox(
@@ -587,7 +590,6 @@ class _BillListScreenSupercupertinoState
                             billPlugin: widget.billPlugin,
                             accountId: widget.accountId,
                             initialDate: _selectedDay ?? DateTime.now(),
-                            embeddedInSheet: true,
                             onSaved: () {
                               _loadMonthBills();
                             },
@@ -652,7 +654,8 @@ class _BillListScreenSupercupertinoState
                     return ValueListenableBuilder<Map<DateTime, _DailyStats>>(
                       valueListenable: _dailyStats,
                       builder: (context, stats, child) {
-                        final isSelected = _selectedDay != null &&
+                        final isSelected =
+                            _selectedDay != null &&
                             _isSameDay(day, _selectedDay!);
                         return _buildCalendarCell(day, isSelected);
                       },
@@ -764,8 +767,10 @@ class _BillListScreenSupercupertinoState
                                         (account) =>
                                             account.id == widget.accountId,
                                       );
-                                  await widget.billPlugin.controller
-                                      .deleteBill(currentAccount.id, bill.id);
+                                  await widget.billPlugin.controller.deleteBill(
+                                    currentAccount.id,
+                                    bill.id,
+                                  );
                                   _loadMonthBills();
                                 } catch (e) {
                                   Toast.error('删除失败: $e');
@@ -881,7 +886,7 @@ class _BillListScreenSupercupertinoState
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 标题与保存按钮由 BillEditScreen 的 DSLightHeader 提供
+          // 标题/返回由 BillEditScreen 的 DSTopBar 提供
           // 固定高度：BillEditScreen 内部 Expanded 布局需要有界高度约束
           SizedBox(
             height: MediaQuery.sizeOf(context).height * 0.82,
@@ -889,7 +894,6 @@ class _BillListScreenSupercupertinoState
               billPlugin: widget.billPlugin,
               accountId: widget.accountId,
               bill: billObject,
-              embeddedInSheet: true,
               onSaved: _loadMonthBills,
             ),
           ),

@@ -236,10 +236,7 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
         child: DsIcon(DsIconKind.trash, color: Colors.white),
       ),
       onDismissed: (direction) {
-        widget.billPlugin.controller.deleteBill(
-          widget.account.id,
-          bill.id,
-        );
+        widget.billPlugin.controller.deleteBill(widget.account.id, bill.id);
       },
       child: ListTile(
         leading: CircleAvatar(
@@ -288,7 +285,7 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 标题与保存按钮由 BillEditScreen 的 DSLightHeader 提供
+          // 标题/返回由 BillEditScreen 的 DSTopBar 提供
           // 固定高度：BillEditScreen 内部 Expanded 布局需要
           // 有界高度约束
           SizedBox(
@@ -297,7 +294,6 @@ class _AccountBillsScreenState extends State<AccountBillsScreen> {
               billPlugin: widget.billPlugin,
               accountId: _currentAccount.id,
               bill: bill,
-              embeddedInSheet: true,
               onSaved: () {
                 // 强制更新列表
                 _refreshAccountData();

@@ -19,10 +19,6 @@ class BillEditScreen extends StatefulWidget {
   final VoidCallback? onCancel;
   final DateTime? initialDate;
 
-  /// 嵌入底部 SmoothBottomSheet 展示：无 AppBar、Scaffold 底色透明，
-  /// 底色与圆角由 sheet 容器提供（需固定高度避免无界约束）
-  final bool embeddedInSheet;
-
   // 预填充参数（用于快捷记账小组件）
   final String? initialCategory;
   final double? initialAmount;
@@ -36,7 +32,6 @@ class BillEditScreen extends StatefulWidget {
     this.onSaved,
     this.onCancel,
     this.initialDate,
-    this.embeddedInSheet = false,
     this.initialCategory,
     this.initialAmount,
     this.initialIsExpense,
@@ -202,8 +197,9 @@ class _BillEditScreenState extends State<BillEditScreen> {
       } else {
         // 保存为普通账单
         final title = values['title'] as String?;
-        final finalTitle =
-            (title == null || title.isEmpty) ? (_tag ?? '未分类') : title;
+        final finalTitle = (title == null || title.isEmpty)
+            ? (_tag ?? '未分类')
+            : title;
 
         final bill = Bill(
           id: widget.bill?.id ?? const Uuid().v4(),
@@ -240,118 +236,74 @@ class _BillEditScreenState extends State<BillEditScreen> {
     final primaryColor = theme.primary;
 
     return Scaffold(
-      backgroundColor:
-          widget.embeddedInSheet ? Colors.transparent : backgroundColor,
-      appBar:
-          widget.embeddedInSheet
-              ? null
-              : AppBar(
-                backgroundColor: backgroundColor.withValues(alpha: 0.8),
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                centerTitle: true,
-                title: Text(
-                  widget.bill == null ? 'bill_addBill'.tr : 'bill_editBill'.tr,
-                  style: DsTypography.title.copyWith(
-                    color: theme.text,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
+      backgroundColor: backgroundColor,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              // sheet 是新路由取不到 DS 主题，DSTopBar 需包桥
+              child: DSThemeBridge(
+                child: DSTopBar(
+                  title: widget.bill == null
+                      ? 'bill_addBill'.tr
+                      : 'bill_editBill'.tr,
+                  onBack: widget.onCancel ?? () => Navigator.of(context).pop(),
                 ),
-                leading: DSThemeBridge(
-                  child: Builder(
-                    builder: (context) {
-                      final theme = DSThemeBridge.resolve(context);
-                      return DSIconButton(
-                        icon: DsIconKind.chevronLeft,
-                        size: 40,
-                        color: theme.surface,
-                        iconColor: theme.text,
-                        onPressed:
-                            widget.onCancel ??
-                            () => Navigator.of(context).pop(),
-                      );
-                    },
-                  ),
-                ),
-              ),
-      body: Column(
-        children: [
-          // sheet 模式无 AppBar，由 DSLightHeader 提供标题与保存动作
-          if (widget.embeddedInSheet)
-            DSThemeBridge(
-              child: Builder(
-                builder: (context) {
-                  final theme = DSThemeBridge.resolve(context);
-                  return DSLightHeader(
-                    title:
-                        widget.bill == null
-                            ? 'bill_addBill'.tr
-                            : 'bill_editBill'.tr,
-                    showBack: false,
-                    trailing: DSIconButton(
-                      icon: DsIconKind.check,
-                      size: 38,
-                      color: theme.surface,
-                      iconColor: theme.text,
-                      tooltip: 'bill_save'.tr,
-                      onPressed: () => _wrapperState?.submitForm(),
-                    ),
-                  );
-                },
               ),
             ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: FormBuilderWrapper(
-                formKey: _formKey,
-                onStateReady: (state) => _wrapperState = state,
-                config: FormConfig(
-                  fields: _buildFormFields(primaryColor),
-                  showSubmitButton: false,
-                  showResetButton: false,
-                  onSubmit: _handleSave,
-                  fieldSpacing: 0,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: FormBuilderWrapper(
+                  formKey: _formKey,
+                  onStateReady: (state) => _wrapperState = state,
+                  config: FormConfig(
+                    fields: _buildFormFields(primaryColor),
+                    showSubmitButton: false,
+                    showResetButton: false,
+                    onSubmit: _handleSave,
+                    fieldSpacing: 0,
+                  ),
+                  contentBuilder: (context, fields) {
+                    // 使用 contentBuilder 自定义布局
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 标题字段
+                        FormFieldGroup(
+                          showDividers: false,
+                          showBackground: false,
+                          children: [fields[2]], // title字段
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 类型和金额卡片
+                        _buildTypeAndAmountCard(fields, primaryColor),
+                        const SizedBox(height: 16),
+
+                        // 分类选择卡片
+                        _buildCategoryCard(fields, primaryColor),
+                        const SizedBox(height: 16),
+
+                        // 日期和备注
+                        _buildDateAndNoteSection(fields),
+                        const SizedBox(height: 16),
+
+                        // 订阅服务卡片
+                        _buildSubscriptionCard(fields, primaryColor),
+                      ],
+                    );
+                  },
                 ),
-                contentBuilder: (context, fields) {
-                  // 使用 contentBuilder 自定义布局
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 标题字段
-                      FormFieldGroup(
-                        showDividers: false,
-                        showBackground: false,
-                        children: [fields[2]], // title字段
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 类型和金额卡片
-                      _buildTypeAndAmountCard(fields, primaryColor),
-                      const SizedBox(height: 16),
-
-                      // 分类选择卡片
-                      _buildCategoryCard(fields, primaryColor),
-                      const SizedBox(height: 16),
-
-                      // 日期和备注
-                      _buildDateAndNoteSection(fields),
-                      const SizedBox(height: 16),
-
-                      // 订阅服务卡片
-                      _buildSubscriptionCard(fields, primaryColor),
-                    ],
-                  );
-                },
               ),
             ),
-          ),
 
-          // 保存按钮区域（sheet 模式下保存在 header 右侧图标）
-          if (!widget.embeddedInSheet)
+            // 保存按钮区域（底部安全区由按钮自身处理）
             _buildSaveButton(backgroundColor, primaryColor),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -363,10 +315,9 @@ class _BillEditScreenState extends State<BillEditScreen> {
       FormFieldConfig(
         name: 'isExpense',
         type: FormFieldType.expenseTypeSelector,
-        initialValue:
-            widget.bill != null
-                ? widget.bill!.isExpense
-                : (widget.initialIsExpense ?? true),
+        initialValue: widget.bill != null
+            ? widget.bill!.isExpense
+            : (widget.initialIsExpense ?? true),
         extra: {
           'expenseColor': const Color(0xFFE74C3C),
           'incomeColor': const Color(0xFF2ECC71),
@@ -377,10 +328,9 @@ class _BillEditScreenState extends State<BillEditScreen> {
       FormFieldConfig(
         name: 'amount',
         type: FormFieldType.amountInput,
-        initialValue:
-            widget.bill != null
-                ? widget.bill!.absoluteAmount
-                : widget.initialAmount,
+        initialValue: widget.bill != null
+            ? widget.bill!.absoluteAmount
+            : widget.initialAmount,
         required: true,
         validationMessage: 'bill_amountMustBePositive'.tr,
         extra: {'currencySymbol': '¥', 'fontSize': 40.0},
@@ -402,7 +352,9 @@ class _BillEditScreenState extends State<BillEditScreen> {
         initialValue: _selectedDate,
         labelText: 'bill_date'.tr,
         extra: {
-          'format': Get.locale?.languageCode == 'zh' ? 'yyyy年MM月dd日' : 'yyyy/MM/dd',
+          'format': Get.locale?.languageCode == 'zh'
+              ? 'yyyy年MM月dd日'
+              : 'yyyy/MM/dd',
           'inline': true,
         },
       ),
@@ -463,7 +415,10 @@ class _BillEditScreenState extends State<BillEditScreen> {
           const SizedBox(height: 24),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
-            children: [const SizedBox(width: 16), Expanded(child: amountField)],
+            children: [
+              const SizedBox(width: 16),
+              Expanded(child: amountField),
+            ],
           ),
         ],
       ),
