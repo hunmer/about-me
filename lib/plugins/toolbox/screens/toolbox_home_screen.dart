@@ -62,7 +62,8 @@ class ToolboxHomeScreen extends StatelessWidget {
           itemBuilder: (context, index) {
             final tool = tools[index];
             return DSCard(
-              onTap: () => NavigationHelper.push(context, tool.builder(context)),
+              onTap: () =>
+                  NavigationHelper.push(context, tool.builder(context)),
               child: Row(
                 children: [
                   Container(

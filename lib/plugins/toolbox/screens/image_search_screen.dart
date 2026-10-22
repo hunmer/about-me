@@ -31,6 +31,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
   void initState() {
     super.initState();
     _controller.addListener(_onChanged);
+    _controller.loadHistory();
     // 搜索完成后预热缩略图
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller.preloadThumbs();
@@ -126,7 +127,9 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                       Expanded(
                         child: DSInput(
                           controller: _inputController,
-                          focusNode: c.mode == 'keyword' ? _queryNode : _urlNode,
+                          focusNode: c.mode == 'keyword'
+                              ? _queryNode
+                              : _urlNode,
                           hint: c.mode == 'keyword'
                               ? 'toolbox_searchHint'.tr
                               : 'toolbox_imageUrlHint'.tr,
@@ -184,7 +187,8 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                 child: Row(
                   children: [
                     TextButton.icon(
-                      onPressed: () => setState(() => _showFilters = !_showFilters),
+                      onPressed: () =>
+                          setState(() => _showFilters = !_showFilters),
                       icon: Icon(
                         _showFilters ? Icons.expand_less : Icons.tune,
                         size: 18,
@@ -192,14 +196,15 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                       ),
                       label: Text(
                         'toolbox_filters'.tr,
-                        style: DsTypography.caption.copyWith(color: theme.textSub),
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            if (_showFilters && c.mode == 'keyword')
-              _buildFilters(theme),
+            if (_showFilters && c.mode == 'keyword') _buildFilters(theme),
             Divider(height: 1, color: theme.stroke),
             // 结果区
             Expanded(child: _buildResults(theme)),
@@ -240,7 +245,14 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
             ]),
           if (supportsOrientation)
             _filterRow(theme, 'toolbox_orientation', [
-              for (final o in const ['any', 'landscape', 'portrait', 'squarish', 'horizontal', 'vertical'])
+              for (final o in const [
+                'any',
+                'landscape',
+                'portrait',
+                'squarish',
+                'horizontal',
+                'vertical',
+              ])
                 if (c.provider != 'pixabay' || o != 'squarish')
                   DSChip(
                     label: o,
@@ -284,6 +296,116 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
     );
   }
 
+  /// 最近搜索列表（未搜索时的初始状态）：点击回填重搜，长按删除单条
+  Widget _buildHistoryList(AppThemeData theme) {
+    final c = _controller;
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'toolbox_recentSearches'.tr,
+                style: DsTypography.title.copyWith(color: theme.text),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await c.clearHistory();
+                  if (context.mounted) setState(() {});
+                },
+                child: Text(
+                  'toolbox_clearHistory'.tr,
+                  style: DsTypography.caption.copyWith(color: theme.textSub),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // 图源过滤 chips（历史中出现过的图源）
+        if (c.historyProviders.length > 1)
+          SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: DSChip(
+                    label: 'toolbox_filterAll'.tr,
+                    selected: c.historyFilter == null,
+                    onSelected: (_) => c.setHistoryFilter(null),
+                  ),
+                ),
+                for (final p in c.historyProviders)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: DSChip(
+                      label: p == 'google_lens' ? 'Google Lens' : p,
+                      selected: c.historyFilter == p,
+                      onSelected: (_) => c.setHistoryFilter(p),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: c.filteredHistory.isEmpty
+              ? Center(
+                  child: Text(
+                    'toolbox_noResults'.tr,
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: c.filteredHistory.length,
+                  itemBuilder: (context, index) {
+                    final entry = c.filteredHistory[index];
+                    final isLens = entry['mode'] == 'lens';
+                    final text = isLens
+                        ? (entry['imageUrl'] as String? ?? '')
+                        : (entry['query'] as String? ?? '');
+                    return ListTile(
+                      dense: true,
+                      leading: Icon(
+                        isLens ? Icons.image_search : Icons.history,
+                        size: 20,
+                        color: theme.textSub,
+                      ),
+                      title: Text(
+                        text,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: DsTypography.body.copyWith(color: theme.text),
+                      ),
+                      trailing: Text(
+                        isLens
+                            ? 'Google Lens'
+                            : (entry['provider'] as String? ?? ''),
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
+                      ),
+                      onTap: () async {
+                        await c.searchFromHistory(entry);
+                        // 回填输入框显示
+                        _inputController.text = text;
+                        if (context.mounted) setState(() {});
+                      },
+                      onLongPress: () async {
+                        await c.removeHistory(entry);
+                        if (context.mounted) setState(() {});
+                      },
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildResults(AppThemeData theme) {
     final c = _controller;
 
@@ -303,16 +425,13 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
       );
     }
     if (!c.searched) {
-      return DSEmptyState(
-        emoji: '🔍',
-        title: 'toolbox_searchEmpty'.tr,
-      );
+      if (c.history.isEmpty) {
+        return DSEmptyState(emoji: '🔍', title: 'toolbox_searchEmpty'.tr);
+      }
+      return _buildHistoryList(theme);
     }
     if (c.images.isEmpty) {
-      return DSEmptyState(
-        emoji: '🖼️',
-        title: 'toolbox_noResults'.tr,
-      );
+      return DSEmptyState(emoji: '🖼️', title: 'toolbox_noResults'.tr);
     }
 
     return Column(
@@ -333,7 +452,8 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
           child: ListView.builder(
             padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
             itemCount: c.images.length,
-            itemBuilder: (context, index) => _buildImageItem(theme, c.images[index]),
+            itemBuilder: (context, index) =>
+                _buildImageItem(theme, c.images[index]),
           ),
         ),
         if (c.canPaging)
@@ -370,7 +490,8 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
 
   /// 以图搜图/搜索引擎结果：缩略图横排；图库结果：大图竖排
   Widget _buildImageItem(AppThemeData theme, SearchedImage img) {
-    final compact = img.source == 'google_lens' ||
+    final compact =
+        img.source == 'google_lens' ||
         ImageSearchService.isSerpProvider(img.source);
     final thumbUrl = img.thumb.isNotEmpty ? img.thumb : img.url;
 
@@ -387,28 +508,31 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: image,
-            ),
+            ClipRRect(borderRadius: BorderRadius.circular(8), child: image),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    img.description.isEmpty ? '(无标题)' : _clip(img.description, 80),
+                    img.description.isEmpty
+                        ? '(无标题)'
+                        : _clip(img.description, 80),
                     style: DsTypography.body.copyWith(color: theme.text),
                   ),
                   if (img.credit.isNotEmpty)
                     Text(
                       img.credit,
-                      style: DsTypography.caption.copyWith(color: theme.textSub),
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
                     ),
                   if (img.pageUrl.isNotEmpty)
                     Text(
                       _clip(img.pageUrl, 70),
-                      style: DsTypography.caption.copyWith(color: theme.textSub),
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
                     ),
                 ],
               ),
@@ -464,7 +588,13 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
       width: width,
       height: height,
       color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-      child: const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+      child: const Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
     );
   }
 

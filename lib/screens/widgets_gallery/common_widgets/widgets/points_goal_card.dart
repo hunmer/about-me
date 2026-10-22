@@ -110,6 +110,8 @@ class _PointsGoalCardWidgetState extends State<PointsGoalCardWidget> {
                   ),
                 ),
                 SizedBox(
+                  // 撑宽非 Positioned 尺寸来源，Stack/画布才不会缩成文字宽
+                  width: double.infinity,
                   height: barHeight,
                   child: Center(
                     child: Text(

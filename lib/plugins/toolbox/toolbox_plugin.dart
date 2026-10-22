@@ -56,9 +56,6 @@ class ToolboxPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Map<String, Function> defineJSAPI() {
-    return {
-      'searchImages': jsSearchImages,
-      'generateImages': jsGenerateImages,
-    };
+    return {'searchImages': jsSearchImages, 'generateImages': jsGenerateImages};
   }
 }

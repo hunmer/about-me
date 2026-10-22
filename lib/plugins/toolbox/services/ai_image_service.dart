@@ -27,10 +27,15 @@ class AiImageService {
   static final AiImageService instance = AiImageService._();
 
   static const _configPath = 'configs/toolbox/ai_image_config.json';
-  static const _legacyConfigPath = 'configs/scripts_center/ai_image_config.json';
+  static const _legacyConfigPath =
+      'configs/scripts_center/ai_image_config.json';
 
   /// 产物保存目录（相对 app_data）
   static const outputDir = 'toolbox/ai_image';
+
+  /// 生成历史（相对 app_data），上限 100 条
+  static const historyPath = 'toolbox/ai_image/history.json';
+  static const historyLimit = 100;
 
   /// 模型选项（与原脚本一致）
   static const List<String> models = [
@@ -168,10 +173,10 @@ class AiImageService {
     final apiKey = _cfg('apiKey');
     if (apiKey.isEmpty) return const ToolboxToolResult.fail('未配置 API Key');
 
-    final baseUrl = _cfg('baseUrl', 'https://ai.comfly.chat').replaceAll(
-      RegExp(r'/+$'),
-      '',
-    );
+    final baseUrl = _cfg(
+      'baseUrl',
+      'https://ai.comfly.chat',
+    ).replaceAll(RegExp(r'/+$'), '');
     final useModel = (model ?? '').trim().isNotEmpty
         ? model!.trim()
         : _cfg('model', 'gpt-image-1');
@@ -191,19 +196,16 @@ class AiImageService {
 
       final status = submit['statusCode'] as int;
       if (status >= 400) {
-        return ToolboxToolResult.fail('HTTP $status: ${_bodySummary(submit['body'])}');
+        return ToolboxToolResult.fail(
+          'HTTP $status: ${_bodySummary(submit['body'])}',
+        );
       }
 
       // 提取 task_id（comfly 顶层 / closeai 风格 data.task_id / data 为字符串）
       var payload = submit['body'];
       final taskId = _pickTaskId(payload);
       if (taskId.isNotEmpty) {
-        payload = await _pollTask(
-          baseUrl,
-          apiKey,
-          taskId,
-          onStatus,
-        );
+        payload = await _pollTask(baseUrl, apiKey, taskId, onStatus);
         if (payload == null) {
           return ToolboxToolResult.fail('轮询超时');
         }
@@ -259,7 +261,13 @@ class AiImageService {
             }
             final rel = '$outputDir/ai_image_${stamp}_${i + 1}.png';
             await globalStorage.writeBytes(rel, bytes);
-            saved.add(GeneratedImage(relativePath: rel, absolutePath: await _absolutePath(rel), bytes: bytes));
+            saved.add(
+              GeneratedImage(
+                relativePath: rel,
+                absolutePath: await _absolutePath(rel),
+                bytes: bytes,
+              ),
+            );
           } catch (e) {
             debugPrint('[toolbox] 保存第 ${i + 1} 张失败: $e');
           }
@@ -267,13 +275,22 @@ class AiImageService {
         if (saved.isEmpty) {
           return const ToolboxToolResult.fail('生成成功但图片保存失败');
         }
+        // 写入生成历史（失败不影响主流程）
+        await _addHistory(
+          prompt: p,
+          model: useModel,
+          aspectRatio: ratio,
+          refCount: refs.length,
+          images: [for (final s in saved) s.relativePath],
+        );
         return ToolboxToolResult(
           success: true,
           message: '生成 ${images.length} 张图片，保存 ${saved.length} 张',
           data: {
             'images': saved,
             'localPaths': [
-              for (final s in saved) s.absolutePath.isNotEmpty ? s.absolutePath : s.relativePath,
+              for (final s in saved)
+                s.absolutePath.isNotEmpty ? s.absolutePath : s.relativePath,
             ],
             'taskId': taskId,
             'model': useModel,
@@ -347,10 +364,18 @@ class AiImageService {
           // URL 参考图：先下载到临时文件再上传
           final tmp = await _downloadToTemp(client, ref);
           if (tmp != null) {
-            req.files.add(await http.MultipartFile.fromPath(field, tmp.path, filename: filename));
+            req.files.add(
+              await http.MultipartFile.fromPath(
+                field,
+                tmp.path,
+                filename: filename,
+              ),
+            );
           }
         } else if (File(ref).existsSync()) {
-          req.files.add(await http.MultipartFile.fromPath(field, ref, filename: filename));
+          req.files.add(
+            await http.MultipartFile.fromPath(field, ref, filename: filename),
+          );
         }
       }
       req.fields['prompt'] = prompt;
@@ -358,9 +383,7 @@ class AiImageService {
       if (ratio.isNotEmpty) req.fields['aspect_ratio'] = ratio;
       req.fields['n'] = n.toString();
 
-      final resp = await client
-          .send(req)
-          .timeout(const Duration(seconds: 120));
+      final resp = await client.send(req).timeout(const Duration(seconds: 120));
       final text = await resp.stream.bytesToString();
       return {'statusCode': resp.statusCode, 'body': _parseBody(text)};
     } finally {
@@ -386,7 +409,9 @@ class AiImageService {
         try {
           resp = await client
               .get(
-                Uri.parse('$baseUrl/v1/images/tasks/${Uri.encodeComponent(taskId)}'),
+                Uri.parse(
+                  '$baseUrl/v1/images/tasks/${Uri.encodeComponent(taskId)}',
+                ),
                 headers: {'Authorization': 'Bearer $apiKey'},
               )
               .timeout(const Duration(seconds: 30));
@@ -396,11 +421,18 @@ class AiImageService {
         }
         final body = _parseBody(resp.body);
         final data = (body is Map ? body['data'] : null);
-        final status = data is Map ? data['status']?.toString().toUpperCase() ?? '' : '';
-        onStatus?.call('任务状态: ${status.isEmpty ? "未知" : status} ${data is Map ? data["progress"] ?? "" : ""}');
+        final status = data is Map
+            ? data['status']?.toString().toUpperCase() ?? ''
+            : '';
+        onStatus?.call(
+          '任务状态: ${status.isEmpty ? "未知" : status} ${data is Map ? data["progress"] ?? "" : ""}',
+        );
         if (status == 'SUCCESS') return data;
         if (status == 'FAILURE' || status == 'FAILED') {
-          return {'status': 'FAILURE', 'fail_reason': data is Map ? data['fail_reason'] : null};
+          return {
+            'status': 'FAILURE',
+            'fail_reason': data is Map ? data['fail_reason'] : null,
+          };
         }
       }
       return null;
@@ -476,7 +508,10 @@ class AiImageService {
       final bytes = await _downloadBytes(client, url);
       if (bytes == null) return null;
       final tmp = File(
-        path.join(Directory.systemTemp.path, 'toolbox_ref_${DateTime.now().millisecondsSinceEpoch}_${url.hashCode}.png'),
+        path.join(
+          Directory.systemTemp.path,
+          'toolbox_ref_${DateTime.now().millisecondsSinceEpoch}_${url.hashCode}.png',
+        ),
       );
       await tmp.writeAsBytes(bytes);
       return tmp;
@@ -505,5 +540,82 @@ class AiImageService {
     final v = _config[key];
     if (v is num) return v.toInt();
     return int.tryParse(v?.toString() ?? '') ?? fallback;
+  }
+
+  // ── 生成历史 ─────────────────────────────────────────
+
+  /// 读取生成历史（新→旧），过滤掉图片文件已全部丢失的记录
+  Future<List<Map<String, dynamic>>> getHistory() async {
+    try {
+      final data = await AboutmeDataService.instance.readPath(historyPath);
+      final list = data is List
+          ? data.whereType<Map<String, dynamic>>().toList()
+          : <Map<String, dynamic>>[];
+      // 校验图片存在性，整条失效的剔除
+      final valid = <Map<String, dynamic>>[];
+      for (final entry in list) {
+        final images = (entry['images'] as List?)?.cast<String>() ?? [];
+        final existing = <String>[
+          for (final rel in images)
+            if (await AboutmeDataService.instance.existsPath(rel)) rel,
+        ];
+        if (existing.isEmpty) continue;
+        entry['images'] = existing;
+        valid.add(entry);
+      }
+      return valid;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _addHistory({
+    required String prompt,
+    required String model,
+    required String aspectRatio,
+    required int refCount,
+    required List<String> images,
+  }) async {
+    try {
+      final history = await getHistory();
+      history.insert(0, {
+        'ts': DateTime.now().millisecondsSinceEpoch,
+        'prompt': prompt,
+        'model': model,
+        'aspectRatio': aspectRatio,
+        'refCount': refCount,
+        'images': images,
+      });
+      await AboutmeDataService.instance.writePath(
+        historyPath,
+        history.take(historyLimit).toList(),
+      );
+    } catch (e) {
+      debugPrint('[toolbox] 写入生成历史失败: $e');
+    }
+  }
+
+  /// 删除单条历史记录（连同其图片文件）
+  Future<void> deleteHistoryEntry(Map<String, dynamic> entry) async {
+    final images = (entry['images'] as List?)?.cast<String>() ?? [];
+    for (final rel in images) {
+      try {
+        await AboutmeDataService.instance.deletePath(rel);
+      } catch (_) {
+        /* 单张删除失败继续 */
+      }
+    }
+    final ts = entry['ts'];
+    final history = await getHistory();
+    history.removeWhere((e) => e['ts'] == ts);
+    await AboutmeDataService.instance.writePath(historyPath, history);
+  }
+
+  /// 清空生成历史（连同全部产物图片）
+  Future<void> clearHistory() async {
+    final history = await getHistory();
+    for (final entry in history) {
+      await deleteHistoryEntry(entry);
+    }
   }
 }

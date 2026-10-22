@@ -11,13 +11,20 @@ const Map<String, String> toolboxTranslationsZh = {
 
   // 图片搜索
   'toolbox_image_search_name': '图片搜索',
-  'toolbox_image_search_desc': '关键词搜图（Unsplash/Pixabay/全网引擎）+ 以图搜图（Google Lens）',
+  'toolbox_image_search_desc':
+      '关键词搜图（Unsplash/Pixabay/全网引擎）+ 以图搜图（Google Lens）',
   'toolbox_searchByKeyword': '关键词搜图',
   'toolbox_searchByImage': '以图搜图',
   'toolbox_searchHint': '例如：mountain sunrise',
   'toolbox_imageUrlHint': '图片直链 URL（以图搜图）',
   'toolbox_searchEmpty': '输入关键词或图片 URL 开始搜索',
   'toolbox_noResults': '无搜索结果',
+  'toolbox_recentSearches': '最近搜索',
+  'toolbox_clearHistory': '清空历史',
+  'toolbox_filterAll': '全部',
+  'toolbox_aiImage_regenerate': '重新生成',
+  'toolbox_historyDeleted': '已删除该条记录',
+  'toolbox_historyCleared': '历史已清空',
   'toolbox_prevPage': '上一页',
   'toolbox_nextPage': '下一页',
   'toolbox_perPage': '数量',
@@ -49,4 +56,7 @@ const Map<String, String> toolboxTranslationsZh = {
   'toolbox_aiImage_generateEdit': '生成（图生图）',
   'toolbox_aiImage_savedTo': '已保存到',
   'toolbox_aiImage_settings': 'AI 图片生成设置',
+  'toolbox_aiImage_history': '生成图库',
+  'toolbox_aiImage_historyEmpty': '还没有生成记录',
+  'toolbox_aiImage_clearConfirm': '将删除全部历史记录及其图片文件，不可恢复',
 };

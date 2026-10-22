@@ -281,7 +281,10 @@ class _ScoreGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
+      // expand：Expanded 内横向是宽松约束，靠文字子级撑尺寸会把
+      // 仪表画布缩成文字宽
       builder: (context, constraints) => Stack(
+        fit: StackFit.expand,
         children: [
           Positioned.fill(
             child: CustomPaint(

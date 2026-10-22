@@ -169,7 +169,10 @@ class _PerformanceBarChartWidgetState extends State<PerformanceBarChartWidget>
             SizedBox(height: widget.size.getTitleSpacing()),
             // 柱状图区域使用 Expanded 获取可用高度
             Expanded(
+              // 子级全为 Positioned 时 Stack 尺寸取 constraints.smallest，
+              // Column.start 下横向是宽松约束会缩成 0 宽，须 expand 撑满
               child: Stack(
+                fit: StackFit.expand,
                 children: [
                   // 淡墨虚线网格
                   Positioned.fill(

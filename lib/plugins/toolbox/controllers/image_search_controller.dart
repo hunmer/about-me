@@ -31,10 +31,31 @@ class ImageSearchController extends ChangeNotifier {
   int resultPage = 1;
   String lastMessage = '';
 
+  /// 最近搜索历史（新→旧，未搜索状态的初始页展示）
+  List<Map<String, dynamic>> history = [];
+
+  /// 历史图源过滤（null=全部；值为 provider 或 'google_lens'）
+  String? historyFilter;
+
+  /// 历史中实际出现过的图源集合（过滤 chips 用）
+  Set<String> get historyProviders =>
+      {for (final e in history) e['provider']?.toString() ?? ''}..remove('');
+
+  /// 过滤后的历史列表
+  List<Map<String, dynamic>> get filteredHistory => historyFilter == null
+      ? history
+      : history
+            .where((e) => e['provider']?.toString() == historyFilter)
+            .toList();
+
+  void setHistoryFilter(String? value) {
+    historyFilter = value;
+    notifyListeners();
+  }
+
   /// 当前图源是否支持翻页（仅 unsplash/pixabay）
   bool get canPaging =>
-      mode == 'keyword' &&
-      (provider == 'unsplash' || provider == 'pixabay');
+      mode == 'keyword' && (provider == 'unsplash' || provider == 'pixabay');
 
   /// 缩略图字节缓存（key=图片 URL），走系统代理下载，
   /// google/bing 等被墙图源的缓存缩略图才能显示（Image.network 不走代理）
@@ -114,6 +135,14 @@ class ImageSearchController extends ChangeNotifier {
         lastMessage = result.message ?? '';
         thumbBytes.clear();
         Toast.success(lastMessage);
+        // 成功才记历史（失败的关键词不进记录）
+        await _service.addHistory(
+          mode: mode,
+          query: query.trim(),
+          imageUrl: imageUrl.trim(),
+          provider: mode == 'lens' ? 'google_lens' : provider,
+        );
+        history = await _service.getHistory();
       }
       searched = true;
     } catch (e) {
@@ -124,6 +153,41 @@ class ImageSearchController extends ChangeNotifier {
       searching = false;
       notifyListeners();
     }
+  }
+
+  /// 加载最近搜索历史（界面 initState 调用）
+  Future<void> loadHistory() async {
+    history = await _service.getHistory();
+    notifyListeners();
+  }
+
+  /// 点击历史条目：回填表单并重新搜索
+  Future<void> searchFromHistory(Map<String, dynamic> entry) async {
+    mode = (entry['mode'] as String?) ?? 'keyword';
+    query = (entry['query'] as String?) ?? '';
+    imageUrl = (entry['imageUrl'] as String?) ?? '';
+    final p = entry['provider'] as String?;
+    if (p != null &&
+        p != 'google_lens' &&
+        ImageSearchService.providers.contains(p)) {
+      provider = p;
+    }
+    await search();
+  }
+
+  /// 删除单条历史（时间戳定位）
+  Future<void> removeHistory(Map<String, dynamic> entry) async {
+    final ts = entry['ts'];
+    await _service.removeHistory(ts is int ? ts : int.tryParse('$ts') ?? 0);
+    history = await _service.getHistory();
+    notifyListeners();
+  }
+
+  /// 清空搜索历史
+  Future<void> clearHistory() async {
+    await _service.clearHistory();
+    history = [];
+    notifyListeners();
   }
 
   /// 下一页（仅支持翻页的图源）
@@ -141,7 +205,9 @@ class ImageSearchController extends ChangeNotifier {
 
   /// 下载缩略图字节（带系统代理，成功后 notify 刷新对应格子）
   void loadThumb(String url) {
-    if (url.isEmpty || thumbBytes.containsKey(url) || _thumbLoading.contains(url)) {
+    if (url.isEmpty ||
+        thumbBytes.containsKey(url) ||
+        _thumbLoading.contains(url)) {
       return;
     }
     _thumbLoading.add(url);

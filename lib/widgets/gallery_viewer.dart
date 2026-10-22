@@ -120,6 +120,7 @@ class GalleryViewer extends StatefulWidget {
     this.entranceAnimation = false,
     this.showFileActions = false,
     this.showEditAction = true,
+    this.onImageEdited,
   });
 
   final List<GalleryPhoto> photos;
@@ -142,6 +143,11 @@ class GalleryViewer extends StatefulWidget {
   /// 顶栏是否显示编辑照片入口（仅图片页显示，编辑结果写回原位，
   /// 无法写回的网络/Asset 图片保存副本到应用存储）
   final bool showEditAction;
+
+  /// 当前页照片编辑完成回调：副本场景（网络/Asset 原图无法覆盖）下
+  /// photos 列表归调用方所有，可据此用 [PhotoEditorResult.savedPath]
+  /// 替换原条目数据；写回原位场景查看器已自行刷新，可不处理
+  final void Function(int index, PhotoEditorResult result)? onImageEdited;
 
   /// 单文件预览便捷入口（替代原 FilePreviewScreen）：
   /// 按 mimeType/扩展名自动判定图片、视频（推导伴生封面 `<name>.thumb.jpg`）
@@ -554,10 +560,13 @@ class _GalleryViewerState extends State<GalleryViewer>
       (photo.liveVideoUrl == null || photo.liveVideoUrl!.isEmpty);
 
   /// 打开照片编辑器；编辑结果写回原位时 url 不变，
-  /// evict 图片缓存后重建当前页以显示新内容
+  /// evict 图片缓存后重建当前页以显示新内容；
+  /// 副本场景交由 onImageEdited 回调（photos 数据归调用方）
   Future<void> _openPhotoEditor(GalleryPhoto current) async {
-    final edited = await showPhotoEditor(context, imageUrl: current.url);
-    if (edited == null || !mounted) return;
+    final result = await showPhotoEditor(context, imageUrl: current.url);
+    if (result == null || !mounted) return;
+    widget.onImageEdited?.call(_index, result);
+    if (!result.overwroteOriginal) return;
     await GalleryImageResolver.cached(current.url)?.evict();
     if (mounted) setState(() {});
   }

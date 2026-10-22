@@ -12,7 +12,9 @@ Future<String> jsSearchImages(Map<String, dynamic> params) async {
       query: params['query']?.toString(),
       imageUrl: params['imageUrl']?.toString(),
       provider: params['provider']?.toString() ?? 'unsplash',
-      perPage: params['perPage'] is num ? (params['perPage'] as num).toInt() : null,
+      perPage: params['perPage'] is num
+          ? (params['perPage'] as num).toInt()
+          : null,
       page: params['page'] is num ? (params['page'] as num).toInt() : 1,
       imageType: params['imageType']?.toString() ?? 'photo',
       orientation: params['orientation']?.toString() ?? 'any',

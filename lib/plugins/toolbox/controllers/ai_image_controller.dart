@@ -11,8 +11,10 @@ class AiImageController extends ChangeNotifier {
 
   // ── 表单状态 ──
   String prompt = '';
+
   /// 模型（空 = 用配置中的默认模型）
   String model = '';
+
   /// 宽高比（空 = 用配置中的默认比例）
   String aspectRatio = '';
   int n = 1;

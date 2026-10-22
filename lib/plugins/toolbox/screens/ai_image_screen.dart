@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/toolbox/controllers/ai_image_controller.dart';
+import 'package:aboutme/plugins/toolbox/screens/ai_image_history_screen.dart';
 import 'package:aboutme/plugins/toolbox/services/ai_image_service.dart';
 import 'package:aboutme/plugins/toolbox/widgets/toolbox_config_sheet.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
@@ -63,6 +65,32 @@ class _AiImageScreenState extends State<AiImageScreen> {
     );
   }
 
+  /// 打开生成图库；选中"重新生成"的记录时回填表单
+  Future<void> _openHistory() async {
+    final entry = await NavigationHelper.push<Map<String, dynamic>>(
+      context,
+      const AiImageHistoryScreen(),
+    );
+    if (entry == null || !mounted) return;
+    final prompt = entry['prompt']?.toString() ?? '';
+    if (prompt.isNotEmpty) {
+      _promptController.text = prompt;
+      _controller.setPrompt(prompt);
+    }
+    final model = entry['model']?.toString();
+    if (model != null &&
+        model.isNotEmpty &&
+        AiImageService.models.contains(model)) {
+      _controller.setModel(model);
+    }
+    final ratio = entry['aspectRatio']?.toString();
+    if (ratio != null &&
+        ratio.isNotEmpty &&
+        AiImageService.aspectRatios.contains(ratio)) {
+      _controller.setAspectRatio(ratio);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
@@ -76,13 +104,26 @@ class _AiImageScreenState extends State<AiImageScreen> {
           child: Builder(
             builder: (context) {
               final theme = DSThemeBridge.resolve(context);
-              return DSIconButton(
-                icon: DsIconKind.gear,
-                size: 36,
-                color: theme.surfaceAlt,
-                iconColor: theme.textSub,
-                tooltip: 'toolbox_settings'.tr,
-                onPressed: _openSettings,
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DSIconButton(
+                    icon: DsIconKind.layers,
+                    size: 36,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    tooltip: 'toolbox_aiImage_history'.tr,
+                    onPressed: _openHistory,
+                  ),
+                  DSIconButton(
+                    icon: DsIconKind.gear,
+                    size: 36,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    tooltip: 'toolbox_settings'.tr,
+                    onPressed: _openSettings,
+                  ),
+                ],
               );
             },
           ),
@@ -177,7 +218,10 @@ class _AiImageScreenState extends State<AiImageScreen> {
     if (img.absolutePath.isNotEmpty && File(img.absolutePath).existsSync()) {
       return Image.file(File(img.absolutePath), fit: BoxFit.fitWidth);
     }
-    return const SizedBox(height: 120, child: Center(child: Icon(Icons.broken_image)));
+    return const SizedBox(
+      height: 120,
+      child: Center(child: Icon(Icons.broken_image)),
+    );
   }
 
   /// 参考图横排：已选图 + 添加按钮（图片选择器，支持网络搜图）
@@ -222,11 +266,14 @@ class _AiImageScreenState extends State<AiImageScreen> {
             width: 84,
             height: 84,
             child: isNetwork
-                ? Image.network(path, fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const Icon(Icons.link))
+                ? Image.network(
+                    path,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => const Icon(Icons.link),
+                  )
                 : isFile
-                    ? Image.file(File(path), fit: BoxFit.cover)
-                    : const Icon(Icons.image_not_supported_outlined),
+                ? Image.file(File(path), fit: BoxFit.cover)
+                : const Icon(Icons.image_not_supported_outlined),
           ),
         ),
         Positioned(
@@ -343,9 +390,6 @@ class _AiImageScreenState extends State<AiImageScreen> {
 
   Widget _paramLabel(AppThemeData theme, String key) => Padding(
     padding: const EdgeInsets.only(bottom: 4),
-    child: Text(
-      key.tr,
-      style: DsTypography.body.copyWith(color: theme.text),
-    ),
+    child: Text(key.tr, style: DsTypography.body.copyWith(color: theme.text)),
   );
 }

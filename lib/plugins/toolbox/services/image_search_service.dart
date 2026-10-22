@@ -24,6 +24,10 @@ class ImageSearchService {
   static const _legacyConfigPath =
       'configs/scripts_center/image_search_config.json';
 
+  /// 最近搜索历史（相对 app_data），上限 50 条
+  static const _historyPath = 'toolbox/image_search_history.json';
+  static const _historyLimit = 50;
+
   /// 图源选项（google/bing/yahoo/yandex 共用 SerpAPI Key，
   /// 不支持翻页/方向/排序/类型）
   static const List<String> providers = [
@@ -44,7 +48,8 @@ class ImageSearchService {
 
   /// 是否为 SerpAPI 搜索引擎图源（google/bing/yahoo/yandex，
   /// 结果为紧凑横排布局，不支持翻页/方向/排序）
-  static bool isSerpProvider(String provider) => _serpEngines.containsKey(provider);
+  static bool isSerpProvider(String provider) =>
+      _serpEngines.containsKey(provider);
 
   Map<String, dynamic> _config = {};
   bool _loaded = false;
@@ -69,7 +74,8 @@ class ImageSearchService {
       name: 'serpApiKey',
       type: 'password',
       labelText: 'SerpAPI Key',
-      hintText: 'serpapi.com 的 API Key，以图搜图（Google Lens）与 google/bing/yahoo/yandex 图源共用，用到时必填',
+      hintText:
+          'serpapi.com 的 API Key，以图搜图（Google Lens）与 google/bing/yahoo/yandex 图源共用，用到时必填',
     ),
     ToolboxConfigField(
       name: 'googleHl',
@@ -127,6 +133,64 @@ class ImageSearchService {
   Future<void> saveConfig(Map<String, dynamic> config) async {
     _config = config;
     await AboutmeDataService.instance.writePath(_configPath, config);
+  }
+
+  // ── 搜索历史 ─────────────────────────────────────────
+
+  /// 读取最近搜索历史（新→旧）
+  Future<List<Map<String, dynamic>>> getHistory() async {
+    try {
+      final data = await AboutmeDataService.instance.readPath(_historyPath);
+      return data is List
+          ? data.whereType<Map<String, dynamic>>().toList()
+          : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// 追加一条搜索历史（相同关键词+模式+图源的去重置顶），超出上限截断
+  Future<void> addHistory({
+    required String mode,
+    required String query,
+    required String imageUrl,
+    required String provider,
+  }) async {
+    try {
+      final history = await getHistory();
+      history.removeWhere(
+        (e) =>
+            e['mode'] == mode &&
+            e['query'] == query &&
+            e['imageUrl'] == imageUrl &&
+            e['provider'] == provider,
+      );
+      history.insert(0, {
+        'mode': mode,
+        'query': query,
+        'imageUrl': imageUrl,
+        'provider': provider,
+        'ts': DateTime.now().millisecondsSinceEpoch,
+      });
+      await AboutmeDataService.instance.writePath(
+        _historyPath,
+        history.take(_historyLimit).toList(),
+      );
+    } catch (e) {
+      debugPrint('[toolbox] 写入搜索历史失败: $e');
+    }
+  }
+
+  /// 删除指定时间戳的历史条目
+  Future<void> removeHistory(int ts) async {
+    final history = await getHistory();
+    history.removeWhere((e) => e['ts'] == ts);
+    await AboutmeDataService.instance.writePath(_historyPath, history);
+  }
+
+  /// 清空搜索历史
+  Future<void> clearHistory() async {
+    await AboutmeDataService.instance.writePath(_historyPath, []);
   }
 
   String _cfg(String key) => (_config[key] ?? '').toString().trim();
@@ -199,7 +263,9 @@ class ImageSearchService {
       }
     }
     if (mode == 'keyword' && !isSerp) {
-      final key = provider == 'unsplash' ? _cfg('unsplashAccessKey') : _cfg('pixabayKey');
+      final key = provider == 'unsplash'
+          ? _cfg('unsplashAccessKey')
+          : _cfg('pixabayKey');
       if (key.isEmpty) {
         return ToolboxToolResult.fail('未配置 $provider 的 Key');
       }
@@ -257,8 +323,12 @@ class ImageSearchService {
           user: (v['source'] ?? '').toString(),
           pageUrl: v['link'].toString(),
           description: (v['title'] ?? '').toString(),
-          width: v['thumbnail_width'] is int ? v['thumbnail_width'] as int : null,
-          height: v['thumbnail_height'] is int ? v['thumbnail_height'] as int : null,
+          width: v['thumbnail_width'] is int
+              ? v['thumbnail_width'] as int
+              : null,
+          height: v['thumbnail_height'] is int
+              ? v['thumbnail_height'] as int
+              : null,
           source: 'google_lens',
         ),
       );
@@ -325,7 +395,9 @@ class ImageSearchService {
           pageUrl: (r['link'] ?? '').toString(),
           description: (r['title'] ?? '').toString(),
           width: r['original_width'] is int ? r['original_width'] as int : null,
-          height: r['original_height'] is int ? r['original_height'] as int : null,
+          height: r['original_height'] is int
+              ? r['original_height'] as int
+              : null,
           source: provider,
         ),
       );
@@ -402,7 +474,8 @@ class ImageSearchService {
             url: (urls['regular'] ?? urls['full'] ?? '').toString(),
             thumb: (urls['thumb'] ?? '').toString(),
             user: (user?['name'] ?? '未知').toString(),
-            profileUrl: (((user?['links'] ?? {}) as Map)['html'] ?? '').toString(),
+            profileUrl: (((user?['links'] ?? {}) as Map)['html'] ?? '')
+                .toString(),
             pageUrl: ((item['links'] ?? {}) as Map)['html']?.toString() ?? '',
             description: (item['description'] ?? item['alt_description'] ?? '')
                 .toString(),
@@ -414,7 +487,8 @@ class ImageSearchService {
       }
       return ToolboxToolResult(
         success: true,
-        message: '搜索 "$query" 命中 ${images.length}/${body['total'] ?? 0} 张（unsplash）',
+        message:
+            '搜索 "$query" 命中 ${images.length}/${body['total'] ?? 0} 张（unsplash）',
         data: {
           'mode': 'keyword',
           'provider': 'unsplash',
@@ -448,7 +522,8 @@ class ImageSearchService {
     // Pixabay 错误是纯文本 [ERROR 400] "..."（JSON 解析失败保持字符串）
     if (status >= 400 || body is String) {
       final detail = _errorDetail(body);
-      final hint = RegExp('blocked|invalid', caseSensitive: false).hasMatch(detail)
+      final hint =
+          RegExp('blocked|invalid', caseSensitive: false).hasMatch(detail)
           ? '（API Key 无效或被封禁）'
           : '';
       return ToolboxToolResult.fail('HTTP $status: $detail $hint');
@@ -475,7 +550,9 @@ class ImageSearchService {
     }
     if (images.isEmpty) {
       final overLimit = (page - 1) * effectivePerPage >= 500;
-      return ToolboxToolResult.fail(overLimit ? '翻页超过 totalHits 上限 500' : '无搜索结果');
+      return ToolboxToolResult.fail(
+        overLimit ? '翻页超过 totalHits 上限 500' : '无搜索结果',
+      );
     }
     return ToolboxToolResult(
       success: true,
@@ -508,6 +585,9 @@ class ImageSearchService {
     if (u == null || !RegExp(r'^https?://', caseSensitive: false).hasMatch(u)) {
       return u;
     }
-    return RegExp(r'^https?://([^/]+)', caseSensitive: false).firstMatch(u)?.group(1);
+    return RegExp(
+      r'^https?://([^/]+)',
+      caseSensitive: false,
+    ).firstMatch(u)?.group(1);
   }
 }

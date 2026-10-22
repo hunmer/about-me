@@ -98,7 +98,9 @@ class _ToolboxConfigSheetState extends State<ToolboxConfigSheet> {
           config[field.name] = _switches[field.name] ?? false;
         } else if (field.type == 'number') {
           final text = _controllers[field.name]!.text.trim();
-          config[field.name] = text.isEmpty ? field.initialValue : num.tryParse(text) ?? field.initialValue;
+          config[field.name] = text.isEmpty
+              ? field.initialValue
+              : num.tryParse(text) ?? field.initialValue;
         } else {
           config[field.name] = _controllers[field.name]!.text.trim();
         }
@@ -157,11 +159,16 @@ class _ToolboxConfigSheetState extends State<ToolboxConfigSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(field.labelText, style: DsTypography.body.copyWith(color: theme.text)),
+                  Text(
+                    field.labelText,
+                    style: DsTypography.body.copyWith(color: theme.text),
+                  ),
                   if (field.hintText.isNotEmpty)
                     Text(
                       field.hintText,
-                      style: DsTypography.caption.copyWith(color: theme.textSub),
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
                     ),
                 ],
               ),

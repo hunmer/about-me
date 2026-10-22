@@ -233,6 +233,9 @@ class _GradientProgressCardWidgetState extends State<GradientProgressCardWidget>
           onHorizontalDragUpdate: (details) =>
               _updateProgress(details.localPosition.dx, width, thumbSize),
           child: SizedBox(
+            // CustomPaint 无 child 时尺寸取 constraints.smallest，
+            // Column 居中给的是宽松宽度约束，必须显式撑满宽度
+            width: double.infinity,
             height: trackHeight,
             child: CustomPaint(
               painter: _StripedTrackPainter(

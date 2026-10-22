@@ -295,6 +295,8 @@ class _WalletBalanceCardWidgetState extends State<WalletBalanceCardWidget>
           animation: _animation,
           builder: (context, child) {
             return SizedBox(
+              // CustomPaint 无 child 时取 constraints.smallest，须显式撑宽
+              width: double.infinity,
               height: indicatorSize,
               child: CustomPaint(
                 painter: _StripedProgressBarPainter(

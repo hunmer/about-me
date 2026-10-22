@@ -656,6 +656,8 @@ class _StatItemRow extends StatelessWidget {
                 ),
                 SizedBox(height: size.getSmallSpacing() + 2),
                 SizedBox(
+                  // CustomPaint 无 child 时取 constraints.smallest，须显式撑宽
+                  width: double.infinity,
                   height: barHeight,
                   child: CustomPaint(
                     painter: _StripedItemBarPainter(
