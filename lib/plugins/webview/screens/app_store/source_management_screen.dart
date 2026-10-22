@@ -445,17 +445,7 @@ class SourceManagementScreen extends StatelessWidget {
   }
 
   void _setAsDefault(BuildContext context, AppStoreSource source) {
-    final manager = context.read<AppStoreManager>();
-
-    // 将所有源的 isDefault 设为 false
-    for (var s in manager.sources) {
-      if (s.id != source.id && s.isDefault) {
-        manager.updateSource(s.copyWith(isDefault: false));
-      }
-    }
-
-    // 将当前源设为默认
-    manager.updateSource(source.copyWith(isDefault: true));
+    context.read<AppStoreManager>().setDefaultSource(source.id);
   }
 
   String _formatDate(DateTime date) {

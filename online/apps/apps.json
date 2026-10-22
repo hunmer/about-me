@@ -46,5 +46,17 @@
     "homepage": "",
     "tags": ["时间线", "记忆", "展示"],
     "permissions": ["storage"]
+  },
+  {
+    "id": "open-home-3d",
+    "title": "家居生成器",
+    "icon": "🏠",
+    "desc": "开源卡通风格多房间家居设计器：程序化种子布局、300+ CC0 家具模型、模型上传与趣味编辑。",
+    "files": "open-home-3d/files.json",
+    "version": "0.2.0",
+    "author": "openhome3d",
+    "homepage": "",
+    "tags": ["3D", "家居", "创意"],
+    "permissions": ["storage"]
   }
 ]

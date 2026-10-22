@@ -282,6 +282,7 @@ class _JellyAssistantTabState extends State<JellyAssistantTab> {
                                 ),
                                 child: MessageInput(
                                   controller: controller,
+                                  showSuggestedQuestions: true,
                                   showPanelStroke: true,
                                   dashedPanelStroke: true,
                                   trailingToolbarActions: [

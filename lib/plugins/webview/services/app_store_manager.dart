@@ -89,8 +89,8 @@ class AppStoreManager extends ChangeNotifier {
     final localSource = AppStoreSource(
       id: const Uuid().v4(),
       name: '本地开发仓库',
-      url: 'http://127.0.0.1:8899/apps/apps.json',
-      baseUrl: 'http://127.0.0.1:8899/apps',
+      url: 'http://127.0.0.1:8080/apps/apps.json',
+      baseUrl: 'http://127.0.0.1:8080/apps',
       createdAt: DateTime.now(),
     );
     await addSource(localSource);
@@ -157,6 +157,21 @@ class AppStoreManager extends ChangeNotifier {
     _currentSource = source;
     await _saveCurrentSourceId();
     await fetchApps();
+    notifyListeners();
+  }
+
+  /// 设置默认源（单次写盘，避免多次 updateSource 并发写坏 JSON）
+  Future<void> setDefaultSource(String sourceId) async {
+    var changed = false;
+    for (var i = 0; i < _sources.length; i++) {
+      final shouldBeDefault = _sources[i].id == sourceId;
+      if (_sources[i].isDefault != shouldBeDefault) {
+        _sources[i] = _sources[i].copyWith(isDefault: shouldBeDefault);
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    await _saveSources();
     notifyListeners();
   }
 

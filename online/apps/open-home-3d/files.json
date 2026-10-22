@@ -1,0 +1,1732 @@
+[
+  {
+    "path": "assets/index-DhZLtPVW.css",
+    "md5": "c78ff85e094115ee24a74765b4cfb0df",
+    "size": 26320
+  },
+  {
+    "path": "assets/index-Drs28rAG.js",
+    "md5": "74a82301a8a44187728e284b198285aa",
+    "size": 1837487
+  },
+  {
+    "path": "brand/logo-header.webp",
+    "md5": "11a5e85a677ce968dc975aa68b7769b7",
+    "size": 180858
+  },
+  {
+    "path": "brand/logo-loading.webp",
+    "md5": "c0987da21b6bb3a5116806dd278029cf",
+    "size": 260704
+  },
+  {
+    "path": "brand/logo-static.png",
+    "md5": "ea5208a7860b6b1bd688aa5d903e75d5",
+    "size": 7201
+  },
+  {
+    "path": "index.html",
+    "md5": "049acbd5086939eb1dfb5554af1477db",
+    "size": 492
+  },
+  {
+    "path": "models/kaykit-furniture/LICENSE.txt",
+    "md5": "47d351bdff5353534fb5a403fb47bedf",
+    "size": 860
+  },
+  {
+    "path": "models/kaykit-furniture/armchair-pillows.glb",
+    "md5": "7ed482283ce2aefccaaf7e1ad6ee5e9c",
+    "size": 37376
+  },
+  {
+    "path": "models/kaykit-furniture/armchair.glb",
+    "md5": "b017288251390143509dee5fb6ffc808",
+    "size": 34256
+  },
+  {
+    "path": "models/kaykit-furniture/bed-double-a.glb",
+    "md5": "34350e5126b61834bc9137099c4f06af",
+    "size": 41576
+  },
+  {
+    "path": "models/kaykit-furniture/bed-double-b.glb",
+    "md5": "f3ffe4af7e81adc07175efee2cd4cbbf",
+    "size": 44784
+  },
+  {
+    "path": "models/kaykit-furniture/bed-single-a.glb",
+    "md5": "be9b2b92ba2d8e2028da042f6048037e",
+    "size": 38976
+  },
+  {
+    "path": "models/kaykit-furniture/bed-single-b.glb",
+    "md5": "5862aa2876a158a8398f444218412341",
+    "size": 42280
+  },
+  {
+    "path": "models/kaykit-furniture/book-set.glb",
+    "md5": "9e14f92a7168e4434af3c5f789d14c98",
+    "size": 28552
+  },
+  {
+    "path": "models/kaykit-furniture/book-single.glb",
+    "md5": "f9ada140f8a150ab21ca2f7759ec8a3f",
+    "size": 20968
+  },
+  {
+    "path": "models/kaykit-furniture/cabinet-medium-decorated.glb",
+    "md5": "214b9bd9506728e178ad7cf043b9fad3",
+    "size": 65984
+  },
+  {
+    "path": "models/kaykit-furniture/cabinet-medium.glb",
+    "md5": "9bb60629a262e7333bd5d7e623027707",
+    "size": 40220
+  },
+  {
+    "path": "models/kaykit-furniture/cabinet-small-decorated.glb",
+    "md5": "6624ee1e70ce39e76560784b4d55cd26",
+    "size": 44528
+  },
+  {
+    "path": "models/kaykit-furniture/cabinet-small.glb",
+    "md5": "8dbc8c83799b6c6c122b7b22adb79446",
+    "size": 36388
+  },
+  {
+    "path": "models/kaykit-furniture/cactus-medium-a.glb",
+    "md5": "10a8118ca464679c6c2ea4cf1f903c25",
+    "size": 34528
+  },
+  {
+    "path": "models/kaykit-furniture/cactus-medium-b.glb",
+    "md5": "68fc288ff8926c9901335c82d66dc073",
+    "size": 34528
+  },
+  {
+    "path": "models/kaykit-furniture/cactus-small-a.glb",
+    "md5": "889b05dfcb2407f9c04da3d1d5a8d71a",
+    "size": 26308
+  },
+  {
+    "path": "models/kaykit-furniture/cactus-small-b.glb",
+    "md5": "5853b030806bc3ab0947cc81e62e5a65",
+    "size": 26308
+  },
+  {
+    "path": "models/kaykit-furniture/chair-a-wood.glb",
+    "md5": "c77143162132d0e1002f0c9dc6709c8b",
+    "size": 33456
+  },
+  {
+    "path": "models/kaykit-furniture/chair-a.glb",
+    "md5": "8a4e75f04ac60bae1134443c8c6e74d2",
+    "size": 33448
+  },
+  {
+    "path": "models/kaykit-furniture/chair-b-wood.glb",
+    "md5": "0bedea1af41a6def2fed928cc0dab8c2",
+    "size": 35216
+  },
+  {
+    "path": "models/kaykit-furniture/chair-b.glb",
+    "md5": "a9a410dedfb4f2225e668bbbd006f5be",
+    "size": 35212
+  },
+  {
+    "path": "models/kaykit-furniture/chair-c.glb",
+    "md5": "7406f595594366542e1bf31c22e3c19d",
+    "size": 29568
+  },
+  {
+    "path": "models/kaykit-furniture/chair-stool-wood.glb",
+    "md5": "03c976141f8d3bc16f85a8825c05d99f",
+    "size": 27796
+  },
+  {
+    "path": "models/kaykit-furniture/chair-stool.glb",
+    "md5": "eadbaa4ca9a898a520595fcb5fd31ddf",
+    "size": 27792
+  },
+  {
+    "path": "models/kaykit-furniture/couch-pillows.glb",
+    "md5": "c8cecc4bc8f3d05ac5729addb03f54d5",
+    "size": 44580
+  },
+  {
+    "path": "models/kaykit-furniture/couch.glb",
+    "md5": "d2918f74687b5e55b6773fa98470717b",
+    "size": 38356
+  },
+  {
+    "path": "models/kaykit-furniture/lamp-standing.glb",
+    "md5": "38d706942f9ede48d473a03a79e41fda",
+    "size": 28600
+  },
+  {
+    "path": "models/kaykit-furniture/lamp-table.glb",
+    "md5": "73eab6c7f464c2757d9be7e7bc938f94",
+    "size": 29768
+  },
+  {
+    "path": "models/kaykit-furniture/pictureframe-large-a.glb",
+    "md5": "3532858c01c6fabcc9f82444bd84b97a",
+    "size": 20156
+  },
+  {
+    "path": "models/kaykit-furniture/pictureframe-large-b.glb",
+    "md5": "1b38f215401a49e8c94428a640989e00",
+    "size": 20140
+  },
+  {
+    "path": "models/kaykit-furniture/pictureframe-medium.glb",
+    "md5": "0eaa909a22c83a69800206d67743e675",
+    "size": 20156
+  },
+  {
+    "path": "models/kaykit-furniture/pictureframe-small-a.glb",
+    "md5": "85463ade9221c96049f179517229fe5d",
+    "size": 20160
+  },
+  {
+    "path": "models/kaykit-furniture/pictureframe-small-b.glb",
+    "md5": "d4c9e7788806186938a430aa1fe6b1a3",
+    "size": 20160
+  },
+  {
+    "path": "models/kaykit-furniture/pictureframe-small-c.glb",
+    "md5": "e4b3f05ed1e4b20b41676202f693e26c",
+    "size": 20156
+  },
+  {
+    "path": "models/kaykit-furniture/pictureframe-standing-a.glb",
+    "md5": "0af10f2bf241ebad944f5e1aead1735a",
+    "size": 21056
+  },
+  {
+    "path": "models/kaykit-furniture/pictureframe-standing-b.glb",
+    "md5": "6ed2c27008719f7a121fd34468696d78",
+    "size": 21180
+  },
+  {
+    "path": "models/kaykit-furniture/pillow-a.glb",
+    "md5": "331db36bde08b338130affd7b9b60053",
+    "size": 19684
+  },
+  {
+    "path": "models/kaykit-furniture/pillow-b.glb",
+    "md5": "6d74173f7490bbc550d1b15f908ef070",
+    "size": 19684
+  },
+  {
+    "path": "models/kaykit-furniture/rug-oval-a.glb",
+    "md5": "9ab0b3d6fb28dfb2cfc00d7b142c04a7",
+    "size": 23452
+  },
+  {
+    "path": "models/kaykit-furniture/rug-oval-b.glb",
+    "md5": "fd4e6a751748a66dcabf4b2d09dc6db1",
+    "size": 23452
+  },
+  {
+    "path": "models/kaykit-furniture/rug-rectangle-a.glb",
+    "md5": "b96b6998d6e3140f9b5e1f2894115cbb",
+    "size": 18692
+  },
+  {
+    "path": "models/kaykit-furniture/rug-rectangle-b.glb",
+    "md5": "34cdd383805a74e9d33096be4b986eed",
+    "size": 18692
+  },
+  {
+    "path": "models/kaykit-furniture/rug-rectangle-stripes-a.glb",
+    "md5": "1f5efbcc6c2552694e1015905d8c503b",
+    "size": 19612
+  },
+  {
+    "path": "models/kaykit-furniture/rug-rectangle-stripes-b.glb",
+    "md5": "76198f66b202f043f9d6ec7d7d64b281",
+    "size": 19612
+  },
+  {
+    "path": "models/kaykit-furniture/shelf-a-big.glb",
+    "md5": "459d93b0eca0def2e561e2819aa4d57c",
+    "size": 27048
+  },
+  {
+    "path": "models/kaykit-furniture/shelf-a-small.glb",
+    "md5": "e7f442c3b0c98ea9aa6192f28469a24f",
+    "size": 27052
+  },
+  {
+    "path": "models/kaykit-furniture/shelf-b-large-decorated.glb",
+    "md5": "eada848b5a502e70bd03dbe378c88605",
+    "size": 42752
+  },
+  {
+    "path": "models/kaykit-furniture/shelf-b-large.glb",
+    "md5": "7c422c3411fc46a9935ab786731c0fa5",
+    "size": 27068
+  },
+  {
+    "path": "models/kaykit-furniture/shelf-b-small-decorated.glb",
+    "md5": "799b002b684fa6f595fbfaec46529742",
+    "size": 40392
+  },
+  {
+    "path": "models/kaykit-furniture/shelf-b-small.glb",
+    "md5": "6c74a34b1278b9860196f4f49f04a19c",
+    "size": 27068
+  },
+  {
+    "path": "models/kaykit-furniture/table-low.glb",
+    "md5": "442af3452e3acb854a028accb4f0d8c8",
+    "size": 29320
+  },
+  {
+    "path": "models/kaykit-furniture/table-medium-long.glb",
+    "md5": "5132e18bc4f29acccf40f689432340e7",
+    "size": 26228
+  },
+  {
+    "path": "models/kaykit-furniture/table-medium.glb",
+    "md5": "4eefc13d038fd7f60340df8f3aad4f74",
+    "size": 26220
+  },
+  {
+    "path": "models/kaykit-furniture/table-small.glb",
+    "md5": "b5b4323da8bbb3d721e49a55ef3a5714",
+    "size": 26224
+  },
+  {
+    "path": "models/kaykit-restaurant/LICENSE.txt",
+    "md5": "577ae96b7aca7a2d055273f2ad4452c8",
+    "size": 897
+  },
+  {
+    "path": "models/kaykit-restaurant/bowl-dirty.glb",
+    "md5": "3d9ff0b75e74ce22fcba9cc77b27319d",
+    "size": 33636
+  },
+  {
+    "path": "models/kaykit-restaurant/bowl-small.glb",
+    "md5": "81abbe70686675743721525b7d7b47b2",
+    "size": 31192
+  },
+  {
+    "path": "models/kaykit-restaurant/bowl.glb",
+    "md5": "b0e52fcb98181defa8d56815285a6d7a",
+    "size": 30684
+  },
+  {
+    "path": "models/kaykit-restaurant/chair-a.glb",
+    "md5": "18b92ce51453e362a9cd1d43e3ac386f",
+    "size": 39300
+  },
+  {
+    "path": "models/kaykit-restaurant/chair-b.glb",
+    "md5": "4147422a58c55b6b02d784cd893010c1",
+    "size": 39300
+  },
+  {
+    "path": "models/kaykit-restaurant/chair-stool.glb",
+    "md5": "5b945f34b66d9738d0dc6f3cba5e9c18",
+    "size": 32408
+  },
+  {
+    "path": "models/kaykit-restaurant/crate-buns.glb",
+    "md5": "0178a8a92a830976c7b5bd49159d4b8d",
+    "size": 125200
+  },
+  {
+    "path": "models/kaykit-restaurant/crate-carrots.glb",
+    "md5": "db33e286abb1c86f066395530cbaedc3",
+    "size": 85608
+  },
+  {
+    "path": "models/kaykit-restaurant/crate-cheese.glb",
+    "md5": "356e504b263f6409dac77a013cfcffce",
+    "size": 72672
+  },
+  {
+    "path": "models/kaykit-restaurant/crate-ham.glb",
+    "md5": "11a5144b6089d42ef7fe6020f7fee9a4",
+    "size": 48808
+  },
+  {
+    "path": "models/kaykit-restaurant/crate-lettuce.glb",
+    "md5": "4cb8125a77b8284902998d22d7bc5299",
+    "size": 91840
+  },
+  {
+    "path": "models/kaykit-restaurant/crate-lid.glb",
+    "md5": "864b18d094b70c14fb1bd76b0150e992",
+    "size": 34868
+  },
+  {
+    "path": "models/kaykit-restaurant/crate-onions.glb",
+    "md5": "5ee7f620dbf3790d07e1e85db5dafbaf",
+    "size": 83088
+  },
+  {
+    "path": "models/kaykit-restaurant/crate-potatoes.glb",
+    "md5": "9664afaa8626395e8c5765d7e893c595",
+    "size": 52380
+  },
+  {
+    "path": "models/kaykit-restaurant/crate-steak.glb",
+    "md5": "afb19390cf6ec51218a970d314aa6fbd",
+    "size": 71724
+  },
+  {
+    "path": "models/kaykit-restaurant/crate-tomatoes.glb",
+    "md5": "181eb03444e7c350c2b70d681caa6016",
+    "size": 104332
+  },
+  {
+    "path": "models/kaykit-restaurant/crate.glb",
+    "md5": "5d28dabefced32de71cbbad29c915ad9",
+    "size": 31392
+  },
+  {
+    "path": "models/kaykit-restaurant/cuttingboard.glb",
+    "md5": "4ff5ba8f4e1fd782c0351d13b3a92ed1",
+    "size": 24568
+  },
+  {
+    "path": "models/kaykit-restaurant/dishrack-plates.glb",
+    "md5": "7f3bcc4b7d60bee0c750e4031e20d975",
+    "size": 60348
+  },
+  {
+    "path": "models/kaykit-restaurant/dishrack.glb",
+    "md5": "a9533f498af365d6cac31e23fd9d79fc",
+    "size": 35760
+  },
+  {
+    "path": "models/kaykit-restaurant/door-a.glb",
+    "md5": "10f9d09c0236baed81ddb21686cf35e0",
+    "size": 34164
+  },
+  {
+    "path": "models/kaykit-restaurant/door-b.glb",
+    "md5": "d49c6053a3944837850eb852c42b4eb3",
+    "size": 34164
+  },
+  {
+    "path": "models/kaykit-restaurant/extractorhood.glb",
+    "md5": "73b1bdd5131ee6f6536d5d445545e675",
+    "size": 34260
+  },
+  {
+    "path": "models/kaykit-restaurant/floor-kitchen-small.glb",
+    "md5": "7b7ed20a439f9762afb9792d7cd95d11",
+    "size": 25568
+  },
+  {
+    "path": "models/kaykit-restaurant/floor-kitchen.glb",
+    "md5": "9e376ddf460b15fb07b8d75a2012e2ce",
+    "size": 25560
+  },
+  {
+    "path": "models/kaykit-restaurant/food-burger.glb",
+    "md5": "f2a0f2758bb0748258f06e81c187fd8c",
+    "size": 84756
+  },
+  {
+    "path": "models/kaykit-restaurant/food-dinner.glb",
+    "md5": "afa57c87b59c83e8f69a6c618984045a",
+    "size": 67188
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-bun-bottom.glb",
+    "md5": "0a4bdb814615ba7bfd88c7bb805da78b",
+    "size": 27392
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-bun-top.glb",
+    "md5": "f10488b438fd09d906f94bd804910ba8",
+    "size": 34416
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-bun.glb",
+    "md5": "d6245bcb7ea4ebdccdaf20de5e3fcf6e",
+    "size": 38080
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-burger-cooked.glb",
+    "md5": "ada9a852eceea7303232b9a4a14d1729",
+    "size": 29720
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-burger-trash.glb",
+    "md5": "161772e30b5e94727e165f2055b6d83b",
+    "size": 29720
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-burger-uncooked.glb",
+    "md5": "8c667fb2d9dfcdfdeda9c9aa9560019a",
+    "size": 29144
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-carrot-chopped.glb",
+    "md5": "0af946830760729c7517b66e7dd2304f",
+    "size": 40740
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-carrot-pieces.glb",
+    "md5": "fbad6bfdf5e6e7eff4548f76c8aee300",
+    "size": 44604
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-carrot.glb",
+    "md5": "e4ad2caaaefb33e651e1e78dee0f312b",
+    "size": 32520
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-cheese-chopped.glb",
+    "md5": "23ac4f9dd22a4f2dec114fdcf71beb89",
+    "size": 32368
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-cheese-slice.glb",
+    "md5": "a6e5e9d4c13ed8f01f3af8f779215483",
+    "size": 24472
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-cheese.glb",
+    "md5": "caf3d54946a410d32cb95ef2fde9973d",
+    "size": 32496
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-ham-cooked.glb",
+    "md5": "80e0bde410b2745cd3ab5d6ad99f8410",
+    "size": 31120
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-ham-trash.glb",
+    "md5": "17f0c0f765b77217412683a83a00c343",
+    "size": 31120
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-ham.glb",
+    "md5": "11c96b952f1d9fef7b9074aafa79019a",
+    "size": 31116
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-lettuce-chopped.glb",
+    "md5": "dac11ee01bd3b1b66c00ac840526cb60",
+    "size": 38196
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-lettuce-slice.glb",
+    "md5": "0a3a29aeced1e73cc17344fe4905021a",
+    "size": 28316
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-lettuce.glb",
+    "md5": "99cdd24378ce1c4457ff02421f1a5e35",
+    "size": 37388
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-onion-chopped.glb",
+    "md5": "ccf58da44ce451d4f292cfa87264ec35",
+    "size": 48248
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-onion-rings.glb",
+    "md5": "164a9f4870c4f16f2e1addfab3d84717",
+    "size": 37044
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-onion.glb",
+    "md5": "42483fc91e16d2f60734eeab0c33e226",
+    "size": 32768
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-potato-chopped.glb",
+    "md5": "bb1a5b5abeafe050cabe2dde72ea2657",
+    "size": 31500
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-potato-mashed.glb",
+    "md5": "10877901a1ef9e7aeefb3b7f8097b9af",
+    "size": 23764
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-potato.glb",
+    "md5": "ca1b49066dbdc390ca6e1423af9c3392",
+    "size": 25936
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-steak-pieces.glb",
+    "md5": "28528b07fbd58e90ca9b44d5db6c3a85",
+    "size": 31712
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-steak.glb",
+    "md5": "bf1361aea0df4dad884d401e9ab4cd25",
+    "size": 35892
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-tomato-slice.glb",
+    "md5": "ee0cc97c978cbe77f487441f8dd31505",
+    "size": 31972
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-tomato-slices.glb",
+    "md5": "93625ec9b3ed8ef58ce2f8ef18407f1a",
+    "size": 43112
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-tomato.glb",
+    "md5": "e32a73caf73b3f650fa40410bb4d6ca6",
+    "size": 35760
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-vegetableburger-cooked.glb",
+    "md5": "ad0bb0e8d53638abf09343fec21d7373",
+    "size": 38840
+  },
+  {
+    "path": "models/kaykit-restaurant/food-ingredient-vegetableburger-uncooked.glb",
+    "md5": "d09a330de915f29ce44d9a8d79910f68",
+    "size": 38264
+  },
+  {
+    "path": "models/kaykit-restaurant/food-stew.glb",
+    "md5": "3a33bc0a2e276c045630688d6e801aad",
+    "size": 45384
+  },
+  {
+    "path": "models/kaykit-restaurant/food-vegetableburger.glb",
+    "md5": "46ab214f9b7f3973e147f8612b8048a2",
+    "size": 91844
+  },
+  {
+    "path": "models/kaykit-restaurant/fridge-a-decorated.glb",
+    "md5": "3d43f2d60551aa354e6247b9bbbd8c2d",
+    "size": 111996
+  },
+  {
+    "path": "models/kaykit-restaurant/fridge-a.glb",
+    "md5": "8c5fc922437bdba50ac9376cfecb8101",
+    "size": 50808
+  },
+  {
+    "path": "models/kaykit-restaurant/fridge-b.glb",
+    "md5": "ab3454b559845919dd9601a59f70ad85",
+    "size": 42404
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-a-large.glb",
+    "md5": "49753af8b95bdef2e0127cab766dc427",
+    "size": 28856
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-a-medium.glb",
+    "md5": "6ecd48c6c720c9abac0eedc12a96ced1",
+    "size": 29616
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-a-small.glb",
+    "md5": "a9bec9ad66355ab17b9b51e7313c5d0c",
+    "size": 29412
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-b-large.glb",
+    "md5": "2a0e2c1cb040647a7d91e609bd87d762",
+    "size": 28856
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-b-medium.glb",
+    "md5": "9ed43cae7b7db189b594b7848c143122",
+    "size": 29616
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-b-small.glb",
+    "md5": "65df974ae83065543de3375ddd11808e",
+    "size": 29412
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-c-large.glb",
+    "md5": "71617768d5df219a68a4b040539bfb6d",
+    "size": 28856
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-c-medium.glb",
+    "md5": "38309bac2de4c0b33e354423e7a7b33f",
+    "size": 29616
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-c-small.glb",
+    "md5": "f5509fe6b25a463411d37c4b62ad225e",
+    "size": 29412
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-d-large.glb",
+    "md5": "cf5953597b038638ba0b5d1f410aab1c",
+    "size": 28856
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-d-medium.glb",
+    "md5": "6d74bf02de84c417c3b2ef13275b8010",
+    "size": 29616
+  },
+  {
+    "path": "models/kaykit-restaurant/jar-d-small.glb",
+    "md5": "b8cb1974340ed206e90e036f7973b4ca",
+    "size": 29412
+  },
+  {
+    "path": "models/kaykit-restaurant/ketchup.glb",
+    "md5": "c11f52bcceab45fa7ed8d51f80e15aff",
+    "size": 28864
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencabinet-corner-half.glb",
+    "md5": "d9af6cf19785f4bb495aabe68003546e",
+    "size": 30860
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencabinet-corner.glb",
+    "md5": "2d0832b21e0711c344555d966c934c27",
+    "size": 30728
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencabinet-half.glb",
+    "md5": "4d457af871dedbca3363406208c3a0ad",
+    "size": 29748
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencabinet.glb",
+    "md5": "2c42006281aea21e87515eac2e328b40",
+    "size": 29744
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-innercorner-backsplash.glb",
+    "md5": "701e58a73efe4f27390ba056e3c89590",
+    "size": 25744
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-innercorner.glb",
+    "md5": "579c2cb6aadf26b4ceff6f83d52a6554",
+    "size": 24748
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-outercorner-backsplash.glb",
+    "md5": "6debe76a33c413979016fca7307c9955",
+    "size": 25760
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-outercorner.glb",
+    "md5": "93b018e389d62dbcb71db16228cad4b2",
+    "size": 24764
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-sink-backsplash.glb",
+    "md5": "bdf76cf0498579554403aaefdb6a3f41",
+    "size": 52296
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-sink.glb",
+    "md5": "fd1d5aa8fa5716728f6c294b907c7054",
+    "size": 51608
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-straight-a-backsplash.glb",
+    "md5": "5c2bb0e57fbb8f2e40fd9eb21dc0c495",
+    "size": 31432
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-straight-a-decorated.glb",
+    "md5": "1574a6665d45b2ffc0fc63937ec2fc49",
+    "size": 85864
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-straight-a.glb",
+    "md5": "82cfc351b123caedaff613bc492454a6",
+    "size": 30756
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-straight-b-backsplash.glb",
+    "md5": "f4dc1b71809cf149f275cff1105903c1",
+    "size": 31080
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-straight-b.glb",
+    "md5": "c6e9f6112527d843d3627fd810e4ca17",
+    "size": 30404
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchencounter-straight-decorated.glb",
+    "md5": "b4057d0764fd0dca1dd0fe7a4ee38fb5",
+    "size": 59404
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchentable-a-large-decorated.glb",
+    "md5": "7ff12c42e696d956775e1948cbc37a7c",
+    "size": 100196
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchentable-a-large.glb",
+    "md5": "62723c0ac38236a2af3bef81c2db6780",
+    "size": 34052
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchentable-a.glb",
+    "md5": "680366c4a46519ee2327e1e09e841f9b",
+    "size": 34108
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchentable-b-large.glb",
+    "md5": "ca1a542e60657ea4e405eafd67a3738c",
+    "size": 34052
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchentable-b.glb",
+    "md5": "9ceb4abb52c0c41001b182f5af6c671d",
+    "size": 34108
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchentable-sink-large-decorated.glb",
+    "md5": "f4499e981518f6c82acac49b5ddd57fe",
+    "size": 128156
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchentable-sink-large.glb",
+    "md5": "b1808f6830be8506dbd6487ca5bc9181",
+    "size": 60824
+  },
+  {
+    "path": "models/kaykit-restaurant/kitchentable-sink.glb",
+    "md5": "629689cce7add1390beff6e63c6701c9",
+    "size": 54960
+  },
+  {
+    "path": "models/kaykit-restaurant/knife.glb",
+    "md5": "a3e50359fb3b4d9588b02e989e600444",
+    "size": 26988
+  },
+  {
+    "path": "models/kaykit-restaurant/lid-a.glb",
+    "md5": "be61001f40c01723f3d214e6bd205d5d",
+    "size": 29556
+  },
+  {
+    "path": "models/kaykit-restaurant/lid-b.glb",
+    "md5": "c6b92db4aad979bae52bc20edae099b9",
+    "size": 29556
+  },
+  {
+    "path": "models/kaykit-restaurant/lid-large.glb",
+    "md5": "76fcce782c53507d8f2e418f86132c9e",
+    "size": 29464
+  },
+  {
+    "path": "models/kaykit-restaurant/menu.glb",
+    "md5": "6c597ee155a38348c9c4aec113b1e06a",
+    "size": 27828
+  },
+  {
+    "path": "models/kaykit-restaurant/mustard.glb",
+    "md5": "436cc3af2e79f99abcb32296fdba8837",
+    "size": 28864
+  },
+  {
+    "path": "models/kaykit-restaurant/oven.glb",
+    "md5": "cf8aabf2c72afb62c0ef65610a2c72ee",
+    "size": 57708
+  },
+  {
+    "path": "models/kaykit-restaurant/pan-006.glb",
+    "md5": "2f9dd93e4df907ddc269e1d47f884e3f",
+    "size": 33264
+  },
+  {
+    "path": "models/kaykit-restaurant/pan-a.glb",
+    "md5": "9fcb1e72a05fc6bf755f4950eb957dca",
+    "size": 33448
+  },
+  {
+    "path": "models/kaykit-restaurant/pan-b.glb",
+    "md5": "8f99c04d0844ba79bc740765966e91bf",
+    "size": 33448
+  },
+  {
+    "path": "models/kaykit-restaurant/papertowel.glb",
+    "md5": "59e4b6d5c5922d7122a334d6c46c4e32",
+    "size": 30912
+  },
+  {
+    "path": "models/kaykit-restaurant/pillar-a.glb",
+    "md5": "b94ff1edec942177ee749b79a8b79a25",
+    "size": 25488
+  },
+  {
+    "path": "models/kaykit-restaurant/pillar-b.glb",
+    "md5": "29517e45bddda4e43bfee60512ae4795",
+    "size": 25424
+  },
+  {
+    "path": "models/kaykit-restaurant/plate-dirty.glb",
+    "md5": "0504e2fd76759c9da5452881b6d112a7",
+    "size": 33552
+  },
+  {
+    "path": "models/kaykit-restaurant/plate-small.glb",
+    "md5": "b4f65ec1d1abfa39ed47ff9f9931b75c",
+    "size": 27020
+  },
+  {
+    "path": "models/kaykit-restaurant/plate.glb",
+    "md5": "a856a559ac3cc1d8fcd4e071cccfb314",
+    "size": 28576
+  },
+  {
+    "path": "models/kaykit-restaurant/pot-a-stew.glb",
+    "md5": "9fc9b5f66334109051c1947510e922a4",
+    "size": 49452
+  },
+  {
+    "path": "models/kaykit-restaurant/pot-a.glb",
+    "md5": "e3a058af26db1a804d461774d5a5819e",
+    "size": 35384
+  },
+  {
+    "path": "models/kaykit-restaurant/pot-b-stew.glb",
+    "md5": "9cd325d1a6b04d5dadabd008e1dc8505",
+    "size": 49452
+  },
+  {
+    "path": "models/kaykit-restaurant/pot-b.glb",
+    "md5": "7b72bd8773c7f8b8e142157ea3f4cfe6",
+    "size": 35384
+  },
+  {
+    "path": "models/kaykit-restaurant/pot-large.glb",
+    "md5": "77fb98c7401a9fabe78d0ebf31ad882f",
+    "size": 39132
+  },
+  {
+    "path": "models/kaykit-restaurant/shelf-papertowel-decorated.glb",
+    "md5": "a0aac13b2ffdfda27aefd76e93286356",
+    "size": 57212
+  },
+  {
+    "path": "models/kaykit-restaurant/shelf-papertowel.glb",
+    "md5": "c1d9669754ee6e43025b8fa158c6bdea",
+    "size": 36572
+  },
+  {
+    "path": "models/kaykit-restaurant/stew-bowl.glb",
+    "md5": "baacdeb2767b26f18cca129040671fc2",
+    "size": 37124
+  },
+  {
+    "path": "models/kaykit-restaurant/stew-pot.glb",
+    "md5": "455be34116d4ae7391c0c04339e90a6d",
+    "size": 37120
+  },
+  {
+    "path": "models/kaykit-restaurant/stove-multi-countertop.glb",
+    "md5": "a7d7f81e10b61294681313dbcdad483e",
+    "size": 58116
+  },
+  {
+    "path": "models/kaykit-restaurant/stove-multi-decorated.glb",
+    "md5": "be3e77c0a06d02e6c6be6b56799d7c88",
+    "size": 125608
+  },
+  {
+    "path": "models/kaykit-restaurant/stove-multi.glb",
+    "md5": "b97c37bc8f1b922a1058032fe0eb69c3",
+    "size": 77080
+  },
+  {
+    "path": "models/kaykit-restaurant/stove-single-countertop.glb",
+    "md5": "9a92e6db39f6acb6b5c121e7abbf2889",
+    "size": 40172
+  },
+  {
+    "path": "models/kaykit-restaurant/stove-single.glb",
+    "md5": "6dad25c1766f037f898e2b1a285a7e5c",
+    "size": 58756
+  },
+  {
+    "path": "models/kaykit-restaurant/table-round-a-decorated.glb",
+    "md5": "31b9de12ae1935feaa801f6ff403b593",
+    "size": 195016
+  },
+  {
+    "path": "models/kaykit-restaurant/table-round-a-small-decorated.glb",
+    "md5": "feac04f201d1bd06ed1cb3395156bcf1",
+    "size": 53340
+  },
+  {
+    "path": "models/kaykit-restaurant/table-round-a-small.glb",
+    "md5": "5b44477a3c759a0abe5eae4da84f59f5",
+    "size": 34920
+  },
+  {
+    "path": "models/kaykit-restaurant/table-round-a.glb",
+    "md5": "b3322c2f8cb026f3006bd3ce4d4f179f",
+    "size": 34908
+  },
+  {
+    "path": "models/kaykit-restaurant/table-round-b.glb",
+    "md5": "5441b5bb3437c0d91280b6a716eae07b",
+    "size": 35380
+  },
+  {
+    "path": "models/kaykit-restaurant/towelrail.glb",
+    "md5": "05fae56001c398b4be61bf022907af06",
+    "size": 30480
+  },
+  {
+    "path": "models/kaykit-restaurant/wall-decorated.glb",
+    "md5": "5739c1aa4d9a19624f04e0a35fe36353",
+    "size": 195724
+  },
+  {
+    "path": "models/kaykit-restaurant/wall-doorway.glb",
+    "md5": "069e1bd2266fe2d57a0f496d675daba4",
+    "size": 32700
+  },
+  {
+    "path": "models/kaykit-restaurant/wall-half.glb",
+    "md5": "3282fce451b8a84b49259328ce7efc50",
+    "size": 27700
+  },
+  {
+    "path": "models/kaykit-restaurant/wall-orderwindow-decorated.glb",
+    "md5": "e0ddf81d4b93fe830239fbf2637fb49c",
+    "size": 52816
+  },
+  {
+    "path": "models/kaykit-restaurant/wall-orderwindow.glb",
+    "md5": "5bb962d2862459430d8c9a9e92aab562",
+    "size": 34524
+  },
+  {
+    "path": "models/kaykit-restaurant/wall-window-closed.glb",
+    "md5": "884fd765d039349035292308e4b7cae4",
+    "size": 34064
+  },
+  {
+    "path": "models/kaykit-restaurant/wall-window-open.glb",
+    "md5": "b4cd831f29e189aec04432610f628260",
+    "size": 33780
+  },
+  {
+    "path": "models/kaykit-restaurant/wall.glb",
+    "md5": "c1d737ffdab94d29985d1d3bafb294a3",
+    "size": 27692
+  },
+  {
+    "path": "models/kenney/LICENSE.txt",
+    "md5": "561337dc6db74f436b89b7323d183a53",
+    "size": 614
+  },
+  {
+    "path": "models/kenney/bathroomCabinet.glb",
+    "md5": "49e6a5330d6247be9c5136d442ac7980",
+    "size": 7216
+  },
+  {
+    "path": "models/kenney/bathroomCabinetDrawer.glb",
+    "md5": "2121fa4c56bf4ac8f84e0f2248e4471d",
+    "size": 34744
+  },
+  {
+    "path": "models/kenney/bathroomMirror.glb",
+    "md5": "32dc6ef680ae842809c702b788b77b2c",
+    "size": 6792
+  },
+  {
+    "path": "models/kenney/bathroomSink.glb",
+    "md5": "085792acd86c36e43ea99edf16e3c251",
+    "size": 22536
+  },
+  {
+    "path": "models/kenney/bathroomSinkSquare.glb",
+    "md5": "734bae6afd3dd08dd86a76a749f185b6",
+    "size": 15108
+  },
+  {
+    "path": "models/kenney/bathtub.glb",
+    "md5": "2d69859d472725199cf286082b23aa0c",
+    "size": 35500
+  },
+  {
+    "path": "models/kenney/bear.glb",
+    "md5": "83a4b39255be9f58bde26f434818a974",
+    "size": 11884
+  },
+  {
+    "path": "models/kenney/bedBunk.glb",
+    "md5": "b8ef276c2e1e70f8904b3feb0aa8200b",
+    "size": 40784
+  },
+  {
+    "path": "models/kenney/bedDouble.glb",
+    "md5": "a29aa52fbaa0a95e75442b2ba7113b11",
+    "size": 23368
+  },
+  {
+    "path": "models/kenney/bedSingle.glb",
+    "md5": "4f1d4a16562e6c160e3e20adfa6e3597",
+    "size": 18636
+  },
+  {
+    "path": "models/kenney/bench.glb",
+    "md5": "41253e074978fd584097ff45626e64ef",
+    "size": 10756
+  },
+  {
+    "path": "models/kenney/benchCushion.glb",
+    "md5": "5727367ed96a6325f7be56311da5f29f",
+    "size": 12500
+  },
+  {
+    "path": "models/kenney/benchCushionLow.glb",
+    "md5": "532e410d72c0612adb739336023eba42",
+    "size": 10268
+  },
+  {
+    "path": "models/kenney/bookcaseClosed.glb",
+    "md5": "2a1065d237b3d8ba9dd285f790abcaf3",
+    "size": 23132
+  },
+  {
+    "path": "models/kenney/bookcaseClosedDoors.glb",
+    "md5": "a40f3f55761c68555e1a1c54cdff810a",
+    "size": 22644
+  },
+  {
+    "path": "models/kenney/bookcaseClosedWide.glb",
+    "md5": "d8d96c8efb0316e947de0445326239a4",
+    "size": 23140
+  },
+  {
+    "path": "models/kenney/bookcaseOpen.glb",
+    "md5": "7dd4ea72f1a72a91b1b4de35cdbe2b72",
+    "size": 18020
+  },
+  {
+    "path": "models/kenney/bookcaseOpenLow.glb",
+    "md5": "91ca1cfcf76830d67cb439d26cf0762d",
+    "size": 11520
+  },
+  {
+    "path": "models/kenney/books.glb",
+    "md5": "f4c101e97e824dd3fa8de837ba4ee1fd",
+    "size": 6864
+  },
+  {
+    "path": "models/kenney/cabinetBed.glb",
+    "md5": "5dcffd149e03745468c911b5a7238ada",
+    "size": 7496
+  },
+  {
+    "path": "models/kenney/cabinetBedDrawer.glb",
+    "md5": "cbc2fc64a26bf51d3ae4aeeff3864355",
+    "size": 16088
+  },
+  {
+    "path": "models/kenney/cabinetBedDrawerTable.glb",
+    "md5": "a0ba718745deb7ba38506f2a7855c0bd",
+    "size": 12200
+  },
+  {
+    "path": "models/kenney/cabinetTelevision.glb",
+    "md5": "00f0c4d1d6136f09ef50007911f68de6",
+    "size": 10524
+  },
+  {
+    "path": "models/kenney/cabinetTelevisionDoors.glb",
+    "md5": "737c6667c64ceae565bb824fc0b13104",
+    "size": 16876
+  },
+  {
+    "path": "models/kenney/cardboardBoxClosed.glb",
+    "md5": "c0df8c652db82e525f126f49f4979e00",
+    "size": 5400
+  },
+  {
+    "path": "models/kenney/cardboardBoxOpen.glb",
+    "md5": "fc8fec4a373eaaa776dbc6ccc76897c6",
+    "size": 5404
+  },
+  {
+    "path": "models/kenney/ceilingFan.glb",
+    "md5": "740f07a154f4c0f2438c2b522eeea76f",
+    "size": 15284
+  },
+  {
+    "path": "models/kenney/chair.glb",
+    "md5": "e2513fad00f98ab65f2dd26f26649af4",
+    "size": 10756
+  },
+  {
+    "path": "models/kenney/chairCushion.glb",
+    "md5": "5f29f0b526bb468eb4a112d19d72b0ef",
+    "size": 12588
+  },
+  {
+    "path": "models/kenney/chairDesk.glb",
+    "md5": "f4bd2548fa78dda2189f783111e4964e",
+    "size": 39016
+  },
+  {
+    "path": "models/kenney/chairModernCushion.glb",
+    "md5": "84ebd609dc02cd568fdb330c32ff69a9",
+    "size": 7376
+  },
+  {
+    "path": "models/kenney/chairModernFrameCushion.glb",
+    "md5": "542b847f44096222c40fb4f0cb2a0a23",
+    "size": 18592
+  },
+  {
+    "path": "models/kenney/chairRounded.glb",
+    "md5": "8322ddfd55f85553d00042cee5352291",
+    "size": 17156
+  },
+  {
+    "path": "models/kenney/coatRack.glb",
+    "md5": "88b9670a91f1463bc7c439bc8eb9a1d1",
+    "size": 9948
+  },
+  {
+    "path": "models/kenney/coatRackStanding.glb",
+    "md5": "89c524125a60a413c37e8cd2201a84a7",
+    "size": 13288
+  },
+  {
+    "path": "models/kenney/computerKeyboard.glb",
+    "md5": "b6d214a8695fa5ec6902a8a8872f1c76",
+    "size": 3476
+  },
+  {
+    "path": "models/kenney/computerMouse.glb",
+    "md5": "91215db53364f00d23a5a84e33723b7b",
+    "size": 5868
+  },
+  {
+    "path": "models/kenney/computerScreen.glb",
+    "md5": "2594d958e69674d7c65c1a282ab06f39",
+    "size": 6404
+  },
+  {
+    "path": "models/kenney/desk.glb",
+    "md5": "3f95ec73cef661a192f70404340abeab",
+    "size": 15048
+  },
+  {
+    "path": "models/kenney/deskCorner.glb",
+    "md5": "b427c5945a95bd760ef3480cb1393df1",
+    "size": 17984
+  },
+  {
+    "path": "models/kenney/doorway.glb",
+    "md5": "4496fed981a0e9089a2f31a6eef3df34",
+    "size": 14532
+  },
+  {
+    "path": "models/kenney/doorwayFront.glb",
+    "md5": "6b569708e9e10b7a3d11e6ad742111fc",
+    "size": 13016
+  },
+  {
+    "path": "models/kenney/doorwayOpen.glb",
+    "md5": "ee41617ecb24462ab3a30e3e1acad5ab",
+    "size": 3256
+  },
+  {
+    "path": "models/kenney/dryer.glb",
+    "md5": "6c5980a02badda324202a997388b6d25",
+    "size": 17760
+  },
+  {
+    "path": "models/kenney/floorCorner.glb",
+    "md5": "adbef68b14ed6beabed03d32d39c3722",
+    "size": 2524
+  },
+  {
+    "path": "models/kenney/floorCornerRound.glb",
+    "md5": "297a5f46031d2dca6f3df44ebe931698",
+    "size": 5168
+  },
+  {
+    "path": "models/kenney/floorFull.glb",
+    "md5": "2c6284a72d7c17cf63b194ff704ae602",
+    "size": 2260
+  },
+  {
+    "path": "models/kenney/floorHalf.glb",
+    "md5": "d964df2142d4b486084feca3645faba2",
+    "size": 2264
+  },
+  {
+    "path": "models/kenney/hoodLarge.glb",
+    "md5": "bdb6ea7c1ec0f771bc97fc4f6aae841b",
+    "size": 4652
+  },
+  {
+    "path": "models/kenney/hoodModern.glb",
+    "md5": "a9c884fb713932ac0b8ca2d311de55ee",
+    "size": 3968
+  },
+  {
+    "path": "models/kenney/kitchenBar.glb",
+    "md5": "a9e235fcb054e613c1c4640cbb45b6c9",
+    "size": 6004
+  },
+  {
+    "path": "models/kenney/kitchenBarEnd.glb",
+    "md5": "9c3872c3cef185954b504734c1194d7e",
+    "size": 11084
+  },
+  {
+    "path": "models/kenney/kitchenBlender.glb",
+    "md5": "b6f66eb1f63d78e606b4f54fb4a05d46",
+    "size": 18728
+  },
+  {
+    "path": "models/kenney/kitchenCabinet.glb",
+    "md5": "b36608cc5d7716055c7cdbdca8042984",
+    "size": 10444
+  },
+  {
+    "path": "models/kenney/kitchenCabinetCornerInner.glb",
+    "md5": "e8710abb4e95c243581c373eac8127f4",
+    "size": 5184
+  },
+  {
+    "path": "models/kenney/kitchenCabinetCornerRound.glb",
+    "md5": "1bab084cf6c484afb88196cfc94e9a12",
+    "size": 13656
+  },
+  {
+    "path": "models/kenney/kitchenCabinetDrawer.glb",
+    "md5": "24c7f730aafacdcb90928887e5419a17",
+    "size": 15384
+  },
+  {
+    "path": "models/kenney/kitchenCabinetUpper.glb",
+    "md5": "36fe07cb12f885addecece0db845680f",
+    "size": 8168
+  },
+  {
+    "path": "models/kenney/kitchenCabinetUpperCorner.glb",
+    "md5": "e334b12b1b55ad14d27f13323cb50bc0",
+    "size": 13712
+  },
+  {
+    "path": "models/kenney/kitchenCabinetUpperDouble.glb",
+    "md5": "f029cdabd31bd709120d5a25585624fe",
+    "size": 18184
+  },
+  {
+    "path": "models/kenney/kitchenCabinetUpperLow.glb",
+    "md5": "c1555e7881112267c19d222abbe2428b",
+    "size": 7216
+  },
+  {
+    "path": "models/kenney/kitchenCoffeeMachine.glb",
+    "md5": "8d2a03f83a7aca3fe0dd228adf016269",
+    "size": 13332
+  },
+  {
+    "path": "models/kenney/kitchenFridge.glb",
+    "md5": "a30092bd93d0ed0cb1baa47bbee427fb",
+    "size": 20116
+  },
+  {
+    "path": "models/kenney/kitchenFridgeBuiltIn.glb",
+    "md5": "325baa9d47f608d147d2f38dfe47bc40",
+    "size": 22616
+  },
+  {
+    "path": "models/kenney/kitchenFridgeLarge.glb",
+    "md5": "4f11cafad94a8122f2e53ca13ad528b3",
+    "size": 30632
+  },
+  {
+    "path": "models/kenney/kitchenFridgeSmall.glb",
+    "md5": "f8ef1f0ea04f90605f1a273547f9ede5",
+    "size": 12988
+  },
+  {
+    "path": "models/kenney/kitchenMicrowave.glb",
+    "md5": "824a0b1bfad3a15e697f570a1b30a3c8",
+    "size": 11248
+  },
+  {
+    "path": "models/kenney/kitchenSink.glb",
+    "md5": "19aacfe0938fc57e3f2630e642945d00",
+    "size": 23480
+  },
+  {
+    "path": "models/kenney/kitchenStove.glb",
+    "md5": "727c31249e16f144785f80b6234de668",
+    "size": 54324
+  },
+  {
+    "path": "models/kenney/kitchenStoveElectric.glb",
+    "md5": "bf8debb4917635f186f6d0dedf9e0a30",
+    "size": 18604
+  },
+  {
+    "path": "models/kenney/lampRoundFloor.glb",
+    "md5": "605be9419c50bb53c98d302f7d94887e",
+    "size": 6600
+  },
+  {
+    "path": "models/kenney/lampRoundTable.glb",
+    "md5": "a5a83a893892600bf4714f2beb9ea6f2",
+    "size": 6604
+  },
+  {
+    "path": "models/kenney/lampSquareCeiling.glb",
+    "md5": "bb6dcf013883386830ec15a11409b854",
+    "size": 5628
+  },
+  {
+    "path": "models/kenney/lampSquareFloor.glb",
+    "md5": "f748675f1ef69407febb44217dbea28e",
+    "size": 5624
+  },
+  {
+    "path": "models/kenney/lampSquareTable.glb",
+    "md5": "44463b5838bed788beafd847b9b5c924",
+    "size": 5624
+  },
+  {
+    "path": "models/kenney/lampWall.glb",
+    "md5": "53f619e54f98393367490071ac977bf0",
+    "size": 4828
+  },
+  {
+    "path": "models/kenney/laptop.glb",
+    "md5": "cce5c6c4e87db3386d9f6fa10ba06fcd",
+    "size": 5540
+  },
+  {
+    "path": "models/kenney/loungeChair.glb",
+    "md5": "9567e4f45caa88a609da3a8e11f875ff",
+    "size": 9648
+  },
+  {
+    "path": "models/kenney/loungeChairRelax.glb",
+    "md5": "0d8ff7a8097067d8d29bb7e2d4bc50d0",
+    "size": 13904
+  },
+  {
+    "path": "models/kenney/loungeDesignChair.glb",
+    "md5": "daa6a8e6ef589fe50302b30dbaa8caa5",
+    "size": 9136
+  },
+  {
+    "path": "models/kenney/loungeDesignSofa.glb",
+    "md5": "959f181d43d3c209ce3068a99414d2b7",
+    "size": 9128
+  },
+  {
+    "path": "models/kenney/loungeDesignSofaCorner.glb",
+    "md5": "d869a32fd36ea6b612af57128724fc37",
+    "size": 13744
+  },
+  {
+    "path": "models/kenney/loungeSofa.glb",
+    "md5": "52228f524fc7f128695f21304a5b92df",
+    "size": 9644
+  },
+  {
+    "path": "models/kenney/loungeSofaCorner.glb",
+    "md5": "f8945e10909cb2470ccda939e5d6293e",
+    "size": 13412
+  },
+  {
+    "path": "models/kenney/loungeSofaLong.glb",
+    "md5": "447b7b0e318d3dbfc883e52c1951e03e",
+    "size": 13112
+  },
+  {
+    "path": "models/kenney/loungeSofaOttoman.glb",
+    "md5": "1dfc72946de706a8a469e6b16eabddd5",
+    "size": 6960
+  },
+  {
+    "path": "models/kenney/paneling.glb",
+    "md5": "ecfb0a19543c3c961313c9aeb0e2a890",
+    "size": 3960
+  },
+  {
+    "path": "models/kenney/pillow.glb",
+    "md5": "5a86c7fd42bd78dcdbd9ecbde670454c",
+    "size": 5044
+  },
+  {
+    "path": "models/kenney/pillowBlue.glb",
+    "md5": "db5e320289617a7c088d1ee698e7bcb2",
+    "size": 5056
+  },
+  {
+    "path": "models/kenney/pillowBlueLong.glb",
+    "md5": "e48b8dfea8c4e7ac308249bdc170f703",
+    "size": 5088
+  },
+  {
+    "path": "models/kenney/pillowLong.glb",
+    "md5": "def92937d413b4eed34eed545214f8d4",
+    "size": 5072
+  },
+  {
+    "path": "models/kenney/plantSmall1.glb",
+    "md5": "b0e0b9587c4b85cfe311bcb1cfb90d57",
+    "size": 8224
+  },
+  {
+    "path": "models/kenney/plantSmall2.glb",
+    "md5": "e7d859b2f8bd3aea3ca9bf00efa4160d",
+    "size": 12996
+  },
+  {
+    "path": "models/kenney/plantSmall3.glb",
+    "md5": "30f5525d5f0d20c119a900292fcb1c5f",
+    "size": 8424
+  },
+  {
+    "path": "models/kenney/pottedPlant.glb",
+    "md5": "906e7745bd01786b6a0a4789eba9d27b",
+    "size": 7576
+  },
+  {
+    "path": "models/kenney/radio.glb",
+    "md5": "a01ad75a6d3a15df4d0e90682d6edce9",
+    "size": 25020
+  },
+  {
+    "path": "models/kenney/rugDoormat.glb",
+    "md5": "c265fe68dd1d4b7c015abcf3c0fc0491",
+    "size": 13812
+  },
+  {
+    "path": "models/kenney/rugRectangle.glb",
+    "md5": "567a9a947700ea725f797948e24bda15",
+    "size": 3188
+  },
+  {
+    "path": "models/kenney/rugRound.glb",
+    "md5": "514bfea323c4ecf575aab783ec349792",
+    "size": 10164
+  },
+  {
+    "path": "models/kenney/rugRounded.glb",
+    "md5": "398aa23feef5b617013f85e472dd2c25",
+    "size": 10876
+  },
+  {
+    "path": "models/kenney/rugSquare.glb",
+    "md5": "ca6e11badce807b3759112d237ab2887",
+    "size": 3180
+  },
+  {
+    "path": "models/kenney/shower.glb",
+    "md5": "3917957da6ea4c625222a4055d2528ed",
+    "size": 52020
+  },
+  {
+    "path": "models/kenney/showerRound.glb",
+    "md5": "bf837dbca389a41ed15b16612cdb009a",
+    "size": 72048
+  },
+  {
+    "path": "models/kenney/sideTable.glb",
+    "md5": "6d387bf0140875d43e5f18962fd0e7e1",
+    "size": 8800
+  },
+  {
+    "path": "models/kenney/sideTableDrawers.glb",
+    "md5": "836a8ccade4976a18a83d32e4f83fa83",
+    "size": 19072
+  },
+  {
+    "path": "models/kenney/speaker.glb",
+    "md5": "4181d220fb107f0edfec2efd2d394856",
+    "size": 15744
+  },
+  {
+    "path": "models/kenney/speakerSmall.glb",
+    "md5": "75aa41176a82ed25270cb88aeb438c91",
+    "size": 15244
+  },
+  {
+    "path": "models/kenney/stairs.glb",
+    "md5": "734d3cca0e913a32e4732087ee7143b6",
+    "size": 21616
+  },
+  {
+    "path": "models/kenney/stairsCorner.glb",
+    "md5": "a302023a90727592b891c5b6dd6a57df",
+    "size": 21576
+  },
+  {
+    "path": "models/kenney/stairsOpen.glb",
+    "md5": "6eabc4bc55c2f78997fb1676ad94dfcf",
+    "size": 39924
+  },
+  {
+    "path": "models/kenney/stairsOpenSingle.glb",
+    "md5": "c48a9512db937e7b7cba9cccbba6abaa",
+    "size": 24600
+  },
+  {
+    "path": "models/kenney/stoolBar.glb",
+    "md5": "b3fab1902340bfa06d28ca210fae3e9d",
+    "size": 11816
+  },
+  {
+    "path": "models/kenney/stoolBarSquare.glb",
+    "md5": "34f49fe2edf8bf9e3f779d581a48a795",
+    "size": 9784
+  },
+  {
+    "path": "models/kenney/table.glb",
+    "md5": "253cbaa0c852707fdead38e9980e08fd",
+    "size": 8196
+  },
+  {
+    "path": "models/kenney/tableCloth.glb",
+    "md5": "209d03ec6ee503c0dce7a6d4c26477db",
+    "size": 9920
+  },
+  {
+    "path": "models/kenney/tableCoffee.glb",
+    "md5": "e1ae6617be63cb5a266686c88a9d7ea4",
+    "size": 8256
+  },
+  {
+    "path": "models/kenney/tableCoffeeGlass.glb",
+    "md5": "ee22edd7c6e233b543a27084f915f870",
+    "size": 9428
+  },
+  {
+    "path": "models/kenney/tableCoffeeGlassSquare.glb",
+    "md5": "5574066cc3feef86282ab1e3edcc6852",
+    "size": 9448
+  },
+  {
+    "path": "models/kenney/tableCoffeeSquare.glb",
+    "md5": "ca79138e69662bccba0bada95b7f4c33",
+    "size": 8276
+  },
+  {
+    "path": "models/kenney/tableCross.glb",
+    "md5": "409bd132e46672149fe48067a62b15f5",
+    "size": 12140
+  },
+  {
+    "path": "models/kenney/tableCrossCloth.glb",
+    "md5": "770886f8e4f8ec69b4ad70e09a693479",
+    "size": 13852
+  },
+  {
+    "path": "models/kenney/tableGlass.glb",
+    "md5": "104f5b17793897941d23b6bc6437155b",
+    "size": 9848
+  },
+  {
+    "path": "models/kenney/tableRound.glb",
+    "md5": "01d2ab7c937b31fbfda49444fcc24863",
+    "size": 6444
+  },
+  {
+    "path": "models/kenney/televisionAntenna.glb",
+    "md5": "3d8ff253b155f7858c5fd35ff0d73170",
+    "size": 4500
+  },
+  {
+    "path": "models/kenney/televisionModern.glb",
+    "md5": "6971ba13bd540cf9e1613cf556f00d19",
+    "size": 6368
+  },
+  {
+    "path": "models/kenney/televisionVintage.glb",
+    "md5": "d28784d0bc32a7aaa7c99b8cf01c8e52",
+    "size": 19392
+  },
+  {
+    "path": "models/kenney/toaster.glb",
+    "md5": "7b25aa25af40884d679dfcd17a025f55",
+    "size": 14924
+  },
+  {
+    "path": "models/kenney/toilet.glb",
+    "md5": "d2236368944c73807d553b5ad42c0fb0",
+    "size": 18112
+  },
+  {
+    "path": "models/kenney/toiletSquare.glb",
+    "md5": "a32ee9842cc278bad3afba5d586b4779",
+    "size": 17548
+  },
+  {
+    "path": "models/kenney/trashcan.glb",
+    "md5": "6a34bd0502f8aa797f870973e5d2053e",
+    "size": 6452
+  },
+  {
+    "path": "models/kenney/wall.glb",
+    "md5": "dffaac29764cf9c9366b33d591303f3b",
+    "size": 3340
+  },
+  {
+    "path": "models/kenney/wallCorner.glb",
+    "md5": "3cfbae867d04fe430c2f922143c0bc76",
+    "size": 4460
+  },
+  {
+    "path": "models/kenney/wallCornerRond.glb",
+    "md5": "8658540f1688c4124471fd2ca1be5686",
+    "size": 10448
+  },
+  {
+    "path": "models/kenney/wallDoorway.glb",
+    "md5": "51e345d8684a27b396292ceb6a3be976",
+    "size": 6444
+  },
+  {
+    "path": "models/kenney/wallDoorwayWide.glb",
+    "md5": "fc3ac116ea1e433f7961e8e2bad8b691",
+    "size": 6468
+  },
+  {
+    "path": "models/kenney/wallHalf.glb",
+    "md5": "467b5aa0afc89a31ab66c863283c43ae",
+    "size": 3348
+  },
+  {
+    "path": "models/kenney/wallWindow.glb",
+    "md5": "8483c1b2c114fed4c6a4e24b39dea9d5",
+    "size": 10744
+  },
+  {
+    "path": "models/kenney/wallWindowSlide.glb",
+    "md5": "414adcb3382a6bac1bccf53bbb649b07",
+    "size": 14564
+  },
+  {
+    "path": "models/kenney/washer.glb",
+    "md5": "704062d0cece606b3e5f77f729192421",
+    "size": 48104
+  },
+  {
+    "path": "models/kenney/washerDryerStacked.glb",
+    "md5": "5937c3de79dc93011b7231c0e4064b98",
+    "size": 64060
+  }
+]

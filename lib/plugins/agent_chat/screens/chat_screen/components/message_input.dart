@@ -52,6 +52,9 @@ class MessageInput extends StatefulWidget {
   /// 工具栏右侧动作组（贴右缘排布）
   final List<common.MessageInputQuickAction> trailingToolbarActions;
 
+  /// 是否在工具栏显示"你可以问"（建议问题）入口
+  final bool showSuggestedQuestions;
+
   /// 素描面板是否画墨线描边（透传通用输入框；false = 无边框）
   final bool showPanelStroke;
 
@@ -64,6 +67,7 @@ class MessageInput extends StatefulWidget {
     this.extraQuickActions = const [],
     this.toolbarActions = const [],
     this.trailingToolbarActions = const [],
+    this.showSuggestedQuestions = false,
     this.showPanelStroke = true,
     this.dashedPanelStroke = false,
   });
@@ -341,15 +345,38 @@ class _MessageInputState extends State<MessageInput> {
       useSketchPanel: true,
       showPanelStroke: widget.showPanelStroke,
       dashedPanelStroke: widget.dashedPanelStroke,
-      quickActions: widget.toolbarActions,
+      // 工具栏常驻快捷动作：图片/视频/Skill/MCP（完整列表见"+"抽屉）
+      quickActions: [
+        common.MessageInputQuickAction(
+          icon: DsIconKind.image,
+          tooltip: 'agent_chat_image'.tr,
+          onPressed: () => widget.controller.pickImages(),
+        ),
+        common.MessageInputQuickAction(
+          icon: DsIconKind.video,
+          tooltip: '选择视频',
+          onPressed: _pickVideos,
+        ),
+        common.MessageInputQuickAction(
+          icon: DsIconKind.book,
+          tooltip: '选择Skill',
+          onPressed: () => _showResourceMenu(skills: true),
+        ),
+        common.MessageInputQuickAction(
+          icon: DsIconKind.block,
+          tooltip: '选择MCP',
+          onPressed: () => _showResourceMenu(skills: false),
+        ),
+        ...widget.toolbarActions,
+      ],
       thinkingEffortIndex:
           widget.controller.currentAgent?.thinkingEffort.index ?? 1,
       onThinkingEffortChanged: agentReady
           ? (index) => _updateThinkingEffort(agentId!, index)
           : null,
-      // 工具栏右组：内置"你可以问"/表情（原输入框内嵌后缀）+ 外部注入动作
+      // 工具栏右组：表情 + 外部注入动作（"你可以问"按需开启，见 [showSuggestedQuestions]）
       trailingQuickActions: [
-        if (agentReady)
+        if (agentReady && widget.showSuggestedQuestions)
           common.MessageInputQuickAction(
             icon: DsIconKind.star,
             tooltip: '你可以问',
