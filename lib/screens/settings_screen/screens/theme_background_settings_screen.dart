@@ -10,6 +10,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/services/app_background_controller.dart';
 import 'package:aboutme/core/services/ds_ink_motion_controller.dart';
 import 'package:aboutme/core/services/ds_ink_style_controller.dart';
+import 'package:aboutme/core/services/hand_drawn_style_controller.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/picker/app_color_picker.dart';
@@ -1071,6 +1072,59 @@ class _ThemeBackgroundSettingsScreenState
                     SettingsGroup(
                       title: 'screens_inkMotionDuration'.tr,
                       children: [_buildInkMotionSetting(theme)],
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
+                    // 手绘便签效果：全局控制贴条与倾斜姿态
+                    ListenableBuilder(
+                      listenable: HandDrawnStyleController(),
+                      builder: (context, _) {
+                        final style = HandDrawnStyleController();
+                        return SettingsGroup(
+                          title: 'settings_screen_handDrawnGroupTitle'.tr,
+                          children: [
+                            SettingsTile(
+                              icon: DsIconKind.stickyNote,
+                              iconColor: DsAccentColors.amber,
+                              title: 'settings_screen_handDrawnTapeTitle'.tr,
+                              subtitle:
+                                  'settings_screen_handDrawnTapeSubtitle'.tr,
+                              showChevron: false,
+                              trailing: DSSwitch(
+                                value: style.tapeEnabled,
+                                onChanged: style.setTapeEnabled,
+                              ),
+                            ),
+                            SettingsTile(
+                              icon: DsIconKind.rotateRight,
+                              iconColor: DsAccentColors.pink,
+                              title: 'settings_screen_handDrawnTiltTitle'.tr,
+                              subtitle:
+                                  'settings_screen_handDrawnTiltSubtitle'.tr,
+                              showChevron: false,
+                              trailing: DSSwitch(
+                                value: style.tiltEnabled,
+                                onChanged: style.setTiltEnabled,
+                              ),
+                            ),
+                            SettingsTile(
+                              icon: DsIconKind.animation,
+                              iconColor: DsAccentColors.sky,
+                              title:
+                                  'settings_screen_handDrawnEntranceTitle'.tr,
+                              subtitle:
+                                  'settings_screen_handDrawnEntranceSubtitle'
+                                  .tr,
+                              showChevron: false,
+                              trailing: DSSwitch(
+                                value: style.entranceEnabled,
+                                onChanged: style.setEntranceEnabled,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
 
                     SizedBox(height: theme.spacing.lg),

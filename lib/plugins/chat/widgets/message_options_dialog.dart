@@ -1,11 +1,17 @@
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/utils/message_options_handler.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_bubble/components/fixed_symbol.dart';
 import 'package:aboutme/widgets/common/cute_notepad_editor.dart';
+import 'package:aboutme/widgets/emoji_picker/emoji.dart';
+import 'package:aboutme/widgets/emoji_picker/emoji_category.dart';
+import 'package:aboutme/widgets/emoji_picker/emoji_picker.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 消息选项对话框组件
@@ -245,89 +251,75 @@ class MessageOptionsDialog extends StatelessWidget {
   }
 
   void _showFixedSymbolDialog(BuildContext context) async {
-    final TextEditingController symbolController = TextEditingController();
     final List<String> recentSymbols = await _getRecentSymbols();
+    if (!context.mounted) return;
+
+    // 最近使用分组：文本与图像符号统一为可选项
+    final recentCategory = recentSymbols.isEmpty
+        ? null
+        : EmojiCategory(
+            icon: const Text('🕘'),
+            name: 'chat_recentSymbols'.tr,
+            emojis: recentSymbols
+                .map(
+                  (value) => Emoji(
+                    widget: buildFixedSymbolChild(
+                      value,
+                      style: const TextStyle(fontSize: 20),
+                      imageSize: 24,
+                    ),
+                    value: value,
+                    aliases: [value].lock,
+                    description: value,
+                    tags: const IList.empty(),
+                  ),
+                )
+                .toIList(),
+          );
 
     SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'chat_addEmoji'.tr,
       child: Builder(
-        builder: (context) {
-          final theme = DSThemeBridge.resolve(context);
+        builder: (sheetContext) {
           return Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
-                child: DSInput(
-                  controller: symbolController,
-                  label: 'chat_tag'.tr,
-                  hint: 'chat_tagHint'.tr,
-                  maxLength: 1, // 限制只能输入一个字符
-                ),
-              ),
-              if (useRecentSymbols && recentSymbols.isNotEmpty) ...[
-                SizedBox(height: theme.spacing.md),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
-                  child: Text(
-                    'chat_recentSymbols'.tr,
-                    style: DsTypography.caption.copyWith(
-                      color: theme.textSub,
-                    ),
+              SizedBox(
+                height: MediaQuery.of(sheetContext).size.height * 0.5,
+                child: ProviderScope(
+                  // 开启全部内置分组：SVG 贴纸 / 方块表情 / 内置表情 / Unicode 表情
+                  child: EmojiPicker(
+                    prependCategories: [
+                      if (recentCategory != null) recentCategory,
+                    ].lock,
+                    types: const [
+                      kEmojiPickerTypeSvg,
+                      kEmojiPickerTypeImage,
+                      kEmojiPickerTypeEmoji,
+                    ],
+                    // 搜索框提交的自由文本也作为文本符号
+                    allowFreeText: true,
+                    onSelection: (value, isFreeText) {
+                      final symbol = value.trim();
+                      if (symbol.isEmpty) return;
+                      _addRecentSymbol(symbol);
+                      onSetFixedSymbol(message, symbol);
+                      Navigator.pop(sheetContext);
+                    },
                   ),
                 ),
-                SizedBox(height: theme.spacing.sm),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
-                  child: Wrap(
-                    spacing: theme.spacing.sm,
-                    runSpacing: theme.spacing.sm,
-                    children: recentSymbols
-                        .map(
-                          (symbol) => DSChip(
-                            label: symbol,
-                            onSelected:
-                                (_) => symbolController.text = symbol,
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ],
-              SizedBox(height: theme.spacing.lg),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: DSButton(
-                        label: 'app_cancel'.tr,
-                        variant: DSButtonVariant.outline,
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
-                    SizedBox(width: theme.spacing.md),
-                    Expanded(
-                      child: DSButton(
-                        label: 'app_confirm'.tr,
-                        onPressed: () async {
-                          final symbol = symbolController.text.isEmpty
-                              ? null
-                              : symbolController.text;
-                          if (symbol != null) {
-                            await _addRecentSymbol(symbol);
-                          }
-                          onSetFixedSymbol(message, symbol);
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
               ),
-              SizedBox(height: theme.spacing.md),
+              // 移除固定符号
+              if (message.fixedSymbol != null)
+                SmoothSheetAction(
+                  icon: DsIconKind.refresh,
+                  label: 'chat_removeSymbol'.tr,
+                  onTap: () {
+                    onSetFixedSymbol(message, null);
+                    Navigator.pop(sheetContext);
+                  },
+                ),
             ],
           );
         },

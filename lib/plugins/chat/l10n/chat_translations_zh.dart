@@ -72,6 +72,7 @@ class ChatTranslationsZh {
     'chat_favorite': '收藏',
     'chat_unfavorite': '取消收藏',
     'chat_recentSymbols': '最近使用',
+    'chat_removeSymbol': '移除标记',
     'chat_editMessage': '编辑消息',
     'chat_deleteMessage': '删除消息',
     'chat_deleteMessageConfirmation': '确定要删除这条消息吗？此操作不可撤销。',

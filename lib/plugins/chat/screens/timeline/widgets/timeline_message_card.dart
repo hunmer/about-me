@@ -14,6 +14,7 @@ import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/utils/text_highlight.dart';
 import 'package:aboutme/plugins/chat/screens/timeline/controllers/timeline_controller/base_controller.dart';
 import 'package:aboutme/plugins/chat/utils/message_options_handler.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_bubble/components/fixed_symbol.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/chat_screen.dart';
 
@@ -120,13 +121,14 @@ class TimelineMessageCard extends StatelessWidget {
                         color: theme.primary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
+                      child: buildFixedSymbolChild(
                         message.fixedSymbol!,
                         style: TextStyle(
                           color: theme.primary,
                           fontWeight: FontWeight.bold,
                           fontSize: isGridView ? 10 : 12,
                         ),
+                        imageSize: isGridView ? 12 : 14,
                       ),
                     ),
                   ],

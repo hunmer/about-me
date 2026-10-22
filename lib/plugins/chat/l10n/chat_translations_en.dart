@@ -72,6 +72,7 @@ class ChatTranslationsEn {
     'chat_favorite': 'Favorite',
     'chat_unfavorite': 'Unfavorite',
     'chat_recentSymbols': 'Recently used',
+    'chat_removeSymbol': 'Remove Symbol',
     'chat_editMessage': 'Edit Message',
     'chat_deleteMessage': 'Delete Message',
     'chat_deleteMessageConfirmation':

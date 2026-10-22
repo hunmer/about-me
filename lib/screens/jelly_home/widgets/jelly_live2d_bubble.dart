@@ -67,22 +67,39 @@ extension _JellyLive2DBubble on _JellyLive2DState {
     await prefs.setDouble(_bubbleOffsetYPrefKey, _bubbleOffsetY);
   }
 
-  /// 按命中区域挑一条随机台词，避免和上一条重复
+  /// 按命中区域挑一条随机台词，避免和上一条重复。
+  /// 当前档案开启自定义台词时优先取该部位配置，未配置的部位回退内置文案
   String _pickBubbleMessage(String? hitAreaId, String? hitAreaName) {
     final area = (hitAreaName != null && hitAreaName.isNotEmpty)
         ? hitAreaName
         : hitAreaId?.replaceFirst('HitArea', '') ?? '';
     final lower = area.toLowerCase();
-    final List<String> pool;
-    if (lower.contains('head') || area.contains('头')) {
-      pool = _headMessages;
-    } else if (lower.contains('body') || area.contains('身')) {
-      pool = _bodyMessages;
-    } else if (area.isNotEmpty) {
-      pool = _bodyMessages;
+    final String partId;
+    if (area.isEmpty) {
+      partId = 'miss';
     } else {
-      pool = _missMessages;
+      partId =
+          live2DTapParts
+              .where(
+                (part) => part.keywords.any((keyword) =>
+                    lower.contains(keyword.toLowerCase())),
+              )
+              .map((part) => part.id)
+              .firstOrNull ??
+          'body';
     }
+    final archive = Live2DPlugin.instance.selected;
+    final custom =
+        archive != null && archive.tapMessagesEnabled
+        ? archive.tapMessageList(partId)
+        : const <String>[];
+    final List<String> pool = custom.isNotEmpty
+        ? custom
+        : switch (partId) {
+            'head' => _headMessages,
+            'miss' => _missMessages,
+            _ => _bodyMessages,
+          };
     var index = _random.nextInt(pool.length);
     if (pool[index] == _lastBubbleMessage && pool.length > 1) {
       index = (index + 1) % pool.length;

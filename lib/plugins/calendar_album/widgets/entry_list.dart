@@ -75,8 +75,8 @@ class EntryList extends StatelessWidget {
       children: [
         // 连线卡片：组件仅提供交错布局 + 贝塞尔连线，卡面由 cardBuilder 外置
         LinkedTaskFlowCardWidget(
-          backgroundFrom: theme.surfaceAlt,
-          backgroundTo: theme.surfaceAlt,
+          backgroundFrom: Colors.transparent,
+          backgroundTo: Colors.transparent,
           cardColor: theme.surface,
           connectorColor: theme.primary,
           showStripes: false,

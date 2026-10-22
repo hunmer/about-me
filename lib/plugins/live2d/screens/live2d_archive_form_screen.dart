@@ -42,6 +42,12 @@ class Live2DArchiveFormScreen extends StatefulWidget {
 class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
   final plugin = Live2DPlugin.instance;
   final nameController = TextEditingController();
+
+  /// 点击台词按部位的输入控制器（部位 id -> 多行文本，每行一条）
+  final Map<String, TextEditingController> tapControllers = {
+    for (final part in live2DTapParts)
+      part.id: TextEditingController(),
+  };
   List<AIAgent> agents = [];
   Live2DArchive? archive;
   String? _coverPath;
@@ -54,6 +60,9 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         .firstOrNull;
     nameController.text = archive?.name ?? '';
     _coverPath = archive?.coverPath;
+    for (final entry in tapControllers.entries) {
+      entry.value.text = archive?.tapMessages[entry.key] ?? '';
+    }
     widget.onReady?.call(_save);
     widget.onDeleteReady?.call(_delete);
     AgentController().loadVisibleAgents().then((value) {
@@ -64,6 +73,9 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
   @override
   void dispose() {
     nameController.dispose();
+    for (final controller in tapControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -145,6 +157,9 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         ? 'Live2D'
         : nameController.text.trim();
     current.coverPath = _coverPath;
+    current.tapMessages = {
+      for (final entry in tapControllers.entries) entry.key: entry.value.text,
+    };
     await plugin.upsert(current);
     if (!mounted) return;
     ScaffoldMessenger.of(
@@ -295,6 +310,28 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
           showChevron: true,
           onTap: _chooseAgent,
         ),
+        const SizedBox(height: 12),
+        DSListItem(
+          title: '点击台词',
+          subtitle: '开启后按部位随机显示自定义台词，未填写的部位使用默认文案',
+          leading: DsIcon(DsIconKind.chat, color: theme.primary),
+          trailing: DSSwitch(
+            value: current.tapMessagesEnabled,
+            onChanged: (value) =>
+                setState(() => current.tapMessagesEnabled = value),
+          ),
+        ),
+        if (current.tapMessagesEnabled) ...[
+          for (final part in live2DTapParts) ...[
+            const SizedBox(height: 12),
+            DSInput(
+              controller: tapControllers[part.id],
+              label: '${part.label}台词（每行一条，随机挑选）',
+              maxLines: 3,
+              minLines: 2,
+            ),
+          ],
+        ],
         if (!widget.embedInSheet) ...[
           const SizedBox(height: 32),
           SizedBox(
