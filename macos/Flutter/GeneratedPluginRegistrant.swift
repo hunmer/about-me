@@ -34,6 +34,7 @@ import super_native_extensions
 import url_launcher_macos
 import video_player_avfoundation
 import window_manager
+import xue_hua_media_info
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   AudioplayersDarwinPlugin.register(with: registry.registrar(forPlugin: "AudioplayersDarwinPlugin"))
@@ -65,4 +66,5 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   UrlLauncherPlugin.register(with: registry.registrar(forPlugin: "UrlLauncherPlugin"))
   VideoPlayerPlugin.register(with: registry.registrar(forPlugin: "VideoPlayerPlugin"))
   WindowManagerPlugin.register(with: registry.registrar(forPlugin: "WindowManagerPlugin"))
+  XueHuaMediaInfoDarwinPlugin.register(with: registry.registrar(forPlugin: "XueHuaMediaInfoDarwinPlugin"))
 }

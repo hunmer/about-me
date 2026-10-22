@@ -8,12 +8,17 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
 import 'package:aboutme/plugins/toolbox/services/ai_image_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/pixel_eraser_page.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as path;
+import 'package:photo_manager/photo_manager.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 /// 照片编辑结果：导出字节 + 保存路径
 /// （[overwroteOriginal] 为 true 时已覆盖写回原图位置，路径未变）
@@ -34,42 +39,226 @@ class PhotoEditorResult {
   final bool overwroteOriginal;
 }
 
+/// 编辑器退出结果（bytes 为空表示取消/丢弃）
+class _EditorExit {
+  const _EditorExit({
+    required this.bytes,
+    this.savedInEditor = false,
+    this.savedPath,
+  });
+
+  final Uint8List? bytes;
+
+  /// 返回前已在编辑器内完成保存（返回时选择"保存"的路径）
+  final bool savedInEditor;
+
+  final String? savedPath;
+}
+
 /// 照片编辑器组件（包装 pro_image_editor）：
 /// 解析任意来源图片（网络 URL / assets / 本地文件 / 应用存储相对路径）
-/// 为字节后打开内置编辑器；导出结果优先覆盖写回原位置
-/// （本地文件 / 应用存储），无法写回的网络/Asset 图片保存副本到 './editor/'。
+/// 为字节后打开内置编辑器。
 ///
-/// 返回 [PhotoEditorResult]（用户取消或失败返回 null）。
-/// 写回原位时 url 不变，调用方需自行 evict 图片缓存后刷新显示。
+/// [savePath] 为可选的目标保存路径（文件完整路径：相对 app_data 如
+/// 'editor/x.png'，或本地绝对路径）：
+/// - 传入：提交后直接写入该路径，不弹保存询问
+/// - 未传入：提交后弹"是否保存"询问（保存=存副本到 app_data/editor/，
+///   不保存=丢弃）；返回时有未保存编辑同样弹询问（保存=导出存副本后关闭）
+///
+/// 返回 [PhotoEditorResult]（用户取消、丢弃或失败返回 null）。
+/// 写回原位（savePath 与 imageUrl 相同）时 url 不变，
+/// 调用方需自行 evict 图片缓存后刷新显示。
 Future<PhotoEditorResult?> showPhotoEditor(
   BuildContext context, {
   required String imageUrl,
+  String? savePath,
 }) async {
-  final edited = await NavigationHelper.push<Uint8List>(
+  final exit = await NavigationHelper.push<_EditorExit>(
     context,
-    _PhotoEditorScreen(imageUrl: imageUrl),
+    _PhotoEditorScreen(imageUrl: imageUrl, savePath: savePath),
   );
-  if (edited == null) return null;
+  final edited = exit?.bytes;
+  if (edited == null || edited.isEmpty) return null;
 
   try {
-    final savedPath = await _persistEdited(imageUrl, edited);
-    if (!context.mounted) return null;
-    if (savedPath == imageUrl) {
-      Toast.success('app_photoEditSaved'.tr);
-    } else if (savedPath != null) {
-      Toast.success('${'app_photoEditSavedCopy'.tr}: $savedPath');
+    // 返回时已在编辑器内保存：直接返回（相册场景 savedPath 为空，toast 已弹）
+    if (exit!.savedInEditor) {
+      final path = exit.savedPath ?? '';
+      if (path.isNotEmpty && context.mounted) {
+        Toast.success('${'app_photoEditSavedCopy'.tr}: $path');
+      }
+      return PhotoEditorResult(
+        bytes: edited,
+        savedPath: path,
+        overwroteOriginal: false,
+      );
     }
-    return PhotoEditorResult(
-      bytes: edited,
-      savedPath: savedPath ?? imageUrl,
-      overwroteOriginal: savedPath == imageUrl,
-    );
+    if (savePath != null && savePath.isNotEmpty) {
+      // 调用方指定保存路径：提交后直接写入
+      final savedPath = await _writeToSavePath(savePath, edited);
+      if (!context.mounted) return null;
+      if (savedPath == imageUrl) {
+        Toast.success('app_photoEditSaved'.tr);
+      } else {
+        Toast.success('${'app_photoEditSavedCopy'.tr}: $savedPath');
+      }
+      return PhotoEditorResult(
+        bytes: edited,
+        savedPath: savedPath,
+        overwroteOriginal: savedPath == imageUrl,
+      );
+    }
+    // 未指定路径：提交后询问保存目标（软件内部 / 系统相册 / 不保存）
+    final target = await _chooseSaveTarget(context, allowCancel: false);
+    if (target == _SaveTarget.internal) {
+      final savedPath = await ImageUtils.saveBytesToAppDirectory(
+        edited,
+        'editor',
+        // 擦除产物为 PNG（保留透明），按魔数判断扩展名
+        extension: _looksLikePng(edited) ? '.png' : '.jpg',
+      );
+      if (context.mounted) {
+        Toast.success('${'app_photoEditSavedCopy'.tr}: $savedPath');
+      }
+      return PhotoEditorResult(
+        bytes: edited,
+        savedPath: savedPath,
+        overwroteOriginal: false,
+      );
+    }
+    if (target == _SaveTarget.album) {
+      final ok = await _saveToAlbum(context, edited);
+      // savedPath 留空：相册产物不在 app_data（toast 已由保存流程弹出）
+      return ok
+          ? PhotoEditorResult(
+              bytes: edited,
+              savedPath: '',
+              overwroteOriginal: false,
+            )
+          : null;
+    }
+    return null;
   } catch (e) {
     debugPrint('照片编辑保存失败: $e');
     if (context.mounted) Toast.error('app_photoEditSaveFailed'.tr);
     return null;
   }
 }
+
+/// 未保存编辑的保存目标
+enum _SaveTarget { internal, album, discard, cancel }
+
+/// 保存目标询问：软件内部 / 系统相册（Web 隐藏）/ 不保存 [/ 继续编辑]。
+/// [allowCancel] 为 true 时（编辑器还开着）多一个"继续编辑"选项。
+Future<_SaveTarget?> _chooseSaveTarget(
+  BuildContext context, {
+  required bool allowCancel,
+}) async {
+  return showDialog<_SaveTarget>(
+    context: context,
+    builder: (context) => SimpleDialog(
+      title: Text('app_photoEditUnsavedTitle'.tr),
+      children: [
+        SimpleDialogOption(
+          onPressed: () => Navigator.pop(context, _SaveTarget.internal),
+          child: ListTile(
+            leading: const Icon(Icons.folder_outlined),
+            title: Text('app_photoEditSaveInternal'.tr),
+            subtitle: const Text('app_data/editor/'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        if (!kIsWeb)
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, _SaveTarget.album),
+            child: ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text('app_photoEditSaveAlbum'.tr),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        SimpleDialogOption(
+          onPressed: () => Navigator.pop(context, _SaveTarget.discard),
+          child: ListTile(
+            leading: const Icon(Icons.delete_outline),
+            title: Text('app_photoEditUnsavedDiscard'.tr),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        if (allowCancel)
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, _SaveTarget.cancel),
+            child: ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: Text('app_photoEditUnsavedCancel'.tr),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+/// 保存到系统相册：移动端走 PhotoManager，桌面端退化为另存为文件。
+/// 成功返回 true（toast 已弹）。
+Future<bool> _saveToAlbum(BuildContext context, Uint8List bytes) async {
+  final name =
+      'photo_editor_${DateTime.now().millisecondsSinceEpoch}'
+      '${_looksLikePng(bytes) ? '.png' : '.jpg'}';
+  try {
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+      final state = await PhotoManager.requestPermissionExtend();
+      if (!state.hasAccess) {
+        if (context.mounted) Toast.error('app_stickerNoPermission'.tr);
+        return false;
+      }
+      await PhotoManager.editor.saveImage(bytes, filename: name, title: name);
+      if (context.mounted) Toast.success('app_stickerSavedAlbum'.tr);
+      return true;
+    }
+    // 桌面端无系统相册：另存为文件
+    final savePath = await FilePicker.platform.saveFile(
+      fileName: name,
+      type: FileType.image,
+    );
+    if (savePath == null) return false;
+    final ext = path.extension(name);
+    final file = File(
+      savePath.toLowerCase().endsWith(ext) ? savePath : '$savePath$ext',
+    );
+    await file.writeAsBytes(bytes, flush: true);
+    if (context.mounted) {
+      Toast.success('${'app_photoEditSavedCopy'.tr}: ${file.path}');
+    }
+    return true;
+  } catch (e) {
+    debugPrint('保存到相册失败: $e');
+    if (context.mounted) Toast.error('app_photoEditSaveFailed'.tr);
+    return false;
+  }
+}
+
+/// 写入指定保存路径：绝对路径直接写文件，其余按 app_data 相对路径走存储后端
+Future<String> _writeToSavePath(String savePath, Uint8List bytes) async {
+  final normalized = savePath.replaceAll(r'\', '/');
+  if (!kIsWeb &&
+      (normalized.startsWith('/') ||
+          RegExp(r'^[A-Za-z]:/').hasMatch(normalized))) {
+    final file = File(normalized);
+    await file.parent.create(recursive: true);
+    await file.writeAsBytes(bytes, flush: true);
+    return normalized;
+  }
+  final rel = normalized.startsWith('./')
+      ? normalized.substring(2)
+      : normalized;
+  await globalStorage.writeBytes(rel, bytes);
+  return './$rel';
+}
+
+/// PNG 魔数（0x89 50 4E 47）探测
+bool _looksLikePng(Uint8List bytes) =>
+    bytes.length > 4 && bytes[0] == 0x89 && bytes[1] == 0x50;
 
 /// 读取任意来源图片字节：网络下载 / asset 加载 / 存储读取 / 本地文件读取
 Future<Uint8List?> _loadImageBytes(String url) async {
@@ -102,41 +291,14 @@ Future<Uint8List?> _loadImageBytes(String url) async {
   }
 }
 
-/// 持久化编辑结果：返回保存路径（与 [url] 相同表示覆盖写回原位），
-/// 保存副本时返回新路径，失败抛异常
-Future<String?> _persistEdited(String url, Uint8List bytes) async {
-  final isHttp = url.startsWith('http://') || url.startsWith('https://');
-  final isAsset = url.startsWith('assets/');
-  if (!isHttp && !isAsset) {
-    final storagePath = url.startsWith('./')
-        ? url.substring(2).replaceAll(r'\', '/')
-        : null;
-    // Web / 远端存储：经全局存储后端写回原位
-    if (storagePath != null && (kIsWeb || globalStorage.isRemote)) {
-      await globalStorage.writeBytes(storagePath, bytes);
-      return url;
-    }
-    // 本地模式：覆盖本地文件
-    if (!kIsWeb) {
-      final absolutePath = await ImageUtils.getAbsolutePath(url);
-      if (absolutePath.isNotEmpty && !absolutePath.startsWith('http')) {
-        final file = File(absolutePath);
-        if (await file.exists()) {
-          await file.writeAsBytes(bytes, flush: true);
-          return url;
-        }
-      }
-    }
-  }
-  // 无法写回原位（网络/Asset/本地文件缺失）：保存副本到应用存储
-  return ImageUtils.saveBytesToAppDirectory(bytes, 'editor');
-}
-
 /// 编辑器全屏页：进入时加载图片字节（loading/错误占位），完成后交给 ProImageEditor
 class _PhotoEditorScreen extends StatefulWidget {
-  const _PhotoEditorScreen({required this.imageUrl});
+  const _PhotoEditorScreen({required this.imageUrl, this.savePath});
 
   final String imageUrl;
+
+  /// 目标保存路径（空=提交/返回时弹保存询问，保存到默认 app_data/editor/）
+  final String? savePath;
 
   @override
   State<_PhotoEditorScreen> createState() => _PhotoEditorScreenState();
@@ -146,9 +308,16 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
   Uint8List? _bytes;
   bool _loadFailed = false;
 
-  /// AI 修图替换画布计数：编辑器无中途换图 API，
-  /// 通过变更 key 整体重建以加载新图（编辑历史随之重置）
-  int _canvasGeneration = 0;
+  /// 编辑器 state 引用（返回时导出画布用）；
+  /// AI 修图替换画布时换新实例整体重建（编辑历史随之重置）
+  GlobalKey<ProImageEditorState> _editorKey = GlobalKey<ProImageEditorState>();
+
+  /// 返回时选择"保存"的暂存结果（onCloseEditor pop 带出）
+  _EditorExit? _closeExit;
+
+  /// 画布是否含透明像素（橡皮擦擦除后置 true）：
+  /// 编辑器导出格式随之切 PNG，避免透明被 JPG 压黑
+  bool _canvasHasAlpha = false;
 
   @override
   void initState() {
@@ -168,7 +337,23 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
     if (generated == null || !mounted) return;
     setState(() {
       _bytes = generated;
-      _canvasGeneration++;
+      _editorKey = GlobalKey<ProImageEditorState>();
+    });
+  }
+
+  /// 像素橡皮擦：涂抹擦除图片本体为透明，完成后替换画布
+  Future<void> _openPixelEraser() async {
+    final bytes = _bytes;
+    if (bytes == null) return;
+    final erased = await NavigationHelper.push<Uint8List>(
+      context,
+      PixelEraserPage(imageBytes: bytes),
+    );
+    if (erased == null || !mounted) return;
+    setState(() {
+      _bytes = erased;
+      _editorKey = GlobalKey<ProImageEditorState>();
+      _canvasHasAlpha = true;
     });
   }
 
@@ -229,12 +414,16 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
       backgroundColor: Colors.black,
       body: ProImageEditor.memory(
         bytes,
-        key: ValueKey('photo-editor-canvas-$_canvasGeneration'),
+        key: _editorKey,
         configs: ProImageEditorConfigs(
           i18n: _buildI18n(),
+          // 擦除后画布含透明，导出必须 PNG（JPG 无 alpha 会压黑）
+          imageGeneration: ImageGenerationConfigs(
+            outputFormat: _canvasHasAlpha ? OutputFormat.png : OutputFormat.jpg,
+          ),
           mainEditor: MainEditorConfigs(
             widgets: MainEditorWidgets(
-              // AI 修图浮动入口：子编辑器（裁剪/滤镜等）打开时隐藏
+              // AI 修图 / 像素橡皮擦浮动入口：子编辑器（裁剪/滤镜等）打开时隐藏
               wrapBody: (editor, rebuildStream, content) => Stack(
                 children: [
                   content,
@@ -245,24 +434,75 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
                       stream: rebuildStream,
                       builder: (_) => editor.isSubEditorOpen
                           ? const SizedBox.shrink()
-                          : _buildAiFab(),
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildAiFab(),
+                                const SizedBox(height: 12),
+                                _buildEraserFab(),
+                              ],
+                            ),
                     ),
                   ),
                 ],
               ),
+              // 未指定保存路径：返回时的关闭警告替换为保存询问
+              //（保存=导出存副本；指定了路径的调用方保留编辑器自带警告）
+              closeWarningDialog: widget.savePath == null
+                  ? _customCloseWarning
+                  : null,
             ),
           ),
         ),
         callbacks: ProImageEditorCallbacks(
           // 编辑器导出期间保持自带 loading 遮罩，pop 后由 showPhotoEditor 持久化
           onImageEditingComplete: (editedBytes) async {
-            Navigator.of(context).pop(editedBytes);
+            Navigator.of(context).pop(_EditorExit(bytes: editedBytes));
           },
           // 设置了该回调时编辑器不会自行 pop，由这里统一关闭
-          onCloseEditor: (mode) => Navigator.of(context).pop(),
+          onCloseEditor: (mode) => Navigator.of(context).pop(_closeExit),
         ),
       ),
     );
+  }
+
+  /// 返回且有未保存编辑：选择保存目标（软件内部/相册）后导出关闭，
+  /// 不保存=丢弃关闭，继续编辑=留在编辑器。
+  /// 导出走 captureEditorImage（与提交导出同一管线）。
+  Future<bool> _customCloseWarning(ProImageEditorState editor) async {
+    final target = await _chooseSaveTarget(context, allowCancel: true);
+    if (target == null || target == _SaveTarget.cancel) return false;
+    if (target == _SaveTarget.discard) return true;
+    try {
+      final bytes = await editor.captureEditorImage();
+      if (bytes.isEmpty) throw Exception('导出为空');
+      if (target == _SaveTarget.internal) {
+        final rel = await ImageUtils.saveBytesToAppDirectory(
+          bytes,
+          'editor',
+          extension: _looksLikePng(bytes) ? '.png' : '.jpg',
+        );
+        _closeExit = _EditorExit(
+          bytes: bytes,
+          savedInEditor: true,
+          savedPath: rel,
+        );
+      } else {
+        // 相册：toast 由保存流程弹出，savedPath 置空
+        final ok = await _saveToAlbum(context, bytes);
+        if (!ok) return false;
+        _closeExit = _EditorExit(
+          bytes: bytes,
+          savedInEditor: true,
+          savedPath: '',
+        );
+      }
+      return true;
+    } catch (e) {
+      debugPrint('照片编辑返回导出失败: $e');
+      if (mounted) Toast.error('app_photoEditSaveFailed'.tr);
+      return false;
+    }
   }
 
   /// AI 修图浮动按钮（Web 无本地文件供服务上传，点击仅提示）
@@ -275,6 +515,17 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
           ? () => Toast.error('app_aiEditWebUnsupported'.tr)
           : _openAiEdit,
       child: const Icon(Icons.auto_fix_high, size: 20),
+    );
+  }
+
+  /// 像素橡皮擦浮动按钮
+  Widget _buildEraserFab() {
+    return FloatingActionButton.small(
+      backgroundColor: Colors.black.withValues(alpha: 0.55),
+      foregroundColor: Colors.white,
+      tooltip: 'app_pixelEraser'.tr,
+      onPressed: _openPixelEraser,
+      child: const Icon(Icons.cleaning_services_outlined, size: 20),
     );
   }
 
@@ -483,7 +734,8 @@ class _AiEditDialogState extends State<_AiEditDialog> {
       Toast.error('app_aiEditPresetEmpty'.tr);
       return;
     }
-    final exists = _customPresets.contains(text) ||
+    final exists =
+        _customPresets.contains(text) ||
         _builtinPresetKeys.any((k) => k.tr == text);
     if (exists) {
       Toast.error('app_aiEditPresetExists'.tr);
@@ -626,24 +878,19 @@ class _AiEditDialogState extends State<_AiEditDialog> {
               children: [
                 for (final key in _builtinPresetKeys)
                   ActionChip(
-                    label: Text(
-                      key.tr,
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    label: Text(key.tr, style: const TextStyle(fontSize: 12)),
                     visualDensity: VisualDensity.compact,
                     onPressed: _running ? null : () => _applyPreset(key.tr),
                   ),
                 // 自定义预设：带 x 可删除
                 for (final preset in _customPresets)
                   InputChip(
-                    label: Text(
-                      preset,
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    label: Text(preset, style: const TextStyle(fontSize: 12)),
                     visualDensity: VisualDensity.compact,
                     onPressed: _running ? null : () => _applyPreset(preset),
-                    onDeleted:
-                        _running ? null : () => _removeCustomPreset(preset),
+                    onDeleted: _running
+                        ? null
+                        : () => _removeCustomPreset(preset),
                   ),
                 ActionChip(
                   avatar: const Icon(Icons.add, size: 16),

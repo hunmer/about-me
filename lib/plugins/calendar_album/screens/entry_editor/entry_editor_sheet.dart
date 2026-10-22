@@ -16,12 +16,15 @@ class EntryEditorSheet {
   /// 以底部弹层打开日记表单，保存成功后自动关闭
   ///
   /// [entry] 非空为编辑模式（标题栏提供删除，带确认）；否则为新建模式
+  /// [initialImages] 新建模式带入的图片（{'url','thumbUrl','liveVideoUrl'}，
+  /// 与 ImagePickerDialog 返回结构一致）
   /// [calendarController] / [tagController] 缺省时从 [context] 的 Provider 查询；
   /// 调用处 context 不在 Provider 树内（如 FAB、小组件）时需显式传入
   static Future<void> show(
     BuildContext context, {
     CalendarEntry? entry,
     DateTime? initialDate,
+    List<Map<String, dynamic>>? initialImages,
     CalendarController? calendarController,
     TagController? tagController,
   }) {
@@ -42,6 +45,7 @@ class EntryEditorSheet {
       child: _EntryEditorSheetBody(
         entry: entry,
         initialDate: initialDate,
+        initialImages: initialImages,
         calendarController: resolvedCalendarController,
         tagController: resolvedTagController,
         onStateReady: (state) => bodyState = state,
@@ -88,6 +92,7 @@ class EntryEditorSheet {
 class _EntryEditorSheetBody extends StatefulWidget {
   final CalendarEntry? entry;
   final DateTime? initialDate;
+  final List<Map<String, dynamic>>? initialImages;
   final CalendarController calendarController;
   final TagController tagController;
   final ValueChanged<_EntryEditorSheetBodyState> onStateReady;
@@ -95,6 +100,7 @@ class _EntryEditorSheetBody extends StatefulWidget {
   const _EntryEditorSheetBody({
     required this.entry,
     required this.initialDate,
+    this.initialImages,
     required this.calendarController,
     required this.tagController,
     required this.onStateReady,
@@ -114,6 +120,18 @@ class _EntryEditorSheetBodyState extends State<_EntryEditorSheetBody> {
       entry: widget.entry,
       isEditing: widget.entry != null,
       initialDate: widget.initialDate,
+      initialImageUrls: [
+        for (final r in widget.initialImages ?? const <Map<String, dynamic>>[])
+          if (r['url'] != null) r['url'] as String,
+      ],
+      initialThumbUrls: [
+        for (final r in widget.initialImages ?? const <Map<String, dynamic>>[])
+          r['thumbUrl'] as String? ?? '',
+      ],
+      initialLiveVideoUrls: [
+        for (final r in widget.initialImages ?? const <Map<String, dynamic>>[])
+          r['liveVideoUrl'] as String? ?? '',
+      ],
     );
     widget.onStateReady(this);
   }

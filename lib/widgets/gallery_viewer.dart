@@ -598,7 +598,15 @@ class _GalleryViewerState extends State<GalleryViewer>
   /// evict 图片缓存后重建当前页以显示新内容；
   /// 副本场景交由 onImageEdited 回调（photos 数据归调用方）
   Future<void> _openPhotoEditor(GalleryPhoto current) async {
-    final result = await showPhotoEditor(context, imageUrl: current.url);
+    final url = current.url;
+    // 本地/应用存储图：传原 url 覆盖写回原位（保持原行为，不弹询问）；
+    // 网络/Asset 无法写回：不传路径，提交/返回时弹保存询问
+    final canOverwrite = !url.startsWith('http') && !url.startsWith('assets/');
+    final result = await showPhotoEditor(
+      context,
+      imageUrl: url,
+      savePath: canOverwrite ? url : null,
+    );
     if (result == null || !mounted) return;
     widget.onImageEdited?.call(_index, result);
     if (!result.overwroteOriginal) return;

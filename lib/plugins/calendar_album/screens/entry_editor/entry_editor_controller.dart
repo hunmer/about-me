@@ -9,6 +9,11 @@ class EntryEditorController {
   final bool isEditing;
   final DateTime? initialDate;
 
+  /// 新建模式的初始图片（如"从照片创建"带入），编辑模式忽略
+  final List<String>? initialImageUrls;
+  final List<String>? initialThumbUrls;
+  final List<String>? initialLiveVideoUrls;
+
   late TextEditingController titleController;
   late TextEditingController contentController;
   late TextEditingController locationController;
@@ -27,6 +32,9 @@ class EntryEditorController {
     this.entry,
     required this.isEditing,
     this.initialDate,
+    this.initialImageUrls,
+    this.initialThumbUrls,
+    this.initialLiveVideoUrls,
   }) {
     titleController = TextEditingController(text: entry?.title ?? '');
     contentController = TextEditingController(text: entry?.content ?? '');
@@ -34,9 +42,10 @@ class EntryEditorController {
     latLng = entry?.latLng;
     mood = entry?.mood;
     weather = entry?.weather;
-    imageUrls = entry?.imageUrls.toList() ?? [];
-    thumbUrls = entry?.thumbUrls.toList() ?? [];
-    liveVideoUrls = entry?.liveVideoUrls.toList() ?? [];
+    imageUrls = entry?.imageUrls.toList() ?? initialImageUrls?.toList() ?? [];
+    thumbUrls = entry?.thumbUrls.toList() ?? initialThumbUrls?.toList() ?? [];
+    liveVideoUrls =
+        entry?.liveVideoUrls.toList() ?? initialLiveVideoUrls?.toList() ?? [];
   }
 
   void dispose() {
