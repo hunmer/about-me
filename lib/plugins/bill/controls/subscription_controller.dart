@@ -39,7 +39,6 @@ class SubscriptionController with ChangeNotifier {
 
   late final BillPlugin _plugin;
   final List<Subscription> _subscriptions = [];
-  static const String _subscriptionsKey = 'subscriptions';
 
   List<Subscription> get subscriptions => List.unmodifiable(_subscriptions);
 
@@ -48,18 +47,42 @@ class SubscriptionController with ChangeNotifier {
     _plugin = plugin;
   }
 
+  /// 调用统一数据 SDK 的订阅命令（失败抛错；tolerateNotFound 时忽略 NOT_FOUND，
+  /// 保持旧行为中对已不存在的订阅静默成功的语义）
+  Future<void> _sdkCall(
+    String action,
+    Map<String, dynamic> params, {
+    bool tolerateNotFound = false,
+  }) async {
+    final response = await AboutmeDataService.instance.data.call(
+      'bill',
+      action,
+      params,
+    );
+    if (response['success'] != true &&
+        !(tolerateNotFound && response['code'] == 'NOT_FOUND')) {
+      throw '订阅服务操作失败: ${response['error']}';
+    }
+  }
+
   /// 加载订阅服务列表
   Future<void> loadSubscriptions() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(
-        'bill/$_subscriptionsKey.json',
-        {'subscriptions': []},
+      final response = await AboutmeDataService.instance.data.get(
+        'bill',
+        'getSubscriptions',
       );
+      if (response['success'] != true) {
+        debugPrint('加载订阅服务失败: ${response['error']}');
+        return;
+      }
 
-      final List<dynamic> subscriptionsJson = data['subscriptions'] ?? [];
+      final subscriptionsJson = (response['data'] as Map)['data'] as List;
       _subscriptions.clear();
       _subscriptions.addAll(
-        subscriptionsJson.map((json) => Subscription.fromJson(json)).toList(),
+        subscriptionsJson
+            .whereType<Map<String, dynamic>>()
+            .map(Subscription.fromJson),
       );
 
       notifyListeners();
@@ -68,26 +91,10 @@ class SubscriptionController with ChangeNotifier {
     }
   }
 
-  /// 保存订阅服务列表
-  Future<void> _saveSubscriptions() async {
-    try {
-      final data = {
-        'subscriptions': _subscriptions.map((s) => s.toJson()).toList(),
-      };
-      await AboutmeDataService.instance.writePath(
-        'bill/$_subscriptionsKey.json',
-        data,
-      );
-    } catch (e) {
-      debugPrint('保存订阅服务失败: $e');
-      rethrow;
-    }
-  }
-
   /// 创建订阅服务
   Future<void> createSubscription(Subscription subscription) async {
+    await _sdkCall('createSubscription', subscription.toJson());
     _subscriptions.add(subscription);
-    await _saveSubscriptions();
     notifyListeners();
 
     // 广播事件
@@ -104,8 +111,8 @@ class SubscriptionController with ChangeNotifier {
   Future<void> updateSubscription(Subscription subscription) async {
     final index = _subscriptions.indexWhere((s) => s.id == subscription.id);
     if (index != -1) {
+      await _sdkCall('updateSubscription', subscription.toJson());
       _subscriptions[index] = subscription;
-      await _saveSubscriptions();
       notifyListeners();
 
       // 广播事件
@@ -125,9 +132,14 @@ class SubscriptionController with ChangeNotifier {
 
     final updatedSubscription = subscription.copyWith(isActive: false);
 
+    await _sdkCall(
+      'updateSubscription',
+      updatedSubscription.toJson(),
+      tolerateNotFound: true,
+    );
+
     final index = _subscriptions.indexOf(subscription);
     _subscriptions[index] = updatedSubscription;
-    await _saveSubscriptions();
     notifyListeners();
 
     // 广播事件
@@ -139,8 +151,12 @@ class SubscriptionController with ChangeNotifier {
 
   /// 删除订阅服务
   Future<void> deleteSubscription(String subscriptionId) async {
+    await _sdkCall(
+      'deleteSubscription',
+      {'id': subscriptionId},
+      tolerateNotFound: true,
+    );
     _subscriptions.removeWhere((s) => s.id == subscriptionId);
-    await _saveSubscriptions();
     notifyListeners();
 
     // 广播事件

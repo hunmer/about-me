@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/plugins/calendar_album/sample_data.dart';
-import 'dart:convert';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event_args.dart';
@@ -25,11 +24,22 @@ class CalendarController extends ChangeNotifier {
   DateTime _rangeStart = DateTime.now();
   DateTime _rangeEnd = DateTime.now();
   final List<DateTime> _displayMonths = [];
-  final String _storageKey = 'calendar_album/calendar_entries.json';
+  late final VoidCallback _cancelPluginWatch;
 
   CalendarController() {
     _loadEntries();
     _updateDisplayMonths(); // 初始化时设置默认月份范围
+    // 远端 REST/MCP 写入后自动刷新（本机写入由内存状态同步维护）
+    _cancelPluginWatch = AboutmeDataService.instance.onPluginChanged(
+      'calendar_album',
+      () => reloadEntries(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _cancelPluginWatch();
+    super.dispose();
   }
 
   DateTime get selectedDate => _selectedDate;
@@ -121,27 +131,39 @@ class CalendarController extends ChangeNotifier {
     return _entries[key] ?? [];
   }
 
+  static String _dateStr(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  bool _ok(Map<String, dynamic> result) => result['success'] == true;
+
   Future<void> _loadEntries() async {
-    final data = await AboutmeDataService.instance.readPath(
-      _storageKey,
-      <String, dynamic>{},
-    );
+    try {
+      final result = await AboutmeDataService.instance.get(
+        'calendar_album',
+        'getSnapshot',
+      );
+      if (!_ok(result)) return;
+      final data = (result['data'] as Map)['data'] as Map? ?? {};
+      if (data.isEmpty) return;
 
-    if (data.isEmpty) return;
-
-    // 加载现有数据
-    data.forEach((key, value) {
-      final date = DateTime.parse(key);
-      final entries =
-          (value as List)
-              .map(
-                (e) =>
-                    CalendarEntry.fromJson(Map<String, dynamic>.from(e as Map)),
-              )
-              .toList();
-      _entries[date] = entries;
+      // 加载现有数据
+      data.forEach((key, value) {
+        final date = DateTime.parse(key as String);
+        final entries =
+            (value as List)
+                .map(
+                  (e) =>
+                      CalendarEntry.fromJson(Map<String, dynamic>.from(e as Map)),
+                )
+                .toList();
+        _entries[date] = entries;
+      });
       notifyListeners();
-    });
+    } catch (e) {
+      debugPrint('加载日历相册数据失败: $e');
+    }
   }
 
   /// 重新加载日记数据（供同步后刷新使用）
@@ -152,33 +174,29 @@ class CalendarController extends ChangeNotifier {
 
   /// 加载示例数据（存储为空时写入，供首次打开引导选择调用）
   Future<void> loadSampleData() async {
-    final data = await AboutmeDataService.instance.readPath(
-      _storageKey,
-      <String, dynamic>{},
+    final snapshot = await AboutmeDataService.instance.get(
+      'calendar_album',
+      'getSnapshot',
     );
-    if (data.isNotEmpty) return;
+    if (!_ok(snapshot)) return;
+    final existing = ((snapshot['data'] as Map)['data'] as Map?) ?? {};
+    if (existing.isNotEmpty) return;
     final sampleEntries = CalendarAlbumSampleData.getSampleCalendarEntriesGrouped();
 
-    // 将示例数据加载到内存中
-    sampleEntries.forEach((date, entries) {
-      _entries[date] = entries;
+    // 示例数据按原日期分组结构一次性导入
+    final entries = <String, dynamic>{};
+    sampleEntries.forEach((date, list) {
+      entries[date.toIso8601String()] =
+          list.map((e) => e.toJson()).toList();
     });
-
-    // 保存示例数据到存储
-    await _saveEntries();
-
-    notifyListeners();
-  }
-
-  Future<void> _saveEntries() async {
-    final Map<String, dynamic> data = {};
-    _entries.forEach((key, value) {
-      data[key.toIso8601String()] = value.map((e) => e.toJson()).toList();
-    });
-    await AboutmeDataService.instance.writePath(
-      _storageKey,
-      json.encode(data),
+    final result = await AboutmeDataService.instance.call(
+      'calendar_album',
+      'importData',
+      {'entries': entries},
     );
+    if (!_ok(result)) return;
+    await reloadEntries();
+    notifyListeners();
   }
 
   Future<void> addEntry(CalendarEntry entry) async {
@@ -187,11 +205,14 @@ class CalendarController extends ChangeNotifier {
       entry.createdAt.month,
       entry.createdAt.day,
     );
-    if (!_entries.containsKey(date)) {
-      _entries[date] = [];
-    }
+    final result = await AboutmeDataService.instance.call(
+      'calendar_album',
+      'create',
+      entry.toJson(),
+    );
+    if (!_ok(result)) return;
+    _entries.putIfAbsent(date, () => []);
     _entries[date]!.add(entry);
-    await _saveEntries();
     notifyListeners();
 
     // 广播添加事件
@@ -215,31 +236,37 @@ class CalendarController extends ChangeNotifier {
       entry.createdAt.month,
       entry.createdAt.day,
     );
-    if (_entries.containsKey(date)) {
-      final index = _entries[date]!.indexWhere((e) => e.id == entry.id);
-      if (index != -1) {
-        // 成就系统计数（A38 定格瞬间）：编辑新增的照片张数（差集）
-        final oldImages = _entries[date]![index].imageUrls;
-        final addedImages = entry.imageUrls
-            .where((url) => !oldImages.contains(url))
-            .length;
-        _entries[date]![index] = entry;
-        await _saveEntries();
-        notifyListeners();
-        if (addedImages > 0) {
-          EventManager.instance.broadcast(
-            'album_photo_added',
-            Value<int>(addedImages, 'album_photo_added'),
-          );
-        }
+    final bucket = _entries[date];
+    if (bucket == null) return;
+    final index = bucket.indexWhere((e) => e.id == entry.id);
+    if (index == -1) return;
 
-        // 广播更新事件
-        _notifyEvent('updated', entry);
+    // 成就系统计数（A38 定格瞬间）：编辑新增的照片张数（差集）
+    final oldImages = bucket[index].imageUrls;
+    final addedImages = entry.imageUrls
+        .where((url) => !oldImages.contains(url))
+        .length;
 
-        // 同步小组件数据
-        await PluginWidgetSyncHelper.instance.syncCalendarAlbum();
-      }
+    final result = await AboutmeDataService.instance.call(
+      'calendar_album',
+      'update',
+      {'date': _dateStr(date), ...entry.toJson()},
+    );
+    if (!_ok(result)) return;
+    bucket[index] = entry;
+    notifyListeners();
+    if (addedImages > 0) {
+      EventManager.instance.broadcast(
+        'album_photo_added',
+        Value<int>(addedImages, 'album_photo_added'),
+      );
     }
+
+    // 广播更新事件
+    _notifyEvent('updated', entry);
+
+    // 同步小组件数据
+    await PluginWidgetSyncHelper.instance.syncCalendarAlbum();
   }
 
   Future<void> deleteEntry(CalendarEntry entry) async {
@@ -248,20 +275,25 @@ class CalendarController extends ChangeNotifier {
       entry.createdAt.month,
       entry.createdAt.day,
     );
-    if (_entries.containsKey(date)) {
-      _entries[date]!.removeWhere((e) => e.id == entry.id);
-      if (_entries[date]!.isEmpty) {
-        _entries.remove(date);
-      }
-      await _saveEntries();
-      notifyListeners();
-
-      // 广播删除事件
-      _notifyEvent('deleted', entry);
-
-      // 同步小组件数据
-      await PluginWidgetSyncHelper.instance.syncCalendarAlbum();
+    final bucket = _entries[date];
+    if (bucket == null || !bucket.any((e) => e.id == entry.id)) return;
+    final result = await AboutmeDataService.instance.call(
+      'calendar_album',
+      'delete',
+      {'date': _dateStr(date), 'id': entry.id},
+    );
+    if (!_ok(result)) return;
+    bucket.removeWhere((e) => e.id == entry.id);
+    if (bucket.isEmpty) {
+      _entries.remove(date);
     }
+    notifyListeners();
+
+    // 广播删除事件
+    _notifyEvent('deleted', entry);
+
+    // 同步小组件数据
+    await PluginWidgetSyncHelper.instance.syncCalendarAlbum();
   }
 
   List<String> getAllTags() {

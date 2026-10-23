@@ -11,6 +11,14 @@ class DatabaseController {
 
   DatabaseController(this.service);
 
+  /// 业务命令结果校验：失败向上抛（损坏数据不再伪装为空列表）
+  dynamic _result(Map<String, dynamic> res) {
+    if (res['success'] != true) {
+      throw Exception('数据库记录操作失败: ${res['error']}');
+    }
+    return res['data'];
+  }
+
   Future<void> loadDatabase(String databaseId) async {
     final databases = await service.getAllDatabases();
     currentDatabase = databases.firstWhere((db) => db.id == databaseId);
@@ -37,34 +45,35 @@ class DatabaseController {
   }
 
   Future<List<Record>> getRecords(String databaseId) async {
-    try {
-      final records =
-          await AboutmeDataService.instance.readPath('records_$databaseId') ??
-          [];
-      if (records is List) {
-        return records.map((r) => Record.fromMap(r)).toList();
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
+    final result = _result(
+      await AboutmeDataService.instance.get('database', 'getRecords', {
+        'databaseId': databaseId,
+      }),
+    ) as Map<String, dynamic>;
+    final list = result['data'] as List;
+    return list
+        .map((r) => Record.fromMap(Map<String, dynamic>.from(r)))
+        .toList();
   }
 
   Future<void> createRecord(Record record) async {
-    final records = await getRecords(record.tableId);
-    records.add(record);
-    await _saveRecords(record.tableId, records);
+    _result(
+      await AboutmeDataService.instance.call('database', 'createRecord', {
+        ...record.toMap(),
+        'databaseId': record.tableId,
+      }),
+    );
     _notifyRecordEvent('added', record);
   }
 
   Future<void> updateRecord(Record record) async {
-    final records = await getRecords(record.tableId);
-    final index = records.indexWhere((r) => r.id == record.id);
-    if (index != -1) {
-      records[index] = record;
-      await _saveRecords(record.tableId, records);
-      _notifyRecordEvent('updated', record);
-    }
+    _result(
+      await AboutmeDataService.instance.call('database', 'updateRecord', {
+        ...record.toMap(),
+        'databaseId': record.tableId,
+      }),
+    );
+    _notifyRecordEvent('updated', record);
   }
 
   Future<void> deleteRecord(String recordId) async {
@@ -73,17 +82,14 @@ class DatabaseController {
     final index = records.indexWhere((r) => r.id == recordId);
     if (index != -1) {
       final record = records[index];
-      records.removeWhere((r) => r.id == recordId);
-      await _saveRecords(currentDatabase!.id, records);
+      _result(
+        await AboutmeDataService.instance.call('database', 'deleteRecord', {
+          'databaseId': currentDatabase!.id,
+          'id': recordId,
+        }),
+      );
       _notifyRecordEvent('deleted', record);
     }
-  }
-
-  Future<void> _saveRecords(String databaseId, List<Record> records) async {
-    await AboutmeDataService.instance.writePath(
-      'records_$databaseId',
-      records.map((r) => r.toMap()).toList(),
-    );
   }
 
   // 触发数据库事件

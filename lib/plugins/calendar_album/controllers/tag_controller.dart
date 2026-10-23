@@ -1,10 +1,9 @@
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/widgets/tags_dialog/tags_dialog.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'package:aboutme/constants/app_icons.dart';
-import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 
@@ -54,20 +53,8 @@ class TagController extends ChangeNotifier {
   /// 标签 → 文件夹贴纸图标名（AppIcons.predefinedIcons 的键）
   Map<String, String> tagIcons = {};
 
-  final String _tagGroupsFile = 'data/calendar_tag_groups.json';
-  final String _recentTagsFile = 'data/calendar_recent_tags.json';
-  final String _tagIconsFile = 'data/calendar_tag_icons.json';
-
   TagController({this.onTagsChanged}) {
     initialize();
-  }
-
-  StorageManager get storageManager {
-    final storage = PluginManager.instance.storageManager;
-    if (storage == null) {
-      throw Exception('StorageManager is not initialized in PluginManager');
-    }
-    return storage;
   }
 
   Future<void> initialize() async {
@@ -80,30 +67,35 @@ class TagController extends ChangeNotifier {
     ];
 
     try {
+      // 加载标签数据（tag 三文件合一命令）
+      final result = await AboutmeDataService.instance.get(
+        'calendar_album',
+        'getTags',
+      );
+      if (result['success'] != true) {
+        throw Exception('加载标签失败: ${result['error']}');
+      }
+      final tags = Map<String, dynamic>.from(result['data'] as Map);
+
       // 尝试加载标签组
-      if (await storageManager.fileExists(_tagGroupsFile)) {
-        final jsonStr = await storageManager.readFile(_tagGroupsFile, '');
-        if (jsonStr.isNotEmpty) {
-          final List<dynamic> data = json.decode(jsonStr);
-          if (data.isNotEmpty) {
-            tagGroups = data.map((e) => TagGroup.fromJson(e as Map<String, dynamic>)).toList();
-          }
-        }
+      final groups = (tags['tagGroups'] as List).cast<Map>();
+      if (groups.isNotEmpty) {
+        tagGroups = groups
+            .map((e) => TagGroup.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
       } else {
         // 如果文件为空，保存默认标签组
         await _saveTagGroups();
       }
 
       // 尝试加载最近使用的标签
-      final recentJson = await storageManager.readFile(_recentTagsFile, '[]');
-      final List<dynamic> recentData = json.decode(recentJson);
-      recentTags = recentData.cast<String>().toList();
+      recentTags = (tags['recentTags'] as List).cast<String>().toList();
       _updateRecentTagGroup();
 
       // 尝试加载标签文件夹图标
-      final iconsJson = await storageManager.readFile(_tagIconsFile, '{}');
-      final Map<String, dynamic> iconsData = json.decode(iconsJson);
-      tagIcons = iconsData.map((key, value) => MapEntry(key, value.toString()));
+      tagIcons = (tags['tagIcons'] as Map).map(
+        (key, value) => MapEntry(key as String, value.toString()),
+      );
 
       notifyListeners();
       onTagsChanged?.call();
@@ -116,12 +108,11 @@ class TagController extends ChangeNotifier {
 
   Future<void> _saveTagGroups() async {
     try {
-      final data = json.encode(
-        tagGroups
+      await AboutmeDataService.instance.call('calendar_album', 'updateTags', {
+        'tagGroups': tagGroups
             .map((group) => {'name': group.name, 'tags': group.tags})
             .toList(),
-      );
-      await storageManager.writeFile(_tagGroupsFile, data);
+      });
     } catch (e) {
       debugPrint('保存标签组失败: $e');
     }
@@ -129,8 +120,9 @@ class TagController extends ChangeNotifier {
 
   Future<void> _saveRecentTags() async {
     try {
-      final data = json.encode(recentTags);
-      await storageManager.writeFile(_recentTagsFile, data);
+      await AboutmeDataService.instance.call('calendar_album', 'updateTags', {
+        'recentTags': List<String>.from(recentTags),
+      });
     } catch (e) {
       debugPrint('保存最近标签失败: $e');
     }
@@ -138,7 +130,9 @@ class TagController extends ChangeNotifier {
 
   Future<void> _saveTagIcons() async {
     try {
-      await storageManager.writeFile(_tagIconsFile, json.encode(tagIcons));
+      await AboutmeDataService.instance.call('calendar_album', 'updateTags', {
+        'tagIcons': Map<String, String>.from(tagIcons),
+      });
     } catch (e) {
       debugPrint('保存标签图标失败: $e');
     }

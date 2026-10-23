@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../storage_errors.dart';
 import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
@@ -10,6 +11,20 @@ import '../utils.dart';
 // 账户可能是 JSON 编码的字符串或 Map 对象
 
 PluginHandlers createBillHandlers(PluginData data) {
+  // 解码单个账户（兼容 JSON 编码字符串与 Map 两种格式；无法解析返回 null）
+  Map<String, dynamic>? decodeAccount(dynamic a) {
+    if (a is Map) return Map<String, dynamic>.from(a);
+    if (a is String) {
+      try {
+        final decoded = jsonDecode(a);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      } catch (_) {
+        // JSON 解析失败 → null → 调用方按无效数据处理
+      }
+    }
+    return null;
+  }
+
   // 读取所有账户（包含嵌套的账单）
   Future<List<Map<String, dynamic>>> readAllAccounts() async {
     final accountsData = await data.read('bill', 'accounts.json');
@@ -20,20 +35,9 @@ PluginHandlers createBillHandlers(PluginData data) {
 
     final accounts = <Map<String, dynamic>>[];
     for (final a in accountsRaw) {
-      // 兼容两种存储格式：
-      // 1. 客户端格式：账户是 JSON 编码的字符串
-      // 2. 标准格式：账户是 Map 对象
-      if (a is String) {
-        try {
-          final decoded = jsonDecode(a);
-          if (decoded is Map) {
-            accounts.add(Map<String, dynamic>.from(decoded));
-          }
-        } catch (_) {
-          // JSON 解析失败 → 空对象 → 被下方 isNotEmpty 过滤（与 TS 行为一致）
-        }
-      } else if (a is Map) {
-        accounts.add(Map<String, dynamic>.from(a));
+      final decoded = decodeAccount(a);
+      if (decoded != null) {
+        accounts.add(decoded);
       }
     }
     return accounts.where((a) => a.isNotEmpty).toList();
@@ -46,6 +50,28 @@ PluginHandlers createBillHandlers(PluginData data) {
       'accounts.json',
       {'accounts': accounts.map((a) => jsonEncode(a)).toList()},
     );
+  }
+
+  // 读取所有订阅（subscriptions.json；缺文件视为空，结构损坏明确报错）
+  Future<List<Map<String, dynamic>>> readAllSubscriptions() async {
+    final raw = await data.read('bill', 'subscriptions.json');
+    if (raw == null) return [];
+    if (raw is! Map) {
+      throw const StorageException(StorageErrorKind.invalidData, '订阅数据结构损坏');
+    }
+    final list = raw['subscriptions'];
+    if (list == null) return [];
+    if (list is! List || list.any((e) => e is! Map)) {
+      throw const StorageException(StorageErrorKind.invalidData, '订阅数据结构损坏');
+    }
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  // 保存所有订阅（对象数组格式，与客户端 Subscription.toJson 字段一致）
+  Future<void> saveAllSubscriptions(List<Map<String, dynamic>> subscriptions) {
+    return data.write('bill', 'subscriptions.json', {
+      'subscriptions': subscriptions,
+    });
   }
 
   // 将客户端格式的账单转换为标准格式
@@ -468,6 +494,168 @@ PluginHandlers createBillHandlers(PluginData data) {
         });
       } catch (e) {
         return PluginResult.failure('获取统计失败: $e');
+      }
+    },
+
+    // 获取账户完整数据（含内嵌账单原样字段；getList 返回的是 DTO，不含账单）
+    'getAccountsWithBills': (data, params) async {
+      try {
+        final accounts = await readAllAccounts();
+        return PluginResult.success(
+          createPaginatedResult(
+            accounts,
+            offset: params['offset'] as int?,
+            count: params['count'] as int? ?? accounts.length,
+          ),
+        );
+      } catch (e) {
+        return PluginResult.failure('获取账户失败: $e');
+      }
+    },
+
+    // 整表保存账户（客户端内存态全量回写，落盘保持 JSON 字符串数组格式）
+    'saveAccounts': (data, params) async {
+      try {
+        final raw = params['accounts'];
+        if (raw is! List) {
+          return const PluginResult.failure('accounts 必须为数组', 'INVALID_PARAMS');
+        }
+        final accounts = <Map<String, dynamic>>[];
+        for (final item in raw) {
+          final account = decodeAccount(item);
+          if (account == null || account.isEmpty) {
+            return const PluginResult.failure('账户格式非法', 'INVALID_PARAMS');
+          }
+          accounts.add(account);
+        }
+        await saveAllAccounts(accounts);
+        return PluginResult.success({'count': accounts.length});
+      } catch (e) {
+        return PluginResult.failure('保存账户失败: $e');
+      }
+    },
+
+    // 获取订阅列表
+    'getSubscriptions': (data, params) async {
+      try {
+        final subscriptions = await readAllSubscriptions();
+        return PluginResult.success(
+          createPaginatedResult(
+            subscriptions,
+            offset: params['offset'] as int?,
+            count: params['count'] as int? ?? subscriptions.length,
+          ),
+        );
+      } on StorageException catch (e) {
+        return PluginResult.failure(e.message, 'CORRUPT_DATA');
+      } catch (e) {
+        return PluginResult.failure('获取订阅失败: $e');
+      }
+    },
+
+    // 创建订阅（字段与客户端 Subscription.toJson 一致）
+    'createSubscription': (data, params) async {
+      try {
+        if (params['name'] is! String ||
+            (params['name'] as String).trim().isEmpty) {
+          return const PluginResult.failure(
+            '订阅名称必须为非空字符串',
+            'INVALID_PARAMS',
+          );
+        }
+        if (params['days'] is! int || (params['days'] as int) <= 0) {
+          return const PluginResult.failure(
+            'days 必须为正整数',
+            'INVALID_PARAMS',
+          );
+        }
+        if (params['totalAmount'] is! num) {
+          return const PluginResult.failure(
+            'totalAmount 必须为数值',
+            'INVALID_PARAMS',
+          );
+        }
+        if (params['startDate'] is! String ||
+            DateTime.tryParse(params['startDate'] as String) == null) {
+          return const PluginResult.failure(
+            'startDate 必须为 ISO 日期',
+            'INVALID_PARAMS',
+          );
+        }
+
+        final subscriptions = await readAllSubscriptions();
+        final id =
+            params['id'] != null && params['id'].toString().isNotEmpty
+            ? params['id']
+            : generateUUID();
+        if (subscriptions.any((s) => s['id'] == id)) {
+          return const PluginResult.failure('订阅已存在', 'CONFLICT');
+        }
+
+        final now = jsIsoDateTime(DateTime.now());
+        final subscription = <String, dynamic>{
+          ...params,
+          'id': id,
+          'createdAt': _truthy(params['createdAt'])
+              ? params['createdAt']
+              : now,
+          'updatedAt': now,
+        };
+
+        subscriptions.add(subscription);
+        await saveAllSubscriptions(subscriptions);
+        return PluginResult.success(subscription);
+      } on StorageException catch (e) {
+        return PluginResult.failure(e.message, 'CORRUPT_DATA');
+      } catch (e) {
+        return PluginResult.failure('创建订阅失败: $e');
+      }
+    },
+
+    // 更新订阅（合并保留未传字段；终止订阅 = isActive: false）
+    'updateSubscription': (data, params) async {
+      try {
+        final subscriptions = await readAllSubscriptions();
+        final index = subscriptions.indexWhere((s) => s['id'] == params['id']);
+
+        if (index == -1) {
+          return const PluginResult.failure('订阅不存在', 'NOT_FOUND');
+        }
+
+        final updated = <String, dynamic>{
+          ...subscriptions[index],
+          ...params,
+          'updatedAt': jsIsoDateTime(DateTime.now()),
+        };
+        subscriptions[index] = updated;
+
+        await saveAllSubscriptions(subscriptions);
+        return PluginResult.success(updated);
+      } on StorageException catch (e) {
+        return PluginResult.failure(e.message, 'CORRUPT_DATA');
+      } catch (e) {
+        return PluginResult.failure('更新订阅失败: $e');
+      }
+    },
+
+    // 删除订阅（不影响已生成的账单）
+    'deleteSubscription': (data, params) async {
+      try {
+        final subscriptions = await readAllSubscriptions();
+        final filtered = subscriptions
+            .where((s) => s['id'] != params['id'])
+            .toList();
+
+        if (filtered.length == subscriptions.length) {
+          return const PluginResult.failure('订阅不存在', 'NOT_FOUND');
+        }
+
+        await saveAllSubscriptions(filtered);
+        return PluginResult.success({'id': params['id']});
+      } on StorageException catch (e) {
+        return PluginResult.failure(e.message, 'CORRUPT_DATA');
+      } catch (e) {
+        return PluginResult.failure('删除订阅失败: $e');
       }
     },
   };

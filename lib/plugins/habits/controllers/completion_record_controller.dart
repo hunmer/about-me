@@ -17,38 +17,36 @@ class CompletionRecordController {
     required this.skillControlle,
   });
 
+  /// 业务命令结果校验：失败抛错（与旧文件读写失败路径一致）
+  dynamic _resultData(Map<String, dynamic> res) {
+    if (res['success'] != true) {
+      throw Exception('habits 数据命令失败: ${res['error']}');
+    }
+    return res['data'];
+  }
+
+  List<CompletionRecord> _decodeRecords(dynamic payload) {
+    final data = payload is Map ? payload['data'] : null;
+    if (data is! List) return const [];
+    return data
+        .whereType<Map>()
+        .where((m) => m.isNotEmpty)
+        .map((e) => CompletionRecord.fromMap(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
   Future<void> saveCompletionRecord(
     String habitId,
     CompletionRecord record,
   ) async {
-    final path = 'habits/records/$habitId.json';
-    // readPath 对不存在的文件默认返回 {}，必须显式传 [] 才不会走单条记录分支
-    final data = await AboutmeDataService.instance.readPath(path, []);
-    final records = <CompletionRecord>[];
-
-    if (data != null) {
-      // 处理不同的数据格式
-      if (data is List) {
-        records.addAll(
-          data.whereType<Map>().where((m) => m.isNotEmpty).map((e) {
-            final stringKeyMap = Map<String, dynamic>.from(e);
-            return CompletionRecord.fromMap(stringKeyMap);
-          }),
-        );
-      } else if (data is Map && data.isNotEmpty) {
-        // 如果是单个记录对象
-        final stringKeyMap = Map<String, dynamic>.from(data);
-        records.add(CompletionRecord.fromMap(stringKeyMap));
-      }
-    }
-
-    records.add(record);
-    await AboutmeDataService.instance.writePath(
-      path,
-      records.map((r) => r.toMap()).toList(),
+    await AboutmeDataService.instance.call(
+      'habits',
+      'addRecord',
+      record.toMap(),
     );
 
     // 更新习惯的总累计时长缓存
+    final records = await getHabitCompletionRecords(habitId);
     final totalMinutes = records.fold<int>(
       0,
       (sum, r) => sum + r.duration.inMinutes,
@@ -85,76 +83,56 @@ class CompletionRecordController {
 
     // 2. 获取这些habitIds对应的records
     for (final habitId in skillHabitIds) {
-      final path = 'habits/records/$habitId.json';
-      if (await AboutmeDataService.instance.existsPath(path)) {
-        final data = await AboutmeDataService.instance.readPath(path);
-        if (data != null) {
-          if (data is List) {
-            matchingRecords.addAll(
-              data.whereType<Map>().where((m) => m.isNotEmpty).map((e) {
-                final stringKeyMap = Map<String, dynamic>.from(e);
-                return CompletionRecord.fromMap(stringKeyMap);
-              }),
-            );
-          } else if (data is Map && data.isNotEmpty) {
-            final stringKeyMap = Map<String, dynamic>.from(data);
-            matchingRecords.add(CompletionRecord.fromMap(stringKeyMap));
-          }
-        }
-      }
+      matchingRecords.addAll(await getHabitCompletionRecords(habitId));
     }
 
     return matchingRecords;
   }
 
   Future<int> getTotalDuration(String habitId) async {
-    final records = await getHabitCompletionRecords(habitId);
-    return records.fold<int>(
-      0,
-      (sum, record) => sum + record.duration.inMinutes,
-    );
+    final stats = _resultData(
+      await AboutmeDataService.instance.get('habits', 'getStats', {
+        'habitId': habitId,
+      }),
+    ) as Map;
+    return (stats['totalDurationMinutes'] as num?)?.toInt() ?? 0;
   }
 
   Future<int> getCompletionCount(String habitId) async {
-    final records = await getHabitCompletionRecords(habitId);
-    return records.length;
+    final stats = _resultData(
+      await AboutmeDataService.instance.get('habits', 'getStats', {
+        'habitId': habitId,
+      }),
+    ) as Map;
+    return (stats['completionCount'] as num?)?.toInt() ?? 0;
   }
 
   Future<void> deleteCompletionRecord(String recordId) async {
-    bool recordFound = false;
-
-    for (final habitId in getHabitIds()) {
-      final records = await getHabitCompletionRecords(habitId);
-      final initialLength = records.length;
-      records.removeWhere((record) => record.id == recordId);
-
-      if (records.length < initialLength) {
-        recordFound = true;
-        await AboutmeDataService.instance.writePath(
-          'habits/records/$habitId.json',
-          records.map((r) => r.toMap()).toList(),
-        );
-
-        // 更新习惯的总累计时长缓存
-        final totalMinutes = records.fold<int>(
-          0,
-          (sum, r) => sum + r.duration.inMinutes,
-        );
-        await habitController.updateTotalDuration(habitId, totalMinutes);
-        break;
-      }
-    }
-
-    if (!recordFound) {
+    final res = await AboutmeDataService.instance.call(
+      'habits',
+      'deleteRecord',
+      {'id': recordId},
+    );
+    if (res['success'] != true) {
       throw Exception('Completion record not found: $recordId');
     }
+    final data = res['data'];
+    final habitId = data is Map ? data['parentId'] : null;
+    if (habitId is! String || habitId.isEmpty) return;
+
+    // 更新习惯的总累计时长缓存
+    final records = await getHabitCompletionRecords(habitId);
+    final totalMinutes = records.fold<int>(
+      0,
+      (sum, r) => sum + r.duration.inMinutes,
+    );
+    await habitController.updateTotalDuration(habitId, totalMinutes);
   }
 
   Future<void> clearAllCompletionRecords(String habitId) async {
-    await AboutmeDataService.instance.writePath(
-      'habits/records/$habitId.json',
-      [],
-    );
+    await AboutmeDataService.instance.call('habits', 'clearRecords', {
+      'parentId': habitId,
+    });
     // 清空记录后，重置总累计时长为 0
     await habitController.updateTotalDuration(habitId, 0);
   }
@@ -162,25 +140,9 @@ class CompletionRecordController {
   Future<List<CompletionRecord>> getHabitCompletionRecords(
     String habitId,
   ) async {
-    // readPath 对不存在的文件默认返回 {}，必须显式传 [] 才不会走单条记录分支
-    final data = await AboutmeDataService.instance.readPath(
-      'habits/records/$habitId.json',
-      [],
-    );
-
-    final records = <CompletionRecord>[];
-    if (data is List) {
-      records.addAll(
-        data.whereType<Map>().where((m) => m.isNotEmpty).map((e) {
-          final stringKeyMap = Map<String, dynamic>.from(e);
-          return CompletionRecord.fromMap(stringKeyMap);
-        }),
-      );
-    } else if (data is Map && data.isNotEmpty) {
-      final stringKeyMap = Map<String, dynamic>.from(data);
-      records.add(CompletionRecord.fromMap(stringKeyMap));
-    }
-
-    return records;
+    final res = await AboutmeDataService.instance.get('habits', 'getRecords', {
+      'parentId': habitId,
+    });
+    return _decodeRecords(_resultData(res));
   }
 }

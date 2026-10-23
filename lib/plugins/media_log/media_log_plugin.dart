@@ -45,10 +45,14 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
   Future<void> setViewMode(String mode) async {
     if (_viewMode == mode) return;
     _viewMode = mode;
-    await AboutmeDataService.instance.writePath(
-      'media_log/ui_settings.json',
+    final res = await AboutmeDataService.instance.call(
+      'media_log',
+      'updateSettings',
       {'viewMode': mode},
     );
+    if (res['success'] != true) {
+      throw StateError('${res['message'] ?? res['code'] ?? 'updateSettings failed'}');
+    }
   }
 
   List<MediaItem> get items => _items;
@@ -89,39 +93,56 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
     }
   }
 
-  Future<void> _loadItems() async {
-    try {
-      // 视图偏好（独立小文件，读取失败回落默认书柜）
-      final ui = await AboutmeDataService.instance.readPath(
-        'media_log/ui_settings.json',
+  /// 拉取全量快照（items + 视图偏好）
+  Future<Map<String, dynamic>> _fetchSnapshot() async {
+    final res = await AboutmeDataService.instance.get(
+      'media_log',
+      'getSnapshot',
+    );
+    if (res['success'] != true) {
+      throw StateError(
+        '${res['message'] ?? res['code'] ?? 'getSnapshot failed'}',
       );
-      final mode = ui is Map ? ui['viewMode'] : null;
+    }
+    return Map<String, dynamic>.from(res['data'] as Map);
+  }
+
+  /// 用快照刷新内存状态（视图偏好读取失败回落默认书柜）
+  void _applySnapshot(Map<String, dynamic> snap) {
+    final settings = snap['settings'];
+    if (settings is Map) {
+      final mode = settings['viewMode'];
       if (mode == 'grid' || mode == 'list' || mode == 'shelf') {
         _viewMode = mode;
       }
+    }
+    _items.clear();
+    for (final item in (snap['items'] as List? ?? const [])) {
+      _items.add(MediaItem.fromJson(Map<String, dynamic>.from(item as Map)));
+    }
+  }
 
-      final data = await AboutmeDataService.instance.readPath(
-        'media_log/items.json',
-      );
-      _items.clear();
-      if (data.isNotEmpty && data['items'] != null) {
-        for (final item in data['items'] as List) {
-          _items.add(MediaItem.fromJson(Map<String, dynamic>.from(item)));
+  Future<void> _loadItems() async {
+    try {
+      _applySnapshot(await _fetchSnapshot());
+      if (_items.isEmpty) {
+        // 首次使用：幂等写入示例数据（来自 ai_picks_demo 的演示内容 + 观影示例）
+        final res = await AboutmeDataService.instance.call(
+          'media_log',
+          'seedExamples',
+          {
+            'items': [
+              for (final item in MediaSampleData.build()) item.toJson(),
+            ],
+          },
+        );
+        if (res['success'] == true) {
+          _applySnapshot(await _fetchSnapshot());
         }
-      } else {
-        // 首次使用：写入示例数据（来自 ai_picks_demo 的演示内容 + 观影示例）
-        _items.addAll(MediaSampleData.build());
-        await _persist();
       }
     } catch (e) {
       debugPrint('[MediaLogPlugin] 加载数据失败: $e');
     }
-  }
-
-  Future<void> _persist() async {
-    await AboutmeDataService.instance.writePath('media_log/items.json', {
-      'items': [for (final item in _items) item.toJson()],
-    });
   }
 
   MediaItem? getItem(String id) {
@@ -142,46 +163,85 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
 
   /// 新增或更新条目（按 id 匹配），返回保存后的条目
   Future<MediaItem> saveItem(MediaItem item) async {
-    final index = _items.indexWhere((i) => i.id == item.id);
-    if (index == -1) {
-      _items.insert(0, item);
-    } else {
-      _items[index] = item;
+    final exists = _items.any((i) => i.id == item.id);
+    final res = await AboutmeDataService.instance.call(
+      'media_log',
+      exists ? 'update' : 'create',
+      item.toJson(),
+    );
+    if (res['success'] != true) {
+      throw StateError(
+        '${res['message'] ?? res['code'] ?? 'saveItem failed'}',
+      );
     }
-    await _persist();
+    final saved = MediaItem.fromJson(
+      Map<String, dynamic>.from(res['data'] as Map),
+    );
+    final index = _items.indexWhere((i) => i.id == saved.id);
+    if (index == -1) {
+      _items.insert(0, saved);
+    } else {
+      _items[index] = saved;
+    }
     notifyListeners();
-    return item;
+    return saved;
   }
 
   Future<void> deleteItem(String id) async {
+    final res = await AboutmeDataService.instance.call(
+      'media_log',
+      'delete',
+      {'id': id},
+    );
+    if (res['success'] != true && res['code'] != 'NOT_FOUND') {
+      throw StateError(
+        '${res['message'] ?? res['code'] ?? 'deleteItem failed'}',
+      );
+    }
     _items.removeWhere((i) => i.id == id);
-    await _persist();
     notifyListeners();
   }
 
   /// 新增 / 更新点评（可多条）
   Future<void> saveReview(String itemId, MediaReview review) async {
-    final item = getItem(itemId);
-    if (item == null) return;
-    final index = item.reviews.indexWhere((r) => r.id == review.id);
-    final reviews = [...item.reviews];
-    if (index == -1) {
-      reviews.add(review);
-    } else {
-      reviews[index] = review;
+    if (getItem(itemId) == null) return;
+    final res = await AboutmeDataService.instance.call(
+      'media_log',
+      'addReview',
+      {'itemId': itemId, ...review.toJson()},
+    );
+    if (res['success'] != true) {
+      throw StateError(
+        '${res['message'] ?? res['code'] ?? 'saveReview failed'}',
+      );
     }
-    reviews.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    await saveItem(item.copyWith(reviews: reviews));
+    _applyItemResult(res['data']);
   }
 
   Future<void> deleteReview(String itemId, String reviewId) async {
-    final item = getItem(itemId);
-    if (item == null) return;
-    await saveItem(
-      item.copyWith(
-        reviews: item.reviews.where((r) => r.id != reviewId).toList(),
-      ),
+    if (getItem(itemId) == null) return;
+    final res = await AboutmeDataService.instance.call(
+      'media_log',
+      'deleteReview',
+      {'itemId': itemId, 'reviewId': reviewId},
     );
+    if (res['success'] != true) {
+      throw StateError(
+        '${res['message'] ?? res['code'] ?? 'deleteReview failed'}',
+      );
+    }
+    _applyItemResult(res['data']);
+  }
+
+  /// 用服务端返回的条目替换内存副本
+  void _applyItemResult(dynamic raw) {
+    if (raw is! Map) return;
+    final saved = MediaItem.fromJson(Map<String, dynamic>.from(raw));
+    final index = _items.indexWhere((i) => i.id == saved.id);
+    if (index != -1) {
+      _items[index] = saved;
+      notifyListeners();
+    }
   }
 
   static String newId() => _uuid.v4();

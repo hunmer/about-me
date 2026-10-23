@@ -1,0 +1,39 @@
+import 'package:aboutme/widgets/cute_fruit_timer_demo.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  testWidgets('水果计时器支持计时、设置和快捷操作', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: CuteFruitTimerDemo()));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('25:00'), findsOneWidget);
+    expect(find.text('Stay focused,'), findsOneWidget);
+    expect(find.text('get cute oranges'), findsOneWidget);
+
+    await tester.tap(find.text('Start Focus'));
+    await tester.pump(const Duration(seconds: 4));
+    expect(find.text('Pause Focus'), findsOneWidget);
+    expect(find.text('24:56'), findsOneWidget);
+
+    await tester.tap(find.text('24:56'));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.text('Reading'));
+    await tester.tap(find.text('5m'));
+    await tester.pump();
+    expect(find.text('05:00'), findsOneWidget);
+    expect(find.text('Reading'), findsNWidgets(2));
+
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.text('+ 掉一颗'));
+    await tester.tap(find.text('铺满'));
+    await tester.tap(find.text('清空'));
+    await tester.tap(find.text('Reset Timer'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Start Focus'), findsOneWidget);
+    expect(find.text('05:00'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}

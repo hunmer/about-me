@@ -40,16 +40,16 @@ void main() {
     await data.writePath('legacy/index.json', {'2026-10-23': {}});
     expect(await data.readPath('legacy/index.json'), {'2026-10-23': {}});
     await data.writePath(
-      'day/memorial_days.json',
+      'legacy/memorial_days.json',
       jsonEncode([
         {'id': 'sample'},
       ]),
     );
-    expect(await data.readPath('day/memorial_days.json'), [
+    expect(await data.readPath('legacy/memorial_days.json'), [
       {'id': 'sample'},
     ]);
     expect(
-      await data.readPathText('day/memorial_days.json'),
+      await data.readPathText('legacy/memorial_days.json'),
       '[{"id":"sample"}]',
     );
     await data.writePath('empty.json', '');

@@ -25,7 +25,7 @@ void main() {
   test('写入/读取/ETag（sha256 hex 双引号包裹）', () async {
     final result = await storage.writeRawFile(
       user,
-      'todo/data.json',
+      'misc/data.json',
       bytes('hello'),
       force: true,
     );
@@ -36,7 +36,7 @@ void main() {
       '"2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"',
     );
 
-    final read = await storage.readRawFile(user, 'todo/data.json');
+    final read = await storage.readRawFile(user, 'misc/data.json');
     expect(read, isNotNull);
     expect(String.fromCharCodes(read!.data), 'hello');
   });
@@ -115,17 +115,17 @@ void main() {
   });
 
   test('列表/前缀过滤/清除', () async {
-    await storage.writeRawFile(user, 'todo/1.json', bytes('1'), force: true);
-    await storage.writeRawFile(user, 'todo/2.json', bytes('2'), force: true);
-    await storage.writeRawFile(user, 'notes/3.json', bytes('3'), force: true);
+    await storage.writeRawFile(user, 'misc/1.json', bytes('1'), force: true);
+    await storage.writeRawFile(user, 'misc/2.json', bytes('2'), force: true);
+    await storage.writeRawFile(user, 'other/3.json', bytes('3'), force: true);
 
     final all = await storage.listRawFiles(user);
-    expect(all.map((e) => e.path), ['notes/3.json', 'todo/1.json', 'todo/2.json']);
+    expect(all.map((e) => e.path), ['misc/1.json', 'misc/2.json', 'other/3.json']);
 
-    final todo = await storage.listRawFiles(user, prefix: 'todo/');
-    expect(todo.map((e) => e.path), ['todo/1.json', 'todo/2.json']);
+    final todo = await storage.listRawFiles(user, prefix: 'misc/');
+    expect(todo.map((e) => e.path), ['misc/1.json', 'misc/2.json']);
 
-    final deleted = await storage.clearRawFiles(user, 'todo/');
+    final deleted = await storage.clearRawFiles(user, 'misc/');
     expect(deleted, 2);
     expect((await storage.listRawFiles(user)).length, 1);
 

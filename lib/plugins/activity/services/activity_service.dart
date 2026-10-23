@@ -1,41 +1,59 @@
 import 'package:flutter/foundation.dart';
-import 'dart:convert';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/plugins/activity/sample_data.dart';
 import 'package:aboutme/widgets/tags_dialog/models/models.dart';
 
+/// 活动数据服务：分日活动 / 标签分组 / 最近标签 / 最近心情
+/// 全部经统一数据 SDK（data.call/query）读写，与 REST/MCP 共用同一套处理器
 class ActivityService {
+  static const _pluginId = 'activity';
+
   final StorageManager _storage; // ignore: unused_field
-  final String _pluginDir;
+  final String _pluginDir; // ignore: unused_field
 
   ActivityService(this._storage, this._pluginDir);
 
-  // 获取标签组文件路径
-  String get _tagGroupsFilePath => '$_pluginDir/tag_groups.json';
+  // ============ SDK 调用辅助 ============
 
-  // 获取最近使用标签文件路径
-  String get _recentTagsFilePath => '$_pluginDir/recent_tags.json';
+  String _dateKey(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-  // 获取最近使用心情文件路径
-  String get _recentMoodsFilePath => '$_pluginDir/recent_moods.json';
+  Future<Map<String, dynamic>> _command(
+    String action,
+    Map<String, dynamic> params,
+  ) async {
+    final response = await AboutmeDataService.instance.data.call(
+      _pluginId,
+      action,
+      params,
+    );
+    if (response['success'] != true) throw QueryFailure(response);
+    return response;
+  }
 
-  // 获取特定日期的活动记录文件路径
-  String _getActivityFilePath(DateTime date) {
-    final dateStr =
-        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    return '$_pluginDir/activities_$dateStr.json';
+  Future<Map<String, dynamic>> _query(
+    String action, [
+    Map<String, dynamic> params = const {},
+  ]) async {
+    final response = await AboutmeDataService.instance.data.query(
+      _pluginId,
+      action,
+      params,
+    );
+    if (response['success'] != true) throw QueryFailure(response);
+    return response;
   }
 
   // 保存活动记录
   Future<void> saveActivity(ActivityRecord activity, {bool notify = true}) async {
     try {
       final date = activity.startTime;
-      final filePath = _getActivityFilePath(date);
-      debugPrint('[ActivityTime] save id=${activity.id} path=$filePath '
+      debugPrint('[ActivityTime] save id=${activity.id} date=${_dateKey(date)} '
           'start=${activity.startTime.toIso8601String()} end=${activity.endTime.toIso8601String()}');
 
       // 读取现有活动
@@ -49,19 +67,16 @@ class ActivityService {
       );
 
       if (overlappingIndex != -1) {
-        // 如果存在重叠，替换原有的活动
-        activities[overlappingIndex] = activity;
-      } else {
-        // 如果不存在重叠，添加新活动
-        activities.add(activity);
+        // 如果存在重叠，替换原有的活动（删旧写新，保留新 id）
+        await _command('delete', {
+          'id': activities[overlappingIndex].id,
+          'date': _dateKey(date),
+        });
       }
-
-      // 按开始时间排序
-      activities.sort((a, b) => a.startTime.compareTo(b.startTime));
-
-      // 保存到文件
-      final jsonList = activities.map((e) => e.toJson()).toList();
-      await AboutmeDataService.instance.writePath(filePath, jsonList);
+      await _command('create', {
+        ...activity.toJson(),
+        'date': _dateKey(date),
+      });
 
       // 同步到小组件
       await _syncWidget();
@@ -86,27 +101,15 @@ class ActivityService {
   // 获取指定日期的所有活动
   Future<List<ActivityRecord>> getActivitiesForDate(DateTime date) async {
     try {
-      final filePath = _getActivityFilePath(date);
-
-      // 检查文件是否存在
-      if (!await AboutmeDataService.instance.existsPath(filePath)) {
-        return [];
-      }
-
-      // 读取并解析文件
-      final jsonString = await AboutmeDataService.instance.readPathText(filePath);
-      final dynamic jsonData = jsonDecode(jsonString);
-
-      // 兼容两种格式：数组 [...] 或对象 {"activities": [...]}
-      final List<dynamic> jsonList = jsonData is List
-          ? jsonData
-          : (jsonData as Map<String, dynamic>)['activities'] as List<dynamic>? ?? [];
+      final response = await _query('getList', {'date': _dateKey(date)});
+      final jsonList = ((response['data'] as Map)['data'] as List)
+          .cast<Map<String, dynamic>>();
 
       return jsonList.map((json) {
         final activity = ActivityRecord.fromJson(json);
         if (DateTime.parse(json['startTime']).isUtc ||
             DateTime.parse(json['endTime']).isUtc) {
-          debugPrint('[ActivityTime] read id=${activity.id} path=$filePath '
+          debugPrint('[ActivityTime] read id=${activity.id} date=${_dateKey(date)} '
               'raw=${json['startTime']}..${json['endTime']} '
               'local=${activity.startTime.toIso8601String()}..${activity.endTime.toIso8601String()}');
         }
@@ -138,7 +141,7 @@ class ActivityService {
         final date = oldActivity.startTime;
         final activities = await getActivitiesForDate(date);
 
-        // 查找并替换活动
+        // 查找并替换活动（删旧写新，保留新 id）
         final index = activities.indexWhere(
           (a) =>
               a.startTime == oldActivity.startTime &&
@@ -147,12 +150,14 @@ class ActivityService {
         );
 
         if (index != -1) {
-          activities[index] = newActivity;
-
-          // 保存更新后的列表
-          final filePath = _getActivityFilePath(date);
-          final jsonList = activities.map((e) => e.toJson()).toList();
-          await AboutmeDataService.instance.writePath(filePath, jsonList);
+          await _command('delete', {
+            'id': activities[index].id,
+            'date': _dateKey(date),
+          });
+          await _command('create', {
+            ...newActivity.toJson(),
+            'date': _dateKey(date),
+          });
 
           // 同步到小组件
           await _syncWidget();
@@ -171,22 +176,21 @@ class ActivityService {
   Future<void> deleteActivity(ActivityRecord activity, {bool notify = true}) async {
     try {
       final date = activity.startTime;
-      final filePath = _getActivityFilePath(date);
 
-      // 读取现有活动
-      List<ActivityRecord> activities = await getActivitiesForDate(date);
+      // 读取现有活动，查找并删除所有匹配记录
+      final activities = await getActivitiesForDate(date);
+      final matches = activities
+          .where(
+            (a) =>
+                a.startTime == activity.startTime &&
+                a.endTime == activity.endTime &&
+                a.title == activity.title,
+          )
+          .toList();
 
-      // 查找并删除活动
-      activities.removeWhere(
-        (a) =>
-            a.startTime == activity.startTime &&
-            a.endTime == activity.endTime &&
-            a.title == activity.title,
-      );
-
-      // 保存更新后的列表
-      final jsonList = activities.map((e) => e.toJson()).toList();
-      await AboutmeDataService.instance.writePath(filePath, jsonList);
+      for (final match in matches) {
+        await _command('delete', {'id': match.id, 'date': _dateKey(date)});
+      }
 
       // 同步到小组件
       await _syncWidget();
@@ -228,8 +232,9 @@ class ActivityService {
   // 保存标签组
   Future<void> saveTagGroups(List<TagGroupWithTags> groups) async {
     try {
-      final jsonList = groups.map((group) => group.toMap()).toList();
-      await AboutmeDataService.instance.writePath(_tagGroupsFilePath, jsonList);
+      await _command('updateTagGroups', {
+        'groups': groups.map((group) => group.toMap()).toList(),
+      });
     } catch (e) {
       debugPrint('Error saving tag groups: $e');
       rethrow;
@@ -239,13 +244,11 @@ class ActivityService {
   // 获取标签组
   Future<List<TagGroupWithTags>> getTagGroups() async {
     try {
-      if (!await AboutmeDataService.instance.existsPath(_tagGroupsFilePath)) {
-        return [];
-      }
-      final jsonString = await AboutmeDataService.instance.readPathText(_tagGroupsFilePath);
-      final List<dynamic> jsonList = jsonDecode(jsonString);
+      final response = await _query('getTagGroups');
+      final jsonList = ((response['data'] as Map)['data'] as List)
+          .cast<Map<String, dynamic>>();
       return jsonList
-          .map((json) => TagGroupWithTags.fromMap(json as Map<String, dynamic>))
+          .map((json) => TagGroupWithTags.fromMap(json))
           .toList();
     } catch (e) {
       debugPrint('Error loading tag groups: $e');
@@ -256,7 +259,7 @@ class ActivityService {
   // 保存最近使用的标签
   Future<void> saveRecentTags(List<String> tags) async {
     try {
-      await AboutmeDataService.instance.writePath(_recentTagsFilePath, tags);
+      await _command('updateRecentTags', {'tags': tags});
     } catch (e) {
       debugPrint('Error saving recent tags: $e');
       rethrow;
@@ -266,12 +269,8 @@ class ActivityService {
   // 获取最近使用的标签
   Future<List<String>> getRecentTags() async {
     try {
-      if (!await AboutmeDataService.instance.existsPath(_recentTagsFilePath)) {
-        return [];
-      }
-      final jsonString = await AboutmeDataService.instance.readPathText(_recentTagsFilePath);
-      final List<dynamic> jsonList = jsonDecode(jsonString);
-      return List<String>.from(jsonList);
+      final response = await _query('getRecentTags');
+      return List<String>.from(response['data'] as List);
     } catch (e) {
       debugPrint('Error loading recent tags: $e');
       return [];
@@ -281,7 +280,7 @@ class ActivityService {
   // 保存最近使用的心情
   Future<void> saveRecentMoods(List<String> moods) async {
     try {
-      await AboutmeDataService.instance.writePath(_recentMoodsFilePath, moods);
+      await _command('updateRecentMoods', {'moods': moods});
     } catch (e) {
       debugPrint('Error saving recent moods: $e');
       rethrow;
@@ -291,12 +290,8 @@ class ActivityService {
   // 获取最近使用的心情
   Future<List<String>> getRecentMoods() async {
     try {
-      if (!await AboutmeDataService.instance.existsPath(_recentMoodsFilePath)) {
-        return [];
-      }
-      final jsonString = await AboutmeDataService.instance.readPathText(_recentMoodsFilePath);
-      final List<dynamic> jsonList = jsonDecode(jsonString);
-      return List<String>.from(jsonList);
+      final response = await _query('getRecentMoods');
+      return List<String>.from(response['data'] as List);
     } catch (e) {
       debugPrint('Error loading recent moods: $e');
       return [];
@@ -356,28 +351,13 @@ class ActivityService {
     DateTime endDate,
   ) async {
     try {
-      final Map<String, int> tagStats = {};
-
-      // 遍历日期范围
-      DateTime current = DateTime(startDate.year, startDate.month, startDate.day);
-      final end = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
-
-      while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
-        final activities = await getActivitiesForDate(current);
-
-        for (final activity in activities) {
-          final duration = activity.endTime.difference(activity.startTime).inMinutes;
-
-          // 为每个标签累加时长
-          for (final tag in activity.tags) {
-            tagStats[tag] = (tagStats[tag] ?? 0) + duration;
-          }
-        }
-
-        current = current.add(const Duration(days: 1));
-      }
-
-      return tagStats;
+      final response = await _query('getRangeStats', {
+        'startDate': _dateKey(startDate),
+        'endDate': _dateKey(endDate),
+      });
+      return Map<String, int>.from(
+        (response['data'] as Map)['tagStats'] as Map,
+      );
     } catch (e) {
       debugPrint('Error getting activity stats by tag: $e');
       return {};
@@ -390,22 +370,13 @@ class ActivityService {
     DateTime endDate,
   ) async {
     try {
-      final List<ActivityRecord> allActivities = [];
-
-      // 遍历日期范围
-      DateTime current = DateTime(startDate.year, startDate.month, startDate.day);
-      final end = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
-
-      while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
-        final activities = await getActivitiesForDate(current);
-        allActivities.addAll(activities);
-        current = current.add(const Duration(days: 1));
-      }
-
-      // 按开始时间排序
-      allActivities.sort((a, b) => a.startTime.compareTo(b.startTime));
-
-      return allActivities;
+      final response = await _query('getRange', {
+        'startDate': _dateKey(startDate),
+        'endDate': _dateKey(endDate),
+      });
+      final jsonList = ((response['data'] as Map)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      return jsonList.map((json) => ActivityRecord.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error getting activities for range: $e');
       return [];
@@ -416,9 +387,10 @@ class ActivityService {
   /// 供首次打开引导选择调用
   Future<void> loadSampleTagData() async {
     try {
-      final tagGroupsExists = await AboutmeDataService.instance
-          .existsPath(_tagGroupsFilePath);
-      if (tagGroupsExists) return;
+      // 与旧版 existsPath 判断对齐：文件已创建（含空分组）则不再种示例
+      final response = await _query('getTagGroups');
+      final fileExists = (response['data'] as Map)['exists'] == true;
+      if (fileExists) return;
 
       final defaultTagGroups = ActivitySampleData.defaultTagGroups;
       await saveTagGroups(defaultTagGroups);

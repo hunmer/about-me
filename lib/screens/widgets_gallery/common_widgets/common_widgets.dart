@@ -100,6 +100,7 @@ import 'widgets/spending_overview_card.dart';
 import 'widgets/linked_task_flow_card.dart';
 import 'widgets/roadmap_timeline_card.dart';
 import 'widgets/folder_deck_card.dart';
+import 'widgets/spatial_list_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -201,6 +202,7 @@ enum CommonWidgetId {
   habitCheckinHeatmapCard,
   roadmapTimelineCard,
   folderDeckCard,
+  spatialListCard,
 }
 
 /// 公共小组件元数据
@@ -941,7 +943,8 @@ class CommonWidgetsRegistry {
     CommonWidgetId.expenseTrackerCard: const CommonWidgetMetadata(
       id: CommonWidgetId.expenseTrackerCard,
       name: '支出追踪卡片',
-      description: '深色支出统计：半圆彩色弧段仪表（中心总额）+ 月份胶囊选择条（两侧渐隐）+ 分类列表（图标徽章 + 32 格刻度条），点击分类高亮弧段',
+      description:
+          '深色支出统计：半圆彩色弧段仪表（中心总额）+ 月份胶囊选择条（两侧渐隐）+ 分类列表（图标徽章 + 32 格刻度条），点击分类高亮弧段',
       icon: Icons.account_balance_wallet,
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize(), Large3Size()],
@@ -949,7 +952,8 @@ class CommonWidgetsRegistry {
     CommonWidgetId.totalSalesAnalyticsCard: const CommonWidgetMetadata(
       id: CommonWidgetId.totalSalesAnalyticsCard,
       name: '总销售分析卡片',
-      description: '深色销售统计：头部品牌圆标与操作按钮（通知红点）+ 大号总额 + 柱状图（激活柱滑动斜纹、圆点光环、悬浮数值胶囊），支持周期筛选弹层',
+      description:
+          '深色销售统计：头部品牌圆标与操作按钮（通知红点）+ 大号总额 + 柱状图（激活柱滑动斜纹、圆点光环、悬浮数值胶囊），支持周期筛选弹层',
       icon: Icons.bar_chart,
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize(), Large3Size()],
@@ -957,7 +961,8 @@ class CommonWidgetsRegistry {
     CommonWidgetId.spendingOverviewCard: const CommonWidgetMetadata(
       id: CommonWidgetId.spendingOverviewCard,
       name: '支出概览卡片',
-      description: '磨砂浅灰支出概览：总额与趋势 + 分类列表 + 右缘垂直平切甜甜圈图（首尾段外凸投影、中间段斜纹），支持任意数量分类与周期下拉切换',
+      description:
+          '磨砂浅灰支出概览：总额与趋势 + 分类列表 + 右缘垂直平切甜甜圈图（首尾段外凸投影、中间段斜纹），支持任意数量分类与周期下拉切换',
       icon: Icons.donut_small,
       defaultSize: Large3Size(),
       supportedSizes: [LargeSize(), Large3Size()],
@@ -965,7 +970,8 @@ class CommonWidgetsRegistry {
     CommonWidgetId.linkedTaskFlowCard: const CommonWidgetMetadata(
       id: CommonWidgetId.linkedTaskFlowCard,
       name: '连线任务流卡片',
-      description: '交错左右对齐的任务卡片（头像 + 进度胶囊 + 标题 + 负责人）由贝塞尔曲线依次相连：卡片浮现 -> 连线生长 -> 流光循环，支持自定义配色与斜纹背景',
+      description:
+          '交错左右对齐的任务卡片（头像 + 进度胶囊 + 标题 + 负责人）由贝塞尔曲线依次相连：卡片浮现 -> 连线生长 -> 流光循环，支持自定义配色与斜纹背景',
       icon: Icons.account_tree,
       defaultSize: Large3Size(),
       supportedSizes: [Large3Size(), Wide3Size()],
@@ -973,7 +979,8 @@ class CommonWidgetsRegistry {
     CommonWidgetId.habitCheckinHeatmapCard: const CommonWidgetMetadata(
       id: CommonWidgetId.habitCheckinHeatmapCard,
       name: '习惯打卡热力图卡片',
-      description: 'iOS 深色风格习惯打卡卡片：7x10 四档亮度热力图矩阵 + 今日待打卡空心指示格 + 底部胶囊打卡按钮（未打卡/已打卡/多次打卡三态），内置 4 套主题色板',
+      description:
+          'iOS 深色风格习惯打卡卡片：7x10 四档亮度热力图矩阵 + 今日待打卡空心指示格 + 底部胶囊打卡按钮（未打卡/已打卡/多次打卡三态），内置 4 套主题色板',
       icon: Icons.grid_on,
       defaultSize: Large3Size(),
       supportedSizes: [MediumSize(), Wide2Size(), Large3Size()],
@@ -993,6 +1000,14 @@ class CommonWidgetsRegistry {
       icon: Icons.folder_copy,
       defaultSize: Large3Size(),
       supportedSizes: [MediumSize(), Wide2Size(), Large3Size()],
+    ),
+    CommonWidgetId.spatialListCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.spatialListCard,
+      name: '空间清单卡片',
+      description: '可折叠清单与可拖动空间画布，包含物品插画、数量徽标和联动小地图',
+      icon: Icons.dashboard_customize,
+      defaultSize: Large3Size(),
+      supportedSizes: [Large3Size()],
     ),
   };
 
@@ -1241,7 +1256,10 @@ class CommonWidgetBuilder {
       case CommonWidgetId.expenseTrackerCard:
         return ExpenseTrackerCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.totalSalesAnalyticsCard:
-        return TotalSalesAnalyticsCardWidget.fromProps(finalProps, effectiveSize);
+        return TotalSalesAnalyticsCardWidget.fromProps(
+          finalProps,
+          effectiveSize,
+        );
       case CommonWidgetId.spendingOverviewCard:
         return SpendingOverviewCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.linkedTaskFlowCard:
@@ -1252,6 +1270,8 @@ class CommonWidgetBuilder {
         return RoadmapTimelineCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.folderDeckCard:
         return FolderDeckCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.spatialListCard:
+        return SpatialListCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

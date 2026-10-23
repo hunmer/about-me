@@ -98,8 +98,12 @@ PluginHandlers createCalendarHandlers(PluginData data) {
   Future<Map<String, dynamic>> preferences() async =>
       entityObject(await data.read('calendar', 'calendar_last_view.json'));
   return {
-    'restoreBackup': (_, p) async =>
-        PluginResult.success(await restoreDomainBackup(data, 'calendar')),
+    'restoreBackup': (_, p) async {
+      if (p['confirmRestore'] != true) {
+        throw const FormatException('confirmRestore required');
+      }
+      return PluginResult.success(await restoreDomainBackup(data, 'calendar'));
+    },
     'getPreferences': (_, p) async => PluginResult.success(await preferences()),
     'updatePreferences': (_, p) async {
       await ensureDomainBackup(data, 'calendar');
@@ -135,7 +139,7 @@ PluginHandlers createCalendarHandlers(PluginData data) {
     },
     'resetData': (_, p) async {
       final s = await state();
-      await backupDomain(data, 'calendar', s);
+      await ensureDomainBackup(data, 'calendar');
       s['events'] = [];
       s['completedEvents'] = [];
       await save(s);

@@ -99,6 +99,7 @@ const structuredDomainFiles = <String, List<String>>{
   ],
   'day': ['memorial_days.json', 'view_preference.json'],
   'calendar': ['calendar_events.json', 'calendar_last_view.json'],
+  'calendar_album': ['calendar_entries.json'],
 };
 Future<void> ensureDomainBackup(PluginData data, String plugin) async {
   if (await data.read(plugin, 'sdk_migration_backup.json') != null) return;

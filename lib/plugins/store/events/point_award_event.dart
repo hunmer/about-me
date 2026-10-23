@@ -1,6 +1,8 @@
+import 'package:aboutme/core/event/event_args.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/plugins/store/store_plugin.dart';
+import 'package:uuid/uuid.dart';
 
 /// 积分奖励事件处理器
 class PointAwardEvent {
@@ -60,9 +62,32 @@ class PointAwardEvent {
     eventManager.subscribe('bill_added', _handleBillAdded);
   }
 
+  /// 积分发放幂等键：同一奖励发生（如同一实体创建、同一天同一打卡项）
+  /// 只入账一次，事件重试/重复广播不重复加分。
+  /// 事件不带实体 ID 时（如 activity_added 的空参数）退化为按次发放。
+  String _dedupeKey(String eventName, EventArgs args) {
+    if (args is ItemEventArgs) {
+      if (eventName == 'checkin_completed') {
+        // 打卡按天发放：同一天同一打卡项（区分扣分标记）只奖一次
+        final penalty = args.data?['isPenalty'] == true;
+        final now = DateTime.now();
+        final day =
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+        return 'store:award:checkin:${args.itemId}:$day:${penalty ? 'p' : 'n'}';
+      }
+      return 'store:award:$eventName:${args.itemId}';
+    }
+    if (args is Value) {
+      // Value<Message>/Value<Record> 等携带实体的事件按实体 ID 去重
+      final entityId = (args as dynamic).value?.id;
+      if (entityId != null) return 'store:award:$eventName:$entityId';
+    }
+    return 'store:award:$eventName:${const Uuid().v4()}';
+  }
+
   /// 处理活动添加事件
   Future<void> _handleActivityAdded(EventArgs args) async {
-    await _award('activity_added');
+    await _award('activity_added', args);
   }
 
   /// 处理签到完成事件（扣分项取反积分）
@@ -73,52 +98,62 @@ class PointAwardEvent {
     await _awardPoints(
       isPenalty ? -points : points,
       eventReasons['checkin_completed']!,
+      clientMutationId: _dedupeKey('checkin_completed', args),
     );
   }
 
   /// 处理任务完成事件
   Future<void> _handleTaskCompleted(EventArgs args) async {
-    await _award('task_completed');
+    await _award('task_completed', args);
   }
 
   /// 处理笔记添加事件
   Future<void> _handleNoteAdded(EventArgs args) async {
-    await _award('note_added');
+    await _award('note_added', args);
   }
 
   /// 处理物品添加事件
   Future<void> _handleGoodsAdded(EventArgs args) async {
-    await _award('goods_added');
+    await _award('goods_item_added', args);
   }
 
   /// 处理消息发送事件
   Future<void> _handleMessageSent(EventArgs args) async {
-    await _award('chat_message_sent');
+    await _award('chat_message_sent', args);
   }
 
   /// 处理记录添加事件
   Future<void> _handleRecordAdded(EventArgs args) async {
-    await _award('onRecordAdded');
+    await _award('onRecordAdded', args);
   }
 
   /// 处理日记添加事件
   Future<void> _handleDiaryAdded(EventArgs args) async {
-    await _award('diary_entry_created');
+    await _award('diary_entry_created', args);
   }
 
   Future<void> _handleBillAdded(EventArgs args) async {
-    await _award('bill_added');
+    await _award('bill_added', args);
   }
 
   /// 按事件名发放积分（reason 取 [eventReasons] 统一文案）
-  Future<void> _award(String eventName) async {
-    await _awardPoints(_getPointsForEvent(eventName), eventReasons[eventName]!);
+  Future<void> _award(String eventName, EventArgs args) async {
+    await _awardPoints(
+      _getPointsForEvent(eventName),
+      eventReasons[eventName]!,
+      clientMutationId: _dedupeKey(eventName, args),
+    );
   }
 
-  /// 添加积分（负数为扣分）
-  Future<void> _awardPoints(int points, String reason) async {
+  /// 添加积分（负数为扣分）；带幂等键时同一奖励重试不重复入账
+  Future<void> _awardPoints(int points, String reason,
+      {String? clientMutationId}) async {
     if (points != 0) {
-      await _storePlugin.controller.addPoints(points, reason);
+      await _storePlugin.controller.addPoints(
+        points,
+        reason,
+        clientMutationId: clientMutationId,
+      );
     }
   }
 

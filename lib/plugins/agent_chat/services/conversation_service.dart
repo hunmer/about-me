@@ -49,15 +49,16 @@ class ConversationService extends ChangeNotifier {
   /// 加载所有会话
   Future<void> _loadConversations() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(
-        'agent_chat/conversations.json',
-      );
-      if (data is List && data.isNotEmpty) {
+      final res = await AboutmeDataService.instance.get('agent_chat', 'getList');
+      final list = (res['success'] == true && res['data'] is Map)
+          ? (res['data'] as Map)['data']
+          : null;
+      if (list is List && list.isNotEmpty) {
         // 有数据，正常加载
         _conversations
           ..clear()
           ..addAll(
-            data
+            list
                 .map(
                   (json) => Conversation.fromJson(
                     json as Map<String, dynamic>,
@@ -74,19 +75,21 @@ class ConversationService extends ChangeNotifier {
 
   /// 加载示例数据（存储为空时写入，供首次打开引导选择调用）
   Future<void> loadSampleData() async {
-    final data = await AboutmeDataService.instance.readPath(
-      'agent_chat/conversations.json',
-    );
-    if (data is List && data.isNotEmpty) return;
+    final res = await AboutmeDataService.instance.get('agent_chat', 'getList');
+    final list = (res['success'] == true && res['data'] is Map)
+        ? (res['data'] as Map)['data']
+        : null;
+    if (list is List && list.isNotEmpty) return;
     try {
       // 获取示例数据
       final sampleData = AgentChatSampleData.getFullSampleData();
 
       // 保存会话数据
       final conversationsJson = sampleData['conversations'] as List;
-      await AboutmeDataService.instance.writePath(
-        'agent_chat/conversations.json',
-        conversationsJson,
+      await AboutmeDataService.instance.call(
+        'agent_chat',
+        'saveConversations',
+        {'conversations': conversationsJson},
       );
 
       // 保存消息数据
@@ -94,10 +97,10 @@ class ConversationService extends ChangeNotifier {
       for (var entry in messagesJson.entries) {
         final conversationId = entry.key;
         final messages = entry.value as List;
-        await AboutmeDataService.instance.writePath(
-          'agent_chat/messages/$conversationId.json',
-          messages,
-        );
+        await AboutmeDataService.instance.call('agent_chat', 'saveMessages', {
+          'conversationId': conversationId,
+          'messages': messages,
+        });
       }
 
       // 提取唯一分组数量
@@ -128,9 +131,10 @@ class ConversationService extends ChangeNotifier {
       debugPrint('AgentChat插件: 加载示例数据失败: $e');
       // 如果加载示例数据失败，创建空数据
       _conversations.clear();
-      await AboutmeDataService.instance.writePath(
-        'agent_chat/conversations.json',
-        [],
+      await AboutmeDataService.instance.call(
+        'agent_chat',
+        'saveConversations',
+        {'conversations': <dynamic>[]},
       );
       notifyListeners();
     }
@@ -144,9 +148,10 @@ class ConversationService extends ChangeNotifier {
         .then((_) async {
           try {
             final data = _conversations.map((c) => c.toJson()).toList();
-            await AboutmeDataService.instance.writePath(
-              'agent_chat/conversations.json',
-              data,
+            await AboutmeDataService.instance.call(
+              'agent_chat',
+              'saveConversations',
+              {'conversations': data},
             );
           } catch (e) {
             debugPrint('保存会话失败: $e');
@@ -217,10 +222,12 @@ class ConversationService extends ChangeNotifier {
     await _saveConversations();
     notifyListeners();
 
-    // 同时删除会话的所有消息
+    // 同时删除会话的所有消息（clearMessages 删除 messages/{id}.json）
     try {
-      await AboutmeDataService.instance.deletePath(
-        'agent_chat/messages/$id.json',
+      await AboutmeDataService.instance.call(
+        'agent_chat',
+        'clearMessages',
+        {'conversationId': id},
       );
     } catch (e) {
       debugPrint('删除会话失败: $e');

@@ -55,11 +55,16 @@ class MessageService extends ChangeNotifier {
   /// 加载指定会话的消息
   Future<void> _loadMessages(String conversationId) async {
     try {
-      final data = await AboutmeDataService.instance.readPath(
-        'agent_chat/messages/$conversationId.json',
+      final res = await AboutmeDataService.instance.get(
+        'agent_chat',
+        'getMessages',
+        {'conversationId': conversationId},
       );
-      if (data is List) {
-        final messages = data
+      final list = (res['success'] == true && res['data'] is Map)
+          ? (res['data'] as Map)['data']
+          : null;
+      if (list is List) {
+        final messages = list
             .map((json) => ChatMessage.fromJson(json as Map<String, dynamic>))
             .toList();
         _messageCache[conversationId] = messages;
@@ -86,10 +91,10 @@ class MessageService extends ChangeNotifier {
       try {
         final messages = _messageCache[conversationId] ?? [];
         final data = messages.map((m) => m.toJson()).toList();
-        await AboutmeDataService.instance.writePath(
-          'agent_chat/messages/$conversationId.json',
-          data,
-        );
+        await AboutmeDataService.instance.call('agent_chat', 'saveMessages', {
+          'conversationId': conversationId,
+          'messages': data,
+        });
       } catch (e) {
         debugPrint('❌ [MessageService] 保存消息失败: $e');
         if (throwOnError) rethrow;

@@ -99,7 +99,6 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
   String _selectedGroup = '全部'; // 当前选中的分组
   bool _isHeatmapView = false; // false=卡片网格视图, true=热力图视图
   final Map<String, List<CompletionRecord>> _records = {}; // 各习惯完成记录（热力图数据源）
-  static const _viewSettingsKey = 'habits/view_settings.json';
 
   @override
   void initState() {
@@ -180,10 +179,10 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
 
   /// 恢复持久化的视图模式
   Future<void> _loadViewMode() async {
-    final data = await AboutmeDataService.instance.readPath(
-      _viewSettingsKey,
-      <String, dynamic>{},
+    final res = await AboutmeDataService.instance.get(
+      'habits', 'getSettings',
     );
+    final data = res['success'] == true ? res['data'] : null;
     if (mounted && data is Map && data['heatmapView'] == true) {
       setState(() => _isHeatmapView = true);
       _loadRecords();
@@ -192,7 +191,7 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
 
   /// 持久化视图模式
   Future<void> _saveViewMode() async {
-    await AboutmeDataService.instance.writePath(_viewSettingsKey, {
+    await AboutmeDataService.instance.call('habits', 'updateSettings', {
       'heatmapView': _isHeatmapView,
     });
   }

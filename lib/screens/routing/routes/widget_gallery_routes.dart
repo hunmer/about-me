@@ -21,6 +21,8 @@ import 'package:aboutme/screens/widgets_gallery/screens/run_receipt_printer_exam
 import 'package:aboutme/screens/widgets_gallery/screens/lucky_wheel_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/moments_nyc_map_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/effort_slider_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/interests_interactive_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/cute_fruit_timer_example.dart';
 
 import 'package:aboutme/screens/widgets_gallery/screens/segmented_progress_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/monthly_progress_with_dots_card_example.dart';
@@ -108,6 +110,8 @@ import 'package:aboutme/screens/widgets_gallery/screens/audio_ui_replica_example
 import 'package:aboutme/screens/widgets_gallery/screens/pseudo_3d_flip_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/roadmap_timeline_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/folder_deck_card_example.dart';
+import 'package:aboutme/widgets/drink_checkin_calendar.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/spatial_list_card_example.dart';
 
 /// 组件展示路由注册表
 class WidgetGalleryRoutes implements RouteRegistry {
@@ -971,12 +975,44 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: 'Effort 推理强度滑块（脑图标 + Galaxy 星尘像素特效）',
     ),
     RouteDefinition(
+      path: '/widgets_gallery/interests_interactive',
+      handler: (settings) => RouteHelpers.createRoute(
+        const InterestsInteractiveExample(),
+        settings: settings,
+      ),
+      description: 'Interests 兴趣选择（标签选择 + 三图标飞入计数动画）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/cute_fruit_timer',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CuteFruitTimerExample(),
+        settings: settings,
+      ),
+      description: '可爱水果专注计时器（物理堆叠 + 拖拽 + 自动掉落）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/drink_checkin_calendar',
+      handler: (settings) => RouteHelpers.createRoute(
+        const DrinkCheckinCalendarDemo(),
+        settings: settings,
+      ),
+      description: '饮品打卡日历（SfCalendar 自定义格子 + 贴纸打卡）',
+    ),
+    RouteDefinition(
       path: '/widgets_gallery/folder_deck_card',
       handler: (settings) => RouteHelpers.createRoute(
         const FolderDeckCardExample(),
         settings: settings,
       ),
       description: '文件夹卡片堆叠',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/spatial_list_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const SpatialListCardExample(),
+        settings: settings,
+      ),
+      description: '空间清单卡片',
     ),
   ];
 }
@@ -1463,6 +1499,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '文件夹卡片堆叠',
     subtitle: 'FolderDeckCard - 3D 文件夹堆叠切换与标题联动',
     route: '/widgets_gallery/folder_deck_card',
+  ),
+  WidgetPreviewItem(
+    category: '内容类',
+    icon: Icons.dashboard_customize,
+    title: '空间清单卡片',
+    subtitle: 'SpatialListCard - 可折叠清单与可拖动空间画布',
+    route: '/widgets_gallery/spatial_list_card',
   ),
   // 财务类
   WidgetPreviewItem(

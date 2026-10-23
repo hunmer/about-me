@@ -98,9 +98,11 @@ class ConversationController extends ChangeNotifier {
   /// 加载全局配置
   Future<void> _loadGlobalConfig() async {
     try {
-      final config = await AboutmeDataService.instance.readPath(
-        'agent_chat/config',
+      final res = await AboutmeDataService.instance.get(
+        'agent_chat',
+        'getConfig',
       );
+      final config = res['success'] == true ? res['data'] : null;
       if (config is Map<String, dynamic>) {
         _defaultContextMessageCount =
             config['defaultContextMessageCount'] as int? ?? 10;
@@ -115,7 +117,7 @@ class ConversationController extends ChangeNotifier {
   /// 保存全局配置
   Future<void> _saveGlobalConfig() async {
     try {
-      await AboutmeDataService.instance.writePath('agent_chat/config', {
+      await AboutmeDataService.instance.call('agent_chat', 'updateConfig', {
         'defaultContextMessageCount': _defaultContextMessageCount,
       });
     } catch (e) {

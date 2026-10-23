@@ -405,6 +405,25 @@ class _TransactionData implements PluginData, LegacyAssetData {
     }
     return (persistence as BinaryPluginPersistence).readBytes(path, maxBytes);
   }
+
+  /// 受控迁移：删除分区外旧数据文件，纳入当前事务（崩溃由日志恢复重放）。
+  @override
+  Future<bool> removeLegacyAsset(String path) async {
+    final checked = PersistentPluginBackend.checkedPath(path);
+    try {
+      if (writes.containsKey(checked)) {
+        final pending = writes[checked] != null;
+        if (pending) writes[checked] = null;
+        return pending;
+      }
+      final exists = await backend._json(checked) != null;
+      if (exists) writes[checked] = null;
+      return exists;
+    } on StorageException catch (error) {
+      fault = error;
+      rethrow;
+    }
+  }
   String _path(String pluginId, String fileName) =>
       PersistentPluginBackend.checkedPath('$pluginId/$fileName');
   @override

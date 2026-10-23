@@ -9,7 +9,6 @@ import 'package:aboutme/plugins/habits/sample_data.dart';
 
 class SkillController {
   final StorageManager storage;
-  static const _skillsKey = 'habits/skills.json';
   List<Skill> _skills = [];
 
   SkillController(this.storage) {
@@ -20,20 +19,22 @@ class SkillController {
     String skillId,
   ) async {
     try {
-      final data = await AboutmeDataService.instance.readPath(
-        'habits/records/$skillId.json',
-        [],
-      );
+      final res = await AboutmeDataService.instance.get('habits', 'getRecords', {
+        'parentId': skillId,
+      });
+      if (res['success'] != true) {
+        throw Exception('加载完成记录失败: ${res['error']}');
+      }
+      final payload = res['data'];
+      final recordsData = payload is Map ? payload['data'] : null;
+
       List<Map<String, dynamic>> recordMaps = [];
-      if (data is List) {
+      if (recordsData is List) {
         recordMaps = List<Map<String, dynamic>>.from(
-          data.whereType<Map>().where((m) => m.isNotEmpty),
+          recordsData.whereType<Map>().where((m) => m.isNotEmpty),
         );
       }
-      return recordMaps
-          .map((e) => CompletionRecord.fromMap(e))
-          .where((r) => r != null)
-          .toList();
+      return recordMaps.map((e) => CompletionRecord.fromMap(e)).toList();
     } catch (e) {
       print('Error loading completion records: $e');
       return [];
@@ -42,19 +43,23 @@ class SkillController {
 
   Future<List<Skill>> loadSkills() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_skillsKey, []);
+      final res = await AboutmeDataService.instance.get(
+        'habits', 'getSkills',
+      );
+      if (res['success'] != true) {
+        throw Exception('加载技能失败: ${res['error']}');
+      }
+      final payload = res['data'];
+      final skillsData = payload is Map ? payload['data'] : null;
+
       List<Map<String, dynamic>> skillMaps = [];
-      if (data is List) {
+      if (skillsData is List) {
         skillMaps = List<Map<String, dynamic>>.from(
-          data.whereType<Map>().where((m) => m.isNotEmpty),
+          skillsData.whereType<Map>().where((m) => m.isNotEmpty),
         );
       }
 
-      _skills =
-          skillMaps
-              .map((e) => Skill.fromMap(e))
-              .where((s) => s != null)
-              .toList();
+      _skills = skillMaps.map((e) => Skill.fromMap(e)).toList();
 
       return _skills;
     } catch (e) {
@@ -65,20 +70,16 @@ class SkillController {
 
   /// 创建示例技能数据（存储为空时写入，供首次打开引导选择调用）
   Future<void> createDefaultSkills() async {
-    final existing = await AboutmeDataService.instance.readPath(_skillsKey, []);
-    if (existing is List && existing.isNotEmpty) return;
+    final existing = _skills.isNotEmpty ? _skills : await loadSkills();
+    if (existing.isNotEmpty) return;
 
-    // 使用示例数据创建默认技能
+    // 使用示例数据创建默认技能（SDK 端按空集合判重）
     final sampleData = HabitsSampleData.getSampleData();
-    final skillMaps = sampleData['skills'] as List<Map<String, dynamic>>;
-    final defaultSkills = skillMaps.map((m) => Skill.fromMap(m)).toList();
-
-    _skills = defaultSkills;
-    await AboutmeDataService.instance.writePath(
-      _skillsKey,
-      defaultSkills.map((s) => s.toMap()).toList(),
-    );
-    print('Created default skills: ${defaultSkills.length} items');
+    await AboutmeDataService.instance.call('habits', 'seedExamples', {
+      'skills': sampleData['skills'],
+    });
+    await loadSkills();
+    print('Created default skills: ${_skills.length} items');
   }
 
   List<Skill> getSkills() {
@@ -101,9 +102,10 @@ class SkillController {
     } else {
       _skills.add(skill);
     }
-    await AboutmeDataService.instance.writePath(
-      _skillsKey,
-      _skills.map((s) => s.toMap()).toList(),
+    await AboutmeDataService.instance.call(
+      'habits',
+      index >= 0 ? 'updateSkill' : 'createSkill',
+      skill.toMap(),
     );
 
     // 广播技能数据变更事件，同步小组件
@@ -118,9 +120,8 @@ class SkillController {
 
   Future<void> deleteSkill(String id) async {
     _skills.removeWhere((s) => s.id == id);
-    await AboutmeDataService.instance.writePath(
-      _skillsKey,
-      _skills.map((s) => s.toMap()).toList(),
+    await AboutmeDataService.instance.call(
+      'habits', 'deleteSkill', {'id': id},
     );
 
     // 广播技能数据变更事件，同步小组件

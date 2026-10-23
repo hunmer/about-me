@@ -7,6 +7,7 @@ import '../handlers/record_domain_support.dart';
 Map<String,List<String>> recordDomainFiles(String plugin) => switch(plugin) {
   'todo'=>{'tasks.json':['tasks','completedTasks']},
   'tracker'=>{'goals.json':['goals'],'records.json':['records']},
+  'checkin'=>{'items.json':['items']},
   _=>throw ArgumentError('Unsupported domain'),
 };
 dynamic _canonical(dynamic raw) {
@@ -25,6 +26,14 @@ Future<Map<String,dynamic>> _snapshot(PluginData data,String plugin) async {
     final goals=(ids['goals'] as List).toSet();
     for(final record in (files['records.json']?['records'] as List? ?? [])){if(!goals.contains(record['goalId']))throw const DomainFailure('CORRUPT_DATA','Orphan tracker record');}
   }
+  // checkin 记录内嵌在 item.checkInRecords（key=yyyy-MM-dd，value=记录列表），按实际形状校验
+  if(plugin=='checkin') {
+    for(final item in (files['items.json']?['items'] as List? ?? [])) {
+      final records=(item as Map)['checkInRecords'];
+      if(records==null)continue;
+      if(records is! Map||records.values.any((v)=>v is! List))throw const DomainFailure('CORRUPT_DATA','Invalid checkin records');
+    }
+  }
   return {'schemaVersion':1,'domain':plugin,'files':files,'entityIds':ids,'checksum':_checksum(files)};
 }
 Future<void> prepareRecordDomainMigration(PluginData data,String plugin) async {
@@ -39,11 +48,12 @@ Future<void> prepareRecordDomainMigration(PluginData data,String plugin) async {
 PluginHandlers recordDomainMigrationHandlers(PluginData data,String plugin)=>{
   'migrate':domainAction((_)async{await prepareRecordDomainMigration(data,plugin);return data.read('sdk_migrations','$plugin/v1.json');}),
   'getMigrationReport':domainAction((_)async{
+    // 始终校验当前数据，孤儿 record 即使在清单已存在后也要被发现
+    await _snapshot(data,plugin);
     final manifest=await data.read('sdk_migrations','$plugin/v1.json');
     if(manifest==null)return {'schemaVersion':1,'verified':false};
     if(manifest is! Map||manifest['verified']!=true||manifest['schemaVersion']!=1)throw const DomainFailure('CORRUPT_DATA','Invalid migration manifest');
-    await prepareRecordDomainMigration(data,plugin);
-    return data.read('sdk_migrations','$plugin/v1.json');
+    return manifest;
   }),
   'exportData':domainAction((_)=>_snapshot(data,plugin)),
   'restoreBackup':domainAction((p)async{
@@ -63,7 +73,9 @@ PluginHandlers withRecordDomainMigration(PluginData data,String plugin,PluginHan
     entry.key:entry.key.startsWith('get')||entry.key.startsWith('search')||entry.key=='exportData'
       ?entry.value
       : (transaction,params)async{
+        final result=await entry.value(transaction,params);
+        if(!result.isSuccess)return result;
         try{await prepareRecordDomainMigration(data,plugin);}on DomainFailure catch(e){return PluginResult.failure(e.message,e.code);}
-        return entry.value(transaction,params);
+        return result;
       },
 };

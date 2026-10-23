@@ -196,8 +196,12 @@ PluginHandlers createContactHandlers(PluginData data) {
   }
 
   return {
-    'restoreBackup': (_, p) async =>
-        PluginResult.success(await restoreDomainBackup(data, 'contact')),
+    'restoreBackup': (_, p) async {
+      if (p['confirmRestore'] != true) {
+        throw const FormatException('confirmRestore required');
+      }
+      return PluginResult.success(await restoreDomainBackup(data, 'contact'));
+    },
     'getList': (_, p) => list(p),
     'search': (_, p) => list(p),
     'getSnapshot': (_, p) async => PluginResult.success(await snapshot()),

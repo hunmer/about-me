@@ -1,8 +1,10 @@
+import '../migrations/record_domains_migration.dart';
 import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
 // Checkin 插件专用处理器（移植自 nodejs handlers/checkin.ts）。
+// 全部动作经 withRecordDomainMigration 包裹：写操作成功后完成域迁移快照。
 //
 // 数据格式：items.json 文件包含打卡项目列表，每个项目有嵌套的 checkInRecords
 
@@ -21,8 +23,8 @@ PluginHandlers createCheckinHandlers(PluginData data) {
     return data.write('checkin', 'items.json', {'items': items});
   }
 
-  return {
-    // 获取打卡项目列表
+  return withRecordDomainMigration(data, 'checkin', {
+    // 获取打卡项目列表（未指定 count 时返回全量，与 todo/tracker 一致）
     'getList': (data, params) async {
       try {
         final items = await readAllItems();
@@ -31,7 +33,7 @@ PluginHandlers createCheckinHandlers(PluginData data) {
           createPaginatedResult(
             items,
             offset: params['offset'] as int?,
-            count: params['count'] as int?,
+            count: params['count'] as int? ?? items.length,
           ),
         );
       } catch (e) {
@@ -141,13 +143,19 @@ PluginHandlers createCheckinHandlers(PluginData data) {
             : <String, dynamic>{};
 
         final now = jsIsoDateTime(DateTime.now());
+        // 兼容旧调用（不传时间时与原行为一致：checkinTime 用当前时间）；
+        // Flutter 侧经 repository 传入完整记录字段（startTime/endTime/checkinTime）
+        final checkinTime = params['checkinTime'] ?? now;
         final newRecord = <String, dynamic>{
           'id': generateUUID(),
-          'checkinTime': now,
+          if (params['startTime'] != null) 'startTime': params['startTime'],
+          if (params['endTime'] != null) 'endTime': params['endTime'],
+          'checkinTime': checkinTime,
           if (note != null) 'note': note,
         };
 
-        final dateKey = date.toString();
+        final dateKey =
+            date?.toString() ?? checkinTime.toString().split('T')[0];
         var dateRecords = checkInRecords[dateKey];
         if (dateRecords is! List) {
           dateRecords = <dynamic>[];
@@ -166,6 +174,58 @@ PluginHandlers createCheckinHandlers(PluginData data) {
         return PluginResult.success(newRecord);
       } catch (e) {
         return PluginResult.failure('签到失败: $e');
+      }
+    },
+
+    // 删除打卡记录（按 item + 日期 + 索引；统计由 getStats 实时计算，删除后自然回滚）
+    'deleteRecord': (data, params) async {
+      try {
+        final itemId = params['id'];
+        final dateKey = params['date']?.toString();
+        final items = await readAllItems();
+        final index = items.indexWhere((i) => i['id'] == itemId);
+
+        if (index == -1) {
+          return const PluginResult.failure('打卡项目不存在', 'NOT_FOUND');
+        }
+
+        final item = items[index];
+        final existingRecords = item['checkInRecords'];
+        final checkInRecords = existingRecords is Map
+            ? Map<String, dynamic>.from(existingRecords)
+            : <String, dynamic>{};
+
+        final dateRecords = dateKey == null ? null : checkInRecords[dateKey];
+        if (dateRecords is! List || dateRecords.isEmpty) {
+          return const PluginResult.failure('打卡记录不存在', 'NOT_FOUND');
+        }
+
+        // 路径参数经 URL 提取为字符串，body/SDK 调用为 int，两者都接受
+        final rawIndex = params['recordIndex'];
+        final recordIndex =
+            rawIndex is int ? rawIndex : int.tryParse('$rawIndex');
+        if (recordIndex == null ||
+            recordIndex < 0 ||
+            recordIndex >= dateRecords.length) {
+          return const PluginResult.failure('记录索引无效', 'INVALID_PARAMS');
+        }
+
+        dateRecords.removeAt(recordIndex);
+        if (dateRecords.isEmpty) {
+          checkInRecords.remove(dateKey);
+        }
+
+        final updatedItem = <String, dynamic>{
+          ...item,
+          'checkInRecords': checkInRecords,
+          'updatedAt': jsIsoDateTime(DateTime.now()),
+        };
+        items[index] = updatedItem;
+
+        await saveAllItems(items);
+        return PluginResult.success(updatedItem);
+      } catch (e) {
+        return PluginResult.failure('删除打卡记录失败: $e');
       }
     },
 
@@ -228,5 +288,5 @@ PluginHandlers createCheckinHandlers(PluginData data) {
         return PluginResult.failure('获取统计失败: $e');
       }
     },
-  };
+  });
 }

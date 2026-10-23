@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-/// 仅供 SDK 受控迁移处理器读取旧二进制资源；不提供任意路径写入。
+/// 仅供 SDK 受控迁移处理器访问分区外旧数据文件；不提供任意路径写入。
 abstract class LegacyAssetData {
   Future<Uint8List?> readLegacyAsset(String path, int maxBytes);
+
+  /// 受控迁移专用：在当前事务内删除分区外旧数据文件（如顶层 records_x）。
+  Future<bool> removeLegacyAsset(String path);
 }
 
 /// 插件数据访问接口：业务 handler 通过它读写插件数据文件（明文 JSON）。

@@ -33,7 +33,6 @@ class HabitController {
   final StorageManager storage;
   final TimerController timerController;
   final SkillController skillController;
-  static const _habitsKey = 'habits/habits.json';
   List<Habit> _habits = [];
 
   HabitController(
@@ -53,30 +52,23 @@ class HabitController {
 
   Future<List<Habit>> loadHabits() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_habitsKey, []);
+      final res = await AboutmeDataService.instance.get(
+        'habits', 'getSnapshot',
+      );
+      if (res['success'] != true) {
+        throw Exception('加载习惯失败: ${res['error']}');
+      }
+      final snapshot = res['data'];
+      final habitsData = snapshot is Map ? snapshot['habits'] : null;
 
       List<Map<String, dynamic>> habitMaps = [];
-      if (data is List) {
+      if (habitsData is List) {
         habitMaps = List<Map<String, dynamic>>.from(
-          data.whereType<Map>().where((m) => m.isNotEmpty),
+          habitsData.whereType<Map>().where((m) => m.isNotEmpty),
         );
-      } else if (data is Map) {
-        // 如果数据是Map格式，可能存储结构有问题
-        if (data.containsKey('habits')) {
-          final habitsData = data['habits'];
-          if (habitsData is List) {
-            habitMaps = List<Map<String, dynamic>>.from(
-              habitsData.whereType<Map>().where((m) => m.isNotEmpty),
-            );
-          }
-        }
       }
 
-      _habits =
-          habitMaps
-              .map((e) => Habit.fromMap(e))
-              .where((h) => h != null)
-              .toList();
+      _habits = habitMaps.map((e) => Habit.fromMap(e)).toList();
 
       return _habits;
     } catch (e) {
@@ -87,43 +79,17 @@ class HabitController {
 
   /// 创建示例习惯数据（存储为空时写入，供首次打开引导选择调用）
   Future<void> createDefaultHabits() async {
-    final existing = await AboutmeDataService.instance.readPath(_habitsKey, []);
-    if (existing is List && existing.isNotEmpty) return;
+    final existing = _habits.isNotEmpty ? _habits : await loadHabits();
+    if (existing.isNotEmpty) return;
 
-    // 使用示例数据创建默认习惯
+    // 使用示例数据创建默认习惯与对应完成记录（SDK 端按空集合判重）
     final sampleData = HabitsSampleData.getSampleData();
-    final habitMaps = sampleData['habits'] as List<Map<String, dynamic>>;
-    final defaultHabits = habitMaps.map((m) => Habit.fromMap(m)).toList();
-
-    _habits = defaultHabits;
-    await AboutmeDataService.instance.writePath(
-      _habitsKey,
-      defaultHabits.map((h) => h.toMap()).toList(),
-    );
-    print('Created default habits: ${defaultHabits.length} items');
-
-    // 同时创建示例完成记录
-    await _createDefaultRecords();
-  }
-
-  /// 创建默认完成记录
-  Future<void> _createDefaultRecords() async {
-    final sampleData = HabitsSampleData.getSampleData();
-    final recordsMap = sampleData['records'] as Map<String, dynamic>;
-
-    for (final entry in recordsMap.entries) {
-      final habitId = entry.key;
-      final recordList = entry.value as List;
-
-      if (recordList.isNotEmpty) {
-        await AboutmeDataService.instance.writePath(
-          'habits/records/$habitId.json',
-          recordList,
-        );
-      }
-    }
-
-    print('Created default completion records for ${recordsMap.length} habits');
+    await AboutmeDataService.instance.call('habits', 'seedExamples', {
+      'habits': sampleData['habits'],
+      'records': sampleData['records'],
+    });
+    await loadHabits();
+    print('Created default habits: ${_habits.length} items');
   }
 
   List<Habit> getHabits() => _habits;
@@ -138,9 +104,10 @@ class HabitController {
       habits.add(habit);
     }
 
-    await AboutmeDataService.instance.writePath(
-      _habitsKey,
-      habits.map((h) => h.toMap()).toList(),
+    await AboutmeDataService.instance.call(
+      'habits',
+      index >= 0 ? 'update' : 'create',
+      habit.toMap(),
     );
 
     // 广播习惯数据变更事件，同步小组件
@@ -162,10 +129,7 @@ class HabitController {
   Future<void> deleteHabit(String id) async {
     final habits = getHabits();
     habits.removeWhere((h) => h.id == id);
-    await AboutmeDataService.instance.writePath(
-      _habitsKey,
-      habits.map((h) => h.toMap()).toList(),
-    );
+    await AboutmeDataService.instance.call('habits', 'delete', {'id': id});
 
     // 广播习惯数据变更事件，同步小组件
     EventManager.instance.broadcast('habit_data_changed', Value({'habitId': id}));
@@ -226,10 +190,10 @@ class HabitController {
       );
 
       habits[index] = updatedHabit;
-      await AboutmeDataService.instance.writePath(
-      _habitsKey,
-      habits.map((h) => h.toMap()).toList(),
-    );
+      await AboutmeDataService.instance.call('habits', 'update', {
+        'id': habitId,
+        'totalDurationMinutes': totalMinutes,
+      });
 
       // 广播习惯数据变更事件
       EventManager.instance.broadcast('habit_data_changed', Value({'habit': updatedHabit}));

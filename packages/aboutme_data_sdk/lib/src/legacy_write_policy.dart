@@ -4,7 +4,24 @@ import 'storage_errors.dart';
 
 /// 已迁移域的 local/HTTP 原始文件写入共同边界。
 class LegacyWritePolicy {
-  static const migratedDomains = <String>['diary'];
+  static const migratedDomains = <String>[
+    'diary',
+    'todo',
+    'tracker',
+    'notes',
+    'nodes',
+    'contact',
+    'day',
+    'calendar',
+    'checkin',
+    'habits',
+    'bill',
+    'goods',
+    'store',
+    'calendar_album',
+    'media_log',
+    'database',
+  ];
   static const _protectedRoots = [...migratedDomains, 'assets', 'asset_references',
     'stickers/collections.json', 'sdk_migrations', '.sdk'];
 

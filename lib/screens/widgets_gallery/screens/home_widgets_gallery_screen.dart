@@ -597,6 +597,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'FolderDeckCard - 3D 文件夹堆叠切换与标题联动',
         route: '/widgets_gallery/folder_deck_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.dashboard_customize,
+        title: '空间清单卡片',
+        subtitle: 'SpatialListCard - 可折叠清单与可拖动空间画布',
+        route: '/widgets_gallery/spatial_list_card',
+      ),
     ];
   }
 

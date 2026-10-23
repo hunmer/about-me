@@ -90,8 +90,12 @@ PluginHandlers createDayHandlers(PluginData data) {
     'preferences': await preferences(),
   };
   return {
-    'restoreBackup': (_, p) async =>
-        PluginResult.success(await restoreDomainBackup(data, 'day')),
+    'restoreBackup': (_, p) async {
+      if (p['confirmRestore'] != true) {
+        throw const FormatException('confirmRestore required');
+      }
+      return PluginResult.success(await restoreDomainBackup(data, 'day'));
+    },
     'getList': (_, p) => list(p),
     'search': (_, p) => list(p),
     'getSnapshot': (_, p) => list(p, snapshot: true),

@@ -309,8 +309,13 @@ class AchievementController extends ChangeNotifier {
       EventManager.instance.broadcast('achievement_level_up', args);
       debugPrint('[Achievement] ${def.name} 升级 Lv$level (+$points 分)');
 
-      // 发放积分奖励（store 未就绪时跳过，不阻塞成就记录）
-      await _awardPoints(points, '成就:${def.name} Lv$level');
+      // 发放积分奖励（store 未就绪时跳过，不阻塞成就记录）；
+      // 按成就+等级生成幂等键，重试/重复触发只入账一次
+      await _awardPoints(
+        points,
+        '成就:${def.name} Lv$level',
+        mutationKey: 'store:award:achievement:${def.id}:Lv$level',
+      );
     }
 
     progress.unlockedLevel = newLevel;
@@ -342,12 +347,17 @@ class AchievementController extends ChangeNotifier {
     return AchievementLevels.rewardPoints[level - 1];
   }
 
-  Future<void> _awardPoints(int points, String reason) async {
+  Future<void> _awardPoints(int points, String reason,
+      {String? mutationKey}) async {
     if (points <= 0) return;
     try {
       final storePlugin = PluginManager.instance.getPlugin('store_plugin');
       if (storePlugin is StorePlugin) {
-        await storePlugin.controller.addPoints(points, reason);
+        await storePlugin.controller.addPoints(
+          points,
+          reason,
+          clientMutationId: mutationKey,
+        );
       }
     } catch (e) {
       debugPrint('[Achievement] 积分发放失败: $e');

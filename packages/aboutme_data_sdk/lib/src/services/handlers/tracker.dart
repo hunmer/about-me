@@ -166,7 +166,8 @@ PluginHandlers createTrackerHandlers(PluginData data) {
           r = await recordsFile(),
           goals = domainRows(g, 'goals'),
           records = domainRows(r, 'records');
-      final i = domainIndex(goals, p['goalId']);
+      // 孤儿 record 允许写入，由迁移快照校验拒绝（CORRUPT_DATA）
+      final i = goals.indexWhere((e) => e['id'] == p['goalId']);
       final value = p['value'];
       if (value is! num || !value.isFinite || value <= 0)
         throw ArgumentError('Positive finite record value required');
@@ -184,7 +185,8 @@ PluginHandlers createTrackerHandlers(PluginData data) {
         'createdAt': DateTime.now().toIso8601String(),
       };
       records.add(record);
-      setValue(goals[i], domainNumber(goals[i]['currentValue']) + value);
+      if (i >= 0)
+        setValue(goals[i], domainNumber(goals[i]['currentValue']) + value);
       await saveRecords(r);
       await saveGoals(g);
       return record;

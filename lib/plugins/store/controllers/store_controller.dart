@@ -296,47 +296,34 @@ class StoreController with ChangeNotifier {
       return false;
     }
 
-    // 执行兑换
-    _userPoints -= product.price;
+    // 兑换为单事务命令：扣库存+扣积分+写流水+加用户物品，业务失败则全部不写入
+    final result = await AboutmeDataService.instance.call('store', 'purchase', {
+      'productId': product.id,
+      'clientMutationId': 'store:purchase:${product.id}:${const Uuid().v4()}',
+    });
+    if (result['success'] != true) return false;
+    final payload = Map<String, dynamic>.from(result['data'] as Map);
+
+    // 应用服务端提交结果到内存
+    _userPoints = payload['value'] as int;
+    final logMap = payload['log'] as Map?;
+    if (logMap != null && !_pointsLogs.any((l) => l.id == logMap['id'])) {
+      _pointsLogs.add(PointsLog.fromJson(Map<String, dynamic>.from(logMap)));
+    }
+    final productMap = payload['product'] as Map?;
     final index = _products.indexOf(product);
-    _products[index] = Product(
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      image: product.image,
-      category: product.category,
-      stock: product.stock - 1,
-      price: product.price,
-      exchangeStart: product.exchangeStart,
-      exchangeEnd: product.exchangeEnd,
-      useDuration: product.useDuration,
-    );
+    if (index >= 0 && productMap != null) {
+      _products[index] = Product.fromJson(
+        Map<String, dynamic>.from(productMap),
+      );
+    }
 
     // 添加用户物品（基础数据经 base 引用商品列表，不再快照复制）
-    final newItem = UserItem(
-      id: const Uuid().v4(),
-      productId: product.id,
-      remaining: 1,
-      expireDate: DateTime.now().add(Duration(days: product.useDuration)),
-      purchaseDate: DateTime.now(),
-      purchasePrice: product.price,
+    final newItem = UserItem.fromJson(
+      Map<String, dynamic>.from(payload['userItem'] as Map),
     )..base = product;
     _userItems.add(newItem);
 
-    // 添加积分记录
-    _pointsLogs.add(
-      PointsLog(
-        id: const Uuid().v4(),
-        type: '消耗',
-        value: product.price,
-        reason: '兑换商品: ${product.name}',
-        timestamp: DateTime.now(),
-      ),
-    );
-
-    await saveProducts();
-    await savePoints();
-    await saveUserItems();
     _updateStreams(); // 更新badge显示
     notifyListeners(); // 通知UI更新
 
@@ -356,24 +343,24 @@ class StoreController with ChangeNotifier {
   Future<bool> useItem(UserItem item) async {
     if (DateTime.now().isAfter(item.expireDate)) return false;
 
-    // 记录使用历史（使用记录冻结当时的基础数据快照）
-    _usedItems.add(
-      UsedItem(
-        id: item.id,
-        productId: item.productId,
-        useDate: DateTime.now(),
-        productSnapshot:
-            item.base?.toJson() ?? Map<String, dynamic>.from(item.legacySnapshot ?? const {}),
-      ),
-    );
+    // 使用为单事务命令：写使用记录 + 扣减剩余次数，业务失败则全部不写入
+    final result = await AboutmeDataService.instance.call('store', 'useItem', {
+      'id': item.id,
+      'clientMutationId': 'store:use:${item.id}:${const Uuid().v4()}',
+    });
+    if (result['success'] != true) return false;
+    final payload = Map<String, dynamic>.from(result['data'] as Map);
 
-    item.use();
-    if (item.remaining <= 0) {
+    // 应用服务端提交结果到内存
+    _usedItems.add(
+      UsedItem.fromJson(Map<String, dynamic>.from(payload['usedItem'] as Map)),
+    );
+    final remainingMap = payload['userItem'] as Map?;
+    if (remainingMap == null) {
       _userItems.remove(item);
+    } else {
+      item.remaining = remainingMap['remaining'] as int;
     }
-    await saveProducts();
-    await savePoints();
-    await saveUserItems();
     _updateStreams(); // 更新badge显示
     notifyListeners(); // 通知UI更新
 
@@ -402,43 +389,53 @@ class StoreController with ChangeNotifier {
 
   // 保存已使用物品
   Future<void> saveUsedItems() async {
-    await AboutmeDataService.instance.writePath('store/used_items.json', {
+    await AboutmeDataService.instance.call('store', 'saveUsedItems', {
       'items': _usedItems.map((item) => item.toJson()).toList(),
     });
   }
 
   // 加载已使用物品
   Future<void> loadUsedItems() async {
-    final storedUsedItems = await AboutmeDataService.instance.readPath(
-      'store/used_items.json',
+    final result = await AboutmeDataService.instance.get(
+      'store',
+      'getUsedItems',
     );
-    if (storedUsedItems is Map<String, dynamic>) {
-      final itemsData = storedUsedItems['items'];
-      if (itemsData is List) {
-        _usedItems.clear();
-        _usedItems.addAll(
-          (itemsData)
-              .whereType<Map<String, dynamic>>()
-              .map((item) => UsedItem.fromJson(item))
-              .toList(),
-        );
-      }
+    if (result['success'] != true) return;
+    final itemsData = (result['data'] as Map)['data'];
+    if (itemsData is List) {
+      _usedItems.clear();
+      _usedItems.addAll(
+        itemsData
+            .whereType<Map<String, dynamic>>()
+            .map((item) => UsedItem.fromJson(item))
+            .toList(),
+      );
     }
   }
 
-  // 添加积分
-  Future<void> addPoints(int value, String reason) async {
-    _userPoints += value;
-    _pointsLogs.add(
-      PointsLog(
-        id: const Uuid().v4(),
-        type: value > 0 ? '获得' : '失去',
-        value: value,
-        reason: reason,
-        timestamp: DateTime.now(),
-      ),
-    );
-    await savePoints();
+  // 添加积分（[clientMutationId] 提供时同一命令重试命中幂等缓存，
+  // 返回首次结果并跳过重复入账与提醒）
+  Future<void> addPoints(
+    int value,
+    String reason, {
+    String? clientMutationId,
+  }) async {
+    final result = await AboutmeDataService.instance.call('store', 'addPoints', {
+      'value': value,
+      'reason': reason,
+      if (clientMutationId != null) 'clientMutationId': clientMutationId,
+    });
+    if (result['success'] != true) {
+      throw StateError('addPoints 失败: ${result['error']}');
+    }
+    final payload = Map<String, dynamic>.from(result['data'] as Map);
+    final logMap = payload['log'] as Map?;
+    final isReplay =
+        logMap != null && _pointsLogs.any((l) => l.id == logMap['id']);
+    _userPoints = payload['value'] as int;
+    if (!isReplay && logMap != null) {
+      _pointsLogs.add(PointsLog.fromJson(Map<String, dynamic>.from(logMap)));
+    }
     _updateStreams();
     notifyListeners();
 
@@ -448,10 +445,10 @@ class StoreController with ChangeNotifier {
     // 触发缓存更新事件
     _notifyCacheUpdatedEvent();
 
-    // 检查是否启用积分变动通知（toast 提示）
+    // 检查是否启用积分变动通知（toast 提示；幂等重放不重复提示）
     final enablePointsNotification =
         plugin.settings['enablePointsNotification'] as bool? ?? true;
-    if (enablePointsNotification) {
+    if (enablePointsNotification && !isReplay) {
       // 显示 toast 通知
       final message = value > 0
           ? '获得 $value 积分：$reason'
@@ -548,37 +545,34 @@ class StoreController with ChangeNotifier {
 
   // 从存储加载数据
   Future<void> loadFromStorage() async {
-    final storedProducts = await AboutmeDataService.instance.readPath(
-      'store/products.json',
+    final snapshotResult = await AboutmeDataService.instance.get(
+      'store',
+      'getSnapshot',
     );
-    final storedArchivedProducts = await AboutmeDataService.instance.readPath(
-      'store/archived_products.json',
-    );
-    final storedPoints = await AboutmeDataService.instance.readPath(
-      'store/points.json',
-    );
-    final storedUserItems = await AboutmeDataService.instance.readPath(
-      'store/user_items.json',
-    );
-    await loadUsedItems();
+    if (snapshotResult['success'] != true) {
+      debugPrint('Failed to load store snapshot: ${snapshotResult['error']}');
+      await initializeDefaultData();
+      return;
+    }
+    final snapshot = Map<String, dynamic>.from(snapshotResult['data'] as Map);
+    final productsList = snapshot['products'] as List? ?? [];
+    final archivedList = snapshot['archivedProducts'] as List? ?? [];
+    final pointsValue = snapshot['value'] as int? ?? 0;
+    final logsData = snapshot['logs'] as List? ?? [];
+    final itemsData = snapshot['userItems'] as List? ?? [];
+    final usedItemsData = snapshot['usedItems'] as List? ?? [];
 
     _products.clear();
     _archivedProducts.clear();
     _pointsLogs.clear();
     _userItems.clear();
+    _usedItems.clear();
 
     // 检查是否有数据，没有则初始化默认数据
-    // 注意：readPath 对不存在的文件返回空 Map {}，需排除（否则 hasPoints
-    // 恒为 true，删除数据文件后永远不会回落默认数据）
-    final hasProducts =
-        storedProducts is Map<String, dynamic> &&
-        storedProducts['products'] is List &&
-        (storedProducts['products'] as List).isNotEmpty;
-    final hasPoints =
-        storedPoints is Map<String, dynamic> && storedPoints.isNotEmpty;
-    final hasUserItems =
-        storedUserItems is Map<String, dynamic> &&
-        storedUserItems['items'] is List;
+    // 注意：积分以文件是否存在判定（而非值是否为 0），与旧 readPath 行为一致
+    final hasProducts = productsList.isNotEmpty;
+    final hasPoints = snapshot['pointsFileExists'] == true;
+    final hasUserItems = itemsData.isNotEmpty;
 
     if (!hasProducts && !hasPoints && !hasUserItems) {
       debugPrint('No existing data found, initializing with default data');
@@ -588,28 +582,16 @@ class StoreController with ChangeNotifier {
 
     try {
       // 加载商品数据
-      if (storedProducts is Map<String, dynamic>) {
-        final productsList =
-            storedProducts['products'] is List
-                ? storedProducts['products'] as List
-                : [];
-        for (final productData in productsList) {
-          if (productData is Map<String, dynamic>) {
-            addProductFromJson(productData);
-          }
+      for (final productData in productsList) {
+        if (productData is Map<String, dynamic>) {
+          addProductFromJson(productData);
         }
       }
 
       // 加载存档商品
-      if (storedArchivedProducts is Map<String, dynamic>) {
-        final archivedList =
-            storedArchivedProducts['products'] is List
-                ? storedArchivedProducts['products'] as List
-                : [];
-        for (final productData in archivedList) {
-          if (productData is Map<String, dynamic>) {
-            _archivedProducts.add(Product.fromJson(productData));
-          }
+      for (final productData in archivedList) {
+        if (productData is Map<String, dynamic>) {
+          _archivedProducts.add(Product.fromJson(productData));
         }
       }
     } catch (e) {
@@ -619,30 +601,27 @@ class StoreController with ChangeNotifier {
     }
 
     // 加载积分数据
-    if (storedPoints is Map<String, dynamic>) {
-      _userPoints =
-          storedPoints['value'] is int ? storedPoints['value'] as int : 0;
-      final logsData = storedPoints['logs'];
-      if (logsData is List) {
-        _pointsLogs =
-            (logsData)
-                .whereType<Map<String, dynamic>>()
-                .map((log) => PointsLog.fromJson(log))
-                .toList();
-      }
-    }
+    _userPoints = pointsValue;
+    _pointsLogs =
+        logsData
+            .whereType<Map<String, dynamic>>()
+            .map((log) => PointsLog.fromJson(log))
+            .toList();
 
     // 加载用户物品
-    if (storedUserItems is Map<String, dynamic>) {
-      final itemsData = storedUserItems['items'];
-      if (itemsData is List) {
-        _userItems =
-            (itemsData)
-                .whereType<Map<String, dynamic>>()
-                .map((item) => UserItem.fromJson(item))
-                .toList();
-      }
-    }
+    _userItems =
+        itemsData
+            .whereType<Map<String, dynamic>>()
+            .map((item) => UserItem.fromJson(item))
+            .toList();
+
+    // 加载已使用物品
+    _usedItems.addAll(
+      usedItemsData
+          .whereType<Map<String, dynamic>>()
+          .map((item) => UsedItem.fromJson(item))
+          .toList(),
+    );
 
     // 更新流数据
     _updateStreams();
@@ -650,21 +629,21 @@ class StoreController with ChangeNotifier {
 
   // 保存商品数据
   Future<void> saveProducts() async {
-    await AboutmeDataService.instance.writePath('store/products.json', {
+    await AboutmeDataService.instance.call('store', 'saveProducts', {
       'products': productsJson,
     });
   }
 
   // 保存存档商品数据
   Future<void> saveArchivedProducts() async {
-    await AboutmeDataService.instance.writePath('store/archived_products.json', {
+    await AboutmeDataService.instance.call('store', 'saveArchivedProducts', {
       'products': archivedProductsJson,
     });
   }
 
   // 保存积分数据
   Future<void> savePoints() async {
-    await AboutmeDataService.instance.writePath('store/points.json', {
+    await AboutmeDataService.instance.call('store', 'savePoints', {
       'value': _userPoints,
       'logs': _pointsLogs.map((log) => log.toJson()).toList(),
     });
@@ -672,7 +651,7 @@ class StoreController with ChangeNotifier {
 
   // 保存用户物品数据
   Future<void> saveUserItems() async {
-    await AboutmeDataService.instance.writePath('store/user_items.json', {
+    await AboutmeDataService.instance.call('store', 'saveUserItems', {
       'items': _userItems.map((item) => item.toJson()).toList(),
     });
   }
@@ -739,7 +718,7 @@ class StoreController with ChangeNotifier {
   // 清空用户物品
   Future<void> clearUserItems() async {
     _userItems.clear();
-    await saveUserItems();
+    await AboutmeDataService.instance.call('store', 'clearUserItems');
     _updateStreams();
     notifyListeners();
   }
@@ -747,7 +726,7 @@ class StoreController with ChangeNotifier {
   // 清空积分记录
   Future<void> clearPointsLogs() async {
     _pointsLogs.clear();
-    await savePoints();
+    await AboutmeDataService.instance.call('store', 'clearPointsLogs');
     _updateStreams();
     notifyListeners();
   }

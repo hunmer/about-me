@@ -19,16 +19,16 @@ void main() {
   });
 
   test('文件层：readFile/writeFile/deleteFile 明文 JSON', () async {
-    expect(await data.readFile('todo', 'tasks.json'), isNull);
+    expect(await data.readFile('misc', 'tasks.json'), isNull);
 
-    await data.writeFile('todo', 'tasks.json', {
+    await data.writeFile('misc', 'tasks.json', {
       'tasks': [
         {'id': 't1', 'title': '本地任务'},
       ],
       'viewMode': 'ViewMode.quadrant',
     });
     expect(
-      await data.readFile('todo', 'tasks.json'),
+      await data.readFile('misc', 'tasks.json'),
       {
         'tasks': [
           {'id': 't1', 'title': '本地任务'},
@@ -39,12 +39,12 @@ void main() {
 
     // 落盘明文
     final raw = await File(
-      '${tempDir.path}/todo/tasks.json',
+      '${tempDir.path}/misc/tasks.json',
     ).readAsString();
     expect(raw, contains('本地任务'));
 
-    expect(await data.deleteFile('todo', 'tasks.json'), isTrue);
-    expect(await data.readFile('todo', 'tasks.json'), isNull);
+    expect(await data.deleteFile('misc', 'tasks.json'), isTrue);
+    expect(await data.readFile('misc', 'tasks.json'), isNull);
   });
 
   test('业务层：与 REST/MCP 同一套处理器（本地直调）', () async {
@@ -64,14 +64,13 @@ void main() {
     expect((completed['data'] as Map)['completed'], isTrue);
   });
 
-  test('业务层保留文件级额外字段（与客户端整文件写共存）', () async {
-    await data.writeFile('todo', 'tasks.json', {
-      'tasks': <dynamic>[],
-      'completedTasks': [
-        {'id': 'old'},
-      ],
-      'viewMode': 'ViewMode.list',
-    });
+  test('业务层保留文件级额外字段（与旧客户端整文件写共存）', () async {
+    // todo 已封闭原始写，用磁盘 fixture 模拟旧客户端遗留文件
+    final legacy = File('${tempDir.path}/todo/tasks.json');
+    await legacy.parent.create(recursive: true);
+    await legacy.writeAsString(
+      '{"tasks":[],"completedTasks":[{"id":"old"}],"viewMode":"ViewMode.list"}',
+    );
 
     await data.call('todo', 'create', {'title': '新增'});
     final file = await data.readFile('todo', 'tasks.json') as Map;
@@ -85,12 +84,12 @@ void main() {
     final sub = data.events.listen(events.add);
 
     await data.call('chat', 'create', {'name': '事件频道'});
-    await data.writeFile('todo', 'tasks.json', {'tasks': []});
+    await data.writeFile('misc', 'x.json', {'k': 1});
 
     await Future<void>.delayed(Duration.zero);
     expect(events.length, greaterThanOrEqualTo(2));
     expect(events.any((e) => e.pluginId == 'chat'), isTrue);
-    expect(events.any((e) => e.pluginId == 'todo'), isTrue);
+    expect(events.any((e) => e.pluginId == 'misc'), isTrue);
     expect(events.first.source, 'local');
     await sub.cancel();
   });
@@ -117,23 +116,23 @@ void main() {
 
   test('全路径读写：与 StorageManager 语义对齐（默认值/文本/存在/列举/清除）', () async {
     // readPath 不存在 → 缺省 {}（与 StorageManager.read 历史语义一致）
-    expect(await data.readPath('notes/x.json'), <String, dynamic>{});
-    expect(await data.readPath('notes/x.json', {'d': 1}), {'d': 1});
+    expect(await data.readPath('misc/x.json'), <String, dynamic>{});
+    expect(await data.readPath('misc/x.json', {'d': 1}), {'d': 1});
 
     // JSON 写读
-    await data.writePath('notes/x.json', {'k': 'v'});
-    expect(await data.readPath('notes/x.json'), {'k': 'v'});
+    await data.writePath('misc/x.json', {'k': 'v'});
+    expect(await data.readPath('misc/x.json'), {'k': 'v'});
 
     // 文本写读
     await data.writePath('scripts/a.js', 'console.log(1)');
     expect(await data.readPathText('scripts/a.js'), 'console.log(1)');
 
     // 存在/列举/删除/清除
-    expect(await data.existsPath('notes/x.json'), isTrue);
-    final keys = await data.listPathKeys('notes/');
-    expect(keys, contains('notes/x.json'));
-    expect(await data.deletePath('notes/x.json'), isTrue);
-    expect(await data.existsPath('notes/x.json'), isFalse);
+    expect(await data.existsPath('misc/x.json'), isTrue);
+    final keys = await data.listPathKeys('misc/');
+    expect(keys, contains('misc/x.json'));
+    expect(await data.deletePath('misc/x.json'), isTrue);
+    expect(await data.existsPath('misc/x.json'), isFalse);
 
     await data.writePath('tmp/1.json', {});
     await data.writePath('tmp/2.json', {});
@@ -143,9 +142,9 @@ void main() {
     // 全路径写也触发事件（pluginId = 首段）
     final events = <DataChangeEvent>[];
     final sub = data.events.listen(events.add);
-    await data.writePath('goods/items.json', {'items': []});
+    await data.writePath('misc/items.json', {'items': []});
     await Future<void>.delayed(Duration.zero);
-    expect(events.any((e) => e.pluginId == 'goods'), isTrue);
+    expect(events.any((e) => e.pluginId == 'misc'), isTrue);
     await sub.cancel();
   });
 }

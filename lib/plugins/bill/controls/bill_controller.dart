@@ -77,7 +77,6 @@ class BillController with ChangeNotifier {
 
   BillController._internal();
 
-  static const String _accountsKey = 'accounts';
   final List<Account> _accounts = [];
   String? _selectedAccountId;
   bool _initialized = false;
@@ -173,7 +172,7 @@ class BillController with ChangeNotifier {
     notifyListeners();
   }
 
-  // 从插件存储加载账户列表
+  // 从统一数据 SDK 加载账户列表（完整字段，含内嵌账单）
   Future<void> _loadAccounts() async {
     try {
       // 确保_plugin已初始化
@@ -182,26 +181,22 @@ class BillController with ChangeNotifier {
         return;
       }
 
-      final accountsData = await AboutmeDataService.instance.readPath(
-        'bill/$_accountsKey.json',
-        {'accounts': []},
+      final response = await AboutmeDataService.instance.data.get(
+        'bill',
+        'getAccountsWithBills',
       );
-
-      final rawAccounts = accountsData['accounts'] ?? [];
-      _accounts.clear();
-
-      if (rawAccounts.isNotEmpty) {
-        // 兼容两种格式：字符串数组（每项是 JSON 字符串）或对象数组
-        for (final item in rawAccounts) {
-          if (item is String) {
-            // 旧格式：JSON 字符串
-            _accounts.add(Account.fromJson(jsonDecode(item)));
-          } else if (item is Map<String, dynamic>) {
-            // 新格式：直接是对象
-            _accounts.add(Account.fromJson(item));
-          }
-        }
+      if (response['success'] != true) {
+        debugPrint('加载账户失败: ${response['error']}');
+        return;
       }
+
+      final rawAccounts = (response['data'] as Map)['data'] as List;
+      _accounts.clear();
+      _accounts.addAll(
+        rawAccounts
+            .whereType<Map<String, dynamic>>()
+            .map(Account.fromJson),
+      );
 
       notifyListeners();
     } catch (e) {
@@ -211,11 +206,14 @@ class BillController with ChangeNotifier {
 
   /// 加载示例数据（存储为空时写入，供首次打开引导选择调用）
   Future<void> loadSampleData() async {
-    final accountsData = await AboutmeDataService.instance.readPath(
-      'bill/$_accountsKey.json',
-      {'accounts': []},
+    final response = await AboutmeDataService.instance.data.get(
+      'bill',
+      'getAccountsWithBills',
     );
-    if ((accountsData['accounts'] ?? []).isNotEmpty) return;
+    if (response['success'] != true) {
+      throw '加载账户失败: ${response['error']}';
+    }
+    if (((response['data'] as Map)['data'] as List).isNotEmpty) return;
     try {
       // 获取示例数据
       final sampleData = BillSampleData.getSampleData();
@@ -251,7 +249,7 @@ class BillController with ChangeNotifier {
     }
   }
 
-  // 保存账户列表到插件存储
+  // 保存账户列表到统一数据 SDK
   Future<void> _saveAccounts() async {
     try {
       // 确保_plugin已初始化
@@ -264,13 +262,16 @@ class BillController with ChangeNotifier {
         _accounts[i].calculateTotal();
       }
 
-      final accountsJson =
-          _accounts.map((account) => jsonEncode(account.toJson())).toList();
-
-      // 将数据保存到统一数据入口
-      await AboutmeDataService.instance.writePath('bill/$_accountsKey.json', {
-        'accounts': accountsJson,
-      });
+      final response = await AboutmeDataService.instance.data.call(
+        'bill',
+        'saveAccounts',
+        {
+          'accounts': _accounts.map((account) => account.toJson()).toList(),
+        },
+      );
+      if (response['success'] != true) {
+        throw '保存账户失败: ${response['error']}';
+      }
     } catch (e) {
       debugPrint('保存账户失败: $e');
       throw '保存账户失败: $e';

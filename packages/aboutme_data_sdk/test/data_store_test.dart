@@ -82,36 +82,36 @@ void main() {
   });
 
   test('save/load JSON 往返 + 默认值', () async {
-    await store.save('todo/list.json', {'items': [1, 2]});
-    expect(await store.load('todo/list.json'), {
+    await store.save('misc/list.json', {'items': [1, 2]});
+    expect(await store.load('misc/list.json'), {
       'items': [1, 2],
     });
     expect(await store.load('missing.json', 'fallback'), 'fallback');
-    expect(await store.exists('todo/list.json'), isTrue);
+    expect(await store.exists('misc/list.json'), isTrue);
   });
 
   test('插件数据路径与读写', () async {
-    await store.savePluginData('todo', 'list.json', {'a': 1});
-    expect(await store.loadPluginData('todo', 'list.json'), {'a': 1});
-    expect(store.getPluginPath('todo'), 'todo');
-    expect(backend.files.containsKey('todo/list.json'), isTrue);
+    await store.savePluginData('misc', 'list.json', {'a': 1});
+    expect(await store.loadPluginData('misc', 'list.json'), {'a': 1});
+    expect(store.getPluginPath('misc'), 'misc');
+    expect(backend.files.containsKey('misc/list.json'), isTrue);
   });
 
   test('remove / clearPrefix / getKeysWithPrefix', () async {
-    await store.save('todo/1.json', 'a');
-    await store.save('todo/2.json', 'b');
-    await store.save('notes/3.json', 'c');
+    await store.save('misc/1.json', 'a');
+    await store.save('misc/2.json', 'b');
+    await store.save('misc/3.json', 'c');
 
     expect(
-      await store.getKeysWithPrefix('todo/'),
-      allOf(contains('todo/1.json'), contains('todo/2.json')),
+      await store.getKeysWithPrefix('misc/'),
+      allOf(contains('misc/1.json'), contains('misc/2.json')),
     );
 
-    await store.remove('todo/1.json');
-    expect(await store.exists('todo/1.json'), isFalse);
+    await store.remove('misc/1.json');
+    expect(await store.exists('misc/1.json'), isFalse);
 
-    await store.clearPrefix('todo/');
-    expect(await store.getKeysWithPrefix('todo/'), isEmpty);
+    await store.clearPrefix('misc/');
+    expect(await store.getKeysWithPrefix('misc/'), isEmpty);
   });
 
   test('readSafeJson 容错非 Map 数据', () async {

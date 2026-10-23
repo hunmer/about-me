@@ -22,7 +22,6 @@ import 'services/route_agent_config_service.dart';
 import 'services/shortcuts_handler_service.dart';
 import 'services/conversation_sync_service.dart';
 import 'services/watch_connectivity_service.dart';
-import 'models/chat_message.dart';
 import 'models/agent_chain_node.dart';
 import 'repositories/client_agent_chat_repository.dart';
 import 'package:shared_models/shared_models.dart';
@@ -181,51 +180,17 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
   }
 
   /// 获取今日消息数
-  /// 统计所有会话中今天发送的消息总数
+  /// 统计所有会话中今天发送的消息总数（本地时区当天，与 SDK handler 同源）
   Future<int> getTodayMessagesCount() async {
     try {
-      final controller = conversationController;
-      if (controller == null) {
-        debugPrint('conversationController 未初始化');
-        return 0;
+      final res = await AboutmeDataService.instance.get(
+        'agent_chat',
+        'getStats',
+      );
+      if (res['success'] == true && res['data'] is Map) {
+        return ((res['data'] as Map)['todayMessageCount'] as int?) ?? 0;
       }
-
-      final today = DateTime.now();
-      final todayStart = DateTime(today.year, today.month, today.day);
-      final todayEnd = todayStart.add(const Duration(days: 1));
-
-      int count = 0;
-
-      // 遍历所有会话
-      for (final conversation in controller.conversations) {
-        try {
-          // 加载该会话的消息
-          final data = await AboutmeDataService.instance.readPath(
-            'agent_chat/messages/${conversation.id}.json',
-          );
-          if (data is List) {
-            final messages =
-                data
-                    .map(
-                      (json) =>
-                          ChatMessage.fromJson(json as Map<String, dynamic>),
-                    )
-                    .toList();
-
-            // 统计今日消息
-            count +=
-                messages.where((msg) {
-                  return msg.timestamp.isAfter(todayStart) &&
-                      msg.timestamp.isBefore(todayEnd);
-                }).length;
-          }
-        } catch (e) {
-          debugPrint('加载会话 ${conversation.id} 的消息失败: $e');
-          continue;
-        }
-      }
-
-      return count;
+      return 0;
     } catch (e) {
       debugPrint('获取今日消息数失败: $e');
       return 0;

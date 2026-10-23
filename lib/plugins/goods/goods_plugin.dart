@@ -274,9 +274,32 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
   // 保存特定仓库的排序偏好
   Future<void> saveSortPreference(String warehouseId, String sortBy) async {
     _warehouseSortPreferences[warehouseId] = sortBy;
-    await AboutmeDataService.instance.writePath('goods/preferences.json', {
+    await _sdkCall('updatePreferences', {
       'warehouseSortPreferences': _warehouseSortPreferences,
     });
+  }
+
+  // ============ 统一数据 SDK 收口 ============
+
+  /// 业务命令：与 REST/MCP 共用同一套处理器，失败抛错
+  Future<void> _sdkCall(String action, Map<String, dynamic> params) async {
+    final response = await AboutmeDataService.instance.data.call(
+      'goods',
+      action,
+      params,
+    );
+    if (response['success'] != true) {
+      throw StateError('goods/$action 失败: ${response['error']}');
+    }
+  }
+
+  /// 业务查询：返回 data 载荷，失败抛错
+  Future<dynamic> _sdkQuery(String action) async {
+    final response = await AboutmeDataService.instance.data.get('goods', action);
+    if (response['success'] != true) {
+      throw StateError('goods/$action 失败: ${response['error']}');
+    }
+    return response['data'];
   }
 
   @override
@@ -305,13 +328,11 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
 
   Future<void> _loadSortPreferences() async {
     try {
-      final preferencesData = await AboutmeDataService.instance.readPath(
-        'goods/preferences.json',
-      );
-      if (preferencesData.isNotEmpty &&
+      final preferencesData = await _sdkQuery('getPreferences');
+      if (preferencesData is Map &&
           preferencesData.containsKey('warehouseSortPreferences')) {
         final Map<String, dynamic> sortPrefs = Map<String, dynamic>.from(
-          preferencesData['warehouseSortPreferences'],
+          preferencesData['warehouseSortPreferences'] as Map,
         );
 
         _warehouseSortPreferences.clear();
@@ -328,24 +349,13 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
     try {
       _warehouses.clear();
 
-      final warehousesData = await AboutmeDataService.instance.readPath(
-        'goods/warehouses.json',
-      );
-      if (warehousesData.isNotEmpty &&
-          warehousesData.containsKey('warehouses')) {
-        final List<String> warehouseIds = List<String>.from(
-          warehousesData['warehouses'],
+      final result = await _sdkQuery('getWarehouses');
+      final List warehouses =
+          result is Map ? (result['data'] as List? ?? []) : [];
+      for (final warehouse in warehouses) {
+        _warehouses.add(
+          Warehouse.fromJson(Map<String, dynamic>.from(warehouse as Map)),
         );
-
-        for (var warehouseId in warehouseIds) {
-          final data = await AboutmeDataService.instance.readPath(
-            'goods/warehouse/$warehouseId.json',
-          );
-          if (data.isNotEmpty && data.containsKey('warehouse')) {
-            final warehouse = Warehouse.fromJson(data['warehouse']);
-            _warehouses.add(warehouse);
-          }
-        }
       }
     } catch (e) {
       debugPrint('Error loading warehouses: $e');
@@ -364,14 +374,12 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
 
   /// 创建示例仓库数据（存储为空时写入，供首次打开引导选择调用）
   Future<void> createSampleWarehouses() async {
-    final warehousesData = await AboutmeDataService.instance.readPath(
-      'goods/warehouses.json',
-    );
-    if (warehousesData.isNotEmpty &&
-        (warehousesData['warehouses'] as List?)?.isNotEmpty == true) {
-      return;
-    }
     try {
+      final result = await _sdkQuery('getWarehouses');
+      final existing =
+          result is Map ? (result['data'] as List? ?? []) : const [];
+      if (existing.isNotEmpty) return;
+
       // 获取示例仓库数据
       final sampleWarehouses = GoodsSampleData.getSampleWarehouses();
 
@@ -390,17 +398,18 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
     try {
       // 更新内存中的仓库信息
       final index = _warehouses.indexWhere((w) => w.id == warehouse.id);
-      if (index != -1) {
+      final isNew = index == -1;
+      Warehouse warehouseToSave = warehouse;
+      if (!isNew) {
         // 保持现有物品列表，除非明确要求更新
         final existingWarehouse = _warehouses[index];
-        final updatedWarehouse = warehouse.copyWith(
+        warehouseToSave = warehouse.copyWith(
           items:
               warehouse.items.isEmpty
                   ? existingWarehouse.items
                   : warehouse.items,
         );
-        _warehouses[index] = updatedWarehouse;
-        warehouse = updatedWarehouse; // 更新引用以保存正确的数据
+        _warehouses[index] = warehouseToSave;
       } else {
         _warehouses.add(warehouse);
         // 成就系统计数（A46 分仓管理，仅新增仓库时）
@@ -410,16 +419,20 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
         );
       }
 
-      // 保存仓库信息
-      await AboutmeDataService.instance.writePath('goods/warehouse/${warehouse.id}.json', {
-        'warehouse': warehouse.toJson(),
-      });
-
-      // 更新仓库列表
-      final warehouseIds = _warehouses.map((w) => w.id).toList();
-      await AboutmeDataService.instance.writePath('goods/warehouses.json', {
-        'warehouses': warehouseIds,
-      });
+      // 仓库元数据经统一数据 SDK 落盘（物品由单物品命令维护）
+      await _sdkCall(
+        isNew ? 'createWarehouse' : 'updateWarehouse',
+        warehouseToSave.toJson(),
+      );
+      // 新建携带物品（如示例数据）时逐个补落盘
+      if (isNew) {
+        for (final item in warehouseToSave.items) {
+          await _sdkCall('create', {
+            ...item.toJson(),
+            'warehouseId': warehouseToSave.id,
+          });
+        }
+      }
 
       notifyListeners();
 
@@ -433,13 +446,8 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
 
   Future<void> deleteWarehouse(String warehouseId) async {
     try {
-      await AboutmeDataService.instance.deletePath('goods/warehouse/$warehouseId.json');
+      await _sdkCall('deleteWarehouse', {'id': warehouseId});
       _warehouses.removeWhere((w) => w.id == warehouseId);
-
-      final warehouseIds = _warehouses.map((w) => w.id).toList();
-      await AboutmeDataService.instance.writePath('goods/warehouses.json', {
-        'warehouses': warehouseIds,
-      });
 
       notifyListeners();
 
@@ -467,7 +475,12 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
           GoodsItemAddedEventArgs(item, warehouseId),
         );
       }
-      await saveWarehouse(warehouse);
+
+      // 单物品命令落盘（不再整仓库写回）
+      await _sdkCall(updated ? 'update' : 'create', {
+        ...item.toJson(),
+        'warehouseId': warehouseId,
+      });
 
       // 触发缓存更新事件
       _notifyCacheUpdatedEvent();
@@ -527,7 +540,8 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
         GoodsItemDeletedEventArgs(itemId, warehouseId),
       );
 
-      await saveWarehouse(warehouse);
+      // 单物品命令落盘（不再整仓库写回）
+      await _sdkCall('delete', {'id': itemId});
 
       // 触发缓存更新事件
       _notifyCacheUpdatedEvent();
@@ -566,7 +580,11 @@ class GoodsPlugin extends BasePlugin with JSBridgePlugin {
       final warehouse = _warehouses.firstWhere((w) => w.id == warehouseId);
       // 创建一个新的仓库对象，但清空物品列表
       final clearedWarehouse = warehouse.copyWith(items: []);
-      await saveWarehouse(clearedWarehouse);
+      final index = _warehouses.indexOf(warehouse);
+      _warehouses[index] = clearedWarehouse;
+
+      // 清空命令落盘（只重写该仓库文件）
+      await _sdkCall('clearWarehouse', {'id': warehouseId});
     } catch (e) {
       debugPrint('Error clearing warehouse: $e');
       rethrow;

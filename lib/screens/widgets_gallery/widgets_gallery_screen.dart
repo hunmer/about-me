@@ -9,9 +9,7 @@ class WidgetsGalleryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('通用组件示例'),
-      ),
+      appBar: AppBar(title: const Text('通用组件示例')),
       body: ListView(
         children: [
           // 设计系统（手绘风组件库）
@@ -90,6 +88,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
 
           // 日历类组件
           _buildSectionHeader(context, '日历类'),
+          _buildListItem(
+            context,
+            icon: Icons.local_cafe,
+            title: '饮品打卡日历',
+            subtitle: 'DrinkCheckinCalendar（SfCalendar 自定义格子 + 贴纸打卡 + SmoothBottomSheet）',
+            route: '/widgets_gallery/drink_checkin_calendar',
+          ),
 
           const Divider(),
 
@@ -233,6 +238,20 @@ class WidgetsGalleryScreen extends StatelessWidget {
             title: 'Effort 推理强度滑块',
             subtitle: 'EffortSlider（脑图标滑块 + Galaxy 星尘像素特效）',
             route: '/widgets_gallery/effort_slider',
+          ),
+          _buildListItem(
+            context,
+            icon: Icons.interests,
+            title: 'Interests 兴趣选择',
+            subtitle: 'InterestsInteractiveDemo（标签选择 + 图标飞入计数动画）',
+            route: '/widgets_gallery/interests_interactive',
+          ),
+          _buildListItem(
+            context,
+            icon: Icons.timer_outlined,
+            title: '可爱水果专注计时器',
+            subtitle: 'CuteFruitTimerDemo（水果物理堆叠 + 可拖拽 + 专注倒计时）',
+            route: '/widgets_gallery/cute_fruit_timer',
           ),
         ],
       ),
