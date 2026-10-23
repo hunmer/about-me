@@ -40,10 +40,17 @@ class StorageWebSocketService {
       );
       final channel = WebSocketChannel.connect(uri);
       _channel = channel;
+      // 只有当前活跃连接意外结束才重连；主动 disconnect/被替换的旧连接
+      // 触发的 onDone 不得再安排重连，否则会形成"断旧连接→onDone→定时
+      // 重连→再断新连接"的自维持循环
       channel.stream.listen(
         _onMessage,
-        onError: (_) => _scheduleReconnect(),
-        onDone: _scheduleReconnect,
+        onError: (_) {
+          if (_channel == channel) _scheduleReconnect();
+        },
+        onDone: () {
+          if (_channel == channel) _scheduleReconnect();
+        },
       );
       await channel.ready;
       channel.sink.add(
@@ -89,7 +96,7 @@ class StorageWebSocketService {
     }
   }
 
-  void _scheduleReconnect([Object? _]) {
+  void _scheduleReconnect() {
     if (_closed || _reconnectTimer?.isActive == true) return;
     debugPrint('[SyncDebug][WS] reconnect scheduled in=3s');
     _reconnectTimer = Timer(const Duration(seconds: 3), _connectNow);

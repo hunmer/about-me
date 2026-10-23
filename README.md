@@ -143,6 +143,37 @@ dart run bin/server.dart
 # 访问 http://localhost:8874/admin/（管理面板源码在 admin-vue/，npm run build 构建到 ../admin）
 ```
 
+### 应用内配置存储后端（设置 → 存储后端）
+
+应用通过「设置 → 存储后端」对话框切换本地存储 / HTTP 服务器同步。选择「HTTP 服务器」后各字段填写方式：
+
+| 字段 | 填写说明 |
+|------|----------|
+| 服务器地址 | 服务器**根地址**（不带路径，末尾 `/` 会自动去除），SDK 自动拼接 `/api/v1/storage/files`。本机开发填 `http://127.0.0.1:8874`。校验规则：必须 HTTPS，仅 `localhost` / `127.0.0.1` 允许 HTTP——手机/模拟器需用局域网 IP 连接，此时必须配 HTTPS 反向代理 |
+| API Key | 以 `mk_` 开头，通过服务端创建（见下方）。随每个请求以 `X-API-Key` 头发送 |
+| 用户 ID | 可留空。仅本地记录展示用，不参与请求——服务端根据 API Key 自动识别所属用户目录 |
+
+**获取 API Key**（任选其一）：
+
+- 管理面板：访问 `http://localhost:8874/admin/`，登录后在 API Key 页签创建
+- 命令行：
+  ```bash
+  # 登录拿 token（默认管理员 admin/admin123）
+  curl -s -X POST http://localhost:8874/api/v1/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"username":"admin","password":"admin123","device_id":"setup"}'
+  # 用 token 创建 Key（返回 mk_ 开头的 key）
+  curl -s -X POST http://localhost:8874/api/v1/auth/api-keys \
+    -H "Authorization: Bearer <上一步返回的token>" \
+    -H "Content-Type: application/json" -d '{"name":"my-app"}'
+  ```
+
+**对话框按钮**：
+
+- **测试连接**：校验必填项后请求 `/api/v1/storage/health` 并建立 WebSocket，成功/失败会显示在对话框内
+- **迁移本地数据**：将本地后端的数据一次性上传到所填 HTTP 服务器（自动先测试连接，并显示进度）
+- **保存**：切换后端类型（本地 ↔ HTTP）时会弹确认框——切换会改变应用读写数据的位置；保存后立即连接/断开 WebSocket
+
 ### MCP 端点 (AI 集成)
 
 MCP 服务内置于 Dart 同步服务器（`packages/aboutme_server`），启动服务器后即可使用：

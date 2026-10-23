@@ -188,6 +188,64 @@ PluginHandlers createGoodsHandlers(PluginData data) {
       }
     },
 
+    // 创建仓库
+    'createWarehouse': (data, params) async {
+      try {
+        final warehousesData = await data.read('goods', 'warehouses.json');
+        final ids = warehousesData is Map && warehousesData['warehouses'] is List
+            ? List<dynamic>.from(warehousesData['warehouses'] as List)
+            : <dynamic>[];
+
+        final id = params['id'] != null && params['id'].toString().isNotEmpty
+            ? params['id'].toString()
+            : generateUUID();
+        final now = jsIsoDateTime(DateTime.now());
+        final warehouse = <String, dynamic>{
+          'id': id,
+          'title': params['title'] ?? params['name'] ?? '未命名仓库',
+          if (params['iconData'] != null) 'iconData': params['iconData'],
+          if (params['iconColor'] != null) 'iconColor': params['iconColor'],
+          'items': <dynamic>[],
+          'createdAt': now,
+          'updatedAt': now,
+        };
+
+        if (!ids.contains(id)) ids.add(id);
+        await data.write('goods', 'warehouses.json', {'warehouses': ids});
+        await data.write('goods', 'warehouse/$id.json', {
+          'warehouse': warehouse,
+        });
+
+        return PluginResult.success(warehouse);
+      } catch (e) {
+        return PluginResult.failure('创建仓库失败: $e');
+      }
+    },
+
+    // 删除仓库
+    'deleteWarehouse': (data, params) async {
+      try {
+        final warehousesData = await data.read('goods', 'warehouses.json');
+        if (warehousesData is! Map ||
+            warehousesData['warehouses'] is! List) {
+          return const PluginResult.failure('仓库不存在', 'NOT_FOUND');
+        }
+
+        final ids = List<dynamic>.from(warehousesData['warehouses'] as List);
+        if (!ids.contains(params['id'])) {
+          return const PluginResult.failure('仓库不存在', 'NOT_FOUND');
+        }
+
+        ids.remove(params['id']);
+        await data.write('goods', 'warehouses.json', {'warehouses': ids});
+        await data.delete('goods', 'warehouse/${params['id']}.json');
+
+        return PluginResult.success({'id': params['id']});
+      } catch (e) {
+        return PluginResult.failure('删除仓库失败: $e');
+      }
+    },
+
     // 搜索物品
     'search': (data, params) async {
       try {

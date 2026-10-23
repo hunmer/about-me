@@ -84,4 +84,5 @@ ios/build/ios/XCBuildData/*
 .DS_Store
 *-cwd
 packages/aboutme_server/admin/
+packages/aboutme_server/data/
 ios/build/*

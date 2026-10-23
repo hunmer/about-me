@@ -49,6 +49,8 @@ final List<Map<String, dynamic>> toolDefinitions = [
   {'name': 'aboutme_activity_getTodayStats', 'description': '获取今日活动统计', 'inputSchema': _schema({})},
   // Goods
   {'name': 'aboutme_goods_getWarehouses', 'description': '获取仓库列表', 'inputSchema': _schema({'offset': _prop('number', '偏移量'), 'count': _prop('number', '数量限制')})},
+  {'name': 'aboutme_goods_createWarehouse', 'description': '创建仓库', 'inputSchema': _schema({'name': _prop('string', '仓库名称'), 'iconData': _prop('number', '图标编码'), 'iconColor': _prop('number', '图标颜色')}, ['name'])},
+  {'name': 'aboutme_goods_deleteWarehouse', 'description': '删除仓库', 'inputSchema': _schema({'id': _prop('string', '仓库 ID')}, ['id'])},
   {'name': 'aboutme_goods_getItems', 'description': '获取物品列表', 'inputSchema': _schema({'warehouseId': _prop('string', '仓库 ID (可选)'), 'offset': _prop('number', '偏移量'), 'count': _prop('number', '数量限制')})},
   {'name': 'aboutme_goods_createItem', 'description': '创建物品', 'inputSchema': _schema({'name': _prop('string', '物品名称'), 'warehouseId': _prop('string', '仓库 ID'), 'description': _prop('string', '描述'), 'quantity': _prop('number', '数量'), 'category': _prop('string', '分类'), 'tags': _arrayProp('标签')}, ['name', 'warehouseId'])},
   {'name': 'aboutme_goods_updateItem', 'description': '更新物品', 'inputSchema': _schema({'id': _prop('string', '物品 ID'), 'name': _prop('string', '物品名称'), 'description': _prop('string', '描述'), 'quantity': _prop('number', '数量'), 'category': _prop('string', '分类'), 'tags': _arrayProp('标签')}, ['id'])},
@@ -56,6 +58,8 @@ final List<Map<String, dynamic>> toolDefinitions = [
   {'name': 'aboutme_goods_searchItems', 'description': '搜索物品', 'inputSchema': _schema({'keyword': _prop('string', '搜索关键词'), 'warehouseId': _prop('string', '仓库 ID (可选)')}, ['keyword'])},
   // Bill
   {'name': 'aboutme_bill_getAccounts', 'description': '获取账户列表', 'inputSchema': _schema({'offset': _prop('number', '偏移量'), 'count': _prop('number', '数量限制')})},
+  {'name': 'aboutme_bill_createAccount', 'description': '创建账户', 'inputSchema': _schema({'name': _prop('string', '账户名称'), 'balance': _prop('number', '初始余额')}, ['name'])},
+  {'name': 'aboutme_bill_deleteAccount', 'description': '删除账户', 'inputSchema': _schema({'id': _prop('string', '账户 ID')}, ['id'])},
   {'name': 'aboutme_bill_getBills', 'description': '获取账单列表', 'inputSchema': _schema({'accountId': _prop('string', '账户 ID'), 'offset': _prop('number', '偏移量'), 'count': _prop('number', '数量限制')}, ['accountId'])},
   {'name': 'aboutme_bill_createBill', 'description': '创建账单', 'inputSchema': _schema({'accountId': _prop('string', '账户 ID'), 'type': {'type': 'string', 'enum': ['income', 'expense', 'transfer'], 'description': '类型'}, 'amount': _prop('number', '金额'), 'category': _prop('string', '分类'), 'description': _prop('string', '描述'), 'date': _prop('string', '日期 (YYYY-MM-DD)')}, ['accountId', 'type', 'amount'])},
   {'name': 'aboutme_bill_updateBill', 'description': '更新账单', 'inputSchema': _schema({'id': _prop('string', '账单 ID'), 'type': {'type': 'string', 'enum': ['income', 'expense', 'transfer'], 'description': '类型'}, 'amount': _prop('number', '金额'), 'category': _prop('string', '分类'), 'description': _prop('string', '描述'), 'date': _prop('string', '日期 (YYYY-MM-DD)')}, ['id'])},
@@ -65,6 +69,7 @@ final List<Map<String, dynamic>> toolDefinitions = [
   {'name': 'aboutme_todo_getTasks', 'description': '获取任务列表', 'inputSchema': _schema({'completed': _prop('string', '完成状态筛选 (true/false)'), 'priority': _prop('string', '优先级筛选 (0-3)'), 'category': _prop('string', '分类筛选'), 'offset': _prop('number', '偏移量'), 'count': _prop('number', '数量限制')})},
   {'name': 'aboutme_todo_createTask', 'description': '创建任务', 'inputSchema': _schema({'title': _prop('string', '任务标题'), 'description': _prop('string', '任务描述'), 'dueDate': _prop('string', '截止日期 (YYYY-MM-DD)'), 'priority': _prop('number', '优先级 (0-3，3 最高)'), 'category': _prop('string', '分类'), 'tags': _arrayProp('标签')}, ['title'])},
   {'name': 'aboutme_todo_updateTask', 'description': '更新任务', 'inputSchema': _schema({'id': _prop('string', '任务 ID'), 'title': _prop('string', '新标题'), 'description': _prop('string', '新描述'), 'completed': _prop('boolean', '完成状态'), 'dueDate': _prop('string', '新截止日期'), 'priority': _prop('number', '新优先级')}, ['id'])},
+  {'name': 'aboutme_todo_deleteTask', 'description': '删除任务', 'inputSchema': _schema({'id': _prop('string', '任务 ID')}, ['id'])},
   {'name': 'aboutme_todo_completeTask', 'description': '完成任务', 'inputSchema': _schema({'id': _prop('string', '任务 ID')}, ['id'])},
   {'name': 'aboutme_todo_getTodayTasks', 'description': '获取今日任务', 'inputSchema': _schema({})},
   {'name': 'aboutme_todo_getOverdueTasks', 'description': '获取过期任务', 'inputSchema': _schema({})},
@@ -209,6 +214,15 @@ Future<(String, bool)> dispatchTool(
       case 'aboutme_goods_getWarehouses':
         response = await call('get', '/api/v1/plugins/goods/warehouses',
             query: _pick(args, ['offset', 'count']));
+      case 'aboutme_goods_createWarehouse':
+        response = await call('post', '/api/v1/plugins/goods/warehouses', body: {
+          'title': args['name'],
+          if (args['iconData'] != null) 'iconData': args['iconData'],
+          if (args['iconColor'] != null) 'iconColor': args['iconColor'],
+        });
+      case 'aboutme_goods_deleteWarehouse':
+        response = await call(
+            'delete', '/api/v1/plugins/goods/warehouses/${args['id']}');
       case 'aboutme_goods_getItems':
         response = await call('get', '/api/v1/plugins/goods/items',
             query: _pick(args, ['warehouseId', 'offset', 'count']));
@@ -228,6 +242,14 @@ Future<(String, bool)> dispatchTool(
       case 'aboutme_bill_getAccounts':
         response = await call('get', '/api/v1/plugins/bill/accounts',
             query: _pick(args, ['offset', 'count']));
+      case 'aboutme_bill_createAccount':
+        response = await call('post', '/api/v1/plugins/bill/accounts', body: {
+          'name': args['name'],
+          if (args['balance'] != null) 'balance': args['balance'],
+        });
+      case 'aboutme_bill_deleteAccount':
+        response = await call(
+            'delete', '/api/v1/plugins/bill/accounts/${args['id']}');
       case 'aboutme_bill_getBills':
         response = await call(
             'get', '/api/v1/plugins/bill/accounts/${args['accountId']}/bills',
@@ -257,6 +279,9 @@ Future<(String, bool)> dispatchTool(
       case 'aboutme_todo_completeTask':
         response = await call(
             'post', '/api/v1/plugins/todo/tasks/${args['id']}/complete');
+      case 'aboutme_todo_deleteTask':
+        response = await call(
+            'delete', '/api/v1/plugins/todo/tasks/${args['id']}');
       case 'aboutme_todo_getTodayTasks':
         response = await call('get', '/api/v1/plugins/todo/tasks/filter/today');
       case 'aboutme_todo_getOverdueTasks':
@@ -339,7 +364,16 @@ Future<(String, bool)> dispatchTool(
         });
       case 'aboutme_day_updateMemorialDay':
         response = await call('put', '/api/v1/plugins/day/days/${args['id']}',
-            body: rest(args, ['id']));
+            body: {
+              // 与 create 一致的参数映射（底层字段为 title/targetDate/notes/backgroundColor）
+              if (args['name'] != null) 'title': args['name'],
+              if (args['date'] != null) 'targetDate': args['date'],
+              if (args['description'] != null)
+                'notes': [args['description']],
+              if (args['color'] != null)
+                'backgroundColor':
+                    int.tryParse(args['color'].toString()) ?? 4280391411,
+            });
       case 'aboutme_day_deleteMemorialDay':
         response =
             await call('delete', '/api/v1/plugins/day/days/${args['id']}');
@@ -364,7 +398,11 @@ Future<(String, bool)> dispatchTool(
       case 'aboutme_tracker_updateGoal':
         response = await call(
             'put', '/api/v1/plugins/tracker/goals/${args['id']}',
-            body: rest(args, ['id']));
+            body: {
+              ...rest(args, ['id', 'unit']),
+              // 与 create 一致：unit 映射为底层字段 unitType
+              if (args['unit'] != null) 'unitType': args['unit'],
+            });
       case 'aboutme_tracker_deleteGoal':
         response =
             await call('delete', '/api/v1/plugins/tracker/goals/${args['id']}');

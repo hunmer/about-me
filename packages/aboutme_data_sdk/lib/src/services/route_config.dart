@@ -42,6 +42,8 @@ final pluginRouteConfigs = <PluginRouteConfig>[
   // ==================== Goods ====================
   PluginRouteConfig(pluginId: 'goods', routes: [
     PluginRouteDefinition(method: 'get', path: '/warehouses', handler: 'getWarehouses', resourceName: 'warehouses'),
+    PluginRouteDefinition(method: 'post', path: '/warehouses', handler: 'createWarehouse', resourceName: 'warehouses'),
+    PluginRouteDefinition(method: 'delete', path: '/warehouses/:id', handler: 'deleteWarehouse', resourceName: 'warehouses'),
     PluginRouteDefinition(method: 'get', path: '/items', handler: 'getList', resourceName: 'items'),
     PluginRouteDefinition(method: 'post', path: '/items', handler: 'create', resourceName: 'items'),
     PluginRouteDefinition(method: 'put', path: '/items/:id', handler: 'update', resourceName: 'items'),

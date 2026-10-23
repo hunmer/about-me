@@ -1,0 +1,13 @@
+{
+  "mcp": {
+    "servers": {
+      "aboutme-server": {
+        "type": "http",
+        "url": "http://127.0.0.1:8874/mcp",
+        "headers": {
+          "X-API-Key": "mk_pSPpW0hpllZAGJZxGZCw0pyHuhO56nwALIuMEhtwhwY"
+        }
+      }
+    }
+  }
+}
