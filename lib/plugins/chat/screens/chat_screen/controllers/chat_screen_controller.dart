@@ -17,6 +17,7 @@ class ChatScreenController extends ChangeNotifier {
       // 更新完整消息列表
       allMessages = List<Message>.from(channelMessages)
         ..sort((a, b) => b.date.compareTo(a.date));
+      debugPrint('[ChatSync] reload channel=${channel.id} messages=${allMessages.length}');
 
       // 如果新消息数量超过了当前显示范围，调整索引以包含新消息
       if (currentEndIndex < allMessages.length) {

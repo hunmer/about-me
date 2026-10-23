@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,6 +6,7 @@ import 'package:aboutme/core/app_initializer.dart' show globalStorage;
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/route/route_refresh_manager.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
@@ -32,6 +34,8 @@ void main() {
   late HttpServer server;
   late _TestChatPlugin plugin;
   final files = <String, dynamic>{};
+  Completer<void>? messageReadStarted;
+  Completer<void>? releaseMessageRead;
 
   Channel channel(String id) =>
       Channel(id: id, title: id, icon: Icons.chat, messages: []);
@@ -54,7 +58,15 @@ void main() {
             request.response.statusCode = 204;
           default:
             if (files.containsKey(key)) {
-              request.response.write(jsonEncode(files[key]));
+              final content = jsonEncode(files[key]);
+              if (key == 'chat/messages/slow.json' &&
+                  messageReadStarted != null) {
+                final release = releaseMessageRead!;
+                messageReadStarted!.complete();
+                messageReadStarted = null;
+                await release.future;
+              }
+              request.response.write(content);
             } else {
               request.response.statusCode = 404;
             }
@@ -145,6 +157,72 @@ void main() {
     expect(files['chat/channels.json'], {
       'channels': ['first'],
     });
+  });
+
+  test('HTTP：连续同步通知后客户端包含全部 MCP 消息', () async {
+    final refresh = RouteRefreshManager();
+    refresh.setPluginManager(PluginManager.instance);
+    files['chat/channels.json'] = {
+      'channels': ['batch'],
+    };
+    files['chat/channel/batch.json'] = {'channel': channel('batch').toJson()};
+    final messages = <Map<String, dynamic>>[];
+    files['chat/messages/batch.json'] = {'messages': messages};
+    messages.add({
+      'id': 'first',
+      'content': 'first message',
+      'senderId': 'zcode_agent',
+      'senderName': 'ZCode',
+      'createdAt': '2026-10-23T03:37:51.598Z',
+    });
+    await refresh.onFileSynced('chat/messages/batch.json');
+    final updates = <Future<void>>[];
+    for (var i = 0; i < 4; i++) {
+      messages.add({
+        'id': 'batch-$i',
+        'content': 'message $i',
+        'senderId': 'zcode_agent',
+        'senderName': 'ZCode',
+        'createdAt': '2026-10-23T03:37:51.685Z',
+      });
+      updates.add(refresh.onFileSynced('chat/messages/batch.json'));
+    }
+    await Future.wait(updates);
+    final loaded = await plugin.dataService.getChannelMessages('batch');
+    expect(loaded!.map((m) => m.id), messages.map((m) => m['id']));
+  });
+
+  test('HTTP：刷新过程中新增消息会在下一轮补读', () async {
+    final refresh = RouteRefreshManager();
+    refresh.setPluginManager(PluginManager.instance);
+    files['chat/channels.json'] = {
+      'channels': ['slow'],
+    };
+    files['chat/channel/slow.json'] = {'channel': channel('slow').toJson()};
+    final messages = <Map<String, dynamic>>[
+      {
+        'id': 'first',
+        'content': 'first',
+        'senderId': 'zcode_agent',
+        'createdAt': '2026-10-23T03:37:51.598Z',
+      },
+    ];
+    files['chat/messages/slow.json'] = {'messages': messages};
+    final started = messageReadStarted = Completer<void>();
+    final release = releaseMessageRead = Completer<void>();
+    final first = refresh.onFileSynced('chat/messages/slow.json');
+    await started.future;
+    messages.add({
+      'id': 'during-refresh',
+      'content': 'new message',
+      'senderId': 'zcode_agent',
+      'createdAt': '2026-10-23T03:37:51.685Z',
+    });
+    final next = refresh.onFileSynced('chat/messages/slow.json');
+    release.complete();
+    await Future.wait([first, next]);
+    final loaded = await plugin.dataService.getChannelMessages('slow');
+    expect(loaded!.map((m) => m.id), ['first', 'during-refresh']);
   });
 
   test('HTTP：消息解析失败时保留已加载的频道列表', () async {

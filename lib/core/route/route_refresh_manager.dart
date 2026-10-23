@@ -21,8 +21,9 @@ class RouteRefreshManager {
 
   PluginManager? _pluginManager;
 
-  /// 防抖：记录最近刷新时间
-  final Map<String, DateTime> _lastRefreshTimes = {};
+  /// 同一插件合并通知并串行刷新，刷新期间收到的通知留到下一轮。
+  final Map<String, String> _pendingFiles = {};
+  final Map<String, Future<void>> _refreshTasks = {};
 
   /// 防抖间隔（毫秒）
   static const int _debounceIntervalMs = 500;
@@ -78,20 +79,31 @@ class RouteRefreshManager {
     }
     _log('[SyncDebug][Refresh] start plugin=$pluginId path=$filePath');
 
-    // 防抖检查
-    final now = DateTime.now();
-    final lastRefresh = _lastRefreshTimes[pluginId];
-    if (lastRefresh != null) {
-      final diff = now.difference(lastRefresh).inMilliseconds;
-      if (diff < _debounceIntervalMs) {
-        _log(
-          '[SyncDebug][Refresh] debounced plugin=$pluginId elapsed=${diff}ms',
-        );
-        return;
-      }
+    _pendingFiles[pluginId] = filePath;
+    final running = _refreshTasks[pluginId];
+    if (running != null) {
+      _log('[SyncDebug][Refresh] queued plugin=$pluginId path=$filePath');
+      return running;
     }
-    _lastRefreshTimes[pluginId] = now;
+    final task = _drainRefreshes(pluginId).whenComplete(() {
+      _refreshTasks.remove(pluginId);
+    });
+    _refreshTasks[pluginId] = task;
+    return task;
+  }
 
+  Future<void> _drainRefreshes(String pluginId) async {
+    while (_pendingFiles.containsKey(pluginId)) {
+      await Future<void>.delayed(
+        const Duration(milliseconds: _debounceIntervalMs),
+      );
+      final filePath = _pendingFiles.remove(pluginId)!;
+      _log('[SyncDebug][Refresh] reload plugin=$pluginId path=$filePath');
+      await _refreshPlugin(pluginId, filePath);
+    }
+  }
+
+  Future<void> _refreshPlugin(String pluginId, String filePath) async {
     // 1. 主动调用插件的 refreshData() 方法
     bool refreshSuccess = false;
     if (_pluginManager != null) {

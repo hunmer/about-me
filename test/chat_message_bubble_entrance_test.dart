@@ -8,7 +8,6 @@ import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_bubble/index.dart'
     as chat_bubble;
-import 'package:aboutme/widgets/swipe_action/index.dart';
 
 void main() {
   Future<void> pumpWithDate(WidgetTester tester, DateTime date) async {
@@ -40,7 +39,7 @@ void main() {
   List<double> bubbleScales(WidgetTester tester) => tester
       .widgetList<ScaleTransition>(
         find.descendant(
-          of: find.byType(SwipeActionWrapper),
+          of: find.byType(chat_bubble.MessageBubble),
           matching: find.byType(ScaleTransition),
         ),
       )

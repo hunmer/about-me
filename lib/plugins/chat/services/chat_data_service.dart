@@ -165,6 +165,7 @@ class ChatDataService {
 
           final channel = Channel.fromJson(channelJson, messages: messages);
           loadedChannels.add(channel);
+          debugPrint('[ChatSync] loaded channel=$channelId messages=${messages.length}');
         }
 
         loadedChannels.sort(Channel.compare);
