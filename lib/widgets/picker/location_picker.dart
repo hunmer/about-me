@@ -55,7 +55,7 @@ class _LocationPickerState extends State<LocationPicker> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _searchResults = [];
   bool _isLoading = false;
-  String _apiKey = 'dad6a772bf826842c3049e9c7198115c'; // 默认 API Key
+  String _apiKey = ''; // 从设置 location_api_key 读取
   // String? _selectedLocation; // No longer needed for single tap select
 
   static const String _favoritesKey = 'location_favorites';
@@ -465,9 +465,7 @@ class _LocationPickerState extends State<LocationPicker> {
   Future<void> _loadApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _apiKey =
-          prefs.getString('location_api_key') ??
-          'dad6a772bf826842c3049e9c7198115c';
+      _apiKey = prefs.getString('location_api_key') ?? '';
     });
   }
 

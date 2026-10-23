@@ -55,7 +55,7 @@ class _PluginOnboardingScreenState extends State<PluginOnboardingScreen> {
 
   bool get _isLast => _index >= widget.steps.length - 1;
 
-  Future<void> _finish() async {
+  Future<void> _finish({bool skipSampleData = false}) async {
     final plugin = widget.plugin;
     final values = Map<String, dynamic>.of(_values);
     if (!mounted) return;
@@ -63,7 +63,7 @@ class _PluginOnboardingScreenState extends State<PluginOnboardingScreen> {
     await plugin.onOnboardingComplete(context, values);
     // 应用用户在「示例数据选择」步骤勾选的分组（跳过引导视为未勾选）
     final selectedIds = values[kSampleDataGroupIdsKey];
-    if (selectedIds is List) {
+    if (!skipSampleData && selectedIds is List) {
       await plugin.applySampleDataGroups(
         selectedIds.whereType<String>().toList(),
       );
@@ -101,7 +101,7 @@ class _PluginOnboardingScreenState extends State<PluginOnboardingScreen> {
                         size: 38,
                         color: theme.surfaceAlt,
                         iconColor: theme.textSub,
-                        onPressed: _finish,
+                        onPressed: () => _finish(skipSampleData: true),
                         tooltip: 'app_onboarding_skip'.tr,
                       ),
                     ),

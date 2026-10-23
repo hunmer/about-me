@@ -112,6 +112,8 @@ class EntryList extends StatelessWidget {
     ];
 
     return JellyBox(
+      // 无实底：仅保留墨线描边，露出页面纸面
+      color: Colors.transparent,
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

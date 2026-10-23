@@ -1,7 +1,10 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:image_compress_plus/image_compress_plus.dart';
 import 'package:path/path.dart' as path;
 
+import 'package:aboutme/core/services/image_compression_service.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/toolbox/services/ai_image_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
@@ -25,10 +28,11 @@ class ImageGenService {
     String? archiveDir,
   }) async {
     final archive = archiveDir ?? MomentsService.imagesDir;
+    final refImages = await _convertRefImagesToWebp(refImageAbsolutePaths);
     final result = await AiImageService.instance
         .generate(
           prompt: prompt,
-          refImages: refImageAbsolutePaths,
+          refImages: refImages,
           aspectRatio: aspectRatio,
           n: n,
           // 后台调用不回传字节（URL 直写磁盘），不弹界面
@@ -61,5 +65,36 @@ class ImageGenService {
     }
     if (archived.isEmpty) throw Exception('生图失败: 图片归档失败');
     return archived;
+  }
+
+  /// 参考图统一转成 webp 后再送入生图接口
+  ///
+  /// 已是 webp 或文件不存在时原样透传；转换失败时回退原图，不阻断生图
+  Future<List<String>> _convertRefImagesToWebp(List<String> paths) async {
+    if (paths.isEmpty) return paths;
+    final converted = <String>[];
+    for (final abs in paths) {
+      if (path.extension(abs).toLowerCase() == '.webp' || !await File(abs).exists()) {
+        converted.add(abs);
+        continue;
+      }
+      try {
+        // 参考图偏重保质量，质量取 90
+        final target = path.join(
+          Directory.systemTemp.path,
+          '${path.basenameWithoutExtension(abs)}_${DateTime.now().millisecondsSinceEpoch}.webp',
+        );
+        converted.add(await ImageCompressionService().compressImage(
+          sourcePath: abs,
+          targetPath: target,
+          quality: 90,
+          format: CompressFormat.webp,
+        ));
+      } catch (e) {
+        debugPrint('参考图转 webp 失败，回退原图: $abs ($e)');
+        converted.add(abs);
+      }
+    }
+    return converted;
   }
 }

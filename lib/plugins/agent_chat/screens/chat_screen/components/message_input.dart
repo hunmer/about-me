@@ -743,6 +743,7 @@ class _MessageInputState extends State<MessageInput> {
       builder: (context) => DSThemeBridge(
         child: Builder(
           builder: (context) => SafeArea(
+            top: false,
             child: MessageInputActionsDrawer(
               actions: _buildDrawerActions(),
               quickActionIds: _quickActionIds,

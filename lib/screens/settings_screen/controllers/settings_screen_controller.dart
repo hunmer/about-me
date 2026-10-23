@@ -59,7 +59,7 @@ class SettingsScreenController extends ChangeNotifier {
   Future<void> initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
     enableLogging = _prefs.getBool('enable_logging') ?? false;
-    _locationApiKey = _prefs.getString('location_api_key') ?? 'dad6a772bf826842c3049e9c7198115c';
+    _locationApiKey = _prefs.getString('location_api_key') ?? '';
 
     // 加载剪切板自动读取配置（默认关闭）
     _clipboardAutoRead = _prefs.getBool('clipboard_auto_read') ?? false;
@@ -152,7 +152,7 @@ class SettingsScreenController extends ChangeNotifier {
   }
 
   // 定位 API Key 设置
-  String _locationApiKey = 'dad6a772bf826842c3049e9c7198115c';
+  String _locationApiKey = '';
   String get locationApiKey => _locationApiKey;
   Future<void> setLocationApiKey(String value) async {
     _locationApiKey = value;

@@ -9,12 +9,17 @@ class ImageCompressionTask {
   final String sourcePath;
   final String targetPath;
   final int quality;
+
+  /// 显式输出格式；null 时按源文件扩展名推断
+  final CompressFormat? format;
+
   final Completer<String> completer;
 
   ImageCompressionTask({
     required this.sourcePath,
     required this.targetPath,
     required this.quality,
+    this.format,
   }) : completer = Completer<String>();
 }
 
@@ -34,12 +39,14 @@ class ImageCompressionService {
   /// [sourcePath] 源文件路径
   /// [targetPath] 目标文件路径（可选，默认覆盖源文件）
   /// [quality] 压缩质量 0-100（默认 85）
+  /// [format] 显式输出格式（可选，默认按源文件扩展名推断）
   ///
   /// 返回压缩后的文件路径
   Future<String> compressImage({
     required String sourcePath,
     String? targetPath,
     int quality = 85,
+    CompressFormat? format,
   }) async {
     // 如果没有指定目标路径，使用源文件路径
     final outputPath = targetPath ?? sourcePath;
@@ -49,6 +56,7 @@ class ImageCompressionService {
       sourcePath: sourcePath,
       targetPath: outputPath,
       quality: quality,
+      format: format,
     );
 
     // 添加到队列
@@ -77,6 +85,7 @@ class ImageCompressionService {
           sourcePath: task.sourcePath,
           targetPath: task.targetPath,
           quality: task.quality,
+          format: task.format,
         );
         task.completer.complete(compressedPath);
       } catch (e) {
@@ -92,6 +101,7 @@ class ImageCompressionService {
     required String sourcePath,
     required String targetPath,
     required int quality,
+    CompressFormat? format,
   }) async {
     try {
       // Web 平台需在 index.html 引入 pica 才可用，暂不支持压缩，直接返回源文件路径
@@ -111,33 +121,32 @@ class ImageCompressionService {
         await targetDir.create(recursive: true);
       }
 
-      // 获取文件扩展名并确定输出格式
+      // 确定输出格式：显式指定优先（如格式转换场景），否则按源文件扩展名推断
       final extension = path.extension(sourcePath).toLowerCase();
-      CompressFormat format;
-
-      switch (extension) {
-        case '.png':
-          format = CompressFormat.png;
-          break;
-        case '.webp':
-          format = CompressFormat.webp;
-          break;
-        case '.heic':
-          format = CompressFormat.heic;
-          break;
-        case '.jpg':
-        case '.jpeg':
-        default:
-          format = CompressFormat.jpeg;
-          break;
+      final CompressFormat outputFormat;
+      if (format != null) {
+        outputFormat = format;
+      } else {
+        switch (extension) {
+          case '.png':
+            outputFormat = CompressFormat.png;
+          case '.webp':
+            outputFormat = CompressFormat.webp;
+          case '.heic':
+            outputFormat = CompressFormat.heic;
+          case '.jpg':
+          case '.jpeg':
+          default:
+            outputFormat = CompressFormat.jpeg;
+        }
       }
 
       // heic 仅移动端支持，桌面端（Windows/Linux/macOS）降级为 jpeg，
       // 同时目标路径扩展名改为 .jpg 保持与实际编码一致
       String outputPath = targetPath;
-      if (format == CompressFormat.heic &&
+      if (outputFormat == CompressFormat.heic &&
           (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-        format = CompressFormat.jpeg;
+        outputFormat = CompressFormat.jpeg;
         if (path.extension(targetPath).toLowerCase() == '.heic') {
           outputPath = '${targetPath.substring(0, targetPath.length - 5)}.jpg';
         }
@@ -148,7 +157,7 @@ class ImageCompressionService {
         sourcePath,
         outputPath,
         quality: quality,
-        format: format,
+        format: outputFormat,
         // 保持原始方向
         keepExif: false,
         // 自动旋转

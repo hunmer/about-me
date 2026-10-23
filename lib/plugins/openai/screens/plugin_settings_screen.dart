@@ -147,10 +147,12 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
       child: Builder(
         builder: (context) {
           return Scaffold(
-            body: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return Column(
+            body: SafeArea(
+              bottom: false,
+              child: Builder(
+                builder: (context) {
+                  final theme = DSThemeBridge.resolve(context);
+                  return Column(
                   children: [
                     DSLightHeader(title: 'openai_pluginSettingsTitle'.tr),
                     Expanded(
@@ -389,8 +391,9 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
                       ),
                     ),
                   ],
-                );
-              },
+                  );
+                },
+              ),
             ),
           );
         },

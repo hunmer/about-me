@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:http/http.dart' as http;
 import 'package:location/location.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // 条件导入：默认 Web 平台存根，有 IO 库时（移动/桌面）使用真实实现
 import 'platform/mobile_js_engine_stub.dart'
     if (dart.library.io) 'platform/mobile_js_engine.dart';
@@ -126,9 +127,14 @@ class JSUIHandlers {
         final longitude = locationData.longitude ?? 0;
 
         // 使用高德地图 API 进行逆地理编码
+        final prefs = await SharedPreferences.getInstance();
+        final apiKey = prefs.getString('location_api_key') ?? '';
+        if (apiKey.isEmpty) {
+          return {'error': 'Location API key is not configured'};
+        }
         final response = await http.get(
           Uri.parse(
-            'http://restapi.amap.com/v3/geocode/regeo?key=dad6a772bf826842c3049e9c7198115c&location=$longitude,$latitude&poitype=&radius=1000&extensions=all&batch=false&roadlevel=0',
+            'http://restapi.amap.com/v3/geocode/regeo?key=$apiKey&location=$longitude,$latitude&poitype=&radius=1000&extensions=all&batch=false&roadlevel=0',
           ),
         );
 

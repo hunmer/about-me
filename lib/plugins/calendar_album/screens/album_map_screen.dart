@@ -94,8 +94,18 @@ class _PinGroup {
 }
 
 const _monthLabels = [
-  'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+  'JAN',
+  'FEB',
+  'MAR',
+  'APR',
+  'MAY',
+  'JUN',
+  'JUL',
+  'AUG',
+  'SEP',
+  'OCT',
+  'NOV',
+  'DEC',
 ];
 
 /// 高德静态图 zoom 范围 [1,17]，过低无街道细节
@@ -103,8 +113,7 @@ const _minZoom = 3;
 const _maxZoom = 17;
 
 class _AlbumMapScreenState extends State<AlbumMapScreen> {
-  late AlbumPhotoQuery _query =
-      widget.initialQuery ?? const AlbumPhotoQuery();
+  late AlbumPhotoQuery _query = widget.initialQuery ?? const AlbumPhotoQuery();
 
   /// 当前过滤结果（build 时更新，供大头针点击回调使用）
   List<AlbumMapPhoto> _records = const [];
@@ -121,6 +130,8 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
 
   /// 手势期间的本地变换（平移/捏合即时反馈），交互结束提交后重置
   final _transformController = TransformationController();
+  Offset _gestureAnchor = Offset.zero;
+  double _gestureStartScale = 1;
 
   String? _lastFitSignature;
 
@@ -138,8 +149,12 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
 
   Future<void> _loadApiKey() async {
     final prefs = await SharedPreferences.getInstance();
+    // SharedPreferences 为进程内缓存，先刷新再判断是否确实未配置。
+    await prefs.reload();
     if (!mounted) return;
-    setState(() => _apiKey = prefs.getString('location_api_key') ?? '');
+    setState(
+      () => _apiKey = (prefs.getString('location_api_key') ?? '').trim(),
+    );
   }
 
   /// 过滤条件变化 → 重建大头针；坐标集合变化 → 重新适配视野
@@ -188,15 +203,12 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
     }
     final (minX, minY) = _latLngToWorld(LatLng(maxLat, minLng), 0);
     final (maxX, maxY) = _latLngToWorld(LatLng(minLat, maxLng), 0);
-    final ratio = math.max(
-      (maxX - minX) / usableW,
-      (maxY - minY) / usableH,
-    );
-    // zoom 0 世界边长 256：span(256)/256=ratio → 目标边长 256/ratio
+    final ratio = math.max((maxX - minX) / usableW, (maxY - minY) / usableH);
+    // 跨度已经是 zoom 0 的世界像素，放大倍数为 1/ratio。
     _zoom = ratio <= 0
         ? _maxZoom
         // -1 留一级余量，避免大头针贴边
-        : (math.log(256.0 / ratio) / math.ln2).floor() - 1;
+        : (math.log(1.0 / ratio) / math.ln2).floor() - 1;
     _zoom = _zoom.clamp(_minZoom, _maxZoom);
     _center = _worldToLatLng((minX + maxX) / 2, (minY + maxY) / 2, 0);
   }
@@ -215,20 +227,43 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
     final px = inv.entry(0, 0) * dx + inv.entry(0, 1) * dy + inv.entry(0, 3);
     final py = inv.entry(1, 0) * dx + inv.entry(1, 1) * dy + inv.entry(1, 3);
     final (cx, cy) = _latLngToWorld(center, _zoom.toDouble());
+    final pixelScale = _mapPixelScale(viewport);
     final newCenter = _worldToLatLng(
-      cx + px - viewport.width / 2,
-      cy + py - viewport.height / 2,
+      cx + (px - viewport.width / 2) / pixelScale,
+      cy + (py - viewport.height / 2) / pixelScale,
       _zoom.toDouble(),
     );
-    final newZoom = (_zoom + math.log(scale) / math.ln2)
-        .round()
-        .clamp(_minZoom, _maxZoom);
+    final newZoom = (_zoom + math.log(scale) / math.ln2).round().clamp(
+      _minZoom,
+      _maxZoom,
+    );
     setState(() {
       _center = newCenter;
       _zoom = newZoom;
       _transformController.value = Matrix4.identity();
     });
   }
+
+  void _startTransform(ScaleStartDetails details) {
+    _gestureAnchor = _transformController.toScene(details.localFocalPoint);
+    _gestureStartScale = _transformController.value.getMaxScaleOnAxis();
+  }
+
+  void _updateTransform(ScaleUpdateDetails details) {
+    final scale = (_gestureStartScale * details.scale).clamp(0.5, 4.0);
+    final offset = details.localFocalPoint - _gestureAnchor * scale;
+    _transformController.value = Matrix4.identity()
+      ..setEntry(0, 0, scale)
+      ..setEntry(1, 1, scale)
+      ..setEntry(0, 3, offset.dx)
+      ..setEntry(1, 3, offset.dy);
+  }
+
+  // 静态图每边最多 1024px，BoxFit.cover 放大后投影和拖动也需同比换算。
+  double _mapPixelScale(Size size) => math.max(
+    size.width / size.width.round().clamp(1, 1024),
+    size.height / size.height.round().clamp(1, 1024),
+  );
 
   /// 直接调整缩放级（桌面滚轮 / 双击放大），中心点不变
   void _zoomBy(int delta) {
@@ -320,9 +355,7 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
   Widget _buildAmapBody(List<_PinGroup> groups) {
     final key = _apiKey;
     if (key == null) {
-      return Center(
-        child: DSLoadingDots(color: AppTheme.of(context).primary),
-      );
+      return Center(child: DSLoadingDots(color: AppTheme.of(context).primary));
     }
     if (key.isEmpty) {
       return Center(
@@ -341,33 +374,47 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
         return Listener(
           // 桌面滚轮缩放
           onPointerSignal: (event) {
-            if (event is PointerScrollEvent) {
+            if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
               _zoomBy(event.scrollDelta.dy < 0 ? 1 : -1);
             }
           },
           child: GestureDetector(
             // 双击放大
             onDoubleTap: () => _zoomBy(1),
-            child: InteractiveViewer(
-              transformationController: _transformController,
-              minScale: 0.5,
-              maxScale: 4,
-              boundaryMargin: const EdgeInsets.all(double.infinity),
-              onInteractionEnd: (_) => _commitTransform(),
-              child: SizedBox.fromSize(
-                size: constraints.biggest,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(
-                      _staticMapUrl(constraints.biggest),
-                      fit: BoxFit.cover,
-                      // 交互结束重请求期间保持旧图，避免闪烁
-                      gaplessPlayback: true,
-                      errorBuilder: (_, __, ___) => _buildMapError(),
-                    ),
-                    _buildPinsLayer(groups, constraints.biggest),
-                  ],
+            behavior: HitTestBehavior.opaque,
+            // 静态图松手即提交，避免 InteractiveViewer 在提交后继续惯性移动。
+            onScaleStart: _startTransform,
+            onScaleUpdate: _updateTransform,
+            onScaleEnd: (_) => _commitTransform(),
+            child: ClipRect(
+              child: ValueListenableBuilder<Matrix4>(
+                valueListenable: _transformController,
+                builder: (context, matrix, child) =>
+                    Transform(transform: matrix, child: child),
+                child: SizedBox.fromSize(
+                  size: constraints.biggest,
+                  child: Image.network(
+                    _staticMapUrl(constraints.biggest),
+                    fit: BoxFit.cover,
+                    // 新底图与新投影的标记一起显示，避免旧图配新坐标。
+                    frameBuilder: (context, image, frame, synchronous) {
+                      if (frame == null && !synchronous) {
+                        return Center(
+                          child: DSLoadingDots(
+                            color: AppTheme.of(context).primary,
+                          ),
+                        );
+                      }
+                      return Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          image,
+                          _buildPinsLayer(groups, constraints.biggest),
+                        ],
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => _buildMapError(),
+                  ),
                 ),
               ),
             ),
@@ -395,6 +442,7 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
   /// 大头针层：按与中心的像素偏移叠加在静态图上
   Widget _buildPinsLayer(List<_PinGroup> groups, Size size) {
     final (cx, cy) = _latLngToWorld(_center!, _zoom.toDouble());
+    final pixelScale = _mapPixelScale(size);
     return Stack(
       children: [
         for (final group in groups)
@@ -403,13 +451,13 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
             final w = group.indices.length > 1 ? 150.0 : 76.0;
             final h = group.indices.length > 1 ? 132.0 : 96.0;
             return Positioned(
-              left: x - cx + size.width / 2 - w / 2,
-              top: y - cy + size.height / 2 - h / 2,
+              left: (x - cx) * pixelScale + size.width / 2 - w / 2,
+              top: (y - cy) * pixelScale + size.height / 2 - h / 2,
               width: w,
               height: h,
               child: GestureDetector(
-                onTap: () => widget.onOpenGallery
-                    ?.call(_records, group.indices.first),
+                onTap: () =>
+                    widget.onOpenGallery?.call(_records, group.indices.first),
                 child: _buildPin(group),
               ),
             );
@@ -464,11 +512,7 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
           photo: _records[group.indices.first],
         ),
         // 右下角数量贴纸
-        Positioned(
-          bottom: -2,
-          right: -6,
-          child: _countBadge(count),
-        ),
+        Positioned(bottom: -2, right: -6, child: _countBadge(count)),
       ],
     );
   }
@@ -494,7 +538,11 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
               blurRadius: 16,
               offset: Offset(0, 8),
             ),
-            BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(0, 2)),
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 5,
+              offset: Offset(0, 2),
+            ),
           ],
         ),
         child: ClipRRect(
@@ -585,10 +633,10 @@ class _AlbumMapScreenState extends State<AlbumMapScreen> {
   /// 大头针缩略图：网络图直接加载，本地图经 ImageUtils 解析绝对路径
   Widget _pinImage(String url) {
     Widget placeholder() => Container(
-          color: const Color(0xFFE7E2D6),
-          alignment: Alignment.center,
-          child: const Icon(Icons.image_outlined, size: 18, color: Colors.black26),
-        );
+      color: const Color(0xFFE7E2D6),
+      alignment: Alignment.center,
+      child: const Icon(Icons.image_outlined, size: 18, color: Colors.black26),
+    );
 
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return Image.network(

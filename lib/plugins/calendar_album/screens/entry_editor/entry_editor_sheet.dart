@@ -72,10 +72,10 @@ class EntryEditorSheet {
       context: context,
       theme: DSThemeBridge.resolve(context),
       builder: (context) => DSDialog(
-        title: 'common_delete'.tr,
-        message: '${'common_confirmDelete'.tr} "${entry.title}"?',
+        title: 'core_delete'.tr,
+        message: '${'core_confirmDelete'.tr} "${entry.title}"?',
         cancelText: 'calendar_album_cancel'.tr,
-        confirmText: 'common_delete'.tr,
+        confirmText: 'core_delete'.tr,
         confirmVariant: DSButtonVariant.destructive,
         onCancel: () => Navigator.pop(context),
         onConfirm: () => Navigator.pop(context, true),

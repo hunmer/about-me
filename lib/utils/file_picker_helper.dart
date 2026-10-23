@@ -9,10 +9,15 @@ class FilePickerHelper {
   /// 选择图片（支持多选）
   ///
   /// [multiple] 是否允许多选，默认为true
+  /// [allowedExtensions] 自定义扩展名白名单（如含 heic），传入时以 custom 类型过滤
   /// 返回选中的文件列表，如果用户取消则返回空列表
-  static Future<List<File>> pickImages({bool multiple = true}) async {
+  static Future<List<File>> pickImages({
+    bool multiple = true,
+    List<String>? allowedExtensions,
+  }) async {
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
+      type: allowedExtensions != null ? FileType.custom : FileType.image,
+      allowedExtensions: allowedExtensions,
       allowMultiple: multiple,
     );
 
