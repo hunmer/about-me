@@ -35,8 +35,11 @@ Future<void> showSuggestedQuestionTestDialog(
   late final SuggestedQuestionTestRunner runner;
   runner = SuggestedQuestionTestRunner(
     questions: selected,
-    writeReport: (path, report) =>
-        AboutmeDataService.instance.writePath(path, report),
+    writeReport: (path, report) => AboutmeDataService.instance.call(
+      'agent_chat',
+      'saveTestRun',
+      {'runId': report['runId'], 'report': report},
+    ),
     createSession: (index) async {
       final conversation = await service.createConversation(
         title: '工具测试 ${runner.startedAt.toLocal()} #$index',

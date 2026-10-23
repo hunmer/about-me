@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as p;
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
+import 'package:aboutme/core/data/sdk_media_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
@@ -16,6 +17,7 @@ import 'package:aboutme/plugins/agent_chat/models/file_attachment.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
+import 'package:aboutme/plugins/openai/moments/services/agent_assets_service.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 
 /// Agent 朋友圈动态服务
@@ -26,13 +28,12 @@ class MomentsService extends ChangeNotifier {
 
   static final MomentsService instance = MomentsService._();
 
-  static const _postsPath = 'openai/moments/posts.json';
-  static const _uiStatePath = 'openai/moments/ui_state.json';
-  static const _profileBgPath = 'openai/moments/profile_bg.json';
   static const _maxPosts = 500;
 
   /// 单帖图片数上限（多图网格 3 列展示）
   static const maxImagesPerPost = 9;
+
+  /// 旧版帖图数据区目录（现图片存 SDK 资源，仅作一次性迁移前缀）
   static const imagesDir = 'openai/moments/images';
 
   /// 工具执行上下文：当前会话与其 agent
@@ -88,16 +89,18 @@ class MomentsService extends ChangeNotifier {
     final abs = await ImageUtils.getAbsolutePath(relPath);
     final bytes = await File(abs).readAsBytes();
     final ext = p.extension(abs);
-    return ImageUtils.saveBytesToAppDirectory(
+    final asset = await SdkMediaService.uploadBytes(
       bytes,
-      imagesDir,
-      extension: ext.isEmpty ? '.png' : ext,
+      'profile_bg_${DateTime.now().millisecondsSinceEpoch}${ext.isEmpty ? '.png' : ext}',
     );
+    return asset.reference;
   }
 
   Future<void> _saveProfileBg() async {
     try {
-      await AboutmeDataService.instance.writePath(_profileBgPath, _profileBg);
+      await AboutmeDataService.instance.call('openai', 'saveProfileBg', {
+        'backgrounds': _profileBg,
+      });
     } catch (e) {
       debugPrint('[Moments] 保存主页背景失败: $e');
     }
@@ -105,7 +108,11 @@ class MomentsService extends ChangeNotifier {
 
   Future<void> _loadProfileBg() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_profileBgPath);
+      final res = await AboutmeDataService.instance.call(
+        'openai',
+        'getProfileBg',
+      );
+      final data = res['success'] == true ? res['data'] : null;
       _profileBg
         ..clear()
         ..addAll(
@@ -140,9 +147,11 @@ class MomentsService extends ChangeNotifier {
 
   Future<void> _saveUiState() async {
     try {
-      await AboutmeDataService.instance.writePath(_uiStatePath, {
-        'seenAuthors': _seenAuthorIds.toList(),
-        'savedPosts': _savedPostIds.toList(),
+      await AboutmeDataService.instance.call('openai', 'saveMomentsUiState', {
+        'uiState': {
+          'seenAuthors': _seenAuthorIds.toList(),
+          'savedPosts': _savedPostIds.toList(),
+        },
       });
     } catch (e) {
       debugPrint('[Moments] 保存 UI 状态失败: $e');
@@ -151,7 +160,11 @@ class MomentsService extends ChangeNotifier {
 
   Future<void> _loadUiState() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_uiStatePath);
+      final res = await AboutmeDataService.instance.call(
+        'openai',
+        'getMomentsUiState',
+      );
+      final data = res['success'] == true ? res['data'] : null;
       final seen =
           (data is Map ? data['seenAuthors'] : null) as List<dynamic>? ?? [];
       final saved =
@@ -170,7 +183,11 @@ class MomentsService extends ChangeNotifier {
   Future<void> loadPosts({bool force = false}) async {
     if (_loaded && !force) return;
     try {
-      final data = await AboutmeDataService.instance.readPath(_postsPath);
+      final res = await AboutmeDataService.instance.call(
+        'openai',
+        'getPosts',
+      );
+      final data = res['success'] == true ? res['data'] : null;
       final list =
           (data is Map ? data['posts'] : null) as List<dynamic>? ?? [];
       _posts = list
@@ -185,8 +202,87 @@ class MomentsService extends ChangeNotifier {
     }
     await _loadUiState();
     await _loadProfileBg();
+    // 旧数据区图片一次性迁移为 SDK 资源（幂等，无旧文件时直接跳过）
+    await _migrateLegacyImages();
     _loaded = true;
     notifyListeners();
+  }
+
+  /// 旧数据区图片一次性迁移为 SDK 资源（幂等）：
+  /// - 数据文件：`openai/moments/images/`（帖图/背景）与
+  ///   `openai/moments/assets/`（agent 资产图）下的媒体文件
+  /// - 引用更新：posts.json 的 images 数组、profile_bg.json 的值、
+  ///   各 agent assets.json 的 path 字段（'./x' 与 'x' 两种前缀形态都匹配）
+  /// 迁移成功后旧文件由 migrateLegacyAssets 命令删除，二次启动
+  /// listPathKeys 为空即跳过。
+  Future<void> _migrateLegacyImages() async {
+    final svc = AboutmeDataService.instance;
+    try {
+      final keys = <String>[
+        ...await svc.listPathKeys('openai/moments/images/'),
+        ...await svc.listPathKeys('openai/moments/assets/'),
+      ];
+      if (keys.isEmpty) return;
+
+      // 分批迁移（命令单次上限 50 项）
+      final pathMap = <String, String>{};
+      for (var i = 0; i < keys.length; i += 50) {
+        try {
+          final res = await svc.call('assets', 'migrateLegacyAssets', {
+            'items': [
+              for (final key in keys.skip(i).take(50)) {'sourcePath': key},
+            ],
+          });
+          if (res['success'] != true) {
+            debugPrint('[Moments] 旧图迁移命令失败: ${res['error']}');
+            continue;
+          }
+          final migrated =
+              ((res['data'] as Map)['migrated'] as List).cast<Map>();
+          for (final m in migrated) {
+            pathMap[m['sourcePath'] as String] = m['reference'] as String;
+          }
+        } catch (e) {
+          debugPrint('[Moments] 旧图迁移批次失败: $e');
+        }
+      }
+      if (pathMap.isEmpty) return;
+
+      String? referenceOf(String path) {
+        final normalized = path.startsWith('./') ? path.substring(2) : path;
+        return pathMap[normalized];
+      }
+
+      // posts.json 的 images 数组
+      var postsChanged = false;
+      for (final post in _posts) {
+        for (var i = 0; i < post.images.length; i++) {
+          final reference = referenceOf(post.images[i]);
+          if (reference != null) {
+            post.images[i] = reference;
+            postsChanged = true;
+          }
+        }
+      }
+      if (postsChanged) await _save();
+
+      // profile_bg.json 的值
+      var bgChanged = false;
+      for (final entry in _profileBg.entries.toList()) {
+        final reference = referenceOf(entry.value);
+        if (reference != null) {
+          _profileBg[entry.key] = reference;
+          bgChanged = true;
+        }
+      }
+      if (bgChanged) await _saveProfileBg();
+
+      // 各 agent assets.json 的 path 字段
+      await AgentAssetsService.instance.migrateLegacyPaths(pathMap);
+      debugPrint('[Moments] 旧图迁移完成（${pathMap.length} 个文件）');
+    } catch (e) {
+      debugPrint('[Moments] 旧图迁移失败: $e');
+    }
   }
 
   /// 发布动态（新帖插到最前；图片数超过上限时截断）
@@ -322,8 +418,8 @@ class MomentsService extends ChangeNotifier {
   }
 
   Future<void> _save() async {
-    await AboutmeDataService.instance.writePath(_postsPath, {
-      'posts': _posts.map((p) => p.toJson()).toList(),
+    await AboutmeDataService.instance.call('openai', 'savePosts', {
+      'posts': {'posts': _posts.map((p) => p.toJson()).toList()},
     });
     notifyListeners();
   }

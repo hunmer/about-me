@@ -22,9 +22,11 @@ class TimerController {
   // 从存储加载任务
   Future<Map<String, dynamic>> loadTasks() async {
     try {
-      final data = await AboutmeDataService.instance.readPath('timer/tasks.json');
+      final res = await AboutmeDataService.instance
+          .call('timer', 'getSnapshot', {});
+      final data = res['success'] == true ? res['data'] : null;
       _tasks =
-          data['tasks'] != null
+          data is Map && data['tasks'] != null
               ? (data['tasks'] as List)
                   .map(
                     (data) => TimerTask.fromJson(data as Map<String, dynamic>),
@@ -41,8 +43,8 @@ class TimerController {
   // 保存任务到存储
   Future<void> saveTasks(List<TimerTask> tasks) async {
     final tasksData = tasks.map((task) => task.toJson()).toList();
-    await AboutmeDataService.instance.writePath('timer/tasks.json', {
-      'tasks': tasksData,
+    await AboutmeDataService.instance.call('timer', 'saveSnapshot', {
+      'snapshot': {'tasks': tasksData},
     });
     await _syncWidget();
   }

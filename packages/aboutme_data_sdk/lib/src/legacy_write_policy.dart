@@ -21,6 +21,17 @@ class LegacyWritePolicy {
     'calendar_album',
     'media_log',
     'database',
+    'agent_chat',
+    'activity',
+    'timer',
+    'achievement',
+    'reminder',
+    'live2d',
+    'tts',
+    'webview',
+    'scripts_center',
+    'openai',
+    'toolbox',
   ];
   static const _protectedRoots = [...migratedDomains, 'assets', 'asset_references',
     'stickers/collections.json', 'sdk_migrations', '.sdk'];

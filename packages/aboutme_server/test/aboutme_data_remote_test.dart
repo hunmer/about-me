@@ -143,7 +143,7 @@ void main() {
 
   test('远程模式：服务端落盘明文（无加密）', () async {
     final data = AboutmeData.remote(serverUrl: baseUrl, apiKey: apiKey);
-    await data.writeFile('todo', 'tasks.json', {
+    await data.writeFile('misc', 'tasks.json', {
       'tasks': [
         {'id': 'plain', 'title': '明文任务'},
       ],
@@ -154,7 +154,7 @@ void main() {
         .listSync(recursive: true)
         .whereType<File>()
         .firstWhere(
-          (f) => f.path.replaceAll('\\', '/').endsWith('todo/tasks.json'),
+          (f) => f.path.replaceAll('\\', '/').endsWith('misc/tasks.json'),
         );
     expect(await dataFile.readAsString(), contains('明文任务'));
   });
@@ -316,6 +316,7 @@ void main() {
           .where((result) => result.containsKey('success'))
           .every((result) => result['success'] == true),
       isTrue,
+      reason: '${results.where((r) => r['success'] != true && r.containsKey('success'))}',
     );
     expect(
       results

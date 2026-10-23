@@ -78,6 +78,16 @@ class ApiClient {
       throw new Error('登录已过期，请重新登录')
     }
 
+    // 已迁移业务域的原始文件写入被服务端以 426 拒绝，标记给 UI 展示升级引导
+    if (response.status === 426) {
+      const errorData = await response.json().catch(() => ({}))
+      const error = new Error(errorData.error || UPGRADE_REQUIRED_MESSAGE)
+      ;(error as Error & { status?: number; code?: string }).status = 426
+      ;(error as Error & { status?: number; code?: string }).code =
+        errorData.code || 'UPGRADE_REQUIRED'
+      throw error
+    }
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.error || `HTTP Error: ${response.status}`)
@@ -307,4 +317,35 @@ export const syncApi = {
 
   downloadExportFile: (fileName: string): Promise<Blob> =>
     apiClient.downloadFile(syncApi.getDownloadUrl(fileName))
+}
+
+
+// ==== 已迁移业务域引导（P4）====
+export const UPGRADE_REQUIRED_MESSAGE =
+  '该路径属于已迁移的业务数据域，原始文件写入已禁用（HTTP 426）。请升级客户端 App，通过新版客户端（SDK 业务命令）管理这些数据；管理后台仅提供只读浏览。'
+
+export function isUpgradeRequiredError(err: unknown): boolean {
+  const e = err as { status?: number; code?: string }
+  return e?.status === 426 || e?.code === 'UPGRADE_REQUIRED'
+}
+
+// 已迁移业务域清单（来自服务端 capabilities，失败时退回空表仅靠 426 兜底）
+let migratedDomainsCache: string[] | null = null
+export async function fetchMigratedDomains(): Promise<string[]> {
+  if (migratedDomainsCache) return migratedDomainsCache
+  try {
+    const caps = await apiClient.request<{ migratedDomains?: string[] }>(
+      '/api/v1/plugins/capabilities'
+    )
+    migratedDomainsCache = caps.migratedDomains || []
+  } catch {
+    migratedDomainsCache = []
+  }
+  return migratedDomainsCache
+}
+
+// 路径是否落在已迁移业务域前缀下（如 'diary/...' / 'agent_chat/...'）
+export function isMigratedPath(path: string, domains: string[]): boolean {
+  const first = path.replace(/^\/+/, '').split('/')[0]?.toLowerCase()
+  return !!first && domains.includes(first)
 }

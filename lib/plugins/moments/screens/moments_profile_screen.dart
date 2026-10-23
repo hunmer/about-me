@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
 import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 
+import 'package:aboutme/core/data/sdk_media_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
@@ -16,7 +17,6 @@ import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
-import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
@@ -213,13 +213,13 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
       final files = await FilePickerHelper.pickImages(multiple: false);
       if (files.isEmpty) return;
       final file = files.first;
-      final ext = p.extension(file.path);
-      final rel = await ImageUtils.saveBytesToAppDirectory(
+      var name = p.basename(file.path);
+      if (!name.contains('.')) name = '$name.png';
+      final asset = await SdkMediaService.uploadBytes(
         await file.readAsBytes(),
-        MomentsService.imagesDir,
-        extension: ext.isEmpty ? '.png' : ext,
+        name,
       );
-      await _moments.setProfileBg(_authorKey, rel);
+      await _moments.setProfileBg(_authorKey, asset.reference);
       if (mounted) ToastService.instance.showToast('moments_bgSet'.tr);
     } catch (e) {
       if (mounted) {

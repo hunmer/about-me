@@ -407,7 +407,6 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
       final images = await ImageGenService.instance.generate(
         prompt: '$prompt${await _personaSuffix()}',
         refImageAbsolutePaths: refPaths,
-        archiveDir: _archiveDir,
       );
       if (images.isEmpty) throw Exception('openai_noImageReturned'.tr);
       if (!mounted) return;

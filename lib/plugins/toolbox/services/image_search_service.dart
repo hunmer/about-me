@@ -20,14 +20,6 @@ class ImageSearchService {
 
   static final ImageSearchService instance = ImageSearchService._();
 
-  static const _configPath = 'configs/toolbox/image_search_config.json';
-  static const _legacyConfigPath =
-      'configs/scripts_center/image_search_config.json';
-
-  /// 最近搜索历史（相对 app_data），上限 50 条
-  static const _historyPath = 'toolbox/image_search_history.json';
-  static const _historyLimit = 50;
-
   /// 图源选项（google/bing/yahoo/yandex 共用 SerpAPI Key，
   /// 不支持翻页/方向/排序/类型）
   static const List<String> providers = [
@@ -106,24 +98,18 @@ class ImageSearchService {
     ),
   ];
 
-  /// 读取配置（首次自动迁移旧脚本中心配置）
+  /// 读取配置（经 SDK 命令，首次自动迁移旧脚本中心配置）
   Future<void> ensureLoaded() async {
     if (_loaded) return;
     _loaded = true;
     try {
-      final data = await AboutmeDataService.instance.readPath(_configPath);
+      final res = await AboutmeDataService.instance.call(
+        'toolbox',
+        'getImageSearchConfig',
+      );
+      final data = res['success'] == true ? res['data'] : null;
       if (data is Map<String, dynamic>) {
         _config = data;
-        return;
-      }
-      // 迁移旧脚本配置（原内置脚本 image_search 的 API Key 等）
-      final legacy = await AboutmeDataService.instance.readPath(
-        _legacyConfigPath,
-      );
-      if (legacy is Map<String, dynamic>) {
-        _config = Map<String, dynamic>.from(legacy);
-        await AboutmeDataService.instance.writePath(_configPath, _config);
-        debugPrint('[toolbox] 已迁移 image_search 旧脚本配置');
       }
     } catch (e) {
       debugPrint('[toolbox] 读取 image_search 配置失败: $e');
@@ -132,7 +118,9 @@ class ImageSearchService {
 
   Future<void> saveConfig(Map<String, dynamic> config) async {
     _config = config;
-    await AboutmeDataService.instance.writePath(_configPath, config);
+    await AboutmeDataService.instance.call('toolbox', 'saveImageSearchConfig', {
+      'config': config,
+    });
   }
 
   // ── 搜索历史 ─────────────────────────────────────────
@@ -140,7 +128,11 @@ class ImageSearchService {
   /// 读取最近搜索历史（新→旧）
   Future<List<Map<String, dynamic>>> getHistory() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_historyPath);
+      final res = await AboutmeDataService.instance.call(
+        'toolbox',
+        'getImageSearchHistory',
+      );
+      final data = res['success'] == true ? res['data'] : null;
       return data is List
           ? data.whereType<Map<String, dynamic>>().toList()
           : [];
@@ -149,7 +141,7 @@ class ImageSearchService {
     }
   }
 
-  /// 追加一条搜索历史（相同关键词+模式+图源的去重置顶），超出上限截断
+  /// 追加一条搜索历史（相同关键词+模式+图源的去重置顶、截断在命令内）
   Future<void> addHistory({
     required String mode,
     required String query,
@@ -157,24 +149,15 @@ class ImageSearchService {
     required String provider,
   }) async {
     try {
-      final history = await getHistory();
-      history.removeWhere(
-        (e) =>
-            e['mode'] == mode &&
-            e['query'] == query &&
-            e['imageUrl'] == imageUrl &&
-            e['provider'] == provider,
-      );
-      history.insert(0, {
-        'mode': mode,
-        'query': query,
-        'imageUrl': imageUrl,
-        'provider': provider,
-        'ts': DateTime.now().millisecondsSinceEpoch,
-      });
-      await AboutmeDataService.instance.writePath(
-        _historyPath,
-        history.take(_historyLimit).toList(),
+      await AboutmeDataService.instance.call(
+        'toolbox',
+        'addImageSearchHistory',
+        {
+          'mode': mode,
+          'query': query,
+          'imageUrl': imageUrl,
+          'provider': provider,
+        },
       );
     } catch (e) {
       debugPrint('[toolbox] 写入搜索历史失败: $e');
@@ -183,14 +166,19 @@ class ImageSearchService {
 
   /// 删除指定时间戳的历史条目
   Future<void> removeHistory(int ts) async {
-    final history = await getHistory();
-    history.removeWhere((e) => e['ts'] == ts);
-    await AboutmeDataService.instance.writePath(_historyPath, history);
+    await AboutmeDataService.instance.call(
+      'toolbox',
+      'removeImageSearchHistory',
+      {'ts': ts},
+    );
   }
 
   /// 清空搜索历史
   Future<void> clearHistory() async {
-    await AboutmeDataService.instance.writePath(_historyPath, []);
+    await AboutmeDataService.instance.call(
+      'toolbox',
+      'clearImageSearchHistory',
+    );
   }
 
   String _cfg(String key) => (_config[key] ?? '').toString().trim();

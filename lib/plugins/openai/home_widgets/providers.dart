@@ -13,12 +13,15 @@ List<StatItemData> getAvailableStats(BuildContext context) {
 
     // 从存储中读取智能体列表
     int agentsCount = 0;
-    AboutmeDataService.instance.readPath('openai/agents.json').then((data) {
-      if (data is Map<String, dynamic>) {
-        final agentsList = data['agents'] as List? ?? [];
-        agentsCount = agentsList.length;
-      }
-    });
+    AboutmeDataService.instance
+        .call('openai', 'getAgents')
+        .then((res) {
+          final data = res['success'] == true ? res['data'] : null;
+          if (data is Map<String, dynamic>) {
+            final agentsList = data['agents'] as List? ?? [];
+            agentsCount = agentsList.length;
+          }
+        });
 
     return [
       StatItemData(

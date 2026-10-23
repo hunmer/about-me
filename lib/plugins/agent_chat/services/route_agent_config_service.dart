@@ -42,7 +42,6 @@ class RouteAgentConfig {
 /// 管理路由与 Agent 配置的关联，实现配置记忆功能
 class RouteAgentConfigService {
   final StorageManager storage;
-  static const String _storageKey = 'agent_chat/route_agent_configs';
 
   /// 路由配置缓存
   Map<String, RouteAgentConfig> _configs = {};
@@ -57,7 +56,11 @@ class RouteAgentConfigService {
   /// 加载所有路由配置
   Future<void> _loadConfigs() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_storageKey);
+      final res = await AboutmeDataService.instance.call(
+        'agent_chat',
+        'getRouteAgentConfigs',
+      );
+      final data = (res['success'] == true) ? res['data'] : null;
       if (data is Map<String, dynamic>) {
         _configs = data.map(
           (key, value) => MapEntry(
@@ -78,7 +81,11 @@ class RouteAgentConfigService {
       final data = _configs.map(
         (key, value) => MapEntry(key, value.toJson()),
       );
-      await AboutmeDataService.instance.writePath(_storageKey, data);
+      await AboutmeDataService.instance.call(
+        'agent_chat',
+        'saveRouteAgentConfigs',
+        {'configs': data},
+      );
     } catch (e) {
       debugPrint('保存路由配置失败: $e');
     }

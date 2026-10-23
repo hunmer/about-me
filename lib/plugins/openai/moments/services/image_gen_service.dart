@@ -4,20 +4,23 @@ import 'package:flutter/foundation.dart';
 import 'package:image_compress_plus/image_compress_plus.dart';
 import 'package:path/path.dart' as path;
 
+import 'package:aboutme/core/data/sdk_media_service.dart';
 import 'package:aboutme/core/services/image_compression_service.dart';
-import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
+import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
 import 'package:aboutme/plugins/toolbox/services/ai_image_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 
 /// 生图服务：封装工具箱插件的 AI 图片生成小工具
 ///
-/// 文生图 / 图生图（参考图），结果拷贝归档到 `openai/moments/images/`
+/// 文生图 / 图生图（参考图）；工具箱产物已上传为 SDK 资源，
+/// 这里为朋友圈单独上传一份副本资源归档（避免工具箱删除生成
+/// 历史时把仍在引用的资源一并移除），返回 'asset://...' 引用列表
 class ImageGenService {
   ImageGenService._();
 
   static final ImageGenService instance = ImageGenService._();
 
-  /// 生成图片，返回归档后的相对路径列表（'./openai/moments/images/xxx.png'）
+  /// 生成图片，返回归档后的 SDK 资源引用列表（'asset://...'）
   ///
   /// [refImageAbsolutePaths] 参考图（图生图），本地绝对路径
   Future<List<String>> generate({
@@ -25,9 +28,7 @@ class ImageGenService {
     List<String> refImageAbsolutePaths = const [],
     String? aspectRatio,
     int n = 1,
-    String? archiveDir,
   }) async {
-    final archive = archiveDir ?? MomentsService.imagesDir;
     final (refImages, tempRefFiles) = await _convertRefImagesToWebp(refImageAbsolutePaths);
     try {
       final result = await AiImageService.instance
@@ -36,7 +37,7 @@ class ImageGenService {
             refImages: refImages,
             aspectRatio: aspectRatio,
             n: n,
-            // 后台调用不回传字节（URL 直写磁盘），不弹界面
+            // 后台调用不回传字节（工具箱侧直传 SDK 资源），不弹界面
             returnBytes: false,
           )
           .catchError(
@@ -45,24 +46,31 @@ class ImageGenService {
       if (!result.success) {
         throw Exception('生图失败: ${result.error ?? '未知错误'}');
       }
-      final localPaths = (result.data?['images'] as List?)
-              ?.map((e) => e.absolutePath.isNotEmpty ? e.absolutePath : e.relativePath)
+      final refs = (result.data?['images'] as List?)
+              ?.map(
+                (e) => e is GeneratedImage ? e.relativePath : e.toString(),
+              )
+              .where((e) => e.isNotEmpty)
               .toList() ??
           <String>[];
-      if (localPaths.isEmpty) {
-        throw Exception('生图失败: 未返回本地图片，请检查工具箱 AI 图片生成配置');
+      if (refs.isEmpty) {
+        throw Exception('生图失败: 未返回图片，请检查工具箱 AI 图片生成配置');
       }
-      // 拷贝归档，避免与工具产物目录互相干扰
+      // 副本归档为朋友圈独立资源（读取源字节后重新上传，
+      // 与工具箱生成历史各自持有资源，互不影响删除）
       final archived = <String>[];
-      for (final abs in localPaths) {
-        final file = File(abs as String);
-        if (!await file.exists()) continue;
-        final rel = await ImageUtils.saveBytesToAppDirectory(
-          await file.readAsBytes(),
-          archive,
-          extension: path.extension(file.path).isEmpty ? '.png' : path.extension(file.path),
-        );
-        archived.add(rel);
+      for (var i = 0; i < refs.length; i++) {
+        try {
+          final bytes = await ImageUtils.readStorageBytes(refs[i]);
+          if (bytes == null || bytes.isEmpty) continue;
+          final asset = await SdkMediaService.uploadBytes(
+            bytes,
+            'moment_${DateTime.now().millisecondsSinceEpoch}_${i + 1}.png',
+          );
+          archived.add(asset.reference);
+        } catch (e) {
+          debugPrint('[Moments] 生图归档失败 (${refs[i]}): $e');
+        }
       }
       if (archived.isEmpty) throw Exception('生图失败: 图片归档失败');
       return archived;

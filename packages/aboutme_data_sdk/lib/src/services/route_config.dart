@@ -5,6 +5,11 @@ final pluginRouteConfigs = <PluginRouteConfig>[
   PluginRouteConfig(pluginId: 'assets', routes: [
     PluginRouteDefinition(method: 'get', path: '/', handler: 'list', resourceName: 'assets'),
     PluginRouteDefinition(method: 'get', path: '/legacy-sticker', handler: 'readLegacySticker', resourceName: 'assets'),
+    PluginRouteDefinition(method: 'post', path: '/migrate-legacy', handler: 'migrateLegacyAssets', resourceName: 'assets'),
+    PluginRouteDefinition(method: 'post', path: '/uploads', handler: 'initUpload', resourceName: 'assets'),
+    PluginRouteDefinition(method: 'post', path: '/uploads/:uploadId/complete', handler: 'completeUpload', resourceName: 'assets'),
+    PluginRouteDefinition(method: 'put', path: '/uploads/:uploadId', handler: 'appendChunk', resourceName: 'assets'),
+    PluginRouteDefinition(method: 'post', path: '/sweep', handler: 'sweep', resourceName: 'assets'),
     PluginRouteDefinition(method: 'post', path: '/', handler: 'upload', resourceName: 'assets'),
     PluginRouteDefinition(method: 'get', path: '/:id/metadata', handler: 'getMetadata', resourceName: 'assets'),
     PluginRouteDefinition(method: 'get', path: '/:id', handler: 'read', resourceName: 'assets'),
@@ -101,6 +106,10 @@ final pluginRouteConfigs = <PluginRouteConfig>[
     PluginRouteDefinition(method: 'put', path: '/recent-tags', handler: 'updateRecentTags', resourceName: 'recentTags'),
     PluginRouteDefinition(method: 'get', path: '/recent-moods', handler: 'getRecentMoods', resourceName: 'recentMoods'),
     PluginRouteDefinition(method: 'put', path: '/recent-moods', handler: 'updateRecentMoods', resourceName: 'recentMoods'),
+    PluginRouteDefinition(method: 'get', path: '/notification-settings', handler: 'getNotificationSettings', resourceName: 'settings'),
+    PluginRouteDefinition(method: 'patch', path: '/notification-settings', handler: 'updateNotificationSettings', resourceName: 'settings'),
+    PluginRouteDefinition(method: 'get', path: '/tts-settings', handler: 'getTtsSettings', resourceName: 'settings'),
+    PluginRouteDefinition(method: 'patch', path: '/tts-settings', handler: 'updateTtsSettings', resourceName: 'settings'),
   ]),
   // ==================== Goods ====================
   PluginRouteConfig(pluginId: 'goods', routes: [
@@ -321,6 +330,23 @@ final pluginRouteConfigs = <PluginRouteConfig>[
     PluginRouteDefinition(method: 'delete', path: '/conversations/:conversationId/messages', handler: 'clearMessages', resourceName: 'messages'),
     PluginRouteDefinition(method: 'patch', path: '/conversations/:conversationId/messages/:messageId', handler: 'updateMessage', resourceName: 'messages'),
     PluginRouteDefinition(method: 'delete', path: '/conversations/:conversationId/messages/:messageId', handler: 'deleteMessage', resourceName: 'messages'),
+    PluginRouteDefinition(method: 'get', path: '/tools/index', handler: 'getToolIndexFile', resourceName: 'tools'),
+    PluginRouteDefinition(method: 'put', path: '/tools/index', handler: 'saveToolIndexFile', resourceName: 'tools'),
+    PluginRouteDefinition(method: 'get', path: '/tools/:pluginId', handler: 'getToolPlugin', resourceName: 'tools'),
+    PluginRouteDefinition(method: 'put', path: '/tools/:pluginId', handler: 'saveToolPlugin', resourceName: 'tools'),
+    PluginRouteDefinition(method: 'delete', path: '/tools', handler: 'clearToolPlugins', resourceName: 'tools'),
+    PluginRouteDefinition(method: 'get', path: '/tool-templates', handler: 'listToolTemplates', resourceName: 'toolTemplates'),
+    PluginRouteDefinition(method: 'put', path: '/tool-templates/:id', handler: 'saveToolTemplate', resourceName: 'toolTemplates'),
+    PluginRouteDefinition(method: 'delete', path: '/tool-templates/:id', handler: 'deleteToolTemplate', resourceName: 'toolTemplates'),
+    PluginRouteDefinition(method: 'get', path: '/message-details/:messageId', handler: 'getMessageDetail', resourceName: 'messageDetails'),
+    PluginRouteDefinition(method: 'put', path: '/message-details/:messageId', handler: 'saveMessageDetail', resourceName: 'messageDetails'),
+    PluginRouteDefinition(method: 'delete', path: '/message-details/:messageId', handler: 'deleteMessageDetail', resourceName: 'messageDetails'),
+    PluginRouteDefinition(method: 'get', path: '/route-agent-configs', handler: 'getRouteAgentConfigs', resourceName: 'routeAgentConfigs'),
+    PluginRouteDefinition(method: 'put', path: '/route-agent-configs', handler: 'saveRouteAgentConfigs', resourceName: 'routeAgentConfigs'),
+    PluginRouteDefinition(method: 'get', path: '/test-runs', handler: 'listTestRuns', resourceName: 'testRuns'),
+    PluginRouteDefinition(method: 'put', path: '/test-runs/:runId', handler: 'saveTestRun', resourceName: 'testRuns'),
+    PluginRouteDefinition(method: 'get', path: '/preferences/:key', handler: 'getPreference', resourceName: 'preferences'),
+    PluginRouteDefinition(method: 'put', path: '/preferences/:key', handler: 'setPreference', resourceName: 'preferences'),
   ]),
   // ==================== Store ====================
   PluginRouteConfig(pluginId: 'store', routes: [
@@ -394,17 +420,119 @@ final pluginRouteConfigs = <PluginRouteConfig>[
     PluginRouteDefinition(method: 'get', path: '/stats', handler: 'getStats', resourceName: 'entries'),
     PluginRouteDefinition(method: 'post', path: '/examples', handler: 'seedExamples', resourceName: 'entries'),
   ]),
+  // ==================== System（服务器全局配置）====================
+  PluginRouteConfig(pluginId: 'system', routes: [
+    PluginRouteDefinition(method: 'get', path: '/registry', handler: 'getPluginRegistry', resourceName: 'registry'),
+    PluginRouteDefinition(method: 'get', path: '/store-config', handler: 'getStoreConfig', resourceName: 'storeConfig'),
+    PluginRouteDefinition(method: 'patch', path: '/store-config', handler: 'updateStoreConfig', resourceName: 'storeConfig'),
+  ]),
+  // ==================== 单文件快照域（timer/achievement/reminder/live2d/tts）====================
+  PluginRouteConfig(pluginId: 'timer', routes: [
+    PluginRouteDefinition(method: 'get', path: '/snapshot', handler: 'getSnapshot', resourceName: 'tasks'),
+    PluginRouteDefinition(method: 'put', path: '/snapshot', handler: 'saveSnapshot', resourceName: 'tasks'),
+  ]),
+  PluginRouteConfig(pluginId: 'achievement', routes: [
+    PluginRouteDefinition(method: 'get', path: '/snapshot', handler: 'getSnapshot', resourceName: 'progress'),
+    PluginRouteDefinition(method: 'put', path: '/snapshot', handler: 'saveSnapshot', resourceName: 'progress'),
+  ]),
+  PluginRouteConfig(pluginId: 'reminder', routes: [
+    PluginRouteDefinition(method: 'get', path: '/snapshot', handler: 'getSnapshot', resourceName: 'reminders'),
+    PluginRouteDefinition(method: 'put', path: '/snapshot', handler: 'saveSnapshot', resourceName: 'reminders'),
+  ]),
+  PluginRouteConfig(pluginId: 'live2d', routes: [
+    PluginRouteDefinition(method: 'get', path: '/snapshot', handler: 'getSnapshot', resourceName: 'archives'),
+    PluginRouteDefinition(method: 'put', path: '/snapshot', handler: 'saveSnapshot', resourceName: 'archives'),
+  ]),
+  PluginRouteConfig(pluginId: 'tts', routes: [
+    PluginRouteDefinition(method: 'get', path: '/snapshot', handler: 'getSnapshot', resourceName: 'services'),
+    PluginRouteDefinition(method: 'put', path: '/snapshot', handler: 'saveSnapshot', resourceName: 'services'),
+  ]),
+  // ==================== Toolbox（工具箱：AI 生图 / 图片搜索）====================
+  PluginRouteConfig(pluginId: 'toolbox', routes: [
+    // config 读取为 POST：首次含旧脚本配置迁移落盘（查询不得写入）
+    PluginRouteDefinition(method: 'post', path: '/ai-image/config', handler: 'getAiImageConfig', resourceName: 'aiImageConfig'),
+    PluginRouteDefinition(method: 'put', path: '/ai-image/config', handler: 'saveAiImageConfig', resourceName: 'aiImageConfig'),
+    PluginRouteDefinition(method: 'get', path: '/ai-image/history', handler: 'getAiImageHistory', resourceName: 'aiImageHistory'),
+    PluginRouteDefinition(method: 'put', path: '/ai-image/history', handler: 'saveAiImageHistory', resourceName: 'aiImageHistory'),
+    PluginRouteDefinition(method: 'post', path: '/image-search/config', handler: 'getImageSearchConfig', resourceName: 'imageSearchConfig'),
+    PluginRouteDefinition(method: 'put', path: '/image-search/config', handler: 'saveImageSearchConfig', resourceName: 'imageSearchConfig'),
+    // 静态路由需先于参数路由注册, 否则 /image-search/history 会被 /image-search/history/:ts 抢先匹配
+    PluginRouteDefinition(method: 'get', path: '/image-search/history', handler: 'getImageSearchHistory', resourceName: 'imageSearchHistory'),
+    PluginRouteDefinition(method: 'post', path: '/image-search/history', handler: 'addImageSearchHistory', resourceName: 'imageSearchHistory'),
+    PluginRouteDefinition(method: 'delete', path: '/image-search/history', handler: 'clearImageSearchHistory', resourceName: 'imageSearchHistory'),
+    PluginRouteDefinition(method: 'delete', path: '/image-search/history/:ts', handler: 'removeImageSearchHistory', resourceName: 'imageSearchHistory'),
+  ]),
+  // ==================== WebView ====================
+  PluginRouteConfig(pluginId: 'webview', routes: [
+    PluginRouteDefinition(method: 'get', path: '/settings', handler: 'getSettings', resourceName: 'settings'),
+    PluginRouteDefinition(method: 'patch', path: '/settings', handler: 'updateSettings', resourceName: 'settings'),
+    PluginRouteDefinition(method: 'get', path: '/tabs', handler: 'getTabs', resourceName: 'tabs'),
+    PluginRouteDefinition(method: 'put', path: '/tabs', handler: 'saveTabs', resourceName: 'tabs'),
+    PluginRouteDefinition(method: 'get', path: '/cards', handler: 'getCards', resourceName: 'cards'),
+    PluginRouteDefinition(method: 'put', path: '/cards', handler: 'saveCards', resourceName: 'cards'),
+    PluginRouteDefinition(method: 'get', path: '/storage/:key', handler: 'getWebStorage', resourceName: 'storage'),
+    PluginRouteDefinition(method: 'put', path: '/storage/:key', handler: 'setWebStorage', resourceName: 'storage'),
+    PluginRouteDefinition(method: 'delete', path: '/storage/:key', handler: 'deleteWebStorage', resourceName: 'storage'),
+  ]),
+  // ==================== OpenAI（AI 助手 / 活人感 / 朋友圈 / 话题合集，文件层命令）====================
+  PluginRouteConfig(pluginId: 'openai', routes: [
+    PluginRouteDefinition(method: 'get', path: '/agents', handler: 'getAgents', resourceName: 'agents'),
+    PluginRouteDefinition(method: 'put', path: '/agents', handler: 'saveAgents', resourceName: 'agents'),
+    PluginRouteDefinition(method: 'get', path: '/providers', handler: 'getProviders', resourceName: 'providers'),
+    PluginRouteDefinition(method: 'put', path: '/providers', handler: 'saveProviders', resourceName: 'providers'),
+    PluginRouteDefinition(method: 'get', path: '/presets', handler: 'getPresets', resourceName: 'presets'),
+    PluginRouteDefinition(method: 'put', path: '/presets', handler: 'savePresets', resourceName: 'presets'),
+    PluginRouteDefinition(method: 'get', path: '/aliveness/docs/:kind', handler: 'alivenessGetDoc', resourceName: 'aliveness'),
+    PluginRouteDefinition(method: 'put', path: '/aliveness/docs/:kind', handler: 'alivenessSetDoc', resourceName: 'aliveness'),
+    PluginRouteDefinition(method: 'get', path: '/aliveness/decisions', handler: 'alivenessGetDecisions', resourceName: 'aliveness'),
+    PluginRouteDefinition(method: 'put', path: '/aliveness/decisions', handler: 'alivenessSaveDecisions', resourceName: 'aliveness'),
+    // 静态路由需先于参数路由注册, 否则 /moments/ui-state 会被 /moments/:agentId/assets 抢先匹配
+    PluginRouteDefinition(method: 'get', path: '/moments/posts', handler: 'getPosts', resourceName: 'moments'),
+    PluginRouteDefinition(method: 'put', path: '/moments/posts', handler: 'savePosts', resourceName: 'moments'),
+    PluginRouteDefinition(method: 'get', path: '/moments/ui-state', handler: 'getMomentsUiState', resourceName: 'moments'),
+    PluginRouteDefinition(method: 'put', path: '/moments/ui-state', handler: 'saveMomentsUiState', resourceName: 'moments'),
+    PluginRouteDefinition(method: 'get', path: '/moments/profile-bg', handler: 'getProfileBg', resourceName: 'moments'),
+    PluginRouteDefinition(method: 'put', path: '/moments/profile-bg', handler: 'saveProfileBg', resourceName: 'moments'),
+    PluginRouteDefinition(method: 'get', path: '/moments/:agentId/assets', handler: 'getAssets', resourceName: 'moments'),
+    PluginRouteDefinition(method: 'put', path: '/moments/:agentId/assets', handler: 'saveAssets', resourceName: 'moments'),
+    PluginRouteDefinition(method: 'get', path: '/topics/collections/:id', handler: 'getTopicCollection', resourceName: 'topics'),
+    PluginRouteDefinition(method: 'put', path: '/topics/collections/:id', handler: 'saveTopicCollection', resourceName: 'topics'),
+    PluginRouteDefinition(method: 'delete', path: '/topics/collections/:id', handler: 'deleteTopicCollection', resourceName: 'topics'),
+    PluginRouteDefinition(method: 'get', path: '/topics/collections/:collectionId/agents', handler: 'getTopicAgents', resourceName: 'topics'),
+    PluginRouteDefinition(method: 'put', path: '/topics/collections/:collectionId/agents', handler: 'saveTopicAgents', resourceName: 'topics'),
+    PluginRouteDefinition(method: 'delete', path: '/topics/collections/:collectionId/agents', handler: 'deleteTopicAgents', resourceName: 'topics'),
+    PluginRouteDefinition(method: 'delete', path: '/topics/legacy-collections', handler: 'deleteLegacyTopicCollections', resourceName: 'topics'),
+  ]),
+  // ==================== ScriptsCenter（脚本中心：脚本/配置/执行记录/商场）====================
+  PluginRouteConfig(pluginId: 'scripts_center', routes: [
+    // 静态路由需先于参数路由注册, 否则 /scripts/sync-builtin 会被 /scripts/:id/** 抢先匹配
+    PluginRouteDefinition(method: 'post', path: '/scripts/sync-builtin', handler: 'syncBuiltin', resourceName: 'scripts'),
+    PluginRouteDefinition(method: 'get', path: '/scripts', handler: 'listScripts', resourceName: 'scripts'),
+    PluginRouteDefinition(method: 'post', path: '/scripts', handler: 'createScript', resourceName: 'scripts'),
+    PluginRouteDefinition(method: 'get', path: '/scripts/:id/meta', handler: 'getMeta', resourceName: 'scripts'),
+    PluginRouteDefinition(method: 'put', path: '/scripts/:id/meta', handler: 'saveMeta', resourceName: 'scripts'),
+    PluginRouteDefinition(method: 'get', path: '/scripts/:id/code', handler: 'getCode', resourceName: 'scripts'),
+    PluginRouteDefinition(method: 'put', path: '/scripts/:id/code', handler: 'saveCode', resourceName: 'scripts'),
+    PluginRouteDefinition(method: 'delete', path: '/scripts/:id', handler: 'deleteScript', resourceName: 'scripts'),
+    PluginRouteDefinition(method: 'get', path: '/scripts/:id/exists', handler: 'existsScript', resourceName: 'scripts'),
+    PluginRouteDefinition(method: 'get', path: '/configs/:scriptId', handler: 'getConfig', resourceName: 'scriptConfigs'),
+    PluginRouteDefinition(method: 'put', path: '/configs/:scriptId', handler: 'setConfig', resourceName: 'scriptConfigs'),
+    PluginRouteDefinition(method: 'delete', path: '/configs/:scriptId', handler: 'deleteConfig', resourceName: 'scriptConfigs'),
+    PluginRouteDefinition(method: 'get', path: '/exec-log', handler: 'getExecLog', resourceName: 'execLog'),
+    PluginRouteDefinition(method: 'post', path: '/exec-log', handler: 'recordExecution', resourceName: 'execLog'),
+    PluginRouteDefinition(method: 'delete', path: '/exec-log', handler: 'clearExecLog', resourceName: 'execLog'),
+    PluginRouteDefinition(method: 'get', path: '/store/sources', handler: 'getSources', resourceName: 'store'),
+    PluginRouteDefinition(method: 'put', path: '/store/sources', handler: 'saveSources', resourceName: 'store'),
+    PluginRouteDefinition(method: 'get', path: '/store/installed', handler: 'getInstalled', resourceName: 'store'),
+    PluginRouteDefinition(method: 'put', path: '/store/installed', handler: 'saveInstalled', resourceName: 'store'),
+  ]),
   // ==================== 其他插件使用通用路由 ====================
   ..._genericPlugins.map(
     (id) => PluginRouteConfig(pluginId: id, routes: _genericRoutes),
   ),
 ];
 
-const _genericPlugins = [
-
-  'openai',
-  'timer',
-];
+const _genericPlugins = <String>[];
 
 /// 通用 CRUD 插件的路由（全部复用同一组定义）。
 const _genericRoutes = [

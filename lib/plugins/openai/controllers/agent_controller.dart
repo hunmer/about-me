@@ -41,15 +41,26 @@ class AgentController extends ChangeNotifier {
   final List<AIAgent> _temporaryAgents = [];
   List<AIAgent> get temporaryAgents => List.unmodifiable(_temporaryAgents);
 
+  /// 读取 agents.json（缺失/失败按空数据处理）
+  Future<Map<String, dynamic>?> _readAgentsFile() async {
+    final res = await AboutmeDataService.instance.call('openai', 'getAgents');
+    final data = res['success'] == true ? res['data'] : null;
+    return data is Map<String, dynamic> ? data : null;
+  }
+
+  /// 全量写 agents.json（整文件替换，保持 {agents:[...]} 结构）
+  Future<void> _saveAgentsFile(List<Map<String, dynamic>> agentsJson) =>
+      AboutmeDataService.instance.call('openai', 'saveAgents', {
+        'agents': {'agents': agentsJson},
+      });
+
   Future<List<AIAgent>> loadAgents() async {
     final plugin = PluginManager.instance.getPlugin('openai');
     if (plugin == null) return [];
 
     try {
-      final data = await AboutmeDataService.instance.readPath(
-        '${plugin.storageDir}/agents.json',
-      );
-      if (data.isNotEmpty) {
+      final data = await _readAgentsFile();
+      if (data != null && data.isNotEmpty) {
         final List<dynamic> jsonList = (data['agents'] ?? []) as List<dynamic>;
         _agents =
             jsonList
@@ -99,9 +110,7 @@ class AgentController extends ChangeNotifier {
     // Save all agents
     final List<Map<String, dynamic>> agentsJson =
         _agents.map((a) => a.toJson()).toList();
-    await AboutmeDataService.instance.writePath('${plugin.storageDir}/agents.json', {
-      'agents': agentsJson,
-    });
+    await _saveAgentsFile(agentsJson);
 
     // 通知监听器数据已更新
     notifyListeners();
@@ -133,10 +142,7 @@ class AgentController extends ChangeNotifier {
       _notifyAgentEvent(index >= 0 ? 'updated' : 'added', agent);
     }
 
-    await AboutmeDataService.instance.writePath(
-      '${plugin.storageDir}/agents.json',
-      {'agents': _agents.map((a) => a.toJson()).toList()},
-    );
+    await _saveAgentsFile(_agents.map((a) => a.toJson()).toList());
 
     notifyListeners();
 
@@ -162,9 +168,7 @@ class AgentController extends ChangeNotifier {
     _agents.removeWhere((agent) => agent.id == agentId);
     final List<Map<String, dynamic>> agentsJson =
         _agents.map((a) => a.toJson()).toList();
-    await AboutmeDataService.instance.writePath('${plugin.storageDir}/agents.json', {
-      'agents': agentsJson,
-    });
+    await _saveAgentsFile(agentsJson);
 
     // 通知监听器数据已更新
     notifyListeners();
@@ -243,15 +247,20 @@ class AgentController extends ChangeNotifier {
   }
 
   /// 从extra storage加载agents
+  /// （storageKey 形如 `topic_agents_<collectionId>`，经 SDK 命令读写
+  /// `openai/topic_agents_<collectionId>.json`，文件布局不变）
   Future<List<AIAgent>> loadExtraStorageAgents(String storageKey) async {
     final plugin = PluginManager.instance.getPlugin('openai');
     if (plugin == null) return [];
 
     try {
-      final data = await AboutmeDataService.instance.readPath(
-        '${plugin.storageDir}/$storageKey.json',
+      final res = await AboutmeDataService.instance.call(
+        'openai',
+        'getTopicAgents',
+        {'collectionId': _collectionIdOf(storageKey)},
       );
-      if (data.isNotEmpty) {
+      final data = res['success'] == true ? res['data'] : null;
+      if (data is Map && data.isNotEmpty) {
         final List<dynamic> jsonList = (data['agents'] ?? []) as List<dynamic>;
         return jsonList
             .map((item) => AIAgent.fromJson(item as Map<String, dynamic>))
@@ -262,6 +271,12 @@ class AgentController extends ChangeNotifier {
     }
     return [];
   }
+
+  /// extra storage key（`topic_agents_<collectionId>`）对应的合集 id
+  String _collectionIdOf(String storageKey) =>
+      storageKey.startsWith('topic_agents_')
+          ? storageKey.substring('topic_agents_'.length)
+          : storageKey;
 
   /// 保存agent到extra storage
   Future<void> saveAgentToExtraStorage(
@@ -283,11 +298,7 @@ class AgentController extends ChangeNotifier {
     }
 
     // 保存
-    final List<Map<String, dynamic>> agentsJson =
-        existingAgents.map((a) => a.toJson()).toList();
-    await AboutmeDataService.instance.writePath('${plugin.storageDir}/$storageKey.json', {
-      'agents': agentsJson,
-    });
+    await _saveTopicAgentsFile(storageKey, existingAgents);
     notifyListeners();
   }
 
@@ -306,11 +317,16 @@ class AgentController extends ChangeNotifier {
     existingAgents.removeWhere((agent) => agent.id == agentId);
 
     // 保存
-    final List<Map<String, dynamic>> agentsJson =
-        existingAgents.map((a) => a.toJson()).toList();
-    await AboutmeDataService.instance.writePath('${plugin.storageDir}/$storageKey.json', {
-      'agents': agentsJson,
-    });
+    await _saveTopicAgentsFile(storageKey, existingAgents);
     notifyListeners();
   }
+
+  /// 全量写合集 agent 存储（整文件替换，保持 {agents:[...]} 结构）
+  Future<void> _saveTopicAgentsFile(
+    String storageKey,
+    List<AIAgent> agents,
+  ) => AboutmeDataService.instance.call('openai', 'saveTopicAgents', {
+    'collectionId': _collectionIdOf(storageKey),
+    'agents': {'agents': agents.map((a) => a.toJson()).toList()},
+  });
 }

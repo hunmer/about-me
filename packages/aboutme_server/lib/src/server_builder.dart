@@ -69,6 +69,7 @@ Future<Handler> buildServer(ServerConfig config) async {
   final pluginApi = PluginApi(storage: storage, wsHub: wsHub, runtimes: runtimes);
   final mcpApi = McpApi(storage: storage, wsHub: wsHub, runtimes: runtimes);
   final systemApi = SystemApi(auth: auth, dataDir: config.dataDir);
+  await systemApi.ensureMigrated();
   final adminStatic = AdminStatic(_resolveAdminDir(config));
 
   final router = Router(notFoundHandler: _notFound);

@@ -134,50 +134,52 @@ void main() {
       expect(deleted['success'], isTrue);
     });
 
-    test('通用 CRUD 插件（timer）：增查改删', () async {
-      final created = await _post(
+    test('单文件快照域（timer）：快照读写', () async {
+      final saved = await _put(
         client,
         baseUrl,
-        '/api/v1/plugins/timer/item',
-        {'title': 'focus timer'},
+        '/api/v1/plugins/timer/snapshot',
+        {
+          'snapshot': {
+            'tasks': [
+              {'id': 't1', 'title': 'focus timer'},
+            ],
+          },
+        },
         headers: _pluginHeaders(),
       );
-      expect(created['success'], isTrue, reason: '$created');
-      final id = (created['data'] as Map)['id'] as String;
+      expect(saved['success'], isTrue, reason: '$saved');
+      expect(
+        ((saved['data'] as Map)['tasks'] as List).length,
+        1,
+      );
 
-      final updated = await _put(
+      final snapshot = await _get(
         client,
         baseUrl,
-        '/api/v1/plugins/timer/item/$id',
-        {'title': 'focus timer 2'},
+        '/api/v1/plugins/timer/snapshot',
         headers: _pluginHeaders(),
       );
-      expect(updated['success'], isTrue);
-      expect((updated['data'] as Map)['title'], 'focus timer 2');
-
-      final list = await _get(
-        client,
-        baseUrl,
-        '/api/v1/plugins/timer/items',
-        headers: _pluginHeaders(),
+      expect(snapshot['success'], isTrue);
+      expect(
+        (((snapshot['data'] as Map)['tasks'] as List).first
+            as Map)['title'],
+        'focus timer',
       );
-      expect(((list['data'] as Map)['data'] as List).length, 1);
-
-      final deleted = await _delete(
-        client,
-        baseUrl,
-        '/api/v1/plugins/timer/item/$id',
-        headers: _pluginHeaders(),
-      );
-      expect(deleted['success'], isTrue);
     });
 
     test('插件数据落盘为明文 JSON（统一数据区）', () async {
-      await _post(
+      await _put(
         client,
         baseUrl,
-        '/api/v1/plugins/timer/item',
-        {'title': 'plain-title'},
+        '/api/v1/plugins/timer/snapshot',
+        {
+          'snapshot': {
+            'tasks': [
+              {'id': 't1', 'title': 'plain-title'},
+            ],
+          },
+        },
         headers: _pluginHeaders(),
       );
       final usersDir = Directory('${tempDir.path}/users');
@@ -185,37 +187,29 @@ void main() {
           .listSync(recursive: true)
           .whereType<File>()
           .firstWhere(
-            (f) => f.path.replaceAll('\\', '/').endsWith('timer/data.json'),
+            (f) => f.path.replaceAll('\\', '/').endsWith('timer/tasks.json'),
           );
       final content = await dataFile.readAsString();
-      // 明文存储，路径为 users/{id}/timer/data.json（无 .storage 前缀）
+      // 明文存储，路径为 users/{id}/timer/tasks.json（无 .storage 前缀）
       expect(content, contains('plain-title'));
       expect(
         dataFile.path.replaceAll('\\', '/'),
-        contains('/timer/data.json'),
+        contains('/timer/tasks.json'),
       );
     });
 
-    test('跨通路同数据：storage API 写的文件，插件/MCP 直接读到并修改', () async {
-      // 1) 通过 storage files API（客户端文件层）写入 todo 数据，
-      //    带客户端特有的额外字段 viewMode/completedTasks
-      final put = await client.putUrl(
-        Uri.parse('$baseUrl/api/v1/storage/files/todo/tasks.json'),
+    test('跨通路同数据：业务命令写的文件，storage/MCP 直接读到并修改', () async {
+      // 1) 通过插件业务 API 创建 todo 任务（原文件层直写已随域封闭禁用）
+      final created = await _post(
+        client,
+        baseUrl,
+        '/api/v1/plugins/todo/tasks',
+        {'id': 't1', 'title': 'storage 写入', 'completed': false},
+        headers: _pluginHeaders(),
       );
-      _pluginHeaders().forEach(put.headers.set);
-      put.headers.set('X-Force-Overwrite', 'true');
-      put.headers.contentType = ContentType.binary;
-      put.add(
-        utf8.encode(
-          '{"tasks":[{"id":"t1","title":"storage 写入","completed":false}],'
-          '"completedTasks":[],"viewMode":"ViewMode.quadrant"}',
-        ),
-      );
-      final putResponse = await put.close();
-      expect(putResponse.statusCode, 200);
-      await putResponse.drain();
+      expect(created['success'], isTrue, reason: '$created');
 
-      // 2) 插件业务 API（同一套 SDK 处理器）读到的就是这份数据
+      // 2) 插件业务 API 读到的就是这份数据
       final tasks = await _get(
         client,
         baseUrl,
@@ -249,7 +243,7 @@ void main() {
       expect((mcpCall['result'] as Map)['isError'], isNull,
           reason: '${mcpCall['result']}');
 
-      // 4) 落盘验证：明文、tasks 更新、额外字段保留
+      // 4) 落盘验证：明文、tasks 更新
       final usersDir = Directory('${tempDir.path}/users');
       final dataFile = usersDir
           .listSync(recursive: true)
@@ -259,8 +253,7 @@ void main() {
           );
       final content = await dataFile.readAsString();
       expect(content, contains('"completed":true'));
-      expect(content, contains('viewMode')); // 未丢客户端字段
-      expect(content, contains('completedTasks'));
+      expect(content, contains('storage 写入'));
 
       // 5) storage files API 再读 → 拿到 MCP 修改后的版本
       final get = await client.getUrl(

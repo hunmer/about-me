@@ -15,8 +15,6 @@ class PromptPresetService extends ChangeNotifier {
   List<PromptPreset> _presets = [];
   List<PromptPreset> get presets => List.unmodifiable(_presets);
 
-  static const String _storageKey = 'openai/prompt_presets.json';
-
   /// 预设类别映射
   static const Map<String, String> categoryNames = {
     'communication': '通用对话',
@@ -32,9 +30,13 @@ class PromptPresetService extends ChangeNotifier {
   /// 加载所有预设
   Future<List<PromptPreset>> loadPresets() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_storageKey);
+      final res = await AboutmeDataService.instance.call(
+        'openai',
+        'getPresets',
+      );
+      final data = res['success'] == true ? res['data'] : null;
 
-      if (data.isNotEmpty && data['presets'] != null) {
+      if (data is Map && data.isNotEmpty && data['presets'] != null) {
         _presets = (data['presets'] as List)
             .map((json) => PromptPreset.fromJson(json as Map<String, dynamic>))
             .toList();
@@ -54,8 +56,10 @@ class PromptPresetService extends ChangeNotifier {
   /// 保存所有预设
   Future<void> _savePresets() async {
     try {
-      await AboutmeDataService.instance.writePath(_storageKey, {
-        'presets': _presets.map((p) => p.toJson()).toList(),
+      await AboutmeDataService.instance.call('openai', 'savePresets', {
+        'presets': {
+          'presets': _presets.map((p) => p.toJson()).toList(),
+        },
       });
     } catch (e) {
       debugPrint('Error saving prompt presets: $e');

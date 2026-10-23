@@ -129,9 +129,9 @@ void main() {
     final (_, apiKey, __) = await provisionUser('storage-user');
     final storage = httpStorageOf(apiKey);
 
-    await storage.writeString('todo/list.json', jsonEncode({'items': [1, 2]}));
+    await storage.writeString('misc/list.json', jsonEncode({'items': [1, 2]}));
     expect(
-      await storage.readString('todo/list.json'),
+      await storage.readString('misc/list.json'),
       jsonEncode({'items': [1, 2]}),
     );
     await storage.writeBytes(
@@ -140,13 +140,13 @@ void main() {
     );
     expect(await storage.readBytes('images/a.bin'), [1, 2, 3]);
 
-    final keys = await storage.getKeysWithPrefix('todo/');
-    expect(keys, contains('todo/list.json'));
+    final keys = await storage.getKeysWithPrefix('misc/');
+    expect(keys, contains('misc/list.json'));
 
-    expect(await storage.hasData('todo/list.json'), isTrue);
-    await storage.deleteFile('todo/list.json');
-    expect(await storage.hasData('todo/list.json'), isFalse);
-    expect(await storage.readBytes('todo/list.json'), isNull);
+    expect(await storage.hasData('misc/list.json'), isTrue);
+    await storage.deleteFile('misc/list.json');
+    expect(await storage.hasData('misc/list.json'), isFalse);
+    expect(await storage.readBytes('misc/list.json'), isNull);
   });
 
   test('服务器落盘为明文（统一数据区 = 用户根目录）', () async {
@@ -160,10 +160,10 @@ void main() {
     final content = await raw.readAsString();
     expect(content, 'plain-text-data');
 
-    // 插件业务 API 与 storage API 同区：写入后插件目录可直接读
-    await storage.writeString('todo/tasks.json', '{"tasks":[{"id":"t1"}]}');
+    // storage API 写入的文件直接落在用户根目录（未封闭前缀）
+    await storage.writeString('misc/tasks.json', '{"tasks":[{"id":"t1"}]}');
     expect(
-      await File('${tempDir.path}/users/$userId/todo/tasks.json').exists(),
+      await File('${tempDir.path}/users/$userId/misc/tasks.json').exists(),
       isTrue,
     );
   });

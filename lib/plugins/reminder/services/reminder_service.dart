@@ -12,8 +12,6 @@ class ReminderService {
   factory ReminderService() => _instance;
   ReminderService._internal();
 
-  static const String _storageKey = 'reminders.json';
-
   List<Reminder> _reminders = [];
   final ReminderNotificationService _notificationService =
       ReminderNotificationService();
@@ -30,9 +28,10 @@ class ReminderService {
   /// 加载提醒数据
   Future<void> _loadReminders() async {
     try {
-      final pluginPath = 'reminder/$_storageKey';
-      final data = await AboutmeDataService.instance.readPath(pluginPath);
-      if (data != null && data.containsKey('reminders')) {
+      final res = await AboutmeDataService.instance
+          .call('reminder', 'getSnapshot', {});
+      final data = res['success'] == true ? res['data'] : null;
+      if (data is Map && data.containsKey('reminders')) {
         _reminders = (data['reminders'] as List)
             .map((json) => Reminder.fromJson(json as Map<String, dynamic>))
             .toList();
@@ -46,9 +45,10 @@ class ReminderService {
   /// 保存提醒数据
   Future<void> _saveReminders() async {
     try {
-      final pluginPath = 'reminder/$_storageKey';
       final data = {'reminders': _reminders.map((r) => r.toJson()).toList()};
-      await AboutmeDataService.instance.writePath(pluginPath, data);
+      await AboutmeDataService.instance.call('reminder', 'saveSnapshot', {
+        'snapshot': data,
+      });
     } catch (e) {
       debugPrint('[ReminderService] 保存提醒失败: $e');
       rethrow;

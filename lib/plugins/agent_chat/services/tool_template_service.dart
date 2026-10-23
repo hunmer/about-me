@@ -154,25 +154,24 @@ class ToolTemplateService extends ChangeNotifier {
   /// 加载所有模板
   Future<void> _loadTemplates() async {
     try {
-      // 获取所有模板文件
-      final keys = await AboutmeDataService.instance.listPathKeys(
-        _templatesDir,
+      // 一次拉取全部模板
+      final res = await AboutmeDataService.instance.call(
+        'agent_chat',
+        'listToolTemplates',
       );
 
       _templates = [];
-      for (final key in keys) {
-        if (!key.endsWith('.json')) continue;
-
-        try {
-          final data = await AboutmeDataService.instance.readPath(key, null);
-          if (data != null && data is Map<String, dynamic>) {
+      final rows = (res['success'] == true && res['data'] is List)
+          ? res['data'] as List
+          : null;
+      if (rows != null) {
+        for (final data in rows) {
+          if (data is Map<String, dynamic>) {
             final template = SavedToolTemplate.fromJson(data);
             _templates.add(
               template.copyWith(steps: _normalizeSteps(template.steps)),
             );
           }
-        } catch (e) {
-          debugPrint('加载模板失败 ($key): $e');
         }
       }
 
@@ -198,19 +197,16 @@ class ToolTemplateService extends ChangeNotifier {
     });
   }
 
-  /// 获取模板文件路径
-  String _getTemplatePath(String id) => '$_templatesDir/$id.json';
-
   /// 保存单个模板文件
   Future<void> _saveTemplateFile(SavedToolTemplate template) async {
     try {
       final normalizedTemplate = template.copyWith(
         steps: _normalizeSteps(template.steps),
       );
-      await AboutmeDataService.instance.writePath(
-        _getTemplatePath(template.id),
-        normalizedTemplate.toJson(),
-      );
+      await AboutmeDataService.instance.call('agent_chat', 'saveToolTemplate', {
+        'id': normalizedTemplate.id,
+        'template': normalizedTemplate.toJson(),
+      });
     } catch (e) {
       debugPrint('保存工具模板失败: $e');
       rethrow;
@@ -220,7 +216,11 @@ class ToolTemplateService extends ChangeNotifier {
   /// 删除模板文件
   Future<void> _deleteTemplateFile(String id) async {
     try {
-      await AboutmeDataService.instance.deletePath(_getTemplatePath(id));
+      await AboutmeDataService.instance.call(
+        'agent_chat',
+        'deleteToolTemplate',
+        {'id': id},
+      );
     } catch (e) {
       debugPrint('删除工具模板文件失败: $e');
     }

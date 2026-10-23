@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
@@ -8,6 +7,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_execution_logger.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_executor.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 import 'package:get/get.dart';
 /// 脚本执行记录页面
@@ -241,16 +241,15 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
     );
   }
 
-  /// 图片缩略图（点击全屏查看）
+  /// 图片缩略图（点击全屏查看；支持 SDK 资源引用与本地路径）
   Widget _buildImageThumb(String imgPath) {
-    final file = File(imgPath);
     return InkWell(
       onTap: () => _showFullScreenImage(imgPath),
       borderRadius: BorderRadius.circular(8),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Image.file(
-          file,
+        child: Image(
+          image: ImageUtils.createImageProvider(imgPath),
           width: 100,
           height: 100,
           fit: BoxFit.cover,
@@ -289,8 +288,8 @@ class _ScriptExecutionLogScreenState extends State<ScriptExecutionLogScreen> {
           body: Center(
             child: InteractiveViewer(
               maxScale: 5,
-              child: Image.file(
-                File(imgPath),
+              child: Image(
+                image: ImageUtils.createImageProvider(imgPath),
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => Text('scripts_center_imageLoadFailed'.tr,
                   style: TextStyle(color: Colors.white70),

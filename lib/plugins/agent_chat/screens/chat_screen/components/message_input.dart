@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -95,7 +94,6 @@ class _MessageInputState extends State<MessageInput> {
   TencentASRService? _recognitionService;
 
   /// 快捷工具栏常驻动作 id（持久化，勾选入口见动作抽屉 header）
-  static const String _quickActionIdsKey = 'agent_chat/quick_toolbar_actions';
   static const Set<String> _defaultQuickActionIds = {
     'image',
     'video',
@@ -106,9 +104,12 @@ class _MessageInputState extends State<MessageInput> {
 
   Future<void> _loadQuickActionIds() async {
     try {
-      final text = await AboutmeDataService.instance
-          .readPathText(_quickActionIdsKey);
-      final list = jsonDecode(text);
+      final res = await AboutmeDataService.instance.call(
+        'agent_chat',
+        'getPreference',
+        {'key': 'quickToolbarActions'},
+      );
+      final list = (res['success'] == true) ? res['data'] : null;
       if (list is List && list.every((e) => e is String)) {
         if (mounted) setState(() => _quickActionIds = {...list.cast<String>()});
       }
@@ -119,7 +120,11 @@ class _MessageInputState extends State<MessageInput> {
 
   void _setQuickActionIds(Set<String> ids) {
     setState(() => _quickActionIds = ids);
-    AboutmeDataService.instance.writePath(_quickActionIdsKey, ids.toList());
+    AboutmeDataService.instance.call(
+      'agent_chat',
+      'setPreference',
+      {'key': 'quickToolbarActions', 'value': ids.toList()},
+    );
   }
 
   @override

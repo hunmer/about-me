@@ -6,13 +6,15 @@ import 'package:aboutme/plugins/openai/moments/models/agent_asset.dart';
 
 /// Agent 资产图服务
 ///
-/// 数据：`openai/moments/<agentId>/assets.json`
-/// 图片文件：`openai/moments/assets/<agentId>/`（经 ImageUtils 保存，相对路径 './...'）
+/// 数据：`openai/moments/<agentId>/assets.json`，path 字段为 SDK 资源
+/// 引用（'asset://...'；旧 './openai/moments/assets/...' 由
+/// MomentsService 启动迁移统一改为引用）
 class AgentAssetsService extends ChangeNotifier {
   AgentAssetsService._();
 
   static final AgentAssetsService instance = AgentAssetsService._();
 
+  /// 旧版资产图数据区目录（现图片存 SDK 资源，仅作一次性迁移前缀）
   static const assetsDir = 'openai/moments/assets';
 
   /// 预置占位：名称 → 生成提示词模板
@@ -25,14 +27,15 @@ class AgentAssetsService extends ChangeNotifier {
 
   final Map<String, List<AgentAsset>> _cache = {};
 
-  String _path(String agentId) => 'openai/moments/$agentId/assets.json';
-
   List<AgentAsset>? cached(String agentId) => _cache[agentId];
 
   Future<List<AgentAsset>> getAssets(String agentId) async {
     if (_cache.containsKey(agentId)) return _cache[agentId]!;
     try {
-      final data = await AboutmeDataService.instance.readPath(_path(agentId));
+      final res = await AboutmeDataService.instance.call('openai', 'getAssets', {
+        'agentId': agentId,
+      });
+      final data = res['success'] == true ? res['data'] : null;
       final list =
           (data is Map ? data['assets'] : null) as List<dynamic>? ?? [];
       _cache[agentId] = list
@@ -125,10 +128,50 @@ class AgentAssetsService extends ChangeNotifier {
         .toList();
   }
 
+  /// 旧数据区资产图路径 → SDK 资源引用（一次性迁移，由 MomentsService
+  /// 启动迁移调用）：遍历 `openai/moments/<agentId>/assets.json`，
+  /// 把 path 字段中命中 [pathMap]（sourcePath → reference）的替换后保存。
+  /// 经本服务读写，保证内存缓存与落盘一致。
+  Future<void> migrateLegacyPaths(Map<String, String> pathMap) async {
+    if (pathMap.isEmpty) return;
+    try {
+      final keys = await AboutmeDataService.instance.listPathKeys(
+        'openai/moments/',
+      );
+      final pattern = RegExp(r'^openai/moments/([^/]+)/assets\.json$');
+      for (final key in keys) {
+        final agentId = pattern.firstMatch(key)?.group(1);
+        if (agentId == null) continue;
+        try {
+          final assets = await getAssets(agentId);
+          var changed = false;
+          for (final asset in assets) {
+            final path = asset.path;
+            if (path == null || path.isEmpty) continue;
+            final normalized = path.startsWith('./')
+                ? path.substring(2)
+                : path;
+            final reference = pathMap[normalized];
+            if (reference != null) {
+              asset.path = reference;
+              changed = true;
+            }
+          }
+          if (changed) await _save(agentId);
+        } catch (e) {
+          debugPrint('[Moments] 资产图路径迁移失败 ($agentId): $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('[Moments] 资产图路径迁移失败: $e');
+    }
+  }
+
   Future<void> _save(String agentId) async {
     final assets = _cache[agentId] ?? [];
-    await AboutmeDataService.instance.writePath(_path(agentId), {
-      'assets': assets.map((a) => a.toJson()).toList(),
+    await AboutmeDataService.instance.call('openai', 'saveAssets', {
+      'agentId': agentId,
+      'assets': {'assets': assets.map((a) => a.toJson()).toList()},
     });
     notifyListeners();
   }

@@ -193,7 +193,9 @@ class Live2DPlugin extends BasePlugin {
       'bubbleRegions': <String, dynamic>{},
       'customBubbleAssets': <String>[],
     });
-    final data = await AboutmeDataService.instance.readPath('$storageDir/archives.json');
+    final res = await AboutmeDataService.instance
+        .call('live2d', 'getSnapshot', {});
+    final data = res['success'] == true ? res['data'] : null;
     final rawArchives = data is Map ? data['archives'] : null;
     archives
       ..clear()
@@ -202,13 +204,16 @@ class Live2DPlugin extends BasePlugin {
           (e) => Live2DArchive.fromJson(Map<String, dynamic>.from(e as Map)),
         ),
       );
-    selectedId = data['selectedId'] as String?;
+    selectedId = data is Map ? data['selectedId'] as String? : null;
   }
 
-  Future<void> save() async => AboutmeDataService.instance.writePath('$storageDir/archives.json', {
-    'selectedId': selectedId,
-    'archives': archives.map((a) => a.toJson()).toList(),
-  });
+  Future<void> save() async =>
+      AboutmeDataService.instance.call('live2d', 'saveSnapshot', {
+        'snapshot': {
+          'selectedId': selectedId,
+          'archives': archives.map((a) => a.toJson()).toList(),
+        },
+      });
   Live2DArchive? get selected =>
       archives.where((a) => a.id == selectedId).firstOrNull;
   Future<void> upsert(Live2DArchive archive) async {

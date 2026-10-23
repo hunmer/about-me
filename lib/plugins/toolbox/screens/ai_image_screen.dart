@@ -11,6 +11,7 @@ import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
 import 'package:aboutme/plugins/toolbox/screens/ai_image_history_screen.dart';
 import 'package:aboutme/plugins/toolbox/services/ai_image_service.dart';
 import 'package:aboutme/plugins/toolbox/widgets/toolbox_config_sheet.dart';
+import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -209,7 +210,7 @@ class _AiImageScreenState extends State<AiImageScreen> {
                   ),
                 ),
               Text(
-                '${'toolbox_aiImage_savedTo'.tr} app_data/${AiImageService.outputDir}/',
+                '${'toolbox_aiImage_savedTo'.tr} SDK',
                 style: DsTypography.caption.copyWith(color: theme.textSub),
                 textAlign: TextAlign.center,
               ),
@@ -244,9 +245,21 @@ class _AiImageScreenState extends State<AiImageScreen> {
     if (img.bytes != null) {
       return Image.memory(img.bytes!, fit: BoxFit.fitWidth);
     }
-    if (img.absolutePath.isNotEmpty && File(img.absolutePath).existsSync()) {
-      return Image.file(File(img.absolutePath), fit: BoxFit.fitWidth);
+    // 结果为 SDK 资源引用（后台生成无字节时），统一走资源感知的 provider
+    final reference = img.relativePath.isNotEmpty
+        ? img.relativePath
+        : img.absolutePath;
+    if (reference.isNotEmpty) {
+      return Image(
+        image: ImageUtils.createImageProvider(reference),
+        fit: BoxFit.fitWidth,
+        errorBuilder: (_, __, ___) => _resultPlaceholder(),
+      );
     }
+    return _resultPlaceholder();
+  }
+
+  Widget _resultPlaceholder() {
     return const SizedBox(
       height: 120,
       child: Center(child: Icon(Icons.broken_image)),

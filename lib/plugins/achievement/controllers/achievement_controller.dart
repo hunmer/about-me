@@ -60,8 +60,6 @@ class AchievementController extends ChangeNotifier {
 
   final BasePlugin plugin;
 
-  static const String _storageKey = 'achievement/progress.json';
-
   /// 事件总线信号 → 成就编号（自计数增量，O(1)，删除源数据不影响计数）。
   ///
   /// 「xx_added/created」类事件对应文档「累计创建」口径，天然只增；
@@ -196,7 +194,9 @@ class AchievementController extends ChangeNotifier {
 
   Future<void> _loadFromStorage() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_storageKey);
+      final res = await AboutmeDataService.instance
+          .call('achievement', 'getSnapshot', {});
+      final data = res['success'] == true ? res['data'] : null;
       if (data is Map<String, dynamic>) {
         data.forEach((id, value) {
           if (value is Map && kAchievementById.containsKey(id)) {
@@ -211,10 +211,9 @@ class AchievementController extends ChangeNotifier {
 
   Future<void> _save() async {
     try {
-      await AboutmeDataService.instance.writePath(
-        _storageKey,
-        _progress.map((id, p) => MapEntry(id, p.toJson())),
-      );
+      await AboutmeDataService.instance.call('achievement', 'saveSnapshot', {
+        'snapshot': _progress.map((id, p) => MapEntry(id, p.toJson())),
+      });
     } catch (e) {
       debugPrint('[Achievement] 保存进度失败: $e');
     }

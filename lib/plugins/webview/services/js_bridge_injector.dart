@@ -348,9 +348,15 @@ class JSBridgeInjector {
             return jsonEncode({'error': 'WebView plugin not found'});
           }
 
-          // 构建存储路径: app_data/webview/<key>
-          final storagePath = 'webview/$key';
-          final result = await AboutmeDataService.instance.readPath(storagePath);
+          // webview/{key} KV 读取走统一数据 SDK 命令
+          final res = await AboutmeDataService.instance
+              .call('webview', 'getWebStorage', {'key': key});
+          if (res['success'] != true) {
+            return jsonEncode(
+              {'error': res['error']?.toString() ?? 'Storage read failed'},
+            );
+          }
+          final result = res['data'];
 
           debugPrint(
             '[JSBridge Storage Read] key=$key, hasData=${result != null}, dataType=${result?.runtimeType}, value=$result',
@@ -407,9 +413,14 @@ class JSBridgeInjector {
             return jsonEncode({'error': 'WebView plugin not found'});
           }
 
-          // 构建存储路径: app_data/webview/<key>
-          final storagePath = 'webview/$key';
-          await AboutmeDataService.instance.writePath(storagePath, value);
+          // webview/{key} KV 写入走统一数据 SDK 命令
+          final res = await AboutmeDataService.instance
+              .call('webview', 'setWebStorage', {'key': key, 'value': value});
+          if (res['success'] != true) {
+            return jsonEncode(
+              {'error': res['error']?.toString() ?? 'Storage write failed'},
+            );
+          }
 
           debugPrint(
             '[JSBridge Storage Write] key=$key, valueType=${value?.runtimeType}, success=true',
@@ -453,9 +464,14 @@ class JSBridgeInjector {
             return jsonEncode({'error': 'WebView plugin not found'});
           }
 
-          // 构建存储路径: app_data/webview/<key>
-          final storagePath = 'webview/$key';
-          await AboutmeDataService.instance.deletePath(storagePath);
+          // webview/{key} KV 删除走统一数据 SDK 命令
+          final res = await AboutmeDataService.instance
+              .call('webview', 'deleteWebStorage', {'key': key});
+          if (res['success'] != true) {
+            return jsonEncode(
+              {'error': res['error']?.toString() ?? 'Storage delete failed'},
+            );
+          }
 
           return jsonEncode({'success': true});
         } catch (e) {

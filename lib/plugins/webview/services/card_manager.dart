@@ -10,7 +10,6 @@ import '../models/webview_card.dart';
 /// 卡片/书签管理服务
 class CardManager extends ChangeNotifier {
   final StorageManager _storage;
-  static const String _storageKey = 'webview/cards.json';
 
   List<WebViewCard> _cards = [];
 
@@ -31,8 +30,11 @@ class CardManager extends ChangeNotifier {
   /// 加载卡片数据
   Future<void> _loadCards() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_storageKey);
-      if (data != null && data is List) {
+      final res = await AboutmeDataService.instance.call('webview', 'getCards');
+      final data = res['success'] == true && res['data'] is List
+          ? res['data'] as List
+          : null;
+      if (data != null) {
         _cards = data.map((item) => WebViewCard.fromJson(item as Map<String, dynamic>)).toList();
         notifyListeners();
       }
@@ -44,7 +46,9 @@ class CardManager extends ChangeNotifier {
   /// 保存卡片数据
   Future<void> _saveCards() async {
     try {
-      await AboutmeDataService.instance.writePath(_storageKey, _cards.map((c) => c.toJson()).toList());
+      await AboutmeDataService.instance.call('webview', 'saveCards', {
+        'cards': _cards.map((c) => c.toJson()).toList(),
+      });
     } catch (e) {
       debugPrint('保存卡片数据失败: $e');
     }

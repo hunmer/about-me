@@ -9,10 +9,12 @@ class ServiceProviderController {
     final plugin = PluginManager.instance.getPlugin('openai');
     if (plugin == null) return [];
 
-    final data = await AboutmeDataService.instance.readPath(
-      '${plugin.storageDir}/providers.json',
+    final res = await AboutmeDataService.instance.call(
+      'openai',
+      'getProviders',
     );
-    if (data.isNotEmpty) {
+    final data = res['success'] == true ? res['data'] : null;
+    if (data is Map && data.isNotEmpty) {
       final List<dynamic> jsonList = (data['providers'] ?? []) as List<dynamic>;
       providers =
           jsonList
@@ -41,11 +43,7 @@ class ServiceProviderController {
     }
 
     // Save all providers
-    final List<Map<String, dynamic>> providersJson =
-        providers.map((p) => p.toJson()).toList();
-    await AboutmeDataService.instance.writePath('${plugin.storageDir}/providers.json', {
-      'providers': providersJson,
-    });
+    await _saveProvidersFile();
   }
 
   Future<void> deleteProvider(String providerName) async {
@@ -53,10 +51,14 @@ class ServiceProviderController {
     if (plugin == null) return;
 
     providers.removeWhere((provider) => provider.label == providerName);
-    final List<Map<String, dynamic>> providersJson =
-        providers.map((p) => p.toJson()).toList();
-    await AboutmeDataService.instance.writePath('${plugin.storageDir}/providers.json', {
-      'providers': providersJson,
-    });
+    await _saveProvidersFile();
   }
+
+  /// 全量写 providers.json（整文件替换，保持 {providers:[...]} 结构）
+  Future<void> _saveProvidersFile() =>
+      AboutmeDataService.instance.call('openai', 'saveProviders', {
+        'providers': {
+          'providers': providers.map((p) => p.toJson()).toList(),
+        },
+      });
 }

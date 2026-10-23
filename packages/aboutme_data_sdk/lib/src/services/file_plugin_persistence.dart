@@ -44,6 +44,9 @@ class FilePluginPersistence implements PluginPersistence, BinaryPluginPersistenc
   }
 
   @override
+  Future<bool> exists(String path) async => (await _file(path)).exists();
+
+  @override
   Future<Uint8List?> readBytes(String path, int maxBytes) async {
     final file = await _file(path);
     if (!await file.exists()) return null;

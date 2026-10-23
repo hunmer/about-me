@@ -329,12 +329,18 @@ class ScriptManager extends ChangeNotifier {
     }
   }
 
-  /// 保存脚本配置数据到 configs/scripts_center/{scriptId}_config.json
+  /// 保存脚本配置数据（scripts_center 分区 configs/{scriptId}_config.json）
   Future<void> _saveScriptConfig(String scriptId, Map<String, dynamic> config) async {
     try {
-      final configPath = 'configs/scripts_center/${scriptId}_config.json';
-      await AboutmeDataService.instance.writePath(configPath, config);
-      print('✅ 保存脚本配置成功: $scriptId -> $configPath');
+      final result = await AboutmeDataService.instance.call(
+        'scripts_center',
+        'setConfig',
+        {'scriptId': scriptId, 'config': config},
+      );
+      if (result['success'] != true) {
+        throw Exception(result['error']);
+      }
+      print('✅ 保存脚本配置成功: $scriptId');
     } catch (e) {
       _lastError = '保存脚本配置失败: $e';
       print('❌ $_lastError');
@@ -346,8 +352,12 @@ class ScriptManager extends ChangeNotifier {
   ///
   /// 兼容旧扁平格式（视为单个 default 配置文件）
   Future<ScriptProfiles> getScriptProfiles(String scriptId) async {
-    final configPath = 'configs/scripts_center/${scriptId}_config.json';
-    final data = await AboutmeDataService.instance.readPath(configPath);
+    final result = await AboutmeDataService.instance.call(
+      'scripts_center',
+      'getConfig',
+      {'scriptId': scriptId},
+    );
+    final data = result['success'] == true ? result['data'] : null;
     return ScriptProfiles.fromStorage(data);
   }
 
@@ -369,8 +379,12 @@ class ScriptManager extends ChangeNotifier {
 
     // metadata：脚本元数据 + id + 配置文件（含全部 profile，原样透传）
     final metadata = <String, dynamic>{...script.toJson(), 'id': script.id};
-    final config =
-        await AboutmeDataService.instance.readPath('configs/scripts_center/${script.id}_config.json');
+    final configResult = await AboutmeDataService.instance.call(
+      'scripts_center',
+      'getConfig',
+      {'scriptId': script.id},
+    );
+    final config = configResult['success'] == true ? configResult['data'] : null;
     if (config is Map && config.isNotEmpty) {
       metadata['config'] = config;
     }
@@ -392,16 +406,8 @@ class ScriptManager extends ChangeNotifier {
     }
 
     try {
-      // 从文件删除
+      // 从分区删除（命令内级联删除元数据、代码与运行配置）
       await loader.deleteScript(scriptId);
-
-      // 删除配置文件（如果存在）
-      try {
-        final configPath = 'configs/scripts_center/${scriptId}_config.json';
-        await AboutmeDataService.instance.deletePath(configPath);
-      } catch (_) {
-        // 配置文件不存在，忽略错误
-      }
 
       // 从内存移除
       _scripts.removeWhere((script) => script.id == scriptId);

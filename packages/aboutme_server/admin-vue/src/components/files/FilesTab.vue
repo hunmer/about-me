@@ -5,7 +5,7 @@ import { useFilesStore } from '@/stores/files'
 import { useUIStore } from '@/stores/ui'
 import { useMessage } from '@/composables/useMessage'
 import { useDialog } from '@/composables/useDialog'
-import { syncApi } from '@/api'
+import { syncApi, isUpgradeRequiredError, isMigratedPath, fetchMigratedDomains, UPGRADE_REQUIRED_MESSAGE } from '@/api'
 import { formatSize, formatTime } from '@/utils/format'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -301,27 +301,52 @@ function handleDownload(node: FileNode): void {
   void downloadFile(node.path)
 }
 
+// 已迁移业务域的删除会被服务端 426 拒绝：弹升级引导而不是确认删除
+async function guardMigratedDelete(paths: string[]): Promise<boolean> {
+  const domains = await fetchMigratedDomains()
+  if (paths.some((p) => isMigratedPath(p, domains))) {
+    dialog.warning({
+      title: '已迁移业务域（禁止原始文件操作）',
+      content: UPGRADE_REQUIRED_MESSAGE,
+      type: 'warning',
+      positiveText: '知道了',
+      onPositiveClick: () => {}
+    })
+    return false
+  }
+  return true
+}
+
 // 删除确认
 function handleDelete(node: FileNode): void {
-  dialog.warning({
-    title: '确认删除文件',
-    content: `确定要永久删除 ${node.path} 吗？此操作不可恢复。`,
-    type: 'error',
-    positiveText: '确认永久删除',
-    negativeText: '取消',
-    onPositiveClick: async () => {
-      uiStore.setLoading(true, '删除文件...')
-      try {
-        await filesStore.deleteFile(node.path)
-        await handleRefresh()
-        message.success('文件已删除')
-        uiStore.addActivity('delete', `删除了文件 ${node.path}`)
-      } catch (err) {
-        message.error(err instanceof Error ? err.message : '删除失败')
-      } finally {
-        uiStore.setLoading(false)
+  void guardMigratedDelete([node.path]).then((allowed) => {
+    if (!allowed) return
+    dialog.warning({
+      title: '确认删除文件',
+      content: `确定要永久删除 ${node.path} 吗？此操作不可恢复。`,
+      type: 'error',
+      positiveText: '确认永久删除',
+      negativeText: '取消',
+      onPositiveClick: async () => {
+        uiStore.setLoading(true, '删除文件...')
+        try {
+          await filesStore.deleteFile(node.path)
+          await handleRefresh()
+          message.success('文件已删除')
+          uiStore.addActivity('delete', `删除了文件 ${node.path}`)
+        } catch (err) {
+          message.error(
+            isUpgradeRequiredError(err)
+              ? UPGRADE_REQUIRED_MESSAGE
+              : err instanceof Error
+                ? err.message
+                : '删除失败'
+          )
+        } finally {
+          uiStore.setLoading(false)
+        }
       }
-    }
+    })
   })
 }
 
@@ -399,6 +424,13 @@ async function handleExportFolder(inputNode: FileNode): Promise<void> {
 // 批量删除
 function handleBatchDelete(): void {
   const count = selectedFilePaths.value.length
+  void guardMigratedDelete(selectedFilePaths.value).then((allowed) => {
+    if (!allowed) return
+    batchDeleteConfirm(count)
+  })
+}
+
+function batchDeleteConfirm(count: number): void {
   dialog.warning({
     title: '批量删除确认',
     content: `警告：您正在批量清除选定的 ${count} 个文件 (共 ${formatSize(selectedBytes.value)})，所有操作不可恢复。`,
@@ -421,7 +453,9 @@ function handleBatchDelete(): void {
 
       uiStore.setLoading(false)
 
-      if (successCount > 0 && failCount === 0) {
+      if (failCount > 0 && successCount === 0) {
+        message.error('全部删除失败，可能包含已迁移业务域文件（原始写入被禁止）')
+      } else if (successCount > 0 && failCount === 0) {
         message.success(`成功删除 ${successCount} 个文件`)
       } else if (successCount > 0 && failCount > 0) {
         message.warning(`删除完成：${successCount} 个成功，${failCount} 个失败`)

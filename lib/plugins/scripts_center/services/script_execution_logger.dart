@@ -84,10 +84,9 @@ class RunningScript {
 /// 脚本执行记录器
 ///
 /// 由 ScriptExecutor 在每次执行结束时调用 record，
-/// 内存保存最近 [maxEntries] 条并异步持久化到
-/// configs/scripts_center/execution_log.json
+/// 内存保存最近 [maxEntries] 条并异步经 SDK 命令持久化到
+/// scripts_center 分区 execution_log.json（滚动上限由命令保证）
 class ScriptExecutionLogger extends ChangeNotifier {
-  static const String _logPath = 'configs/scripts_center/execution_log.json';
   static const int maxEntries = 200;
 
   final StorageManager storage;
@@ -169,7 +168,7 @@ class ScriptExecutionLogger extends ChangeNotifier {
     return text;
   }
 
-  /// 记录一次执行（异步持久化，不阻塞调用方）
+  /// 记录一次执行（异步持久化，不阻塞调用方；滚动上限由 SDK 命令保证）
   void record({
     required String scriptId,
     required String scriptName,
@@ -206,16 +205,25 @@ class ScriptExecutionLogger extends ChangeNotifier {
     _entries.clear();
     notifyListeners();
     try {
-      await AboutmeDataService.instance.deletePath(_logPath);
+      final r = await AboutmeDataService.instance.call(
+        'scripts_center',
+        'clearExecLog',
+        const {},
+      );
+      if (r['success'] != true) throw Exception(r['error']);
     } catch (_) {}
   }
 
   Future<void> _load() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_logPath);
-      if (data is List) {
+      final r = await AboutmeDataService.instance.call(
+        'scripts_center',
+        'getExecLog',
+        const {},
+      );
+      if (r['success'] == true && r['data'] is List) {
         _entries.addAll(
-          data
+          (r['data'] as List)
               .whereType<Map>()
               .map(
                 (e) =>
@@ -233,10 +241,13 @@ class ScriptExecutionLogger extends ChangeNotifier {
 
   Future<void> _save() async {
     try {
-      await AboutmeDataService.instance.writePath(
-        _logPath,
-        _entries.map((e) => e.toJson()).toList(),
+      if (_entries.isEmpty) return;
+      final r = await AboutmeDataService.instance.call(
+        'scripts_center',
+        'recordExecution',
+        {'entry': _entries.first.toJson()},
       );
+      if (r['success'] != true) throw Exception(r['error']);
     } catch (e) {
       debugPrint('保存脚本执行记录失败: $e');
     }

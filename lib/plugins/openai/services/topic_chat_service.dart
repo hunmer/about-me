@@ -12,7 +12,6 @@ import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/models/topic_collection.dart';
-import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 
@@ -41,12 +40,6 @@ class TopicChatService {
   /// 内置合集目录的 assets 目录
   static const String assetDir = 'assets/openai/topic_collections';
 
-  /// 数据目录中合集目录的存储前缀（`openai/topic_collections/<id>.json`）
-  String get _storagePrefix =>
-      '${OpenAIPlugin.instance.storageDir}/topic_collections';
-
-  String _collectionPath(String id) => '$_storagePrefix/$id.json';
-
   List<TopicCollection>? _cachedCollections;
 
   /// 已加载的合集（数据目录为准；未加载时为空，先 [loadCollections]）
@@ -62,9 +55,12 @@ class TopicChatService {
     final stored = <TopicCollection>[];
     for (final id in syncedIds) {
       try {
-        final data = await AboutmeDataService.instance.readPath(
-          _collectionPath(id),
+        final res = await AboutmeDataService.instance.call(
+          'openai',
+          'getTopicCollection',
+          {'id': id},
         );
+        final data = res['success'] == true ? res['data'] : null;
         if (data is Map<String, dynamic>) {
           stored.add(TopicCollection.fromJson(data));
         }
@@ -102,17 +98,21 @@ class TopicChatService {
         final incoming = TopicCollection.fromJson(json);
         ids.add(incoming.id);
 
-        final existing = await AboutmeDataService.instance.readPath(
-          _collectionPath(incoming.id),
+        final res = await AboutmeDataService.instance.call(
+          'openai',
+          'getTopicCollection',
+          {'id': incoming.id},
         );
+        final existing = res['success'] == true ? res['data'] : null;
         final existingVersion =
             existing is Map<String, dynamic>
                 ? (existing['version'] as num?)?.toInt() ?? -1
                 : -1;
         if (incoming.version > existingVersion) {
-          await AboutmeDataService.instance.writePath(
-            _collectionPath(incoming.id),
-            incoming.toJson(),
+          await AboutmeDataService.instance.call(
+            'openai',
+            'saveTopicCollection',
+            {'id': incoming.id, 'collection': incoming.toJson()},
           );
           debugPrint(
             '[TopicChat] 合集目录更新: ${incoming.id} '
@@ -177,8 +177,8 @@ class TopicChatService {
   /// 编辑不生效，启动后清掉（deleteAgent 拦截 builtin_ 前缀，
   /// 这里直接清洗存储文件与遗留文件）
   Future<void> _cleanupLegacyAgents() async {
-    final path = '${OpenAIPlugin.instance.storageDir}/agents.json';
-    final data = await AboutmeDataService.instance.readPath(path);
+    final res = await AboutmeDataService.instance.call('openai', 'getAgents');
+    final data = res['success'] == true ? res['data'] : null;
     if (data is Map<String, dynamic>) {
       final list = data['agents'];
       if (list is List && list.isNotEmpty) {
@@ -188,15 +188,17 @@ class TopicChatService {
               return id is! String || !id.startsWith('builtin_topic_');
             }).toList();
         if (filtered.length != list.length) {
-          await AboutmeDataService.instance.writePath(path, {
-            'agents': filtered,
+          await AboutmeDataService.instance.call('openai', 'saveAgents', {
+            'agents': {'agents': filtered},
           });
         }
       }
     }
+    // 旧版遗留 topic_collections.json（合集 prompt 覆盖存储）启动清理
     try {
-      await AboutmeDataService.instance.deletePath(
-        '${OpenAIPlugin.instance.storageDir}/topic_collections.json',
+      await AboutmeDataService.instance.call(
+        'openai',
+        'deleteLegacyTopicCollections',
       );
     } catch (_) {}
   }

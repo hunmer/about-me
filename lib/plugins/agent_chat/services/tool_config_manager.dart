@@ -17,9 +17,6 @@ class ToolConfigManager {
   static final ToolConfigManager instance = ToolConfigManager._();
   ToolConfigManager._();
 
-  // 工具配置在存储中的路径前缀
-  static const String _toolsPrefix = 'agent_chat/tools';
-
   // 内存缓存
   List<List<String>> _toolIndex = [];
   final Map<String, PluginToolSet> _pluginTools = {};
@@ -98,9 +95,12 @@ class ToolConfigManager {
     if (_initialized) return;
     try {
       // 以索引文件是否存在判断是否已初始化过（与旧版本地文件位置兼容）
-      if (!await AboutmeDataService.instance.existsPath(
-        '$_toolsPrefix/index.json',
-      )) {
+      final indexRes = await AboutmeDataService.instance.call(
+        'agent_chat',
+        'getToolIndexFile',
+      );
+      final hasIndex = indexRes['success'] == true && indexRes['data'] != null;
+      if (!hasIndex) {
         await _copyAssetsToStorage();
       } else {
         // 增量同步：新版本新增的工具描述文件补拷给老安装（不覆盖已有文件，
@@ -140,13 +140,20 @@ class ToolConfigManager {
   Future<void> _syncMissingToolFiles() async {
     var copied = false;
     for (final pluginId in _pluginIds) {
-      final path = '$_toolsPrefix/$pluginId.json';
-      if (await AboutmeDataService.instance.existsPath(path)) continue;
+      final res = await AboutmeDataService.instance.call(
+        'agent_chat',
+        'getToolPlugin',
+        {'pluginId': pluginId},
+      );
+      if (res['success'] == true && res['data'] != null) continue;
       try {
         final configData = await rootBundle.loadString(
           'lib/plugins/agent_chat/tools/$pluginId.json',
         );
-        await AboutmeDataService.instance.writePath(path, configData);
+        await AboutmeDataService.instance.call('agent_chat', 'saveToolPlugin', {
+          'pluginId': pluginId,
+          'tools': jsonDecode(configData),
+        });
         copied = true;
         print('✅ 增量补拷 $pluginId.json');
       } catch (_) {
@@ -160,7 +167,6 @@ class ToolConfigManager {
 
   Future<void> _syncMissingMomentTools() async {
     const pluginId = 'moments';
-    final path = '$_toolsPrefix/$pluginId.json';
     try {
       final bundledJson = await rootBundle.loadString(
         'lib/plugins/agent_chat/tools/$pluginId.json',
@@ -168,7 +174,7 @@ class ToolConfigManager {
       final bundled = jsonDecode(bundledJson);
       if (bundled is! Map<String, dynamic>) return;
 
-      final storedData = await AboutmeDataService.instance.readPath(path, null);
+      final storedData = await _readToolPlugin(pluginId);
       final stored = storedData is Map<String, dynamic>
           ? Map<String, dynamic>.from(storedData)
           : <String, dynamic>{};
@@ -180,10 +186,10 @@ class ToolConfigManager {
       }
       if (!changed) return;
 
-      await AboutmeDataService.instance.writePath(
-        path,
-        const JsonEncoder.withIndent('  ').convert(stored),
-      );
+      await AboutmeDataService.instance.call('agent_chat', 'saveToolPlugin', {
+        'pluginId': pluginId,
+        'tools': stored,
+      });
       await _regenerateToolIndex();
       print('✅ 增量补拷 moments 缺失工具');
     } catch (e) {
@@ -192,7 +198,6 @@ class ToolConfigManager {
   }
 
   Future<void> _syncMissingPluginTools(String pluginId) async {
-    final path = '$_toolsPrefix/$pluginId.json';
     try {
       final bundledJson = await rootBundle.loadString(
         'lib/plugins/agent_chat/tools/$pluginId.json',
@@ -200,7 +205,7 @@ class ToolConfigManager {
       final bundled = jsonDecode(bundledJson);
       if (bundled is! Map<String, dynamic>) return;
 
-      final storedData = await AboutmeDataService.instance.readPath(path, null);
+      final storedData = await _readToolPlugin(pluginId);
       final stored = storedData is Map<String, dynamic>
           ? Map<String, dynamic>.from(storedData)
           : <String, dynamic>{};
@@ -265,10 +270,10 @@ class ToolConfigManager {
       }
       if (!changed) return;
 
-      await AboutmeDataService.instance.writePath(
-        path,
-        const JsonEncoder.withIndent('  ').convert(stored),
-      );
+      await AboutmeDataService.instance.call('agent_chat', 'saveToolPlugin', {
+        'pluginId': pluginId,
+        'tools': stored,
+      });
       await _regenerateToolIndex();
       print('✅ 增量同步 $pluginId 缺失工具');
     } catch (e) {
@@ -300,8 +305,7 @@ class ToolConfigManager {
   Future<void> _normalizeQueryTools() async {
     var changed = false;
     for (final pluginId in _queryPlugins) {
-      final path = '$_toolsPrefix/$pluginId.json';
-      final data = await AboutmeDataService.instance.readPath(path, null);
+      final data = await _readToolPlugin(pluginId);
       if (data is! Map<String, dynamic>) continue;
       final normalized = Map<String, dynamic>.from(data);
       final before = normalized.length;
@@ -338,9 +342,10 @@ class ToolConfigManager {
         }
       }
       if (pluginChanged) {
-        await AboutmeDataService.instance.writePath(
-          path,
-          const JsonEncoder.withIndent('  ').convert(normalized),
+        await AboutmeDataService.instance.call(
+          'agent_chat',
+          'saveToolPlugin',
+          {'pluginId': pluginId, 'tools': normalized},
         );
         changed = true;
       }
@@ -411,9 +416,8 @@ class ToolConfigManager {
   /// 保留用户对描述的自定义。缺失该条目时按捆绑版本补齐。
   Future<void> _syncTimerStatusOptionalArg() async {
     const pluginId = 'timer';
-    final path = '$_toolsPrefix/$pluginId.json';
     try {
-      final storedData = await AboutmeDataService.instance.readPath(path, null);
+      final storedData = await _readToolPlugin(pluginId);
       if (storedData is! Map<String, dynamic>) return; // 首装走全量拷贝
       final stored = Map<String, dynamic>.from(storedData);
 
@@ -438,10 +442,10 @@ class ToolConfigManager {
       if (bundledEntry is! Map<String, dynamic>) return;
 
       stored['timer_getTimerStatus'] = bundledEntry;
-      await AboutmeDataService.instance.writePath(
-        path,
-        const JsonEncoder.withIndent('  ').convert(stored),
-      );
+      await AboutmeDataService.instance.call('agent_chat', 'saveToolPlugin', {
+        'pluginId': pluginId,
+        'tools': stored,
+      });
       await _regenerateToolIndex();
       print('✅ 同步 timer.getTimerStatus 可选参数签名');
     } catch (e) {
@@ -459,10 +463,10 @@ class ToolConfigManager {
         final configData = await rootBundle.loadString(
           'lib/plugins/agent_chat/tools/$pluginId.json',
         );
-        await AboutmeDataService.instance.writePath(
-          '$_toolsPrefix/$pluginId.json',
-          configData,
-        );
+        await AboutmeDataService.instance.call('agent_chat', 'saveToolPlugin', {
+          'pluginId': pluginId,
+          'tools': jsonDecode(configData),
+        });
         print('✅ 复制 $pluginId.json');
       } catch (e) {
         print('⚠️ 复制 $pluginId.json 失败: $e');
@@ -484,10 +488,7 @@ class ToolConfigManager {
     // 遍历所有插件配置文件
     for (final pluginId in _pluginIds) {
       try {
-        final jsonData = await AboutmeDataService.instance.readPath(
-          '$_toolsPrefix/$pluginId.json',
-          null,
-        );
+        final jsonData = await _readToolPlugin(pluginId);
         if (jsonData is! Map<String, dynamic>) continue;
 
         // 为每个工具创建索引条目
@@ -527,11 +528,9 @@ class ToolConfigManager {
 
     // 保存新的索引文件
     try {
-      final content = const JsonEncoder.withIndent('  ').convert(newIndex);
-      await AboutmeDataService.instance.writePath(
-        '$_toolsPrefix/index.json',
-        content,
-      );
+      await AboutmeDataService.instance.call('agent_chat', 'saveToolIndexFile', {
+        'index': newIndex,
+      });
       print('✅ 工具索引已生成 (共 ${newIndex.length} 个工具)');
       _invalidateNativeToolCache();
     } catch (e) {
@@ -548,13 +547,24 @@ class ToolConfigManager {
     }
   }
 
+  /// 读取插件工具配置（call 失败或文件不存在时返回 null）
+  Future<dynamic> _readToolPlugin(String pluginId) async {
+    final res = await AboutmeDataService.instance.call(
+      'agent_chat',
+      'getToolPlugin',
+      {'pluginId': pluginId},
+    );
+    return (res['success'] == true) ? res['data'] : null;
+  }
+
   /// 从存储加载工具索引
   Future<void> _loadToolIndexFromFile() async {
     try {
-      final jsonData = await AboutmeDataService.instance.readPath(
-        '$_toolsPrefix/index.json',
-        null,
+      final res = await AboutmeDataService.instance.call(
+        'agent_chat',
+        'getToolIndexFile',
       );
+      final jsonData = (res['success'] == true) ? res['data'] : null;
 
       if (jsonData is List && jsonData.isNotEmpty) {
         _toolIndex = jsonData
@@ -576,10 +586,7 @@ class ToolConfigManager {
   /// 加载插件配置
   Future<void> _loadPluginConfig(String pluginId) async {
     try {
-      final jsonData = await AboutmeDataService.instance.readPath(
-        '$_toolsPrefix/$pluginId.json',
-        null,
-      );
+      final jsonData = await _readToolPlugin(pluginId);
 
       if (jsonData is Map<String, dynamic>) {
         _pluginTools[pluginId] = PluginToolSet.fromJson(pluginId, jsonData);
@@ -601,11 +608,10 @@ class ToolConfigManager {
       }
 
       final jsonData = toolSet.toJson();
-      final content = const JsonEncoder.withIndent('  ').convert(jsonData);
-      await AboutmeDataService.instance.writePath(
-        '$_toolsPrefix/$pluginId.json',
-        content,
-      );
+      await AboutmeDataService.instance.call('agent_chat', 'saveToolPlugin', {
+        'pluginId': pluginId,
+        'tools': jsonData,
+      });
       _invalidateNativeToolCache();
     } catch (e) {
       print('❌ 保存 $pluginId 配置失败: $e');
@@ -616,10 +622,10 @@ class ToolConfigManager {
   /// 保存工具索引到存储
   Future<void> _saveToolIndex() async {
     try {
-      final content = const JsonEncoder.withIndent('  ').convert(_toolIndex);
-      await AboutmeDataService.instance.writePath(
-        '$_toolsPrefix/index.json',
-        content,
+      await AboutmeDataService.instance.call(
+        'agent_chat',
+        'saveToolIndexFile',
+        {'index': _toolIndex},
       );
     } catch (e) {
       print('❌ 保存工具索引失败: $e');
@@ -896,7 +902,7 @@ class ToolConfigManager {
   Future<void> resetToDefault() async {
     try {
       // 清空存储中的现有工具配置
-      await AboutmeDataService.instance.clearPathPrefix(_toolsPrefix);
+      await AboutmeDataService.instance.call('agent_chat', 'clearToolPlugins');
 
       // 重新从 assets 复制
       await _copyAssetsToStorage();

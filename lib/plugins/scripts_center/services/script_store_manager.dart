@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
-import 'package:path/path.dart' as path;
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_store_models.dart';
@@ -21,11 +20,33 @@ class ScriptStoreManager extends ChangeNotifier {
   final ScriptLoader _scriptLoader;
   final http.Client _httpClient;
 
-  // 存储键
-  static const String _sourcesKey =
-      'configs/scripts_center_script_sources.json';
-  static const String _installedKey =
-      'configs/scripts_center_installed_scripts';
+  // 存储命令（scripts_center 分区 store 组）
+  Future<List<dynamic>> _readStoreList(String action) async {
+    final result = await AboutmeDataService.instance.call(
+      'scripts_center',
+      action,
+      const {},
+    );
+    if (result['success'] != true) {
+      throw Exception(result['error']);
+    }
+    return result['data'] as List? ?? [];
+  }
+
+  Future<void> _writeStoreList(
+    String action,
+    String listKey,
+    List<dynamic> value,
+  ) async {
+    final result = await AboutmeDataService.instance.call(
+      'scripts_center',
+      action,
+      {listKey: value},
+    );
+    if (result['success'] != true) {
+      throw Exception(result['error']);
+    }
+  }
 
   // 状态
   List<ScriptStoreSource> _sources = [];
@@ -303,14 +324,8 @@ class ScriptStoreManager extends ChangeNotifier {
     if (installed == null) return;
 
     try {
-      // 获取脚本目录
-      final scriptsPath = await _scriptLoader.getScriptsDirectory();
-      final scriptDir = Directory(path.join(scriptsPath, scriptId));
-
-      // 删除脚本目录
-      if (await scriptDir.exists()) {
-        await scriptDir.delete(recursive: true);
-      }
+      // 删除脚本（SDK 命令级联删除元数据、代码与运行配置）
+      await _scriptLoader.deleteScript(scriptId);
 
       // 更新状态
       _installedScripts.remove(scriptId);
@@ -337,16 +352,12 @@ class ScriptStoreManager extends ChangeNotifier {
   /// 加载源配置
   Future<void> _loadSources() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_sourcesKey);
-      if (data != null && data is List) {
-        _sources =
-            data
-                .map(
-                  (item) =>
-                      ScriptStoreSource.fromJson(item as Map<String, dynamic>),
-                )
-                .toList();
-      }
+      final data = await _readStoreList('getSources');
+      _sources = data
+          .map(
+            (item) => ScriptStoreSource.fromJson(item as Map<String, dynamic>),
+          )
+          .toList();
     } catch (e) {
       debugPrint('Failed to load sources: $e');
     }
@@ -355,8 +366,11 @@ class ScriptStoreManager extends ChangeNotifier {
   /// 保存源配置
   Future<void> _saveSources() async {
     try {
-      final jsonList = _sources.map((s) => s.toJson()).toList();
-      await AboutmeDataService.instance.writePath(_sourcesKey, jsonList);
+      await _writeStoreList(
+        'saveSources',
+        'sources',
+        _sources.map((s) => s.toJson()).toList(),
+      );
     } catch (e) {
       debugPrint('Failed to save sources: $e');
     }
@@ -365,21 +379,19 @@ class ScriptStoreManager extends ChangeNotifier {
   /// 加载已安装脚本
   Future<void> _loadInstalledScripts() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_installedKey);
-      if (data != null && data is List) {
-        _installedScripts = {};
-        for (var item in data) {
-          final installed = InstalledScript.fromJson(
-            item as Map<String, dynamic>,
-          );
-          // 验证脚本是否真实存在
-          final scriptsPath = await _scriptLoader.getScriptsDirectory();
-          final scriptDir = Directory(
-            path.join(scriptsPath, installed.scriptId),
-          );
-          if (await scriptDir.exists()) {
-            _installedScripts[installed.scriptId] = installed;
-          }
+      final data = await _readStoreList('getInstalled');
+      _installedScripts = {};
+      for (var item in data) {
+        final installed = InstalledScript.fromJson(
+          item as Map<String, dynamic>,
+        );
+        // 验证脚本是否真实存在
+        final exists = await _scriptLoader.call(
+          'existsScript',
+          {'id': installed.scriptId},
+        );
+        if (exists == true) {
+          _installedScripts[installed.scriptId] = installed;
         }
       }
     } catch (e) {
@@ -391,8 +403,11 @@ class ScriptStoreManager extends ChangeNotifier {
   /// 保存已安装脚本
   Future<void> _saveInstalledScripts() async {
     try {
-      final jsonList = _installedScripts.values.map((s) => s.toJson()).toList();
-      await AboutmeDataService.instance.writePath(_installedKey, jsonList);
+      await _writeStoreList(
+        'saveInstalled',
+        'installed',
+        _installedScripts.values.map((s) => s.toJson()).toList(),
+      );
     } catch (e) {
       debugPrint('Failed to save installed scripts: $e');
     }

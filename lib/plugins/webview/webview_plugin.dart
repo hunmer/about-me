@@ -211,11 +211,13 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   /// 加载设置
   Future<void> _loadSettings() async {
     try {
-      final data = await AboutmeDataService.instance.readPath('webview/settings.json');
+      final res = await AboutmeDataService.instance
+          .call('webview', 'getSettings');
+      final data = res['success'] == true && res['data'] is Map
+          ? res['data'] as Map<String, dynamic>
+          : null;
       if (data != null) {
-        webviewSettings = WebViewSettings.fromJson(
-          data as Map<String, dynamic>,
-        );
+        webviewSettings = WebViewSettings.fromJson(data);
       } else {
         webviewSettings = WebViewSettings();
       }
@@ -226,7 +228,11 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
 
   /// 保存设置
   Future<void> saveWebviewSettings() async {
-    await AboutmeDataService.instance.writePath('webview/settings.json', webviewSettings.toJson());
+    await AboutmeDataService.instance.call(
+      'webview',
+      'updateSettings',
+      webviewSettings.toJson(),
+    );
 
     // 重新应用 proxy 配置
     if (proxyController.isSupported) {
@@ -239,8 +245,11 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   /// 恢复标签页
   Future<void> _restoreTabs() async {
     try {
-      final data = await AboutmeDataService.instance.readPath('webview/tabs.json');
-      if (data != null && data is List) {
+      final res = await AboutmeDataService.instance.call('webview', 'getTabs');
+      final data = res['success'] == true && res['data'] is List
+          ? res['data'] as List
+          : null;
+      if (data != null) {
         await tabManager.restoreFromJson(data);
       }
     } catch (e) {
@@ -251,7 +260,11 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   /// 保存标签页状态
   Future<void> saveTabs() async {
     final tabsJson = tabManager.toJson();
-    await AboutmeDataService.instance.writePath('webview/tabs.json', tabsJson);
+    await AboutmeDataService.instance.call(
+      'webview',
+      'saveTabs',
+      {'tabs': tabsJson},
+    );
   }
 
   // ==================== 统计方法 ====================

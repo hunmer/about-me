@@ -12,7 +12,7 @@ import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
 import 'package:aboutme/plugins/toolbox/services/image_search_service.dart';
 import 'package:aboutme/plugins/toolbox/widgets/toolbox_config_sheet.dart';
 import 'package:aboutme/widgets/gallery_viewer.dart';
-import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/core/data/sdk_media_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
@@ -688,11 +688,13 @@ class _ImageActionsSheet extends StatelessWidget {
         if (resp.statusCode != 200 || resp.bodyBytes.isEmpty) {
           throw Exception('HTTP ${resp.statusCode}');
         }
-        final rel = await ImageUtils.saveBytesToAppDirectory(
-          resp.bodyBytes,
-          'toolbox/image_search',
-        );
-        Toast.success('${'toolbox_savedTo'.tr} $rel');
+        // 保存为 SDK 资源（文件名取 URL 尾段，无扩展名时按时间戳命名）
+        var name = downloadUrl.split('/').last.split('?').first;
+        if (!name.contains('.')) {
+          name = 'image_search_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        }
+        final asset = await SdkMediaService.uploadBytes(resp.bodyBytes, name);
+        Toast.success('${'toolbox_savedTo'.tr} ${asset.reference}');
       } finally {
         client.close();
       }

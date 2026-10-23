@@ -17,8 +17,14 @@ import 'handlers/habits.dart';
 import 'handlers/media_log.dart';
 import 'handlers/notes.dart';
 import 'handlers/nodes.dart';
+import 'handlers/openai.dart';
 import 'handlers/store.dart';
+import 'handlers/scripts_center.dart';
+import 'handlers/snapshot_domain.dart';
+import 'handlers/system.dart';
 import 'handlers/todo.dart';
+import 'handlers/toolbox.dart';import 'handlers/webview.dart';
+
 import 'handlers/tracker.dart';
 import 'types.dart';
 
@@ -66,6 +72,49 @@ PluginHandlers createHandlersForPlugin(PluginData data, String pluginId) {
       return createStoreHandlers(data);
     case 'media_log':
       return createMediaLogHandlers(data);
+    case 'toolbox':
+      return createToolboxHandlers(data);
+    case 'system':
+      return createSystemHandlers(data);
+    case 'webview':
+      return createWebviewHandlers(data);
+    case 'openai':
+      return createOpenaiHandlers(data);
+    case 'scripts_center':
+      return createScriptsCenterHandlers(data);
+    case 'timer':
+      return createSnapshotDomainHandlers(
+        data,
+        pluginId: 'timer',
+        fileName: 'tasks.json',
+        listKeys: {'tasks'},
+      );
+    case 'achievement':
+      return createSnapshotDomainHandlers(
+        data,
+        pluginId: 'achievement',
+        fileName: 'progress.json',
+      );
+    case 'reminder':
+      return createSnapshotDomainHandlers(
+        data,
+        pluginId: 'reminder',
+        fileName: 'reminders.json',
+        listKeys: {'reminders'},
+      );
+    case 'live2d':
+      return createSnapshotDomainHandlers(
+        data,
+        pluginId: 'live2d',
+        fileName: 'archives.json',
+        listKeys: {'archives'},
+      );
+    case 'tts':
+      return createSnapshotDomainHandlers(
+        data,
+        pluginId: 'tts',
+        fileName: 'services.json',
+      );
     default:
       return createCrudHandlers(data, pluginId, 'items');
   }

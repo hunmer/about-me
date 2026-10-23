@@ -7,24 +7,26 @@ class ProviderController {
   // 使用OpenAI插件的storage
   final storage = OpenAIPlugin().storage;
   final String storageKey = 'providers.json';
-  final String storagePath;
 
-  ProviderController()
-    : storagePath = '${OpenAIPlugin().storageDir}/providers.json';
+  ProviderController();
 
   // 获取所有服务商
   Future<List<ServiceProvider>> getProviders() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(storagePath);
+      final res = await AboutmeDataService.instance.call(
+        'openai',
+        'getProviders',
+      );
+      final data = res['success'] == true ? res['data'] : null;
 
-      if (data.isEmpty) {
+      if (data is! Map || data.isEmpty) {
         // 首次使用，加载默认服务商并保存
         final defaultProviders = getDefaultProviders();
         await saveProviders(defaultProviders);
         return defaultProviders;
       }
 
-      final List<dynamic> jsonList = data['providers'] as List<dynamic>;
+      final List<dynamic> jsonList = (data['providers'] ?? []) as List<dynamic>;
       final providers = jsonList
           .map((json) => ServiceProvider.fromJson(json as Map<String, dynamic>))
           .toList();
@@ -57,8 +59,10 @@ class ProviderController {
   // 保存所有服务商
   Future<void> saveProviders(List<ServiceProvider> providers) async {
     try {
-      await AboutmeDataService.instance.writePath(storagePath, {
-        'providers': providers.map((p) => p.toJson()).toList(),
+      await AboutmeDataService.instance.call('openai', 'saveProviders', {
+        'providers': {
+          'providers': providers.map((p) => p.toJson()).toList(),
+        },
       });
     } catch (e) {
       debugPrint('Error saving providers: $e');

@@ -21,6 +21,9 @@ abstract class PluginPersistence {
 
 abstract class BinaryPluginPersistence {
   Future<Uint8List?> readBytes(String path, int maxBytes);
+
+  /// 原始字节存在性（不经 JSON 解码，二进制旧媒体文件也可判断）。
+  Future<bool> exists(String path);
 }
 
 /// 浏览器 IndexedDB 等宿主存储接入共享执行器，不依赖 dart:io。
@@ -52,6 +55,9 @@ class StoragePluginPersistence implements PluginPersistence, BinaryPluginPersist
     }
     return bytes;
   }
+
+  @override
+  Future<bool> exists(String path) => storage.hasData(path);
 }
 
 abstract class TransactionalPluginData implements PluginData {
@@ -235,7 +241,11 @@ class PersistentPluginBackend implements TransactionalPluginData {
       await prepareDiaryMigration(transaction);
     }
     final result = await operation(transaction);
-    if (transaction.fault != null) throw transaction.fault!;
+    // 读异常只有被 handler 吞掉才会留痕（未被吞掉的已在 operation 抛出）。
+    // 纯查询无写入时放行（如 listScripts 跳过损坏条目）；存在写入则保持
+    // 原子放弃，避免基于失败读取的部分状态被提交。
+    if (transaction.fault != null && transaction.writes.isNotEmpty)
+      throw transaction.fault!;
     if (result['success'] != true) return {...result, 'version': version};
     if (isQuery) {
       if (transaction.writes.isNotEmpty) throw StateError('查询不得写入持久化');
@@ -416,7 +426,15 @@ class _TransactionData implements PluginData, LegacyAssetData {
         if (pending) writes[checked] = null;
         return pending;
       }
-      final exists = await backend._json(checked) != null;
+      // 旧文件可能是二进制媒体（PNG 等），不能经 JSON 解码判断存在性。
+      // 注：is 到非子类型不会做类型提升（Dart 3.13），需显式 as 收窄。
+      final legacy = backend.persistence;
+      final bool exists;
+      if (legacy is BinaryPluginPersistence) {
+        exists = await (legacy as BinaryPluginPersistence).exists(checked);
+      } else {
+        exists = await backend._json(checked) != null;
+      }
       if (exists) writes[checked] = null;
       return exists;
     } on StorageException catch (error) {

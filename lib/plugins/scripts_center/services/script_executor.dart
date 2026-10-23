@@ -168,8 +168,12 @@ class ScriptExecutor {
         return {'error': 'scriptId 参数缺失'};
       }
 
-      final configPath = 'configs/scripts_center/${scriptId}_config.json';
-      final data = await AboutmeDataService.instance.readPath(configPath);
+      final result = await AboutmeDataService.instance.call(
+        'scripts_center',
+        'getConfig',
+        {'scriptId': scriptId},
+      );
+      final data = result['success'] == true ? result['data'] : null;
 
       // 默认配置
       final defaultConfig = {
@@ -234,16 +238,28 @@ class ScriptExecutor {
         return {'error': 'config 参数缺失'};
       }
 
-      final configPath = 'configs/scripts_center/${scriptId}_config.json';
+      Future<dynamic> exec(String action, Map<String, dynamic> params) async {
+        final r = await AboutmeDataService.instance.call(
+          'scripts_center',
+          action,
+          params,
+        );
+        if (r['success'] != true) throw Exception(r['error']);
+        return r['data'];
+      }
 
-      // 确保目录存在
-      await storage.createDirectory('configs/scripts_center');
+      Future<dynamic> readConfig() async {
+        final r = await AboutmeDataService.instance.call(
+          'scripts_center',
+          'getConfig',
+          {'scriptId': scriptId},
+        );
+        return r['success'] == true ? r['data'] : null;
+      }
 
       if (profileId != null && profileId.isNotEmpty) {
         // 只更新指定配置文件的值，保留其他配置文件
-        final existing = ScriptProfiles.fromStorage(
-          await AboutmeDataService.instance.readPath(configPath),
-        );
+        final existing = ScriptProfiles.fromStorage(await readConfig());
         final index = existing.profiles.indexWhere((p) => p.id == profileId);
         final updated = ScriptProfile(
           id: profileId,
@@ -255,10 +271,13 @@ class ScriptExecutor {
         } else {
           existing.profiles.add(updated);
         }
-        await AboutmeDataService.instance.writePath(configPath, existing.toStorage());
+        await exec('setConfig', {
+          'scriptId': scriptId,
+          'config': existing.toStorage(),
+        });
       } else {
         // 未指定配置文件：整体覆盖（兼容旧脚本行为）
-        await AboutmeDataService.instance.writePath(configPath, config);
+        await exec('setConfig', {'scriptId': scriptId, 'config': config});
       }
 
       return {'success': true};

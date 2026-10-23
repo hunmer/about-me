@@ -439,5 +439,91 @@ PluginHandlers createActivityHandlers(PluginData data) {
         return PluginResult.failure('更新最近心情失败: $e');
       }
     },
+
+    // 读取通知栏设置（文件缺失返回空对象，字段缺省由客户端兜底）
+    'getNotificationSettings': (data, params) async {
+      try {
+        final raw = await data.read('activity', 'notification_settings.json');
+        if (raw == null) return PluginResult.success(<String, dynamic>{});
+        if (raw is! Map) {
+          return const PluginResult.failure(
+            '通知设置损坏',
+            'CORRUPT_DATA',
+          );
+        }
+        return PluginResult.success(Map<String, dynamic>.from(raw));
+      } catch (e) {
+        return PluginResult.failure('读取通知设置失败: $e');
+      }
+    },
+
+    // 合并更新通知栏设置
+    'updateNotificationSettings': (data, params) async {
+      try {
+        final raw = await data.read('activity', 'notification_settings.json');
+        if (raw != null && raw is! Map) {
+          return const PluginResult.failure(
+            '通知设置损坏',
+            'CORRUPT_DATA',
+          );
+        }
+        final settings = raw is Map
+            ? Map<String, dynamic>.from(raw)
+            : <String, dynamic>{};
+        settings.addAll(domainPatch(params));
+        await data.write('activity', 'notification_settings.json', settings);
+        return PluginResult.success(settings);
+      } catch (e) {
+        return PluginResult.failure('更新通知设置失败: $e');
+      }
+    },
+
+    // 读取 TTS 播报设置（文件缺失返回空对象，客户端按默认值补齐）
+    'getTtsSettings': (data, params) async {
+      try {
+        final raw = await data.read(
+          'activity',
+          'tts_announcement_settings.json',
+        );
+        if (raw == null) return PluginResult.success(<String, dynamic>{});
+        if (raw is! Map) {
+          return const PluginResult.failure(
+            'TTS 设置损坏',
+            'CORRUPT_DATA',
+          );
+        }
+        return PluginResult.success(Map<String, dynamic>.from(raw));
+      } catch (e) {
+        return PluginResult.failure('读取 TTS 设置失败: $e');
+      }
+    },
+
+    // 合并更新 TTS 播报设置
+    'updateTtsSettings': (data, params) async {
+      try {
+        final raw = await data.read(
+          'activity',
+          'tts_announcement_settings.json',
+        );
+        if (raw != null && raw is! Map) {
+          return const PluginResult.failure(
+            'TTS 设置损坏',
+            'CORRUPT_DATA',
+          );
+        }
+        final settings = raw is Map
+            ? Map<String, dynamic>.from(raw)
+            : <String, dynamic>{};
+        settings.addAll(domainPatch(params));
+        await data.write(
+          'activity',
+          'tts_announcement_settings.json',
+          settings,
+        );
+        return PluginResult.success(settings);
+      } catch (e) {
+        return PluginResult.failure('更新 TTS 设置失败: $e');
+      }
+    },
   };
 }

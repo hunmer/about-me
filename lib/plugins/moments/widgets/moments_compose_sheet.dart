@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 
+import 'package:aboutme/core/data/sdk_media_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/moments/services/image_gen_service.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
-import 'package:aboutme/utils/image_utils.dart';
 
 import 'moments_shared.dart';
 
@@ -63,17 +63,16 @@ class _MomentsComposeSheetState extends State<MomentsComposeSheet> {
     }
     setState(() => _submitting = true);
     try {
-      // 挑选的图片归档到朋友圈图片目录，转相对路径存储
+      // 挑选的图片上传为 SDK 资源，存储资源引用
       final relPaths = <String>[];
       for (final file in _images) {
-        final ext = p.extension(file.path);
-        relPaths.add(
-          await ImageUtils.saveBytesToAppDirectory(
-            await file.readAsBytes(),
-            MomentsService.imagesDir,
-            extension: ext.isEmpty ? '.png' : ext,
-          ),
+        var name = p.basename(file.path);
+        if (!name.contains('.')) name = '$name.png';
+        final asset = await SdkMediaService.uploadBytes(
+          await file.readAsBytes(),
+          name,
         );
+        relPaths.add(asset.reference);
       }
       // AI 配图（可选）：留空用文案生图，失败降级为无图发布
       if (_aiImage) {

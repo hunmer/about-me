@@ -26,10 +26,6 @@ class SuggestedQuestionsDialog extends StatefulWidget {
 }
 
 class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
-  // 存储上次选中分类的 key
-  static const String _lastCategoryKey =
-      'agent_chat/suggested_questions_last_category';
-
   final _service = SuggestedQuestionsService();
   Map<String, List<String>>? _questions;
   String? _selectedCategory;
@@ -62,9 +58,13 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
         // 尝试读取上次选中的分类
         String? lastCategory;
         try {
-          lastCategory = await AboutmeDataService.instance.readPathText(
-            _lastCategoryKey,
+          final res = await AboutmeDataService.instance.call(
+            'agent_chat',
+            'getPreference',
+            {'key': 'suggestedQuestionsCategory'},
           );
+          final value = (res['success'] == true) ? res['data'] : null;
+          if (value is String) lastCategory = value;
         } catch (e) {
           // 如果读取失败，忽略错误
           lastCategory = null;
@@ -99,20 +99,14 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
     Map<String, List<String>> questions,
   ) async {
     try {
-      final keys = await AboutmeDataService.instance.listPathKeys(
-        'agent_chat/test_runs',
+      final res = await AboutmeDataService.instance.call(
+        'agent_chat',
+        'listTestRuns',
       );
-      final reportKeys = keys.where((key) => key.endsWith('.json')).toList();
-      final reports = await Future.wait(
-        reportKeys.map((key) async {
-          try {
-            final report = await AboutmeDataService.instance.readPath(key);
-            return report is Map ? report : null;
-          } catch (_) {
-            return null;
-          }
-        }),
-      );
+      final rows = (res['success'] == true && res['data'] is List)
+          ? res['data'] as List
+          : null;
+      final reports = rows?.whereType<Map>().toList() ?? const <Map>[];
 
       final statuses = <String, SuggestedQuestionTestStatus>{};
       for (final entry in questions.entries) {
@@ -146,7 +140,11 @@ class _SuggestedQuestionsDialogState extends State<SuggestedQuestionsDialog> {
   /// 保存当前选中的分类
   Future<void> _saveSelectedCategory(String category) async {
     try {
-      await AboutmeDataService.instance.writePath(_lastCategoryKey, category);
+      await AboutmeDataService.instance.call(
+        'agent_chat',
+        'setPreference',
+        {'key': 'suggestedQuestionsCategory', 'value': category},
+      );
     } catch (e) {
       // 保存失败不影响功能，忽略错误
     }

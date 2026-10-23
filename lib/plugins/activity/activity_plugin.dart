@@ -354,9 +354,12 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
     // 自动恢复通知栏显示（如果之前是开启的）
     try {
-      final settings = await AboutmeDataService.instance.readPath(
-        'activity/notification_settings.json',
-      );
+      final res = await AboutmeDataService.instance
+          .call('activity', 'getNotificationSettings');
+      final settings =
+          res['success'] == true && res['data'] is Map
+              ? res['data'] as Map
+              : const {};
       if (settings.isNotEmpty && settings['isEnabled'] == true) {
         debugPrint('[ActivityPlugin] 检测到之前开启了通知栏显示，正在自动恢复...');
         await enableActivityNotification();
@@ -367,9 +370,12 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
     // 自动恢复播报服务（如果之前是开启的）
     try {
-      final ttsSettings = await AboutmeDataService.instance.readPath(
-        'activity/tts_announcement_settings.json',
-      );
+      final res = await AboutmeDataService.instance
+          .call('activity', 'getTtsSettings');
+      final ttsSettings =
+          res['success'] == true && res['data'] is Map
+              ? res['data'] as Map
+              : const {};
       if (ttsSettings.isNotEmpty && ttsSettings['isEnabled'] == true) {
         debugPrint('[ActivityPlugin] 检测到之前开启了播报服务，正在自动恢复...');
         await _loadTTSAnnouncementSettings();
@@ -674,7 +680,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
       await _notificationService.enable();
       // 保存设置
-      await AboutmeDataService.instance.writePath('activity/notification_settings.json', {
+      await AboutmeDataService.instance.call('activity', 'updateNotificationSettings', {
         'isEnabled': true,
         'minimumReminderInterval': minInterval,
         'updateInterval': updateInt,
@@ -691,7 +697,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     try {
       await _notificationService.disable();
       // 保存设置
-      await AboutmeDataService.instance.writePath('activity/notification_settings.json', {
+      await AboutmeDataService.instance.call('activity', 'updateNotificationSettings', {
         'isEnabled': false,
       });
       debugPrint('[ActivityPlugin] 通知栏显示已禁用并保存');
@@ -709,10 +715,12 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 获取最小提醒间隔（分钟）
   Future<int> getMinimumReminderInterval() async {
     try {
-      final settings = await AboutmeDataService.instance.readPath(
-        'activity/notification_settings.json',
-      );
-      return settings['minimumReminderInterval'] as int? ?? 30; // 默认30分钟
+      final res = await AboutmeDataService.instance
+          .call('activity', 'getNotificationSettings');
+      if (res['success'] == true && res['data'] is Map) {
+        return (res['data'] as Map)['minimumReminderInterval'] as int? ?? 30; // 默认30分钟
+      }
+      return 30; // 默认30分钟
     } catch (e) {
       debugPrint('[ActivityPlugin] 读取最小提醒间隔失败: $e');
       return 30;
@@ -722,11 +730,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 设置最小提醒间隔（分钟）
   Future<void> setMinimumReminderInterval(int minutes) async {
     try {
-      final settings = await AboutmeDataService.instance.readPath(
-        'activity/notification_settings.json',
-      );
-      settings['minimumReminderInterval'] = minutes;
-      await AboutmeDataService.instance.writePath('activity/notification_settings.json', settings);
+      await AboutmeDataService.instance.call('activity', 'updateNotificationSettings', {
+        'minimumReminderInterval': minutes,
+      });
       debugPrint('[ActivityPlugin] 最小提醒间隔已设置为 $minutes 分钟');
 
       // 更新通知服务
@@ -740,10 +746,12 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 获取通知更新频率（分钟）
   Future<int> getUpdateInterval() async {
     try {
-      final settings = await AboutmeDataService.instance.readPath(
-        'activity/notification_settings.json',
-      );
-      return settings['updateInterval'] as int? ?? 1; // 默认1分钟
+      final res = await AboutmeDataService.instance
+          .call('activity', 'getNotificationSettings');
+      if (res['success'] == true && res['data'] is Map) {
+        return (res['data'] as Map)['updateInterval'] as int? ?? 1; // 默认1分钟
+      }
+      return 1; // 默认1分钟
     } catch (e) {
       debugPrint('[ActivityPlugin] 读取通知更新频率失败: $e');
       return 1;
@@ -753,11 +761,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 设置通知更新频率（分钟）
   Future<void> setUpdateInterval(int minutes) async {
     try {
-      final settings = await AboutmeDataService.instance.readPath(
-        'activity/notification_settings.json',
-      );
-      settings['updateInterval'] = minutes;
-      await AboutmeDataService.instance.writePath('activity/notification_settings.json', settings);
+      await AboutmeDataService.instance.call('activity', 'updateNotificationSettings', {
+        'updateInterval': minutes,
+      });
       debugPrint('[ActivityPlugin] 通知更新频率已设置为 $minutes 分钟');
 
       // 更新通知服务
@@ -903,9 +909,12 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 获取工作时间设置
   Future<Map<String, dynamic>> getWorkHoursSettings() async {
     try {
-      final settings = await AboutmeDataService.instance.readPath(
-        'activity/tts_announcement_settings.json',
-      );
+      final res = await AboutmeDataService.instance
+          .call('activity', 'getTtsSettings');
+      final settings =
+          res['success'] == true && res['data'] is Map
+              ? res['data'] as Map
+              : const {};
       return {
         'checkOnlyWorkHours': settings['checkOnlyWorkHours'] as bool? ?? false,
         'workHoursStart': settings['workHoursStart'] as int? ?? 9,

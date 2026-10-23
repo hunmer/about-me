@@ -5,11 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
-import 'package:aboutme/core/app_initializer.dart' show globalStorage;
 import 'package:aboutme/core/data/aboutme_data_service.dart';
-import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/core/data/sdk_media_service.dart';
 import 'package:aboutme/core/utils/network.dart';
 import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 /// AI 图片生成小工具服务（原 assets/scripts/ai_image 的 Dart 移植版）
 ///
@@ -20,21 +20,17 @@ import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
 /// 提交返回 task_id 则轮询到终态（IN_PROGRESS / SUCCESS / FAILURE），
 /// 部分服务会直接同步返回 { created, data: [{url|b64_json}] }。
 ///
-/// 生成图片持久化到 app_data/toolbox/ai_image/。
+/// 生成图片上传为 SDK 资源（历史记录 images 数组存 'asset://...' 引用；
+/// 旧本地 PNG 由 ensureLoaded 一次性迁移）。
 class AiImageService {
   AiImageService._();
 
   static final AiImageService instance = AiImageService._();
 
-  static const _configPath = 'configs/toolbox/ai_image_config.json';
-  static const _legacyConfigPath =
-      'configs/scripts_center/ai_image_config.json';
+  /// 旧版本产物目录（相对 app_data，仅作一次性迁移前缀）
+  static const legacyOutputDir = 'toolbox/ai_image';
 
-  /// 产物保存目录（相对 app_data）
-  static const outputDir = 'toolbox/ai_image';
-
-  /// 生成历史（相对 app_data），上限 100 条
-  static const historyPath = 'toolbox/ai_image/history.json';
+  /// 生成历史上限 100 条（存储经 SDK 命令，截断由本服务负责）
   static const historyLimit = 100;
 
   /// 模型选项（与原脚本一致）
@@ -113,32 +109,103 @@ class AiImageService {
     ),
   ];
 
-  /// 读取配置（首次自动迁移旧脚本中心配置）
+  /// 读取配置（经 SDK 命令，首次自动迁移旧脚本中心配置与旧本地 PNG）
   Future<void> ensureLoaded() async {
     if (_loaded) return;
     _loaded = true;
     try {
-      final data = await AboutmeDataService.instance.readPath(_configPath);
+      final res = await AboutmeDataService.instance.call(
+        'toolbox',
+        'getAiImageConfig',
+      );
+      final data = res['success'] == true ? res['data'] : null;
       if (data is Map<String, dynamic>) {
         _config = data;
-        return;
-      }
-      final legacy = await AboutmeDataService.instance.readPath(
-        _legacyConfigPath,
-      );
-      if (legacy is Map<String, dynamic>) {
-        _config = Map<String, dynamic>.from(legacy);
-        await AboutmeDataService.instance.writePath(_configPath, _config);
-        debugPrint('[toolbox] 已迁移 ai_image 旧脚本配置');
       }
     } catch (e) {
       debugPrint('[toolbox] 读取 ai_image 配置失败: $e');
     }
+    // 旧数据区 PNG 一次性迁移为 SDK 资源（幂等，失败不阻塞）
+    await _migrateLegacyImages();
+  }
+
+  /// 旧版本产物（app_data/toolbox/ai_image/ 下的 PNG）一次性迁移为
+  /// SDK 资源（幂等）：migrateLegacyAssets 分批迁移（成功后删旧文件），
+  /// 再用 sourcePath → reference 映射更新 history 里 images 引用。
+  Future<void> _migrateLegacyImages() async {
+    final svc = AboutmeDataService.instance;
+    try {
+      // 仅迁移媒体文件（目录下还混有 history.json，非媒体不进白名单）
+      final mediaPattern = RegExp(
+        r'\.(png|gif|jpe?g|webp|svg|apng|bmp|mp4|mov|webm|mp3|m4a|aac|wav)$',
+        caseSensitive: false,
+      );
+      final keys = (await svc.listPathKeys('$legacyOutputDir/'))
+          .where((key) => mediaPattern.hasMatch(key))
+          .toList();
+      if (keys.isEmpty) return;
+
+      final pathMap = <String, String>{};
+      for (var i = 0; i < keys.length; i += 50) {
+        try {
+          final res = await svc.call('assets', 'migrateLegacyAssets', {
+            'items': [
+              for (final key in keys.skip(i).take(50)) {'sourcePath': key},
+            ],
+          });
+          if (res['success'] != true) {
+            debugPrint('[toolbox] ai_image 旧图迁移命令失败: ${res['error']}');
+            continue;
+          }
+          final migrated =
+              ((res['data'] as Map)['migrated'] as List).cast<Map>();
+          for (final m in migrated) {
+            pathMap[m['sourcePath'] as String] = m['reference'] as String;
+          }
+        } catch (e) {
+          debugPrint('[toolbox] ai_image 旧图迁移批次失败: $e');
+        }
+      }
+      if (pathMap.isEmpty) return;
+
+      final res = await svc.call('toolbox', 'getAiImageHistory');
+      final list = res['success'] == true && res['data'] is List
+          ? (res['data'] as List).whereType<Map<String, dynamic>>().toList()
+          : <Map<String, dynamic>>[];
+      var changed = false;
+      for (final entry in list) {
+        final images = (entry['images'] as List?)?.cast<String>() ?? [];
+        final updated = <String>[
+          for (final rel in images)
+            pathMap[rel.startsWith('./') ? rel.substring(2) : rel] ?? rel,
+        ];
+        if (!_sameList(updated, images)) {
+          entry['images'] = updated;
+          changed = true;
+        }
+      }
+      if (changed) {
+        await svc.call('toolbox', 'saveAiImageHistory', {'history': list});
+        debugPrint('[toolbox] ai_image 旧图引用已迁移（${pathMap.length} 个文件）');
+      }
+    } catch (e) {
+      debugPrint('[toolbox] ai_image 旧图迁移失败: $e');
+    }
+  }
+
+  static bool _sameList(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   Future<void> saveConfig(Map<String, dynamic> config) async {
     _config = config;
-    await AboutmeDataService.instance.writePath(_configPath, config);
+    await AboutmeDataService.instance.call('toolbox', 'saveAiImageConfig', {
+      'config': config,
+    });
   }
 
   String _cfg(String key, [String fallback = '']) {
@@ -234,7 +301,7 @@ class AiImageService {
         return ToolboxToolResult.fail('未获取到图片: ${_bodySummary(payload)}');
       }
 
-      // 保存到 app_data/toolbox/ai_image/（单张失败不影响主流程）
+      // 上传为 SDK 资源（单张失败不影响主流程）
       final stamp = _timestamp();
       final client = await _client();
       try {
@@ -246,26 +313,17 @@ class AiImageService {
             if (img.kind == 'base64') {
               bytes = base64Decode(img.value);
             } else {
-              if (!returnBytes && img.kind == 'url') {
-                // 后台模式：URL 直写磁盘，不占内存
-                final rel = await _downloadTo(
-                  client,
-                  img.value,
-                  '$outputDir/ai_image_${stamp}_${i + 1}.png',
-                );
-                if (rel != null) saved.add(rel);
-                continue;
-              }
               bytes = await _downloadBytes(client, img.value);
               if (bytes == null) continue;
             }
-            final rel = '$outputDir/ai_image_${stamp}_${i + 1}.png';
-            await globalStorage.writeBytes(rel, bytes);
+            final asset = await SdkMediaService.uploadBytes(
+              bytes,
+              'ai_image_${stamp}_${i + 1}.png',
+            );
             saved.add(
               GeneratedImage(
-                relativePath: rel,
-                absolutePath: await _absolutePath(rel),
-                bytes: bytes,
+                relativePath: asset.reference,
+                bytes: returnBytes ? bytes : null,
               ),
             );
           } catch (e) {
@@ -288,10 +346,7 @@ class AiImageService {
           message: '生成 ${images.length} 张图片，保存 ${saved.length} 张',
           data: {
             'images': saved,
-            'localPaths': [
-              for (final s in saved)
-                s.absolutePath.isNotEmpty ? s.absolutePath : s.relativePath,
-            ],
+            'localPaths': [for (final s in saved) s.relativePath],
             'taskId': taskId,
             'model': useModel,
           },
@@ -488,21 +543,6 @@ class AiImageService {
     return null;
   }
 
-  /// URL 直写磁盘（后台模式，字节不过内存）
-  Future<GeneratedImage?> _downloadTo(
-    http.Client client,
-    String url,
-    String relativePath,
-  ) async {
-    final bytes = await _downloadBytes(client, url);
-    if (bytes == null) return null;
-    await globalStorage.writeBytes(relativePath, bytes);
-    return GeneratedImage(
-      relativePath: relativePath,
-      absolutePath: await _absolutePath(relativePath),
-    );
-  }
-
   Future<File?> _downloadToTemp(http.Client client, String url) async {
     try {
       final bytes = await _downloadBytes(client, url);
@@ -521,15 +561,6 @@ class AiImageService {
     }
   }
 
-  Future<String> _absolutePath(String relativePath) async {
-    try {
-      final root = await StorageManager.appDataDirectory();
-      return '${root.path}/$relativePath';
-    } catch (_) {
-      return '';
-    }
-  }
-
   String _timestamp() {
     final d = DateTime.now();
     String p(int n) => n < 10 ? '0$n' : '$n';
@@ -544,21 +575,40 @@ class AiImageService {
 
   // ── 生成历史 ─────────────────────────────────────────
 
-  /// 读取生成历史（新→旧），过滤掉图片文件已全部丢失的记录
+  /// 读取生成历史（新→旧），过滤掉图片已全部丢失的记录
+  ///
+  /// 'asset://...' 引用经资源索引校验存在性（list 分页拉取 id 集合，
+  /// 避免逐张 getMetadata）；历史遗留的本地路径仍走文件层 existsPath。
   Future<List<Map<String, dynamic>>> getHistory() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(historyPath);
-      final list = data is List
-          ? data.whereType<Map<String, dynamic>>().toList()
-          : <Map<String, dynamic>>[];
+      final res = await AboutmeDataService.instance.call(
+        'toolbox',
+        'getAiImageHistory',
+      );
+      final list = res['success'] == true && res['data'] is List
+          ? res['data'] as List
+          : <dynamic>[];
+      if (list.isEmpty) return [];
       // 校验图片存在性，整条失效的剔除
+      final assetIds = await _existingAssetIds();
       final valid = <Map<String, dynamic>>[];
-      for (final entry in list) {
+      for (final entry in list.whereType<Map<String, dynamic>>()) {
         final images = (entry['images'] as List?)?.cast<String>() ?? [];
-        final existing = <String>[
-          for (final rel in images)
-            if (await AboutmeDataService.instance.existsPath(rel)) rel,
-        ];
+        final existing = <String>[];
+        for (final rel in images) {
+          final id = ImageUtils.sdkAssetId(rel);
+          if (id != null) {
+            // 资源引用：索引 id 集合中存在即可用
+            if (assetIds.contains(id)) existing.add(rel);
+          } else {
+            // 历史遗留本地路径：仍走文件层存在性检查
+            try {
+              if (await AboutmeDataService.instance.existsPath(rel)) {
+                existing.add(rel);
+              }
+            } catch (_) {}
+          }
+        }
         if (existing.isEmpty) continue;
         entry['images'] = existing;
         valid.add(entry);
@@ -567,6 +617,24 @@ class AiImageService {
     } catch (_) {
       return [];
     }
+  }
+
+  /// 现存全部资源 id 集合（list 分页翻页，每页上限 100）
+  Future<Set<String>> _existingAssetIds() async {
+    final ids = <String>{};
+    try {
+      for (var offset = 0; offset < 1000; offset += 100) {
+        final page = await AboutmeDataService.instance.data.assets.list(
+          offset: offset,
+          limit: 100,
+        );
+        ids.addAll(page.data.map((asset) => asset.id));
+        if (!page.hasMore) break;
+      }
+    } catch (e) {
+      debugPrint('[toolbox] 拉取资源索引失败: $e');
+    }
+    return ids;
   }
 
   Future<void> _addHistory({
@@ -586,21 +654,23 @@ class AiImageService {
         'refCount': refCount,
         'images': images,
       });
-      await AboutmeDataService.instance.writePath(
-        historyPath,
-        history.take(historyLimit).toList(),
+      await AboutmeDataService.instance.call(
+        'toolbox',
+        'saveAiImageHistory',
+        {'history': history.take(historyLimit).toList()},
       );
     } catch (e) {
       debugPrint('[toolbox] 写入生成历史失败: $e');
     }
   }
 
-  /// 删除单条历史记录（连同其图片文件）
+  /// 删除单条历史记录（连同其图片资源/旧文件）
   Future<void> deleteHistoryEntry(Map<String, dynamic> entry) async {
     final images = (entry['images'] as List?)?.cast<String>() ?? [];
     for (final rel in images) {
+      // 'asset://...' 引用走资源 remove，历史遗留本地路径走文件删除
       try {
-        await AboutmeDataService.instance.deletePath(rel);
+        await ImageUtils.deleteImage(rel);
       } catch (_) {
         /* 单张删除失败继续 */
       }
@@ -608,7 +678,9 @@ class AiImageService {
     final ts = entry['ts'];
     final history = await getHistory();
     history.removeWhere((e) => e['ts'] == ts);
-    await AboutmeDataService.instance.writePath(historyPath, history);
+    await AboutmeDataService.instance.call('toolbox', 'saveAiImageHistory', {
+      'history': history,
+    });
   }
 
   /// 清空生成历史（连同全部产物图片）

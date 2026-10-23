@@ -5,7 +5,9 @@ Map<String, dynamic> dataCapabilities() => {
   'protocolVersion': 1,
   'deployment': 'single-process',
   'mutationRetentionDays': 30,
-  'assets': {'protocolVersion': 1, 'encoding': 'base64', 'maxBytes': 16 * 1024 * 1024},
+  'assets': {'protocolVersion': 2, 'encoding': 'base64', 'maxBytes': 16 * 1024 * 1024,
+    'chunked': {'maxBytes': 256 * 1024 * 1024, 'chunkBytes': 8 * 1024 * 1024},
+    'migration': true, 'sweep': true},
   'migratedDomains': LegacyWritePolicy.migratedDomains,
   'protectedResources': ['assets', 'stickers/collections.json'],
   'actions': [

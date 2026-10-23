@@ -326,11 +326,14 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
     if (widget.script == null) return;
 
     try {
-      final configPath =
-          'configs/scripts_center/${widget.script!.id}_config.json';
-      final data = await AboutmeDataService.instance.readPath(configPath);
+      final result = await AboutmeDataService.instance.call(
+        'scripts_center',
+        'getConfig',
+        {'scriptId': widget.script!.id},
+      );
+      final data = result['success'] == true ? result['data'] : null;
       if (!mounted) return;
-      // 注意：文件不存在时 read 返回空 Map（非 null），同样标记加载完成
+      // 注意：配置不存在时 data 为 null，同样标记加载完成
       setState(() {
         _applyProfilesData(data);
         _configLoaded = true;

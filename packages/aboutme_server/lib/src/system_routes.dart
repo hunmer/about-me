@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:aboutme_data_sdk/io.dart' show AuthStore;
-import 'package:aboutme_data_sdk/io.dart' show jsIsoDateTime;
+import 'package:aboutme_data_sdk/io.dart'
+    show AuthStore, jsIsoDateTime, LocalPluginBackend, PluginInvoker;
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 
@@ -12,10 +12,26 @@ import 'package:shelf/shelf.dart';
 /// Dart 服务器不支持执行此类插件，因此保留注册表/配置的读写能力，
 /// 安装/卸载等操作返回 501。
 class SystemApi {
-  SystemApi({required this.auth, required this.dataDir});
+  SystemApi({required this.auth, required this.dataDir})
+      : _backend = LocalPluginBackend(dataDir, source: 'server'),
+        _invoker = PluginInvoker();
 
   final AuthStore auth;
   final String dataDir;
+  final LocalPluginBackend _backend;
+  final PluginInvoker _invoker;
+
+  /// 把 dataDir 顶层旧配置文件一次性搬入 system/ 分区（SDK 只认分区路径）。
+  /// 分区文件已存在时保留分区版本；顶层无旧文件则跳过。
+  Future<void> ensureMigrated() async {
+    for (final name in ['plugin_registry.json', 'store_config.json']) {
+      final legacy = File(p.join(dataDir, name));
+      final target = File(p.join(dataDir, 'system', name));
+      if (await target.exists() || !await legacy.exists()) continue;
+      await target.parent.create(recursive: true);
+      await legacy.rename(target.path);
+    }
+  }
 
   static const _mimeType = <String, String>{
     '.html': 'text/html; charset=utf-8',
@@ -32,9 +48,6 @@ class SystemApi {
     '.woff2': 'font/woff2',
     '.ttf': 'font/ttf',
   };
-
-  File get _registryFile => File(p.join(dataDir, 'plugin_registry.json'));
-  File get _storeConfigFile => File(p.join(dataDir, 'store_config.json'));
 
   Response _json(int status, Map<String, dynamic> body) => Response(
     status,
@@ -61,13 +74,15 @@ class SystemApi {
       {'plugins': <String, dynamic>{}, 'updatedAt': ''};
 
   Future<Map<String, dynamic>> _readRegistry() async {
-    if (!await _registryFile.exists()) return _emptyRegistry;
-    try {
-      return jsonDecode(await _registryFile.readAsString())
-          as Map<String, dynamic>;
-    } catch (_) {
-      return _emptyRegistry;
-    }
+    final result = await _invoker.invokeAction(
+      _backend,
+      'system',
+      'getPluginRegistry',
+      const {},
+    );
+    if (result['success'] != true) return _emptyRegistry;
+    final data = result['data'];
+    return data is Map<String, dynamic> ? data : _emptyRegistry;
   }
 
   Handler get handler => (request) async {
@@ -102,19 +117,24 @@ class SystemApi {
       });
     }
 
-    // PUT /plugins/config - 更新商店配置
+    // PUT /plugins/config - 更新商店配置（SDK 合并命令）
     if (path == 'plugins/config' && method == 'PUT') {
       final body = jsonDecode(await request.readAsString());
-      final config = await _readStoreConfig();
-      if (body is Map<String, dynamic>) {
-        config.addAll(body);
+      if (body is! Map<String, dynamic>) {
+        return _error(400, '请求体必须为 JSON 对象');
       }
-      await _storeConfigFile.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(config),
+      final result = await _invoker.invokeAction(
+        _backend,
+        'system',
+        'updateStoreConfig',
+        body,
       );
+      if (result['success'] != true) {
+        return _error(500, result['error']?.toString() ?? '配置更新失败');
+      }
       return _json(200, {
         'success': true,
-        'config': config,
+        'config': result['data'],
         'message': '配置已更新',
         'timestamp': jsIsoDateTime(DateTime.now()),
       });
@@ -162,13 +182,15 @@ class SystemApi {
   Map<String, dynamic> get _emptyStoreConfig => {'storeURL': '', 'lastSyncAt': ''};
 
   Future<Map<String, dynamic>> _readStoreConfig() async {
-    if (!await _storeConfigFile.exists()) return _emptyStoreConfig;
-    try {
-      return jsonDecode(await _storeConfigFile.readAsString())
-          as Map<String, dynamic>;
-    } catch (_) {
-      return _emptyStoreConfig;
-    }
+    final result = await _invoker.invokeAction(
+      _backend,
+      'system',
+      'getStoreConfig',
+      const {},
+    );
+    if (result['success'] != true) return _emptyStoreConfig;
+    final data = result['data'];
+    return data is Map<String, dynamic> ? data : _emptyStoreConfig;
   }
 }
 

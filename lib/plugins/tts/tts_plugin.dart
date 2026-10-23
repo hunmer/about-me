@@ -54,14 +54,18 @@ class TTSPlugin extends BasePlugin {
       storagePrefix: storageDir,
       readStorage: (key) async {
         try {
-          return await AboutmeDataService.instance.readPath(key);
-        } catch (e) {
+          final res = await AboutmeDataService.instance
+              .call('tts', 'getSnapshot', {});
+          final d = res['success'] == true ? res['data'] : null;
+          return d is Map<String, dynamic> ? d : {};
+        } catch (_) {
           return {};
         }
       },
-      writeStorage: (key, data) async {
-        await AboutmeDataService.instance.writePath(key, data);
-      },
+      writeStorage: (key, data) =>
+          AboutmeDataService.instance.call('tts', 'saveSnapshot', {
+            'snapshot': data,
+          }),
     );
 
     // 初始化默认数据

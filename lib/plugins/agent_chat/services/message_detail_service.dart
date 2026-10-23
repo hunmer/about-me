@@ -37,8 +37,10 @@ class MessageDetailService {
         timestamp: DateTime.now(),
       );
 
-      final path = 'agent_chat/message_details/$messageId';
-      await AboutmeDataService.instance.writePath(path, detail.toJson());
+      await AboutmeDataService.instance.call('agent_chat', 'saveMessageDetail', {
+        'messageId': messageId,
+        'detail': detail.toJson(),
+      });
 
       // 更新缓存
       _cache[messageId] = detail;
@@ -57,8 +59,12 @@ class MessageDetailService {
     }
 
     try {
-      final path = 'agent_chat/message_details/$messageId';
-      final data = await AboutmeDataService.instance.readPath(path);
+      final res = await AboutmeDataService.instance.call(
+        'agent_chat',
+        'getMessageDetail',
+        {'messageId': messageId},
+      );
+      final data = (res['success'] == true) ? res['data'] : null;
 
       if (data == null) {
         debugPrint('⚠️ 消息详细数据不存在: $messageId');
@@ -80,8 +86,11 @@ class MessageDetailService {
   /// 删除消息详细数据
   Future<void> deleteDetail(String messageId) async {
     try {
-      final path = 'agent_chat/message_details/$messageId';
-      await AboutmeDataService.instance.deletePath(path);
+      await AboutmeDataService.instance.call(
+        'agent_chat',
+        'deleteMessageDetail',
+        {'messageId': messageId},
+      );
 
       // 清除缓存
       _cache.remove(messageId);

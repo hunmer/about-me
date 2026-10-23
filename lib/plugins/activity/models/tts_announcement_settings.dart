@@ -90,7 +90,7 @@ class TTSAnnouncementSettings {
 /// TTS 播报设置管理器
 class TTSAnnouncementSettingsManager {
   final StorageManager _storage; // ignore: unused_field
-  final String _settingsFileName;
+  final String _settingsFileName; // ignore: unused_field
 
   TTSAnnouncementSettingsManager({
     required StorageManager storage,
@@ -101,11 +101,18 @@ class TTSAnnouncementSettingsManager {
   /// 读取设置
   Future<TTSAnnouncementSettings> load() async {
     try {
-      final json = await AboutmeDataService.instance.readPath(_settingsFileName);
-      if (json.isEmpty) {
-        return const TTSAnnouncementSettings();
+      final res = await AboutmeDataService.instance
+          .call('activity', 'getTtsSettings');
+      if (res['success'] == true && res['data'] is Map) {
+        final json = res['data'] as Map;
+        if (json.isEmpty) {
+          return const TTSAnnouncementSettings();
+        }
+        return TTSAnnouncementSettings.fromJson(
+          Map<String, dynamic>.from(json),
+        );
       }
-      return TTSAnnouncementSettings.fromJson(json);
+      return const TTSAnnouncementSettings();
     } catch (e) {
       debugPrint('[TTSAnnouncementSettings] 加载设置失败: $e');
       return const TTSAnnouncementSettings();
@@ -115,8 +122,9 @@ class TTSAnnouncementSettingsManager {
   /// 保存设置
   Future<void> save(TTSAnnouncementSettings settings) async {
     try {
-      await AboutmeDataService.instance.writePath(
-        _settingsFileName,
+      await AboutmeDataService.instance.call(
+        'activity',
+        'updateTtsSettings',
         settings.toJson(),
       );
     } catch (e) {
