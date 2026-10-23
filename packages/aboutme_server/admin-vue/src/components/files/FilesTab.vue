@@ -563,11 +563,6 @@ onMounted(() => {
           />
         </div>
       </div>
-      <div class="flex items-center gap-2 rounded-lg bg-primary-container/30 px-3 py-1.5 text-on-primary-container">
-        <span class="material-symbols-outlined text-sm text-primary">account_tree</span>
-        <span class="text-[11px] font-medium">选中目录自动递归包含其子项</span>
-        <div class="ml-1 h-1.5 w-1.5 rounded-full bg-primary" />
-      </div>
     </div>
 
     <!-- 主文件树面板 -->

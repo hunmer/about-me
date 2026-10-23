@@ -229,6 +229,11 @@ export const devicesApi = {
     })
 }
 
+// 按路径段编码，保留目录分隔符，与存储 SDK 的路径规则一致。
+function encodeStoragePath(filePath: string): string {
+  return filePath.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')
+}
+
 // 同步 API
 export const syncApi = {
   getFiles: (directory?: string): Promise<{ success: boolean; files: SyncFileInfo[] }> => {
@@ -258,13 +263,13 @@ export const syncApi = {
   })),
 
   deleteFile: (filePath: string): Promise<ApiResponse> =>
-    apiClient.request(`/api/v1/storage/files/${encodeURIComponent(filePath)}`, {
+    apiClient.request(`/api/v1/storage/files/${encodeStoragePath(filePath)}`, {
       method: 'DELETE', headers: { 'X-Force-Overwrite': 'true' }
     }),
 
   // 下载原始文件，保留文件内容与格式
   downloadFile: async (filePath: string): Promise<Blob> => {
-    const url = `${apiClient.getBaseUrl()}/api/v1/storage/files/${encodeURIComponent(filePath)}`
+    const url = `${apiClient.getBaseUrl()}/api/v1/storage/files/${encodeStoragePath(filePath)}`
     const headers: Record<string, string> = {}
     const token = apiClient.getToken()
     if (token) {
@@ -298,7 +303,7 @@ export const syncApi = {
     }),
 
   getDownloadUrl: (fileName: string): string =>
-    `${apiClient.getBaseUrl()}/api/v1/storage/files/${encodeURIComponent(fileName)}`,
+    `${apiClient.getBaseUrl()}/api/v1/storage/files/${encodeStoragePath(fileName)}`,
 
   downloadExportFile: (fileName: string): Promise<Blob> =>
     apiClient.downloadFile(syncApi.getDownloadUrl(fileName))

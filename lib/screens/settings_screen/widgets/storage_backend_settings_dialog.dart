@@ -79,11 +79,20 @@ class _StorageBackendSettingsDialogState
     try {
       await HttpStorage.fromConfig(_config()).testConnection();
       await StorageWebSocketService.instance.connect(_config());
+      debugPrint('[StorageBackendTest] success url=${_serverController.text}');
       if (mounted) {
+        Toast.show('settings_screen_storageConnectionSuccess'.tr);
         setState(() => _status = 'settings_screen_storageConnectionSuccess'.tr);
       }
     } catch (error) {
+      debugPrint('[StorageBackendTest] failed: $error');
       if (mounted) {
+        Toast.show(
+          'settings_screen_storageConnectionFailed'.trParams({
+            'error': error.toString(),
+          }),
+          type: ToastType.error,
+        );
         setState(
           () => _status = 'settings_screen_storageConnectionFailed'.trParams({
             'error': error.toString(),

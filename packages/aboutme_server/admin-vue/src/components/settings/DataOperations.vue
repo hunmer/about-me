@@ -88,24 +88,12 @@ function handleClearData(): void {
       </div>
     </div>
 
-    <!-- 破坏性警告横幅 -->
-    <div class="mt-6 flex items-start gap-3 rounded-xl bg-error-container/25 p-4 text-xs leading-relaxed text-on-error-container">
-      <span class="material-symbols-outlined mt-0.5 shrink-0 text-lg text-error">warning</span>
-      <div>
-        <span class="font-bold text-error">警告：</span>
-        <span>涉及底层存储打包或不可逆物理抹除，请谨慎操作。</span>
-      </div>
-    </div>
-
     <!-- 全量数据归档导出 -->
     <div class="mt-6 space-y-4 rounded-xl bg-surface-container/60 p-5 backdrop-blur-md">
       <div class="flex items-center gap-2">
         <span class="material-symbols-outlined text-lg text-primary">archive</span>
         <span class="text-xs font-bold text-on-surface">全量数据归档导出</span>
       </div>
-      <p class="text-xs leading-relaxed text-on-surface-variant">
-        服务端将所有加密文档、元数据库打包为 ZIP 归档包供离线冷备。
-      </p>
 
       <!-- 指标高亮框 -->
       <div class="grid grid-cols-2 gap-3 rounded-lg bg-surface-container-lowest/80 p-3 font-mono text-xs">
