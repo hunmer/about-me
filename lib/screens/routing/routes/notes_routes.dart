@@ -39,7 +39,7 @@ class NotesRoutes implements RouteRegistry {
                   final plugin = PluginManager.instance.getPlugin('notes') as NotesPlugin?;
                   if (plugin != null) {
                     await plugin.controller.createNote(
-                      title.isEmpty ? 'untitled'.tr : title,
+                      title.isEmpty ? 'notes_untitled'.tr : title,
                       content,
                       folderId ?? 'root',
                       tags: tags,
@@ -64,7 +64,7 @@ class NotesRoutes implements RouteRegistry {
                   final plugin = PluginManager.instance.getPlugin('notes') as NotesPlugin?;
                   if (plugin != null) {
                     await plugin.controller.createNote(
-                      title.isEmpty ? 'untitled'.tr : title,
+                      title.isEmpty ? 'notes_untitled'.tr : title,
                       content,
                       folderId ?? 'root',
                       tags: tags,

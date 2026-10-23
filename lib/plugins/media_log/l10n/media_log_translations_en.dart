@@ -33,7 +33,6 @@ const Map<String, String> mediaLogTranslationsEn = {
   'media_confirm': 'Confirm',
   'media_now': 'Now',
   'media_titleRequired': 'Title is required',
-  'media_saved': 'Saved',
 
   // List / filters / sorting
   'media_searchPlaceholder': 'Search title, author, tags',
@@ -59,12 +58,11 @@ const Map<String, String> mediaLogTranslationsEn = {
   'media_reviewText': 'Review text',
   'media_reviewTimestamp': 'Timestamp',
   'media_reviewRequired': 'Review text is required',
-  'media_reviewAuthor': 'Author',
   'media_me': 'Me',
   'media_noReviews': 'No reviews yet',
   'media_noReviewsMessage': 'Write down your first thoughts after reading or watching',
 
   // Cover image
   'media_uploadCover': 'Upload cover',
-  'media_coverImagePicked': 'Using image cover',
+    'media_overviewSection': 'Overview',
 };

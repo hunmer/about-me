@@ -10,29 +10,18 @@ const Map<String, String> coreTranslationsZh = {
   'core_activity': '活动',
   'core_tag': '标签',
   'core_comment': '评论',
-  'core_clearAll': '清空所有',
   'core_selectDate': '选择日期',
   'core_selectDateRange': '选择日期范围',
   'core_searchScope': '搜索范围',
 
   // Action Executor
-  'core_inputJavaScriptCode': '输入JavaScript代码',
   'core_cancel': '取消',
-  'core_execute': '执行',
 
   // Custom Action Examples
   'core_save': '保存',
-  'core_executionResult': '执行结果',
-  'core_executionStatus': '执行状态: @status',
-  'core_outputData': '输出数据:',
-  'core_errorMessage': '错误信息:',
   'core_close': '关闭',
-  'core_inputFloatingBallJavaScriptCode': '输入悬浮球JavaScript代码',
 
   // Migration Tool
-  'core_configMigration': '配置迁移',
-  'core_migrating': '迁移中...',
-  'core_startMigration': '开始迁移',
 
   // Action Config Form
   'core_notSelected': '未选择',
@@ -65,10 +54,6 @@ const Map<String, String> coreTranslationsZh = {
   'core_addFirstButton': '添加第一个按钮',
 
   // Floating Button Edit Dialog
-  'core_clearIconImage': '清空图标/图片',
-  'core_confirmClearIconImage': '确定要清空当前设置的图标和图片吗?',
-  'core_clear': '清空',
-  'core_selectIcon': '选择图标',
 
   // Plugin Overlay Widget
   'core_routeError': '路由错误',

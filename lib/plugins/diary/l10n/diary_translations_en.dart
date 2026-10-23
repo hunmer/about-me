@@ -3,7 +3,6 @@ class DiaryTranslationsEn {
   static const Map<String, String> translations = {
     // 插件基本信息
     'diary_name': 'Diary',
-    'diary_diaryPluginDescription': 'Diary management plugin',
 
     // Widget related
     'diary_widgetName': 'Diary',
@@ -12,7 +11,6 @@ class DiaryTranslationsEn {
     'diary_overviewDescription': 'Display today\'s word count and monthly progress',
     'diary_weeklyName': 'Weekly Diary',
     'diary_weeklyDescription': 'Show this week\'s diary titles and moods',
-    'diary_weeklyTitle': 'This Week',
 
     // 统计信息
     'diary_todayWordCount': '1d word',
@@ -24,40 +22,14 @@ class DiaryTranslationsEn {
     'diary_contentHint': 'Write down today\'s story...',
     'diary_selectMood': 'Select Today\'s Mood',
     'diary_clearSelection': 'Clear Selection',
-    'diary_moodSelectorTooltip': 'Select Mood',
 
     // Activity form translations
-    'diary_addActivity': 'Add Activity',
-    'diary_editActivity': 'Edit Activity',
-    'diary_activityName': 'Activity Name',
-    'diary_unnamedActivity': 'Unnamed Activity',
-    'diary_activityDescription': 'Activity Description',
-    'diary_tagsHint': 'e.g.: Work, Study, Exercise',
-    'diary_tagsHelperText':
-        'You can directly enter new tags, they will be automatically saved to Ungrouped',
-    'diary_editInterval': 'Edit Interval',
-    'diary_confirmButton': 'Confirm',
-    'diary_cancelButton': 'Cancel',
-    'diary_endTimeError': 'End time must be later than start time',
-    'diary_minDurationError': 'Activity time must be at least 1 minute',
-    'diary_dayEndError': 'Activity end time cannot exceed 23:59 of the day',
 
     // Timeline app bar translations
-    'diary_activityTimeline': 'Activity Timeline',
-    'diary_minutesSelected': '@minutes minutes selected',
-    'diary_switchToTimelineView': 'Switch to timeline view',
-    'diary_switchToGridView': 'Switch to grid view',
-    'diary_tagManagement': 'Tag Management',
-    'diary_sortBy': 'Sort by',
-    'diary_sortByStartTimeAsc': 'Sort by start time (ascending)',
-    'diary_sortByDuration': 'Sort by activity duration',
-    'diary_sortByStartTimeDesc': 'Sort by start time (descending)',
 
     // 心情与日记管理
     'diary_mood': 'Mood',
-    'diary_cannotSelectFutureDate': 'Cannot select future date',
     'diary_myDiary': 'My Diary',
-    'diary_recentlyUsed': 'Recently Used',
     'diary_deleteDiary': 'Delete Diary',
     'diary_confirmDeleteDiary': 'Confirm Delete',
     'diary_deleteDiaryMessage':
@@ -115,14 +87,7 @@ class DiaryTranslationsEn {
     'diary_mood_deadpan': 'Deadpan',
 
     // 额外的翻译（在实现类中但未在抽象类中声明）
-    'diary_cancel': 'Cancel',
     'diary_save': 'Save',
-    'diary_close': 'Close',
-    'diary_startTime': 'Start Time',
-    'diary_endTime': 'End Time',
-    'diary_interval': 'Interval',
-    'diary_minutes': 'minutes',
-    'diary_tags': 'Tags',
     'diary_searchPlaceholder': 'Search diary content...',
     'diary_dayCardName': 'Diary Day Card',
     'diary_dayCardDesc': 'Show diary entries of the selected date, tap to view/edit',

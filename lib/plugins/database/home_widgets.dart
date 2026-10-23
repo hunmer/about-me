@@ -68,7 +68,7 @@ class DatabaseHomeWidgets {
       return [
         StatItemData(
           id: 'total_databases',
-          label: 'database_totalDatabases'.tr,
+          label: 'database_total_databases'.tr,
           value: '$databaseCount',
           highlight: databaseCount > 0,
           color: Colors.deepPurple,

@@ -2,8 +2,6 @@ class TimerTranslationsZh {
   static const Map<String, String> keys = {
     'timer_name': '计时器',
     'timer_totalTimer': '总计时器',
-    'timer_deleteTimer': '删除计时器',
-    'timer_deleteTimerConfirmation': '确定要删除这个计时器吗?',
     'timer_countUpTimer': '正计时',
     'timer_countDownTimer': '倒计时',
     'timer_pomodoroTimer': '番茄钟',
@@ -24,21 +22,9 @@ class TimerTranslationsZh {
     'timer_selectGroup': '选择分组',
     'timer_group': '分组',
     'timer_all': '全部',
-    'timer_cancelTimer': '取消计时器',
-    'timer_pauseTimerConfirm': '确定要暂停计时器吗?已记录时间:@time',
-    'timer_continueTimer': '继续计时',
-    'timer_confirmCancel': '确认取消',
-    'timer_completeTimer': '完成计时',
-    'timer_completeTimerConfirm': '确定要完成计时吗?\n记录时间:@time@note',
-    'timer_timerNotePrefix': '备注:',
-    'timer_continueAdjust': '继续调整',
-    'timer_confirmComplete': '确认完成',
     'timer_searchPlaceholder': '搜索计时器任务...',
 
     // Timer Task Details Page
-    'timer_remainingTime': '剩余',
-    'timer_pause': '暂停',
-    'timer_play': '开始',
     'timer_running': '运行中',
     'timer_phase': '阶段',
     'timer_paused': '已暂停',
@@ -90,7 +76,6 @@ class TimerTranslationsZh {
     'timer_listWidgetName': '计时器列表',
     'timer_listWidgetDesc': '显示所有计时器及其进度',
     'timer_overview': '计时器概览',
-    'viewDetail': '查看详情',
     'timer_tabTasks': '任务',
     'timer_tabStats': '统计',
     'timer_completed': '已完成',
@@ -112,5 +97,6 @@ class TimerTranslationsZh {
   
   // const Text 硬编码迁移(zh)
   'timer_focusStats': '专注统计',
+    'timer_taskEmpty': '暂无任务',
 };
 }

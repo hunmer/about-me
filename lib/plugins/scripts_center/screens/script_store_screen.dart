@@ -239,7 +239,7 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
 
       // 启用搜索栏
       enableSearchBar: true,
-      searchPlaceholder: 'search'.tr,
+      searchPlaceholder: 'core_search'.tr,
       onSearchChanged: _onSearchChanged,
 
       // 启用多条件过滤
@@ -451,7 +451,7 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
                   onPressed: () {
                     context.read<ScriptDownloadManager>().cancelInstall();
                   },
-                  child: Text('cancel'.tr),
+                  child: Text('core_cancel'.tr),
                 ),
             ],
           ),
@@ -479,7 +479,7 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
             ElevatedButton.icon(
               onPressed: () => manager.fetchScripts(),
               icon: const Icon(Icons.refresh),
-              label: Text('retry'.tr),
+              label: Text('app_retry'.tr),
             ),
           ],
         ),
@@ -580,7 +580,7 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(confirmContext),
-                                child: Text('cancel'.tr),
+                                child: Text('core_cancel'.tr),
                               ),
                               TextButton(
                                 onPressed: () {
@@ -588,7 +588,7 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
                                   Navigator.pop(confirmContext);
                                   Navigator.pop(dialogContext);
                                 },
-                                child: Text('delete'.tr),
+                                child: Text('core_delete'.tr),
                               ),
                             ],
                           );
@@ -603,7 +603,7 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: Text('close'.tr),
+              child: Text('core_close'.tr),
             ),
             TextButton(
               onPressed: () {
@@ -655,7 +655,7 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: Text('cancel'.tr),
+              child: Text('core_cancel'.tr),
             ),
             TextButton(
               onPressed: () async {
@@ -680,7 +680,7 @@ class _ScriptStoreScreenState extends State<ScriptStoreScreen> {
                 Navigator.pop(dialogContext);
                 Toast.success('scripts_center_source_added'.tr);
               },
-              child: Text('add'.tr),
+              child: Text('app_add'.tr),
             ),
           ],
         );

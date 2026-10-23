@@ -299,16 +299,16 @@ String _formatTimeAgo(DateTime dateTime, DateTime now) {
   final difference = now.difference(dateTime);
 
   if (difference.inSeconds < 60) {
-    return 'justNow'.tr;
+    return 'goods_justNow'.tr;
   } else if (difference.inMinutes < 60) {
     final minutes = difference.inMinutes;
-    return 'minutesAgo'.trParams({'count': '$minutes'});
+    return 'goods_minutesAgo'.trParams({'count': '$minutes'});
   } else if (difference.inHours < 24) {
     final hours = difference.inHours;
-    return 'hoursAgo'.trParams({'count': '$hours'});
+    return 'goods_hoursAgo'.trParams({'count': '$hours'});
   } else if (difference.inDays < 7) {
     final days = difference.inDays;
-    return 'daysAgo'.trParams({'count': '$days'});
+    return 'goods_daysAgo'.trParams({'count': '$days'});
   } else {
     return DateFormat('yyyy-MM-dd').format(dateTime);
   }

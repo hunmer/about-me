@@ -1123,6 +1123,56 @@
         "PROCM_ROOM_ID": "aboutme",
         "PROCM_CLIENT_NAME": "aboutme-app-windows"
       }
+    },
+    {
+      "id": "NFj7Cj_P",
+      "name": "server",
+      "script": "dart",
+      "args": [
+        "run",
+        "bin/server.dart"
+      ],
+      "cwd": "D:\\about-me\\packages\\aboutme_server",
+      "status": "exited",
+      "pid": 5684,
+      "exitCode": null,
+      "error": null,
+      "desc": "Dart storage server on port 8874: storage/auth/plugin REST API + MCP + WS, based on aboutme_data_sdk (drop-in replacement of nodejs server, same DATA_DIR layout)",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792719517431,
+      "lastStartedAt": 1792719517431,
+      "stoppedAt": 1792720404294,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\rjoCTP(7356)\\processes\\NFj7Cj_P-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\rjoCTP(7356)\\processes\\NFj7Cj_P-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "0rRrWEQV",
+      "name": "server",
+      "script": "dart",
+      "args": [
+        "run",
+        "bin/server.dart"
+      ],
+      "cwd": "D:\\about-me\\packages\\aboutme_server",
+      "status": "exited",
+      "pid": 2024,
+      "exitCode": null,
+      "error": null,
+      "desc": "Dart storage server on port 8874: storage/auth/plugin REST API + MCP + WS, based on aboutme_data_sdk (drop-in replacement of nodejs server, same DATA_DIR layout)",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792720536083,
+      "lastStartedAt": 1792720536083,
+      "stoppedAt": 1792720680538,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\rjoCTP(7356)\\processes\\0rRrWEQV-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\rjoCTP(7356)\\processes\\0rRrWEQV-stderr.log",
+      "envs": {}
     }
   ]
 }

@@ -2,8 +2,6 @@ class TimerTranslationsEn {
   static const Map<String, String> keys = {
     'timer_name': 'Timer',
     'timer_totalTimer': 'Total',
-    'timer_deleteTimer': 'Delete Timer',
-    'timer_deleteTimerConfirmation': 'Are you sure you want to delete this timer?',
     'timer_countUpTimer': 'Count Up',
     'timer_countDownTimer': 'Count Down',
     'timer_pomodoroTimer': 'Pomodoro',
@@ -24,21 +22,9 @@ class TimerTranslationsEn {
     'timer_selectGroup': 'Select Group',
     'timer_group': 'Group',
     'timer_all': 'All',
-    'timer_cancelTimer': 'Cancel Timer',
-    'timer_pauseTimerConfirm': 'Are you sure you want to pause the timer? Recorded time: @time',
-    'timer_continueTimer': 'Continue Timer',
-    'timer_confirmCancel': 'Confirm Cancel',
-    'timer_completeTimer': 'Complete Timer',
-    'timer_completeTimerConfirm': 'Are you sure you want to complete the timer?\nRecorded time: @time@note',
-    'timer_timerNotePrefix': 'Note: ',
-    'timer_continueAdjust': 'Continue Adjust',
-    'timer_confirmComplete': 'Confirm Complete',
     'timer_searchPlaceholder': 'Search timer tasks...',
 
     // Timer Task Details Page
-    'timer_remainingTime': 'remaining',
-    'timer_pause': 'Pause',
-    'timer_play': 'Play',
     'timer_running': 'Running',
     'timer_phase': 'Phase',
     'timer_paused': 'Paused',
@@ -90,7 +76,6 @@ class TimerTranslationsEn {
     'timer_listWidgetName': 'Timer List',
     'timer_listWidgetDesc': 'Display all timers and their progress',
     'timer_overview': 'Timer Overview',
-    'viewDetail': 'View Detail',
     'timer_tabTasks': 'Tasks',
     'timer_tabStats': 'Stats',
     'timer_completed': 'Completed',
@@ -112,5 +97,6 @@ class TimerTranslationsEn {
   
   // const Text 硬编码迁移(en)
   'timer_focusStats': 'Focus Stats',
+    'timer_taskEmpty': 'No task yet',
 };
 }

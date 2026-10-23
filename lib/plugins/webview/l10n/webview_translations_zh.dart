@@ -20,12 +20,6 @@ const Map<String, String> webviewTranslationsZh = {
   'webview_share': '分享',
   'webview_stop': '停止',
   'webview_open_in_browser': '在浏览器中打开',
-  'webview_settings': '设置',
-  'webview_enable_javascript': '启用 JavaScript',
-  'webview_enable_js_bridge': '启用 Aboutme API',
-  'webview_block_popups': '阻止弹窗',
-  'webview_max_tabs': '最大标签页数',
-  'webview_restore_tabs': '启动时恢复标签页',
   'webview_no_cards': '暂无网址卡片',
   'webview_no_tabs': '暂无打开的标签页',
   'webview_tab_manager': '标签页管理',
@@ -34,13 +28,9 @@ const Map<String, String> webviewTranslationsZh = {
   'webview_unpin': '取消固定',
   'webview_confirm_delete': '确定删除此卡片吗？',
   'webview_confirm_close_all': '确定关闭所有标签页吗？',
-  'webview_loading': '加载中...',
-  'webview_error_loading': '加载失败',
   'webview_enter_url': '输入网址',
   'webview_local_files': '本地文件',
   'webview_online_urls': '在线网址',
-  'webview_frequently_used': '常用',
-  'webview_recently_updated': '最近更新',
   'webview_all_cards': '全部卡片',
   'webview_select_local_file': '选择本地文件',
   'webview_copy_url': '复制链接',
@@ -48,8 +38,6 @@ const Map<String, String> webviewTranslationsZh = {
   'webview_add_to_cards': '添加到卡片',
   'webview_card_added': '卡片已添加',
   'webview_max_tabs_reached': '已达到最大标签页数量',
-  'webview_tab_closed': '标签页已关闭',
-  'webview_all_tabs_closed': '所有标签页已关闭',
 
   // Proxy 相关翻译
   'webview_proxy_settings': '代理设置',
@@ -116,7 +104,6 @@ const Map<String, String> webviewTranslationsZh = {
   'webview_source_base_url_hint': 'Base URL 用于下载应用文件',
   'webview_source_switched': '已切换源：@name',
   'webview_source_last_fetched': '上次拉取：@date • @count 个应用',
-  'webview_select_source': '选择源',
   'webview_manage_sources': '管理源',
   'webview_add_source': '添加源',
   'webview_edit_source': '编辑源',
@@ -133,7 +120,6 @@ const Map<String, String> webviewTranslationsZh = {
   'webview_installing': '安装中',
   'webview_install_failed': '安装失败',
   'webview_downloading_files': '正在下载文件',
-  'webview_verifying_files': '正在校验文件',
 
   // Widget Home Strings
   'webview_widgetName': '浏览器',
@@ -145,7 +131,6 @@ const Map<String, String> webviewTranslationsZh = {
   'webview_embeddedName': '内置网页',
   'webview_embeddedDesc': '在小组件中直接显示网页内容',
   'webview_selectCard': '选择网址卡片',
-  'webview_quickAccess': '快捷访问',
   'webview_localFile': '本地文件',
   'webview_cardSelectorName': '网址卡片',
   'webview_cardSelectorDesc': '选择一个网址卡片添加到主页',
@@ -162,6 +147,4 @@ const Map<String, String> webviewTranslationsZh = {
   'webview_category': '分类',
 
   // 小组件翻译
-  'webview_cardListWidgetName': '网址列表',
-  'webview_cardListWidgetDesc': '以彩色网格显示所有网址卡片',
 };

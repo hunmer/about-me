@@ -218,7 +218,7 @@ class _ChannelDialogState extends State<ChannelDialog> {
                     SizedBox(width: theme.spacing.md),
                     Expanded(
                       child: DSButton(
-                        label: widget.isEditMode ? 'save'.tr : 'chat_create'.tr,
+                        label: widget.isEditMode ? 'core_save'.tr : 'chat_create'.tr,
                         onPressed: _submit,
                       ),
                     ),

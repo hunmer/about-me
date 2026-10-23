@@ -148,7 +148,7 @@ class DatabasePlugin extends BasePlugin with JSBridgePlugin {
                       Column(
                         children: [
                           Text(
-                            'database_totalDatabasesCount'.tr,
+                            'database_total_databases_count'.tr,
                             style: theme.textTheme.bodyMedium,
                           ),
                           Text(

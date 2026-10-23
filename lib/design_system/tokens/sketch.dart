@@ -778,10 +778,8 @@ class DsSketchPanel extends StatelessWidget {
           fillColor: fillStyle == DsSketchFill.solid
               ? (hachureColor ?? theme.hatch)
               : (hachure || fillStyle != null ? DsColors.transparent : null),
-          fillStyle:
-              fillStyle ??
-              (hachure ? DsSketchFill.hachure : null) ??
-              (fillColor != null ? DsSketchFill.solid : null),
+          // 纸底已由外层 Container 绘制；关闭排线时不再追加实色填充。
+          fillStyle: fillStyle ?? (hachure ? DsSketchFill.hachure : null),
           hachureColor: hachureColor,
           hachureGap: 10,
           seed: seed,

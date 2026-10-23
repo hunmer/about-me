@@ -1,7 +1,6 @@
 const Map<String, String> todoTranslationsEn = {
   // Basic information
   'todo_name': 'Todo',
-  'todo_todoPluginDescription': 'A simple todo plugin for Aboutme',
 
   // Statistics
   'todo_totalTasks': 'Total Tasks',
@@ -10,34 +9,20 @@ const Map<String, String> todoTranslationsEn = {
   'todo_weeklyTasksCount': 'Weekly',
 
   // Interface titles
-  'todo_taskDetailsTitle': 'Task Details',
   'todo_deleteTaskTitle': 'Delete Task',
-  'todo_completedTasksHistoryTitle': 'Completed Tasks History',
-  'todo_completedTaskDetailsTitle': 'Completed Task Details',
-  'todo_filterTasksTitle': 'Filter Tasks',
-  'todo_selectTagsTitle': 'Select Tags',
   'todo_configureTodoListWidget': 'Configure Todo List Widget',
-  'todo_configureQuadrantWidget': 'Configure Quadrant Widget',
   'todo_historyTitle': 'History',
   'todo_clearHistoryTitle': 'Clear History',
 
   // Task operations
   'todo_newTask': 'New Task',
   'todo_editTask': 'Edit Task',
-  'todo_createTask': 'Create Task',
-  'todo_saveTask': 'Save Task',
-  'todo_deleteTask': 'Delete Task',
   'todo_deleteTaskMessage': 'Are you sure you want to delete this task?',
-  'todo_confirmDeleteThisTask': 'Are you sure you want to delete this task?',
 
   // Task fields
   'todo_title': 'Title',
   'todo_description': 'Description',
-  'todo_notes': 'Notes',
   'todo_tags': 'Tags',
-  'todo_timer': 'Timer',
-  'todo_duration': 'Duration:',
-  'todo_dates': 'Dates',
   'todo_created': 'Created',
   'todo_createdAt': 'Created at',
   'todo_dueDate': 'Due Date',
@@ -48,21 +33,11 @@ const Map<String, String> todoTranslationsEn = {
 
   // Action buttons
   'todo_start': 'Start',
-  'todo_pause': 'Pause',
-  'todo_complete': 'Complete',
   'todo_done': 'Done',
   'todo_add': 'Add',
-  'todo_addTag': 'Add Tag',
-  'todo_addReminder': 'Add Reminder',
   'todo_delete': 'Delete',
   'todo_cancel': 'Cancel',
-  'todo_close': 'Close',
-  'todo_edit': 'Edit',
-  'todo_ok': 'OK',
-  'todo_clear': 'Clear',
   'todo_clearHistoryAction': 'Clear',
-  'todo_taskActions': 'Task Actions',
-  'todo_resetTimer': 'Reset Timer',
 
   // Priority
   'todo_priority': 'Priority:',
@@ -70,7 +45,6 @@ const Map<String, String> todoTranslationsEn = {
   'todo_q2': 'Important & Not Urgent',
   'todo_q3': 'Urgent & Not Important',
   'todo_q4': 'Not Urgent & Not Important',
-  'todo_highPriority': 'High Priority',
   'todo_overdue': 'Overdue',
 
   // Filter and sort
@@ -110,7 +84,6 @@ const Map<String, String> todoTranslationsEn = {
   'todo_statsPriorityChart': 'By Priority',
 
   // Search related
-  'todo_searchIn': 'Search in',
   'todo_searchTasksHint': 'Search task titles, notes, tags...',
   'todo_searchTitle': 'Title',
   'todo_searchDescription': 'Notes',
@@ -123,11 +96,8 @@ const Map<String, String> todoTranslationsEn = {
 
   // Hints
   'todo_pleaseEnterTitle': 'Please enter a title',
-  'todo_selectDates': 'Select Dates',
-  'todo_notSet': 'Not set',
   'todo_noCompletedTasks': 'No completed tasks',
   'todo_noTodoTasks': 'No Todo Tasks',
-  'todo_loading': 'Loading...',
   'todo_addSomeNotesHint': 'Add some notes...',
   'todo_none': 'None',
 
@@ -156,8 +126,6 @@ const Map<String, String> todoTranslationsEn = {
 
   // Empty state messages
   'todo_emptyTaskList': 'No tasks yet\nTap + to add a new task',
-  'todo_daysRemaining': 'days remaining',
-  'todo_hoursRemaining': 'hours remaining',
 
   // Week view
   'todo_weekDateRange': '@start - @end',

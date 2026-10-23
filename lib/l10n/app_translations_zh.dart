@@ -5,7 +5,6 @@
 const Map<String, String> appTranslationsZh = {
   // App basics
   'app_appTitle': 'aboutme',
-  'app_pluginManager': '插件管理器',
   'app_home': '首页',
   'app_settings': '设置',
   'app_version': '版本',
@@ -29,8 +28,6 @@ const Map<String, String> appTranslationsZh = {
   // Common actions
   'app_ok': '确定',
   'app_select': '选择',
-  'app_no': '否',
-  'app_yes': '是',
   'app_cancel': '取消',
   'app_save': '保存',
   'app_searchEmoji': '搜索表情',
@@ -75,8 +72,6 @@ const Map<String, String> appTranslationsZh = {
   'app_photoEditLoadFailed': '图片加载失败',
   'app_photoEditSaveFailed': '保存失败',
   'app_photoEditUnsavedTitle': '有未保存的编辑',
-  'app_photoEditUnsavedMessage': '是否保存本次编辑？不保存将丢弃更改。',
-  'app_photoEditUnsavedSave': '保存',
   'app_photoEditUnsavedDiscard': '不保存',
   'app_photoEditUnsavedCancel': '继续编辑',
   'app_photoEditSaveAlbum': '保存到系统相册',
@@ -125,21 +120,11 @@ const Map<String, String> appTranslationsZh = {
   'app_selectDate': '选择日期',
   'app_startTime': '开始时间',
   'app_endTime': '结束时间',
-  'app_interval': '间隔',
-  'app_minutes': '分钟',
-  'app_week': '周',
-  'app_month': '月',
   'app_date': '日期',
 
   // Display options
-  'app_showAll': '显示全部',
-  'app_adjustCardSize': '调整卡片大小',
-  'app_width': '宽度',
-  'app_height': '高度',
 
   // Tags and categories
-  'app_tags': '标签',
-  'app_selectGroup': '选择分组',
   'app_selectLocation': '选择位置',
   'app_selectIcon': '选择图标',
 
@@ -183,7 +168,6 @@ const Map<String, String> appTranslationsZh = {
   'app_selectBackupMethod': '请选择备份方式',
 
   // Backup progress
-  'app_backupInProgress': '正在备份',
   'app_completed': '已完成: @percentage%',
   'app_exportingData': '正在导出数据',
   'app_importingData': '正在导入数据',
@@ -204,8 +188,6 @@ const Map<String, String> appTranslationsZh = {
   'app_importCancelled': '已取消导入操作',
   'app_selectBackupFile': '请选择备份文件',
   'app_noFileSelected': '未选择文件',
-  'app_importInProgress': '正在导入',
-  'app_processingBackupFile': '正在处理备份文件...',
   'app_importSuccess': '数据导入成功,请重启应用',
   'app_restartRequired': '需要重启',
   'app_restartMessage': '数据已导入完成,需要重启应用才能生效。',
@@ -218,23 +200,12 @@ const Map<String, String> appTranslationsZh = {
   'app_importFailedWithError': '导入失败: @error',
 
   // Plugin management
-  'app_noPluginsAvailable': '没有可用的插件',
-  'app_failedToLoadPlugins': '加载插件失败: @error',
   'app_selectPluginToExport': '选择要导出的插件',
-  'app_selectPluginToImport': '选择要导入的插件 (@mode)',
-  'app_selectPluginsToImport': '选择插件导入',
   'app_selectFolderToImport': '选择要导入的文件夹',
-  'app_dataSize': '数据大小: @size',
-  'app_mergeMode': '合并模式',
-  'app_overwriteMode': '覆盖模式',
 
   // Permissions
-  'app_permissionRequired': '需要@permission权限',
-  'app_permissionRequiredForApp': '应用需要@permission权限来正常工作,是否授予权限?',
   'app_notNow': '暂不授予',
-  'app_grantPermission': '授予权限',
   'app_permissionRequiredInSettings': '需要@permission权限才能继续。请在系统设置中授予权限。',
-  'app_storagePermissionRequired': '需要存储权限才能继续。请在系统设置中授予权限。',
   'app_permissionsTitle': '权限授权',
   'app_permissionsDescription': '为了正常备份、导入和接收提醒，请授予以下权限。',
   'app_permissionsGrantAll': '一次性授权全部权限',
@@ -256,7 +227,6 @@ const Map<String, String> appTranslationsZh = {
   'app_permission_calendarDescription': '用于同步系统日历、创建和管理日历事件。',
 
   // File operations
-  'app_downloadCancelled': '下载已取消',
   'app_moveSuccess': '移动成功',
   'app_moveFailed': '移动失败: @error',
   'app_renameFailed': '重命名失败: @error',
@@ -264,22 +234,17 @@ const Map<String, String> appTranslationsZh = {
   // Media selection
   'app_selectImage': '选择图片',
   'app_removeImage': '移除图片',
-  'app_selectFromGallery': '从相册选择',
-  'app_takePhoto': '拍照',
   'app_loadingVideo': '正在加载视频...',
   'app_videoLoadFailed': '视频加载失败: @error',
   'app_audioLoadFailed': '音频加载失败',
 
   // Form validation
-  'app_pleaseEnterTitle': '请输入标题',
-  'app_titleRequired': '请输入标题',
 
   // Colors
   'app_selectBackgroundColor': '选择背景颜色',
   'app_nodeColor': '节点颜色',
 
   // Testing
-  'app_testForegroundTask': '测试前台任务',
 
   // About
   'app_aboutTitle': '关于',
@@ -295,13 +260,9 @@ const Map<String, String> appTranslationsZh = {
   'home_categoryRecord': '记录',
   'home_categoryTools': '工具',
   'home_categoryCommunication': '通讯',
-  'home_categoryFinance': '财务',
-  'home_categoryLife': '生活',
   'home_loadFailed': '加载失败',
   'home_quickCreateTitle': '新建',
   'home_today': '今天',
-  'home_modeDateView': '切换到日期视图',
-  'home_modeFixedLayout': '切换到固定布局',
   'home_dateViewEmpty': '暂无日期卡片',
   'home_dateViewNoData': '这一天还没有记录',
   'home_sortDefault': '默认',
@@ -319,8 +280,6 @@ const Map<String, String> appTranslationsZh = {
   'app_tags_sortCreatedAt': '添加时间',
   'app_tags_sortLastUsedAt': '使用时间',
   'app_tags_sortName': '名称',
-  'app_tags_batchEdit': '批量编辑',
-  'app_tags_exitBatchEdit': '退出批量编辑',
   'app_tags_addTag': '添加标签',
   'app_tags_editTag': '编辑标签',
   'app_tags_name': '标签名称',
@@ -329,4 +288,5 @@ const Map<String, String> appTranslationsZh = {
   'app_tags_commentHint': '添加备注信息',
   'app_tags_deleteTagConfirm': '确定要删除标签「@name」吗？',
   'app_tags_deleteSelectedConfirm': '确定要删除选中的 @count 个标签吗？',
+    'app_deleteSuccess': '删除成功',
 };

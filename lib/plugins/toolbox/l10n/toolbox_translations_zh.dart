@@ -11,8 +11,6 @@ const Map<String, String> toolboxTranslationsZh = {
 
   // 图片搜索
   'toolbox_image_search_name': '图片搜索',
-  'toolbox_image_search_desc':
-      '关键词搜图（Unsplash/Pixabay/全网引擎）+ 以图搜图（Google Lens）',
   'toolbox_searchByKeyword': '关键词搜图',
   'toolbox_searchByImage': '以图搜图',
   'toolbox_searchHint': '例如：mountain sunrise',
@@ -29,27 +27,18 @@ const Map<String, String> toolboxTranslationsZh = {
   'toolbox_saving': '正在下载图片...',
   'toolbox_savedTo': '已保存到',
   'toolbox_saveFailed': '保存失败',
-  'toolbox_aiImage_regenerate': '重新生成',
   'toolbox_historyDeleted': '已删除该条记录',
   'toolbox_historyCleared': '历史已清空',
   'toolbox_prevPage': '上一页',
   'toolbox_nextPage': '下一页',
   'toolbox_perPage': '数量',
   'toolbox_imageType': '类型',
-  'toolbox_imageType_photo': '摄影',
-  'toolbox_imageType_illustration': '插画',
-  'toolbox_imageType_vector': '矢量',
-  'toolbox_imageType_all': '全部',
   'toolbox_orientation': '方向',
   'toolbox_sort': '排序',
-  'toolbox_sort_relevant': '相关度',
-  'toolbox_sort_popular': '热门',
-  'toolbox_sort_latest': '最新',
   'toolbox_imageSearch_settings': '图片搜索设置',
 
   // AI 图片生成
   'toolbox_ai_image_name': 'AI 图片生成',
-  'toolbox_ai_image_desc': '文生图 + 参考图编辑（图生图/多图融合），产物自动保存本地',
   'toolbox_aiImage_prompt': '图片描述',
   'toolbox_aiImage_promptHint': '例如：一只戴墨镜的橘猫坐在沙滩上，日落背景',
   'toolbox_aiImage_editPrompt': '编辑指令',
@@ -69,11 +58,11 @@ const Map<String, String> toolboxTranslationsZh = {
 
   // 图片编辑器
   'toolbox_photo_editor_name': '图片编辑器',
-  'toolbox_photo_editor_desc':
-      '涂鸦 / 裁剪 / 滤镜 / AI 修图 / 像素橡皮擦，自动记录最近打开',
   'toolbox_photoEditor_pickImage': '选择图片开始编辑',
   'toolbox_photoEditor_pickDesc': '相册 / 拍照 / 在线图片 / 图片搜索，选择后进入编辑器',
   'toolbox_photoEditor_history': '最近打开',
   'toolbox_photoEditor_historyEmpty': '还没有打开记录，选择一张图片开始编辑',
   'toolbox_photoEditor_clearConfirm': '仅清空打开记录，不会删除图片文件',
+    'toolbox_aiImage_name': 'AI 绘图',
+    'toolbox_imageSearch_name': '图片搜索',
 };

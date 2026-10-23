@@ -5,7 +5,6 @@
 const Map<String, String> appTranslationsEn = {
   // App basics
   'app_appTitle': 'aboutme',
-  'app_pluginManager': 'Plugin Manager',
   'app_home': 'Home',
   'app_settings': 'Settings',
   'app_version': 'Version',
@@ -30,8 +29,6 @@ const Map<String, String> appTranslationsEn = {
   // Common actions
   'app_ok': 'OK',
   'app_select': 'Select',
-  'app_no': 'No',
-  'app_yes': 'Yes',
   'app_cancel': 'Cancel',
   'app_save': 'Save',
   'app_searchEmoji': 'Search emoji',
@@ -76,8 +73,6 @@ const Map<String, String> appTranslationsEn = {
   'app_photoEditLoadFailed': 'Failed to load image',
   'app_photoEditSaveFailed': 'Failed to save',
   'app_photoEditUnsavedTitle': 'Unsaved edits',
-  'app_photoEditUnsavedMessage': 'Save your edits? Changes will be discarded otherwise.',
-  'app_photoEditUnsavedSave': 'Save',
   'app_photoEditUnsavedDiscard': 'Discard',
   'app_photoEditUnsavedCancel': 'Keep editing',
   'app_photoEditSaveAlbum': 'Save to photo album',
@@ -127,21 +122,11 @@ const Map<String, String> appTranslationsEn = {
   'app_selectDate': 'select Date',
   'app_startTime': 'Start Time',
   'app_endTime': 'End Time',
-  'app_interval': 'Interval',
-  'app_minutes': 'Minutes',
-  'app_week': 'Week',
-  'app_month': 'Month',
   'app_date': 'Date',
 
   // Display options
-  'app_showAll': 'show All',
-  'app_adjustCardSize': 'Adjust Card Size',
-  'app_width': 'Width',
-  'app_height': 'Height',
 
   // Tags and categories
-  'app_tags': 'Tags',
-  'app_selectGroup': 'Select group',
   'app_selectLocation': 'Select location',
   'app_selectIcon': 'Select icon',
 
@@ -185,7 +170,6 @@ const Map<String, String> appTranslationsEn = {
   'app_selectBackupMethod': 'Please select backup method',
 
   // Backup progress
-  'app_backupInProgress': 'Backup in progress',
   'app_completed': 'Completed: @percentage%',
   'app_exportingData': 'exporting Data',
   'app_importingData': 'importing Data',
@@ -207,8 +191,6 @@ const Map<String, String> appTranslationsEn = {
   'app_importCancelled': 'Import cancelled',
   'app_selectBackupFile': 'Please select backup file',
   'app_noFileSelected': 'No file selected',
-  'app_importInProgress': 'Import in progress',
-  'app_processingBackupFile': 'Processing backup file...',
   'app_importSuccess': 'Data imported successfully, please restart app',
   'app_restartRequired': 'Restart required',
   'app_restartMessage':
@@ -222,26 +204,13 @@ const Map<String, String> appTranslationsEn = {
   'app_importFailedWithError': 'Import failed: @error',
 
   // Plugin management
-  'app_noPluginsAvailable': 'No plugins available',
-  'app_failedToLoadPlugins': 'Failed to load plugins: @error',
   'app_selectPluginToExport': 'Select plugin to export',
-  'app_selectPluginToImport': 'Select plugin to import (@mode)',
-  'app_selectPluginsToImport': 'Select Plugins To Import',
   'app_selectFolderToImport': 'Select folder to import',
-  'app_dataSize': 'Data size: @size',
-  'app_mergeMode': 'Merge Mode',
-  'app_overwriteMode': 'Overwrite Mode',
 
   // Permissions
-  'app_permissionRequired': '@permission permission required',
-  'app_permissionRequiredForApp':
-      'App requires @permission permission to work properly. Grant permission?',
   'app_notNow': 'Not now',
-  'app_grantPermission': 'Grant permission',
   'app_permissionRequiredInSettings':
       '@permission permission is required to continue. Please grant permission in system settings.',
-  'app_storagePermissionRequired':
-      'Storage permission is required to continue. Please grant permission in system settings.',
   'app_permissionsTitle': 'Permission access',
   'app_permissionsDescription':
       'Grant these permissions to ensure backups, imports, and reminders continue to work properly.',
@@ -271,7 +240,6 @@ const Map<String, String> appTranslationsEn = {
       'Required to sync system calendar and manage calendar events.',
 
   // File operations
-  'app_downloadCancelled': 'Download cancelled',
   'app_moveSuccess': 'Move successful',
   'app_moveFailed': 'Move failed: @error',
   'app_renameFailed': 'Rename failed: @error',
@@ -279,22 +247,17 @@ const Map<String, String> appTranslationsEn = {
   // Media selection
   'app_selectImage': 'Select image',
   'app_removeImage': 'Remove image',
-  'app_selectFromGallery': 'Select from gallery',
-  'app_takePhoto': 'Take photo',
   'app_loadingVideo': 'Loading video...',
   'app_videoLoadFailed': 'Video load failed: @error',
   'app_audioLoadFailed': 'Audio load failed',
 
   // Form validation
-  'app_pleaseEnterTitle': 'Please Enter Title',
-  'app_titleRequired': 'Title is required',
 
   // Colors
   'app_selectBackgroundColor': 'Select background color',
   'app_nodeColor': 'Node Color',
 
   // Testing
-  'app_testForegroundTask': 'Test Foreground Task',
 
   // About
   'app_aboutTitle': 'About',
@@ -311,13 +274,9 @@ const Map<String, String> appTranslationsEn = {
   'home_categoryRecord': 'Record',
   'home_categoryTools': 'Tools',
   'home_categoryCommunication': 'Communication',
-  'home_categoryFinance': 'Finance',
-  'home_categoryLife': 'Life',
   'home_loadFailed': 'Load Failed',
   'home_quickCreateTitle': 'Quick Create',
   'home_today': 'Today',
-  'home_modeDateView': 'Switch to date view',
-  'home_modeFixedLayout': 'Switch to fixed layout',
   'home_dateViewEmpty': 'No date cards yet',
   'home_dateViewNoData': 'No records on this day',
   'home_sortDefault': 'Default',
@@ -335,8 +294,6 @@ const Map<String, String> appTranslationsEn = {
   'app_tags_sortCreatedAt': 'Added time',
   'app_tags_sortLastUsedAt': 'Last used',
   'app_tags_sortName': 'Name',
-  'app_tags_batchEdit': 'Batch edit',
-  'app_tags_exitBatchEdit': 'Exit batch edit',
   'app_tags_addTag': 'Add tag',
   'app_tags_editTag': 'Edit tag',
   'app_tags_name': 'Tag name',
@@ -345,4 +302,5 @@ const Map<String, String> appTranslationsEn = {
   'app_tags_commentHint': 'Add a note',
   'app_tags_deleteTagConfirm': 'Delete tag "@name"?',
   'app_tags_deleteSelectedConfirm': 'Delete @count selected tags?',
+    'app_deleteSuccess': 'Deleted successfully',
 };

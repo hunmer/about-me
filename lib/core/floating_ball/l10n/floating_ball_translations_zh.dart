@@ -12,7 +12,6 @@ const Map<String, String> floatingBallTranslationsZh = {
   'floating_ball_positionReset': '悬浮球位置已重置',
   'floating_ball_resetPosition': '重置悬浮球位置',
   'floating_ball_notSet': '未设置',
-  'floating_ball_noAction': '无动作',
   'floating_ball_groupActionCount': '@title（@count 个动作）',
 
   // 手势

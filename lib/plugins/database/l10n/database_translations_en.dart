@@ -3,7 +3,6 @@ class DatabaseTranslationsEn {
   static const Map<String, String> translations = {
     // Plugin basic information
     'database_name': 'Database',
-    'database_plugin_description': 'A plugin for managing databases',
 
     // Record related
     'database_delete_record_title': 'Delete Record',
@@ -16,7 +15,6 @@ class DatabaseTranslationsEn {
     'database_delete': 'Delete',
     'database_cancel': 'Cancel',
     'database_save': 'Save',
-    'database_ok': 'OK',
 
     // Database editing
     'database_edit_database_title': 'Edit Database',
@@ -32,7 +30,6 @@ class DatabaseTranslationsEn {
     'database_field_name_label': 'Field Name',
     'database_default_value_label': 'Default Value',
     'database_select_field_type_title': 'Select Field Type',
-    'database_new_field_title': 'New @type Field',
     'database_save_failed_message': 'Save failed: @error',
     'database_delete_field_title': 'Delete Field',
     'database_delete_field_confirm':
@@ -42,11 +39,9 @@ class DatabaseTranslationsEn {
 
     // Database list
     'database_database_list_title': 'Database List',
-    'database_new_database_default_name': 'New Database',
     'database_load_failed_message': 'Load failed',
     'database_no_databases_message': 'No databases',
     'database_add_database_hint': 'Click the button below to add',
-    'database_copy_success_message': 'Copy successful',
     'database_search_databases': 'Search databases',
     'database_add_database': 'Add Database',
 

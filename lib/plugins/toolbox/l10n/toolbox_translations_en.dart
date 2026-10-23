@@ -11,8 +11,6 @@ const Map<String, String> toolboxTranslationsEn = {
 
   // Image search
   'toolbox_image_search_name': 'Image Search',
-  'toolbox_image_search_desc':
-      'Keyword search (Unsplash/Pixabay/web engines) + search by image (Google Lens)',
   'toolbox_searchByKeyword': 'By keyword',
   'toolbox_searchByImage': 'By image',
   'toolbox_searchHint': 'e.g. mountain sunrise',
@@ -29,28 +27,18 @@ const Map<String, String> toolboxTranslationsEn = {
   'toolbox_saving': 'Downloading image...',
   'toolbox_savedTo': 'Saved to',
   'toolbox_saveFailed': 'Save failed',
-  'toolbox_aiImage_regenerate': 'Regenerate',
   'toolbox_historyDeleted': 'Entry deleted',
   'toolbox_historyCleared': 'History cleared',
   'toolbox_prevPage': 'Prev',
   'toolbox_nextPage': 'Next',
   'toolbox_perPage': 'Count',
   'toolbox_imageType': 'Type',
-  'toolbox_imageType_photo': 'Photo',
-  'toolbox_imageType_illustration': 'Illustration',
-  'toolbox_imageType_vector': 'Vector',
-  'toolbox_imageType_all': 'All',
   'toolbox_orientation': 'Orientation',
   'toolbox_sort': 'Sort',
-  'toolbox_sort_relevant': 'Relevant',
-  'toolbox_sort_popular': 'Popular',
-  'toolbox_sort_latest': 'Latest',
   'toolbox_imageSearch_settings': 'Image Search Settings',
 
   // AI image generation
   'toolbox_ai_image_name': 'AI Image',
-  'toolbox_ai_image_desc':
-      'Text-to-image + reference-image editing, results saved locally',
   'toolbox_aiImage_prompt': 'Prompt',
   'toolbox_aiImage_promptHint':
       'e.g. an orange cat wearing sunglasses on a beach at sunset',
@@ -72,8 +60,6 @@ const Map<String, String> toolboxTranslationsEn = {
 
   // Photo editor
   'toolbox_photo_editor_name': 'Photo editor',
-  'toolbox_photo_editor_desc':
-      'Paint / crop / filters / AI edit / pixel eraser, with recent-open history',
   'toolbox_photoEditor_pickImage': 'Pick an image to edit',
   'toolbox_photoEditor_pickDesc':
       'Album / camera / online URL / image search, then open the editor',
@@ -82,4 +68,6 @@ const Map<String, String> toolboxTranslationsEn = {
       'No open history yet. Pick an image to start editing.',
   'toolbox_photoEditor_clearConfirm':
       'Only clears the open history; image files are kept.',
+    'toolbox_aiImage_name': 'AI Image',
+    'toolbox_imageSearch_name': 'Image Search',
 };

@@ -20,12 +20,6 @@ const Map<String, String> webviewTranslationsEn = {
   'webview_share': 'Share',
   'webview_stop': 'Stop',
   'webview_open_in_browser': 'Open in Browser',
-  'webview_settings': 'Settings',
-  'webview_enable_javascript': 'Enable JavaScript',
-  'webview_enable_js_bridge': 'Enable Aboutme API',
-  'webview_block_popups': 'Block Popups',
-  'webview_max_tabs': 'Max Tabs',
-  'webview_restore_tabs': 'Restore Tabs on Startup',
   'webview_no_cards': 'No cards yet',
   'webview_no_tabs': 'No open tabs',
   'webview_tab_manager': 'Tab Manager',
@@ -34,13 +28,9 @@ const Map<String, String> webviewTranslationsEn = {
   'webview_unpin': 'Unpin',
   'webview_confirm_delete': 'Delete this card?',
   'webview_confirm_close_all': 'Close all tabs?',
-  'webview_loading': 'Loading...',
-  'webview_error_loading': 'Failed to load',
   'webview_enter_url': 'Enter URL',
   'webview_local_files': 'Local Files',
   'webview_online_urls': 'Online URLs',
-  'webview_frequently_used': 'Frequently Used',
-  'webview_recently_updated': 'Recently Updated',
   'webview_all_cards': 'All Cards',
   'webview_select_local_file': 'Select Local File',
   'webview_copy_url': 'Copy Link',
@@ -48,8 +38,6 @@ const Map<String, String> webviewTranslationsEn = {
   'webview_add_to_cards': 'Add to Cards',
   'webview_card_added': 'Card added',
   'webview_max_tabs_reached': 'Maximum tabs reached',
-  'webview_tab_closed': 'Tab closed',
-  'webview_all_tabs_closed': 'All tabs closed',
 
   // Proxy related translations
   'webview_proxy_settings': 'Proxy Settings',
@@ -116,7 +104,6 @@ const Map<String, String> webviewTranslationsEn = {
   'webview_source_base_url_hint': 'Base URL is used to download app files',
   'webview_source_switched': 'Switched to @name',
   'webview_source_last_fetched': 'Last fetched: @date • @count apps',
-  'webview_select_source': 'Select Source',
   'webview_manage_sources': 'Manage Sources',
   'webview_add_source': 'Add Source',
   'webview_edit_source': 'Edit Source',
@@ -133,7 +120,6 @@ const Map<String, String> webviewTranslationsEn = {
   'webview_installing': 'Installing',
   'webview_install_failed': 'Install Failed',
   'webview_downloading_files': 'Downloading files',
-  'webview_verifying_files': 'Verifying files',
 
   // Widget Home Strings
   'webview_widgetName': 'Browser',
@@ -145,7 +131,6 @@ const Map<String, String> webviewTranslationsEn = {
   'webview_embeddedName': 'Embedded WebView',
   'webview_embeddedDesc': 'Display web content directly in the widget',
   'webview_selectCard': 'Select URL Card',
-  'webview_quickAccess': 'Quick Access',
   'webview_localFile': 'Local File',
   'webview_cardSelectorName': 'URL Card',
   'webview_cardSelectorDesc': 'Select a URL card to add to home screen',
@@ -162,6 +147,4 @@ const Map<String, String> webviewTranslationsEn = {
   'webview_category': 'Category',
 
   // Widget translations
-  'webview_cardListWidgetName': 'URL Cards',
-  'webview_cardListWidgetDesc': 'Display all URL cards in a colorful grid',
 };

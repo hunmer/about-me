@@ -33,7 +33,6 @@ const Map<String, String> mediaLogTranslationsZh = {
   'media_confirm': '确认',
   'media_now': '此刻',
   'media_titleRequired': '请输入标题',
-  'media_saved': '已保存',
 
   // 列表 / 过滤 / 排序
   'media_searchPlaceholder': '搜索标题、作者、标签',
@@ -59,12 +58,11 @@ const Map<String, String> mediaLogTranslationsZh = {
   'media_reviewText': '点评内容',
   'media_reviewTimestamp': '时间',
   'media_reviewRequired': '请输入点评内容',
-  'media_reviewAuthor': '点评人',
   'media_me': '我',
   'media_noReviews': '还没有点评',
   'media_noReviewsMessage': '看完/读完后，写下第一条感受吧',
 
   // 封面图片
   'media_uploadCover': '上传封面',
-  'media_coverImagePicked': '已使用图片封面',
+    'media_overviewSection': '概览',
 };

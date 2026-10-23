@@ -15,11 +15,8 @@ const Map<String, String> dataManagementTranslationsZh = {
   'data_management_cancel': '取消',
   'data_management_create': '创建',
   'data_management_rename': '重命名',
-  'data_management_edit': '编辑',
   'data_management_select': '选择',
   'data_management_move': '移动',
-  'data_management_export': '导出',
-  'data_management_import': '导入',
 
   // 确认对话框
   'data_management_confirmDelete': '确认删除',
@@ -27,17 +24,11 @@ const Map<String, String> dataManagementTranslationsZh = {
 
   // 成功提示
   'data_management_deleteSuccess': '删除成功',
-  'data_management_moveSuccess': '移动成功',
-  'data_management_exportSuccess': '导出成功',
   'data_management_importSuccess': '导入成功',
 
   // 失败提示
   'data_management_importFailed': '导入失败',
   'data_management_exportFailed': '导出失败',
-  'data_management_moveFailed': '移动失败',
-  'data_management_deleteFailed': '删除失败',
-  'data_management_renameFailed': '重命名失败',
-  'data_management_createFailed': '创建失败',
   'data_management_directoryLoadFailed': '无法加载目录',
   'data_management_directoryAccessFailed': '无法访问目录',
 

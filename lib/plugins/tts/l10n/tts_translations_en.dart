@@ -56,15 +56,11 @@ const Map<String, String> ttsTranslationsEn = {
 
   // Queue management
   'tts_queue': 'Queue',
-  'tts_currentReading': 'Currently Reading',
-  'tts_waiting': 'Waiting',
-  'tts_clearQueue': 'Clear Queue',
 
   // Status messages
   'tts_loading': 'Loading...',
   'tts_loadingVoiceList': 'Loading voice list...',
   'tts_testSuccess': 'Test Successful',
-  'tts_testFailed': 'Test Failed',
   'tts_testFailedPrefix': 'Test failed',
 
   // Success messages
@@ -103,7 +99,6 @@ const Map<String, String> ttsTranslationsEn = {
 
   // Voice related
   'tts_voiceTestText': 'Hello, this is a voice test',
-  'tts_reloadVoiceList': 'Reload voice list',
   'tts_fillAccordingToApi': 'Fill according to API requirements',
 
   // Parameterized translations - using @name placeholders

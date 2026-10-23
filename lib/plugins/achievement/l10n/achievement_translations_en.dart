@@ -4,8 +4,6 @@ class AchievementTranslationsEn {
     'achievement_name': 'Achievements',
     'achievement_widgetName': 'Achievements',
     'achievement_widgetDescription': 'Quick access to Achievements',
-    'achievement_pluginDescription':
-        'Achievement system: track your usage and unlock level badges',
     'achievement_overviewWidgetDescription':
         'Shows achievement progress and earned points. Tap to open the gallery',
 
@@ -24,9 +22,7 @@ class AchievementTranslationsEn {
     'achievement_points': 'points',
 
     // Filters
-    'achievement_filterAll': 'All',
     'achievement_filterUnlocked': 'Unlocked',
-    'achievement_filterLocked': 'Locked',
 
     // Detail
     'achievement_unit': 'Unit',
@@ -44,9 +40,7 @@ class AchievementTranslationsEn {
     'achievement_nextMilestone': 'Next Milestone',
 
     // Detail screen
-    'achievement_detailCurrentProgress': 'Progress',
     'achievement_detailLevelDetails': 'Level Details',
-    'achievement_nextLevel': 'Next',
     'achievement_maxed': 'Maxed',
 
     // Unlock dialog

@@ -9,50 +9,25 @@ class BillTranslationsEn {
     'bill_billList': 'Bill List',
     'bill_newBill': 'New Bill',
     'bill_editBill': 'Edit Bill',
-    'bill_deleteBill': 'Delete Bill',
-    'bill_amount': 'Amount',
-    'bill_category': 'Category',
     'bill_date': 'Date',
     'bill_note': 'Note',
     'bill_income': 'Income',
     'bill_expense': 'Expense',
-    'bill_transfer': 'Transfer',
     'bill_save': 'Save',
     'bill_cancel': 'Cancel',
     'bill_confirmDelete': 'Confirm Delete',
     'bill_selectCategory': 'Select Category',
-    'bill_selectDate': 'Select Date',
     'bill_addNote': 'Add Note',
 
     // Statistics
-    'bill_statistics': 'Statistics',
-    'bill_monthlyReport': 'Monthly Report',
-    'bill_yearlyReport': 'Yearly Report',
     'bill_byCategory': 'By Category',
-    'bill_byTime': 'By Time',
-    'bill_allCategories': 'All Categories',
     'bill_statisticsAnalysis': 'Statistics Analysis',
 
     // List and search
-    'bill_noBillsYet': 'No bills yet',
-    'bill_noBillsFound': 'No bills found',
-    'bill_searchBills': 'Search Bills',
-    'bill_filter': 'Filter',
-    'bill_clearFilter': 'Clear Filter',
-    'bill_fromDate': 'From Date',
-    'bill_toDate': 'To Date',
-    'bill_minAmount': 'Min Amount',
-    'bill_maxAmount': 'Max Amount',
-    'bill_type': 'Type',
-    'bill_allTypes': 'All Types',
 
     // Messages
     'bill_billSaved': 'Bill saved successfully',
     'bill_billSaveFailed': 'Failed to save bill',
-    'bill_billDeleted': 'Bill deleted successfully',
-    'bill_billDeleteFailed': 'Failed to delete bill',
-    'bill_invalidAmount': 'Invalid amount',
-    'bill_invalidDate': 'Invalid date',
     'bill_requiredField': 'This field is required',
 
     // Account management
@@ -60,8 +35,6 @@ class BillTranslationsEn {
     'bill_accountManagement': 'Account Management',
     'bill_accountDeleted': 'Account deleted',
     'bill_noAccounts': 'No accounts yet',
-    'bill_noBills': 'No bills',
-    'bill_accountTitle': 'Account',
     'bill_deleteAccount': 'Delete Account',
     'bill_enterAccountName': 'Enter account name',
     'bill_confirmDeleteAccountWithBills':
@@ -71,31 +44,16 @@ class BillTranslationsEn {
     'bill_todayFinance': 'Today',
     'bill_monthFinance': 'Monthly',
     'bill_monthBills': 'Monthly',
-    'bill_thisWeek': 'This Week',
-    'bill_thisMonth': 'This Month',
-    'bill_thisYear': 'This Year',
-    'bill_all': 'All',
-    'bill_custom': 'Custom',
-    'bill_timeRange': 'Time Range',
 
     // Others
     'bill_delete': 'Delete',
-    'bill_noBillsClickToAdd': 'No bills, click to add',
     'bill_balance': 'Balance',
     'bill_title': 'Title',
-    'bill_enterTitle': 'Enter title',
-    'bill_enterAmount': 'Enter amount',
-    'bill_enterValidAmount': 'Enter valid amount',
-    'bill_time': 'Time',
 
     // Quick bookkeeping config
-    'bill_shortcutsAccountingConfig': 'Shortcuts Accounting Config',
-    'bill_configDailyWidget': 'Configure Daily Widget',
-    'bill_configWeeklyWidget': 'Configure Weekly Widget',
     'bill_saveConfig': 'Save Config',
     'bill_quickBookkeepingConfig': 'Quick Bookkeeping Config',
     'bill_addQuickPreset': 'Add Quick Preset',
-    'bill_quickAccountingPreview': 'Quick Accounting Preview',
     'bill_noQuickPresets': 'No Quick Presets',
     'bill_clickToAddQuickPreset':
         'Click the + button in the bottom right to add quick presets',
@@ -105,7 +63,6 @@ class BillTranslationsEn {
     'bill_pleaseEnterPresetName': 'Please enter preset name',
     'bill_presetAmount': 'Preset Amount (Optional)',
     'bill_presetAmountHint': 'Leave blank to enter manually each time',
-    'bill_add': 'Add',
     'bill_edit': 'Edit',
     'bill_monthlyRecord': 'Monthly Records',
 
@@ -116,24 +73,15 @@ class BillTranslationsEn {
     'bill_overviewDescription': 'Display income and expense statistics',
     'bill_createShortcutName': 'Create Bill',
     'bill_createShortcutDescription': 'Quick create new bill',
-    'bill_createBill': 'Create Bill',
 
     // Stats Widget Strings
     'bill_statsWidgetName': 'Expense Stats',
     'bill_statsWidgetDescription':
         'Display income/expense stats with custom target',
-    'bill_statsSelectorTitle': 'Stats Configuration',
-    'bill_selectType': 'Stats Type',
-    'bill_selectPeriod': 'Time Period',
-    'bill_targetAmount': 'Target Amount',
 
     // Monthly Bill Widget Strings
     'bill_monthlyBillsWidgetName': 'Monthly Bills',
     'bill_monthlyBillsWidgetDescription': 'Display bills for a specific month',
-    'bill_monthlySelectorTitle': 'Monthly Configuration',
-    'bill_selectMonth': 'Select Month',
-    'bill_thisMonthWidget': 'This Month',
-    'bill_lastMonthWidget': 'Last Month',
 
     // Interface search
     'bill_searchPlaceholder': 'Search bills by name, category, or note',
@@ -143,7 +91,6 @@ class BillTranslationsEn {
     'bill_addSubscription': 'Add Subscription',
     'bill_editSubscription': 'Edit Subscription',
     'bill_deleteSubscription': 'Delete Subscription',
-    'bill_subscriptionList': 'Subscription List',
     'bill_activeSubscriptions': 'Active Subscriptions',
     'bill_inactiveSubscriptions': 'Inactive',
     'bill_noSubscriptions': 'No subscriptions yet',
@@ -152,7 +99,6 @@ class BillTranslationsEn {
     'bill_subscriptionPrice': 'Price',
     'bill_startDate': 'Start Date',
     'bill_endDate': 'End Date',
-    'bill_cycle': 'Cycle',
     'bill_chooseIcon': 'Choose Icon',
     'bill_monthly': 'Monthly',
     'bill_quarterly': 'Quarterly',
@@ -166,11 +112,8 @@ class BillTranslationsEn {
         'Are you sure you want to delete "{name}"? This action cannot be undone.',
     'bill_subscriptionCreated': 'Subscription created',
     'bill_subscriptionUpdated': 'Subscription updated',
-    'bill_subscriptionDeleted': 'Subscription deleted',
-    'bill_subscriptionTerminated': 'Subscription terminated',
     'bill_saveFailed': 'Save failed',
     'bill_subscriptionDaysError': 'Subscription days must be greater than 0',
-    'bill_frequency': 'Frequency',
     'bill_nextDate': 'Next:',
     'bill_autoRenew': 'Auto-renew',
     'bill_days': 'Days',

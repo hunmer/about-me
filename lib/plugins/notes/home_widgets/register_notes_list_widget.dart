@@ -372,16 +372,16 @@ class _NotesListStatefulWidgetState extends State<_NotesListStatefulWidget> {
     final difference = now.difference(dateTime);
 
     if (difference.inSeconds < 60) {
-      return 'justNow'.tr;
+      return 'notes_justNow'.tr;
     } else if (difference.inMinutes < 60) {
       final minutes = difference.inMinutes;
-      return 'minutesAgo'.trParams({'count': '$minutes'});
+      return 'notes_minutesAgo'.trParams({'count': '$minutes'});
     } else if (difference.inHours < 24) {
       final hours = difference.inHours;
-      return 'hoursAgo'.trParams({'count': '$hours'});
+      return 'notes_hoursAgo'.trParams({'count': '$hours'});
     } else if (difference.inDays < 7) {
       final days = difference.inDays;
-      return 'daysAgo'.trParams({'count': '$days'});
+      return 'notes_daysAgo'.trParams({'count': '$days'});
     } else {
       return DateFormat('yyyy-MM-dd').format(dateTime);
     }

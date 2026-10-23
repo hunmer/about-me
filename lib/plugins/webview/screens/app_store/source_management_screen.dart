@@ -189,7 +189,7 @@ class SourceManagementScreen extends StatelessWidget {
                                                   size: 20,
                                                   color: menuTheme.danger,
                                                 ),
-                                                label: 'delete'.tr,
+                                                label: 'core_delete'.tr,
                                                 theme: menuTheme,
                                                 danger: true,
                                                 onTap: () {
@@ -294,7 +294,7 @@ class SourceManagementScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: DSButton(
-                            label: 'cancel'.tr,
+                            label: 'core_cancel'.tr,
                             variant: DSButtonVariant.outline,
                             onPressed: () => Navigator.of(dialogContext).pop(),
                           ),
@@ -302,7 +302,7 @@ class SourceManagementScreen extends StatelessWidget {
                         SizedBox(width: theme.spacing.md),
                         Expanded(
                           child: DSButton(
-                            label: 'add'.tr,
+                            label: 'app_add'.tr,
                             onPressed: () {
                               if (nameController.text.isNotEmpty &&
                                   urlController.text.isNotEmpty &&
@@ -381,7 +381,7 @@ class SourceManagementScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: DSButton(
-                            label: 'cancel'.tr,
+                            label: 'core_cancel'.tr,
                             variant: DSButtonVariant.outline,
                             onPressed: () => Navigator.of(dialogContext).pop(),
                           ),
@@ -389,7 +389,7 @@ class SourceManagementScreen extends StatelessWidget {
                         SizedBox(width: theme.spacing.md),
                         Expanded(
                           child: DSButton(
-                            label: 'save'.tr,
+                            label: 'core_save'.tr,
                             onPressed: () {
                               if (nameController.text.isNotEmpty &&
                                   urlController.text.isNotEmpty &&
@@ -425,12 +425,12 @@ class SourceManagementScreen extends StatelessWidget {
       builder: (dialogContext) => DSThemeBridge(
         child: Builder(
           builder: (dialogContext) => DSDialog(
-            title: 'confirm'.tr,
+            title: 'core_confirm'.tr,
             message: 'webview_delete_source_confirm'.trParams({
               'name': source.name,
             }),
-            confirmText: 'delete'.tr,
-            cancelText: 'cancel'.tr,
+            confirmText: 'core_delete'.tr,
+            cancelText: 'core_cancel'.tr,
             confirmVariant: DSButtonVariant.destructive,
             onConfirm: () => Navigator.of(dialogContext).pop(true),
             onCancel: () => Navigator.of(dialogContext).pop(false),

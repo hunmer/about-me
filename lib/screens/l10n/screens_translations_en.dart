@@ -10,16 +10,12 @@ final Map<String, String> screensTranslationsEn = {
   // floating_widget_screen
   'screens_floatingBallSettings': 'System Floating Ball',
   'screens_requestPermission': 'Request Permission',
-  'screens_floatingBallConfig': 'Floating Ball Configuration',
-  'screens_customizeFloatingBallAppearanceBehavior':
-      'Customize the appearance and behavior of the floating ball',
   'screens_selectImageAsFloatingBall': 'Select image as floating ball',
   'screens_sizeColon': 'Size: ',
   'screens_ballSizeDp': '@sizedp',
   'screens_snapThresholdColon': 'Snap Threshold: ',
   'screens_snapThresholdPx': '@thresholdpx',
   'screens_autoRestoreFloatingBallState': 'Auto restore floating ball state',
-  'screens_buttonCountColon': 'Button Count: ',
   'screens_buttonCount': '@count buttons',
   'screens_manageFloatingButtons': 'Manage Floating Buttons',
   'screens_currentPosition': 'Current Position',
@@ -41,7 +37,6 @@ final Map<String, String> screensTranslationsEn = {
   'screens_delete': 'Delete',
   'screens_selectWidgetSize': 'Select Widget Size',
   'screens_confirmDelete': 'Confirm Delete',
-  'screens_confirmDeleteItem': 'Are you sure you want to delete "@itemName"?',
   'screens_moveToFolder': 'Move to Folder',
   'screens_topDisplay': 'Top Display',
   'screens_centerDisplay': 'Center Display',
@@ -113,11 +108,9 @@ final Map<String, String> screensTranslationsEn = {
   'screens_editFolder': 'Edit Folder',
 
   // home_card
-  'screens_cannotOpenPlugin': 'Cannot open plugin',
   'screens_pluginDisabled': 'Plugin disabled',
 
   // home_grid
-  'screens_quickCreateLayout': 'Quick Create Layout',
   'screens_dragToFolder': 'Drag to folder',
   'screens_dragItemToFolder': 'Drag "@item" to folder "@folder"',
   'screens_pleaseSelectAction': 'Please select an action:',
@@ -129,38 +122,18 @@ final Map<String, String> screensTranslationsEn = {
   'screens_confirmDeleteLayout':
       'Are you sure you want to delete layout "@layoutName"? This action cannot be undone.',
   'screens_layoutManagement': 'Layout Management',
-  'screens_layoutInfo': '@items widgets · @columns columns grid',
   'screens_switchToThisLayout': 'Switch to this layout',
   'screens_rename': 'Rename',
   'screens_close': 'Close',
 
   // widget_settings_dialog
-  'screens_oneColumn': 'One Column',
-  'screens_twoColumns': 'Two Columns',
-  'screens_backgroundImage': 'Background Image',
-  'screens_alreadySet': 'Already Set',
-  'screens_notSet': 'Not Set',
-  'screens_iconColor': 'Icon Color',
-  'screens_customized': 'Customized',
-  'screens_useDefault': 'Use Default',
-  'screens_backgroundColor': 'Background Color',
-  'screens_effectWhenNoBackgroundImage': 'Effective when no background image',
   'screens_customColorWithTransparency':
       'Custom color (with transparency support)',
 
   // intent_test_screen
-  'screens_quickRegisterIntent': 'Quick Register Intent',
-  'screens_selectPresetIntentType':
-      'Select a preset Intent type for quick registration',
-  'screens_aboutmeTest': 'Aboutme Test (aboutme:///test)',
-  'screens_aboutmeComplete':
-      'Aboutme Complete (aboutme://app.example.com/open)',
-  'screens_customApp': 'Custom App (myapp://custom.host)',
   'screens_intentTest': 'Intent Test',
   'screens_grokCharacterStudyTitle': 'Grok Character Motion',
   'screens_grokCharacterStudySubtitle': 'Spring character engine single-animation debug',
-  'screens_quickRegister': 'Quick Register',
-  'screens_bulletScheme': '• @scheme',
 
   // json_dynamic_test
   'screens_jsonDynamicUITest': 'JSON Dynamic UI Test',
@@ -169,69 +142,41 @@ final Map<String, String> screensTranslationsEn = {
   'screens_uiPreview': 'UI Preview',
 
   // notification_test
-  'screens_notificationTestPage': 'Notification Test Page',
-  'screens_test': 'Test',
 
   // settings_screen
   'screens_jsonDynamicWidgetTest': 'JSON Dynamic Widget Test',
   'screens_testAndPreviewDynamicUI': 'Test and preview dynamic UI components',
-  'screens_testIOSStyleNavigation': 'Test iOS style navigation bar component',
-  'screens_notificationTest': 'Notification Test',
   'screens_manageSystemFloatingBall':
       'Manage system-level floating ball functionality',
   'screens_testDynamicIntentAndDeepLink':
       'Test dynamic Intent registration and deep linking',
 
   // base_settings_controller
-  'screens_selectLanguage': 'Select Language',
-  'screens_chinese': 'Chinese',
-  'screens_english': 'English',
 
   // super_cupertino_test_screen
-  'screens_superCupertinoTest': 'Super Cupertino Test',
-  'screens_fruitList': 'Fruit List',
-  'screens_fruitIndex': 'This is the @indexth fruit',
 
   // Additional messages
   'screens_floatingBallStarted': 'Floating ball started',
   'screens_floatingBallStopped': 'Floating ball stopped',
   'screens_pleaseEnterLayoutName': 'Please enter layout name',
-  'screens_notificationPermissionGranted': 'Notification permission granted',
-  'screens_notificationPermissionDenied': 'Notification permission denied',
-  'screens_saveSuccess': 'Saved successfully',
   'screens_allWidgetsCleared': 'All widgets cleared',
   'screens_layoutSaved': 'Layout "@name" saved',
   'screens_saveFailed': 'Save failed',
-  'screens_noImage': 'No image',
-  'screens_imageLoadFailed': 'Failed to load image',
-  'screens_pleaseSelectImage': 'Please select an image',
-  'screens_copySuccess': 'Copy successful',
-  'screens_copiedToClipboard': 'Copied to clipboard',
-  'screens_sendNotification': 'Send notification',
-  'screens_notificationSent': 'Notification sent',
-  'screens_noTestSchemeAvailable': 'No test scheme available',
   'screens_widgetSettings': 'Widget Settings',
   'screens_reselectData': 'Reselect Data',
   'screens_replaceWidget': 'Replace Widget',
   'screens_itemCount': '@count items',
   'screens_layoutBackgroundSettings': '@layoutName - Background Settings',
   'screens_layoutBackgroundSettingsTitle': 'Layout Background Settings',
-  'screens_addWidgets': 'Add Widgets',
   'screens_clear': 'Clear',
   'screens_newLayout': 'New Layout',
 
   // Additional floating ball messages
   'screens_permissionGranted': 'Permission granted',
   'screens_permissionDenied': 'Permission denied',
-  'screens_floatingBallStatus': 'Floating Ball Status',
-  'screens_running': 'Running',
-  'screens_stopped': 'Stopped',
   'screens_floatingWindowPermission': 'Floating Window Permission',
   'screens_granted': 'Granted',
-  'screens_notGranted': 'Not Granted',
   'screens_floatingBallSwitch': 'Floating Ball Switch',
-  'screens_clickToStop': 'Click to Stop',
-  'screens_clickToStart': 'Click to Start',
   'screens_autoHideInApp': 'Auto Hide In App',
   'screens_autoHideInAppDescription': 'Auto hide overlay floating ball in app',
   'screens_expandAnimation': 'Expand Animation',
@@ -253,13 +198,8 @@ final Map<String, String> screensTranslationsEn = {
   'screens_customSize': 'Custom',
   'screens_customSizeDesc': 'Custom Size',
   'screens_customSizeAdjust': 'Adjust Custom Size',
-  'screens_width': 'Width',
-  'screens_height': 'Height',
   'screens_customSizePreview': 'Preview: @width×@height',
   'screens_applyCustomSize': 'Apply Size',
-  'screens_noLayoutName': 'No layout name',
-  'screens_createNewLayout': 'Create New Layout',
-  'screens_inputLayoutName': 'Please enter layout name',
   'screens_layoutName': 'Layout Name',
   'screens_layoutNameHint': 'e.g., Work Layout, Entertainment Layout',
   'screens_deleted': 'deleted',
@@ -312,7 +252,6 @@ final Map<String, String> screensTranslationsEn = {
 
   // home_grid
   'screens_noWidgetsYet': 'No widgets yet',
-  'screens_quickLayout': 'Quick Layout',
   'screens_component': 'Widget',
   'screens_item': 'Item',
   'screens_clickPlusToAdd': 'Click the + button in the top right to add',
@@ -327,7 +266,6 @@ final Map<String, String> screensTranslationsEn = {
   'screens_deleteSuccess': 'Delete successful',
 
   'screens_presetColors': 'Preset Colors',
-  'screens_quickSelectPresetColors': 'Quick Select Preset Colors',
 
   // location_api_key_settings
   'screens_locationApiKey': 'Location API Key',
@@ -335,7 +273,6 @@ final Map<String, String> screensTranslationsEn = {
   'screens_locationApiKeyPartial': '@key...',
   'screens_setLocationApiKey': 'Set Location API Key',
   'screens_locationApiKeyHint': 'Please enter Amap API Key',
-  'screens_apiKeyLabel': 'API Key',
   'screens_apiKeyInputHint': 'Enter API Key',
   'screens_locationApiKeyGuide':
       'How to get API Key:\n1. Visit Amap Open Platform\n2. Register and create application\n3. Get Web Service API Key',
@@ -386,7 +323,6 @@ final Map<String, String> screensTranslationsEn = {
   'screens_jellyLive2dLoadStageTextures': 'Loading model textures',
   'screens_jellyLive2dLoadStageComplete': 'Loading complete',
   'screens_jellyLive2dLoadStageLoading': 'Loading',
-  'screens_jellyLive2dArchives': 'Live2D Profiles',
   'screens_jellyLive2dNoArchives': 'No profiles yet. Create one in Live2D settings',
   'screens_jellyLive2dOpenModelList': 'Models',
   'screens_jellyLive2dCharacterSize': 'Character Size',
@@ -448,10 +384,6 @@ final Map<String, String> screensTranslationsEn = {
   'screens_markBubbleRegion': 'Mark Bubble Regions',
   'screens_markBubbleRegionDesc': 'After selecting a region, drag on the image to draw rectangles. Red for model name, blue for body text.',
   'screens_configureTopPanel': 'Configure Top Info Panel',
-  'screens_avatarPosition': 'Avatar Position',
-  'screens_expBarPosition': 'Exp Bar Position',
-  'screens_iconPosition': 'Icon Position',
-  'screens_valuePosition': 'Value Position',
   'screens_topPanelAvatarHint':
       'Tap the avatar to change it. If the Live2D archive has a cover, the cover takes precedence.',
   'screens_logSystem': 'Log System',
@@ -467,7 +399,6 @@ final Map<String, String> screensTranslationsEn = {
   'screens_assistantTitle': 'Chat Assistant',
   'screens_assistantBadgeIdle': 'Your Assistant',
   'screens_assistantWorking': 'Working on it…',
-  'screens_assistantTyping': 'Typing…',
   'screens_assistantGreeting': 'Hey! What can I\nnote down for you?',
   'screens_assistantIdeas': 'Try these',
   'screens_assistantIdeaTodo': 'Todo: standup at 9 am',
@@ -476,12 +407,25 @@ final Map<String, String> screensTranslationsEn = {
   'screens_assistantIdeaCheckin': 'Check in: drank 500ml water',
   'screens_assistantIdeaEvent': 'Schedule: gym Friday 7 pm',
   'screens_assistantIdeaTimer': 'Remind me: walk break in 1 hour',
-  'screens_assistantOpenFull': 'Open full chat',
   'screens_assistantInitFailed': 'Chat assistant failed to initialize',
-  'screens_assistantClearMessages': 'Clear messages',
-  'screens_assistantClearConfirm':
-      'Clear all messages in this conversation? This cannot be undone.',
-  'screens_assistantCleared': 'Chat history cleared',
   'screens_assistantCopied': 'Copied',
   'screens_assistantDeleteMessage': 'Delete message',
+    'homeScreen_widgetSettings': 'Widget settings',
+    'homeScreen_backgroundImage': 'Background image',
+    'homeScreen_alreadySet': 'Set',
+    'homeScreen_notSet': 'Not set',
+    'homeScreen_backgroundColor': 'Background color',
+    'homeScreen_effectWhenNoBackgroundImage': 'Applied when no background image is set',
+    'homeScreen_iconColor': 'Icon color',
+    'homeScreen_customized': 'Customized',
+    'homeScreen_useDefault': 'Use default',
+    'homeScreen_oneColumn': 'One column',
+    'homeScreen_twoColumns': 'Two columns',
+    'homeScreen_presetColors': 'Preset colors',
+    'homeScreen_customColorWithTransparency': 'Custom color (with transparency)',
+    'screens_selectStackDirection': 'Select stack direction',
+    'screens_selectStackDirectionDesc': 'Choose how widgets are stacked on the screen',
+    'screens_selectPresetStyle': 'Select a preset style',
+    'screens_fromGallery': 'From gallery',
+    'screens_floatingBallImageSet': 'Floating ball image set',
 };

@@ -4,7 +4,6 @@ class AchievementTranslationsZh {
     'achievement_name': '成就',
     'achievement_widgetName': '成就',
     'achievement_widgetDescription': '快速打开成就',
-    'achievement_pluginDescription': '成就系统：记录使用足迹，解锁等级徽章',
     'achievement_overviewWidgetDescription': '展示成就解锁进度与累计积分，点击进入成就展览',
 
     // 分类
@@ -22,9 +21,7 @@ class AchievementTranslationsZh {
     'achievement_points': '积分',
 
     // 筛选
-    'achievement_filterAll': '全部',
     'achievement_filterUnlocked': '已解锁',
-    'achievement_filterLocked': '未解锁',
 
     // 详情
     'achievement_unit': '计数单位',
@@ -42,9 +39,7 @@ class AchievementTranslationsZh {
     'achievement_nextMilestone': '下一里程碑',
 
     // 详情页
-    'achievement_detailCurrentProgress': '当前进度',
     'achievement_detailLevelDetails': '等级明细',
-    'achievement_nextLevel': '下一级',
     'achievement_maxed': '已满级',
 
     // 达成弹窗

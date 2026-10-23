@@ -12,31 +12,22 @@ class ChatTranslationsZh {
     'chat_archiveChannel': '已封存',
     'chat_unarchiveChannel': '取消封存',
     'chat_archivedNoSend': '该频道已封存，无法发送消息',
-    'chat_showAvatarInChannelList': '在聊天列表显示头像',
     'chat_channelList': '频道列表',
     'chat_newChannel': '新建频道',
     'chat_deleteChannel': '删除频道',
     'chat_deleteMessages': '删除消息',
     'chat_draft': '草稿',
-    'chat_chatRoom': '聊天室',
     'chat_enterMessage': '输入消息...',
     'chat_justNow': '刚刚',
     'chat_edit': '编辑',
     'chat_copy': '复制',
     'chat_delete': '删除',
     'chat_pin': '置顶',
-    'chat_clear': '清空',
-    'chat_info': '信息',
     'chat_multiSelectMode': '多选模式',
     'chat_clearMessages': '清空消息',
     'chat_autoReplySettings': '自动回复设置',
-    'chat_channelInfo': '频道信息',
-    'chat_selectedMessages': '已选择 @count 条消息',
-    'chat_edited': '已编辑',
     'chat_channelsTab': '频道',
     'chat_timelineTab': '时间线',
-    'chat_timelineComingSoon': '时间线功能 - 即将推出',
-    'chat_editProfile': '编辑个人资料',
     'chat_today': '今天',
     'chat_yesterday': '昨天',
 
@@ -44,28 +35,14 @@ class ChatTranslationsZh {
     'chat_minutesAgo': '@minutes分钟前',
     'chat_hoursAgo': '@hours小时前',
     'chat_daysAgo': '@days天前',
-    'chat_userInitial': '@username的首字母',
 
     // 高级筛选
-    'chat_advancedFilter': '高级筛选',
-    'chat_searchIn': '搜索范围：',
-    'chat_channelNames': '频道名称',
-    'chat_usernames': '用户名',
-    'chat_messageContent': '消息内容',
     'chat_dateRange': '日期范围：',
-    'chat_startDate': '开始日期',
-    'chat_endDate': '结束日期',
-    'chat_clearDates': '清除日期',
     'chat_selectChannels': '选择频道：',
-    'chat_selectUsers': '选择用户：',
-    'chat_noChannelsAvailable': '没有可用的频道',
-    'chat_noUsersAvailable': '没有可用的用户',
-    'chat_setBackground': '设置背景',
 
     // 消息操作对话框
     'chat_messageOptions': '消息选项',
     'chat_addEmoji': '添加表情',
-    'chat_settings': '设置',
     'chat_share': '分享',
     'chat_makeSticker': '制作贴图',
     'chat_reply': '回复',
@@ -77,7 +54,6 @@ class ChatTranslationsZh {
     'chat_deleteMessage': '删除消息',
     'chat_deleteMessageConfirmation': '确定要删除这条消息吗？此操作不可撤销。',
     'chat_copiedToClipboard': '已复制到剪贴板',
-    'chat_createChannelFailed': '创建频道失败: @e',
     'chat_noMessagesYet': '暂无消息',
     'chat_noMessagesFound': '没有找到匹配的消息',
 
@@ -85,16 +61,11 @@ class ChatTranslationsZh {
     'chat_copiedSelectedMessages': '已复制所选消息',
     'chat_aiAssistantNotFound': '找不到对应的AI助手',
     'chat_aiMessages': 'AI消息',
-    'chat_filterAiMessages': '筛选AI创建的消息',
     'chat_favoriteMessages': '收藏的消息',
-    'chat_showOnlyFavorites': '仅显示收藏的消息',
 
     // 录音与文件相关
     'chat_recordingFailed': '录音失败',
-    'chat_gotIt': '知道了',
     'chat_recordingStopError': '停止录音时出现错误,录音可能未能保存。',
-    'chat_selectDate': '选择日期',
-    'chat_invalidAudioMessage': '无效的音频消息',
     'chat_fileNotAccessible': '文件不存在或无法访问',
     'chat_fileProcessingFailed': '处理文件失败: @processingError',
     'chat_fileSelectionFailed': '选择文件失败: @e',
@@ -109,25 +80,15 @@ class ChatTranslationsZh {
     'chat_videoProcessingFailed': '处理视频失败: @processingError',
     'chat_videoSelectionFailed': '选择视频失败: @e',
     'chat_videoSent': '已发送视频: @basename',
-    'chat_videoRecordingFailed': '拍摄视频失败: @e',
     'chat_channelCreationFailed': '创建频道失败: @e',
 
     // 新增翻译
     'chat_usernameCannotBeEmpty': '用户名不能为空',
     'chat_updateFailed': '更新失败: @e',
-    'chat_showAll': '显示全部',
-    'chat_singleFile': '1个文件',
-    'chat_contextRange': '上下文',
-    'chat_setContextRange': '设置上下文范围',
-    'chat_currentRange': '当前范围: @currentValue',
-    'chat_titleCannotBeEmpty': '标题不能为空',
-    'chat_deleteChannelConfirmation': '确定要删除频道"@title"吗？此操作不可撤销。',
 
     // UI服务相关
     'chat_channelCount': '频道数量',
-    'chat_totalMessagesCount': '总消息数量',
     'chat_todayMessages': '今日新增消息',
-    'chat_profileTitle': '个人资料',
     'chat_chatSettings': '聊天设置',
     'chat_showAvatarInChat': '在聊天中显示头像',
     'chat_playSoundOnSend': '发送消息播放提示音',
@@ -139,7 +100,6 @@ class ChatTranslationsZh {
     'chat_takePhoto': '拍照',
     'chat_recordVideo': '录像',
     'chat_video': '视频',
-    'chat_pluginAnalysis': '插件分析',
     'chat_file': '文件',
     'chat_audioRecording': '录音',
     'chat_smartAgent': '智能体',
@@ -147,15 +107,10 @@ class ChatTranslationsZh {
     // 小组件相关
     'chat_widgetName': '聊天',
     'chat_widgetDescription': '快速打开聊天',
-    'chat_chatWidgetIcon': '聊天',
     'chat_overviewName': '聊天概览',
     'chat_overviewDescription': '显示频道和消息统计',
-    'chat_communicationCategory': '通讯',
-    'chat_loadFailed': '加载失败',
     'chat_channelQuickAccess': '频道快速访问',
     'chat_channelQuickAccessDesc': '快速打开指定频道',
-    'chat_clickToEnter': '点击进入',
-    'chat_untitled': '未命名频道',
     'chat_noMessages': '暂无消息',
 
     // 选择器相关
@@ -165,33 +120,22 @@ class ChatTranslationsZh {
     'chat_noChannels': '暂无频道，请先创建',
 
     // 其他UI元素
-    'chat_editMessageTitle': '编辑消息标题',
-    'chat_messageHintText': '消息提示文本',
     'chat_errorFilePreviewFailed': '预览文件失败: @e',
     'chat_audioMessageBubbleErrorText': '音频消息气泡错误文本',
     'chat_stopRecordingHint': '点击停止录音',
-    'chat_rangeHint': '上下文范围',
     'chat_metadataFilters': '元数据筛选器',
 
     // 频道相关
     'chat_channelName': '频道名称',
-    'chat_tag': '标签',
-    'chat_tagHint': '添加标签以分类消息',
     'chat_username': '用户名',
     'chat_channelGroupLabel': '频道分组',
     'chat_channelGroupHint': '可选，留空则归类为默认分组',
 
     // 底部栏按钮
-    'chat_createChannel': '创建频道',
     'chat_create': '创建',
     'chat_cancel': '取消',
-    'chat_channelCreated': '频道已创建',
 
     // 其他
-    'chat_save': '保存',
-    'chat_reset': '重置',
-    'chat_apply': '应用',
-    'chat_fileOpenFailed': '打开文件失败: @e',
 
     // 界面搜索
     'chat_channelListTitle': '频道列表',
@@ -215,7 +159,6 @@ class ChatTranslationsZh {
     'chat_typeSent': '发出',
     'chat_typeReceived': '收到',
     'chat_typeAudio': '语音',
-    'chat_tagList': '标签列表',
     'chat_messageCount': '@count 条消息',
     'chat_searchTags': '搜索标签',
     'chat_sortByTime': '按时间排序',
@@ -224,15 +167,10 @@ class ChatTranslationsZh {
     'chat_noTagsFound': '暂无标签',
     'chat_noMatchingTags': '未找到匹配的标签',
     'chat_totalMessages': '共 @count 条消息',
-    'chat_unknownChannel': '未知频道',
-    'chat_error': '错误',
-    'chat_messageNoChannel': '消息没有关联频道',
     'chat_channelNotFound': '频道不存在',
     'chat_searchMessages': '搜索消息',
     'chat_noMatchingMessages': '未找到匹配的消息',
     'chat_refresh': '刷新',
-    'chat_listView': '切换为列表视图',
-    'chat_cardView': '切换为卡片视图',
   
   // const Text 硬编码迁移(zh)
   'chat_deleteStickerPack': '删除贴纸包',
@@ -277,5 +215,7 @@ class ChatTranslationsZh {
   // 示例数据
   'chat_sampleChannelsTitle': '示例频道与消息',
   'chat_sampleChannelsDesc': '创建几个示例聊天频道、消息和设置',
+    'chat_pluginNotAvailable': '插件不可用',
+    'chat_videoFileNotExist': '视频文件不存在',
 };
 }

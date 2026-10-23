@@ -45,7 +45,6 @@ const Map<String, String> scriptsCenterTranslationsZh = {
   'scripts_center_create': '创建',
   'scripts_center_basicInfo': '基本信息',
   'scripts_center_codeEditor': '代码编辑',
-  'scripts_center_triggers': '触发条件',
   'scripts_center_advancedSettings': '高级设置',
   'scripts_center_config': '配置',
   'scripts_center_format': '格式化',
@@ -55,7 +54,6 @@ const Map<String, String> scriptsCenterTranslationsZh = {
 
   // 脚本字段
   'scripts_center_scriptName': '脚本名称',
-  'scripts_center_scriptId': '脚本ID',
   'scripts_center_version': '版本号',
   'scripts_center_scriptType': '脚本类型',
   'scripts_center_updateUrl': '更新地址（可选）',
@@ -63,9 +61,6 @@ const Map<String, String> scriptsCenterTranslationsZh = {
   'scripts_center_selectIcon': '选择图标',
 
   // 配置相关
-  'scripts_center_selectAgent': '选择 AI 助手',
-  'scripts_center_enabledEvents': '监听的事件',
-  'scripts_center_promptTemplate': '提示词模板',
 
   // 脚本类型
   'scripts_center_moduleType': 'Module(可接受参数)',
@@ -102,16 +97,12 @@ const Map<String, String> scriptsCenterTranslationsZh = {
   'scripts_center_scriptExecutorDescription': '选择并快速执行脚本',
   'scripts_center_selectScript': '选择脚本',
   'scripts_center_script': '脚本',
-  'scripts_center_tapToExecute': '点击执行',
-  'scripts_center_clickToExecute': '点击执行脚本',
   'scripts_center_scriptNotFound': '脚本未找到',
   'scripts_center_scriptExecuted': '脚本执行成功',
   'scripts_center_scriptExecuteFailed': '脚本执行失败',
   'scripts_center_scriptExecuteError': '脚本执行错误',
 
   // 脚本列表小组件
-  'scripts_center_scriptsListWidgetName': '脚本列表',
-  'scripts_center_scriptsListWidgetDesc': '以彩色网格展示所有脚本',
 
   // 删除相关
   'scripts_center_delete_confirm': '确认删除',
@@ -138,9 +129,7 @@ const Map<String, String> scriptsCenterTranslationsZh = {
   'scripts_center_selectConfigFile': '选择配置文件',
   'scripts_center_executionLogs': '执行记录',
   'scripts_center_exportScript': '导出脚本',
-  'scripts_center_exportScriptDesc': '导出代码、元数据和所有配置文件',
   'scripts_center_importJsFile': '导入 JS 文件',
-  'scripts_center_required': '必填',
   'scripts_center_addLink': '添加链接',
   'scripts_center_addImageLink': '添加图片链接',
 

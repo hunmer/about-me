@@ -1,30 +1,16 @@
 /// Agent Chat插件中文翻译
 const Map<String, String> agentChatTranslationsZh = {
   // 对话列表页面
-  'agent_chat_conversationListTitle': 'AI 对话',
-  'agent_chat_groupManagement': '分组管理',
-  'agent_chat_editGroup': '编辑分组',
-  'agent_chat_addGroup': '添加分组',
   'agent_chat_addChannel': '添加频道',
-  'agent_chat_create': '创建',
   'agent_chat_editConversation': '编辑会话',
   'agent_chat_confirmDelete': '确认删除',
   'agent_chat_delete': '删除',
-  'agent_chat_selectCreateType': '选择要创建的类型',
-  'agent_chat_channel': '频道',
-  'agent_chat_channelDescription': '创建新的对话频道',
-  'agent_chat_group': '分组',
-  'agent_chat_groupDescription': '创建新的分组分类',
   'agent_chat_clear': '清除',
 
   // 聊天页面
   'agent_chat_selectAgent': '选择Agent',
-  'agent_chat_createNewChat': '创建新聊天',
   'agent_chat_tokenStatistics': 'Token统计',
   'agent_chat_close': '关闭',
-  'agent_chat_conversationSettings': '会话设置',
-  'agent_chat_useGlobalSettings': '使用全局设置',
-  'agent_chat_custom': '自定义',
   'agent_chat_save': '保存',
   'agent_chat_cancel': '取消',
   'agent_chat_confirmClear': '确认清空',
@@ -37,9 +23,7 @@ const Map<String, String> agentChatTranslationsZh = {
 
   // 工具模板页面
   'agent_chat_toolTemplate': '工具模板',
-  'agent_chat_selectTagFilter': '选择标签过滤',
   'agent_chat_use': '使用',
-  'agent_chat_deleteConfirm': '删除确认',
   'agent_chat_reset': '重置',
   'agent_chat_confirm': '确定',
 
@@ -64,14 +48,8 @@ const Map<String, String> agentChatTranslationsZh = {
   'agent_chat_enableBackgroundServiceDescription': '切换到其他应用后继续接收AI回复。会显示前台通知以保持服务运行。',
   'agent_chat_showTokenConsumption': '显示Token消耗',
   'agent_chat_showTokenConsumptionDescription': '在通知中实时显示输入/输出token数量和总消耗。',
-  'agent_chat_testConfiguration': '测试配置',
-  'agent_chat_saveSettings': '保存设置',
 
   // 配置对话框
-  'agent_chat_configuration': '配置',
-  'agent_chat_advancedConfiguration': '高级配置',
-  'agent_chat_confirmSave': '确认保存',
-  'agent_chat_confirmSaveDescription': '确定要保存配置吗?',
   'agent_chat_copyResult': '复制结果',
   'agent_chat_executeAgain': '重新执行此步骤',
   'agent_chat_viewCreatedDetail': '点击查看详情',
@@ -81,14 +59,8 @@ const Map<String, String> agentChatTranslationsZh = {
   'agent_chat_goBack': '返回',
 
   // 消息操作
-  'agent_chat_copy': '复制',
   'agent_chat_edit': '编辑',
-  'agent_chat_regenerate': '重新生成',
   'agent_chat_saveTool': '保存工具',
-  'agent_chat_reExecuteTool': '重新执行工具',
-  'agent_chat_viewDetails': '查看详情',
-  'agent_chat_deleteTask': '删除任务',
-  'agent_chat_confirmDeleteTask': '确定要删除这个任务吗?',
   'agent_chat_send': '发送',
 
   // 工具相关
@@ -114,10 +86,6 @@ const Map<String, String> agentChatTranslationsZh = {
   'agent_chat_resettingDefaultTemplates': '正在重置默认模板...',
 
   // 创建对话框
-  'agent_chat_selectTypeToCreate': '选择要创建的类型',
-  'agent_chat_createNewConversationChannel': '创建新的对话频道',
-  'agent_chat_createNewGroupCategory': '创建新的分组分类',
-  'agent_chat_confirmDeleteGroup': '确定要删除分组 "@groupName" 吗?\n\n此操作将同时清除该分组的筛选状态。',
   'agent_chat_aiChat': 'AI 对话',
 
   // 插件信息
@@ -128,22 +96,15 @@ const Map<String, String> agentChatTranslationsZh = {
 
   // 空状态
   'agent_chat_loadingToolTemplates': '正在加载工具模板...',
-  'agent_chat_noToolTemplates': '暂无工具模板',
-  'agent_chat_noChannels': '暂无频道',
-  'agent_chat_noGroups': '暂无分组',
-  'agent_chat_noMessages': '暂无消息',
-  'agent_chat_emptyConversationHistory': '空白的对话历史',
 
   // Widget Home Strings
   'agent_chat_pluginName': 'AI 对话',
   'agent_chat_name': 'AI 对话',
-  'agent_chat_description': '快速打开 Agent Chat',
   'agent_chat_overview': 'Agent Chat 概览',
   'agent_chat_overviewDescription': '显示会话统计信息',
   'agent_chat_totalConversations': '会话总数',
   'agent_chat_unreadMessages': '未读消息',
   'agent_chat_totalGroups': '分组总数',
-  'agent_chat_loadFailed': '加载失败',
 
   // 选择器小组件
   'agent_chat_conversationSelectorName': '会话选择',
@@ -151,7 +112,6 @@ const Map<String, String> agentChatTranslationsZh = {
   'agent_chat_selectConversation': '选择会话',
   'agent_chat_conversationQuickAccess': 'AI 频道快捷入口',
   'agent_chat_conversationQuickAccessDesc': '快速进入指定的 AI 会话频道',
-  'agent_chat_clickToEnter': '点击进入',
   'agent_chat_justNow': '刚刚',
   'agent_chat_minutesAgo': '@count 分钟前',
   'agent_chat_hoursAgo': '@count 小时前',
@@ -161,9 +121,6 @@ const Map<String, String> agentChatTranslationsZh = {
   'agent_chat_searchPlaceholder': '搜索会话...',
 
   // const Text 硬编码迁移(zh)
-  'agent_chat_selectConfigMode': '选择配置模式',
-  'agent_chat_singleAgentMode': '单 Agent 模式',
-  'agent_chat_agentChainMode': 'Agent 链模式',
 
   // 工具模板管理
   'agent_chat_tag': '标签',
@@ -211,4 +168,6 @@ const Map<String, String> agentChatTranslationsZh = {
   // 示例数据
   'agentChat_sampleConversationsTitle': '示例会话与消息',
   'agentChat_sampleConversationsDesc': '创建分组好的示例 AI 会话和消息记录',
+    'agent_chat_conversationNotFound': '未找到对话',
+    'agent_chat_pluginNotAvailable': '插件不可用',
 };

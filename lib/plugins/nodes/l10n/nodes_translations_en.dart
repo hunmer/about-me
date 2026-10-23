@@ -52,18 +52,9 @@ final Map<String, String> nodesTranslationsEn = {
   'nodes_key': 'key',
   'nodes_value': 'value',
   'nodes_notes': 'Notes',
-  'nodes_note': 'Note',
 
   // Operations
-  'nodes_createNew': 'Create new',
-  'nodes_newFolder': 'New folder',
-  'nodes_newNote': 'New note',
   'nodes_delete': 'Delete',
-  'nodes_selectCurrentFolder': 'Select current folder',
-  'nodes_moveTo': 'Move to',
-  'nodes_deleteNote': 'Delete note',
-  'nodes_deleteNoteConfirmation': 'Are you sure you want to delete this note? This action cannot be undone.',
-  'nodes_movedTo': 'Moved to @targetFolderName',
   'nodes_cancel': 'Cancel',
   'nodes_save': 'Save',
   'nodes_clear': 'Clear',
@@ -77,18 +68,8 @@ final Map<String, String> nodesTranslationsEn = {
   'nodes_copiedToClipboard': 'Copied to clipboard',
 
   // Sorting & Filtering
-  'nodes_sortByName': 'Sort by name',
-  'nodes_sortByDate': 'Sort by date',
-  'nodes_sortByPriority': 'Sort by priority',
-  'nodes_filterAll': 'All',
-  'nodes_filterCompleted': 'Completed',
-  'nodes_filterPending': 'Pending',
 
   // Node status
-  'nodes_nodeStatusCompleted': 'Completed',
-  'nodes_nodeStatusPending': 'Pending',
-  'nodes_confirmCompleteNode': 'Are you sure you want to mark this node as completed?',
-  'nodes_confirmReopenNode': 'Are you sure you want to reopen this node?',
   'nodes_emptyNodesMessage': 'No nodes yet, click the button below to create',
 
   // UI elements
@@ -104,8 +85,6 @@ final Map<String, String> nodesTranslationsEn = {
 
   // Node List Widget
   'nodes_selectNotebook': 'Select notebook',
-  'nodes_notebookListName': 'Node List',
-  'nodes_notebookListDescription': 'Display nodes from selected notebook',
   'nodes_notebookListWidgetName': 'Notebook List',
   'nodes_notebookListWidgetDesc': 'Display all nodes in notebook',
   'nodes_nodeCount': '@count nodes',
@@ -114,4 +93,10 @@ final Map<String, String> nodesTranslationsEn = {
   // Sample data
   'nodes_sampleNotebooksTitle': 'Sample notebooks',
   'nodes_sampleNotebooksDesc': 'Create sample work/life/learning notebooks with nodes',
+    'nodes_todoNodes': 'Todo nodes',
+    'nodes_editCustomField': 'Edit custom field',
+    'nodes_deleteCustomField': 'Delete custom field',
+    'nodes_deleteCustomFieldConfirm': 'Delete this field?',
+    'nodes_fieldNameHint': 'Enter field name',
+    'nodes_fieldValueHint': 'Enter field value',
 };

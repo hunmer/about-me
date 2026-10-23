@@ -133,7 +133,7 @@ class _TodoListWidgetContent extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Center(
                             child: Text(
-                              'empty_todo'.tr,
+                              'todo_emptyTaskList'.tr,
                               style: DsTypography.caption.copyWith(
                                 color: theme.textSub.withValues(alpha: 0.5),
                               ),

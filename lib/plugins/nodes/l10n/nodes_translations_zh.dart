@@ -52,18 +52,9 @@ final Map<String, String> nodesTranslationsZh = {
   'nodes_key': '键',
   'nodes_value': '值',
   'nodes_notes': '笔记',
-  'nodes_note': '笔记',
 
   // 操作
-  'nodes_createNew': '创建新',
-  'nodes_newFolder': '新建文件夹',
-  'nodes_newNote': '新建笔记',
   'nodes_delete': '删除',
-  'nodes_selectCurrentFolder': '选择当前文件夹',
-  'nodes_moveTo': '移动到',
-  'nodes_deleteNote': '删除笔记',
-  'nodes_deleteNoteConfirmation': '确定要删除此笔记吗?此操作不可恢复。',
-  'nodes_movedTo': '已移动到 @targetFolderName',
   'nodes_cancel': '取消',
   'nodes_save': '保存',
   'nodes_clear': '清空',
@@ -77,18 +68,8 @@ final Map<String, String> nodesTranslationsZh = {
   'nodes_copiedToClipboard': '已复制到剪贴板',
 
   // 排序与筛选
-  'nodes_sortByName': '按名称排序',
-  'nodes_sortByDate': '按日期排序',
-  'nodes_sortByPriority': '按优先级排序',
-  'nodes_filterAll': '全部',
-  'nodes_filterCompleted': '已完成',
-  'nodes_filterPending': '待完成',
 
   // 节点状态
-  'nodes_nodeStatusCompleted': '已完成',
-  'nodes_nodeStatusPending': '待完成',
-  'nodes_confirmCompleteNode': '确定要将此节点标记为已完成吗?',
-  'nodes_confirmReopenNode': '确定要重新打开此节点吗?',
   'nodes_emptyNodesMessage': '暂无节点,点击下方按钮创建',
 
   // 界面元素
@@ -104,8 +85,6 @@ final Map<String, String> nodesTranslationsZh = {
 
   // 节点列表小组件
   'nodes_selectNotebook': '选择笔记本',
-  'nodes_notebookListName': '节点列表',
-  'nodes_notebookListDescription': '显示选定笔记本的节点列表',
   'nodes_notebookListWidgetName': '笔记本列表',
   'nodes_notebookListWidgetDesc': '显示笔记本中的所有节点',
   'nodes_nodeCount': '@count 个节点',
@@ -114,4 +93,10 @@ final Map<String, String> nodesTranslationsZh = {
   // 示例数据
   'nodes_sampleNotebooksTitle': '示例笔记本',
   'nodes_sampleNotebooksDesc': '创建工作、生活、学习示例笔记本与节点',
+    'nodes_todoNodes': '待办节点',
+    'nodes_editCustomField': '编辑自定义字段',
+    'nodes_deleteCustomField': '删除自定义字段',
+    'nodes_deleteCustomFieldConfirm': '确定要删除这个字段吗？',
+    'nodes_fieldNameHint': '输入字段名称',
+    'nodes_fieldValueHint': '输入字段值',
 };

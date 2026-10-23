@@ -388,8 +388,8 @@ class _AppDetailSheetState extends State<AppDetailSheet> {
                     title: 'webview_confirm_install'.tr,
                     message:
                         'This will download ${_files!.length} files (${_formatBytes(_files!.fold<int>(0, (sum, file) => sum + file.size))}).\n\nContinue?',
-                    confirmText: 'confirm'.tr,
-                    cancelText: 'cancel'.tr,
+                    confirmText: 'core_confirm'.tr,
+                    cancelText: 'core_cancel'.tr,
                     onConfirm: () => Navigator.of(dialogContext).pop(true),
                     onCancel: () => Navigator.of(dialogContext).pop(false),
                   ),
@@ -423,7 +423,7 @@ class _AppDetailSheetState extends State<AppDetailSheet> {
                     message:
                         'Are you sure you want to uninstall ${widget.app.title}?',
                     confirmText: 'webview_uninstall'.tr,
-                    cancelText: 'cancel'.tr,
+                    cancelText: 'core_cancel'.tr,
                     confirmVariant: DSButtonVariant.destructive,
                     onConfirm: () => Navigator.of(dialogContext).pop(true),
                     onCancel: () => Navigator.of(dialogContext).pop(false),

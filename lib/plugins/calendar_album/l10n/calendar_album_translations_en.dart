@@ -6,46 +6,12 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_dayCardName': 'Album day card',
     'calendar_album_dayCardDesc': 'Show photos and entries for the selected date',
     'calendar_album_dayCardEmpty': 'No photos on this day',
-    'calendar_album_entries_unit': 'entries',
-    'calendar_album_items_unit': 'items',
 
     // Album Management
-    'calendar_album_create_album': 'Create Album',
-    'calendar_album_delete_album': 'Delete Album',
-    'calendar_album_album_list': 'Album List',
     'calendar_album_add_photos': 'Add Photos',
     'calendar_album_add_tag': 'Add Tag',
-    'calendar_album_select_date': 'Select Date',
-    'calendar_album_no_photos_yet': 'No photos yet',
-    'calendar_album_photo_count': 'Photos: ',
-    'calendar_album_view_all_photos': 'View All Photos',
-    'calendar_album_edit_album_info': 'Edit Album Info',
-    'calendar_album_album_cover': 'Album Cover',
-    'calendar_album_save_changes': 'Save Changes',
     'calendar_album_cancel': 'Cancel',
-    'calendar_album_confirm_delete_album':
-        'Are you sure you want to delete this album?',
-    'calendar_album_album_created': 'Album created',
-    'calendar_album_album_deleted': 'Album deleted',
-    'calendar_album_photo_added': 'Photo added',
-    'calendar_album_photo_removed': 'Photo removed',
     'calendar_album_select_photos': 'Select Photos',
-    'calendar_album_create_new_album': 'Create New Album',
-    'calendar_album_album_settings': 'Album Settings',
-    'calendar_album_change_cover': 'Change Cover',
-    'calendar_album_sort_by_date': 'Sort by Date',
-    'calendar_album_sort_by_name': 'Sort by Name',
-    'calendar_album_search_albums': 'Search Albums',
-    'calendar_album_no_albums_found': 'No albums found',
-    'calendar_album_shared_albums': 'Shared Albums',
-    'calendar_album_my_albums': 'My Albums',
-    'calendar_album_share_album': 'Share Album',
-    'calendar_album_stop_sharing': 'Stop Sharing',
-    'calendar_album_shared_with': 'Shared with',
-    'calendar_album_privacy_settings': 'Privacy Settings',
-    'calendar_album_public_album': 'Public Album',
-    'calendar_album_private_album': 'Private Album',
-    'calendar_album_shared_with_selected': 'Shared with selected',
 
     // Diary Management
     'calendar_album_all_diaries': 'All',
@@ -69,25 +35,19 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_calendar': 'Calendar',
     'calendar_album_content': 'Content',
     'calendar_album_create_entry': 'Create Entry',
-    'calendar_album_delete_entry': 'Delete Entry',
     'calendar_album_edit': 'Edit',
     'calendar_album_location': 'Location',
     'calendar_album_mood': 'Mood',
     'calendar_album_new_entry': 'New Entry',
     'calendar_album_no_entries': 'No Entries',
-    'calendar_album_no_entries_for_date': 'No entries for this date',
     'calendar_album_no_tags': 'No Tags',
-    'calendar_album_select_tag': 'Select Tag',
     'calendar_album_tag_management': 'Tag Management',
     'calendar_album_tags': 'Tags',
-    'calendar_album_tags_hint': 'Add tags separated by commas',
     'calendar_album_title': 'Title',
     'calendar_album_weather': 'Weather',
-    'calendar_album_word_count': 'Word Count',
 
     // Entry Editor
     'calendar_album_edit_post': 'Edit Post',
-    'calendar_album_view_post': 'View Post',
     'calendar_album_new_post': 'New Post',
     'calendar_album_split_by_date_title': 'Split Records',
     'calendar_album_split_by_date_message':
@@ -95,7 +55,6 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_split_by_date_split': 'Split',
     'calendar_album_split_by_date_merge': 'Merge',
     'calendar_album_date_photo_count': '@date · @count photos',
-    'calendar_album_save': 'Save',
     'calendar_album_whats_on_mind': "What's on your mind?",
     'calendar_album_select_mood': 'Select Mood',
     'calendar_album_add_location': 'Add Location',
@@ -123,14 +82,9 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_weather_clear': 'Clear',
 
     // Widget Configuration
-    'calendar_album_config_weekly_widget': 'Configure Weekly Album Widget',
     'calendar_album_complete': 'Complete',
 
     // Album Statistics
-    'calendar_album_album_statistics': 'Album Statistics',
-    'calendar_album_total_photo_count': 'Total Photos',
-    'calendar_album_recent_photos': 'Recent Photos:',
-    'calendar_album_close': 'Close',
 
     // Create New Diary
     'calendar_album_create_new_diary': 'Create New Diary',
@@ -142,8 +96,6 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_config_description_text':
         'The weekly album widget displays photo diaries for a week.\nAfter configuration, you can click on specific dates in the widget to quickly view or add diaries.',
     'calendar_album_widget_style': 'Widget Style',
-    'calendar_album_background_label': 'Background Color',
-    'calendar_album_title_label': 'Title Color',
     'calendar_album_one_day_one_photo': 'One Day One Photo',
     'calendar_album_week_info': 'Week 45 ・ Nov 3 - Nov 9',
 
@@ -164,10 +116,7 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_tag': 'Tag',
     'calendar_album_switch_photo_view': 'Photo view',
     'calendar_album_switch_calendar_view': 'Calendar view',
-    'calendar_album_select_month': 'Select month and year',
-    'calendar_album_confirm': 'Confirm',
     'calendar_album_diary_for_date': ' diary',
-    'calendar_album_new_diary': 'New Diary',
     'calendar_album_title_cannot_be_empty': 'Title cannot be empty',
 
     // Tag folders

@@ -21,7 +21,7 @@ void registerMonthlyBillWidget(HomeWidgetRegistry registry) {
       id: 'monthly_bill_widget',
       pluginId: 'bill',
       name: 'bill_monthlyBillsWidgetName'.tr,
-      description: 'bill_monthlyWidgetDescription'.tr,
+      description: 'bill_monthlyBillsWidgetDescription'.tr,
       icon: Icons.calendar_month,
       color: billColor,
       defaultSize: const LargeSize(),

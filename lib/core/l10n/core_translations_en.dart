@@ -10,29 +10,18 @@ const Map<String, String> coreTranslationsEn = {
   'core_activity': 'Activity',
   'core_tag': 'Tag',
   'core_comment': 'Comment',
-  'core_clearAll': 'Clear All',
   'core_selectDate': 'Select Date',
   'core_selectDateRange': 'Select Date Range',
   'core_searchScope': 'Search Scope',
 
   // Action Executor
-  'core_inputJavaScriptCode': 'Input JavaScript Code',
   'core_cancel': 'Cancel',
-  'core_execute': 'Execute',
 
   // Custom Action Examples
   'core_save': 'Save',
-  'core_executionResult': 'Execution Result',
-  'core_executionStatus': 'Execution Status: @status',
-  'core_outputData': 'Output Data:',
-  'core_errorMessage': 'Error Message:',
   'core_close': 'Close',
-  'core_inputFloatingBallJavaScriptCode': 'Input Floating Ball JavaScript Code',
 
   // Migration Tool
-  'core_configMigration': 'Configuration Migration',
-  'core_migrating': 'Migrating...',
-  'core_startMigration': 'Start Migration',
 
   // Action Config Form
   'core_notSelected': 'Not Selected',
@@ -65,10 +54,6 @@ const Map<String, String> coreTranslationsEn = {
   'core_addFirstButton': 'Add First Button',
 
   // Floating Button Edit Dialog
-  'core_clearIconImage': 'Clear Icon/Image',
-  'core_confirmClearIconImage': 'Are you sure to clear the current icon and image settings?',
-  'core_clear': 'Clear',
-  'core_selectIcon': 'Select Icon',
 
   // Plugin Overlay Widget
   'core_routeError': 'Route Error',

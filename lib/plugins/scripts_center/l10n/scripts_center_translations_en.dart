@@ -45,7 +45,6 @@ const Map<String, String> scriptsCenterTranslationsEn = {
   'scripts_center_create': 'Create',
   'scripts_center_basicInfo': 'Basic Info',
   'scripts_center_codeEditor': 'Code Editor',
-  'scripts_center_triggers': 'Triggers',
   'scripts_center_advancedSettings': 'Advanced Settings',
   'scripts_center_config': 'Configuration',
   'scripts_center_format': 'Format',
@@ -55,7 +54,6 @@ const Map<String, String> scriptsCenterTranslationsEn = {
 
   // Script fields
   'scripts_center_scriptName': 'Script Name',
-  'scripts_center_scriptId': 'Script ID',
   'scripts_center_version': 'Version',
   'scripts_center_scriptType': 'Script Type',
   'scripts_center_updateUrl': 'Update URL (Optional)',
@@ -63,9 +61,6 @@ const Map<String, String> scriptsCenterTranslationsEn = {
   'scripts_center_selectIcon': 'Select Icon',
 
   // Configuration
-  'scripts_center_selectAgent': 'Select AI Agent',
-  'scripts_center_enabledEvents': 'Monitored Events',
-  'scripts_center_promptTemplate': 'Prompt Template',
 
   // Script types
   'scripts_center_moduleType': 'Module (Accepts Parameters)',
@@ -102,16 +97,12 @@ const Map<String, String> scriptsCenterTranslationsEn = {
   'scripts_center_scriptExecutorDescription': 'Select and quickly execute a script',
   'scripts_center_selectScript': 'Select Script',
   'scripts_center_script': 'Script',
-  'scripts_center_tapToExecute': 'Tap to Execute',
-  'scripts_center_clickToExecute': 'Click to execute script',
   'scripts_center_scriptNotFound': 'Script not found',
   'scripts_center_scriptExecuted': 'Script executed successfully',
   'scripts_center_scriptExecuteFailed': 'Script execution failed',
   'scripts_center_scriptExecuteError': 'Script execution error',
 
   // Scripts List Widget
-  'scripts_center_scriptsListWidgetName': 'Scripts List',
-  'scripts_center_scriptsListWidgetDesc': 'Display all scripts in a colorful grid',
 
   // Delete related
   'scripts_center_delete_confirm': 'Confirm Delete',
@@ -138,9 +129,7 @@ const Map<String, String> scriptsCenterTranslationsEn = {
   'scripts_center_selectConfigFile': 'Select Config File',
   'scripts_center_executionLogs': 'Execution Logs',
   'scripts_center_exportScript': 'Export Script',
-  'scripts_center_exportScriptDesc': 'Export code, metadata and all config files',
   'scripts_center_importJsFile': 'Import JS File',
-  'scripts_center_required': 'Required',
   'scripts_center_addLink': 'Add Link',
   'scripts_center_addImageLink': 'Add Image Link',
 

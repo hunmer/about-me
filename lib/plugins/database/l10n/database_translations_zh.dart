@@ -3,7 +3,6 @@ class DatabaseTranslationsZh {
   static const Map<String, String> translations = {
     // 插件基本信息
     'database_name': '数据库',
-    'database_plugin_description': '用于管理数据库的插件',
 
     // 记录相关
     'database_delete_record_title': '删除记录',
@@ -15,7 +14,6 @@ class DatabaseTranslationsZh {
     'database_delete': '删除',
     'database_cancel': '取消',
     'database_save': '保存',
-    'database_ok': '确定',
 
     // 数据库编辑
     'database_edit_database_title': '编辑数据库',
@@ -31,7 +29,6 @@ class DatabaseTranslationsZh {
     'database_field_name_label': '字段名称',
     'database_default_value_label': '默认值',
     'database_select_field_type_title': '选择字段类型',
-    'database_new_field_title': '新建@type字段',
     'database_save_failed_message': '保存失败: @error',
     'database_delete_field_title': '删除字段',
     'database_delete_field_confirm': '确定要删除字段"@name"吗?',
@@ -39,11 +36,9 @@ class DatabaseTranslationsZh {
 
     // 数据库列表
     'database_database_list_title': '数据库列表',
-    'database_new_database_default_name': '新建数据库',
     'database_load_failed_message': '加载失败',
     'database_no_databases_message': '暂无数据库',
     'database_add_database_hint': '点击右下角按钮添加',
-    'database_copy_success_message': '复制成功',
     'database_search_databases': '搜索数据库',
     'database_add_database': '添加数据库',
 

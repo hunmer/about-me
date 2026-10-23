@@ -56,15 +56,11 @@ const Map<String, String> ttsTranslationsZh = {
 
   // 队列管理
   'tts_queue': '队列',
-  'tts_currentReading': '当前朗读',
-  'tts_waiting': '等待中',
-  'tts_clearQueue': '清空队列',
 
   // 状态提示
   'tts_loading': '加载中...',
   'tts_loadingVoiceList': '正在加载语音列表...',
   'tts_testSuccess': '测试成功',
-  'tts_testFailed': '测试失败',
   'tts_testFailedPrefix': '测试失败',
 
   // 成功提示
@@ -103,7 +99,6 @@ const Map<String, String> ttsTranslationsZh = {
 
   // 语音相关
   'tts_voiceTestText': '你好，这是语音测试',
-  'tts_reloadVoiceList': '重新加载语音列表',
   'tts_fillAccordingToApi': '根据API要求填写',
 
   // 参数化翻译 - 使用 @name 占位符

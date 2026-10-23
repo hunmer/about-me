@@ -1,30 +1,16 @@
 /// Agent Chat plugin English translations
 const Map<String, String> agentChatTranslationsEn = {
   // Conversation list page
-  'agent_chat_conversationListTitle': 'AI Chat',
-  'agent_chat_groupManagement': 'Group Management',
-  'agent_chat_editGroup': 'Edit Group',
-  'agent_chat_addGroup': 'Add Group',
   'agent_chat_addChannel': 'Add Channel',
-  'agent_chat_create': 'Create',
   'agent_chat_editConversation': 'Edit Conversation',
   'agent_chat_confirmDelete': 'Confirm Delete',
   'agent_chat_delete': 'Delete',
-  'agent_chat_selectCreateType': 'Select Type to Create',
-  'agent_chat_channel': 'Channel',
-  'agent_chat_channelDescription': 'Create a new conversation channel',
-  'agent_chat_group': 'Group',
-  'agent_chat_groupDescription': 'Create a new group category',
   'agent_chat_clear': 'Clear',
 
   // Chat page
   'agent_chat_selectAgent': 'Select Agent',
-  'agent_chat_createNewChat': 'Create New Chat',
   'agent_chat_tokenStatistics': 'Token Statistics',
   'agent_chat_close': 'Close',
-  'agent_chat_conversationSettings': 'Conversation Settings',
-  'agent_chat_useGlobalSettings': 'Use Global Settings',
-  'agent_chat_custom': 'Custom',
   'agent_chat_save': 'Save',
   'agent_chat_cancel': 'Cancel',
   'agent_chat_confirmClear': 'Confirm Clear',
@@ -37,9 +23,7 @@ const Map<String, String> agentChatTranslationsEn = {
 
   // Tool template page
   'agent_chat_toolTemplate': 'Tool Templates',
-  'agent_chat_selectTagFilter': 'Select Tag Filter',
   'agent_chat_use': 'Use',
-  'agent_chat_deleteConfirm': 'Delete Confirmation',
   'agent_chat_reset': 'Reset',
   'agent_chat_confirm': 'Confirm',
 
@@ -64,14 +48,8 @@ const Map<String, String> agentChatTranslationsEn = {
   'agent_chat_enableBackgroundServiceDescription': 'Continue receiving AI replies after switching to other apps. Will show foreground notification to keep the service running.',
   'agent_chat_showTokenConsumption': 'Show Token Consumption',
   'agent_chat_showTokenConsumptionDescription': 'Display input/output token count and total consumption in real-time notifications.',
-  'agent_chat_testConfiguration': 'Test Configuration',
-  'agent_chat_saveSettings': 'Save Settings',
 
   // Configuration dialog
-  'agent_chat_configuration': 'Configuration',
-  'agent_chat_advancedConfiguration': 'Advanced Configuration',
-  'agent_chat_confirmSave': 'Confirm Save',
-  'agent_chat_confirmSaveDescription': 'Are you sure you want to save the configuration?',
   'agent_chat_copyResult': 'Copy Result',
   'agent_chat_executeAgain': 'Execute This Step Again',
   'agent_chat_viewCreatedDetail': 'View Details',
@@ -81,14 +59,8 @@ const Map<String, String> agentChatTranslationsEn = {
   'agent_chat_goBack': 'Return',
 
   // Message operations
-  'agent_chat_copy': 'Copy',
   'agent_chat_edit': 'Edit',
-  'agent_chat_regenerate': 'Regenerate',
   'agent_chat_saveTool': 'Save Tool',
-  'agent_chat_reExecuteTool': 'Re-execute Tool',
-  'agent_chat_viewDetails': 'View Details',
-  'agent_chat_deleteTask': 'Delete Task',
-  'agent_chat_confirmDeleteTask': 'Are you sure to delete this task?',
   'agent_chat_send': 'Send',
 
   // Tool related
@@ -114,10 +86,6 @@ const Map<String, String> agentChatTranslationsEn = {
   'agent_chat_resettingDefaultTemplates': 'Resetting default templates...',
 
   // Create dialog
-  'agent_chat_selectTypeToCreate': 'Select Type to Create',
-  'agent_chat_createNewConversationChannel': 'Create a new conversation channel',
-  'agent_chat_createNewGroupCategory': 'Create a new group category',
-  'agent_chat_confirmDeleteGroup': 'Are you sure to delete group "@groupName"?\n\nThis operation will also clear the filter state of this group.',
   'agent_chat_aiChat': 'AI Chat',
 
   // Plugin info
@@ -128,22 +96,15 @@ const Map<String, String> agentChatTranslationsEn = {
 
   // Empty states
   'agent_chat_loadingToolTemplates': 'Loading tool templates...',
-  'agent_chat_noToolTemplates': 'No tool templates',
-  'agent_chat_noChannels': 'No channels',
-  'agent_chat_noGroups': 'No groups',
-  'agent_chat_noMessages': 'No messages',
-  'agent_chat_emptyConversationHistory': 'Empty conversation history',
 
   // Widget Home Strings
   'agent_chat_pluginName': 'Agent Chat',
   'agent_chat_name': 'Agent Chat',
-  'agent_chat_description': 'Quick access to Agent Chat',
   'agent_chat_overview': 'Agent Chat Overview',
   'agent_chat_overviewDescription': 'Display conversation statistics',
   'agent_chat_totalConversations': 'Total Conversations',
   'agent_chat_unreadMessages': 'Unread Messages',
   'agent_chat_totalGroups': 'Total Groups',
-  'agent_chat_loadFailed': 'Load Failed',
 
   // Selector Widget
   'agent_chat_conversationSelectorName': 'Conversation Selector',
@@ -151,7 +112,6 @@ const Map<String, String> agentChatTranslationsEn = {
   'agent_chat_selectConversation': 'Select Conversation',
   'agent_chat_conversationQuickAccess': 'AI Channel Quick Access',
   'agent_chat_conversationQuickAccessDesc': 'Quick access to a specific AI conversation channel',
-  'agent_chat_clickToEnter': 'Click to enter',
   'agent_chat_justNow': 'Just now',
   'agent_chat_minutesAgo': '@count minutes ago',
   'agent_chat_hoursAgo': '@count hours ago',
@@ -161,9 +121,6 @@ const Map<String, String> agentChatTranslationsEn = {
   'agent_chat_searchPlaceholder': 'Search conversations...',
 
   // const Text 硬编码迁移(en)
-  'agent_chat_selectConfigMode': 'Select Config Mode',
-  'agent_chat_singleAgentMode': 'Single Agent Mode',
-  'agent_chat_agentChainMode': 'Agent Chain Mode',
 
   // Tool template management
   'agent_chat_tag': 'Tag',
@@ -212,4 +169,6 @@ const Map<String, String> agentChatTranslationsEn = {
   // Sample data
   'agentChat_sampleConversationsTitle': 'Sample conversations & messages',
   'agentChat_sampleConversationsDesc': 'Create grouped sample AI conversations with messages',
+    'agent_chat_conversationNotFound': 'Conversation not found',
+    'agent_chat_pluginNotAvailable': 'Plugin not available',
 };

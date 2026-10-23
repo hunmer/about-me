@@ -59,7 +59,7 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
         transitionBetweenRoutes: false,
         enableLargeTitle: true,
         enableSearchBar: true,
-        searchPlaceholder: 'search'.tr,
+        searchPlaceholder: 'core_search'.tr,
         onSearchChanged: (_) => setState(() {}),
         enableSearchFilter: true,
         filterLabels: {
@@ -482,7 +482,7 @@ class _AppStoreScreenState extends State<AppStoreScreen> {
       child: DSEmptyState(
         emoji: '⚠️',
         title: manager.error!,
-        actionLabel: 'retry'.tr,
+        actionLabel: 'app_retry'.tr,
         onAction: () => manager.fetchApps(),
       ),
     );

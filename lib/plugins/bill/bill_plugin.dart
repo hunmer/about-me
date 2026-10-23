@@ -904,14 +904,14 @@ class _BillStatsConfigFormState extends State<_BillStatsConfigForm> {
                   children: [
                     Expanded(
                       child: DSButton(
-                        label: 'cancel'.tr,
+                        label: 'core_cancel'.tr,
                         variant: DSButtonVariant.outline,
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: DSButton(label: 'confirm'.tr, onPressed: _confirm),
+                      child: DSButton(label: 'core_confirm'.tr, onPressed: _confirm),
                     ),
                   ],
                 ),
@@ -1079,7 +1079,7 @@ class _MonthlyBillConfigFormState extends State<_MonthlyBillConfigForm> {
                     children: [
                       Expanded(
                         child: DSButton(
-                          label: 'cancel'.tr,
+                          label: 'core_cancel'.tr,
                           variant: DSButtonVariant.outline,
                           onPressed: () => Navigator.pop(context),
                         ),
@@ -1087,7 +1087,7 @@ class _MonthlyBillConfigFormState extends State<_MonthlyBillConfigForm> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: DSButton(
-                          label: 'confirm'.tr,
+                          label: 'core_confirm'.tr,
                           onPressed: _confirm,
                         ),
                       ),
