@@ -7,7 +7,7 @@ import 'page_visit_record.dart';
 ///
 /// 负责记录和管理页面访问历史，支持持久化存储
 /// 可作为 NavigatorObserver 自动记录路由变化
-class RouteHistoryManager extends NavigatorObserver {
+class RouteHistoryManager extends RouteObserver<Route<dynamic>> {
   static final RouteHistoryManager _instance = RouteHistoryManager._internal();
   factory RouteHistoryManager() => _instance;
   RouteHistoryManager._internal();

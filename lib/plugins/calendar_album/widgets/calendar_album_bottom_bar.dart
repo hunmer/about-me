@@ -73,6 +73,7 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
       color: widget.plugin.color,
       iconColor: Colors.white,
       icon: DsIconKind.edit,
+      circularActions: true,
       actions: [
         ExpandableFabAction(
           icon: DsIconKind.edit,

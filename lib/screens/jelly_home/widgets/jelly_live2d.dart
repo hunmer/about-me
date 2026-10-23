@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/event/event.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/live2d/screens/live2d_archive_form_screen.dart';
@@ -107,7 +108,7 @@ class JellyLive2D extends StatefulWidget {
   State<JellyLive2D> createState() => _JellyLive2DState();
 }
 
-class _JellyLive2DState extends State<JellyLive2D> {
+class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   final Live2DViewController _controller = Live2DViewController();
   final ValueNotifier<double> _size = ValueNotifier<double>(_defaultSize);
   final GlobalKey _modelCaptureKey = GlobalKey();
@@ -115,6 +116,8 @@ class _JellyLive2DState extends State<JellyLive2D> {
       widget.initialModel ?? availableJellyLive2DModels.first;
   JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
   bool _isSwitchingModel = true;
+  bool _routeVisible = true;
+  Future<void>? _routeUnload;
   Live2DMotionDefinition? _pendingMotion;
 
   /// 可点击区域（HitAreas）调试叠加层的开关状态，不持久化；
@@ -177,24 +180,63 @@ class _JellyLive2DState extends State<JellyLive2D> {
     unawaited(_initialize());
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      RouteHistoryManager.instance.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() {
+    _routeVisible = false;
+    _routeUnload = _unloadModel();
+  }
+
+  @override
+  void didPopNext() {
+    _routeVisible = true;
+    unawaited(_restoreModel());
+  }
+
+  Future<void> _restoreModel() async {
+    await _routeUnload;
+    if (!mounted || !_routeVisible) return;
+    if (!_controller.value.isLoaded && !_controller.value.isLoadingModel) {
+      await _loadModel(_selectedModel);
+    }
+  }
+
+  Future<void> _unloadModel() async {
+    if (!_controller.value.isLoaded) return;
+    try {
+      await _controller.unloadModel();
+    } on Live2DException {
+      // 路由离开时释放失败不应阻断页面导航。
+    }
+  }
+
   Future<void> _initialize() async {
     await _loadSavedSize();
     await _loadSavedBubblePosition();
-    if (!mounted) return;
+    if (!mounted || !_routeVisible) return;
     // Wait until the first finite layout is committed. The native view must
     // not be loaded against the temporary constraints from the first build.
     await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
+    if (!mounted || !_routeVisible) return;
     // The home screen's bottom navigation reports its final safe area one or
     // two frames after the first layout. Give that resize time to settle
     // before creating the native viewport.
     await Future<void>.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
+    if (!mounted || !_routeVisible) return;
     await _loadModel(_selectedModel);
   }
 
   @override
   void dispose() {
+    RouteHistoryManager.instance.unsubscribe(this);
     widget.motionRequest?.removeListener(_handleMotionRequest);
     _controller.removeListener(_onViewStateChanged);
     _bubbleTimer?.cancel();

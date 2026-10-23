@@ -49,6 +49,7 @@ class MessageInputActionsBuilder {
     // 添加高级编辑器动作
     actions.add(
       MessageInputAction(
+        id: 'advanced_editor',
         title: 'chat_advancedEditor'.tr,
         icon: DsIconKind.edit,
         onTap:
@@ -62,6 +63,7 @@ class MessageInputActionsBuilder {
     // 添加图片选择动作（长按进入多选）
     actions.add(
       MessageInputAction(
+        id: 'photo',
         title: 'chat_photo'.tr,
         icon: DsIconKind.image,
         onTap:
@@ -85,6 +87,7 @@ class MessageInputActionsBuilder {
     // 添加拍照动作
     actions.add(
       MessageInputAction(
+        id: 'take_photo',
         title: 'chat_takePhoto'.tr,
         icon: DsIconKind.camera,
         onTap:
@@ -101,6 +104,7 @@ class MessageInputActionsBuilder {
     // 在Web平台上不支持视频拍摄，但我们仍然显示按钮，点击后会提示不支持
     actions.add(
       MessageInputAction(
+        id: 'record_video',
         title: 'chat_recordVideo'.tr,
         icon: DsIconKind.video,
         onTap:
@@ -115,6 +119,7 @@ class MessageInputActionsBuilder {
     // 添加视频选择动作（长按进入多选）
     actions.add(
       MessageInputAction(
+        id: 'video',
         title: 'chat_video'.tr,
         icon: DsIconKind.list,
         onTap:
@@ -136,6 +141,7 @@ class MessageInputActionsBuilder {
     // 添加文件选择动作
     actions.add(
       MessageInputAction(
+        id: 'file',
         title: 'chat_file'.tr,
         icon: DsIconKind.copy,
         onTap:
@@ -152,6 +158,7 @@ class MessageInputActionsBuilder {
     if (!kIsWeb) {
       actions.add(
         MessageInputAction(
+          id: 'audio_recording',
           title: 'chat_audioRecording'.tr,
           icon: DsIconKind.mic,
           onTap:
@@ -167,6 +174,7 @@ class MessageInputActionsBuilder {
     // 添加智能体动作
     actions.add(
       MessageInputAction(
+        id: 'smart_agent',
         title: 'chat_smartAgent'.tr,
         icon: DsIconKind.bot,
         onTap: () {

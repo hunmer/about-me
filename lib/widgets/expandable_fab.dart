@@ -18,10 +18,11 @@ class ExpandableFabAction {
 
 /// 可展开菜单的悬浮按钮（自 notes 插件的 NotesFab 抽离的公共组件）
 ///
-/// 点击主按钮原地旋转并向上展开菜单项（DSButton 描边小按钮，右对齐）。
-/// 菜单经 Overlay + LayerLink 锚定在主按钮上方，因此组件可嵌于紧凑或
-/// 带变换的父级（如底部导航 dock 的 35px 缩放槽位），菜单仍按原始尺寸
-/// 渲染；点击菜单外任意处收起（不拦截下层正常响应）。
+/// 点击主按钮原地旋转并向上展开菜单项（右对齐）。菜单项默认为 DSButton
+/// 描边小按钮，[ExpandableFab.circularActions] 为真时渲染为圆形小 FAB
+/// 加文字标签气泡。菜单经 Overlay + LayerLink 锚定在主按钮上方，因此组件
+/// 可嵌于紧凑或带变换的父级（如底部导航 dock 的 35px 缩放槽位），菜单仍按
+/// 原始尺寸渲染；点击菜单外任意处收起（不拦截下层正常响应）。
 class ExpandableFab extends StatefulWidget {
   const ExpandableFab({
     super.key,
@@ -29,6 +30,7 @@ class ExpandableFab extends StatefulWidget {
     this.icon = DsIconKind.plus,
     this.color,
     this.iconColor,
+    this.circularActions = false,
   });
 
   /// 主按钮图标
@@ -39,6 +41,9 @@ class ExpandableFab extends StatefulWidget {
 
   /// 主按钮图标颜色
   final Color? iconColor;
+
+  /// 菜单项渲染为圆形小 FAB + 文字标签（默认 DSButton 描边长条）
+  final bool circularActions;
 
   /// 展开的菜单项（自上而下排列）
   final List<ExpandableFabAction> actions;
@@ -84,16 +89,7 @@ class _ExpandableFabState extends State<ExpandableFab> {
                   children: [
                     for (var i = 0; i < widget.actions.length; i++) ...[
                       if (i > 0) const SizedBox(height: 16),
-                      DSButton(
-                        label: widget.actions[i].label,
-                        icon: widget.actions[i].icon,
-                        variant: DSButtonVariant.outline,
-                        size: DSButtonSize.sm,
-                        onPressed: () {
-                          _collapse();
-                          widget.actions[i].onPressed();
-                        },
-                      ),
+                      _buildActionItem(widget.actions[i]),
                     ],
                   ],
                 ),
@@ -111,6 +107,30 @@ class _ExpandableFabState extends State<ExpandableFab> {
     _menuEntry?.remove();
     _menuEntry = null;
     if (mounted) setState(() {});
+  }
+
+  /// 单个菜单项：默认 DSButton 描边按钮，circularActions 时为圆形小 FAB
+  Widget _buildActionItem(ExpandableFabAction action) {
+    void onPressed() {
+      _collapse();
+      action.onPressed();
+    }
+
+    if (!widget.circularActions) {
+      return DSButton(
+        label: action.label,
+        icon: action.icon,
+        variant: DSButtonVariant.outline,
+        size: DSButtonSize.sm,
+        onPressed: onPressed,
+      );
+    }
+    return _CircularFabAction(
+      action: action,
+      color: widget.color,
+      iconColor: widget.iconColor,
+      onPressed: onPressed,
+    );
   }
 
   @override
@@ -137,6 +157,54 @@ class _ExpandableFabState extends State<ExpandableFab> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 圆形 FAB 风格菜单项：小圆形 DSFab + 左侧文字标签气泡
+class _CircularFabAction extends StatelessWidget {
+  const _CircularFabAction({
+    required this.action,
+    this.color,
+    this.iconColor,
+    required this.onPressed,
+  });
+
+  final ExpandableFabAction action;
+  final Color? color;
+  final Color? iconColor;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AppTheme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: theme.surface,
+            borderRadius: theme.radii.pill,
+            boxShadow: theme.shadows.soft,
+          ),
+          child: Text(
+            action.label,
+            style: DsTypography.button.copyWith(
+              fontSize: 13,
+              color: theme.text,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        DSFab(
+          icon: action.icon,
+          size: 44,
+          color: color,
+          iconColor: iconColor,
+          onPressed: onPressed,
+        ),
+      ],
     );
   }
 }

@@ -123,7 +123,7 @@ class ImageCompressionService {
 
       // 确定输出格式：显式指定优先（如格式转换场景），否则按源文件扩展名推断
       final extension = path.extension(sourcePath).toLowerCase();
-      final CompressFormat outputFormat;
+      CompressFormat outputFormat;
       if (format != null) {
         outputFormat = format;
       } else {

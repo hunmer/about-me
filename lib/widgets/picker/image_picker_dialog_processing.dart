@@ -267,15 +267,23 @@ extension _ImagePickerDialogProcessingExt on _ImagePickerDialogState {
                               await originalFile.delete();
                             }
 
-                            final relativePath =
+                            var relativePath =
                                 await ImageUtils.saveBytesToAppDirectory(
                                   croppedImage,
                                   widget.saveDirectory,
                                 );
+                            var savedImagePath =
+                                await ImageUtils.getAbsolutePath(relativePath);
+
+                            // 裁剪产物同样统一转 webp
+                            final webp = await _convertToWebpIfNeeded(
+                              savedImagePath,
+                              relativePath,
+                            );
+                            relativePath = webp.$1;
+                            savedImagePath = webp.$2;
 
                             // 处理压缩和缩略图
-                            final savedImagePath =
-                                await ImageUtils.getAbsolutePath(relativePath);
                             final compressionResult =
                                 await _processImageCompression(
                                   savedImagePath,
@@ -286,7 +294,9 @@ extension _ImagePickerDialogProcessingExt on _ImagePickerDialogState {
                               Navigator.of(dialogContext).pop();
                               completer.complete({
                                 ...compressionResult,
-                                'bytes': croppedImage,
+                                'bytes': await File(
+                                  savedImagePath,
+                                ).readAsBytes(),
                               });
                             }
                           } catch (e) {

@@ -52,6 +52,7 @@ final Map<String, String> nodesTranslationsEn = {
   'nodes_key': 'key',
   'nodes_value': 'value',
   'nodes_notes': 'Notes',
+  'nodes_note': 'Note',
 
   // Operations
   'nodes_createNew': 'Create new',

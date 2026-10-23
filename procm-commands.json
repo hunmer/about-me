@@ -28,6 +28,12 @@
       "group": "aboutme",
       "desc": "Static analysis quality gate"
     },
+    "check-translations": {
+      "script": "python",
+      "args": ["tool/check_translations.py"],
+      "group": "aboutme",
+      "desc": "i18n quality gate: all '.tr' keys must be defined and zh/en dictionaries symmetric"
+    },
     "server": {
       "script": "dart",
       "args": ["run", "bin/server.dart"],

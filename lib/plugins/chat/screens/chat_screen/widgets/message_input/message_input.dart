@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -13,8 +16,6 @@ import 'package:aboutme/widgets/message_input/message_input.dart' as common;
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_drawer.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_builder.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/emoji_handler.dart';
-import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/image_handler.dart';
-import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/local_video_handler.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
@@ -56,6 +57,29 @@ class _MessageInputState extends State<MessageInput> {
   // 语音识别服务
   TencentASRService? _recognitionService;
 
+  /// 快捷工具栏常驻动作 id（持久化，勾选入口见动作抽屉 header）
+  static const String _quickActionIdsKey = 'chat/quick_toolbar_actions';
+  static const Set<String> _defaultQuickActionIds = {'photo', 'video'};
+  Set<String> _quickActionIds = _defaultQuickActionIds;
+
+  Future<void> _loadQuickActionIds() async {
+    try {
+      final text = await AboutmeDataService.instance
+          .readPathText(_quickActionIdsKey);
+      final list = jsonDecode(text);
+      if (list is List && list.every((e) => e is String)) {
+        if (mounted) setState(() => _quickActionIds = {...list.cast<String>()});
+      }
+    } catch (_) {
+      // 无配置或解析失败时保持默认集合
+    }
+  }
+
+  void _setQuickActionIds(Set<String> ids) {
+    setState(() => _quickActionIds = ids);
+    AboutmeDataService.instance.writePath(_quickActionIdsKey, ids.toList());
+  }
+
   @override
   void initState() {
     super.initState();
@@ -70,6 +94,8 @@ class _MessageInputState extends State<MessageInput> {
 
     // 初始化语音识别服务
     _initializeVoiceRecognition();
+
+    _loadQuickActionIds();
   }
 
   /// 初始化语音识别服务
@@ -273,42 +299,22 @@ class _MessageInputState extends State<MessageInput> {
     );
   }
 
-  /// 顶部图标工具栏快捷动作：常用上传固定在此（底部抽屉动作的快捷方式）
+  /// 顶部图标工具栏快捷动作：抽屉动作按持久化配置过滤（勾选入口在抽屉 header）
   List<common.MessageInputQuickAction> _buildQuickActions() {
-    final fileService = FileService();
     return [
-      common.MessageInputQuickAction(
-        icon: DsIconKind.image,
-        tooltip: 'chat_photo'.tr,
-        onPressed: () => handleImageSelection(
-          context: context,
-          fileService: fileService,
-          onFileSelected: _handleFileSelected,
-          fromCamera: false,
-        ),
-        onLongPress: () => handleImageSelection(
-          context: context,
-          fileService: fileService,
-          onFileSelected: _handleFileSelected,
-          fromCamera: false,
-          multiple: true,
-        ),
-      ),
-      common.MessageInputQuickAction(
-        icon: DsIconKind.video,
-        tooltip: 'chat_video'.tr,
-        onPressed: () => handleLocalVideoSelection(
-          context: context,
-          fileService: fileService,
-          onFileSelected: _handleFileSelected,
-        ),
-        onLongPress: () => handleLocalVideoSelection(
-          context: context,
-          fileService: fileService,
-          onFileSelected: _handleFileSelected,
-          multiple: true,
-        ),
-      ),
+      for (final action in MessageInputActionsBuilder.getDefaultActions(
+        context,
+        onFileSelected: _handleFileSelected,
+        onSendMessage: widget.onSendMessage,
+        textController: widget.controller,
+      ))
+        if (_quickActionIds.contains(action.id))
+          common.MessageInputQuickAction(
+            icon: action.icon,
+            tooltip: action.title,
+            onPressed: action.onTap,
+            onLongPress: action.onLongPress,
+          ),
     ];
   }
 
@@ -324,6 +330,8 @@ class _MessageInputState extends State<MessageInput> {
           textController: widget.controller,
         ),
         onFileSelected: _handleFileSelected,
+        quickActionIds: _quickActionIds,
+        onQuickActionIdsChanged: _setQuickActionIds,
       ),
     );
   }

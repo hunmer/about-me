@@ -36,6 +36,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       a.modelDir == b.modelDir && a.modelFile == b.modelFile;
 
   Future<void> _loadModel(Live2DModelDefinition model) async {
+    if (!_routeVisible) return;
     if (mounted) {
       _bubbleTimer?.cancel();
       setState(() {
@@ -46,7 +47,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     try {
       final localModel = await Live2DOnlineCatalog.cacheDefinition(model);
       await _controller.whenAttached;
-      if (!mounted) return;
+      if (!mounted || !_routeVisible) return;
       if (_controller.value.isLoaded) {
         await _controller.unloadModel();
       }
@@ -54,6 +55,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
         modelDir: localModel.modelDir,
         modelFileName: localModel.modelFile,
       );
+      if (!_routeVisible) await _unloadModel();
     } on Live2DException {
       // The controller exposes the detailed error through Live2DViewState.
     } finally {
