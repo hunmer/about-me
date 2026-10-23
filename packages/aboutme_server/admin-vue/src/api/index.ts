@@ -262,25 +262,10 @@ export const syncApi = {
       method: 'DELETE', headers: { 'X-Force-Overwrite': 'true' }
     }),
 
-  downloadDecrypted: (
-    filePath: string,
-    encryptionKey: string
-  ): Promise<{ success: boolean; data: unknown }> =>
-    apiClient.request(
-      `/api/v1/storage/files/${encodeURIComponent(filePath)}`,
-      {},
-      { 'X-Encryption-Key': encryptionKey }
-    ),
-
-  // 下载解密后的二进制文件（图片等）
-  downloadDecryptedBinary: async (
-    filePath: string,
-    encryptionKey: string
-  ): Promise<Blob> => {
+  // 下载原始文件，保留文件内容与格式
+  downloadFile: async (filePath: string): Promise<Blob> => {
     const url = `${apiClient.getBaseUrl()}/api/v1/storage/files/${encodeURIComponent(filePath)}`
-    const headers: Record<string, string> = {
-      'X-Encryption-Key': encryptionKey
-    }
+    const headers: Record<string, string> = {}
     const token = apiClient.getToken()
     if (token) {
       headers['Authorization'] = `Bearer ${token}`

@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, provide } from 'vue'
 import JSZip from 'jszip'
 import { useFilesStore } from '@/stores/files'
-import { useAuthStore } from '@/stores/auth'
 import { useUIStore } from '@/stores/ui'
 import { useMessage } from '@/composables/useMessage'
 import { useDialog } from '@/composables/useDialog'
@@ -14,7 +13,6 @@ import FileTreeNode from './FileTreeNode.vue'
 import type { FileNode } from './types'
 
 const filesStore = useFilesStore()
-const authStore = useAuthStore()
 const uiStore = useUIStore()
 const message = useMessage()
 const dialog = useDialog()
@@ -276,52 +274,21 @@ async function handleRefresh(): Promise<void> {
   }
 }
 
-// 检查文件是否为二进制（根据扩展名）
-function isBinaryFile(filePath: string): boolean {
-  const binaryExtensions = [
-    '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg',
-    '.mp3', '.wav', '.ogg', '.m4a', '.flac',
-    '.mp4', '.webm', '.mov', '.avi', '.mkv',
-    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-    '.zip', '.rar', '.7z', '.tar', '.gz'
-  ]
-  const ext = filePath.toLowerCase().slice(filePath.lastIndexOf('.'))
-  return binaryExtensions.includes(ext)
-}
-
-// 单文件下载（解密）
+// 单文件下载
 async function downloadFile(filePath: string): Promise<void> {
-  if (!authStore.encryptionKey) {
-    message.error('请先在设置页配置加密密钥')
-    return
-  }
-
   uiStore.setLoading(true, '下载文件...')
   try {
     const fileName = filePath.split('/').pop() || 'file'
 
-    if (isBinaryFile(filePath)) {
-      const blob = await syncApi.downloadDecryptedBinary(filePath, authStore.encryptionKey)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = fileName
-      a.click()
-      URL.revokeObjectURL(url)
-    } else {
-      const result = await syncApi.downloadDecrypted(filePath, authStore.encryptionKey)
-      const blob = new Blob([JSON.stringify((result as { data: unknown }).data, null, 2)], {
-        type: 'application/json'
-      })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = fileName.endsWith('.json') ? fileName : `${fileName}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-    }
+    const blob = await syncApi.downloadFile(filePath)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    a.click()
+    URL.revokeObjectURL(url)
 
-    message.success('下载成功（已解密）')
+    message.success('下载成功')
     uiStore.addActivity('download', `下载了文件 ${filePath}`)
   } catch (err) {
     message.error(err instanceof Error ? err.message : '下载失败')
@@ -360,10 +327,6 @@ function handleDelete(node: FileNode): void {
 
 // 批量下载（ZIP 打包）
 async function batchDownload(paths: string[]): Promise<void> {
-  if (!authStore.encryptionKey) {
-    message.error('请先在设置页配置加密密钥')
-    return
-  }
   if (paths.length === 0) {
     message.warning('请先选择要下载的文件')
     return
@@ -381,14 +344,8 @@ async function batchDownload(paths: string[]): Promise<void> {
 
   for (const filePath of paths) {
     try {
-      if (isBinaryFile(filePath)) {
-        const blob = await syncApi.downloadDecryptedBinary(filePath, authStore.encryptionKey)
-        zip.file(filePath, blob)
-      } else {
-        const result = await syncApi.downloadDecrypted(filePath, authStore.encryptionKey)
-        const content = JSON.stringify((result as { data: unknown }).data, null, 2)
-        zip.file(filePath, content)
-      }
+      const blob = await syncApi.downloadFile(filePath)
+      zip.file(filePath, blob)
       successCount++
     } catch {
       failCount++
@@ -514,7 +471,7 @@ onMounted(() => {
         <div class="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
         <div class="z-10 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold tracking-tight text-on-surface">云端加密文件仓库</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-on-surface">云端文件仓库</h1>
           </div>
           <div class="flex items-center gap-3">
             <Button
@@ -534,7 +491,7 @@ onMounted(() => {
         </div>
 
         <!-- 遥测条 -->
-        <div class="z-10 mt-6 grid grid-cols-3 gap-3 rounded-lg bg-surface-container-low/70 p-3">
+        <div class="z-10 mt-6 grid grid-cols-2 gap-3 rounded-lg bg-surface-container-low/70 p-3">
           <div class="flex flex-col">
             <span class="font-mono text-[10px] uppercase text-on-surface-variant">总同步对象</span>
             <span class="mt-0.5 font-mono text-base font-bold text-on-surface">{{ filesStore.stats.totalFiles }} 个项</span>
@@ -542,16 +499,6 @@ onMounted(() => {
           <div class="flex flex-col">
             <span class="font-mono text-[10px] uppercase text-on-surface-variant">占用空间</span>
             <span class="mt-0.5 font-mono text-base text-on-surface">{{ filesStore.formattedTotalSize }}</span>
-          </div>
-          <div class="flex flex-col">
-            <span class="font-mono text-[10px] uppercase text-on-surface-variant">密钥状态</span>
-            <span
-              class="mt-0.5 flex items-center gap-1 font-mono text-base"
-              :class="authStore.hasEncryptionKey ? 'text-tertiary' : 'text-error'"
-            >
-              <span class="material-symbols-outlined text-xs">verified</span>
-              <span>{{ authStore.hasEncryptionKey ? '就绪' : '未配置' }}</span>
-            </span>
           </div>
         </div>
       </div>

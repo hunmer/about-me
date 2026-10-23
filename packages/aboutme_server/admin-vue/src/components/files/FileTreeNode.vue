@@ -54,8 +54,6 @@ const iconMeta = computed(() => {
     return { icon: 'image', color: 'text-secondary', ext: name.split('.').pop() || 'img' }
   if (/\.(db|sqlite|sqlite3)$/.test(name))
     return { icon: 'database', color: 'text-tertiary', ext: 'SQLite' }
-  if (/\.enc$/.test(name))
-    return { icon: 'lock', color: 'text-primary', ext: 'AES' }
   if (/\.(json|yaml|yml|toml|ini|conf)$/.test(name))
     return { icon: 'settings', color: 'text-on-surface-variant', ext: name.split('.').pop() || 'cfg' }
   if (/\.(zip|rar|7z|tar|gz)$/.test(name))
@@ -160,8 +158,8 @@ function sumSize(node: FileNode): number {
         class="flex items-center gap-1 rounded bg-surface-container-high px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
         @click="ctx?.onDownload(node)"
       >
-        <span class="material-symbols-outlined text-xs">key</span>
-        <span>下载解密</span>
+        <span class="material-symbols-outlined text-xs">download</span>
+        <span>下载</span>
       </button>
       <button
         type="button"
