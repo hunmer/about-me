@@ -122,7 +122,8 @@ class ChatDataService {
 
   Future<void> _loadChannels() async {
     try {
-      _channels.clear();
+      // 全部读取成功后再替换，避免网络或消息解析失败清空现有频道。
+      final loadedChannels = <Channel>[];
 
       final channelsListData = await AboutmeDataService.instance.readPath('chat/channels.json');
 
@@ -163,11 +164,14 @@ class ChatDataService {
           }
 
           final channel = Channel.fromJson(channelJson, messages: messages);
-          _channels.add(channel);
+          loadedChannels.add(channel);
         }
 
-        _channels.sort(Channel.compare);
+        loadedChannels.sort(Channel.compare);
       }
+      _channels
+        ..clear()
+        ..addAll(loadedChannels);
     } catch (e) {
       debugPrint('Error loading channels: $e');
     }
@@ -183,6 +187,22 @@ class ChatDataService {
   void setCurrentChannel(Channel? channel) {
     _currentChannel = channel;
     _plugin.refresh();
+  }
+
+  /// 索引以存储中的列表为准，不用可能尚未完整加载的内存列表覆盖。
+  Future<void> _updateChannelIndex(String channelId, {bool remove = false}) async {
+    final data = await AboutmeDataService.instance.readFile('chat', 'channels.json');
+    final channelIds = List<String>.from(data?['channels'] ?? <String>[]);
+    if (remove) {
+      channelIds.removeWhere((id) => id == channelId);
+    } else if (!channelIds.contains(channelId)) {
+      channelIds.add(channelId);
+    } else {
+      return;
+    }
+    await AboutmeDataService.instance.writePath('chat/channels.json', {
+      'channels': channelIds,
+    });
   }
 
   Future<void> createChannel(Channel channel) async {
@@ -201,8 +221,7 @@ class ChatDataService {
         AboutmeDataService.instance.writePath('chat/messages/${channel.id}.json', {'messages': []}),
       ]);
 
-      final channelIds = _channels.map((c) => c.id).toList();
-      await AboutmeDataService.instance.writePath('chat/channels.json', {'channels': channelIds});
+      await _updateChannelIndex(channel.id);
 
       _channels.sort(Channel.compare);
       _plugin.refresh();
@@ -235,8 +254,7 @@ class ChatDataService {
       'channel': channel.toJson(),
     });
 
-    final channelIds = _channels.map((c) => c.id).toList();
-    await AboutmeDataService.instance.writePath('chat/channels.json', {'channels': channelIds});
+    await _updateChannelIndex(channel.id);
 
     final index = _channels.indexWhere((c) => c.id == channel.id);
     if (index != -1) {
@@ -259,8 +277,7 @@ class ChatDataService {
 
       _channels.removeWhere((channel) => channel.id == channelId);
 
-      final channelIds = _channels.map((c) => c.id).toList();
-      await AboutmeDataService.instance.writePath('chat/channels.json', {'channels': channelIds});
+      await _updateChannelIndex(channelId, remove: true);
 
       _plugin.refresh();
       await _syncWidget();

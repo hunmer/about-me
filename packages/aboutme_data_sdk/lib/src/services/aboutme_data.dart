@@ -114,8 +114,9 @@ class AboutmeData {
       final result = await _localBackend!.readPath(path);
       return result ?? defaultValue ?? <String, dynamic>{};
     }
-    final text = await _fileStorage!.readString(path);
-    if (text.isEmpty) return defaultValue ?? <String, dynamic>{};
+    // 与本地后端一致：文件尚未创建时返回默认值，供插件首次初始化使用。
+    final text = await _fileStorage!.loadData(path);
+    if (text == null || text.isEmpty) return defaultValue ?? <String, dynamic>{};
     try {
       return jsonDecode(text);
     } catch (_) {
@@ -126,8 +127,7 @@ class AboutmeData {
   /// 读取文本文件（不存在返回空串）。
   Future<String> readPathText(String path) async {
     if (!isRemote) return _localBackend!.readPathText(path);
-    final text = await _fileStorage!.readString(path);
-    return text;
+    return await _fileStorage!.loadData(path) ?? '';
   }
 
   /// 写入 JSON（或字符串原样写入），本地写触发变更事件。

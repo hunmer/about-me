@@ -219,7 +219,8 @@ class Message {
       userMap = Map<String, dynamic>.from(json['user'] as Map<String, dynamic>);
       userId = userMap['id'] as String;
     } else {
-      userId = 'unknown_user';
+      userId = json['senderId'] as String? ?? 'unknown_user';
+      userMap = {'username': json['senderName']};
     }
 
     // 从用户列表中查找基础用户信息
@@ -250,7 +251,7 @@ class Message {
         (t) => t.toString().split('.').last == json['type'],
         orElse: () => MessageType.received,
       ),
-      date: DateTime.parse(json['date'] as String),
+      date: DateTime.parse((json['date'] ?? json['createdAt']) as String),
       editedAt:
           json['editedAt'] != null
               ? DateTime.parse(json['editedAt'] as String)
