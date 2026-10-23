@@ -5,10 +5,7 @@ import 'package:aboutme/plugins/nodes/models/node.dart';
 class AddCustomFieldDialog extends StatefulWidget {
   final Function(NodeCustomField) onCustomFieldAdded;
 
-  const AddCustomFieldDialog({
-    super.key,
-    required this.onCustomFieldAdded,
-  });
+  const AddCustomFieldDialog({super.key, required this.onCustomFieldAdded});
 
   @override
   State<AddCustomFieldDialog> createState() => AddCustomFieldDialogState();
@@ -27,7 +24,6 @@ class AddCustomFieldDialogState extends State<AddCustomFieldDialog> {
 
   @override
   Widget build(BuildContext context) {
-
     return AlertDialog(
       title: Text('nodes_addCustomField'.tr),
       content: Column(
@@ -56,10 +52,7 @@ class AddCustomFieldDialogState extends State<AddCustomFieldDialog> {
           onPressed: () => Navigator.pop(context),
           child: Text('nodes_cancel'.tr),
         ),
-        TextButton(
-          onPressed: _addCustomField,
-          child: Text('nodes_save'.tr),
-        ),
+        TextButton(onPressed: _addCustomField, child: Text('nodes_save'.tr)),
       ],
     );
   }

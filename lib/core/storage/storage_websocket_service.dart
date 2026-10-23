@@ -72,6 +72,7 @@ class StorageWebSocketService {
       final message = jsonDecode(raw as String) as Map<String, dynamic>;
       final type = message['type'] as String?;
       if (type == 'auth_success') {
+        AboutmeDataService.instance.revalidate();
         debugPrint(
           '[SyncDebug][WS] authenticated device=${_shortId(deviceId)}',
         );
@@ -89,7 +90,11 @@ class StorageWebSocketService {
       );
       // 转发进统一数据事件流（来源含 REST / MCP / 其它设备）
       final pluginId = path.contains('/') ? path.split('/').first : path;
-      AboutmeDataService.instance.publishRemoteEvent(pluginId, path);
+      AboutmeDataService.instance.publishRemoteEvent(
+        pluginId,
+        path,
+        metadata: data,
+      );
       unawaited(RouteRefreshManager().onFileSynced(path));
     } catch (error) {
       debugPrint('[SyncDebug][WS] invalid message error=$error');
@@ -116,10 +121,9 @@ class StorageWebSocketService {
     await disconnect();
   }
 
-  String _shortId(String? value) =>
-      value == null || value.isEmpty
-          ? '-'
-          : value.length <= 8
-          ? value
-          : value.substring(0, 8);
+  String _shortId(String? value) => value == null || value.isEmpty
+      ? '-'
+      : value.length <= 8
+      ? value
+      : value.substring(0, 8);
 }

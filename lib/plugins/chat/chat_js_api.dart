@@ -5,7 +5,6 @@ part of 'chat_plugin.dart';
 /// 构建 chat 插件的 JS API 表（由 ChatPlugin.defineJSAPI 调用）
 Map<String, Function> buildChatJSAPI() {
   return {
-
     // 频道相关
     'getChannels': _jsGetChannels,
     'createChannel': _jsCreateChannel,
@@ -47,8 +46,9 @@ Future<String> _jsGetChannels(Map<String, dynamic> params) async {
 
 /// 创建频道
 Future<String> _jsCreateChannel(Map<String, dynamic> params) async {
-  final result = await ChatPlugin.instance.chatUseCase.createChannel(params);
-  return result.toJsonString();
+  return jsonEncode(
+    await AboutmeDataService.instance.call('chat', 'create', params),
+  );
 }
 
 /// 删除频道
@@ -59,8 +59,13 @@ Future<String> _jsDeleteChannel(Map<String, dynamic> params) async {
 
 /// 发送消息
 Future<String> _jsSendMessage(Map<String, dynamic> params) async {
-  final result = await ChatPlugin.instance.chatUseCase.sendMessage(params);
-  return result.toJsonString();
+  return jsonEncode(
+    await AboutmeDataService.instance.call('chat', 'sendMessage', {
+      ...params,
+      if (!params.containsKey('user'))
+        'user': ChatPlugin.instance.userService.currentUser.toJson(),
+    }),
+  );
 }
 
 /// 获取频道消息
@@ -114,7 +119,9 @@ Future<String> _jsFindChannelById(Map<String, dynamic> params) async {
 /// @param params.offset 分页起始位置 (可选，仅 findAll=true 时有效)
 /// @param params.count 分页返回数量 (可选，仅 findAll=true 时有效，默认 100)
 Future<String> _jsFindChannelByTitle(Map<String, dynamic> params) async {
-  final result = await ChatPlugin.instance.chatUseCase.findChannelByTitle(params);
+  final result = await ChatPlugin.instance.chatUseCase.findChannelByTitle(
+    params,
+  );
   return result.toJsonString();
 }
 
@@ -148,7 +155,9 @@ Future<String> _jsFindMessageById(Map<String, dynamic> params) async {
 /// @param params.offset 分页起始位置 (可选，仅 findAll=true 时有效)
 /// @param params.count 分页返回数量 (可选，仅 findAll=true 时有效，默认 100)
 Future<String> _jsFindMessageByContent(Map<String, dynamic> params) async {
-  final result = await ChatPlugin.instance.chatUseCase.findMessageByContent(params);
+  final result = await ChatPlugin.instance.chatUseCase.findMessageByContent(
+    params,
+  );
   return result.toJsonString();
 }
 
@@ -173,10 +182,14 @@ Future<String> _jsGetMessagesByDate(Map<String, dynamic> params) async {
 
     // 解析日期
     final startDate = DateTime.parse(startDateStr);
-    final endDate = DateTime.parse(endDateStr).add(const Duration(days: 1)); // 包含结束日期当天的消息
+    final endDate = DateTime.parse(
+      endDateStr,
+    ).add(const Duration(days: 1)); // 包含结束日期当天的消息
 
     // 获取所有频道
-    final channelsResult = await ChatPlugin.instance.chatUseCase.getChannels({});
+    final channelsResult = await ChatPlugin.instance.chatUseCase.getChannels(
+      {},
+    );
     if (channelsResult.isFailure) {
       return '{"error": "获取频道失败", "messages": []}';
     }
@@ -200,9 +213,8 @@ Future<String> _jsGetMessagesByDate(Map<String, dynamic> params) async {
 
       try {
         // 获取频道的所有消息
-        final messagesResult = await ChatPlugin.instance.chatUseCase.getMessages({
-          'channelId': channelId,
-        });
+        final messagesResult = await ChatPlugin.instance.chatUseCase
+            .getMessages({'channelId': channelId});
 
         if (messagesResult.isSuccess) {
           final messagesData = messagesResult.dataOrNull;
@@ -221,7 +233,8 @@ Future<String> _jsGetMessagesByDate(Map<String, dynamic> params) async {
                   final timestamp = DateTime.parse(timestampStr);
 
                   // 检查是否在日期范围内
-                  if (timestamp.isAfter(startDate) && timestamp.isBefore(endDate)) {
+                  if (timestamp.isAfter(startDate) &&
+                      timestamp.isBefore(endDate)) {
                     allMessages.add(msg);
                   }
                 } catch (e) {
@@ -278,11 +291,10 @@ Future<String> _jsImportStickerCollection(Map<String, dynamic> params) async {
     if (name.isEmpty) {
       return '{"error": "缺少必需参数: name"}';
     }
-    final paths =
-        (params['paths'] as List<dynamic>? ?? [])
-            .map((e) => e.toString())
-            .where((p) => p.isNotEmpty)
-            .toList();
+    final paths = (params['paths'] as List<dynamic>? ?? [])
+        .map((e) => e.toString())
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (paths.isEmpty) {
       return '{"error": "缺少必需参数: paths（至少一张贴图文件）"}';
     }

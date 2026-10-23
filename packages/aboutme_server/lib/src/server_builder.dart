@@ -6,7 +6,6 @@ import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
-
 import 'auth_middleware.dart';
 import 'auth_routes.dart';
 import 'config.dart';
@@ -16,6 +15,7 @@ import 'plugin_routes.dart';
 import 'storage_routes.dart';
 import 'system_routes.dart';
 import 'ws_hub.dart';
+import 'user_data_runtimes.dart';
 
 /// 组装完整服务器 Handler：
 /// /health、/version、/api/v1/auth、/api/v1/storage（含 WS）、
@@ -65,8 +65,9 @@ Future<Handler> buildServer(ServerConfig config) async {
     fcm: fcm,
   );
 
-  final pluginApi = PluginApi(storage: storage, wsHub: wsHub);
-  final mcpApi = McpApi(storage: storage, wsHub: wsHub);
+  final runtimes = UserDataRuntimes(storage: storage, wsHub: wsHub);
+  final pluginApi = PluginApi(storage: storage, wsHub: wsHub, runtimes: runtimes);
+  final mcpApi = McpApi(storage: storage, wsHub: wsHub, runtimes: runtimes);
   final systemApi = SystemApi(auth: auth, dataDir: config.dataDir);
   final adminStatic = AdminStatic(_resolveAdminDir(config));
 
@@ -84,20 +85,23 @@ Future<Handler> buildServer(ServerConfig config) async {
       headers: {'content-type': 'application/json; charset=utf-8'},
     );
   });
-  router.get('/health', (Request request) => Response.ok(
-        jsonEncode({
-          'status': 'healthy',
-          'timestamp': jsIsoDateTimeNow(),
-        }),
-        headers: {'content-type': 'application/json; charset=utf-8'},
-      ));
-  router.get('/version', (Request request) => Response.ok(
-        jsonEncode({
-          'version': '1.0.0',
-          'name': 'Aboutme HTTP Storage Server (Dart)',
-        }),
-        headers: {'content-type': 'application/json; charset=utf-8'},
-      ));
+  router.get(
+    '/health',
+    (Request request) => Response.ok(
+      jsonEncode({'status': 'healthy', 'timestamp': jsIsoDateTimeNow()}),
+      headers: {'content-type': 'application/json; charset=utf-8'},
+    ),
+  );
+  router.get(
+    '/version',
+    (Request request) => Response.ok(
+      jsonEncode({
+        'version': '1.0.0',
+        'name': 'Aboutme HTTP Storage Server (Dart)',
+      }),
+      headers: {'content-type': 'application/json; charset=utf-8'},
+    ),
+  );
 
   // WebSocket（文件实时同步）
   router.get('/api/v1/storage/ws', wsHub.handler);
@@ -129,9 +133,7 @@ Future<Handler> buildServer(ServerConfig config) async {
   // MCP 端点（认证）
   router.mount(
     '/mcp',
-    Pipeline()
-        .addMiddleware(authMiddleware(auth))
-        .addHandler(mcpApi.handler),
+    Pipeline().addMiddleware(authMiddleware(auth)).addHandler(mcpApi.handler),
   );
 
   // 管理界面静态资源（SPA）
@@ -172,8 +174,10 @@ Middleware _requestLogger(bool enabled) {
     return (request) async {
       final response = await innerHandler(request);
       if (enabled) {
-        print('${DateTime.now().toIso8601String()} '
-            '${request.method} ${request.url.path}');
+        print(
+          '${DateTime.now().toIso8601String()} '
+          '${request.method} ${request.url.path}',
+        );
       }
       return response;
     };
@@ -194,6 +198,7 @@ Middleware _cors(ServerConfig config) {
     'Mcp-Session-Id',
     'Mcp-Protocol-Version',
     'Last-Event-ID',
+    'X-Aboutme-Query-Encoding',
   ];
   const exposedHeaders = ['ETag', 'Content-Length', 'Last-Modified'];
 
@@ -206,11 +211,9 @@ Middleware _cors(ServerConfig config) {
             config.corsAllowAll || config.corsOrigins.contains(origin);
         if (allow) {
           corsHeaders = {
-            'access-control-allow-origin': config.corsAllowAll
-                ? '*'
-                : origin,
+            'access-control-allow-origin': config.corsAllowAll ? '*' : origin,
             'access-control-allow-methods':
-                'GET, HEAD, POST, PUT, DELETE, OPTIONS',
+                'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS',
             'access-control-allow-headers': allowedHeaders.join(', '),
             'access-control-expose-headers': exposedHeaders.join(', '),
           };

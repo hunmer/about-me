@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
 import 'package:aboutme/core/services/timer/models/timer_state.dart';
@@ -5,9 +6,12 @@ import 'subtask.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
 enum TaskPriority { q1, q2, q3, q4 }
+
 enum TaskStatus { todo, inProgress, done }
 
 class Task {
+  final int? sdkVersion;
+  final Map<String,dynamic>? originalJson;
   final String id;
   String title;
   String? description;
@@ -28,6 +32,8 @@ class Task {
   IconData? icon;
 
   Task({
+    this.sdkVersion,
+    this.originalJson,
     required this.id,
     required this.title,
     this.description,
@@ -43,9 +49,9 @@ class Task {
     this.startTime,
     this.duration,
     this.icon,
-  })  : subtasks = subtasks ?? [],
-        reminders = reminders ?? [],
-        tags = tags ?? [];
+  }) : subtasks = subtasks ?? [],
+       reminders = reminders ?? [],
+       tags = tags ?? [];
 
   Task copyWith({
     String? id,
@@ -65,6 +71,8 @@ class Task {
     IconData? icon,
   }) {
     return Task(
+      sdkVersion:sdkVersion,
+      originalJson:originalJson,
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
@@ -84,32 +92,34 @@ class Task {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'description': description,
-        'createdAt': createdAt.toIso8601String(),
-        'startDate': startDate?.toIso8601String(),
-        'dueDate': dueDate?.toIso8601String(),
-        'priority': priority.index,
-        'status': status.index,
-        'tags': tags,
-        'subtasks': subtasks.map((e) => e.toJson()).toList(),
-        'reminders': reminders.map((e) => e.toIso8601String()).toList(),
-        'completedDate': completedDate?.toIso8601String(),
-        'startTime': startTime?.toIso8601String(),
-        'duration': duration?.inMilliseconds, // 将持续时间转换为毫秒存储
-        'iconCodePoint': icon?.codePoint, // 存储图标的 codePoint
-        'iconFontFamily': icon?.fontFamily, // 存储图标的字体族
-      };
+    'id': id,
+    'title': title,
+    'description': description,
+    'createdAt': createdAt.toIso8601String(),
+    'startDate': startDate?.toIso8601String(),
+    'dueDate': dueDate?.toIso8601String(),
+    'priority': priority.index,
+    'status': status.index,
+    'tags': tags,
+    'subtasks': subtasks.map((e) => e.toJson()).toList(),
+    'reminders': reminders.map((e) => e.toIso8601String()).toList(),
+    'completedDate': completedDate?.toIso8601String(),
+    'startTime': startTime?.toIso8601String(),
+    'duration': duration?.inMilliseconds, // 将持续时间转换为毫秒存储
+    'iconCodePoint': icon?.codePoint, // 存储图标的 codePoint
+    'iconFontFamily': icon?.fontFamily, // 存储图标的字体族
+  };
 
   factory Task.fromJson(Map<String, dynamic> json) {
     // 兼容 TaskDto 格式：isCompleted -> status
     TaskStatus status;
     if (json.containsKey('status') && json['status'] != null) {
       status = TaskStatus.values[json['status'] as int];
-    } else if (json.containsKey('isCompleted')) {
+    } else if (json.containsKey('isCompleted') ||
+        json.containsKey('completed')) {
       // TaskDto 格式：isCompleted 映射到 done/todo
-      final isCompleted = json['isCompleted'] as bool? ?? false;
+      final isCompleted =
+          (json['isCompleted'] ?? json['completed']) as bool? ?? false;
       status = isCompleted ? TaskStatus.done : TaskStatus.todo;
     } else {
       status = TaskStatus.todo;
@@ -130,29 +140,35 @@ class Task {
       // TaskDto: 0=none, 1=low, 2=medium, 3=high
       // Task: q1=紧急重要, q2=重要不紧急, q3=紧急不重要, q4=不重要不紧急
       // 简单映射：0->q4, 1->q3, 2->q2, 3->q1
-      priority = TaskPriority.values[(3 - priorityIndex).clamp(0, 3)];
+      priority = TaskPriority.values[priorityIndex.clamp(0, 3)];
     } else {
       priority = TaskPriority.q2;
     }
 
     return Task(
+      sdkVersion:json['_sdkVersion'] as int?,
+      originalJson:Map<String,dynamic>.from(jsonDecode(jsonEncode(json)) as Map),
       id: json['id'],
       title: json['title'],
       description: json['description'],
       createdAt: DateTime.parse(json['createdAt']),
-      startDate: json['startDate'] != null ? DateTime.parse(json['startDate']) : null,
+      startDate: json['startDate'] != null
+          ? DateTime.parse(json['startDate'])
+          : null,
       dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
       priority: priority,
       status: status,
-      tags: json['tags'] != null
-          ? List<String>.from(json['tags'])
-          : [],
-      subtasks: (json['subtasks'] as List?)
-          ?.map((e) => Subtask.fromJson(e))
-          .toList() ?? [],
-      reminders: (json['reminders'] as List?)
-          ?.map((e) => DateTime.parse(e))
-          .toList() ?? [],
+      tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
+      subtasks:
+          (json['subtasks'] as List?)
+              ?.map((e) => Subtask.fromJson(e))
+              .toList() ??
+          [],
+      reminders:
+          (json['reminders'] as List?)
+              ?.map((e) => DateTime.parse(e))
+              .toList() ??
+          [],
       completedDate: completedDate,
       startTime: json['startTime'] != null
           ? DateTime.parse(json['startTime'])
@@ -192,7 +208,7 @@ class Task {
         return Icons.check_circle_outline;
     }
   }
-  
+
   // 启动任务计时（委托给统一控制器）
   void startTimer() {
     // 检查是否已有运行中的计时器
@@ -262,7 +278,7 @@ class Task {
 
     return '00:00:00';
   }
-  
+
   // 格式化时间为 HH:MM:SS 格式
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -271,7 +287,7 @@ class Task {
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return '$hours:$minutes:$seconds';
   }
-  
+
   // 检查任务是否正在计时
   bool get isTimerRunning {
     return status == TaskStatus.inProgress && startTime != null;

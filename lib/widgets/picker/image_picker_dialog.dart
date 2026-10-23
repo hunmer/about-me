@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:aboutme_data_sdk/aboutme_data_sdk.dart' show StorageFileInfo;
 import 'package:crop_your_image/crop_your_image.dart';
@@ -10,8 +9,8 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_compress_plus/image_compress_plus.dart' show CompressFormat;
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:smooth_sheets/smooth_sheets.dart';
 import 'package:super_cupertino_navigation_bar/utils/navigation_bar_static_components.dart';
@@ -19,14 +18,14 @@ import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import 'package:aboutme/core/app_initializer.dart';
-import 'package:aboutme/core/services/image_compression_service.dart';
+import 'package:aboutme/core/data/sdk_media_service.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/utils/network.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
 import 'package:aboutme/plugins/toolbox/services/image_search_service.dart';
-import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/utils/platform_utils.dart';
 import 'package:aboutme/widgets/emoji_picker/index.dart';
@@ -304,11 +303,8 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
           data.offsetInBytes,
           data.lengthInBytes,
         );
-        final url = await ImageUtils.saveBytesToAppDirectory(
-          bytes,
-          widget.saveDirectory,
-          extension: ext,
-        );
+        final asset = await SdkMediaService.uploadBytes(bytes, path.basename(assetPath));
+        final url = asset.reference;
         if (mounted) {
           Navigator.of(context).pop(
             ext == '.svg'

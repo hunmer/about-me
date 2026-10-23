@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:aboutme/core/data/aboutme_data_service.dart';
+import 'package:aboutme/utils/image_utils.dart';
 
 /// 照片编辑器打开历史：记录每次成功打开进编辑器的图片
 /// （url + 名称 + 时间戳，同 url 去重置顶，上限 50 条），
@@ -23,8 +24,16 @@ class PhotoEditorHistory {
       for (final entry in entries) {
         final url = entry['url'] as String?;
         if (url == null || url.isEmpty) continue;
+        final assetId = ImageUtils.sdkAssetId(url);
         if (_isHttp(url) || url.startsWith('assets/')) {
           valid.add(entry);
+          continue;
+        }
+        if (assetId != null) {
+          try {
+            await AboutmeDataService.instance.data.assets.getMetadata(assetId);
+            valid.add(entry);
+          } catch (_) {}
           continue;
         }
         // 本地绝对路径（file_picker 选择）走文件系统，其余走存储后端
@@ -45,8 +54,7 @@ class PhotoEditorHistory {
   static Future<void> record(String url, {String? name}) async {
     if (url.isEmpty) return;
     try {
-      final history = (await list())
-        ..removeWhere((e) => e['url'] == url);
+      final history = (await list())..removeWhere((e) => e['url'] == url);
       history.insert(0, {
         'ts': DateTime.now().millisecondsSinceEpoch,
         'url': url,
@@ -80,9 +88,7 @@ class PhotoEditorHistory {
   static String _defaultName(String url) {
     final clean = url.split('?').first;
     final segments = clean.split(RegExp(r'[/\\]'));
-    return segments.isEmpty || segments.last.isEmpty
-        ? clean
-        : segments.last;
+    return segments.isEmpty || segments.last.isEmpty ? clean : segments.last;
   }
 
   static bool _isHttp(String url) =>

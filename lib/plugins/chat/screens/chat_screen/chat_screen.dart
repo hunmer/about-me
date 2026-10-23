@@ -5,7 +5,6 @@ import 'package:aboutme/core/event/event.dart' as aboutme_event;
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 import 'package:aboutme/utils/image_utils.dart';
-import 'package:aboutme/plugins/openai/handlers/chat_event_handler.dart'; // 导入ValuesEventArgs
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -82,9 +81,9 @@ class _ChatScreenState extends State<ChatScreen> {
     // 添加监听器，当 ChatPlugin 发生变化时重新加载背景
     ChatPlugin.instance.addListener(_handleChatPluginUpdate);
     // 订阅消息更新事件
-    eventManager.subscribe('chat_message_updated', _handleMessageUpdated);
+
     // 订阅同步刷新事件（用于同步后的全量刷新）
-    eventManager.subscribe('chat_refresh', _handleSyncRefresh);
+
     _loadBackgroundPath();
     _loadChannelDraft();
     unawaited(AiThreadService.instance.loadChannel(widget.channel.id));
@@ -131,37 +130,13 @@ class _ChatScreenState extends State<ChatScreen> {
     // 移除监听器
     ChatPlugin.instance.removeListener(_handleChatPluginUpdate);
     // 取消订阅消息更新事件
-    eventManager.unsubscribe('chat_message_updated', _handleMessageUpdated);
+
     // 取消订阅同步刷新事件
-    eventManager.unsubscribe('chat_refresh', _handleSyncRefresh);
+
     _controller.dispose();
     _filterState.dispose();
     // MessageOperations不需要dispose
     super.dispose();
-  }
-
-  // 处理消息更新事件（兼容两种事件载荷：openai 的 ValuesEventArgs 与 chat 插件的 Value）
-  void _handleMessageUpdated(aboutme_event.EventArgs args) {
-    Message? message;
-    if (args is ValuesEventArgs<Message, String>) {
-      message = args.value1;
-    } else if (args is aboutme_event.Value<Message>) {
-      message = args.value;
-    }
-    if (message == null) return;
-
-    // 检查更新的消息是否属于当前频道
-    if (message.channelId != widget.channel.id) return;
-
-    // 重新加载消息列表
-    _controller.reloadMessages();
-  }
-
-  // 处理同步刷新事件（来自 RouteRefreshManager）
-  void _handleSyncRefresh(aboutme_event.EventArgs args) {
-    debugPrint('[ChatScreen] 收到同步刷新事件');
-    // 重新加载消息列表
-    _controller.reloadMessages();
   }
 
   // 处理 ChatPlugin 更新
@@ -245,7 +220,14 @@ class _ChatScreenState extends State<ChatScreen> {
       theme: DSThemeBridge.resolve(currentContext),
       builder: (BuildContext dialogContext) => ClearMessagesDialog(
         onConfirm: () async {
-          await _controller.clearMessages();
+          try {
+            await _controller.clearMessages();
+          } catch (error) {
+            if (currentContext.mounted) {
+              ScaffoldMessenger.of(currentContext).showSnackBar(SnackBar(content: Text('清空失败：$error')));
+            }
+            return;
+          }
           if (!mounted) return;
           _updateMessages(); // 更新消息列表
           if (currentContext.mounted) {
@@ -677,6 +659,15 @@ class _ChatScreenState extends State<ChatScreen> {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) {
+        if (_controller.loadError != null && _controller.messages.isEmpty) {
+          return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text('消息加载失败：${_controller.loadError}'),
+            TextButton(onPressed: _controller.retryMessages, child: const Text('重试')),
+          ]));
+        }
+        if (_controller.isLoading && _controller.messages.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
         // 获取显示的消息（根据是否有搜索/过滤来决定）
         final displayMessages =
             _searchQuery.isNotEmpty || _filterState.hasAnyFilter

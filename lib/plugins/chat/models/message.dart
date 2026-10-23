@@ -6,6 +6,8 @@ import 'package:aboutme/plugins/chat/chat_plugin.dart';
 enum MessageType { received, sent, file, image, video, audio }
 
 class Message {
+  Map<String, dynamic>? sdkSnapshot;
+  int? sdkVersion;
   static const String metadataKeyFileInfo = 'fileInfo';
 
   final String id;
@@ -115,7 +117,7 @@ class Message {
     Message? replyTo,
     String? replyToId,
   }) async {
-    return create(
+    final next = await create(
       id: id ?? this.id,
       content: content ?? this.content,
       user: user ?? this.user,
@@ -129,6 +131,9 @@ class Message {
       replyTo: replyTo ?? this.replyTo,
       replyToId: replyToId ?? this.replyToId,
     );
+    next.sdkSnapshot = sdkSnapshot;
+    next.sdkVersion = sdkVersion;
+    return next;
   }
 
   // 编辑消息内容

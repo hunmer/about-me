@@ -25,9 +25,11 @@ class NodeEditScreen extends StatefulWidget {
   State<NodeEditScreen> createState() => NodeEditScreenState();
 }
 
-class NodeEditScreenState extends State<NodeEditScreen> with SingleTickerProviderStateMixin {
+class NodeEditScreenState extends State<NodeEditScreen>
+    with SingleTickerProviderStateMixin {
   // FormBuilderWrapper 的 key，用于访问表单状态
-  final GlobalKey<FormBuilderState> _basicInfoFormKey = GlobalKey<FormBuilderState>();
+  final GlobalKey<FormBuilderState> _basicInfoFormKey =
+      GlobalKey<FormBuilderState>();
 
   // 自定义字段列表
   late List<NodeCustomField> _customFields;
@@ -87,7 +89,6 @@ class NodeEditScreenState extends State<NodeEditScreen> with SingleTickerProvide
 
   @override
   Widget build(BuildContext context) {
-
     final controller = Provider.of<NodesController>(context);
 
     return Scaffold(
@@ -202,10 +203,7 @@ class NodeEditScreenState extends State<NodeEditScreen> with SingleTickerProvide
                         label = 'nodes_done'.tr;
                         break;
                     }
-                    return DropdownMenuItem(
-                      value: status,
-                      child: Text(label),
-                    );
+                    return DropdownMenuItem(value: status, child: Text(label));
                   }).toList(),
                 ),
               ],
@@ -369,9 +367,7 @@ class NodeEditScreenState extends State<NodeEditScreen> with SingleTickerProvide
                 const VerticalDivider(),
 
                 // 链接
-                quill.QuillToolbarLinkStyleButton(
-                  controller: _quillController,
-                ),
+                quill.QuillToolbarLinkStyleButton(controller: _quillController),
               ],
             ),
           ),
@@ -394,7 +390,10 @@ class NodeEditScreenState extends State<NodeEditScreen> with SingleTickerProvide
     );
   }
 
-  void _saveNode(BuildContext context, NodesController controller) {
+  Future<void> _saveNode(
+    BuildContext context,
+    NodesController controller,
+  ) async {
     // 获取基本信息表单的值
     final basicInfoState = _basicInfoFormKey.currentState;
     if (basicInfoState == null || !basicInfoState.saveAndValidate()) {
@@ -405,11 +404,10 @@ class NodeEditScreenState extends State<NodeEditScreen> with SingleTickerProvide
 
     // 从表单值中提取数据
     final title = basicInfoValues['title'] as String? ?? '';
-    final tags = (basicInfoValues['tags'] as List<dynamic>?)
-            ?.cast<String>() ??
-        [];
-    final status = basicInfoValues['status'] as NodeStatus? ??
-        widget.node.status;
+    final tags =
+        (basicInfoValues['tags'] as List<dynamic>?)?.cast<String>() ?? [];
+    final status =
+        basicInfoValues['status'] as NodeStatus? ?? widget.node.status;
     final color = basicInfoValues['color'] as Color? ?? Colors.grey;
 
     // 使用状态变量中的日期和自定义字段
@@ -434,6 +432,7 @@ class NodeEditScreenState extends State<NodeEditScreen> with SingleTickerProvide
 
     // 创建更新后的节点对象
     final updatedNode = Node(
+      sdkVersion: widget.node.sdkVersion,
       id: widget.node.id,
       parentId: widget.node.parentId,
       title: title,
@@ -449,19 +448,26 @@ class NodeEditScreenState extends State<NodeEditScreen> with SingleTickerProvide
       color: color,
     );
 
-    if (widget.isNew) {
-      // 添加新节点，确保传递父节点ID
-      controller.addNode(
-        widget.notebookId,
-        updatedNode,
-        parentId: widget.node.parentId,
-      );
-    } else {
-      // 更新现有节点
-      controller.updateNode(widget.notebookId, updatedNode);
+    try {
+      if (widget.isNew) {
+        // 添加新节点，确保传递父节点ID
+        await controller.addNode(
+          widget.notebookId,
+          updatedNode,
+          parentId: widget.node.parentId,
+        );
+      } else {
+        // 更新现有节点
+        await controller.updateNode(widget.notebookId, updatedNode);
+      }
+    } catch (error) {
+      if (context.mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('保存失败：$error')));
+      return;
     }
-
-    // 返回上一页
-    Navigator.pop(context);
+    // Return only after the SDK confirms commit.
+    if (context.mounted) Navigator.pop(context);
   }
 }

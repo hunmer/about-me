@@ -4,7 +4,7 @@ import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/services/conversation_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/diary/diary_plugin.dart';
-import 'package:aboutme/plugins/diary/models/diary_entry.dart';
+import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
 import 'package:aboutme/plugins/activity/activity_plugin.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 import 'package:aboutme/plugins/checkin/checkin_plugin.dart';
@@ -204,7 +204,7 @@ class WatchConnectivityService {
   /// 获取本月日记列表（供 watchOS 使用）
   Future<List<Map<String, dynamic>>> _getWatchDiaryEntries() async {
     final diaryPlugin = DiaryPlugin.instance;
-    final entries = diaryPlugin.getMonthlyDiaryEntriesSync();
+    final entries = await diaryPlugin.getMonthlyDiaryEntries();
 
     // 转换为 watchOS 需要的格式
     final entryList =
@@ -218,7 +218,7 @@ class WatchConnectivityService {
                 entry.content.length > 100
                     ? '${entry.content.substring(0, 100)}...'
                     : entry.content,
-            'wordCount': entry.content.length,
+            'wordCount': DiaryUtils.contentToPlainText(entry.content).trim().length,
             'mood': entry.mood,
             'updatedAt': entry.updatedAt.toIso8601String(),
           };
@@ -233,27 +233,12 @@ class WatchConnectivityService {
     if (arguments is! Map) {
       throw ArgumentError('参数必须是 Map 类型');
     }
-
     final dateStr = arguments['date'] as String?;
     if (dateStr == null) {
       throw ArgumentError('缺少 date 参数');
     }
-
-    final diaryPlugin = DiaryPlugin.instance;
     final date = DateTime.parse(dateStr);
-    final entries = diaryPlugin.getMonthlyDiaryEntriesSync();
-
-    // 查找指定日期的日记
-    DiaryEntry? entry;
-    for (final tuple in entries) {
-      final entryDate = tuple.$1;
-      if (entryDate.year == date.year &&
-          entryDate.month == date.month &&
-          entryDate.day == date.day) {
-        entry = tuple.$2;
-        break;
-      }
-    }
+    final entry = await DiaryUtils.loadDiaryEntry(date);
 
     if (entry == null) {
       throw Exception('未找到日期为 $dateStr 的日记');
@@ -263,7 +248,7 @@ class WatchConnectivityService {
       'date': dateStr,
       'title': entry.title,
       'content': entry.content,
-      'wordCount': entry.content.length,
+      'wordCount': DiaryUtils.contentToPlainText(entry.content).trim().length,
       'mood': entry.mood,
       'createdAt': entry.createdAt.toIso8601String(),
       'updatedAt': entry.updatedAt.toIso8601String(),
@@ -276,9 +261,9 @@ class WatchConnectivityService {
   /// 获取日记统计数据（供 watchOS 使用）
   Future<Map<String, dynamic>> _getWatchDiaryStats() async {
     final diaryPlugin = DiaryPlugin.instance;
-    final todayWordCount = diaryPlugin.getTodayWordCountSync();
-    final monthWordCount = diaryPlugin.getMonthWordCountSync();
-    final monthProgress = diaryPlugin.getMonthProgressSync();
+    final todayWordCount = await diaryPlugin.getTodayWordCount();
+    final monthWordCount = await diaryPlugin.getMonthWordCount();
+    final monthProgress = await diaryPlugin.getMonthProgress();
 
     final result = {
       'todayWordCount': todayWordCount,

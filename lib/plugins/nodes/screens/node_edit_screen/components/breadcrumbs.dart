@@ -51,12 +51,12 @@ class NodeBreadcrumbs extends StatelessWidget {
       nodeIds = controller.getNodePathIds(notebookId, node.id);
       debugPrint('【Breadcrumbs】当前节点路径: $path');
     }
-    
+
     if (path.isEmpty) {
       // 如果路径为空（例如新的根节点），则不显示任何内容
       return const SizedBox.shrink();
     }
-    
+
     return Wrap(
       spacing: 4,
       children: [
@@ -72,13 +72,17 @@ class NodeBreadcrumbs extends StatelessWidget {
                     if (i < path.length - 1 && i < nodeIds.length) {
                       // 将当前编辑的节点设置为所选节点的子节点
                       final selectedNodeId = nodeIds[i];
-                      final selectedNode = controller.findNodeById(notebookId, selectedNodeId);
+                      final selectedNode = controller.findNodeById(
+                        notebookId,
+                        selectedNodeId,
+                      );
                       final currentContext = context;
-                      
+
                       if (selectedNode != null) {
                         try {
                           // 创建一个新的节点，保持原有的信息，但更新父节点ID
                           final updatedNode = Node(
+                            sdkVersion: node.sdkVersion,
                             id: node.id,
                             title: node.title,
                             createdAt: node.createdAt,
@@ -90,10 +94,13 @@ class NodeBreadcrumbs extends StatelessWidget {
                             notes: node.notes,
                             parentId: selectedNode.id, // 更新父节点ID
                             children: node.children,
-                            pathValue: '${selectedNode.pathValue}/${node.title}',
+                            pathValue:
+                                '${selectedNode.pathValue}/${node.title}',
                           );
 
-                          debugPrint('【Breadcrumbs】开始更新节点: ${updatedNode.title}');
+                          debugPrint(
+                            '【Breadcrumbs】开始更新节点: ${updatedNode.title}',
+                          );
                           // 更新节点树中的节点
                           await controller.updateNode(notebookId, updatedNode);
                           debugPrint('【Breadcrumbs】节点更新完成，准备通知UI更新');
@@ -106,7 +113,7 @@ class NodeBreadcrumbs extends StatelessWidget {
                           // 使用 Navigator.pop 返回上一级，然后用更新后的节点重新打开编辑页面
                           Navigator.pop(currentContext);
                           if (!currentContext.mounted) return;
-                          
+
                           debugPrint('【Breadcrumbs】准备打开新的编辑页面');
                           NavigationHelper.push(
                             currentContext,
@@ -149,7 +156,7 @@ class NodeBreadcrumbs extends StatelessWidget {
     // 获取同级节点列表
     final siblings = controller.getSiblingNodes(notebookId, nodeId);
     debugPrint('【Breadcrumbs】找到${siblings.length}个同级节点');
-    
+
     // 如果没有同级节点或只有一个节点（自身），则不显示选择器
     if (siblings.length <= 1) {
       return const SizedBox.shrink();
@@ -161,7 +168,7 @@ class NodeBreadcrumbs extends StatelessWidget {
         onTapDown: (details) async {
           final RenderBox button = context.findRenderObject() as RenderBox;
           final Offset offset = button.localToGlobal(Offset.zero);
-          
+
           debugPrint('【Breadcrumbs】显示同级节点菜单');
           final selectedNode = await showMenu<Node>(
             context: context,
@@ -173,10 +180,12 @@ class NodeBreadcrumbs extends StatelessWidget {
             ),
             items: siblings
                 .where((sibling) => sibling.id != nodeId) // 排除当前节点
-                .map((sibling) => PopupMenuItem<Node>(
-                      value: sibling,
-                      child: Text(sibling.title),
-                    ))
+                .map(
+                  (sibling) => PopupMenuItem<Node>(
+                    value: sibling,
+                    child: Text(sibling.title),
+                  ),
+                )
                 .toList(),
           );
 
@@ -184,6 +193,7 @@ class NodeBreadcrumbs extends StatelessWidget {
             try {
               // 创建一个新的节点，保持原有的信息，但更新父节点ID
               final updatedNode = Node(
+                sdkVersion: node.sdkVersion,
                 id: node.id,
                 title: node.title,
                 createdAt: node.createdAt,
@@ -209,14 +219,17 @@ class NodeBreadcrumbs extends StatelessWidget {
               if (!context.mounted) return;
               Navigator.pop(context);
               if (!context.mounted) return;
-              
+
               debugPrint('【Breadcrumbs】准备打开新的编辑页面（菜单选择后）');
-              NavigationHelper.push(context, ChangeNotifierProvider<NodesController>.value(
-                    value: controller,
-                    child: NodeEditScreen(
-                      notebookId: notebookId,
-                      node: updatedNode,
-                      isNew: isNew,),
+              NavigationHelper.push(
+                context,
+                ChangeNotifierProvider<NodesController>.value(
+                  value: controller,
+                  child: NodeEditScreen(
+                    notebookId: notebookId,
+                    node: updatedNode,
+                    isNew: isNew,
+                  ),
                 ),
               );
             } catch (e) {

@@ -11,6 +11,12 @@ int errorCodeToStatus(String? code) {
       return 404;
     case 'INVALID_PARAMS':
       return 400;
+    case 'UNSUPPORTED':
+      return 501;
+    case 'CORRUPT_DATA':
+      return 422;
+    case 'OFFLINE':
+      return 503;
     case 'UNAUTHORIZED':
       return 401;
     case 'FORBIDDEN':
@@ -83,7 +89,8 @@ bool truthy(dynamic value) {
   if (value == null) return false;
   if (value is bool) return value;
   if (value is num) return value != 0;
-  if (value is String) return value.isNotEmpty && value != 'false' && value != '0';
+  if (value is String)
+    return value.isNotEmpty && value != 'false' && value != '0';
   return true;
 }
 

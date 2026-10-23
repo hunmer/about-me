@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/data/sdk_media_service.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -146,12 +147,10 @@ Future<PhotoEditorResult?> showPhotoEditor(
     // 未指定路径：提交后询问保存目标（软件内部 / 系统相册 / 不保存）
     final target = await _chooseSaveTarget(context, allowCancel: false);
     if (target == _SaveTarget.internal) {
-      final savedPath = await ImageUtils.saveBytesToAppDirectory(
+      final savedPath = (await SdkMediaService.uploadBytes(
         edited,
-        'editor',
-        // 擦除产物为 PNG（保留透明），按魔数判断扩展名
-        extension: _looksLikePng(edited) ? '.png' : '.jpg',
-      );
+        'photo_editor_${DateTime.now().millisecondsSinceEpoch}${_looksLikePng(edited) ? '.png' : '.jpg'}',
+      )).reference;
       // 副本入打开历史，主界面可继续编辑
       unawaited(PhotoEditorHistory.record(savedPath));
       if (context.mounted) {
@@ -289,6 +288,7 @@ Future<String> _writeToSavePath(String savePath, Uint8List bytes) async {
   final rel = normalized.startsWith('./')
       ? normalized.substring(2)
       : normalized;
+  if (ImageUtils.sdkAssetId(savePath) != null) return savePath;
   await globalStorage.writeBytes(rel, bytes);
   return './$rel';
 }
@@ -368,7 +368,8 @@ class _CanvasState {
 }
 
 class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
-  late final List<PhotoEditorItem> _items = widget.items ??
+  late final List<PhotoEditorItem> _items =
+      widget.items ??
       [PhotoEditorItem(url: widget.imageUrl, savePath: widget.savePath)];
   late final List<_CanvasState> _canvases = List.generate(
     _items.length,
@@ -505,11 +506,10 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
           return;
         }
         if (target == _SaveTarget.internal) {
-          final rel = await ImageUtils.saveBytesToAppDirectory(
+          final rel = (await SdkMediaService.uploadBytes(
             bytes,
-            'editor',
-            extension: _looksLikePng(bytes) ? '.png' : '.jpg',
-          );
+            'photo_editor_${DateTime.now().millisecondsSinceEpoch}${_looksLikePng(bytes) ? '.png' : '.jpg'}',
+          )).reference;
           unawaited(PhotoEditorHistory.record(rel));
           if (mounted) {
             Toast.success('${'app_photoEditSavedCopy'.tr}: $rel');
@@ -572,11 +572,10 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
           if (item.savePath != null && item.savePath!.isNotEmpty) {
             await _writeToSavePath(item.savePath!, bytes);
           } else if (target == _SaveTarget.internal) {
-            final rel = await ImageUtils.saveBytesToAppDirectory(
+            final rel = (await SdkMediaService.uploadBytes(
               bytes,
-              'editor',
-              extension: _looksLikePng(bytes) ? '.png' : '.jpg',
-            );
+              'photo_editor_${DateTime.now().millisecondsSinceEpoch}${_looksLikePng(bytes) ? '.png' : '.jpg'}',
+            )).reference;
             unawaited(PhotoEditorHistory.record(rel));
           } else if (target == _SaveTarget.album) {
             await _saveToAlbum(context, bytes);
@@ -651,8 +650,9 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
           i18n: _buildI18n(),
           // 擦除后画布含透明，导出必须 PNG（JPG 无 alpha 会压黑）
           imageGeneration: ImageGenerationConfigs(
-            outputFormat:
-                _canvas.hasAlpha ? OutputFormat.png : OutputFormat.jpg,
+            outputFormat: _canvas.hasAlpha
+                ? OutputFormat.png
+                : OutputFormat.jpg,
           ),
           mainEditor: MainEditorConfigs(
             widgets: MainEditorWidgets(
@@ -695,8 +695,7 @@ class _PhotoEditorScreenState extends State<_PhotoEditorScreen> {
               // 未指定保存路径：返回时的关闭警告替换为保存询问
               //（保存=导出存副本；多图模式走编辑器自带丢弃警告，
               //  保存已在每张图提交导出时完成）
-              closeWarningDialog:
-                  !_isMulti && widget.savePath == null
+              closeWarningDialog: !_isMulti && widget.savePath == null
                   ? _customCloseWarning
                   : null,
             ),

@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 class AddTagDialog extends StatefulWidget {
   final Function(String) onTagAdded;
 
-  const AddTagDialog({
-    super.key,
-    required this.onTagAdded,
-  });
+  const AddTagDialog({super.key, required this.onTagAdded});
 
   @override
   State<AddTagDialog> createState() => AddTagDialogState();
@@ -24,7 +21,6 @@ class AddTagDialogState extends State<AddTagDialog> {
 
   @override
   Widget build(BuildContext context) {
-
     return AlertDialog(
       title: Text('nodes_tags'.tr),
       content: TextField(
@@ -41,10 +37,7 @@ class AddTagDialogState extends State<AddTagDialog> {
           onPressed: () => Navigator.pop(context),
           child: Text('nodes_cancel'.tr),
         ),
-        TextButton(
-          onPressed: _addTag,
-          child: Text('nodes_save'.tr),
-        ),
+        TextButton(onPressed: _addTag, child: Text('nodes_save'.tr)),
       ],
     );
   }

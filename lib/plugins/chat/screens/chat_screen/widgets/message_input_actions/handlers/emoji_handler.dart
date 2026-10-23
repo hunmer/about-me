@@ -36,7 +36,12 @@ Future<void> handleEmojiSelection({
 }) async {
   final emojiFaces = await _loadEmojiAssets(kEmojiFaceAssetDir);
   final emojiAssets = await _loadEmojiAssets(kBuiltInEmojiAssetDir);
-  final stickerCollections = await StickerService.instance.listCollections();
+  List<StickerCollection> stickerCollections = [];
+  try {
+    stickerCollections = await StickerService.instance.listCollections();
+  } catch (error) {
+    toastService.showToast('贴图加载失败: $error');
+  }
   if (!context.mounted) return;
 
   // 适配小屏：选择器高度不超过屏幕高度的 70%

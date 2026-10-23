@@ -89,6 +89,12 @@ class StorageApi {
     headers: {'content-type': 'application/json; charset=utf-8'},
   );
 
+  Response _storageError(StorageException error) => Response(
+    error.statusCode ?? 500,
+    body: jsonEncode({'success': false, 'error': error.message, 'code': error.statusCode == 426 ? 'UPGRADE_REQUIRED' : 'INTERNAL_ERROR'}),
+    headers: {'content-type': 'application/json; charset=utf-8'},
+  );
+
   Map<String, String> _metadataHeaders(
     RawFileMetadata metadata, {
     bool includeRepresentationHeaders = true,
@@ -158,6 +164,8 @@ class StorageApi {
         jsonEncode({'deleted': deleted}),
         headers: {'content-type': 'application/json; charset=utf-8'},
       );
+    } on StorageException catch (error) {
+      return _storageError(error);
     } on StoragePathException {
       return _jsonError(400, '无法清除文件');
     } catch (_) {
@@ -200,6 +208,7 @@ class StorageApi {
 
   Future<Response> _writeFile(Request request, String filePath) async {
     final auth = authContextOf(request)!;
+    try { LegacyWritePolicy.check(filePath); } on StorageException catch (error) { return _storageError(error); }
     final contentType = request.headers['content-type'] ?? '';
     if (!contentType.startsWith('application/octet-stream')) {
       return _jsonError(415, '仅支持 application/octet-stream');
@@ -265,6 +274,8 @@ class StorageApi {
         200,
         headers: _metadataHeaders(result.metadata!, includeRepresentationHeaders: false),
       );
+    } on StorageException catch (error) {
+      return _storageError(error);
     } on StoragePathException {
       return _jsonError(400, '无法写入文件');
     } catch (_) {
@@ -303,6 +314,8 @@ class StorageApi {
           );
           return Response(204);
       }
+    } on StorageException catch (error) {
+      return _storageError(error);
     } on StoragePathException {
       return _jsonError(400, '无法删除文件');
     } catch (_) {

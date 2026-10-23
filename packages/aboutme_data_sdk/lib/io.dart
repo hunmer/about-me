@@ -10,3 +10,6 @@ export 'src/jwt_hs256.dart';
 export 'src/local_file_storage.dart';
 export 'src/pbkdf2.dart';
 export 'src/services/local_plugin_backend.dart';
+export 'src/services/file_plugin_persistence.dart';
+export 'src/services/asset_materialization.dart';
+export 'src/services/migrations/diary_migration.dart' show restoreDiaryMigrationBackup, diaryMigrationReport;

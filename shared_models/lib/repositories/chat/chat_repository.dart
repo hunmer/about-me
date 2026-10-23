@@ -7,6 +7,7 @@ library;
 
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
+import '../../data_contracts/chat_codec.dart';
 
 /// 频道数据传输对象
 class ChannelDto {
@@ -19,6 +20,8 @@ class ChannelDto {
   final List<String> groups;
   final DateTime? lastMessageTime;
   final Map<String, dynamic>? metadata;
+  final Map<String, dynamic> extensions;
+  final int? version;
 
   const ChannelDto({
     required this.id,
@@ -30,9 +33,12 @@ class ChannelDto {
     this.groups = const [],
     this.lastMessageTime,
     this.metadata,
+    this.extensions = const {},
+    this.version,
   });
 
   factory ChannelDto.fromJson(Map<String, dynamic> json) {
+    json = ChatCodec.channel(json);
     return ChannelDto(
       id: json['id'] as String,
       title: json['title'] as String,
@@ -45,10 +51,13 @@ class ChannelDto {
           ? DateTime.tryParse(json['lastMessageTime'] as String)
           : null,
       metadata: json['metadata'] as Map<String, dynamic>?,
+      extensions: Map<String, dynamic>.from(json)..remove('_sdkVersion'),
+      version: json['_sdkVersion'] as int?,
     );
   }
 
   Map<String, dynamic> toJson() => {
+        ...extensions,
         'id': id,
         'title': title,
         if (iconCodePoint != null) 'icon': iconCodePoint,
@@ -82,6 +91,8 @@ class ChannelDto {
       groups: groups ?? this.groups,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       metadata: metadata ?? this.metadata,
+      extensions: extensions,
+      version: version,
     );
   }
 }
@@ -96,6 +107,7 @@ class MessageDto {
   final DateTime date;
   final String? replyToId;
   final Map<String, dynamic>? metadata;
+  final Map<String, dynamic> extensions;
 
   const MessageDto({
     required this.id,
@@ -106,20 +118,21 @@ class MessageDto {
     required this.date,
     this.replyToId,
     this.metadata,
+    this.extensions = const {},
   });
 
   factory MessageDto.fromJson(Map<String, dynamic> json) {
+    json = ChatCodec.message(json);
     return MessageDto(
       id: json['id'] as String,
       content: json['content'] as String,
       channelId: json['channelId'] as String? ?? '',
       user: _parseUser(json['user']),
       type: json['type'] as String? ?? 'sent',
-      date: json['date'] != null
-          ? DateTime.parse(json['date'] as String)
-          : DateTime.now(),
+      date: DateTime.parse(json['date'] as String),
       replyToId: json['replyToId'] as String?,
       metadata: json['metadata'] as Map<String, dynamic>?,
+      extensions: Map<String, dynamic>.from(json),
     );
   }
 
@@ -137,6 +150,7 @@ class MessageDto {
   }
 
   Map<String, dynamic> toJson() => {
+        ...extensions,
         'id': id,
         'content': content,
         'channelId': channelId,
@@ -240,8 +254,15 @@ abstract class IChatRepository {
   /// 更新频道
   Future<Result<ChannelDto>> updateChannel(String id, ChannelDto channel);
 
+  /// 只提交调用者提供的字段；null 表示显式清空。
+  Future<Result<ChannelDto>> patchChannel(
+    String id,
+    Map<String, dynamic> patch, {
+    int? expectedVersion,
+  });
+
   /// 删除频道
-  Future<Result<bool>> deleteChannel(String id);
+  Future<Result<bool>> deleteChannel(String id, {int? expectedVersion});
 
   /// 查找频道
   Future<Result<List<ChannelDto>>> findChannels(ChannelQuery query);
@@ -258,7 +279,8 @@ abstract class IChatRepository {
   Future<Result<MessageDto>> sendMessage(String channelId, MessageDto message);
 
   /// 删除消息
-  Future<Result<bool>> deleteMessage(String channelId, String messageId);
+  Future<Result<bool>> deleteMessage(String channelId, String messageId,
+      {int? expectedVersion});
 
   /// 查找消息
   Future<Result<List<MessageDto>>> findMessages(MessageQuery query);

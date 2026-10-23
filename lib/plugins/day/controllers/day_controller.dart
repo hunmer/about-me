@@ -1,16 +1,12 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
+import 'package:flutter/foundation.dart';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
-import 'package:aboutme/plugins/day/day_plugin.dart';
-import 'package:aboutme/plugins/day/sample_data.dart';
 
-/// 纪念日缓存更新事件参数
-///
-/// 携带最新的纪念日列表数据，小组件可直接使用
 class MemorialDayCacheUpdatedEventArgs extends EventArgs {
   /// 所有纪念日列表
   final List<MemorialDay> items;
@@ -18,337 +14,166 @@ class MemorialDayCacheUpdatedEventArgs extends EventArgs {
   /// 更新时间
   final DateTime timestamp;
 
-  MemorialDayCacheUpdatedEventArgs({
-    required this.items,
-    DateTime? timestamp,
-  }) : timestamp = timestamp ?? DateTime.now(),
-       super('memorial_day_cache_updated');
+  MemorialDayCacheUpdatedEventArgs({required this.items, DateTime? timestamp})
+    : timestamp = timestamp ?? DateTime.now(),
+      super('memorial_day_cache_updated');
 }
 
-enum SortMode {
-  upcoming, // 即将发生
-  recent, // 最近添加
-  manual, // 手动排序
-}
+enum SortMode { upcoming, recent, manual }
 
 class DayController extends ChangeNotifier {
-  final _plugin = DayPlugin.instance;
+  AboutmeData get _data => AboutmeDataService.instance.data;
   final List<MemorialDay> _memorialDays = [];
+  final _originals = <String, Map<String, dynamic>>{};
+  final _versions = <String, int?>{};
   bool _isCardView = true;
-  VoidCallback? _cancelDataSync;
-
-  List<MemorialDay> get memorialDays => _memorialDays;
+  SortMode _sortMode = SortMode.upcoming;
+  int? _version;
+  Object? queryError;
+  StreamSubscription<QuerySnapshot>? _subscription;
+  List<MemorialDay> get memorialDays => List.unmodifiable(_memorialDays);
   bool get isCardView => _isCardView;
-
-  // 判断是否允许拖拽排序
+  SortMode get sortMode => _sortMode;
   bool get isDraggable => _sortMode == SortMode.manual;
+  dynamic _result(Map<String, dynamic> r) {
+    if (r['success'] != true) throw QueryFailure(r);
+    _version = r['version'] as int?;
+    return r['data'];
+  }
 
-  // 初始化
-  Future<void> initialize() async {
-    await _loadMemorialDays();
-    await _loadViewPreference();
-
-    // 订阅插件数据变更（远端写入后局部刷新）
-    _cancelDataSync ??= AboutmeDataService.instance.onPluginChanged(
-      'day',
-      () => reloadData(),
+  void _accept(Map<String, dynamic> response) {
+    final state = _result(response) as Map;
+    final rows = (state['data'] as List)
+        .map((r) => MemorialDay.fromJson(Map<String, dynamic>.from(r as Map)))
+        .toList();
+    _memorialDays
+      ..clear()
+      ..addAll(rows);
+    _originals.clear();
+    _versions.clear();
+    for (final row in rows) {
+      _originals[row.id] = row.toJson();
+      _versions[row.id] = _version;
+    }
+    final prefs = state['preferences'] as Map;
+    _isCardView = prefs['isCardView'] as bool;
+    _sortMode = SortMode.values.byName(
+      prefs['sortMode'].toString().split('.').last,
     );
+    queryError = null;
+    notifyListeners();
+    EventManager.instance.broadcast(
+      'memorial_day_cache_updated',
+      MemorialDayCacheUpdatedEventArgs(items: List.from(rows)),
+    );
+  }
+
+  Future<void> initialize() async {
+    await reloadData();
+    _subscription = _data.watch('day', 'getSnapshot').listen((snapshot) {
+      if (snapshot.status == QueryStatus.data) _accept(snapshot.result!);
+      if (snapshot.status == QueryStatus.error) {
+        queryError = snapshot.error;
+        notifyListeners();
+      }
+    });
   }
 
   @override
   void dispose() {
-    _cancelDataSync?.call();
-    _cancelDataSync = null;
+    _subscription?.cancel();
     super.dispose();
   }
 
-  /// 重新加载数据（供同步后刷新使用）
   Future<void> reloadData() async {
-    await _loadMemorialDays();
-    notifyListeners();
-    // 广播缓存更新事件
-    EventManager.instance.broadcast(
-      'memorial_day_cache_updated',
-      MemorialDayCacheUpdatedEventArgs(items: List.from(_memorialDays)),
-    );
-  }
-
-  // 切换视图模式
-  void toggleView() {
-    _isCardView = !_isCardView;
-    _saveViewPreference();
-    notifyListeners();
-  }
-
-  // 加载视图偏好设置
-  Future<void> _loadViewPreference() async {
     try {
-      // 确保目录存在
-      await _plugin.storage.createDirectory('day');
-
-      // 设置默认的配置JSON字符串
-      final defaultConfig = jsonEncode({
-        'isCardView': true,
-        'sortMode': SortMode.upcoming.toString(),
-      });
-
-      var configStr = await AboutmeDataService.instance.readPathText(
-        '${'day'}/view_preference.json',
-      );
-      if (configStr.isEmpty) {
-        configStr = defaultConfig;
-      }
-
-      final config = jsonDecode(configStr);
-      _isCardView = config['isCardView'] ?? true;
-
-      // 解析排序模式
-      if (config['sortMode'] != null) {
-        final sortModeStr = config['sortMode'].toString();
-        if (sortModeStr.contains('upcoming')) {
-          _sortMode = SortMode.upcoming;
-        } else if (sortModeStr.contains('recent')) {
-          _sortMode = SortMode.recent;
-        } else if (sortModeStr.contains('manual')) {
-          _sortMode = SortMode.manual;
-        } else {
-          _sortMode = SortMode.upcoming;
-        }
-      } else {
-        _sortMode = SortMode.upcoming;
-      }
+      _accept(await _data.query('day', 'getSnapshot'));
     } catch (e) {
-      debugPrint('加载视图偏好设置失败: $e');
-      _isCardView = true;
-      _sortMode = SortMode.upcoming;
+      queryError = e;
+      notifyListeners();
+      rethrow;
     }
   }
 
-  // 保存视图偏好设置
-  Future<void> _saveViewPreference() async {
+  Future<void> _command(
+    String action,
+    Map<String, dynamic> p, {
+    int? expectedVersion,
+  }) async {
     try {
-      await AboutmeDataService.instance.writePath(
-        '${'day'}/view_preference.json',
-        jsonEncode({
-          'isCardView': _isCardView,
-          'sortMode': _sortMode.toString(),
+      _result(
+        await _data.call('day', action, {
+          ...p,
+          if (expectedVersion != null) 'expectedVersion': expectedVersion,
         }),
       );
+      await reloadData();
     } catch (e) {
-      debugPrint('保存视图偏好设置失败: $e');
-    }
-  }
-
-  // 加载纪念日数据
-  Future<void> _loadMemorialDays() async {
-    // 确保目录存在
-    await _plugin.storage.createDirectory('day');
-
-    final filePath = '${'day'}/memorial_days.json';
-
-    // 检查文件是否存在
-    final fileExists = await AboutmeDataService.instance.existsPath(filePath);
-
-    if (!fileExists) {
-      _memorialDays.clear();
-      await _saveMemorialDays();
-      _sortMemorialDays();
-      return;
-    }
-
-    // 设置默认的空数组JSON字符串
-    final defaultContent = '[]';
-
-    var content = await AboutmeDataService.instance.readPathText(filePath);
-    if (content.isEmpty) {
-      content = defaultContent;
-    }
-
-    try {
-      final List<dynamic> jsonList = jsonDecode(content);
-      _memorialDays.clear();
-      // 加载所有纪念日
-      _memorialDays.addAll(
-        jsonList.map((json) => MemorialDay.fromJson(json)).toList(),
-      );
-
-      // 检查是否所有项目都有有效的sortIndex
-      var hasInvalidIndex = _memorialDays.any((day) => day.sortIndex < 0);
-      if (hasInvalidIndex) {
-        // 如果有无效的索引，重新分配所有索引
-        for (var i = 0; i < _memorialDays.length; i++) {
-          _memorialDays[i] = _memorialDays[i].copyWith(sortIndex: i);
-        }
-        // 保存更新后的索引
-        await _saveMemorialDays();
-      }
-    } catch (e) {
-      debugPrint('解析纪念日数据失败: $e');
-      _memorialDays.clear();
-    }
-    // 始终按当前排序模式排序
-    _sortMemorialDays();
-  }
-
-  // 保存纪念日数据
-  Future<void> _saveMemorialDays() async {
-    try {
-      final jsonList = _memorialDays.map((day) => day.toJson()).toList();
-      await AboutmeDataService.instance.writePath(
-        '${'day'}/memorial_days.json',
-        jsonEncode(jsonList),
-      );
-    } catch (e) {
-      debugPrint('保存纪念日数据失败: $e');
-    }
-  }
-
-  /// 加载示例纪念日数据（存储为空时写入，供首次打开引导选择调用）
-  Future<void> loadSampleMemorialDays() async {
-    final filePath = '${'day'}/memorial_days.json';
-    var content = await AboutmeDataService.instance.readPathText(filePath);
-    if (content.isNotEmpty) {
-      try {
-        final List<dynamic> jsonList = jsonDecode(content);
-        if (jsonList.isNotEmpty) return;
-      } catch (e) {
-        debugPrint('解析纪念日数据失败: $e');
-        return;
-      }
-    }
-
-    _memorialDays.addAll(DaySampleData.getSampleMemorialDays());
-    await _saveMemorialDays();
-    _sortMemorialDays();
-    notifyListeners();
-  }
-
-  // 添加纪念日
-  Future<void> addMemorialDay(MemorialDay memorialDay) async {
-    // 在手动排序模式下，新项目添加到末尾
-    if (_sortMode == SortMode.manual) {
-      final newMemorialDay = memorialDay.copyWith(
-        sortIndex:
-            _memorialDays.isEmpty
-                ? 0
-                : _memorialDays.map((d) => d.sortIndex).reduce(max) + 1,
-      );
-      _memorialDays.add(newMemorialDay);
-    } else {
-      _memorialDays.add(memorialDay);
-      _sortMemorialDays();
-    }
-    await _saveMemorialDays();
-    notifyListeners();
-    debugPrint('[DayController] Added memorial day: ${memorialDay.title}, total: ${_memorialDays.length}');
-    _notifyEvent('added', memorialDay);
-  }
-
-  // 更新纪念日
-  Future<void> updateMemorialDay(MemorialDay memorialDay) async {
-    final index = _memorialDays.indexWhere((day) => day.id == memorialDay.id);
-    if (index != -1) {
-      _memorialDays[index] = memorialDay;
-      _sortMemorialDays();
-      await _saveMemorialDays();
+      queryError = e;
       notifyListeners();
-      _notifyEvent('updated', memorialDay);
+      rethrow;
     }
   }
 
-  // 删除纪念日
-  Future<void> deleteMemorialDay(String id) async {
-    final index = _memorialDays.indexWhere((day) => day.id == id);
-    if (index != -1) {
-      final removedDay = _memorialDays[index];
-      _memorialDays.removeWhere((day) => day.id == id);
-      await _saveMemorialDays();
-      notifyListeners();
-      debugPrint('[DayController] Deleted memorial day: ${removedDay.title}, total remaining: ${_memorialDays.length}');
-      _notifyEvent('deleted', removedDay);
-    } else {
-      debugPrint('[DayController] Failed to find memorial day with id: $id');
-    }
+  Future<void> toggleView() async {
+    await _command('updatePreferences', {'isCardView': !_isCardView});
   }
 
-  // 按当前排序模式排序
-  void _sortMemorialDays() {
-    switch (_sortMode) {
-      case SortMode.upcoming:
-        _memorialDays.sort(
-          (a, b) => a.daysRemaining.compareTo(b.daysRemaining),
-        );
-        break;
-      case SortMode.recent:
-        _memorialDays.sort((a, b) => b.creationDate.compareTo(a.creationDate));
-        break;
-      case SortMode.manual:
-        // 按 sortIndex 排序
-        _memorialDays.sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
-        break;
-    }
-  }
-
-  // 手动重新排序纪念日
-  Future<void> reorderMemorialDays(int oldIndex, int newIndex) async {
-    // 确保在手动排序模式下
-    if (_sortMode != SortMode.manual) return;
-
-    // 调整新索引（ReorderableListView的要求）
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-
-    // 移动项目
-    final item = _memorialDays.removeAt(oldIndex);
-    _memorialDays.insert(newIndex, item);
-
-    // 计算新的排序索引
-    double newSortIndex;
-    if (newIndex == 0) {
-      // 移动到开头
-      newSortIndex = _memorialDays[1].sortIndex - 1.0;
-    } else if (newIndex == _memorialDays.length - 1) {
-      // 移动到末尾
-      newSortIndex = _memorialDays[newIndex - 1].sortIndex + 1.0;
-    } else {
-      // 移动到中间，取前后两项sortIndex的平均值
-      newSortIndex =
-          (_memorialDays[newIndex - 1].sortIndex +
-              _memorialDays[newIndex + 1].sortIndex) /
-          2.0;
-    }
-
-    // 更新移动项目的sortIndex
-    _memorialDays[newIndex] = _memorialDays[newIndex].copyWith(
-      sortIndex: newSortIndex.round(),
-    );
-
-    // 保存更改
-    await _saveMemorialDays();
-
-    // 通知监听器
-    notifyListeners();
-  }
-
-  // 设置自定义排序顺序
-  SortMode _sortMode = SortMode.upcoming;
-  SortMode get sortMode => _sortMode;
-
-  // 设置排序模式
   Future<void> setSortMode(SortMode mode) async {
-    _sortMode = mode;
-    _sortMemorialDays();
-    // 保存排序模式到偏好设置
-    await _saveViewPreference();
-    notifyListeners();
+    await _command('updatePreferences', {'sortMode': mode.name});
+  }
+
+  Future<void> loadSampleMemorialDays() async {
+    await _command('seedExamples', {
+      'groups': ['memorialDays'],
+      'templateVersion': 1,
+    });
+  }
+
+  Future<void> addMemorialDay(MemorialDay day) async {
+    await _command('create', day.toJson());
+    _notifyEvent('added', day);
+  }
+
+  Future<void> updateMemorialDay(MemorialDay day) async {
+    final old = _originals[day.id];
+    if (old == null) throw StateError('纪念日已失效，请刷新');
+    final row = day.toJson();
+    final patch = {
+      'id': day.id,
+      for (final e in row.entries)
+        if (e.key != 'id' && jsonEncode(e.value) != jsonEncode(old[e.key]))
+          e.key: e.value,
+    };
+    await _command('update', patch, expectedVersion: _versions[day.id]);
+    _notifyEvent('updated', day);
+  }
+
+  Future<void> deleteMemorialDay(String id) async {
+    final day = _memorialDays.firstWhere((r) => r.id == id);
+    await _command('delete', {'id': id}, expectedVersion: _versions[id]);
+    _notifyEvent('deleted', day);
+  }
+
+  Future<void> reorderIds(List<String> ids) async {
+    await _command('reorder', {'ids': ids}, expectedVersion: _version);
+  }
+
+  Future<void> reorderMemorialDays(int oldIndex, int newIndex) async {
+    if (!isDraggable) return;
+    final ids = _memorialDays.map((r) => r.id).toList();
+    if (oldIndex < newIndex) newIndex--;
+    ids.insert(newIndex, ids.removeAt(oldIndex));
+    await _command('reorder', {'ids': ids}, expectedVersion: _version);
   }
 
   // 触发事件
   void _notifyEvent(String action, MemorialDay memorialDay) {
     // 1. 广播单个项目的事件（保持兼容性）
     final eventName = 'memorial_day_$action';
-    debugPrint('[DayController] Broadcasting event: $eventName, itemId: ${memorialDay.id}');
+    debugPrint(
+      '[DayController] Broadcasting event: $eventName, itemId: ${memorialDay.id}',
+    );
     final eventArgs = ItemEventArgs(
       eventName: eventName,
       itemId: memorialDay.id,
@@ -358,7 +183,9 @@ class DayController extends ChangeNotifier {
     EventManager.instance.broadcast(eventName, eventArgs);
 
     // 2. 广播缓存更新事件（携带所有纪念日数据）
-    debugPrint('[DayController] Broadcasting cache_updated with ${_memorialDays.length} items');
+    debugPrint(
+      '[DayController] Broadcasting cache_updated with ${_memorialDays.length} items',
+    );
     EventManager.instance.broadcast(
       'memorial_day_cache_updated',
       MemorialDayCacheUpdatedEventArgs(items: List.from(_memorialDays)),

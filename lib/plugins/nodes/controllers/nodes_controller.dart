@@ -1,8 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
 import 'package:aboutme/plugins/nodes/models/notebook.dart';
-import 'package:aboutme/plugins/nodes/sample_data.dart';
+
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
@@ -15,15 +18,76 @@ class NodesController extends ChangeNotifier {
   Notebook? _selectedNotebook;
 
   NodesController(this._storageManager) {
-    _loadData();
-    // 远端变更（REST/MCP/其它设备写入）→ 局部重载刷新
-    _cancelDataSync = AboutmeDataService.instance.onPluginChanged('nodes', () {
-      reloadData();
-    });
+    _watch = AboutmeDataService.instance.data
+        .watch('nodes', 'getSnapshot')
+        .listen((snapshot) {
+          queryStatus = snapshot.status;
+          queryError = snapshot.error;
+          if (snapshot.result != null) _apply(snapshot.result!);
+          notifyListeners();
+        });
+  }
+  StreamSubscription<QuerySnapshot>? _watch;
+  QueryStatus queryStatus = QueryStatus.loading;
+  Object? queryError;
+  int? _version;
+  final _rawNodes = <String, Map<String, dynamic>>{};
+  final _rawNotebooks = <String, Map<String, dynamic>>{};
+  AboutmeData get _data => AboutmeDataService.instance.data;
+
+  void _apply(Map<String, dynamic> response) {
+    final selected = _selectedNotebook?.id;
+    final values = (response['data'] as Map)['notebooks'] as List;
+    _version = response['version'] as int?;
+    _rawNodes.clear();
+    _rawNotebooks.clear();
+    void collect(List xs) {
+      for (final n in xs) {
+        final json = Map<String, dynamic>.from(n as Map);
+        n['_sdkVersion'] = _version;
+        _rawNodes[json['id'] as String] = json;
+        collect(json['children'] as List);
+      }
+    }
+
+    for (final nb in values) {
+      final raw = Map<String, dynamic>.from(nb as Map);
+      nb['_sdkVersion'] = _version;
+      _rawNotebooks[raw['id'] as String] = raw;
+      collect(raw['nodes'] as List);
+    }
+    _notebooks = values
+        .map((x) => Notebook.fromJson(Map<String, dynamic>.from(x as Map)))
+        .toList();
+    _selectedNotebook =
+        _notebooks.where((n) => n.id == selected).firstOrNull ??
+        _notebooks.firstOrNull;
   }
 
-  /// 数据同步事件订阅取消句柄
-  VoidCallback? _cancelDataSync;
+  Map<String, dynamic> _diff(
+    Map<String, dynamic> next,
+    Map<String, dynamic>? old,
+  ) => {
+    for (final e in next.entries)
+      if (!{'nodes', 'children', 'createdAt'}.contains(e.key) &&
+          (old == null || jsonEncode(old[e.key]) != jsonEncode(e.value)))
+        e.key: e.value,
+  };
+  Future<void> _command(
+    String action,
+    Map<String, dynamic> params, {
+    bool edit = false,
+    int? editingVersion,
+  }) async {
+    final response = await _data.call('nodes', action, {
+      ...params,
+      if (edit && _version != null)
+        'expectedVersion': editingVersion ?? _version,
+    });
+    if (response['success'] != true) throw QueryFailure(response);
+    await reloadData();
+    await PluginWidgetSyncHelper.instance.syncNodes();
+  }
 
   // ========== 事件通知 ==========
 
@@ -60,14 +124,7 @@ class NodesController extends ChangeNotifier {
   }
 
   Future<void> clearNodes(String notebookId) async {
-    final index = _notebooks.indexWhere(
-      (notebook) => notebook.id == notebookId,
-    );
-    if (index != -1) {
-      _notebooks[index].nodes.clear();
-      notifyListeners();
-      await _saveData();
-    }
+    await _command('clearNodes', {'notebookId': notebookId}, edit: true);
   }
 
   void selectNotebook(Notebook notebook) {
@@ -77,56 +134,23 @@ class NodesController extends ChangeNotifier {
 
   /// 重新加载数据（供同步后刷新使用）
   Future<void> reloadData() async {
-    await _loadData();
-  }
-
-  Future<void> _loadData() async {
+    queryStatus = QueryStatus.loading;
+    notifyListeners();
     try {
-      final notebooksData = await AboutmeDataService.instance.readPath('nodes/nodes_notebooks.json');
-      if (notebooksData.isNotEmpty) {
-        final List<dynamic> notebooks =
-            notebooksData['notebooks'] as List<dynamic>;
-        _notebooks =
-            notebooks
-                .map((data) => Notebook.fromJson(data as Map<String, dynamic>))
-                .toList();
-
-        if (_notebooks.isNotEmpty && _selectedNotebook == null) {
-          _selectedNotebook = _notebooks.first;
-        }
-      }
+      _apply(await _data.query('nodes', 'getSnapshot'));
+      queryStatus = QueryStatus.data;
+      queryError = null;
+    } catch (e) {
+      queryError = e;
+      queryStatus = _notebooks.isEmpty ? QueryStatus.error : QueryStatus.stale;
+      rethrow;
+    } finally {
       notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading notebooks: $e');
     }
   }
 
-  /// 加载示例数据（存储为空时写入，供首次打开引导选择调用）
   Future<void> loadSampleData() async {
-    final notebooksData = await AboutmeDataService.instance.readPath('nodes/nodes_notebooks.json');
-    if (notebooksData.isNotEmpty) return;
-    try {
-      _notebooks = NodesSampleData.getSampleNotebooks();
-      if (_notebooks.isNotEmpty) {
-        _selectedNotebook = _notebooks.first;
-      }
-      // 保存示例数据到存储
-      await _saveData();
-      debugPrint('【NodesController】示例数据加载完成，共 ${_notebooks.length} 个笔记本');
-    } catch (e) {
-      debugPrint('Error loading sample data: $e');
-    }
-  }
-
-  Future<void> _saveData() async {
-    try {
-      final Map<String, dynamic> data = {
-        'notebooks': _notebooks.map((notebook) => notebook.toJson()).toList(),
-      };
-      await AboutmeDataService.instance.writePath('nodes/nodes_notebooks.json', data);
-    } catch (e) {
-      debugPrint('Error saving notebooks: $e');
-    }
+    await _command('seedExamples', {'templateVersion': 1});
   }
 
   Future<void> addNotebook(
@@ -135,272 +159,85 @@ class NodesController extends ChangeNotifier {
     String? id,
     Color color = Colors.blue,
   }) async {
-    final newNotebook = Notebook(
-      id: id ?? const Uuid().v4(),
-      title: title,
-      icon: icon,
-      color: color,
-    );
-
-    _notebooks.add(newNotebook);
-    if (_notebooks.length == 1) {
-      _selectedNotebook = newNotebook;
-    }
-
-    notifyListeners();
-    await _saveData();
-
-    // 触发笔记本添加事件
-    _notifyNotebookEvent('added', newNotebook);
-
-    // 同步小组件数据
-    await PluginWidgetSyncHelper.instance.syncNodes();
+    final notebookId = id ?? const Uuid().v4();
+    await _command('createNotebook', {
+      'id': notebookId,
+      'title': title,
+      'icon': icon.codePoint,
+      'color': color.value,
+    });
+    final created = getNotebook(notebookId);
+    if (created != null) _notifyNotebookEvent('added', created);
   }
 
   Future<void> updateNotebook(Notebook notebook) async {
-    final index = _notebooks.indexWhere((n) => n.id == notebook.id);
-    if (index != -1) {
-      _notebooks[index] = notebook;
-      if (_selectedNotebook?.id == notebook.id) {
-        _selectedNotebook = notebook;
-      }
-      notifyListeners();
-      await _saveData();
-
-      // 触发笔记本更新事件
-      _notifyNotebookEvent('updated', notebook);
-
-      // 同步小组件数据
-      await PluginWidgetSyncHelper.instance.syncNodes();
-    }
+    await _command(
+      'updateNotebook',
+      {
+        'id': notebook.id,
+        ..._diff(notebook.toJson(), _rawNotebooks[notebook.id]),
+      },
+      edit: true,
+      editingVersion: notebook.sdkVersion,
+    );
+    _notifyNotebookEvent('updated', notebook);
   }
 
   Future<void> deleteNotebook(String notebookId) async {
-    // 获取要删除的笔记本用于事件
-    final notebookToDelete = _notebooks.firstWhere(
-      (nb) => nb.id == notebookId,
-      orElse: () => Notebook(id: '', title: '', icon: Icons.book),
-    );
-
-    _notebooks.removeWhere((notebook) => notebook.id == notebookId);
-
-    if (_selectedNotebook?.id == notebookId) {
-      _selectedNotebook = _notebooks.isNotEmpty ? _notebooks.first : null;
-    }
-
-    notifyListeners();
-    await _saveData();
-
-    // 触发笔记本删除事件
-    if (notebookToDelete.id.isNotEmpty) {
-      _notifyNotebookEvent('deleted', notebookToDelete);
-    }
-
-    // 同步小组件数据
-    await PluginWidgetSyncHelper.instance.syncNodes();
+    final old = getNotebook(notebookId);
+    await _command('deleteNotebook', {'id': notebookId}, edit: true);
+    if (old != null && old.id.isNotEmpty) _notifyNotebookEvent('deleted', old);
   }
 
   Future<void> reorderNotebooks(int oldIndex, int newIndex) async {
     if (oldIndex < 0 ||
         newIndex < 0 ||
         oldIndex >= _notebooks.length ||
-        newIndex >= _notebooks.length) {
+        newIndex >= _notebooks.length)
       return;
-    }
-
-    final Notebook item = _notebooks.removeAt(oldIndex);
-    _notebooks.insert(newIndex, item);
-
-    notifyListeners();
-    await _saveData();
+    final ids = _notebooks.map((n) => n.id).toList();
+    ids.insert(newIndex, ids.removeAt(oldIndex));
+    await _command('reorderNotebooks', {'ids': ids}, edit: true);
   }
 
   // Node operations
   Future<void> addNode(String notebookId, Node node, {String? parentId}) async {
-    final notebookIndex = _notebooks.indexWhere(
-      (notebook) => notebook.id == notebookId,
-    );
-    if (notebookIndex == -1) return;
-
-    debugPrint('【NodesController】开始添加新节点: ${node.title}');
-    debugPrint(
-      '【NodesController】节点 parentId: ${node.parentId}, 传入的 parentId: $parentId',
-    );
-
-    // 使用节点自身的 parentId，如果没有则使用传入的 parentId
-    final effectiveParentId =
-        node.parentId.isNotEmpty ? node.parentId : (parentId ?? '');
-    debugPrint('【NodesController】最终使用的 parentId: $effectiveParentId');
-
-    if (effectiveParentId.isEmpty) {
-      debugPrint('【NodesController】添加为根节点');
-      // Add as root node
-      _notebooks[notebookIndex].nodes.add(node);
-    } else {
-      debugPrint('【NodesController】尝试添加为子节点');
-      // Add as child node
-      final success = _addChildNode(
-        _notebooks[notebookIndex].nodes,
-        effectiveParentId,
-        node,
-      );
-      if (!success) {
-        // 如果找不到父节点，作为根节点添加
-        debugPrint('【NodesController】未找到父节点: $effectiveParentId, 添加为根节点');
-        _notebooks[notebookIndex].nodes.add(node);
-      } else {
-        debugPrint('【NodesController】成功添加为子节点');
-      }
-    }
-
-    notifyListeners();
-    await _saveData();
-    debugPrint('【NodesController】节点添加完成，已通知UI更新');
-
-    // 触发节点添加事件
+    await _command('createNode', {
+      'notebookId': notebookId,
+      ...node.toJson(),
+      'parentId': node.parentId.isNotEmpty ? node.parentId : (parentId ?? ''),
+    });
     _notifyNodeEvent('added', node, notebookId);
-
-    // 同步小组件数据
-    await PluginWidgetSyncHelper.instance.syncNodes();
-  }
-
-  bool _addChildNode(List<Node> nodes, String parentId, Node newNode) {
-    for (int i = 0; i < nodes.length; i++) {
-      if (nodes[i].id == parentId) {
-        newNode.parentId = parentId;
-        nodes[i].children.add(newNode);
-        return true;
-      }
-
-      if (nodes[i].children.isNotEmpty) {
-        if (_addChildNode(nodes[i].children, parentId, newNode)) {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   Future<void> updateNode(String notebookId, Node updatedNode) async {
-    final notebookIndex = _notebooks.indexWhere(
-      (notebook) => notebook.id == notebookId,
+    final wasDone =
+        _rawNodes[updatedNode.id]?['status'] == NodeStatus.done.index;
+    await _command(
+      'updateNode',
+      {
+        'notebookId': notebookId,
+        'id': updatedNode.id,
+        ..._diff(updatedNode.toJson(), _rawNodes[updatedNode.id]),
+      },
+      edit: true,
+      editingVersion: updatedNode.sdkVersion,
     );
-    if (notebookIndex == -1) return;
-
-    // 尝试在原位置更新节点
-    final updated = _updateNodeInList(
-      _notebooks[notebookIndex].nodes,
-      updatedNode,
-    );
-
-    // 如果找不到节点（罕见情况），则删除旧节点并添加新节点
-    if (!updated) {
-      // 首先找到并删除原节点
-      final oldNode = findNodeById(notebookId, updatedNode.id);
-      if (oldNode != null) {
-        _deleteNodeFromList(_notebooks[notebookIndex].nodes, updatedNode.id);
-      }
-
-      // 然后在新的位置添加更新后的节点
-      if (updatedNode.parentId.isEmpty) {
-        // 如果是根节点，直接添加到根节点列表
-        _notebooks[notebookIndex].nodes.add(updatedNode);
-      } else {
-        // 否则添加为子节点
-        final success = _addChildNode(
-          _notebooks[notebookIndex].nodes,
-          updatedNode.parentId,
-          updatedNode,
-        );
-        if (!success) {
-          // 如果找不到父节点，作为根节点添加
-          debugPrint(
-            'Parent node not found: ${updatedNode.parentId}, adding as root node',
-          );
-          _notebooks[notebookIndex].nodes.add(updatedNode);
-        }
-      }
-    }
-
-    notifyListeners();
-    await _saveData();
-
-    // 触发节点更新事件
     _notifyNodeEvent('updated', updatedNode, notebookId);
-
-    // 同步小组件数据
-    await PluginWidgetSyncHelper.instance.syncNodes();
-  }
-
-  bool _updateNodeInList(List<Node> nodes, Node updatedNode) {
-    for (int i = 0; i < nodes.length; i++) {
-      if (nodes[i].id == updatedNode.id) {
-        // 保留原节点的子节点和展开状态
-        final List<Node> originalChildren = nodes[i].children;
-        final bool originalExpandedState = nodes[i].isExpanded;
-        final bool wasNotDone = nodes[i].status != NodeStatus.done;
-
-        // 更新节点，但保留位置、子节点和展开状态
-        updatedNode.children = originalChildren;
-        updatedNode.isExpanded = originalExpandedState;
-        nodes[i] = updatedNode;
-
-        // 成就系统计数（A32 闭环完成）：节点首次置为 done 时
-        if (wasNotDone && updatedNode.status == NodeStatus.done) {
-          EventManager.instance.broadcast(
-            'node_status_done',
-            EventArgs('node_status_done'),
-          );
-        }
-        return true;
-      }
-
-      if (nodes[i].children.isNotEmpty) {
-        if (_updateNodeInList(nodes[i].children, updatedNode)) {
-          return true;
-        }
-      }
-    }
-    return false;
+    if (!wasDone && updatedNode.status == NodeStatus.done)
+      EventManager.instance.broadcast(
+        'node_status_done',
+        EventArgs('node_status_done'),
+      );
   }
 
   Future<void> deleteNode(String notebookId, String nodeId) async {
-    final notebookIndex = _notebooks.indexWhere(
-      (notebook) => notebook.id == notebookId,
-    );
-    if (notebookIndex == -1) return;
-
-    // 获取要删除的节点用于事件
-    final nodeToDelete = findNodeById(notebookId, nodeId);
-
-    _deleteNodeFromList(_notebooks[notebookIndex].nodes, nodeId);
-
-    notifyListeners();
-    await _saveData();
-
-    // 触发节点删除事件
-    if (nodeToDelete != null) {
-      _notifyNodeEvent('deleted', nodeToDelete, notebookId);
-    }
-
-    // 同步小组件数据
-    await PluginWidgetSyncHelper.instance.syncNodes();
-  }
-
-  bool _deleteNodeFromList(List<Node> nodes, String nodeId) {
-    for (int i = 0; i < nodes.length; i++) {
-      if (nodes[i].id == nodeId) {
-        nodes.removeAt(i);
-        return true;
-      }
-
-      if (nodes[i].children.isNotEmpty) {
-        if (_deleteNodeFromList(nodes[i].children, nodeId)) {
-          return true;
-        }
-      }
-    }
-    return false;
+    final old = findNodeById(notebookId, nodeId);
+    await _command('deleteNode', {
+      'notebookId': notebookId,
+      'id': nodeId,
+    }, edit: true);
+    if (old != null) _notifyNodeEvent('deleted', old, notebookId);
   }
 
   Future<void> toggleNodeExpansion(String notebookId, String nodeId) async {
@@ -537,7 +374,7 @@ class NodesController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _cancelDataSync?.call();
+    _watch?.cancel();
     super.dispose();
   }
 }

@@ -22,6 +22,7 @@ class ClientDayRepository implements IDayRepository {
     PaginationParams? pagination,
   }) async {
     try {
+      await _controller.reloadData();
       final days = _controller.memorialDays;
       final dtos = days.map(_memorialDayToDto).toList();
 
@@ -60,6 +61,7 @@ class ClientDayRepository implements IDayRepository {
   Future<Result<MemorialDayDto?>> getMemorialDayById(String id) async {
     try {
       try {
+        await _controller.reloadData();
         final day = _controller.memorialDays.firstWhere((d) => d.id == id);
         return Result.success(_memorialDayToDto(day));
       } catch (e) {
@@ -108,32 +110,7 @@ class ClientDayRepository implements IDayRepository {
   @override
   Future<Result<bool>> reorderMemorialDays(List<String> orderedIds) async {
     try {
-      // 使用 DayController 的 reorderMemorialDays 方法
-      // 通过比较新旧顺序找出需要移动的项目
-      final currentDays = _controller.memorialDays;
-      final idToIndex = <String, int>{};
-      for (int i = 0; i < currentDays.length; i++) {
-        idToIndex[currentDays[i].id] = i;
-      }
-
-      // 重新排序内存中的列表
-      final sortedDays =
-          currentDays.map((day) {
-            final newIndex = orderedIds.indexOf(day.id);
-            if (newIndex >= 0) {
-              return day.copyWith(sortIndex: newIndex);
-            }
-            return day;
-          }).toList();
-
-      // 使用现有的排序逻辑
-      for (int i = 0; i < sortedDays.length; i++) {
-        final oldIndex = idToIndex[sortedDays[i].id] ?? i;
-        if (oldIndex != i) {
-          await _controller.reorderMemorialDays(oldIndex, i);
-        }
-      }
-
+      await _controller.reorderIds(orderedIds);
       return Result.success(true);
     } catch (e) {
       return Result.failure('重新排序纪念日失败: $e', code: ErrorCodes.serverError);
@@ -145,16 +122,19 @@ class ClientDayRepository implements IDayRepository {
     MemorialDayQuery query,
   ) async {
     try {
-      var days = _controller.memorialDays;
+      await _controller.reloadData();
+      var days = _controller.memorialDays.toList();
 
       // 日期范围过滤
       if (query.startDate != null) {
-        days =
-            days.where((d) => d.targetDate.isAfter(query.startDate!)).toList();
+        days = days
+            .where((d) => d.targetDate.isAfter(query.startDate!))
+            .toList();
       }
       if (query.endDate != null) {
-        days =
-            days.where((d) => d.targetDate.isBefore(query.endDate!)).toList();
+        days = days
+            .where((d) => d.targetDate.isBefore(query.endDate!))
+            .toList();
       }
 
       // 是否包含过期的
@@ -199,6 +179,7 @@ class ClientDayRepository implements IDayRepository {
   @override
   Future<Result<MemorialDayStatsDto>> getStats() async {
     try {
+      await _controller.reloadData();
       final days = _controller.memorialDays;
 
       int total = days.length;

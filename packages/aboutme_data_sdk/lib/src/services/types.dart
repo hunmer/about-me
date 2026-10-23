@@ -3,13 +3,13 @@ import 'plugin_data.dart';
 /// 插件业务处理器统一结果类型。
 class PluginResult {
   const PluginResult.success(this.data)
-      : isSuccess = true,
-        message = null,
-        code = null;
+    : isSuccess = true,
+      message = null,
+      code = null;
 
   const PluginResult.failure(this.message, [this.code = 'INTERNAL_ERROR'])
-      : isSuccess = false,
-        data = null;
+    : isSuccess = false,
+      data = null;
 
   final bool isSuccess;
   final dynamic data;
@@ -19,10 +19,8 @@ class PluginResult {
 
 /// 插件业务处理器：入参为数据后端 + 合并后的请求参数。
 /// 同一套处理器在客户端（本地后端）与服务端（用户目录后端）执行。
-typedef PluginHandler = Future<PluginResult> Function(
-  PluginData data,
-  Map<String, dynamic> params,
-);
+typedef PluginHandler =
+    Future<PluginResult> Function(PluginData data, Map<String, dynamic> params);
 
 typedef PluginHandlers = Map<String, PluginHandler>;
 
@@ -33,12 +31,20 @@ class PluginRouteDefinition {
     required this.path,
     required this.handler,
     this.resourceName,
+    this.capabilityVersion = 1,
+    this.requestModel = 'json-object',
+    this.responseModel = 'plugin-result-v1',
   });
 
   final String method; // get | post | put | delete
   final String path; // 如 /channels/:id
   final String handler;
   final String? resourceName;
+  final int capabilityVersion;
+  final String requestModel;
+  final String responseModel;
+  String get permission =>
+      method == 'get' ? 'user:data:read' : 'user:data:write';
 }
 
 class PluginRouteConfig {

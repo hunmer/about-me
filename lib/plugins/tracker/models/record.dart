@@ -21,7 +21,7 @@ class Record {
     return Record(
       id: json['id'],
       goalId: json['goalId'],
-      value: json['value'],
+      value: (json['value'] as num).toDouble(),
       note: json['note'],
       recordedAt: DateTime.parse(json['recordedAt']),
       durationSeconds: json['durationSeconds'],

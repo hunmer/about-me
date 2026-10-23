@@ -6,6 +6,7 @@ enum StorageErrorKind {
   server,
   invalidData,
   invalidRequest,
+  unsupported,
 }
 
 class StorageException implements Exception {

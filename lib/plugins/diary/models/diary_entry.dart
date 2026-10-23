@@ -1,4 +1,8 @@
+import 'package:shared_models/shared_models.dart';
+
 class DiaryEntry {
+  final int? sdkVersion;
+  final Map<String, dynamic> extensions;
   final DateTime date;
   final String title;
   final String content;
@@ -15,10 +19,15 @@ class DiaryEntry {
     required this.updatedAt,
     this.mood,
     this.tags = const [],
+    this.sdkVersion,
+    this.extensions = const {},
   });
 
   factory DiaryEntry.fromJson(Map<String, dynamic> json) {
+    json = DiaryCodec.entry(json);
     return DiaryEntry(
+      sdkVersion: json['_sdkVersion'] as int?,
+      extensions: Map<String, dynamic>.from(json)..remove('_sdkVersion'),
       date: DateTime.parse(json['date']),
       title: json['title'] ?? '',
       content: json['content'],
@@ -31,6 +40,7 @@ class DiaryEntry {
 
   Map<String, dynamic> toJson() {
     return {
+      ...extensions,
       'date': date.toIso8601String().split('T')[0],
       'title': title,
       'content': content,
@@ -58,6 +68,8 @@ class DiaryEntry {
       updatedAt: updatedAt ?? this.updatedAt,
       mood: mood ?? this.mood,
       tags: tags ?? this.tags,
+      sdkVersion: sdkVersion,
+      extensions: extensions,
     );
   }
 }

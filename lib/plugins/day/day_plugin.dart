@@ -71,9 +71,7 @@ class DayPlugin extends BasePlugin with JSBridgePlugin {
   IconData get icon => Icons.event_outlined;
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'day/',
-  ];
+  static const List<String> _refreshableFiles = ['day/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -95,7 +93,6 @@ class DayPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> registerToApp(
-    
     PluginManager pluginManager,
     ConfigManager configManager,
   ) async {
@@ -112,16 +109,13 @@ class DayPlugin extends BasePlugin with JSBridgePlugin {
   @override
   Future<void> initialize() async {
     // 确保纪念日数据目录存在
-    await storage.createDirectory('day');
 
     // 初始化控制器
     _controller = DayController();
     await _controller.initialize();
 
     // 创建 Repository 和 UseCase
-    _repository = ClientDayRepository(
-      controller: _controller,
-    );
+    _repository = ClientDayRepository(controller: _controller);
     _useCase = DayUseCase(_repository);
 
     _isInitialized = true;
@@ -154,20 +148,16 @@ class DayPlugin extends BasePlugin with JSBridgePlugin {
   // 获取即将到来的纪念日数量（7天内）
   int getUpcomingMemorialDayCount() {
     if (!_isInitialized) return 0;
-    return _controller.memorialDays
-        .where((day) {
-          final daysRemaining = day.daysRemaining;
-          return daysRemaining >= 0 && daysRemaining <= 7;
-        })
-        .length;
+    return _controller.memorialDays.where((day) {
+      final daysRemaining = day.daysRemaining;
+      return daysRemaining >= 0 && daysRemaining <= 7;
+    }).length;
   }
 
   // 获取今日纪念日数量
   int getTodayMemorialDayCount() {
     if (!_isInitialized) return 0;
-    return _controller.memorialDays
-        .where((day) => day.isToday)
-        .length;
+    return _controller.memorialDays.where((day) => day.isToday).length;
   }
 
   // ==================== JS API 定义 ====================
@@ -192,11 +182,12 @@ class DayPlugin extends BasePlugin with JSBridgePlugin {
     };
   }
 
-
   /// 根据 ID 获取纪念日（供小组件使用）
   MemorialDay? getMemorialDayById(String id) {
     if (!_isInitialized) return null;
-    debugPrint('[DayPlugin] getMemorialDayById: $id, total memorial days: ${_controller.memorialDays.length}');
+    debugPrint(
+      '[DayPlugin] getMemorialDayById: $id, total memorial days: ${_controller.memorialDays.length}',
+    );
     try {
       return _controller.memorialDays.firstWhere((day) => day.id == id);
     } catch (e) {
@@ -237,7 +228,9 @@ class DayPlugin extends BasePlugin with JSBridgePlugin {
       debugPrint('[DayPlugin] getAllMemorialDays: plugin not initialized yet!');
       return [];
     }
-    debugPrint('[DayPlugin] getAllMemorialDays: returning ${_controller.memorialDays.length} memorial days, memorial days: ${_controller.memorialDays.map((d) => d.title).toList()}');
+    debugPrint(
+      '[DayPlugin] getAllMemorialDays: returning ${_controller.memorialDays.length} memorial days, memorial days: ${_controller.memorialDays.map((d) => d.title).toList()}',
+    );
     return List.from(_controller.memorialDays);
   }
 
@@ -301,10 +294,7 @@ class DayPlugin extends BasePlugin with JSBridgePlugin {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    'day_upcoming'.tr,
-                    style: theme.textTheme.bodyMedium,
-                  ),
+                  Text('day_upcoming'.tr, style: theme.textTheme.bodyMedium),
                   Text(
                     upcomingDays.isNotEmpty ? upcomingDays.join('，') : '',
                     style: theme.textTheme.bodyMedium?.copyWith(

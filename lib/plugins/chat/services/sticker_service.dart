@@ -1,79 +1,58 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart' show QueryFailure, QueryStatus, assetMediaType;
 
 import 'package:aboutme/core/data/aboutme_data_service.dart';
-import 'package:aboutme/core/plugin_manager.dart';
-import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/chat/models/sticker_collection.dart';
 
 /// 贴图合集管理服务
 ///
-/// - 注册表：`stickers/collections.json`（StorageManager JSON 文件）
-/// - 贴图文件：`stickers/{collectionId}/xxx.png`（相对 app_data）
+/// - 注册表由 SDK 业务命令管理，客户端不执行整表读改写。
+/// - 新贴图保存 SDK 稳定资源 ID；旧目录图片仅通过 SDK 兼容读取。
 /// - 同时作为脚本桥接后端（Aboutme.plugins.chat.importStickerCollection）
 class StickerService {
   StickerService._();
 
   static final StickerService instance = StickerService._();
 
-  static const String _registryPath = 'stickers/collections.json';
-
-  StorageManager? get _storage => PluginManager.instance.storageManager;
-
   /// 列出全部合集（按更新时间倒序）
   Future<List<StickerCollection>> listCollections() async {
-    if (_storage == null) return [];
-    try {
-      final raw = await AboutmeDataService.instance.readPathText(
-        _registryPath,
-      );
-      if (raw == null || raw.isEmpty) return [];
-      final list = jsonDecode(raw) as List<dynamic>;
-      final collections = list
-          .map(
-            (e) => StickerCollection.fromJson((e as Map).cast<String, dynamic>()),
-          )
-          .toList();
-      collections.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      return collections;
-    } catch (e) {
-      debugPrint('[StickerService] 读取贴图注册表失败: $e');
-      return [];
-    }
+    final list = await _call('getStickerCollections') as List;
+    return list.map((entry) => StickerCollection.fromJson(
+      Map<String, dynamic>.from(entry as Map))).toList();
   }
+
+  Stream<List<StickerCollection>> watchCollections() =>
+    AboutmeDataService.instance.data.watch('chat', 'getStickerCollections')
+      .where((snapshot) => snapshot.status == QueryStatus.data || snapshot.status == QueryStatus.error)
+      .map((snapshot) {
+        if (snapshot.error != null) throw snapshot.error!;
+        final list = snapshot.result!['data'] as List;
+        return list.map((entry) => StickerCollection.fromJson(
+          Map<String, dynamic>.from(entry as Map))).toList();
+      });
 
   /// 创建合集（可同时导入源文件）
   ///
   /// [sourcePaths] 支持两类路径：
-  /// - 存储相对路径（如脚本下载产物 `stickers/downloads/x.png`）→ 移动（复制后删除源）
+  /// - 存储相对路径（如脚本下载产物 `stickers/downloads/x.png`）→ 导入为 SDK 资源
   /// - 本地绝对路径（如图库选择的照片）→ 复制
   Future<StickerCollection> createCollection(
     String name, {
     List<String> sourcePaths = const [],
   }) async {
-    final storage = _requireStorage();
     final id = const Uuid().v4();
-    final collection = StickerCollection(id: id, name: name.trim());
-
-    await storage.createDirectory('stickers/$id');
     final stored = <String>[];
     for (final src in sourcePaths) {
-      final storedPath = await _copyIn(storage, id, src);
+      final storedPath = await _copyIn(src);
       if (storedPath != null) stored.add(storedPath);
     }
-    collection.stickerPaths = stored;
-    if (stored.isNotEmpty) collection.coverPath = stored.first;
-
-    final collections = await listCollections();
-    collections.insert(0, collection);
-    await _saveRegistry(collections);
-    return collection;
+    return _collection(await _call('createStickerCollection', {
+      'id': id, 'name': name, 'stickerPaths': stored,
+    }));
   }
 
   /// 重命名合集
@@ -81,9 +60,7 @@ class StickerService {
     String id,
     String newName,
   ) async {
-    return _updateCollection(id, (c) {
-      c.name = newName.trim();
-    });
+    return _mutate('renameStickerCollection', {'id': id, 'name': newName});
   }
 
   /// 向合集添加贴图（sourcePaths 语义同 createCollection）
@@ -91,57 +68,32 @@ class StickerService {
     String id,
     List<String> sourcePaths,
   ) async {
-    return _updateCollection(id, (c) async {
-      final storage = _requireStorage();
-      for (final src in sourcePaths) {
-        final storedPath = await _copyIn(storage, id, src);
-        if (storedPath != null && !c.stickerPaths.contains(storedPath)) {
-          c.stickerPaths.add(storedPath);
-        }
-      }
-      c.coverPath ??= c.stickerPaths.isNotEmpty ? c.stickerPaths.first : null;
-    });
-  }
-
-  /// 从合集移除单张贴图（同时删除存储中的文件）
-  Future<StickerCollection?> removeSticker(String id, String stickerPath) async {
-    return _updateCollection(id, (c) async {
-      c.stickerPaths.remove(stickerPath);
-      if (c.coverPath == stickerPath) {
-        c.coverPath = c.stickerPaths.isNotEmpty ? c.stickerPaths.first : null;
-      }
-      try {
-        await AboutmeDataService.instance.deletePath(stickerPath);
-      } catch (e) {
-        debugPrint('[StickerService] 删除贴图文件失败: $stickerPath - $e');
-      }
-    });
-  }
-
-  /// 删除合集（注册表 + 全部贴图文件）
-  Future<bool> deleteCollection(String id) async {
-    if (_storage == null) return false;
-    final collections = await listCollections();
-    final target = collections.where((c) => c.id == id).firstOrNull;
-    if (target == null) return false;
-
-    collections.removeWhere((c) => c.id == id);
-    await _saveRegistry(collections);
-
-    for (final stickerPath in target.stickerPaths) {
-      try {
-        await AboutmeDataService.instance.deletePath(stickerPath);
-      } catch (e) {
-        debugPrint('[StickerService] 删除贴图文件失败: $stickerPath - $e');
-      }
+    final stored = <String>[];
+    for (final src in sourcePaths) {
+      final reference = await _copyIn(src);
+      if (reference != null) stored.add(reference);
     }
-    return true;
+    return _mutate('addStickers', {'id': id, 'stickerPaths': stored});
+  }
+
+  /// 从合集移除单张贴图引用。
+  Future<StickerCollection?> removeSticker(String id, String stickerPath) async {
+    // 只移除引用。旧资源可能被消息或其它合集共用，不能直接物理删除。
+    return _mutate('removeSticker', {'id': id, 'stickerPath': stickerPath});
+  }
+
+  /// 删除合集并释放其资源引用。
+  Future<bool> deleteCollection(String id) async {
+    return await _mutate('deleteStickerCollection', {'id': id}) != null;
   }
 
   /// 读取贴图字节（供聊天发送附件使用）
   Future<Uint8List?> readStickerBytes(String stickerPath) async {
     try {
-      return await _storage?.readBytes(stickerPath);
+      if (stickerPath.startsWith('asset://')) {
+        return await AboutmeDataService.instance.data.assets.read(stickerPath.substring(8));
+      }
+      return await AboutmeDataService.instance.data.assets.readLegacySticker(stickerPath);
     } catch (e) {
       debugPrint('[StickerService] 读取贴图失败: $stickerPath - $e');
       return null;
@@ -177,41 +129,28 @@ class StickerService {
     }
   }
 
-  StorageManager _requireStorage() {
-    final storage = _storage;
-    if (storage == null) {
-      throw StateError('StorageManager 未初始化');
-    }
-    return storage;
-  }
-
-  /// 将源文件拷入合集目录，返回存储相对路径；失败返回 null
+  /// 读取宿主选中的输入或受控旧贴图，返回稳定资源引用。
   Future<String?> _copyIn(
-    StorageManager storage,
-    String collectionId,
     String sourcePath,
   ) async {
     try {
       Uint8List? bytes;
       var fileName = '';
-      var deleteSource = false;
 
       if (path.isAbsolute(sourcePath)) {
         // 本地绝对路径（图库/文件选择器产物）→ 读取后复制
-        final file = File(sourcePath);
-        if (!await file.exists()) return null;
-        bytes = await file.readAsBytes();
+        bytes = await AboutmeDataService.instance.data.assets.readSelectedFile(sourcePath);
         fileName = path.basename(sourcePath);
       } else {
-        // 存储相对路径（脚本下载产物）→ 读取后移动
+        // 存储相对路径（脚本下载产物）→ 由 SDK 受控读取，保留原输入
         final normalized = sourcePath.replaceAll('\\', '/').replaceFirst(
           './',
           '',
         );
-        bytes = await storage.readBytes(normalized);
-        if (bytes == null) return null;
+        if (normalized.startsWith('asset://')) return normalized;
+        bytes = await AboutmeDataService.instance.data.assets.readLegacySticker(normalized);
+        if (bytes == null) throw StateError('源贴图不存在: $sourcePath');
         fileName = path.basename(normalized);
-        deleteSource = true;
       }
 
       // PNG 尝试 APNG→GIF（LINE 动态贴图等），成功则以 GIF 存储（表情面板可播放动画）
@@ -227,45 +166,30 @@ class StickerService {
         }
       }
 
-      // 防止同名覆盖：加短随机后缀
-      final ext = path.extension(fileName).isEmpty
-          ? '.png'
-          : path.extension(fileName);
-      final base = path.basenameWithoutExtension(fileName);
-      final dst = 'stickers/$collectionId/${base}_${const Uuid().v4().substring(0, 8)}$ext';
-      await storage.writeBytes(dst, bytes!);
-      if (deleteSource) {
-        try {
-          await AboutmeDataService.instance.deletePath(
-            sourcePath.replaceAll('\\', '/').replaceFirst('./', ''),
-          );
-        } catch (_) {}
-      }
-      return dst;
+      final asset = await AboutmeDataService.instance.data.assets.upload(bytes!,
+        fileName: fileName, mediaType: assetMediaType(fileName), clientMutationId: const Uuid().v4());
+      return asset.reference;
     } catch (e) {
       debugPrint('[StickerService] 导入贴图失败: $sourcePath - $e');
-      return null;
+      rethrow;
     }
   }
 
-  Future<StickerCollection?> _updateCollection(
-    String id,
-    FutureOr<void> Function(StickerCollection) mutate,
-  ) async {
-    final collections = await listCollections();
-    final index = collections.indexWhere((c) => c.id == id);
-    if (index == -1) return null;
+  StickerCollection _collection(dynamic value) => StickerCollection.fromJson(
+    Map<String, dynamic>.from(value as Map));
 
-    final collection = collections[index];
-    await mutate(collection);
-    collection.updatedAt = DateTime.now();
-    collections[index] = collection;
-    await _saveRegistry(collections);
-    return collection;
+  Future<dynamic> _call(String action, [Map<String, dynamic> params = const {}]) async {
+    final result = await AboutmeDataService.instance.data.call('chat', action, params);
+    if (result['success'] != true) throw QueryFailure(result);
+    return result['data'];
   }
 
-  Future<void> _saveRegistry(List<StickerCollection> collections) async {
-    final json = jsonEncode(collections.map((c) => c.toJson()).toList());
-    await AboutmeDataService.instance.writePath(_registryPath, json);
+  Future<StickerCollection?> _mutate(String action, Map<String, dynamic> params) async {
+    try {
+      return _collection(await _call(action, params));
+    } on QueryFailure catch (error) {
+      if (error.result['code'] == 'NOT_FOUND') return null;
+      rethrow;
+    }
   }
 }

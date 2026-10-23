@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
+import 'chat_data_service.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:aboutme/core/data/aboutme_data_service.dart';
@@ -44,21 +47,18 @@ class AiThreadMessage {
     'agentName': agentName,
   };
 
-  static AiThreadMessage fromJson(Map<String, dynamic> json) =>
-      AiThreadMessage(
-        id: json['id'] as String,
-        role: json['role'] as String? ?? 'assistant',
-        content: json['content'] as String? ?? '',
-        type: json['type'] as String? ?? 'text',
-        audioPath: json['audioPath'] as String?,
-        audioDurationSec: json['audioDurationSec'] as int?,
-        status: json['status'] as String? ?? 'done',
-        date:
-            DateTime.tryParse(json['date'] as String? ?? '') ??
-            DateTime.now(),
-        agentId: json['agentId'] as String?,
-        agentName: json['agentName'] as String?,
-      );
+  static AiThreadMessage fromJson(Map<String, dynamic> json) => AiThreadMessage(
+    id: json['id'] as String,
+    role: json['role'] as String? ?? 'assistant',
+    content: json['content'] as String? ?? '',
+    type: json['type'] as String? ?? 'text',
+    audioPath: json['audioPath'] as String?,
+    audioDurationSec: json['audioDurationSec'] as int?,
+    status: json['status'] as String? ?? 'done',
+    date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+    agentId: json['agentId'] as String?,
+    agentName: json['agentName'] as String?,
+  );
 }
 
 /// 以频道内一条用户消息为根的 AI 回复线程：
@@ -77,8 +77,9 @@ class AiThread {
   }) : agentIds = agentIds ?? [],
        messages = messages ?? [];
 
-  int get replyCount =>
-      messages.where((m) => m.role == 'assistant' && m.status != 'thinking').length;
+  int get replyCount => messages
+      .where((m) => m.role == 'assistant' && m.status != 'thinking')
+      .length;
 
   bool get isThinking => messages.any((m) => m.status == 'thinking');
 
@@ -92,16 +93,12 @@ class AiThread {
   static AiThread fromJson(Map<String, dynamic> json) => AiThread(
     rootMessageId: json['rootMessageId'] as String,
     channelId: json['channelId'] as String,
-    agentIds:
-        (json['agentIds'] as List<dynamic>? ?? [])
-            .map((e) => e.toString())
-            .toList(),
-    messages:
-        (json['messages'] as List<dynamic>? ?? [])
-            .map(
-              (m) => AiThreadMessage.fromJson(Map<String, dynamic>.from(m)),
-            )
-            .toList(),
+    agentIds: (json['agentIds'] as List<dynamic>? ?? [])
+        .map((e) => e.toString())
+        .toList(),
+    messages: (json['messages'] as List<dynamic>? ?? [])
+        .map((m) => AiThreadMessage.fromJson(Map<String, dynamic>.from(m)))
+        .toList(),
   );
 }
 
@@ -118,79 +115,145 @@ class AiThreadService {
       PluginManager.instance.getPlugin('chat')! as ChatPlugin;
 
   final _threads = <String, AiThread>{};
-  final _loadedChannels = <String>{};
+  final _subscriptions = <String, StreamSubscription<QuerySnapshot>>{};
+  final _persistedMessages = <String>{};
+  final _channelVersions = <String, int>{};
+  int _epoch = 0;
 
-  /// 启动时全量加载（频道数有限，直接读入内存最简单可靠）
+  Future<dynamic> _call(String action, Map<String, dynamic> params) async {
+    final epoch = _epoch;
+    final response = await AboutmeDataService.instance.call(
+      'chat',
+      action,
+      params,
+    );
+    if (epoch != _epoch) throw StateError('线程服务已销毁');
+    final value = ChatDataService.resultData(response);
+    return value is Map
+        ? {...value, '_sdkVersion': response['version']}
+        : value;
+  }
+
   Future<void> loadAll() async {
-    try {
-      for (final channel in _plugin.channelService.channels) {
-        await _loadChannel(channel.id);
-      }
-    } catch (e) {
-      debugPrint('[AiThread] 加载线程失败: $e');
+    for (final channel in _plugin.channelService.channels) {
+      await loadChannel(channel.id);
     }
   }
 
-  /// 仅加载当前打开的频道，避免启动时扫描所有线程文件。
-  Future<void> loadChannel(String channelId) => _loadChannel(channelId);
+  Future<void> loadChannel(String channelId) async {
+    final epoch = _epoch;
+    final response = await AboutmeDataService.instance.get(
+      'chat',
+      'getThreads',
+      {'channelId': channelId},
+    );
+    if (epoch != _epoch) return;
+    _applyChannel(channelId, {
+      ...Map<String, dynamic>.from(ChatDataService.resultData(response) as Map),
+      '_sdkVersion': response['version'],
+    });
+    _subscriptions.putIfAbsent(
+      channelId,
+      () => AboutmeDataService.instance.data
+          .watch('chat', 'getThreads', {'channelId': channelId})
+          .listen((snapshot) {
+            if (snapshot.status == QueryStatus.data &&
+                snapshot.result != null) {
+              _applyChannel(channelId, {
+                ...Map<String, dynamic>.from(
+                  ChatDataService.resultData(snapshot.result!) as Map,
+                ),
+                '_sdkVersion': snapshot.result!['version'],
+              });
+            } else if (snapshot.error != null) {
+              debugPrint('[AiThread] 查询失败: ${snapshot.error}');
+            }
+          }),
+    );
+  }
 
-  Future<void> _loadChannel(String channelId) async {
-    if (_loadedChannels.contains(channelId)) return;
-    _loadedChannels.add(channelId);
-    try {
-      final data = await AboutmeDataService.instance.readPath('chat/ai_threads/$channelId.json');
-      final threadsJson = data['threads'] as Map<String, dynamic>? ?? {};
-      final loadedRootIds = <String>[];
-      threadsJson.forEach((rootId, value) {
-        _threads[rootId] = AiThread.fromJson(
-          Map<String, dynamic>.from(value as Map),
-        );
-        loadedRootIds.add(rootId);
+  void _applyChannel(String id, Map<String, dynamic> value) {
+    final version = value['_sdkVersion'] as int?;
+    if (version != null && version < (_channelVersions[id] ?? -1)) return;
+    if (version != null) _channelVersions[id] = version;
+    final previous = _threads.values
+        .where((t) => t.channelId == id)
+        .map((t) => t.rootMessageId)
+        .toSet();
+    final incoming = value['threads'] as Map? ?? {};
+    for (final entry in incoming.entries) {
+      _accept({
+        ...Map<String, dynamic>.from(entry.value as Map),
+        '_sdkVersion': version,
       });
-      for (final rootId in loadedRootIds) {
-        _notify(rootId);
-      }
-    } catch (e) {
-      debugPrint('[AiThread] 加载频道 $channelId 线程失败: $e');
+      previous.remove(entry.key);
     }
+    for (final root in previous) {
+      final removed = _threads.remove(root);
+      _persistedMessages.removeAll(removed?.messages.map((m) => m.id) ?? []);
+      _notify(root);
+    }
+  }
+
+  AiThread _accept(Map<String, dynamic> json) {
+    final next = AiThread.fromJson(json);
+    final version = json['_sdkVersion'] as int?;
+    if (version != null && version < (_channelVersions[next.channelId] ?? -1)) {
+      return _threads[next.rootMessageId] ?? next;
+    }
+    if (version != null) _channelVersions[next.channelId] = version;
+    final pending =
+        _threads[next.rootMessageId]?.messages
+            .where((m) => !_persistedMessages.contains(m.id))
+            .toList() ??
+        [];
+    _persistedMessages.addAll(next.messages.map((m) => m.id));
+    next.messages.addAll(
+      pending.where((m) => !next.messages.any((saved) => saved.id == m.id)),
+    );
+    _threads[next.rootMessageId] = next;
+    _notify(next.rootMessageId);
+    return next;
   }
 
   AiThread? getThread(String rootMessageId) => _threads[rootMessageId];
 
-  /// 获取或创建线程（同一线程追加 @ 到的 agent）
   Future<AiThread> ensureThread(
     String rootMessageId,
     String channelId,
     String agentId,
   ) async {
-    await _loadChannel(channelId);
-    var thread = _threads[rootMessageId];
-    if (thread == null) {
-      thread = AiThread(rootMessageId: rootMessageId, channelId: channelId);
-      _threads[rootMessageId] = thread;
-    }
-    if (!thread.agentIds.contains(agentId)) {
-      thread.agentIds.add(agentId);
-    }
-    await _persist(thread);
-    _notify(rootMessageId);
-    return thread;
+    final value = await _call('ensureThread', {
+      'channelId': channelId,
+      'rootMessageId': rootMessageId,
+      'agentId': agentId,
+    });
+    final thread = _accept(Map<String, dynamic>.from(value as Map));
+    if (!_subscriptions.containsKey(channelId)) await loadChannel(channelId);
+    return _threads[rootMessageId] ?? thread;
   }
 
-  /// 追加消息（流式生成的 thinking 占位可不持久化，崩溃后状态自然干净）
   Future<void> appendMessage(
     String rootMessageId,
     AiThreadMessage message, {
     bool persist = true,
   }) async {
     final thread = _threads[rootMessageId];
-    if (thread == null) return;
-    thread.messages.add(message);
-    if (persist) await _persist(thread);
-    _notify(rootMessageId);
+    if (thread == null) throw StateError('线程不存在: $rootMessageId');
+    if (!persist) {
+      thread.messages.add(message);
+      _notify(rootMessageId);
+      return;
+    }
+    final value = await _call('appendThreadMessage', {
+      'channelId': thread.channelId,
+      'rootMessageId': rootMessageId,
+      'message': message.toJson(),
+      'clientMutationId': 'thread-message:${message.id}',
+    });
+    _accept(Map<String, dynamic>.from(value as Map));
   }
 
-  /// 原地更新线程内消息（流式 token 高频调用，persist=false 只更新内存并广播）
   Future<void> updateMessage(
     String rootMessageId,
     String messageId, {
@@ -200,77 +263,79 @@ class AiThreadService {
   }) async {
     final thread = _threads[rootMessageId];
     final msg = thread?.messages.where((m) => m.id == messageId).firstOrNull;
-    if (msg == null) return;
-    if (content != null) msg.content = content;
-    if (status != null) msg.status = status;
-    if (persist) await _persist(thread!);
-    _notify(rootMessageId);
+    if (thread == null || msg == null) throw StateError('线程消息不存在: $messageId');
+    if (!persist) {
+      if (content != null) msg.content = content;
+      if (status != null) msg.status = status;
+      _notify(rootMessageId);
+      return;
+    }
+    final patch = <String, dynamic>{
+      if (content != null) 'content': content,
+      if (status != null) 'status': status,
+    };
+    if (!_persistedMessages.contains(messageId)) {
+      final json = {...msg.toJson(), ...patch};
+      final value = await _call('appendThreadMessage', {
+        'channelId': thread.channelId,
+        'rootMessageId': rootMessageId,
+        'message': json,
+        'clientMutationId': 'thread-message:$messageId',
+      });
+      _accept(Map<String, dynamic>.from(value as Map));
+    } else {
+      final value = await _call('updateThreadMessage', {
+        'channelId': thread.channelId,
+        'rootMessageId': rootMessageId,
+        'messageId': messageId,
+        'patch': patch,
+      });
+      _accept(Map<String, dynamic>.from(value as Map));
+    }
   }
 
   Future<void> removeMessage(String rootMessageId, String messageId) async {
     final thread = _threads[rootMessageId];
     if (thread == null) return;
-    thread.messages.removeWhere((m) => m.id == messageId);
-    await _persist(thread);
+    if (_persistedMessages.contains(messageId)) {
+      final value = await _call('deleteThreadMessage', {
+        'channelId': thread.channelId,
+        'rootMessageId': rootMessageId,
+        'messageId': messageId,
+      });
+      _accept(Map<String, dynamic>.from(value as Map));
+    }
+    _threads[rootMessageId]?.messages.removeWhere((m) => m.id == messageId);
+    _persistedMessages.remove(messageId);
     _notify(rootMessageId);
   }
 
-  /// 根消息被删除时级联清理线程
   Future<void> removeThread(String rootMessageId) async {
-    final thread = _threads.remove(rootMessageId);
+    final thread = _threads[rootMessageId];
     if (thread == null) return;
-    await _deleteRoot(rootMessageId, thread.channelId);
+    await _call('deleteThread', {
+      'channelId': thread.channelId,
+      'rootMessageId': rootMessageId,
+    });
+    _threads.remove(rootMessageId);
+    _persistedMessages.removeAll(thread.messages.map((m) => m.id));
     _notify(rootMessageId);
   }
 
+  /// 频道消息清空命令已经在同一事务中级联清理线程。
   Future<void> clearChannel(String channelId) async {
-    final removed = _threads.values
-        .where((t) => t.channelId == channelId)
-        .map((t) => t.rootMessageId)
-        .toList();
-    if (removed.isEmpty) return;
-    _threads.removeWhere((_, t) => t.channelId == channelId);
-    try {
-      await AboutmeDataService.instance.writePath('chat/ai_threads/$channelId.json', {
-        'threads': {},
-      });
-    } catch (e) {
-      debugPrint('[AiThread] 清空频道线程失败: $e');
-    }
-    for (final rootId in removed) {
-      _notify(rootId);
-    }
+    await loadChannel(channelId);
   }
 
-  Future<void> _persist(AiThread thread) async {
-    try {
-      final data = await AboutmeDataService.instance.readPath(
-        'chat/ai_threads/${thread.channelId}.json',
-      );
-      final threadsJson =
-          Map<String, dynamic>.from(data['threads'] as Map? ?? {});
-      threadsJson[thread.rootMessageId] = thread.toJson();
-      await AboutmeDataService.instance.writePath(
-        'chat/ai_threads/${thread.channelId}.json',
-        {'threads': threadsJson},
-      );
-    } catch (e) {
-      debugPrint('[AiThread] 持久化线程失败: $e');
+  Future<void> dispose() async {
+    _epoch++;
+    for (final sub in _subscriptions.values) {
+      await sub.cancel();
     }
-  }
-
-  Future<void> _deleteRoot(String rootMessageId, String channelId) async {
-    try {
-      final data = await AboutmeDataService.instance.readPath('chat/ai_threads/$channelId.json');
-      final threadsJson =
-          Map<String, dynamic>.from(data['threads'] as Map? ?? {});
-      threadsJson.remove(rootMessageId);
-      await AboutmeDataService.instance.writePath('chat/ai_threads/$channelId.json', {
-        'threads': threadsJson,
-      });
-    } catch (e) {
-      debugPrint('[AiThread] 删除线程失败: $e');
-    }
+    _subscriptions.clear();
+    _threads.clear();
+    _persistedMessages.clear();
+    _channelVersions.clear();
   }
 
   void _notify(String rootMessageId) {

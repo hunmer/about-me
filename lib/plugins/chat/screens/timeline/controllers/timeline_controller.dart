@@ -1,3 +1,5 @@
+import 'dart:async';
+import '../../../models/message.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
@@ -39,9 +41,6 @@ class TimelineController extends BaseTimelineController
         ScrollControllerMixin,
         ChannelControllerMixin
     implements MessageActionsController {
-  // 存储路径
-  static const String _storagePath = 'chat/timeline';
-
   /// 时间线显示模式
   TimelineDisplayMode? _displayMode;
   TimelineDisplayMode get displayMode =>
@@ -61,7 +60,8 @@ class TimelineController extends BaseTimelineController
   }
 
   /// 数据同步事件订阅取消句柄
-  VoidCallback? _cancelDataSync;
+  StreamSubscription<List<Message>>? _messageSubscription;
+  bool _disposed = false;
 
   TimelineController(
     ChatPlugin chatPlugin, {
@@ -88,15 +88,6 @@ class TimelineController extends BaseTimelineController
     // 监听搜索输入变化
     searchController.addListener(onSearchChanged);
 
-    // 添加聊天插件监听，当有新消息时刷新
-    chatPlugin.addListener(_onChatDataChanged);
-
-    // 远端变更（REST/MCP/其它设备写入）→ 局部重载刷新
-    _cancelDataSync = AboutmeDataService.instance.onPluginChanged(
-      'chat',
-      refreshTimeline,
-    );
-
     // 先恢复状态，再初始化时间线
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       ensureScrollListener();
@@ -109,8 +100,13 @@ class TimelineController extends BaseTimelineController
 
   /// 初始化时间线数据
   void _initializeTimeline() {
-    debugPrint('Timeline: 开始初始化时间线...');
-    _loadAllMessages();
+    if (_disposed) return;
+    _messageSubscription = chatPlugin.messageService.watchAllMessages().listen((messages) {
+      if (_disposed) return;
+      allMessages = messages..sort((a, b) => b.date.compareTo(a.date));
+      filterMessages(saveState: false);
+      notifyListeners();
+    }, onError: (Object error) { debugPrint('[ChatTimeline] 查询失败: $error'); });
   }
 
   /// 从所有频道加载所有消息
@@ -145,13 +141,6 @@ class TimelineController extends BaseTimelineController
         notifyListeners();
       }
     }
-  }
-
-  /// 聊天数据变化时的回调
-  void _onChatDataChanged() {
-    _loadAllMessages();
-    // 不在这里保存状态，因为 _loadAllMessages 会调用 filterMessages
-    // 并且 filterMessages 会在需要时保存状态
   }
 
   /// 刷新时间线数据
@@ -189,7 +178,8 @@ class TimelineController extends BaseTimelineController
       };
 
       // 保存到存储
-      await AboutmeDataService.instance.writePath(_storagePath, timelineState);
+      final result = await AboutmeDataService.instance.call('chat', 'updateTimelineState', {'patch': timelineState});
+      if (result['success'] != true) throw StateError(result['error'].toString());
       debugPrint('Timeline: 已保存时间线状态');
     } catch (e) {
       debugPrint('Timeline: 保存时间线状态时出错: $e');
@@ -207,9 +197,9 @@ class TimelineController extends BaseTimelineController
   Future<void> _restoreTimelineState() async {
     try {
       // 从存储中读取状态
-      final timelineState = await AboutmeDataService.instance.readPath(
-        _storagePath,
-      );
+      final result = await AboutmeDataService.instance.get('chat', 'getTimelineState');
+      if (result['success'] != true) throw StateError(result['error'].toString());
+      final timelineState = result['data'];
       if (timelineState == null) return;
 
       // 恢复过滤器设置
@@ -264,10 +254,9 @@ class TimelineController extends BaseTimelineController
   @override
   void dispose() {
     // 取消数据同步订阅
-    _cancelDataSync?.call();
+    _disposed = true;
+    _messageSubscription?.cancel();
 
-    // 移除监听器
-    chatPlugin.removeListener(_onChatDataChanged);
     searchController.removeListener(onSearchChanged);
 
     // 释放控制器已在父类中处理

@@ -28,10 +28,7 @@ List<DateTime> getCurrentWeekDays(DateTime date) {
 /// 打开日记编辑器
 ///
 /// 导航到指定日期的日记编辑页面，如果存在日记则加载现有内容
-Future<void> openDiaryEditor(
-  BuildContext context,
-  DateTime date,
-) async {
+Future<void> openDiaryEditor(BuildContext context, DateTime date) async {
   final plugin = PluginManager.instance.getPlugin('diary') as DiaryPlugin?;
   if (plugin == null) return;
 
@@ -52,34 +49,59 @@ Future<void> openDiaryEditor(
 /// 获取可用的统计项数据
 ///
 /// 用于概览小组件的统计信息展示
-List<StatItemData> getAvailableStats(BuildContext context) {
+List<StatItemData> getAvailableStats(
+  BuildContext context, {
+  Map<DateTime, DiaryEntry>? entries,
+}) {
   try {
     final plugin = PluginManager.instance.getPlugin('diary') as DiaryPlugin?;
-    if (plugin == null) return [];
+    if (entries == null && plugin == null) return [];
 
     // 同步获取统计数据
-    final todayCount = plugin.getTodayWordCountSync();
-    final monthCount = plugin.getMonthWordCountSync();
-    final monthProgress = plugin.getMonthProgressSync();
+    final now = DateTime.now();
+    final monthly = entries?.entries.where(
+      (entry) => entry.key.year == now.year && entry.key.month == now.month,
+    );
+    final todayEntry = entries?[DateTime(now.year, now.month, now.day)];
+    final todayCount = entries == null
+        ? plugin!.getTodayWordCountSync()
+        : todayEntry == null
+        ? 0
+        : DiaryUtils.contentToPlainText(todayEntry.content).trim().length;
+    final monthCount = entries == null
+        ? plugin!.getMonthWordCountSync()
+        : monthly!.fold<int>(
+            0,
+            (sum, entry) =>
+                sum +
+                DiaryUtils.contentToPlainText(
+                  entry.value.content,
+                ).trim().length,
+          );
+    final monthProgress = entries == null
+        ? plugin!.getMonthProgressSync()
+        : (monthly!.length, DateTime(now.year, now.month + 1, 0).day);
+    final ready = entries != null || plugin!.hasQuerySnapshot;
+    final missing = plugin?.queryError == null ? '加载中' : '加载失败';
 
     return [
       StatItemData(
         id: 'today_word_count',
         label: '今日字数',
-        value: '$todayCount',
+        value: ready ? '$todayCount' : missing,
         highlight: todayCount > 0,
         color: Colors.indigo,
       ),
       StatItemData(
         id: 'month_word_count',
         label: '本月字数',
-        value: '$monthCount',
+        value: ready ? '$monthCount' : missing,
         highlight: false,
       ),
       StatItemData(
         id: 'month_progress',
         label: '本月进度',
-        value: '${monthProgress.$1}/${monthProgress.$2}',
+        value: ready ? '${monthProgress.$1}/${monthProgress.$2}' : missing,
         highlight: monthProgress.$1 > 0,
         color: Colors.indigo,
       ),
@@ -90,10 +112,7 @@ List<StatItemData> getAvailableStats(BuildContext context) {
 }
 
 /// 根据日记条目创建周报卡片数据
-WeekDiaryCardData createWeekCardData(
-  DateTime date,
-  DiaryEntry? entry,
-) {
+WeekDiaryCardData createWeekCardData(DateTime date, DiaryEntry? entry) {
   final now = DateTime.now();
   return WeekDiaryCardData(
     date: date,

@@ -95,6 +95,13 @@ class _ImageMessageWidgetState extends State<ImageMessageWidget> {
 
     final theme = _resolveTheme(context);
 
+    if (ImageUtils.sdkAssetId(filePath) != null) {
+      return _buildFrame(context, theme, Image(
+        image: ImageUtils.createImageProvider(filePath), fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context, fileName),
+      ));
+    }
+
     // 网络图片直接 URL 引用（图片搜索/在线图片入口），Image.file 只支持本地文件
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       return _buildFrame(

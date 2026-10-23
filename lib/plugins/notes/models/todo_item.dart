@@ -20,7 +20,10 @@ class TodoItem {
   static String encodeList(List<TodoItem> items) {
     return items
         .where((item) => item.text.trim().isNotEmpty)
-        .map((item) => '${item.checked ? _checkedMark : _uncheckedMark} ${item.text}')
+        .map(
+          (item) =>
+              '${item.checked ? _checkedMark : _uncheckedMark} ${item.text}',
+        )
         .join('\n');
   }
 
@@ -74,7 +77,9 @@ class TodoMeta {
 
   String toJson() {
     return jsonEncode({
-      'doneAt': doneAt.map((key, value) => MapEntry(key, value.toIso8601String())),
+      'doneAt': doneAt.map(
+        (key, value) => MapEntry(key, value.toIso8601String()),
+      ),
     });
   }
 
@@ -83,6 +88,6 @@ class TodoMeta {
   void markDone(String text, DateTime at) => doneAt[text] = at;
 
   /// 清理已不存在条目的记录
-  void retainTexts(Set<String> texts) => doneAt.removeWhere((text, _) => !texts.contains(text));
+  void retainTexts(Set<String> texts) =>
+      doneAt.removeWhere((text, _) => !texts.contains(text));
 }
-

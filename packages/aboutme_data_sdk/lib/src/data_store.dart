@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'http_storage.dart';
 import 'storage_interface.dart';
+import 'legacy_write_policy.dart';
 
 /// 纯 Dart 数据管理门面：在 [StorageInterface] 之上提供键值/JSON/文件
 /// 三类数据操作与内存缓存，是客户端 StorageManager 与服务端共用的数据核心。
@@ -30,6 +31,7 @@ class DataStore {
 
   /// 保存数据
   Future<void> save(String key, dynamic value) async {
+    LegacyWritePolicy.check(key);
     if (value is String) {
       await _saveString(key, value);
     } else {
@@ -44,6 +46,7 @@ class DataStore {
 
   /// 删除数据
   Future<void> remove(String key) async {
+    LegacyWritePolicy.check(key);
     _cache.remove(key);
     await _storage.removeData(key);
   }
@@ -55,6 +58,7 @@ class DataStore {
 
   /// 清除指定前缀的数据
   Future<void> clearPrefix(String prefix) async {
+    LegacyWritePolicy.check(prefix, prefix: true);
     await _storage.clearWithPrefix(prefix);
     _cache.removeWhere((key, _) => key.startsWith(prefix));
   }
@@ -121,16 +125,19 @@ class DataStore {
 
   /// 写入字符串内容
   Future<void> writeString(String path, String content) async {
+    LegacyWritePolicy.check(path);
     await _storage.writeString(path, content);
   }
 
   /// 删除文件
   Future<void> deleteFile(String path) async {
+    LegacyWritePolicy.check(path);
     await _storage.deleteFile(path);
   }
 
   /// 写入JSON数据
   Future<void> writeJson(String path, dynamic data) async {
+    LegacyWritePolicy.check(path);
     await _storage.saveJson(path, data);
   }
 
@@ -206,6 +213,7 @@ class DataStore {
 
   /// 写入二进制文件
   Future<void> writeBytes(String path, Uint8List bytes) async {
+    LegacyWritePolicy.check(path);
     await _storage.writeBytes(path, bytes);
   }
 

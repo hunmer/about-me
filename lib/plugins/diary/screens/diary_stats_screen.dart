@@ -10,13 +10,12 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:skribble/skribble.dart';
 
-import 'package:aboutme/core/event/event.dart';
-import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/diary/models/diary_entry.dart';
 import 'package:aboutme/plugins/diary/utils/diary_utils.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_mood_face.dart';
+import 'package:aboutme/plugins/diary/widgets/diary_query_guard.dart';
 import 'package:aboutme/widgets/quill_viewer/index.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -56,16 +55,16 @@ const Map<JarMood, _JarMoodSpec> _jarMoodSpecs = {
 
 /// 分类主题色（禁止硬编码数据色，走主题语义色）
 Color _jarMoodColor(AppThemeData theme, JarMood mood) => switch (mood) {
-      JarMood.perfect => theme.primary,
-      JarMood.good => theme.secondary,
-      JarMood.nice => theme.warning,
-    };
+  JarMood.perfect => theme.primary,
+  JarMood.good => theme.secondary,
+  JarMood.nice => theme.warning,
+};
 
 Color _jarMoodOnColor(AppThemeData theme, JarMood mood) => switch (mood) {
-      JarMood.perfect => theme.onPrimary,
-      JarMood.good => theme.onSecondary,
-      JarMood.nice => theme.onWarning,
-    };
+  JarMood.perfect => theme.onPrimary,
+  JarMood.good => theme.onSecondary,
+  JarMood.nice => theme.onWarning,
+};
 
 /// 日记心情 emoji -> 罐子分类
 JarMood _jarMoodOf(String mood) {
@@ -127,9 +126,9 @@ class _BadgeBody {
     this.angle = 0,
     this.radius = _kBaseRadius,
     this.scale = 0.35,
-  })  : vy = 0,
-        va = 0,
-        highlight = 0;
+  }) : vy = 0,
+       va = 0,
+       highlight = 0;
 
   void bounceImpulse() {
     final rnd = math.Random();
@@ -192,6 +191,8 @@ class DiaryStatsScreen extends StatefulWidget {
 class _DiaryStatsScreenState extends State<DiaryStatsScreen>
     with SingleTickerProviderStateMixin {
   Map<DateTime, DiaryEntry> _entries = {};
+  bool _hasSnapshot = false;
+  Object? _queryError;
   late DateTime _selectedMonth;
   final List<_BadgeBody> _badges = [];
   final List<_Ripple> _ripples = [];
@@ -209,16 +210,15 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
     final now = DateTime.now();
     _selectedMonth = DateTime(now.year, now.month);
     _ticker = createTicker(_onTick)..start();
-    _loadEntries();
-    for (final e in const [
-      'diary_refresh',
-      'diary_entry_created',
-      'diary_entry_updated',
-      'diary_entry_deleted',
-    ]) {
-      EventManager.instance.subscribe(e, _handleRefresh);
-    }
+    _entriesSubscription = DiaryUtils.watchEntries().listen(
+      _applyEntries,
+      onError: (Object error) {
+        if (mounted) setState(() => _queryError = error);
+      },
+    );
   }
+
+  StreamSubscription<Map<DateTime, DiaryEntry>>? _entriesSubscription;
 
   @override
   void dispose() {
@@ -227,24 +227,16 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
     for (final ink in _faceInks.values) {
       ink.image?.dispose();
     }
-    for (final e in const [
-      'diary_refresh',
-      'diary_entry_created',
-      'diary_entry_updated',
-      'diary_entry_deleted',
-    ]) {
-      EventManager.instance.unsubscribe(e, _handleRefresh);
-    }
+    _entriesSubscription?.cancel();
     super.dispose();
   }
 
-  void _handleRefresh(EventArgs args) => _loadEntries();
-
-  Future<void> _loadEntries() async {
-    final entries = await DiaryUtils.loadDiaryEntries();
+  void _applyEntries(Map<DateTime, DiaryEntry> entries) {
     if (!mounted) return;
     setState(() {
       _entries = entries;
+      _hasSnapshot = true;
+      _queryError = null;
       // 若当前选中月没有心情日记，则落到最近一个有数据的月份
       if (_monthBadgeCount(_selectedMonth) == 0) {
         final months = _monthsWithBadges();
@@ -252,6 +244,14 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
       }
       _spawnBadges();
     });
+  }
+
+  Future<void> _retryQuery() async {
+    try {
+      _applyEntries(await DiaryUtils.loadDiaryEntries());
+    } catch (error) {
+      if (mounted) setState(() => _queryError = error);
+    }
   }
 
   /// 有心情记录的月份（倒序）
@@ -266,21 +266,26 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
 
   int _monthBadgeCount(DateTime month) {
     return _entries.values
-        .where((e) =>
-            e.mood != null &&
-            e.date.year == month.year &&
-            e.date.month == month.month)
+        .where(
+          (e) =>
+              e.mood != null &&
+              e.date.year == month.year &&
+              e.date.month == month.month,
+        )
         .length;
   }
 
   List<DiaryEntry> _monthEntries(DateTime month) {
-    final list = _entries.values
-        .where((e) =>
-            e.mood != null &&
-            e.date.year == month.year &&
-            e.date.month == month.month)
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final list =
+        _entries.values
+            .where(
+              (e) =>
+                  e.mood != null &&
+                  e.date.year == month.year &&
+                  e.date.month == month.month,
+            )
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
     return list;
   }
 
@@ -290,16 +295,18 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
     _targetRadius = _computeTargetRadius(monthEntries.length);
     _badges.clear();
     for (final entry in monthEntries) {
-      _badges.add(_BadgeBody(
-        x: 80 + rnd.nextDouble() * 180,
-        y: 170 + rnd.nextDouble() * 140,
-        type: _jarMoodOf(entry.mood!),
-        entry: entry,
-        radius: _targetRadius,
-        vx: (rnd.nextDouble() - 0.5) * 3,
-        angle: (rnd.nextDouble() - 0.5) * 0.7,
-        scale: 1,
-      ));
+      _badges.add(
+        _BadgeBody(
+          x: 80 + rnd.nextDouble() * 180,
+          y: 170 + rnd.nextDouble() * 140,
+          type: _jarMoodOf(entry.mood!),
+          entry: entry,
+          radius: _targetRadius,
+          vx: (rnd.nextDouble() - 0.5) * 3,
+          angle: (rnd.nextDouble() - 0.5) * 0.7,
+          scale: 1,
+        ),
+      );
     }
     unawaited(_preloadFaces(monthEntries));
   }
@@ -497,7 +504,8 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
     for (var i = _badges.length - 1; i >= 0; i--) {
       final b = _badges[i];
       final d = math.sqrt(
-          math.pow(pos.dx - b.x, 2) + math.pow(pos.dy - b.y, 2));
+        math.pow(pos.dx - b.x, 2) + math.pow(pos.dy - b.y, 2),
+      );
       if (d <= b.radius * 1.18) {
         hit = b;
         break;
@@ -520,8 +528,15 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
         other.va += (rnd.nextDouble() - 0.5) * 0.15;
       }
     }
-    _ripples.add(_Ripple(
-        hit.x, hit.y, 12, 0.9, _jarMoodColor(DSThemeBridge.resolve(context), hit.type)));
+    _ripples.add(
+      _Ripple(
+        hit.x,
+        hit.y,
+        12,
+        0.9,
+        _jarMoodColor(DSThemeBridge.resolve(context), hit.type),
+      ),
+    );
 
     Future.delayed(const Duration(milliseconds: 220), () {
       if (mounted) _openMoodModal(hit!);
@@ -565,26 +580,33 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
   @override
   Widget build(BuildContext context) {
     return DSThemeBridge(
-      child: Builder(builder: (context) {
-        final theme = AppTheme.of(context);
-        return SuperCupertinoNavigationWrapper(
-          title: Text('diary_stats'.tr),
-          largeTitle: 'diary_stats'.tr,
-          enableLargeTitle: false,
-          backgroundColor: dsScaffoldBackground(theme),
-          body: Container(
-            color: dsScaffoldBackground(theme),
-            child: Column(
-              children: [
-                _buildHeader(theme),
-                Expanded(child: _buildJarSection(theme)),
-                _buildSummaryCard(theme),
-                const SizedBox(height: 100), // 避让底部悬浮导航栏
-              ],
+      child: Builder(
+        builder: (context) {
+          final theme = AppTheme.of(context);
+          return SuperCupertinoNavigationWrapper(
+            title: Text('diary_stats'.tr),
+            largeTitle: 'diary_stats'.tr,
+            enableLargeTitle: false,
+            backgroundColor: dsScaffoldBackground(theme),
+            body: DiaryQueryGuard(
+              hasSnapshot: _hasSnapshot,
+              error: _queryError,
+              onRetry: _retryQuery,
+              child: Container(
+                color: dsScaffoldBackground(theme),
+                child: Column(
+                  children: [
+                    _buildHeader(theme),
+                    Expanded(child: _buildJarSection(theme)),
+                    _buildSummaryCard(theme),
+                    const SizedBox(height: 100), // 避让底部悬浮导航栏
+                  ],
+                ),
+              ),
             ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 
@@ -653,7 +675,8 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
               itemCount: months.length,
               itemBuilder: (context, i) {
                 final m = months[i];
-                final selected = m.year == _selectedMonth.year &&
+                final selected =
+                    m.year == _selectedMonth.year &&
                     m.month == _selectedMonth.month;
                 return SmoothSheetAction(
                   icon: DsIconKind.calendar,
@@ -673,13 +696,17 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
                     children: [
                       Text(
                         'x${_monthBadgeCount(m)}',
-                        style: DsTypography.caption
-                            .copyWith(color: theme.textSub),
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
+                        ),
                       ),
                       if (selected) ...[
                         const SizedBox(width: 6),
-                        DsIcon(DsIconKind.check,
-                            size: 16, color: theme.primary),
+                        DsIcon(
+                          DsIconKind.check,
+                          size: 16,
+                          color: theme.primary,
+                        ),
                       ],
                     ],
                   ),
@@ -696,7 +723,9 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
     return LayoutBuilder(
       builder: (context, constraints) {
         final scale = math.min(
-            constraints.maxWidth / _kJarW, constraints.maxHeight / _kJarH);
+          constraints.maxWidth / _kJarW,
+          constraints.maxHeight / _kJarH,
+        );
         return Center(
           child: SizedBox(
             width: _kJarW * scale,
@@ -715,8 +744,10 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
                         children: [
                           CustomPaint(
                             size: const Size(_kJarW, _kJarH),
-                            painter:
-                                _JarSketchPainter(theme: theme, front: false),
+                            painter: _JarSketchPainter(
+                              theme: theme,
+                              front: false,
+                            ),
                           ),
                           CustomPaint(
                             size: const Size(_kJarW, _kJarH),
@@ -730,7 +761,10 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
                           ),
                           CustomPaint(
                             size: const Size(_kJarW, _kJarH),
-                            painter: _JarSketchPainter(theme: theme, front: true),
+                            painter: _JarSketchPainter(
+                              theme: theme,
+                              front: true,
+                            ),
                           ),
                         ],
                       ),
@@ -836,7 +870,8 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
                     radius: BorderRadius.circular(999),
                     strokeWidth: 1.1,
                     stroke: theme.ink.withValues(
-                        alpha: (i >= start && i < start + active) ? 0.55 : 0.25),
+                      alpha: (i >= start && i < start + active) ? 0.55 : 0.25,
+                    ),
                     fillColor: (i >= start && i < start + active)
                         ? _jarMoodColor(theme, _badges[i - start].type)
                         : theme.surfaceAlt,
@@ -914,8 +949,11 @@ class _MoodFaceBadge extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration:
-          dsSketchDecoration(theme: theme, fillColor: spec.bg, circle: true),
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: spec.bg,
+        circle: true,
+      ),
       child: Center(
         child: SizedBox(
           width: faceSize,
@@ -996,8 +1034,10 @@ class _MoodModalCardState extends State<_MoodModalCard>
               child: JellyBox(
                 color: _jarMoodColor(theme, widget.badge.type),
                 radius: theme.radii.circle,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 3,
+                ),
                 child: Text(
                   moodName,
                   style: DsTypography.caption.copyWith(
@@ -1036,52 +1076,52 @@ class _MoodModalCardState extends State<_MoodModalCard>
               textAlign: TextAlign.center,
               style: DsTypography.caption.copyWith(color: theme.textSub),
             ),
-              // 日记正文（有内容才渲染）
-              if (hasContent) ...[
-                SizedBox(height: theme.spacing.md),
-                Container(
-                  decoration: dsSketchDecoration(
-                    theme: theme,
-                    radius: theme.radii.lg,
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (entry.title.trim().isNotEmpty) ...[
-                        Text(
-                          entry.title,
-                          style: DsTypography.body.copyWith(
-                            color: theme.text,
-                            fontWeight: FontWeight.bold,
-                          ),
+            // 日记正文（有内容才渲染）
+            if (hasContent) ...[
+              SizedBox(height: theme.spacing.md),
+              Container(
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: theme.radii.lg,
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (entry.title.trim().isNotEmpty) ...[
+                      Text(
+                        entry.title,
+                        style: DsTypography.body.copyWith(
+                          color: theme.text,
+                          fontWeight: FontWeight.bold,
                         ),
-                        SizedBox(height: theme.spacing.sm),
-                      ],
-                      QuillViewer(data: entry.content, selectable: true),
+                      ),
+                      SizedBox(height: theme.spacing.sm),
                     ],
+                    QuillViewer(data: entry.content, selectable: true),
+                  ],
+                ),
+              ),
+            ],
+            SizedBox(height: theme.spacing.xl),
+            Row(
+              children: [
+                Expanded(
+                  child: DSButton(
+                    label: 'diary_stats_bounceAgain'.tr,
+                    variant: DSButtonVariant.outline,
+                    onPressed: widget.onBounceAgain,
+                  ),
+                ),
+                SizedBox(width: theme.spacing.md),
+                Expanded(
+                  child: DSButton(
+                    label: 'diary_stats_closeCard'.tr,
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
               ],
-              SizedBox(height: theme.spacing.xl),
-              Row(
-                children: [
-                  Expanded(
-                    child: DSButton(
-                      label: 'diary_stats_bounceAgain'.tr,
-                      variant: DSButtonVariant.outline,
-                      onPressed: widget.onBounceAgain,
-                    ),
-                  ),
-                  SizedBox(width: theme.spacing.md),
-                  Expanded(
-                    child: DSButton(
-                      label: 'diary_stats_closeCard'.tr,
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                ],
-              ),
+            ),
           ],
         ),
       ),
@@ -1163,45 +1203,59 @@ class _JarSketchPainter extends CustomPainter {
     if (!front) {
       // 罐身墨线轮廓
       final body = generator.curvePath(_jarOutlinePoints);
-      RoughDrawing(body, ink(2.2, 0.9), ink(2.2, 0.9))
-          .paint(canvas, pressure: 0);
+      RoughDrawing(
+        body,
+        ink(2.2, 0.9),
+        ink(2.2, 0.9),
+      ).paint(canvas, pressure: 0);
       // 桌面接地短线
-      RoughDrawing(generator.line(34, 356, 126, 358), ink(1.8, 0.4),
-              ink(1.8, 0.4))
-          .paint(canvas, pressure: 0);
-      RoughDrawing(generator.line(158, 358, 306, 356), ink(1.8, 0.4),
-              ink(1.8, 0.4))
-          .paint(canvas, pressure: 0);
+      RoughDrawing(
+        generator.line(34, 356, 126, 358),
+        ink(1.8, 0.4),
+        ink(1.8, 0.4),
+      ).paint(canvas, pressure: 0);
+      RoughDrawing(
+        generator.line(158, 358, 306, 356),
+        ink(1.8, 0.4),
+        ink(1.8, 0.4),
+      ).paint(canvas, pressure: 0);
     } else {
       // 轻描一遍罐身轮廓，让徽章看起来在罐内
       final body = generator.curvePath(_jarOutlinePoints);
-      RoughDrawing(body, ink(1.6, 0.4), ink(1.6, 0.4))
-          .paint(canvas, pressure: 0);
+      RoughDrawing(
+        body,
+        ink(1.6, 0.4),
+        ink(1.6, 0.4),
+      ).paint(canvas, pressure: 0);
       // 玻璃反光两笔
       RoughDrawing(
-          generator.curvePath([
-            PointD(62, 150),
-            PointD(60, 195),
-            PointD(63, 240),
-          ]),
-          ink(1.4, 0.28),
-          ink(1.4, 0.28)).paint(canvas, pressure: 0);
+        generator.curvePath([
+          PointD(62, 150),
+          PointD(60, 195),
+          PointD(63, 240),
+        ]),
+        ink(1.4, 0.28),
+        ink(1.4, 0.28),
+      ).paint(canvas, pressure: 0);
       RoughDrawing(
-          generator.curvePath([
-            PointD(272, 160),
-            PointD(275, 200),
-            PointD(272, 228),
-          ]),
-          ink(1.4, 0.28),
-          ink(1.4, 0.28)).paint(canvas, pressure: 0);
+        generator.curvePath([
+          PointD(272, 160),
+          PointD(275, 200),
+          PointD(272, 228),
+        ]),
+        ink(1.4, 0.28),
+        ink(1.4, 0.28),
+      ).paint(canvas, pressure: 0);
       // 瓶盖：墨线框 + 排线填充（画在徽章之上盖住瓶口）
       final capGen = Generator(
         config,
-        HachureFiller(FillerConfig.build(
-          drawConfig: config,
-          hachureGap: 6,
-          fillWeight: 1.2,
-        )),
+        HachureFiller(
+          FillerConfig.build(
+            drawConfig: config,
+            hachureGap: 6,
+            fillWeight: 1.2,
+          ),
+        ),
       );
       final cap = capGen.roundedRectangle(80, 18, 180, 40, 16, 16, 16, 16);
       final hatch = Paint()
@@ -1241,8 +1295,7 @@ class _BadgesPainter extends CustomPainter {
 
     for (final b in badges) {
       final mood = b.entry.mood!;
-      final ink =
-          faceInks[mood] ?? _FaceInk(diaryMoodSpecOf(mood));
+      final ink = faceInks[mood] ?? _FaceInk(diaryMoodSpecOf(mood));
       final drawRadius = b.radius * b.scale;
 
       canvas.save();
@@ -1258,14 +1311,18 @@ class _BadgesPainter extends CustomPainter {
           img,
           Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()),
           Rect.fromCenter(
-              center: Offset.zero, width: faceSide, height: faceSide),
+            center: Offset.zero,
+            width: faceSide,
+            height: faceSide,
+          ),
           Paint()..filterQuality = FilterQuality.medium,
         );
       } else {
         final tp = TextPainter(
           text: TextSpan(
-              text: ink.spec.emoji,
-              style: TextStyle(fontSize: faceSide * 0.7)),
+            text: ink.spec.emoji,
+            style: TextStyle(fontSize: faceSide * 0.7),
+          ),
           textDirection: ui.TextDirection.ltr,
         )..layout();
         tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));

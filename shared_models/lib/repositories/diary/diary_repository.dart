@@ -5,6 +5,7 @@ library;
 
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
+import '../../data_contracts/diary_codec.dart';
 
 // ============ DTOs ============
 
@@ -16,6 +17,9 @@ class DiaryEntryDto {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? mood;
+  final List<String> tags;
+  final int? version;
+  final Map<String, dynamic> extensions;
 
   const DiaryEntryDto({
     required this.date,
@@ -24,10 +28,17 @@ class DiaryEntryDto {
     required this.createdAt,
     required this.updatedAt,
     this.mood,
+    this.tags = const [],
+    this.version,
+    this.extensions = const {},
   });
 
   factory DiaryEntryDto.fromJson(Map<String, dynamic> json) {
+    json = DiaryCodec.entry(json);
     return DiaryEntryDto(
+      tags: List<String>.from(json['tags'] as List),
+      version: json['_sdkVersion'] as int?,
+      extensions: Map<String, dynamic>.from(json)..remove('_sdkVersion'),
       date: json['date'] as String,
       title: json['title'] as String? ?? '',
       content: json['content'] as String,
@@ -39,6 +50,8 @@ class DiaryEntryDto {
 
   Map<String, dynamic> toJson() {
     return {
+      ...extensions,
+      'tags': tags,
       'date': date,
       'title': title,
       'content': content,
@@ -55,6 +68,7 @@ class DiaryEntryDto {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? mood,
+    List<String>? tags,
   }) {
     return DiaryEntryDto(
       date: date ?? this.date,
@@ -63,6 +77,9 @@ class DiaryEntryDto {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       mood: mood ?? this.mood,
+      tags: tags ?? this.tags,
+      version: version,
+      extensions: extensions,
     );
   }
 }
@@ -137,8 +154,14 @@ abstract class IDiaryRepository {
   /// 更新日记
   Future<Result<DiaryEntryDto>> updateEntry(String date, DiaryEntryDto entry);
 
+  Future<Result<DiaryEntryDto>> patchEntry(
+    String date,
+    Map<String, dynamic> patch, {
+    int? expectedVersion,
+  });
+
   /// 删除日记
-  Future<Result<bool>> deleteEntry(String date);
+  Future<Result<bool>> deleteEntry(String date, {int? expectedVersion});
 
   /// 搜索日记
   Future<Result<List<DiaryEntryDto>>> searchEntries(DiaryQuery query);

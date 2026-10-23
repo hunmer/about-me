@@ -1,4 +1,7 @@
+import 'dart:convert';
 class Goal {
+  final int? sdkVersion;
+  final Map<String,dynamic>? originalJson;
   final String id;
   final String name;
   final String icon;
@@ -17,6 +20,8 @@ class Goal {
   bool get isCompleted => currentValue >= targetValue;
 
   Goal({
+    this.sdkVersion,
+    this.originalJson,
     required this.id,
     required this.name,
     required this.icon,
@@ -35,13 +40,15 @@ class Goal {
 
   factory Goal.fromJson(Map<String, dynamic> json) {
     return Goal(
+      sdkVersion:json['_sdkVersion'] as int?,
+      originalJson:Map<String,dynamic>.from(jsonDecode(jsonEncode(json)) as Map),
       id: json['id'],
       name: json['name'],
       icon: json['icon'],
       iconColor: json['iconColor'],
       unitType: json['unitType'],
-      targetValue: json['targetValue'],
-      currentValue: json['currentValue'],
+      targetValue: (json['targetValue'] as num).toDouble(),
+      currentValue: (json['currentValue'] as num).toDouble(),
       dateSettings: DateSettings.fromJson(json['dateSettings']),
       reminderTime: json['reminderTime'],
       isLoopReset: json['isLoopReset'],
@@ -88,6 +95,8 @@ class Goal {
     int? progressColor,
   }) {
     return Goal(
+      sdkVersion:sdkVersion,
+      originalJson:originalJson,
       id: id ?? this.id,
       name: name ?? this.name,
       icon: icon ?? this.icon,
@@ -124,13 +133,13 @@ class DateSettings {
   factory DateSettings.fromJson(Map<String, dynamic> json) {
     return DateSettings(
       type: json['type'],
-      startDate:
-          json['startDate'] != null ? DateTime.parse(json['startDate']) : null,
+      startDate: json['startDate'] != null
+          ? DateTime.parse(json['startDate'])
+          : null,
       endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
-      selectedDays:
-          json['selectedDays'] != null
-              ? List<String>.from(json['selectedDays'])
-              : null,
+      selectedDays: json['selectedDays'] != null
+          ? List<String>.from(json['selectedDays'])
+          : null,
       monthDay: json['monthDay'],
     );
   }

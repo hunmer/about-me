@@ -148,7 +148,7 @@ class ChatEventHandler {
       // 与 @ 流程的消息级 contextCount 互不影响
       final contextCount =
           (message.metadata?['autoReplyContextCount'] as num?)?.toInt() ?? 0;
-      final recent = _plugin.channelService.getRecentMessages(
+      final recent = await _plugin.channelService.getRecentMessages(
         channelId,
         contextCount,
       );
@@ -277,7 +277,7 @@ class ChatEventHandler {
         developer.log('请求的上下文数量: $contextCount', name: 'ChatEventHandler');
         if (contextCount > 0) {
           // 直接获取频道中最近的消息，不需要等待或重试
-          final previousMessages = ChatPlugin.instance.channelService
+          final previousMessages = await ChatPlugin.instance.channelService
               .getRecentMessages(channelId, contextCount);
 
           developer.log(
@@ -622,7 +622,7 @@ Future<void> submitAutoReplyThreadMessage({
     final contextMessages = <ChatCompletionMessage>[
       ChatCompletionMessage.system(content: await _systemWithMemory(agent, text)),
     ];
-    for (final msg in plugin.channelService.getRecentMessages(channelId, 20)) {
+    for (final msg in await plugin.channelService.getRecentMessages(channelId, 20)) {
       if (msg.id == rootMessageId) continue;
       if (msg.metadata?['isError'] == true) continue;
       if (msg.content.trim().isEmpty) continue;

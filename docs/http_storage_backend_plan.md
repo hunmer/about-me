@@ -1,5 +1,7 @@
 # HTTP 可选存储后端实施计划
 
+> 历史方案，仅保留设计沿革。当前实施目标见 [统一业务数据访问改造计划](unified_data_sdk_refactor_plan.md)，已落地行为见 [协议 v1](unified_data_sdk_protocol.md)。本文的旧 Node 服务、文件级 CRUD 与加密描述不代表当前架构；已迁移域禁止普通原始文件写入。
+
 ## 1. 目标与边界
 
 ### 目标

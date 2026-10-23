@@ -1,0 +1,26 @@
+name: Data SDK architecture
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  data-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+        working-directory: packages/aboutme_data_sdk
+      - run: dart analyze
+        working-directory: packages/aboutme_data_sdk
+      - run: dart test
+        working-directory: packages/aboutme_data_sdk
+      - run: dart --packages=packages/aboutme_data_sdk/.dart_tool/package_config.json tool/data_access_inventory.dart
+      - run: dart pub get
+        working-directory: packages/aboutme_server
+      - run: dart analyze
+        working-directory: packages/aboutme_server
+      - run: dart test
+        working-directory: packages/aboutme_server

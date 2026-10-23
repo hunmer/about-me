@@ -7,7 +7,7 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
-import 'package:aboutme/widgets/event_listener_container.dart';
+import '../widgets/diary_query_guard.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/diary/diary_plugin.dart';
 import 'package:aboutme/plugins/diary/models/diary_entry.dart';
@@ -26,18 +26,15 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
       icon: Icons.menu_book,
       color: const Color(0xFFD8BFD8),
       defaultSize: const Wide2Size(),
-      supportedSizes: const [
-        Large3Size(),
-        Wide2Size(),
-        Wide3Size(),
-      ],
+      supportedSizes: const [Large3Size(), Wide2Size(), Wide3Size()],
       category: 'home_categoryRecord'.tr,
       isDateDriven: true,
       hasDateData: (date) async {
         try {
           return await DiaryUtils.loadDiaryEntry(date) != null;
         } catch (_) {
-          return false;
+          // 查询失败时仍显示卡片，由 SDK watch 展示错误和重试。
+          return true;
         }
       },
       builder: (context, config) => const _DiaryDayCardHomeWidget(),
@@ -46,70 +43,25 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
 }
 
 /// 日记日卡内容：读取主页选中日期的日记并用 DiaryEntryCard 渲染
-class _DiaryDayCardHomeWidget extends StatefulWidget {
+class _DiaryDayCardHomeWidget extends StatelessWidget {
   const _DiaryDayCardHomeWidget();
 
   @override
-  State<_DiaryDayCardHomeWidget> createState() => _DiaryDayCardHomeWidgetState();
-}
+  Widget build(BuildContext context) => DiarySnapshotBuilder(
+    builder: (context, entries) => ListenableBuilder(
+      listenable: HomeDateController(),
+      builder: (context, _) {
+        final date = HomeDateController().date;
+        return _buildContent(
+          context,
+          entries[DateTime(date.year, date.month, date.day)],
+        );
+      },
+    ),
+  );
 
-class _DiaryDayCardHomeWidgetState extends State<_DiaryDayCardHomeWidget> {
-  DiaryEntry? _entry;
-  DateTime? _loadingFor;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    HomeDateController().addListener(_loadEntry);
-    _loadEntry();
-  }
-
-  @override
-  void dispose() {
-    HomeDateController().removeListener(_loadEntry);
-    super.dispose();
-  }
-
-  /// 加载选中日期的日记（当前数据模型为一天一篇）
-  Future<void> _loadEntry() async {
-    final date = HomeDateController().date;
-    _loadingFor = date;
-    try {
-      final entry = await DiaryUtils.loadDiaryEntry(date);
-      if (!mounted || _loadingFor != date) return;
-      setState(() {
-        _entry = entry;
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted || _loadingFor != date) return;
-      setState(() => _loading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return EventListenerContainer(
-      events: const [
-        'diary_entry_created',
-        'diary_entry_updated',
-        'diary_entry_deleted',
-        'diary_refresh',
-      ],
-      onEvent: _loadEntry,
-      child: _buildContent(context),
-    );
-  }
-
-  Widget _buildContent(BuildContext context) {
+  Widget _buildContent(BuildContext context, DiaryEntry? entry) {
     final theme = Theme.of(context);
-
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    final entry = _entry;
     if (entry == null) {
       // 空状态
       return Center(
@@ -138,13 +90,13 @@ class _DiaryDayCardHomeWidgetState extends State<_DiaryDayCardHomeWidget> {
       padding: const EdgeInsets.all(4),
       child: DiaryEntryCard(
         entry: entry,
-        onTap: () => _openEditor(entry),
+        onTap: () => _openEditor(context, entry),
       ),
     );
   }
 
   /// 打开日记编辑器（与插件页一致，带原文预填）
-  void _openEditor(DiaryEntry entry) {
+  void _openEditor(BuildContext context, DiaryEntry entry) {
     NavigationHelper.push(
       context,
       DiaryEditorScreen(

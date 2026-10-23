@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/chat/models/file_message.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
@@ -103,7 +104,13 @@ Future<Map<String, dynamic>> _buildLocalImageMetadata(
   String relativePath,
   String? thumbUrl,
 ) async {
-  final absolutePath = await ImageUtils.getAbsolutePath(relativePath);
+  final assetId = ImageUtils.sdkAssetId(relativePath);
+  final FileMessage fileMessage;
+  if (assetId != null) {
+    final asset = await AboutmeDataService.instance.data.assets.getMetadata(assetId);
+    fileMessage = FileMessage.fromAsset(asset, thumbPath: thumbUrl);
+  } else {
+    final absolutePath = await ImageUtils.getAbsolutePath(relativePath);
   final imageFile = File(absolutePath);
 
   if (!await imageFile.exists()) {
@@ -111,11 +118,12 @@ Future<Map<String, dynamic>> _buildLocalImageMetadata(
   }
 
   final originalFileName = path.basename(absolutePath);
-  final fileMessage = await FileMessage.fromFile(
+  fileMessage = await FileMessage.fromFile(
     imageFile,
     originalFileName: originalFileName,
     thumbPath: thumbUrl,
   );
+  }
 
   return {
     'fileInfo': {
@@ -126,7 +134,7 @@ Future<Map<String, dynamic>> _buildLocalImageMetadata(
       'thumbPath': fileMessage.thumbPath,
       'size': fileMessage.fileSize,
       'extension': fileMessage.extension,
-      'mimeType': 'image/${fileMessage.extension.replaceAll('.', '')}',
+      'mimeType': fileMessage.mimeType,
       'type': 'image',
       'isImage': true,
       'createdAt': DateTime.now().toIso8601String(),

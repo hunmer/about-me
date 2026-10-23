@@ -1,3 +1,4 @@
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:get/get.dart';
 import 'dart:async';
 import 'package:aboutme/plugins/todo/models/task.dart';
@@ -184,7 +185,37 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _plugin.taskController,
+    builder: (context, child) {
+      final controller = _plugin.taskController;
+      return Column(
+        children: [
+          if (controller.queryStatus == QueryStatus.loading ||
+              controller.queryStatus == QueryStatus.stale)
+            const LinearProgressIndicator(),
+          if (controller.loadError != null)
+            Material(
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: ListTile(
+                title: Text('加载失败，当前显示缓存数据：${controller.loadError}'),
+                trailing: TextButton(
+                  onPressed: () async {
+                    try {
+                      await controller.reload();
+                    } catch (_) {}
+                  },
+                  child: const Text('重试'),
+                ),
+              ),
+            ),
+          Expanded(child: _buildContent(context)),
+        ],
+      );
+    },
+  );
+
+  Widget _buildContent(BuildContext context) {
     return CustomBottomBar(
       currentIndex: _currentPage,
       tabController: _tabController,
@@ -193,11 +224,7 @@ class _TodoBottomBarViewState extends State<TodoBottomBarView>
         controller: _tabController,
         dragStartBehavior: DragStartBehavior.down,
         physics: const NeverScrollableScrollPhysics(),
-        children: [
-          _buildTabPage(0),
-          _buildTabPage(1),
-          _buildTabPage(2),
-        ],
+        children: [_buildTabPage(0), _buildTabPage(1), _buildTabPage(2)],
       ),
       fab: _buildFab(),
       items: [

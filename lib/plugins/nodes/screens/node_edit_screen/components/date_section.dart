@@ -17,7 +17,6 @@ class DateSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Row(
       children: [
         Expanded(
@@ -50,8 +49,9 @@ class DateSection extends StatelessWidget {
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate:
-          isStart ? startDate ?? DateTime.now() : endDate ?? DateTime.now(),
+      initialDate: isStart
+          ? startDate ?? DateTime.now()
+          : endDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );

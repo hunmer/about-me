@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
@@ -18,9 +19,8 @@ import 'package:get/get.dart';
 import 'screens/diary_calendar_screen.dart';
 import 'screens/diary_editor_screen.dart';
 import 'screens/diary_stats_screen.dart';
-import 'dart:convert';
-import 'package:path/path.dart' as path;
 import 'models/diary_entry.dart';
+import 'widgets/diary_query_guard.dart';
 import 'utils/diary_utils.dart';
 import 'repositories/client_diary_repository.dart';
 import 'package:shared_models/usecases/diary/diary_usecase.dart';
@@ -59,10 +59,15 @@ class DiaryCacheUpdatedEventArgs extends EventArgs {
 
   /// 条目数量
   final int count;
+  final bool hasSnapshot;
+  final Object? error;
+  bool get isStale => hasSnapshot && error != null;
 
   DiaryCacheUpdatedEventArgs({
     required this.entries,
     required this.month,
+    this.hasSnapshot = true,
+    this.error,
   }) : count = entries.length,
        super('diary_cache_updated');
 }
@@ -186,12 +191,9 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
   late final DiaryUseCase _diaryUseCase;
 
   // 初始化标志
-  bool _isInitialized = false;
 
   /// 支持刷新的文件路径前缀
-  static const List<String> _refreshableFiles = [
-    'diary/',
-  ];
+  static const List<String> _refreshableFiles = ['diary/'];
 
   @override
   bool supportsFileRefresh(String filePath) {
@@ -202,7 +204,7 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
   Future<bool> refreshData([PluginRefreshDataArgs? args]) async {
     try {
       debugPrint('[DiaryPlugin] 开始刷新数据, 文件: ${args?.filePath}');
-      await _refreshMonthlyEntriesCache();
+      AboutmeDataService.instance.revalidate();
       debugPrint('[DiaryPlugin] 数据刷新成功');
       return true;
     } catch (e) {
@@ -221,17 +223,66 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
     ),
   ];
 
-  // 缓存统计数据（用于同步访问）
-  int _cachedTodayWordCount = 0;
-  int _cachedMonthWordCount = 0;
-  (int, int) _cachedMonthProgress = (0, 0);
-  DateTime? _cacheDateToday;
-  DateTime? _cacheDateMonth;
+  // SDK 快照的 UI 适配；不独立维护权威数据或持久化状态。
+  Map<DateTime, DiaryEntry>? _entriesSnapshot;
+  Object? _lastQueryError;
+  Future<void>? _refreshFuture;
+  Object? get queryError => _lastQueryError;
+  bool get hasQuerySnapshot => _entriesSnapshot != null;
 
-  // 缓存本月日记列表（用于同步访问）
-  List<(DateTime, DiaryEntry)> _cachedMonthlyDiaryEntries = [];
-  DateTime? _cacheDateMonthlyEntries;
-  bool _monthlyEntriesCacheValid = false;
+  void _recordQueryError(Object error) {
+    _lastQueryError = error;
+    _broadcastSnapshot();
+  }
+
+  void _applySnapshot(Map<DateTime, DiaryEntry> entries) {
+    _entriesSnapshot = entries;
+    _lastQueryError = null;
+    _broadcastSnapshot();
+  }
+
+  void _broadcastSnapshot() {
+    final now = DateTime.now();
+    eventManager.broadcast(
+      'diary_cache_updated',
+      DiaryCacheUpdatedEventArgs(
+        entries: _monthlyEntries(),
+        month: DateTime(now.year, now.month),
+        hasSnapshot: hasQuerySnapshot,
+        error: _lastQueryError,
+      ),
+    );
+  }
+
+  Future<void> refreshSnapshot() => _refreshFuture ??= _loadSnapshot();
+
+  Future<void> _loadSnapshot() async {
+    try {
+      _applySnapshot(await DiaryUtils.loadDiaryEntries());
+    } catch (error) {
+      _recordQueryError(error);
+      rethrow;
+    } finally {
+      _refreshFuture = null;
+    }
+  }
+
+  List<(DateTime, DiaryEntry)> _monthlyEntries() {
+    final now = DateTime.now();
+    return (_entriesSnapshot?.entries ?? <MapEntry<DateTime, DiaryEntry>>[])
+        .where(
+          (entry) => entry.key.year == now.year && entry.key.month == now.month,
+        )
+        .map((entry) => (entry.key, entry.value))
+        .toList()
+      ..sort((a, b) => b.$1.compareTo(a.$1));
+  }
+
+  void _requestMissingSnapshot() {
+    if (!hasQuerySnapshot && _lastQueryError == null) {
+      unawaited(refreshSnapshot().then<void>((_) {}, onError: (Object _) {}));
+    }
+  }
 
   @override
   String get id => 'diary';
@@ -247,271 +298,54 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
     return 'diary_name'.tr;
   }
 
-  // 获取今日文字数
   Future<int> getTodayWordCount() async {
-    final today = DateTime.now();
-    final todayFile = path.join(
-      storage.getPluginStoragePath(id),
-      '${DateFormat('yyyy-MM-dd').format(today)}.json',
-    );
-
-    int wordCount = 0;
-    try {
-      if (await AboutmeDataService.instance.existsPath(todayFile)) {
-        final content = await AboutmeDataService.instance.readPathText(
-          todayFile,
-        );
-        if (content.isNotEmpty) {
-          // 解析 JSON 文件
-          final jsonData = jsonDecode(content) as Map<String, dynamic>;
-          final diaryContent = jsonData['content'] as String? ?? '';
-          wordCount = diaryContent.trim().length;
-        }
-      }
-    } catch (e) {
-      debugPrint('Error reading today\'s diary: $e');
-    }
-
-    // 更新缓存
-    _updateTodayCache(today, wordCount);
-
-    return wordCount;
+    await refreshSnapshot();
+    return getTodayWordCountSync();
   }
 
-  // 获取本月文字数
   Future<int> getMonthWordCount() async {
-    final now = DateTime.now();
-    var totalCount = 0;
-
-    try {
-      // 使用 DiaryUtils 加载所有日记条目
-      final allEntries = await DiaryUtils.loadDiaryEntries();
-
-      // 过滤本月的日记
-      final currentMonthEntries = allEntries.entries.where((entry) {
-        return entry.key.year == now.year && entry.key.month == now.month;
-      });
-
-      // 计算总字数
-      for (final entry in currentMonthEntries) {
-        totalCount += entry.value.content.trim().length;
-      }
-    } catch (e) {
-      debugPrint('Error calculating month word count: $e');
-    }
-
-    // 更新缓存
-    _updateMonthCache(now, totalCount, null);
-
-    return totalCount;
+    await refreshSnapshot();
+    return getMonthWordCountSync();
   }
 
-  // 获取本月完成进度
   Future<(int, int)> getMonthProgress() async {
-    final now = DateTime.now();
-    var completedDays = 0;
-    final totalDays = DateTime(now.year, now.month + 1, 0).day;
-
-    try {
-      // 使用 DiaryUtils 加载所有日记条目
-      final allEntries = await DiaryUtils.loadDiaryEntries();
-
-      // 过滤本月的日记并计算有日记的天数
-      final currentMonthDates =
-          allEntries.keys.where((date) {
-            return date.year == now.year && date.month == now.month;
-          }).toSet();
-
-      completedDays = currentMonthDates.length;
-    } catch (e) {
-      debugPrint('Error calculating month progress: $e');
-    }
-
-    final progress = (completedDays, totalDays);
-
-    // 更新缓存
-    _updateMonthCache(now, null, progress);
-
-    return progress;
+    await refreshSnapshot();
+    return getMonthProgressSync();
   }
 
-  // 获取本月日记列表（异步，用于缓存刷新）
   Future<List<(DateTime, DiaryEntry)>> getMonthlyDiaryEntries() async {
-    final now = DateTime.now();
-    final year = now.year;
-    final month = now.month;
-
-    try {
-      // 使用 DiaryUtils 加载所有日记条目
-      final allEntries = await DiaryUtils.loadDiaryEntries();
-
-      // 过滤本月的日记
-      final monthlyEntries = <(DateTime, DiaryEntry)>[];
-      for (final entry in allEntries.entries) {
-        if (entry.key.year == year && entry.key.month == month) {
-          monthlyEntries.add((entry.key, entry.value));
-        }
-      }
-
-      // 按日期排序（倒序）
-      monthlyEntries.sort((a, b) => b.$1.compareTo(a.$1));
-
-      // 更新缓存
-      _updateMonthlyEntriesCache(now, monthlyEntries);
-
-      return monthlyEntries;
-    } catch (e) {
-      debugPrint('[DiaryPlugin] 获取本月日记失败: $e');
-      return [];
-    }
+    await refreshSnapshot();
+    return _monthlyEntries();
   }
 
-  // 同步获取本月日记列表（从缓存）
+  // 同步 getter 仅供展示；调用方必须结合 hasQuerySnapshot/queryError 展示状态。
   List<(DateTime, DiaryEntry)> getMonthlyDiaryEntriesSync() {
-    // 如果缓存无效，返回空列表并异步刷新
-    if (!_monthlyEntriesCacheValid) {
-      getMonthlyDiaryEntries();
-      return [];
-    }
-
-    final now = DateTime.now();
-    final month = DateTime(now.year, now.month);
-    final cachedMonth = _cacheDateMonthlyEntries != null
-        ? DateTime(_cacheDateMonthlyEntries!.year, _cacheDateMonthlyEntries!.month)
-        : null;
-
-    if (cachedMonth == null || !cachedMonth.isAtSameMomentAs(month)) {
-      // 日期不匹配，异步刷新并返回空列表
-      getMonthlyDiaryEntries();
-      return [];
-    }
-
-    return _cachedMonthlyDiaryEntries;
+    _requestMissingSnapshot();
+    return _monthlyEntries();
   }
 
-  // 更新本月缓存
-  void _updateMonthlyEntriesCache(DateTime date, List<(DateTime, DiaryEntry)> entries) {
-    final month = DateTime(date.year, date.month);
-    final cachedMonth = _cacheDateMonthlyEntries != null
-        ? DateTime(_cacheDateMonthlyEntries!.year, _cacheDateMonthlyEntries!.month)
-        : null;
-
-    // 如果是新的月份，重置缓存
-    if (cachedMonth == null || !cachedMonth.isAtSameMomentAs(month)) {
-      _cachedMonthlyDiaryEntries = [];
-      _cacheDateMonthlyEntries = month;
-      _monthlyEntriesCacheValid = false;
-    }
-
-    // 更新缓存值
-    _cachedMonthlyDiaryEntries = entries;
-    _monthlyEntriesCacheValid = true;
-  }
-
-  // 更新今日缓存
-  void _updateTodayCache(DateTime date, int wordCount) {
-    final today = DateTime(date.year, date.month, date.day);
-    final cachedDay =
-        _cacheDateToday != null
-            ? DateTime(
-              _cacheDateToday!.year,
-              _cacheDateToday!.month,
-              _cacheDateToday!.day,
-            )
-            : null;
-
-    // 如果是新的一天，重置缓存
-    if (cachedDay == null || !cachedDay.isAtSameMomentAs(today)) {
-      _cachedTodayWordCount = 0;
-      _cacheDateToday = today;
-    }
-
-    // 更新缓存值
-    _cachedTodayWordCount = wordCount;
-  }
-
-  // 更新本月缓存
-  void _updateMonthCache(DateTime date, int? wordCount, (int, int)? progress) {
-    final month = DateTime(date.year, date.month);
-    final cachedMonth =
-        _cacheDateMonth != null
-            ? DateTime(_cacheDateMonth!.year, _cacheDateMonth!.month)
-            : null;
-
-    // 如果是新的月份，重置缓存
-    if (cachedMonth == null || !cachedMonth.isAtSameMomentAs(month)) {
-      _cachedMonthWordCount = 0;
-      _cachedMonthProgress = (0, 0);
-      _cacheDateMonth = month;
-    }
-
-    // 更新缓存值
-    if (wordCount != null) _cachedMonthWordCount = wordCount;
-    if (progress != null) _cachedMonthProgress = progress;
-  }
-
-  // 同步获取今日文字数（从缓存）
   int getTodayWordCountSync() {
-    // 检查缓存是否是今天的
+    _requestMissingSnapshot();
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final cachedDay =
-        _cacheDateToday != null
-            ? DateTime(
-              _cacheDateToday!.year,
-              _cacheDateToday!.month,
-              _cacheDateToday!.day,
-            )
-            : null;
-
-    if (cachedDay != null && cachedDay.isAtSameMomentAs(today)) {
-      return _cachedTodayWordCount;
-    }
-
-    // 如果缓存不可用，异步刷新缓存（不等待）
-    getTodayWordCount();
-
-    return 0;
+    final entry = _entriesSnapshot?[DateTime(now.year, now.month, now.day)];
+    return entry == null
+        ? 0
+        : DiaryUtils.contentToPlainText(entry.content).trim().length;
   }
 
-  // 同步获取本月文字数（从缓存）
   int getMonthWordCountSync() {
-    // 检查缓存是否是本月的
-    final now = DateTime.now();
-    final month = DateTime(now.year, now.month);
-    final cachedMonth =
-        _cacheDateMonth != null
-            ? DateTime(_cacheDateMonth!.year, _cacheDateMonth!.month)
-            : null;
-
-    if (cachedMonth != null && cachedMonth.isAtSameMomentAs(month)) {
-      return _cachedMonthWordCount;
-    }
-
-    // 如果缓存不可用，异步刷新缓存（不等待）
-    getMonthWordCount();
-
-    return 0;
+    _requestMissingSnapshot();
+    return _monthlyEntries().fold(
+      0,
+      (sum, entry) =>
+          sum + DiaryUtils.contentToPlainText(entry.$2.content).trim().length,
+    );
   }
 
-  // 同步获取本月完成进度（从缓存）
   (int, int) getMonthProgressSync() {
-    // 检查缓存是否是本月的
+    _requestMissingSnapshot();
     final now = DateTime.now();
-    final month = DateTime(now.year, now.month);
-    final cachedMonth =
-        _cacheDateMonth != null
-            ? DateTime(_cacheDateMonth!.year, _cacheDateMonth!.month)
-            : null;
-
-    if (cachedMonth != null && cachedMonth.isAtSameMomentAs(month)) {
-      return _cachedMonthProgress;
-    }
-
-    // 如果缓存不可用，异步刷新缓存（不等待）
-    getMonthProgress();
-
-    return (0, DateTime(now.year, now.month + 1, 0).day);
+    return (_monthlyEntries().length, DateTime(now.year, now.month + 1, 0).day);
   }
 
   @override
@@ -574,9 +408,6 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> initialize() async {
-    // 确保日记数据目录存在
-    await storage.createDirectory('diary');
-
     // 初始化 UseCase
     final repository = ClientDiaryRepository();
     _diaryUseCase = DiaryUseCase(repository);
@@ -591,43 +422,22 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
     await registerJSAPI();
 
     // 标记为已初始化
-    _isInitialized = true;
 
-    // 初始化完成后主动刷新缓存，确保首次加载有数据
-    getMonthlyDiaryEntries();
+    // 初始化完成后主动刷新缓存，确保首次加载有数据；失败保留空缓存
+    _requestMissingSnapshot();
   }
 
-  // 设置事件监听器
+  StreamSubscription<Map<DateTime, DiaryEntry>>? _entriesSubscription;
+
   void _setupEventListeners() {
-    eventManager.subscribe('diary_entry_created', (_) => _refreshMonthlyEntriesCache());
-    eventManager.subscribe('diary_entry_updated', (_) => _refreshMonthlyEntriesCache());
-    eventManager.subscribe('diary_entry_deleted', (_) => _refreshMonthlyEntriesCache());
-  }
-
-  // 刷新本月日记缓存
-  Future<void> _refreshMonthlyEntriesCache() async {
-    if (!_isInitialized) return;
-
-    try {
-      final entries = await getMonthlyDiaryEntries();
-      final now = DateTime.now();
-
-      // 广播时携带数据（性能优化：小组件可直接使用，无需再次获取）
-      eventManager.broadcast(
-        'diary_cache_updated',
-        DiaryCacheUpdatedEventArgs(
-          entries: entries,
-          month: DateTime(now.year, now.month),
-        ),
-      );
-    } catch (e) {
-      debugPrint('[DiaryPlugin] 刷新本月日记缓存失败: $e');
-    }
+    _entriesSubscription = DiaryUtils.watchEntries().listen(
+      _applySnapshot,
+      onError: _recordQueryError,
+    );
   }
 
   @override
   Future<void> registerToApp(
-
     PluginManager pluginManager,
     ConfigManager configManager,
   ) async {
@@ -637,7 +447,7 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
   }
 
   Future<void> dispose() async {
-    // 清理资源
+    await _entriesSubscription?.cancel();
   }
 
   @override
@@ -649,19 +459,24 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
   Widget buildCardView(BuildContext context) {
     final theme = Theme.of(context);
 
-    return FutureBuilder<(int, int, int)>(
-      future: Future.wait([
-        getTodayWordCount(),
-        getMonthWordCount(),
-        getMonthProgress().then((value) => value.$1),
-      ]).then((values) => (values[0], values[1], values[2])),
-      builder: (context, snapshot) {
-        final todayCount = snapshot.data?.$1 ?? 0;
-        final monthCount = snapshot.data?.$2 ?? 0;
-        final completedDays = snapshot.data?.$3 ?? 0;
-        final totalDays =
-            DateTime(DateTime.now().year, DateTime.now().month + 1, 0).day;
-
+    return DiarySnapshotBuilder(
+      builder: (context, entries) {
+        final now = DateTime.now();
+        final today = entries[DateTime(now.year, now.month, now.day)];
+        final todayCount = today == null
+            ? 0
+            : DiaryUtils.contentToPlainText(today.content).trim().length;
+        final monthly = entries.entries.where(
+          (entry) => entry.key.year == now.year && entry.key.month == now.month,
+        );
+        final monthCount = monthly.fold<int>(
+          0,
+          (sum, entry) =>
+              sum +
+              DiaryUtils.contentToPlainText(entry.value.content).trim().length,
+        );
+        final completedDays = monthly.length;
+        final totalDays = DateTime(now.year, now.month + 1, 0).day;
         return Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -707,10 +522,9 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
                             '$todayCount',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color:
-                                  todayCount > 0
-                                      ? theme.colorScheme.primary
-                                      : null,
+                              color: todayCount > 0
+                                  ? theme.colorScheme.primary
+                                  : null,
                             ),
                           ),
                         ],
@@ -748,10 +562,9 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
                             '$completedDays/$totalDays',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color:
-                                  completedDays > 0
-                                      ? theme.colorScheme.primary
-                                      : null,
+                              color: completedDays > 0
+                                  ? theme.colorScheme.primary
+                                  : null,
                             ),
                           ),
                         ],

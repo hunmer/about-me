@@ -141,7 +141,7 @@ class NodeItem extends StatelessWidget {
   }
 
   Node _copyWith(Node source, {NodeStatus? status, Color? color}) => Node(
-    id: source.id,
+    sdkVersion: source.sdkVersion,    id: source.id,
     title: source.title,
     createdAt: source.createdAt,
     tags: source.tags,

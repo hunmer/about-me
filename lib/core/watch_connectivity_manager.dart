@@ -11,7 +11,7 @@ import 'package:watch_connectivity/watch_connectivity.dart';
 import '../plugins/chat/chat_plugin.dart';
 import '../plugins/chat/models/channel.dart';
 import '../plugins/diary/diary_plugin.dart';
-import '../plugins/diary/models/diary_entry.dart';
+import '../plugins/diary/utils/diary_utils.dart';
 import 'package:intl/intl.dart';
 
 /// 手表连接管理器 - 响应手表的数据请求
@@ -279,7 +279,7 @@ class WatchConnectivityManager extends ChangeNotifier {
   Future<Map<String, dynamic>> _getDiaryEntries() async {
     try {
       final diaryPlugin = DiaryPlugin.instance;
-      final entries = diaryPlugin.getMonthlyDiaryEntriesSync();
+      final entries = await diaryPlugin.getMonthlyDiaryEntries();
 
       // 转换为手表可识别的格式
       final entryData = entries.map((tuple) {
@@ -291,7 +291,7 @@ class WatchConnectivityManager extends ChangeNotifier {
           'contentPreview': entry.content.length > 100
               ? '${entry.content.substring(0, 100)}...'
               : entry.content,
-          'wordCount': entry.content.length,
+          'wordCount': DiaryUtils.contentToPlainText(entry.content).trim().length,
           'mood': entry.mood,
           'updatedAt': entry.updatedAt.toIso8601String(),
         };
@@ -313,21 +313,8 @@ class WatchConnectivityManager extends ChangeNotifier {
   /// 获取指定日期的日记详情
   Future<Map<String, dynamic>> _getDiaryEntry(String dateStr) async {
     try {
-      final diaryPlugin = DiaryPlugin.instance;
       final date = DateTime.parse(dateStr);
-      final entries = diaryPlugin.getMonthlyDiaryEntriesSync();
-
-      // 查找指定日期的日记
-      DiaryEntry? entry;
-      for (final tuple in entries) {
-        final entryDate = tuple.$1;
-        if (entryDate.year == date.year &&
-            entryDate.month == date.month &&
-            entryDate.day == date.day) {
-          entry = tuple.$2;
-          break;
-        }
-      }
+      final entry = await DiaryUtils.loadDiaryEntry(date);
 
       if (entry == null) {
         return {
@@ -342,7 +329,7 @@ class WatchConnectivityManager extends ChangeNotifier {
           'date': dateStr,
           'title': entry.title,
           'content': entry.content,
-          'wordCount': entry.content.length,
+          'wordCount': DiaryUtils.contentToPlainText(entry.content).trim().length,
           'mood': entry.mood,
           'createdAt': entry.createdAt.toIso8601String(),
           'updatedAt': entry.updatedAt.toIso8601String(),
@@ -361,9 +348,9 @@ class WatchConnectivityManager extends ChangeNotifier {
   Future<Map<String, dynamic>> _getDiaryStats() async {
     try {
       final diaryPlugin = DiaryPlugin.instance;
-      final todayWordCount = diaryPlugin.getTodayWordCountSync();
-      final monthWordCount = diaryPlugin.getMonthWordCountSync();
-      final monthProgress = diaryPlugin.getMonthProgressSync();
+      final todayWordCount = await diaryPlugin.getTodayWordCount();
+      final monthWordCount = await diaryPlugin.getMonthWordCount();
+      final monthProgress = await diaryPlugin.getMonthProgress();
 
       return {
         'success': true,

@@ -77,6 +77,7 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
   /// 本地视频的伴生首帧缩略图路径（沿用 `<name>.thumb` 命名约定，统一 jpg），
   /// 在线 URL 无伴生缩略图返回 null
   String? _thumbPathOf(String filePath) {
+    if (ImageUtils.sdkAssetId(filePath) != null) return fileInfo?['thumbPath'] as String?;
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       return null;
     }

@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
+import 'package:aboutme/core/data/sdk_asset_image_provider.dart';
 
 /// 图片类型枚举
 enum ImageType {
@@ -106,6 +108,9 @@ class ImageUtils {
       return '';
     }
 
+    final resourceId = sdkAssetId(relativePath);
+    if (resourceId != null) return AboutmeDataService.instance.data.assets.resolvePath(resourceId);
+
     if (_storage?.isRemote == true && relativePath.startsWith('./')) {
       final storagePath = relativePath.substring(2).replaceAll(r'\', '/');
       final file = await _storage!.materializeToTemporaryFile(storagePath);
@@ -163,6 +168,8 @@ class ImageUtils {
   /// [relativePath] 支持 './xxx' 或不含前缀的存储相对路径。
   static Future<Uint8List?> readStorageBytes(String? relativePath) async {
     if (relativePath == null || relativePath.isEmpty) return null;
+    final resourceId = sdkAssetId(relativePath);
+    if (resourceId != null) return AboutmeDataService.instance.data.assets.read(resourceId);
     final storage = _storage ?? StorageManager();
     final storagePath = relativePath.startsWith('./')
         ? relativePath.substring(2)
@@ -174,6 +181,8 @@ class ImageUtils {
   /// [relativePath] 相对路径，必须以 './' 开头
   /// 返回是否删除成功
   static Future<bool> deleteImage(String? relativePath) async {
+    final resourceId = sdkAssetId(relativePath);
+    if (resourceId != null) return AboutmeDataService.instance.data.assets.remove(resourceId);
     try {
       if (relativePath == null || !relativePath.startsWith('./')) {
         return false;
@@ -207,6 +216,9 @@ class ImageUtils {
     if (relativePath == null || relativePath.isEmpty) {
       return '';
     }
+
+    final resourceId = sdkAssetId(relativePath);
+    if (resourceId != null) return AboutmeDataService.instance.data.assets.resolvedPath(resourceId) ?? '';
 
     final materialized = _materializedPaths[relativePath];
     if (materialized != null) return materialized;
@@ -242,6 +254,12 @@ class ImageUtils {
   static String getAbsolutePathSync(String? relativePath) {
     if (relativePath == null || relativePath.isEmpty) {
       return '';
+    }
+    final resourceId = sdkAssetId(relativePath);
+    if (resourceId != null) {
+      final resolved = AboutmeDataService.instance.data.assets.resolvedPath(resourceId);
+      if (resolved == null) throw StateError('资源尚未物化，请先调用 getAbsolutePath');
+      return resolved;
     }
 
     // 如果已经是绝对路径，直接返回
@@ -299,6 +317,10 @@ class ImageUtils {
   }
 
   static Future<String> toRelativePath(String absolutePath) async {
+    if (sdkAssetId(absolutePath) != null) return absolutePath;
+    final resource = AboutmeDataService.instance.isInitialized
+        ? AboutmeDataService.instance.data.assets.referenceForResolvedPath(absolutePath) : null;
+    if (resource != null) return resource;
     final appDir = await StorageManager.getApplicationDocumentsDirectory();
     final appDataPath = path.join(appDir.path, 'app_data');
 
@@ -366,6 +388,10 @@ class ImageUtils {
 
   /// 根据图片路径智能创建对应的 ImageProvider
   static ImageProvider createImageProvider(String? imagePath) {
+    final resourceId = sdkAssetId(imagePath);
+    if (resourceId != null) {
+      return SdkAssetImageProvider(AboutmeDataService.instance.data, resourceId);
+    }
     final imageType = getImageType(imagePath);
 
     switch (imageType) {
@@ -417,6 +443,13 @@ class ImageUtils {
         // 返回一个空的占位图片
         return const AssetImage('assets/images/placeholder.png');
     }
+  }
+
+  /// 获取显示用的图片路径（用于调试和日志）
+  static String? sdkAssetId(String? reference) {
+    if (reference == null) return null;
+    final value = reference.startsWith('./') ? reference.substring(2) : reference;
+    return value.startsWith('asset://') ? value.substring('asset://'.length) : null;
   }
 
   /// 获取显示用的图片路径（用于调试和日志）

@@ -43,7 +43,9 @@ class StorageManager extends DataStore {
     if (bytes == null) return null;
     final tempRoot = await path_provider.getTemporaryDirectory();
     final safePath = storagePath.replaceAll('\\', '/');
-    final target = File(path.join(tempRoot.path, 'aboutme_remote_cache', safePath));
+    final target = File(
+      path.join(tempRoot.path, 'aboutme_remote_cache', safePath),
+    );
     await target.parent.create(recursive: true);
     await target.writeAsBytes(bytes, flush: true);
     return target;
@@ -55,21 +57,20 @@ class StorageManager extends DataStore {
     remoteFallbackReason = null;
     final config = await _configStore.load();
     if (config.isHttpEnabled) {
+      // 配置无效时中止初始化，不能继续向默认本地后端写入。
+      final httpStorage = HttpStorage.fromConfig(
+        config,
+        deviceId: DeviceIdentity.id,
+      );
+      setBackend(httpStorage);
       try {
-        final httpStorage = HttpStorage.fromConfig(
-          config,
-          deviceId: DeviceIdentity.id,
-        );
-        // 构造不会联网，必须实际探测一次，服务器离线时才能在此回退，
-        // 否则首个读取操作会抛 offline 导致核心初始化中断
         await httpStorage.testConnection();
-        setBackend(httpStorage);
       } catch (e) {
-        // 远端存储不可用（服务器未启动、凭据失效等）时回退本地存储，
-        // 避免启动即崩溃；下次启动会重新尝试连接远端
         remoteFallbackReason = e.toString();
-        debugPrint('[StorageManager] 远端存储不可用，回退本地存储: $e');
+        debugPrint('[StorageManager] 远端存储不可用，保持 HTTP 模式: $e');
       }
+    } else {
+      setBackend(_defaultStorage());
     }
     clearCache();
   }

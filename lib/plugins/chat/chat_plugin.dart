@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'dart:io' show Platform;
 
 import 'package:aboutme/core/services/startup_trace.dart';
@@ -24,6 +25,7 @@ import 'services/chat_config_service.dart';
 import 'services/ui_service.dart';
 import 'services/widget_service.dart';
 import 'services/tag_service.dart';
+import 'services/ai_thread_service.dart';
 import 'services/sticker_service.dart';
 import 'package:shared_models/usecases/chat/chat_usecase.dart';
 import 'package:aboutme/core/watch_connectivity_manager.dart';
@@ -110,9 +112,7 @@ class ChatPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   Future<bool> refreshData([PluginRefreshDataArgs? args]) async {
     try {
       debugPrint('[ChatPlugin] 开始刷新数据, 文件: ${args?.filePath}');
-      // 重新加载频道和消息数据
-      await dataService.reloadChannels();
-      notifyListeners();
+      AboutmeDataService.instance.revalidate();
       debugPrint('[ChatPlugin] 数据刷新成功');
       return true;
     } catch (e) {
@@ -212,7 +212,7 @@ class ChatPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   /// 根据消息ID获取消息
   /// 代理到 dataService.getMessageById
   Future<Message?> getMessage(String messageId) async {
-    return dataService.getMessageById(messageId);
+    return dataService.loadReplyMessage(messageId);
   }
 
   /// 手动触发刷新（用于外部事件变化时通知监听者）
@@ -253,6 +253,14 @@ class ChatPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
     return uiService.buildCardView(context);
   }
 
+
+  @override
+  Future<void> dispose() async {
+    await dataService.dispose();
+    await configService.dispose();
+    await AiThreadService.instance.dispose();
+    super.dispose();
+  }
 
   @override
   Future<void> registerToApp(

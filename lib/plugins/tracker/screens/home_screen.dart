@@ -1,3 +1,4 @@
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -31,6 +32,29 @@ class _HomeScreenState extends State<HomeScreen> {
           final theme = DSThemeBridge.resolve(context);
           return Column(
             children: [
+              Consumer<TrackerController>(
+                builder: (context, controller, child) {
+                  if (controller.loadError != null)
+                    return Material(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      child: ListTile(
+                        title: Text('加载失败，当前显示缓存数据：${controller.loadError}'),
+                        trailing: TextButton(
+                          onPressed: () async {
+                            try {
+                              await controller.reloadData();
+                            } catch (_) {}
+                          },
+                          child: const Text('重试'),
+                        ),
+                      ),
+                    );
+                  if (controller.queryStatus == QueryStatus.loading ||
+                      controller.queryStatus == QueryStatus.stale)
+                    return const LinearProgressIndicator();
+                  return const SizedBox.shrink();
+                },
+              ),
               // 分组切换器
               Container(
                 height: 50,
@@ -41,10 +65,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     return Center(
                       child: DSChipBar(
                         labels: groups,
-                        selected: groups.indexOf(_currentGroup).clamp(
-                          0,
-                          groups.length - 1,
-                        ),
+                        selected: groups
+                            .indexOf(_currentGroup)
+                            .clamp(0, groups.length - 1),
                         onChanged: (index) =>
                             setState(() => _currentGroup = groups[index]),
                       ),
@@ -63,21 +86,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildGoalsList(BuildContext context, AppThemeData theme) {
     final controller = Provider.of<TrackerController>(context);
-    final filteredGoals =
-        controller.goals.where((goal) {
-          if (_currentGroup != '全部' && goal.group != _currentGroup) {
-            return false;
-          }
+    final filteredGoals = controller.goals.where((goal) {
+      if (_currentGroup != '全部' && goal.group != _currentGroup) {
+        return false;
+      }
 
-          // 根据状态过滤
-          if (_filterStatus == '进行中' && goal.isCompleted) return false;
-          if (_filterStatus == '已完成' && !goal.isCompleted) return false;
+      // 根据状态过滤
+      if (_filterStatus == '进行中' && goal.isCompleted) return false;
+      if (_filterStatus == '已完成' && !goal.isCompleted) return false;
 
-          // 根据日期过滤
-          // 这里可以根据需要实现日期过滤逻辑
+      // 根据日期过滤
+      // 这里可以根据需要实现日期过滤逻辑
 
-          return true;
-        }).toList();
+      return true;
+    }).toList();
 
     if (widget.isGridView) {
       return GridView.builder(
@@ -131,20 +153,17 @@ class _HomeScreenState extends State<HomeScreen> {
             return await showDSDialog<bool>(
               context: context,
               theme: DSThemeBridge.resolve(context),
-              builder:
-                  (_) => DSThemeBridge(
-                    child: Builder(
-                      builder:
-                          (context) => DSDialog(
-                            title: 'tracker_confirmDeletion'.tr,
-                            message:
-                                '${'tracker_confirmDeletion'.tr} "${goal.name}"',
-                            cancelText: 'app_cancel'.tr,
-                            confirmText: 'app_delete'.tr,
-                            confirmVariant: DSButtonVariant.destructive,
-                          ),
-                    ),
+              builder: (_) => DSThemeBridge(
+                child: Builder(
+                  builder: (context) => DSDialog(
+                    title: 'tracker_confirmDeletion'.tr,
+                    message: '${'tracker_confirmDeletion'.tr} "${goal.name}"',
+                    cancelText: 'app_cancel'.tr,
+                    confirmText: 'app_delete'.tr,
+                    confirmVariant: DSButtonVariant.destructive,
                   ),
+                ),
+              ),
             );
           },
           onDismissed: (direction) {

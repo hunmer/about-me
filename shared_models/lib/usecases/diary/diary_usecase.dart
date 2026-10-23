@@ -124,6 +124,7 @@ class DiaryUseCase {
         createdAt: now,
         updatedAt: now,
         mood: moodValue,
+        tags: (params['tags'] as List?)?.cast<String>() ?? const [],
       );
 
       final result = await repository.createEntry(entry);
@@ -149,33 +150,10 @@ class DiaryUseCase {
     }
 
     try {
-      // 获取现有日记
-      final existingResult = await repository.getEntryByDate(date);
-      if (existingResult.isFailure) {
-        return Result.failure('日记不存在', code: ErrorCodes.notFound);
-      }
-
-      final existing = existingResult.dataOrNull;
-      if (existing == null) {
-        return Result.failure('日记不存在', code: ErrorCodes.notFound);
-      }
-
-      // 合并更新
-      // 处理 mood 参数，支持 int 或 string 类型
-      String? moodValue;
-      final moodParam = params['mood'];
-      if (moodParam != null) {
-        moodValue = moodParam.toString();
-      }
-
-      final updated = existing.copyWith(
-        title: params['title'] as String? ?? existing.title,
-        content: params['content'] as String? ?? existing.content,
-        mood: moodValue ?? existing.mood,
-        updatedAt: DateTime.now(),
-      );
-
-      final result = await repository.updateEntry(date, updated);
+      final result = await repository.patchEntry(date, {
+        for (final key in ['title', 'content', 'tags', 'mood'])
+          if (params.containsKey(key)) key: params[key],
+      }, expectedVersion: params['expectedVersion'] as int?);
       return result.map((e) => e.toJson());
     } catch (e) {
       return Result.failure('更新日记失败: $e', code: ErrorCodes.serverError);
@@ -194,7 +172,7 @@ class DiaryUseCase {
     }
 
     try {
-      final result = await repository.deleteEntry(date);
+      final result = await repository.deleteEntry(date, expectedVersion: params['expectedVersion'] as int?);
       return result.map((success) => {
             'deleted': success,
             'date': date,

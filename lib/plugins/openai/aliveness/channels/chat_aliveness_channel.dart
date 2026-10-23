@@ -249,7 +249,7 @@ class ChatAlivenessSession implements AlivenessSessionChannel {
 
     // 频道历史（排除根消息/本次缓冲/异常消息）
     final buffered = input.bufferedHandles.whereType<Message>().toList();
-    final recent = _plugin.channelService.getRecentMessages(
+    final recent = await _plugin.channelService.getRecentMessages(
       channelId,
       contextCount + buffered.length,
     );

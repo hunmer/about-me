@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -8,8 +9,6 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
-import 'package:aboutme/core/event/event_manager.dart';
-import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/widgets/quill_viewer/index.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
@@ -20,6 +19,7 @@ import 'package:aboutme/plugins/diary/widgets/diary_calendar_day_cell.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_calendar_header.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_calendar_palette.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_mood_face.dart';
+import 'package:aboutme/plugins/diary/widgets/diary_query_guard.dart';
 import 'package:aboutme/plugins/diary/widgets/diary_search_result_tile.dart';
 
 class DiaryCalendarScreen extends StatefulWidget {
@@ -37,9 +37,15 @@ class DiaryCalendarScreen extends StatefulWidget {
 }
 
 class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
+  StreamSubscription<Map<DateTime, DiaryEntry>>? _entriesSubscription;
   late DateTime _focusedDay;
   DateTime? _selectedDay;
   Map<DateTime, DiaryEntry> _diaryEntries = {};
+  bool _hasSnapshot = false;
+  Object? _queryError;
+  Object? _searchError;
+  bool _searchLoading = false;
+  int _searchSequence = 0;
   late CalendarController _calendarController;
 
   // 底部详情 sheet 控制器（smooth_sheets：拖拽吸附，点日期展开）
@@ -74,56 +80,53 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     _calendarController = CalendarController();
     _calendarController.displayDate = initialDay;
     _calendarController.selectedDate = _selectedDay;
-    _loadDiaryEntries();
-
-    // 订阅同步刷新事件
-    EventManager.instance.subscribe('diary_refresh', _handleSyncRefresh);
-    EventManager.instance.subscribe('diary_entry_created', _handleSyncRefresh);
-    EventManager.instance.subscribe('diary_entry_updated', _handleSyncRefresh);
-    EventManager.instance.subscribe('diary_entry_deleted', _handleSyncRefresh);
+    _entriesSubscription = DiaryUtils.watchEntries().listen(
+      (entries) {
+        if (mounted) {
+          setState(() {
+            _diaryEntries = entries;
+            _hasSnapshot = true;
+            _queryError = null;
+          });
+        }
+      },
+      onError: (Object error) {
+        if (mounted) setState(() => _queryError = error);
+      },
+    );
   }
 
   @override
   void dispose() {
-    // 取消订阅，避免内存泄漏
-    EventManager.instance.unsubscribe('diary_refresh', _handleSyncRefresh);
-    EventManager.instance.unsubscribe(
-      'diary_entry_created',
-      _handleSyncRefresh,
-    );
-    EventManager.instance.unsubscribe(
-      'diary_entry_updated',
-      _handleSyncRefresh,
-    );
-    EventManager.instance.unsubscribe(
-      'diary_entry_deleted',
-      _handleSyncRefresh,
-    );
+    _entriesSubscription?.cancel();
     _calendarController.dispose();
     _sheetController.dispose();
     super.dispose();
   }
 
-  /// 处理同步刷新事件
-  void _handleSyncRefresh(EventArgs args) {
-    debugPrint('[DiaryCalendarScreen] 收到同步刷新事件');
-    _loadDiaryEntries();
-  }
-
   Future<void> _loadDiaryEntries() async {
-    final entries = await DiaryUtils.loadDiaryEntries();
-    debugPrint('Loaded ${entries.length} diary entries');
-    if (mounted) {
-      setState(() {
-        _diaryEntries = entries;
-      });
+    try {
+      final entries = await DiaryUtils.loadDiaryEntries();
+      debugPrint('Loaded ${entries.length} diary entries');
+      if (mounted) {
+        setState(() {
+          _diaryEntries = entries;
+          _hasSnapshot = true;
+          _queryError = null;
+        });
+      }
+    } catch (error) {
+      if (mounted) setState(() => _queryError = error);
     }
   }
 
   /// 处理搜索查询
   Future<void> _handleSearch(String query) async {
+    final sequence = ++_searchSequence;
     setState(() {
       _searchQuery = query;
+      _searchError = null;
+      _searchLoading = query.trim().isNotEmpty;
     });
 
     if (query.trim().isEmpty) {
@@ -134,11 +137,21 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     }
 
     // 执行搜索
-    final results = await DiaryUtils.searchDiaryEntries(query);
-    if (mounted) {
-      setState(() {
-        _searchResults = results;
-      });
+    try {
+      final results = await DiaryUtils.searchDiaryEntries(query);
+      if (mounted && sequence == _searchSequence) {
+        setState(() {
+          _searchResults = results;
+          _searchLoading = false;
+        });
+      }
+    } catch (error) {
+      if (mounted && sequence == _searchSequence) {
+        setState(() {
+          _searchError = error;
+          _searchLoading = false;
+        });
+      }
     }
   }
 
@@ -342,7 +355,14 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
         onSearchChanged: _handleSearch,
         onSearchSubmitted: _handleSearch,
         // Builder 让视图方法在主题桥之内构建，可读取 AppTheme
-        body: Builder(builder: _buildCalendarView),
+        body: Builder(
+          builder: (context) => DiaryQueryGuard(
+            hasSnapshot: _hasSnapshot,
+            error: _queryError,
+            onRetry: _loadDiaryEntries,
+            child: _buildCalendarView(context),
+          ),
+        ),
         searchBody: Builder(builder: _buildSearchResults),
       ),
     );
@@ -351,6 +371,18 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
   /// 构建搜索结果视图：日记条目列表（无日历）
   Widget _buildSearchResults(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    if (_searchLoading) return const Center(child: DSLoadingDots());
+    if (_searchError != null) {
+      return Center(
+        child: DSEmptyState(
+          icon: DsIconKind.book,
+          title: '搜索失败',
+          message: '$_searchError',
+          actionLabel: '重试',
+          onAction: () => _handleSearch(_searchQuery),
+        ),
+      );
+    }
 
     return Container(
       color: theme.background,

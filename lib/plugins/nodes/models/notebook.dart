@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'node.dart';
 
 class Notebook {
+  int? sdkVersion;
   String id;
   String title;
   IconData icon;
@@ -9,6 +10,7 @@ class Notebook {
   List<Node> nodes;
 
   Notebook({
+    this.sdkVersion,
     required this.id,
     required this.title,
     this.icon = Icons.book,
@@ -25,10 +27,9 @@ class Notebook {
   };
 
   factory Notebook.fromJson(Map<String, dynamic> json) {
-    final nodesList =
-        (json['nodes'] as List<dynamic>)
-            .map((e) => Node.fromJson(e as Map<String, dynamic>))
-            .toList();
+    final nodesList = (json['nodes'] as List<dynamic>)
+        .map((e) => Node.fromJson(e as Map<String, dynamic>))
+        .toList();
 
     // 预定义常用Material图标常量
     const materialIcons = {
@@ -40,6 +41,7 @@ class Notebook {
     };
 
     return Notebook(
+      sdkVersion: json['_sdkVersion'] as int?,
       id: json['id'] as String,
       title: json['title'] as String,
       icon: materialIcons[json['icon'] as int] ?? Icons.book,

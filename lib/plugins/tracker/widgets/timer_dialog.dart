@@ -137,12 +137,7 @@ class _TimerDialogState extends State<TimerDialog> {
         durationSeconds: _seconds,
       );
 
-      final newGoal = widget.goal.copyWith(
-        currentValue: widget.goal.currentValue + recordValue,
-      );
-
-      await widget.controller.updateGoal(widget.goal.id, newGoal);
-      await widget.controller.addRecord(record, newGoal);
+      await widget.controller.addRecord(record, widget.goal);
 
       if (mounted) {
         Navigator.of(context).pop();

@@ -3,13 +3,8 @@ import 'package:aboutme/plugins/notes/models/folder.dart';
 
 /// 文件夹树节点，用于 animated_tree_view 展示
 class FolderTreeNode extends TreeNode<Folder> {
-  FolderTreeNode({
-    required Folder folder,
-    List<FolderTreeNode>? children,
-  }) : super(
-          key: folder.id,
-          data: folder,
-        ) {
+  FolderTreeNode({required Folder folder, List<FolderTreeNode>? children})
+    : super(key: folder.id, data: folder) {
     if (children != null) {
       addAll(children);
     }
@@ -29,9 +24,6 @@ class FolderTreeNode extends TreeNode<Folder> {
         .map((childFolder) => buildTree(childFolder, allFolders))
         .toList();
 
-    return FolderTreeNode(
-      folder: folder,
-      children: children,
-    );
+    return FolderTreeNode(folder: folder, children: children);
   }
 }

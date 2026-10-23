@@ -8,6 +8,8 @@ class FilePathConverter {
   /// [absolutePath] 绝对路径或已经是相对路径的字符串
   /// 返回相对于应用数据目录的路径
   static Future<String> toRelativePath(String absolutePath) async {
+    if (absolutePath.startsWith('asset://') || absolutePath.startsWith('http://') ||
+        absolutePath.startsWith('https://')) return absolutePath;
     // 如果路径已经是相对路径（以 './' 开头），则规范化路径格式
     if (absolutePath.startsWith('./')) {
       // 修复多余斜杠问题，如 ".///" 变为 "./"

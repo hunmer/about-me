@@ -39,7 +39,7 @@ class ChatWidgetService {
                   'iconCodePoint': c.icon.codePoint,
                   'colorValue': c.backgroundColor.value,
                   'lastMessage':
-                      c.messages.isNotEmpty ? c.messages.last.content : '',
+                      c.lastMessage?.content ?? '',
                   'unreadCount': 0, // TODO: 实现未读计数
                 },
               )
@@ -75,14 +75,8 @@ class ChatWidgetService {
     // 按最后消息时间排序
     final sorted = List<Channel>.from(channels);
     sorted.sort((a, b) {
-      final aTime =
-          a.messages.isNotEmpty
-              ? a.messages.last.date
-              : DateTime.fromMillisecondsSinceEpoch(0);
-      final bTime =
-          b.messages.isNotEmpty
-              ? b.messages.last.date
-              : DateTime.fromMillisecondsSinceEpoch(0);
+      final aTime = a.lastMessageTime;
+      final bTime = b.lastMessageTime;
       return bTime.compareTo(aTime);
     });
 

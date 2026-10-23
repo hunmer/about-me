@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:aboutme_data_sdk/aboutme_data_sdk.dart' show StorageFileInfo;
 import 'package:flutter/material.dart';
@@ -11,6 +11,7 @@ import 'package:super_cupertino_navigation_bar/utils/persistent_nav_bar.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/data/sdk_media_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -83,6 +84,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
 
   /// 缩略图生成中的视频 key（防重复请求）
   final Set<String> _thumbGenerating = {};
+  final Map<String, Uint8List> _thumbImages = {};
 
   bool _loading = true;
 
@@ -141,14 +143,15 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
   /// 汇总应用存储内各目录的视频元信息，最近修改的在前
   Future<void> _loadVideos() async {
     try {
-      final infos = await globalStorage.listFileInfos('');
+      final infos = [...await globalStorage.listFileInfos(''),
+        ...await SdkMediaService.listMedia('video/')];
 
       final allKeys = <String>{};
       final videos = <StorageFileInfo>[];
       for (final info in infos) {
         final key = info.path.replaceAll(r'\', '/');
         allKeys.add(key);
-        if (!_isVideoExtension(key)) continue;
+        if (ImageUtils.sdkAssetId(key) == null && !_isVideoExtension(key)) continue;
         videos.add(
           StorageFileInfo(
             path: key,
@@ -182,6 +185,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
 
   /// 视频的伴生缩略图 key（沿用图片 `<name>.thumb` 命名约定，视频统一 jpg）
   String _thumbKeyFor(String key) {
+    if (ImageUtils.sdkAssetId(key) != null) return '$key#thumb';
     final dir = path.dirname(key);
     final name = path.basenameWithoutExtension(key);
     return '$dir/$name.thumb.jpg';
@@ -196,19 +200,15 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
     _thumbGenerating.add(key);
     try {
       final videoAbs = await ImageUtils.getAbsolutePath('./$key');
-      final tmp = await VideoThumbnail.thumbnailFile(
+      final bytes = await VideoThumbnail.thumbnailData(
         video: videoAbs,
         imageFormat: ImageFormat.JPEG,
         maxWidth: 220,
         quality: 60,
       );
-      if (tmp == null) return;
-      final thumbAbs = await ImageUtils.getAbsolutePath('./$thumbKey');
-      final thumbFile = File(thumbAbs);
-      await thumbFile.parent.create(recursive: true);
-      await thumbFile.writeAsBytes(await File(tmp).readAsBytes());
+      if (bytes == null) return;
       if (mounted) {
-        setState(() => _allKeys.add(thumbKey));
+        setState(() { _allKeys.add(thumbKey); _thumbImages[thumbKey] = bytes; });
       }
     } catch (e) {
       debugPrint('生成视频缩略图失败 $key: $e');
@@ -219,6 +219,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
 
   /// 视频所属的顶层目录（插件维度），如 chat/chat_files/x.mp4 -> chat
   String? _pluginDirOf(String key) {
+    if (ImageUtils.sdkAssetId(key) != null) return null;
     final index = key.indexOf('/');
     return index > 0 ? key.substring(0, index) : null;
   }
@@ -304,7 +305,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
       });
       return;
     }
-    Navigator.of(context).pop(<String, dynamic>{'url': './$key', 'bytes': null});
+    Navigator.of(context).pop(<String, dynamic>{'url': ImageUtils.sdkAssetId(key) != null ? key : './$key', 'bytes': null});
   }
 
   /// 长按视频：单选模式切入多选并选中该视频；已是多选则忽略
@@ -326,7 +327,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
 
   Future<void> _confirmMultiple() async {
     final results = <Map<String, dynamic>>[
-      for (final key in _selected) {'url': './$key', 'bytes': null},
+      for (final key in _selected) {'url': ImageUtils.sdkAssetId(key) != null ? key : './$key', 'bytes': null},
     ];
     if (results.isNotEmpty) Navigator.of(context).pop(results);
   }
@@ -669,7 +670,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
       fit: StackFit.expand,
       children: [
         Image(
-          image: ImageUtils.createImageProvider('./$thumbKey'),
+          image: _thumbImages[thumbKey] == null ? ImageUtils.createImageProvider('./$thumbKey') : MemoryImage(_thumbImages[thumbKey]!),
           fit: BoxFit.cover,
           errorBuilder: (_, _, _) => _videoFallback(theme),
         ),
@@ -838,7 +839,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
               child:
                   hasThumb
                       ? Image(
-                        image: ImageUtils.createImageProvider('./$thumbKey'),
+                        image: _thumbImages[thumbKey] == null ? ImageUtils.createImageProvider('./$thumbKey') : MemoryImage(_thumbImages[thumbKey]!),
                         fit: BoxFit.cover,
                         errorBuilder:
                             (_, _, _) => _selectedThumbFallback(theme),
@@ -983,10 +984,7 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
 
       final results = <Map<String, dynamic>>[];
       for (final video in videos) {
-        final relativePath = await ImageUtils.saveImage(
-          File(video.path),
-          widget.saveDirectory,
-        );
+        final relativePath = (await SdkMediaService.importPicked(video)).reference;
         debugPrint('视频保存完成，相对路径: $relativePath');
         results.add({'url': relativePath, 'bytes': null});
       }

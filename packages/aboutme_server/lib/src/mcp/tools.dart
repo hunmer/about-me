@@ -26,6 +26,24 @@ Map<String, dynamic> _arrayProp([String? description]) => {
 
 /// 工具定义列表（与 nodejs getToolDefinitions 一致）。
 final List<Map<String, dynamic>> toolDefinitions = [
+  {
+    'name': 'aboutme_data_call',
+    'description':
+        '按 SDK 动作定义执行查询或命令，参数与 local/REST 一致；写入支持 expectedVersion/clientMutationId。',
+    'inputSchema': _schema(
+      {
+        'pluginId': _prop('string'),
+        'action': _prop('string'),
+        'params': {'type': 'object', 'additionalProperties': true},
+      },
+      ['pluginId', 'action'],
+    ),
+  },
+  {
+    'name': 'aboutme_data_capabilities',
+    'description': '读取 SDK 能力、版本及动作列表',
+    'inputSchema': _schema({}),
+  },
   // Chat
   {'name': 'aboutme_chat_getChannels', 'description': '获取聊天频道列表', 'inputSchema': _schema({'offset': _prop('number', '偏移量'), 'count': _prop('number', '数量限制')})},
   {'name': 'aboutme_chat_createChannel', 'description': '创建新的聊天频道', 'inputSchema': _schema({'name': _prop('string', '频道名称'), 'description': _prop('string', '频道描述')}, ['name'])},
@@ -127,6 +145,21 @@ Future<(String, bool)> dispatchTool(
   String name,
   Map<String, dynamic> args,
 ) async {
+  if (name == 'aboutme_data_capabilities')
+    return (jsonEncode(dataCapabilities()), false);
+  if (name == 'aboutme_data_call') {
+    if (args['pluginId'] is! String ||
+        args['action'] is! String ||
+        (args.containsKey('params') && args['params'] is! Map))
+      return ('参数格式错误', true);
+    final result = await invoker.invokeAction(
+      data,
+      args['pluginId'] as String,
+      args['action'] as String,
+      Map<String, dynamic>.from(args['params'] as Map? ?? {}),
+    );
+    return (jsonEncode(result), result['success'] != true);
+  }
   Future<Map<String, dynamic>> call(
     String method,
     String path, {

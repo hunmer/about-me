@@ -41,14 +41,17 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
   /// 汇总应用存储内各目录的图片元信息，最近修改的在前
   Future<void> _loadImages() async {
     try {
-      final infos = await globalStorage.listFileInfos('');
+      final infos = [
+        ...await globalStorage.listFileInfos(''),
+        ...await SdkMediaService.listMedia('image/'),
+      ];
 
       final imageKeys = <String>{};
       final images = <StorageFileInfo>[];
       for (final info in infos) {
         // 统一正斜杠，屏蔽本地(Windows)与远端路径分隔符差异
         final key = info.path.replaceAll(r'\', '/');
-        if (!_isImageExtension(key)) {
+        if (ImageUtils.sdkAssetId(key) == null && !_isImageExtension(key)) {
           continue;
         }
         imageKeys.add(key);
@@ -87,6 +90,7 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
 
   /// 图片所属的顶层目录（插件维度），如 chat/chat_files/x.jpg -> chat
   String? _pluginDirOf(String key) {
+    if (ImageUtils.sdkAssetId(key) != null) return null;
     final index = key.indexOf('/');
     return index > 0 ? key.substring(0, index) : null;
   }
@@ -167,6 +171,7 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
 
   /// 压缩图片的伴生缩略图 key（存在时作为 thumbUrl 返回）
   String? _thumbUrlFor(String key) {
+    if (ImageUtils.sdkAssetId(key) != null) return null;
     final dir = path.dirname(key);
     final name = path.basenameWithoutExtension(key);
     final ext = path.extension(key);
@@ -185,7 +190,7 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
     final bytes = await ImageUtils.readStorageBytes(key);
     if (mounted) {
       Navigator.of(context).pop(<String, dynamic>{
-        'url': './$key',
+        'url': ImageUtils.sdkAssetId(key) != null ? key : './$key',
         'thumbUrl': _thumbUrlFor(key),
         'bytes': bytes,
       });
@@ -205,7 +210,7 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
     for (final key in _selected) {
       final bytes = await ImageUtils.readStorageBytes(key);
       results.add({
-        'url': './$key',
+        'url': ImageUtils.sdkAssetId(key) != null ? key : './$key',
         'thumbUrl': _thumbUrlFor(key),
         'bytes': bytes,
       });
@@ -466,18 +471,14 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
               horizontal: theme.spacing.md,
               vertical: theme.spacing.sm,
             ),
-            color: pressed
-                ? theme.surfaceAlt.withValues(alpha: 0.7)
-                : null,
+            color: pressed ? theme.surfaceAlt.withValues(alpha: 0.7) : null,
             child: Row(
               children: [
                 DsIcon(icon, size: 18, color: color ?? theme.text),
                 SizedBox(width: theme.spacing.sm),
                 Text(
                   label,
-                  style: DsTypography.body.copyWith(
-                    color: color ?? theme.text,
-                  ),
+                  style: DsTypography.body.copyWith(color: color ?? theme.text),
                 ),
               ],
             ),
@@ -518,20 +519,27 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
   }
 
   /// 编辑图片：单张直接进编辑器，多张批量进（缩略图条切换）；
-  /// savePath 指向原图（写回原位），完成后失效缓存并刷新网格
+  /// 资源图写回原引用；旧目录图片没有可写回的稳定引用，
+  /// 编辑产物保存为新资源，完成后失效缓存并刷新网格
   Future<void> _editImages(List<String> keys) async {
-    final urls = [for (final k in keys) './$k'];
+    final urls = [
+      for (final k in keys) ImageUtils.sdkAssetId(k) != null ? k : './$k',
+    ];
     if (urls.length == 1) {
       await showPhotoEditor(
         context,
         imageUrl: urls.first,
-        savePath: urls.first,
+        savePath: ImageUtils.sdkAssetId(keys.first) != null ? urls.first : null,
       );
     } else {
       await showPhotoEditorList(
         context,
         items: [
-          for (final u in urls) PhotoEditorItem(url: u, savePath: u),
+          for (var i = 0; i < urls.length; i++)
+            PhotoEditorItem(
+              url: urls[i],
+              savePath: ImageUtils.sdkAssetId(keys[i]) != null ? urls[i] : null,
+            ),
         ],
       );
     }
@@ -570,26 +578,25 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
     );
     if (confirmed != true) return;
 
+    final deleted = <String>[];
     for (final key in keys) {
-      // 伴生缩略图（dirname/name.thumb.ext）一并清理
-      final dir = path.dirname(key);
-      final name = path.basenameWithoutExtension(key);
-      final ext = path.extension(key);
-      final thumbKey = '$dir/$name.thumb$ext';
       try {
-        await globalStorage.deleteFile(key);
-        await globalStorage.deleteFile(thumbKey);
+        final id = ImageUtils.sdkAssetId(key);
+        if (id == null) throw UnsupportedError('旧图片需要先迁移，暂不支持从资源库删除');
+        await AboutmeDataService.instance.data.assets.remove(id);
+        deleted.add(key);
       } catch (e) {
         debugPrint('删除图片失败: $key, $e');
+        if (mounted) Toast.error('删除失败：$e');
       }
     }
     if (!mounted) return;
     setState(() {
-      _allInfos.removeWhere((e) => keys.contains(e.path));
-      _imageKeySet.removeAll(keys);
-      _selected.removeWhere(keys.contains);
+      _allInfos.removeWhere((e) => deleted.contains(e.path));
+      _imageKeySet.removeAll(deleted);
+      _selected.removeWhere(deleted.contains);
     });
-    Toast.success('image_picker_deleted'.tr);
+    if (deleted.isNotEmpty) Toast.success('image_picker_deleted'.tr);
   }
 
   /// 多选确认栏：左侧已选缩略图横滑条（右上 × 移除、长按拖拽排序）
@@ -623,11 +630,8 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
           // 批量操作菜单：编辑全部已选 / 删除全部已选
           DSPopover(
             width: 168,
-            contentBuilder: (popoverContext, close) => _imageMenu(
-              popoverContext,
-              close,
-              List<String>.of(_selected),
-            ),
+            contentBuilder: (popoverContext, close) =>
+                _imageMenu(popoverContext, close, List<String>.of(_selected)),
             child: DSIconButton(
               icon: DsIconKind.dots,
               size: 36,

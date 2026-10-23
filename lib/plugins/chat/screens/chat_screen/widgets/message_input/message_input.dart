@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:flutter/material.dart';
@@ -58,15 +57,15 @@ class _MessageInputState extends State<MessageInput> {
   TencentASRService? _recognitionService;
 
   /// 快捷工具栏常驻动作 id（持久化，勾选入口见动作抽屉 header）
-  static const String _quickActionIdsKey = 'chat/quick_toolbar_actions';
+
   static const Set<String> _defaultQuickActionIds = {'photo', 'video'};
   Set<String> _quickActionIds = _defaultQuickActionIds;
 
   Future<void> _loadQuickActionIds() async {
     try {
-      final text = await AboutmeDataService.instance
-          .readPathText(_quickActionIdsKey);
-      final list = jsonDecode(text);
+      final response = await AboutmeDataService.instance.get('chat', 'getQuickActions');
+      if (response['success'] != true) throw StateError(response['error'].toString());
+      final list = response['data'];
       if (list is List && list.every((e) => e is String)) {
         if (mounted) setState(() => _quickActionIds = {...list.cast<String>()});
       }
@@ -75,9 +74,10 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  void _setQuickActionIds(Set<String> ids) {
-    setState(() => _quickActionIds = ids);
-    AboutmeDataService.instance.writePath(_quickActionIdsKey, ids.toList());
+  void _setQuickActionIds(Set<String> ids) async {
+    final response = await AboutmeDataService.instance.call('chat', 'updateQuickActions', {'ids': ids.toList()});
+    if (response['success'] != true) { debugPrint('[Chat] 保存快捷动作失败: ${response['error']}'); return; }
+    if (mounted) setState(() => _quickActionIds = ids);
   }
 
   @override

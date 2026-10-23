@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/chat/models/channel.dart';
@@ -8,30 +9,53 @@ import '../../../../../../utils/audio_service.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 class ChatScreenController extends ChangeNotifier {
-  // 重新加载消息列表
-  void reloadMessages() async {
-    final channelMessages = await chatPlugin.channelService.getChannelMessages(
-      channel.id,
-    );
-    if (channelMessages != null) {
-      // 更新完整消息列表
-      allMessages = List<Message>.from(channelMessages)
-        ..sort((a, b) => b.date.compareTo(a.date));
-      debugPrint('[ChatSync] reload channel=${channel.id} messages=${allMessages.length}');
+  final String channelId;
+  final Channel _initialChannel;
+  Channel get channel =>
+      chatPlugin.channelService.channelById(channelId) ?? _initialChannel;
+  StreamSubscription<List<Message>>? _messageSubscription;
+  bool _disposed = false;
+  int _pages = 1;
+  Object? loadError;
 
-      // 如果新消息数量超过了当前显示范围，调整索引以包含新消息
-      if (currentEndIndex < allMessages.length) {
-        // 保持当前起始索引，调整结束索引以包含所有新消息
-        currentEndIndex = allMessages.length;
-      }
+  void reloadMessages() => _subscribeMessages();
 
-      // 重新加载当前显示范围内的消息
-      _loadMessagesInRange();
-      notifyListeners();
-    }
+  void _subscribeMessages() {
+    _messageSubscription?.cancel();
+    isLoading = true;
+    _messageSubscription = chatPlugin.channelService
+        .watchMessages(
+          channelId,
+          pages: _pages,
+          throughMessageId: autoScroll ? initialMessage?.id : null,
+        )
+        .listen(
+          (items) {
+            if (_disposed) return;
+            allMessages = items;
+            isLoading = false;
+            loadError = null;
+            currentStartIndex = 0;
+            currentEndIndex = items.length;
+            _loadMessagesInRange();
+            if (autoScroll && initialMessage != null) {
+              final target = initialMessage!;
+              autoScroll = false;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!_disposed) scrollToMessage(target);
+              });
+            }
+          },
+          onError: (Object error) {
+            if (_disposed) return;
+            isLoading = false;
+            loadError = error;
+            debugPrint('[Chat] 消息查询失败 channel=$channelId: $error');
+            notifyListeners();
+          },
+        );
   }
 
-  final Channel channel;
   final ChatPlugin chatPlugin;
   final AutoScrollController scrollController = AutoScrollController();
   final _audioService = AudioService();
@@ -62,108 +86,20 @@ class ChatScreenController extends ChangeNotifier {
   late User currentUser;
 
   ChatScreenController({
-    required this.channel,
+    required Channel channel,
     required this.chatPlugin,
     this.initialMessage,
     this.highlightMessage,
     this.autoScroll = false,
-  }) {
+  }) : channelId = channel.id,
+       _initialChannel = channel {
     // 初始化时计算并加载最后一页
     _initializeAndLoadLastPage();
     _setupScrollListener();
     _initializeCurrentUser();
   }
 
-  void _initializeAndLoadLastPage() async {
-    // 获取最新的消息总数
-    debugPrint('Searching for channel with id: ${channel.id}');
-    debugPrint(
-      'Available channels: ${chatPlugin.channelService.channels.map((c) => c.id).join(', ')}',
-    );
-    // 查找当前频道
-    if (!chatPlugin.channelService.channels.any((c) => c.id == channel.id)) {
-      debugPrint('Channel not found: ${channel.id}');
-      return;
-    }
-
-    // 获取完整消息列表
-    final channelMessages = await chatPlugin.channelService.getChannelMessages(
-      channel.id,
-    );
-    if (channelMessages == null) {
-      debugPrint('Channel messages not found');
-      return;
-    }
-
-    // 按时间倒序排序
-    allMessages = List<Message>.from(channelMessages)
-      ..sort((a, b) => b.date.compareTo(a.date));
-
-    debugPrint('Total messages: ${allMessages.length}');
-
-    // 如果需要定位到特定消息
-    if (initialMessage != null && autoScroll) {
-      _isLocatingMessage = true; // 设置定位标志
-      final targetIndex = allMessages.indexWhere(
-        (m) => m.id == initialMessage!.id,
-      );
-      if (targetIndex != -1) {
-        // 计算显示范围：目标消息前后各 pageSize/2 条消息
-        final halfPageSize = (pageSize / 2).floor();
-        currentStartIndex = (targetIndex - halfPageSize).clamp(
-          0,
-          allMessages.length,
-        );
-        currentEndIndex = (targetIndex + halfPageSize).clamp(
-          0,
-          allMessages.length,
-        );
-
-        // 如果目标消息接近列表末尾，调整显示范围
-        if (targetIndex > allMessages.length - halfPageSize) {
-          currentStartIndex = (allMessages.length - pageSize).clamp(
-            0,
-            allMessages.length,
-          );
-          currentEndIndex = allMessages.length;
-        }
-
-        debugPrint(
-          'Target message index: $targetIndex, display range: $currentStartIndex-$currentEndIndex',
-        );
-
-        // 加载显示范围内的消息
-        _loadMessagesInRange();
-
-        // 延迟滚动到目标消息，等待markdown渲染完成
-        // 初始延迟100ms用于布局，然后额外延迟500ms用于markdown渲染
-        Future.delayed(const Duration(milliseconds: 600), () {
-          final displayIndex = targetIndex - currentStartIndex;
-          if (displayIndex >= 0 && displayIndex < messages.length) {
-            _isNavigatingToMessage = true; // 设置导航标志防止滚动监听干扰
-            scrollToMessageAtDisplayIndex(
-              displayIndex,
-              preferBeforePosition: false,
-            );
-
-            // 延迟重置标志，等待滚动动画完成
-            Future.delayed(const Duration(milliseconds: 500), () {
-              _isNavigatingToMessage = false;
-              _isLocatingMessage = false; // 重置定位标志
-            });
-          }
-        });
-      } else {
-        debugPrint('Target message not found in all messages');
-        // 如果没找到目标消息，显示最新消息
-        _loadLatestMessages();
-      }
-    }
-    // 如果不需要定位到特定消息，则加载最新消息
-    else {
-      _loadLatestMessages();
-    }
-  }
+  void _initializeAndLoadLastPage() => _subscribeMessages();
 
   void _initializeCurrentUser() {
     currentUser = chatPlugin.userService.currentUser;
@@ -214,18 +150,6 @@ class ChatScreenController extends ChangeNotifier {
     }
   }
 
-  /// 加载最新消息
-  void _loadLatestMessages() {
-    currentStartIndex = 0;
-    currentEndIndex = (pageSize).clamp(0, allMessages.length);
-    _loadMessagesInRange();
-
-    // 滚动到最新消息
-    Future.delayed(const Duration(milliseconds: 100), () {
-      requestScrollToLatest();
-    });
-  }
-
   /// 在显示列表中滚动到指定索引（使用scroll_to_index）
   Future<void> scrollToMessageAtDisplayIndex(
     int displayIndex, {
@@ -236,10 +160,9 @@ class ChatScreenController extends ChangeNotifier {
         await scrollController.scrollToIndex(
           displayIndex,
           duration: const Duration(milliseconds: 300),
-          preferPosition:
-              preferBeforePosition
-                  ? AutoScrollPosition.begin
-                  : AutoScrollPosition.end,
+          preferPosition: preferBeforePosition
+              ? AutoScrollPosition.begin
+              : AutoScrollPosition.end,
         );
       } catch (e) {
         debugPrint('滚动到消息索引时发生错误: $e');
@@ -278,7 +201,8 @@ class ChatScreenController extends ChangeNotifier {
 
     // 如果已经到达列表末尾，不加载更多
     if (currentEndIndex >= allMessages.length) {
-      debugPrint('Already at the end of messages');
+      _pages++;
+      _subscribeMessages();
       return;
     }
 
@@ -420,6 +344,11 @@ class ChatScreenController extends ChangeNotifier {
     }
   }
 
+  @override
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
+
   /// 请求滚动到最新消息
   void requestScrollToLatest() {
     // 如果正在定位消息，不执行自动滚动
@@ -434,7 +363,7 @@ class ChatScreenController extends ChangeNotifier {
   /// 尝试滚动到最新消息（使用scroll_to_index）
   Future<void> _tryScrollToLatest() async {
     // 如果不需要滚动，直接返回
-    if (!_needsScroll) return;
+    if (_disposed || !_needsScroll) return;
 
     // 如果正在定位消息，取消滚动
     if (_isLocatingMessage) {
@@ -508,15 +437,13 @@ class ChatScreenController extends ChangeNotifier {
         replyTo: replyTo,
       );
 
-      // 将新消息添加到本地消息列表
-      messages.insert(0, newMessage);
-
-      // 确保消息被添加到频道
-      await chatPlugin.channelService.addMessage(channel.id, newMessage);
+      final committed = await chatPlugin.channelService.addMessage(
+        channelId,
+        newMessage,
+      );
 
       // 清除草稿
       draftController.clear();
-      await chatPlugin.channelService.saveDraft(channel.id, '');
 
       // 请求滚动到最新消息
       // 如果之前在定位消息，发送新消息后应该恢复正常的自动滚动
@@ -537,7 +464,7 @@ class ChatScreenController extends ChangeNotifier {
           }
         });
       }
-      return newMessage;
+      return committed;
     } catch (e) {
       debugPrint('Error sending message: $e');
       return null;
@@ -549,29 +476,20 @@ class ChatScreenController extends ChangeNotifier {
   }
 
   Future<void> clearMessages() async {
-    try {
-      // 清空内存中的消息
-      messages.clear();
-
-      // 删除存储中的消息
-      await chatPlugin.channelService.deleteChannelMessages(channel.id);
-
-      // 保存空消息列表到存储
-      await chatPlugin.channelService.saveMessages(channel.id, messages);
-
-      // 消息发送完成后，确保在主线程中更新UI
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        notifyListeners();
-      });
-    } catch (e) {
-      debugPrint('Error clearing messages: $e');
-      // 如果清空失败，重新加载最新消息
-      _loadLatestMessages();
-    }
+    await chatPlugin.channelService.deleteChannelMessages(channel.id);
+    if (_disposed) return;
+    allMessages.clear();
+    messages.clear();
+    notifyListeners();
   }
+
+  void retryMessages() => reloadMessages();
 
   @override
   void dispose() {
+    _disposed = true;
+    _messageSubscription?.cancel();
+    editingController.dispose();
     draftController.dispose();
     scrollController.dispose();
     focusNode.dispose();

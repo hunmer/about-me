@@ -1,3 +1,4 @@
+import '../widgets/sdk_query_status.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -41,7 +42,12 @@ class _NotesMainViewState extends NotesMainViewState
       ),
       largeTitle: 'notes_myNotes'.tr,
 
-      body: DSThemeBridge(child: buildBody()),
+      body: NotesQueryStatus(
+        status: plugin.controller.queryStatus,
+        error: plugin.controller.queryError,
+        retry: plugin.controller.reloadData,
+        child: DSThemeBridge(child: buildBody()),
+      ),
       enableLargeTitle: true,
       enableSearchBar: true,
       enableMultiFilter: true,

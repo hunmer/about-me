@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import 'storage_errors.dart';
+import 'legacy_write_policy.dart';
 
 class RawFileMetadata {
   const RawFileMetadata({
@@ -95,6 +96,8 @@ class LocalFileStorage {
           segment.isEmpty ||
           segment == '.' ||
           segment == '..' ||
+          segment.toLowerCase() == '.sdk' ||
+          RegExp(r'[. ]$').hasMatch(segment) ||
           windowsDrive.hasMatch(segment),
     )) {
       throw const StoragePathException();
@@ -183,6 +186,7 @@ class LocalFileStorage {
     String? ifNoneMatch,
     bool force = false,
   }) {
+    LegacyWritePolicy.check(filePath);
     return _withRawFileLock('$userId:$filePath', () async {
       final root = p.canonicalize(getStorageDir(userId));
       final fullPath = resolveStoragePath(userId, filePath);
@@ -243,6 +247,7 @@ class LocalFileStorage {
     String? ifMatch,
     bool force = false,
   }) {
+    LegacyWritePolicy.check(filePath);
     return _withRawFileLock('$userId:$filePath', () async {
       final existing = await getRawFileMetadata(userId, filePath);
       if (existing == null) return RawFileDeleteStatus.notFound;
@@ -273,6 +278,7 @@ class LocalFileStorage {
       // 统一数据区为用户根目录：过滤隐藏文件（.file_index.json 等）
       if (name.startsWith('.')) return;
       final relative = p.relative(file.path, from: root).replaceAll('\\', '/');
+      if (relative.startsWith('.sdk/') || name.contains('.sdk-')) return;
       if (normalizedPrefix.isEmpty || relative.startsWith(normalizedPrefix)) {
         files.add(
           RawFileEntry(
@@ -288,6 +294,7 @@ class LocalFileStorage {
   }
 
   Future<int> clearRawFiles(String userId, String prefix) async {
+    LegacyWritePolicy.check(prefix, prefix: true);
     final normalizedPrefix = prefix.replaceAll(RegExp(r'/+$'), '');
     if (normalizedPrefix.isEmpty) throw const StoragePathException();
     final files = await listRawFiles(userId, prefix: normalizedPrefix);

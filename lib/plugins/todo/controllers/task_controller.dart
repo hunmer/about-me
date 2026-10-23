@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/todo/models/models.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
@@ -40,16 +43,23 @@ class TaskController extends ChangeNotifier {
   // 参数保留以兼容既有调用方；数据操作已全部走统一数据入口
   // ignore: avoid_unused_constructor_parameters
   TaskController(StorageManager storage, String storageDir) {
-    _loadTasks();
-    // 远端变更（REST/MCP/其它设备写入）→ 局部重载刷新
-    _cancelDataSync = AboutmeDataService.instance.onPluginChanged(
-      'todo',
-      reload,
-    );
+    _subscription = AboutmeDataService.instance.data
+        .watch('todo', 'getSnapshot')
+        .listen((snapshot) {
+          queryStatus = snapshot.status;
+          loadError = snapshot.error;
+          if (snapshot.status == QueryStatus.data && snapshot.result != null)
+            _apply(snapshot.result!);
+          else
+            notifyListeners();
+        });
   }
 
-  /// 数据同步事件订阅取消句柄
-  VoidCallback? _cancelDataSync;
+  StreamSubscription<QuerySnapshot>? _subscription;
+  QueryStatus queryStatus = QueryStatus.loading;
+  Object? loadError;
+  int? _version;
+  final Map<String, Map<String, dynamic>> _baseline = {};
 
   // Getters
   List<Task> get tasks => _tasks;
@@ -60,14 +70,28 @@ class TaskController extends ChangeNotifier {
   void setViewMode(ViewMode mode) {
     _viewMode = mode;
     notifyListeners();
-    _saveTasks(); // 保存视图模式到存储
+    unawaited(
+      _command('updateSettings', {'viewMode': _viewMode.toString()}).catchError(
+        (Object e) {
+          loadError = e;
+          notifyListeners();
+        },
+      ),
+    );
   }
 
   // 切换视图模式（循环切换 quadrant -> week -> quadrant）
   void toggleViewMode() {
     _viewMode = ViewMode.values[(_viewMode.index + 1) % ViewMode.values.length];
     notifyListeners();
-    _saveTasks(); // 保存视图模式到存储
+    unawaited(
+      _command('updateSettings', {'viewMode': _viewMode.toString()}).catchError(
+        (Object e) {
+          loadError = e;
+          notifyListeners();
+        },
+      ),
+    );
   }
 
   // 设置排序方式
@@ -89,113 +113,108 @@ class TaskController extends ChangeNotifier {
 
   // 实际执行过滤逻辑（纯方法，返回过滤结果）
   List<Task> _applyFilterInternal(Map<String, dynamic> filter) {
-    final filtered =
-        _tasks.where((task) {
-          // 关键词过滤
-          final keyword = filter['keyword'] as String?;
-          if (keyword != null && keyword.isNotEmpty) {
-            // 获取搜索过滤器设置
-            final searchFilters = filter['searchFilters'] as Map<String, bool>?;
+    final filtered = _tasks.where((task) {
+      // 关键词过滤
+      final keyword = filter['keyword'] as String?;
+      if (keyword != null && keyword.isNotEmpty) {
+        // 获取搜索过滤器设置
+        final searchFilters = filter['searchFilters'] as Map<String, bool>?;
 
-            bool keywordMatch = false;
+        bool keywordMatch = false;
 
-            // 根据搜索过滤器设置决定搜索范围
-            if (searchFilters == null || searchFilters.isEmpty) {
-              // 默认搜索所有字段
-              keywordMatch = _matchesKeyword(task, keyword);
-            } else {
-              // 根据过滤器设置逐个检查字段
-              if (searchFilters['title'] == true) {
-                keywordMatch =
-                    keywordMatch ||
-                    task.title.toLowerCase().contains(keyword.toLowerCase());
-              }
-              if (searchFilters['description'] == true && !keywordMatch) {
-                keywordMatch =
-                    task.description != null &&
-                    task.description!.toLowerCase().contains(
-                      keyword.toLowerCase(),
-                    );
-              }
-              if (searchFilters['tag'] == true && !keywordMatch) {
-                keywordMatch = task.tags.any(
-                  (tag) => tag.toLowerCase().contains(keyword.toLowerCase()),
-                );
-              }
-              if (searchFilters['subtask'] == true && !keywordMatch) {
-                keywordMatch = task.subtasks.any(
-                  (subtask) => subtask.title.toLowerCase().contains(
-                    keyword.toLowerCase(),
-                  ),
-                );
-              }
-            }
-
-            if (!keywordMatch) return false;
+        // 根据搜索过滤器设置决定搜索范围
+        if (searchFilters == null || searchFilters.isEmpty) {
+          // 默认搜索所有字段
+          keywordMatch = _matchesKeyword(task, keyword);
+        } else {
+          // 根据过滤器设置逐个检查字段
+          if (searchFilters['title'] == true) {
+            keywordMatch =
+                keywordMatch ||
+                task.title.toLowerCase().contains(keyword.toLowerCase());
           }
+          if (searchFilters['description'] == true && !keywordMatch) {
+            keywordMatch =
+                task.description != null &&
+                task.description!.toLowerCase().contains(keyword.toLowerCase());
+          }
+          if (searchFilters['tag'] == true && !keywordMatch) {
+            keywordMatch = task.tags.any(
+              (tag) => tag.toLowerCase().contains(keyword.toLowerCase()),
+            );
+          }
+          if (searchFilters['subtask'] == true && !keywordMatch) {
+            keywordMatch = task.subtasks.any(
+              (subtask) =>
+                  subtask.title.toLowerCase().contains(keyword.toLowerCase()),
+            );
+          }
+        }
 
-          // 优先级过滤
-          final priority = filter['priority'] as TaskPriority?;
-          if (priority != null && task.priority != priority) {
+        if (!keywordMatch) return false;
+      }
+
+      // 优先级过滤
+      final priority = filter['priority'] as TaskPriority?;
+      if (priority != null && task.priority != priority) {
+        return false;
+      }
+
+      // 标签过滤
+      final tags = filter['tags'] as List<String>?;
+      if (tags != null && tags.isNotEmpty) {
+        final hasAllTags = tags.every((tag) => task.tags.contains(tag));
+        if (!hasAllTags) return false;
+      }
+
+      // 日期范围过滤
+      final filterStartDate = filter['startDate'] as DateTime?;
+      final filterEndDate = filter['endDate'] as DateTime?;
+      if (filterStartDate != null || filterEndDate != null) {
+        // 如果任务没有开始日期和截止日期，则不符合过滤条件
+        if (task.startDate == null && task.dueDate == null) return false;
+
+        // 检查任务的日期范围是否与过滤条件有交集
+        if (filterStartDate != null) {
+          // 如果任务有截止日期，且截止日期早于过滤的开始日期，则不符合条件
+          if (task.dueDate != null && task.dueDate!.isBefore(filterStartDate)) {
             return false;
           }
-
-          // 标签过滤
-          final tags = filter['tags'] as List<String>?;
-          if (tags != null && tags.isNotEmpty) {
-            final hasAllTags = tags.every((tag) => task.tags.contains(tag));
-            if (!hasAllTags) return false;
-          }
-
-          // 日期范围过滤
-          final filterStartDate = filter['startDate'] as DateTime?;
-          final filterEndDate = filter['endDate'] as DateTime?;
-          if (filterStartDate != null || filterEndDate != null) {
-            // 如果任务没有开始日期和截止日期，则不符合过滤条件
-            if (task.startDate == null && task.dueDate == null) return false;
-
-            // 检查任务的日期范围是否与过滤条件有交集
-            if (filterStartDate != null) {
-              // 如果任务有截止日期，且截止日期早于过滤的开始日期，则不符合条件
-              if (task.dueDate != null &&
-                  task.dueDate!.isBefore(filterStartDate)) {
-                return false;
-              }
-              // 如果任务只有开始日期，没有截止日期，且开始日期早于过滤的开始日期，则不符合条件
-              if (task.dueDate == null &&
-                  task.startDate != null &&
-                  task.startDate!.isBefore(filterStartDate)) {
-                return false;
-              }
-            }
-
-            if (filterEndDate != null) {
-              // 如果任务有开始日期，且开始日期晚于过滤的截止日期，则不符合条件
-              if (task.startDate != null &&
-                  task.startDate!.isAfter(filterEndDate)) {
-                return false;
-              }
-              // 如果任务只有截止日期，没有开始日期，且截止日期晚于过滤的截止日期，则不符合条件
-              if (task.startDate == null &&
-                  task.dueDate != null &&
-                  task.dueDate!.isAfter(filterEndDate)) {
-                return false;
-              }
-            }
-          }
-
-          // 完成状态过滤
-          final showCompleted = filter['showCompleted'] as bool? ?? true;
-          final showIncomplete = filter['showIncomplete'] as bool? ?? true;
-          if (!showCompleted && task.status == TaskStatus.done) {
+          // 如果任务只有开始日期，没有截止日期，且开始日期早于过滤的开始日期，则不符合条件
+          if (task.dueDate == null &&
+              task.startDate != null &&
+              task.startDate!.isBefore(filterStartDate)) {
             return false;
           }
-          if (!showIncomplete && task.status != TaskStatus.done) {
+        }
+
+        if (filterEndDate != null) {
+          // 如果任务有开始日期，且开始日期晚于过滤的截止日期，则不符合条件
+          if (task.startDate != null &&
+              task.startDate!.isAfter(filterEndDate)) {
             return false;
           }
+          // 如果任务只有截止日期，没有开始日期，且截止日期晚于过滤的截止日期，则不符合条件
+          if (task.startDate == null &&
+              task.dueDate != null &&
+              task.dueDate!.isAfter(filterEndDate)) {
+            return false;
+          }
+        }
+      }
 
-          return true;
-        }).toList();
+      // 完成状态过滤
+      final showCompleted = filter['showCompleted'] as bool? ?? true;
+      final showIncomplete = filter['showIncomplete'] as bool? ?? true;
+      if (!showCompleted && task.status == TaskStatus.done) {
+        return false;
+      }
+      if (!showIncomplete && task.status != TaskStatus.done) {
+        return false;
+      }
+
+      return true;
+    }).toList();
 
     // 排序
     final sorted = List<Task>.from(filtered);
@@ -210,7 +229,9 @@ class TaskController extends ChangeNotifier {
         (task.description != null &&
             task.description!.toLowerCase().contains(keywordLower)) ||
         task.tags.any((tag) => tag.toLowerCase().contains(keywordLower)) ||
-        task.subtasks.any((subtask) => subtask.title.toLowerCase().contains(keywordLower));
+        task.subtasks.any(
+          (subtask) => subtask.title.toLowerCase().contains(keywordLower),
+        );
   }
 
   // 根据当前排序方式对任务进行排序
@@ -242,70 +263,70 @@ class TaskController extends ChangeNotifier {
     await _loadTasks();
   }
 
-  // 加载任务（经统一数据入口：本地直处理 / 远程 REST 自动决定）
+  void _apply(Map<String, dynamic> response) {
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    final tasks = (data['tasks'] as List)
+        .map((e) => Task.fromJson({...Map<String, dynamic>.from(e),'_sdkVersion':response['version']}))
+        .toList();
+    final history = (data['completedTasks'] as List)
+        .map((e) => Task.fromJson({...Map<String, dynamic>.from(e),'_sdkVersion':response['version']}))
+        .toList();
+    _tasks = tasks;
+    _completedTasks = history;
+    _version = response['version'] as int?;
+    _baseline
+      ..clear()
+      ..addEntries(tasks.map((t) => MapEntry(t.id, t.toJson())));
+    _viewMode = ViewMode.values.firstWhere(
+      (e) => e.toString() == data['viewMode'],
+      orElse: () => ViewMode.quadrant,
+    );
+    queryStatus = QueryStatus.data;
+    loadError = null;
+    _sortTasks();
+    notifyListeners();
+    EventManager.instance.broadcast('todo_cache_updated', Value(_tasks.length));
+  }
+
   Future<void> _loadTasks() async {
-    final data = await AboutmeDataService.instance
-        .readFile('todo', 'tasks.json');
-    if (data is Map<String, dynamic> && data.isNotEmpty) {
-      final List<dynamic> taskList = data['tasks'] as List<dynamic>;
-      _tasks = taskList.map((item) => Task.fromJson(item)).toList();
-
-      // 加载已完成任务历史
-      if (data['completedTasks'] != null) {
-        final List<dynamic> completedTaskList =
-            data['completedTasks'] as List<dynamic>;
-        _completedTasks =
-            completedTaskList.map((item) => Task.fromJson(item)).toList();
-      }
-
-      // 加载视图模式设置
-      if (data['viewMode'] != null) {
-        try {
-          final viewModeStr = data['viewMode'] as String;
-          _viewMode = ViewMode.values.firstWhere(
-            (e) => e.toString() == viewModeStr,
-            orElse: () => ViewMode.quadrant, // 默认四象限视图
-          );
-        } catch (e) {
-          _viewMode = ViewMode.quadrant; // 解析失败时使用默认值
-        }
-      }
-
-      _sortTasks();
-      notifyListeners();
-      // 加载完成（首载/同步重载）后通知外部依赖方（如日期视图网格）重查
-      EventManager.instance.broadcast(
-        'todo_cache_updated',
-        Value(_tasks.length),
+    queryStatus = _tasks.isEmpty ? QueryStatus.loading : QueryStatus.stale;
+    notifyListeners();
+    try {
+      _apply(
+        await AboutmeDataService.instance.data.query('todo', 'getSnapshot'),
       );
+    } catch (e) {
+      queryStatus = QueryStatus.error;
+      loadError = e;
+      notifyListeners();
+      rethrow;
     }
   }
 
-  // 保存任务（经统一数据入口，写回保留完整文件结构）
-  Future<void> _saveTasks() async {
-    final data = {
-      'tasks': _tasks.map((task) => task.toJson()).toList(),
-      'completedTasks': _completedTasks.map((task) => task.toJson()).toList(),
-      'viewMode': _viewMode.toString(), // 保存视图模式设置
-    };
-    await AboutmeDataService.instance.writeFile('todo', 'tasks.json', data);
+  Future<void> _command(
+    String action,
+    Map<String, dynamic> params, {
+    bool versioned = false,
+    int? expectedVersion,
+  }) async {
+    final response = await AboutmeDataService.instance.data
+        .call('todo', action, {
+          ...params,
+          'clientMutationId': const Uuid().v4(),
+          if (versioned && _version != null) 'expectedVersion': expectedVersion ?? _version,
+        });
+    if (response['success'] != true) throw QueryFailure(response);
+    await _loadTasks();
+    await _syncWidget();
   }
 
   // 添加任务
   Future<void> addTask(Task task) async {
-    _tasks.add(task);
-    _sortTasks();
-
-    notifyListeners();
-    await _saveTasks();
-    // 发送添加事件（通知Listeners之后发送，确保UI已更新）
-    _notifyEvent('added', task);
-    await _syncWidget();
-
-    // 同步任务到系统日历（如果有开始日期）
-    if (task.startDate != null || task.dueDate != null) {
-      _syncTaskToSystemCalendar(task);
-    }
+    await _command('create', task.toJson());
+    final committed = _tasks.firstWhere((t) => t.id == task.id);
+    _notifyEvent('added', committed);
+    if (committed.startDate != null || committed.dueDate != null)
+      await _syncTaskToSystemCalendar(committed);
   }
 
   // 创建新任务
@@ -341,20 +362,17 @@ class TaskController extends ChangeNotifier {
 
   // 更新任务
   Future<void> updateTask(Task task) async {
-    final index = _tasks.indexWhere((t) => t.id == task.id);
-    if (index != -1) {
-      final oldTask = _tasks[index];
-      _tasks[index] = task;
-      _sortTasks();
-      notifyListeners();
-      await _saveTasks();
-      // 发送更新事件（通知Listeners之后发送，确保UI已更新）
-      _notifyEvent('updated', task);
-      await _syncWidget();
-
-      // 同步更新到系统日历
-      _syncUpdateToSystemCalendar(oldTask, task);
-    }
+    final before = task.originalJson ?? _baseline[task.id];
+    if (before == null) throw StateError('Read task before editing');
+    final oldTask = Task.fromJson(before);
+    final patch = <String, dynamic>{
+      for (final e in task.toJson().entries)
+        if (jsonEncode(before[e.key]) != jsonEncode(e.value)) e.key: e.value,
+    };
+    await _command('update', {...patch, 'id': task.id}, versioned: true);
+    final committed = _tasks.firstWhere((t) => t.id == task.id);
+    _notifyEvent('updated', committed);
+    await _syncUpdateToSystemCalendar(oldTask, committed);
   }
 
   // 已完成任务历史
@@ -365,86 +383,38 @@ class TaskController extends ChangeNotifier {
   // 删除任务
   Future<void> deleteTask(String taskId) async {
     final task = _tasks.firstWhere((t) => t.id == taskId);
-    bool wasCompleted = task.status == TaskStatus.done;
-    if (wasCompleted) {
-      // 如果是已完成任务，添加到历史记录
-      _completedTasks.add(task.copyWith(completedDate: DateTime.now()));
-    }
-    _tasks.removeWhere((task) => task.id == taskId);
-    notifyListeners();
-    await _saveTasks();
-    // 发送事件（通知Listeners之后发送，确保UI已更新）
-    if (wasCompleted) {
-      _notifyEvent('completed', task);
-    }
+    await _command('delete', {'id': taskId}, versioned: true);
+    if (task.status == TaskStatus.done) _notifyEvent('completed', task);
     _notifyEvent('deleted', task);
-    await _syncWidget();
-
-    // 从系统日历删除
-    _syncDeleteFromSystemCalendar(task);
+    await _syncDeleteFromSystemCalendar(task);
   }
 
   // 从历史记录中删除任务
   Future<void> removeFromHistory(String taskId) async {
-    _completedTasks.removeWhere((task) => task.id == taskId);
-    notifyListeners();
-    await _saveTasks();
-    await _syncWidget();
+    await _command('removeHistory', {'id': taskId}, versioned: true);
   }
 
   // 清空历史记录
-  void clearHistory() {
-    _completedTasks.clear();
-    notifyListeners();
-    _saveTasks();
-    _syncWidget();
+  Future<void> clearHistory() async {
+    await _command('clearHistory', {}, versioned: true);
   }
 
   // 更新任务状态
   Future<void> updateTaskStatus(String taskId, TaskStatus status) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index != -1) {
-      final task = _tasks[index];
-      final oldStatus = task.status;
-      final isCompleting = status == TaskStatus.done;
-
-      // 如果任务正在进行中，先停止计时（完成状态由 completeTask 统一停止）
-      if (oldStatus == TaskStatus.inProgress && !isCompleting) {
-        task.stopTimer();
-      }
-
-      task.status = status;
-
-      // 如果新状态是进行中，开始计时
-      if (status == TaskStatus.inProgress) {
-        task.startTimer();
-      }
-
-      // 如果任务标记为完成，停止计时并自动标记所有子任务为完成
-      if (isCompleting) {
-        task.completeTask();
-        for (var subtask in task.subtasks) {
-          subtask.isCompleted = true;
-        }
-      }
-
-      notifyListeners();
-      await _saveTasks();
-      // 状态变更（完成/取消完成）影响日期卡片的可见性，需广播通知
-      _notifyEvent('updated', task);
-      await _syncWidget();
-    }
+    await _command('setStatus', {
+      'id': taskId,
+      'status': status.index,
+    }, versioned: true);
+    _notifyEvent('updated', _tasks.firstWhere((t) => t.id == taskId));
   }
 
   // 添加子任务
   Future<void> addSubtask(String taskId, String title) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index != -1) {
-      _tasks[index].subtasks.add(Subtask(id: const Uuid().v4(), title: title));
-      notifyListeners();
-      await _saveTasks();
-      await _syncWidget();
-    }
+    await _command('addSubtask', {
+      'id': taskId,
+      'title': title,
+      'subtaskId': const Uuid().v4(),
+    });
   }
 
   // 更新子任务状态
@@ -453,29 +423,11 @@ class TaskController extends ChangeNotifier {
     String subtaskId,
     bool isCompleted,
   ) async {
-    final taskIndex = _tasks.indexWhere((t) => t.id == taskId);
-    if (taskIndex != -1) {
-      final subtaskIndex = _tasks[taskIndex].subtasks.indexWhere(
-        (s) => s.id == subtaskId,
-      );
-      if (subtaskIndex != -1) {
-        _tasks[taskIndex].subtasks[subtaskIndex].isCompleted = isCompleted;
-
-        // 检查所有子任务是否都已完成，如果是，则将任务标记为完成
-        final allCompleted = _tasks[taskIndex].subtasks.every(
-          (s) => s.isCompleted,
-        );
-        if (allCompleted && _tasks[taskIndex].subtasks.isNotEmpty) {
-          _tasks[taskIndex].status = TaskStatus.done;
-        } else if (_tasks[taskIndex].status == TaskStatus.done) {
-          _tasks[taskIndex].status = TaskStatus.inProgress;
-        }
-
-        notifyListeners();
-        await _saveTasks();
-        await _syncWidget();
-      }
-    }
+    await _command('setSubtaskStatus', {
+      'id': taskId,
+      'subtaskId': subtaskId,
+      'isCompleted': isCompleted,
+    });
   }
 
   // 按标签获取任务
@@ -494,22 +446,12 @@ class TaskController extends ChangeNotifier {
 
   // 添加标签到任务
   Future<void> addTagToTask(String taskId, String tag) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index != -1 && !_tasks[index].tags.contains(tag)) {
-      _tasks[index].tags.add(tag);
-      notifyListeners();
-      await _saveTasks();
-    }
+    await _command('changeTag', {'id': taskId, 'tag': tag});
   }
 
   // 从任务中移除标签
   Future<void> removeTagFromTask(String taskId, String tag) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index != -1) {
-      _tasks[index].tags.remove(tag);
-      notifyListeners();
-      await _saveTasks();
-    }
+    await _command('changeTag', {'id': taskId, 'tag': tag, 'remove': true});
   }
 
   // 获取指定状态的任务数量
@@ -569,7 +511,9 @@ class TaskController extends ChangeNotifier {
       }
 
       // ✅ 检查是否已存在映射关系，避免重复同步
-      final existingSystemId = mappingManager.getSystemEventId('todo_${task.id}');
+      final existingSystemId = mappingManager.getSystemEventId(
+        'todo_${task.id}',
+      );
       if (existingSystemId != null) {
         debugPrint('TaskController: 任务 "${task.title}" 已存在映射关系，跳过同步');
         return;
@@ -605,7 +549,9 @@ class TaskController extends ChangeNotifier {
           },
           systemId: result.value!,
         );
-        debugPrint('TaskController: 任务 "${task.title}" 同步到系统日历成功，系统ID: ${result.value}');
+        debugPrint(
+          'TaskController: 任务 "${task.title}" 同步到系统日历成功，系统ID: ${result.value}',
+        );
       } else {
         debugPrint('TaskController: 任务 "${task.title}" 同步到系统日历失败');
       }
@@ -652,7 +598,9 @@ class TaskController extends ChangeNotifier {
       }
 
       // 通过映射关系删除旧事件
-      final oldSystemEventId = mappingManager.getSystemEventId('todo_${oldTask.id}');
+      final oldSystemEventId = mappingManager.getSystemEventId(
+        'todo_${oldTask.id}',
+      );
       if (oldSystemEventId != null) {
         await systemCalendar.deleteEventFromSystem(oldSystemEventId);
         await mappingManager.removeMapping('todo_${oldTask.id}');
@@ -679,7 +627,9 @@ class TaskController extends ChangeNotifier {
       // 通过映射关系获取系统日历ID
       final systemEventId = mappingManager.getSystemEventId('todo_${task.id}');
       if (systemEventId != null) {
-        final success = await systemCalendar.deleteEventFromSystem(systemEventId);
+        final success = await systemCalendar.deleteEventFromSystem(
+          systemEventId,
+        );
         if (success) {
           debugPrint('TaskController: 任务 "${task.title}" 已从系统日历删除');
 
@@ -698,7 +648,7 @@ class TaskController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _cancelDataSync?.call();
+    _subscription?.cancel();
     super.dispose();
   }
 }

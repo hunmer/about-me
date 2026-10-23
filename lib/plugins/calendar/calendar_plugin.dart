@@ -114,8 +114,9 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
     calendarUseCase = CalendarUseCase(repository);
 
     // 从存储中读取上次使用的视图
-    final viewData = await storageManager.read('calendar/calendar_last_view');
-    final String? lastView = viewData?['view'] as String?;
+    await controller.reloadEvents();
+    final viewData = await controller.getPreferences();
+    final String? lastView = viewData['view'] as String?;
     if (lastView != null) {
       sfController.view = _getCalendarViewFromString(lastView);
     } else {
@@ -138,9 +139,7 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
     final eventId = created['id'] as String?;
     if (eventId == null) return null;
     return () {
-      final event = controller.events.firstWhereOrNull(
-        (e) => e.id == eventId,
-      );
+      final event = controller.events.firstWhereOrNull((e) => e.id == eventId);
       if (event == null) return;
       showEventDetails(context, event);
     };
@@ -222,9 +221,7 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
     VoidCallback? updateRouteContext,
   ) async {
     // 保存最后使用的视图
-    await storageManager.write('calendar/calendar_last_view', {
-      'view': _getStringFromCalendarView(sfController.view!),
-    });
+    await controller.setView(_getStringFromCalendarView(sfController.view!));
 
     // 更新路由上下文
     if (updateRouteContext != null) {
@@ -624,8 +621,7 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> uninstall() async {
-    await storageManager.delete('calendar/calendar_events');
-    await storageManager.delete('calendar/calendar_last_view');
+    await controller.resetData();
   }
 }
 

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
@@ -16,24 +19,77 @@ class CalendarController extends ChangeNotifier {
   List<CalendarEvent> _systemEvents = []; // 系统日历事件缓存
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedMonth = DateTime.now();
-  VoidCallback? _cancelDataSync;
-
+  StreamSubscription<QuerySnapshot>? _subscription;
+  Object? queryError;
+  int? _version;
+  final _originals = <String, Map<String, dynamic>>{};
+  final _versions = <String, int?>{};
+  AboutmeData get _data => AboutmeDataService.instance.data;
   CalendarController(this._storage) {
-    _loadEvents();
-    // cleanupOrphanedSystemEvents();
-
-    // 订阅插件数据变更（远端写入后局部刷新）
-    _cancelDataSync = AboutmeDataService.instance.onPluginChanged(
-      'calendar',
-      () => reloadEvents(),
-    );
+    _subscription = _data.watch('calendar', 'getSnapshot').listen((snapshot) {
+      if (snapshot.status == QueryStatus.data) _accept(snapshot.result!);
+      if (snapshot.status == QueryStatus.error) {
+        queryError = snapshot.error;
+        notifyListeners();
+      }
+    });
   }
-
   @override
   void dispose() {
-    _cancelDataSync?.call();
-    _cancelDataSync = null;
+    _subscription?.cancel();
     super.dispose();
+  }
+
+  dynamic _result(Map<String, dynamic> response) {
+    if (response['success'] != true) throw QueryFailure(response);
+    _version = response['version'] as int?;
+    return response['data'];
+  }
+
+  void _accept(Map<String, dynamic> response) {
+    final state = _result(response) as Map;
+    final active = (state['events'] as List)
+        .map((r) => CalendarEvent.fromJson(Map<String, dynamic>.from(r as Map)))
+        .toList();
+    final completed = (state['completedEvents'] as List)
+        .map((r) => CalendarEvent.fromJson(Map<String, dynamic>.from(r as Map)))
+        .toList();
+    _events
+      ..clear()
+      ..addAll(active);
+    _completedEvents
+      ..clear()
+      ..addAll(completed);
+    _originals.clear();
+    _versions.clear();
+    for (final row in [...active, ...completed]) {
+      _originals[row.id] = row.toJson();
+      _versions[row.id] = _version;
+    }
+    queryError = null;
+    notifyListeners();
+  }
+
+  Future<dynamic> _command(
+    String action,
+    Map<String, dynamic> params, {
+    bool versioned = false,
+  }) async {
+    try {
+      final result = _result(
+        await _data.call('calendar', action, {
+          ...params,
+          if (versioned && _versions[params['id']] != null)
+            'expectedVersion': _versions[params['id']],
+        }),
+      );
+      await reloadEvents();
+      return result;
+    } catch (e) {
+      queryError = e;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   /// 加载系统日历事件和映射关系
@@ -79,78 +135,51 @@ class CalendarController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 添加事件
-  void addEvent(CalendarEvent event) async {
-    _events.add(event);
-    await _saveEvents();
-    notifyListeners();
-
-    // 触发事件
-    _notifyEvent('added', event);
-
-    // 同步到系统日历
-    _syncToSystemCalendar(event);
-
-    // 同步小组件数据
-    PluginWidgetSyncHelper.instance.syncCalendar();
+  Future<void> addEvent(CalendarEvent event) async {
+    final saved = CalendarEvent.fromJson(
+      Map<String, dynamic>.from(
+        await _command('create', event.toJson()) as Map,
+      ),
+    );
+    _notifyEvent('added', saved);
+    await _syncToSystemCalendar(saved);
+    await PluginWidgetSyncHelper.instance.syncCalendar();
   }
 
-  // 更新事件
-  void updateEvent(CalendarEvent updatedEvent) async {
-    final index = _events.indexWhere((e) => e.id == updatedEvent.id);
-    if (index != -1) {
-      final oldEvent = _events[index];
-      _events[index] = updatedEvent;
-      await _saveEvents();
-      notifyListeners();
-
-      // 触发事件
-      _notifyEvent('updated', updatedEvent);
-
-      // 同步到系统日历
-      await _syncUpdateToSystemCalendar(oldEvent, updatedEvent);
-
-      // 同步小组件数据
-      PluginWidgetSyncHelper.instance.syncCalendar();
-    }
+  Future<void> updateEvent(CalendarEvent event) async {
+    final old = _originals[event.id];
+    if (old == null) throw StateError('日程已失效，请刷新');
+    final json = event.toJson();
+    final patch = {
+      'id': event.id,
+      for (final e in json.entries)
+        if (e.key != 'id' && jsonEncode(e.value) != jsonEncode(old[e.key]))
+          e.key: e.value,
+    };
+    final saved = CalendarEvent.fromJson(
+      Map<String, dynamic>.from(
+        await _command('update', patch, versioned: true) as Map,
+      ),
+    );
+    _notifyEvent('updated', saved);
+    await _syncUpdateToSystemCalendar(CalendarEvent.fromJson(old), saved);
+    await PluginWidgetSyncHelper.instance.syncCalendar();
   }
 
-  // 删除事件（未完成与已完成列表都会清理）
-  void deleteEvent(CalendarEvent event) async {
-    _events.removeWhere((e) => e.id == event.id);
-    _completedEvents.removeWhere((e) => e.id == event.id);
-    await _saveEvents();
-    notifyListeners();
-
-    // 触发事件
+  Future<void> deleteEvent(CalendarEvent event) async {
+    await _command('delete', {'id': event.id}, versioned: true);
     _notifyEvent('deleted', event);
-
-    // 从系统日历删除
     await _syncDeleteFromSystemCalendar(event);
-
-    // 同步小组件数据
-    PluginWidgetSyncHelper.instance.syncCalendar();
+    await PluginWidgetSyncHelper.instance.syncCalendar();
   }
 
-  // 完成事件
-  void completeEvent(CalendarEvent event) async {
-    final completedEvent = event.copyWith(completedTime: DateTime.now());
-    _events.removeWhere((e) => e.id == event.id);
-    _completedEvents.add(completedEvent);
-    await _saveEvents();
-    notifyListeners();
-
-    // 触发事件
+  Future<void> completeEvent(CalendarEvent event) async {
+    await _command('completeEvent', {'id': event.id}, versioned: true);
     _notifyEvent('completed', event);
-
-    // 从系统日历删除（已完成的事件不再显示在日历中）
     await _syncDeleteFromSystemCalendar(event);
-
-    // 同步小组件数据
-    PluginWidgetSyncHelper.instance.syncCalendar();
+    await PluginWidgetSyncHelper.instance.syncCalendar();
   }
 
-  // 触发事件
   void _notifyEvent(String action, CalendarEvent event) {
     final eventArgs = ItemEventArgs(
       eventName: 'calendar_event_$action',
@@ -161,116 +190,37 @@ class CalendarController extends ChangeNotifier {
     EventManager.instance.broadcast('calendar_event_$action', eventArgs);
   }
 
-  // 加载事件
-  Future<void> _loadEvents() async {
-    try {
-      final data = await AboutmeDataService.instance.readPath(
-        'calendar/calendar_events.json',
+  Future<void> restoreEvent(String id) async {
+    await _command('restoreEvent', {'id': id}, versioned: true);
+  }
+
+  Future<void> resetData() async {
+    await _command('resetData', {}, versioned: false);
+  }
+
+  Future<Map<String, dynamic>> getPreferences() async =>
+      Map<String, dynamic>.from(
+        _result(await _data.query('calendar', 'getPreferences')) as Map,
       );
-      if (data.isNotEmpty) {
-        final List<dynamic> eventsData = data['events'] ?? [];
-        final List<dynamic> completedEventsData = data['completedEvents'] ?? [];
-
-        _events.clear();
-        _completedEvents.clear();
-
-        _events.addAll(eventsData.map((e) => CalendarEvent.fromJson(e)));
-        _completedEvents.addAll(
-          completedEventsData.map((e) => CalendarEvent.fromJson(e)),
-        );
-      } else {
-        // 文件不存在或为空，创建示例事件
-        await _createSampleEvents();
-      }
-    } catch (e) {
-      debugPrint('Error loading calendar events: $e');
-      // 加载失败时也尝试创建示例事件
-      await _createSampleEvents();
-    }
-    notifyListeners();
-
-    // 同步所有现有事件到系统日历（异步执行，不阻塞 UI）
-    _syncAllEventsToSystemCalendar();
+  Future<void> setView(String view) async {
+    _result(await _data.call('calendar', 'updatePreferences', {'view': view}));
   }
 
-  /// 重新加载事件数据（供同步后刷新使用）
   Future<void> reloadEvents() async {
-    await _loadEvents();
-  }
-
-  // 创建示例事件
-  Future<void> _createSampleEvents() async {
-    final now = DateTime.now();
-
-    // 使用固定的ID前缀，避免重复创建
-    const String sampleIdPrefix = 'sample_event_';
-
-    final sampleEvents = [
-      CalendarEvent(
-        id: '${sampleIdPrefix}1',
-        title: '团队周会',
-        description: '每周例会，讨论本周工作进展和下周计划',
-        startTime: DateTime(now.year, now.month, now.day, 10, 0),
-        endTime: DateTime(now.year, now.month, now.day, 11, 0),
-        icon: const IconData(
-          0xe8df,
-          fontFamily: 'MaterialIcons',
-        ), // Icons.groups
-        color: Colors.blue,
-        reminderMinutes: 15,
-      ),
-      CalendarEvent(
-        id: '${sampleIdPrefix}2',
-        title: '健身时间',
-        description: '下班后去健身房锻炼',
-        startTime: DateTime(now.year, now.month, now.day, 18, 30),
-        endTime: DateTime(now.year, now.month, now.day, 20, 0),
-        icon: const IconData(
-          0xeb43,
-          fontFamily: 'MaterialIcons',
-        ), // Icons.fitness_center
-        color: Colors.green,
-        reminderMinutes: 30,
-      ),
-      CalendarEvent(
-        id: '${sampleIdPrefix}3',
-        title: '朋友生日',
-        description: '记得准备生日礼物和蛋糕',
-        startTime: DateTime(now.year, now.month, now.day + 3, 19, 0),
-        endTime: DateTime(now.year, now.month, now.day + 3, 21, 0),
-        icon: const IconData(0xe7f2, fontFamily: 'MaterialIcons'), // Icons.cake
-        color: Colors.pink,
-        reminderMinutes: 1440, // 提前一天提醒
-      ),
-      CalendarEvent(
-        id: '${sampleIdPrefix}4',
-        title: '项目截止日期',
-        description: '完成项目文档和代码提交',
-        startTime: DateTime(now.year, now.month, now.day + 7, 17, 0),
-        endTime: DateTime(now.year, now.month, now.day + 7, 18, 0),
-        icon: const IconData(
-          0xe873,
-          fontFamily: 'MaterialIcons',
-        ), // Icons.assignment
-        color: Colors.orange,
-        reminderMinutes: 2880, // 提前两天提醒
-      ),
-    ];
-
-    _events.addAll(sampleEvents);
-    await _saveEvents();
-  }
-
-  // 保存事件
-  Future<void> _saveEvents() async {
     try {
-      await AboutmeDataService.instance.writePath('calendar/calendar_events.json', {
-        'events': _events.map((e) => e.toJson()).toList(),
-        'completedEvents': _completedEvents.map((e) => e.toJson()).toList(),
-      });
+      _accept(await _data.query('calendar', 'getSnapshot'));
     } catch (e) {
-      debugPrint('Error saving calendar events: $e');
+      queryError = e;
+      notifyListeners();
+      rethrow;
     }
+  }
+
+  Future<void> createSampleEvents() async {
+    await _command('seedExamples', {
+      'groups': ['events'],
+      'templateVersion': 1,
+    });
   }
 
   // 获取所有事件（包括本地事件和系统日历事件）

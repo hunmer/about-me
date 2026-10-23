@@ -19,7 +19,7 @@ class HttpStorageDefaults {
 /// HTTP 远端存储后端：对接 Aboutme 存储服务的 `/api/v1/storage/files` API。
 ///
 /// 数据明文传输（服务端存储已取消加密）；写操作走条件写
-/// （If-Match / If-None-Match），冲突刷新重试、二次冲突回退强写。
+/// （If-Match / If-None-Match），冲突交由调用方处理。
 class HttpStorage implements StorageInterface {
   HttpStorage({
     required String serverUrl,
@@ -58,6 +58,7 @@ class HttpStorage implements StorageInterface {
   String get serverUrl => _baseUri.toString();
   String get credential => _credential;
   String? get deviceId => _deviceId;
+  void close() => _client.close();
 
   /// HTTP 存储统一通过 X-API-Key 认证。
   Map<String, String> get _headers => {
@@ -78,8 +79,9 @@ class HttpStorage implements StorageInterface {
     }
     final normalizedPrefix = prefix?.replaceAll('\\', '/');
     return Uri.parse(root).replace(
-      queryParameters:
-          normalizedPrefix == null ? null : {'prefix': normalizedPrefix},
+      queryParameters: normalizedPrefix == null
+          ? null
+          : {'prefix': normalizedPrefix},
     );
   }
 
@@ -104,31 +106,48 @@ class HttpStorage implements StorageInterface {
 
   Never _throwFor(http.Response response) {
     final code = response.statusCode;
+    String? message;
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map && decoded['error'] is String)
+        message = decoded['error'] as String;
+    } on FormatException {
+      // 非 JSON 错误页也按 HTTP 状态映射。
+    }
     if (code == 401 || code == 403) {
       throw StorageException(
         StorageErrorKind.unauthorized,
-        '认证失败',
+        message ?? '认证失败',
         statusCode: code,
       );
     }
     if (code == 404) {
       throw StorageException(
         StorageErrorKind.notFound,
-        '文件不存在',
+        message ?? '资源不存在',
         statusCode: code,
       );
     }
     if (code == 409 || code == 412) {
       throw StorageException(
         StorageErrorKind.conflict,
-        '远端文件已被其他客户端修改',
+        message ?? '远端版本已被其他客户端修改',
+        statusCode: code,
+      );
+    }
+    if (code == 422 || code == 426 || code == 501) {
+      throw StorageException(
+        code == 422
+            ? StorageErrorKind.invalidData
+            : StorageErrorKind.unsupported,
+        message ?? '服务端不支持该能力或数据损坏',
         statusCode: code,
       );
     }
     if (code >= 500) {
       throw StorageException(
         StorageErrorKind.server,
-        '存储服务器错误',
+        message ?? '存储服务器错误',
         statusCode: code,
       );
     }
@@ -138,6 +157,12 @@ class HttpStorage implements StorageInterface {
       detail.isEmpty ? '存储请求失败' : '存储请求失败：$detail',
       statusCode: code,
     );
+  }
+
+  Future<void> testConnection() async {
+    final uri = Uri.parse('${_baseUri.toString()}/api/v1/storage/health');
+    final response = await _request(() => _client.get(uri, headers: _headers));
+    if (response.statusCode != 200) _throwFor(response);
   }
 
   Future<String?> _fetchVersion(String path) async {
@@ -154,54 +179,90 @@ class HttpStorage implements StorageInterface {
     return etag;
   }
 
-  Future<void> testConnection() async {
-    final uri = Uri.parse('${_baseUri.toString()}/api/v1/storage/health');
-    final response = await _request(() => _client.get(uri, headers: _headers));
-    if (response.statusCode != 200) _throwFor(response);
-  }
-
-  /// POST JSON（供插件业务 REST 使用），返回解码后的响应体。
-  Future<Map<String, dynamic>> postJson(
+  /// 业务请求保留 HTTP 方法。写入不自动重试，避免超时后的重复效果。
+  /// GET 的复合参数使用 JSON 编码；DELETE 参数放请求体。
+  Future<Map<String, dynamic>> requestJson(
+    String method,
     String path,
-    Map<String, dynamic> body,
+    Map<String, dynamic> params,
   ) async {
-    final uri = Uri.parse('${_baseUri.toString()}$path');
-    final response = await _request(
-      () => _client.post(
-        uri,
-        headers: {..._headers, 'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      ),
-    );
-    final decoded = jsonDecode(response.body);
-    if (decoded is Map<String, dynamic>) return decoded;
-    throw StorageException(
-      StorageErrorKind.invalidData,
-      '响应格式错误: ${response.body.substring(0, 200)}',
-    );
-  }
-
-  /// GET JSON（供插件业务 REST 使用），返回解码后的响应体。
-  Future<Map<String, dynamic>> getJson(
-    String path,
-    Map<String, dynamic> query,
-  ) async {
+    final verb = method.toUpperCase();
+    if (!const ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].contains(verb)) {
+      throw const StorageException(
+        StorageErrorKind.invalidRequest,
+        '不支持的 HTTP 方法',
+      );
+    }
     var uri = Uri.parse('${_baseUri.toString()}$path');
-    if (query.isNotEmpty) {
+    if (verb == 'GET' && params.isNotEmpty) {
       uri = uri.replace(
-        queryParameters: query.map(
-          (k, v) => MapEntry(k, v?.toString() ?? ''),
+        queryParameters: params.map(
+          (key, value) => MapEntry(
+            key,
+            jsonEncode(
+              value,
+              toEncodable: (value) => value is DateTime
+                  ? value.toUtc().toIso8601String()
+                  : throw ArgumentError('不支持的参数类型: ${value.runtimeType}'),
+            ),
+          ),
         ),
       );
     }
-    final response = await _request(() => _client.get(uri, headers: _headers));
-    final decoded = jsonDecode(response.body);
+    final response = await _request(() async {
+      final request = http.Request(verb, uri);
+      request.headers.addAll({
+        ..._headers,
+        'Content-Type': 'application/json',
+        'X-Aboutme-Query-Encoding': 'json-v1',
+      });
+      if (verb != 'GET') {
+        request.body = jsonEncode(
+          params,
+          toEncodable: (value) => value is DateTime
+              ? value.toUtc().toIso8601String()
+              : throw ArgumentError('不支持的参数类型: ${value.runtimeType}'),
+        );
+      }
+      return http.Response.fromStream(await _client.send(request));
+    }, retry: verb == 'GET');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      // 已认证业务协议的失败保留 code/version，尤其是不存在实体的读取版本。
+      // 不能把非成功 HTTP 中的 success=true 当成成功结果。
+      try {
+        final failure = jsonDecode(response.body);
+        if (failure is Map<String, dynamic> && failure['success'] == false &&
+            failure['error'] is String && failure['code'] is String) {
+          return failure;
+        }
+      } on FormatException { /* 非业务错误仍按 HTTP 状态映射。 */ }
+      _throwFor(response);
+    }
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } on FormatException {
+      throw const StorageException(
+        StorageErrorKind.invalidData,
+        '业务响应不是有效 JSON',
+      );
+    }
     if (decoded is Map<String, dynamic>) return decoded;
-    throw StorageException(
+    throw const StorageException(
       StorageErrorKind.invalidData,
-      '响应格式错误: ${response.body.substring(0, 200)}',
+      '业务响应必须是 JSON 对象',
     );
   }
+
+  Future<Map<String, dynamic>> postJson(
+    String path,
+    Map<String, dynamic> body,
+  ) => requestJson('POST', path, body);
+
+  Future<Map<String, dynamic>> getJson(
+    String path,
+    Map<String, dynamic> query,
+  ) => requestJson('GET', path, query);
 
   @override
   Future<Uint8List?> readBytes(String path) async {
@@ -215,62 +276,10 @@ class HttpStorage implements StorageInterface {
     return Uint8List.fromList(response.bodyBytes);
   }
 
-  /// 写入文件：优先条件写（已知版本用 If-Match，新文件用 If-None-Match: *），
-  /// 冲突时刷新版本重试一次，仍冲突则强制覆盖。
-  /// 这样既能在多端并发时让服务端记录真实的版本冲突（审计可见），
-  /// 又保持调用方"写必成功"的历史语义。
+  /// 版本冲突直接返回，禁止用陈旧内容刷新版本后覆盖最新数据。
   @override
   Future<void> writeBytes(String path, Uint8List bytes) =>
-      _writeBytesConditional(path, bytes, retryAllowed: true);
-
-  Future<void> _writeBytesConditional(
-    String path,
-    Uint8List bytes, {
-    required bool retryAllowed,
-  }) async {
-    final headers = <String, String>{
-      ..._headers,
-      'Content-Type': 'application/octet-stream',
-    };
-    final knownEtag = _versions[path];
-    if (knownEtag != null) {
-      headers['If-Match'] = knownEtag;
-    } else {
-      headers['If-None-Match'] = '*';
-    }
-    final response = await _request(
-      () =>
-          _client.put(_filesUri(path), headers: headers, body: bytes),
-    );
-
-    if (response.statusCode == 412) {
-      if (retryAllowed) {
-        // 远端版本已变化：刷新本地 ETag 后重试一次
-        final latest = await _fetchVersion(path);
-        if (latest == null) _versions.remove(path);
-        return _writeBytesConditional(path, bytes, retryAllowed: false);
-      }
-      return _forceWrite(path, bytes);
-    }
-    if (response.statusCode != 200) _throwFor(response);
-    final etag = response.headers['etag'];
-    if (etag != null) _versions[path] = etag;
-  }
-
-  Future<void> _forceWrite(String path, Uint8List bytes) async {
-    final headers = <String, String>{
-      ..._headers,
-      'Content-Type': 'application/octet-stream',
-      'X-Force-Overwrite': 'true',
-    };
-    final response = await _request(
-      () =>
-          _client.put(_filesUri(path), headers: headers, body: bytes),
-    );
-    if (response.statusCode != 200) _throwFor(response);
-    final etag = response.headers['etag'];
-    if (etag != null) _versions[path] = etag;
-  }
+      writeBytesIfCurrent(path, bytes);
 
   /// 严格条件写：版本冲突（412）直接抛 StorageException(conflict)，
   /// 不重试不强制覆盖，供需要显式处理冲突的调用方使用。
@@ -286,8 +295,7 @@ class HttpStorage implements StorageInterface {
       headers['If-None-Match'] = '*';
     }
     final response = await _request(
-      () =>
-          _client.put(_filesUri(path), headers: headers, body: bytes),
+      () => _client.put(_filesUri(path), headers: headers, body: bytes),
     );
     if (response.statusCode == 412) {
       _throwFor(response);

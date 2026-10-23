@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
 class Note {
+  int? sdkVersion;
   static const String typeText = 'text';
   static const String typeTodo = 'todo';
 
@@ -32,6 +33,7 @@ class Note {
   bool isArchived;
 
   Note({
+    this.sdkVersion,
     required this.id,
     required this.title,
     required this.content,
@@ -79,6 +81,7 @@ class Note {
 
   factory Note.fromJson(Map<String, dynamic> json) {
     return Note(
+      sdkVersion: json['_sdkVersion'] as int?,
       id: json['id'] as String,
       title: json['title'] as String,
       content: json['content'] as String,
@@ -110,6 +113,7 @@ class Note {
     bool? isArchived,
   }) {
     return Note(
+      sdkVersion: sdkVersion,
       id: id,
       title: title ?? this.title,
       content: content ?? this.content,

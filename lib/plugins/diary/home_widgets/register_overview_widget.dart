@@ -9,6 +9,8 @@ import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/screens/home_screen/widgets/generic_plugin_widget.dart';
 import 'package:aboutme/screens/home_screen/models/plugin_widget_config.dart';
 import 'utils.dart';
+import '../widgets/diary_query_guard.dart';
+import '../models/diary_entry.dart';
 
 /// 注册日记概览小组件（2x2 详细卡片 - 显示统计信息）
 void registerOverviewWidget(HomeWidgetRegistry registry) {
@@ -23,7 +25,10 @@ void registerOverviewWidget(HomeWidgetRegistry registry) {
       defaultSize: const LargeSize(),
       supportedSizes: [const LargeSize()],
       category: 'home_categoryRecord'.tr,
-      builder: (context, config) => _buildOverviewWidget(context, config),
+      builder: (context, config) => DiarySnapshotBuilder(
+        builder: (context, entries) =>
+            _buildOverviewWidget(context, config, entries),
+      ),
       availableStatsProvider: _getAvailableStats,
     ),
   );
@@ -38,6 +43,7 @@ List<StatItemData> _getAvailableStats(BuildContext context) {
 Widget _buildOverviewWidget(
   BuildContext context,
   Map<String, dynamic> config,
+  Map<DateTime, DiaryEntry> entries,
 ) {
   try {
     // 解析插件配置
@@ -55,7 +61,7 @@ Widget _buildOverviewWidget(
     }
 
     // 获取可用的统计项数据
-    final availableItems = _getAvailableStats(context);
+    final availableItems = getAvailableStats(context, entries: entries);
 
     // 使用通用小组件
     return GenericPluginWidget(

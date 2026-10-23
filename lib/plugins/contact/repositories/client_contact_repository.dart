@@ -135,8 +135,9 @@ class ClientContactRepository implements IContactRepository {
 
         // 未联系天数筛选
         if (isMatch && query.uncontactedDays != null) {
-          final daysSinceLastContact =
-              DateTime.now().difference(contact.lastContactTime).inDays;
+          final daysSinceLastContact = DateTime.now()
+              .difference(contact.lastContactTime)
+              .inDays;
           isMatch = daysSinceLastContact >= query.uncontactedDays!;
         }
 
@@ -238,15 +239,9 @@ class ClientContactRepository implements IContactRepository {
         participants: dto.participants,
       );
 
-      // 保存更新
-      final allInteractions = await controller.getAllInteractions();
-      final index = allInteractions.indexWhere((i) => i.id == id);
-      if (index != -1) {
-        allInteractions[index] = updated;
-        await controller.saveAllInteractions(allInteractions);
-      }
+      final saved = await controller.updateInteraction(updated);
 
-      return Result.success(_interactionToDto(updated));
+      return Result.success(_interactionToDto(saved));
     } catch (e) {
       return Result.failure('更新交互记录失败: $e', code: ErrorCodes.serverError);
     }
@@ -449,13 +444,12 @@ class ClientContactRepository implements IContactRepository {
       website: dto.website,
       address: dto.address,
       notes: dto.notes,
-      gender:
-          dto.gender != null
-              ? ContactGender.values.firstWhere(
-                (e) => e.name == dto.gender,
-                orElse: () => ContactGender.other,
-              )
-              : null,
+      gender: dto.gender != null
+          ? ContactGender.values.firstWhere(
+              (e) => e.name == dto.gender,
+              orElse: () => ContactGender.other,
+            )
+          : null,
       tags: List<String>.from(dto.tags),
       customFields: Map<String, String>.from(dto.customFields),
       customActivityEvents:

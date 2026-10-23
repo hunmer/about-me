@@ -28,6 +28,7 @@ class ClientCalendarRepository extends ICalendarRepository {
     PaginationParams? pagination,
   }) async {
     try {
+      await controller.reloadEvents();
       final events = controller.events;
       final dtos = events.map(_eventToDto).toList();
 
@@ -49,6 +50,7 @@ class ClientCalendarRepository extends ICalendarRepository {
   @override
   Future<Result<CalendarEventDto?>> getEventById(String id) async {
     try {
+      await controller.reloadEvents();
       final event = controller.events.firstOrNull((e) => e.id == id);
       if (event == null) {
         return Result.success(null);
@@ -63,7 +65,7 @@ class ClientCalendarRepository extends ICalendarRepository {
   Future<Result<CalendarEventDto>> createEvent(CalendarEventDto dto) async {
     try {
       final event = _dtoToEvent(dto);
-      controller.addEvent(event);
+      await controller.addEvent(event);
       return Result.success(_eventToDto(event));
     } catch (e) {
       return Result.failure('创建事件失败: $e', code: ErrorCodes.serverError);
@@ -77,7 +79,7 @@ class ClientCalendarRepository extends ICalendarRepository {
   ) async {
     try {
       final updatedEvent = _dtoToEvent(dto);
-      controller.updateEvent(updatedEvent);
+      await controller.updateEvent(updatedEvent);
       return Result.success(_eventToDto(updatedEvent));
     } catch (e) {
       return Result.failure('更新事件失败: $e', code: ErrorCodes.serverError);
@@ -87,12 +89,13 @@ class ClientCalendarRepository extends ICalendarRepository {
   @override
   Future<Result<bool>> deleteEvent(String id) async {
     try {
+      await controller.reloadEvents();
       final event = controller.events.firstOrNull((e) => e.id == id);
       if (event == null) {
         return Result.failure('事件不存在', code: ErrorCodes.notFound);
       }
 
-      controller.deleteEvent(event);
+      await controller.deleteEvent(event);
       return Result.success(true);
     } catch (e) {
       return Result.failure('删除事件失败: $e', code: ErrorCodes.serverError);
@@ -105,13 +108,14 @@ class ClientCalendarRepository extends ICalendarRepository {
     DateTime completedTime,
   ) async {
     try {
+      await controller.reloadEvents();
       final event = controller.events.firstOrNull((e) => e.id == id);
       if (event == null) {
         return Result.failure('事件不存在', code: ErrorCodes.notFound);
       }
 
       final completedEvent = event.copyWith(completedTime: completedTime);
-      controller.completeEvent(completedEvent);
+      await controller.completeEvent(completedEvent);
       return Result.success(_eventToDto(completedEvent));
     } catch (e) {
       return Result.failure('完成事件失败: $e', code: ErrorCodes.serverError);
@@ -123,6 +127,7 @@ class ClientCalendarRepository extends ICalendarRepository {
     CalendarEventQuery query,
   ) async {
     try {
+      await controller.reloadEvents();
       final events = controller.events;
       final matches = <CalendarEvent>[];
 
@@ -191,6 +196,7 @@ class ClientCalendarRepository extends ICalendarRepository {
     PaginationParams? pagination,
   }) async {
     try {
+      await controller.reloadEvents();
       final events = controller.completedEvents;
       final dtos = events.map(_eventToDto).toList();
 
@@ -212,6 +218,7 @@ class ClientCalendarRepository extends ICalendarRepository {
   @override
   Future<Result<CalendarEventDto?>> getCompletedEventById(String id) async {
     try {
+      await controller.reloadEvents();
       final event = controller.completedEvents.firstOrNull((e) => e.id == id);
       if (event == null) {
         return Result.success(null);
@@ -225,15 +232,14 @@ class ClientCalendarRepository extends ICalendarRepository {
   @override
   Future<Result<CalendarEventDto>> restoreCompletedEvent(String id) async {
     try {
+      await controller.reloadEvents();
       final event = controller.completedEvents.firstOrNull((e) => e.id == id);
       if (event == null) {
         return Result.failure('已完成事件不存在', code: ErrorCodes.notFound);
       }
 
-      final restoredEvent = event.copyWith(completedTime: null);
-      // 将事件从已完成列表移到普通列表
-      controller.deleteEvent(restoredEvent);
-      controller.addEvent(restoredEvent);
+      await controller.restoreEvent(id);
+      final restoredEvent = controller.events.firstWhere((e) => e.id == id);
       return Result.success(_eventToDto(restoredEvent));
     } catch (e) {
       return Result.failure('恢复事件失败: $e', code: ErrorCodes.serverError);
@@ -251,17 +257,7 @@ class ClientCalendarRepository extends ICalendarRepository {
         return Result.failure('已完成事件不存在', code: ErrorCodes.notFound);
       }
 
-      // 直接从已完成列表中删除（需要通过私有方法或修改控制器）
-      // 这里我们使用变通方法：创建新列表排除该事件
-      // 注意：这可能需要修改 CalendarController 来提供更直接的删除方法
-      final updatedCompletedEvents =
-          completedEvents.where((e) => e.id != id).toList();
-
-      // 由于 CalendarController 没有直接的删除已完成事件的方法，
-      // 我们需要重新保存整个事件列表
-      // 这是一个临时解决方案，更好的做法是扩展 CalendarController
-      final allEvents = controller.events;
-      await _saveAllEvents(allEvents, updatedCompletedEvents);
+      await controller.deleteEvent(event);
 
       return Result.success(true);
     } catch (e) {
@@ -301,18 +297,6 @@ class ClientCalendarRepository extends ICalendarRepository {
       reminderMinutes: dto.reminderMinutes,
       completedTime: dto.completedTime,
     );
-  }
-
-  /// 保存所有事件（普通事件和已完成事件）
-  /// 这是一个临时解决方案，用于处理删除已完成事件
-  Future<void> _saveAllEvents(
-    List<CalendarEvent> events,
-    List<CalendarEvent> completedEvents,
-  ) async {
-    // 这里需要访问 CalendarController 的存储方法
-    // 由于这些方法是私有的，我们通过公共接口来间接实现
-    // 注意：这可能不是最高效的方法，更好的做法是扩展 CalendarController
-    controller.refresh();
   }
 }
 

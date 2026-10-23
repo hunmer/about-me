@@ -131,7 +131,7 @@ void main() {
 
     expect(
       () => storage.clearRawFiles(user, ''),
-      throwsA(isA<StoragePathException>()),
+      throwsA(isA<StorageException>().having((e) => e.statusCode, 'status', 426)),
     );
   });
 

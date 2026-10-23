@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
@@ -10,209 +13,87 @@ import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 class TrackerController with ChangeNotifier {
   List<Goal> _goals = [];
   List<Record> _records = [];
-  VoidCallback? _cancelDataSync;
+  StreamSubscription<QuerySnapshot>? _subscription;
+  QueryStatus queryStatus = QueryStatus.loading;
+  Object? loadError;
+  int? _version;
+  Map<String, Map<String, dynamic>> _baseline = {};
+
+  void _apply(Map<String, dynamic> response) {
+    final snapshot = Map<String, dynamic>.from(response['data'] as Map);
+    final goals = (snapshot['goals'] as List)
+        .map((g) => Goal.fromJson({...Map<String, dynamic>.from(g),'_sdkVersion':response['version']}))
+        .toList();
+    final records = (snapshot['records'] as List)
+        .map((r) => Record.fromJson(Map<String, dynamic>.from(r)))
+        .toList();
+    _goals = goals;
+    _records = records;
+    _version = response['version'] as int?;
+    _baseline = {for (final goal in goals) goal.id: goal.toJson()};
+    queryStatus = QueryStatus.data;
+    loadError = null;
+    notifyListeners();
+    eventManager.broadcast(
+      'tracker_cache_updated',
+      TrackerCacheUpdatedEventArgs(goals: _goals, cacheDate: DateTime.now()),
+    );
+  }
 
   Future<void> loadInitialData() async {
-    final plugin = TrackerPlugin.instance;
-    debugPrint(
-      '[Tracker] loadInitialData: controller=$hashCode, '
-      'plugin=${plugin.hashCode}, storageReady=${plugin.hasStorage}',
-    );
-    try {
-      final savedGoals =
-          await AboutmeDataService.instance.readPath('tracker/goals.json') ??
-          {};
-      if (savedGoals.containsKey('goals')) {
-        _goals =
-            (savedGoals['goals'] as List).map((g) => Goal.fromJson(g)).toList();
-      }
-    } catch (e, st) {
-      debugPrint('加载目标数据失败: $e\n$st');
+    await reloadData();
+    if (_goals.isEmpty && _records.isEmpty) {
+      await _command('seedExamples', {});
     }
-
-    try {
-      final savedRecords =
-          await AboutmeDataService.instance.readPath('tracker/records.json') ??
-          {};
-      if (savedRecords.containsKey('records')) {
-        _records =
-            (savedRecords['records'] as List)
-                .map((r) => Record.fromJson(r))
-                .toList();
-      }
-    } catch (e, st) {
-      debugPrint('加载记录数据失败: $e\n$st');
-    }
-
-    // 如果没有数据，插入默认数据
-    if (_goals.isEmpty) {
-      await _insertDefaultData();
-    }
-
-    // 订阅插件数据变更（远端写入后局部刷新）
-    _cancelDataSync ??= AboutmeDataService.instance.onPluginChanged(
-      'tracker',
-      () => reloadData(),
-    );
+    _subscription ??= AboutmeDataService.instance.data
+        .watch('tracker', 'getSnapshot')
+        .listen((snapshot) {
+          queryStatus = snapshot.status;
+          loadError = snapshot.error;
+          if (snapshot.status == QueryStatus.data && snapshot.result != null)
+            _apply(snapshot.result!);
+          else
+            notifyListeners();
+        });
   }
 
   @override
   void dispose() {
-    _cancelDataSync?.call();
-    _cancelDataSync = null;
+    _subscription?.cancel();
     super.dispose();
   }
 
-  /// 重新加载数据（供同步后刷新使用）
   Future<void> reloadData() async {
-    _goals.clear();
-    _records.clear();
-    await loadInitialData();
+    queryStatus = _goals.isEmpty ? QueryStatus.loading : QueryStatus.stale;
     notifyListeners();
-  }
-
-  /// 插入默认数据
-  Future<void> _insertDefaultData() async {
-    final now = DateTime.now();
-    final today = tracker_date_utils.DateUtils.startOfDay(now);
-
-    // 创建默认目标
-    final defaultGoals = [
-      Goal(
-        id: now.millisecondsSinceEpoch.toString(),
-        name: '每日阅读',
-        icon: '57455', // book icon
-        iconColor: 0xFF2196F3, // 蓝色
-        unitType: '分钟',
-        targetValue: 30,
-        currentValue: 15,
-        dateSettings: DateSettings(type: 'daily'),
-        reminderTime: '09:00',
-        isLoopReset: true,
-        createdAt: today,
-        group: '学习',
-        progressColor: 0xFF2196F3,
-      ),
-      Goal(
-        id: (now.millisecondsSinceEpoch + 1).toString(),
-        name: '每日运动',
-        icon: '58718', // fitness icon
-        iconColor: 0xFF4CAF50, // 绿色
-        unitType: '分钟',
-        targetValue: 30,
-        currentValue: 0,
-        dateSettings: DateSettings(type: 'daily'),
-        reminderTime: '18:00',
-        isLoopReset: true,
-        createdAt: today,
-        group: '健康',
-        progressColor: 0xFF4CAF50,
-      ),
-      Goal(
-        id: (now.millisecondsSinceEpoch + 2).toString(),
-        name: '每日喝水',
-        icon: '59817', // water drop icon
-        iconColor: 0xFF00BCD4, // 青色
-        unitType: '杯',
-        targetValue: 8,
-        currentValue: 3,
-        dateSettings: DateSettings(type: 'daily'),
-        isLoopReset: true,
-        createdAt: today,
-        group: '健康',
-        progressColor: 0xFF00BCD4,
-      ),
-      Goal(
-        id: (now.millisecondsSinceEpoch + 3).toString(),
-        name: '每周跑步',
-        icon: '58718', // directions run icon
-        iconColor: 0xFFFF9800, // 橙色
-        unitType: '公里',
-        targetValue: 10,
-        currentValue: 3.5,
-        dateSettings: DateSettings(
-          type: 'weekly',
-          selectedDays: ['Monday', 'Wednesday', 'Friday'],
-        ),
-        isLoopReset: true,
-        createdAt: today,
-        group: '健康',
-        progressColor: 0xFFFF9800,
-      ),
-    ];
-
-    _goals = defaultGoals;
-
-    // 创建默认记录
-    final defaultRecords = [
-      // 阅读记录
-      Record(
-        id: now.millisecondsSinceEpoch.toString(),
-        goalId: defaultGoals[0].id,
-        value: 15,
-        note: '阅读技术文档',
-        recordedAt: today.add(const Duration(hours: 9, minutes: 30)),
-      ),
-      // 喝水记录
-      Record(
-        id: (now.millisecondsSinceEpoch + 1).toString(),
-        goalId: defaultGoals[2].id,
-        value: 1,
-        note: '早晨第一杯水',
-        recordedAt: today.add(const Duration(hours: 7)),
-      ),
-      Record(
-        id: (now.millisecondsSinceEpoch + 2).toString(),
-        goalId: defaultGoals[2].id,
-        value: 1,
-        recordedAt: today.add(const Duration(hours: 10)),
-      ),
-      Record(
-        id: (now.millisecondsSinceEpoch + 3).toString(),
-        goalId: defaultGoals[2].id,
-        value: 1,
-        recordedAt: today.add(const Duration(hours: 14)),
-      ),
-      // 跑步记录
-      Record(
-        id: (now.millisecondsSinceEpoch + 4).toString(),
-        goalId: defaultGoals[3].id,
-        value: 3.5,
-        note: '晨跑',
-        recordedAt: today.add(const Duration(hours: 6, minutes: 30)),
-        durationSeconds: 1800, // 30分钟
-      ),
-    ];
-
-    _records = defaultRecords;
-
-    // 保存到存储
-    await _saveGoals();
-    await _saveRecords();
-
-    debugPrint('已插入默认数据: ${_goals.length} 个目标, ${_records.length} 条记录');
-  }
-
-  Future<void> _saveGoals() async {
     try {
-      await AboutmeDataService.instance.writePath('tracker/goals.json', {
-        'goals': _goals.map((g) => g.toJson()).toList(),
-        'lastUpdated': DateTime.now().toIso8601String(),
-      });
-    } catch (e, st) {
-      debugPrint('保存目标数据失败: $e\n保存目标数据堆栈: $st');
+      _apply(
+        await AboutmeDataService.instance.data.query('tracker', 'getSnapshot'),
+      );
+    } catch (e) {
+      queryStatus = QueryStatus.error;
+      loadError = e;
+      notifyListeners();
+      rethrow;
     }
   }
 
-  Future<void> _saveRecords() async {
-    try {
-      await AboutmeDataService.instance.writePath('tracker/records.json', {
-        'records': _records.map((r) => r.toJson()).toList(),
-        'lastUpdated': DateTime.now().toIso8601String(),
-      });
-    } catch (e, st) {
-      debugPrint('保存记录数据失败: $e\n保存记录数据堆栈: $st');
-    }
+  Future<Map<String, dynamic>> _command(
+    String action,
+    Map<String, dynamic> params, {
+    bool versioned = false,
+    int? expectedVersion,
+  }) async {
+    final response = await AboutmeDataService.instance.data
+        .call('tracker', action, {
+          ...params,
+          'clientMutationId': const Uuid().v4(),
+          if (versioned && _version != null) 'expectedVersion': expectedVersion ?? _version,
+        });
+    if (response['success'] != true) throw QueryFailure(response);
+    await reloadData();
+    await PluginWidgetSyncHelper.instance.syncTracker();
+    return Map<String, dynamic>.from(response['data'] as Map);
   }
 
   List<Goal> get goals => _goals;
@@ -228,66 +109,26 @@ class TrackerController with ChangeNotifier {
   // 目标管理
   Future<void> addGoal(Goal goal) async {
     _validateGoalDates(goal);
-    _goals.add(goal);
-    await _saveGoals();
-    notifyListeners();
-
-    // 同步小组件数据
-    await PluginWidgetSyncHelper.instance.syncTracker();
+    await _command('create', goal.toJson());
   }
 
   Future<void> updateGoal(String id, Goal newGoal) async {
-    final index = _goals.indexWhere((g) => g.id == id);
-    if (index != -1) {
-      _validateGoalDates(newGoal);
-      _goals[index] = newGoal;
-      await _saveGoals();
-      notifyListeners();
-
-      // 广播缓存更新事件（携带数据，性能优化）
-      eventManager.broadcast(
-        'tracker_cache_updated',
-        TrackerCacheUpdatedEventArgs(
-          goals: _goals,
-          cacheDate: DateTime.now(),
-        ),
-      );
-
-      // 同步小组件数据
-      await PluginWidgetSyncHelper.instance.syncTracker();
-    }
+    _validateGoalDates(newGoal);
+    final before = newGoal.originalJson ?? _baseline[id] ?? <String, dynamic>{};
+    final patch = <String, dynamic>{
+      for (final entry in newGoal.toJson().entries)
+        if (jsonEncode(before[entry.key]) != jsonEncode(entry.value))
+          entry.key: entry.value,
+    };
+    await _command('update', {...patch, 'id': id}, versioned: true, expectedVersion:newGoal.sdkVersion);
   }
 
   Future<void> toggleGoalCompletion(String id) async {
-    final index = _goals.indexWhere((g) => g.id == id);
-    if (index != -1) {
-      final goal = _goals[index];
-      _goals[index] = goal.copyWith(
-        currentValue: !goal.isCompleted ? goal.targetValue : 0,
-      );
-      await _saveGoals();
-      notifyListeners();
-
-      // 同步小组件数据
-      await PluginWidgetSyncHelper.instance.syncTracker();
-    }
+    await _command('toggleCompletion', {'id': id}, versioned: true);
   }
 
   Future<void> deleteGoal(String id) async {
-    // 检查目标是否存在
-    final goalExists = _goals.any((g) => g.id == id);
-    if (!goalExists) {
-      throw ArgumentError('目标不存在: $id');
-    }
-
-    _goals.removeWhere((g) => g.id == id);
-    _records.removeWhere((r) => r.goalId == id);
-    await _saveGoals();
-    await _saveRecords();
-    notifyListeners();
-
-    // 同步小组件数据
-    await PluginWidgetSyncHelper.instance.syncTracker();
+    await _command('delete', {'id': id}, versioned: true);
   }
 
   // 进度计算
@@ -315,11 +156,13 @@ class TrackerController with ChangeNotifier {
 
   // 获取所有目标
   Future<List<Goal>> getAllGoals() async {
+    await reloadData();
     return _goals;
   }
 
   // 按状态筛选目标
   Future<List<Goal>> getGoalsByStatus(String status) async {
+    await reloadData();
     switch (status) {
       case 'active':
         return _goals.where((g) => !g.isCompleted).toList();
@@ -344,23 +187,24 @@ class TrackerController with ChangeNotifier {
   }
 
   // 获取特定目标的记录流
-  Stream<List<Record>> watchRecordsForGoal(String goalId) {
-    return Stream.fromFuture(
-      Future.value(_records.where((r) => r.goalId == goalId).toList()),
-    ).asyncExpand((_) {
-      final controller = StreamController<List<Record>>();
-      void update() {
-        controller.add(_records.where((r) => r.goalId == goalId).toList());
-      }
-
-      addListener(update);
-      controller.onCancel = () => removeListener(update);
-      return controller.stream;
-    });
-  }
+  Stream<List<Record>> watchRecordsForGoal(String goalId) => AboutmeDataService
+      .instance
+      .data
+      .watch('tracker', 'getSnapshot')
+      .map((snapshot) {
+        if (snapshot.error != null) throw snapshot.error!;
+        if (snapshot.result == null)
+          return _records.where((r) => r.goalId == goalId).toList();
+        final body = snapshot.result!['data'] as Map;
+        return (body['records'] as List)
+            .map((r) => Record.fromJson(Map<String, dynamic>.from(r)))
+            .where((r) => r.goalId == goalId)
+            .toList();
+      });
 
   // 获取特定目标的记录
   Future<List<Record>> getRecordsForGoal(String goalId) async {
+    await reloadData();
     return _records.where((r) => r.goalId == goalId).toList();
   }
 
@@ -396,62 +240,31 @@ class TrackerController with ChangeNotifier {
 
   // 清空特定目标的所有记录
   Future<void> clearRecordsForGoal(String goalId) async {
-    final goal = _goals.firstWhere((g) => g.id == goalId);
-    _records.removeWhere((r) => r.goalId == goalId);
-    await _saveRecords();
-    // 重置目标当前值
-    await updateGoal(goalId, goal.copyWith(currentValue: 0));
-    notifyListeners();
-
-    // 同步小组件数据（updateGoal 已经调用了同步，这里不需要重复调用）
+    await _command('clearRecords', {'goalId': goalId}, versioned: true);
   }
 
   // 删除单条记录
   Future<void> deleteRecord(String recordId) async {
-    final record = _records.firstWhere(
-      (r) => r.id == recordId,
-      orElse: () => throw ArgumentError('记录不存在: $recordId'),
-    );
-    final goal = _goals.firstWhere(
-      (g) => g.id == record.goalId,
-      orElse: () => throw ArgumentError('目标不存在: ${record.goalId}'),
-    );
-    _records.removeWhere((r) => r.id == recordId);
-    await _saveRecords();
-    // 更新目标当前值
-    await updateGoal(
-      goal.id,
-      goal.copyWith(currentValue: goal.currentValue - record.value),
-    );
-    notifyListeners();
-
-    // 同步小组件数据（updateGoal 已经调用了同步，这里不需要重复调用）
+    await _command('deleteRecord', {'id': recordId}, versioned: true);
   }
 
   // 添加记录并更新目标值
   Future<void> addRecord(Record record, Goal goal) async {
     Record.validate(record, goal);
-    _records.add(record);
-    await _saveRecords();
-    // 更新目标当前值
-    final updatedGoal = goal.copyWith(
-      currentValue: goal.currentValue + record.value,
-    );
-    await updateGoal(goal.id, updatedGoal);
-
-    // 成就系统计数（A54 旗开得胜）：目标首次达成 100% 时
-    if (updatedGoal.isCompleted && !goal.isCompleted) {
+    final wasCompleted =
+        _goals.where((g) => g.id == record.goalId).firstOrNull?.isCompleted ??
+        false;
+    final committed = await _command('addRecord', record.toJson());
+    if (!wasCompleted &&
+        (_goals.where((g) => g.id == record.goalId).firstOrNull?.isCompleted ??
+            false))
       eventManager.broadcast(
         'tracker_goal_completed',
         EventArgs('tracker_goal_completed'),
       );
-    }
-
-    // 广播记录添加事件
-    eventManager.broadcast('onRecordAdded', Value<Record>(record));
-
-    notifyListeners();
-
-    // 同步小组件数据（updateGoal 已经调用了同步，这里不需要重复调用）
+    eventManager.broadcast(
+      'onRecordAdded',
+      Value<Record>(Record.fromJson(committed)),
+    );
   }
 }

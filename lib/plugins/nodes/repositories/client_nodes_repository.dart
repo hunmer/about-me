@@ -23,6 +23,7 @@ class ClientNodesRepository extends INodesRepository {
     PaginationParams? pagination,
   }) async {
     try {
+      await controller.reloadData();
       final notebooks = controller.notebooks;
       final dtos = notebooks.map(_notebookToDto).toList();
 
@@ -44,6 +45,7 @@ class ClientNodesRepository extends INodesRepository {
   @override
   Future<Result<NotebookDto?>> getNotebookById(String id) async {
     try {
+      await controller.reloadData();
       final notebook = controller.getNotebook(id);
       if (notebook == null || notebook.id.isEmpty) {
         return Result.success(null);
@@ -57,6 +59,7 @@ class ClientNodesRepository extends INodesRepository {
   @override
   Future<Result<NotebookDto>> createNotebook(NotebookDto dto) async {
     try {
+      await controller.reloadData();
       // 将 DTO 转换为 Notebook
       final icon = dynamicIconData(dto.icon, fontFamily: 'MaterialIcons');
       final color = Color(dto.color);
@@ -78,6 +81,7 @@ class ClientNodesRepository extends INodesRepository {
   @override
   Future<Result<NotebookDto>> updateNotebook(String id, NotebookDto dto) async {
     try {
+      await controller.reloadData();
       // 获取现有笔记本
       final existingNotebook = controller.getNotebook(id);
       if (existingNotebook == null || existingNotebook.id.isEmpty) {
@@ -93,10 +97,9 @@ class ClientNodesRepository extends INodesRepository {
         title: dto.title,
         icon: icon,
         color: color,
-        nodes:
-            (dto.nodes.isNotEmpty)
-                ? dto.nodes.map((nodeDto) => _dtoToNode(nodeDto)).toList()
-                : existingNotebook.nodes,
+        nodes: (dto.nodes.isNotEmpty)
+            ? dto.nodes.map((nodeDto) => _dtoToNode(nodeDto)).toList()
+            : existingNotebook.nodes,
       );
 
       await controller.updateNotebook(updatedNotebook);
@@ -116,6 +119,7 @@ class ClientNodesRepository extends INodesRepository {
   @override
   Future<Result<bool>> deleteNotebook(String id) async {
     try {
+      await controller.reloadData();
       await controller.deleteNotebook(id);
       return Result.success(true);
     } catch (e) {
@@ -126,6 +130,7 @@ class ClientNodesRepository extends INodesRepository {
   @override
   Future<Result<List<NotebookDto>>> searchNotebooks(NotebookQuery query) async {
     try {
+      await controller.reloadData();
       final notebooks = controller.notebooks;
       final matches = <Notebook>[];
 
@@ -167,6 +172,7 @@ class ClientNodesRepository extends INodesRepository {
     PaginationParams? pagination,
   }) async {
     try {
+      await controller.reloadData();
       final notebook = controller.getNotebook(notebookId);
       if (notebook == null || notebook.id.isEmpty) {
         return Result.failure('笔记本不存在', code: ErrorCodes.notFound);
@@ -194,6 +200,7 @@ class ClientNodesRepository extends INodesRepository {
   @override
   Future<Result<NodeDto?>> getNodeById(String id) async {
     try {
+      await controller.reloadData();
       // 在所有笔记本中查找节点
       for (final notebook in controller.notebooks) {
         final node = _findNodeById(notebook.nodes, id);
@@ -210,6 +217,7 @@ class ClientNodesRepository extends INodesRepository {
   @override
   Future<Result<NodeDto>> createNode(NodeDto dto) async {
     try {
+      await controller.reloadData();
       // 找到所属笔记本
       var notebookId = _findNotebookIdByNodeDto(dto);
 
@@ -237,6 +245,7 @@ class ClientNodesRepository extends INodesRepository {
   @override
   Future<Result<NodeDto>> updateNode(String id, NodeDto dto) async {
     try {
+      await controller.reloadData();
       // 找到节点所在的笔记本
       String? notebookId;
       local.Node? existingNode;
@@ -271,6 +280,7 @@ class ClientNodesRepository extends INodesRepository {
   @override
   Future<Result<bool>> deleteNode(String id) async {
     try {
+      await controller.reloadData();
       // 找到节点所在的笔记本
       String? notebookId;
 
@@ -296,6 +306,7 @@ class ClientNodesRepository extends INodesRepository {
   @override
   Future<Result<List<NodeDto>>> searchNodes(NodeQuery query) async {
     try {
+      await controller.reloadData();
       final notebook = controller.getNotebook(query.notebookId);
       if (notebook == null || notebook.id.isEmpty) {
         return Result.failure('笔记本不存在', code: ErrorCodes.notFound);
@@ -353,6 +364,7 @@ class ClientNodesRepository extends INodesRepository {
     bool isExpanded,
   ) async {
     try {
+      await controller.reloadData();
       // 找到节点所在的笔记本
       String? notebookId;
       local.Node? node;
@@ -372,8 +384,10 @@ class ClientNodesRepository extends INodesRepository {
       await controller.toggleNodeExpansion(notebookId, id);
 
       // 返回更新后的节点
-      final updatedNode =
-          _findNodeById(controller.getNotebook(notebookId)!.nodes, id)!;
+      final updatedNode = _findNodeById(
+        controller.getNotebook(notebookId)!.nodes,
+        id,
+      )!;
 
       return Result.success(_nodeToDto(updatedNode));
     } catch (e) {
@@ -387,6 +401,7 @@ class ClientNodesRepository extends INodesRepository {
     String nodeId,
   ) async {
     try {
+      await controller.reloadData();
       final pathTitles = controller.getNodePath(notebookId, nodeId);
       return Result.success(pathTitles);
     } catch (e) {
@@ -400,6 +415,7 @@ class ClientNodesRepository extends INodesRepository {
     String nodeId,
   ) async {
     try {
+      await controller.reloadData();
       final siblings = controller.getSiblingNodes(notebookId, nodeId);
       return Result.success(siblings.map(_nodeToDto).toList());
     } catch (e) {
@@ -428,12 +444,9 @@ class ClientNodesRepository extends INodesRepository {
       status: _convertNodeStatus(node.status),
       startDate: node.startDate,
       endDate: node.endDate,
-      customFields:
-          node.customFields
-              .map(
-                (field) => CustomFieldDto(key: field.key, value: field.value),
-              )
-              .toList(),
+      customFields: node.customFields
+          .map((field) => CustomFieldDto(key: field.key, value: field.value))
+          .toList(),
       notes: node.notes,
       parentId: node.parentId,
       children: node.children.map(_nodeToDto).toList(),
@@ -452,13 +465,12 @@ class ClientNodesRepository extends INodesRepository {
       status: _convertNodeStatusFromDto(dto.status),
       startDate: dto.startDate,
       endDate: dto.endDate,
-      customFields:
-          dto.customFields
-              .map(
-                (field) =>
-                    local.NodeCustomField(key: field.key, value: field.value),
-              )
-              .toList(),
+      customFields: dto.customFields
+          .map(
+            (field) =>
+                local.NodeCustomField(key: field.key, value: field.value),
+          )
+          .toList(),
       notes: dto.notes,
       parentId: dto.parentId,
       color: Color(dto.color),

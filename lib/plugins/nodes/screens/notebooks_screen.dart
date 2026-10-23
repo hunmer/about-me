@@ -1,3 +1,4 @@
+import '../widgets/sdk_query_status.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Node;
 import 'package:provider/provider.dart';
@@ -30,14 +31,13 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
     final theme = DSThemeBridge.resolve(context);
 
     // 过滤笔记本列表
-    final filteredNotebooks =
-        _searchQuery.isEmpty
-            ? controller.notebooks
-            : controller.notebooks.where((notebook) {
-              return notebook.title.toLowerCase().contains(
-                _searchQuery.toLowerCase(),
-              );
-            }).toList();
+    final filteredNotebooks = _searchQuery.isEmpty
+        ? controller.notebooks
+        : controller.notebooks.where((notebook) {
+            return notebook.title.toLowerCase().contains(
+              _searchQuery.toLowerCase(),
+            );
+          }).toList();
 
     return SuperCupertinoNavigationWrapper(
       title: Text('nodes_notebooks'.tr),
@@ -65,10 +65,13 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
           ),
         ),
       ],
-      body:
-          filteredNotebooks.isEmpty
-              ? _buildEmptyState(searching: _searchQuery.isNotEmpty)
-              : ReorderableListView.builder(
+      body: NodesQueryStatus(
+        status: controller.queryStatus,
+        error: controller.queryError,
+        retry: controller.reloadData,
+        child: filteredNotebooks.isEmpty
+            ? _buildEmptyState(searching: _searchQuery.isNotEmpty)
+            : ReorderableListView.builder(
                 buildDefaultDragHandles: false,
                 padding: EdgeInsets.fromLTRB(
                   theme.spacing.md,
@@ -105,7 +108,11 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
                     child: WiredDraw(
                       child: ReorderableDelayedDragStartListener(
                         index: index,
-                        child: _buildNotebookItem(context, controller, notebook),
+                        child: _buildNotebookItem(
+                          context,
+                          controller,
+                          notebook,
+                        ),
                       ),
                     ),
                   );
@@ -117,6 +124,7 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
                   controller.reorderNotebooks(oldIndex, newIndex);
                 },
               ),
+      ),
     );
   }
 
@@ -218,11 +226,7 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
 
     SmoothBottomSheet.showWithTitle(
       context: context,
-      title:
-          (notebook == null
-                  ? 'nodes_addNotebook'
-                  : 'nodes_editNotebook')
-              .tr,
+      title: (notebook == null ? 'nodes_addNotebook' : 'nodes_editNotebook').tr,
       child: Builder(
         builder: (sheetContext) {
           return StatefulBuilder(
@@ -326,20 +330,19 @@ class _NotebooksScreenState extends State<NotebooksScreen> {
     await showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (dialogContext) => DSDialog(
-            title: 'nodes_deleteNotebook'.tr,
-            message: 'nodes_deleteNotebookConfirmation'.trParams({
-              'notebookTitle': notebook.title,
-            }),
-            cancelText: 'nodes_cancel'.tr,
-            confirmText: 'nodes_delete'.tr,
-            confirmVariant: DSButtonVariant.destructive,
-            onConfirm: () {
-              controller.deleteNotebook(notebook.id);
-              Navigator.pop(dialogContext, true);
-            },
-          ),
+      builder: (dialogContext) => DSDialog(
+        title: 'nodes_deleteNotebook'.tr,
+        message: 'nodes_deleteNotebookConfirmation'.trParams({
+          'notebookTitle': notebook.title,
+        }),
+        cancelText: 'nodes_cancel'.tr,
+        confirmText: 'nodes_delete'.tr,
+        confirmVariant: DSButtonVariant.destructive,
+        onConfirm: () {
+          controller.deleteNotebook(notebook.id);
+          Navigator.pop(dialogContext, true);
+        },
+      ),
     );
   }
 }
@@ -355,11 +358,7 @@ DsIconKind _statusIcon(NodeStatus status) => switch (status) {
 /// 笔记本卡片：左上"文件夹标签页"标题 + 排线卡体（节点行 + 底部头像区）
 /// 设计参考：标签页内标题、卡内图标行、底部小标签 + 圆头像 + 名称
 class _NotebookCard extends StatelessWidget {
-  const _NotebookCard({
-    required this.notebook,
-    this.onTap,
-    this.onMore,
-  });
+  const _NotebookCard({required this.notebook, this.onTap, this.onMore});
 
   final Notebook notebook;
   final VoidCallback? onTap;
@@ -539,11 +538,8 @@ class _RoughConnector extends StatelessWidget {
 }
 
 class _RoughLinePainter extends CustomPainter {
-  _RoughLinePainter({
-    required this.theme,
-    required this.seed,
-    this.progress,
-  }) : super(repaint: progress);
+  _RoughLinePainter({required this.theme, required this.seed, this.progress})
+    : super(repaint: progress);
 
   final AppThemeData theme;
   final int seed;

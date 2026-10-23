@@ -21,7 +21,7 @@ class ChatSyncer extends PluginWidgetSyncer {
 
       int totalMessageCount = 0;
       for (final channel in channels) {
-        totalMessageCount += channel.messages.length;
+        totalMessageCount += channel.messageCount;
       }
 
       await updateWidget(

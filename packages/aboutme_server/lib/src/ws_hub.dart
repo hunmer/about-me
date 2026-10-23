@@ -5,7 +5,8 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import 'package:aboutme_data_sdk/aboutme_data_sdk.dart' show jsIsoDateTime;
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart'
+    show jsIsoDateTime, DataChangeEvent;
 
 import 'auth_middleware.dart';
 
@@ -42,15 +43,13 @@ class StorageWsHub {
     // WebSocketChannel.stream 是单订阅流：转广播后只监听一次，
     // 认证后保持订阅存活（后续消息无业务语义），连接关闭由 onDone 清理
     final messages = channel.stream.asBroadcastStream();
-    final authCompleter =
-        Completer<({AuthContext auth, String deviceId})?>();
+    final authCompleter = Completer<({AuthContext auth, String deviceId})?>();
 
     final authSub = messages.listen(
       (raw) {
         if (authCompleter.isCompleted) return;
         try {
-          final message =
-              jsonDecode(raw as String) as Map<String, dynamic>;
+          final message = jsonDecode(raw as String) as Map<String, dynamic>;
           final token = message['token'] as String?;
           final deviceId = message['device_id'] as String? ?? '';
           if (message['type'] == 'auth' &&
@@ -78,8 +77,10 @@ class StorageWsHub {
       },
     );
 
-    final result = await authCompleter.future
-        .timeout(const Duration(seconds: 10), onTimeout: () => null);
+    final result = await authCompleter.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => null,
+    );
 
     if (result == null) {
       await authSub.cancel();
@@ -93,8 +94,10 @@ class StorageWsHub {
       deviceId: result.deviceId,
     );
     _clients.add(client);
-    _log('connected user=${_short(client.userId)} '
-        'device=${_short(client.deviceId)} clients=${_clients.length}');
+    _log(
+      'connected user=${_short(client.userId)} '
+      'device=${_short(client.deviceId)} clients=${_clients.length}',
+    );
     channel.sink.add(
       jsonEncode({'type': 'auth_success', 'user_id': client.userId}),
     );
@@ -109,9 +112,11 @@ class StorageWsHub {
 
   void _removeClient(_WsClient client, String reason) {
     if (_clients.remove(client)) {
-      _log('disconnected user=${_short(client.userId)} '
-          'device=${_short(client.deviceId)} reason=$reason '
-          'clients=${_clients.length}');
+      _log(
+        'disconnected user=${_short(client.userId)} '
+        'device=${_short(client.deviceId)} reason=$reason '
+        'clients=${_clients.length}',
+      );
     }
   }
 
@@ -119,11 +124,13 @@ class StorageWsHub {
   void broadcastFileUpdate(
     String userId,
     String? sourceDeviceId,
-    String filePath,
-  ) {
+    String filePath, {
+    DataChangeEvent? change,
+  }) {
     final message = jsonEncode({
       'type': 'file_updated',
       'data': {
+        if (change != null) ...change.toJson(),
         'file_path': filePath,
         'modified_at': jsIsoDateTime(DateTime.now()),
         'source_device_id': sourceDeviceId ?? '',
@@ -140,16 +147,17 @@ class StorageWsHub {
         }
       }
     }
-    _log('broadcast user=${_short(userId)} source=${_short(sourceDeviceId)} '
-        'path=$filePath recipients=$recipients');
+    _log(
+      'broadcast user=${_short(userId)} source=${_short(sourceDeviceId)} '
+      'path=$filePath recipients=$recipients',
+    );
   }
 
   void _log(String message) => print('[SyncDebug][WS] $message');
 
-  String _short(String? value) =>
-      value == null || value.isEmpty
-          ? '-'
-          : value.length <= 8
-          ? value
-          : value.substring(0, 8);
+  String _short(String? value) => value == null || value.isEmpty
+      ? '-'
+      : value.length <= 8
+      ? value
+      : value.substring(0, 8);
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/diary_entry.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
@@ -31,6 +32,10 @@ class DiaryEditorScreen extends StatefulWidget {
 
 class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
   String? _selectedMood;
+  DiaryEntry? _entry;
+  int? _version;
+  bool _loading = true;
+  Object? _loadError;
   List<String> _tags = const [];
 
   @override
@@ -41,13 +46,26 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
   }
 
   Future<void> _loadCurrentEntry() async {
-    // 从存储加载最新的日记条目（同步外部修改的心情与标签）
-    final entry = await DiaryUtils.loadDiaryEntry(widget.date);
-    if (entry != null && mounted) {
+    try {
+      final snapshot = await DiaryUtils.loadDiarySnapshot(widget.date);
+      if (!mounted) return;
       setState(() {
-        _selectedMood = entry.mood;
-        _tags = entry.tags;
+        _entry = snapshot.entry;
+        _version = snapshot.version;
+        if (_entry != null) {
+          _selectedMood = _entry!.mood;
+          _tags = _entry!.tags;
+        }
+        _loading = false;
+        _loadError = null;
       });
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadError = error;
+        });
+      }
     }
   }
 
@@ -125,6 +143,18 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loadError != null) {
+      return Center(
+        child: TextButton(
+          onPressed: () {
+            setState(() => _loading = true);
+            _loadCurrentEntry();
+          },
+          child: Text('日记加载失败，点击重试：$_loadError'),
+        ),
+      );
+    }
     final dateStr = DateFormat.yMMMMd(
       Localizations.localeOf(context).toString(),
     ).format(widget.date);
@@ -133,8 +163,8 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
         : null;
 
     return RichEditorScreen(
-      initialTitle: widget.initialTitle,
-      initialContent: widget.initialContent,
+      initialTitle: _entry?.title ?? widget.initialTitle,
+      initialContent: _entry?.content ?? widget.initialContent,
       initialTags: _tags,
       eyebrow: dateStr,
       // 编辑态标题行的心情表情（即改即生效）
@@ -175,14 +205,24 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
         title: title,
         mood: _selectedMood,
         tags: tags,
+        expectedVersion: _version,
+        onCommitted: (entry, version) {
+          _entry = entry;
+          _version = version;
+        },
       ),
-      onDelete: () => DiaryUtils.deleteDiaryEntry(widget.date),
+      onDelete: () =>
+          DiaryUtils.deleteDiaryEntry(widget.date, expectedVersion: _version),
     );
   }
 
   Widget _buildMoodDockIcon(AppThemeData theme) {
     if (_selectedMood == null) {
-      return Icon(Icons.emoji_emotions_outlined, size: 18, color: theme.textSub);
+      return Icon(
+        Icons.emoji_emotions_outlined,
+        size: 18,
+        color: theme.textSub,
+      );
     }
     final spec = diaryMoodSpecOf(_selectedMood!);
     return Image.asset(

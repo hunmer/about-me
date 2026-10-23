@@ -37,8 +37,8 @@ void main() {
         );
       }),
     );
-    await data.writePath('diary/diary_index.json', {'2026-10-23': {}});
-    expect(await data.readPath('diary/diary_index.json'), {'2026-10-23': {}});
+    await data.writePath('legacy/index.json', {'2026-10-23': {}});
+    expect(await data.readPath('legacy/index.json'), {'2026-10-23': {}});
     await data.writePath(
       'day/memorial_days.json',
       jsonEncode([
@@ -53,9 +53,11 @@ void main() {
       '[{"id":"sample"}]',
     );
     await data.writePath('empty.json', '');
-    expect(await data.readPath('empty.json', []), []);
+    await expectLater(data.readPath('empty.json', []),
+      throwsA(isA<StorageException>().having((error) => error.kind, 'kind', StorageErrorKind.invalidData)));
     await data.writePath('invalid.json', 'invalid json');
-    expect(await data.readPath('invalid.json', []), []);
+    await expectLater(data.readPath('invalid.json', []),
+      throwsA(isA<StorageException>().having((error) => error.kind, 'kind', StorageErrorKind.invalidData)));
   });
 
   for (final status in [401, 500]) {

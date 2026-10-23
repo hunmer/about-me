@@ -1,6 +1,6 @@
 # Aboutme 统一业务数据访问改造计划
 
-日期：2026-10-23。状态：代码审查后的实施建议，尚未实施本计划。
+日期：2026-10-23。状态：正在实施；逐阶段进度及验证证据见 [执行状态](unified_data_sdk_refactor_status.md)，已落地协议见 [协议 v1](unified_data_sdk_protocol.md)。
 
 ## 1. 改造结论与边界
 

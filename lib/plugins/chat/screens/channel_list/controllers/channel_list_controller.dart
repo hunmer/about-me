@@ -66,16 +66,17 @@ class ChannelListController extends ChangeNotifier {
     if (selectedGroup == "archived") {
       tempChannels = channels.where((channel) => channel.isArchived).toList();
     } else if (selectedGroup == "all") {
-      tempChannels =
-          channels.where((channel) => !channel.isArchived).toList();
+      tempChannels = channels.where((channel) => !channel.isArchived).toList();
     } else if (selectedGroup == "ungrouped") {
       tempChannels = channels
           .where((channel) => channel.groups.isEmpty && !channel.isArchived)
           .toList();
     } else {
       tempChannels = channels
-          .where((channel) =>
-              channel.groups.contains(selectedGroup) && !channel.isArchived)
+          .where(
+            (channel) =>
+                channel.groups.contains(selectedGroup) && !channel.isArchived,
+          )
           .toList();
     }
 
@@ -107,60 +108,45 @@ class ChannelListController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateChannel(Channel updatedChannel) {
-    final index = channels.indexWhere((c) => c.id == updatedChannel.id);
-    if (index != -1) {
-      channels[index] = updatedChannel;
-      _updateAvailableGroups();
-      _updateSortedChannels();
-      ChatPlugin.instance.channelService.saveChannels();
-      notifyListeners();
-    }
+  Future<void> updateChannel(Channel updatedChannel) async {
+    await chatPlugin.channelService.saveChannel(updatedChannel);
+    _updateAvailableGroups();
+    notifyListeners();
   }
 
-  void deleteChannel(String channelId) {
-    ChatPlugin.instance.channelService.deleteChannel(channelId);
+  Future<void> deleteChannel(String channelId) async {
+    await chatPlugin.channelService.deleteChannel(channelId);
     _updateSortedChannels();
     notifyListeners();
   }
 
-  /// 切换频道固定状态（固定频道始终排在列表最前）
-  void togglePin(Channel channel) {
-    channel.isPinned = !channel.isPinned;
+  Future<void> togglePin(Channel channel) async {
+    await chatPlugin.channelService.patchChannel(channel.id, {
+      'isPinned': !channel.isPinned,
+    });
     _updateSortedChannels();
-    ChatPlugin.instance.channelService.saveChannels();
     notifyListeners();
   }
 
-  /// 切换频道封存状态（封存频道归入"已封存"分类并禁止发送消息）
-  void toggleArchive(Channel channel) {
-    channel.isArchived = !channel.isArchived;
-    // 封存时取消固定，避免状态叠加
-    if (channel.isArchived) {
-      channel.isPinned = false;
-    }
+  Future<void> toggleArchive(Channel channel) async {
+    final archived = !channel.isArchived;
+    await chatPlugin.channelService.patchChannel(channel.id, {
+      'isArchived': archived,
+      if (archived) 'isPinned': false,
+    });
     _updateSortedChannels();
-    ChatPlugin.instance.channelService.saveChannels();
     notifyListeners();
   }
 
-  void reorderChannels(int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-    final Channel item = sortedChannels.removeAt(oldIndex);
-    sortedChannels.insert(newIndex, item);
-
-    // 更新优先级以反映新的顺序
-    for (int i = 0; i < sortedChannels.length; i++) {
-      final channel = sortedChannels[i];
-      final index = channels.indexWhere((c) => c.id == channel.id);
-      if (index != -1) {
-        final newPriority = sortedChannels.length - i;
-        channels[index].priority = newPriority;
-      }
-    }
-    ChatPlugin.instance.channelService.saveChannels();
+  Future<void> reorderChannels(int oldIndex, int newIndex) async {
+    if (oldIndex < newIndex) newIndex--;
+    final ordered = [...sortedChannels];
+    final item = ordered.removeAt(oldIndex);
+    ordered.insert(newIndex, item);
+    await chatPlugin.channelService.reorderChannels(
+      ordered.map((c) => c.id).toList(),
+    );
+    _updateSortedChannels();
     notifyListeners();
   }
 

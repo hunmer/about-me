@@ -4,6 +4,7 @@ import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart' show AssetDto;
 
 enum FileMessageType { document, image, video, audio, other }
 
@@ -29,6 +30,15 @@ class FileMessage {
     this.mimeType,
     FileMessageType? type,
   }) : type = type ?? _determineFileType(filePath);
+
+  factory FileMessage.fromAsset(AssetDto asset, {String? originalFileName, String? thumbPath}) => FileMessage(
+    id: const Uuid().v4(), fileName: asset.fileName,
+    originalFileName: originalFileName ?? asset.fileName, filePath: asset.reference, thumbPath: thumbPath,
+    fileSize: asset.size, timestamp: DateTime.parse(asset.createdAt), mimeType: asset.mediaType,
+    type: asset.mediaType.startsWith('image/') ? FileMessageType.image
+      : asset.mediaType.startsWith('video/') ? FileMessageType.video
+      : asset.mediaType.startsWith('audio/') ? FileMessageType.audio : _determineFileType(asset.fileName),
+  );
 
   // 根据文件路径确定文件类型
   static FileMessageType _determineFileType(String filePath) {
@@ -104,9 +114,11 @@ class FileMessage {
     // 确保文件路径使用正确的相对路径格式
     String relativePath = relativeStoragePath == null
         ? await ImageUtils.toRelativePath(file.path)
-        : './${relativeStoragePath.replaceAll(r'\', '/')}';
+        : ImageUtils.sdkAssetId(relativeStoragePath) != null
+            ? relativeStoragePath
+            : './${relativeStoragePath.replaceAll(r'\', '/')}';
     // 确保路径以 './' 开头
-    if (!relativePath.startsWith('./')) {
+    if (!relativePath.startsWith('./') && ImageUtils.sdkAssetId(relativePath) == null) {
       relativePath = './${relativePath.replaceFirst('app_data/', '')}';
     }
 

@@ -22,6 +22,7 @@ class ClientNotesRepository implements INotesRepository {
     PaginationParams? pagination,
   }) async {
     try {
+      await controller.reloadData();
       List<Note> notes;
       if (folderId != null) {
         notes = controller.getFolderNotes(folderId);
@@ -49,6 +50,7 @@ class ClientNotesRepository implements INotesRepository {
   @override
   Future<Result<NoteDto?>> getNoteById(String id) async {
     try {
+      await controller.reloadData();
       final allNotes = controller.searchNotes(query: '');
       final note = allNotes.where((n) => n.id == id).firstOrNull;
       if (note == null) {
@@ -63,6 +65,7 @@ class ClientNotesRepository implements INotesRepository {
   @override
   Future<Result<NoteDto>> createNote(NoteDto dto) async {
     try {
+      await controller.reloadData();
       final note = await controller.createNote(
         dto.title,
         dto.content,
@@ -88,6 +91,7 @@ class ClientNotesRepository implements INotesRepository {
   @override
   Future<Result<NoteDto>> updateNote(String id, NoteDto dto) async {
     try {
+      await controller.reloadData();
       // 获取现有笔记
       final allNotes = controller.searchNotes(query: '');
       final existing = allNotes.where((n) => n.id == id).firstOrNull;
@@ -113,6 +117,7 @@ class ClientNotesRepository implements INotesRepository {
   @override
   Future<Result<bool>> deleteNote(String id) async {
     try {
+      await controller.reloadData();
       await controller.deleteNote(id);
       return Result.success(true);
     } catch (e) {
@@ -123,6 +128,7 @@ class ClientNotesRepository implements INotesRepository {
   @override
   Future<Result<NoteDto>> moveNote(String id, String? targetFolderId) async {
     try {
+      await controller.reloadData();
       final targetId = targetFolderId ?? 'root';
       await controller.moveNote(id, targetId);
 
@@ -142,6 +148,7 @@ class ClientNotesRepository implements INotesRepository {
   @override
   Future<Result<List<NoteDto>>> searchNotes(NoteQuery query) async {
     try {
+      await controller.reloadData();
       final keyword = query.keyword ?? '';
       final tags = query.tags;
       final pagination = query.pagination;
@@ -178,6 +185,7 @@ class ClientNotesRepository implements INotesRepository {
     PaginationParams? pagination,
   }) async {
     try {
+      await controller.reloadData();
       final folders = controller.getAllFolders();
       final dtos = folders.map(_folderToDto).toList();
 
@@ -199,6 +207,7 @@ class ClientNotesRepository implements INotesRepository {
   @override
   Future<Result<FolderDto?>> getFolderById(String id) async {
     try {
+      await controller.reloadData();
       final folder = controller.getFolder(id);
       if (folder == null) {
         return Result.success(null);
@@ -212,6 +221,7 @@ class ClientNotesRepository implements INotesRepository {
   @override
   Future<Result<FolderDto>> createFolder(FolderDto dto) async {
     try {
+      await controller.reloadData();
       final folder = await controller.createFolder(
         dto.name,
         dto.parentId,
@@ -226,6 +236,7 @@ class ClientNotesRepository implements INotesRepository {
   @override
   Future<Result<FolderDto>> updateFolder(String id, FolderDto dto) async {
     try {
+      await controller.reloadData();
       // 获取现有文件夹
       final existing = controller.getFolder(id);
       if (existing == null) {
@@ -250,6 +261,7 @@ class ClientNotesRepository implements INotesRepository {
   @override
   Future<Result<bool>> deleteFolder(String id) async {
     try {
+      await controller.reloadData();
       await controller.deleteFolder(id);
       return Result.success(true);
     } catch (e) {
@@ -263,6 +275,7 @@ class ClientNotesRepository implements INotesRepository {
     PaginationParams? pagination,
   }) async {
     try {
+      await controller.reloadData();
       final notes = controller.getFolderNotes(folderId);
       final dtos = notes.map(_noteToDto).toList();
 

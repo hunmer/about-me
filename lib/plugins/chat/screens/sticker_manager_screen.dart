@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -12,6 +13,20 @@ import 'package:aboutme/utils/image_utils.dart';
 import 'package:get/get.dart';
 
 /// 贴图管理界面（手绘风）：合集列表（创建/重命名/删除/添加贴图）
+class _StickerLoadError extends StatelessWidget {
+  const _StickerLoadError({required this.error, required this.onRetry});
+  final String error;
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Row(children: [
+      Expanded(child: Text('数据可能已过期：$error', maxLines: 2, overflow: TextOverflow.ellipsis)),
+      TextButton(onPressed: onRetry, child: const Text('重试')),
+    ]),
+  );
+}
+
 class StickerManagerScreen extends StatefulWidget {
   const StickerManagerScreen({super.key});
 
@@ -22,20 +37,35 @@ class StickerManagerScreen extends StatefulWidget {
 class _StickerManagerScreenState extends State<StickerManagerScreen> {
   List<StickerCollection> _collections = [];
   bool _loading = true;
+  String? _error;
+  StreamSubscription<List<StickerCollection>>? _subscription;
 
   @override
   void initState() {
     super.initState();
-    _reload();
+    _subscription = StickerService.instance.watchCollections().listen(_applyCollections,
+      onError: (Object error) {
+        if (mounted) setState(() { _error = '$error'; _loading = false; });
+      });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _applyCollections(List<StickerCollection> collections) {
+    if (!mounted) return;
+    setState(() { _collections = collections; _loading = false; _error = null; });
   }
 
   Future<void> _reload() async {
-    final collections = await StickerService.instance.listCollections();
-    if (!mounted) return;
-    setState(() {
-      _collections = collections;
-      _loading = false;
-    });
+    try {
+      _applyCollections(await StickerService.instance.listCollections());
+    } catch (error) {
+      if (mounted) setState(() { _error = '$error'; _loading = false; });
+    }
   }
 
   Future<void> _openDetail(String collectionId) async {
@@ -107,8 +137,12 @@ class _StickerManagerScreenState extends State<StickerManagerScreen> {
       initial: collection.name,
     );
     if (name == null || name.trim().isEmpty) return;
-    await StickerService.instance.renameCollection(collection.id, name.trim());
-    await _reload();
+    try {
+      await StickerService.instance.renameCollection(collection.id, name.trim());
+      await _reload();
+    } catch (error) {
+      if (mounted) toastService.showToast('重命名失败: $error', type: ToastType.error);
+    }
   }
 
   Future<void> _deleteCollection(StickerCollection collection) async {
@@ -194,6 +228,8 @@ class _StickerManagerScreenState extends State<StickerManagerScreen> {
                       onPressed: _createCollection,
                     ),
                   ),
+                  if (_error != null && _collections.isNotEmpty)
+                    _StickerLoadError(error: _error!, onRetry: _reload),
                   Expanded(
                     child:
                         _loading
@@ -207,12 +243,12 @@ class _StickerManagerScreenState extends State<StickerManagerScreen> {
                                           const SizedBox(height: 80),
                                           DSEmptyState(
                                             icon: DsIconKind.mood,
-                                            title: 'chat_stickerEmptyTitle'.tr,
+                                            title: _error == null ? 'chat_stickerEmptyTitle'.tr : '加载失败',
                                             message:
-                                                'chat_stickerEmptyMessage'.tr,
+                                                _error ?? 'chat_stickerEmptyMessage'.tr,
                                             actionLabel:
-                                                'chat_stickerNewCollection'.tr,
-                                            onAction: _createCollection,
+                                                _error == null ? 'chat_stickerNewCollection'.tr : '重试',
+                                            onAction: _error == null ? _createCollection : _reload,
                                           ),
                                         ],
                                       )
@@ -447,21 +483,40 @@ class StickerCollectionDetailScreen extends StatefulWidget {
 class _StickerCollectionDetailScreenState
     extends State<StickerCollectionDetailScreen> {
   StickerCollection? _collection;
+  bool _loading = true;
+  String? _error;
+  StreamSubscription<List<StickerCollection>>? _subscription;
 
   @override
   void initState() {
     super.initState();
-    _reload();
+    _subscription = StickerService.instance.watchCollections().listen(_applyCollections,
+      onError: (Object error) {
+        if (mounted) setState(() { _error = '$error'; _loading = false; });
+      });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _applyCollections(List<StickerCollection> collections) {
+    if (!mounted) return;
+    setState(() {
+      _collection = collections.where((c) => c.id == widget.collectionId).firstOrNull;
+      _error = null;
+      _loading = false;
+    });
   }
 
   Future<void> _reload() async {
-    final collections = await StickerService.instance.listCollections();
-    if (!mounted) return;
-    setState(() {
-      _collection = collections
-          .where((c) => c.id == widget.collectionId)
-          .firstOrNull;
-    });
+    try {
+      _applyCollections(await StickerService.instance.listCollections());
+    } catch (error) {
+      if (mounted) setState(() { _error = '$error'; _loading = false; });
+    }
   }
 
   Future<void> _addStickers() async {
@@ -496,11 +551,12 @@ class _StickerCollectionDetailScreenState
           ),
     );
     if (confirmed != true) return;
-    await StickerService.instance.removeSticker(
-      widget.collectionId,
-      stickerPath,
-    );
-    await _reload();
+    try {
+      await StickerService.instance.removeSticker(widget.collectionId, stickerPath);
+      await _reload();
+    } catch (error) {
+      if (mounted) toastService.showToast('移除失败: $error', type: ToastType.error);
+    }
   }
 
   @override
@@ -529,10 +585,16 @@ class _StickerCollectionDetailScreenState
                       onPressed: _addStickers,
                     ),
                   ),
+                  if (_error != null && collection != null)
+                    _StickerLoadError(error: _error!, onRetry: _reload),
                   Expanded(
                     child:
-                        collection == null
+                        _loading
                             ? const Center(child: DSLoadingDots())
+                            : collection == null
+                            ? Center(child: DSEmptyState(icon: DsIconKind.image,
+                                title: _error == null ? '合集已删除' : '加载失败',
+                                message: _error, actionLabel: '重试', onAction: _reload))
                             : collection.stickerPaths.isEmpty
                             ? Center(
                               child: DSEmptyState(

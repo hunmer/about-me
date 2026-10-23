@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/chat/models/file_message.dart';
-import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart' show assetMediaType;
 
 // 用于返回保存文件的结果
 class SaveFileResult {
@@ -18,48 +18,25 @@ class SaveFileResult {
 }
 
 class FileService {
-  Future<Directory> get _appFilesDir async {
-    final appDir = await StorageManager.getApplicationDocumentsDirectory();
-    // 确保使用正确的路径分隔符
-    final filesDir = Directory(path.join('app_data', 'chat', 'chat_files'));
-    final absoluteFilesDir = Directory(path.join(appDir.path, filesDir.path));
-    if (!await absoluteFilesDir.exists()) {
-      await absoluteFilesDir.create(recursive: true);
-    }
-    return absoluteFilesDir;
-  }
-
   // 选择文件
   Future<FileMessage?> pickFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.any,
       allowMultiple: false,
+      withData: kIsWeb,
     );
 
     if (result != null && result.files.isNotEmpty) {
       final platformFile = result.files.first;
-      final file = File(platformFile.path!);
-      // 获取原始文件名
-      final originalFileName = platformFile.name;
-
-      // 保存文件到应用目录
-      final saveResult = await _saveFile(file);
-      debugPrint('文件已保存到: ${saveResult.savedFile.path}');
-
-      // 创建FileMessage对象
-      final fileMessage = await FileMessage.fromFile(
-        saveResult.savedFile,
-        systemFileName: saveResult.systemFileName,
-        originalFileName: originalFileName, // 传递原始文件名
-        relativeStoragePath: saveResult.storagePath,
-      );
-
-      // 验证文件路径
-      final absolutePath = await fileMessage.getAbsolutePath();
-      final fileExists = await File(absolutePath).exists();
-      debugPrint('文件路径验证: $absolutePath, 文件存在: $fileExists');
-
-      return fileMessage;
+      final assets = AboutmeDataService.instance.data.assets;
+      final asset = kIsWeb
+        ? await assets.upload(platformFile.bytes ?? (throw StateError('选择器没有返回文件字节')),
+            fileName: platformFile.name, mediaType: getMimeType(platformFile.name) ?? 'application/octet-stream',
+            clientMutationId: const Uuid().v4())
+        : await assets.importSelectedFile(platformFile.path ?? (throw StateError('选择器没有返回文件路径')),
+            fileName: platformFile.name, mediaType: getMimeType(platformFile.name) ?? 'application/octet-stream',
+            clientMutationId: const Uuid().v4());
+      return FileMessage.fromAsset(asset, originalFileName: platformFile.name);
     }
     return null;
   }
@@ -69,36 +46,14 @@ class FileService {
     File sourceFile, {
     String? subdirectory,
   }) async {
-    final filesDir = await _appFilesDir;
-    String targetDir = filesDir.path;
-
-    // 如果指定了子目录，创建它
-    if (subdirectory != null) {
-      targetDir = path.join(filesDir.path, subdirectory);
-      final subDir = Directory(targetDir);
-      if (!await subDir.exists()) {
-        await subDir.create(recursive: true);
-      }
-    }
-
-    // 生成唯一的文件名
-    final extension = path.extension(sourceFile.path);
-    final uuid = const Uuid().v4();
-    final uniqueFileName = '$uuid$extension';
-    final storage = PluginManager.instance.storageManager;
-    if (storage?.isRemote == true) {
-      final parts = ['chat', 'chat_files', if (subdirectory != null) subdirectory, uniqueFileName];
-      final storagePath = parts.join('/');
-      await storage!.writeBytes(storagePath, await sourceFile.readAsBytes());
-      final materialized = await storage.materializeToTemporaryFile(storagePath);
-      if (materialized == null) throw StateError('远端附件物化失败: $storagePath');
-      return SaveFileResult(materialized, uniqueFileName, storagePath: storagePath);
-    }
-    final targetFile = File(path.join(targetDir, uniqueFileName));
-
-    // 复制文件到目标目录
-    final savedFile = await sourceFile.copy(targetFile.path);
-    return SaveFileResult(savedFile, uniqueFileName);
+    final assets = AboutmeDataService.instance.data.assets;
+    final name = path.basename(sourceFile.path);
+    final asset = await assets.importSelectedFile(sourceFile.path,
+      fileName: name, mediaType: subdirectory == 'audios' && path.extension(name).toLowerCase() == '.webm'
+        ? 'audio/webm' : getMimeType(name) ?? 'application/octet-stream',
+      clientMutationId: const Uuid().v4());
+    final localPath = await assets.resolvePath(asset.id);
+    return SaveFileResult(File(localPath), asset.fileName, storagePath: asset.reference);
   }
 
   // 保存图片到应用目录
@@ -122,44 +77,30 @@ class FileService {
   /// 保存音频字节为聊天附件（Web 录音等无本地文件场景），
   /// 返回 './chat/chat_files/audios/xxx' 相对存储路径
   Future<String> saveAudioBytes(List<int> bytes, String fileName) async {
-    final uuid = const Uuid().v4();
-    final ext = path.extension(fileName).isEmpty
-        ? '.webm'
-        : path.extension(fileName);
-    final storagePath = 'chat/chat_files/audios/$uuid$ext';
-    final storage = PluginManager.instance.storageManager;
-    if (storage == null) throw StateError('StorageManager 未初始化');
-    await storage.writeBytes(storagePath, Uint8List.fromList(bytes));
-    return './$storagePath';
+    final asset = await AboutmeDataService.instance.data.assets.upload(
+      Uint8List.fromList(bytes), fileName: fileName,
+      mediaType: path.extension(fileName).toLowerCase() == '.webm'
+        ? 'audio/webm' : getMimeType(fileName) ?? 'application/octet-stream',
+      clientMutationId: const Uuid().v4());
+    return asset.reference;
   }
 
   /// 保存图片字节为聊天附件（内置表情等无本地文件场景），
   /// 返回 './chat/chat_files/images/xxx' 相对存储路径
   Future<String> saveImageBytes(List<int> bytes, String fileName) async {
-    final uuid = const Uuid().v4();
-    final ext = path.extension(fileName).isEmpty
-        ? '.png'
-        : path.extension(fileName);
-    final storagePath = 'chat/chat_files/images/$uuid$ext';
-    final storage = PluginManager.instance.storageManager;
-    if (storage == null) throw StateError('StorageManager 未初始化');
-    await storage.writeBytes(storagePath, Uint8List.fromList(bytes));
-    return './$storagePath';
+    final asset = await AboutmeDataService.instance.data.assets.upload(
+      Uint8List.fromList(bytes), fileName: fileName,
+      mediaType: getMimeType(fileName) ?? 'application/octet-stream',
+      clientMutationId: const Uuid().v4());
+    return asset.reference;
   }
 
   // 删除文件
   Future<bool> deleteFile(String filePath) async {
-    try {
-      final file = File(filePath);
-      if (await file.exists()) {
-        await file.delete();
-        return true;
-      }
-      return false;
-    } catch (e) {
-      _logError('删除文件错误: $e');
-      return false;
-    }
+    final assets = AboutmeDataService.instance.data.assets;
+    final reference = filePath.startsWith('asset://') ? filePath : assets.referenceForResolvedPath(filePath);
+    if (reference == null) throw ArgumentError('删除附件需要 SDK 资源引用');
+    return assets.remove(reference.substring(8));
   }
 
   // 获取文件MIME类型
@@ -215,7 +156,7 @@ class FileService {
       case '.zip':
         return 'application/zip';
       default:
-        return 'application/octet-stream';
+        return assetMediaType(filePath);
     }
   }
 
@@ -265,42 +206,7 @@ class FileService {
 
   // 获取视频缩略图
   Future<String?> getVideoThumbnail(String videoPath) async {
-    try {
-      // 首先检查视频文件是否存在，并获取绝对路径
-      final videoFile = File(videoPath);
-      if (!await videoFile.exists()) {
-        _logError('视频文件不存在: $videoPath');
-        return null;
-      }
-
-      final filesDir = await _appFilesDir;
-      final thumbnailsDir = Directory(path.join(filesDir.path, 'thumbnails'));
-
-      // 确保缩略图目录存在
-      if (!await thumbnailsDir.exists()) {
-        await thumbnailsDir.create(recursive: true);
-      }
-
-      // 生成唯一的缩略图文件名
-      final uuid = const Uuid().v4();
-      final thumbnailPath = path.join(thumbnailsDir.path, '$uuid.jpg');
-
-      try {
-        // TODO: 实现视频缩略图生成逻辑
-        return thumbnailPath;
-      } catch (thumbnailError) {
-        _logError('视频缩略图生成失败: $thumbnailError');
-        return null;
-      }
-    } catch (e) {
-      _logError('处理视频缩略图时出错: $e');
-      return null;
-    }
-  }
-
-  // 记录错误信息
-  void _logError(String message) {
-    // TODO: 实现proper logging
-    debugPrint(message);
+    // 当前宿主尚未提供缩略图生成器；不能返回不存在的假文件路径。
+    return null;
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
 class Folder {
+  int? sdkVersion;
   final String id;
   String name;
   final String? parentId; // null for root folder
@@ -14,6 +15,7 @@ class Folder {
   bool isArchived;
 
   Folder({
+    this.sdkVersion,
     required this.id,
     required this.name,
     this.parentId,
@@ -39,13 +41,17 @@ class Folder {
 
   factory Folder.fromJson(Map<String, dynamic> json) {
     return Folder(
+      sdkVersion: json['_sdkVersion'] as int?,
       id: json['id'] as String,
       name: json['name'] as String,
       parentId: json['parentId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       color: Color(json['color'] as int? ?? Colors.blue.value),
-      icon: dynamicIconData(json['icon'] as int? ?? Icons.folder.codePoint, fontFamily: 'MaterialIcons'),
+      icon: dynamicIconData(
+        json['icon'] as int? ?? Icons.folder.codePoint,
+        fontFamily: 'MaterialIcons',
+      ),
       isArchived: json['isArchived'] as bool? ?? false,
     );
   }

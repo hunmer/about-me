@@ -98,6 +98,8 @@ class GalleryImageResolver {
         provider ??= NetworkImage(url);
       } else if (url.startsWith('assets/')) {
         provider = AssetImage(url);
+      } else if (ImageUtils.sdkAssetId(url) != null) {
+        provider = ImageUtils.createImageProvider(url);
       } else {
         final absolutePath = await ImageUtils.getAbsolutePath(url);
         if (absolutePath.isNotEmpty) {
@@ -110,8 +112,12 @@ class GalleryImageResolver {
     });
   }
 
-  static String _cacheKey(String url, bool viaProxy) =>
-      viaProxy ? '$url#proxy' : url;
+  static String _cacheKey(String url, bool viaProxy) {
+    if (ImageUtils.sdkAssetId(url) != null) {
+      return '$url#${ImageUtils.createImageProvider(url).hashCode}';
+    }
+    return viaProxy ? '$url#proxy' : url;
+  }
 
   /// 失效 url 的显示缓存（底层文件内容已变化，如编辑器写回）：
   /// evict 图片缓存并清除已解析 provider，下次 build 会以新 provider
@@ -285,6 +291,7 @@ class GalleryViewer extends StatefulWidget {
   /// 本地视频的伴生首帧缩略图路径（`<name>.thumb.jpg` 命名约定），
   /// 在线 URL 无伴生缩略图返回 null
   static String? _companionThumbPath(String filePath) {
+    if (ImageUtils.sdkAssetId(filePath) != null) return null;
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       return null;
     }
@@ -624,6 +631,7 @@ class _GalleryViewerState extends State<GalleryViewer>
   /// 是否有用户语义的本地文件路径（决定是否显示"打开文件夹"定位按钮）：
   /// http 外链 / assets / 远端存储相对路径（仅有服务端文件与临时物化缓存）无
   bool _hasLocalFileUrl(String url) {
+    if (ImageUtils.sdkAssetId(url) != null) return false;
     if (url.startsWith('http://') || url.startsWith('https://')) return false;
     if (url.startsWith('assets/')) return false;
     if (url.startsWith('./') && globalStorage.isRemote) return false;
@@ -635,7 +643,8 @@ class _GalleryViewerState extends State<GalleryViewer>
   /// - http/Asset 原图：保存为副本后当前页切换显示副本内容
   Future<void> _openPhotoEditor(GalleryPhoto current) async {
     final url = _urlOf(_index);
-    final canOverwrite = !url.startsWith('http') && !url.startsWith('assets/');
+    final canOverwrite = !url.startsWith('http') && !url.startsWith('assets/') &&
+      ImageUtils.sdkAssetId(url) == null;
     final result = await showPhotoEditor(
       context,
       imageUrl: url,

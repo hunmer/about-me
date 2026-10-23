@@ -4,6 +4,8 @@ import 'message.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
 class Channel {
+  Map<String, dynamic>? sdkSnapshot;
+  int? sdkVersion;
   final String id;
   String title;
   IconData icon;
@@ -11,6 +13,7 @@ class Channel {
   final List<Message> messages;
   int priority;
   final DateTime lastMessageTime;
+  final int messageCount;
   List<String> groups; // 频道所属的组，可以属于多个组
   bool isPinned; // 固定到列表顶部
   bool isArchived; // 已封存，封存频道不出现在普通分组且禁止发送消息
@@ -35,8 +38,13 @@ class Channel {
     this.backgroundPath,
     Message? lastMessage,
     this.metadata,
-  }) : lastMessageTime =
-           messages.isNotEmpty ? messages.last.date : DateTime.now() {
+    this.sdkSnapshot,
+    this.sdkVersion,
+    DateTime? lastMessageTime,
+    int? messageCount,
+  }) : lastMessageTime = lastMessageTime ??
+           (messages.isNotEmpty ? messages.last.date : DateTime.fromMillisecondsSinceEpoch(0)),
+       messageCount = messageCount ?? messages.length {
     _lastMessage = lastMessage ?? (messages.isNotEmpty ? messages.last : null);
   }
 
@@ -92,6 +100,10 @@ class Channel {
       backgroundPath: backgroundPath ?? this.backgroundPath,
       lastMessage: lastMessage ?? _lastMessage,
       metadata: metadata ?? this.metadata,
+      lastMessageTime: lastMessageTime,
+      messageCount: messageCount,
+      sdkSnapshot: sdkSnapshot,
+      sdkVersion: sdkVersion,
     );
   }
 
@@ -112,6 +124,7 @@ class Channel {
       'fixedSymbol': fixedSymbol,
       'backgroundPath': backgroundPath,
       'lastMessageTime': lastMessageTime.toIso8601String(),
+      'messageCount': messageCount,
       'metadata': metadata,
     };
   }
@@ -136,6 +149,7 @@ class Channel {
             : Colors.blue;
 
     return Channel(
+      sdkVersion: json['_sdkVersion'] as int?,
       id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? '未命名频道',
       draft: json['draft'] as String?,
@@ -152,6 +166,8 @@ class Channel {
       fixedSymbol: json['fixedSymbol'] as String?,
       backgroundPath: json['backgroundPath'] as String?,
       metadata: json['metadata'] as Map<String, dynamic>?,
+      lastMessageTime: DateTime.tryParse(json['lastMessageTime'] as String? ?? ''),
+      messageCount: json['messageCount'] as int?,
     );
   }
 }

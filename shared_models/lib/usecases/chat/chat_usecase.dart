@@ -98,7 +98,7 @@ class ChatUseCase {
     }
 
     try {
-      return await repository.deleteChannel(id);
+      return await repository.deleteChannel(id, expectedVersion: params['expectedVersion'] as int?);
     } catch (e) {
       return Result.failure('删除频道失败: $e', code: ErrorCodes.serverError);
     }
@@ -144,35 +144,10 @@ class ChatUseCase {
     }
 
     try {
-      // 先获取现有频道
-      final existingResult = await repository.getChannelById(id);
-      if (existingResult.isFailure) {
-        return Result.failure('频道不存在', code: ErrorCodes.notFound);
-      }
-
-      final existing = existingResult.dataOrNull;
-      if (existing == null) {
-        return Result.failure('频道不存在', code: ErrorCodes.notFound);
-      }
-
-      // 合并更新
-      final updated = ChannelDto(
-        id: existing.id,
-        title: params['title'] as String? ?? existing.title,
-        iconCodePoint: params['icon'] as int? ?? existing.iconCodePoint,
-        iconFontFamily:
-            params['iconFontFamily'] as String? ?? existing.iconFontFamily,
-        backgroundColor:
-            params['backgroundColor'] as String? ?? existing.backgroundColor,
-        priority: params['priority'] as int? ?? existing.priority,
-        groups: (params['groups'] as List<dynamic>?)?.cast<String>() ??
-            existing.groups,
-        lastMessageTime: existing.lastMessageTime,
-        metadata:
-            params['metadata'] as Map<String, dynamic>? ?? existing.metadata,
-      );
-
-      final result = await repository.updateChannel(id, updated);
+      final result = await repository.patchChannel(id, {
+        for (final key in ['title', 'icon', 'iconFontFamily', 'backgroundColor', 'priority', 'groups', 'metadata'])
+          if (params.containsKey(key)) key: params[key],
+      }, expectedVersion: params['expectedVersion'] as int?);
       return result.map((c) => c.toJson());
     } catch (e) {
       return Result.failure('更新频道失败: $e', code: ErrorCodes.serverError);
@@ -299,6 +274,7 @@ class ChatUseCase {
       return await repository.deleteMessage(
         params['channelId'] as String,
         params['messageId'] as String,
+        expectedVersion: params['expectedVersion'] as int?,
       );
     } catch (e) {
       return Result.failure('删除消息失败: $e', code: ErrorCodes.serverError);

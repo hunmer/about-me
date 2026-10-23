@@ -1,355 +1,268 @@
+import '../../storage_errors.dart';
 import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 
-// Notes 插件专用处理器（移植自 nodejs handlers/notes.ts）。
-//
-// 数据格式：
-// - data.json: 文件夹列表 {"folders": [...]}（folderCrud 默认数据文件）
-// - notes/index.json: 笔记 ID 列表 ["id1", "id2", ...]
-// - notes/{id}.json: 单个笔记详情
-
+/// Index, note and folder changes execute in the shared SDK transaction.
 PluginHandlers createNotesHandlers(PluginData data) {
-  // 读取所有笔记（从独立文件中）
-  Future<List<Map<String, dynamic>>> readAllNotes() async {
-    // 读取笔记 ID 列表
-    final indexData = await data.read('notes', 'notes/index.json');
-    if (indexData is! List) return [];
+  Map<String, dynamic> object(dynamic v) {
+    if (v is! Map)
+      throw const StorageException(StorageErrorKind.invalidData, '笔记数据损坏');
+    return Map<String, dynamic>.from(v);
+  }
 
-    final notes = <Map<String, dynamic>>[];
-    for (final id in indexData) {
-      final noteData = await data.read('notes', 'notes/$id.json');
-      if (noteData is Map) {
-        notes.add(Map<String, dynamic>.from(noteData));
+  Future<List<Map<String, dynamic>>> folders() async {
+    List<Map<String, dynamic>> decode(dynamic v) {
+      if (v == null) return [];
+      final xs = v is Map ? v['folders'] : v;
+      if (xs is! List)
+        throw const StorageException(StorageErrorKind.invalidData, '文件夹数据损坏');
+      return xs.map(object).toList();
+    }
+
+    final merged = <String, Map<String, dynamic>>{};
+    for (final f in [
+      ...decode(await data.read('notes', 'data.json')),
+      ...decode(await data.read('notes', 'folders.json')),
+    ]) {
+      final id = f['id'];
+      if (id is! String || id.isEmpty) throw const FormatException('文件夹缺少ID');
+      merged[id] = {...?merged[id], ...f};
+    }
+    return merged.values.toList();
+  }
+
+  Future<List<Map<String, dynamic>>> notes() async {
+    final ids = await data.read('notes', 'notes/index.json');
+    if (ids == null) return [];
+    if (ids is! List)
+      throw const StorageException(StorageErrorKind.invalidData, '笔记索引损坏');
+    final result = <Map<String, dynamic>>[], seen = <String>{};
+    for (final id in ids) {
+      if (id is! String ||
+          id.contains('/') ||
+          id.contains('\\') ||
+          !seen.add(id))
+        throw const FormatException('笔记索引ID无效或重复');
+      final n = object(await data.read('notes', 'notes/$id.json'));
+      if (n['id'] != id)
+        throw const StorageException(
+          StorageErrorKind.invalidData,
+          '笔记与索引ID不一致',
+        );
+      result.add(n);
+    }
+    return result;
+  }
+
+  Future<void> backup() async {
+    if (await data.read('notes', 'migration_v1_backup.json') != null) return;
+    await data.write('notes', 'migration_v1_backup.json', {
+      'schemaVersion': 1,
+      'folders': await folders(),
+      'notes': await notes(),
+      'originalFolders': await data.read('notes', 'folders.json'),
+      'originalData': await data.read('notes', 'data.json'),
+    });
+  }
+
+  void target(List<Map<String, dynamic>> fs, dynamic id) {
+    if (id != null && id != 'root' && !fs.any((f) => f['id'] == id))
+      throw const FormatException('目标文件夹不存在');
+  }
+
+  Future<PluginResult> list(Map<String, dynamic> p) async {
+    var ns = await notes();
+    if (p['folderId'] != null)
+      ns = ns.where((n) => n['folderId'] == p['folderId']).toList();
+    final q = (p['keyword'] ?? '').toString().toLowerCase();
+    ns = ns
+        .where(
+          (n) => (n['title'].toString() + ' ' + n['content'].toString())
+              .toLowerCase()
+              .contains(q),
+        )
+        .toList();
+    ns.sort((a, b) => a['id'].toString().compareTo(b['id'].toString()));
+    return PluginResult.success(
+      createPaginatedResult(
+        ns,
+        offset: p['offset'] as int?,
+        count: p['count'] as int?,
+      ),
+    );
+  }
+
+  Future<PluginResult> save(
+    Map<String, dynamic> p,
+    bool folder,
+    bool create,
+  ) async {
+    final fs = await folders(), ns = await notes(), items = folder ? fs : ns;
+    final id = p['id'] ?? generateUUID();
+    if (id is! String ||
+        id.isEmpty ||
+        id.contains('/') ||
+        id.contains('\\') ||
+        {'index', '.', '..'}.contains(id))
+      throw const FormatException('ID无效');
+    final i = items.indexWhere((x) => x['id'] == id);
+    if (create && i >= 0)
+      return const PluginResult.failure('ID已存在', 'CONFLICT');
+    if (!create && i < 0)
+      return const PluginResult.failure('项目不存在', 'NOT_FOUND');
+    final patch = Map<String, dynamic>.from(p)
+      ..remove('id')
+      ..remove('createdAt')
+      ..remove('updatedAt');
+    final now = jsIsoDateTime(DateTime.now());
+    final next = <String, dynamic>{
+      if (i >= 0) ...items[i],
+      ...patch,
+      'id': id,
+      'createdAt': i >= 0 ? items[i]['createdAt'] : now,
+      'updatedAt': now,
+    };
+    if (next[folder ? 'name' : 'title'] is! String)
+      throw const FormatException('标题必须为字符串');
+    if (folder) {
+      target(fs, next['parentId']);
+      final visited = <dynamic>{id};
+      dynamic parent = next['parentId'];
+      while (parent != null && parent != 'root') {
+        if (!visited.add(parent))
+          throw const FormatException('文件夹不能移动到自身或子文件夹');
+        parent = fs.firstWhere((f) => f['id'] == parent)['parentId'];
+      }
+    } else {
+      target(fs, next['folderId']);
+      next.putIfAbsent('content', () => '');
+      next.putIfAbsent('tags', () => []);
+      if (next['content'] is! String || next['tags'] is! List)
+        throw const FormatException('笔记内容或标签无效');
+    }
+    await backup();
+    if (i < 0) {
+      items.add(next);
+    } else {
+      items[i] = next;
+    }
+    if (folder) {
+      await data.write('notes', 'folders.json', fs);
+    } else {
+      await data.write('notes', 'notes/$id.json', next);
+      if (create)
+        await data.write(
+          'notes',
+          'notes/index.json',
+          ns.map((n) => n['id']).toList(),
+        );
+    }
+    return PluginResult.success(next);
+  }
+
+  Future<PluginResult> remove(Map<String, dynamic> p, bool folder) async {
+    final fs = await folders(), ns = await notes(), id = p['id'];
+    if (!(folder ? fs : ns).any((x) => x['id'] == id))
+      return const PluginResult.failure('项目不存在', 'NOT_FOUND');
+    final removed = <dynamic>{id};
+    if (folder) {
+      bool changed = true;
+      while (changed) {
+        changed = false;
+        for (final f in fs) {
+          if (removed.contains(f['parentId']) && removed.add(f['id']))
+            changed = true;
+        }
       }
     }
-    return notes;
-  }
-
-  // 保存所有笔记（到独立文件）
-  Future<void> saveAllNotes(List<Map<String, dynamic>> notes) async {
-    // 保存 index.json
-    final noteIds = notes.map((n) => n['id']).toList();
-    await data.write('notes', 'notes/index.json', noteIds);
-
-    // 保存每个笔记文件
-    for (final note in notes) {
-      await data.write('notes', 'notes/${note['id']}.json', note);
+    await backup();
+    final deleted = ns
+        .where((n) => folder ? removed.contains(n['folderId']) : n['id'] == id)
+        .toList();
+    for (final n in deleted) {
+      await data.delete('notes', 'notes/' + n['id'].toString() + '.json');
     }
-  }
-
-  // ===== 文件夹 CRUD（移植自 nodejs crud.ts 的 createCrudHandlers('notes', 'folders')）=====
-
-  // 读取文件夹列表
-  Future<List<Map<String, dynamic>>> readFolders() async {
-    final content = await data.read('notes', 'data.json');
-    if (content is List) return List<Map<String, dynamic>>.from(content);
-    if (content is Map) {
-      final items = content['folders'];
-      if (items is List) return List<Map<String, dynamic>>.from(items);
+    ns.removeWhere((n) => deleted.contains(n));
+    await data.write(
+      'notes',
+      'notes/index.json',
+      ns.map((n) => n['id']).toList(),
+    );
+    if (folder) {
+      fs.removeWhere((f) => removed.contains(f['id']));
+      await data.write('notes', 'folders.json', fs);
+      final old = await data.read('notes', 'data.json');
+      if (old != null)
+        await data.write('notes', 'data.json', {
+          if (old is Map) ...Map<String, dynamic>.from(old),
+          'folders': fs,
+        });
     }
-    return [];
+    return PluginResult.success({'id': id});
   }
 
-  // 保存文件夹列表
-  Future<void> saveFolders(List<Map<String, dynamic>> folders) {
-    return data.write('notes', 'data.json', {'folders': folders});
-  }
-
-  Future<PluginResult> folderGetList(
-    PluginData data,
-    Map<String, dynamic> params,
-  ) async {
-    try {
-      final folders = await readFolders();
-      return PluginResult.success(
+  Future<PluginResult> folderList(Map<String, dynamic> p) async =>
+      PluginResult.success(
         createPaginatedResult(
-          folders,
-          offset: params['offset'] as int?,
-          count: params['count'] as int?,
+          await folders(),
+          offset: p['offset'] as int?,
+          count: p['count'] as int?,
         ),
       );
-    } catch (e) {
-      return PluginResult.failure('读取数据失败: $e');
+  Future<PluginResult> byId(Map<String, dynamic> p, bool folder) async {
+    for (final x in folder ? await folders() : await notes()) {
+      if (x['id'] == p['id']) return PluginResult.success(x);
     }
+    return const PluginResult.failure('项目不存在', 'NOT_FOUND');
   }
 
-  Future<PluginResult> folderGetById(
-    PluginData data,
-    Map<String, dynamic> params,
-  ) async {
-    try {
-      final folders = await readFolders();
-      final index = folders.indexWhere((f) => f['id'] == params['id']);
-      if (index == -1) {
-        return const PluginResult.failure('项目不存在', 'NOT_FOUND');
-      }
-      return PluginResult.success(folders[index]);
-    } catch (e) {
-      return PluginResult.failure('读取数据失败: $e');
-    }
-  }
-
-  Future<PluginResult> folderCreate(
-    PluginData data,
-    Map<String, dynamic> params,
-  ) async {
-    try {
-      final folders = await readFolders();
-      final now = jsIsoDateTime(DateTime.now());
-
-      final newFolder = <String, dynamic>{
-        ...params,
-        'id':
-            params['id'] != null && params['id'].toString().isNotEmpty
-            ? params['id']
-            : generateUUID(),
-        'createdAt': now,
-        'updatedAt': now,
-      };
-
-      folders.add(newFolder);
-      await saveFolders(folders);
-
-      return PluginResult.success(newFolder);
-    } catch (e) {
-      return PluginResult.failure('创建失败: $e');
-    }
-  }
-
-  Future<PluginResult> folderUpdate(
-    PluginData data,
-    Map<String, dynamic> params,
-  ) async {
-    try {
-      final folders = await readFolders();
-      final index = folders.indexWhere((f) => f['id'] == params['id']);
-
-      if (index == -1) {
-        return const PluginResult.failure('项目不存在', 'NOT_FOUND');
-      }
-
-      final updatedFolder = <String, dynamic>{
-        ...folders[index],
-        ...params,
-        'updatedAt': jsIsoDateTime(DateTime.now()),
-      };
-      folders[index] = updatedFolder;
-
-      await saveFolders(folders);
-      return PluginResult.success(updatedFolder);
-    } catch (e) {
-      return PluginResult.failure('更新失败: $e');
-    }
-  }
-
-  Future<PluginResult> folderDelete(
-    PluginData data,
-    Map<String, dynamic> params,
-  ) async {
-    try {
-      final folders = await readFolders();
-      final index = folders.indexWhere((f) => f['id'] == params['id']);
-
-      if (index == -1) {
-        return const PluginResult.failure('项目不存在', 'NOT_FOUND');
-      }
-
-      folders.removeAt(index);
-      await saveFolders(folders);
-
-      return PluginResult.success({'id': params['id']});
-    } catch (e) {
-      return PluginResult.failure('删除失败: $e');
-    }
-  }
-
-  return {
-    // folderCrud 展开后的条目（Folder + 首字母大写的 handler 名）
-    'FolderGetList': folderGetList,
-    'FolderGetById': folderGetById,
-    'FolderCreate': folderCreate,
-    'FolderUpdate': folderUpdate,
-    'FolderDelete': folderDelete,
-
-    // 获取笔记列表
-    'getList': (data, params) async {
-      try {
-        var notes = await readAllNotes();
-
-        // 按文件夹过滤
-        final folderId = params['folderId'];
-        if (folderId != null && folderId.toString().isNotEmpty) {
-          notes = notes.where((n) => n['folderId'] == folderId).toList();
-        }
-
-        return PluginResult.success(
-          createPaginatedResult(
-            notes,
-            offset: params['offset'] as int?,
-            count: params['count'] as int?,
-          ),
+  final handlers = <String, PluginHandler>{
+    'getSnapshot': (_, p) async => PluginResult.success({
+      'folders': await folders(),
+      'notes': await notes(),
+    }),
+    'getList': (_, p) => list(p),
+    'search': (_, p) => list(p),
+    'getById': (_, p) => byId(p, false),
+    'create': (_, p) => save(p, false, true),
+    'update': (_, p) => save(p, false, false),
+    'delete': (_, p) => remove(p, false),
+    'moveNote': (_, p) =>
+        save({'id': p['id'], 'folderId': p['folderId']}, false, false),
+    'getFolders': (_, p) => folderList(p),
+    'getFolderById': (_, p) => byId(p, true),
+    'createFolder': (_, p) => save(p, true, true),
+    'updateFolder': (_, p) => save(p, true, false),
+    'deleteFolder': (_, p) => remove(p, true),
+    'getFolderNotes': (_, p) => list({...p, 'folderId': p['id']}),
+    'seedExamples': (_, p) async {
+      const id = 'notes-example-welcome-v1', noteId = 'notes-example-intro-v1';
+      if (!(await folders()).any((f) => f['id'] == id))
+        await save({'id': id, 'name': '示例笔记'}, true, true);
+      if (!(await notes()).any((n) => n['id'] == noteId))
+        await save(
+          {
+            'id': noteId,
+            'folderId': id,
+            'title': '欢迎使用笔记',
+            'content': '记录想法，支持文件夹、标签与待办清单。',
+            'seedKey': noteId,
+          },
+          false,
+          true,
         );
-      } catch (e) {
-        return PluginResult.failure('获取笔记失败: $e');
-      }
-    },
-
-    // 根据 ID 获取笔记
-    'getById': (data, params) async {
-      try {
-        final notes = await readAllNotes();
-        final index = notes.indexWhere((n) => n['id'] == params['id']);
-
-        if (index == -1) {
-          return const PluginResult.failure('笔记不存在', 'NOT_FOUND');
-        }
-
-        return PluginResult.success(notes[index]);
-      } catch (e) {
-        return PluginResult.failure('获取笔记失败: $e');
-      }
-    },
-
-    // 创建笔记
-    'create': (data, params) async {
-      try {
-        final notes = await readAllNotes();
-        final now = jsIsoDateTime(DateTime.now());
-
-        final newNote = <String, dynamic>{
-          ...params,
-          'id':
-              params['id'] != null && params['id'].toString().isNotEmpty
-              ? params['id']
-              : generateUUID(),
-          'createdAt': now,
-          'updatedAt': now,
-        };
-
-        notes.add(newNote);
-        await saveAllNotes(notes);
-
-        return PluginResult.success(newNote);
-      } catch (e) {
-        return PluginResult.failure('创建笔记失败: $e');
-      }
-    },
-
-    // 更新笔记
-    'update': (data, params) async {
-      try {
-        final notes = await readAllNotes();
-        final index = notes.indexWhere((n) => n['id'] == params['id']);
-
-        if (index == -1) {
-          return const PluginResult.failure('笔记不存在', 'NOT_FOUND');
-        }
-
-        final updatedNote = <String, dynamic>{
-          ...notes[index],
-          ...params,
-          'updatedAt': jsIsoDateTime(DateTime.now()),
-        };
-        notes[index] = updatedNote;
-
-        await saveAllNotes(notes);
-        return PluginResult.success(updatedNote);
-      } catch (e) {
-        return PluginResult.failure('更新笔记失败: $e');
-      }
-    },
-
-    // 删除笔记
-    'delete': (data, params) async {
-      try {
-        final notes = await readAllNotes();
-        final filtered = notes.where((n) => n['id'] != params['id']).toList();
-
-        if (filtered.length == notes.length) {
-          return const PluginResult.failure('笔记不存在', 'NOT_FOUND');
-        }
-
-        await saveAllNotes(filtered);
-        return PluginResult.success({'id': params['id']});
-      } catch (e) {
-        return PluginResult.failure('删除笔记失败: $e');
-      }
-    },
-
-    // 获取文件夹列表
-    'getFolders': folderGetList,
-
-    'getFolderById': folderGetById,
-
-    'createFolder': folderCreate,
-
-    'updateFolder': folderUpdate,
-
-    'deleteFolder': folderDelete,
-
-    // 移动笔记
-    'moveNote': (data, params) async {
-      try {
-        final notes = await readAllNotes();
-        final index = notes.indexWhere((n) => n['id'] == params['id']);
-
-        if (index == -1) {
-          return const PluginResult.failure('笔记不存在', 'NOT_FOUND');
-        }
-
-        notes[index] = <String, dynamic>{
-          ...notes[index],
-          'folderId': params['folderId'],
-          'updatedAt': jsIsoDateTime(DateTime.now()),
-        };
-
-        await saveAllNotes(notes);
-        return PluginResult.success(notes[index]);
-      } catch (e) {
-        return PluginResult.failure('移动笔记失败: $e');
-      }
-    },
-
-    // 获取文件夹的笔记
-    'getFolderNotes': (data, params) async {
-      try {
-        final folderId = params['id'];
-        var notes = await readAllNotes();
-
-        notes = notes.where((n) => n['folderId'] == folderId).toList();
-
-        return PluginResult.success({'data': notes, 'total': notes.length});
-      } catch (e) {
-        return PluginResult.failure('获取笔记失败: $e');
-      }
-    },
-
-    // 搜索笔记
-    'search': (data, params) async {
-      try {
-        final keyword = params['keyword'];
-        final folderId = params['folderId'];
-        var notes = await readAllNotes();
-
-        if (folderId != null && folderId.toString().isNotEmpty) {
-          notes = notes.where((n) => n['folderId'] == folderId).toList();
-        }
-        if (keyword != null && keyword.toString().isNotEmpty) {
-          final kw = keyword.toString().toLowerCase();
-          notes = notes
-              .where(
-                (n) =>
-                    (n['title'] ?? '').toString().toLowerCase().contains(kw) ||
-                    (n['content'] ?? '').toString().toLowerCase().contains(kw),
-              )
-              .toList();
-        }
-
-        return PluginResult.success({'data': notes, 'total': notes.length});
-      } catch (e) {
-        return PluginResult.failure('搜索失败: $e');
-      }
+      return const PluginResult.success({'templateVersion': 1});
     },
   };
+  for (final e in {
+    'FolderGetList': 'getFolders',
+    'FolderGetById': 'getFolderById',
+    'FolderCreate': 'createFolder',
+    'FolderUpdate': 'updateFolder',
+    'FolderDelete': 'deleteFolder',
+  }.entries) {
+    handlers[e.key] = handlers[e.value]!;
+  }
+  return handlers;
 }

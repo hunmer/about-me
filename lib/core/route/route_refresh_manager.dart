@@ -35,8 +35,6 @@ class RouteRefreshManager {
 
   /// 文件路径前缀 -> 插件ID 映射
   static const Map<String, String> _fileToPlugin = {
-    'diary/': 'diary',
-    'chat/': 'chat',
     'notes/': 'notes',
     'todo/': 'todo',
     'activity/': 'activity',

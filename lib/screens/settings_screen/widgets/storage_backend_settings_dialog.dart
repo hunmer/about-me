@@ -3,7 +3,6 @@ import 'package:aboutme/core/storage/http_storage.dart';
 import 'package:aboutme/core/storage/storage_backend_config.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/core/storage/storage_migration_service.dart';
-import 'package:aboutme/core/storage/storage_websocket_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
@@ -76,9 +75,9 @@ class _StorageBackendSettingsDialogState
       _loading = true;
       _status = null;
     });
+    final probe = HttpStorage.fromConfig(_config());
     try {
-      await HttpStorage.fromConfig(_config()).testConnection();
-      await StorageWebSocketService.instance.connect(_config());
+      await probe.testConnection();
       debugPrint('[StorageBackendTest] success url=${_serverController.text}');
       if (mounted) {
         Toast.show('settings_screen_storageConnectionSuccess'.tr);
@@ -100,6 +99,7 @@ class _StorageBackendSettingsDialogState
         );
       }
     } finally {
+      probe.close();
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -126,11 +126,8 @@ class _StorageBackendSettingsDialogState
     setState(() => _loading = true);
     try {
       await _store.save(_config());
-      if (_type == StorageBackendType.http) {
-        await StorageWebSocketService.instance.connect(_config());
-      } else {
-        await StorageWebSocketService.instance.dispose();
-      }
+      // 当前页面提示重启生效。保存只更新 bootstrap 配置，不能提前将
+      // WS 切到另一账号，而 HTTP/SDK/插件快照仍指向当前账号。
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (mounted) {

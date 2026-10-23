@@ -93,8 +93,10 @@ extension _ImagePickerDialogSourcesExt on _ImagePickerDialogState {
   Future<void> _pickFromGallery(BuildContext context) async {
     try {
       debugPrint('开始选择图片...');
-      final files = await FilePickerHelper.pickImages(
-        multiple: _multiple,
+      final selected = await FilePicker.platform.pickFiles(
+        allowMultiple: _multiple,
+        withData: kIsWeb,
+        type: FileType.custom,
         allowedExtensions: const [
           'jpg',
           'jpeg',
@@ -107,7 +109,10 @@ extension _ImagePickerDialogSourcesExt on _ImagePickerDialogState {
         ],
       );
       final List<_PickedImage> images = [
-        for (final file in files) _PickedImage(XFile(file.path)),
+        for (final file in selected?.files ?? <PlatformFile>[])
+          if (kIsWeb && file.bytes != null)
+            _PickedImage(XFile.fromData(file.bytes!, name: file.name))
+          else if (file.path != null) _PickedImage(XFile(file.path!)),
       ];
 
       debugPrint('图片选择完成，数量: ${images.length}');

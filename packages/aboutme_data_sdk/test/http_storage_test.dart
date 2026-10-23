@@ -49,7 +49,11 @@ void main() {
           return http.Response('', 200, headers: {'etag': serverEtag});
         case 'GET':
           if (stored == null) return http.Response('', 404);
-          return http.Response.bytes(stored!, 200, headers: {'etag': serverEtag});
+          return http.Response.bytes(
+            stored!,
+            200,
+            headers: {'etag': serverEtag},
+          );
         default:
           throw StateError('unexpected ${request.method}');
       }
@@ -70,7 +74,7 @@ void main() {
     expect(putHeaders.last.containsKey('If-None-Match'), isFalse);
   });
 
-  test('条件写冲突：刷新版本重试一次，二次冲突回退强制覆盖', () async {
+  test('条件写冲突：返回冲突且不刷新版本或强制覆盖', () async {
     final putIfMatchHeaders = <String?>[];
     var putCalls = 0;
     final client = MockClient((request) async {
@@ -94,12 +98,18 @@ void main() {
       client: client,
     );
 
-    await storage.writeBytes('retry.bin', Uint8List.fromList([1]));
-    // If-None-Match/* 冲突 → HEAD 刷新 → If-Match 重试仍冲突 → 强制覆盖成功
-    expect(putIfMatchHeaders.length, 3);
+    await expectLater(
+      storage.writeBytes('retry.bin', Uint8List.fromList([1])),
+      throwsA(
+        isA<StorageException>().having(
+          (error) => error.kind,
+          'kind',
+          StorageErrorKind.conflict,
+        ),
+      ),
+    );
+    expect(putIfMatchHeaders.length, 1);
     expect(putIfMatchHeaders[0], isNull);
-    expect(putIfMatchHeaders[1], '"server-v9"');
-    expect(putIfMatchHeaders[2], isNull);
   });
 
   test('writeBytesIfCurrent 严格模式：冲突直接抛异常', () async {
