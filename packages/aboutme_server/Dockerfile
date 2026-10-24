@@ -11,6 +11,14 @@ RUN mkdir -p /app \
     && dart pub get --offline \
     && dart compile exe bin/server.dart -o /app/aboutme-server
 
+FROM node:22 AS admin-build
+
+WORKDIR /src/packages/aboutme_server/admin-vue
+COPY packages/aboutme_server/admin-vue/package.json packages/aboutme_server/admin-vue/package-lock.json ./
+RUN npm ci
+COPY packages/aboutme_server/admin-vue ./
+RUN npm run build
+
 FROM debian:bookworm-slim
 
 RUN groupadd --system aboutme \
@@ -20,7 +28,7 @@ RUN groupadd --system aboutme \
 
 WORKDIR /app
 COPY --from=build /app/aboutme-server /app/aboutme-server
-COPY --from=build /src/packages/aboutme_server/admin /app/admin
+COPY --from=admin-build /src/packages/aboutme_server/admin /app/admin
 COPY --from=build /src/packages/aboutme_server/debug /app/debug
 RUN chown -R aboutme:aboutme /app
 

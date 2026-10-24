@@ -4,4 +4,5 @@
 **/build
 packages/aboutme_server/data
 packages/aboutme_server/.env
+packages/aboutme_server/admin
 packages/aboutme_server/server_out.txt
