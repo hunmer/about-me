@@ -35,7 +35,16 @@ jobs:
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       
     - name: Build Windows
-      run: flutter build windows --release --no-tree-shake-icons
+      run: flutter build windows --release --no-tree-shake-icons --verbose
+
+    - name: Diagnose installation failure
+      if: failure()
+      shell: pwsh
+      run: |
+        Get-ChildItem "$env:VCPKG_ROOT/installed/x64-windows/bin" -Filter "*.dll" | Select-Object Name
+        if (Test-Path "build/windows/x64/runner/Release/aboutme.exe") {
+          cmake --install "build/windows/x64" --config Release --verbose
+        }
 
     - name: Create ZIP package
       run: |
