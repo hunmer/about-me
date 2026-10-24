@@ -43,6 +43,9 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
+# Older WinRT plugins still use /await and experimental coroutines on MSVC 14.5x.
+add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
 # Add Windows Runtime libraries for WinRT support
 link_libraries(WindowsApp.lib)
 
