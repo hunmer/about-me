@@ -240,9 +240,7 @@ class FloatingBallConfigManager {
   /// 读取配置（无数据或损坏时返回默认配置）
   static Future<FloatingBallConfig> loadConfig() async {
     try {
-      final svc = AboutmeDataService.instance;
-      await svc.migrateTopLevelConfig(storageKey);
-      final data = await svc.getConfig(storageKey);
+      final data = await AboutmeDataService.instance.getConfig(storageKey);
       if (data == null) {
         return FloatingBallConfig.defaultConfig;
       }

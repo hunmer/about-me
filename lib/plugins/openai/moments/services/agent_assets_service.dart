@@ -128,45 +128,6 @@ class AgentAssetsService extends ChangeNotifier {
         .toList();
   }
 
-  /// 旧数据区资产图路径 → SDK 资源引用（一次性迁移，由 MomentsService
-  /// 启动迁移调用）：遍历 `openai/moments/<agentId>/assets.json`，
-  /// 把 path 字段中命中 [pathMap]（sourcePath → reference）的替换后保存。
-  /// 经本服务读写，保证内存缓存与落盘一致。
-  Future<void> migrateLegacyPaths(Map<String, String> pathMap) async {
-    if (pathMap.isEmpty) return;
-    try {
-      final keys = await AboutmeDataService.instance.listPathKeys(
-        'openai/moments/',
-      );
-      final pattern = RegExp(r'^openai/moments/([^/]+)/assets\.json$');
-      for (final key in keys) {
-        final agentId = pattern.firstMatch(key)?.group(1);
-        if (agentId == null) continue;
-        try {
-          final assets = await getAssets(agentId);
-          var changed = false;
-          for (final asset in assets) {
-            final path = asset.path;
-            if (path == null || path.isEmpty) continue;
-            final normalized = path.startsWith('./')
-                ? path.substring(2)
-                : path;
-            final reference = pathMap[normalized];
-            if (reference != null) {
-              asset.path = reference;
-              changed = true;
-            }
-          }
-          if (changed) await _save(agentId);
-        } catch (e) {
-          debugPrint('[Moments] 资产图路径迁移失败 ($agentId): $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('[Moments] 资产图路径迁移失败: $e');
-    }
-  }
-
   Future<void> _save(String agentId) async {
     final assets = _cache[agentId] ?? [];
     await AboutmeDataService.instance.call('openai', 'saveAssets', {

@@ -100,13 +100,14 @@ class _NewspaperStandDemoState extends State<NewspaperStandDemo> {
 
   void _onHorizontalDragEnd(DragEndDetails details) {
     if (!_dragging) return;
+    final velocity = details.primaryVelocity ?? 0;
     var next = _activeIndex;
-    if (_dragDelta.abs() > 48) {
-      if (_dragDelta < 0 && _activeIndex < 4) {
-        next = _activeIndex + 1;
-      } else if (_dragDelta > 0 && _activeIndex > 0) {
-        next = _activeIndex - 1;
-      }
+    final swipedLeft = _dragDelta < -48 || velocity < -280;
+    final swipedRight = _dragDelta > 48 || velocity > 280;
+    if (swipedLeft && !swipedRight && _activeIndex < 4) {
+      next = _activeIndex + 1;
+    } else if (swipedRight && !swipedLeft && _activeIndex > 0) {
+      next = _activeIndex - 1;
     }
     setState(() {
       _dragging = false;
@@ -368,7 +369,10 @@ class _NewspaperStandDemoState extends State<NewspaperStandDemo> {
           clipBehavior: Clip.none,
           children: [
             for (final i in order)
+              // 必须带 key：切换 activeIndex 时 z 序会重排，
+              // 无 key 会导致卡片按位置复用、从别的卡片的旧 transform 开始插值而跳变
               Positioned(
+                key: ValueKey(i),
                 left: cx - 143,
                 top: cy - 94,
                 child: _buildPositionedCard(i),

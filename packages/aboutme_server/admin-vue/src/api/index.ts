@@ -344,8 +344,35 @@ export async function fetchMigratedDomains(): Promise<string[]> {
   return migratedDomainsCache
 }
 
+// 非域类的原始写保护前缀（configs 设置统一通道 / assets 资源系统等）
+let protectedPrefixesCache: string[] | null = null
+export async function fetchProtectedPrefixes(): Promise<string[]> {
+  if (protectedPrefixesCache) return protectedPrefixesCache
+  try {
+    const caps = await apiClient.request<{ protectedPrefixes?: string[] }>(
+      '/api/v1/plugins/capabilities'
+    )
+    protectedPrefixesCache = caps.protectedPrefixes || []
+  } catch {
+    protectedPrefixesCache = []
+  }
+  return protectedPrefixesCache
+}
+
 // 路径是否落在已迁移业务域前缀下（如 'diary/...' / 'agent_chat/...'）
 export function isMigratedPath(path: string, domains: string[]): boolean {
   const first = path.replace(/^\/+/, '').split('/')[0]?.toLowerCase()
   return !!first && domains.includes(first)
+}
+
+// 路径是否落在保护前缀下（支持目录前缀与精确文件，如 'configs/...'、
+// 'stickers/collections.json'；旧服务端未上报时 prefixes 为空表自动跳过）
+export function isProtectedPath(path: string, prefixes: string[]): boolean {
+  const normalized = path.replace(/^\/+/, '').toLowerCase()
+  if (!normalized) return false
+  return prefixes.some(
+    (prefix) =>
+      normalized === prefix.toLowerCase() ||
+      normalized.startsWith(`${prefix.toLowerCase()}/`)
+  )
 }

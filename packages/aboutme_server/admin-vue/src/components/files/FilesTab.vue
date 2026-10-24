@@ -5,7 +5,7 @@ import { useFilesStore } from '@/stores/files'
 import { useUIStore } from '@/stores/ui'
 import { useMessage } from '@/composables/useMessage'
 import { useDialog } from '@/composables/useDialog'
-import { syncApi, isUpgradeRequiredError, isMigratedPath, fetchMigratedDomains, UPGRADE_REQUIRED_MESSAGE } from '@/api'
+import { syncApi, isUpgradeRequiredError, isMigratedPath, isProtectedPath, fetchMigratedDomains, fetchProtectedPrefixes, UPGRADE_REQUIRED_MESSAGE } from '@/api'
 import { formatSize, formatTime } from '@/utils/format'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -301,12 +301,20 @@ function handleDownload(node: FileNode): void {
   void downloadFile(node.path)
 }
 
-// 已迁移业务域的删除会被服务端 426 拒绝：弹升级引导而不是确认删除
+// 已迁移业务域与保护前缀（configs 设置通道/assets 资源等）的删除会被服务端
+// 426 拒绝：弹升级引导而不是确认删除
 async function guardMigratedDelete(paths: string[]): Promise<boolean> {
-  const domains = await fetchMigratedDomains()
-  if (paths.some((p) => isMigratedPath(p, domains))) {
+  const [domains, prefixes] = await Promise.all([
+    fetchMigratedDomains(),
+    fetchProtectedPrefixes()
+  ])
+  if (
+    paths.some(
+      (p) => isMigratedPath(p, domains) || isProtectedPath(p, prefixes)
+    )
+  ) {
     dialog.warning({
-      title: '已迁移业务域（禁止原始文件操作）',
+      title: '受保护路径（禁止原始文件操作）',
       content: UPGRADE_REQUIRED_MESSAGE,
       type: 'warning',
       positiveText: '知道了',

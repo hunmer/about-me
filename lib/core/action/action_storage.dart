@@ -26,13 +26,8 @@ class ActionStorage {
 
   AboutmeDataService get _svc => AboutmeDataService.instance;
 
-  /// 顶层旧主配置一次性迁入 configs/（幂等；读旧→写新→删旧）
-  Future<void> _ensureMigrated() =>
-      _svc.migrateTopLevelConfig(CONFIG_FILE_NAME);
-
   /// 检查配置文件是否存在
   Future<bool> hasConfig() async {
-    await _ensureMigrated();
     try {
       return await _svc.getConfig(CONFIG_FILE_NAME) != null;
     } catch (_) {
@@ -43,7 +38,6 @@ class ActionStorage {
   /// 加载配置
   Future<ActionStorageData> loadConfig() async {
     try {
-      await _ensureMigrated();
       final raw = await _svc.getConfig(CONFIG_FILE_NAME);
       if (raw is! Map || raw.isEmpty) {
         return _emptyConfig();
@@ -144,7 +138,6 @@ class ActionStorage {
 
   /// 获取配置信息
   Future<ConfigInfo> getConfigInfo() async {
-    await _ensureMigrated();
     final config = await _svc.getConfig(CONFIG_FILE_NAME);
     final content = config == null ? '' : jsonEncode(config);
 
@@ -200,7 +193,6 @@ class ActionStorage {
   /// 验证配置文件
   Future<ConfigValidationResult> validateConfig() async {
     try {
-      await _ensureMigrated();
       final raw = await _svc.getConfig(CONFIG_FILE_NAME);
       if (raw is! Map || raw.isEmpty) {
         return ConfigValidationResult(

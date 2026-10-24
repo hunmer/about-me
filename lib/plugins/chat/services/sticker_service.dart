@@ -100,20 +100,6 @@ class StickerService {
     }
   }
 
-  /// 一次性幂等迁移：注册表中残留的 stickers/ 旧引用批量转 SDK 资源
-  /// （旧二进制经迁移记录去重复用，迁后删旧；无旧引用时仅一次轻量 dryRun）。
-  Future<void> migrateLegacyStickers() async {
-    try {
-      final dry = await _call('migrateLegacyStickers') as Map;
-      if ((dry['pending'] as int? ?? 0) == 0) return;
-      final done = await _call('migrateLegacyStickers', {'dryRun': false}) as Map;
-      debugPrint('[StickerService] 旧贴图迁移完成: '
-          '${done['migrated']}/${done['pending']}，失败 ${(done['failed'] as List).length}');
-    } catch (e) {
-      debugPrint('[StickerService] 旧贴图迁移跳过: $e');
-    }
-  }
-
   // ==================== 内部实现 ====================
 
   /// APNG → 动画 GIF（在 isolate 中执行，供 compute 调用）

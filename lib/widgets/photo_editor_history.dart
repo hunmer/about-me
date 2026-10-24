@@ -44,11 +44,12 @@ class PhotoEditorHistory {
           continue;
         }
         // 本地绝对路径（file_picker 选择）走文件系统，其余走存储后端
+        // （只读直达 SDK data，文件层兼容层已移除）
         final isLocalAbs =
             url.startsWith('/') || RegExp(r'^[A-Za-z]:[/\\]').hasMatch(url);
         final exists = isLocalAbs
             ? File(url).existsSync()
-            : await AboutmeDataService.instance.existsPath(url);
+            : await AboutmeDataService.instance.data.existsPath(url);
         if (exists) valid.add(entry);
       }
       return valid;

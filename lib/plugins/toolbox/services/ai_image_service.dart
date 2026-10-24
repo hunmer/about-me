@@ -28,7 +28,6 @@ class AiImageService {
   static final AiImageService instance = AiImageService._();
 
   /// 旧版本产物目录（相对 app_data，仅作一次性迁移前缀）
-  static const legacyOutputDir = 'toolbox/ai_image';
 
   /// 生成历史上限 100 条（存储经 SDK 命令，截断由本服务负责）
   static const historyLimit = 100;
@@ -125,80 +124,6 @@ class AiImageService {
     } catch (e) {
       debugPrint('[toolbox] 读取 ai_image 配置失败: $e');
     }
-    // 旧数据区 PNG 一次性迁移为 SDK 资源（幂等，失败不阻塞）
-    await _migrateLegacyImages();
-  }
-
-  /// 旧版本产物（app_data/toolbox/ai_image/ 下的 PNG）一次性迁移为
-  /// SDK 资源（幂等）：migrateLegacyAssets 分批迁移（成功后删旧文件），
-  /// 再用 sourcePath → reference 映射更新 history 里 images 引用。
-  Future<void> _migrateLegacyImages() async {
-    final svc = AboutmeDataService.instance;
-    try {
-      // 仅迁移媒体文件（目录下还混有 history.json，非媒体不进白名单）
-      final mediaPattern = RegExp(
-        r'\.(png|gif|jpe?g|webp|svg|apng|bmp|mp4|mov|webm|mp3|m4a|aac|wav)$',
-        caseSensitive: false,
-      );
-      final keys = (await svc.listPathKeys('$legacyOutputDir/'))
-          .where((key) => mediaPattern.hasMatch(key))
-          .toList();
-      if (keys.isEmpty) return;
-
-      final pathMap = <String, String>{};
-      for (var i = 0; i < keys.length; i += 50) {
-        try {
-          final res = await svc.call('assets', 'migrateLegacyAssets', {
-            'items': [
-              for (final key in keys.skip(i).take(50)) {'sourcePath': key},
-            ],
-          });
-          if (res['success'] != true) {
-            debugPrint('[toolbox] ai_image 旧图迁移命令失败: ${res['error']}');
-            continue;
-          }
-          final migrated =
-              ((res['data'] as Map)['migrated'] as List).cast<Map>();
-          for (final m in migrated) {
-            pathMap[m['sourcePath'] as String] = m['reference'] as String;
-          }
-        } catch (e) {
-          debugPrint('[toolbox] ai_image 旧图迁移批次失败: $e');
-        }
-      }
-      if (pathMap.isEmpty) return;
-
-      final res = await svc.call('toolbox', 'getAiImageHistory');
-      final list = res['success'] == true && res['data'] is List
-          ? (res['data'] as List).whereType<Map<String, dynamic>>().toList()
-          : <Map<String, dynamic>>[];
-      var changed = false;
-      for (final entry in list) {
-        final images = (entry['images'] as List?)?.cast<String>() ?? [];
-        final updated = <String>[
-          for (final rel in images)
-            pathMap[rel.startsWith('./') ? rel.substring(2) : rel] ?? rel,
-        ];
-        if (!_sameList(updated, images)) {
-          entry['images'] = updated;
-          changed = true;
-        }
-      }
-      if (changed) {
-        await svc.call('toolbox', 'saveAiImageHistory', {'history': list});
-        debugPrint('[toolbox] ai_image 旧图引用已迁移（${pathMap.length} 个文件）');
-      }
-    } catch (e) {
-      debugPrint('[toolbox] ai_image 旧图迁移失败: $e');
-    }
-  }
-
-  static bool _sameList(List<String> a, List<String> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 
   Future<void> saveConfig(Map<String, dynamic> config) async {
@@ -603,7 +528,7 @@ class AiImageService {
           } else {
             // 历史遗留本地路径：仍走文件层存在性检查
             try {
-              if (await AboutmeDataService.instance.existsPath(rel)) {
+              if (await AboutmeDataService.instance.data.existsPath(rel)) {
                 existing.add(rel);
               }
             } catch (_) {}

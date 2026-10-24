@@ -451,4 +451,75 @@ void main() {
     expect(page.data.single.toJson()['extension'], true);
     expect((await remote.get('diary', 'exportEntries'))['data']['entries'][0]['content'], 'keep');
   });
+
+  test('system config 命令远端链路：斜杠 key、写删与 configs 封闭', () async {
+    final remote = AboutmeData.remote(serverUrl: baseUrl, apiKey: apiKey);
+    addTearDown(remote.dispose);
+
+    // GET 走 query（json-v1 编码）：多段 key（bill/settings.json）与顶层键
+    final missing = await remote.get(
+      'system', 'getConfig', {'key': 'bill/settings.json'});
+    expect(missing['success'], true, reason: '$missing');
+    expect(missing['data']['value'], isNull);
+
+    // PUT 走 body：对象/字符串值写读闭环
+    final saved = await remote.get('system', 'setConfig', {
+      'key': 'bill/settings.json',
+      'value': {'currency': 'CNY'},
+    });
+    expect(saved['success'], true, reason: '$saved');
+    final read = await remote.get(
+      'system', 'getConfig', {'key': 'bill/settings.json'});
+    expect(read['data']['value']['currency'], 'CNY');
+
+    final savedId = await remote.get('system', 'setConfig', {
+      'key': 'webview_app_source_current.json',
+      'value': 'uuid-1',
+    });
+    expect(savedId['success'], true, reason: '$savedId');
+    final readId = await remote.get(
+      'system', 'getConfig', {'key': 'webview_app_source_current.json'});
+    expect(readId['data']['value'], 'uuid-1');
+
+    // 落盘 configs/ 前缀原位（server 按认证用户隔离在 users/<id>/ 下）
+    final userFiles = Directory('${tempDir.path}/users')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .map((f) => f.path.replaceAll('\\', '/'))
+        .toList();
+    expect(
+      userFiles.any((p) => p.endsWith('/configs/bill/settings.json')),
+      true,
+      reason: '$userFiles',
+    );
+
+    // DELETE 走 body
+    final removed = await remote.get(
+      'system', 'deleteConfig', {'key': 'bill/settings.json'});
+    expect(removed['data']['deleted'], true);
+
+    // configs 原始文件写被封闭（426）
+    final client = HttpClient(); addTearDown(client.close);
+    final req = await client.putUrl(
+      Uri.parse('$baseUrl/api/v1/storage/files/configs/app_config.json'));
+    req.headers.set('X-API-Key', apiKey);
+    req.headers.set('X-Force-Overwrite', 'true');
+    req.headers.contentType = ContentType.binary;
+    req.write('{}');
+    final response = await req.close();
+    expect(response.statusCode, 426);
+    expect(
+      jsonDecode(await response.transform(utf8.decoder).join())['code'],
+      'UPGRADE_REQUIRED',
+    );
+
+    // capabilities 对外声明保护前缀
+    final capsReq = await client.getUrl(
+      Uri.parse('$baseUrl/api/v1/plugins/capabilities'));
+    capsReq.headers.set('X-API-Key', apiKey);
+    final caps = jsonDecode(
+      await (await capsReq.close()).transform(utf8.decoder).join())
+      as Map<String, dynamic>;
+    expect((caps['protectedPrefixes'] as List).contains('configs'), true);
+  });
 }

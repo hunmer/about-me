@@ -24,17 +24,6 @@ class ScriptLoader {
     'image_search',
   ];
 
-  /// 旧分区顶层键（迁移用）
-  static const String _legacySourcesKey =
-      'configs/scripts_center_script_sources.json';
-  static const String _legacyInstalledKey =
-      'configs/scripts_center_installed_scripts';
-
-  /// configs/ 全路径 → system 域 config 命令的相对 key（configs/ 前缀
-  /// 原始写已封闭，迁移删旧走 deleteConfig 命令）
-  static String _configKeyOf(String fullPath) =>
-      fullPath.startsWith('configs/') ? fullPath.substring(8) : fullPath;
-
   ScriptLoader(this.storage);
 
   /// 获取默认scripts目录路径（仅作文件夹展示标识，数据实际在 SDK 分区）
@@ -55,16 +44,13 @@ class ScriptLoader {
     return result['data'];
   }
 
-  /// 同步内置脚本（在 loadScripts 之前调用，先执行旧分区迁移）
+  /// 同步内置脚本（在 loadScripts 之前调用）
   ///
   /// 内置脚本随应用 assets 打包（assets/scripts/{id}/）：
   /// - 本地不存在：从 assets 恢复
   /// - assets 版本更高：自动升级覆盖（代码与元数据），用户配置不受影响
   /// - 版本相同：跳过（保留用户对内置脚本代码的本地修改）
   Future<void> syncBuiltInScripts() async {
-    // 一次性幂等迁移：旧 scripts/ 与 configs/scripts_center* → scripts_center 分区
-    await migrateLegacyPartition();
-
     final items = <Map<String, dynamic>>[];
     for (final scriptId in builtInScriptIds) {
       try {
@@ -118,125 +104,6 @@ class ScriptLoader {
       } catch (e) {
         print('⚠️ 清理下线内置脚本失败: $scriptId, 错误: $e');
       }
-    }
-  }
-
-  /// 旧分区数据一次性迁移（幂等）：
-  /// - scripts/{id}/metadata.json + script.js → 分区 createScript
-  /// - scripts/index.json → 废弃直接删
-  /// - configs/scripts_center/{id}_config.json → 分区 setConfig
-  ///   （ai_image/image_search 两个已下线工具的配置留给工具箱服务迁移）
-  /// - configs/scripts_center/execution_log.json → recordExecution 回放
-  /// - configs/scripts_center_script_sources.json → store/sources.json
-  /// - configs/scripts_center_installed_scripts → store/installed.json
-  ///
-  /// 触发条件：分区内无任何脚本且旧分区存在数据；迁移后删除旧文件，
-  /// 之后启动条件不再成立。
-  Future<void> migrateLegacyPartition() async {
-    final svc = AboutmeDataService.instance;
-    try {
-      final existing = await call('listScripts', {}) as List;
-      if (existing.isNotEmpty) return;
-
-      final legacyScriptKeys = await svc.listPathKeys('scripts/');
-      final legacyConfigKeys = await svc.listPathKeys('configs/scripts_center');
-      final legacySourcesExists = await svc.existsPath(_legacySourcesKey);
-      final legacyInstalledExists = await svc.existsPath(_legacyInstalledKey);
-      if (legacyScriptKeys.isEmpty &&
-          legacyConfigKeys.isEmpty &&
-          !legacySourcesExists &&
-          !legacyInstalledExists) {
-        return;
-      }
-
-      // 1) 脚本：metadata + code → 分区（分区当前为空，不会 CONFLICT）
-      final ids = <String>{};
-      for (final key in legacyScriptKeys) {
-        final parts = key.split('/'); // scripts/{id}/{file}
-        if (parts.length == 3) ids.add(parts[1]);
-      }
-      for (final id in ids) {
-        try {
-          final metadata = await svc.readPath('scripts/$id/metadata.json');
-          final code = await svc.readPathText('scripts/$id/script.js');
-          if (metadata is Map && metadata.isNotEmpty) {
-            await call('createScript', {
-              'id': id,
-              'metadata': metadata,
-              'code': code,
-            });
-          }
-        } catch (e) {
-          print('⚠️ 迁移脚本失败: $id, 错误: $e');
-        }
-      }
-
-      // 2) 脚本配置（跳过已下线工具箱工具，其配置由工具箱兜底迁移）
-      for (final key in legacyConfigKeys) {
-        final name = key.split('/').last;
-        if (name == 'execution_log.json' || !name.endsWith('_config.json')) {
-          continue;
-        }
-        final scriptId = name.substring(0, name.length - '_config.json'.length);
-        if (_retiredBuiltInScriptIds.contains(scriptId)) continue;
-        try {
-          final config = await svc.readPath(key);
-          if (config is Map && config.isNotEmpty) {
-            await call('setConfig', {'scriptId': scriptId, 'config': config});
-          }
-          await svc.deleteConfig(_configKeyOf(key));
-        } catch (e) {
-          print('⚠️ 迁移脚本配置失败: $scriptId, 错误: $e');
-        }
-      }
-
-      // 3) 执行记录：倒序回放（recordExecution 头部插入，最终顺序与旧文件一致）
-      const legacyLogKey = 'configs/scripts_center/execution_log.json';
-      if (legacyConfigKeys.contains(legacyLogKey)) {
-        try {
-          final entries = await svc.readPath(legacyLogKey);
-          if (entries is List && entries.isNotEmpty) {
-            for (final entry in entries.reversed.whereType<Map>()) {
-              await call('recordExecution', {
-                'entry': Map<String, dynamic>.from(entry),
-              });
-            }
-          }
-          await svc.deleteConfig(_configKeyOf(legacyLogKey));
-        } catch (e) {
-          print('⚠️ 迁移执行记录失败: $e');
-        }
-      }
-
-      // 4) 商场源配置与已安装脚本
-      try {
-        if (legacySourcesExists) {
-          final sources = await svc.readPath(_legacySourcesKey);
-          if (sources is List && sources.isNotEmpty) {
-            await call('saveSources', {'sources': sources});
-          }
-          await svc.deleteConfig(_configKeyOf(_legacySourcesKey));
-        }
-        if (legacyInstalledExists) {
-          final installed = await svc.readPath(_legacyInstalledKey);
-          if (installed is List && installed.isNotEmpty) {
-            await call('saveInstalled', {'installed': installed});
-          }
-          await svc.deleteConfig(_configKeyOf(_legacyInstalledKey));
-        }
-      } catch (e) {
-        print('⚠️ 迁移商场数据失败: $e');
-      }
-
-      // 5) 删除旧 scripts/ 文件（含废弃的 index.json）
-      for (final key in legacyScriptKeys) {
-        try {
-          await svc.deletePath(key);
-        } catch (_) {}
-      }
-      print('✅ scripts_center 旧分区迁移完成（${ids.length} 个脚本）');
-    } catch (e) {
-      print('❌ scripts_center 旧分区迁移失败: $e');
     }
   }
 

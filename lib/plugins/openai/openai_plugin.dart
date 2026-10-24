@@ -277,9 +277,6 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> initializeDefaultData() async {
-    // 旧数据迁移：avatarUrl 旧引用（打包路径/数据区路径）统一改为 SDK 资源
-    await _migrateBundledAgentAvatars();
-
     // 确保 agents.json 文件存在并初始化默认智能体
     final agentData = await _readAgentsFile();
     if (agentData == null || agentData.isEmpty) {
@@ -328,81 +325,6 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       }
     }
     return migrated;
-  }
-
-  /// 已写入 agents.json 的旧 avatarUrl 迁移为 SDK 资源引用（幂等）：
-  /// - 'assets/agents/...'：打包路径，rootBundle 重读字节上传
-  /// - './openai/...' 或 'openai/...'：旧数据区文件，经 assets
-  ///   migrateLegacyAssets 批量迁移（成功后由命令删除旧文件）
-  /// - 'asset://...'：已是资源引用，跳过
-  Future<void> _migrateBundledAgentAvatars() async {
-    try {
-      final agentData = await _readAgentsFile();
-      if (agentData == null) return;
-      final agents = agentData['agents'] as List?;
-      if (agents == null || agents.isEmpty) return;
-
-      // 1) 打包路径头像：rootBundle 重读上传
-      final assetUrls = agents
-          .map((agent) => (agent as Map)['avatarUrl'])
-          .whereType<String>()
-          .where((url) => url.startsWith('assets/agents/'))
-          .toSet();
-      final avatarMap = await _copyBundledAgentAvatars(assetUrls);
-
-      // 2) 旧数据区本地路径：migrateLegacyAssets 批量迁移（单次上限 50）
-      final legacyPaths = agents
-          .map((agent) => (agent as Map)['avatarUrl'])
-          .whereType<String>()
-          .map((url) => url.startsWith('./') ? url.substring(2) : url)
-          .where((url) => url.startsWith('openai/'))
-          .toSet();
-      for (var i = 0; i < legacyPaths.length; i += 50) {
-        try {
-          final res = await AboutmeDataService.instance.call(
-            'assets',
-            'migrateLegacyAssets',
-            {
-              'items': [
-                for (final p in legacyPaths.skip(i).take(50))
-                  {'sourcePath': p},
-              ],
-            },
-          );
-          if (res['success'] != true) {
-            debugPrint('[OpenAIPlugin] 旧头像迁移命令失败: ${res['error']}');
-            continue;
-          }
-          for (final m
-              in ((res['data'] as Map)['migrated'] as List).cast<Map>()) {
-            avatarMap[m['sourcePath'] as String] = m['reference'] as String;
-          }
-        } catch (e) {
-          debugPrint('[OpenAIPlugin] 旧头像迁移批次失败: $e');
-        }
-      }
-      if (avatarMap.isEmpty) return;
-
-      var changed = false;
-      for (final agent in agents.cast<Map<String, dynamic>>()) {
-        final url = agent['avatarUrl'];
-        if (url is! String) continue;
-        final normalized = url.startsWith('./') ? url.substring(2) : url;
-        final reference = avatarMap[url] ?? avatarMap[normalized];
-        if (reference != null) {
-          agent['avatarUrl'] = reference;
-          changed = true;
-        }
-      }
-      if (changed) {
-        await AboutmeDataService.instance.call('openai', 'saveAgents', {
-          'agents': agentData,
-        });
-        debugPrint('[OpenAIPlugin] 已迁移 ${avatarMap.length} 个头像为 SDK 资源');
-      }
-    } catch (e) {
-      debugPrint('[OpenAIPlugin] 默认头像迁移失败: $e');
-    }
   }
 
   /// 初始化提示词预设数据

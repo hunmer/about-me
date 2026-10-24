@@ -75,33 +75,6 @@ class AboutmeDataService with WidgetsBindingObserver {
     debugPrint('[AboutmeData] 本地模式');
   }
 
-  // ==================== 文件层（全路径，客户端迁移兼容层） ====================
-  // path 形如 'todo/tasks.json'，与原 StorageManager.read/write 语义对齐。
-
-  Future<dynamic> readPath(String path, [dynamic defaultValue]) =>
-      data.readPath(path, defaultValue);
-
-  Future<String> readPathText(String path) => data.readPathText(path);
-
-  Future<void> writePath(String path, dynamic content) =>
-      data.writePath(path, content);
-
-  Future<bool> deletePath(String path) => data.deletePath(path);
-
-  Future<bool> existsPath(String path) => data.existsPath(path);
-
-  Future<List<String>> listPathKeys(String prefix) => data.listPathKeys(prefix);
-
-  Future<void> clearPathPrefix(String prefix) => data.clearPathPrefix(prefix);
-
-  // ==================== 插件分区文件层 ====================
-
-  Future<dynamic> readFile(String pluginId, String fileName) =>
-      data.readFile(pluginId, fileName);
-
-  Future<void> writeFile(String pluginId, String fileName, dynamic content) =>
-      data.writeFile(pluginId, fileName, content);
-
   // ==================== 业务层（与 REST/MCP 同一套处理器） ====================
 
   Future<Map<String, dynamic>> call(
@@ -118,8 +91,10 @@ class AboutmeDataService with WidgetsBindingObserver {
 
   // ==================== configs 设置统一通道（system 域命令封装） ====================
   // key 为 configs/ 下相对路径（如 'app_config.json'、'bill/settings.json'），
-  // 落盘与旧 configs/ 布局原位一致（零迁移）。失败（损坏/无效 key 等）抛
+  // 落盘与旧 configs/ 布局原位一致。失败（损坏/无效 key 等）抛
   // StateError，调用方按各自缺省语义兜底；configs/ 前缀原始文件写已封闭。
+  // 文件层兼容层已移除（旧数据由用户手动清空）：本服务不再提供
+  // readPath/writePath 等全路径转发，历史等只读直达 [data]。
 
   Future<dynamic> getConfig(String key) async {
     final result = await call('system', 'getConfig', {'key': key});
@@ -145,30 +120,6 @@ class AboutmeDataService with WidgetsBindingObserver {
       throw StateError('deleteConfig($key) 失败: ${result['error']}');
     }
     return (result['data'] as Map)['deleted'] == true;
-  }
-
-  final _migratedTopLevelConfigs = <String>{};
-
-  /// 顶层裸配置文件一次性迁入 configs/ 统一通道（读旧→写新→删旧，幂等）。
-  /// configs/ 已有值或顶层无旧文件时为快速 no-op；顶层路径不受封闭。
-  /// 迁移失败静默（下次调用重试）。
-  Future<void> migrateTopLevelConfig(String fileName) async {
-    if (_migratedTopLevelConfigs.contains(fileName)) return;
-    try {
-      if (await getConfig(fileName) != null) {
-        _migratedTopLevelConfigs.add(fileName);
-        return;
-      }
-      if (!await existsPath(fileName)) {
-        _migratedTopLevelConfigs.add(fileName);
-        return;
-      }
-      await setConfig(fileName, await readPath(fileName));
-      await deletePath(fileName);
-      _migratedTopLevelConfigs.add(fileName);
-    } catch (_) {
-      /* 迁移失败下次重试（不加内存标记） */
-    }
   }
 
   // ==================== 局部刷新订阅 ====================
