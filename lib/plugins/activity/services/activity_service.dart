@@ -60,19 +60,13 @@ class ActivityService {
       List<ActivityRecord> activities = await getActivitiesForDate(date);
 
       // 检查是否存在重叠的活动
-      final overlappingIndex = activities.indexWhere(
+      final hasOverlap = activities.any(
         (a) =>
             a.startTime.isBefore(activity.endTime) &&
             a.endTime.isAfter(activity.startTime),
       );
 
-      if (overlappingIndex != -1) {
-        // 如果存在重叠，替换原有的活动（删旧写新，保留新 id）
-        await _command('delete', {
-          'id': activities[overlappingIndex].id,
-          'date': _dateKey(date),
-        });
-      }
+      // 重叠拆分由 SDK 在创建事务内统一处理，避免提前删除旧活动剩余时间。
       await _command('create', {
         ...activity.toJson(),
         'date': _dateKey(date),
@@ -85,7 +79,7 @@ class ActivityService {
       if (notify) {
         eventManager.broadcast('activity_added', EventArgs());
         // 成就系统计数（A18 千时如梭）：仅新增记录（非重叠替换）时累计时长（分钟）
-        if (overlappingIndex == -1) {
+        if (!hasOverlap) {
           eventManager.broadcast(
             'activity_duration_added',
             Value<int>(activity.durationInMinutes, 'activity_duration_added'),
@@ -104,6 +98,7 @@ class ActivityService {
       final response = await _query('getList', {'date': _dateKey(date)});
       final jsonList = ((response['data'] as Map)['data'] as List)
           .cast<Map<String, dynamic>>();
+      debugPrint('[ActivityDay] date=${_dateKey(date)} records=${jsonList.length}');
 
       return jsonList.map((json) {
         final activity = ActivityRecord.fromJson(json);
@@ -115,8 +110,8 @@ class ActivityService {
         }
         return activity;
       }).toList();
-    } catch (e) {
-      debugPrint('Error loading activities: $e');
+    } catch (e, stack) {
+      debugPrint('Error loading activities date=${_dateKey(date)}: $e\n$stack');
       return [];
     }
   }

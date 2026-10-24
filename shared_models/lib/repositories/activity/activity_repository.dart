@@ -38,7 +38,7 @@ class ActivityDto {
       title: json['title'] as String,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       description: json['description'] as String?,
-      mood: json['mood'] as String?,
+      mood: json['mood']?.toString(),
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }

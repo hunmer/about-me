@@ -110,6 +110,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
         items: [
           for (final account in accounts) _buildAccountCardData(account),
         ],
+        onCardTap: (index) => _openAccountBills(context, accounts[index]),
         onCardLongPress: (index) => _showAccountActions(context, accounts[index]),
       ),
     );

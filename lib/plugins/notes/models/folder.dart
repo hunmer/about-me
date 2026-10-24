@@ -44,7 +44,9 @@ class Folder {
       sdkVersion: json['_sdkVersion'] as int?,
       id: json['id'] as String,
       name: json['name'] as String,
-      parentId: json['parentId'] as String?,
+      // SDK/MCP 允许省略父级，普通文件夹应归入页面使用的 root 目录。
+      parentId: json['parentId'] as String? ??
+          (json['id'] == 'root' ? null : 'root'),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       color: Color(json['color'] as int? ?? Colors.blue.value),

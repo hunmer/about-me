@@ -1,7 +1,9 @@
+import 'dart:convert';
 import '../plugin_data.dart';
 import '../types.dart';
 import '../utils.dart';
 import 'record_domain_support.dart';
+import 'activity_time_segments.dart';
 
 // Activity 插件专用处理器（移植自 nodejs handlers/activity.ts）。
 //
@@ -11,7 +13,7 @@ import 'record_domain_support.dart';
 
 PluginHandlers createActivityHandlers(PluginData data) {
   // 读取指定日期的活动（文件缺失视为空；损坏数据报 CORRUPT_DATA）
-  Future<List<Map<String, dynamic>>> readActivitiesForDate(
+  Future<List<Map<String, dynamic>>> readStoredActivitiesForDate(
     String dateStr,
   ) async {
     final content = await data.read('activity', 'activities_$dateStr.json');
@@ -20,9 +22,8 @@ PluginHandlers createActivityHandlers(PluginData data) {
     // 兼容两种格式：数组 [...] 或对象 {"activities": [...]}
     final List? rows = switch (content) {
       List() => content,
-      Map() => content['activities'] is List
-          ? content['activities'] as List
-          : null,
+      Map() =>
+        content['activities'] is List ? content['activities'] as List : null,
       _ => null,
     };
     if (rows == null) {
@@ -89,22 +90,98 @@ PluginHandlers createActivityHandlers(PluginData data) {
     });
   }
 
+  // 旧跨天记录按日投影，查询不写盘；命令在同一事务内持久化所需拆分。
+  Future<
+    ({
+      Map<String, List<Map<String, dynamic>>> original,
+      Map<String, List<Map<String, dynamic>>> days,
+    })
+  >
+  loadActivityDays() async {
+    final original = <String, List<Map<String, dynamic>>>{};
+    final days = <String, List<Map<String, dynamic>>>{};
+    for (final file in await data.listFiles('activity', 'activities_*.json')) {
+      final date = file.substring(
+        'activities_'.length,
+        file.length - '.json'.length,
+      );
+      final rows = await readStoredActivitiesForDate(date);
+      original[date] = rows;
+      for (final row in rows) {
+        for (final segment in splitActivityByDay(row)) {
+          final day = (segment['startTime'] as String).split('T')[0];
+          days.putIfAbsent(day, () => []).add(segment);
+        }
+      }
+    }
+    return (original: original, days: days);
+  }
+
+  Future<void> saveActivityDays(
+    Map<String, List<Map<String, dynamic>>> original,
+    Map<String, List<Map<String, dynamic>>> days,
+  ) async {
+    for (final day in {...original.keys, ...days.keys}) {
+      final rows = days[day] ?? <Map<String, dynamic>>[];
+      sortByStartTime(rows);
+      if (jsonEncode(original[day] ?? []) != jsonEncode(rows)) {
+        await saveActivitiesForDate(day, rows);
+      }
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> readActivitiesForDate(String date) async =>
+      (await loadActivityDays()).days[date] ?? [];
+
+  void insertActivity(
+    Map<String, List<Map<String, dynamic>>> days,
+    Map<String, dynamic> activity,
+  ) {
+    for (final segment in splitActivityByDay(activity)) {
+      final date = (segment['startTime'] as String).split('T')[0];
+      final start = DateTime.parse(segment['startTime']);
+      final end = DateTime.parse(segment['endTime']);
+      final remaining = <Map<String, dynamic>>[];
+      for (final old in days[date] ?? <Map<String, dynamic>>[]) {
+        final oldStart = DateTime.parse(old['startTime']);
+        final oldEnd = DateTime.parse(old['endTime']);
+        if (!oldStart.isBefore(end) || !oldEnd.isAfter(start)) {
+          remaining.add(old);
+          continue;
+        }
+        final keepLeft = oldStart.isBefore(start);
+        if (keepLeft) {
+          remaining.add({
+            ...old,
+            'endTime': segment['startTime'],
+            'updatedAt': activity['updatedAt'],
+          });
+        }
+        if (oldEnd.isAfter(end)) {
+          remaining.add({
+            ...old,
+            if (keepLeft) 'id': generateUUID(),
+            'startTime': segment['endTime'],
+            'updatedAt': activity['updatedAt'],
+          });
+        }
+      }
+      days[date] = [...remaining, segment];
+    }
+  }
+
   // 读取日期区间（含两端）内的全部活动，按开始时间升序
   Future<List<Map<String, dynamic>>> readActivitiesInRange(
     String startDate,
     String endDate,
   ) async {
-    final files = await data.listFiles('activity', 'activities_*.json');
+    final days = (await loadActivityDays()).days;
     final result = <Map<String, dynamic>>[];
-    for (final file in files) {
-      final dateStr = file.substring(
-        'activities_'.length,
-        file.length - '.json'.length,
-      );
+    for (final dateStr in days.keys) {
       if (dateStr.compareTo(startDate) < 0 || dateStr.compareTo(endDate) > 0) {
         continue;
       }
-      result.addAll(await readActivitiesForDate(dateStr));
+      result.addAll(days[dateStr]!);
     }
     sortByStartTime(result);
     return result;
@@ -163,10 +240,16 @@ PluginHandlers createActivityHandlers(PluginData data) {
     'create': (data, params) async {
       try {
         final startTime = params['startTime'] as String?;
-        final dateStr = startTime != null && startTime.isNotEmpty
-            ? startTime.split('T')[0]
-            : formatDate(DateTime.now());
-        final activities = await readActivitiesForDate(dateStr);
+        final endTime = params['endTime'] as String?;
+        final start = startTime == null ? null : DateTime.tryParse(startTime);
+        final end = endTime == null ? null : DateTime.tryParse(endTime);
+        if (start == null || end == null || !end.isAfter(start)) {
+          return const PluginResult.failure(
+            '必须提供有效起止时间，且结束时间晚于开始时间',
+            'INVALID_PARAMS',
+          );
+        }
+        final state = await loadActivityDays();
 
         final now = jsIsoDateTime(DateTime.now());
         final id = params['id'];
@@ -177,12 +260,8 @@ PluginHandlers createActivityHandlers(PluginData data) {
           'updatedAt': now,
         };
 
-        activities.add(newItem);
-
-        // 按开始时间排序
-        sortByStartTime(activities);
-
-        await saveActivitiesForDate(dateStr, activities);
+        insertActivity(state.days, newItem);
+        await saveActivityDays(state.original, state.days);
 
         return PluginResult.success(newItem);
       } on DomainFailure catch (e) {
@@ -196,7 +275,8 @@ PluginHandlers createActivityHandlers(PluginData data) {
     'update': (data, params) async {
       try {
         final date = resolveDate(params);
-        final activities = await readActivitiesForDate(date);
+        final state = await loadActivityDays();
+        final activities = state.days[date] ?? <Map<String, dynamic>>[];
         final index = activities.indexWhere((a) => a['id'] == params['id']);
 
         if (index == -1) {
@@ -208,12 +288,14 @@ PluginHandlers createActivityHandlers(PluginData data) {
           ...params,
           'updatedAt': jsIsoDateTime(DateTime.now()),
         };
-        activities[index] = updatedItem;
-
-        // 按开始时间排序
-        sortByStartTime(activities);
-
-        await saveActivitiesForDate(date, activities);
+        final start = DateTime.tryParse('${updatedItem['startTime']}');
+        final end = DateTime.tryParse('${updatedItem['endTime']}');
+        if (start == null || end == null || !end.isAfter(start)) {
+          return const PluginResult.failure('活动起止时间无效', 'INVALID_PARAMS');
+        }
+        activities.removeAt(index);
+        insertActivity(state.days, updatedItem);
+        await saveActivityDays(state.original, state.days);
 
         return PluginResult.success(updatedItem);
       } on DomainFailure catch (e) {
@@ -227,7 +309,8 @@ PluginHandlers createActivityHandlers(PluginData data) {
     'delete': (data, params) async {
       try {
         final date = resolveDate(params);
-        final activities = await readActivitiesForDate(date);
+        final state = await loadActivityDays();
+        final activities = state.days[date] ?? <Map<String, dynamic>>[];
         final index = activities.indexWhere((a) => a['id'] == params['id']);
 
         if (index == -1) {
@@ -235,7 +318,7 @@ PluginHandlers createActivityHandlers(PluginData data) {
         }
 
         activities.removeAt(index);
-        await saveActivitiesForDate(date, activities);
+        await saveActivityDays(state.original, state.days);
 
         return PluginResult.success({'id': params['id']});
       } on DomainFailure catch (e) {
@@ -381,7 +464,9 @@ PluginHandlers createActivityHandlers(PluginData data) {
     // 获取最近使用标签
     'getRecentTags': (data, params) async {
       try {
-        return PluginResult.success(await readStringListFile('recent_tags.json'));
+        return PluginResult.success(
+          await readStringListFile('recent_tags.json'),
+        );
       } on DomainFailure catch (e) {
         return PluginResult.failure(e.message, e.code);
       } catch (e) {
@@ -394,12 +479,13 @@ PluginHandlers createActivityHandlers(PluginData data) {
       try {
         final tags = params['tags'];
         if (tags is! List || tags.any((e) => e is! String)) {
-          return const PluginResult.failure(
-            'tags 必须为字符串数组',
-            'INVALID_PARAMS',
-          );
+          return const PluginResult.failure('tags 必须为字符串数组', 'INVALID_PARAMS');
         }
-        await data.write('activity', 'recent_tags.json', List<String>.from(tags));
+        await data.write(
+          'activity',
+          'recent_tags.json',
+          List<String>.from(tags),
+        );
         return PluginResult.success({'count': tags.length});
       } catch (e) {
         return PluginResult.failure('更新最近标签失败: $e');
@@ -424,10 +510,7 @@ PluginHandlers createActivityHandlers(PluginData data) {
       try {
         final moods = params['moods'];
         if (moods is! List || moods.any((e) => e is! String)) {
-          return const PluginResult.failure(
-            'moods 必须为字符串数组',
-            'INVALID_PARAMS',
-          );
+          return const PluginResult.failure('moods 必须为字符串数组', 'INVALID_PARAMS');
         }
         await data.write(
           'activity',
@@ -446,10 +529,7 @@ PluginHandlers createActivityHandlers(PluginData data) {
         final raw = await data.read('activity', 'notification_settings.json');
         if (raw == null) return PluginResult.success(<String, dynamic>{});
         if (raw is! Map) {
-          return const PluginResult.failure(
-            '通知设置损坏',
-            'CORRUPT_DATA',
-          );
+          return const PluginResult.failure('通知设置损坏', 'CORRUPT_DATA');
         }
         return PluginResult.success(Map<String, dynamic>.from(raw));
       } catch (e) {
@@ -462,10 +542,7 @@ PluginHandlers createActivityHandlers(PluginData data) {
       try {
         final raw = await data.read('activity', 'notification_settings.json');
         if (raw != null && raw is! Map) {
-          return const PluginResult.failure(
-            '通知设置损坏',
-            'CORRUPT_DATA',
-          );
+          return const PluginResult.failure('通知设置损坏', 'CORRUPT_DATA');
         }
         final settings = raw is Map
             ? Map<String, dynamic>.from(raw)
@@ -487,10 +564,7 @@ PluginHandlers createActivityHandlers(PluginData data) {
         );
         if (raw == null) return PluginResult.success(<String, dynamic>{});
         if (raw is! Map) {
-          return const PluginResult.failure(
-            'TTS 设置损坏',
-            'CORRUPT_DATA',
-          );
+          return const PluginResult.failure('TTS 设置损坏', 'CORRUPT_DATA');
         }
         return PluginResult.success(Map<String, dynamic>.from(raw));
       } catch (e) {
@@ -506,10 +580,7 @@ PluginHandlers createActivityHandlers(PluginData data) {
           'tts_announcement_settings.json',
         );
         if (raw != null && raw is! Map) {
-          return const PluginResult.failure(
-            'TTS 设置损坏',
-            'CORRUPT_DATA',
-          );
+          return const PluginResult.failure('TTS 设置损坏', 'CORRUPT_DATA');
         }
         final settings = raw is Map
             ? Map<String, dynamic>.from(raw)

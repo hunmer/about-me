@@ -114,35 +114,34 @@ class _CalendarScreenState extends State<CalendarScreen>
     });
 
     // 根据过滤器条件搜索
-    _searchResults =
-        allEntries.where((entry) {
-          bool matches = false;
+    _searchResults = allEntries.where((entry) {
+      bool matches = false;
 
-          // 搜索标题
-          if (_searchFilters['title'] == true) {
-            if (entry.title.toLowerCase().contains(query.toLowerCase())) {
-              matches = true;
-            }
-          }
+      // 搜索标题
+      if (_searchFilters['title'] == true) {
+        if (entry.title.toLowerCase().contains(query.toLowerCase())) {
+          matches = true;
+        }
+      }
 
-          // 搜索内容
-          if (_searchFilters['content'] == true && !matches) {
-            if (entry.content.toLowerCase().contains(query.toLowerCase())) {
-              matches = true;
-            }
-          }
+      // 搜索内容
+      if (_searchFilters['content'] == true && !matches) {
+        if (entry.content.toLowerCase().contains(query.toLowerCase())) {
+          matches = true;
+        }
+      }
 
-          // 搜索标签
-          if (_searchFilters['tag'] == true && !matches) {
-            if (entry.tags.any(
-              (tag) => tag.toLowerCase().contains(query.toLowerCase()),
-            )) {
-              matches = true;
-            }
-          }
+      // 搜索标签
+      if (_searchFilters['tag'] == true && !matches) {
+        if (entry.tags.any(
+          (tag) => tag.toLowerCase().contains(query.toLowerCase()),
+        )) {
+          matches = true;
+        }
+      }
 
-          return matches;
-        }).toList();
+      return matches;
+    }).toList();
 
     // 按创建时间倒序排列
     _searchResults.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -199,15 +198,15 @@ class _CalendarScreenState extends State<CalendarScreen>
               builder: (buildContext) {
                 final theme = DSThemeBridge.resolve(buildContext);
                 return DSIconButton(
-                  icon:
-                      _usePhotoView ? DsIconKind.calendar : DsIconKind.image,
+                  icon: _usePhotoView ? DsIconKind.calendar : DsIconKind.image,
                   size: 36,
                   color: theme.surfaceAlt,
                   iconColor: theme.textSub,
-                  tooltip: (_usePhotoView
-                          ? 'calendar_album_switch_calendar_view'
-                          : 'calendar_album_switch_photo_view')
-                      .tr,
+                  tooltip:
+                      (_usePhotoView
+                              ? 'calendar_album_switch_calendar_view'
+                              : 'calendar_album_switch_photo_view')
+                          .tr,
                   onPressed: () {
                     setState(() => _usePhotoView = !_usePhotoView);
                     // 视图模式持久化，重启后保持
@@ -296,7 +295,10 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     return ListView.builder(
       padding: EdgeInsets.fromLTRB(
-        16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom,
+        16,
+        16,
+        16,
+        16 + MediaQuery.paddingOf(context).bottom,
       ),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
@@ -306,11 +308,10 @@ class _CalendarScreenState extends State<CalendarScreen>
           // 挂载即描画入场
           child: WiredDraw(
             child: DSCard(
-              onTap:
-                  () => _openEntryEditor(
-                    entry: entry,
-                    calendarController: calendarController,
-                  ),
+              onTap: () => _openEntryEditor(
+                entry: entry,
+                calendarController: calendarController,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -337,10 +338,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                       height: 80,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount:
-                            entry.imageUrls.length > 3
-                                ? 3
-                                : entry.imageUrls.length,
+                        itemCount: entry.imageUrls.length > 3
+                            ? 3
+                            : entry.imageUrls.length,
                         itemBuilder: (context, index) {
                           final imageUrl = entry.imageUrls[index];
                           return Container(
@@ -378,10 +378,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                       child: Wrap(
                         spacing: 8,
                         runSpacing: 4,
-                        children:
-                            entry.tags
-                                .map((tag) => DSChip(label: tag))
-                                .toList(),
+                        children: entry.tags
+                            .map((tag) => DSChip(label: tag))
+                            .toList(),
                       ),
                     ),
                   const SizedBox(height: 8),
@@ -489,8 +488,8 @@ class _CalendarScreenState extends State<CalendarScreen>
             ChangeNotifierProvider.value(value: calendarController),
             ChangeNotifierProvider.value(value: tagController),
           ],
-          child: Consumer<TagController>(
-            builder: (context, tagController, child) {
+          child: Consumer2<CalendarController, TagController>(
+            builder: (context, calendarController, tagController, child) {
               return _buildDrawerEntryList(
                 context,
                 calendarController,
@@ -514,38 +513,30 @@ class _CalendarScreenState extends State<CalendarScreen>
       entries: calendarController.getEntriesForDate(selectedDate),
       onTap: (entry) {
         Navigator.pop(context); // 关闭抽屉
-        _openEntryEditor(
-          entry: entry,
-          calendarController: calendarController,
-        );
+        _openEntryEditor(entry: entry, calendarController: calendarController);
       },
       onEdit: (entry) {
         Navigator.pop(context); // 关闭抽屉
-        _openEntryEditor(
-          entry: entry,
-          calendarController: calendarController,
-        );
+        _openEntryEditor(entry: entry, calendarController: calendarController);
       },
-      onDelete:
-          (entry) => showDSDialog(
-            context: context,
-            theme: DSThemeBridge.resolve(context),
-            builder:
-                (context) => DSDialog(
-                  title: 'core_delete'.tr,
-                  message: '${'core_confirmDelete'.tr} "${entry.title}"?',
-                  cancelText: 'calendar_album_cancel'.tr,
-                  confirmText: 'core_delete'.tr,
-                  confirmVariant: DSButtonVariant.destructive,
-                  onCancel: () => Navigator.pop(context),
-                  onConfirm: () {
-                    calendarController.deleteEntry(entry);
-                    Navigator.pop(context); // 关闭对话框
-                    Navigator.pop(context); // 关闭抽屉并刷新
-                    setState(() {});
-                  },
-                ),
-          ),
+      onDelete: (entry) => showDSDialog(
+        context: context,
+        theme: DSThemeBridge.resolve(context),
+        builder: (context) => DSDialog(
+          title: 'core_delete'.tr,
+          message: '${'core_confirmDelete'.tr} "${entry.title}"?',
+          cancelText: 'calendar_album_cancel'.tr,
+          confirmText: 'core_delete'.tr,
+          confirmVariant: DSButtonVariant.destructive,
+          onCancel: () => Navigator.pop(context),
+          onConfirm: () {
+            calendarController.deleteEntry(entry);
+            Navigator.pop(context); // 关闭对话框
+            Navigator.pop(context); // 关闭抽屉并刷新
+            setState(() {});
+          },
+        ),
+      ),
       onCreateNew: () {
         Navigator.pop(context); // 关闭抽屉
         _openEntryEditor(
@@ -852,7 +843,10 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
                 padding: EdgeInsets.fromLTRB(
-                  0, 16, 0, 16 + MediaQuery.paddingOf(context).bottom,
+                  0,
+                  16,
+                  0,
+                  16 + MediaQuery.paddingOf(context).bottom,
                 ),
                 itemCount: _months.length,
                 itemBuilder: (context, index) {
@@ -871,9 +865,7 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
                   bottom: 16,
                   left: 0,
                   right: 0,
-                  child: Center(
-                    child: DSLoadingDots(color: theme.textSub),
-                  ),
+                  child: Center(child: DSLoadingDots(color: theme.textSub)),
                 ),
             ],
           ),
@@ -1056,20 +1048,23 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
 
   /// 首图缩略图：白底 + 左右随机小角度倾斜（拍立得效果）。
   /// 倾斜角按日期哈希稳定取值，同一格 rebuild 不抖变
-  Widget _buildTiltedImage(String imagePath, DateTime day, AppThemeData theme) =>
-      _buildTiledSlot(
-        // Web/远端存储下 File 路径不可用，统一走 createImageProvider
-        // （内部按 network/asset/file/存储分发，含 StorageImageProvider 解密）
-        Image(
-          image: ImageUtils.createImageProvider(imagePath),
-          width: 36,
-          height: 36,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _imageFallback(theme),
-        ),
-        day,
-        theme,
-      );
+  Widget _buildTiltedImage(
+    String imagePath,
+    DateTime day,
+    AppThemeData theme,
+  ) => _buildTiledSlot(
+    // Web/远端存储下 File 路径不可用，统一走 createImageProvider
+    // （内部按 network/asset/file/存储分发，含 StorageImageProvider 解密）
+    Image(
+      image: ImageUtils.createImageProvider(imagePath),
+      width: 36,
+      height: 36,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _imageFallback(theme),
+    ),
+    day,
+    theme,
+  );
 
   /// 有条目但无图时的占位：同样走拍立得墨盒外框，中间为图片图标
   Widget _buildTiledPlaceholder(DateTime day, AppThemeData theme) =>
@@ -1087,10 +1082,7 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
           color: theme.surface,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: child,
-        ),
+        child: ClipRRect(borderRadius: BorderRadius.circular(6), child: child),
       ),
     );
   }
@@ -1105,7 +1097,11 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
 
     // 按周分行；所有行统一行高，无图片的格子留白不缩行
     final rows = <List<DateTime?>>[];
-    var currentRow = List<DateTime?>.filled(leadingBlanks, null, growable: true);
+    var currentRow = List<DateTime?>.filled(
+      leadingBlanks,
+      null,
+      growable: true,
+    );
     for (var day = 1; day <= daysInMonth; day++) {
       currentRow.add(DateTime(month.year, month.month, day));
       if (currentRow.length == 7) {
@@ -1133,40 +1129,27 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
               children: [
                 // 顶部区域始终占满剩余高度：无条目时留空占位，保证日期固定贴底
                 Expanded(
-                  child:
-                      (info != null)
-                          ? Padding(
-                            padding: const EdgeInsets.only(bottom: 2),
-                            child:
-                                info.imagePath != null
-                                    ? _buildTiltedImage(
-                                      info.imagePath!,
-                                      day,
-                                      theme,
-                                    )
-                                    : _buildTiledPlaceholder(day, theme),
-                          )
-                          : const SizedBox.shrink(),
+                  child: (info != null)
+                      ? Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: info.imagePath != null
+                              ? _buildTiltedImage(info.imagePath!, day, theme)
+                              : _buildTiledPlaceholder(day, theme),
+                        )
+                      : const SizedBox.shrink(),
                 ),
                 Container(
                   width: 26,
                   height: 26,
                   alignment: Alignment.center,
-                  decoration:
-                      isToday
-                          ? BoxDecoration(
-                            color: theme.text,
-                            shape: BoxShape.circle,
-                          )
-                          : isSelected
-                          ? BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: theme.primary,
-                              width: 1.5,
-                            ),
-                          )
-                          : null,
+                  decoration: isToday
+                      ? BoxDecoration(color: theme.text, shape: BoxShape.circle)
+                      : isSelected
+                      ? BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: theme.primary, width: 1.5),
+                        )
+                      : null,
                   child: Text(
                     '${day.day}',
                     style: DsTypography.caption.copyWith(
@@ -1228,21 +1211,20 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
                     ),
                   ),
                   Row(
-                    children:
-                        ['日', '一', '二', '三', '四', '五', '六']
-                            .map(
-                              (label) => Expanded(
-                                child: Center(
-                                  child: Text(
-                                    label,
-                                    style: DsTypography.caption.copyWith(
-                                      color: theme.textSub,
-                                    ),
-                                  ),
+                    children: ['日', '一', '二', '三', '四', '五', '六']
+                        .map(
+                          (label) => Expanded(
+                            child: Center(
+                              child: Text(
+                                label,
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
                                 ),
                               ),
-                            )
-                            .toList(),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                   const SizedBox(height: 4),
                   for (final row in rows)
@@ -1250,10 +1232,9 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
                       children: [
                         for (final day in row)
                           Expanded(
-                            child:
-                                day == null
-                                    ? const SizedBox(height: _photoRowHeight)
-                                    : buildDayCell(day, dayData[day]),
+                            child: day == null
+                                ? const SizedBox(height: _photoRowHeight)
+                                : buildDayCell(day, dayData[day]),
                           ),
                       ],
                     ),
@@ -1282,7 +1263,10 @@ class _PhotoCalendarViewState extends State<_PhotoCalendarView>
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
                 padding: EdgeInsets.fromLTRB(
-                  0, 16, 0, 16 + MediaQuery.paddingOf(context).bottom,
+                  0,
+                  16,
+                  0,
+                  16 + MediaQuery.paddingOf(context).bottom,
                 ),
                 itemCount: _months.length,
                 itemBuilder: (context, index) {

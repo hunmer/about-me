@@ -302,6 +302,11 @@ class _StackedAccordionCardWidgetState extends State<StackedAccordionCardWidget>
       widget.onCardTap!(index);
       return;
     }
+    _toggleExpand(index);
+  }
+
+  /// 切换展开/收起（箭头按钮专用，不受 onCardTap 影响）
+  void _toggleExpand(int index) {
     setState(() {
       _expandedIndex = _expandedIndex == index ? null : index;
     });
@@ -328,6 +333,7 @@ class _StackedAccordionCardWidgetState extends State<StackedAccordionCardWidget>
                 isLast: i == widget.items.length - 1,
                 metrics: metrics,
                 onTap: () => _handleTap(i),
+                onToggleExpand: () => _toggleExpand(i),
                 onLongPress:
                     widget.onCardLongPress == null
                         ? null
@@ -382,6 +388,9 @@ class _AccordionCard extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
+  /// 箭头按钮点击：切换展开/收起
+  final VoidCallback? onToggleExpand;
+
   const _AccordionCard({
     required this.data,
     required this.expanded,
@@ -389,6 +398,7 @@ class _AccordionCard extends StatefulWidget {
     required this.metrics,
     this.onTap,
     this.onLongPress,
+    this.onToggleExpand,
   });
 
   @override
@@ -566,27 +576,31 @@ class _AccordionCardState extends State<_AccordionCard>
     );
   }
 
-  /// 圆形箭头按钮（墨底纸色图标，展开时旋转 90°）
+  /// 圆形箭头按钮（墨底纸色图标，展开时旋转 90°），点击切换展开/收起
   Widget _arrowButton(_AccordionMetrics m, AppThemeData theme) {
     return AnimatedBuilder(
       animation: _expand,
       builder: (context, _) {
-        return Container(
-          width: m.btnSize,
-          height: m.btnSize,
-          decoration: dsSketchDecoration(
-            theme: theme,
-            radius: BorderRadius.circular(m.btnSize / 2),
-            fillColor: theme.ink,
-          ),
-          child: Center(
-            child: Transform.rotate(
-              angle: _expand.value * math.pi / 2,
-              child: WiredIcon(
-                icon: Icons.arrow_forward,
-                size: m.iconSize,
-                color: theme.surface,
-                drawConfig: theme.wired.drawConfig,
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onToggleExpand,
+          child: Container(
+            width: m.btnSize,
+            height: m.btnSize,
+            decoration: dsSketchDecoration(
+              theme: theme,
+              radius: BorderRadius.circular(m.btnSize / 2),
+              fillColor: theme.ink,
+            ),
+            child: Center(
+              child: Transform.rotate(
+                angle: _expand.value * math.pi / 2,
+                child: WiredIcon(
+                  icon: Icons.arrow_forward,
+                  size: m.iconSize,
+                  color: theme.surface,
+                  drawConfig: theme.wired.drawConfig,
+                ),
               ),
             ),
           ),

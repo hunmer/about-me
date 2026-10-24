@@ -55,7 +55,7 @@ class ActivityRecord {
       title: json['title'],
       tags: List<String>.from(json['tags'] ?? []),
       description: json['description'],
-      mood: json['mood'],
+      mood: json['mood']?.toString(),
       color: color,
     );
   }

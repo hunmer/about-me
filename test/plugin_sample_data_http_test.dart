@@ -12,6 +12,7 @@ import 'package:shared_models/shared_models.dart' show DiaryCodec;
 import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
 import 'package:aboutme/plugins/nodes/controllers/nodes_controller.dart';
 import 'package:aboutme/plugins/notes/controllers/notes_controller.dart';
+import 'package:aboutme/plugins/activity/services/activity_service.dart';
 import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -195,5 +196,110 @@ void main() {
     final controller = NotesController(globalStorage);
     await controller.loadSampleFolders();
     expect(files['notes/folders.json'], isNotEmpty);
+  });
+
+  test('活动：REST PUT 数值 mood 后仍能加载当日全部记录', () async {
+    final today = DateTime.now();
+    final date = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final data = AboutmeDataService.instance;
+    for (final id in ['updated', 'unchanged']) {
+      final result = await data.call('activity', 'create', {
+        'id': id,
+        'title': id,
+        'startTime': '${date}T${id == 'updated' ? '10' : '12'}:00:00',
+        'endTime': '${date}T${id == 'updated' ? '11' : '13'}:00:00',
+      });
+      expect(result['success'], isTrue);
+    }
+    final client = HttpClient();
+    addTearDown(() => client.close(force: true));
+    final request = await client.putUrl(Uri.parse(
+      'http://127.0.0.1:${server.port}/api/v1/plugins/activity/activities/updated',
+    ));
+    request.headers.contentType = ContentType.json;
+    request.write(jsonEncode({'title': 'scn-act-updated', 'mood': 4}));
+    final response = jsonDecode(await utf8.decoder.bind(await request.close()).join());
+    expect(response['success'], isTrue);
+    expect(response['data']['mood'], 4);
+
+    final service = ActivityService(globalStorage, 'activity');
+    final records = await service.getActivitiesForDate(today);
+    expect(records.map((r) => r.id), unorderedEquals(['updated', 'unchanged']));
+    final updated = records.singleWhere((r) => r.id == 'updated');
+    expect(updated.title, 'scn-act-updated');
+    expect(updated.mood, '4');
+    expect(updated.durationInMinutes, 60);
+  });
+
+  test('活动：HTTP 创建重叠时段会拆分，重复时段不并存', () async {
+    final data = AboutmeDataService.instance;
+    final original = await data.call('activity', 'create', {
+      'id': 'old', 'title': '原活动',
+      'startTime': '2026-10-24T09:00:00', 'endTime': '2026-10-24T12:00:00',
+    });
+    expect(original['success'], isTrue);
+    final created = await data.call('activity', 'create', {
+      'id': 'new', 'title': '新活动',
+      'startTime': '2026-10-24T10:00:00', 'endTime': '2026-10-24T11:00:00',
+    });
+    expect(created['success'], isTrue);
+    final service = ActivityService(globalStorage, 'activity');
+    var records = await service.getActivitiesForDate(DateTime(2026, 10, 24));
+    expect(records.map((r) => [r.startTime.hour, r.endTime.hour]),
+        [[9, 10], [10, 11], [11, 12]]);
+    final repeated = await data.call('activity', 'create', {
+      'id': 'latest', 'title': '最新活动',
+      'startTime': '2026-10-24T10:00:00', 'endTime': '2026-10-24T11:00:00',
+    });
+    expect(repeated['success'], isTrue);
+    records = await service.getActivitiesForDate(DateTime(2026, 10, 24));
+    expect(records, hasLength(3));
+    expect(records.where((r) => r.startTime.hour == 10).single.id, 'latest');
+    expect(records.map((r) => r.durationInMinutes).reduce((a, b) => a + b), 180);
+  });
+
+  test('活动：HTTP 跨天创建后客户端两日均能加载，首日截止00点', () async {
+    final created = await AboutmeDataService.instance.call('activity', 'create', {
+      'id': 'overnight', 'title': '睡觉',
+      'startTime': '2026-10-24T23:00:00', 'endTime': '2026-10-25T01:00:00',
+    });
+    expect(created['success'], isTrue);
+    final service = ActivityService(globalStorage, 'activity');
+    final first = (await service.getActivitiesForDate(DateTime(2026, 10, 24))).single;
+    final second = (await service.getActivitiesForDate(DateTime(2026, 10, 25))).single;
+    expect(first.startTime, DateTime(2026, 10, 24, 23));
+    expect(first.endTime, DateTime(2026, 10, 25));
+    expect(second.startTime, DateTime(2026, 10, 25));
+    expect(second.endTime, DateTime(2026, 10, 25, 1));
+    expect(first.durationInMinutes + second.durationInMinutes, 120);
+  });
+
+  test('活动：客户端可加载只存在于首日文件的旧跨天记录', () async {
+    files['activity/activities_2026-10-24.json'] = [
+      {'id': 'legacy', 'title': '旧跨天活动',
+        'startTime': '2026-10-24T23:00:00', 'endTime': '2026-10-25T01:00:00'},
+    ];
+    final service = ActivityService(globalStorage, 'activity');
+    expect((await service.getActivitiesForDate(DateTime(2026, 10, 24))).single.durationInMinutes, 60);
+    expect((await service.getActivitiesForDate(DateTime(2026, 10, 25))).single.durationInMinutes, 60);
+  });
+
+  test('笔记：MCP 同参数创建文件夹后根目录可见，重新加载仍可见', () async {
+    final data = AboutmeDataService.instance;
+    await data.call('notes', 'createFolder', {'id': 'root', 'name': '根目录'});
+    final created = await data.call('notes', 'createFolder', {'name': '新建文件夹'});
+    expect(created['success'], isTrue);
+    final id = created['data']['id'] as String;
+    expect(created['data']['parentId'], isNull);
+
+    final controller = NotesController(globalStorage);
+    addTearDown(controller.dispose);
+    await controller.reloadData();
+    expect(controller.getAllFolders().map((f) => f.id), contains(id));
+    expect(controller.getFolderChildren('root').map((f) => f.id), contains(id));
+    expect(controller.getFolderPath(id).map((f) => f.id), ['root', id]);
+
+    await controller.reloadData();
+    expect(controller.getFolderChildren('root').map((f) => f.id), contains(id));
   });
 }
