@@ -24,7 +24,7 @@
     },
     "app-web": {
       "script": "flutter",
-      "args": ["run", "-d", "web-server", "--release", "--web-hostname", "127.0.0.1", "--web-port", "8080"],
+      "args": ["run", "-d", "web-server", "--release", "--web-hostname", "127.0.0.1", "--web-port", "8080", "--dart-define=PROCM_WS_URL=ws://127.0.0.1:7331/room", "--dart-define=PROCM_ROOM_ID=aboutme", "--dart-define=PROCM_CLIENT_NAME=aboutme-app-web"],
       "group": "aboutme",
       "desc": "Run the Flutter web app at http://127.0.0.1:8080"
     },

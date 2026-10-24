@@ -6,7 +6,11 @@ import 'package:aboutme/core/services/log_service.dart';
 import 'package:aboutme/core/services/startup_trace.dart';
 import 'package:aboutme/core/services/window_geometry_service.dart';
 import 'package:aboutme/core/widgets/app_bootstrap.dart';
-import 'core/services/procm_logger.dart';
+// Select the platform implementation at compile time so the web build keeps
+// its logger dependency isolated from the native startup path.
+import 'core/services/procm_logger_stub.dart'
+    if (dart.library.io) 'core/services/procm_logger_io.dart'
+    if (dart.library.js_interop) 'core/services/procm_logger_web.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 // GetX 统一翻译导入
