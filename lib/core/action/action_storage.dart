@@ -1,18 +1,20 @@
 /// 动作存储管理
-/// 负责动作配置的持久化存储（基于 globalStorage，桌面/移动/Web 通用）
+/// 负责动作配置的持久化存储（桌面/移动/Web 通用）
 library;
 
 import 'dart:convert';
 import 'package:aboutme/core/app_initializer.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
 import 'package:flutter/material.dart';
 import 'models/action_instance.dart';
 import 'models/action_group.dart';
 
-/// 动作存储配置文件名（globalStorage 存储 key，位于 app_data 根目录）
+/// 动作主配置键（system 域 config 命令统一通道，configs/ 前缀；
+/// 顶层旧文件首次访问时自动迁入）。
 const String CONFIG_FILE_NAME = 'action_config.json';
 
-/// 备份文件所在目录（app_data 下的子目录）
+/// 备份文件所在目录（app_data 顶层子目录，快照文件走文件层，不入 configs）
 const String _backupDir = 'action_config_backups';
 
 /// 动作存储管理类
@@ -22,13 +24,27 @@ class ActionStorage {
   factory ActionStorage() => _instance;
   ActionStorage._internal();
 
+  AboutmeDataService get _svc => AboutmeDataService.instance;
+
+  /// 顶层旧主配置一次性迁入 configs/（幂等；读旧→写新→删旧）
+  Future<void> _ensureMigrated() =>
+      _svc.migrateTopLevelConfig(CONFIG_FILE_NAME);
+
   /// 检查配置文件是否存在
-  Future<bool> hasConfig() => globalStorage.exists(CONFIG_FILE_NAME);
+  Future<bool> hasConfig() async {
+    await _ensureMigrated();
+    try {
+      return await _svc.getConfig(CONFIG_FILE_NAME) != null;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// 加载配置
   Future<ActionStorageData> loadConfig() async {
     try {
-      final raw = await globalStorage.readJson(CONFIG_FILE_NAME);
+      await _ensureMigrated();
+      final raw = await _svc.getConfig(CONFIG_FILE_NAME);
       if (raw is! Map || raw.isEmpty) {
         return _emptyConfig();
       }
@@ -93,15 +109,16 @@ class ActionStorage {
 
   /// 保存配置
   Future<void> saveConfig(ActionStorageData data) async {
-    await globalStorage.writeJson(CONFIG_FILE_NAME, data.toJson());
+    await _svc.setConfig(CONFIG_FILE_NAME, data.toJson());
   }
 
   /// 备份配置，返回备份文件的存储 key
   Future<String> backupConfig() async {
-    final content = await globalStorage.readFile(CONFIG_FILE_NAME);
-    if (content.isEmpty) {
+    final config = await _svc.getConfig(CONFIG_FILE_NAME);
+    if (config == null) {
       throw StateError('Config file does not exist');
     }
+    final content = jsonEncode(config);
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final backupKey = '$_backupDir/action_config_backup_$timestamp.json';
@@ -117,17 +134,19 @@ class ActionStorage {
       throw StateError('Backup file does not exist');
     }
 
-    await globalStorage.writeFile(CONFIG_FILE_NAME, content);
+    await _svc.setConfig(CONFIG_FILE_NAME, jsonDecode(content));
   }
 
   /// 删除配置
   Future<void> deleteConfig() async {
-    await globalStorage.deleteFile(CONFIG_FILE_NAME);
+    await _svc.deleteConfig(CONFIG_FILE_NAME);
   }
 
   /// 获取配置信息
   Future<ConfigInfo> getConfigInfo() async {
-    final content = await globalStorage.readFile(CONFIG_FILE_NAME);
+    await _ensureMigrated();
+    final config = await _svc.getConfig(CONFIG_FILE_NAME);
+    final content = config == null ? '' : jsonEncode(config);
 
     return ConfigInfo(
       exists: content.isNotEmpty,
@@ -181,7 +200,8 @@ class ActionStorage {
   /// 验证配置文件
   Future<ConfigValidationResult> validateConfig() async {
     try {
-      final raw = await globalStorage.readJson(CONFIG_FILE_NAME);
+      await _ensureMigrated();
+      final raw = await _svc.getConfig(CONFIG_FILE_NAME);
       if (raw is! Map || raw.isEmpty) {
         return ConfigValidationResult(
           isValid: false,

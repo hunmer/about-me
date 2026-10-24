@@ -92,7 +92,8 @@ class WidgetsGalleryScreen extends StatelessWidget {
             context,
             icon: Icons.local_cafe,
             title: '饮品打卡日历',
-            subtitle: 'DrinkCheckinCalendar（SfCalendar 自定义格子 + 贴纸打卡 + SmoothBottomSheet）',
+            subtitle:
+                'DrinkCheckinCalendar（SfCalendar 自定义格子 + 贴纸打卡 + SmoothBottomSheet）',
             route: '/widgets_gallery/drink_checkin_calendar',
           ),
 
@@ -259,6 +260,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
             title: 'Creator 创作者主页',
             subtitle: 'CreatorProfileDemo（滚动头像收缩 + 平台作品流 + 点赞动画）',
             route: '/widgets_gallery/creator_profile',
+          ),
+          _buildListItem(
+            context,
+            icon: Icons.newspaper,
+            title: '报刊亭交互 UI',
+            subtitle: 'NewspaperStandDemo（报纸堆叠 / 轮播拖拽 + 日期滚轮）',
+            route: '/widgets_gallery/newspaper_stand',
           ),
         ],
       ),

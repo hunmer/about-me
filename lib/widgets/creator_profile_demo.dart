@@ -278,13 +278,16 @@ class _CreatorProfileDemoState extends State<CreatorProfileDemo>
                           top: 190 - 112 * eased,
                           left: 0,
                           right: 0,
-                          child: _FollowersCounter(
-                            value: _followers,
-                            morphProgress: (_scrollProgress / 0.72).clamp(
-                              0.0,
-                              1.0,
+                          child: IgnorePointer(
+                            ignoring: _scrollProgress > 0.25,
+                            child: _FollowersCounter(
+                              value: _followers,
+                              morphProgress: (_scrollProgress / 0.72).clamp(
+                                0.0,
+                                1.0,
+                              ),
+                              onTap: _rollCounter,
                             ),
-                            onTap: _rollCounter,
                           ),
                         ),
                         Positioned(

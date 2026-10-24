@@ -25,12 +25,18 @@ void main() {
     expect(find.text('Follow on'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('creator_profile_tab_0')));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('131.4K'), findsOneWidget);
 
     final scrollView = find.byType(CustomScrollView);
     await tester.drag(scrollView, const Offset(0, -300));
     await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byKey(const ValueKey('creator_profile_tab_2')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.textContaining('Autumn capsule wardrobe'), findsOneWidget);
+
     await tester.tap(find.byIcon(Icons.close));
     await tester.pump(const Duration(milliseconds: 500));
 

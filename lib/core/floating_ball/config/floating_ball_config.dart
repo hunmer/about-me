@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:aboutme/core/app_initializer.dart' show globalStorage;
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
 
 /// 悬浮球配置数据模型
@@ -229,8 +229,9 @@ class FloatingBallConfig {
 }
 
 /// 悬浮球配置管理器：悬浮球配置存储读写的唯一入口
+/// （system 域 config 命令统一通道，configs/ 前缀；顶层旧文件首次读取时迁移）
 class FloatingBallConfigManager {
-  /// 存储键名（沿用历史键名，兼容已有数据）
+  /// configs/ 下相对键名（沿用历史文件名，兼容已有数据）
   static const String storageKey = 'floating_ball_config.json';
 
   /// 写入锁，防止并发写入导致数据覆盖
@@ -239,7 +240,9 @@ class FloatingBallConfigManager {
   /// 读取配置（无数据或损坏时返回默认配置）
   static Future<FloatingBallConfig> loadConfig() async {
     try {
-      final data = await globalStorage.read(storageKey);
+      final svc = AboutmeDataService.instance;
+      await svc.migrateTopLevelConfig(storageKey);
+      final data = await svc.getConfig(storageKey);
       if (data == null) {
         return FloatingBallConfig.defaultConfig;
       }
@@ -269,7 +272,10 @@ class FloatingBallConfigManager {
 
     _isWriting = true;
     try {
-      await globalStorage.write(storageKey, config.toJson());
+      await AboutmeDataService.instance.setConfig(
+        storageKey,
+        config.toJson(),
+      );
     } finally {
       _isWriting = false;
     }

@@ -32,11 +32,16 @@ class LegacyWritePolicy {
     'scripts_center',
     'openai',
     'toolbox',
+    'photo_editor',
   ];
   static const _protectedRoots = [...migratedDomains, 'assets', 'asset_references',
     'stickers/collections.json', 'sdk_migrations', '.sdk',
     // 插件设置统一通道落 configs/ 前缀（system 域 config 命令是唯一写入口）
     'configs'];
+
+  /// 非域类的保护前缀（capabilities 对外声明，管理端删除预判用）。
+  static const protectedPrefixes = ['assets', 'asset_references',
+    'stickers/collections.json', 'sdk_migrations', '.sdk', 'configs'];
 
   static void check(String path, {bool prefix = false}) {
     // Windows 大小写等价路径也不能绕过限制。

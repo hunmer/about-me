@@ -1,27 +1,28 @@
-# 交接：统一数据 SDK 重构 —— C/D/E/F 四阶段完成，G 阶段主体完成（2026-10-24 第五轮）
+# 交接：统一数据 SDK 重构 —— C/D/E/F/G 全阶段主体完成（2026-10-24 第六轮收尾）
 
 **创建时间：** 2026-10-24（Asia/Shanghai）
-**分支：** main（全部改动在工作区未提交，git status 约 75 个 M/?? 文件，属预期；不要 git commit）
-**仓库：** /Users/Zhuanz/Documents/Aboutme（macOS，dart 3.13.5 / flutter 3.47.7；首次跑需 `dart pub get`）；本轮在 Windows 工作区（D:\about-me）继续，改动同源
+**分支：** main（全部改动在工作区未提交，git status 约 80 个 M/?? 文件，属预期；不要 git commit）
+**仓库：** /Users/Zhuanz/Documents/Aboutme（macOS，dart 3.13.5 / flutter 3.47.7；首次跑需 `dart pub get`）；第五/六轮在 Windows 工作区（D:\about-me）继续，改动同源
 **总计划：** docs/unified_data_sdk_refactor_plan.md
-**状态文档：** docs/unified_data_sdk_refactor_status.md（已同步至第五轮）
+**状态文档：** docs/unified_data_sdk_refactor_status.md（已同步至第六轮）
 
 ## 摘要
 
-五轮 subagent/主会话波次推进，C/D/E/F 全部完成，G 阶段主体完成：
+六轮波次推进，C/D/E/F 全部完成，G 阶段主体 + 收尾优化完成：
 - C：agent_chat 外围 17 命令 + 7 文件收口 + 封闭
 - D：activity 设置收口 + 封闭；tracker goal_images 确认已资源化
 - F-P2：system 域（server 全局配置 SDK 化 + 启动迁移 + 集成测试）
 - F-P3：8/8 域收口（timer/achievement/reminder/live2d/tts/webview/openai/toolbox/scripts_center）
 - F-P1：migrateLegacyAssets + sweep + 分块上传（256MiB）+ capabilities v2 + removeLegacyAsset 二进制修复
 - F-P4：FilesTab 426 引导 + 平台适配层评估结论
-- **G（第五轮 2026-10-24）**：system 域 configs 设置命令化（getConfig/setConfig/deleteConfig 原地读写零迁移）+ Flutter 7 类 configs 写入面全收口 + **configs/ 前缀全封闭（原始写 426）** + 迁移恢复演练测试
+- G 五轮：system 域 configs 设置命令化 + Flutter 7 类写入面收口 + configs/ 全封闭 + 迁移恢复演练
+- **G 六轮（收尾）**：photo_editor 建域（第 28 封闭域）+ 顶层裸配置收编（floating_ball_config/action_config 迁入 configs 通道）+ capabilities protectedPrefixes
 
-**最终基线（2026-10-24 第五轮）：`cd packages/aboutme_data_sdk && dart test --concurrency=1` → 211 项全过（+5 system configs/封闭/演练）；`dart analyze` 无 issue；`flutter analyze lib` 无 error（14 项历史 lint 在未触碰文件）；admin-vue `npx vue-tsc -b` 通过（本轮未触碰，未重跑）；server 37 全过。**
+**最终基线（2026-10-24 第六轮）：`cd packages/aboutme_data_sdk && dart test --concurrency=1` → 214 项全过；`dart analyze` 无 issue；`flutter analyze lib` 无 error（14 项历史 lint 在未触碰文件）；server 37 全过；admin-vue vue-tsc（macOS 侧，本轮未触碰未重跑）。**
 
-## 当前封闭状态（migratedDomains 27 域 + configs 前缀，原始写一律 426）
+## 当前封闭状态（migratedDomains 28 域 + configs 前缀，原始写一律 426）
 
-diary、todo、tracker、notes、nodes、contact、day、calendar、checkin、habits、bill、goods、store、calendar_album、media_log、database、agent_chat、activity、timer、achievement、reminder、live2d、tts、webview、scripts_center、openai、toolbox。
+diary、todo、tracker、notes、nodes、contact、day、calendar、checkin、habits、bill、goods、store、calendar_album、media_log、database、agent_chat、activity、timer、achievement、reminder、live2d、tts、webview、scripts_center、openai、toolbox、**photo_editor**。
 
 **configs/ 前缀也已封闭**（在 _protectedRoots，非域）：唯一写入口 = system 域 config 命令。
 
@@ -49,13 +50,15 @@ diary、todo、tracker、notes、nodes、contact、day、calendar、checkin、ha
 
 ## 剩余任务（按优先级）
 
-### 1. G 阶段收尾（所剩无几）
+### 1. G 阶段（主体与收尾均完成，仅剩可选项）
 - ~~删除兼容层小项~~ **已完成（2026-10-24 第四轮）**：ImagePickerDialog 的 saveDirectory 死参数全链删除（24 文件，avatar/video picker 活参数保留）；openai_plugin uninstall 的 deletePath try-catch 残留清除（卸载保留数据分区）。
 - ~~system 域 configs 设置命令化~~ **已完成（2026-10-24 第五轮）**：三命令 + configs/ 全封闭 + Flutter 7 类写入面收口（ConfigManager/PluginBase/bill/webview 商场源/photo_editor ai_edit_config/plugin_manager/route_history）+ script_loader 删旧改命令 + 演练测试。
 - ~~原始文件更新全封闭验收 + 迁移恢复演练~~ **已完成（2026-10-24 第五轮）**：configs 进 _protectedRoots；test/system_config_test.dart 演练（旧布局注入→迁移→426→restoreBackup 恢复）。
-- AboutmeDataService 文件层 API（readPath/writePath 等）**调查结论（2026-10-24）**：调用面已收敛——script_loader 迁移（读旧删旧合法，configs 删旧已改命令）、agent_assets 迁移读取、ai_image existsPath 读判断（三者合法保留）；photo_editor history（photo_editor/ 前缀，未建域，不封闭不拦截）；bill settings 与 webview 商场源已改 system 命令。**删除 API 的最后前置 = photo_editor 建域**（history/config 归属 photo_editor 分区）。
+- ~~photo_editor 建域~~ **已完成（2026-10-24 第六轮）**：getHistory/saveHistory/clearHistory 薄文件层命令 + Flutter PhotoEditorHistory 收口 + 封闭（第 28 域）+ 3 项测试。
+- ~~顶层裸配置收编~~ **已完成（2026-10-24 第六轮）**：floating_ball_config / action_config 主配置走 system 命令（key 沿用原文件名），migrateTopLevelConfig 幂等迁移（读旧→写新→删旧，内存去重）；action_config_backups/ 快照目录留文件层顶层。
+- ~~capabilities protectedPrefixes~~ **SDK 侧已完成（2026-10-24 第六轮）**；admin FilesTab 预判消费**留 macOS 侧 admin-vue**（fetchMigratedDomains 同款加 protectedPrefixes 字段读取，当前 catch 426 兜底已可用）。
+- AboutmeDataService 文件层 API（readPath/writePath 等）**最终定位（2026-10-24 第六轮）**：迁移与只读兼容层——写通道已全封闭（28 域 + configs），剩余调用面全部合法（script_loader/agent_assets/moments/ai_image 迁移读旧删旧、备份快照、existsPath 读判断）；物理删除仅待迁移代码退役。
 - ~~SDK 拆 flutter 变体包~~ **评估结论（2026-10-24）：不拆**。SDK 已零 Flutter 依赖（纯 Dart，依赖仅 shared_models/crypto/encrypt/http/path/pointycastle/uuid），宿主 storage_interface 转发已就位，"SDK 契约 + 宿主实现"依赖倒置已成立；物理拆包无架构收益，仅结构搬家徒增版本同步成本。
-- 可选后续：顶层裸配置（action_config.json、floating_ball_config.json）收编 configs 生态；capabilities 增加 protectedPrefixes 字段供 admin FilesTab 预判（当前 catch 426 兜底已够用）。
 
 ### 2. B 阶段状态确认
 **已完成（2026-10-24）**：用户拍板关闭，状态文档 B 行已更新（残余外围项转小尾巴跟踪）。
@@ -81,10 +84,10 @@ diary、todo、tracker、notes、nodes、contact、day、calendar、checkin、ha
 ## 验证命令
 ```bash
 cd packages/aboutme_data_sdk
-dart test --concurrency=1          # 基线 211 全绿
+dart test --concurrency=1          # 基线 214 全绿
 dart analyze                       # 须无 issue
 cd ../aboutme_server && dart analyze && dart test   # 37 全过
-cd ../admin-vue && npx vue-tsc -b  # 通过
+cd ../admin-vue && npx vue-tsc -b  # 通过（macOS 侧）
 cd /Users/Zhuanz/Documents/Aboutme && flutter analyze lib   # 无 error（14 项历史 lint）
 ```
 

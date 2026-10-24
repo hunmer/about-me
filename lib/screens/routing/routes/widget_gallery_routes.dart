@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/creator_profile_demo.dart';
+import 'package:aboutme/widgets/newspaper_stand_demo.dart';
 import 'package:aboutme/screens/routing/route_definition.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';
 import 'package:aboutme/screens/widgets_gallery/widgets_gallery_screen.dart';
@@ -1022,6 +1023,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '空间清单卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/newspaper_stand',
+      handler: (settings) => RouteHelpers.createRoute(
+        const NewspaperStandDemo(),
+        settings: settings,
+      ),
+      description: '报刊亭交互 UI（报纸堆叠 / 轮播拖拽切换）',
     ),
   ];
 }

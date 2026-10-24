@@ -9,6 +9,8 @@ Map<String, dynamic> dataCapabilities() => {
     'chunked': {'maxBytes': 256 * 1024 * 1024, 'chunkBytes': 8 * 1024 * 1024},
     'migration': true, 'sweep': true},
   'migratedDomains': LegacyWritePolicy.migratedDomains,
+  // 非域类的原始写保护前缀（configs 为设置统一通道，assets 等为资源系统）
+  'protectedPrefixes': LegacyWritePolicy.protectedPrefixes,
   'protectedResources': ['assets', 'stickers/collections.json'],
   'actions': [
     for (final config in pluginRouteConfigs)

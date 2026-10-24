@@ -147,6 +147,30 @@ class AboutmeDataService with WidgetsBindingObserver {
     return (result['data'] as Map)['deleted'] == true;
   }
 
+  final _migratedTopLevelConfigs = <String>{};
+
+  /// 顶层裸配置文件一次性迁入 configs/ 统一通道（读旧→写新→删旧，幂等）。
+  /// configs/ 已有值或顶层无旧文件时为快速 no-op；顶层路径不受封闭。
+  /// 迁移失败静默（下次调用重试）。
+  Future<void> migrateTopLevelConfig(String fileName) async {
+    if (_migratedTopLevelConfigs.contains(fileName)) return;
+    try {
+      if (await getConfig(fileName) != null) {
+        _migratedTopLevelConfigs.add(fileName);
+        return;
+      }
+      if (!await existsPath(fileName)) {
+        _migratedTopLevelConfigs.add(fileName);
+        return;
+      }
+      await setConfig(fileName, await readPath(fileName));
+      await deletePath(fileName);
+      _migratedTopLevelConfigs.add(fileName);
+    } catch (_) {
+      /* 迁移失败下次重试（不加内存标记） */
+    }
+  }
+
   // ==================== 局部刷新订阅 ====================
 
   /// 订阅插件数据变更（远端 REST/MCP/其它设备写入触发；

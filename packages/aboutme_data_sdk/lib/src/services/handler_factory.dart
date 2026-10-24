@@ -18,6 +18,7 @@ import 'handlers/media_log.dart';
 import 'handlers/notes.dart';
 import 'handlers/nodes.dart';
 import 'handlers/openai.dart';
+import 'handlers/photo_editor.dart';
 import 'handlers/store.dart';
 import 'handlers/scripts_center.dart';
 import 'handlers/snapshot_domain.dart';
@@ -82,6 +83,8 @@ PluginHandlers createHandlersForPlugin(PluginData data, String pluginId) {
       return createOpenaiHandlers(data);
     case 'scripts_center':
       return createScriptsCenterHandlers(data);
+    case 'photo_editor':
+      return createPhotoEditorHandlers(data);
     case 'timer':
       return createSnapshotDomainHandlers(
         data,

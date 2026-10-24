@@ -468,6 +468,12 @@ final pluginRouteConfigs = <PluginRouteConfig>[
     PluginRouteDefinition(method: 'delete', path: '/image-search/history', handler: 'clearImageSearchHistory', resourceName: 'imageSearchHistory'),
     PluginRouteDefinition(method: 'delete', path: '/image-search/history/:ts', handler: 'removeImageSearchHistory', resourceName: 'imageSearchHistory'),
   ]),
+  // ==================== Photo Editor（照片编辑器打开历史，薄文件层）====================
+  PluginRouteConfig(pluginId: 'photo_editor', routes: [
+    PluginRouteDefinition(method: 'get', path: '/history', handler: 'getHistory', resourceName: 'history'),
+    PluginRouteDefinition(method: 'put', path: '/history', handler: 'saveHistory', resourceName: 'history'),
+    PluginRouteDefinition(method: 'delete', path: '/history', handler: 'clearHistory', resourceName: 'history'),
+  ]),
   // ==================== WebView ====================
   PluginRouteConfig(pluginId: 'webview', routes: [
     PluginRouteDefinition(method: 'get', path: '/settings', handler: 'getSettings', resourceName: 'settings'),
