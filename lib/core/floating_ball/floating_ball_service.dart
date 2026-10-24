@@ -52,19 +52,21 @@ class FloatingBallService {
       lastContext = context;
       initialize(context);
 
-      _overlayEntry = OverlayEntry(
+      final overlayState = Overlay.maybeOf(context, rootOverlay: true);
+      if (overlayState == null || !overlayState.mounted) {
+        debugPrint('悬浮球 Overlay 尚未就绪，稍后重试');
+        return;
+      }
+
+      final entry = OverlayEntry(
         builder:
             (context) => const FloatingBallWidget(
               baseSize: 60,
               iconPath: 'assets/icon/icon.png',
             ),
       );
-
-      // 使用 maybeOf 安全获取 Overlay，避免异常
-      final overlayState = Overlay.maybeOf(context);
-      if (overlayState != null && overlayState.mounted) {
-        overlayState.insert(_overlayEntry!);
-      }
+      overlayState.insert(entry);
+      _overlayEntry = entry;
     } catch (e, stack) {
       debugPrint('Error showing floating ball: $e');
       debugPrint('堆栈信息: $stack');

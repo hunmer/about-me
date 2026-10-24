@@ -295,7 +295,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
             displaySize: displaySize,
             baseViewportHeight: _defaultSize,
             useResizableViewport:
-                !kIsWeb &&
+                kIsWeb ||
                 (defaultTargetPlatform == TargetPlatform.windows ||
                     defaultTargetPlatform == TargetPlatform.macOS ||
                     defaultTargetPlatform == TargetPlatform.iOS ||
