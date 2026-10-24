@@ -69,7 +69,7 @@ class AdaptiveImage extends StatefulWidget {
 }
 
 /// 本地路径解析结果：绝对路径 + 文件存在性（异步检查，随 Future 缓存）
-typedef _ResolvedLocalImage = ({String absolutePath, bool exists});
+typedef _ResolvedLocalImage = ({String absolutePath, bool exists, String? svg});
 
 class _AdaptiveImageState extends State<AdaptiveImage> {
   /// 缓存的本地路径解析 Future（避免每次 rebuild 重新解析与存在性 IO）
@@ -90,7 +90,10 @@ class _AdaptiveImageState extends State<AdaptiveImage> {
           // 异步检查文件存在性（解析期间文件被删除时不构造 Image.file）
           final exists = absolutePath.isNotEmpty &&
               await File(absolutePath).exists();
-          return (absolutePath: absolutePath, exists: exists);
+          final svg = exists && AdaptiveImage.isSvgImage(path)
+              ? await File(absolutePath).readAsString()
+              : null;
+          return (absolutePath: absolutePath, exists: exists, svg: svg);
         },
       );
     }
@@ -189,8 +192,8 @@ class _AdaptiveImageState extends State<AdaptiveImage> {
             if (AdaptiveImage.isSvgImage(imagePath)) {
               return _buildImageWidget(
                 _buildSvg(
-                  (width, height) => SvgPicture.file(
-                    File(resolved.absolutePath),
+                  (width, height) => SvgPicture.string(
+                    resolved.svg!,
                     width: width,
                     height: height,
                     fit: widget.fit,

@@ -6,7 +6,7 @@ import 'package:aboutme/core/services/log_service.dart';
 import 'package:aboutme/core/services/startup_trace.dart';
 import 'package:aboutme/core/services/window_geometry_service.dart';
 import 'package:aboutme/core/widgets/app_bootstrap.dart';
-import 'package:procm_sdk_dart/procm_sdk_dart.dart';
+import 'core/services/procm_logger.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 // GetX 统一翻译导入
