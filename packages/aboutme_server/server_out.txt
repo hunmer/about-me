@@ -1,0 +1,151 @@
+00:00 +0: loading test\aboutme_data_remote_test.dart
+00:00 +0: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+00:00 +1: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+00:00 +2: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+00:00 +3: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+00:00 +4: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+00:00 +5: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+[SyncDebug][WS] broadcast user=24e80954 source=- path=assets/* recipients=0
+00:00 +6: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+00:00 +7: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+00:00 +8: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+00:00 +9: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+[SyncDebug][WS] broadcast user=24e80954 source=- path=chat/* recipients=0
+00:01 +9: test\server_integration_test.dart: SDK HttpStorage 全链路：写入加密→读取解密→列表→删除
+[SyncDebug][WS] broadcast user=51d8c609 source=- path=misc/list.json recipients=0
+00:01 +9: test\plugin_mcp_test.dart: 插件 REST API chat：建频道 → 列表 → 发消息 → 查消息 → 删除
+[SyncDebug][WS] broadcast user=e5a9ead0 source=- path=chat/* recipients=0
+00:01 +9: test\server_integration_test.dart: SDK HttpStorage 全链路：写入加密→读取解密→列表→删除
+[SyncDebug][WS] broadcast user=51d8c609 source=- path=images/a.bin recipients=0
+00:01 +9: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+[SyncDebug][WS] broadcast user=24e80954 source=- path=chat/* recipients=0
+00:01 +9: test\plugin_mcp_test.dart: 插件 REST API chat：建频道 → 列表 → 发消息 → 查消息 → 删除
+[SyncDebug][WS] broadcast user=e5a9ead0 source=- path=chat/* recipients=0
+00:01 +9: test\server_integration_test.dart: SDK HttpStorage 全链路：写入加密→读取解密→列表→删除
+[SyncDebug][WS] broadcast user=51d8c609 source=- path=misc/list.json recipients=0
+00:01 +9: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+[SyncDebug][WS] broadcast user=24e80954 source=- path=assets/* recipients=0
+00:01 +10: test\aboutme_data_remote_test.dart: 资源的 local/HTTP/REST/MCP 共用内容、引用和旧写保护
+00:01 +11: test\plugin_mcp_test.dart: 插件 REST API chat：建频道 → 列表 → 发消息 → 查消息 → 删除
+[SyncDebug][WS] broadcast user=e5a9ead0 source=- path=chat/* recipients=0
+00:01 +12: test\server_integration_test.dart: 服务器落盘为明文（统一数据区 = 用户根目录）
+[SyncDebug][WS] broadcast user=b68d1ec2 source=- path=secret.json recipients=0
+[SyncDebug][WS] broadcast user=b68d1ec2 source=- path=misc/tasks.json recipients=0
+00:02 +13: test\aboutme_data_remote_test.dart: 远程模式：文件层与业务层操作同一份数据
+00:02 +13: test\plugin_mcp_test.dart: 插件 REST API 单文件快照域（timer）：快照读写
+[SyncDebug][WS] broadcast user=61ad987d source=- path=timer/* recipients=0
+00:02 +14: test\aboutme_data_remote_test.dart: 远程模式：文件层与业务层操作同一份数据
+[SyncDebug][WS] broadcast user=cf7c497e source=device-x path=todo/* recipients=0
+00:02 +14: test\server_integration_test.dart: ETag 条件写：服务端返回 412 与冲突元数据
+[SyncDebug][WS] broadcast user=eba7ba5e source=- path=conflict.json recipients=0
+[SyncDebug][WS] broadcast user=eba7ba5e source=- path=conflict.json recipients=0
+00:02 +15: test\aboutme_data_remote_test.dart: 远程模式：文件层与业务层操作同一份数据
+00:02 +16: test\plugin_mcp_test.dart: 插件 REST API 插件数据落盘为明文 JSON（统一数据区）
+[SyncDebug][WS] broadcast user=f40774ec source=- path=timer/* recipients=0
+00:02 +17: test\server_integration_test.dart: WebSocket：设备 B 收到设备 A 写入的 file_updated 广播
+[SyncDebug][WS] connected user=340a504c device=device-a clients=1
+00:02 +17: test\aboutme_data_remote_test.dart: 远程模式：服务端落盘明文（无加密）
+[SyncDebug][WS] broadcast user=4fc941cc source=- path=misc/tasks.json recipients=0
+00:02 +18: test\server_integration_test.dart: WebSocket：设备 B 收到设备 A 写入的 file_updated 广播
+[SyncDebug][WS] connected user=340a504c device=device-b clients=2
+[SyncDebug][WS] broadcast user=340a504c source=device-a path=sync/note.json recipients=1
+[SyncDebug][WS] disconnected user=340a504c device=device-a reason=closed clients=1
+[SyncDebug][WS] disconnected user=340a504c device=device-b reason=closed clients=0
+00:02 +19: test\plugin_mcp_test.dart: 插件 REST API 跨通路同数据：业务命令写的文件，storage/MCP 直接读到并修改
+00:02 +20: test\plugin_mcp_test.dart: 插件 REST API 跨通路同数据：业务命令写的文件，storage/MCP 直接读到并修改
+00:02 +21: test\plugin_mcp_test.dart: 插件 REST API 跨通路同数据：业务命令写的文件，storage/MCP 直接读到并修改
+[SyncDebug][WS] broadcast user=adf5650b source=- path=todo/* recipients=0
+00:03 +21: test\aboutme_data_remote_test.dart: 真实路由：SDK GET/POST/PUT/PATCH/DELETE、null 和字符串 ID
+[SyncDebug][WS] broadcast user=812db66f source=- path=chat/* recipients=0
+00:03 +21: test\plugin_mcp_test.dart: 插件 REST API 跨通路同数据：业务命令写的文件，storage/MCP 直接读到并修改
+[SyncDebug][WS] broadcast user=adf5650b source=- path=todo/* recipients=0
+00:03 +22: test\aboutme_data_remote_test.dart: 真实路由：SDK GET/POST/PUT/PATCH/DELETE、null 和字符串 ID
+[SyncDebug][WS] broadcast user=812db66f source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=812db66f source=- path=chat/* recipients=0
+00:03 +22: test\plugin_mcp_test.dart: 插件 REST API diary：按日期创建/读取
+[SyncDebug][WS] broadcast user=81938bb8 source=- path=diary/* recipients=0
+00:03 +23: test\aboutme_data_remote_test.dart: 真实路由：SDK GET/POST/PUT/PATCH/DELETE、null 和字符串 ID
+[SyncDebug][WS] broadcast user=812db66f source=- path=chat/* recipients=0
+00:03 +24: test\plugin_mcp_test.dart: 插件 REST API notes：创建笔记/文件夹与搜索
+[SyncDebug][WS] broadcast user=45390d8c source=- path=notes/* recipients=0
+[SyncDebug][WS] broadcast user=45390d8c source=- path=notes/* recipients=0
+00:03 +25: test\aboutme_data_remote_test.dart: 显式 open 返回 HTTP 状态、认证用户和能力，MCP 使用同一动作表
+[SyncDebug][WS] broadcast user=7a5cd7e3 source=- path=chat/* recipients=0
+00:04 +26: test\plugin_mcp_test.dart: 插件 REST API todo：创建/完成/统计
+[SyncDebug][WS] broadcast user=85032a96 source=- path=todo/* recipients=0
+[SyncDebug][WS] broadcast user=85032a96 source=- path=todo/* recipients=0
+00:04 +26: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:04 +27: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:05 +27: test\plugin_mcp_test.dart: 插件 REST API bill：账户与账单
+[SyncDebug][WS] broadcast user=25fcbbe8 source=- path=bill/* recipients=0
+00:05 +27: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:05 +27: test\plugin_mcp_test.dart: 插件 REST API bill：账户与账单
+[SyncDebug][WS] broadcast user=25fcbbe8 source=- path=bill/* recipients=0
+00:05 +28: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:05 +28: test\plugin_mcp_test.dart: 插件 REST API tracker/goal + record
+[SyncDebug][WS] broadcast user=ab2414db source=- path=tracker/* recipients=0
+00:06 +28: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:06 +28: test\plugin_mcp_test.dart: 插件 REST API tracker/goal + record
+[SyncDebug][WS] broadcast user=ab2414db source=- path=tracker/* recipients=0
+00:06 +29: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:06 +29: test\plugin_mcp_test.dart: 插件 REST API calendar/contact/day/goods/checkin/activity 各自主流程
+[SyncDebug][WS] broadcast user=7ed15fdb source=- path=calendar/* recipients=0
+[SyncDebug][WS] broadcast user=7ed15fdb source=- path=contact/* recipients=0
+00:06 +29: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:06 +29: test\plugin_mcp_test.dart: 插件 REST API calendar/contact/day/goods/checkin/activity 各自主流程
+[SyncDebug][WS] broadcast user=7ed15fdb source=- path=day/* recipients=0
+00:06 +29: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:06 +29: test\plugin_mcp_test.dart: 插件 REST API calendar/contact/day/goods/checkin/activity 各自主流程
+[SyncDebug][WS] broadcast user=7ed15fdb source=- path=checkin/* recipients=0
+00:06 +29: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:06 +29: test\plugin_mcp_test.dart: 插件 REST API calendar/contact/day/goods/checkin/activity 各自主流程
+[SyncDebug][WS] broadcast user=7ed15fdb source=- path=activity/* recipients=0
+00:06 +30: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:07 +31: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:07 +31: test\plugin_mcp_test.dart: MCP 端点 initialize → tools/list → tools/call 全流程
+[SyncDebug][WS] broadcast user=e78b1124 source=- path=chat/* recipients=0
+00:07 +31: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:07 +32: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:07 +33: test\aboutme_data_remote_test.dart: 两个 SDK HTTP 客户端与 MCP 并发追加共享事务与幂等记录
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+[SyncDebug][WS] broadcast user=1e08da30 source=- path=chat/* recipients=0
+00:08 +34: test\aboutme_data_remote_test.dart: 真实路由拒绝 body 覆盖路径身份与无效分页
+00:08 +35: test\aboutme_data_remote_test.dart: Diary 的 local/HTTP/REST/MCP 契约一致，缺失读取和冲突均保留版本
+[SyncDebug][WS] broadcast user=a7b1b90c source=- path=diary/* recipients=0
+[SyncDebug][WS] broadcast user=a7b1b90c source=- path=diary/* recipients=0
+00:09 +36: test\aboutme_data_remote_test.dart: Diary 旧文件 PUT/DELETE/前缀 clear 被拒绝，业务导入导出可用
+[SyncDebug][WS] broadcast user=fb206ddc source=- path=diary/* recipients=0
+00:09 +37: test\aboutme_data_remote_test.dart: system config 命令远端链路：斜杠 key、写删与 configs 封闭
+[SyncDebug][WS] broadcast user=26e571be source=- path=system/* recipients=0
+[SyncDebug][WS] broadcast user=26e571be source=- path=system/* recipients=0
+[SyncDebug][WS] broadcast user=26e571be source=- path=system/* recipients=0
+00:10 +38: All tests passed!
