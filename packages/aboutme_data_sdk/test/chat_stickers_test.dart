@@ -138,8 +138,10 @@ void main() {
       }
     }
     // 共享贴图两个合集引用同一资源
-    final refsA = ((collections[0] as Map)['stickerPaths'] as List).cast<String>();
-    final refsB = ((collections[1] as Map)['stickerPaths'] as List).cast<String>();
+    final collectionA = collections.cast<Map>().firstWhere((entry) => entry['id'] == 'a');
+    final collectionB = collections.cast<Map>().firstWhere((entry) => entry['id'] == 'b');
+    final refsA = (collectionA['stickerPaths'] as List).cast<String>();
+    final refsB = (collectionB['stickerPaths'] as List).cast<String>();
     final shared = refsA.toSet().intersection(refsB.toSet());
     expect(shared.length, 1);
     // 封面同步更新为资源引用
