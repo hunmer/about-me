@@ -1,0 +1,123 @@
+{
+  "generate_image": {
+    "title": "生成图片/照片",
+    "description": "用 AI 生成图片并默认发送到当前聊天。用户想看你的照片/自拍/合照、要求画图、生成图片、想象某场景画面时【必须直接调用本工具】生成并发送图片，不要只用文字描述。用户提到的具体照片不在资产列表中也不能拒绝：可把描述写进 prompt，并用已有资产（如「三视图」）做图生图；没有合适参考图时直接文生图",
+    "parameters": [
+      {
+        "name": "prompt",
+        "type": "string",
+        "required": true,
+        "description": "生图提示词，尽量具体（主体、场景、风格、光线）"
+      },
+      {
+        "name": "refAssetNames",
+        "type": "array",
+        "required": false,
+        "description": "参考图资产名数组（图生图），如 ['三视图']。资产列表没有用户提到的那张照片时，不要因此拒绝，改用已有参考图或不传此参数"
+      },
+      {
+        "name": "aspectRatio",
+        "type": "string",
+        "required": false,
+        "description": "画幅比例：1:1/16:9/9:16/4:3/3:4/3:2/2:3，默认 1:1"
+      },
+      {
+        "name": "sendToChat",
+        "type": "boolean",
+        "required": false,
+        "description": "是否发送到当前聊天（默认 true）"
+      },
+      {
+        "name": "n",
+        "type": "number",
+        "required": false,
+        "description": "生成张数 1-4，默认 1"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象 {success, images: [本地图片相对路径], sentToChat, message} 或 {error}"
+    },
+    "examples": [
+      {
+        "title": "文生图并发送到聊天",
+        "code": "const r = await Aboutme.plugins.openai.generate_image({prompt: '午后的猫趴在窗台上晒太阳，温暖治愈风格'});\nsetResult(r.message);"
+      },
+      {
+        "title": "以三视图为参考生成自己的照片（图生图）",
+        "code": "const r = await Aboutme.plugins.openai.generate_image({prompt: '站在樱花树下的全身照', refAssetNames: ['三视图']});\nsetResult(r.message);"
+      }
+    ],
+    "notes": "生成含自己形象的图片时，尽量传 refAssetNames 引用资产图保持形象一致；缺少某张具体照片不影响生成。生图耗时约 10-60 秒，请耐心等待结果，不要重复调用",
+    "enabled": true
+  },
+  "post_moment": {
+    "title": "发朋友圈",
+    "description": "以自己的身份发布一条朋友圈动态（用户可在朋友圈页面查看）。分享日常、心情、见闻时使用。纯文字动态完全没问题（不传 imagePrompt 即可），不必每条都配图；想配图时可提供 imagePrompt 自动生成",
+    "parameters": [
+      {
+        "name": "text",
+        "type": "string",
+        "required": true,
+        "description": "动态文案，口语化、有个人风格，一两句话即可"
+      },
+      {
+        "name": "tag",
+        "type": "string",
+        "required": true,
+        "description": "标签分类（必填），必须是以下之一：life(生活日常)/foodie(美食)/design(设计)/pets(萌宠)/mood(心情)/travel(旅行)，按动态内容选最贴切的"
+      },
+      {
+        "name": "imagePrompt",
+        "type": "string",
+        "required": false,
+        "description": "配图生图提示词；不传则发纯文字动态（完全允许）"
+      },
+      {
+        "name": "refAssetNames",
+        "type": "array",
+        "required": false,
+        "description": "配图参考的资产图名数组（保持形象一致），如 ['三视图','房间照片']"
+      },
+      {
+        "name": "sendToChat",
+        "type": "boolean",
+        "required": false,
+        "description": "配图是否同时发送到当前聊天（默认 false，仅发朋友圈）"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象 {success, message, post} 或 {error}"
+    },
+    "examples": [
+      {
+        "title": "发纯文字动态（最常用）",
+        "code": "const r = await Aboutme.plugins.openai.post_moment({\n  text: '刚看完一部老电影，结局意难平',\n  tag: 'mood'\n});\nsetResult(r.message);"
+      },
+      {
+        "title": "发一条带配图的朋友圈",
+        "code": "const r = await Aboutme.plugins.openai.post_moment({\n  text: '今天整理了一下房间，阳光正好~',\n  tag: 'life',\n  imagePrompt: '整洁温馨的卧室一角，阳光洒进来',\n  refAssetNames: ['房间照片']\n});\nsetResult(r.message);"
+      }
+    ],
+    "notes": "tag 为必填参数，缺失会报错。不要频繁发布，内容要有生活气息，避免广告腔。发含自己形象的配图时优先引用资产图",
+    "enabled": true
+  },
+  "list_agent_assets": {
+    "title": "查询我的资产图",
+    "description": "查询自己可用的资产图列表（角色设定/场景参考图）。生图或发朋友圈配图前可先查询，用 refAssetNames 按名称引用",
+    "parameters": [],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 数组 [{name, hasImage}]；hasImage 为 false 表示占位尚未生成，不能被引用"
+    },
+    "examples": [
+      {
+        "title": "查询可用资产图",
+        "code": "const assets = await Aboutme.plugins.openai.list_agent_assets();\nsetResult(assets);"
+      }
+    ],
+    "notes": "hasImage 为 false 的资产是占位（未生成图片），引用会报错；可提醒用户去资产图库生成",
+    "enabled": true
+  }
+}

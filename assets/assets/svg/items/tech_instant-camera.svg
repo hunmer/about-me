@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="140" height="140">
+<g>
+<path d="M108 18 C108 24 110 26 116 26 C110 26 108 28 108 34 C108 28 106 26 100 26 C106 26 108 24 108 18 Z" fill="#F7DA92" stroke="none"/>
+<g stroke="#3D2B24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+<rect x="38" y="25" width="16" height="8" rx="3" fill="#F297A6"/>
+<rect x="26" y="31" width="88" height="64" rx="16" fill="#FAD2D9"/>
+<path d="M26 56 H114 V72 H26 Z" fill="#FDF3E6"/>
+<rect x="36" y="39" width="12" height="10" rx="3" fill="#FFFDF9"/>
+<circle cx="96" cy="44" r="5" fill="#F7DA92"/>
+<circle cx="70" cy="63" r="20" fill="#DEC2AC"/>
+<circle cx="70" cy="63" r="13" fill="#3D2B24"/>
+<circle cx="65" cy="58" r="3.5" fill="#FFFDF9" stroke="none"/>
+<path d="M44 90 H96" stroke-width="3.2"/>
+<path d="M49 90 L47 121 H93 L91 90 Z" fill="#FFFDF9"/>
+<rect x="53" y="94" width="34" height="20" rx="2" fill="#FAD2D9" stroke-width="1.8"/>
+<path d="M70 110 C70 110 63 105 63 101 C63 98.5 66.5 97.5 69 100 L70 101 L71 100 C73.5 97.5 77 98.5 77 101 C77 105 70 110 70 110 Z" fill="#F297A6" stroke-width="1.6"/>
+</g>
+</g>
+</svg>

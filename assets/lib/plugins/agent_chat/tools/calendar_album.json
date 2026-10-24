@@ -1,0 +1,348 @@
+{
+  "getEntries": {
+    "title": "获取所有图文",
+    "description": "获取所有图文条目（按创建时间倒序）。支持分页查询，提供 offset 或 count 参数时返回分页对象（包含 data、total、offset、count、hasMore）；不提供时返回完整数组。",
+    "parameters": [
+      {"name": "offset", "type": "number", "required": false, "description": "分页偏移量（默认 0）"},
+      {"name": "count", "type": "number", "required": false, "description": "分页数量（默认 100）"}
+    ],
+    "returns": {
+      "type": "Array|Object",
+      "description": "无分页参数时返回图文数组；有分页参数时返回对象 {data: 图文数组, total: 总数, offset: 偏移量, count: 返回数量, hasMore: 是否还有更多}"
+    },
+    "examples": [
+      {
+        "title": "获取所有图文（无分页）",
+        "code": "const entries = await Aboutme.plugins.calendar_album.getEntries({});\nsetResult(JSON.stringify(entries, null, 2));"
+      },
+      {
+        "title": "分页获取图文（第1页，每页10条）",
+        "code": "const result = await Aboutme.plugins.calendar_album.getEntries({offset: 0, count: 10});\nsetResult(`第1页: ${result.data.length}条, 共${result.total}条, 还有更多: ${result.hasMore}`);"
+      }
+    ],
+    "notes": "图文内容为 Markdown 格式；分页从 offset=0 开始",
+    "enabled": true
+  },
+  "getEntriesForDate": {
+    "title": "获取指定日期的图文",
+    "description": "获取指定日期的所有图文条目",
+    "parameters": [
+      {"name": "dateStr", "type": "string", "required": true, "description": "日期字符串（格式：YYYY-MM-DD）"}
+    ],
+    "returns": {
+      "type": "Array",
+      "description": "指定日期的图文列表"
+    },
+    "examples": [
+      {
+        "title": "获取今日图文",
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst entries = await Aboutme.plugins.calendar_album.getEntriesForDate({ dateStr: today });\nsetResult(`今天有 ${entries.length} 条图文`);"
+      }
+    ],
+    "notes": "日期格式必须为 YYYY-MM-DD",
+    "enabled": true
+  },
+  "addEntry": {
+    "title": "添加图文",
+    "description": "添加一条新的图文",
+    "parameters": [
+      {"name": "title", "type": "string", "required": true, "description": "图文标题"},
+      {"name": "content", "type": "string", "required": true, "description": "图文内容（Markdown 格式）"},
+      {"name": "dateStr", "type": "string", "required": false, "description": "日期（格式：YYYY-MM-DD，默认今天）"},
+      {"name": "tags", "type": "array", "required": false, "description": "标签数组（如：[\"生活\", \"心情\"]）"},
+      {"name": "location", "type": "string", "required": false, "description": "位置"},
+      {"name": "mood", "type": "string", "required": false, "description": "心情（emoji 表情）"},
+      {"name": "weather", "type": "string", "required": false, "description": "天气"},
+      {"name": "imageUrls", "type": "array", "required": false, "description": "图片URL数组"}
+    ],
+    "returns": {
+      "type": "Object",
+      "description": "新创建的图文对象"
+    },
+    "examples": [
+      {
+        "title": "添加简单图文",
+        "code": "const entry = await Aboutme.plugins.calendar_album.addEntry({\n  title: '美好的一天',\n  content: '今天天气很好，心情愉快！'\n});\nsetResult(`图文已创建: ${entry.id}`);"
+      },
+      {
+        "title": "添加完整图文",
+        "code": "const timeInfo = await Aboutme.system.getCurrentTime();\nconst today = `${timeInfo.year}-${String(timeInfo.month).padStart(2, '0')}-${String(timeInfo.day).padStart(2, '0')}`;\nconst entry = await Aboutme.plugins.calendar_album.addEntry({\n  title: '生日聚会',\n  content: '今天过生日，很开心！',\n  dateStr: today,\n  tags: ['生活', '生日'],\n  location: '家',\n  mood: '😊',\n  weather: '晴天',\n  imageUrls: ['photos/1.jpg', 'photos/2.jpg']\n});\nsetResult('已添加生日图文');"
+      }
+    ],
+    "notes": "标签和图片URL使用数组格式",
+    "enabled": true
+  },
+  "updateEntry": {
+    "title": "更新图文",
+    "description": "更新已有图文的内容",
+    "parameters": [
+      {"name": "id", "type": "string", "required": true, "description": "图文ID"},
+      {"name": "title", "type": "string", "required": false, "description": "新标题"},
+      {"name": "content", "type": "string", "required": false, "description": "新内容"},
+      {"name": "tags", "type": "array", "required": false, "description": "新标签数组"},
+      {"name": "location", "type": "string", "required": false, "description": "新位置"},
+      {"name": "mood", "type": "string", "required": false, "description": "新心情"},
+      {"name": "weather", "type": "string", "required": false, "description": "新天气"},
+      {"name": "imageUrls", "type": "array", "required": false, "description": "新图片URL数组"}
+    ],
+    "returns": {
+      "type": "Object",
+      "description": "更新后的图文对象"
+    },
+    "examples": [
+      {
+        "title": "更新图文内容",
+        "code": "const updated = await Aboutme.plugins.calendar_album.updateEntry({\n  id: 'entry123',\n  content: '更新后的内容...'\n});\nsetResult('图文已更新');"
+      }
+    ],
+    "notes": "仅更新提供的字段，其他字段保持不变",
+    "enabled": true
+  },
+  "deleteEntry": {
+    "title": "删除图文",
+    "description": "删除指定的图文",
+    "parameters": [
+      {"name": "id", "type": "string", "required": true, "description": "图文ID"}
+    ],
+    "returns": {
+      "type": "Object",
+      "description": "结果对象，包含 success 和可选的 error 字段"
+    },
+    "examples": [
+      {
+        "title": "删除图文",
+        "code": "const result = await Aboutme.plugins.calendar_album.deleteEntry({ id: 'entry123' });\nsetResult(result.success ? '删除成功' : result.error);"
+      }
+    ],
+    "notes": "删除操作不可逆",
+    "enabled": true
+  },
+  "getEntryById": {
+    "title": "根据ID获取图文",
+    "description": "根据图文ID获取详细信息",
+    "parameters": [
+      {"name": "id", "type": "string", "required": true, "description": "图文ID"}
+    ],
+    "returns": {
+      "type": "Object",
+      "description": "图文对象，如不存在则返回 error 字段"
+    },
+    "examples": [
+      {
+        "title": "获取图文详情",
+        "code": "const entry = await Aboutme.plugins.calendar_album.getEntryById({ id: 'entry123' });\nif (entry.error) {\n  setResult('图文不存在');\n} else {\n  setResult(JSON.stringify(entry, null, 2));\n}"
+      }
+    ],
+    "notes": "如图文不存在，返回对象包含 error 字段",
+    "enabled": true
+  },
+  "getTags": {
+    "title": "获取所有标签",
+    "description": "获取系统中的所有标签列表",
+    "parameters": [],
+    "returns": {
+      "type": "Array",
+      "description": "标签字符串数组"
+    },
+    "examples": [
+      {
+        "title": "获取标签列表",
+        "code": "const tags = await Aboutme.plugins.calendar_album.getTags({});\nsetResult(tags.join(', '));"
+      }
+    ],
+    "notes": "返回去重后的标签列表",
+    "enabled": true
+  },
+  "getEntriesByTag": {
+    "title": "根据标签获取图文",
+    "description": "获取包含指定标签的所有图文。支持分页查询，提供 offset 或 count 参数时返回分页对象；不提供时返回完整数组。",
+    "parameters": [
+      {"name": "tag", "type": "string", "required": true, "description": "标签名称"},
+      {"name": "offset", "type": "number", "required": false, "description": "分页偏移量（默认 0）"},
+      {"name": "count", "type": "number", "required": false, "description": "分页数量（默认 100）"}
+    ],
+    "returns": {
+      "type": "Array|Object",
+      "description": "无分页参数时返回图文数组；有分页参数时返回对象 {data, total, offset, count, hasMore}"
+    },
+    "examples": [
+      {
+        "title": "获取生活类图文（无分页）",
+        "code": "const entries = await Aboutme.plugins.calendar_album.getEntriesByTag({ tag: '生活' });\nsetResult(`共有 ${entries.length} 条生活类图文`);"
+      },
+      {
+        "title": "分页获取生活类图文",
+        "code": "const result = await Aboutme.plugins.calendar_album.getEntriesByTag({ tag: '生活', offset: 0, count: 20 });\nsetResult(`第1页: ${result.data.length}条, 共${result.total}条`);"
+      }
+    ],
+    "notes": "单标签筛选；按创建时间倒序",
+    "enabled": true
+  },
+  "getEntriesByTags": {
+    "title": "根据多标签获取图文（AND逻辑）",
+    "description": "获取同时包含所有指定标签的图文。支持分页查询，提供 offset 或 count 参数时返回分页对象；不提供时返回完整数组。",
+    "parameters": [
+      {"name": "tags", "type": "array", "required": true, "description": "标签数组"},
+      {"name": "offset", "type": "number", "required": false, "description": "分页偏移量（默认 0）"},
+      {"name": "count", "type": "number", "required": false, "description": "分页数量（默认 100）"}
+    ],
+    "returns": {
+      "type": "Array|Object",
+      "description": "无分页参数时返回图文数组；有分页参数时返回对象 {data, total, offset, count, hasMore}"
+    },
+    "examples": [
+      {
+        "title": "获取同时包含多个标签的图文（无分页）",
+        "code": "const entries = await Aboutme.plugins.calendar_album.getEntriesByTags({ tags: ['生活', '心情'] });\nsetResult(`共有 ${entries.length} 条同时标记为生活和心情的图文`);"
+      },
+      {
+        "title": "分页获取多标签图文",
+        "code": "const result = await Aboutme.plugins.calendar_album.getEntriesByTags({ tags: ['生活', '心情'], offset: 0, count: 10 });\nsetResult(`找到 ${result.total} 条，当前页 ${result.count} 条`);"
+      }
+    ],
+    "notes": "AND 逻辑：只返回同时包含所有指定标签的图文；按创建时间倒序",
+    "enabled": true
+  },
+  "getPhotos": {
+    "title": "获取所有照片",
+    "description": "获取所有图文中的照片URL列表。支持分页查询，提供 offset 或 count 参数时返回分页对象；不提供时返回完整数组。",
+    "parameters": [
+      {"name": "offset", "type": "number", "required": false, "description": "分页偏移量（默认 0）"},
+      {"name": "count", "type": "number", "required": false, "description": "分页数量（默认 100）"}
+    ],
+    "returns": {
+      "type": "Array|Object",
+      "description": "无分页参数时返回照片URL数组；有分页参数时返回对象 {data, total, offset, count, hasMore}"
+    },
+    "examples": [
+      {
+        "title": "获取所有照片（无分页）",
+        "code": "const photos = await Aboutme.plugins.calendar_album.getPhotos({});\nsetResult(`共有 ${photos.length} 张照片`);"
+      },
+      {
+        "title": "分页获取照片",
+        "code": "const result = await Aboutme.plugins.calendar_album.getPhotos({offset: 0, count: 50});\nsetResult(`第1页: ${result.data.length}张, 共${result.total}张`);"
+      }
+    ],
+    "notes": "包括直接上传的图片和 Markdown 内容中提取的图片",
+    "enabled": true
+  },
+  "getPhotosByDateRange": {
+    "title": "根据日期范围获取照片",
+    "description": "获取指定日期范围内的照片信息。支持分页查询，提供 offset 或 count 参数时返回分页对象；不提供时返回完整数组。",
+    "parameters": [
+      {"name": "startDate", "type": "string", "required": true, "description": "开始日期（格式：YYYY-MM-DD）"},
+      {"name": "endDate", "type": "string", "required": true, "description": "结束日期（格式：YYYY-MM-DD）"},
+      {"name": "offset", "type": "number", "required": false, "description": "分页偏移量（默认 0）"},
+      {"name": "count", "type": "number", "required": false, "description": "分页数量（默认 100）"}
+    ],
+    "returns": {
+      "type": "Array|Object",
+      "description": "无分页参数时返回照片信息数组；有分页参数时返回对象 {data, total, offset, count, hasMore}"
+    },
+    "examples": [
+      {
+        "title": "获取本月的照片（无分页）",
+        "code": "const startDate = await Aboutme.system.getCustomDate({relativePosition: 'startOfMonth', format: 'yyyy-MM-dd'});\nconst endDate = await Aboutme.system.getCustomDate({relativePosition: 'endOfMonth', format: 'yyyy-MM-dd'});\nconst photos = await Aboutme.plugins.calendar_album.getPhotosByDateRange({ startDate, endDate });\nsetResult(JSON.stringify(photos, null, 2));"
+      },
+      {
+        "title": "分页获取日期范围照片",
+        "code": "const result = await Aboutme.plugins.calendar_album.getPhotosByDateRange({ startDate: '2025-01-01', endDate: '2025-01-31', offset: 0, count: 20 });\nsetResult(`第1页: ${result.data.length}张, 共${result.total}张`);"
+      }
+    ],
+    "notes": "返回照片的日期、URL、所属图文ID和标题",
+    "enabled": true
+  },
+  "getStatistics": {
+    "title": "获取统计信息",
+    "description": "获取图文相册的统计数据",
+    "parameters": [],
+    "returns": {
+      "type": "Object",
+      "description": "统计对象，包含 todayCount、last7DaysCount、totalCount、tagCount、photoCount 字段"
+    },
+    "examples": [
+      {
+        "title": "获取统计信息",
+        "code": "const stats = await Aboutme.plugins.calendar_album.getStatistics({});\nsetResult(`今日: ${stats.todayCount}, 近7天: ${stats.last7DaysCount}, 总计: ${stats.totalCount}`);"
+      }
+    ],
+    "notes": "包含今日、近7天、总数、标签数、照片数等统计信息",
+    "enabled": true
+  },
+  "findEntryBy": {
+    "title": "通用图文查找",
+    "description": "根据自定义条件查找图文（支持单条/多条结果）。当 findAll=true 且提供分页参数时，返回分页对象；否则返回原格式。",
+    "parameters": [
+      {"name": "field", "type": "string", "required": true, "description": "要匹配的字段名（如：id、title、location、mood、weather）"},
+      {"name": "value", "type": "any", "required": true, "description": "要匹配的值"},
+      {"name": "findAll", "type": "boolean", "required": false, "description": "是否返回所有匹配项（默认 false，只返回第一个）"},
+      {"name": "offset", "type": "number", "required": false, "description": "分页偏移量（仅 findAll=true 时有效，默认 0）"},
+      {"name": "count", "type": "number", "required": false, "description": "分页数量（仅 findAll=true 时有效，默认 100）"}
+    ],
+    "returns": {
+      "type": "Object|Array|null",
+      "description": "findAll=false 时返回单个图文或 null；findAll=true 无分页时返回图文数组；findAll=true 有分页时返回对象 {data, total, offset, count, hasMore}"
+    },
+    "examples": [
+      {
+        "title": "根据 ID 查找图文",
+        "code": "const entry = await Aboutme.plugins.calendar_album.findEntryBy({field: 'id', value: 'entry123'});\nif (entry) {\n  setResult(`找到图文: ${entry.title}`);\n} else {\n  setResult('未找到该图文');\n}"
+      },
+      {
+        "title": "查找所有心情为开心的图文（无分页）",
+        "code": "const entries = await Aboutme.plugins.calendar_album.findEntryBy({field: 'mood', value: '😊', findAll: true});\nsetResult(`找到 ${entries.length} 条开心的图文`);"
+      },
+      {
+        "title": "分页查找所有心情为开心的图文",
+        "code": "const result = await Aboutme.plugins.calendar_album.findEntryBy({field: 'mood', value: '😊', findAll: true, offset: 0, count: 10});\nsetResult(`第1页: ${result.data.length}条, 共${result.total}条`);"
+      }
+    ],
+    "notes": "简化查找逻辑，避免手动遍历图文列表；支持任意字段匹配；分页仅在 findAll=true 时生效",
+    "enabled": true
+  },
+  "findEntryById": {
+    "title": "根据ID查找图文",
+    "description": "快速根据图文ID查找单个图文（findEntryBy 的便捷方法）",
+    "parameters": [
+      {"name": "id", "type": "string", "required": true, "description": "图文ID"}
+    ],
+    "returns": {
+      "type": "Object|null",
+      "description": "找到的图文对象，未找到返回 null"
+    },
+    "examples": [
+      {
+        "title": "查找指定ID的图文",
+        "code": "const entry = await Aboutme.plugins.calendar_album.findEntryById({id: 'entry123'});\nif (entry) {\n  setResult(`图文标题: ${entry.title}, 内容: ${entry.content.substring(0, 50)}...`);\n} else {\n  setResult('图文不存在');\n}"
+      }
+    ],
+    "notes": "等价于 getEntryById，但遵循统一命名规范",
+    "enabled": true
+  },
+  "findEntryByTitle": {
+    "title": "根据标题查找图文",
+    "description": "根据图文标题查找图文（支持精确匹配或模糊匹配）",
+    "parameters": [
+      {"name": "title", "type": "string", "required": true, "description": "图文标题"},
+      {"name": "fuzzy", "type": "boolean", "required": false, "description": "是否模糊匹配（默认 false，精确匹配）"},
+      {"name": "findAll", "type": "boolean", "required": false, "description": "是否返回所有匹配项（默认 false）"}
+    ],
+    "returns": {
+      "type": "Object|Array|null",
+      "description": "findAll=false 时返回单个图文或 null；findAll=true 时返回图文数组"
+    },
+    "examples": [
+      {
+        "title": "精确匹配图文标题",
+        "code": "const entry = await Aboutme.plugins.calendar_album.findEntryByTitle({title: '美好的一天'});\nsetResult(entry ? `找到图文，创建时间: ${entry.createdAt}` : '未找到');"
+      },
+      {
+        "title": "模糊匹配查找所有包含关键词的图文",
+        "code": "const entries = await Aboutme.plugins.calendar_album.findEntryByTitle({title: '旅行', fuzzy: true, findAll: true});\nsetResult(`找到 ${entries.length} 条包含'旅行'的图文`);"
+      }
+    ],
+    "notes": "精确匹配使用 ===，模糊匹配使用 includes",
+    "enabled": true
+  }
+}

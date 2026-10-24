@@ -1,0 +1,43 @@
+{
+  "name": "LINE 贴图下载",
+  "id": "line_sticker",
+  "version": "1.0.3",
+  "description": "输入 LINE 商店贴图链接，下载整个贴图包并导入为本地贴图合集，可在聊天表情面板中直接发送；参考 line-sticker-downloader",
+  "icon": "image",
+  "author": "Aboutme Team",
+  "enabled": true,
+  "type": "module",
+  "autoRun": false,
+  "inputs": [
+    {
+      "label": "贴图链接",
+      "key": "url",
+      "type": "string",
+      "required": true,
+      "defaultValue": "",
+      "description": "LINE 商店贴图页链接（也支持 line://shop/detail/xxx）",
+      "placeholder": "https://store.line.me/stickershop/product/…/zh-Hans"
+    },
+    {
+      "label": "合集名称",
+      "key": "name",
+      "type": "string",
+      "required": false,
+      "defaultValue": "",
+      "description": "留空自动使用贴图包标题",
+      "placeholder": "可选"
+    }
+  ],
+  "triggers": [],
+  "configFormFields": [
+    {
+      "name": "proxy",
+      "type": "text",
+      "labelText": "网络代理（可选）",
+      "hintText": "留空自动使用系统代理（Windows 设置/环境变量）；可填 http://127.0.0.1:7890 指定代理；填 direct 强制直连",
+      "initialValue": "",
+      "required": false
+    }
+  ],
+  "builtIn": true
+}

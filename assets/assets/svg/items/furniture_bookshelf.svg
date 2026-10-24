@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="140" height="140">
+<g stroke="#3D2B24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+<rect x="30" y="22" width="80" height="88" rx="9" fill="#DEC2AC"/>
+<rect x="37" y="29" width="66" height="34" rx="4" fill="#FDF3E6"/>
+<rect x="37" y="70" width="66" height="33" rx="4" fill="#FDF3E6"/>
+<path d="M38 110 L35 118 M102 110 L105 118" stroke-width="3.5"/>
+<path d="M46 49 H62 L59 63 H49 Z" fill="#FAD2D9"/>
+<path d="M54 49 C48 42 42 41 44 36 C49 35 53 41 54 48 C56 40 62 35 66 38 C67 43 60 45 54 49 Z" fill="#A3B878"/>
+<rect x="72" y="54" width="24" height="9" rx="2" fill="#F4B6AA"/>
+<rect x="75" y="46" width="20" height="8" rx="2" fill="#F7DA92"/>
+<rect x="41" y="79" width="8" height="24" rx="2" fill="#FAD2D9"/>
+<rect x="49" y="81" width="8" height="22" rx="2" fill="#A3B878"/>
+<path d="M58 82 L65 80 L71 102 L64 103 Z" fill="#F297A6"/>
+<rect x="76" y="83" width="22" height="20" rx="3" fill="#FAD2D9"/>
+<path d="M87 97 C87 97 82 93 82 90.5 C82 88.5 84.5 88 86 90 L87 91 L88 90 C89.5 88 92 88.5 92 90.5 C92 93 87 97 87 97 Z" fill="#F297A6" stroke-width="1.6"/>
+</g>
+</svg>

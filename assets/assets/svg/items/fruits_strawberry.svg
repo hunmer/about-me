@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="140" height="140">
+<g stroke="#3D2B24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+<path d="M70 32 C70 24 75 19 79 18" fill="none" stroke-width="2.8"/>
+<path d="M70 34 C42 34 31 56 38 82 C44 102 58 115 70 115 C82 115 96 102 102 82 C109 56 98 34 70 34 Z" fill="#F07B88"/>
+<path d="M45 42 C52 32 62 32 70 34 C78 32 88 32 95 42 C88 49 79 47 76 42 C74 49 66 49 64 42 C61 47 52 49 45 42 Z" fill="#A3B878"/>
+<path d="M66 33 C57 25 49 28 51 35 C53 41 61 38 66 35 Z" fill="#FAD2D9"/>
+<path d="M74 33 C83 25 91 28 89 35 C87 41 79 38 74 35 Z" fill="#FAD2D9"/>
+<circle cx="70" cy="34" r="3.5" fill="#FDF3E6"/>
+<g fill="#FDF3E6" stroke="none">
+<ellipse cx="53" cy="64" rx="2" ry="3"/>
+<ellipse cx="87" cy="64" rx="2" ry="3"/>
+<ellipse cx="62" cy="80" rx="2" ry="3"/>
+<ellipse cx="78" cy="80" rx="2" ry="3"/>
+<ellipse cx="52" cy="92" rx="2" ry="3"/>
+<ellipse cx="88" cy="92" rx="2" ry="3"/>
+<ellipse cx="70" cy="100" rx="2" ry="3"/>
+</g>
+<path d="M70 72 C70 72 63 66 63 62 C63 59 66.5 58 69 61 L70 62 L71 61 C73.5 58 77 59 77 62 C77 66 70 72 70 72 Z" fill="#FAD2D9" stroke-width="1.8"/>
+</g>
+</svg>

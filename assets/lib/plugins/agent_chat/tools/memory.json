@@ -1,0 +1,29 @@
+{
+  "search_memory": {
+    "title": "查询记忆",
+    "description": "查询你对某位用户的长期记忆（喜好、习惯、聊过的事）。当用户问起关于他/她自己的信息（如'我的兴趣''你知道我什么''我之前说过什么'）而你不确定时，调用此工具按关键词检索。关键词用简短词语（如'音乐'、'工作'、'喜好'），留空则返回该用户最重要的核心记忆。",
+    "parameters": [
+      {
+        "name": "query",
+        "type": "string",
+        "optional": true,
+        "description": "检索关键词，如'音乐'、'语音'、'工作'；留空返回核心记忆"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 数组，每项为 {content: 记忆内容, tags: 标签, importance: 重要性, createdAt: 记录时间}"
+    },
+    "examples": [
+      {
+        "code": "const memories = await Aboutme.plugins.openai.search_memory({query: '音乐'});\nsetResult(memories);",
+        "comment": "检索与音乐相关的记忆"
+      },
+      {
+        "code": "const core = await Aboutme.plugins.openai.search_memory({});\nsetResult(core);",
+        "comment": "查看核心记忆"
+      }
+    ],
+    "enabled": true
+  }
+}
