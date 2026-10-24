@@ -6,8 +6,12 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 # 若配置了 VCPKG_ROOT 环境变量且未显式指定 toolchain，则使用 vcpkg 提供原生依赖
 # （image_compress_plus_windows 依赖 libjpeg-turbo/libpng/libwebp/exiv2）
+if(DEFINED ENV{VCPKG_ROOT})
+  string(REPLACE "\\" "/" VCPKG_ROOT_NORMALIZED "$ENV{VCPKG_ROOT}")
+endif()
+
 if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-  set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+  set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT_NORMALIZED}/scripts/buildsystems/vcpkg.cmake"
       CACHE STRING "vcpkg toolchain")
 endif()
 
@@ -110,7 +114,7 @@ if(DEFINED ENV{VCPKG_ROOT})
   # Debug 必须使用 Debug CRT 分配内存的 DLL。jpeg62.dll 在两种配置下同名，
   # 固定复制 Release DLL 会覆盖 Debug DLL，导致 JPEG 缓冲区跨 CRT 释放时崩溃。
   set(VCPKG_RUNTIME_BIN
-    "$ENV{VCPKG_ROOT}/installed/x64-windows/$<IF:$<CONFIG:Debug>,debug/bin,bin>")
+    "${VCPKG_ROOT_NORMALIZED}/installed/x64-windows/$<IF:$<CONFIG:Debug>,debug/bin,bin>")
   set(VCPKG_RUNTIME_DLLS
     "${VCPKG_RUNTIME_BIN}/jpeg62.dll"
     "${VCPKG_RUNTIME_BIN}/libpng16$<$<CONFIG:Debug>:d>.dll")
