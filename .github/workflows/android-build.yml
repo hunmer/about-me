@@ -79,7 +79,7 @@ jobs:
         storePassword=android
         keyPassword=android
         keyAlias=upload
-        storeFile=upload-keystore.jks
+        storeFile=../upload-keystore.jks
         EOF
     - name: Build signed APK (arm64 only)
       run: |
