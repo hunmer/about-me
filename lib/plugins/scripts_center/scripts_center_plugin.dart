@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:aboutme/core/services/startup_trace.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
+import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -180,6 +181,16 @@ class ScriptsCenterPlugin extends BasePlugin {
   ScriptExecutor get scriptExecutor => _scriptExecutor;
   ScriptStoreManager get scriptStoreManager => _scriptStoreManager;
   ScriptDownloadManager get scriptDownloadManager => _scriptDownloadManager;
+
+  @override
+  bool supportsFileRefresh(String filePath) =>
+      filePath.startsWith('scripts_center/');
+
+  @override
+  Future<bool> refreshData([PluginRefreshDataArgs? args]) async {
+    await reloadScripts();
+    return true;
+  }
 
   @override
   Future<void> initialize() async {

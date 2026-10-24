@@ -160,6 +160,19 @@ class AgentChatPlugin extends PluginBase with ChangeNotifier {
   }
 
   @override
+  Future<bool> refreshData([PluginRefreshDataArgs? args]) async {
+    final controller = _conversationController;
+    if (controller == null) return false;
+    try {
+      await controller.refresh();
+      return true;
+    } catch (e) {
+      debugPrint('[AgentChatPlugin] 刷新会话失败: $e');
+      return false;
+    }
+  }
+
+  @override
   bool get hasSettingsView => true;
 
   @override
@@ -304,8 +317,9 @@ class _AgentChatMainViewState extends State<AgentChatMainView> {
     final plugin = AgentChatPlugin.instance;
 
     // 如果已初始化，直接完成；否则等待初始化
-    _initializeFuture =
-        plugin.isInitialized ? Future.value() : _waitForInitialization();
+    _initializeFuture = plugin.isInitialized
+        ? Future.value()
+        : _waitForInitialization();
 
     // 如果传入了conversationId，在初始化完成后直接打开对话
     if (widget.conversationId != null) {

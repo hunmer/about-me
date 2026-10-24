@@ -192,6 +192,12 @@ class Conversation {
       );
     }
 
+    final now = DateTime.now();
+    final createdAt =
+        DateTime.tryParse(json['createdAt'] as String? ?? '') ?? now;
+    final lastMessageAt =
+        DateTime.tryParse(json['lastMessageAt'] as String? ?? '') ?? createdAt;
+
     return Conversation(
       id: json['id'] as String,
       title: json['title'] as String,
@@ -200,13 +206,14 @@ class Conversation {
           ?.map((e) => AgentChainNode.fromJson(e as Map<String, dynamic>))
           .toList(),
       toolAgentConfig: toolAgentConfig,
-      groups: (json['groups'] as List<dynamic>?)
+      groups:
+          (json['groups'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
       contextMessageCount: json['contextMessageCount'] as int?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      lastMessageAt: DateTime.parse(json['lastMessageAt'] as String),
+      createdAt: createdAt,
+      lastMessageAt: lastMessageAt,
       isPinned: json['isPinned'] as bool? ?? false,
       lastMessagePreview: json['lastMessagePreview'] as String?,
       unreadCount: json['unreadCount'] as int? ?? 0,
@@ -215,7 +222,9 @@ class Conversation {
           ? TTSConfig.fromJson(json['ttsConfig'] as Map<String, dynamic>)
           : null,
       voiceCallConfig: json['voiceCallConfig'] != null
-          ? VoiceCallConfig.fromJson(json['voiceCallConfig'] as Map<String, dynamic>)
+          ? VoiceCallConfig.fromJson(
+              json['voiceCallConfig'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -228,8 +237,7 @@ class Conversation {
       'agentId': agentId,
       if (agentChain != null && agentChain!.isNotEmpty)
         'agentChain': agentChain!.map((node) => node.toJson()).toList(),
-      if (toolAgentConfig != null)
-        'toolAgentConfig': toolAgentConfig!.toJson(),
+      if (toolAgentConfig != null) 'toolAgentConfig': toolAgentConfig!.toJson(),
       'groups': groups,
       'contextMessageCount': contextMessageCount,
       'createdAt': createdAt.toIso8601String(),

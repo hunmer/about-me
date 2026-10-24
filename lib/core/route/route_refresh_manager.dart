@@ -51,6 +51,8 @@ class RouteRefreshManager {
     'day/': 'day',
     'nodes/': 'nodes',
     'store/': 'store',
+    'scripts_center/': 'scripts_center',
+    'agent_chat/': 'agent_chat',
   };
 
   /// 路由ID -> 插件ID 映射（用于识别子页面属于哪个插件）
