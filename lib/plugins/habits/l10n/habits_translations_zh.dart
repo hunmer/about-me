@@ -38,6 +38,7 @@ class HabitsTranslationsZh {
     'habits_completions': '完成次数',
     'habits_totalDuration': '总持续时间',
     'habits_title': '标题',
+    'habits_icon': '选择图标',
     'habits_pleaseEnterTitle': '请输入标题',
     'habits_notes': '备注',
     'habits_group': '分组',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -10,6 +11,7 @@ import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:aboutme/plugins/contact/controllers/contact_controller.dart';
 import 'package:aboutme/plugins/contact/models/contact_model.dart';
 import 'package:aboutme/plugins/contact/models/custom_activity_event_model.dart';
+import 'package:aboutme/plugins/contact/models/interaction_record_model.dart';
 import 'package:aboutme/plugins/contact/widgets/contact_form.dart';
 
 /// 联系人详情页（Warm Paper Sketch，布局参考纪念日详情页）
@@ -41,10 +43,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   /// 当前联系人最新数据
   Contact? _current;
 
+  /// 当前联系人的互动记录（按时间倒序）
+  List<InteractionRecord> _interactions = [];
+
   @override
   void initState() {
     super.initState();
     _current = widget.contact;
+    _reloadInteractions();
   }
 
   @override
@@ -68,6 +74,17 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     setState(() => _current = latest);
   }
 
+  /// 重新加载互动记录（进入页面 / 增删改后调用）
+  Future<void> _reloadInteractions() async {
+    final list = await widget.controller.getInteractionsByContactId(
+      widget.contact.id,
+    );
+    if (!mounted) return;
+    setState(
+      () => _interactions = list..sort((a, b) => b.date.compareTo(a.date)),
+    );
+  }
+
   Future<void> _update(Contact contact) async {
     await widget.controller.updateContact(contact);
     await _reload();
@@ -84,6 +101,138 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       ),
     );
     await _reload();
+  }
+
+  // ==================== 互动记录编辑 ====================
+
+  static const _uuid = Uuid();
+
+  /// yyyy-MM-dd HH:mm
+  static String _formatDateTime(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')} '
+      '${d.hour.toString().padLeft(2, '0')}:'
+      '${d.minute.toString().padLeft(2, '0')}';
+
+  Future<void> _submitInteraction(
+    Contact contact,
+    InteractionRecord? record,
+    String notes,
+    DateTime date,
+  ) async {
+    if (record == null) {
+      await widget.controller.addInteraction(
+        InteractionRecord(
+          id: _uuid.v4(),
+          contactId: contact.id,
+          date: date,
+          notes: notes,
+        ),
+      );
+    } else {
+      await widget.controller.updateInteraction(
+        record.copyWith(date: date, notes: notes),
+      );
+    }
+    await _reloadInteractions();
+  }
+
+  /// 新增/编辑互动记录（内容 + 日期时间）
+  void _showInteractionDialog(
+    AppThemeData theme,
+    Contact contact, [
+    InteractionRecord? record,
+  ]) {
+    final isEditing = record != null;
+    _textController.text = record?.notes ?? '';
+    var date = record?.date ?? DateTime.now();
+    showDSDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => DSDialog(
+          title: isEditing
+              ? 'contact_editInteraction'.tr
+              : 'contact_addInteraction'.tr,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DSInput(
+                controller: _textController,
+                hint: 'contact_notesHint'.tr,
+                maxLines: 3,
+                textInputAction: TextInputAction.done,
+              ),
+              const SizedBox(height: 10),
+              Pressable(
+                onPressed: () async {
+                  final d = await showDSDatePickerDialog(
+                    context: dialogContext,
+                    initial: date,
+                    theme: theme,
+                    cancelText: 'contact_cancel'.tr,
+                    confirmText: 'contact_done'.tr,
+                  );
+                  if (d == null) return;
+                  final t = await showDSTimePickerDialog(
+                    context: dialogContext,
+                    initial: TimeOfDay(hour: date.hour, minute: date.minute),
+                    theme: theme,
+                    cancelText: 'contact_cancel'.tr,
+                    confirmText: 'contact_done'.tr,
+                  );
+                  if (t == null) return;
+                  setDialogState(
+                    () => date = DateTime(
+                      d.year,
+                      d.month,
+                      d.day,
+                      t.hour,
+                      t.minute,
+                    ),
+                  );
+                },
+                builder: (context, states) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    fillColor: theme.surface,
+                    radius: BorderRadius.circular(12),
+                    seed: 33,
+                  ),
+                  child: Row(
+                    children: [
+                      DsIcon(
+                        DsIconKind.calendarCheck,
+                        size: 16,
+                        color: theme.textSub,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatDateTime(date),
+                        style: DsTypography.body.copyWith(color: theme.text),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          confirmText: 'contact_done'.tr,
+          cancelText: 'contact_cancel'.tr,
+          onConfirm: () {
+            final notes = _textController.text.trim();
+            if (notes.isEmpty) return;
+            Navigator.of(dialogContext).pop();
+            _submitInteraction(contact, record, notes, date);
+          },
+          onCancel: () => Navigator.of(dialogContext).pop(),
+        ),
+      ),
+    );
   }
 
   // ==================== 事件 / 字段编辑 ====================
@@ -423,6 +572,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       children: [
         _buildBasicInfoCard(theme, contact),
         const SizedBox(height: 16),
+        _buildInteractionsSection(theme, contact),
+        const SizedBox(height: 16),
         _buildEventsSection(theme, contact),
         const SizedBox(height: 16),
         _buildFieldsSection(theme, contact),
@@ -479,6 +630,99 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             const SizedBox(height: 8),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildInteractionsSection(AppThemeData theme, Contact contact) {
+    final interactions = _interactions;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          theme,
+          '${'contact_interactionRecords'.tr} (${interactions.length})',
+          onPressed: () => _showInteractionDialog(theme, contact),
+        ),
+        if (interactions.isEmpty)
+          Text(
+            'contact_noNotes'.tr,
+            style: DsTypography.caption.copyWith(color: theme.textSub),
+          )
+        else
+          for (final record in interactions)
+            _buildInteractionRow(theme, contact, record),
+      ],
+    );
+  }
+
+  Widget _buildInteractionRow(
+    AppThemeData theme,
+    Contact contact,
+    InteractionRecord record,
+  ) {
+    return Pressable(
+      onPressed: () => _showInteractionDialog(theme, contact, record),
+      onLongPress: () => _confirmRemove(record.notes, () async {
+        await widget.controller.deleteInteraction(record.id);
+        await _reloadInteractions();
+      }),
+      builder: (context, states) => Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surface,
+          radius: BorderRadius.circular(14),
+          seed: record.id.hashCode,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: dsSketchDecoration(
+                theme: theme,
+                fillColor: theme.primary.withValues(alpha: 0.35),
+                circle: true,
+                strokeWidth: 1.4,
+                seed: record.id.hashCode + 40,
+              ),
+              child: Center(
+                child: DsIcon(
+                  DsIconKind.chat,
+                  size: 15,
+                  color: theme.text,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    record.notes,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTypography.body.copyWith(color: theme.text),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatDateTime(record.date),
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
+                  ),
+                ],
+              ),
+            ),
+            DsIcon(
+              DsIconKind.chevronRight,
+              size: 14,
+              color: theme.textSub.withValues(alpha: 0.6),
+            ),
+          ],
+        ),
       ),
     );
   }

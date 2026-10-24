@@ -1,8 +1,4 @@
-import 'dart:io';
-
 import 'package:aboutme/core/services/toast_service.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
-import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:flutter/material.dart';
@@ -15,10 +11,7 @@ import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
 import 'package:aboutme/plugins/habits/models/skill.dart';
 import 'package:aboutme/plugins/habits/utils/habits_utils.dart';
-import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
-import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
-import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
 class HabitForm extends StatefulWidget {
@@ -62,17 +55,7 @@ class _HabitFormState extends State<HabitForm> {
       onStateReady: (state) => widget.onStateReady?.call(state),
       config: FormConfig(
         fields: [
-          // 图片选择器
-          FormFieldConfig(
-            name: 'image',
-            type: FormFieldType.imagePicker,
-            initialValue: habit?.image,
-            extra: {
-              'enableCrop': true,
-              'cropAspectRatio': 1.0,
-            },
-          ),
-          // 圆形图标选择器
+          // 圆形图标选择器（头像）
           FormFieldConfig(
             name: 'icon',
             type: FormFieldType.circleIconPicker,
@@ -86,7 +69,11 @@ class _HabitFormState extends State<HabitForm> {
                       'color': Colors.blue,
                     }
                     : {'icon': Icons.check_rounded, 'color': Colors.blue},
-            extra: {'initialBackgroundColor': Colors.blue},
+            extra: {
+              'initialBackgroundColor': Colors.blue,
+              'showLabel': true,
+              'labelText': 'habits_icon'.tr,
+            },
           ),
           // 标题
           FormFieldConfig(
@@ -119,7 +106,7 @@ class _HabitFormState extends State<HabitForm> {
             labelText: '${'habits_duration'.tr} (${'habits_minutes'.tr})',
             initialValue: habit?.durationMinutes ?? 30,
           ),
-          // 技能选择
+          // 技能选择（可选）
           FormFieldConfig(
             name: 'skillId',
             type: FormFieldType.select,
@@ -128,8 +115,6 @@ class _HabitFormState extends State<HabitForm> {
                 _skills.any((s) => s.id == habit?.skillId)
                     ? habit?.skillId
                     : null,
-            required: true,
-            validationMessage: 'habits_selectSkill'.tr,
             items: _buildSkillItems(),
           ),
         ],
@@ -143,25 +128,13 @@ class _HabitFormState extends State<HabitForm> {
         },
       ),
       contentBuilder: (context, fields) {
-        // 自定义布局：图片和图标选择器并排显示
+        // 图标选择器（CircleIconPickerField）与其余表单字段依次渲染
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 图片和图标选择器并排显示
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(child: _buildImagePicker(habit?.image)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildIconPicker(habit)),
-                ],
-              ),
-              const SizedBox(height: 24),
-              // 图片/图标与标题之间的间距
               ...fields
-                  .skip(2)
                   .map(
                     (field) =>
                         Column(children: [field, const SizedBox(height: 20)]),
@@ -169,33 +142,6 @@ class _HabitFormState extends State<HabitForm> {
             ],
           ),
         );
-      },
-    );
-  }
-
-  /// 构建图片选择器
-  Widget _buildImagePicker(String? initialImage) {
-    return _ImagePickerWidget(
-      initialImage: initialImage,
-      onImageChanged: (image) {
-        _formKey.currentState?.patchValue({'image': image});
-      },
-    );
-  }
-
-  /// 构建图标选择器
-  Widget _buildIconPicker(Habit? habit) {
-    IconData? icon =
-        habit?.icon != null
-            ? dynamicIconData(int.parse(habit!.icon!), fontFamily: 'MaterialIcons')
-            : Icons.check_rounded;
-    Color color = Colors.blue;
-
-    return _CircleIconPickerWidget(
-      initialIcon: icon,
-      initialColor: color,
-      onIconChanged: (iconData) {
-        _formKey.currentState?.patchValue({'icon': iconData});
       },
     );
   }
@@ -214,7 +160,8 @@ class _HabitFormState extends State<HabitForm> {
               ? null
               : values['group'] as String?,
       icon: (iconData?['icon'] as IconData?)?.codePoint.toString(),
-      image: values['image'] as String?,
+      // 表单不再上传图片，编辑时保留原有图片
+      image: widget.initialHabit?.image,
       durationMinutes:
           int.tryParse(values['durationMinutes']?.toString() ?? '30') ?? 30,
       skillId: values['skillId'] as String?,
@@ -275,169 +222,6 @@ class _HabitFormState extends State<HabitForm> {
         'mode': isEdit ? 'edit' : 'create',
         if (isEdit) 'habitId': habitId,
         if (isEdit) 'habitTitle': habitTitle,
-      },
-    );
-  }
-}
-
-/// 图片选择器 Widget
-class _ImagePickerWidget extends StatelessWidget {
-  final String? initialImage;
-  final ValueChanged<String?> onImageChanged;
-
-  const _ImagePickerWidget({
-    required this.initialImage,
-    required this.onImageChanged,
-  });
-
-  /// 加载图片路径
-  Future<String> _loadImagePath(String imagePath) async {
-    return imagePath.startsWith('http')
-        ? imagePath
-        : await ImageUtils.getAbsolutePath(imagePath);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-    return GestureDetector(
-      onTap: () async {
-        final result = await ImagePickerDialog.show<Map<String, dynamic>>(
-          context,
-          initialUrl: initialImage,
-          enableCrop: true,
-          cropAspectRatio: 1.0,
-        );
-        if (result != null && result['url'] != null) {
-          onImageChanged(result['url'] as String?);
-        }
-      },
-      child: SizedBox(
-        width: 64,
-        height: 64,
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: theme.primary.withValues(alpha: 0.5),
-              width: 2,
-            ),
-          ),
-          child: Builder(
-            builder: (context) {
-              final image = initialImage;
-              if (image != null && image.isNotEmpty) {
-                return FutureBuilder<String>(
-                  future: _loadImagePath(image),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return Center(
-                        child: AspectRatio(
-                          aspectRatio: 1.0,
-                          child: ClipOval(
-                            child:
-                                image.startsWith('http')
-                                    ? Image.network(
-                                      snapshot.data!,
-                                      width: 64,
-                                      height: 64,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              DsIcon(
-                                                DsIconKind.image,
-                                                color: theme.textSub,
-                                              ),
-                                    )
-                                    : Image.file(
-                                      File(snapshot.data!),
-                                      width: 64,
-                                      height: 64,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              DsIcon(
-                                                DsIconKind.image,
-                                                color: theme.textSub,
-                                              ),
-                                    ),
-                          ),
-                        ),
-                      );
-                    } else if (snapshot.hasError) {
-                      return DsIcon(DsIconKind.image, color: theme.textSub);
-                    } else {
-                      return const DSThemeBridge(
-                        child: Center(child: DSLoadingDots(size: 10)),
-                      );
-                    }
-                  },
-                );
-              } else {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      DsIcon(DsIconKind.camera, size: 24, color: theme.textSub),
-                      const SizedBox(height: 2),
-                      Text(
-                        '选择图片',
-                        style: DsTypography.caption.copyWith(
-                          color: theme.textSub,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 圆形图标选择器 Widget
-class _CircleIconPickerWidget extends StatefulWidget {
-  final IconData? initialIcon;
-  final Color initialColor;
-  final ValueChanged<Map<String, dynamic>> onIconChanged;
-
-  const _CircleIconPickerWidget({
-    required this.initialIcon,
-    required this.initialColor,
-    required this.onIconChanged,
-  });
-
-  @override
-  State<_CircleIconPickerWidget> createState() =>
-      _CircleIconPickerWidgetState();
-}
-
-class _CircleIconPickerWidgetState extends State<_CircleIconPickerWidget> {
-  late IconData _icon;
-  late Color _color;
-
-  @override
-  void initState() {
-    super.initState();
-    _icon = widget.initialIcon ?? Icons.check_rounded;
-    _color = widget.initialColor;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CircleIconPicker(
-      currentIcon: _icon,
-      backgroundColor: _color,
-      onIconSelected: (icon) {
-        setState(() => _icon = icon);
-        widget.onIconChanged({'icon': icon, 'color': _color});
-      },
-      onColorSelected: (color) {
-        setState(() => _color = color);
-        widget.onIconChanged({'icon': _icon, 'color': color});
       },
     );
   }

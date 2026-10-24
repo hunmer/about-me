@@ -46,6 +46,9 @@ const Map<String, String> contactTranslationsZh = {
 
   // 交互记录表单
   'contact_notesHint': '输入联系内容...',
+  'contact_interactionRecords': '互动记录',
+  'contact_addInteraction': '添加互动记录',
+  'contact_editInteraction': '编辑互动记录',
 
   // 其他字段
   'contact_organizationLabel': '组织',

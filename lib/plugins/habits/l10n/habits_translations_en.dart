@@ -39,6 +39,7 @@ class HabitsTranslationsEn {
     'habits_completions': 'Completions',
     'habits_totalDuration': 'Total duration',
     'habits_title': 'Title',
+    'habits_icon': 'Choose Icon',
     'habits_pleaseEnterTitle': 'Please enter a title',
     'habits_notes': 'Notes',
     'habits_group': 'Group',

@@ -46,6 +46,9 @@ const Map<String, String> contactTranslationsEn = {
 
   // Interaction record form
   'contact_notesHint': 'Enter interaction details...',
+  'contact_interactionRecords': 'Interactions',
+  'contact_addInteraction': 'Add interaction',
+  'contact_editInteraction': 'Edit interaction',
 
   // Other fields
   'contact_organizationLabel': 'Organization',
