@@ -17,6 +17,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
 import 'package:aboutme/plugins/database/services/database_service.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 
 class DatabaseListWidget extends StatefulWidget {
   final DatabaseService service;
@@ -35,7 +36,25 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
   @override
   void initState() {
     super.initState();
+    final events = EventManager.instance;
+    events.subscribe('database_added', _onDatabaseChanged);
+    events.subscribe('database_updated', _onDatabaseChanged);
+    events.subscribe('database_deleted', _onDatabaseChanged);
     _loadDatabases();
+  }
+
+  void _onDatabaseChanged(EventArgs _) {
+    if (!mounted) return;
+    _loadDatabases();
+  }
+
+  @override
+  void dispose() {
+    final events = EventManager.instance;
+    events.unsubscribe('database_added', _onDatabaseChanged);
+    events.unsubscribe('database_updated', _onDatabaseChanged);
+    events.unsubscribe('database_deleted', _onDatabaseChanged);
+    super.dispose();
   }
 
   Future<void> _loadDatabases() async {
@@ -195,9 +214,7 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
             Expanded(
               child: database.coverImage != null
                   ? FutureBuilder<String>(
-                      future: ImageUtils.getAbsolutePath(
-                        database.coverImage!,
-                      ),
+                      future: ImageUtils.getAbsolutePath(database.coverImage!),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {

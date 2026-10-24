@@ -133,7 +133,9 @@ class ScriptInfo {
     return ScriptInfo(
       id: id,
       path: path,
-      name: json['name'] as String? ?? 'Unnamed Script',
+      name: json['name'] as String? ??
+          json['title'] as String? ??
+          'Unnamed Script',
       version: json['version'] as String? ?? '1.0.0',
       description: json['description'] as String? ?? '',
       icon: json['icon'] as String? ?? 'code',

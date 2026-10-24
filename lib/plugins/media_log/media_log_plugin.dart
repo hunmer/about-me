@@ -24,7 +24,8 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
   static MediaLogPlugin? _instance;
   static MediaLogPlugin get instance {
     if (_instance == null) {
-      _instance = PluginManager.instance.getPlugin('media_log') as MediaLogPlugin?;
+      _instance =
+          PluginManager.instance.getPlugin('media_log') as MediaLogPlugin?;
       if (_instance == null) {
         throw StateError('MediaLogPlugin has not been initialized');
       }
@@ -51,7 +52,9 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
       {'viewMode': mode},
     );
     if (res['success'] != true) {
-      throw StateError('${res['message'] ?? res['code'] ?? 'updateSettings failed'}');
+      throw StateError(
+        '${res['message'] ?? res['code'] ?? 'updateSettings failed'}',
+      );
     }
   }
 
@@ -125,24 +128,26 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
   Future<void> _loadItems() async {
     try {
       _applySnapshot(await _fetchSnapshot());
-      if (_items.isEmpty) {
-        // 首次使用：幂等写入示例数据（来自 ai_picks_demo 的演示内容 + 观影示例）
-        final res = await AboutmeDataService.instance.call(
-          'media_log',
-          'seedExamples',
-          {
-            'items': [
-              for (final item in MediaSampleData.build()) item.toJson(),
-            ],
-          },
-        );
-        if (res['success'] == true) {
-          _applySnapshot(await _fetchSnapshot());
-        }
-      }
     } catch (e) {
       debugPrint('[MediaLogPlugin] 加载数据失败: $e');
     }
+  }
+
+  Future<void> _loadSampleData() async {
+    if (_items.isNotEmpty) return;
+    final res = await AboutmeDataService.instance.call(
+      'media_log',
+      'seedExamples',
+      {
+        'items': [for (final item in MediaSampleData.build()) item.toJson()],
+      },
+    );
+    if (res['success'] != true) {
+      throw StateError(
+        '${res['message'] ?? res['code'] ?? 'seedExamples failed'}',
+      );
+    }
+    await _loadItems();
   }
 
   MediaItem? getItem(String id) {
@@ -170,9 +175,7 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
       item.toJson(),
     );
     if (res['success'] != true) {
-      throw StateError(
-        '${res['message'] ?? res['code'] ?? 'saveItem failed'}',
-      );
+      throw StateError('${res['message'] ?? res['code'] ?? 'saveItem failed'}');
     }
     final saved = MediaItem.fromJson(
       Map<String, dynamic>.from(res['data'] as Map),
@@ -188,11 +191,9 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
   }
 
   Future<void> deleteItem(String id) async {
-    final res = await AboutmeDataService.instance.call(
-      'media_log',
-      'delete',
-      {'id': id},
-    );
+    final res = await AboutmeDataService.instance.call('media_log', 'delete', {
+      'id': id,
+    });
     if (res['success'] != true && res['code'] != 'NOT_FOUND') {
       throw StateError(
         '${res['message'] ?? res['code'] ?? 'deleteItem failed'}',
@@ -251,6 +252,16 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
     PluginManager pluginManager,
     ConfigManager configManager,
   ) async {}
+
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'mediaItems',
+      title: 'media_sampleDataTitle'.tr,
+      description: 'media_sampleDataDesc'.tr,
+      apply: _loadSampleData,
+    ),
+  ];
 
   @override
   String? getPluginName(context) => 'media_name'.tr;

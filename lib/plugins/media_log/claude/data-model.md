@@ -44,7 +44,7 @@
 
 | 路径 | 内容 |
 |------|------|
-| `media_log/items.json` | `{'items': [MediaItem.toJson() ...]}`，经 AboutmeDataService 读写（同步到自建服务器）；首次为空时写入 9 条示例（sample_data.dart，5 阅读 + 4 观影） |
+| `media_log/items.json` | `{'items': [MediaItem.toJson() ...]}`，经 AboutmeDataService 读写（同步到自建服务器）；用户在 onboarding 选择示例数据后写入 9 条示例（sample_data.dart，5 阅读 + 4 观影） |
 
 toJson 序列化规则：必填字段恒输出；`author/coverImage/rating/overview/finishedAt` 仅非 null 输出；时间用 ISO8601 字符串。
 

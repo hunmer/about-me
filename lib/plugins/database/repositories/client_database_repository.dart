@@ -9,6 +9,8 @@ import 'package:aboutme/plugins/database/controllers/database_controller.dart';
 import 'package:aboutme/plugins/database/models/database_model.dart';
 import 'package:aboutme/plugins/database/models/database_field.dart';
 import 'package:aboutme/plugins/database/models/record.dart';
+import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/event/item_event_args.dart';
 
 /// 客户端 Database Repository 实现
 class ClientDatabaseRepository extends IDatabaseRepository {
@@ -61,6 +63,7 @@ class ClientDatabaseRepository extends IDatabaseRepository {
     try {
       final database = _dtoToDatabase(dto);
       await service.createDatabase(database);
+      _broadcastDatabaseEvent('added', id: database.id, title: database.name);
       return Result.success(_databaseToDto(database));
     } catch (e) {
       return Result.failure('创建数据库失败: $e', code: ErrorCodes.serverError);
@@ -75,6 +78,7 @@ class ClientDatabaseRepository extends IDatabaseRepository {
     try {
       final database = _dtoToDatabase(dto);
       await service.updateDatabase(database);
+      _broadcastDatabaseEvent('updated', id: database.id, title: database.name);
       return Result.success(_databaseToDto(database));
     } catch (e) {
       return Result.failure('更新数据库失败: $e', code: ErrorCodes.serverError);
@@ -85,10 +89,27 @@ class ClientDatabaseRepository extends IDatabaseRepository {
   Future<Result<bool>> deleteDatabase(String id) async {
     try {
       await service.deleteDatabase(id);
+      _broadcastDatabaseEvent('deleted', id: id);
       return Result.success(true);
     } catch (e) {
       return Result.failure('删除数据库失败: $e', code: ErrorCodes.serverError);
     }
+  }
+
+  void _broadcastDatabaseEvent(
+    String action, {
+    required String id,
+    String title = '',
+  }) {
+    EventManager.instance.broadcast(
+      'database_$action',
+      ItemEventArgs(
+        eventName: 'database_$action',
+        itemId: id,
+        title: title,
+        action: action,
+      ),
+    );
   }
 
   @override

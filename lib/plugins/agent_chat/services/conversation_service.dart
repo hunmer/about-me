@@ -49,20 +49,21 @@ class ConversationService extends ChangeNotifier {
   /// 加载所有会话
   Future<void> _loadConversations() async {
     try {
-      final res = await AboutmeDataService.instance.get('agent_chat', 'getList');
+      final res = await AboutmeDataService.instance.get(
+        'agent_chat',
+        'getList',
+      );
       final list = (res['success'] == true && res['data'] is Map)
           ? (res['data'] as Map)['data']
           : null;
-      if (list is List && list.isNotEmpty) {
-        // 有数据，正常加载
+      if (list is List) {
+        // 即使远端列表为空也要清空本地缓存，保证删除操作实时同步。
         _conversations
           ..clear()
           ..addAll(
             list
                 .map(
-                  (json) => Conversation.fromJson(
-                    json as Map<String, dynamic>,
-                  ),
+                  (json) => Conversation.fromJson(json as Map<String, dynamic>),
                 )
                 .toList(),
           );
@@ -143,21 +144,21 @@ class ConversationService extends ChangeNotifier {
   /// 保存所有会话
   Future<void> _saveConversations() {
     // 通过串行化写入，防止多个写操作并发执行造成JSON尾部出现多余字符
-    final saveTask = _conversationsSaveChain
-        .catchError((_, __) {})
-        .then((_) async {
-          try {
-            final data = _conversations.map((c) => c.toJson()).toList();
-            await AboutmeDataService.instance.call(
-              'agent_chat',
-              'saveConversations',
-              {'conversations': data},
-            );
-          } catch (e) {
-            debugPrint('保存会话失败: $e');
-            rethrow; // 重新抛出异常，让调用者知道保存失败
-          }
-        });
+    final saveTask = _conversationsSaveChain.catchError((_, __) {}).then((
+      _,
+    ) async {
+      try {
+        final data = _conversations.map((c) => c.toJson()).toList();
+        await AboutmeDataService.instance.call(
+          'agent_chat',
+          'saveConversations',
+          {'conversations': data},
+        );
+      } catch (e) {
+        debugPrint('保存会话失败: $e');
+        rethrow; // 重新抛出异常，让调用者知道保存失败
+      }
+    });
 
     _conversationsSaveChain = saveTask;
     return saveTask;
@@ -224,11 +225,9 @@ class ConversationService extends ChangeNotifier {
 
     // 同时删除会话的所有消息（clearMessages 删除 messages/{id}.json）
     try {
-      await AboutmeDataService.instance.call(
-        'agent_chat',
-        'clearMessages',
-        {'conversationId': id},
-      );
+      await AboutmeDataService.instance.call('agent_chat', 'clearMessages', {
+        'conversationId': id,
+      });
     } catch (e) {
       debugPrint('删除会话失败: $e');
     }
@@ -319,8 +318,8 @@ class ConversationService extends ChangeNotifier {
 
   /// 刷新会话列表
   Future<void> refresh() async {
-    // 插件已在 initialize() 中完成初始化
-    // 这里可以添加额外的应用级注册逻辑
+    await _loadConversations();
+    notifyListeners();
   }
 
   // ========== 临时频道管理 ==========

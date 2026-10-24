@@ -4,6 +4,8 @@ library;
 const Map<String, String> mediaLogTranslationsZh = {
   // 通用
   'media_name': '媒体记录',
+  'media_sampleDataTitle': '阅读与观影示例',
+  'media_sampleDataDesc': '添加书籍和影片记录示例，快速了解媒体记录的使用方式',
   'media_reading': '阅读',
   'media_watching': '观影',
   'media_kind': '类型',
@@ -64,5 +66,5 @@ const Map<String, String> mediaLogTranslationsZh = {
 
   // 封面图片
   'media_uploadCover': '上传封面',
-    'media_overviewSection': '概览',
+  'media_overviewSection': '概览',
 };

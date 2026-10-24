@@ -161,6 +161,18 @@ function authHeaders(key) {
   return key.split('.').length === 3
     ? {'Authorization': 'Bearer ' + key} : {'X-API-Key': key};
 }
+// 插件分组显示名（内部逻辑仍使用原始 pluginId，路径前缀依赖其长度）
+const PLUGIN_NAMES = {
+  assets:'资源', chat:'聊天', notes:'笔记', nodes:'节点', activity:'活动',
+  goods:'物品', bill:'账单', todo:'待办', diary:'日记', checkin:'打卡',
+  calendar:'日历', calendar_album:'日历相册', contact:'联系人', tracker:'追踪',
+  day:'纪念日', habits:'习惯', agent_chat:'AI 会话', store:'积分商店',
+  media_log:'媒体记录', database:'数据库', system:'系统', timer:'计时器',
+  achievement:'成就', reminder:'提醒', live2d:'Live2D', tts:'语音',
+  toolbox:'工具箱', photo_editor:'图片编辑', webview:'网页组件',
+  openai:'AI 助手', scripts_center:'脚本中心',
+};
+const displayName = g => PLUGIN_NAMES[g] || g;
 function groupOf(a) {
   if (a.group) return a.group;
   const seg = a.path.replace(PREFIX, '').split('/');
@@ -209,7 +221,7 @@ function renderGroups(filter) {
     const d = document.createElement('details');
     d.open = !!filter || g === 'system';
     const s = document.createElement('summary');
-    s.innerHTML = esc(g) + ' <span class="n">' + list.length + '</span>';
+    s.innerHTML = esc(displayName(g)) + ' <span class="n">' + list.length + '</span>';
     d.appendChild(s);
     for (const a of list) {
       const item = document.createElement('div');

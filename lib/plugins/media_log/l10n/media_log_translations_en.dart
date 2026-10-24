@@ -4,6 +4,9 @@ library;
 const Map<String, String> mediaLogTranslationsEn = {
   // Common
   'media_name': 'Media Log',
+  'media_sampleDataTitle': 'Reading and watching examples',
+  'media_sampleDataDesc':
+      'Add sample book and film records to explore the media log',
   'media_reading': 'Reading',
   'media_watching': 'Watching',
   'media_kind': 'Type',
@@ -60,9 +63,10 @@ const Map<String, String> mediaLogTranslationsEn = {
   'media_reviewRequired': 'Review text is required',
   'media_me': 'Me',
   'media_noReviews': 'No reviews yet',
-  'media_noReviewsMessage': 'Write down your first thoughts after reading or watching',
+  'media_noReviewsMessage':
+      'Write down your first thoughts after reading or watching',
 
   // Cover image
   'media_uploadCover': 'Upload cover',
-    'media_overviewSection': 'Overview',
+  'media_overviewSection': 'Overview',
 };

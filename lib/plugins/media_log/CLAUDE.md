@@ -6,7 +6,7 @@
 
 ## 约定的规则
 
-- 数据持久化在 `media_log/items.json`（经 AboutmeDataService 读写）；首次使用（无数据）自动写入 `MediaSampleData.build()` 的 9 条示例（5 书 + 4 影片）并落盘。
+- 数据持久化在 `media_log/items.json`（经 AboutmeDataService 读写）；首次打开时由 onboarding 的样例数据选择步骤决定是否写入 `MediaSampleData.build()` 的 9 条示例（5 书 + 4 影片）。
 - JS API 遵循全局命名约定 `get/create/update/delete{Entity}`，且每个方法都注册一个不带 `Media` 前缀的别名（如 `getMediaItems` 与 `getItems` 同函数）。
 - 封面 Hero 动画 tag 用 `MediaItem.coverHeroTag`（`media_cover_$id`），列表卡片与详情页必须共用，保证两端一致。
 - 点评（MediaReview）可多条、按 timestamp 倒序；`author/avatar` 字段预留给 AI 评论，人工表单不展示、编辑时原值透传。
