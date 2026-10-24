@@ -40,6 +40,7 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
     events.subscribe('database_added', _onDatabaseChanged);
     events.subscribe('database_updated', _onDatabaseChanged);
     events.subscribe('database_deleted', _onDatabaseChanged);
+    events.subscribe('database_refresh', _onDatabaseChanged);
     _loadDatabases();
   }
 
@@ -54,6 +55,7 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
     events.unsubscribe('database_added', _onDatabaseChanged);
     events.unsubscribe('database_updated', _onDatabaseChanged);
     events.unsubscribe('database_deleted', _onDatabaseChanged);
+    events.unsubscribe('database_refresh', _onDatabaseChanged);
     super.dispose();
   }
 

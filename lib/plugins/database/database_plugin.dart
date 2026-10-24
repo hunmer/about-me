@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
+import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:flutter/material.dart';
@@ -40,6 +41,12 @@ class DatabasePlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   String get id => 'database';
+
+  @override
+  bool supportsFileRefresh(String filePath) => filePath.startsWith('database/');
+
+  @override
+  Future<bool> refreshData([PluginRefreshDataArgs? args]) async => true;
 
   @override
   IconData get icon => Icons.storage;

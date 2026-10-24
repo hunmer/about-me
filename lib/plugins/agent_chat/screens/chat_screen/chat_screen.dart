@@ -229,12 +229,17 @@ class _ChatScreenState extends State<ChatScreen> {
     // 初始化工具模板服务
     _templateService = ToolTemplateService(widget.storage);
 
+    final conversationService =
+        widget.conversationService ??
+        ConversationService(storage: widget.storage);
+    final conversation =
+        conversationService.getConversation(widget.conversation.id) ??
+        widget.conversation;
+
     _controller = ChatController(
-      conversation: widget.conversation,
+      conversation: conversation,
       messageService: MessageService(storage: widget.storage),
-      conversationService:
-          widget.conversationService ??
-          ConversationService(storage: widget.storage),
+      conversationService: conversationService,
       messageDetailService: MessageDetailService(storage: widget.storage),
       templateService: _templateService,
       getSettings: widget.getSettings,
@@ -245,6 +250,17 @@ class _ChatScreenState extends State<ChatScreen> {
     debugPrint(
       '✅ ChatController初始化完成, currentAgent=${_controller.currentAgent?.name}',
     );
+    if (mounted) {
+      RouteHistoryManager.updateCurrentContext(
+        pageId: '/agent_chat/conversation',
+        title: conversation.title,
+        params: {
+          'conversationId': conversation.id,
+          'conversationTitle': conversation.title,
+          'agentId': _controller.currentAgent?.id ?? conversation.agentId ?? '',
+        },
+      );
+    }
 
     // 如果提供了初始消息，设置到输入框
     if (widget.initialMessage != null && widget.initialMessage!.isNotEmpty) {
@@ -420,6 +436,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _controller.removeListener(_onControllerChanged);
     _controller.messageService.removeListener(_onControllerChanged);
     _controller.dispose();
+    _controller.messageService.dispose();
     debugPrint('[ChatScreen] controller 已释放，继续 dispose');
     _scrollController.dispose();
     super.dispose();

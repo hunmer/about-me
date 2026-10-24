@@ -29,9 +29,15 @@ class MessageService extends ChangeNotifier {
   /// 当前正在查看的会话ID
   String? _currentConversationId;
 
+  VoidCallback? _cancelDataSync;
+
   MessageService({required this.storage}) {
     // 初始化状态管理器
     _statusManager.initialize();
+    _cancelDataSync = AboutmeDataService.instance.onPluginChanged(
+      'agent_chat',
+      refresh,
+    );
   }
 
   /// 获取状态管理器实例（供外部使用）
@@ -71,8 +77,11 @@ class MessageService extends ChangeNotifier {
       } else {
         _messageCache[conversationId] = [];
       }
-    } catch (e) {
-      _messageCache[conversationId] = [];
+    } catch (e, stackTrace) {
+      debugPrint(
+        '[MessageService] 加载消息失败 conversationId=$conversationId: '
+        '$e\n$stackTrace',
+      );
     }
   }
 
@@ -417,5 +426,11 @@ class MessageService extends ChangeNotifier {
     } else {
       _messageCache.clear();
     }
+  }
+
+  @override
+  void dispose() {
+    _cancelDataSync?.call();
+    super.dispose();
   }
 }

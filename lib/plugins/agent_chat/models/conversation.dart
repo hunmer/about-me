@@ -198,10 +198,12 @@ class Conversation {
     final lastMessageAt =
         DateTime.tryParse(json['lastMessageAt'] as String? ?? '') ?? createdAt;
 
+    final agentId = (json['agentId'] as String?)?.trim();
+
     return Conversation(
       id: json['id'] as String,
       title: json['title'] as String,
-      agentId: json['agentId'] as String?,
+      agentId: agentId == null || agentId.isEmpty ? null : agentId,
       agentChain: (json['agentChain'] as List<dynamic>?)
           ?.map((e) => AgentChainNode.fromJson(e as Map<String, dynamic>))
           .toList(),

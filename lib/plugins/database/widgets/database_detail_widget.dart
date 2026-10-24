@@ -17,6 +17,7 @@ import 'package:aboutme/widgets/form_fields/config.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:skribble/skribble.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import '../models/record.dart' as record_model;
 
 /// 记录排序选项
@@ -78,6 +79,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
   @override
   void initState() {
     super.initState();
+    EventManager.instance.subscribe('database_refresh', _onDatabaseRefresh);
     _loadingFuture = widget.controller.loadDatabase(widget.databaseId);
     // 加载完成后上报路由上下文，供"询问当前上下文"识别
     _loadingFuture.then((_) {
@@ -96,8 +98,19 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
 
   @override
   void dispose() {
+    EventManager.instance.unsubscribe('database_refresh', _onDatabaseRefresh);
     _multiFilterState.dispose();
     super.dispose();
+  }
+
+  /// 同步服务完成数据库或记录变更后，丢弃缓存并重新读取详情数据。
+  void _onDatabaseRefresh(EventArgs _) {
+    if (!mounted) return;
+    setState(() {
+      _needsReload = true;
+      _recordsFuture = null;
+      _consumedFuture = null;
+    });
   }
 
   /// 构建多条件过滤项

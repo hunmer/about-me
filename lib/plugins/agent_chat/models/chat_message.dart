@@ -149,6 +149,7 @@ class ChatMessage {
     }
     return const [];
   }
+
   /// 创建AI消息
   factory ChatMessage.ai({
     required String conversationId,
@@ -180,9 +181,7 @@ class ChatMessage {
   }
 
   /// 创建会话分隔符
-  factory ChatMessage.sessionDivider({
-    required String conversationId,
-  }) {
+  factory ChatMessage.sessionDivider({required String conversationId}) {
     return ChatMessage(
       id: _uuid.v4(),
       conversationId: conversationId,
@@ -199,12 +198,14 @@ class ChatMessage {
       id: json['id'] as String,
       conversationId: json['conversationId'] as String,
       content: json['content'] as String,
-      isUser: json['isUser'] as bool,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      isUser: json['isUser'] as bool? ?? json['role'] == 'user',
+      timestamp:
+          DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+          DateTime.now(),
       tokenCount: json['tokenCount'] as int? ?? 0,
-      attachments: (json['attachments'] as List<dynamic>?)
-              ?.map((e) =>
-                  FileAttachment.fromJson(e as Map<String, dynamic>))
+      attachments:
+          (json['attachments'] as List<dynamic>?)
+              ?.map((e) => FileAttachment.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       editedAt: json['editedAt'] != null
@@ -216,8 +217,8 @@ class ChatMessage {
           ? ToolCallResponse.fromJson(json['toolCall'] as Map<String, dynamic>)
           : null,
       matchedTemplateIds: (json['matchedTemplateIds'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList(),
+          ?.map((e) => e.toString())
+          .toList(),
       parentId: json['parentId'] as String?,
       isSessionDivider: json['isSessionDivider'] as bool? ?? false,
       generatedByAgentId: json['generatedByAgentId'] as String?,
@@ -297,17 +298,11 @@ class ChatMessage {
 
   /// 标记为已编辑
   ChatMessage markAsEdited(String newContent) {
-    return copyWith(
-      content: newContent,
-      editedAt: DateTime.now(),
-    );
+    return copyWith(content: newContent, editedAt: DateTime.now());
   }
 
   /// 完成生成（仅AI消息）
   ChatMessage completeGeneration(int finalTokenCount) {
-    return copyWith(
-      isGenerating: false,
-      tokenCount: finalTokenCount,
-    );
+    return copyWith(isGenerating: false, tokenCount: finalTokenCount);
   }
 }
