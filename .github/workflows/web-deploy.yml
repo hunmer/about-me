@@ -1,5 +1,8 @@
 name: Flutter Web Deploy
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: [ main, master ]
@@ -22,10 +25,10 @@ jobs:
         run: flutter pub get
       
       - name: Build Flutter Web
-        run: flutter build web --release --no-tree-shake-icons --base-href /Aboutme/
+        run: flutter build web --release --no-tree-shake-icons --base-href /about-me/
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.SECERT }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web

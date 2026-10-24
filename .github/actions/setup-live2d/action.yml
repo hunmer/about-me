@@ -1,13 +1,9 @@
 name: Set up Live2D dependency
-description: Restore the sibling path dependency on clean CI runners.
+description: Restore the private Live2D dependency from the vendored source snapshot.
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
-      with:
-        repository: hunmer/flutter_live2d
-        ref: 7e829b67a6db220c3a50d857c09aeb69c9b068be
-        path: .ci/flutter_live2d
-        persist-credentials: false
     - shell: bash
-      run: mv ".ci/flutter_live2d" "../flutter_live2d-main"
+      run: |
+        mkdir -p "../flutter_live2d-main"
+        tar -xzf "third_party/flutter_live2d-7e829b6.tar.gz" -C "../flutter_live2d-main"
