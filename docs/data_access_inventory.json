@@ -10303,6 +10303,20 @@
       "classification": "needs-review"
     },
     {
+      "path": "lib/core/services/procm_logger_web.dart",
+      "line": 22,
+      "kind": "file-method-candidate",
+      "code": "entry.write(_delegate)",
+      "classification": "needs-review"
+    },
+    {
+      "path": "lib/core/services/procm_logger_web.dart",
+      "line": 42,
+      "kind": "file-method-candidate",
+      "code": "entry.write(_delegate)",
+      "classification": "needs-review"
+    },
+    {
       "path": "lib/core/services/timer/storage/timer_storage.dart",
       "line": 135,
       "kind": "file-method-candidate",
@@ -11966,6 +11980,13 @@
       "line": 95,
       "kind": "file-method-candidate",
       "code": "savedImage.writeAsBytes(imageBytes)",
+      "classification": "needs-review"
+    },
+    {
+      "path": "lib/widgets/adaptive_image.dart",
+      "line": 94,
+      "kind": "file-method-candidate",
+      "code": "File(absolutePath).readAsString()",
       "classification": "needs-review"
     },
     {
