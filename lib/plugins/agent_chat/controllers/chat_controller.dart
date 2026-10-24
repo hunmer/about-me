@@ -38,6 +38,8 @@ import 'managers/managers.dart';
 ///
 /// 遵循单一职责原则 (SRP)，提高代码可维护性和可测试性
 class ChatController extends ChangeNotifier {
+  Future<void> _remoteReplyChain = Future.value();
+  bool _disposed = false;
   final Conversation conversation;
   final MessageService messageService;
   final ConversationService conversationService;
@@ -344,6 +346,22 @@ class ChatController extends ChangeNotifier {
 
       // 加载消息
       await messageService.setCurrentConversation(conversation.id);
+      messageService.onRemoteUserMessage = (message) {
+        debugPrint('[AgentChat][RemoteReply] received message=${message.id}');
+        _remoteReplyChain = _remoteReplyChain
+            .then((_) async {
+              while (!_disposed && (_isSending || _isThinking)) {
+                await Future<void>.delayed(const Duration(milliseconds: 100));
+              }
+              if (_disposed) return;
+              await sendMessage(existingUserMessage: message);
+            })
+            .catchError((Object error) {
+              debugPrint(
+                '[AgentChat][RemoteReply] failed message=${message.id}: $error',
+              );
+            });
+      };
 
       debugPrint('✅ ChatController 初始化完成');
     } catch (e, stackTrace) {
@@ -451,6 +469,7 @@ class ChatController extends ChangeNotifier {
   Future<void> sendMessage({
     bool bypassAliveness = false,
     bool Function()? shouldCancel,
+    ChatMessage? existingUserMessage,
   }) async {
     // 如果正在发送，直接返回
     if (_isSending && !_isThinking) {
@@ -464,7 +483,8 @@ class ChatController extends ChangeNotifier {
     }
 
     // 检查输入内容
-    final text = _messageSender.inputText.trim();
+    final text =
+        existingUserMessage?.content ?? _messageSender.inputText.trim();
     if (text.isEmpty &&
         _messageSender.selectedToolTemplate == null &&
         _messageSender.selectedFiles.isEmpty) {
@@ -504,26 +524,38 @@ class ChatController extends ChangeNotifier {
       }
 
       // 创建用户消息
-      final userMessage = ChatMessage.user(
-        conversationId: conversation.id,
-        content: text,
-        tokenCount: TokenCounterService.estimateTokenCount(text),
-        attachments: await _processAttachments(),
-      ).copyWith(metadata: metadata.isNotEmpty ? metadata : null);
+      final userMessage =
+          existingUserMessage ??
+          ChatMessage.user(
+            conversationId: conversation.id,
+            content: text,
+            tokenCount: TokenCounterService.estimateTokenCount(text),
+            attachments: await _processAttachments(),
+          ).copyWith(metadata: metadata.isNotEmpty ? metadata : null);
 
       // 保存用户消息
-      await messageService.addMessage(userMessage);
+      if (existingUserMessage == null) {
+        await messageService.addMessage(userMessage);
+      }
 
       // 更新会话的最后消息
       await conversationService.updateLastMessage(conversation.id, text);
 
       // 清空输入
       final userInput = text;
-      final files = List<File>.from(_messageSender.selectedFiles);
-      final selectedTemplate = _messageSender.selectedToolTemplate;
-      _messageSender.setInputText('');
-      _messageSender.clearFiles();
-      _messageSender.clearSelectedToolTemplate();
+      final files = existingUserMessage != null
+          ? existingUserMessage.attachments
+                .map((attachment) => File(attachment.filePath))
+                .toList()
+          : List<File>.from(_messageSender.selectedFiles);
+      final selectedTemplate = existingUserMessage == null
+          ? _messageSender.selectedToolTemplate
+          : null;
+      if (existingUserMessage == null) {
+        _messageSender.setInputText('');
+        _messageSender.clearFiles();
+        _messageSender.clearSelectedToolTemplate();
+      }
       debugPrint('[ChatClear] model cleared, notifying listeners');
       notifyListeners();
 
@@ -1042,6 +1074,8 @@ class ChatController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    messageService.onRemoteUserMessage = null;
     // 释放所有管理器资源
     _foregroundServiceManager.dispose();
 

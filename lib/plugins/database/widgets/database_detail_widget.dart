@@ -104,7 +104,16 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
   }
 
   /// 同步服务完成数据库或记录变更后，丢弃缓存并重新读取详情数据。
-  void _onDatabaseRefresh(EventArgs _) {
+  Future<void> _onDatabaseRefresh(EventArgs _) async {
+    if (!mounted) return;
+    try {
+      await widget.controller.loadDatabase(widget.databaseId);
+    } catch (_) {
+      if (mounted) {
+        Navigator.of(context).maybePop();
+      }
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _needsReload = true;

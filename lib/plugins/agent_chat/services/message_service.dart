@@ -31,6 +31,10 @@ class MessageService extends ChangeNotifier {
 
   VoidCallback? _cancelDataSync;
 
+  /// 当前聊天控制器处理远端新增用户消息；历史加载不触发。
+  void Function(ChatMessage)? onRemoteUserMessage;
+  final Set<String> _knownMessageIds = {};
+
   MessageService({required this.storage}) {
     // 初始化状态管理器
     _statusManager.initialize();
@@ -55,6 +59,9 @@ class MessageService extends ChangeNotifier {
     if (!_messageCache.containsKey(conversationId)) {
       await _loadMessages(conversationId);
     }
+    _knownMessageIds
+      ..clear()
+      ..addAll(currentMessages.map((message) => message.id));
     notifyListeners();
   }
 
@@ -132,6 +139,7 @@ class MessageService extends ChangeNotifier {
   /// 添加消息
   Future<void> addMessage(ChatMessage message) async {
     final conversationId = message.conversationId;
+    _knownMessageIds.add(message.id);
 
     // 确保消息列表已加载
     if (!_messageCache.containsKey(conversationId)) {
@@ -411,7 +419,17 @@ class MessageService extends ChangeNotifier {
   Future<void> refresh() async {
     if (_currentConversationId != null) {
       await _loadMessages(_currentConversationId!);
+      final newUserMessages = currentMessages
+          .where(
+            (message) =>
+                message.isUser && !_knownMessageIds.contains(message.id),
+          )
+          .toList();
+      _knownMessageIds.addAll(currentMessages.map((message) => message.id));
       notifyListeners();
+      for (final message in newUserMessages) {
+        onRemoteUserMessage?.call(message);
+      }
     }
   }
 
