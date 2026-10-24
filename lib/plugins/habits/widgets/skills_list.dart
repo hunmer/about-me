@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'dart:io';
 
 import 'package:skribble/skribble.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
@@ -42,14 +43,27 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
     super.initState();
     // 添加生命周期监听
     WidgetsBinding.instance.addObserver(this);
+    // 技能增删改后刷新列表（创建入口在 FAB，不在本组件内）
+    EventManager.instance.subscribe('skill_data_changed', _onSkillDataChanged);
     _loadSkills();
 
     // 设置路由上下文
     _updateRouteContext();
   }
 
+  /// 技能数据变更（创建/编辑/删除）后重新加载列表
+  void _onSkillDataChanged(EventArgs args) {
+    if (mounted) {
+      _loadSkills();
+    }
+  }
+
   @override
   void dispose() {
+    EventManager.instance.unsubscribe(
+      'skill_data_changed',
+      _onSkillDataChanged,
+    );
     // 移除生命周期监听
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -99,6 +113,8 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
   }
 
   Future<void> _loadSkills() async {
+    // 启动自动进入时，controller 首次数据加载可能尚未完成
+    await widget.skillController.initialized;
     final skills = widget.skillController.getSkills();
     if (mounted) {
       setState(() {

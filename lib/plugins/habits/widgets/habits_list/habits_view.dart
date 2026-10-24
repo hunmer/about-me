@@ -114,6 +114,11 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
       'habit_completion_record_saved',
       _onRecordSaved,
     );
+    // 习惯增删改后刷新列表（创建入口在 FAB，不在本组件内）
+    EventManager.instance.subscribe(
+      'habits_cache_updated',
+      _onHabitsCacheUpdated,
+    );
     _loadHabits();
     _loadViewMode();
 
@@ -136,7 +141,19 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
       'habit_completion_record_saved',
       _onRecordSaved,
     );
+    EventManager.instance.unsubscribe(
+      'habits_cache_updated',
+      _onHabitsCacheUpdated,
+    );
     super.dispose();
+  }
+
+  /// 习惯数据变更（创建/编辑/删除）后重新加载列表
+  void _onHabitsCacheUpdated(EventArgs args) {
+    if (mounted) {
+      _loadHabits();
+      if (_isHeatmapView) _loadRecords();
+    }
   }
 
   void _onTimerStarted(EventArgs args) {
@@ -266,6 +283,8 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
   }
 
   Future<void> _loadHabits() async {
+    // 启动自动进入本页时，controller 首次数据加载可能尚未完成
+    await widget.controller.initialized;
     final habits = widget.controller.getHabits();
     if (mounted) {
       setState(() {

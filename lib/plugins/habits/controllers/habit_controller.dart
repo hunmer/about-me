@@ -35,12 +35,15 @@ class HabitController {
   final SkillController skillController;
   List<Habit> _habits = [];
 
+  /// 初始数据加载（构造即触发），供 UI 等待首次数据就绪
+  late final Future<void> initialized;
+
   HabitController(
     this.storage, {
     required this.timerController,
     required this.skillController,
   }) {
-    _initialize();
+    initialized = _initialize();
   }
 
   Future<void> _initialize() async {

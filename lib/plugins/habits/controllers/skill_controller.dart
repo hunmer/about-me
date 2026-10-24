@@ -11,8 +11,11 @@ class SkillController {
   final StorageManager storage;
   List<Skill> _skills = [];
 
+  /// 初始数据加载（构造即触发），供 UI 等待首次数据就绪
+  late final Future<List<Skill>> initialized;
+
   SkillController(this.storage) {
-    loadSkills();
+    initialized = loadSkills();
   }
 
   Future<List<CompletionRecord>> getSkillCompletionRecords(
