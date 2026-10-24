@@ -34,6 +34,7 @@ class HabitController {
   final TimerController timerController;
   final SkillController skillController;
   List<Habit> _habits = [];
+  late final void Function() _cancelPluginWatch;
 
   /// 初始数据加载（构造即触发），供 UI 等待首次数据就绪
   late final Future<void> initialized;
@@ -44,6 +45,26 @@ class HabitController {
     required this.skillController,
   }) {
     initialized = _initialize();
+    _cancelPluginWatch = AboutmeDataService.instance.onPluginChanged(
+      'habits',
+      _reloadFromRemote,
+    );
+  }
+
+  /// REST/MCP 或其它设备写入后刷新本地缓存，并通知当前列表重建。
+  Future<void> _reloadFromRemote() async {
+    await loadHabits();
+    EventManager.instance.broadcast(
+      'habits_cache_updated',
+      HabitCacheUpdatedEventArgs(
+        habits: List.from(_habits),
+        cacheDate: DateTime.now(),
+      ),
+    );
+  }
+
+  void dispose() {
+    _cancelPluginWatch();
   }
 
   Future<void> _initialize() async {

@@ -176,6 +176,14 @@ class _HabitCardState extends State<HabitCard> {
     _timerText = data.timerText;
   }
 
+  @override
+  void didUpdateWidget(covariant HabitCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_useDataMode) {
+      _initFromData();
+    }
+  }
+
   /// 从 habit 初始化（原有模式）
   void _initFromHabit() {
     _currentHabit = widget.habit!;
@@ -197,6 +205,11 @@ class _HabitCardState extends State<HabitCard> {
       _onTimerStateChanged,
     );
     EventManager.instance.subscribe('habit_data_changed', _onHabitDataChanged);
+    EventManager.instance.subscribe('habits_cache_updated', _onStatsChanged);
+    EventManager.instance.subscribe(
+      'habit_completion_record_saved',
+      _onStatsChanged,
+    );
   }
 
   @override
@@ -215,8 +228,25 @@ class _HabitCardState extends State<HabitCard> {
         'habit_data_changed',
         _onHabitDataChanged,
       );
+      EventManager.instance.unsubscribe('habits_cache_updated', _onStatsChanged);
+      EventManager.instance.unsubscribe(
+        'habit_completion_record_saved',
+        _onStatsChanged,
+      );
     }
     super.dispose();
+  }
+
+  void _onStatsChanged(EventArgs args) {
+    if (!mounted) return;
+    if (args is Value && args.value is Map) {
+      final habitId = (args.value as Map)['habitId'];
+      if (habitId != null && habitId != widget.habit?.id) return;
+    }
+    debugPrint(
+      '[HabitsSync] reload card habit=${widget.habit?.id} event=${args.runtimeType}',
+    );
+    _loadStats();
   }
 
   void _onHabitDataChanged(EventArgs args) {
@@ -358,6 +388,10 @@ class _HabitCardState extends State<HabitCard> {
           _totalDurationMinutes = duration;
           _last7DaysStatus = status;
         });
+        debugPrint(
+          '[HabitsSync] card updated habit=${widget.habit!.id} '
+          'count=$count today=$_todayCount minutes=$duration',
+        );
       }
     } catch (e) {
       debugPrint('Error loading habit stats: $e');
