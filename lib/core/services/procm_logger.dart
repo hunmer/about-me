@@ -1,2 +1,10 @@
-export 'procm_logger_stub.dart'
-    if (dart.library.io) 'procm_logger_io.dart';
+class ProcmLogger {
+  const ProcmLogger();
+
+  void info(String message, [Object? data]) {}
+
+  void error(String message, [Object? data]) {}
+}
+
+ProcmLogger setupLoggerFromEnv() => const ProcmLogger();
+ProcmLogger getLogger() => const ProcmLogger();
