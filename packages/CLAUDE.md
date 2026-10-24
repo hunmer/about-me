@@ -23,8 +23,8 @@
 
 | 模块 | 类型 | 职责摘要 | 文档 |
 |------|------|----------|------|
-| `aboutme_data_sdk/` | Dart 库（数据核心） | 纯数据 SDK：存储接口/HTTP 远端存储/认证（JWT+PBKDF2）/12 插件处理器/AboutmeDataService 本地-远程路由；客户端与服务器共用 | [README.md](aboutme_data_sdk/README.md) |
-| `aboutme_server/` | Dart 服务 | 同步服务器（薄壳）：REST 19 插件 API、文件存储 ETag 条件写、WS file_updated 广播、FCM、MCP /mcp（68 工具）、管理界面托管（admin-vue 前端源码在本包）；默认端口 8874 | [README.md](aboutme_server/README.md) |
+| `aboutme_data_sdk/` | Dart 库（数据核心） | 纯数据 SDK：存储接口/HTTP 远端存储/认证（JWT+PBKDF2）/33 个域 handler（28 域写封闭 426 + system/assets）/AboutmeData 本地-远程路由；客户端与服务器共用 | [aboutme_data_sdk/CLAUDE.md](aboutme_data_sdk/CLAUDE.md) |
+| `aboutme_server/` | Dart 服务 | 同步服务器（薄壳）：REST 各域业务 API、文件存储 ETag 条件写、WS file_updated 广播、FCM、MCP /mcp、管理界面托管（admin-vue 源码在本包）+ Docker 部署；默认端口 8874 | [aboutme_server/CLAUDE.md](aboutme_server/CLAUDE.md) |
 | `agentlib/` | Dart 库 | OpenAI 兼容 HTTP/SSE 传输门面（AgentLibClient，openai 与 agent_chat 消费） | [agentlib/CLAUDE.md](agentlib/CLAUDE.md) |
 | `dartantic_ai/` | Dart 库（vendor 镜像） | 上游 dartantic_ai 3.4.2 整包 vendor；仅 3 处本地定制（Anthropic baseUrl 等），agent_chat 原生工具调用消费 | [dartantic_ai/CLAUDE.md](dartantic_ai/CLAUDE.md) |
 | `super_cupertino_navigation_bar/` | Dart 库 | iOS 风格大标题导航栏 UI 库（vendor @2.1.2 + 搜索框定制 + sketchFont） | 无独立文档（`docs/SUPER_CUPERTINO_*`） |
@@ -38,7 +38,7 @@
 
 ## 扫描状态
 
-- 更新时间：2026-10-14（/init-project 第六轮：补入 aboutme_data_sdk/aboutme_server/radial_disc_bottom_bar/material_emoji_picker；dartantic_ai 建独立文档集；**server-nodejs 于同日彻底删除；material_emoji_picker 于 2026-10-16 迁入 lib/widgets/emoji_picker 并删除包，子包数 12**）
-- 已扫描：13 个子包清单与接线；aboutme_data_sdk 与 aboutme_server 的目录结构（按 handoff/2026-10-11 与两包 README 核实）；dartantic_ai 全量（见其 claude/）；agentlib、aboutme_widgets 前几轮已建档。
-- 未深扫：aboutme_data_sdk/aboutme_server 源码细节（暂以各自 README 为准，建议下轮建档）；radial_disc_bottom_bar 与 material_emoji_picker 源码；5 个原生插件的 android/ios 平台代码。
+- 更新时间：2026-10-25（后续优化轮：**aboutme_data_sdk 与 aboutme_server 首次独立建档**——各 CLAUDE.md 索引 + claude/ 10 详情，模块索引链接从 README 改指各自 CLAUDE.md，修正过时数字"12 处理器/19 插件 API/68 工具"。此前 2026-10-14 第六轮：补入两包条目；server-nodejs 删除；material_emoji_picker 迁入 lib/widgets 后删包，子包数 12）
+- 已扫描：12 个子包清单与接线；**aboutme_data_sdk（69 lib 文件）与 aboutme_server（15 lib 文件）源码级建档（2026-10-25）**；dartantic_ai 全量（见其 claude/）；agentlib、aboutme_widgets 前几轮已建档。
+- 未深扫：radial_disc_bottom_bar 源码；5 个原生插件的 android/ios 平台代码；admin-vue 前端组件细节。
 - 注意：`radial_disc_bottom_bar/build/` 编译产物被误提交进 git；`skills/moe-ui-skill` 是无 .gitmodules 的 gitlink（根目录层面）。

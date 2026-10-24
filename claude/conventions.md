@@ -17,6 +17,13 @@ procm-command start server   # 启动/重启服务器（命令定义见 procm-co
 dart test                    # aboutme_server / aboutme_data_sdk 各自包内跑测试
 # server-nodejs 已于 2026-10-14 彻底删除（目录不存在），其 npm 命令不再可用
 
+# 质量基线验证（2026-10-24 全绿基线）
+cd packages/aboutme_data_sdk && dart test --concurrency=1   # 214 项
+dart analyze                                                # 须无 issue
+cd ../aboutme_server && dart analyze && dart test           # 38 项
+cd admin-vue && npx vue-tsc -b                              # 管理前端类型检查
+cd /Users/Zhuanz/Documents/Aboutme && flutter analyze lib   # 无 error（少量历史 lint）
+
 # 构建发布（多平台打包 + GitHub Release）
 ./scripts/build.sh       # 配置见 scripts/release_config.json
 ```
@@ -34,6 +41,14 @@ dart test                    # aboutme_server / aboutme_data_sdk 各自包内跑
 - JS API 命名：`get{Entity}s`（分页列表）/ `get{Entity}ById` / `find{Entity}By{Field}` / `create{Entity}` / `update{Entity}` / `delete{Entity}`。
 - 推荐分层：`Plugin（JS API 适配）→ UseCase（业务）→ ClientXxxRepository（数据访问）→ Service + Controller`；接口与 UseCase 定义在 `shared_models/`。
 - 路由：在 `lib/screens/routing/routes/<plugin>_routes.dart` 注册，由 `lib/screens/route.dart` 汇总。
+
+## 数据访问与写封闭（2026-10-24 八轮重构后）
+
+- 新代码数据访问统一走 `lib/core/data/aboutme_data_service.dart` 的**业务层命令**（call/get 各域命令）；**文件层转发 API（readPath/writePath 等）已删除**，不要再寻找或重建这类转发。
+- 28 个迁移域 + `configs/` 前缀的原始文件写一律被 426 拦截（`legacy_write_policy.dart`）；要写 configs 就用 system 域 `setConfig/deleteConfig` 命令，不要绕过 SDK 直写数据区文件。
+- 新增域 handler 时：静态路由先于参数路由；`PUT /xxx/:id` 类 handler 必须从 params 取同名路径参数键；某域 Flutter 侧零残留直写后才能加入 migratedDomains，加完跑 SDK 全量测试。
+- handler 内部 `data.get/call` 返回完整响应 `{success, data, error, code}`，取值先判 success；事务内任何 read 抛 StorageException 都会被提交层重放（handler 内 catch 无效）。
+- 二进制媒体统一走 `SdkMediaService`（asset:// 资源化，>16MiB 自动分块上传）。
 
 ## 重要兼容性提醒
 

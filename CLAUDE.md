@@ -8,8 +8,8 @@ Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / i
 
 - 同步服务器在 `packages/aboutme_server`（Dart，默认端口 **8874**，`procm-command start server` 启动；数据核心在 `packages/aboutme_data_sdk`，客户端 `lib/core/storage/` 也是该 SDK 的转发）。Vue 管理界面源码在 `packages/aboutme_server/admin-vue`，`procm-command start server-admin-build` 构建到同包 `admin/` 由服务器托管于 `/admin/`。旧 nodejs 服务器已于 2026-10-14 彻底移除。
 - 新插件必须注册到 `lib/core/builtin_plugins.dart`；JS API 命名 `get{Entity}s` / `create{Entity}` / `update{Entity}` / `delete{Entity}`；推荐 UseCase 分层（接口放 `shared_models/`）。
-- 新代码的数据访问统一走 `lib/core/data/aboutme_data_service.dart`（本地/远程自动路由），不要再各自直连 StorageManager。
-- Dart 风格：单文件 ≤1000 行、snake_case 文件名、中文注释；`flutter analyze` 为质量门槛，`test/` 现有 34 个测试（活人感/design_system/jelly_live2d/http_storage/media_log/agent 工具调用/moments 地图等），改动相关逻辑后跑 `flutter test`。
+- 新代码的数据访问统一走 `lib/core/data/aboutme_data_service.dart` 的**业务层命令**（本地/远程自动路由），不要再各自直连 StorageManager；**文件层转发 API 已删除（2026-10-24）**，28 个迁移域 + `configs/` 前缀的原始文件写一律 426，写配置走 system 域 `setConfig/deleteConfig`（详见 [数据模型](claude/data-model.md)）。
+- Dart 风格：单文件 ≤1000 行、snake_case 文件名、中文注释；`flutter analyze` 为质量门槛，`test/` 现有 73 个测试（域工具回归/活人感/design_system/jelly_live2d/http_storage/moments 地图等），改动相关逻辑后跑 `flutter test`。
 - ⚠️ `lib/plugins/openai/aliveness/services/aliveness_store.dart` 与 `test/aliveness_e2e_test.dart` 存在硬编码 API Key，开源/分发前必须移除。
 - `tree-shake-icons: false` 是硬性要求（动态 IconData）；Web 平台部分库走条件导入存根。
 - `build/`、`dist/`、`.dart_tool/`、`Aboutme.ipa` 为生成物，不要编辑；Agent 不主动执行 git 操作。
@@ -47,8 +47,8 @@ Aboutme 是一个基于 Flutter 的**跨平台个人助手应用**（Android / i
 | `lib/l10n` | 国际化聚合层：unified_translations 汇入应用层 + core + 29 插件的 zh/en 翻译 | 未深扫（见 [lib/CLAUDE.md](lib/CLAUDE.md)） |
 | `lib/screens/jelly_home` | 果冻小屋主页（**应用默认主页**，四页签 + Live2D 渲染核心 + 状态面板） | [lib/screens/jelly_home/CLAUDE.md](lib/screens/jelly_home/CLAUDE.md) |
 | `packages/` | 13 个子包聚合索引（数据 SDK + Dart 服务器 + 4 Dart 库 + 1 vendor 库 + 6 原生插件） | [packages/CLAUDE.md](packages/CLAUDE.md) |
-| `packages/aboutme_data_sdk` | 纯数据 SDK：存储接口/HTTP 远端存储/服务端文件存储/认证/插件数据（客户端与服务器共用） | [packages/aboutme_data_sdk/README.md](packages/aboutme_data_sdk/README.md) |
-| `packages/aboutme_server` | 同步服务器（Dart，REST + WS 实时同步 + 插件 API + MCP /mcp + FCM + 管理界面托管，含 admin-vue 前端源码） | [packages/aboutme_server/README.md](packages/aboutme_server/README.md) |
+| `packages/aboutme_data_sdk` | 纯数据 SDK：存储接口/HTTP 远端存储/服务端文件存储/认证 + 33 个域 handler（28 域写封闭 + system/assets），客户端与服务器共用 | [packages/aboutme_data_sdk/CLAUDE.md](packages/aboutme_data_sdk/CLAUDE.md) |
+| `packages/aboutme_server` | 同步服务器薄壳（Dart，REST + WS 实时同步 + MCP /mcp + FCM + 管理界面托管，含 admin-vue 源码与 Docker 部署） | [packages/aboutme_server/CLAUDE.md](packages/aboutme_server/CLAUDE.md) |
 | `packages/agentlib` | OpenAI 兼容 HTTP/SSE 传输门面（openai/agent_chat 消费） | [packages/agentlib/CLAUDE.md](packages/agentlib/CLAUDE.md) |
 | `packages/dartantic_ai` | 上游 dartantic_ai 3.4.2 vendor 镜像（3 处定制），agent_chat 原生工具调用消费 | [packages/dartantic_ai/CLAUDE.md](packages/dartantic_ai/CLAUDE.md) |
 | `shared_models/` | 客户端/服务端共享模型（Repository / UseCase / 同步协议） | [shared_models/CLAUDE.md](shared_models/CLAUDE.md) |
@@ -73,8 +73,8 @@ graph TD
 
 ## 扫描状态
 
-- 更新时间：2026-10-20（第七轮：moments 独立成插件并建档，28→29；确认全量国际化体系——29 插件 + core + 应用层均有 l10n/；测试 17→34；lib Dart 1881→1981；新依赖 flutter_map/graphview；material_emoji_picker 包短暂引入后已删除、emoji_picker 组件已迁入 lib/widgets）。
-- 已扫描：10-14 以来 179 个提交的模块级 diff 归类、builtin_plugins 29 插件逐一核对、moments 插件 13 文件与 moments_js_api 全量、openai/moments 数据层归属、l10n/unified_translations 聚合结构、29 插件 Dart 文件数全量重统计、test/ 清单（34 个）、pubspec 依赖 diff。
-- 跳过：`build/`、`dist/`、`node_modules/`、`.git/`、平台宿主工程内部（android/ios/macos/linux/windows/web）、assets 二进制、docs/ 正文、179 个提交逐个的语义细节（信息均为 "fix"）。
-- 未深扫（下次增量优先）：l10n key 全量清单与 arb 生成链路、lib/screens 与 lib/widgets 的 302+188 文件级 UI 变更语义（手绘化重构细节）、assets/svg 120 个新增图标清单、design_system 51 文件建档、22 个旧版插件 CLAUDE.md 向新格式迁移、aboutme_data_sdk 与 aboutme_server 源码细节。
+- 更新时间：2026-10-25（第八轮增量：依据 `handoff/handoff.md` 同步**数据 SDK 八轮重构完成态**——28 迁移域 + configs/ 前缀写封闭（426）、system 域 config 命令、媒体资源化与分块上传、Flutter 侧 AboutmeDataService 文件层 API 删除、AuthStore 并发修复；SDK 测试 42 文件 214 项全过、server 6 文件 38 项全过、admin-vue vue-tsc 通过；Flutter test 34→73 个（新增大量域工具回归）、lib Dart 1981→1866（兼容层删除）；CI 新增 server Docker 镜像构建并全 workflow 跟随 main。**同日后续优化轮：aboutme_data_sdk / aboutme_server 两包首次建档（各索引 + 10 详情），模块索引链接从 README 改指 CLAUDE.md；数据区失效清单核对——本机无数据区**）。
+- 已扫描：handoff.md 全文、`aboutme_data_service.dart` 第八轮删除落地核验、handlers/ 33 文件清单、SDK/server test 目录清点、10-20 以来 141 个提交的归类。
+- 跳过：`build/`、`dist/`、`node_modules/`、`.git/`、平台宿主工程内部、assets 二进制、docs/ 正文、141 个提交逐个语义细节（信息均为 "fix"）。
+- 未深扫（下次增量优先）：l10n key 全量清单与 arb 生成链路、lib/screens 与 lib/widgets 文件级 UI 变更语义、assets/svg 图标清单、design_system 51 文件建档、22 个旧版插件 CLAUDE.md 向新格式迁移（aboutme_data_sdk/aboutme_server 已于 2026-10-25 后续优化轮建档）、第八轮后数据区旧文件失效清单核对——**已核（2026-10-25）：本 macOS 工作区无服务器 data/ 与客户端 app_data/ 数据区，无本机核对项；Windows 侧 handoff 已载明无可回收**。
 - 详细覆盖度量与续跑建议见 [索引变更记录](claude/changelog.md)。

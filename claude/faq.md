@@ -8,6 +8,12 @@ A：都过时了。现行服务器是 **`packages/aboutme_server`**（Dart，薄
 **Q：`api_forwarding_server` / `mcp-aboutme-server` / WebDAV 同步去哪了？**
 A：均已删除。MCP 能力现在内置于 `packages/aboutme_server` 的 `POST /mcp`；WebDAV 同步被自建服务器 HTTP 存储后端（`http_storage.dart`，现为 aboutme_data_sdk 一部分）取代。旧文档提及这些内容的章节一律视为过时。
 
+**Q：写入返回 426？为什么不能直接写数据区文件？**
+A：数据 SDK 八轮重构（2026-10-24 完成）后，28 个迁移域 + `configs/` 前缀的原始文件写（writePath/writeFile/writeBytes/deletePath 等）一律被 `legacy_write_policy.dart` 拦截返回 426。正确做法：走对应域的业务命令（`data.get/call`）；写配置用 system 域 `setConfig/deleteConfig`（REST `PUT/DELETE /api/v1/plugins/system/config`）。读 API 不受限。
+
+**Q：`AboutmeDataService.readPath/writePath` 这些文件层方法去哪了？**
+A：2026-10-24 第八轮按用户决策删除（手动清空旧数据，不需要迁移兼容层）。现在该服务只暴露业务层命令；历史等少量只读场景直接用 `data.existsPath` 直达。旧数据区的旧格式引用（顶层裸配置/旧图/旧贴图）不再被程序迁移，直接失效。
+
 **Q：如何新增一个功能插件？**
 A：① `lib/plugins/<name>/` 创建 `*_plugin.dart` 继承 `BasePlugin`（可 mixin `JSBridgePlugin`）；② 在 `lib/core/builtin_plugins.dart` 的 `_builders` 注册；③ 在 `lib/screens/routing/routes/<name>_routes.dart` 注册路由并在 `route.dart` 汇总；④ 需要同步/复用时在 `shared_models/` 定义 Repository 接口与 UseCase（或新代码直接走 `lib/core/data/aboutme_data_service.dart`）；⑤ 需要服务端 API 时在 `packages/aboutme_data_sdk/lib/src/services/handlers/` 添加处理器（客户端 REST 与 MCP 自动共用）。
 

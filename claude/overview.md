@@ -27,7 +27,7 @@ graph LR
 
 ## 关键设计取舍
 
-- **数据 SDK 化（2026-10-11 起）**：数据业务统一收口 `packages/aboutme_data_sdk`，客户端、服务器 REST、MCP 共用同一套插件处理器；客户端新代码经 `lib/core/data/aboutme_data_service.dart` 统一本地/远程分流，不再各自走 StorageManager；数据明文存于统一数据区。
+- **数据 SDK 化（2026-10-11 起，2026-10-24 八轮重构完成）**：数据业务统一收口 `packages/aboutme_data_sdk`，客户端、服务器 REST、MCP 共用同一套插件处理器（28 个迁移域 + configs/ 前缀全部封闭，原始文件写一律 426，业务命令为唯一写入口）；客户端新代码经 `lib/core/data/aboutme_data_service.dart` 统一本地/远程分流（文件层转发 API 已删除），不再各自走 StorageManager；二进制媒体资源化（asset:// + 分块上传）；数据明文存于统一数据区（服务器按用户隔离 `users/<id>/`）。
 - **本地优先**：数据以 JSON 文件形式存于本地（Web 端为 IndexedDB），服务器只做同步与中转（纯文件存储，无数据库）。
 - **插件化**：功能以 `PluginBase` 子类为单位（`lib/plugins/*`），在 `lib/core/builtin_plugins.dart` 静态注册（29 个）；插件可向 JS Bridge 暴露 API、注册路由与数据选择器。全部插件 + core + 应用层自带 zh/en 翻译，经 `lib/l10n/unified_translations.dart` 聚合到 GetX。
 - **手绘纸墨风设计系统（2026-10）**：`lib/design_system/` 从"软糖果冻风"整体切换为 skribble 手绘引擎（固定 seed、色板 × 墨线档位主题预设，取代旧"主题颜色/Ink style"双开关）；全局字体 TegakiZatsu（851 手写杂书体）。
