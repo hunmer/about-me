@@ -116,6 +116,37 @@ class AboutmeDataService with WidgetsBindingObserver {
     Map<String, dynamic> params = const {},
   ]) => data.get(pluginId, action, params);
 
+  // ==================== configs 设置统一通道（system 域命令封装） ====================
+  // key 为 configs/ 下相对路径（如 'app_config.json'、'bill/settings.json'），
+  // 落盘与旧 configs/ 布局原位一致（零迁移）。失败（损坏/无效 key 等）抛
+  // StateError，调用方按各自缺省语义兜底；configs/ 前缀原始文件写已封闭。
+
+  Future<dynamic> getConfig(String key) async {
+    final result = await call('system', 'getConfig', {'key': key});
+    if (result['success'] != true) {
+      throw StateError('getConfig($key) 失败: ${result['error']}');
+    }
+    return (result['data'] as Map)['value'];
+  }
+
+  Future<void> setConfig(String key, dynamic value) async {
+    final result = await call('system', 'setConfig', {
+      'key': key,
+      'value': value,
+    });
+    if (result['success'] != true) {
+      throw StateError('setConfig($key) 失败: ${result['error']}');
+    }
+  }
+
+  Future<bool> deleteConfig(String key) async {
+    final result = await call('system', 'deleteConfig', {'key': key});
+    if (result['success'] != true) {
+      throw StateError('deleteConfig($key) 失败: ${result['error']}');
+    }
+    return (result['data'] as Map)['deleted'] == true;
+  }
+
   // ==================== 局部刷新订阅 ====================
 
   /// 订阅插件数据变更（远端 REST/MCP/其它设备写入触发；

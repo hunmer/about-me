@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
@@ -14,7 +14,7 @@ import 'services/startup_trace.dart';
 class PluginManager {
   StorageManager? _storageManager;
   Future<void> _configSaveQueue = Future<void>.value();
-  static const String _configStorageKey = 'configs/plugin_manager.json';
+  static const String _configStorageKey = 'plugin_manager.json';
   Map<String, int> _pluginAccessTimes = {};
   // 插件固定时间（毫秒时间戳），被固定的插件在列表中置顶，
   // 按最后固定时间降序排列
@@ -165,11 +165,10 @@ class PluginManager {
     if (_storageManager == null) return;
 
     try {
-      final configStr = await _storageManager!.readFile(
+      final config = await AboutmeDataService.instance.getConfig(
         _configStorageKey,
-        '{}',
       );
-      final config = jsonDecode(configStr) as Map<String, dynamic>;
+      if (config is! Map<String, dynamic>) return;
 
       // 加载访问时间
       final accessTimes = config['accessTimes'] as Map<String, dynamic>?;
@@ -211,20 +210,17 @@ class PluginManager {
 
   /// 保存合并后的配置文件
   Future<void> _saveConfig() {
-    final storage = _storageManager;
-    if (storage == null) return Future<void>.value();
-
-    final content = jsonEncode({
+    final content = {
       'accessTimes': _pluginAccessTimes,
       'pinnedTimes': _pluginPinnedTimes,
       'onboardingShown': _onboardingShownPlugins.toList(),
       'settings': _settings,
       'lastOpenedPlugin': _lastOpenedPluginId,
-    });
+    };
     // 打开记录和引导标记会连续保存，按顺序写入，避免旧配置覆盖新状态。
     _configSaveQueue = _configSaveQueue.then((_) async {
       try {
-        await storage.writeFile(_configStorageKey, content);
+        await AboutmeDataService.instance.setConfig(_configStorageKey, content);
       } catch (e) {
         debugPrint('Warning: Failed to save plugin manager config: $e');
       }

@@ -34,7 +34,9 @@ class LegacyWritePolicy {
     'toolbox',
   ];
   static const _protectedRoots = [...migratedDomains, 'assets', 'asset_references',
-    'stickers/collections.json', 'sdk_migrations', '.sdk'];
+    'stickers/collections.json', 'sdk_migrations', '.sdk',
+    // 插件设置统一通道落 configs/ 前缀（system 域 config 命令是唯一写入口）
+    'configs'];
 
   static void check(String path, {bool prefix = false}) {
     // Windows 大小写等价路径也不能绕过限制。

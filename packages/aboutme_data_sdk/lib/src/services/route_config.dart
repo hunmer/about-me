@@ -19,6 +19,7 @@ final pluginRouteConfigs = <PluginRouteConfig>[
   PluginRouteConfig(pluginId: 'chat', routes: [
     PluginRouteDefinition(method: 'get', path: '/sticker-collections', handler: 'getStickerCollections', resourceName: 'stickers'),
     PluginRouteDefinition(method: 'post', path: '/sticker-collections', handler: 'createStickerCollection', resourceName: 'stickers'),
+    PluginRouteDefinition(method: 'post', path: '/sticker-collections/migrate-legacy', handler: 'migrateLegacyStickers', resourceName: 'stickers'),
     PluginRouteDefinition(method: 'patch', path: '/sticker-collections/:id', handler: 'renameStickerCollection', resourceName: 'stickers'),
     PluginRouteDefinition(method: 'post', path: '/sticker-collections/:id/stickers', handler: 'addStickers', resourceName: 'stickers'),
     PluginRouteDefinition(method: 'delete', path: '/sticker-collections/:id/stickers', handler: 'removeSticker', resourceName: 'stickers'),
@@ -425,6 +426,11 @@ final pluginRouteConfigs = <PluginRouteConfig>[
     PluginRouteDefinition(method: 'get', path: '/registry', handler: 'getPluginRegistry', resourceName: 'registry'),
     PluginRouteDefinition(method: 'get', path: '/store-config', handler: 'getStoreConfig', resourceName: 'storeConfig'),
     PluginRouteDefinition(method: 'patch', path: '/store-config', handler: 'updateStoreConfig', resourceName: 'storeConfig'),
+    // configs/ 设置统一通道：key 含 '/'（如 bill/settings.json），不走 :param
+    // 路径参数（编码歧义），GET 经 query、PUT/DELETE 经 body 传递。
+    PluginRouteDefinition(method: 'get', path: '/config', handler: 'getConfig', resourceName: 'configs'),
+    PluginRouteDefinition(method: 'put', path: '/config', handler: 'setConfig', resourceName: 'configs'),
+    PluginRouteDefinition(method: 'delete', path: '/config', handler: 'deleteConfig', resourceName: 'configs'),
   ]),
   // ==================== 单文件快照域（timer/achievement/reminder/live2d/tts）====================
   PluginRouteConfig(pluginId: 'timer', routes: [

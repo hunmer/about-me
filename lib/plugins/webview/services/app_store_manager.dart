@@ -21,10 +21,9 @@ class AppStoreManager extends ChangeNotifier {
   final CardManager _cardManager;
   final http.Client _httpClient;
 
-  // 存储键
-  static const String _sourcesKey = 'configs/webview_app_sources.json';
-  static const String _currentSourceKey =
-      'configs/webview_app_source_current.json';
+  // 存储键（system 域 config 命令统一通道，configs/ 前缀原位落盘）
+  static const String _sourcesKey = 'webview_app_sources.json';
+  static const String _currentSourceKey = 'webview_app_source_current.json';
 
   // 状态
   List<AppStoreSource> _sources = [];
@@ -62,8 +61,8 @@ class AppStoreManager extends ChangeNotifier {
     // 优先恢复上次使用的源，其次默认源，最后第一个源
     String? savedId;
     try {
-      // readPath 缺省返回 {}（文件尚未创建），只接受字符串形态的存量值
-      final raw = await AboutmeDataService.instance.readPath(
+      // 命令缺省返回 null（文件尚未创建），只接受字符串形态的存量值
+      final raw = await AboutmeDataService.instance.getConfig(
         _currentSourceKey,
       );
       savedId = raw is String ? raw : null;
@@ -369,7 +368,7 @@ class AppStoreManager extends ChangeNotifier {
   /// 加载源配置
   Future<void> _loadSources() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_sourcesKey);
+      final data = await AboutmeDataService.instance.getConfig(_sourcesKey);
       if (data != null && data is List) {
         _sources =
             data
@@ -388,7 +387,7 @@ class AppStoreManager extends ChangeNotifier {
   Future<void> _saveSources() async {
     try {
       final jsonList = _sources.map((s) => s.toJson()).toList();
-      await AboutmeDataService.instance.writePath(_sourcesKey, jsonList);
+      await AboutmeDataService.instance.setConfig(_sourcesKey, jsonList);
     } catch (e) {
       debugPrint('Failed to save sources: $e');
     }
@@ -397,11 +396,10 @@ class AppStoreManager extends ChangeNotifier {
   /// 保存当前使用的源 ID
   Future<void> _saveCurrentSourceId() async {
     try {
-      // readPath 读取时走 jsonDecode，裸 UUID 非合法 JSON 会被判损坏，
-      // 因此写入 JSON 字符串字面量保持写读闭环
-      await AboutmeDataService.instance.writePath(
+      // 磁盘为 JSON 字符串字面量（"uuid"）保持与旧布局写读闭环
+      await AboutmeDataService.instance.setConfig(
         _currentSourceKey,
-        jsonEncode(_currentSource?.id),
+        _currentSource?.id,
       );
     } catch (e) {
       debugPrint('Failed to save current source: $e');

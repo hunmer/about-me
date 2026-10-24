@@ -30,6 +30,11 @@ class ScriptLoader {
   static const String _legacyInstalledKey =
       'configs/scripts_center_installed_scripts';
 
+  /// configs/ 全路径 → system 域 config 命令的相对 key（configs/ 前缀
+  /// 原始写已封闭，迁移删旧走 deleteConfig 命令）
+  static String _configKeyOf(String fullPath) =>
+      fullPath.startsWith('configs/') ? fullPath.substring(8) : fullPath;
+
   ScriptLoader(this.storage);
 
   /// 获取默认scripts目录路径（仅作文件夹展示标识，数据实际在 SDK 分区）
@@ -179,7 +184,7 @@ class ScriptLoader {
           if (config is Map && config.isNotEmpty) {
             await call('setConfig', {'scriptId': scriptId, 'config': config});
           }
-          await svc.deletePath(key);
+          await svc.deleteConfig(_configKeyOf(key));
         } catch (e) {
           print('⚠️ 迁移脚本配置失败: $scriptId, 错误: $e');
         }
@@ -197,7 +202,7 @@ class ScriptLoader {
               });
             }
           }
-          await svc.deletePath(legacyLogKey);
+          await svc.deleteConfig(_configKeyOf(legacyLogKey));
         } catch (e) {
           print('⚠️ 迁移执行记录失败: $e');
         }
@@ -210,14 +215,14 @@ class ScriptLoader {
           if (sources is List && sources.isNotEmpty) {
             await call('saveSources', {'sources': sources});
           }
-          await svc.deletePath(_legacySourcesKey);
+          await svc.deleteConfig(_configKeyOf(_legacySourcesKey));
         }
         if (legacyInstalledExists) {
           final installed = await svc.readPath(_legacyInstalledKey);
           if (installed is List && installed.isNotEmpty) {
             await call('saveInstalled', {'installed': installed});
           }
-          await svc.deletePath(_legacyInstalledKey);
+          await svc.deleteConfig(_configKeyOf(_legacyInstalledKey));
         }
       } catch (e) {
         print('⚠️ 迁移商场数据失败: $e');

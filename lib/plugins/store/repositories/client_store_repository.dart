@@ -100,12 +100,11 @@ class ClientStoreRepository implements IStoreRepository {
         useDuration: dto.useDuration,
       );
 
-      // 从列表中移除旧商品，添加新商品
-      final index = controller.products.indexOf(existingProduct);
-      controller.products.removeAt(index);
-      controller.products.insert(index, updated);
-
-      await controller.saveProducts();
+      // 单行命令提交，避免整表覆盖并发修改
+      final saved = await controller.updateProductRow(updated);
+      if (!saved) {
+        return Result.failure('更新商品失败', code: ErrorCodes.serverError);
+      }
       return Result.success(_productToDto(updated));
     } catch (e) {
       return Result.failure('更新商品失败: $e', code: ErrorCodes.serverError);

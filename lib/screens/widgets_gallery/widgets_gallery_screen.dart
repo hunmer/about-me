@@ -253,6 +253,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
             subtitle: 'CuteFruitTimerDemo（水果物理堆叠 + 可拖拽 + 专注倒计时）',
             route: '/widgets_gallery/cute_fruit_timer',
           ),
+          _buildListItem(
+            context,
+            icon: Icons.account_circle_outlined,
+            title: 'Creator 创作者主页',
+            subtitle: 'CreatorProfileDemo（滚动头像收缩 + 平台作品流 + 点赞动画）',
+            route: '/widgets_gallery/creator_profile',
+          ),
         ],
       ),
     );

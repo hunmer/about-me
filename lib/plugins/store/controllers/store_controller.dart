@@ -462,6 +462,69 @@ class StoreController with ChangeNotifier {
     await _syncWidget();
   }
 
+  // 新建商品（单行命令，避免整表覆盖并发修改）
+  Future<bool> createProductRow(Product product) async {
+    final res = await AboutmeDataService.instance.call(
+      'store',
+      'createProduct',
+      product.toJson(),
+    );
+    if (res['success'] != true) {
+      debugPrint('Failed to create product: ${res['error']}');
+      return false;
+    }
+    final saved = Product.fromJson(
+      Map<String, dynamic>.from(res['data'] as Map),
+    );
+    _products.add(saved);
+    _updateStreams();
+    notifyListeners();
+    _notifyProductEvent('added', saved);
+    _notifyCacheUpdatedEvent();
+    return true;
+  }
+
+  // 更新商品（单行命令，避免整表覆盖并发修改）
+  Future<bool> updateProductRow(Product product) async {
+    final res = await AboutmeDataService.instance.call(
+      'store',
+      'updateProduct',
+      product.toJson(),
+    );
+    if (res['success'] != true) {
+      debugPrint('Failed to update product: ${res['error']}');
+      return false;
+    }
+    final saved = Product.fromJson(
+      Map<String, dynamic>.from(res['data'] as Map),
+    );
+    final index = _products.indexWhere((p) => p.id == saved.id);
+    if (index >= 0) _products[index] = saved;
+    _updateStreams();
+    notifyListeners();
+    _notifyProductEvent('updated', saved);
+    _notifyCacheUpdatedEvent();
+    return true;
+  }
+
+  // 删除商品（单行命令真删，不进存档）
+  Future<bool> deleteProductRow(String id) async {
+    final res = await AboutmeDataService.instance.call(
+      'store',
+      'deleteProduct',
+      {'id': id},
+    );
+    if (res['success'] != true) {
+      debugPrint('Failed to delete product: ${res['error']}');
+      return false;
+    }
+    _products.removeWhere((p) => p.id == id);
+    _updateStreams();
+    notifyListeners();
+    _notifyCacheUpdatedEvent();
+    return true;
+  }
+
   // 排序商品
   Future<void> sortProducts(String field, {bool ascending = true}) async {
     _products.sort((a, b) {
@@ -503,14 +566,19 @@ class StoreController with ChangeNotifier {
     await saveUserItems();
   }
 
-  // 存档产品
+  // 存档产品（单事务命令，避免双整表覆盖并发修改）
   Future<void> archiveProduct(Product product) async {
-    // 从产品列表中移除
+    final res = await AboutmeDataService.instance.call(
+      'store',
+      'archiveProduct',
+      {'id': product.id},
+    );
+    if (res['success'] != true) {
+      debugPrint('Failed to archive product: ${res['error']}');
+      return;
+    }
     _products.removeWhere((p) => p.id == product.id);
-    // 添加到存档列表
     _archivedProducts.add(product);
-    await saveProducts();
-    await saveArchivedProducts();
     notifyListeners();
 
     // 触发商品归档事件
@@ -520,14 +588,19 @@ class StoreController with ChangeNotifier {
     _notifyCacheUpdatedEvent();
   }
 
-  // 恢复存档产品
+  // 恢复存档产品（单事务命令，避免双整表覆盖并发修改）
   Future<void> restoreProduct(Product product) async {
-    // 从存档列表中移除
+    final res = await AboutmeDataService.instance.call(
+      'store',
+      'restoreProduct',
+      {'id': product.id},
+    );
+    if (res['success'] != true) {
+      debugPrint('Failed to restore product: ${res['error']}');
+      return;
+    }
     _archivedProducts.removeWhere((p) => p.id == product.id);
-    // 添加到产品列表
     _products.add(product);
-    await saveProducts();
-    await saveArchivedProducts();
     notifyListeners();
 
     // 触发商品恢复事件

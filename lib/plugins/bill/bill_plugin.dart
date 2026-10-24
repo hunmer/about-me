@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:aboutme/core/config_manager.dart';
-import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -304,50 +303,9 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
     );
   }
 
-  Map<String, dynamic> _settings = {};
+  // loadSettings/saveSettings/updateSettings 继承 PluginBase：
+  // 已统一走 system 域 config 命令（configs/bill/settings.json 原位）。
 
-  @override
-  Map<String, dynamic> get settings => _settings;
-
-  @override
-  Future<void> loadSettings(Map<String, dynamic> defaultSettings) async {
-    try {
-      final storedSettings = await AboutmeDataService.instance.readPath(
-        ConfigManager.getPluginConfigPath(id),
-      );
-      if (storedSettings.isNotEmpty) {
-        _settings = Map<String, dynamic>.from(storedSettings);
-      } else {
-        _settings = Map<String, dynamic>.from(defaultSettings);
-        await saveSettings();
-      }
-    } catch (e) {
-      _settings = Map<String, dynamic>.from(defaultSettings);
-      try {
-        await saveSettings();
-      } catch (e) {
-        debugPrint('Warning: Failed to save plugin settings: $e');
-      }
-    }
-  }
-
-  @override
-  Future<void> saveSettings() async {
-    try {
-      await AboutmeDataService.instance.writePath(
-        ConfigManager.getPluginConfigPath(id),
-        _settings,
-      );
-    } catch (e) {
-      debugPrint('Warning: Failed to save plugin settings: $e');
-    }
-  }
-
-  @override
-  Future<void> updateSettings(Map<String, dynamic> newSettings) async {
-    _settings.addAll(newSettings);
-    await saveSettings();
-  }
 
   // ==================== JS API 定义 ====================
 

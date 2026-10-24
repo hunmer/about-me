@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'data/aboutme_data_service.dart';
 import 'storage/storage_manager.dart';
 import 'plugin_manager.dart';
 import 'config_manager.dart';
@@ -114,13 +115,18 @@ abstract class PluginBase {
     _storage = storageManager;
   }
 
+  /// 插件配置键（configs/ 下相对路径，system 域 config 命令统一通道）
+  String getPluginSettingKey() => '$id/settings.json';
+
   String getPluginSettingPath() => ConfigManager.getPluginConfigPath(id);
 
   /// 加载插件配置
   Future<void> loadSettings(Map<String, dynamic> defaultSettings) async {
     try {
-      final storedSettings = await storage.read(getPluginSettingPath());
-      if (storedSettings.isNotEmpty) {
+      final storedSettings = await AboutmeDataService.instance.getConfig(
+        getPluginSettingKey(),
+      );
+      if (storedSettings is Map && storedSettings.isNotEmpty) {
         _settings = Map<String, dynamic>.from(storedSettings);
         // 确保所有默认配置项都存在
         bool needsUpdate = false;
@@ -150,7 +156,10 @@ abstract class PluginBase {
   /// 保存插件配置
   Future<void> saveSettings() async {
     try {
-      await storage.write(getPluginSettingPath(), _settings);
+      await AboutmeDataService.instance.setConfig(
+        getPluginSettingKey(),
+        _settings,
+      );
     } catch (e) {
       print('Warning: Failed to save plugin settings: $e');
     }

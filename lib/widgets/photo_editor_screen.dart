@@ -1053,8 +1053,9 @@ class _AiEditDialog extends StatefulWidget {
 }
 
 class _AiEditDialogState extends State<_AiEditDialog> {
-  /// 自定义预设与上次 prompt 的持久化位置（随本地/远端存储）
-  static const _configPath = 'configs/photo_editor/ai_edit_config.json';
+  /// 自定义预设与上次 prompt 的持久化位置（随本地/远端存储，
+  /// system 域 config 命令统一通道，configs/ 前缀原位落盘）
+  static const _configKey = 'photo_editor/ai_edit_config.json';
 
   /// 内置快捷指令预设键（文案在 zh/en 翻译文件，跟随界面语言）
   static const _builtinPresetKeys = [
@@ -1085,7 +1086,7 @@ class _AiEditDialogState extends State<_AiEditDialog> {
 
   Future<void> _loadConfig() async {
     try {
-      final data = await AboutmeDataService.instance.readPath(_configPath);
+      final data = await AboutmeDataService.instance.getConfig(_configKey);
       if (!mounted || data is! Map<String, dynamic>) return;
       final presets =
           (data['presets'] as List?)?.whereType<String>().toList() ?? [];
@@ -1103,7 +1104,7 @@ class _AiEditDialogState extends State<_AiEditDialog> {
 
   Future<void> _saveConfig() async {
     try {
-      await AboutmeDataService.instance.writePath(_configPath, {
+      await AboutmeDataService.instance.setConfig(_configKey, {
         'presets': _customPresets,
         'lastPrompt': _input.text.trim(),
       });

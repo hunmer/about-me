@@ -24,13 +24,20 @@ class SdkMediaService {
     return bytes;
   }
 
-  static Future<AssetDto> uploadBytes(Uint8List bytes, String fileName) =>
-      _assets.upload(
-        bytes,
-        fileName: path.basename(fileName),
-        mediaType: assetMediaType(fileName),
-        clientMutationId: const Uuid().v4(),
-      );
+  /// 单次上传 ≤16 MiB，超出自动走分块（上限 256 MiB）
+  static Future<AssetDto> uploadBytes(Uint8List bytes, String fileName) {
+    final name = path.basename(fileName);
+    final mediaType = assetMediaType(fileName);
+    if (bytes.length > maxBytes) {
+      return _assets.uploadChunked(bytes, fileName: name, mediaType: mediaType);
+    }
+    return _assets.upload(
+      bytes,
+      fileName: name,
+      mediaType: mediaType,
+      clientMutationId: const Uuid().v4(),
+    );
+  }
 
   static Future<AssetDto> importPicked(XFile file) async =>
       uploadBytes(await readPicked(file), file.name);

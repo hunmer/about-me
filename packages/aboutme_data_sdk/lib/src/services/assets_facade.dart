@@ -93,6 +93,35 @@ class AssetsFacade {
     return AssetDto.fromJson(_value(result));
   }
 
+  static const chunkedUploadLimit = 256 * 1024 * 1024;
+
+  /// 分块上传大资源（上限 256 MiB）：init → append×N → complete，
+  /// 端到端 sha256 校验；[onProgress] 每块回调（已传块数/总块数）。
+  Future<AssetDto> uploadChunked(Uint8List bytes, {required String fileName,
+    String mediaType = 'application/octet-stream',
+    void Function(int received, int total)? onProgress}) async {
+    if (bytes.isEmpty || bytes.length > chunkedUploadLimit) {
+      throw ArgumentError('分块上传上限 256 MiB');
+    }
+    final init = _value(await data.call('assets', 'initUpload', {
+      'fileName': fileName, 'mediaType': mediaType,
+      'size': bytes.length, 'sha256': sha256.convert(bytes).toString(),
+    }));
+    final uploadId = init['uploadId'] as String;
+    final chunkBytes = init['chunkBytes'] as int;
+    final totalChunks = init['totalChunks'] as int;
+    for (var index = 0; index < totalChunks; index++) {
+      final start = index * chunkBytes;
+      final chunk = bytes.sublist(start,
+          (start + chunkBytes) > bytes.length ? bytes.length : start + chunkBytes);
+      _value(await data.call('assets', 'appendChunk',
+          {'uploadId': uploadId, 'index': index, 'content': base64Encode(chunk)}));
+      onProgress?.call(index + 1, totalChunks);
+    }
+    return AssetDto.fromJson(
+        _value(await data.call('assets', 'completeUpload', {'uploadId': uploadId})));
+  }
+
   Future<AssetDto> getMetadata(String id) async => AssetDto.fromJson(
     _value(await data.get('assets', 'getMetadata', {'id': id})));
 

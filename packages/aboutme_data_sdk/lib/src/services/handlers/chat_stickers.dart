@@ -151,5 +151,62 @@ PluginHandlers createChatStickerHandlers(PluginData data) {
       await save(entries);
       return PluginResult.success(removed);
     },
+    // 注册表驱动的旧贴图二进制批量迁移：stickers/ 旧引用 → asset:// 资源。
+    // 迁移记录幂等（中途失败重跑安全：已迁文件从记录恢复映射）；
+    // dryRun（默认）仅统计待迁移引用，不读旧文件不写注册表。
+    'migrateLegacyStickers': (_, params) async {
+      final dryRun = params['dryRun'] != false;
+      final entries = await read();
+      final pending = <String>{
+        for (final entry in entries)
+          for (final path in (entry['stickerPaths'] as List).cast<String>())
+            if (path.startsWith('stickers/')) path,
+      };
+      if (pending.isEmpty) {
+        return PluginResult.success({'dryRun': dryRun, 'pending': 0,
+          'migrated': 0, 'failed': const [], 'updatedCollections': 0});
+      }
+      if (dryRun) {
+        return PluginResult.success({'dryRun': true, 'pending': pending.length,
+          'migrated': 0, 'failed': const [], 'updatedCollections': 0});
+      }
+      final mapping = <String, String>{};
+      final failed = <Map<String, dynamic>>[];
+      for (final path in pending) {
+        try {
+          final assetId = await migrateLegacyAssetToResource(data, path);
+          if (assetId == null) {
+            failed.add({'path': path, 'error': '旧文件不存在'});
+            continue;
+          }
+          mapping[path] = assetId;
+        } catch (error) {
+          failed.add({'path': path, 'error': '$error'});
+        }
+      }
+      if (mapping.isEmpty) {
+        return PluginResult.success({'dryRun': false,
+          'pending': pending.length, 'migrated': 0, 'failed': failed,
+          'updatedCollections': 0});
+      }
+      // 更新注册表引用；save 维护资源引用索引并写迁移记录
+      for (final entry in entries) {
+        final updated = (entry['stickerPaths'] as List)
+            .map((path) => mapping[path] != null
+                ? 'asset://${mapping[path]}'
+                : path)
+            .toList();
+        entry['stickerPaths'] = updated;
+        final cover = entry['coverPath'];
+        if (cover is String && mapping[cover] != null) {
+          entry['coverPath'] = 'asset://${mapping[cover]}';
+        }
+        entry['updatedAt'] = DateTime.now().toUtc().toIso8601String();
+      }
+      await save(entries);
+      return PluginResult.success({'dryRun': false,
+        'pending': pending.length, 'migrated': mapping.length,
+        'failed': failed, 'updatedCollections': entries.length});
+    },
   };
 }

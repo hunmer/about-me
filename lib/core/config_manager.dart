@@ -1,9 +1,12 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'data/aboutme_data_service.dart';
 import 'storage/storage_manager.dart';
 
 /// 配置管理器，负责管理插件配置
+///
+/// 全部读写走 system 域 config 命令（configs/ 前缀统一通道），
+/// 原始文件层写已封闭（426）。
 class ConfigManager {
   final StorageManager _storage;
   final Map<String, dynamic> _configs = {};
@@ -26,8 +29,14 @@ class ConfigManager {
   /// 加载应用级配置
   Future<void> _loadAppConfig() async {
     try {
-      final config = await _storage.readJson('configs/$_appConfigKey.json');
-      _appConfig.addAll(config as Map<String, dynamic>);
+      final config = await AboutmeDataService.instance.getConfig(
+        '$_appConfigKey.json',
+      );
+      if (config is Map<String, dynamic>) {
+        _appConfig.addAll(config);
+      } else {
+        throw StateError('app_config 形态异常: $config');
+      }
     } catch (e) {
       _appConfig.addAll(_getDefaultConfig());
       await saveAppConfig(); // 保存默认配置到文件
@@ -46,9 +55,9 @@ class ConfigManager {
 
   /// 保存应用级配置
   Future<void> saveAppConfig() async {
-    await _storage.writeString(
-      'configs/$_appConfigKey.json',
-      jsonEncode(_appConfig),
+    await AboutmeDataService.instance.setConfig(
+      '$_appConfigKey.json',
+      _appConfig,
     );
   }
 
@@ -123,11 +132,19 @@ class ConfigManager {
     await saveAppConfig();
   }
 
+  /// 配置键（configs/ 下相对路径）
+  static String getPluginConfigKey(
+    String pluginId, [
+    String? fileName = 'settings',
+  ]) {
+    return '$pluginId/$fileName.json';
+  }
+
   static String getPluginConfigPath(
     String pluginId, [
     String? fileName = 'settings',
   ]) {
-    return 'configs/$pluginId/$fileName.json';
+    return 'configs/${getPluginConfigKey(pluginId, fileName)}';
   }
 
   /// 保存插件配置
@@ -136,9 +153,9 @@ class ConfigManager {
     Map<String, dynamic> config,
   ) async {
     _configs[pluginId] = config;
-    await _storage.writeString(
-      getPluginConfigPath(pluginId),
-      jsonEncode(config),
+    await AboutmeDataService.instance.setConfig(
+      getPluginConfigKey(pluginId),
+      config,
     );
   }
 
@@ -149,7 +166,9 @@ class ConfigManager {
     }
 
     try {
-      final config = await _storage.readJson(getPluginConfigPath(pluginId));
+      final config = await AboutmeDataService.instance.getConfig(
+        getPluginConfigKey(pluginId),
+      );
       if (config is! Map) return null;
 
       // 确保所有键都是String类型
@@ -170,6 +189,8 @@ class ConfigManager {
   /// 删除插件配置
   Future<void> deletePluginConfig(String pluginId) async {
     _configs.remove(pluginId);
-    await _storage.deleteFile(getPluginConfigPath(pluginId));
+    await AboutmeDataService.instance.deleteConfig(
+      getPluginConfigKey(pluginId),
+    );
   }
 }

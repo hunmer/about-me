@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/widgets/creator_profile_demo.dart';
 import 'package:aboutme/screens/routing/route_definition.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';
 import 'package:aboutme/screens/widgets_gallery/widgets_gallery_screen.dart';
@@ -989,6 +990,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '可爱水果专注计时器（物理堆叠 + 拖拽 + 自动掉落）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/creator_profile',
+      handler: (settings) => RouteHelpers.createRoute(
+        const CreatorProfileDemo(),
+        settings: settings,
+      ),
+      description: 'Creator 创作者主页（滚动头像收缩 + 平台作品流 + 点赞动画）',
     ),
     RouteDefinition(
       path: '/widgets_gallery/drink_checkin_calendar',

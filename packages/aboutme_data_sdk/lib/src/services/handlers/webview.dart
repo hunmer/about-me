@@ -6,7 +6,8 @@ import 'record_domain_support.dart';
 /// cards.json 卡片（三者整文件读写），以及网页 JS 经 bridge 读写的
 /// webview/{key} 任意 JSON KV（key 做路径安全校验）。
 ///
-/// app_store_manager 的源配置在 configs/ 前缀（独立于本域），不在此处。
+/// app_store_manager 的源配置在 configs/ 前缀（独立于本域，
+/// 经 system 域 config 命令读写），不在此处。
 PluginHandlers createWebviewHandlers(PluginData data) {
   const plugin = 'webview';
 

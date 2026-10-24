@@ -100,4 +100,80 @@ void main() {
     value(await data.call('chat', 'delete', {'id': 'c'}));
     expect(await data.assets.remove(asset.id), isTrue);
   });
+
+  test('migrateLegacyStickers：dryRun 统计、注册表引用更新、幂等重跑、旧文件删除', () async {
+    // 注入旧注册表（含跨合集共享贴图）与旧贴图二进制
+    final reg = File('${root.path}/stickers/collections.json');
+    await reg.parent.create(recursive: true);
+    await reg.writeAsString(jsonEncode([
+      {'id': 'a', 'name': 'A', 'stickerPaths': ['stickers/one/s1.gif', 'stickers/one/shared.png'],
+        'coverPath': 'stickers/one/s1.gif', 'createdAt': '2026-01-01T00:00:00Z', 'updatedAt': '2026-01-01T00:00:00Z'},
+      {'id': 'b', 'name': 'B', 'stickerPaths': ['stickers/two/s2.png', 'stickers/one/shared.png'],
+        'coverPath': 'stickers/two/s2.png', 'createdAt': '2026-01-02T00:00:00Z', 'updatedAt': '2026-01-02T00:00:00Z'},
+    ]));
+    for (final path in ['stickers/one/s1.gif', 'stickers/one/shared.png', 'stickers/two/s2.png']) {
+      final f = File('${root.path}/$path');
+      await f.parent.create(recursive: true);
+      await f.writeAsBytes([1, 2, 3, path.length]);
+    }
+
+    // dryRun（默认）：仅统计，不产生副作用
+    final dry = value(await data.call('chat', 'migrateLegacyStickers', {}));
+    expect(dry['dryRun'], true);
+    expect(dry['pending'], 3);
+    expect(await File('${root.path}/stickers/one/s1.gif').exists(), isTrue);
+
+    // 执行：注册表全部引用替换为 asset://，旧文件删除
+    final done = value(await data.call('chat', 'migrateLegacyStickers', {'dryRun': false}));
+    expect(done['migrated'], 3);
+    expect((done['failed'] as List), isEmpty);
+    expect(done['updatedCollections'], 2);
+    for (final path in ['stickers/one/s1.gif', 'stickers/one/shared.png', 'stickers/two/s2.png']) {
+      expect(await File('${root.path}/$path').exists(), isFalse, reason: path);
+    }
+    final collections = await list();
+    for (final entry in collections.cast<Map>()) {
+      for (final ref in (entry['stickerPaths'] as List).cast<String>()) {
+        expect(ref.startsWith('asset://'), isTrue, reason: ref);
+      }
+    }
+    // 共享贴图两个合集引用同一资源
+    final refsA = ((collections[0] as Map)['stickerPaths'] as List).cast<String>();
+    final refsB = ((collections[1] as Map)['stickerPaths'] as List).cast<String>();
+    final shared = refsA.toSet().intersection(refsB.toSet());
+    expect(shared.length, 1);
+    // 封面同步更新为资源引用
+    expect(((collections[0] as Map)['coverPath'] as String).startsWith('asset://'), isTrue);
+
+    // 资源可读
+    final sharedId = shared.first.substring('asset://'.length);
+    expect(await data.assets.read(sharedId), isNotNull);
+
+    // 幂等重跑：无待迁移引用
+    final again = value(await data.call('chat', 'migrateLegacyStickers', {'dryRun': false}));
+    expect(again['pending'], 0);
+    expect(again['migrated'], 0);
+
+    // 中断恢复场景：注册表被回写为旧引用（迁移记录仍在），重跑从记录恢复映射
+    final records = (await list()).cast<Map>().toList();
+    final idOf = <String, String>{};
+    for (final entry in records) {
+      for (final ref in (entry['stickerPaths'] as List).cast<String>()) {
+        idOf[ref.substring('asset://'.length)] = '';
+      }
+    }
+    // 模拟旧引用残留：把合集 A 的首张改回旧路径（文件已删）
+    final rollback = [
+      for (final entry in records)
+        {...entry, 'stickerPaths': [
+          for (final ref in (entry['stickerPaths'] as List).cast<String>())
+            if (entry['id'] == 'a' && ref == refsA.first) 'stickers/one/s1.gif' else ref,
+        ], 'coverPath': entry['id'] == 'a' ? 'stickers/one/s1.gif' : entry['coverPath']},
+    ];
+    await reg.writeAsString(jsonEncode(rollback));
+    final recovered = value(await data.call('chat', 'migrateLegacyStickers', {'dryRun': false}));
+    expect(recovered['migrated'], 1); // 从迁移记录恢复，不读旧文件
+    final finalA = ((await list()).firstWhere((e) => (e as Map)['id'] == 'a') as Map);
+    expect(((finalA['stickerPaths'] as List).cast<String>().every((r) => r.startsWith('asset://'))), isTrue);
+  });
 }

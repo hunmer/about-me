@@ -113,6 +113,35 @@ Future<Map<String, dynamic>> _migrationMap(PluginData data) async {
   return Map<String, dynamic>.from(value);
 }
 
+/// 单个旧路径迁移为正式资源（幂等：迁移记录命中直接复用；成功后删旧文件）。
+/// 供 chat_stickers 注册表迁移复用；旧文件不存在且无迁移记录时返回 null。
+/// StorageException 由调用方决定是否视为致命（注册表迁移按项容错）。
+Future<String?> migrateLegacyAssetToResource(
+  PluginData data,
+  String sourcePath,
+) async {
+  if (data is! LegacyAssetData) {
+    throw const StorageException(StorageErrorKind.unsupported, '后端不支持旧资源读取');
+  }
+  final backend = data as LegacyAssetData;
+  final migration = await _migrationMap(data);
+  final existing = migration[sourcePath];
+  if (existing is String) {
+    final record = await readAsset(data, existing);
+    if (record != null) return existing;
+  }
+  final bytes = await backend.readLegacyAsset(sourcePath, maxAssetBytes);
+  if (bytes == null) return null;
+  final fileName = sourcePath.split('/').last;
+  final index = await _assetIndex(data);
+  final record = await _persistAsset(
+    data, index, bytes, fileName, _mediaTypeFor(fileName));
+  migration[sourcePath] = record['id'];
+  await data.write('assets', 'legacy_migration.json', migration);
+  await backend.removeLegacyAsset(sourcePath);
+  return record['id'] as String;
+}
+
 String _mediaTypeFor(String fileName) {
   final ext = fileName.contains('.')
       ? fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase()

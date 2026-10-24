@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
+import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'page_visit_record.dart';
 
@@ -18,8 +18,8 @@ class RouteHistoryManager extends RouteObserver<Route<dynamic>> {
   /// 存储管理器
   StorageManager? _storage;
 
-  /// 存储键
-  static const String _storageKey = 'configs/route_history.json';
+  /// 存储键（system 域 config 命令统一通道，configs/ 前缀原位落盘）
+  static const String _storageKey = 'route_history.json';
 
   /// 历史记录列表（按时间倒序）
   final List<PageVisitRecord> _history = [];
@@ -74,9 +74,8 @@ class RouteHistoryManager extends RouteObserver<Route<dynamic>> {
     }
 
     try {
-      final data = await _storage!.read(_storageKey);
+      final data = await AboutmeDataService.instance.getConfig(_storageKey);
       if (data != null) {
-        // StorageManager.read() 返回的是已经解析过的数据（Map）
         // 使用 Map.from() 进行安全的类型转换
         final json = Map<String, dynamic>.from(data as Map);
         final historyList = json['history'] as List<dynamic>?;
@@ -252,19 +251,10 @@ class RouteHistoryManager extends RouteObserver<Route<dynamic>> {
 
     _isSaving = true;
     try {
-      final data = {
+      // system 域 config 命令为事务写，无文件层 412 版本冲突
+      await AboutmeDataService.instance.setConfig(_storageKey, {
         'history': _history.map((record) => record.toJson()).toList(),
-      };
-      // StorageManager.write() 接受 Map 对象，会自动序列化为 JSON
-      try {
-        await _storage!.write(_storageKey, data);
-      } on StorageException catch (error) {
-        // 客户端尚未持有文件版本（读与写并发交错、或新启动首次写）时，
-        // 远端按"创建意图撞上已存在文件"返回 412；重读刷新版本后重试一次
-        if (error.kind != StorageErrorKind.conflict) rethrow;
-        await _storage!.readBytes(_storageKey);
-        await _storage!.write(_storageKey, data);
-      }
+      });
     } catch (e) {
       debugPrint('保存路由历史失败: $e');
     } finally {

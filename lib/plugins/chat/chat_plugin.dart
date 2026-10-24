@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'dart:io' show Platform;
@@ -192,6 +193,12 @@ class ChatPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
 
     // 注册 JS API（最后一步）
     await registerJSAPI();
+
+    // 旧贴图二进制一次性幂等迁移（无旧引用时为一次轻量 dryRun）
+    unawaited(StartupTrace.measure(
+      'chat.sticker_migrate',
+      StickerService.instance.migrateLegacyStickers,
+    ));
 
     // 初始化手表连接（仅限 iOS 平台）
     if (!kIsWeb && Platform.isIOS) {

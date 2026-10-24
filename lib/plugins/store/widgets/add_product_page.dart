@@ -104,9 +104,7 @@ class _AddProductPageState extends State<AddProductPage> {
     );
 
     if (confirmed == true) {
-      widget.controller.products.removeWhere((p) => p.id == widget.product!.id);
-      await widget.controller.saveProducts();
-      await widget.controller.saveToStorage();
+      await widget.controller.deleteProductRow(widget.product!.id);
       widget.controller.notifyUpdate();
       Navigator.pop(context);
     }
@@ -150,11 +148,11 @@ class _AddProductPageState extends State<AddProductPage> {
               useDuration: 30,
             );
 
-    if (widget.product != null) {
-      widget.controller.products.removeWhere((p) => p.id == product.id);
-    }
-    widget.controller.addProduct(product);
-    await widget.controller.saveProducts();
+    // 单行命令提交：新建走 createProduct，编辑走 updateProduct
+    final saved = widget.product != null
+        ? await widget.controller.updateProductRow(product)
+        : await widget.controller.createProductRow(product);
+    if (!saved) return;
     Navigator.pop(context);
   }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:aboutme_data_sdk/io.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
@@ -148,6 +149,32 @@ void main() {
         'size': 257 * 1024 * 1024,
       }))['code'],
       'INVALID_PARAMS',
+    );
+  });
+
+  test('uploadChunked facade：端到端封装、进度回调与空数据拒绝', () async {
+    final progress = <int>[];
+    final bytes = Uint8List.fromList(List.generate(1024, (i) => i & 0xff));
+    final asset = await data.assets.uploadChunked(
+      bytes,
+      fileName: 'facade.bin',
+      mediaType: 'application/octet-stream',
+      onProgress: (received, total) => progress.add(received),
+    );
+    expect(asset.fileName, 'facade.bin');
+    expect(asset.size, bytes.length);
+    // 单块数据一次回调即完成
+    expect(progress, [1]);
+    // 读回与端到端 sha256 一致
+    expect(await data.assets.read(asset.id), bytes);
+
+    expect(
+      () => data.assets.uploadChunked(
+        Uint8List(0),
+        fileName: 'empty.bin',
+        mediaType: 'application/octet-stream',
+      ),
+      throwsArgumentError,
     );
   });
 
