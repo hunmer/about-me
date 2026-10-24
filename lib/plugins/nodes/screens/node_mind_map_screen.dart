@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Node;
-import 'package:graphview/graphview.dart';
+import 'package:graphview/GraphView.dart';
 import 'package:provider/provider.dart';
 import 'package:skribble/skribble.dart' show WiredDraw, WiredDrawTransition;
 

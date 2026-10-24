@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:graphview/graphview.dart';
+import 'package:graphview/GraphView.dart';
 import 'package:skribble/skribble.dart'
     show DrawConfig, Generator, NoFiller, PointD, RoughDrawing;
 

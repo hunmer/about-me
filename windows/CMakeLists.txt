@@ -1,6 +1,9 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
 
+# Firebase ships a legacy CMake minimum; retain compatibility with CMake 4.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 # 若配置了 VCPKG_ROOT 环境变量且未显式指定 toolchain，则使用 vcpkg 提供原生依赖
 # （image_compress_plus_windows 依赖 libjpeg-turbo/libpng/libwebp/exiv2）
 if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
