@@ -37,6 +37,28 @@ dart compile exe bin/server.dart -o bin/aboutme-server      # 单文件可执行
 
 环境变量同前（`PORT`/`DATA_DIR`/`JWT_SECRET`/`ADMIN_*` 等，见 `lib/src/config.dart`）。
 
+### Docker 部署
+
+在本仓库根目录执行：
+
+```powershell
+cd packages/aboutme_server
+Copy-Item .env.example .env
+```
+
+编辑 `.env`，为 `JWT_SECRET` 和 `ADMIN_PASSWORD` 设置强随机值，然后构建并启动：
+
+```powershell
+docker compose up -d --build
+docker compose logs -f
+```
+
+服务仅映射到本机 `127.0.0.1:8874`，管理界面地址为 `http://127.0.0.1:8874/admin/`；健康检查为 `http://127.0.0.1:8874/health`。数据持久化在本包的 `data/` 目录。停止服务：
+
+```powershell
+docker compose down
+```
+
 ## 管理界面（admin-vue）
 
 ```bash

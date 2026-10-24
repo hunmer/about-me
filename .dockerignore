@@ -1,0 +1,7 @@
+.git
+.dart_tool
+**/.dart_tool
+**/build
+packages/aboutme_server/data
+packages/aboutme_server/.env
+packages/aboutme_server/server_out.txt

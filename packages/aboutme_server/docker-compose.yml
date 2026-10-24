@@ -1,0 +1,17 @@
+services:
+  aboutme-server:
+    build:
+      context: ../..
+      dockerfile: packages/aboutme_server/Dockerfile
+    container_name: aboutme-server
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: "8874"
+      DATA_DIR: /app/data
+      ADMIN_DIR: /app/admin
+    ports:
+      - "127.0.0.1:8874:8874"
+    volumes:
+      - ./data:/app/data
