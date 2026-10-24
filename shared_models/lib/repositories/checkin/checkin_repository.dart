@@ -23,10 +23,15 @@ class CheckinRecordDto {
   });
 
   factory CheckinRecordDto.fromJson(Map<String, dynamic> json) {
+    final checkinTime = DateTime.parse(json['checkinTime'] as String);
     return CheckinRecordDto(
-      startTime: DateTime.parse(json['startTime'] as String),
-      endTime: DateTime.parse(json['endTime'] as String),
-      checkinTime: DateTime.parse(json['checkinTime'] as String),
+      startTime: json['startTime'] != null
+          ? DateTime.parse(json['startTime'] as String)
+          : checkinTime,
+      endTime: json['endTime'] != null
+          ? DateTime.parse(json['endTime'] as String)
+          : checkinTime,
+      checkinTime: checkinTime,
       note: json['note'] as String?,
     );
   }
@@ -146,8 +151,8 @@ class CheckinItemDto {
     return CheckinItemDto(
       id: json['id'] as String,
       name: json['name'] as String,
-      icon: json['icon'] as int,
-      color: json['color'] as int,
+      icon: json['icon'] as int? ?? 57527,
+      color: json['color'] as int? ?? 4280391411,
       group: json['group'] as String? ?? '默认分组',
       description: json['description'] as String? ?? '',
       cardStyle: json['cardStyle'] as int? ?? 0,

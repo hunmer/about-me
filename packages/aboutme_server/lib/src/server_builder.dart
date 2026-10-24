@@ -9,6 +9,7 @@ import 'package:shelf_router/shelf_router.dart';
 import 'auth_middleware.dart';
 import 'auth_routes.dart';
 import 'config.dart';
+import 'debug_page.dart';
 import 'fcm_service.dart';
 import 'mcp/mcp_endpoint.dart';
 import 'plugin_routes.dart';
@@ -136,6 +137,9 @@ Future<Handler> buildServer(ServerConfig config) async {
     '/mcp',
     Pipeline().addMiddleware(authMiddleware(auth)).addHandler(mcpApi.handler),
   );
+
+  // 插件 API 调试页（纯静态 debug/index.html，现读磁盘热更新）
+  router.get('/debug', (Request request) => serveDebugPage(config));
 
   // 管理界面静态资源（SPA）
   router.mount('/admin/', adminStatic.handler);

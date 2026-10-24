@@ -1,0 +1,930 @@
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aboutme API 调试</title>
+<style>
+  :root{
+    --bg:#f6f6f3; --panel:#fff; --ink:#1d1d1b; --muted:#8d8d86; --line:#e8e8e3;
+    --soft:#efefea;
+    --get:#3a7d55; --post:#4a6fa5; --put:#a5764a; --patch:#7d5fa0; --delete:#b05252;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;
+    font:14px/1.6 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  .mono{font-family:ui-monospace,"Cascadia Code",Consolas,monospace}
+  header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:none;
+    padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--line)}
+  header h1{font-size:15px;font-weight:600;margin:0 14px 0 0;letter-spacing:.5px}
+  header input{border:1px solid var(--line);border-radius:6px;padding:6px 10px;
+    background:#fff;color:inherit;font:inherit}
+  #base{width:215px} #key{width:250px}
+  button{font:inherit;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;
+    background:var(--ink);color:#fff}
+  button.ghost{background:transparent;color:var(--muted);padding:6px 4px}
+  button.ghost:hover{color:var(--ink)}
+  #conn-msg{font-size:12px;color:var(--muted)} #conn-msg.bad{color:var(--delete)}
+  main{display:flex;flex:1;min-height:0}
+  aside{width:330px;flex:none;background:var(--panel);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;min-height:0}
+  aside .search{padding:10px;border-bottom:1px solid var(--line)}
+  aside .search input{width:100%;border:1px solid var(--line);border-radius:6px;
+    padding:6px 10px;font:inherit;background:#fff}
+  #groups{overflow:auto;flex:1;padding-bottom:30px}
+  details{border-bottom:1px solid var(--line)}
+  summary{cursor:pointer;padding:8px 12px;font-weight:600;font-size:13px;
+    list-style:none;user-select:none;display:flex;align-items:baseline;gap:6px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";color:var(--muted);transition:.15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  summary .n{color:var(--muted);font-weight:400;font-size:12px}
+  .api{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 28px;
+    cursor:pointer;font-size:12.5px;white-space:nowrap}
+  .api:hover,.api.active{background:var(--soft)}
+  .m{flex:none;width:50px;font-size:10.5px;font-weight:700;letter-spacing:.5px;
+    font-family:ui-monospace,Consolas,monospace}
+  .m-get{color:var(--get)}.m-post{color:var(--post)}.m-put{color:var(--put)}
+  .m-patch{color:var(--patch)}.m-delete{color:var(--delete)}
+  .p{overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,Consolas,monospace}
+  section{flex:1;overflow:auto;padding:18px 24px 60px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:15px 18px;margin-bottom:14px}
+  .card h2{font-size:12px;margin:0 0 12px;color:var(--muted);font-weight:600;
+    letter-spacing:1.5px;display:flex;justify-content:space-between;align-items:center}
+  .reqline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .reqline .m{width:auto;font-size:13px}
+  #req-path{flex:1;min-width:240px;font-size:13px;word-break:break-all}
+  .meta{color:var(--muted);font-size:12px}
+  .pp{display:flex;align-items:center;gap:8px;margin-top:10px}
+  .pp label{font-size:12px;color:var(--muted);flex:none}
+  .pp label::before{content:":"}
+  .pp input{border:1px solid var(--line);border-radius:6px;padding:5px 10px;
+    font:inherit;width:230px;font-family:ui-monospace,Consolas,monospace}
+  table.kv{width:100%;border-collapse:collapse;font-size:13px}
+  table.kv td{padding:3px 0;vertical-align:middle}
+  table.kv td:first-child{width:34%;padding-right:8px}
+  table.kv td:last-child{width:26px}
+  table.kv input{width:100%;border:1px solid var(--line);border-radius:6px;
+    padding:5px 10px;font:12.5px ui-monospace,Consolas,monospace}
+  table.kv button{background:none;color:var(--muted);font-size:15px;padding:0 4px}
+  table.kv button:hover{color:var(--delete)}
+  textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:6px;
+    padding:10px;background:#fff;color:inherit;resize:vertical;
+    font:12.5px/1.65 ui-monospace,Consolas,monospace}
+  .err{color:var(--delete);font-size:12px;margin-top:6px;display:none}
+  .actions{display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap}
+  #status{font-family:ui-monospace,Consolas,monospace;font-weight:700;font-size:15px}
+  .ok{color:var(--get)} .bad{color:var(--delete)}
+  pre{margin:10px 0 0;padding:12px;background:#fafaf7;border:1px solid var(--line);
+    border-radius:8px;overflow:auto;font:12.5px/1.65 ui-monospace,Consolas,monospace;
+    max-height:480px;white-space:pre}
+  .j-key{font-weight:600}.j-str{color:var(--get)}.j-num{color:var(--post)}
+  .j-bool{color:var(--put)}.j-null{color:var(--muted)}
+  #history{display:flex;flex-wrap:wrap;gap:8px}
+  .h-item{border:1px solid var(--line);border-radius:6px;padding:4px 10px;
+    font-size:12px;cursor:pointer;font-family:ui-monospace,Consolas,monospace}
+  .h-item:hover{background:var(--soft)}
+  details.resp-h{margin-top:10px}
+  details.resp-h summary{font-weight:400;color:var(--muted);font-size:12px;padding:2px 0}
+  details.resp-h pre{max-height:200px}
+  .hint{color:var(--muted);font-size:13px;padding:28px;text-align:center;line-height:2}
+  #scn-panel{border-bottom:1px solid var(--line)}
+  .scn{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 28px;cursor:pointer;font-size:13px}
+  .scn:hover,.scn.active{background:var(--soft)}
+  .scn .s-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .scn .p{color:var(--muted);font-size:11.5px;flex:none}
+  .step{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px;background:var(--panel)}
+  .step-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .step-head .idx{width:20px;height:20px;border-radius:50%;background:var(--soft);color:var(--muted);
+    display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+  .step-head .m{width:auto;font-size:11px}
+  .s-title{font-weight:600;font-size:13px;flex:none}
+  .s-path{flex:1;min-width:200px;font-size:12px;color:var(--muted);word-break:break-all}
+  .miss{color:var(--delete)}
+  .s-status{font-size:12px;font-family:ui-monospace,Consolas,monospace;flex:none}
+  .s-status.run{color:var(--muted)} .s-status.ok{color:var(--get)} .s-status.fail{color:var(--delete)}
+  .step button.run{padding:3px 12px;font-size:12px;flex:none}
+  .step-detail{margin-top:8px}
+  .step-detail summary{font-size:12px;color:var(--muted);font-weight:400;cursor:pointer;list-style:none}
+  .step-detail summary::before{content:"▸ ";color:var(--muted)}
+  .step-detail[open] summary::before{content:"▾ "}
+  .step-detail pre{margin-top:8px;max-height:300px}
+  .vars{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .var{background:var(--soft);border-radius:5px;padding:2px 8px;font-size:11.5px;
+    font-family:ui-monospace,Consolas,monospace;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .var b{font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>Aboutme API 调试</h1>
+  <input id="base" placeholder="服务器地址" spellcheck="false">
+  <input id="key" type="password" placeholder="X-API-Key 或 Bearer Token" spellcheck="false">
+  <button id="connect">连接</button>
+  <span id="conn-msg"></span>
+</header>
+<main>
+  <aside>
+    <div class="search"><input id="search" placeholder="搜索接口（名称 / 路径 / 方法）"></div>
+    <details id="scn-panel"><summary>测试场景 <span class="n" id="scn-count"></span></summary>
+      <div id="scn-items"></div>
+    </details>
+    <div id="groups"><div class="hint">输入 API Key 后点击「连接」<br>自动从 capabilities 加载接口清单</div></div>
+  </aside>
+  <section id="pane"><div class="hint">从左侧选择一个接口开始调试</div></section>
+</main>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const PREFIX = '/api/v1/plugins/';
+const BUILTIN = [
+  {actionId:'system.health', method:'GET', path:'/health', group:'system'},
+  {actionId:'system.version', method:'GET', path:'/version', group:'system'},
+  {actionId:'system.capabilities', method:'GET', path:PREFIX+'capabilities', group:'system'},
+];
+const state = {actions:[], selected:null, pathParams:{}, query:[], body:'', history:[]};
+
+$('#base').value = localStorage.getItem('debug_base') || location.origin;
+$('#key').value = localStorage.getItem('debug_key') || '';
+$('#connect').onclick = connect;
+$('#key').addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
+$('#search').addEventListener('input', e => renderGroups(e.target.value.trim().toLowerCase()));
+
+function normBase(v) { return (v || '').trim().replace(/\/+$/, ''); }
+function authHeaders(key) {
+  if (!key) return {};
+  return key.split('.').length === 3
+    ? {'Authorization': 'Bearer ' + key} : {'X-API-Key': key};
+}
+function groupOf(a) {
+  if (a.group) return a.group;
+  const seg = a.path.replace(PREFIX, '').split('/');
+  return seg[0] || 'root';
+}
+function relPath(a) {
+  const g = groupOf(a);
+  return a.group === 'system' ? a.path : (a.path.slice(PREFIX.length + g.length) || '/');
+}
+
+async function connect() {
+  const base = normBase($('#base').value);
+  const key = $('#key').value.trim();
+  localStorage.setItem('debug_base', base);
+  localStorage.setItem('debug_key', key);
+  const msg = $('#conn-msg');
+  msg.className = ''; msg.textContent = '连接中…';
+  try {
+    const res = await fetch(base + PREFIX + 'capabilities', {headers: authHeaders(key)});
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + (await res.text()).slice(0, 140));
+    const caps = await res.json();
+    state.actions = BUILTIN.concat(caps.actions || []);
+    renderGroups($('#search').value.trim().toLowerCase());
+    msg.textContent = '已加载 ' + (caps.actions || []).length + ' 个接口 · 协议 v' + caps.protocolVersion;
+  } catch (e) {
+    state.actions = BUILTIN.slice();
+    renderGroups('');
+    msg.className = 'bad';
+    msg.textContent = '连接失败：' + e.message + '（仅显示免认证的系统接口）';
+  }
+}
+
+function renderGroups(filter) {
+  const groups = new Map();
+  for (const a of state.actions) {
+    if (filter && !(a.actionId + ' ' + a.path + ' ' + a.method).toLowerCase().includes(filter)) continue;
+    const g = groupOf(a);
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(a);
+  }
+  const el = $('#groups');
+  el.innerHTML = '';
+  if (!state.actions.length) return;
+  if (!groups.size) { el.innerHTML = '<div class="hint">无匹配接口</div>'; return; }
+  for (const [g, list] of groups) {
+    const d = document.createElement('details');
+    d.open = !!filter || g === 'system';
+    const s = document.createElement('summary');
+    s.innerHTML = esc(g) + ' <span class="n">' + list.length + '</span>';
+    d.appendChild(s);
+    for (const a of list) {
+      const item = document.createElement('div');
+      item.className = 'api' + (state.selected === a ? ' active' : '');
+      item.innerHTML = '<span class="m m-' + a.method.toLowerCase() + '">' + a.method
+        + '</span><span class="p">' + esc(relPath(a)) + '</span>';
+      item._action = a;
+      item.onclick = () => select(a);
+      d.appendChild(item);
+    }
+    el.appendChild(d);
+  }
+}
+
+function select(a, restore) {
+  state.selected = a;
+  scnState.active = null;
+  renderScnList();
+  if (!restore) { state.pathParams = {}; state.query = a.method === 'GET' ? [{k:'',v:''}] : []; state.body = ''; }
+  updateActive();
+  renderPane();
+}
+
+// 选中态只切换高亮，不重建侧栏，避免分组展开状态被重置
+function updateActive() {
+  document.querySelectorAll('#groups .api').forEach(el => {
+    el.classList.toggle('active', el._action === state.selected);
+  });
+}
+
+function renderPane() {
+  const a = state.selected;
+  const params = [...a.path.matchAll(/:([A-Za-z_][\w-]*)/g)].map(m => m[1]);
+  const info = [a.resource && 'resource: ' + a.resource, a.permission && '权限: ' + a.permission,
+    a.capabilityVersion && 'v' + a.capabilityVersion].filter(Boolean).join(' · ');
+  let html = '<div class="card"><h2>请求' + (info ? '<span class="meta">' + esc(info) + '</span>' : '')
+    + '</h2>'
+    + '<div class="reqline"><span class="m m-' + a.method.toLowerCase() + '">' + a.method
+    + '</span><span id="req-path" class="mono">' + esc(a.path) + '</span></div>';
+  for (const p of params) {
+    html += '<div class="pp"><label>' + esc(p) + '</label>'
+      + '<input data-pp="' + esc(p) + '" value="' + esc(state.pathParams[p] || '')
+      + '" placeholder="路径参数 ' + esc(p) + '" spellcheck="false"></div>';
+  }
+  html += '<div style="margin-top:16px"></div><table class="kv" id="qtable">';
+  state.query.forEach((row, i) => {
+    html += '<tr><td><input data-qk="' + i + '" value="' + esc(row.k)
+      + '" placeholder="参数名（offset / count / fuzzy …）" spellcheck="false"></td>'
+      + '<td style="width:40%"><input data-qv="' + i + '" value="' + esc(row.v)
+      + '" placeholder="值" spellcheck="false"></td>'
+      + '<td><button data-qx="' + i + '" title="删除">×</button></td></tr>';
+  });
+  html += '</table><button class="ghost" id="q-add">＋ 添加 Query 参数</button>';
+  if (a.method !== 'GET') {
+    html += '<div style="margin-top:16px"></div>'
+      + '<textarea id="body" spellcheck="false" placeholder=\'请求体 JSON（留空则不发送）\'>'
+      + esc(state.body) + '</textarea>';
+  }
+  html += '<div class="err" id="form-err"></div>'
+    + '<div class="actions"><button id="send">发送</button>'
+    + '<button class="ghost" id="curl">复制 curl</button>'
+    + '<span class="meta" id="final-url"></span></div></div>'
+    + '<div class="card" id="resp-card" style="display:none"><h2>响应</h2>'
+    + '<div><span id="status"></span> <span class="meta" id="resp-meta"></span></div>'
+    + '<details class="resp-h"><summary>响应头</summary><pre id="resp-headers"></pre></details>'
+    + '<pre><code id="resp-body"></code></pre></div>'
+    + '<div class="card" id="hist-card" style="display:none"><h2>历史'
+    + '<button class="ghost" id="hist-clear">清空</button></h2><div id="history"></div></div>';
+  $('#pane').innerHTML = html;
+
+  $('#pane').querySelectorAll('[data-pp]').forEach(inp => {
+    inp.oninput = () => { state.pathParams[inp.dataset.pp] = inp.value; };
+  });
+  $('#pane').querySelectorAll('[data-qk]').forEach(inp => {
+    inp.oninput = () => { state.query[+inp.dataset.qk].k = inp.value; };
+  });
+  $('#pane').querySelectorAll('[data-qv]').forEach(inp => {
+    inp.oninput = () => { state.query[+inp.dataset.qv].v = inp.value; };
+  });
+  $('#pane').querySelectorAll('[data-qx]').forEach(btn => {
+    btn.onclick = () => { state.query.splice(+btn.dataset.qx, 1); renderPane(); };
+  });
+  $('#q-add').onclick = () => { state.query.push({k:'',v:''}); renderPane(); };
+  const bodyEl = $('#body');
+  if (bodyEl) bodyEl.oninput = () => { state.body = bodyEl.value; };
+  $('#send').onclick = send;
+  $('#curl').onclick = copyCurl;
+  $('#hist-clear').onclick = () => { state.history = []; renderHistory(); };
+  renderHistory();
+}
+
+function buildRequest() {
+  const a = state.selected;
+  const err = m => { const el = $('#form-err'); el.style.display = 'block'; el.textContent = m; return null; };
+  $('#form-err').style.display = 'none';
+  let url = a.path;
+  for (const m of a.path.matchAll(/:([A-Za-z_][\w-]*)/g)) {
+    const v = (state.pathParams[m[1]] || '').trim();
+    if (!v) return err('缺少路径参数：' + m[1]);
+    url = url.replace(':' + m[1], encodeURIComponent(v));
+  }
+  const qs = new URLSearchParams();
+  for (const row of state.query) {
+    if (row.k.trim()) qs.append(row.k.trim(), row.v);
+  }
+  const query = qs.toString();
+  if (query) url += (url.includes('?') ? '&' : '?') + query;
+  let body = null;
+  if (a.method !== 'GET') {
+    const text = state.body.trim();
+    if (text) {
+      try { body = JSON.parse(text); } catch (e) { return err('请求体不是合法 JSON：' + e.message); }
+      if (typeof body !== 'object' || body === null || Array.isArray(body))
+        return err('请求体必须是 JSON 对象 {}');
+    }
+  }
+  return {url, body: body === null ? undefined : JSON.stringify(body, null, 2)};
+}
+
+async function send() {
+  const a = state.selected;
+  const req = buildRequest();
+  if (!req) return;
+  const base = normBase($('#base').value);
+  const full = base + req.url;
+  $('#final-url').textContent = full;
+  const headers = Object.assign({'X-Device-ID': 'debug-page'}, authHeaders($('#key').value.trim()));
+  let payload;
+  if (req.body !== undefined) { headers['Content-Type'] = 'application/json'; payload = req.body; }
+  const card = $('#resp-card');
+  card.style.display = 'block';
+  $('#status').textContent = '…'; $('#status').className = '';
+  $('#resp-meta').textContent = '请求中';
+  $('#resp-headers').textContent = ''; $('#resp-body').innerHTML = '';
+  const t0 = performance.now();
+  let res, text;
+  try {
+    res = await fetch(full, {method: a.method, headers, body: payload});
+    text = await res.text();
+  } catch (e) {
+    $('#status').textContent = '网络错误'; $('#status').className = 'bad';
+    $('#resp-meta').textContent = e.message;
+    return;
+  }
+  const ms = Math.round(performance.now() - t0);
+  $('#status').textContent = 'HTTP ' + res.status;
+  $('#status').className = res.ok ? 'ok' : 'bad';
+  const size = new Blob([text]).size;
+  $('#resp-meta').textContent = ms + ' ms · ' + fmtSize(size);
+  $('#resp-headers').textContent = [...res.headers.entries()].map(([k, v]) => k + ': ' + v).join('\n');
+  let parsed = null;
+  try { parsed = JSON.parse(text); } catch (e) {}
+  $('#resp-body').innerHTML = parsed === null ? esc(text || '(空响应体)')
+    : highlight(JSON.stringify(parsed, null, 2));
+  state.history.unshift({
+    action: a,
+    pathParams: Object.assign({}, state.pathParams),
+    query: state.query.map(r => ({k: r.k, v: r.v})),
+    body: state.body, status: res.status, ms,
+  });
+  if (state.history.length > 20) state.history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const card = $('#hist-card');
+  if (!card) return;
+  card.style.display = state.history.length ? 'block' : 'none';
+  const el = $('#history');
+  el.innerHTML = '';
+  for (const h of state.history) {
+    const item = document.createElement('span');
+    item.className = 'h-item';
+    item.innerHTML = '<span class="m m-' + h.action.method.toLowerCase() + '">'
+      + h.action.method + '</span> ' + esc(relPath(h.action))
+      + ' <span class="' + (h.status < 400 ? 'ok' : 'bad') + '">' + h.status + '</span> · ' + h.ms + 'ms';
+    item.title = h.action.path;
+    item.onclick = () => {
+      state.pathParams = h.pathParams;
+      state.query = h.query.map(r => ({k: r.k, v: r.v}));
+      state.body = h.body;
+      select(h.action, true);
+    };
+    el.appendChild(item);
+  }
+}
+
+function copyCurl() {
+  const a = state.selected;
+  const req = buildRequest();
+  if (!req) return;
+  const key = $('#key').value.trim();
+  let cmd = 'curl -X ' + a.method + " '" + normBase($('#base').value) + req.url + "'";
+  if (key) cmd += " -H '" + (key.split('.').length === 3 ? 'Authorization: Bearer ' + key : 'X-API-Key: ' + key) + "'";
+  if (req.body !== undefined) cmd += " -H 'Content-Type: application/json' --data-raw '" + req.body + "'";
+  (navigator.clipboard ? navigator.clipboard.writeText(cmd) : Promise.reject())
+    .then(() => flash($('#curl'), '已复制'), () => {
+      const t = document.createElement('textarea');
+      t.value = cmd; document.body.appendChild(t); t.select();
+      document.execCommand('copy'); t.remove(); flash($('#curl'), '已复制');
+    });
+}
+
+function flash(btn, text) {
+  const old = btn.textContent;
+  btn.textContent = text;
+  setTimeout(() => { btn.textContent = old; }, 1200);
+}
+
+function fmtSize(n) { return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB'; }
+
+function highlight(json) {
+  return esc(json).replace(
+    /("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(?:\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+    m => {
+      let cls = 'num';
+      if (m.startsWith('"')) cls = /:$/.test(m) ? 'key' : 'str';
+      else if (/^(true|false)$/.test(m)) cls = 'bool';
+      else if (m === 'null') cls = 'null';
+      return '<span class="j-' + cls + '">' + m + '</span>';
+    });
+}
+
+// ==================== 测试场景 ====================
+// 步骤连续执行：extract 从本步响应按点路径提取变量（如 data.id），
+// 后续步骤在 path/pathParams/query/body 里用 {{变量名}} 引用，全程免手填。
+// {{ts}} 为每次进入场景时自动生成的时间戳；body 值整体为 '{{变量名}}' 且变量是
+// 对象/数组时按结构注入（用于快照原样写回）。新增场景：往 SCENARIOS 加一项即可。
+const SCENARIOS = [
+  {id:'chat-lifecycle', name:'聊天频道生命周期', desc:'创建频道 → 更新信息 → 发送消息 → 删除消息 → 删除频道', steps:[
+    {title:'创建频道', method:'POST', path:PREFIX+'chat/channels',
+      body:{name:'scn-channel-{{ts}}', description:'created by scenario'},
+      extract:{channelId:'data.id', channelName:'data.name'}},
+    {title:'更新频道信息', method:'PUT', path:PREFIX+'chat/channels/:id',
+      pathParams:{id:'{{channelId}}'},
+      body:{name:'{{channelName}}-updated', description:'updated by scenario'},
+      extract:{channelName:'data.name'}},
+    {title:'发送消息', method:'POST', path:PREFIX+'chat/channels/:channelId/messages',
+      pathParams:{channelId:'{{channelId}}'},
+      body:{content:'msg from {{channelName}} {{ts}}', senderId:'debug-page', senderName:'Debug'},
+      extract:{messageId:'data.id'}},
+    {title:'删除消息', method:'DELETE', path:PREFIX+'chat/channels/:channelId/messages/:messageId',
+      pathParams:{channelId:'{{channelId}}', messageId:'{{messageId}}'}},
+    {title:'删除频道', method:'DELETE', path:PREFIX+'chat/channels/:id',
+      pathParams:{id:'{{channelId}}'}},
+  ]},
+  {id:'notes-lifecycle', name:'笔记生命周期', desc:'建文件夹 → 建笔记 → 更新 → 搜索 → 删笔记 → 删文件夹', steps:[
+    {title:'创建文件夹', method:'POST', path:PREFIX+'notes/folders',
+      body:{name:'scn-folder-{{ts}}'}, extract:{folderId:'data.id'}},
+    {title:'创建笔记', method:'POST', path:PREFIX+'notes/notes',
+      body:{title:'scn-note-{{ts}}', content:'created by scenario', folderId:'{{folderId}}'},
+      extract:{noteId:'data.id'}},
+    {title:'更新笔记', method:'PUT', path:PREFIX+'notes/notes/:id',
+      pathParams:{id:'{{noteId}}'}, body:{title:'scn-note-updated', tags:['scenario']}},
+    {title:'搜索笔记', method:'GET', path:PREFIX+'notes/search', query:{keyword:'scn-note'}},
+    {title:'删除笔记', method:'DELETE', path:PREFIX+'notes/notes/:id', pathParams:{id:'{{noteId}}'}},
+    {title:'删除文件夹', method:'DELETE', path:PREFIX+'notes/folders/:id', pathParams:{id:'{{folderId}}'}},
+  ]},
+  {id:'todo-lifecycle', name:'待办任务生命周期', desc:'创建任务 → 更新 → 完成 → 查询 → 删除', steps:[
+    {title:'创建任务', method:'POST', path:PREFIX+'todo/tasks',
+      body:{title:'scn-task-{{ts}}', priority:1}, extract:{taskId:'data.id'}},
+    {title:'更新任务', method:'PUT', path:PREFIX+'todo/tasks/:id',
+      pathParams:{id:'{{taskId}}'}, body:{title:'scn-task-updated', priority:2}},
+    {title:'完成任务', method:'POST', path:PREFIX+'todo/tasks/:id/complete',
+      pathParams:{id:'{{taskId}}'}},
+    {title:'查询任务', method:'GET', path:PREFIX+'todo/tasks/:id',
+      pathParams:{id:'{{taskId}}'}, extract:{taskStatus:'data.status'}},
+    {title:'删除任务', method:'DELETE', path:PREFIX+'todo/tasks/:id',
+      pathParams:{id:'{{taskId}}'}},
+  ]},
+  {id:'diary-lifecycle', name:'日记生命周期', desc:'写日记 → 更新 → 搜索 → 删除', steps:[
+    {title:'写日记', method:'POST', path:PREFIX+'diary/entries',
+      body:{date:'2026-10-24', content:'scn diary {{ts}}', mood:'😊', weather:'sunny', tags:['scn']},
+      extract:{diaryDate:'data.date'}},
+    {title:'更新日记', method:'PUT', path:PREFIX+'diary/entries/:date',
+      pathParams:{date:'{{diaryDate}}'}, body:{content:'scn diary updated', mood:'🎉'}},
+    {title:'搜索日记', method:'GET', path:PREFIX+'diary/search', query:{keyword:'scn diary'}},
+    {title:'删除日记', method:'DELETE', path:PREFIX+'diary/entries/:date',
+      pathParams:{date:'{{diaryDate}}'}},
+  ]},
+  {id:'activity-lifecycle', name:'活动记录生命周期', desc:'创建活动 → 查询 → 更新 → 今日统计 → 删除', steps:[
+    {title:'创建活动', method:'POST', path:PREFIX+'activity/activities',
+      body:{title:'scn-act-{{ts}}', startTime:'2026-10-24T10:00:00', endTime:'2026-10-24T11:00:00'},
+      extract:{actId:'data.id'}},
+    {title:'查询活动', method:'GET', path:PREFIX+'activity/activities/:id', pathParams:{id:'{{actId}}'}},
+    {title:'更新活动', method:'PUT', path:PREFIX+'activity/activities/:id',
+      pathParams:{id:'{{actId}}'}, body:{title:'scn-act-updated', mood:4}},
+    {title:'今日统计', method:'GET', path:PREFIX+'activity/stats/today'},
+    {title:'删除活动', method:'DELETE', path:PREFIX+'activity/activities/:id', pathParams:{id:'{{actId}}'}},
+  ]},
+  {id:'bill-lifecycle', name:'账单生命周期', desc:'建账户 → 记账 → 改账单 → 统计 → 删账单 → 删账户', steps:[
+    {title:'创建账户', method:'POST', path:PREFIX+'bill/accounts',
+      body:{name:'scn-acc-{{ts}}', balance:100}, extract:{accId:'data.id'}},
+    {title:'记账', method:'POST', path:PREFIX+'bill/accounts/:accountId/bills',
+      pathParams:{accountId:'{{accId}}'},
+      body:{type:'expense', amount:9.9, category:'test', description:'scn'},
+      extract:{billId:'data.id'}},
+    {title:'修改账单', method:'PUT', path:PREFIX+'bill/bills/:id',
+      pathParams:{id:'{{billId}}'}, body:{amount:19.9}},
+    {title:'账单统计', method:'GET', path:PREFIX+'bill/stats'},
+    {title:'删除账单', method:'DELETE', path:PREFIX+'bill/bills/:id', pathParams:{id:'{{billId}}'}},
+    {title:'删除账户', method:'DELETE', path:PREFIX+'bill/accounts/:id', pathParams:{id:'{{accId}}'}},
+  ]},
+  {id:'calendar-lifecycle', name:'日历事件生命周期', desc:'创建事件 → 更新 → 完成 → 搜索 → 删除', steps:[
+    {title:'创建事件', method:'POST', path:PREFIX+'calendar/events',
+      body:{title:'scn-event-{{ts}}', startTime:'2026-10-24T10:00:00', endTime:'2026-10-24T11:00:00'},
+      extract:{eventId:'data.id'}},
+    {title:'更新事件', method:'PUT', path:PREFIX+'calendar/events/:id',
+      pathParams:{id:'{{eventId}}'}, body:{title:'scn-event-updated'}},
+    {title:'完成事件', method:'POST', path:PREFIX+'calendar/events/:id/complete',
+      pathParams:{id:'{{eventId}}'}},
+    {title:'搜索事件', method:'GET', path:PREFIX+'calendar/events/search', query:{keyword:'scn-event'}},
+    {title:'删除事件', method:'DELETE', path:PREFIX+'calendar/events/:id', pathParams:{id:'{{eventId}}'}},
+  ]},
+  {id:'calendar_album-lifecycle', name:'日历相册生命周期', desc:'添加相册条目 → 更新 → 标签 → 删除', steps:[
+    {title:'添加条目', method:'POST', path:PREFIX+'calendar_album/entries',
+      body:{date:'2026-10-24', title:'scn-album-{{ts}}', content:'scn album entry'}, extract:{entryId:'data.id'}},
+    {title:'更新条目', method:'PUT', path:PREFIX+'calendar_album/entries/:date/:id',
+      pathParams:{date:'2026-10-24', id:'{{entryId}}'}, body:{title:'scn-album-updated', content:'scn album updated'}},
+    {title:'读取标签', method:'GET', path:PREFIX+'calendar_album/tags'},
+    {title:'删除条目', method:'DELETE', path:PREFIX+'calendar_album/entries/:date/:id',
+      pathParams:{date:'2026-10-24', id:'{{entryId}}'}},
+  ]},
+  {id:'checkin-lifecycle', name:'打卡项目生命周期', desc:'建项目 → 打卡 → 统计 → 更新 → 删除', steps:[
+    {title:'创建项目', method:'POST', path:PREFIX+'checkin/items',
+      body:{name:'scn-checkin-{{ts}}', group:'test'}, extract:{itemId:'data.id'}},
+    {title:'打卡', method:'POST', path:PREFIX+'checkin/items/:id/checkin',
+      pathParams:{id:'{{itemId}}'}, body:{date:'2026-10-24', note:'scn'}},
+    {title:'打卡统计', method:'GET', path:PREFIX+'checkin/stats'},
+    {title:'更新项目', method:'PUT', path:PREFIX+'checkin/items/:id',
+      pathParams:{id:'{{itemId}}'}, body:{name:'scn-checkin-updated'}},
+    {title:'删除项目', method:'DELETE', path:PREFIX+'checkin/items/:id', pathParams:{id:'{{itemId}}'}},
+  ]},
+  {id:'contact-lifecycle', name:'联系人生命周期', desc:'建联系人 → 记互动 → 更新 → 删互动 → 删联系人', steps:[
+    {title:'创建联系人', method:'POST', path:PREFIX+'contact/contacts',
+      body:{name:'scn-contact-{{ts}}', phone:'13800000000'}, extract:{contactId:'data.id'}},
+    {title:'记录互动', method:'POST', path:PREFIX+'contact/interactions',
+      body:{contactId:'{{contactId}}', notes:'scn meeting', date:'2026-10-24T10:00:00'},
+      extract:{interactionId:'data.id'}},
+    {title:'更新联系人', method:'PUT', path:PREFIX+'contact/contacts/:id',
+      pathParams:{id:'{{contactId}}'}, body:{tags:['scn']}},
+    {title:'删除互动', method:'DELETE', path:PREFIX+'contact/interactions/:id',
+      pathParams:{id:'{{interactionId}}'}},
+    {title:'删除联系人', method:'DELETE', path:PREFIX+'contact/contacts/:id',
+      pathParams:{id:'{{contactId}}'}},
+  ]},
+  {id:'day-lifecycle', name:'纪念日生命周期', desc:'创建纪念日 → 更新 → 搜索 → 删除', steps:[
+    {title:'创建纪念日', method:'POST', path:PREFIX+'day/days',
+      body:{title:'scn-day-{{ts}}', date:'2027-01-01', type:'countdown'}, extract:{dayId:'data.id'}},
+    {title:'更新纪念日', method:'PUT', path:PREFIX+'day/days/:id',
+      pathParams:{id:'{{dayId}}'}, body:{title:'scn-day-updated'}},
+    {title:'搜索纪念日', method:'GET', path:PREFIX+'day/search', query:{keyword:'scn-day'}},
+    {title:'删除纪念日', method:'DELETE', path:PREFIX+'day/days/:id', pathParams:{id:'{{dayId}}'}},
+  ]},
+  {id:'goods-lifecycle', name:'物品库存生命周期', desc:'建仓库 → 建物品 → 更新 → 搜索 → 删物品 → 删仓库', steps:[
+    {title:'创建仓库', method:'POST', path:PREFIX+'goods/warehouses',
+      body:{name:'scn-wh-{{ts}}'}, extract:{whId:'data.id'}},
+    {title:'创建物品', method:'POST', path:PREFIX+'goods/items',
+      body:{name:'scn-item-{{ts}}', warehouseId:'{{whId}}', quantity:3, category:'test'},
+      extract:{itemId:'data.id'}},
+    {title:'更新物品', method:'PUT', path:PREFIX+'goods/items/:id',
+      pathParams:{id:'{{itemId}}'}, body:{quantity:5}},
+    {title:'搜索物品', method:'GET', path:PREFIX+'goods/search', query:{keyword:'scn-item'}},
+    {title:'删除物品', method:'DELETE', path:PREFIX+'goods/items/:id', pathParams:{id:'{{itemId}}'}},
+    {title:'删除仓库', method:'DELETE', path:PREFIX+'goods/warehouses/:id', pathParams:{id:'{{whId}}'}},
+  ]},
+  {id:'habits-lifecycle', name:'习惯生命周期', desc:'建习惯 → 打卡 → 更新 → 删记录 → 删习惯', steps:[
+    {title:'创建习惯', method:'POST', path:PREFIX+'habits/habits',
+      body:{title:'scn-habit-{{ts}}'}, extract:{habitId:'data.id'}},
+    {title:'习惯打卡', method:'POST', path:PREFIX+'habits/records',
+      body:{parentId:'{{habitId}}', date:'2026-10-24'}, extract:{recordId:'data.id'}},
+    {title:'更新习惯', method:'PUT', path:PREFIX+'habits/habits/:id',
+      pathParams:{id:'{{habitId}}'}, body:{title:'scn-habit-updated'}},
+    {title:'删除记录', method:'DELETE', path:PREFIX+'habits/records/:id',
+      pathParams:{id:'{{recordId}}'}},
+    {title:'删除习惯', method:'DELETE', path:PREFIX+'habits/habits/:id',
+      pathParams:{id:'{{habitId}}'}},
+  ]},
+  {id:'media_log-lifecycle', name:'媒体记录生命周期', desc:'添加条目 → 写评论 → 更新 → 删评论 → 删除条目', steps:[
+    {title:'添加条目', method:'POST', path:PREFIX+'media_log/items',
+      body:{title:'scn-media-{{ts}}', type:'movie', status:'completed'}, extract:{mediaId:'data.id'}},
+    {title:'写评论', method:'POST', path:PREFIX+'media_log/items/:itemId/reviews',
+      pathParams:{itemId:'{{mediaId}}'}, body:{rating:5, text:'scn good'},
+      extract:{reviewId:'data.id'}},
+    {title:'更新条目', method:'PUT', path:PREFIX+'media_log/items/:id',
+      pathParams:{id:'{{mediaId}}'}, body:{status:'watching'}},
+    {title:'删除评论', method:'DELETE', path:PREFIX+'media_log/items/:itemId/reviews/:reviewId',
+      pathParams:{itemId:'{{mediaId}}', reviewId:'{{reviewId}}'}},
+    {title:'删除条目', method:'DELETE', path:PREFIX+'media_log/items/:id',
+      pathParams:{id:'{{mediaId}}'}},
+  ]},
+  {id:'nodes-lifecycle', name:'笔记本节点生命周期', desc:'建笔记本 → 建节点 → 更新 → 删节点 → 删笔记本', steps:[
+    {title:'创建笔记本', method:'POST', path:PREFIX+'nodes/notebooks',
+      body:{title:'scn-notebook-{{ts}}'}, extract:{nbId:'data.id'}},
+    {title:'创建节点', method:'POST', path:PREFIX+'nodes/notebooks/:notebookId/nodes',
+      pathParams:{notebookId:'{{nbId}}'}, body:{title:'scn-node', content:'hello'},
+      extract:{nodeId:'data.id'}},
+    {title:'更新节点', method:'PATCH', path:PREFIX+'nodes/notebooks/:notebookId/nodes/:id',
+      pathParams:{notebookId:'{{nbId}}', id:'{{nodeId}}'}, body:{title:'scn-node-updated'}},
+    {title:'删除节点', method:'DELETE', path:PREFIX+'nodes/notebooks/:notebookId/nodes/:id',
+      pathParams:{notebookId:'{{nbId}}', id:'{{nodeId}}'}},
+    {title:'删除笔记本', method:'DELETE', path:PREFIX+'nodes/notebooks/:id',
+      pathParams:{id:'{{nbId}}'}},
+  ]},
+  {id:'store-lifecycle', name:'积分商店生命周期', desc:'上架商品 → 加积分 → 兑换 → 使用 → 下架商品', steps:[
+    {title:'上架商品', method:'POST', path:PREFIX+'store/products',
+      body:{name:'scn-product-{{ts}}', price:10, stock:5, use_duration:30},
+      extract:{productId:'data.id'}},
+    {title:'增加积分', method:'POST', path:PREFIX+'store/points',
+      body:{value:100, reason:'scn'}},
+    {title:'兑换商品', method:'POST', path:PREFIX+'store/purchase',
+      body:{productId:'{{productId}}'}, extract:{userItemId:'data.userItem.id'}},
+    {title:'使用物品', method:'POST', path:PREFIX+'store/user-items/:id/use',
+      pathParams:{id:'{{userItemId}}'}},
+    {title:'下架商品', method:'DELETE', path:PREFIX+'store/products/:id',
+      pathParams:{id:'{{productId}}'}},
+  ]},
+  {id:'tracker-lifecycle', name:'追踪目标生命周期', desc:'建目标 → 记录 → 查记录 → 更新 → 清记录 → 删目标', steps:[
+    {title:'创建目标', method:'POST', path:PREFIX+'tracker/goals',
+      body:{name:'scn-goal-{{ts}}', targetValue:100, unit:'min'}, extract:{goalId:'data.id'}},
+    {title:'添加记录', method:'POST', path:PREFIX+'tracker/records',
+      body:{goalId:'{{goalId}}', value:30, date:'2026-10-24'}, extract:{recordId:'data.id'}},
+    {title:'查询目标记录', method:'GET', path:PREFIX+'tracker/goals/:goalId/records',
+      pathParams:{goalId:'{{goalId}}'}},
+    {title:'更新目标', method:'PUT', path:PREFIX+'tracker/goals/:id',
+      pathParams:{id:'{{goalId}}'}, body:{name:'scn-goal-updated'}},
+    {title:'清空记录', method:'DELETE', path:PREFIX+'tracker/goals/:goalId/records',
+      pathParams:{goalId:'{{goalId}}'}},
+    {title:'删除目标', method:'DELETE', path:PREFIX+'tracker/goals/:id',
+      pathParams:{id:'{{goalId}}'}},
+  ]},
+  {id:'database-lifecycle', name:'自定义数据库生命周期', desc:'建库 → 插记录 → 改记录 → 删记录 → 删库', steps:[
+    {title:'创建数据库', method:'POST', path:PREFIX+'database/databases',
+      body:{name:'scn-db-{{ts}}'}, extract:{dbId:'data.id'}},
+    {title:'插入记录', method:'POST', path:PREFIX+'database/records',
+      body:{databaseId:'{{dbId}}', data:{foo:'bar'}}, extract:{recordId:'data.id'}},
+    {title:'更新记录', method:'PUT', path:PREFIX+'database/records/:id',
+      pathParams:{id:'{{recordId}}'}, body:{databaseId:'{{dbId}}', data:{foo:'baz'}}},
+    {title:'删除记录', method:'DELETE', path:PREFIX+'database/records/:id',
+      pathParams:{id:'{{recordId}}'}, body:{databaseId:'{{dbId}}'}},
+    {title:'删除数据库', method:'DELETE', path:PREFIX+'database/databases/:id',
+      pathParams:{id:'{{dbId}}'}},
+  ]},
+  {id:'agent_chat-lifecycle', name:'AI 会话生命周期', desc:'建会话 → 加消息 → 更新会话 → 删除会话', steps:[
+    {title:'创建会话', method:'POST', path:PREFIX+'agent_chat/conversations',
+      body:{title:'scn-conv-{{ts}}'}, extract:{convId:'data.id'}},
+    {title:'添加消息', method:'POST', path:PREFIX+'agent_chat/conversations/:conversationId/messages',
+      pathParams:{conversationId:'{{convId}}'}, body:{role:'user', content:'scn hello'},
+      extract:{msgId:'data.id'}},
+    {title:'更新会话', method:'PATCH', path:PREFIX+'agent_chat/conversations/:id',
+      pathParams:{id:'{{convId}}'}, body:{title:'scn-conv-updated'}},
+    {title:'删除会话', method:'DELETE', path:PREFIX+'agent_chat/conversations/:id',
+      pathParams:{id:'{{convId}}'}},
+  ]},
+  {id:'webview-storage', name:'网页组件 KV 存储', desc:'读标签页 → 写存储 → 读回 → 清除', steps:[
+    {title:'读取标签页', method:'GET', path:PREFIX+'webview/tabs'},
+    {title:'写入存储', method:'PUT', path:PREFIX+'webview/storage/:key',
+      pathParams:{key:'scn-key-{{ts}}'}, body:{hello:'scn', ts:'{{ts}}'}},
+    {title:'读取存储', method:'GET', path:PREFIX+'webview/storage/:key',
+      pathParams:{key:'scn-key-{{ts}}'}},
+    {title:'清除存储', method:'DELETE', path:PREFIX+'webview/storage/:key',
+      pathParams:{key:'scn-key-{{ts}}'}},
+  ]},
+  {id:'scripts_center-lifecycle', name:'脚本生命周期', desc:'建脚本 → 改元数据 → 删除', steps:[
+    {title:'创建脚本', method:'POST', path:PREFIX+'scripts_center/scripts',
+      body:{id:'scn-script-{{ts}}', metadata:{title:'scn script'}, code:'console.log(1)'},
+      extract:{scriptId:'data.id'}},
+    {title:'更新元数据', method:'PUT', path:PREFIX+'scripts_center/scripts/:id/meta',
+      pathParams:{id:'{{scriptId}}'}, body:{metadata:{title:'scn script updated'}}},
+    {title:'删除脚本', method:'DELETE', path:PREFIX+'scripts_center/scripts/:id',
+      pathParams:{id:'{{scriptId}}'}},
+  ]},
+  {id:'assets-lifecycle', name:'资源上传生命周期', desc:'上传 base64 资源 → 读元数据 → 删除', steps:[
+    {title:'上传资源', method:'POST', path:PREFIX+'assets/',
+      body:{fileName:'scn-asset-{{ts}}.txt', mediaType:'text/plain', content:'c2NuIGhlbGxv'},
+      extract:{assetId:'data.id'}},
+    {title:'读取元数据', method:'GET', path:PREFIX+'assets/:id/metadata',
+      pathParams:{id:'{{assetId}}'}},
+    {title:'删除资源', method:'DELETE', path:PREFIX+'assets/:id', pathParams:{id:'{{assetId}}'}},
+  ]},
+  {id:'system-readonly', name:'插件系统（只读）', desc:'插件注册表与商店配置读取', steps:[
+    {title:'插件注册表', method:'GET', path:PREFIX+'system/registry'},
+    {title:'商店配置', method:'GET', path:PREFIX+'system/store-config'},
+  ]},
+  {id:'snapshot-rw', name:'本地快照读写（幂等）', desc:'timer/achievement/reminder/live2d/tts：读取快照 → 原样写回', steps:[
+    {title:'timer 读取', method:'GET', path:PREFIX+'timer/snapshot', extract:{snap:'data'}},
+    {title:'timer 写回', method:'PUT', path:PREFIX+'timer/snapshot', body:{snapshot:'{{snap}}'}},
+    {title:'achievement 读取', method:'GET', path:PREFIX+'achievement/snapshot', extract:{snap:'data'}},
+    {title:'achievement 写回', method:'PUT', path:PREFIX+'achievement/snapshot', body:{snapshot:'{{snap}}'}},
+    {title:'reminder 读取', method:'GET', path:PREFIX+'reminder/snapshot', extract:{snap:'data'}},
+    {title:'reminder 写回', method:'PUT', path:PREFIX+'reminder/snapshot', body:{snapshot:'{{snap}}'}},
+    {title:'live2d 读取', method:'GET', path:PREFIX+'live2d/snapshot', extract:{snap:'data'}},
+    {title:'live2d 写回', method:'PUT', path:PREFIX+'live2d/snapshot', body:{snapshot:'{{snap}}'}},
+    {title:'tts 读取', method:'GET', path:PREFIX+'tts/snapshot', extract:{snap:'data'}},
+    {title:'tts 写回', method:'PUT', path:PREFIX+'tts/snapshot', body:{snapshot:'{{snap}}'}},
+  ]},
+  {id:'config-readonly', name:'工具与 AI 配置（只读）', desc:'photo_editor / toolbox / openai 配置读取', steps:[
+    {title:'图片编辑历史', method:'GET', path:PREFIX+'photo_editor/history'},
+    {title:'AI 生图历史', method:'GET', path:PREFIX+'toolbox/ai-image/history'},
+    {title:'搜图历史', method:'GET', path:PREFIX+'toolbox/image-search/history'},
+    {title:'openai agents', method:'GET', path:PREFIX+'openai/agents'},
+    {title:'openai presets', method:'GET', path:PREFIX+'openai/presets'},
+    {title:'openai providers', method:'GET', path:PREFIX+'openai/providers'},
+  ]},
+];
+const scnState = {active:null, vars:{}, results:[], running:false};
+
+function renderScnList() {
+  $('#scn-count').textContent = SCENARIOS.length;
+  const box = $('#scn-items');
+  box.innerHTML = '';
+  for (const scn of SCENARIOS) {
+    const item = document.createElement('div');
+    item.className = 'scn' + (scnState.active === scn ? ' active' : '');
+    item.innerHTML = '<span class="s-name">◈ ' + esc(scn.name) + '</span><span class="p">'
+      + scn.steps.length + ' 步</span>';
+    item.onclick = () => selectScenario(scn);
+    box.appendChild(item);
+  }
+}
+
+function selectScenario(scn) {
+  state.selected = null;
+  scnState.active = scn;
+  scnState.vars = {ts: Date.now().toString(36)};
+  scnState.results = scn.steps.map(() => ({}));
+  scnState.running = false;
+  updateActive();
+  renderScnList();
+  renderScnPanel();
+}
+
+function renderScnPanel() {
+  const scn = scnState.active;
+  let html = '<div class="card"><h2>测试场景 · ' + esc(scn.name)
+    + '<span class="meta">' + esc(scn.desc) + '</span></h2>'
+    + '<div class="actions" style="margin-top:0">'
+    + '<button id="scn-run">▶ 全部执行</button>'
+    + '<button class="ghost" id="scn-reset">重置</button>'
+    + '<span class="meta" id="scn-msg"></span></div>'
+    + '<div class="vars" id="scn-vars"></div></div>';
+  scn.steps.forEach((step, i) => {
+    html += '<div class="step"><div class="step-head">'
+      + '<span class="idx">' + (i + 1) + '</span>'
+      + '<span class="s-title">' + esc(step.title) + '</span>'
+      + '<span class="m m-' + step.method.toLowerCase() + '">' + step.method + '</span>'
+      + '<span class="s-path mono" id="spath-' + i + '"></span>'
+      + '<span class="s-status" id="sstat-' + i + '"></span>'
+      + '<button class="run" id="srun-' + i + '">执行</button></div>'
+      + '<details class="step-detail" id="sdet-' + i + '"><summary>请求 / 响应</summary>'
+      + '<div class="req mono meta" id="sreq-' + i + '"></div>'
+      + '<pre><code id="sresp-' + i + '"></code></pre></details></div>';
+  });
+  $('#pane').innerHTML = html;
+  scn.steps.forEach((step, i) => { $('#srun-' + i).onclick = () => runStep(i); });
+  $('#scn-run').onclick = runAll;
+  $('#scn-reset').onclick = () => selectScenario(scn);
+  refreshStepViews();
+}
+
+function refreshStepViews() {
+  const scn = scnState.active;
+  if (!scn) return;
+  scn.steps.forEach((step, i) => {
+    const r = scnState.results[i];
+    $('#spath-' + i).innerHTML = markMissing(pathPreview(step, scnState.vars));
+    const stat = $('#sstat-' + i);
+    stat.className = 's-status';
+    if (r.status === 'running') { stat.classList.add('run'); stat.textContent = '执行中…'; }
+    else if (r.status === 'ok') { stat.classList.add('ok'); stat.textContent = '✓ ' + r.http + ' · ' + r.ms + 'ms'; }
+    else if (r.status === 'fail') { stat.classList.add('fail'); stat.textContent = '✗ ' + (r.http || '错误'); }
+    else stat.textContent = '';
+  });
+  const entries = Object.entries(scnState.vars);
+  $('#scn-vars').innerHTML = entries.length
+    ? entries.map(([k, v]) => {
+        const s = String(v);
+        return '<span class="var" title="' + esc(s) + '"><b>' + esc(k) + '</b>='
+          + esc(s.length > 24 ? s.slice(0, 24) + '…' : s) + '</span>';
+      }).join('')
+    : '<span class="meta">（变量将在步骤执行后自动提取，供后续步骤引用）</span>';
+}
+
+function fillTpl(s, vars) {
+  return String(s).replace(/\{\{(\w+)\}\}/g, (m, k) => vars[k] === undefined ? m : String(vars[k]));
+}
+
+function markMissing(s) { return s.replace(/\{\{(\w+)\}\}/g, m => '<span class="miss">' + m + '</span>'); }
+
+function missingVars(step, vars) {
+  const need = new Set();
+  const scan = v => {
+    for (const m of String(v).match(/\{\{(\w+)\}\}/g) || []) {
+      const k = m.slice(2, -2);
+      if (vars[k] === undefined) need.add(k);
+    }
+  };
+  scan(step.path);
+  Object.values(step.pathParams || {}).forEach(scan);
+  Object.values(step.query || {}).forEach(scan);
+  if (step.body !== undefined) scan(JSON.stringify(step.body));
+  return [...need];
+}
+
+function buildUrl(step, vars) {
+  let url = fillTpl(step.path, vars);
+  for (const [k, v] of Object.entries(step.pathParams || {}))
+    url = url.replace(':' + k, encodeURIComponent(fillTpl(v, vars)));
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(step.query || {})) qs.append(k, fillTpl(v, vars));
+  const q = qs.toString();
+  if (q) url += (url.includes('?') ? '&' : '?') + q;
+  return url;
+}
+
+function pathPreview(step, vars) { return esc(buildUrl(step, vars)); }
+
+function getByPath(obj, path) {
+  return path.replace(/\[(\d+)\]/g, '.$1').split('.').filter(Boolean)
+    .reduce((o, k) => (o == null ? undefined : o[k]), obj);
+}
+
+// body 值整体为 {{变量名}} 且变量为对象/数组时按结构注入（其余仍走文本替换）
+function materializeBody(body, vars) {
+  const out = Array.isArray(body) ? [] : {};
+  for (const [k, v] of Object.entries(body)) {
+    if (typeof v === 'string') {
+      const m = v.match(/^\{\{(\w+)\}\}$/);
+      if (m && vars[m[1]] !== undefined && vars[m[1]] !== null && typeof vars[m[1]] === 'object') {
+        out[k] = vars[m[1]];
+        continue;
+      }
+    }
+    out[k] = (v && typeof v === 'object') ? materializeBody(v, vars) : v;
+  }
+  return out;
+}
+
+async function sendRaw(step, vars) {
+  const url = buildUrl(step, vars);
+  let payload;
+  if (step.body !== undefined && step.method !== 'GET')
+    payload = fillTpl(JSON.stringify(materializeBody(step.body, vars)), vars);
+  const headers = Object.assign({'X-Device-ID': 'debug-page'}, authHeaders($('#key').value.trim()));
+  if (payload) headers['Content-Type'] = 'application/json';
+  const t0 = performance.now();
+  const res = await fetch(normBase($('#base').value) + url, {method: step.method, headers, body: payload});
+  const text = await res.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch (e) {}
+  return {http: res.status, ok: res.ok, ms: Math.round(performance.now() - t0), json, text, url, payload};
+}
+
+async function runStep(i) {
+  if (scnState.running) return;
+  const scn = scnState.active;
+  const step = scn.steps[i];
+  const r = scnState.results[i];
+  const need = missingVars(step, scnState.vars);
+  if (need.length) {
+    r.status = 'fail'; r.http = 0;
+    $('#sdet-' + i).open = true;
+    $('#sreq-' + i).textContent = '';
+    $('#sresp-' + i).textContent = '缺少变量 ' + need.join(', ') + '，请先执行前面的步骤';
+    refreshStepViews();
+    return;
+  }
+  scnState.running = true;
+  r.status = 'running';
+  refreshStepViews();
+  try {
+    const out = await sendRaw(step, scnState.vars);
+    Object.assign(r, out, {status: out.ok ? 'ok' : 'fail'});
+    if (out.ok && step.extract) {
+      const warns = [];
+      for (const [name, path] of Object.entries(step.extract)) {
+        const v = getByPath(out.json, path);
+        if (v === undefined) warns.push('提取失败 ' + name + ' ← ' + path);
+        else scnState.vars[name] = v;
+      }
+      r.warns = warns;
+    }
+  } catch (e) {
+    Object.assign(r, {status: 'fail', http: 0, ms: 0, text: e.message, json: null});
+  }
+  scnState.running = false;
+  $('#sdet-' + i).open = true;
+  $('#sreq-' + i).textContent = step.method + ' ' + r.url + (r.payload ? '\n' + r.payload : '');
+  const rc = $('#sresp-' + i);
+  let bodyHtml = r.json ? highlight(JSON.stringify(r.json, null, 2)) : esc(r.text || '');
+  if (r.warns && r.warns.length) bodyHtml += '\n<span class="s-status fail">' + esc(r.warns.join('；')) + '</span>';
+  rc.innerHTML = bodyHtml;
+  refreshStepViews();
+}
+
+async function runAll() {
+  if (scnState.running) return;
+  const scn = scnState.active;
+  selectScenario(scn);
+  const msg = $('#scn-msg');
+  msg.classList.remove('bad');
+  for (let i = 0; i < scn.steps.length; i++) {
+    msg.textContent = '执行中 ' + (i + 1) + '/' + scn.steps.length + '…';
+    await runStep(i);
+    if (scnState.results[i].status !== 'ok') {
+      msg.textContent = '第 ' + (i + 1) + ' 步失败，已停止（展开该步查看响应）';
+      msg.classList.add('bad');
+      return;
+    }
+  }
+  msg.textContent = '全部 ' + scn.steps.length + ' 步执行成功 ✓';
+}
+
+// 初始化放在最后：SCENARIOS/scnState 均为 const，避免暂时性死区（TDZ）
+renderScnList();
+</script>
+</body>
+</html>

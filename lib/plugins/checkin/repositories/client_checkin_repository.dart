@@ -6,6 +6,7 @@ library;
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:shared_models/shared_models.dart';
+import 'package:flutter/foundation.dart';
 
 /// 客户端 Checkin Repository 实现
 class ClientCheckinRepository extends ICheckinRepository {
@@ -33,11 +34,13 @@ class ClientCheckinRepository extends ICheckinRepository {
     try {
       return Result.success(await run());
     } on QueryFailure catch (e) {
+      debugPrint('[CheckinRepository] 请求失败: ${e.result['code']} ${e.result['error']}');
       return Result.failure(
         '${e.result['error'] ?? e}',
         code: e.result['code'] as String? ?? ErrorCodes.serverError,
       );
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[CheckinRepository] 数据加载/解析失败: $e\n$stack');
       return Result.failure('$e', code: ErrorCodes.serverError);
     }
   }
@@ -76,9 +79,9 @@ class ClientCheckinRepository extends ICheckinRepository {
           _page(pagination),
         );
         if (response['success'] != true) throw QueryFailure(response);
-        return ((response['data'] as Map)['data'] as List)
-            .map(_item)
-            .toList();
+        final rows = (response['data'] as Map)['data'] as List;
+        debugPrint('[CheckinRepository] getList: ${rows.length} 个项目');
+        return rows.map(_item).toList();
       });
 
   @override

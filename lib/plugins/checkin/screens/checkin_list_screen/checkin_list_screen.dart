@@ -39,13 +39,12 @@ class CheckinListScreen extends StatefulWidget {
 }
 
 class _CheckinListScreenState extends State<CheckinListScreen> {
-  late CheckinListController controller;
+  CheckinListController get controller => widget.controller;
   final _eventManager = EventManager.instance;
 
   @override
   void initState() {
     super.initState();
-    controller = widget.controller;
     // 订阅同步刷新事件
     _eventManager.subscribe('checkin_refresh', _handleSyncRefresh);
     _eventManager.subscribe('checkin_completed', _handleSyncRefresh);
@@ -104,8 +103,14 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return DSThemeBridge(child: _buildContent(context));
+  }
+
+  Widget _buildContent(BuildContext context) {
     final filteredItems = controller.filteredItems;
     final searchResults = controller.getSearchResults();
+    debugPrint('[CheckinListScreen] 总项目=${controller.checkinItems.length}, '
+        '分组=${controller.selectedGroup}, 显示=${filteredItems.length}');
 
     return SuperCupertinoNavigationWrapper(
       title: Text('checkin_name'.tr),

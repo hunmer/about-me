@@ -122,6 +122,17 @@ export const useAuthStore = defineStore('auth', () => {
     await loadApiKeys()
   }
 
+  async function revealApiKey(keyId: string): Promise<void> {
+    const response = await authApi.revealApiKey(keyId)
+    if (!response.success || !response.api_key) {
+      throw new Error(response.error || '获取密钥失败')
+    }
+    createdKey.value = {
+      name: response.api_key.name,
+      key: response.api_key.key
+    }
+  }
+
   async function revokeApiKey(keyId: string): Promise<void> {
     const response = await authApi.revokeApiKey(keyId)
     if (!response.success) {
@@ -176,6 +187,7 @@ export const useAuthStore = defineStore('auth', () => {
     clearEncryptionKey,
     loadApiKeys,
     createApiKey,
+    revealApiKey,
     revokeApiKey,
     clearCreatedKey,
     init

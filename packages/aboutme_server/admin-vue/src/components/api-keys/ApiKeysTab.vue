@@ -16,6 +16,7 @@ const dialog = useDialog()
 
 const showCreateModal = ref(false)
 const showResultModal = ref(false)
+const resultModalMode = ref<'created' | 'view'>('created')
 const searchQuery = ref('')
 const filterMode = ref<'all' | 'active'>('all')
 
@@ -37,6 +38,7 @@ const activeCount = computed(() => authStore.apiKeys.filter(k => !k.is_expired).
 
 function handleCreateSuccess(): void {
   showCreateModal.value = false
+  resultModalMode.value = 'created'
   showResultModal.value = true
   uiStore.addActivity('api_key', '创建了 API Key')
 }
@@ -63,12 +65,13 @@ function handleRevoke(keyId: string, keyName: string): void {
   })
 }
 
-async function copyPrefix(prefix: string): Promise<void> {
+async function handleRevealKey(keyId: string): Promise<void> {
   try {
-    await navigator.clipboard.writeText(prefix)
-    message.success('已复制前缀到剪贴板')
-  } catch {
-    message.error('复制失败')
+    await authStore.revealApiKey(keyId)
+    resultModalMode.value = 'view'
+    showResultModal.value = true
+  } catch (err) {
+    message.error(err instanceof Error ? err.message : '获取密钥失败')
   }
 }
 
@@ -90,7 +93,7 @@ function handleCloseResult(): void {
           <div>
             <span class="font-mono text-xs font-semibold uppercase tracking-wider text-primary">安全通告</span>
             <p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">
-              API Key 用于授权 MCP Server 等外部应用安全访问同步数据。密钥创建后仅完整展示一次，请妥善保存。
+              API Key 用于授权 MCP Server 等外部应用安全访问同步数据。完整密钥可通过"查看 Key"随时获取，请妥善保存、避免泄露。
             </p>
           </div>
         </div>
@@ -229,11 +232,11 @@ function handleCloseResult(): void {
                   <button
                     type="button"
                     class="flex items-center gap-1 rounded-lg bg-surface-container-high/80 px-2 py-1 text-[11px] font-medium text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-on-surface"
-                    title="复制前缀"
-                    @click="copyPrefix(key.key_prefix)"
+                    title="查看并复制完整 Key"
+                    @click="handleRevealKey(key.id)"
                   >
-                    <span class="material-symbols-outlined text-[14px]">content_copy</span>
-                    <span>复制前缀</span>
+                    <span class="material-symbols-outlined text-[14px]">visibility</span>
+                    <span>查看 Key</span>
                   </button>
                   <button
                     type="button"
@@ -262,6 +265,7 @@ function handleCloseResult(): void {
     <KeyResultModal
       v-model:show="showResultModal"
       :api-key="authStore.createdKey"
+      :mode="resultModalMode"
       @close="handleCloseResult"
     />
   </div>

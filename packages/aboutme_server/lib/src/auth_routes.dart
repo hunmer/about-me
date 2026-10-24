@@ -28,6 +28,7 @@ class AuthApi {
     router.post('/refresh', _refresh);
     router.post('/api-keys', _createApiKey);
     router.get('/api-keys', _listApiKeys);
+    router.get('/api-keys/<keyId>/reveal', _revealApiKey);
     router.delete('/api-keys/<keyId>', _revokeApiKey);
     router.get('/user-info', _userInfo);
     router.get('/devices', _listDevices);
@@ -224,6 +225,30 @@ class AuthApi {
           .toList(),
       'count': keys.length,
     });
+  }
+
+  Future<Response> _revealApiKey(Request request, String keyId) async {
+    final userId = _userIdFromBearer(request);
+    if (userId == null) return _error(401, '未认证或 Token 无效');
+    try {
+      final keys = await auth.listApiKeys(userId);
+      final key = keys.where((k) => k.id == keyId).firstOrNull;
+      if (key == null) return _error(404, 'API Key 不存在');
+      return _ok({
+        'api_key': {
+          'id': key.id,
+          'name': key.name,
+          'key': key.key,
+          'createdAt': jsIsoDateTime(key.createdAt),
+          'expiresAt': key.expiresAt == null
+              ? null
+              : jsIsoDateTime(key.expiresAt!),
+          'isRevoked': key.isRevoked,
+        },
+      });
+    } catch (e) {
+      return _error(500, '服务器错误: $e');
+    }
   }
 
   Future<Response> _revokeApiKey(Request request, String keyId) async {

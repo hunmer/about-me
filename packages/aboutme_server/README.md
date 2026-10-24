@@ -24,6 +24,7 @@ MCP(AI 工具)      ──JSON-RPC──►        ▲
 | `WS /api/v1/storage/ws` | 实时同步广播（含 REST/MCP 触发的变更，广播真实文件路径） |
 | `/api/v1/plugins/{id}/*` | 19 插件业务 API（仅需 X-API-Key） |
 | `POST /mcp` | MCP（68 AI 工具，与 REST/客户端同一套处理器） |
+| `GET /debug` | 插件 API 调试页（纯静态 `debug/index.html`，现读磁盘、改完刷新即生效，页面内填 API Key） |
 | `/api/v1/system/*` | 管理员：插件注册表/商店配置（JS 插件执行返回 501） |
 | `/admin/` | 管理界面静态托管（Vue 管理面板，源码在本包 `admin-vue/`） |
 

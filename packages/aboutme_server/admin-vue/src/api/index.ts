@@ -195,6 +195,9 @@ export const authApi = {
       method: 'DELETE'
     }),
 
+  revealApiKey: (keyId: string): Promise<{ success: boolean; api_key?: CreatedApiKeyInfo; error?: string }> =>
+    apiClient.request(`/api/v1/auth/api-keys/${keyId}/reveal`),
+
   getUserInfo: (): Promise<UserInfoResponse> =>
     apiClient.request('/api/v1/auth/user-info'),
 

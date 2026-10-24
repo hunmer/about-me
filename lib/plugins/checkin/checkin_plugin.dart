@@ -46,11 +46,18 @@ class _CheckinMainViewState extends State<CheckinMainView>
   final CheckinPlugin checkinPlugin = CheckinPlugin.instance;
   late TabController _tabController;
   late int _currentPage;
+  late final CheckinListController _listController;
   final GlobalKey _bottomBarKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    _listController = CheckinListController(
+      context: context,
+      onStateChanged: () {
+        if (mounted) setState(() {});
+      },
+    );
     _currentPage = 0;
     _tabController = TabController(length: 2, vsync: this);
     _tabController.animation?.addListener(() {
@@ -65,6 +72,7 @@ class _CheckinMainViewState extends State<CheckinMainView>
 
   @override
   void dispose() {
+    _listController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -102,21 +110,10 @@ class _CheckinMainViewState extends State<CheckinMainView>
         dragStartBehavior: DragStartBehavior.down,
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              final listController = CheckinListController(
-                context: context,
-                onStateChanged: () {
-                  setState(() {});
-                  CheckinPlugin.instance.triggerSave();
-                },
-              );
-              return CheckinListScreen(
-                controller: listController,
-                initialItemId: widget.itemId,
-                targetDate: widget.targetDate,
-              );
-            },
+          CheckinListScreen(
+            controller: _listController,
+            initialItemId: widget.itemId,
+            targetDate: widget.targetDate,
           ),
           ValueListenableBuilder(
             valueListenable: ValueNotifier(CheckinPlugin.instance.checkinItems),
@@ -178,12 +175,21 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
   /// 重新加载数据（供同步后刷新使用）
   Future<void> _reloadData() async {
     final itemsResult = await _checkinUseCase.getItems({});
+    if (!itemsResult.isSuccess) {
+      debugPrint('[CheckinPlugin] 加载失败: ${itemsResult.errorOrNull?.message}');
+      throw StateError('加载打卡数据失败: ${itemsResult.errorOrNull?.message}');
+    }
     if (itemsResult.isSuccess) {
       final jsonList = itemsResult.dataOrNull as List<dynamic>;
       final items = jsonList
           .map((json) => CheckinItemDto.fromJson(json as Map<String, dynamic>))
           .toList();
       _checkinItems = items.map((dto) => _dtoToCheckinItem(dto)).toList();
+      _logLoadedData('reload');
+      EventManager.instance.broadcast(
+        'checkin_refresh',
+        EventArgs('checkin_refresh'),
+      );
     }
     // 同步到小组件
     await _syncWidget();
@@ -282,12 +288,17 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
 
     // 从 UseCase 加载保存的打卡项目
     final itemsResult = await _checkinUseCase.getItems({});
+    if (!itemsResult.isSuccess) {
+      debugPrint('[CheckinPlugin] 初始化加载失败: ${itemsResult.errorOrNull?.message}');
+      throw StateError('加载打卡数据失败: ${itemsResult.errorOrNull?.message}');
+    }
     if (itemsResult.isSuccess) {
       final jsonList = itemsResult.dataOrNull as List<dynamic>;
       final items = jsonList
           .map((json) => CheckinItemDto.fromJson(json as Map<String, dynamic>))
           .toList();
       _checkinItems = items.map((dto) => _dtoToCheckinItem(dto)).toList();
+      _logLoadedData('initialize');
     }
 
     // 如果没有数据，创建默认的四个打卡项目
@@ -431,17 +442,19 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
 
   // 保存打卡项目到存储（同步 UseCase 和本地列表）
   Future<void> _saveCheckinItems() async {
-    // 重新从 UseCase 加载数据
-    final itemsResult = await _checkinUseCase.getItems({});
-    if (itemsResult.isSuccess) {
-      final jsonList = itemsResult.dataOrNull as List<dynamic>;
-      final items = jsonList
-          .map((json) => CheckinItemDto.fromJson(json as Map<String, dynamic>))
-          .toList();
-      _checkinItems = items.map((dto) => _dtoToCheckinItem(dto)).toList();
-    }
-    // 同步到小组件
-    await _syncWidget();
+    await _reloadData();
+  }
+
+  void _logLoadedData(String source) {
+    final records = _checkinItems.fold<int>(
+      0,
+      (total, item) => total + item.checkInRecords.values.fold<int>(
+        0, (n, list) => n + list.length,
+      ),
+    );
+    debugPrint(
+      '[CheckinPlugin] $source: ${_checkinItems.length} 个项目, $records 条记录',
+    );
   }
 
   // 同步小组件数据
@@ -490,9 +503,9 @@ class CheckinPlugin extends BasePlugin with JSBridgePlugin {
       records[date] = recordDtos
           .map(
             (r) => CheckinRecord(
-              startTime: r.startTime,
-              endTime: r.endTime,
-              checkinTime: r.checkinTime,
+              startTime: r.startTime.toLocal(),
+              endTime: r.endTime.toLocal(),
+              checkinTime: r.checkinTime.toLocal(),
               note: r.note,
             ),
           )

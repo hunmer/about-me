@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/event/event_manager.dart';
 
 class CheckinRecordScreen extends StatefulWidget {
   final CheckinItem checkinItem;
@@ -25,18 +26,34 @@ class _CheckinRecordScreenState extends State<CheckinRecordScreen> {
   final _dateFormat = DateFormat('yyyy-MM-dd');
   final _timeFormat = DateFormat('HH:mm');
 
+  // 保存/同步会替换项目对象，始终按 ID 读取最新快照。
+  CheckinItem? get _currentItem => widget.controller.checkinItems
+      .firstWhereOrNull((item) => item.id == widget.checkinItem.id);
+
   @override
   void initState() {
     super.initState();
+    EventManager.instance.subscribe('checkin_refresh', _handleRefresh);
     // 初始化时设置路由上下文
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _updateRouteContext();
     });
   }
 
+  @override
+  void dispose() {
+    EventManager.instance.unsubscribe('checkin_refresh', _handleRefresh);
+    super.dispose();
+  }
+
+  void _handleRefresh(EventArgs args) {
+    if (mounted) setState(() {});
+  }
+
   /// 更新路由上下文，使"询问当前上下文"功能能获取到当前查看的打卡项目
   void _updateRouteContext() {
-    final itemName = widget.checkinItem.name;
+    final itemName = (_currentItem ?? widget.checkinItem).name;
     RouteHistoryManager.updateCurrentContext(
       pageId: "/checkin_record",
       title: '打卡记录 - $itemName',
@@ -46,9 +63,17 @@ class _CheckinRecordScreenState extends State<CheckinRecordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return DSThemeBridge(child: _buildContent(context));
+  }
+
+  Widget _buildContent(BuildContext context) {
     // 按日期分组打卡记录
     final recordsByDate = <DateTime, List<CheckinRecord>>{};
-    for (var entry in widget.checkinItem.checkInRecords.entries) {
+    final currentRecords = _currentItem?.checkInRecords ??
+        <String, List<CheckinRecord>>{};
+    debugPrint('[CheckinRecordScreen] item=${widget.checkinItem.id}, '
+        '找到项目=${_currentItem != null}, 记录日期数=${currentRecords.length}');
+    for (var entry in currentRecords.entries) {
       // 解析日期字符串为DateTime
       final dateParts = entry.key.split('-');
       if (dateParts.length == 3) {
@@ -211,7 +236,7 @@ class _CheckinRecordScreenState extends State<CheckinRecordScreen> {
               Navigator.pop(context);
               // 使用 controller 处理取消打卡记录
               await widget.controller.cancelCheckinRecord(
-                widget.checkinItem,
+                _currentItem ?? widget.checkinItem,
                 recordTime,
               );
               if (mounted) {

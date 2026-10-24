@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { apiClient } from '@/api'
 import { useMessage } from '@/composables/useMessage'
 import {
@@ -14,9 +14,11 @@ import { Button } from '@/components/ui/button'
 interface Props {
   show: boolean
   apiKey: { name: string; key: string } | null
+  /** created: 创建成功后的首次展示；view: 从列表按需查看已有密钥 */
+  mode?: 'created' | 'view'
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), { mode: 'created' })
 
 const emit = defineEmits<{
   'update:show': [value: boolean]
@@ -28,6 +30,15 @@ const message = useMessage()
 const masked = ref(true)
 const copiedKey = ref(false)
 const copiedConfig = ref(false)
+
+watch(
+  () => props.show,
+  v => {
+    if (v) masked.value = true
+  }
+)
+
+const isViewMode = computed(() => props.mode === 'view')
 
 const mcpConfig = computed(() => {
   if (!props.apiKey) return ''
@@ -104,10 +115,10 @@ function handleClose(): void {
             </div>
             <div>
               <DialogTitle class="text-base font-bold tracking-tight text-on-surface">
-                API Key 创建成功
+                {{ isViewMode ? '查看 API Key' : 'API Key 创建成功' }}
               </DialogTitle>
               <DialogDescription class="mt-0.5">
-                请即刻备份，关闭后将不再显示完整内容。
+                {{ isViewMode ? '完整密钥可随时再次查看，请注意保管避免泄露。' : '请即刻备份，关闭后将不再显示完整内容。' }}
               </DialogDescription>
             </div>
           </div>
@@ -124,7 +135,7 @@ function handleClose(): void {
           <div class="space-y-2">
             <div class="flex items-center justify-between text-xs">
               <span class="font-mono uppercase tracking-wider text-on-surface-variant">API 密钥 ({{ apiKey.name }})</span>
-              <span class="flex items-center gap-1 text-[11px] font-medium text-error">
+              <span v-if="!isViewMode" class="flex items-center gap-1 text-[11px] font-medium text-error">
                 <span class="material-symbols-outlined text-[13px]">warning</span>
                 仅显一次
               </span>
@@ -199,7 +210,7 @@ function handleClose(): void {
 
         <DialogFooter class="justify-end pt-2">
           <Button variant="secondary" size="sm" class="bg-surface-container-highest hover:bg-surface-variant" @click="handleClose">
-            我已保存，完成
+            {{ isViewMode ? '关闭' : '我已保存，完成' }}
           </Button>
         </DialogFooter>
       </div>

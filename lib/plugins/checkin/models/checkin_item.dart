@@ -350,11 +350,12 @@ class CheckinRecord {
   }
 
   factory CheckinRecord.fromJson(Map<String, dynamic> json) {
+    final record = CheckinRecordDto.fromJson(json);
     return CheckinRecord(
-      startTime: DateTime.parse(json['startTime'] as String),
-      endTime: DateTime.parse(json['endTime'] as String),
-      checkinTime: DateTime.parse(json['checkinTime'] as String),
-      note: json['note'] as String?,
+      startTime: record.startTime.toLocal(),
+      endTime: record.endTime.toLocal(),
+      checkinTime: record.checkinTime.toLocal(),
+      note: record.note,
     );
   }
 }
