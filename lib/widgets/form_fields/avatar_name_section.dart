@@ -148,7 +148,6 @@ class AvatarNameSection extends StatelessWidget {
 
     final result = await ImagePickerDialog.show<Map<String, dynamic>>(
       context,
-      saveDirectory: 'app_images',
       enableCrop: true,
       cropAspectRatio: 1 / 1,
     );

@@ -68,7 +68,6 @@ class _HabitFormState extends State<HabitForm> {
             type: FormFieldType.imagePicker,
             initialValue: habit?.image,
             extra: {
-              'saveDirectory': 'habits/habit_images',
               'enableCrop': true,
               'cropAspectRatio': 1.0,
             },
@@ -306,7 +305,6 @@ class _ImagePickerWidget extends StatelessWidget {
         final result = await ImagePickerDialog.show<Map<String, dynamic>>(
           context,
           initialUrl: initialImage,
-          saveDirectory: 'habits/habit_images',
           enableCrop: true,
           cropAspectRatio: 1.0,
         );

@@ -507,7 +507,6 @@ class _BillMainViewState extends State<BillMainView>
   Future<void> _handleScanBill() async {
     final result = await ImagePickerDialog.show<Map<String, dynamic>>(
       context,
-      saveDirectory: 'bill',
     );
     if (result == null || !mounted) return;
 

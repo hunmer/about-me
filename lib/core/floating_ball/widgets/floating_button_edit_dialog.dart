@@ -167,7 +167,6 @@ class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
   Future<void> _pickImage() async {
     final result = await ImagePickerDialog.show<Map<String, dynamic>>(
       context,
-      saveDirectory: 'floating_buttons',
       enableCrop: true,
       cropAspectRatio: 1.0,
       enableCompression: true,

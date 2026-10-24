@@ -107,7 +107,6 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
   Future<void> _createEntriesFromPhotos() async {
     final results = await ImagePickerDialog.show<List<Map<String, dynamic>>>(
       context,
-      saveDirectory: 'calendar_album/images',
       multiple: true,
       enableCompression: true,
       compressionQuality: 85,

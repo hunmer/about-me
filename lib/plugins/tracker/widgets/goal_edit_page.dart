@@ -279,7 +279,6 @@ class _GoalEditPageState extends State<GoalEditPage> {
                               initialUrl: imagePath.isNotEmpty
                                   ? imagePath
                                   : null,
-                              saveDirectory: 'tracker/goal_images',
                               enableCrop: true,
                               cropAspectRatio: 9 / 16,
                             );

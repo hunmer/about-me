@@ -91,7 +91,6 @@ class CircleIconPicker extends StatelessWidget {
     final result = await ImagePickerDialog.show<Map<String, dynamic>>(
       context,
       initialUrl: avatarUrl,
-      saveDirectory: imageSaveDirectory,
       enableCrop: true,
       cropAspectRatio: 1.0,
     );

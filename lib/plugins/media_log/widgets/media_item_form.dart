@@ -92,7 +92,6 @@ class _MediaItemFormState extends State<MediaItemForm> {
   Future<void> _pickCoverImage() async {
     final result = await ImagePickerDialog.show<Map<String, dynamic>>(
       context,
-      saveDirectory: 'media_log/covers',
       enableCrop: true,
       cropAspectRatio: 0.7,
       enableCompression: true,

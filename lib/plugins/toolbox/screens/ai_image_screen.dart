@@ -48,7 +48,6 @@ class _AiImageScreenState extends State<AiImageScreen> {
     final picked = await ImagePickerDialog.show<List<Map<String, dynamic>>>(
       context,
       multiple: true,
-      saveDirectory: 'toolbox/ai_image/refs',
     );
     if (picked == null) return;
     for (final item in picked) {

@@ -137,4 +137,62 @@ void main() {
     await auth.setApiAccessStatus(user.userId!, true);
     expect(await auth.getApiAccessStatus(user.userId!), isTrue);
   });
+
+  test('并发 verifyApiKey 全部通过（读-改-写回写竞态回归）', () async {
+    final user = await auth.register(
+      username: 'erin',
+      password: 'secret66',
+      deviceId: 'd1',
+    );
+    final apiKey = await auth.generateApiKey(
+      userId: user.userId!,
+      name: 'concurrent',
+      expiry: ApiKeyExpiry.never,
+    );
+
+    // 修复前：并发回写 lastUsedAt 时读侧命中写了一半的 JSON → 误判无效
+    final results = await Future.wait(
+      List.generate(30, (_) => auth.verifyApiKey(apiKey.key)),
+    );
+    expect(results.every((r) => r != null), isTrue);
+  });
+
+  test('并发注册同名用户恰好成功一个（users 锁回归）', () async {
+    final results = await Future.wait(
+      List.generate(
+        10,
+        (i) => auth.register(
+          username: 'same-name',
+          password: 'secret66',
+          deviceId: 'd$i',
+        ),
+      ),
+    );
+    expect(results.where((r) => r.success).length, 1);
+    final users = await auth.findUserByUsername('same-name');
+    expect(users, isNotNull);
+  });
+
+  test('并发登录不覆盖设备登记且不死锁（users 锁回归）', () async {
+    await auth.register(
+      username: 'frank',
+      password: 'secret66',
+      deviceId: 'seed',
+    );
+    final results = await Future.wait(
+      List.generate(
+        8,
+        (i) => auth.login(
+          username: 'frank',
+          password: 'secret66',
+          deviceId: 'dev-$i',
+          deviceName: 'Device $i',
+        ),
+      ),
+    );
+    expect(results.every((r) => r.success), isTrue);
+    final devices = await auth.getDevices(results.first.userId!);
+    // seed + 8 个并发登记的设备一条不丢
+    expect(devices.length, 9);
+  });
 }

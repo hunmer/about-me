@@ -160,7 +160,6 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
           final results =
               await ImagePickerDialog.show<List<Map<String, dynamic>>>(
                 context,
-                saveDirectory: 'calendar_album/images',
                 multiple: true,
                 enableCompression: true,
                 compressionQuality: 85,

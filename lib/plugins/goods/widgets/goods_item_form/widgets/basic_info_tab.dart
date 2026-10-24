@@ -350,7 +350,6 @@ class BasicInfoTab extends StatelessWidget {
       final result = await ImagePickerDialog.show<Map<String, dynamic>>(
         context,
         initialUrl: controller.imagePath,
-        saveDirectory: 'goods/goods_images',
         enableCrop: true,
         cropAspectRatio: 1,
         enableCompression: true,

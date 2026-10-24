@@ -147,7 +147,6 @@ class _DatabaseEditWidgetState extends State<DatabaseEditWidget> {
                 extra: {
                   'enableCrop': true,
                   'cropAspectRatio': 1.0,
-                  'saveDirectory': 'database_covers',
                   'previewWidth': double.infinity,
                   'previewHeight': 150.0,
                   'showLabel': false,

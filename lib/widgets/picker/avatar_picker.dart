@@ -70,7 +70,6 @@ class _AvatarPickerState extends State<AvatarPicker> {
             : await ImagePickerDialog.show<Map<String, dynamic>>(
               context,
               initialUrl: _avatarPath,
-              saveDirectory: widget.saveDirectory,
               enableCrop: true,
               cropAspectRatio: 1.0, // 强制使用1:1的裁剪比例
             );

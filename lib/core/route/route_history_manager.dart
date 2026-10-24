@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'page_visit_record.dart';
 
@@ -255,7 +256,15 @@ class RouteHistoryManager extends RouteObserver<Route<dynamic>> {
         'history': _history.map((record) => record.toJson()).toList(),
       };
       // StorageManager.write() 接受 Map 对象，会自动序列化为 JSON
-      await _storage!.write(_storageKey, data);
+      try {
+        await _storage!.write(_storageKey, data);
+      } on StorageException catch (error) {
+        // 客户端尚未持有文件版本（读与写并发交错、或新启动首次写）时，
+        // 远端按"创建意图撞上已存在文件"返回 412；重读刷新版本后重试一次
+        if (error.kind != StorageErrorKind.conflict) rethrow;
+        await _storage!.readBytes(_storageKey);
+        await _storage!.write(_storageKey, data);
+      }
     } catch (e) {
       debugPrint('保存路由历史失败: $e');
     } finally {

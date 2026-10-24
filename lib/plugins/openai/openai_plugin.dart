@@ -557,13 +557,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
 
   @override
   Future<void> uninstall() async {
-    // 域即将封闭：分区根 deletePath 会返回 426，静默容错不阻塞卸载；
-    // 卸载时的数据清理（含 SDK 资源回收）留待后续 G 阶段统一处理
-    try {
-      await AboutmeDataService.instance.deletePath(storageDir);
-    } catch (e) {
-      debugPrint('[OpenAIPlugin] uninstall 清理数据分区跳过: $e');
-    }
+    // 数据分区保留（域已封闭，重装可恢复）；如需清空走 admin 后台删除
 
     // 停止主动消息调度
     ProactiveService.instance.stop();

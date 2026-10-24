@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import 'jwt_hs256.dart';
 import 'pbkdf2.dart';
+import 'storage_errors.dart';
 
 class DeviceInfo {
   DeviceInfo({
@@ -193,6 +194,25 @@ class AuthStore {
   final String? adminPassword;
   final String _apiKeyDir;
 
+  // api_keys 文件的读-改-写互斥锁：并发 verifyApiKey 回写 lastUsedAt 时，
+  // 读侧可能命中写了一半的 JSON（_readApiKeys 容错返回空列表 → 误判 401）
+  Future<void> _apiKeysLock = Future<void>.value();
+
+  Future<T> _withApiKeysLock<T>(Future<T> Function() action) {
+    final run = _apiKeysLock.then((_) => action());
+    _apiKeysLock = run.then((_) {}, onError: (_) {});
+    return run;
+  }
+
+  // users.json 的读-改-写互斥锁（login 设备登记、注册 addUser 等）
+  Future<void> _usersLock = Future<void>.value();
+
+  Future<T> _withUsersLock<T>(Future<T> Function() action) {
+    final run = _usersLock.then((_) => action());
+    _usersLock = run.then((_) {}, onError: (_) {});
+    return run;
+  }
+
   File get _usersFile => File(p.join(dataDir, 'auth', 'users.json'));
 
   File get _apiAccessFile => File(p.join(dataDir, 'auth', 'api_access.json'));
@@ -206,22 +226,23 @@ class AuthStore {
   }
 
   /// 初始化管理员账号（已存在则跳过）
-  Future<void> initializeAdmin() async {
-    if (adminUsername == null || adminPassword == null) return;
-    if (await findUserByUsername(adminUsername!) != null) return;
+  Future<void> initializeAdmin() => _withUsersLock(() async {
+        if (adminUsername == null || adminPassword == null) return;
+        if (await findUserByUsername(adminUsername!) != null) return;
 
-    final salt = PasswordHasher.generateSalt();
-    await addUser(
-      UserInfo(
-        id: const Uuid().v4(),
-        username: adminUsername!,
-        passwordHash: PasswordHasher.hashPassword(adminPassword!, salt),
-        salt: salt,
-        createdAt: DateTime.now(),
-        isAdmin: true,
-      ),
-    );
-  }
+        final salt = PasswordHasher.generateSalt();
+        // 锁内用原语（addUser 自带锁）
+        await _addUserUnlocked(
+          UserInfo(
+            id: const Uuid().v4(),
+            username: adminUsername!,
+            passwordHash: PasswordHasher.hashPassword(adminPassword!, salt),
+            salt: salt,
+            createdAt: DateTime.now(),
+            isAdmin: true,
+          ),
+        );
+      });
 
   // ==================== 用户 ====================
 
@@ -233,19 +254,33 @@ class AuthStore {
       return (data['users'] as List<dynamic>? ?? [])
           .map((e) => UserInfo.fromJson(e as Map<String, dynamic>))
           .toList();
-    } catch (_) {
-      return [];
+    } on FormatException {
+      throw StorageException(
+        StorageErrorKind.invalidData,
+        '用户数据损坏: ${_usersFile.path}',
+      );
+    } on TypeError {
+      throw StorageException(
+        StorageErrorKind.invalidData,
+        '用户数据结构异常: ${_usersFile.path}',
+      );
     }
   }
 
   Future<void> saveAllUsers(List<UserInfo> users) async {
     await _usersFile.parent.create(recursive: true);
-    await _usersFile.writeAsString(
+    // 原子写：先写临时文件再替换，避免读侧命中写了一半的内容
+    final tmp = File('${_usersFile.path}.tmp');
+    await tmp.writeAsString(
       jsonEncode({
         'users': users.map((u) => u.toJson()).toList(),
         'updated_at': DateTime.now().toIso8601String(),
       }),
     );
+    if (await _usersFile.exists()) {
+      await _usersFile.delete();
+    }
+    await tmp.rename(_usersFile.path);
   }
 
   Future<UserInfo?> findUserByUsername(String username) async {
@@ -258,13 +293,21 @@ class AuthStore {
     return users.where((u) => u.id == userId).firstOrNull;
   }
 
-  Future<void> addUser(UserInfo user) async {
+  Future<void> addUser(UserInfo user) =>
+      _withUsersLock(() => _addUserUnlocked(user));
+
+  /// 不加锁的追加原语：仅限已持有 users 锁的调用方使用
+  Future<void> _addUserUnlocked(UserInfo user) async {
     final users = await readAllUsers();
     users.add(user);
     await saveAllUsers(users);
   }
 
-  Future<void> updateUser(UserInfo updated) async {
+  Future<void> updateUser(UserInfo updated) =>
+      _withUsersLock(() => _updateUserUnlocked(updated));
+
+  /// 不加锁的读-改-写原语：仅限已持有 users 锁的调用方使用
+  Future<void> _updateUserUnlocked(UserInfo updated) async {
     final users = await readAllUsers();
     final index = users.indexWhere((u) => u.id == updated.id);
     if (index >= 0) {
@@ -280,63 +323,71 @@ class AuthStore {
     required String password,
     required String deviceId,
     String? deviceName,
-  }) async {
-    if (await findUserByUsername(username) != null) {
-      return const AuthResult(success: false, error: '用户名已存在');
-    }
-    final salt = PasswordHasher.generateSalt();
-    final user = UserInfo(
-      id: const Uuid().v4(),
-      username: username,
-      passwordHash: PasswordHasher.hashPassword(password, salt),
-      salt: salt,
-      createdAt: DateTime.now(),
-      devices: [
-        DeviceInfo(
-          deviceId: deviceId,
-          deviceName: deviceName ?? 'Unknown Device',
+  }) =>
+      _withUsersLock(() async {
+        if (await findUserByUsername(username) != null) {
+          return const AuthResult(success: false, error: '用户名已存在');
+        }
+        final salt = PasswordHasher.generateSalt();
+        final user = UserInfo(
+          id: const Uuid().v4(),
+          username: username,
+          passwordHash: PasswordHasher.hashPassword(password, salt),
+          salt: salt,
           createdAt: DateTime.now(),
-        ),
-      ],
-    );
-    await addUser(user);
-    return _authSuccess(user);
-  }
+          devices: [
+            DeviceInfo(
+              deviceId: deviceId,
+              deviceName: deviceName ?? 'Unknown Device',
+              createdAt: DateTime.now(),
+            ),
+          ],
+        );
+        await _addUserUnlocked(user);
+        return _authSuccess(user);
+      });
 
   Future<AuthResult> login({
     required String username,
     required String password,
     required String deviceId,
     String? deviceName,
-  }) async {
-    final user = await findUserByUsername(username);
-    if (user == null ||
-        !PasswordHasher.verifyPassword(password, user.salt, user.passwordHash)) {
-      return const AuthResult(success: false, error: '用户名或密码错误');
-    }
+  }) =>
+      _withUsersLock(() async {
+        final user = await findUserByUsername(username);
+        if (user == null ||
+            !PasswordHasher.verifyPassword(
+              password,
+              user.salt,
+              user.passwordHash,
+            )) {
+          return const AuthResult(success: false, error: '用户名或密码错误');
+        }
 
-    if (deviceId != 'admin_panel') {
-      final index = user.devices.indexWhere((d) => d.deviceId == deviceId);
-      if (index >= 0) {
-        final existing = user.devices[index];
-        existing.deviceName =
-            deviceName?.isNotEmpty == true ? deviceName! : existing.deviceName;
-        existing.lastSyncAt = DateTime.now();
-      } else {
-        user.devices.add(
-          DeviceInfo(
-            deviceId: deviceId,
-            deviceName: deviceName ?? 'Unknown Device',
-            createdAt: DateTime.now(),
-            lastSyncAt: DateTime.now(),
-          ),
-        );
-      }
-    }
-    user.lastLoginAt = DateTime.now();
-    await updateUser(user);
-    return _authSuccess(user);
-  }
+        if (deviceId != 'admin_panel') {
+          final index = user.devices.indexWhere((d) => d.deviceId == deviceId);
+          if (index >= 0) {
+            final existing = user.devices[index];
+            existing.deviceName = deviceName?.isNotEmpty == true
+                ? deviceName!
+                : existing.deviceName;
+            existing.lastSyncAt = DateTime.now();
+          } else {
+            user.devices.add(
+              DeviceInfo(
+                deviceId: deviceId,
+                deviceName: deviceName ?? 'Unknown Device',
+                createdAt: DateTime.now(),
+                lastSyncAt: DateTime.now(),
+              ),
+            );
+          }
+        }
+        user.lastLoginAt = DateTime.now();
+        // 锁不可重入：锁内用原语（updateUser 自带锁）
+        await _updateUserUnlocked(user);
+        return _authSuccess(user);
+      });
 
   Future<AuthResult> refreshToken(String token) async {
     final payload = JwtHs256.verify(token, jwtSecret);
@@ -382,96 +433,114 @@ class AuthStore {
       return (jsonDecode(await file.readAsString()) as List<dynamic>)
           .map((e) => ApiKey.fromJson(e as Map<String, dynamic>))
           .toList();
-    } catch (_) {
-      return [];
+    } on FormatException {
+      throw StorageException(
+        StorageErrorKind.invalidData,
+        'API Key 数据损坏: ${file.path}',
+      );
+    } on TypeError {
+      throw StorageException(
+        StorageErrorKind.invalidData,
+        'API Key 数据结构异常: ${file.path}',
+      );
     }
   }
 
   Future<void> _saveApiKeys(String userId, List<ApiKey> keys) async {
     final file = _apiKeyFile(userId);
     await file.parent.create(recursive: true);
-    await file.writeAsString(
+    // 原子写：先写临时文件再替换，避免读侧命中写了一半的内容
+    final tmp = File('${file.path}.tmp');
+    await tmp.writeAsString(
       const JsonEncoder.withIndent('  ').convert(keys.map((k) => k.toJson()).toList()),
     );
+    if (await file.exists()) {
+      await file.delete();
+    }
+    await tmp.rename(file.path);
   }
 
   Future<ApiKey> generateApiKey({
     required String userId,
     required String name,
     required ApiKeyExpiry expiry,
-  }) async {
-    final user = await findUserById(userId);
-    if (user == null) throw Exception('用户不存在');
+  }) =>
+      _withApiKeysLock(() async {
+        final user = await findUserById(userId);
+        if (user == null) throw Exception('用户不存在');
 
-    final random = Random.secure();
-    final keyBytes = Uint8List(32);
-    for (var i = 0; i < keyBytes.length; i++) {
-      keyBytes[i] = random.nextInt(256);
-    }
-    final key = 'mk_${_base64UrlNoPadding(keyBytes)}';
-    final keyHash = sha256.convert(utf8.encode(key)).toString();
+        final random = Random.secure();
+        final keyBytes = Uint8List(32);
+        for (var i = 0; i < keyBytes.length; i++) {
+          keyBytes[i] = random.nextInt(256);
+        }
+        final key = 'mk_${_base64UrlNoPadding(keyBytes)}';
+        final keyHash = sha256.convert(utf8.encode(key)).toString();
 
-    final apiKey = ApiKey(
-      id: const Uuid().v4(),
-      userId: userId,
-      name: name,
-      key: key,
-      keyHash: keyHash,
-      createdAt: DateTime.now(),
-      expiresAt: switch (expiry) {
-        ApiKeyExpiry.days7 => DateTime.now().add(const Duration(days: 7)),
-        ApiKeyExpiry.days30 => DateTime.now().add(const Duration(days: 30)),
-        ApiKeyExpiry.days90 => DateTime.now().add(const Duration(days: 90)),
-        ApiKeyExpiry.year1 => DateTime.now().add(const Duration(days: 365)),
-        ApiKeyExpiry.never => null,
-      },
-    );
-    final keys = await _readApiKeys(userId);
-    keys.add(apiKey);
-    await _saveApiKeys(userId, keys);
-    return apiKey;
-  }
+        final apiKey = ApiKey(
+          id: const Uuid().v4(),
+          userId: userId,
+          name: name,
+          key: key,
+          keyHash: keyHash,
+          createdAt: DateTime.now(),
+          expiresAt: switch (expiry) {
+            ApiKeyExpiry.days7 => DateTime.now().add(const Duration(days: 7)),
+            ApiKeyExpiry.days30 => DateTime.now().add(const Duration(days: 30)),
+            ApiKeyExpiry.days90 => DateTime.now().add(const Duration(days: 90)),
+            ApiKeyExpiry.year1 => DateTime.now().add(const Duration(days: 365)),
+            ApiKeyExpiry.never => null,
+          },
+        );
+        final keys = await _readApiKeys(userId);
+        keys.add(apiKey);
+        await _saveApiKeys(userId, keys);
+        return apiKey;
+      });
 
   /// 验证 API Key（时序安全比较哈希），成功返回归属用户。
-  Future<ApiKeyValidation?> verifyApiKey(String keyValue) async {
-    if (!await Directory(_apiKeyDir).exists()) return null;
+  Future<ApiKeyValidation?> verifyApiKey(String keyValue) =>
+      _withApiKeysLock(() async {
+        if (!await Directory(_apiKeyDir).exists()) return null;
 
-    final keyHash = sha256.convert(utf8.encode(keyValue)).toString();
-    for (final entity in Directory(_apiKeyDir).listSync()) {
-      if (entity is! File || !entity.path.endsWith('.json')) continue;
-      final userId = p.basenameWithoutExtension(entity.path);
-      final keys = await _readApiKeys(userId);
-      for (final apiKey in keys) {
-        // 比较哈希而非原文，天然等长时序安全
-        if (_fixedTimeEqualsHex(apiKey.keyHash, keyHash)) {
-          if (apiKey.isRevoked) return null;
-          if (apiKey.expiresAt != null &&
-              DateTime.now().isAfter(apiKey.expiresAt!)) {
-            return null;
+        final keyHash = sha256.convert(utf8.encode(keyValue)).toString();
+        for (final entity in Directory(_apiKeyDir).listSync()) {
+          if (entity is! File || !entity.path.endsWith('.json')) continue;
+          final userId = p.basenameWithoutExtension(entity.path);
+          final keys = await _readApiKeys(userId);
+          for (final apiKey in keys) {
+            // 比较哈希而非原文，天然等长时序安全
+            if (_fixedTimeEqualsHex(apiKey.keyHash, keyHash)) {
+              if (apiKey.isRevoked) return null;
+              if (apiKey.expiresAt != null &&
+                  DateTime.now().isAfter(apiKey.expiresAt!)) {
+                return null;
+              }
+              apiKey.lastUsedAt = DateTime.now();
+              await _saveApiKeys(userId, keys);
+              return ApiKeyValidation(
+                userId: apiKey.userId,
+                keyId: apiKey.id,
+                keyName: apiKey.name,
+              );
+            }
           }
-          apiKey.lastUsedAt = DateTime.now();
-          await _saveApiKeys(userId, keys);
-          return ApiKeyValidation(
-            userId: apiKey.userId,
-            keyId: apiKey.id,
-            keyName: apiKey.name,
-          );
         }
-      }
-    }
-    return null;
-  }
+        return null;
+      });
 
-  Future<List<ApiKey>> listApiKeys(String userId) => _readApiKeys(userId);
+  Future<List<ApiKey>> listApiKeys(String userId) =>
+      _withApiKeysLock(() => _readApiKeys(userId));
 
-  Future<void> revokeApiKey(String userId, String keyId) async {
-    final keys = await _readApiKeys(userId);
-    final key = keys.where((k) => k.id == keyId).firstOrNull;
-    if (key == null) throw Exception('API Key 不存在');
-    if (key.userId != userId) throw Exception('无权操作此 API Key');
-    key.isRevoked = true;
-    await _saveApiKeys(userId, keys);
-  }
+  Future<void> revokeApiKey(String userId, String keyId) =>
+      _withApiKeysLock(() async {
+        final keys = await _readApiKeys(userId);
+        final key = keys.where((k) => k.id == keyId).firstOrNull;
+        if (key == null) throw Exception('API Key 不存在');
+        if (key.userId != userId) throw Exception('无权操作此 API Key');
+        key.isRevoked = true;
+        await _saveApiKeys(userId, keys);
+      });
 
   // ==================== 设备管理 ====================
 
@@ -487,42 +556,43 @@ class AuthStore {
     String? deviceName,
     String? fcmToken,
     String? platform,
-  }) async {
-    final user = await findUserById(userId);
-    if (user == null) throw Exception('用户不存在');
+  }) => _withUsersLock(() async {
+        final user = await findUserById(userId);
+        if (user == null) throw Exception('用户不存在');
 
-    final now = DateTime.now();
-    final index = user.devices.indexWhere((d) => d.deviceId == deviceId);
-    DeviceInfo device;
-    if (index >= 0) {
-      device = user.devices[index];
-      if (deviceName?.isNotEmpty == true) device.deviceName = deviceName!;
-      device.lastSyncAt = now;
-      if (fcmToken != null) device.fcmToken = fcmToken;
-      if (platform != null) device.platform = platform;
-    } else {
-      device = DeviceInfo(
-        deviceId: deviceId,
-        deviceName: deviceName ?? 'Unknown Device',
-        createdAt: now,
-        lastSyncAt: now,
-        fcmToken: fcmToken,
-        platform: platform,
-      );
-      user.devices.add(device);
-    }
-    await updateUser(user);
-    return device;
-  }
+        final now = DateTime.now();
+        final index = user.devices.indexWhere((d) => d.deviceId == deviceId);
+        DeviceInfo device;
+        if (index >= 0) {
+          device = user.devices[index];
+          if (deviceName?.isNotEmpty == true) device.deviceName = deviceName!;
+          device.lastSyncAt = now;
+          if (fcmToken != null) device.fcmToken = fcmToken;
+          if (platform != null) device.platform = platform;
+        } else {
+          device = DeviceInfo(
+            deviceId: deviceId,
+            deviceName: deviceName ?? 'Unknown Device',
+            createdAt: now,
+            lastSyncAt: now,
+            fcmToken: fcmToken,
+            platform: platform,
+          );
+          user.devices.add(device);
+        }
+        await _updateUserUnlocked(user);
+        return device;
+      });
 
-  Future<void> deleteDevice(String userId, String deviceId) async {
-    final user = await findUserById(userId);
-    if (user == null) throw Exception('用户不存在');
-    final initialLength = user.devices.length;
-    user.devices.removeWhere((d) => d.deviceId == deviceId);
-    if (user.devices.length == initialLength) throw Exception('设备不存在');
-    await updateUser(user);
-  }
+  Future<void> deleteDevice(String userId, String deviceId) =>
+      _withUsersLock(() async {
+        final user = await findUserById(userId);
+        if (user == null) throw Exception('用户不存在');
+        final initialLength = user.devices.length;
+        user.devices.removeWhere((d) => d.deviceId == deviceId);
+        if (user.devices.length == initialLength) throw Exception('设备不存在');
+        await _updateUserUnlocked(user);
+      });
 
   List<String> getDeviceFcmTokens(UserInfo user, String? deviceId) => (deviceId ==
           null

@@ -80,7 +80,6 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
               initialValue: widget.existingReminder?.imageUrl != null
                   ? {'url': widget.existingReminder!.imageUrl}
                   : null,
-              extra: {'saveDirectory': 'reminder_images'},
             ),
 
             // 提醒时间配置

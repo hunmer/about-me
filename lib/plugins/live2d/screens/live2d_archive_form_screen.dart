@@ -275,7 +275,6 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
           currentImage: _coverPath,
           labelText: 'live2d_coverLabel'.tr,
           hintText: 'live2d_chooseCoverHint'.tr,
-          saveDirectory: 'live2d_covers',
           enableCrop: true,
           cropAspectRatio: 16 / 9,
           defaultImage: _buildCoverPlaceholder(theme),

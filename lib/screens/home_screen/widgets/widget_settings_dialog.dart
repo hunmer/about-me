@@ -138,7 +138,6 @@ class _WidgetSettingsDialogState extends State<WidgetSettingsDialog> {
                       final result =
                           await ImagePickerDialog.show<Map<String, dynamic>>(
                             context,
-                            saveDirectory: 'widget_backgrounds',
                             enableCrop: true,
                             cropAspectRatio: 16 / 9, // 卡片比例
                           );

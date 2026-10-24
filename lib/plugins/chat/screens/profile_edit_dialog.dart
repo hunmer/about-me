@@ -162,7 +162,6 @@ class _ProfileEditDialogState extends State<ProfileEditDialog>
                       return ImagePickerDialog.show<Map<String, dynamic>>(
                         context,
                         initialUrl: initialPath,
-                        saveDirectory: 'chat/avatars',
                         enableCrop: true,
                         cropAspectRatio: 1.0,
                       );

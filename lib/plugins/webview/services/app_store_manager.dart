@@ -62,9 +62,11 @@ class AppStoreManager extends ChangeNotifier {
     // 优先恢复上次使用的源，其次默认源，最后第一个源
     String? savedId;
     try {
-      savedId =
-          await AboutmeDataService.instance.readPath(_currentSourceKey)
-              as String?;
+      // readPath 缺省返回 {}（文件尚未创建），只接受字符串形态的存量值
+      final raw = await AboutmeDataService.instance.readPath(
+        _currentSourceKey,
+      );
+      savedId = raw is String ? raw : null;
     } catch (e) {
       debugPrint('Failed to load current source: $e');
     }
@@ -395,9 +397,11 @@ class AppStoreManager extends ChangeNotifier {
   /// 保存当前使用的源 ID
   Future<void> _saveCurrentSourceId() async {
     try {
+      // readPath 读取时走 jsonDecode，裸 UUID 非合法 JSON 会被判损坏，
+      // 因此写入 JSON 字符串字面量保持写读闭环
       await AboutmeDataService.instance.writePath(
         _currentSourceKey,
-        _currentSource?.id,
+        jsonEncode(_currentSource?.id),
       );
     } catch (e) {
       debugPrint('Failed to save current source: $e');

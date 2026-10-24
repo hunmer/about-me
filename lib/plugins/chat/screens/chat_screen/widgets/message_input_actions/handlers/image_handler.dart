@@ -25,7 +25,6 @@ Future<void> handleImageSelection({
     // 使用 ImagePickerDialog 并启用压缩
     final result = await ImagePickerDialog.show<dynamic>(
       context,
-      saveDirectory: 'chat/chat_files',
       enableCompression: true,
       compressionQuality: 85,
       multiple: multiple,

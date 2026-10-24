@@ -24,9 +24,6 @@ class ImagePickerField extends StatefulWidget {
   /// 值变化回调
   final ValueChanged<dynamic> onImageChanged;
 
-  /// 图片保存目录
-  final String saveDirectory;
-
   /// 是否启用裁剪
   final bool enableCrop;
 
@@ -73,7 +70,6 @@ class ImagePickerField extends StatefulWidget {
     this.labelText,
     this.hintText,
     this.enabled = true,
-    this.saveDirectory = 'app_images',
     this.enableCrop = false,
     this.cropAspectRatio,
     this.multiple = false,
@@ -214,7 +210,6 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
     final result = await ImagePickerDialog.show<dynamic>(
       context,
       initialUrl: initialUrl,
-      saveDirectory: widget.saveDirectory,
       enableCrop: widget.enableCrop,
       cropAspectRatio: widget.cropAspectRatio,
       multiple: widget.multiple,
@@ -260,9 +255,6 @@ class ImagePickerFormField extends StatelessWidget {
 
   /// 值变化回调
   final ValueChanged<dynamic> onImageChanged;
-
-  /// 图片保存目录
-  final String saveDirectory;
 
   /// 是否启用裁剪
   final bool enableCrop;
@@ -310,7 +302,6 @@ class ImagePickerFormField extends StatelessWidget {
     this.labelText,
     this.hintText,
     this.enabled = true,
-    this.saveDirectory = 'app_images',
     this.enableCrop = false,
     this.cropAspectRatio,
     this.multiple = false,
@@ -334,7 +325,6 @@ class ImagePickerFormField extends StatelessWidget {
       hintText: hintText,
       enabled: enabled,
       onImageChanged: onImageChanged,
-      saveDirectory: saveDirectory,
       enableCrop: enableCrop,
       cropAspectRatio: cropAspectRatio,
       multiple: multiple,

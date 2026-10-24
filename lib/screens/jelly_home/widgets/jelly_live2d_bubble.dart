@@ -361,7 +361,6 @@ extension _JellyLive2DBubble on _JellyLive2DState {
   Future<void> _uploadCustomBubble(BuildContext context) async {
     final result = await ImagePickerDialog.show<Map<String, dynamic>>(
       context,
-      saveDirectory: 'live2d/bubbles',
     );
     final asset = result?['url'] as String?;
     if (asset == null || asset.isEmpty) return;

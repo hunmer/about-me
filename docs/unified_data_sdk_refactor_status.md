@@ -1,11 +1,11 @@
 # 统一数据 SDK 重构执行状态
 
-更新时间：2026-10-23。总目标仍在进行，**不得将基础设施或通用 CRUD 当作全阶段完成**。
+更新时间：2026-10-24。总目标仍在进行，**不得将基础设施或通用 CRUD 当作全阶段完成**。
 
 | 阶段 | 状态 | 已落实 | 尚未退出的条件 |
 | --- | --- | --- | --- |
 | A | 进行中 | AST 候选清单、动作/协议表、HTTP 所有 method、参数/错误、取消离线回退、共享命令锁、恢复日志、版本/持久幂等、提交事件、SDK query/watch、Web 注入入口、Chat/Diary codec 与 typed facade、服务端认证用户 runtime、请求来源/设备上下文隔离 | 清单逐项归属审查、完整动作 schema、进程内账号/后端热切换、Web 持久化原子性验收 |
-| B | 进行中 | Chat 主业务/Repository/UI/AI/JS/线程/设置/样例已改业务命令，消息 watch/分页；Diary 主业务/统计/示例/导入导出/备份迁移及原始旧写封闭；贴图注册表事务命令、watch、备份和旧写封闭；新附件使用稳定资源 ID | Chat 整域备份迁移和原始旧写封闭、旧资源迁移、媒体选择器及编辑器全部入口、AI 流式/远端删除边界、Diary 查询失败 UI 与外围导入导出；两域完整验收 |
+| B | 已完成（用户 2026-10-23 口头确认，2026-10-24 复核后关闭） | Chat 主业务/Repository/UI/AI/JS/线程/设置/样例已改业务命令，消息 watch/分页；Diary 主业务/统计/示例/导入导出/备份迁移及原始旧写封闭；贴图注册表事务命令、watch、备份和旧写封闭；新附件使用稳定资源 ID | 无（用户确认 Chat/Diary 两域按现状验收退出；残余外围项转入小尾巴跟踪：chat 旧贴图迁移入口待接，媒体选择器/编辑器外围入口与 AI 流式边界按需收口） |
 | C | 已完成（agent_chat 全域收口） | notes/nodes：业务命令完备 + Flutter 全走 SDK + 已入 migratedDomains 封闭原始写；agent_chat：主数据（会话/消息/config/getStats）SDK handler 17 路由 + Flutter 5 文件收口（含 openai 复用自动受益）；外围配置 17 命令（tools 插件配置/索引/清空、tool_templates、message_details、route_agent_configs、test_runs、preferences 键白名单）+ Flutter 7 文件收口（tool_config_manager 19 处全部 call 化）+ 已入 migratedDomains 封闭 | notes/nodes restore 路由可选 |
 | D | 已完成（全部收口封闭） | todo/tracker/checkin：记录域迁移（migrate/restoreBackup/exportData、首写快照、孤儿/损坏拒绝）+ 封闭；habits：全新 handler（19 动作，文件布局兼容旧数据）+ Flutter 4 文件收口 + 封闭；bill：subscriptions/saveAccounts/getAccountsWithBills 命令 + Flutter 收口 + 封闭；goods：物品 CRUD 修正到 warehouse/{id}.json 内嵌 + updateWarehouse/preferences + Flutter 收口 + 封闭；activity：8 个新命令 + getNotificationSettings/updateNotificationSettings/getTtsSettings/updateTtsSettings + Flutter 设置收口（含额外 3 处残留）+ 封闭；store：全新 handler 五集合 + purchase/redeem/useItem 单事务复合命令 + addPoints clientMutationId 幂等 + point_award_event/achievement 收口 + 封闭 | tracker goal_images 确认已资源化（ImagePickerDialog 的 saveDirectory 为死参数，媒体全部走 SdkMediaService/SDK 资源系统，死参数留 G 清理）；store 整表 save* 按行提交为非阻塞优化未做 |
 | E | 已完成（六域入口全部收口） | contact/day/calendar：Flutter 全走 SDK + restoreBackup 路由与 confirmRestore 强制 + resetData 备份格式修复 + 封闭 + 契约测试 16 项；calendar_album：专用 handler（条目 CRUD/tags/import/export/stats）+ Flutter 两 controller 收口（tag 三文件沿用 data/ 顶层零迁移）+ 封闭 + 测试 15 项；media_log：专用 handler（含 seedExamples 幂等替代空数据自动写示例）+ plugin 收口 + 封闭 + 测试 3 项；database：专用 handler + 顶层 records_*/databases 搬家到 database/ 分区（事务内读旧写新删旧，查询只读回退）+ 去静默降级 + 封闭 + 测试 5 项；activity 补 getById 路由 | 无（六域全部退出） |

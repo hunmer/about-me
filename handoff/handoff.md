@@ -16,7 +16,7 @@
 - F-P1：migrateLegacyAssets + sweep + 分块上传（256MiB）+ capabilities v2 + removeLegacyAsset 二进制修复
 - F-P4：FilesTab 426 引导 + 平台适配层评估结论
 
-**最终基线：`cd packages/aboutme_data_sdk && dart test --concurrency=1` → 201 项全过；`dart analyze` 无 issue；`flutter analyze lib/plugins` 无 error（13 项历史 lint 在未触碰文件）；admin-vue `npx vue-tsc -b` 通过；server 36 过 1 失败（HEAD 既有的并发 UNAUTHORIZED，用干净 worktree 验证过与本轮无关）。**
+**最终基线：`cd packages/aboutme_data_sdk && dart test --concurrency=1` → 204 项全过（含 3 项 auth 并发回归）；`dart analyze` 无 issue；`flutter analyze lib/plugins` 无 error（13 项历史 lint 在未触碰文件）；admin-vue `npx vue-tsc -b` 通过；server 37 全过（2026-10-24 认证层竞态修复后，此前 36 过 1 失败）。**
 
 ## 当前封闭状态（migratedDomains 共 27 域，原始写一律 426）
 
@@ -49,7 +49,7 @@ diary、todo、tracker、notes、nodes、contact、day、calendar、checkin、ha
 - chat 旧贴图二进制批量迁移入口待接（readLegacySticker 与 migrateLegacyAssets 通道均已有，接入需结合 chat_stickers 贴图注册表事务设计；注意用户已确认 chat 域完成，动前先确认）。
 - 孤立旧文件回收：`toolbox/image_search/`、`openai/agents/` 无引用者，可调 `assets sweep`（dryRun 先行）。
 - store 整表 save* 按行提交（非阻塞优化）。
-- server 并发用例 UNAUTHORIZED 既有 bug（aboutme_data_remote_test"两个 SDK HTTP 客户端与 MCP 并发追加"，HEAD 可复现）——排查认证层竞态。
+- ~~server 并发用例 UNAUTHORIZED 既有 bug~~ **已修复（2026-10-24）**：根因为 AuthStore.verifyApiKey 并发回写 lastUsedAt 时读侧命中写了一半的 api_keys JSON（容错返回空表 → 误判 401）。已加进程内互斥锁 + 临时文件原子写；users.json（login 设备登记/注册）同步治理；api_keys/users 数据损坏由静默空表改为显式 StorageException(invalidData)。`aboutme_data_remote_test` 并发用例现通过。
 - 分块上传的 Flutter 端封装（SdkMediaService 目前只封了单次 upload；>16MiB 场景接 init/append/complete）。
 
 ## F-P1 资源命令速查（SDK 已实现，test/assets_migration_sweep_test.dart）
@@ -66,9 +66,9 @@ diary、todo、tracker、notes、nodes、contact、day、calendar、checkin、ha
 ## 验证命令
 ```bash
 cd packages/aboutme_data_sdk
-dart test --concurrency=1          # 基线 201 全绿
+dart test --concurrency=1          # 基线 204 全绿
 dart analyze                       # 须无 issue
-cd ../aboutme_server && dart analyze && dart test   # 36 过 1 失败（既有）
+cd ../aboutme_server && dart analyze && dart test   # 37 全过（2026-10-24 修复并发 UNAUTHORIZED 后）
 cd ../admin-vue && npx vue-tsc -b  # 通过
 cd /Users/Zhuanz/Documents/Aboutme && flutter analyze lib/plugins/<域>
 ```

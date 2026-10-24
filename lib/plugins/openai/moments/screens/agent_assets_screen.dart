@@ -45,8 +45,6 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
   List<AgentAsset> _assets = [];
   final Set<String> _generating = {}; // 正在生成的资产 id
 
-  String get _archiveDir => '${AgentAssetsService.assetsDir}/${widget.agentId}';
-
   @override
   void initState() {
     super.initState();
@@ -247,7 +245,6 @@ class _AgentAssetsScreenState extends State<AgentAssetsScreen> {
   Future<void> _pickAndUpload() async {
     final result = await ImagePickerDialog.show<Map<String, dynamic>>(
       context,
-      saveDirectory: _archiveDir,
       enableCompression: true,
       compressionQuality: 88,
     );

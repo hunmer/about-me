@@ -1373,6 +1373,194 @@
       "stdoutLogPath": "D:\\about-me\\.procm-mcp\\MnFmlK(24000)\\processes\\zUKeTmPW-stdout.log",
       "stderrLogPath": "D:\\about-me\\.procm-mcp\\MnFmlK(24000)\\processes\\zUKeTmPW-stderr.log",
       "envs": {}
+    },
+    {
+      "id": "PBStKLIW",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "exited",
+      "pid": 13148,
+      "exitCode": null,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792804079421,
+      "lastStartedAt": 1792804079421,
+      "stoppedAt": 1792804851498,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\PBStKLIW-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\PBStKLIW-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
+    },
+    {
+      "id": "TdCIO1TW",
+      "name": "server",
+      "script": "dart",
+      "args": [
+        "run",
+        "bin/server.dart"
+      ],
+      "cwd": "D:/about-me/packages/aboutme_server",
+      "status": "exited",
+      "pid": 10672,
+      "exitCode": null,
+      "error": null,
+      "desc": "Dart storage server on port 8874",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792804079422,
+      "lastStartedAt": 1792804776228,
+      "stoppedAt": 1792804851498,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\TdCIO1TW-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\TdCIO1TW-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "w-oLs2qz",
+      "name": "server",
+      "script": "dart",
+      "args": [
+        "run",
+        "bin/server.dart"
+      ],
+      "cwd": "D:/about-me/packages/aboutme_server",
+      "status": "exited",
+      "pid": 12824,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Dart storage server on port 8874",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792805238116,
+      "lastStartedAt": 1792805238116,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\w-oLs2qz-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\w-oLs2qz-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "awQdC3De",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "running",
+      "pid": 11440,
+      "exitCode": null,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792805238116,
+      "lastStartedAt": 1792805238116,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\awQdC3De-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\awQdC3De-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
+    },
+    {
+      "id": "x5oudvGs",
+      "name": "server",
+      "script": "dart",
+      "args": [
+        "run",
+        "bin/server.dart"
+      ],
+      "cwd": "D:/about-me/packages/aboutme_server",
+      "status": "exited",
+      "pid": 13524,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Dart storage server on port 8874",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792806011962,
+      "lastStartedAt": 1792806011962,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\x5oudvGs-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\x5oudvGs-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "-nNV_Pvo",
+      "name": "server",
+      "script": "dart",
+      "args": [
+        "run",
+        "bin/server.dart"
+      ],
+      "cwd": "D:/about-me/packages/aboutme_server",
+      "status": "running",
+      "pid": 16340,
+      "exitCode": null,
+      "error": null,
+      "desc": "Dart storage server on port 8874",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792806346051,
+      "lastStartedAt": 1792806346051,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\-nNV_Pvo-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\-nNV_Pvo-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "t496bRdW",
+      "name": "repro-server",
+      "script": "dart",
+      "args": [
+        "run",
+        "bin/server.dart"
+      ],
+      "cwd": "D:/about-me/packages/aboutme_server",
+      "status": "exited",
+      "pid": 18944,
+      "exitCode": 255,
+      "error": null,
+      "desc": "procm restart bug reproduction instance (port 8875, temp data dir)",
+      "group": "repro",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792806739547,
+      "lastStartedAt": 1792806809598,
+      "stoppedAt": 1792806862880,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\t496bRdW-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\LWbUch(12168)\\processes\\t496bRdW-stderr.log",
+      "envs": {
+        "DATA_DIR": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\procm_repro_data",
+        "PORT": "8875"
+      }
     }
   ]
 }

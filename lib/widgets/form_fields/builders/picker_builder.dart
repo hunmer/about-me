@@ -222,7 +222,6 @@ Widget buildImagePickerField(FormFieldConfig config, GlobalKey fieldKey) {
   final enableCrop = extra['enableCrop'] as bool? ?? false;
   final cropAspectRatio = extra['cropAspectRatio'] as double?;
   final multiple = extra['multiple'] as bool? ?? false;
-  final saveDirectory = extra['saveDirectory'] as String? ?? 'app_images';
   final enableCompression = extra['enableCompression'] as bool? ?? false;
   final flex = extra['flex'] as int? ?? 1;
   final previewWidth = extra['previewWidth'] as double?;
@@ -262,7 +261,6 @@ Widget buildImagePickerField(FormFieldConfig config, GlobalKey fieldKey) {
           labelText: config.labelText,
           hintText: config.hintText,
           enabled: config.enabled,
-          saveDirectory: saveDirectory,
           enableCrop: enableCrop,
           cropAspectRatio: cropAspectRatio,
           multiple: multiple,

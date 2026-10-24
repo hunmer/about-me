@@ -136,7 +136,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
     final result = await ImagePickerDialog.show<Map<String, dynamic>>(
       context,
       initialUrl: item.coverPath,
-      saveDirectory: 'live2d_covers',
       enableCrop: true,
       cropAspectRatio: 1,
     );

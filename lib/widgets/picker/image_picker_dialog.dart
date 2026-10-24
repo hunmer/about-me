@@ -48,7 +48,7 @@ part 'image_picker_dialog_search_sheet.dart';
 /// 网格聚合展示应用存储内各插件上传的图片（chat、calendar_album 等），
 /// 首格为相册入口：移动端使用 wechat_assets_picker，桌面端走系统文件选择。
 /// 表情包 tab：EmojiPicker（svg/图片表情 + Unicode 表情内置分组），
-/// 内置资源选中后转存到 [saveDirectory]：svg 返回
+/// 内置资源选中后：svg 返回
 /// `{'file_path', 'svg'}`（文件路径 + 源码文本），图片返回真实文件路径；
 /// Unicode 表情以 `{'url': 'emoji:<表情>', 'bytes': null}` 返回
 /// （与在线 URL 入口同构，调用方可用 `emoji:` 前缀区分）。
@@ -60,9 +60,6 @@ part 'image_picker_dialog_search_sheet.dart';
 /// - url_sheet / search_sheet：在线 URL、图片搜索二级弹窗
 class ImagePickerDialog extends StatefulWidget {
   final String? initialUrl;
-
-  /// 图片保存的目录名称，默认为 'app_images'
-  final String saveDirectory;
 
   /// 是否启用图片裁剪功能
   final bool enableCrop;
@@ -85,7 +82,6 @@ class ImagePickerDialog extends StatefulWidget {
   const ImagePickerDialog({
     super.key,
     this.initialUrl,
-    this.saveDirectory = 'app_images',
     this.enableCrop = false,
     this.cropAspectRatio,
     this.multiple = false,
@@ -101,7 +97,6 @@ class ImagePickerDialog extends StatefulWidget {
   static Future<T?> show<T>(
     BuildContext context, {
     String? initialUrl,
-    String saveDirectory = 'app_images',
     bool enableCrop = false,
     double? cropAspectRatio,
     bool multiple = false,
@@ -114,7 +109,6 @@ class ImagePickerDialog extends StatefulWidget {
         swipeDismissible: true,
         builder: (context) => ImagePickerDialog(
           initialUrl: initialUrl,
-          saveDirectory: saveDirectory,
           enableCrop: enableCrop,
           cropAspectRatio: cropAspectRatio,
           multiple: multiple,
