@@ -7,8 +7,67 @@ import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/utils/blob_url.dart';
+
+/// 格式化时长为 mm:ss
+String formatDuration(Duration duration) {
+  String twoDigits(int n) => n.toString().padLeft(2, '0');
+  final minutes = twoDigits(duration.inMinutes.remainder(60));
+  final seconds = twoDigits(duration.inSeconds.remainder(60));
+  return '$minutes:$seconds';
+}
+
+/// 打开录音对话框（通用入口）：产物回调由调用方接入各自发送管道，
+/// 成功/失败提示由此处统一处理（chat / agent_chat 共用）
+Future<void> showRecordAudioDialog({
+  required BuildContext context,
+  required FutureOr<void> Function(
+    File audioFile,
+    Duration duration,
+    List<double> amplitudes,
+  ) onStop,
+  required FutureOr<void> Function(
+    Uint8List bytes,
+    String fileName,
+    Duration duration,
+    List<double> amplitudes,
+  ) onStopBytes,
+}) async {
+  if (!context.mounted) return;
+
+  showDSDialog(
+    context: context,
+    theme: DSThemeBridge.resolve(context),
+    barrierDismissible: false,
+    builder:
+        (dialogContext) => RecordAudioDialog(
+          onStopBytes: (bytes, fileName, duration, amplitudes) async {
+            try {
+              await onStopBytes(bytes, fileName, duration, amplitudes);
+              toastService.showToast(
+                '${'record_title'.tr}: ${formatDuration(duration)}',
+              );
+            } catch (e) {
+              debugPrint('处理音频时出错: $e');
+              toastService.showToast('${'record_failed'.tr}: $e');
+            }
+          },
+          onStop: (audioFile, duration, amplitudes) async {
+            try {
+              await onStop(audioFile, duration, amplitudes);
+              toastService.showToast(
+                '${'record_title'.tr}: ${formatDuration(duration)}',
+              );
+            } catch (e) {
+              debugPrint('处理音频时出错: $e');
+              toastService.showToast('${'record_failed'.tr}: $e');
+            }
+          },
+        ),
+  );
+}
 
 class RecordAudioDialog extends StatefulWidget {
   /// amplitudes 为录音期间的振幅采样（dBFS），用于还原真实波形
@@ -201,13 +260,6 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
     }
   }
 
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$minutes:$seconds';
-  }
-
   @override
   Widget build(BuildContext context) {
     return DSThemeBridge(
@@ -228,7 +280,7 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
                 ),
                 SizedBox(height: theme.spacing.lg),
                 Text(
-                  _formatDuration(_duration),
+                  formatDuration(_duration),
                   style: DsTypography.display.copyWith(color: theme.text),
                 ),
                 SizedBox(height: theme.spacing.lg),

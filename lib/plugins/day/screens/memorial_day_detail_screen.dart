@@ -345,6 +345,8 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
         ),
         // 内容区弧形拱起：应用背景色向上拱的全宽弧线（参考图 1），
         // 盖在 header 底边上（拱顶高出底边 [_arcDepth]，两端到 corner）
+        // 颜色与内容区实际背景保持一致：全局背景生效时 Scaffold 透明，
+        // 弧线用全局背景底色，避免连接处出现色差
         Positioned(
           left: 0,
           right: 0,
@@ -352,7 +354,11 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
           child: SizedBox(
             height: _arcDepth + 1,
             child: CustomPaint(
-              painter: _ArcHeaderPainter(theme.background),
+              painter: _ArcHeaderPainter(
+                dsScaffoldBackground(theme).alpha == 0
+                    ? globalBackdropColor(context)
+                    : theme.background,
+              ),
             ),
           ),
         ),
@@ -429,7 +435,8 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          // 顶部留出与弧线的缓冲，避免内容贴到弧线连接处
+          padding: const EdgeInsets.fromLTRB(20, 32, 20, 10),
           child: Text(
             '${'day_notes'.tr} (${day.notes.length})',
             style: DsTypography.heading.copyWith(color: theme.text),

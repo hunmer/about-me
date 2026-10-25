@@ -237,12 +237,17 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
                 IconAvatarRowField(
                   name: 'memorial_icon',
                   initialIcon: _selectedIcon,
-                  initialIconColor: _selectedIconColor,
+                  // 圆圈显示主题色（详情页背景用 backgroundColor，非 iconColor）
+                  initialIconColor: _selectedColor,
                   initialAvatarUrl: _backgroundImageUrl,
                   onChanged: (value) {
                     setState(() {
                       _selectedIcon = value['icon'] as IconData?;
                       _selectedIconColor = value['iconColor'] as Color?;
+                      // 表单唯一的选色入口即纪念日主题色，同步到背景色，
+                      // 否则保存后详情页背景不生效
+                      final color = value['iconColor'];
+                      if (color is Color) _selectedColor = color;
                       _backgroundImageUrl = value['avatarUrl'] as String?;
                     });
                   },

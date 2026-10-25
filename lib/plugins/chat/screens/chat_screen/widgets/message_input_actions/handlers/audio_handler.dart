@@ -1,70 +1,14 @@
-import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
-import 'package:get/get.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/chat/models/file_message.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/widgets/record_audio_dialog.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
-import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/utils.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
-import '../../../../../../../../core/services/toast_service.dart';
 
-/// 打开录音对话框（通用入口）：产物回调由调用方接入各自发送管道，
-/// 成功/失败提示由此处统一处理（chat / agent_chat 共用）
-Future<void> showRecordAudioDialog({
-  required BuildContext context,
-  required FutureOr<void> Function(
-    File audioFile,
-    Duration duration,
-    List<double> amplitudes,
-  ) onStop,
-  required FutureOr<void> Function(
-    Uint8List bytes,
-    String fileName,
-    Duration duration,
-    List<double> amplitudes,
-  ) onStopBytes,
-}) async {
-  if (!context.mounted) return;
-
-  showDSDialog(
-    context: context,
-    theme: DSThemeBridge.resolve(context),
-    barrierDismissible: false,
-    builder:
-        (dialogContext) => RecordAudioDialog(
-          onStopBytes: (bytes, fileName, duration, amplitudes) async {
-            try {
-              await onStopBytes(bytes, fileName, duration, amplitudes);
-              toastService.showToast(
-                '${'record_title'.tr}: ${formatDuration(duration)}',
-              );
-            } catch (e) {
-              debugPrint('处理音频时出错: $e');
-              toastService.showToast('${'record_failed'.tr}: $e');
-            }
-          },
-          onStop: (audioFile, duration, amplitudes) async {
-            try {
-              await onStop(audioFile, duration, amplitudes);
-              toastService.showToast(
-                '${'record_title'.tr}: ${formatDuration(duration)}',
-              );
-            } catch (e) {
-              debugPrint('处理音频时出错: $e');
-              toastService.showToast('${'record_failed'.tr}: $e');
-            }
-          },
-        ),
-  );
-}
-
+/// 录音并作为 chat 语音附件：保存到应用目录并构造标准化元数据，
+/// 交给待发送列表（对话框与成功/失败提示由公共入口 showRecordAudioDialog 处理）
 Future<void> handleAudioRecording({
   required BuildContext context,
   required FileService fileService,
@@ -72,7 +16,6 @@ Future<void> handleAudioRecording({
 }) {
   return showRecordAudioDialog(
     context: context,
-    // 保存到 chat 应用目录并构造标准化元数据，交给待发送列表
     onStopBytes: (bytes, fileName, duration, amplitudes) async {
       final storagePath = await fileService.saveAudioBytes(bytes, fileName);
       onFileSelected?.call(

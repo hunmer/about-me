@@ -37,7 +37,7 @@ import 'suggested_questions_dialog.dart';
 import 'command_selector.dart';
 import 'tool_template_selector.dart';
 import 'package:aboutme/plugins/agent_chat/widgets/press_to_record_button.dart';
-import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/audio_handler.dart';
+import 'package:aboutme/widgets/record_audio_dialog.dart';
 import 'package:aboutme/screens/settings_screen/widgets/speech_recognition_settings_dialog.dart';
 import '../../../../../../core/services/toast_service.dart';
 

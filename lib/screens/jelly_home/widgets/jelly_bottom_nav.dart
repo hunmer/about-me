@@ -73,7 +73,7 @@ class JellyBottomNav extends StatelessWidget {
           DSNavItem(icon: DsIconKind.bot, label: '聊天助手'),
           DSNavItem(icon: DsIconKind.calendar, label: '日程'),
           DSNavItem(icon: DsIconKind.grid, label: '看板'),
-          DSNavItem(icon: DsIconKind.user, label: '我的', showBadge: true),
+          DSNavItem(icon: DsIconKind.user, label: '我的'),
         ],
         currentIndex: current.index,
         onTap: onTap,
