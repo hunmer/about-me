@@ -147,7 +147,10 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   }
 
   Live2DModelDefinition? modelFor(Live2DArchive? value) =>
-      modelDefinitionForArchive(value);
+      modelDefinitionForArchive(
+        value,
+        importedModels: plugin.importedModels,
+      );
 
   @override
   Widget build(BuildContext context) {

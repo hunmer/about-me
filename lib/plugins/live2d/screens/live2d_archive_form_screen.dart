@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
+import 'package:aboutme/plugins/live2d/screens/live2d_imported_models_screen.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_model_page.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
@@ -113,6 +114,21 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
     if (current == null) return;
     final model = await Navigator.of(context).push<Live2DModelDefinition>(
       MaterialPageRoute(builder: (_) => const Live2DOnlineModelPage()),
+    );
+    if (!mounted || model == null) return;
+    setState(() {
+      current.modelLabel = model.label;
+      current.modelDir = model.modelDir;
+      current.modelFile = model.modelFile;
+    });
+  }
+
+  /// 打开本地模型库选择（zip 导入的模型列表，库内可继续导入新压缩包）
+  Future<void> _chooseImportedModel() async {
+    final current = archive;
+    if (current == null) return;
+    final model = await Navigator.of(context).push<Live2DModelDefinition>(
+      MaterialPageRoute(builder: (_) => const Live2DImportedModelsScreen()),
     );
     if (!mounted || model == null) return;
     setState(() {
@@ -294,6 +310,13 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
           subtitle: current.modelLabel,
           showChevron: true,
           onTap: _chooseModel,
+        ),
+        const SizedBox(height: 12),
+        DSListItem(
+          title: 'live2d_importedModelsEntry'.tr,
+          leading: DsIcon(DsIconKind.archive, color: theme.primary),
+          showChevron: true,
+          onTap: _chooseImportedModel,
         ),
         const SizedBox(height: 12),
         DSListItem(

@@ -2,15 +2,27 @@ import 'dart:io';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/events/user_events.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
+import 'package:aboutme/plugins/openai/openai_plugin.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
 
 class MessageAvatar extends StatefulWidget {
   final User user;
+
+  /// AI 消息的 agentId：头像实时读取 agent 配置，不随消息保存
+  final String? agentId;
+
   final VoidCallback? onTap;
 
-  const MessageAvatar({super.key, required this.user, this.onTap});
+  const MessageAvatar({
+    super.key,
+    required this.user,
+    this.agentId,
+    this.onTap,
+  });
 
   @override
   State<MessageAvatar> createState() => _MessageAvatarState();
@@ -19,12 +31,16 @@ class MessageAvatar extends StatefulWidget {
 class _MessageAvatarState extends State<MessageAvatar> {
   late User _currentUser;
 
+  /// agent 消息实时解析出的头像（assets/网络/本地相对路径）
+  String? _agentAvatarUrl;
+
   User get user => _currentUser;
 
   @override
   void initState() {
     super.initState();
     _currentUser = widget.user;
+    _resolveAgentAvatar();
     // 订阅用户头像更新事件
     EventManager.instance.subscribe(
       UserEventNames.userAvatarUpdated,
@@ -37,6 +53,9 @@ class _MessageAvatarState extends State<MessageAvatar> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.user != widget.user) {
       _currentUser = widget.user;
+    }
+    if (oldWidget.agentId != widget.agentId) {
+      _resolveAgentAvatar();
     }
   }
 
@@ -54,6 +73,28 @@ class _MessageAvatarState extends State<MessageAvatar> {
         setState(() {
           _currentUser = args.user; // 更新用户信息，包括新的头像地址
         });
+      }
+    }
+  }
+
+  Future<void> _resolveAgentAvatar() async {
+    final agentId = widget.agentId;
+    if (agentId == null) {
+      if (_agentAvatarUrl != null) {
+        setState(() => _agentAvatarUrl = null);
+      }
+      return;
+    }
+    try {
+      final plugin = PluginManager.instance.getPlugin('openai');
+      if (plugin is! OpenAIPlugin) return;
+      final agent = await plugin.controller.getAgent(agentId);
+      if (!mounted || widget.agentId != agentId || agent == null) return;
+      setState(() => _agentAvatarUrl = agent.avatarUrl);
+    } catch (_) {
+      // agent 已删除等情况：回落到默认头像
+      if (mounted && _agentAvatarUrl != null) {
+        setState(() => _agentAvatarUrl = null);
       }
     }
   }
@@ -83,26 +124,45 @@ class _MessageAvatarState extends State<MessageAvatar> {
           color: Theme.of(context).colorScheme.primaryContainer,
           boxShadow: DsShadows.soft,
         ),
-        child:
-            user.iconPath != null && user.iconPath != ''
-                ? FutureBuilder<String>(
-                  future: ImageUtils.getAbsolutePath(user.iconPath!),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData && snapshot.data != null) {
-                      return ClipOval(
-                        child: Image.file(
-                          File(snapshot.data!),
-                          width: 32,
-                          height: 32,
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    }
-                    return _buildDefaultAvatar(context);
-                  },
-                )
-                : _buildDefaultAvatar(context),
+        child: _buildAvatarContent(context),
       ),
     );
+  }
+
+  Widget _buildAvatarContent(BuildContext context) {
+    // agent 消息：优先使用 agent 配置的头像（实时读取）
+    final agentAvatar = _agentAvatarUrl;
+    if (widget.agentId != null && agentAvatar != null && agentAvatar.isNotEmpty) {
+      return AdaptiveImage(
+        imagePath: agentAvatar,
+        width: 32,
+        height: 32,
+        fit: BoxFit.cover,
+        shape: BoxShape.circle,
+        errorImage: _buildDefaultAvatar(context),
+      );
+    }
+
+    final iconPath = user.iconPath;
+    if (iconPath != null && iconPath.isNotEmpty) {
+      return FutureBuilder<String>(
+        future: ImageUtils.getAbsolutePath(iconPath),
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data != null) {
+            return ClipOval(
+              child: Image.file(
+                File(snapshot.data!),
+                width: 32,
+                height: 32,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _buildDefaultAvatar(context),
+              ),
+            );
+          }
+          return _buildDefaultAvatar(context);
+        },
+      );
+    }
+    return _buildDefaultAvatar(context);
   }
 }

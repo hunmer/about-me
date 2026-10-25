@@ -150,7 +150,8 @@ class _VideoPickerDialogState extends State<VideoPickerDialog> {
       final videos = <StorageFileInfo>[];
       for (final info in infos) {
         final key = info.path.replaceAll(r'\', '/');
-        allKeys.add(key);
+        // 两个来源（应用存储 / SDK 资源）同 key 只保留一条
+        if (!allKeys.add(key)) continue;
         if (ImageUtils.sdkAssetId(key) == null && !_isVideoExtension(key)) continue;
         videos.add(
           StorageFileInfo(

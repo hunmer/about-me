@@ -47,46 +47,29 @@ const List<Live2DModelDefinition> _models = [
       ),
     ],
   ),
-  Live2DModelDefinition(
-    label: 'IceGirl',
-    modelDir: 'assets/models/icegirl/',
-    modelFile: 'IceGirl.model3.json',
-    motions: [],
-  ),
-  Live2DModelDefinition(
-    label: 'Ren',
-    modelDir: 'assets/models/ren/',
-    modelFile: 'ren.model3.json',
-    motions: [
-      Live2DMotionDefinition(
-        group: 'Idle',
-        index: 0,
-        label: 'screens_jellyLive2dMotionIdle',
-      ),
-      Live2DMotionDefinition(
-        group: '',
-        index: 0,
-        label: 'screens_jellyLive2dMotion1',
-      ),
-      Live2DMotionDefinition(
-        group: '',
-        index: 1,
-        label: 'screens_jellyLive2dMotion2',
-      ),
-    ],
-  ),
 ];
 
 List<Live2DModelDefinition> get availableJellyLive2DModels =>
     List.unmodifiable(_models);
 
 /// 把 Live2D 存档转换为视图层模型定义（小屋页签与设置页共用）：
-/// 优先匹配内置模型（带动作列表），否则按存档路径构造在线模型定义
-Live2DModelDefinition? modelDefinitionForArchive(Live2DArchive? value) {
+/// 优先匹配内置模型（带动作列表），其次匹配本地导入模型（带回持久化的
+/// 动作列表），否则按存档路径构造在线模型定义；
+/// [importedModels] 由调用方传入 Live2DPlugin.instance.importedModels
+Live2DModelDefinition? modelDefinitionForArchive(
+  Live2DArchive? value, {
+  List<Live2DModelDefinition> importedModels = const [],
+}) {
   if (value == null || value.modelLabel.isEmpty) return null;
+  final imported = importedModels
+      .where(
+        (model) => model.modelDir == value.modelDir && model.modelFile == value.modelFile,
+      )
+      .firstOrNull;
   return availableJellyLive2DModels
           .where((model) => model.label == value.modelLabel)
           .firstOrNull ??
+      imported ??
       Live2DModelDefinition(
         label: value.modelLabel,
         modelDir: value.modelDir,

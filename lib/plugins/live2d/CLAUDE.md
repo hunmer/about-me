@@ -2,7 +2,7 @@
 
 [根目录](../../../CLAUDE.md) > [lib](../../) > [plugins](../) > **live2d**
 
-Live2D 桌宠插件（9 个 Dart 文件）：以"存档"为单位管理 Live2D 伙伴——每个存档绑定一个模型（内置 Mao/IceGirl/Ren 或在线模型）与一个 AI Agent，支持全局 TTS 播报与打字速度设置。本插件只提供**数据与设置层**，渲染视图复用 `lib/screens/jelly_home/` 的 `JellyLive2D`，对话走 agent_chat 临时会话。
+Live2D 桌宠插件（10 个 Dart 文件）：以"存档"为单位管理 Live2D 伙伴——每个存档绑定一个模型（内置 Mao、在线模型或 zip 压缩包导入，导入记录在本地模型库页管理）与一个 AI Agent，支持全局 TTS 播报与打字速度设置。本插件只提供**数据与设置层**，渲染视图复用 `lib/screens/jelly_home/` 的 `JellyLive2D`，对话走 agent_chat 临时会话。
 
 ## 约定的规则
 

@@ -41,6 +41,58 @@ void main() {
     await root.delete(recursive: true);
   });
 
+  test('批量按非空key查询，去重保序并报告未命中key', () async {
+    final library = await store.createMemoryLibrary('批量查询');
+    await memory.upsertForTool(library.id, 'user.name', '小明', []);
+    await memory.upsertForTool(library.id, 'user.age', '20', []);
+    await memory.upsertForTool(library.id, 'user.archived', '旧值', []);
+    final fragments = await memory.loadFragments(library.id);
+    fragments
+            .firstWhere((fragment) => fragment.key == 'user.archived')
+            .archived =
+        true;
+    await memory.saveFragments(library.id, fragments);
+
+    final result = await memory.searchKeysForTool(library.id, [
+      'user.age',
+      'user.name',
+      'user.age',
+      'missing.key',
+      'user.archived',
+    ]);
+    expect((result['fragments'] as List).map((item) => item['key']), [
+      'user.age',
+      'user.name',
+      'user.archived',
+    ]);
+    expect(result['missingKeys'], ['missing.key']);
+    expect((result['fragments'] as List).last['value'], '旧值');
+    await expectLater(
+      memory.searchKeysForTool(library.id, []),
+      throwsArgumentError,
+    );
+    await expectLater(
+      memory.searchKeysForTool(library.id, ['user.name', '  ']),
+      throwsArgumentError,
+    );
+    await expectLater(
+      memory.searchKeysForTool(library.id, ['user.name', 42]),
+      throwsArgumentError,
+    );
+  });
+
+  test('单条查询要求非空完整key', () async {
+    final library = await store.createMemoryLibrary('单条查询');
+    await expectLater(
+      memory.searchKeysForTool(library.id, [null]),
+      throwsArgumentError,
+    );
+    await expectLater(
+      memory.searchKeysForTool(library.id, ['  ']),
+      throwsArgumentError,
+    );
+  });
+
   test('逐层枚举key，按层级边界匹配且不返回value', () async {
     final library = await store.createMemoryLibrary('层级枚举');
     await memory.saveFragments(library.id, [

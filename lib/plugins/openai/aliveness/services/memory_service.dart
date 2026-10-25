@@ -50,7 +50,7 @@ class MemoryService {
       buffer.writeln('· ${library.name}（memoryId: ${library.id}）');
     }
     buffer.write(
-      '\n读写记忆工具必须传入上述目标库的 memoryId。记忆为 key/value，key 在库内唯一；先按 key 查询，同 key 写入更新当前值；不知道 key 时先用 list_memory_keys 逐层枚举命名空间（含 legacy 旧记忆），再按完整 key 查询；也可用 prefix 或 query 检索。禁止猜测 ID。\n',
+      '\n读写记忆工具必须传入上述目标库的 memoryId。记忆为 key/value，key 在库内唯一；先按 key 查询，同 key 写入更新当前值；不知道 key 时先用 list_memory_keys 逐层枚举命名空间（含 legacy 旧记忆），再用 search_memory 传入非空完整 key 查询；多个 key 使用 batch_search_memory 的非空 keys 数组批量查询。禁止猜测 ID。\n',
     );
     return buffer.toString();
   }
@@ -638,6 +638,43 @@ class MemoryService {
           },
         )
         .toList();
+  }
+
+  Future<Map<String, dynamic>> searchKeysForTool(
+    String memoryId,
+    Object? keys,
+  ) async {
+    if (keys is! List || keys.isEmpty) {
+      throw ArgumentError('keys 必须是非空的记忆 key 数组');
+    }
+    final requested = <String>[];
+    final seen = <String>{};
+    for (final key in keys) {
+      if (key is! String) throw ArgumentError('每个记忆 key 必须是非空字符串');
+      final validKey = validateKey(key);
+      if (seen.add(validKey)) requested.add(validKey);
+    }
+    final records = {
+      for (final fragment in await loadFragments(memoryId))
+        fragment.key: fragment,
+    };
+    return {
+      'memoryId': memoryId,
+      'fragments': [
+        for (final key in requested)
+          if (records.containsKey(key))
+            {
+              ...records[key]!.toJson(),
+              'fragmentId': records[key]!.id,
+              'memoryId': memoryId,
+              'subject': records[key]!.isSelf ? 'self' : 'user',
+            },
+      ],
+      'missingKeys': [
+        for (final key in requested)
+          if (!records.containsKey(key)) key,
+      ],
+    };
   }
 
   Future<MemoryFragment> upsertForTool(

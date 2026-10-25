@@ -228,6 +228,7 @@ class NativeToolAgentService {
   static const _memoryToolNames = {
     'list_memory_keys',
     'search_memory',
+    'batch_search_memory',
     'add_memory',
     'update_memory',
     'delete_memory',
@@ -305,6 +306,7 @@ class NativeToolAgentService {
                 tool.name == 'read_image' ||
                 (const {
                       'search_memory',
+                      'batch_search_memory',
                       'list_memory_keys',
                       'add_memory',
                       'update_memory',
@@ -875,32 +877,24 @@ class NativeToolAgentService {
               description: '命名空间前缀；可带尾部点，返回其下一层完整路径',
             ),
           ],
-          (args) => runMemoryTool(
-            'list_memory_keys',
-            '枚举记忆 key',
-            args,
-            (memoryId) async {
-              final prefix = args['prefix'] as String?;
-              final keys = await MemoryService.instance.listKeysForTool(
-                memoryId,
-                prefix: prefix,
-              );
-              return {
-                'memoryId': memoryId,
-                'prefix': prefix ?? '',
-                'keys': keys,
-              };
-            },
-          ),
+          (args) => runMemoryTool('list_memory_keys', '枚举记忆 key', args, (
+            memoryId,
+          ) async {
+            final prefix = args['prefix'] as String?;
+            final keys = await MemoryService.instance.listKeysForTool(
+              memoryId,
+              prefix: prefix,
+            );
+            return {'memoryId': memoryId, 'prefix': prefix ?? '', 'keys': keys};
+          }),
         ),
       );
       tools.add(
         memoryTool(
           'search_memory',
-          '按指定 memoryId 查询长期记忆（key-value 结构）。必须使用当前 Agent 已启用的 memoryId。'
-          'key 精确匹配单条（含已归档，优先级最高）；prefix 按前缀列出，query 按关键词检索，两者可并用，均不含已归档；'
-          '都不传时返回最近更新的记忆（最多50条）。'
-          '返回的每项含 key 和 value，后续按 key 更新或删除。',
+          '按指定 memoryId 和必填非空完整 key 精确查询单条长期记忆（含已归档）。'
+              '必须使用当前 Agent 已启用的 memoryId；不知道 key 时先用 list_memory_keys 枚举。'
+              '多个 key 使用 batch_search_memory。返回 key、value 等元数据。',
           [
             ToolParameter(
               name: 'memoryId',
@@ -910,39 +904,61 @@ class NativeToolAgentService {
             ToolParameter(
               name: 'key',
               type: 'string',
-              optional: true,
-              description: '精确 key，返回该条记忆（含已归档）',
-            ),
-            ToolParameter(
-              name: 'prefix',
-              type: 'string',
-              optional: true,
-              description: 'key 前缀，列出以该前缀开头的记忆（最多50条）',
-            ),
-            ToolParameter(
-              name: 'query',
-              type: 'string',
-              optional: true,
-              description: '关键词检索；可与 prefix 并用（key 优先，其次 prefix，最后 query）',
+              minLength: 1,
+              pattern: r'^\S+$',
+              description: '必填非空的完整 key，返回该条记忆（含已归档）',
             ),
           ],
           (args) =>
               runMemoryTool('search_memory', '查询记忆', args, (memoryId) async {
-                final results = await MemoryService.instance.searchForTool(
-                  memoryId,
-                  args['query'] as String?,
-                  key: args['key'] as String?,
-                  prefix: args['prefix'] as String?,
-                );
-                return {'memoryId': memoryId, 'fragments': results};
+                return MemoryService.instance.searchKeysForTool(memoryId, [
+                  args['key'],
+                ]);
               }),
+        ),
+      );
+      tools.add(
+        memoryTool(
+          'batch_search_memory',
+          '按指定 memoryId 和非空 keys 数组批量精确查询记忆（含已归档）。'
+              '每个 key 必须是非空完整路径；不知道 key 时先用 list_memory_keys 枚举。'
+              '返回按请求顺序去重的 fragments，以及未找到的 missingKeys。',
+          [
+            ToolParameter(
+              name: 'memoryId',
+              type: 'string',
+              description: '当前 Agent 已启用的目标记忆库 ID',
+            ),
+            ToolParameter(
+              name: 'keys',
+              type: 'array',
+              minItems: 1,
+              items: ToolParameter(
+                name: '',
+                type: 'string',
+                minLength: 1,
+                pattern: r'^\S+$',
+                description: '非空完整记忆 key',
+              ),
+              description: '要精确查询的非空 key 数组',
+            ),
+          ],
+          (args) => runMemoryTool(
+            'batch_search_memory',
+            '批量查询记忆',
+            args,
+            (memoryId) => MemoryService.instance.searchKeysForTool(
+              memoryId,
+              args['keys'],
+            ),
+          ),
         ),
       );
       tools.add(
         memoryTool(
           'add_memory',
           '向指定 memoryId 新增或覆盖一条 key-value 记忆（同 key 覆盖，即 upsert）。'
-          'key 是稳定的点分标识符（如 user.preference.food），value 是完整的记忆内容。返回 key/value/revision/updatedAt。',
+              'key 是稳定的点分标识符（如 user.preference.food），value 是完整的记忆内容。返回 key/value/revision/updatedAt。',
           [
             ToolParameter(
               name: 'memoryId',
@@ -1048,20 +1064,15 @@ class NativeToolAgentService {
               description: '要删除的记忆 key',
             ),
           ],
-          (args) => runMemoryTool('delete_memory', '删除记忆', args, (
-            memoryId,
-          ) async {
-            final key = (args['key'] as String?)?.trim();
-            if (key == null || key.isEmpty) {
-              throw ArgumentError('记忆 key 不能为空');
-            }
-            await MemoryService.instance.deleteByKey(memoryId, key);
-            return {
-              'success': true,
-              'memoryId': memoryId,
-              'key': key,
-            };
-          }),
+          (args) =>
+              runMemoryTool('delete_memory', '删除记忆', args, (memoryId) async {
+                final key = (args['key'] as String?)?.trim();
+                if (key == null || key.isEmpty) {
+                  throw ArgumentError('记忆 key 不能为空');
+                }
+                await MemoryService.instance.deleteByKey(memoryId, key);
+                return {'success': true, 'memoryId': memoryId, 'key': key};
+              }),
         ),
       );
     }

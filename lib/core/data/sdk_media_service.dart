@@ -43,23 +43,26 @@ class SdkMediaService {
       uploadBytes(await readPicked(file), file.name);
 
   /// 兼容现有网格展示模型；不把资源 ID 当成文件路径查询。
+  /// 同一内容多次上传会产生多个资产，按 sha256 去重（列表按时间倒序，保留最新）。
   static Future<List<StorageFileInfo>> listMedia(String mediaTypePrefix) async {
     final result = <StorageFileInfo>[];
+    final seenHashes = <String>{};
     for (var offset = 0; offset < 300; offset += 100) {
       final page = await _assets.list(
         mediaTypePrefix: mediaTypePrefix,
         offset: offset,
         limit: 100,
       );
-      result.addAll(
-        page.data.map(
-          (asset) => StorageFileInfo(
+      for (final asset in page.data) {
+        if (!seenHashes.add(asset.sha256)) continue;
+        result.add(
+          StorageFileInfo(
             path: asset.reference,
             size: asset.size,
             updatedAt: DateTime.parse(asset.createdAt),
           ),
-        ),
-      );
+        );
+      }
       if (!page.hasMore) break;
     }
     return result;

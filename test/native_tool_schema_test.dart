@@ -80,11 +80,12 @@ void main() {
       expect(builtInMode.map((t) => t.name), ['memory', 'get_current_time']);
     });
 
-    test('JS 模式保留五个记忆读写工具', () {
+    test('JS 模式保留六个记忆读写工具', () {
       final memoryTools = [
         for (final name in [
           'list_memory_keys',
           'search_memory',
+          'batch_search_memory',
           'add_memory',
           'update_memory',
           'delete_memory',
@@ -103,7 +104,7 @@ void main() {
       );
       expect(
         tools.map((tool) => tool.name),
-        ['list_memory_keys', 'search_memory', 'add_memory', 'update_memory', 'delete_memory', 'get_current_time', 'run_js'],
+        ['list_memory_keys', 'search_memory', 'batch_search_memory', 'add_memory', 'update_memory', 'delete_memory', 'get_current_time', 'run_js'],
       );
     });
 
@@ -144,6 +145,45 @@ void main() {
   });
 
   group('ToolParameter 嵌套 properties 解析', () {
+    test('约束字段支持序列化往返和 copyWith', () {
+      final param = ToolParameter.fromJson({
+        'name': 'keys',
+        'type': 'array',
+        'required': true,
+        'description': '要查询的 key 列表',
+        'minItems': 1,
+        'items': {
+          'type': 'string',
+          'minLength': 1,
+          'pattern': r'^\S+$',
+        },
+      });
+
+      expect(param.minItems, 1);
+      expect(param.items?.name, '');
+      expect(param.items?.description, '');
+      expect(param.items?.minLength, 1);
+      expect(param.items?.pattern, r'^\S+$');
+      final roundTripped = ToolParameter.fromJson(param.toJson());
+      expect(roundTripped.toJson(), param.toJson());
+
+      final copied = param.copyWith(
+        minLength: 2,
+        pattern: r'^key\.',
+        minItems: 2,
+        items: ToolParameter(
+          name: '',
+          type: 'string',
+          description: '',
+          minLength: 2,
+        ),
+      );
+      expect(copied.minLength, 2);
+      expect(copied.pattern, r'^key\.');
+      expect(copied.minItems, 2);
+      expect(copied.items?.minLength, 2);
+    });
+
     test('object 参数解析嵌套属性', () {
       final param = ToolParameter.fromJson({
         'name': 'params',
@@ -267,6 +307,51 @@ void main() {
       expect(schema['required'], ['filter']);
     });
 
+    test('递归生成数组 items 的约束 schema', () {
+      final schema = ToolSchemaBuilder.buildSchemaMap([
+        ToolParameter(
+          name: 'groups',
+          type: 'array',
+          description: '分组列表',
+          minItems: 1,
+          items: ToolParameter(
+            name: '',
+            type: 'object',
+            description: '',
+            properties: [
+              ToolParameter(
+                name: 'keys',
+                type: 'array',
+                description: 'key 列表',
+                minItems: 1,
+                items: ToolParameter(
+                  name: '',
+                  type: 'string',
+                  description: '',
+                  minLength: 1,
+                  pattern: r'^\S+$',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ]);
+
+      final groups = (schema['properties'] as Map<String, dynamic>)['groups']
+          as Map<String, dynamic>;
+      expect(groups['minItems'], 1);
+      final item = groups['items'] as Map<String, dynamic>;
+      final keys = (item['properties'] as Map<String, dynamic>)['keys']
+          as Map<String, dynamic>;
+      expect(keys['minItems'], 1);
+      expect(keys['items'], {
+        'type': 'string',
+        'description': '',
+        'minLength': 1,
+        'pattern': r'^\S+$',
+      });
+    });
+
     test('空参数生成空 object schema', () {
       final schema = ToolSchemaBuilder.buildSchemaMap([]);
       expect(schema['type'], 'object');
@@ -363,10 +448,11 @@ void main() {
       ) as List<dynamic>;
     });
 
-    test('五个记忆工具均已定义并要求显式 memoryId', () {
+    test('六个记忆工具均已定义并要求显式 memoryId', () {
       const names = {
         'list_memory_keys',
         'search_memory',
+        'batch_search_memory',
         'add_memory',
         'update_memory',
         'delete_memory',
@@ -401,13 +487,47 @@ void main() {
       );
     });
 
+    test('search_memory 和 batch_search_memory 透传 key 约束', () {
+      final searchParameters = (memoryTools['search_memory']
+              as Map<String, dynamic>)['parameters'] as List<dynamic>;
+      final searchSchema = ToolSchemaBuilder.buildSchemaMap(
+        searchParameters
+            .map((parameter) => ToolParameter.fromJson(
+                  Map<String, dynamic>.from(parameter as Map),
+                ))
+            .toList(),
+      );
+      expect(searchSchema['required'], ['memoryId', 'key']);
+      final key = (searchSchema['properties'] as Map)['key'] as Map;
+      expect(key['minLength'], 1);
+      expect(key['pattern'], r'^\S+$');
+
+      final batchParameters = (memoryTools['batch_search_memory']
+              as Map<String, dynamic>)['parameters'] as List<dynamic>;
+      final batchSchema = ToolSchemaBuilder.buildSchemaMap(
+        batchParameters
+            .map((parameter) => ToolParameter.fromJson(
+                  Map<String, dynamic>.from(parameter as Map),
+                ))
+            .toList(),
+      );
+      expect(batchSchema['required'], ['memoryId', 'keys']);
+      final keys = (batchSchema['properties'] as Map)['keys'] as Map;
+      expect(keys['minItems'], 1);
+      expect(keys['items'], {
+        'type': 'string',
+        'description': '',
+        'minLength': 1,
+        'pattern': r'^\S+$',
+      });
+    });
     test('写入和查询工具声明后续操作所需的 key 参数', () {
-      final searchNames = ((memoryTools['search_memory'] as Map<String, dynamic>)['parameters']
-              as List<dynamic>)
-          .cast<Map>()
-          .map((p) => p['name'])
-          .toSet();
-      expect(searchNames, containsAll(['query', 'key', 'prefix']));
+      final searchNames = ((memoryTools['search_memory']
+                  as Map<String, dynamic>)['parameters'] as List<dynamic>)
+              .cast<Map>()
+              .map((p) => p['name'])
+              .toSet();
+      expect(searchNames, {'memoryId', 'key'});
       for (final name in ['add_memory', 'update_memory', 'delete_memory']) {
         final parameters = (memoryTools[name] as Map<String, dynamic>)['parameters']
             as List<dynamic>;
@@ -429,11 +549,12 @@ void main() {
       }
     });
 
-    test('索引包含五个记忆工具', () {
+    test('索引包含六个记忆工具', () {
       final names = toolIndex.map((entry) => (entry as List).first).toSet();
       expect(names, containsAll([
         'memory_list_memory_keys',
         'memory_search_memory',
+        'memory_batch_search_memory',
         'memory_add_memory',
         'memory_update_memory',
         'memory_delete_memory',

@@ -7,6 +7,19 @@ const Map<String, String> live2dTranslationsEn = {
   'live2d_nameLabel': 'Name',
   'live2d_modelSection': 'Live2D Model',
   'live2d_chooseOnlineModel': 'Choose from online model repository',
+  'live2d_importZipModel': 'Import model from zip',
+  'live2d_importedModelsEntry': 'Imported models (import / choose)',
+  'live2d_importedModelsTitle': 'Imported Models',
+  'live2d_importedModelsEmpty':
+      'No imported models yet — import a zip to get started',
+  'live2d_deleteImportedTitle': 'Delete model',
+  'live2d_deleteImportedConfirm':
+      'Delete "@name"? Its model files will be removed too',
+  'live2d_deleteImportedInUseConfirm':
+      '"@name" is used by @count profiles. They will fail to load it after deletion. Delete anyway?',
+  'live2d_importZipPickerTitle': 'Choose a Live2D zip',
+  'live2d_importZipFailed': 'Import failed: @error',
+  'live2d_importZipNoModel': 'No .model3.json found in the zip',
   'live2d_agentSection': 'Agent Persona',
   'live2d_noAgentSelected': 'Not selected',
   'live2d_autoReadTitle': 'Auto-read AI replies',

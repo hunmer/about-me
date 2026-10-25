@@ -228,26 +228,41 @@ class Message {
       userMap = {'username': json['senderName']};
     }
 
-    // 从用户列表中查找基础用户信息
-   final users = ChatPlugin.instance.userService.getAllUsers();
-    var user = users.firstWhere(
-      (u) => u.id == userId,
-      orElse: () => User(id: userId, username: 'Unknown User'),
-    );
-
-    // 如果消息中包含用户信息，使用它覆盖全局用户信息
-    if (userMap != null) {
-      user = user.copyWith(
-        username: userMap['username'] as String?,
-        iconPath: userMap['iconPath'] as String?,
-      );
-    }
-    
     // 获取回复消息ID，优先从JSON直接获取，其次从metadata中获取
     final metadata = json['metadata'] as Map<String, dynamic>?;
-    String? replyToId = json['replyToId'] as String?;
+    final replyToId = json['replyToId'] as String?;
+
+    // 当前用户资料实时读取个人主页数据源（全局用户名/头像），
+    // 不再使用消息内保存的资料；其他用户仍从用户列表读取
+    final currentUser = ChatPlugin.instance.userService.currentUser;
+    if (userId == currentUser.id) {
+      return _createWithUser(json, currentUser, metadata, replyToId);
+    }
+
+    final users = ChatPlugin.instance.userService.getAllUsers();
+    var user = users.firstWhere(
+      (u) => u.id == userId,
+      orElse: () => User(
+        id: userId,
+        username: userMap?['username'] as String? ?? 'Unknown User',
+      ),
+    );
+
+    // 消息内仅允许覆盖用户名（历史消息展示名），头像不随消息保存
+    if (userMap != null && userMap['username'] != null) {
+      user = user.copyWith(username: userMap['username'] as String?);
+    }
+    return _createWithUser(json, user, metadata, replyToId);
+  }
+
+  static Future<Message> _createWithUser(
+    Map<String, dynamic> json,
+    User user,
+    Map<String, dynamic>? metadata,
+    String? replyToId,
+  ) {
     // 从JSON中获取channelId，如果不存在则尝试从metadata中获取
-    String? channelId = json['channelId'] as String?;
+    final channelId = json['channelId'] as String?;
     return create(
       id: json['id'] as String,
       content: json['content'] as String,

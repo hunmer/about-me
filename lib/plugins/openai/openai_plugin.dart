@@ -109,6 +109,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       // 记忆读写工具（均要求显式 memoryId）
       'list_memory_keys': _jsListMemoryKeys,
       'search_memory': _jsSearchMemory,
+      'batch_search_memory': _jsBatchSearchMemory,
       'add_memory': _jsAddMemory,
       'update_memory': _jsUpdateMemory,
       'delete_memory': _jsDeleteMemory,
@@ -420,9 +421,10 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       final agents = await agentController.loadAgents();
       final updatedAgents = <AIAgent>[];
       for (final agent in agents) {
-        // 仅覆盖仍带占位符 Key 的默认 Agent，不动用户已配置的
+        // 仅覆盖未配置的默认 Agent（占位符 Key，或早期内置 Ollama 假
+        // Key 'ollama'），不动用户已配置的
         final hasPlaceholder = agent.headers.values.any(
-          (v) => v.contains('YOUR_API_KEY'),
+          (v) => v.contains('YOUR_API_KEY') || v == 'ollama',
         );
         if (!hasPlaceholder) continue;
         updatedAgents.add(

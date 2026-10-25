@@ -54,7 +54,8 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
         if (ImageUtils.sdkAssetId(key) == null && !_isImageExtension(key)) {
           continue;
         }
-        imageKeys.add(key);
+        // 两个来源（应用存储 / SDK 资源）同 key 只保留一条
+        if (!imageKeys.add(key)) continue;
         if (!path.basename(key).contains('.thumb')) {
           images.add(
             StorageFileInfo(

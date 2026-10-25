@@ -228,6 +228,13 @@ class _MessageBubbleState extends State<MessageBubble>
 
   bool get _isCurrentUser => _currentMessage.user.id == widget.currentUserId;
 
+  /// AI 消息的 agentId（头像实时读取 agent 配置，不随消息保存）
+  String? get _agentId {
+    final metadata = _currentMessage.metadata;
+    if (metadata == null || metadata['isAI'] != true) return null;
+    return metadata['agentId'] as String?;
+  }
+
   bool _isImageMessage() {
     final metadata = _currentMessage.metadata;
     if (metadata == null ||
@@ -352,6 +359,7 @@ class _MessageBubbleState extends State<MessageBubble>
                                   padding: const EdgeInsets.only(right: 4),
                                   child: MessageAvatar(
                                     user: _currentMessage.user,
+                                    agentId: _agentId,
                                     onTap: widget.onAvatarTap,
                                   ),
                                 ),
@@ -365,6 +373,7 @@ class _MessageBubbleState extends State<MessageBubble>
                           padding: const EdgeInsets.only(bottom: 6, right: 4),
                           child: MessageAvatar(
                             user: _currentMessage.user,
+                            agentId: _agentId,
                             onTap: widget.onAvatarTap,
                           ),
                         ),
@@ -379,6 +388,7 @@ class _MessageBubbleState extends State<MessageBubble>
                                   padding: const EdgeInsets.only(left: 4),
                                   child: MessageAvatar(
                                     user: _currentMessage.user,
+                                    agentId: _agentId,
                                     onTap: widget.onAvatarTap,
                                   ),
                                 ),

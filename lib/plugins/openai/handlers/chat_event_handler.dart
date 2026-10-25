@@ -206,12 +206,8 @@ class ChatEventHandler {
         throw Exception('找不到指定的AI助手配置');
       }
 
-      // 使用完整的agent信息创建AI用户
-      aiUser = User(
-        id: agent.id,
-        username: agent.name,
-        iconPath: await ImageUtils.getAbsolutePath(agent.avatarUrl),
-      );
+      // 使用完整的agent信息创建AI用户（头像由气泡按 agentId 实时读取 agent 配置）
+      aiUser = User(id: agent.id, username: agent.name);
 
       // 创建AI回复消息，使用agent的ID确保唯一性
       final messageId =

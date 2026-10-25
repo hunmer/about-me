@@ -274,7 +274,8 @@ class ChatDataService {
   Future<Message> addMessage(String channelId, Message message) async {
     final json = await _call('sendMessage', {
       ...await message.toJson(),
-      'user': message.user.toJson(),
+      // 头像不随消息保存：当前用户读全局资料，AI 消息实时读 agent 配置
+      'user': {'id': message.user.id, 'username': message.user.username},
       'channelId': channelId,
       'clientMutationId': 'message:${message.id}',
     });

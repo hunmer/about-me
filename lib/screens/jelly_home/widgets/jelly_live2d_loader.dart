@@ -139,7 +139,10 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       Live2DPlugin.archiveSelectedEvent,
       EventArgs(Live2DPlugin.archiveSelectedEvent),
     );
-    final model = modelDefinitionForArchive(archive);
+    final model = modelDefinitionForArchive(
+      archive,
+      importedModels: plugin.importedModels,
+    );
     if (model != null) await _selectModel(model);
     // 落盘放在切换之后：持久化失败不应阻断本次模型切换
     try {

@@ -31,16 +31,26 @@ Future<String> _jsSearchMemory(Map<String, dynamic> params) async {
     return jsonEncode({'error': '缺少必需参数: memoryId'});
   }
   try {
-    final results = await MemoryService.instance.searchForTool(
+    final result = await MemoryService.instance.searchKeysForTool(memoryId, [
+      params['key'],
+    ]);
+    return jsonEncode(result);
+  } catch (e) {
+    return jsonEncode({'error': e.toString(), 'memoryId': memoryId});
+  }
+}
+
+Future<String> _jsBatchSearchMemory(Map<String, dynamic> params) async {
+  final memoryId = (params['memoryId'] as String?)?.trim();
+  if (memoryId == null || memoryId.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: memoryId'});
+  }
+  try {
+    final result = await MemoryService.instance.searchKeysForTool(
       memoryId,
-      params['query'] as String?,
-      key: params['key'] as String?,
-      prefix: params['prefix'] as String?,
+      params['keys'],
     );
-    return jsonEncode({
-      'memoryId': memoryId,
-      'fragments': results,
-    });
+    return jsonEncode(result);
   } catch (e) {
     return jsonEncode({'error': e.toString(), 'memoryId': memoryId});
   }
@@ -58,7 +68,11 @@ Future<String> _jsAddMemory(Map<String, dynamic> params) async {
     return jsonEncode({'error': '缺少必需参数: key', 'memoryId': memoryId});
   }
   if (value == null || value.isEmpty) {
-    return jsonEncode({'error': '缺少必需参数: value', 'memoryId': memoryId, 'key': key});
+    return jsonEncode({
+      'error': '缺少必需参数: value',
+      'memoryId': memoryId,
+      'key': key,
+    });
   }
   try {
     final fragment = await MemoryService.instance.upsertForTool(
@@ -69,7 +83,11 @@ Future<String> _jsAddMemory(Map<String, dynamic> params) async {
     );
     return jsonEncode(_memoryKVResult(memoryId, key, fragment));
   } catch (e) {
-    return jsonEncode({'error': e.toString(), 'memoryId': memoryId, 'key': key});
+    return jsonEncode({
+      'error': e.toString(),
+      'memoryId': memoryId,
+      'key': key,
+    });
   }
 }
 
@@ -85,7 +103,11 @@ Future<String> _jsUpdateMemory(Map<String, dynamic> params) async {
     return jsonEncode({'error': '缺少必需参数: key', 'memoryId': memoryId});
   }
   if (value == null || value.isEmpty) {
-    return jsonEncode({'error': '缺少必需参数: value', 'memoryId': memoryId, 'key': key});
+    return jsonEncode({
+      'error': '缺少必需参数: value',
+      'memoryId': memoryId,
+      'key': key,
+    });
   }
   try {
     final fragment = await MemoryService.instance.updateByKey(
@@ -96,7 +118,11 @@ Future<String> _jsUpdateMemory(Map<String, dynamic> params) async {
     );
     return jsonEncode(_memoryKVResult(memoryId, key, fragment));
   } catch (e) {
-    return jsonEncode({'error': e.toString(), 'memoryId': memoryId, 'key': key});
+    return jsonEncode({
+      'error': e.toString(),
+      'memoryId': memoryId,
+      'key': key,
+    });
   }
 }
 
@@ -111,13 +137,13 @@ Future<String> _jsDeleteMemory(Map<String, dynamic> params) async {
   }
   try {
     await MemoryService.instance.deleteByKey(memoryId, key);
+    return jsonEncode({'success': true, 'memoryId': memoryId, 'key': key});
+  } catch (e) {
     return jsonEncode({
-      'success': true,
+      'error': e.toString(),
       'memoryId': memoryId,
       'key': key,
     });
-  } catch (e) {
-    return jsonEncode({'error': e.toString(), 'memoryId': memoryId, 'key': key});
   }
 }
 

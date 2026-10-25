@@ -25,7 +25,6 @@ import 'package:aboutme/plugins/openai/moments/services/agent_assets_service.dar
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
-import 'package:aboutme/utils/image_utils.dart';
 
 /// 主动消息服务（PRD 5.1.2 / Phase 3）：
 /// 周期检查所有开启活人感的 agent，满足条件时主动发消息到上次互动频道。
@@ -304,12 +303,8 @@ class ProactiveService {
     final text = content.trim();
     if (text.isEmpty || text.startsWith('Error:')) return;
 
-    // 分条写入频道
-    final aiUser = User(
-      id: agent.id,
-      username: agent.name,
-      iconPath: await ImageUtils.getAbsolutePath(agent.avatarUrl),
-    );
+    // 分条写入频道（头像由气泡按 agentId 实时读取 agent 配置）
+    final aiUser = User(id: agent.id, username: agent.name);
     final bubbles = _executor.splitIntoBubbles(
       text,
       agent.alivenessConfig?.maxBubbles ?? 3,

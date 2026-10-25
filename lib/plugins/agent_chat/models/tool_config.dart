@@ -20,12 +20,28 @@ class ToolParameter {
   /// object 类型的嵌套属性（可选，原生 FC schema 用）
   final List<ToolParameter> properties;
 
+  /// 字符串最小长度约束
+  final int? minLength;
+
+  /// 字符串正则约束
+  final String? pattern;
+
+  /// 数组最小元素数量约束
+  final int? minItems;
+
+  /// 数组元素 schema
+  final ToolParameter? items;
+
   ToolParameter({
     required this.name,
     required this.type,
     this.optional = false,
     required this.description,
     this.properties = const [],
+    this.minLength,
+    this.pattern,
+    this.minItems,
+    this.items,
   });
 
   factory ToolParameter.fromJson(Map<String, dynamic> json) {
@@ -41,6 +57,14 @@ class ToolParameter {
     }
 
     final nested = _parseNestedProperties(json['properties']);
+    final itemJson = json['items'];
+    final items = itemJson is Map
+        ? ToolParameter.fromJson({
+            ...Map<String, dynamic>.from(itemJson),
+            'name': itemJson['name'] ?? '',
+            'description': itemJson['description'] ?? '',
+          })
+        : null;
 
     return ToolParameter(
       name: json['name'] as String,
@@ -48,6 +72,10 @@ class ToolParameter {
       optional: optional,
       description: json['description'] as String,
       properties: nested,
+      minLength: json['minLength'] as int?,
+      pattern: json['pattern'] as String?,
+      minItems: json['minItems'] as int?,
+      items: items,
     );
   }
 
@@ -82,6 +110,10 @@ class ToolParameter {
       'description': description,
       if (properties.isNotEmpty)
         'properties': properties.map((p) => p.toJson()).toList(),
+      if (minLength != null) 'minLength': minLength,
+      if (pattern != null) 'pattern': pattern,
+      if (minItems != null) 'minItems': minItems,
+      if (items != null) 'items': items!.toJson(),
     };
   }
 
@@ -91,6 +123,10 @@ class ToolParameter {
     bool? optional,
     String? description,
     List<ToolParameter>? properties,
+    int? minLength,
+    String? pattern,
+    int? minItems,
+    ToolParameter? items,
   }) {
     return ToolParameter(
       name: name ?? this.name,
@@ -98,6 +134,10 @@ class ToolParameter {
       optional: optional ?? this.optional,
       description: description ?? this.description,
       properties: properties ?? this.properties,
+      minLength: minLength ?? this.minLength,
+      pattern: pattern ?? this.pattern,
+      minItems: minItems ?? this.minItems,
+      items: items ?? this.items,
     );
   }
 }

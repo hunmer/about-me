@@ -16,7 +16,6 @@ import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
-import 'package:aboutme/plugins/chat/screens/profile_edit_dialog.dart';
 import 'package:aboutme/plugins/chat/utils/message_operations.dart';
 import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
 // 移除未使用的导入
@@ -899,23 +898,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   }
                 }
               } else {
-                // 如果不是AI消息，显示用户资料编辑对话框
-                // （保存由对话框内部完成，统一写入个人主页数据源）
-                final chatPlugin = ChatPlugin.instance;
-                final users = chatPlugin.userService.getAllUsers();
-                final targetUser = users.firstWhere(
-                  (user) => user.id == message.user.id,
-                  orElse: () => message.user,
-                );
-
-                await showDSDialog<User>(
-                  context: context,
-                  theme: DSThemeBridge.resolve(context),
-                  builder: (context) => ProfileEditDialog(
-                    user: targetUser,
-                    chatPlugin: chatPlugin,
-                  ),
-                );
+                // 普通用户消息：chat 不再单独维护头像（读取全局用户资料），无编辑入口
+                return;
               }
             },
             showAvatar: ChatPlugin.instance.settingsService.showAvatarInChat,

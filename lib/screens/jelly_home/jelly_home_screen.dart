@@ -203,6 +203,7 @@ class _CottageTabState extends State<_CottageTab> {
                     reaction: _live2dReaction,
                     initialModel: modelDefinitionForArchive(
                       Live2DPlugin.instance.selected,
+                      importedModels: Live2DPlugin.instance.importedModels,
                     ),
                     typingInterval: Live2DPlugin.instance.bubbleTypingInterval,
                     onTap: (hitAreaId, _) {

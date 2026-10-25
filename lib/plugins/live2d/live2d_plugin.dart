@@ -1,14 +1,20 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
+import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
+import 'package:aboutme/screens/jelly_home/live2d_zip_import.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'screens/live2d_main_screen.dart';
 import 'screens/live2d_settings_screen.dart';
@@ -85,6 +91,68 @@ class Live2DPlugin extends BasePlugin {
   List<String> get customBubbleAssets =>
       (settings['customBubbleAssets'] as List?)?.whereType<String>().toList() ??
       const [];
+
+  /// 本地导入（zip）的模型库，经 settings.importedModels 持久化；
+  /// 存档选中导入模型时据此找回完整定义（含动作列表）
+  List<Live2DModelDefinition> get importedModels => [
+    for (final item in (settings['importedModels'] as List? ?? const []))
+      if (item is Map)
+        importedModelFromJson(Map<String, dynamic>.from(item)),
+  ];
+
+  /// 新增/更新导入记录：同目录+同入口文件视为同一模型，覆盖旧记录
+  Future<void> addImportedModel(Live2DModelDefinition model) async {
+    final next = <Map<String, dynamic>>[
+      ..._rawImportedModels()
+          .where(
+            (item) =>
+                item['modelDir'] != model.modelDir ||
+                item['modelFile'] != model.modelFile,
+          )
+          .map((item) => Map<String, dynamic>.from(item)),
+      importedModelToJson(model),
+    ];
+    await updateSettings({'importedModels': next});
+  }
+
+  /// 删除导入记录；模型文件目录位于应用 live2d_models 目录内时一并清理磁盘
+  Future<void> removeImportedModel(Live2DModelDefinition model) async {
+    final next = _rawImportedModels()
+        .where(
+          (item) =>
+              item['modelDir'] != model.modelDir ||
+              item['modelFile'] != model.modelFile,
+        )
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+    await updateSettings({'importedModels': next});
+    final dir = model.modelDir;
+    if (dir.isEmpty ||
+        !(dir.startsWith('/') || RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(dir))) {
+      return;
+    }
+    try {
+      final modelsRoot = Directory(
+        p.join((await getApplicationSupportDirectory()).path, 'live2d_models'),
+      );
+      // 只清理 live2d_models 目录内的子目录，避免误删任意路径
+      if (p.isWithin(modelsRoot.path, p.normalize(dir))) {
+        await Directory(p.normalize(dir)).delete(recursive: true);
+      }
+    } catch (error) {
+      debugPrint('[Live2D] remove imported model files failed: $error');
+    }
+  }
+
+  /// 引用指定导入模型的存档数量（删除前提示用）
+  int archivesUsingModel(Live2DModelDefinition model) => archives
+      .where((a) => a.modelDir == model.modelDir && a.modelFile == model.modelFile)
+      .length;
+
+  List<Map<String, dynamic>> _rawImportedModels() => [
+    for (final item in (settings['importedModels'] as List? ?? const []))
+      if (item is Map) Map<String, dynamic>.from(item),
+  ];
 
   Future<void> addCustomBubbleAsset(String asset) async {
     final next = [...customBubbleAssets];
@@ -192,6 +260,7 @@ class Live2DPlugin extends BasePlugin {
       'customBackgroundAssets': <String>[],
       'bubbleRegions': <String, dynamic>{},
       'customBubbleAssets': <String>[],
+      'importedModels': <Map<String, dynamic>>[],
     });
     final res = await AboutmeDataService.instance
         .call('live2d', 'getSnapshot', {});

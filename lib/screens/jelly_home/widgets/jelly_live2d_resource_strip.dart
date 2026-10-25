@@ -123,7 +123,10 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
     );
     if (!mounted) return;
     setState(() {});
-    final model = modelDefinitionForArchive(Live2DPlugin.instance.selected);
+    final model = modelDefinitionForArchive(
+      Live2DPlugin.instance.selected,
+      importedModels: Live2DPlugin.instance.importedModels,
+    );
     if (model != null) await _selectModel(model);
   }
 
@@ -220,7 +223,10 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
     );
     if (!mounted) return;
     setState(() {});
-    final model = modelDefinitionForArchive(Live2DPlugin.instance.selected);
+    final model = modelDefinitionForArchive(
+      Live2DPlugin.instance.selected,
+      importedModels: Live2DPlugin.instance.importedModels,
+    );
     if (model != null) await _selectModel(model);
   }
 

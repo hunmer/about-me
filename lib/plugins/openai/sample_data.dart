@@ -19,7 +19,7 @@ class OpenAISampleData {
         'avatarUrl': 'assets/agents/agent_assistant.webp',
         'serviceProviderId': 'ollama',
         'baseUrl': 'http://localhost:11434',
-        'headers': {'api-key': 'ollama'},
+        'headers': {'api-key': 'YOUR_API_KEY'},
         'model': 'llama3',
         'systemPrompt': '''你是一个乐于助人的AI助手，擅长回答问题并提供有用的建议。请用友好的语气与用户交流。
 
@@ -272,7 +272,7 @@ class OpenAISampleData {
         'avatarUrl': 'assets/agents/agent_travel.webp',
         'serviceProviderId': 'ollama',
         'baseUrl': 'http://localhost:11434',
-        'headers': {'api-key': 'ollama'},
+        'headers': {'api-key': 'YOUR_API_KEY'},
         'model': 'llama3',
         'systemPrompt': '''你是一位资深的旅行规划师和旅游达人。
 

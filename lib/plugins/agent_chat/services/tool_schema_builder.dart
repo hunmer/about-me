@@ -94,16 +94,7 @@ class ToolSchemaBuilder {
     final properties = <String, Object?>{};
     final required = <String>[];
     for (final p in params) {
-      final type = _normalizeType(p.type);
-      final prop = <String, Object?>{
-        'type': type,
-        'description': p.description,
-      };
-      if (type == 'object' && p.properties.isNotEmpty) {
-        prop['properties'] = _propsMap(p.properties);
-        prop['required'] = _requiredOf(p.properties);
-      }
-      properties[p.name] = prop;
+      properties[p.name] = _schemaFor(p);
       if (!p.optional) required.add(p.name);
     }
     return <String, Object?>{
@@ -116,17 +107,28 @@ class ToolSchemaBuilder {
   static Map<String, Object?> _propsMap(List<ToolParameter> params) {
     final map = <String, Object?>{};
     for (final p in params) {
-      final prop = <String, Object?>{
-        'type': _normalizeType(p.type),
-        'description': p.description,
-      };
-      if (prop['type'] == 'object' && p.properties.isNotEmpty) {
-        prop['properties'] = _propsMap(p.properties);
-        prop['required'] = _requiredOf(p.properties);
-      }
-      map[p.name] = prop;
+      map[p.name] = _schemaFor(p);
     }
     return map;
+  }
+
+  static Map<String, Object?> _schemaFor(ToolParameter parameter) {
+    final type = _normalizeType(parameter.type);
+    final schema = <String, Object?>{
+      'type': type,
+      'description': parameter.description,
+      if (parameter.minLength != null) 'minLength': parameter.minLength,
+      if (parameter.pattern != null) 'pattern': parameter.pattern,
+      if (parameter.minItems != null) 'minItems': parameter.minItems,
+    };
+    if (type == 'object' && parameter.properties.isNotEmpty) {
+      schema['properties'] = _propsMap(parameter.properties);
+      schema['required'] = _requiredOf(parameter.properties);
+    }
+    if (parameter.items != null) {
+      schema['items'] = _schemaFor(parameter.items!);
+    }
+    return schema;
   }
 
   static List<String> _requiredOf(List<ToolParameter> params) =>
