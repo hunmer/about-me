@@ -30,8 +30,14 @@ class ToolSchemaBuilder {
         final name = '$prefix${parameter.name}';
         if (value == null) {
           if (!parameter.optional) result.add(name);
-        } else if (value is Map && parameter.properties.isNotEmpty) {
-          result.addAll(missing(parameter.properties, value, '$name.'));
+        } else {
+          final valid = _constraintError(parameter, value);
+          if (valid != null) {
+            result.add('$name: $valid');
+          }
+          if (value is Map && parameter.properties.isNotEmpty) {
+            result.addAll(missing(parameter.properties, value, '$name.'));
+          }
         }
       }
       return result;
@@ -52,6 +58,31 @@ class ToolSchemaBuilder {
       return Map<String, dynamic>.from(args['params'] as Map);
     }
     return Map<String, dynamic>.from(args);
+  }
+
+  static String? _constraintError(ToolParameter parameter, dynamic value) {
+    if (parameter.minLength != null &&
+        value is String &&
+        value.length < parameter.minLength!) {
+      return '长度不能少于 ${parameter.minLength}';
+    }
+    if (parameter.pattern != null &&
+        value is String &&
+        !RegExp(parameter.pattern!).hasMatch(value)) {
+      return '格式不符合要求';
+    }
+    if (parameter.minItems != null &&
+        value is List &&
+        value.length < parameter.minItems!) {
+      return '数量不能少于 ${parameter.minItems}';
+    }
+    if (parameter.items != null && value is List) {
+      for (var index = 0; index < value.length; index++) {
+        final error = _constraintError(parameter.items!, value[index]);
+        if (error != null) return '第 ${index + 1} 项 $error';
+      }
+    }
+    return null;
   }
 
   static String? resultError(dynamic result) {

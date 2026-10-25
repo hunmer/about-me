@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 
+import 'package:aboutme/core/app_initializer.dart' show globalStorage;
+import 'package:aboutme/utils/image_utils.dart';
 import 'aboutme_data_service.dart';
 
 /// 宿主只处理所选媒体的字节，所有持久化由 SDK 资源服务执行。
@@ -96,22 +98,7 @@ class SdkMediaService {
     }
     Uint8List? thumb;
     if (enableCompression && ext != '.svg') {
-      try {
-        final candidate = await ImageCompressPlus.compressWithList(
-          bytes,
-          minWidth: 320,
-          minHeight: 320,
-          format: CompressFormat.jpeg,
-          quality: quality,
-        );
-        if (candidate.length >= 3 &&
-            candidate[0] == 0xff &&
-            candidate[1] == 0xd8) {
-          thumb = candidate;
-        }
-      } catch (error) {
-        debugPrint('[Media] 缩略图编码不可用: $error');
-      }
+      thumb = await _compressThumb(bytes, quality);
     }
     final image = await uploadBytes(bytes, name);
     final thumbnail = thumb == null
@@ -125,6 +112,57 @@ class SdkMediaService {
       'thumbUrl': thumbnail?.reference,
       'bytes': bytes,
     };
+  }
+
+  /// 编辑后原地更新图片：SDK 资产内容替换，id/引用不变，
+  /// 持有该引用的业务数据（消息/日历条目等）无需变更。
+  /// 非 SDK 资产 url（本地路径）不在此处理，由调用方自行写文件。
+  static Future<void> replaceAsset(String url, Uint8List bytes) async {
+    final id = ImageUtils.sdkAssetId(url);
+    if (id == null) return;
+    await _assets.replace(id, bytes);
+  }
+
+  /// 用编辑后的原图字节刷新伴生缩略图（引用不变）：
+  /// - SDK 缩略图资产（asset://）原地替换
+  /// - 旧路径缩略图（命名约定 `<name>.thumb<ext>`）直接覆盖写入
+  /// thumbUrl 为空或编码失败时跳过，不影响原图
+  static Future<void> updateThumb(
+    Uint8List originalBytes,
+    String? thumbUrl, {
+    int quality = 85,
+  }) async {
+    if (thumbUrl == null || thumbUrl.isEmpty) return;
+    final thumb = await _compressThumb(originalBytes, quality);
+    if (thumb == null) return;
+    final thumbId = ImageUtils.sdkAssetId(thumbUrl);
+    if (thumbId != null) {
+      await _assets.replace(thumbId, thumb);
+      return;
+    }
+    final rel = thumbUrl.startsWith('./') ? thumbUrl.substring(2) : thumbUrl;
+    if (path.basename(rel).contains('.thumb')) {
+      await globalStorage.writeBytes(rel.replaceAll(r'\', '/'), thumb);
+    }
+  }
+
+  /// 压缩生成缩略图（320 短边 JPEG）；编码不可用或产物非法时返回 null
+  static Future<Uint8List?> _compressThumb(Uint8List bytes, int quality) async {
+    try {
+      final candidate = await ImageCompressPlus.compressWithList(
+        bytes,
+        minWidth: 320,
+        minHeight: 320,
+        format: CompressFormat.jpeg,
+        quality: quality,
+      );
+      if (candidate.length >= 3 && candidate[0] == 0xff && candidate[1] == 0xd8) {
+        return candidate;
+      }
+    } catch (error) {
+      debugPrint('[Media] 缩略图编码不可用: $error');
+    }
+    return null;
   }
 
   static bool _isWebp(Uint8List bytes) =>

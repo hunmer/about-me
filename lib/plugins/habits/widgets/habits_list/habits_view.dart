@@ -119,6 +119,8 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
       'habits_cache_updated',
       _onHabitsCacheUpdated,
     );
+    // 数据重载后的统一刷新事件（同步链路/引导页应用示例数据）
+    EventManager.instance.subscribe('habits_refresh', _onHabitsCacheUpdated);
     _loadHabits();
     _loadViewMode();
 
@@ -145,6 +147,7 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
       'habits_cache_updated',
       _onHabitsCacheUpdated,
     );
+    EventManager.instance.unsubscribe('habits_refresh', _onHabitsCacheUpdated);
     super.dispose();
   }
 

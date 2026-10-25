@@ -126,6 +126,7 @@ void main() {
       label: 'hitori',
       modelDir: '/somewhere/hitori/',
       modelFile: 'character.model3.json',
+      thumbPath: 'live2d_thumbs/hitori.webp',
       motions: const [
         Live2DMotionDefinition(
           group: 'Idle',
@@ -141,8 +142,42 @@ void main() {
     expect(restored.label, model.label);
     expect(restored.modelDir, model.modelDir);
     expect(restored.modelFile, model.modelFile);
+    expect(restored.thumbPath, model.thumbPath);
     expect(restored.motions.single.group, 'Idle');
     expect(restored.motions.single.hasSound, isTrue);
+  });
+
+  test('parseModels 解析并继承 thumbUrl', () {
+    final catalog = {
+      'models': {
+        'name': 'Eikanya/Live2d-model',
+        'thumbUrl': 'https://example.com/cover.png',
+        'children': [
+          {
+            'name': 'group',
+            'children': [
+              {
+                'name': '001',
+                'thumbUrl': 'pics/001.png',
+                'files': ['a/xxx.model3.json'],
+              },
+              {'name': '002', 'files': ['b/yyy.model3.json']},
+            ],
+          },
+        ],
+      },
+    };
+
+    final items = Live2DOnlineCatalog.parseModels(catalog);
+
+    expect(items, hasLength(2));
+    // 自身相对路径 → 拼 CDN 前缀
+    expect(
+      items.first.thumbUrl,
+      'https://cdn.jsdelivr.net/gh/Eikanya/Live2d-model@master/pics/001.png',
+    );
+    // 无自身 thumbUrl → 继承祖先的绝对 URL
+    expect(items.last.thumbUrl, 'https://example.com/cover.png');
   });
 
   test('modelDefinitionForArchive 匹配导入记录时带回动作列表', () {

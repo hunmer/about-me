@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'data/aboutme_data_service.dart';
-import 'event/event_manager.dart';
+import 'event/plugin_refresh_events.dart';
 import 'storage/storage_manager.dart';
 import 'plugin_manager.dart';
 import 'config_manager.dart';
@@ -270,9 +270,10 @@ abstract class PluginBase {
   /// 应用用户勾选的示例数据分组
   ///
   /// 由引导页在完成后调用，逐组执行 [PluginSampleDataGroup.apply]，
-  /// 最后调用 [refreshData] 让插件从存储重载数据，并按同步链路
-  /// （RouteRefreshManager）的约定广播 `{id}_refresh` 事件，
-  /// 让已打开的插件页面（引导页下方的插件主视图）即时刷新。
+  /// 最后调用 [refreshData] 让插件从存储重载数据，再经
+  /// [broadcastPluginRefresh] 广播 `{id}_refresh` 事件（与同步链路
+  /// RouteRefreshManager 同一入口），让已打开的插件页面（引导页
+  /// 下方的插件主视图）即时刷新。
   Future<void> applySampleDataGroups(List<String> groupIds) async {
     if (groupIds.isEmpty) return;
     for (final group in getSampleDataGroups()) {
@@ -288,6 +289,6 @@ abstract class PluginBase {
     } catch (e) {
       debugPrint('插件($id) 应用示例数据后刷新失败: $e');
     }
-    EventManager.instance.broadcast('${id}_refresh', EventArgs('${id}_refresh'));
+    broadcastPluginRefresh(id);
   }
 }

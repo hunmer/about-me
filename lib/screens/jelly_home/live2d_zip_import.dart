@@ -16,6 +16,7 @@ Map<String, dynamic> importedModelToJson(Live2DModelDefinition model) => {
   'label': model.label,
   'modelDir': model.modelDir,
   'modelFile': model.modelFile,
+  if (model.thumbPath != null) 'thumbPath': model.thumbPath,
   'motions': [
     for (final motion in model.motions)
       {
@@ -32,6 +33,7 @@ Live2DModelDefinition importedModelFromJson(Map<String, dynamic> json) =>
       label: json['label'] as String? ?? '',
       modelDir: json['modelDir'] as String? ?? '',
       modelFile: json['modelFile'] as String? ?? '',
+      thumbPath: json['thumbPath'] as String?,
       motions: [
         for (final motion in (json['motions'] as List? ?? const []))
           if (motion is Map)

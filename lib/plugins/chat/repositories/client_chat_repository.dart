@@ -191,8 +191,12 @@ class ClientChatRepository extends IChatRepository {
       });
   @override
   Future<Result<UserDto>> getCurrentUser() => _run(() async {
-    final user = configService.currentUser;
-    return UserDto(id: user.id, name: user.username, avatarPath: user.iconPath);
+    final config = configService;
+    return UserDto(
+      id: config.currentUser.id,
+      name: config.currentUser.username,
+      avatarPath: config.currentUserAvatarPath,
+    );
   });
   @override
   Future<Result<UserDto?>> getAIUser() =>

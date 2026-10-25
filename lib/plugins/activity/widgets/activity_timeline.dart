@@ -459,16 +459,6 @@ class ActivityTimeline extends StatelessWidget {
     );
     DateTime lastEventEnd = dayStart;
 
-    if (activities.first.startTime.isAfter(lastEventEnd)) {
-      items.add(
-        _buildUnrecordedTimeGap(
-          context,
-          lastEventEnd,
-          activities.first.startTime,
-        ),
-      );
-    }
-
     for (int i = 0; i < activities.length; i++) {
       final currentActivity = activities[i];
 

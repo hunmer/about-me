@@ -288,7 +288,11 @@ Future<String> _writeToSavePath(String savePath, Uint8List bytes) async {
   final rel = normalized.startsWith('./')
       ? normalized.substring(2)
       : normalized;
-  if (ImageUtils.sdkAssetId(savePath) != null) return savePath;
+  // SDK 资产（asset://）原地替换内容，id/引用不变
+  if (ImageUtils.sdkAssetId(savePath) != null) {
+    await SdkMediaService.replaceAsset(savePath, bytes);
+    return savePath;
+  }
   await globalStorage.writeBytes(rel, bytes);
   return './$rel';
 }

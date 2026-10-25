@@ -26,15 +26,19 @@ class ChatConfigService {
   final _subscriptions = <StreamSubscription<QuerySnapshot>>[];
 
   /// 当前用户资料统一来自个人主页（SharedPreferences 的 user_name/user_avatar_path），
-  /// 不再使用 chat/users 文件中的独立设置
+  /// 不再使用 chat/users 文件中的独立设置；头像不进 User 模型，单独实时读取
   User get currentUser {
     final name = _prefs?.getString('user_name')?.trim();
-    final avatar = _prefs?.getString('user_avatar_path');
     return User(
       id: 'default_user',
       username: (name == null || name.isEmpty) ? '用户' : name,
-      iconPath: (avatar == null || avatar.isEmpty) ? null : avatar,
     );
+  }
+
+  /// 当前用户全局头像路径（个人主页数据源），chat 不再单独维护头像
+  String? get currentUserAvatarPath {
+    final avatar = _prefs?.getString('user_avatar_path');
+    return (avatar == null || avatar.isEmpty) ? null : avatar;
   }
 
   // ==================== 设置管理 ====================

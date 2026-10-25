@@ -144,6 +144,23 @@ class Live2DPlugin extends BasePlugin {
     }
   }
 
+  /// 更新导入记录的缩略图（本地模型库列表上传）
+  Future<void> setImportedModelThumb(
+    Live2DModelDefinition model,
+    String? thumbPath,
+  ) async {
+    final next = _rawImportedModels()
+        .map((item) {
+          if (item['modelDir'] == model.modelDir &&
+              item['modelFile'] == model.modelFile) {
+            return {...item, 'thumbPath': thumbPath};
+          }
+          return Map<String, dynamic>.from(item);
+        })
+        .toList();
+    await updateSettings({'importedModels': next});
+  }
+
   /// 引用指定导入模型的存档数量（删除前提示用）
   int archivesUsingModel(Live2DModelDefinition model) => archives
       .where((a) => a.modelDir == model.modelDir && a.modelFile == model.modelFile)

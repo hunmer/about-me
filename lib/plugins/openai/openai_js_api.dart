@@ -30,9 +30,13 @@ Future<String> _jsSearchMemory(Map<String, dynamic> params) async {
   if (memoryId == null || memoryId.isEmpty) {
     return jsonEncode({'error': '缺少必需参数: memoryId'});
   }
+  final key = params['key'];
+  if (key is! String || key.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: 非空 key', 'memoryId': memoryId});
+  }
   try {
     final result = await MemoryService.instance.searchKeysForTool(memoryId, [
-      params['key'],
+      key,
     ]);
     return jsonEncode(result);
   } catch (e) {
@@ -45,10 +49,14 @@ Future<String> _jsBatchSearchMemory(Map<String, dynamic> params) async {
   if (memoryId == null || memoryId.isEmpty) {
     return jsonEncode({'error': '缺少必需参数: memoryId'});
   }
+  final keys = params['keys'];
+  if (keys is! List || keys.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: 非空 keys 数组', 'memoryId': memoryId});
+  }
   try {
     final result = await MemoryService.instance.searchKeysForTool(
       memoryId,
-      params['keys'],
+      keys,
     );
     return jsonEncode(result);
   } catch (e) {

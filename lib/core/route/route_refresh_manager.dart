@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../event/event_manager.dart';
+import '../event/plugin_refresh_events.dart';
 import '../plugin_manager.dart';
 import '../plugin_base.dart';
 import 'route_history_manager.dart';
@@ -171,22 +171,7 @@ class RouteRefreshManager {
 
   /// 触发插件刷新
   void _triggerRefresh(String pluginId, bool refreshSuccess) {
-    // 广播插件刷新事件
-    EventManager.instance.broadcast(
-      '${pluginId}_refresh',
-      PluginRefreshArgs(pluginId: pluginId, success: refreshSuccess),
-    );
-
-    // 同时广播通用的数据更新事件
-    EventManager.instance.broadcast(
-      'sync_data_updated',
-      SyncDataUpdatedArgs(
-        filePath: '',
-        source: 'websocket',
-        pluginId: pluginId,
-      ),
-    );
-
+    broadcastPluginRefresh(pluginId, success: refreshSuccess);
     _log('已触发刷新事件: $pluginId');
   }
 
@@ -206,26 +191,4 @@ class RouteRefreshManager {
       debugPrint('$_tag: $message');
     }
   }
-}
-
-/// 插件刷新事件参数
-class PluginRefreshArgs extends EventArgs {
-  final String pluginId;
-  final bool success;
-
-  PluginRefreshArgs({required this.pluginId, this.success = false})
-    : super('plugin_refresh');
-}
-
-/// 同步数据更新事件参数
-class SyncDataUpdatedArgs extends EventArgs {
-  final String filePath;
-  final String source;
-  final String? pluginId;
-
-  SyncDataUpdatedArgs({
-    required this.filePath,
-    required this.source,
-    this.pluginId,
-  }) : super('${pluginId ?? 'sync'}_data_updated');
 }

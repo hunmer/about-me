@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:aboutme/core/floating_ball/adapters/floating_ball_platform_adapter.dart';
 import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
+import 'package:aboutme/core/floating_ball/config/floating_ball_config.dart';
 import 'package:aboutme/core/floating_ball/floating_ball_manager.dart';
 import 'package:aboutme/core/floating_ball/floating_ball_service.dart';
 
@@ -87,6 +89,10 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
   bool _isDocked = false;
   Timer? _dockTimer;
 
+  // 图标配置
+  String _iconKey = FloatingBallIconPresets.defaultKey;
+  Uint8List? _customIconBytes;
+
   /// 展开后无操作恢复收纳的时长
   static const Duration _undockTimeout = Duration(seconds: 5);
 
@@ -126,10 +132,13 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
       }
     });
 
-    // 监听配置变化（如贴边收纳开关）
+    // 监听配置变化（如贴边收纳开关、图标设置）
     _configSubscription = FloatingBallService().configChangeStream.listen((
       _
     ) async {
+      // 图标刷新不依赖拖动状态，先处理
+      await _loadIconConfig();
+
       if (!mounted || _isDragging) return;
       final enabled = await _manager.isEdgeDockEnabled();
       if (!mounted || _isDragging) return;
@@ -157,6 +166,9 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
 
     // 加载贴边收纳开关
     final edgeDockEnabled = await _manager.isEdgeDockEnabled();
+
+    // 加载图标配置
+    await _loadIconConfig();
 
     if (mounted) {
       setState(() {
@@ -238,6 +250,27 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
   }
 
   double get _currentSize => widget.baseSize * _sizeScale;
+
+  /// 加载图标配置（预设图标 + 自定义图片）
+  Future<void> _loadIconConfig() async {
+    final iconKey = await _manager.getIconKey();
+    final customIcon = await _manager.getCustomIcon();
+    if (!mounted) return;
+
+    Uint8List? customBytes;
+    if (customIcon != null) {
+      try {
+        customBytes = base64Decode(customIcon);
+      } catch (e) {
+        debugPrint('Error decoding custom floating ball icon: $e');
+      }
+    }
+
+    setState(() {
+      _iconKey = iconKey;
+      _customIconBytes = customBytes;
+    });
+  }
 
   // ==================== 贴边收纳 ====================
 
@@ -650,17 +683,48 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
                     ),
                   ],
                 ),
-                child: Image.asset(
-                  widget.iconPath,
-                  width: _currentSize,
-                  height: _currentSize,
-                  fit: BoxFit.cover,
-                ),
+                child: _buildBallContent(),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  /// 球体内容：自定义图片 > 预设图标 > 默认图片
+  Widget _buildBallContent() {
+    if (_customIconBytes != null) {
+      return Image.memory(
+        _customIconBytes!,
+        width: _currentSize,
+        height: _currentSize,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (context, error, stackTrace) => _buildDefaultImage(),
+      );
+    }
+
+    final presetIcon = FloatingBallIconPresets.iconOf(_iconKey);
+    if (presetIcon != null) {
+      return Icon(
+        presetIcon,
+        color: Colors.white,
+        size: _currentSize * 0.55,
+      );
+    }
+
+    return _buildDefaultImage();
+  }
+
+  Widget _buildDefaultImage() {
+    return Image.asset(
+      widget.iconPath,
+      width: _currentSize,
+      height: _currentSize,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) =>
+          Icon(Icons.radio_button_on, color: Colors.white, size: _currentSize * 0.4),
     );
   }
 

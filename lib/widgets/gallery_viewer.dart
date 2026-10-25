@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:aboutme/core/app_initializer.dart' show globalStorage;
+import 'package:aboutme/core/data/sdk_media_service.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/utils/network.dart';
@@ -639,12 +640,12 @@ class _GalleryViewerState extends State<GalleryViewer>
   }
 
   /// 打开照片编辑器（作用于当前显示 url，编辑副本后即在副本上继续编辑）：
-  /// - 可写回来源（应用存储/本地文件/已编辑副本）：覆盖原位，失效缓存刷新显示
+  /// - 可写回来源（应用存储/SDK 资产/本地文件/已编辑副本）：覆盖原位，
+  ///   失效缓存刷新显示，并同步重新生成伴生缩略图
   /// - http/Asset 原图：保存为副本后当前页切换显示副本内容
   Future<void> _openPhotoEditor(GalleryPhoto current) async {
     final url = _urlOf(_index);
-    final canOverwrite = !url.startsWith('http') && !url.startsWith('assets/') &&
-      ImageUtils.sdkAssetId(url) == null;
+    final canOverwrite = !url.startsWith('http') && !url.startsWith('assets/');
     final result = await showPhotoEditor(
       context,
       imageUrl: url,
@@ -653,8 +654,10 @@ class _GalleryViewerState extends State<GalleryViewer>
     if (result == null || !mounted) return;
     widget.onImageEdited?.call(_index, result);
     if (result.overwroteOriginal) {
-      // 写回原位：失效解析缓存（新 provider 实例触发重载）后刷新显示
+      // 写回原位：失效解析缓存（新 provider 实例触发重载）后刷新显示；
+      // 原图内容已变，伴生缩略图同步重新生成（引用不变）
       await GalleryImageResolver.invalidate(url);
+      unawaited(SdkMediaService.updateThumb(result.bytes, current.thumbUrl));
     } else if (result.savedPath.isNotEmpty) {
       // 原图无法覆盖（http/Asset）：当前页改为显示编辑后副本
       _overrideUrls[_index] = result.savedPath;

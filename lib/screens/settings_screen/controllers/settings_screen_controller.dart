@@ -97,9 +97,7 @@ class SettingsScreenController extends ChangeNotifier {
   void _broadcastProfileUpdated() {
     EventManager.instance.broadcast(
       UserEventNames.userAvatarUpdated,
-      UserAvatarUpdatedEventArgs(
-        User(id: 'default_user', username: userName, iconPath: _userAvatarPath),
-      ),
+      UserAvatarUpdatedEventArgs(User(id: 'default_user', username: userName)),
     );
   }
 

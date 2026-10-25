@@ -28,12 +28,16 @@ class FloatingBallConfig {
   /// 贴边收纳：拖动结束后吸附到屏幕边缘半隐藏
   final bool edgeDockEnabled;
 
+  /// 自定义图标图片（base64），为空时显示默认图片 assets/icon/icon.png
+  final String? customIcon;
+
   const FloatingBallConfig({
     this.actionMappings = defaultGestureMappings,
     this.sizeScale = defaultSizeScale,
     this.position = defaultPosition,
     this.enabled = true,
     this.edgeDockEnabled = false,
+    this.customIcon,
   });
 
   /// 从JSON创建配置
@@ -63,6 +67,7 @@ class FloatingBallConfig {
         position: position,
         enabled: json['enabled'] as bool? ?? true,
         edgeDockEnabled: json['edge_dock_enabled'] as bool? ?? false,
+        customIcon: json['custom_icon'] as String?,
       );
     } catch (e) {
       debugPrint('Error parsing FloatingBallConfig: $e');
@@ -87,6 +92,7 @@ class FloatingBallConfig {
       },
       'enabled': enabled,
       'edge_dock_enabled': edgeDockEnabled,
+      if (customIcon != null) 'custom_icon': customIcon,
     };
   }
 
@@ -107,12 +113,16 @@ class FloatingBallConfig {
   }
 
   /// 创建副本并修改指定属性
+  ///
+  /// [clearCustomIcon] 为 true 时将自定义图标置空（恢复默认图片）
   FloatingBallConfig copyWith({
     Map<FloatingBallGesture, String>? actionMappings,
     double? sizeScale,
     Offset? position,
     bool? enabled,
     bool? edgeDockEnabled,
+    String? customIcon,
+    bool clearCustomIcon = false,
   }) {
     return FloatingBallConfig(
       actionMappings: actionMappings ?? this.actionMappings,
@@ -120,6 +130,7 @@ class FloatingBallConfig {
       position: position ?? this.position,
       enabled: enabled ?? this.enabled,
       edgeDockEnabled: edgeDockEnabled ?? this.edgeDockEnabled,
+      customIcon: clearCustomIcon ? null : (customIcon ?? this.customIcon),
     );
   }
 

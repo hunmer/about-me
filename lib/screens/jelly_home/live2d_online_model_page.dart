@@ -1,5 +1,6 @@
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -175,6 +176,29 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
     );
   }
 
+  /// 列表缩略图：优先目录 JSON 的 thumbUrl，缺失或加载失败时显示占位图标
+  Widget _buildThumb(AppThemeData theme, String? thumbUrl) {
+    Widget placeholder() => Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: theme.primary.mixWhite(0.92),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      alignment: Alignment.center,
+      child: DsIcon(DsIconKind.bot, size: 22, color: theme.primary),
+    );
+    if (thumbUrl == null || thumbUrl.isEmpty) return placeholder();
+    return AdaptiveImage(
+      imagePath: thumbUrl,
+      width: 48,
+      height: 48,
+      borderRadius: 10,
+      errorImage: placeholder(),
+      defaultImage: placeholder(),
+    );
+  }
+
   Widget _buildContent(AppThemeData theme) {
     if (_loadingCatalog && _models.isEmpty) {
       return Center(
@@ -222,7 +246,7 @@ class _Live2DOnlineModelPageState extends State<Live2DOnlineModelPage> {
               return DSListItem(
                 title: model.name,
                 subtitle: model.category,
-                leading: DsIcon(DsIconKind.bot, size: 20, color: theme.primary),
+                leading: _buildThumb(theme, model.thumbUrl),
                 trailing: loading
                     ? const SizedBox(
                         width: 22,

@@ -24,7 +24,6 @@ class ChatCodec {
         json['senderId'] ?? (rawUser is String ? rawUser : 'unknown');
     user['username'] ??= user['name'] ?? json['senderName'] ?? 'Unknown User';
     user['name'] ??= user['username'];
-    user['iconPath'] ??= user['avatarPath'];
     result['user'] = user;
     result['channelId'] ??= channelId;
     result['date'] ??= json['createdAt'];

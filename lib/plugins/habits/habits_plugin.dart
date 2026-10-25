@@ -83,15 +83,6 @@ class HabitsPlugin extends PluginBase with JSBridgePlugin {
     try {
       debugPrint('[HabitsPlugin] 开始刷新数据, 文件: ${args?.filePath}');
       await reloadData();
-      // 本机写入（如引导页应用示例数据）不会触发远端 watch 的
-      // 缓存更新广播，这里主动补发让已打开的习惯列表刷新
-      EventManager.instance.broadcast(
-        'habits_cache_updated',
-        HabitCacheUpdatedEventArgs(
-          habits: List.from(_habitController.getHabits()),
-          cacheDate: DateTime.now(),
-        ),
-      );
       debugPrint('[HabitsPlugin] 数据刷新成功');
       return true;
     } catch (e) {

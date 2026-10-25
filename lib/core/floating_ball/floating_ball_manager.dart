@@ -237,6 +237,25 @@ class FloatingBallManager {
     FloatingBallService().notifyConfigChange();
   }
 
+  // 获取自定义图标图片（base64）
+  Future<String?> getCustomIcon() async {
+    await _ensureInitialized();
+    final config = await FloatingBallConfigManager.loadConfig();
+    return config.customIcon;
+  }
+
+  /// 设置悬浮球图标：[customIcon] 为 base64 图片，传 null 恢复默认图片
+  Future<void> setCustomIcon(String? customIcon) async {
+    await _ensureInitialized();
+    final config = await FloatingBallConfigManager.loadConfig();
+    await FloatingBallConfigManager.saveConfig(
+      config.copyWith(customIcon: customIcon, clearCustomIcon: customIcon == null),
+    );
+
+    // 通知悬浮球组件刷新图标
+    FloatingBallService().notifyConfigChange();
+  }
+
   // 获取保存的位置
   Future<Offset> getPosition() async {
     await _ensureInitialized();

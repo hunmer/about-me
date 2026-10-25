@@ -49,4 +49,7 @@ const Map<String, String> floatingBallTranslationsEn = {
 
   // const Text 硬编码迁移(en)
   'floating_ball_buttonIcon': 'Button Icon',
+
+  // Ball icon
+  'floating_ball_ballIcon': 'Floating Ball Icon',
 };

@@ -130,16 +130,14 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
       content: message.content,
       user: isUser
           ? _ChatScreenState._localUser
-          : User(
-              id: 'agent_chat_agent',
-              username: _getAgentDisplayText(),
-              iconPath: _currentAgent?.avatarUrl,
-            ),
+          : User(id: 'agent_chat_agent', username: _getAgentDisplayText()),
       type: isUser ? MessageType.sent : MessageType.received,
       date: message.timestamp,
       editedAt: message.editedAt,
       metadata: {
         ...?message.metadata,
+        // agent 头像实时读取 agent 配置（气泡按 agentId 解析）
+        if (!isUser && _currentAgent != null) 'agentId': _currentAgent!.id,
         // 用户消息被 AI 已读（活人感）：转换为 chat 气泡的 readBy 约定
         if (isUser && message.metadata?['readAt'] != null)
           'readBy': <dynamic>['ai'],

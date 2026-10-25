@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/events/user_events.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
@@ -41,7 +42,7 @@ class _MessageAvatarState extends State<MessageAvatar> {
     super.initState();
     _currentUser = widget.user;
     _resolveAgentAvatar();
-    // 订阅用户头像更新事件
+    // 订阅用户头像更新事件（全局用户资料变更时刷新）
     EventManager.instance.subscribe(
       UserEventNames.userAvatarUpdated,
       _handleAvatarUpdate,
@@ -68,10 +69,10 @@ class _MessageAvatarState extends State<MessageAvatar> {
 
   void _handleAvatarUpdate(EventArgs args) {
     if (args is UserAvatarUpdatedEventArgs) {
-      // 只有当更新的是当前显示的用户时才刷新
+      // 只有当更新的是当前显示的用户时才刷新（头像实时重读全局数据源）
       if (args.user.id == user.id) {
         setState(() {
-          _currentUser = args.user; // 更新用户信息，包括新的头像地址
+          _currentUser = args.user;
         });
       }
     }
@@ -132,7 +133,9 @@ class _MessageAvatarState extends State<MessageAvatar> {
   Widget _buildAvatarContent(BuildContext context) {
     // agent 消息：优先使用 agent 配置的头像（实时读取）
     final agentAvatar = _agentAvatarUrl;
-    if (widget.agentId != null && agentAvatar != null && agentAvatar.isNotEmpty) {
+    if (widget.agentId != null &&
+        agentAvatar != null &&
+        agentAvatar.isNotEmpty) {
       return AdaptiveImage(
         imagePath: agentAvatar,
         width: 32,
@@ -143,26 +146,32 @@ class _MessageAvatarState extends State<MessageAvatar> {
       );
     }
 
-    final iconPath = user.iconPath;
-    if (iconPath != null && iconPath.isNotEmpty) {
-      return FutureBuilder<String>(
-        future: ImageUtils.getAbsolutePath(iconPath),
-        builder: (context, snapshot) {
-          if (snapshot.hasData && snapshot.data != null) {
-            return ClipOval(
-              child: Image.file(
-                File(snapshot.data!),
-                width: 32,
-                height: 32,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildDefaultAvatar(context),
-              ),
-            );
-          }
-          return _buildDefaultAvatar(context);
-        },
-      );
+    // 当前用户：实时读取全局头像（个人主页数据源）
+    final userService = ChatPlugin.instance.userService;
+    if (user.id == userService.currentUser.id) {
+      final avatarPath = userService.currentUserAvatarPath;
+      if (avatarPath != null && avatarPath.isNotEmpty) {
+        return FutureBuilder<String>(
+          future: ImageUtils.getAbsolutePath(avatarPath),
+          builder: (context, snapshot) {
+            if (snapshot.hasData && snapshot.data != null) {
+              return ClipOval(
+                child: Image.file(
+                  File(snapshot.data!),
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _buildDefaultAvatar(context),
+                ),
+              );
+            }
+            return _buildDefaultAvatar(context);
+          },
+        );
+      }
     }
+
+    // 其他用户：不再有独立头像来源，显示默认首字母
     return _buildDefaultAvatar(context);
   }
 }

@@ -136,13 +136,12 @@ class MemoryService {
   }
 
   static String validateKey(String key) {
-    final trimmed = key.trim();
-    if (trimmed.isEmpty ||
-        trimmed.length > 200 ||
-        RegExp(r'\s|[\x00-\x1f]').hasMatch(trimmed)) {
+    if (key.isEmpty ||
+        key.length > 200 ||
+        RegExp(r'\s|[\x00-\x1f]').hasMatch(key)) {
       throw ArgumentError('记忆 key 必须为 1~200 个字符，不能包含空白或控制字符');
     }
-    return trimmed;
+    return key;
   }
 
   Future<void> saveFragments(

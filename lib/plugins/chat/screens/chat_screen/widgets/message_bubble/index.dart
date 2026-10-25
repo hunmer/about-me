@@ -229,11 +229,7 @@ class _MessageBubbleState extends State<MessageBubble>
   bool get _isCurrentUser => _currentMessage.user.id == widget.currentUserId;
 
   /// AI 消息的 agentId（头像实时读取 agent 配置，不随消息保存）
-  String? get _agentId {
-    final metadata = _currentMessage.metadata;
-    if (metadata == null || metadata['isAI'] != true) return null;
-    return metadata['agentId'] as String?;
-  }
+  String? get _agentId => _currentMessage.metadata?['agentId'] as String?;
 
   bool _isImageMessage() {
     final metadata = _currentMessage.metadata;

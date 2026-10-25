@@ -48,4 +48,7 @@ const Map<String, String> floatingBallTranslationsZh = {
 
   // const Text 硬编码迁移(zh)
   'floating_ball_buttonIcon': '按钮图标',
+
+  // 悬浮球图标
+  'floating_ball_ballIcon': '悬浮球图标',
 };

@@ -857,7 +857,21 @@ class NativeToolAgentService {
         inputSchema: Schema.fromMap(
           ToolSchemaBuilder.buildSchemaMap(parameters),
         ),
-        onCall: (args) => execute(args),
+        onCall: (args) async {
+          final missing = ToolSchemaBuilder.missingRequiredParameters(
+            ToolConfig(
+              title: name,
+              description: description,
+              parameters: parameters,
+              returns: ToolReturns(type: 'object', description: ''),
+            ),
+            args,
+          );
+          if (missing.isNotEmpty) {
+            return {'error': '参数不符合要求: ${missing.join('、')}'};
+          }
+          return execute(args);
+        },
       );
 
       tools.add(

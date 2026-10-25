@@ -93,6 +93,22 @@ class AssetsFacade {
     return AssetDto.fromJson(_value(result));
   }
 
+  /// 原地替换资源内容（id/fileName/mediaType 不变，size/sha256 随内容更新）。
+  /// 引用不变，持有该资产的业务数据无需变更；已物化句柄随之失效，
+  /// 下次 resolvePath 重新物化新内容。
+  Future<AssetDto> replace(String id, Uint8List bytes) async {
+    if (bytes.length > 16 * 1024 * 1024) throw ArgumentError('单个资源上限 16 MiB');
+    final result = await data.call('assets', 'replace',
+        {'id': id, 'content': base64Encode(bytes)});
+    final operation = _handles.remove(id);
+    _paths.remove(id);
+    if (operation != null) {
+      final handle = await operation;
+      await handle.dispose();
+    }
+    return AssetDto.fromJson(_value(result));
+  }
+
   static const chunkedUploadLimit = 256 * 1024 * 1024;
 
   /// 分块上传大资源（上限 256 MiB）：init → append×N → complete，

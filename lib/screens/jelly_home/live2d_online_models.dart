@@ -37,6 +37,7 @@ class Live2DModelDefinition {
     required this.motions,
     this.category,
     this.isOnline = false,
+    this.thumbPath,
   });
 
   final String label;
@@ -45,6 +46,10 @@ class Live2DModelDefinition {
   final List<Live2DMotionDefinition> motions;
   final String? category;
   final bool isOnline;
+
+  /// 缩略图路径：本地导入记录的用户上传图片（http/file 均可），
+  /// 在线模型与内置模型为空
+  final String? thumbPath;
 }
 
 class Live2DOnlineModelItem {
@@ -52,11 +57,15 @@ class Live2DOnlineModelItem {
     required this.name,
     required this.url,
     required this.category,
+    this.thumbUrl,
   });
 
   final String name;
   final String url;
   final String category;
+
+  /// 目录 JSON 节点的 thumbUrl 字段（可继承祖先节点），列表缩略图用
+  final String? thumbUrl;
 }
 
 class Live2DOnlineCatalog {
@@ -135,8 +144,27 @@ class Live2DOnlineCatalog {
 
     final items = <Live2DOnlineModelItem>[];
 
-    void traverse(Map<String, dynamic> node, List<String> ancestors) {
+    // thumbUrl 规范化：绝对 URL 原样使用，相对路径拼模型仓库 CDN
+    String? resolveThumbUrl(Object? value, String? inherited) {
+      final raw = value?.toString().trim();
+      if (raw == null || raw.isEmpty) return inherited;
+      if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+      final segments = raw
+          .replaceAll('\\', '/')
+          .split('/')
+          .where((segment) => segment.isNotEmpty)
+          .map(Uri.encodeComponent)
+          .join('/');
+      return '$_live2DModelCdnBase$segments';
+    }
+
+    void traverse(
+      Map<String, dynamic> node,
+      List<String> ancestors,
+      String? inheritedThumb,
+    ) {
       final nodeName = node['name']?.toString() ?? '';
+      final thumbUrl = resolveThumbUrl(node['thumbUrl'], inheritedThumb);
       final children = node['children'];
       if (children is List) {
         for (final child in children) {
@@ -144,6 +172,7 @@ class Live2DOnlineCatalog {
             traverse(
               child.map((key, value) => MapEntry(key.toString(), value)),
               [...ancestors, nodeName],
+              thumbUrl,
             );
           }
         }
@@ -183,12 +212,13 @@ class Live2DOnlineCatalog {
             name: '${baseName.isEmpty ? nodeName : baseName} ($nodeName)',
             url: url,
             category: category,
+            thumbUrl: thumbUrl,
           ),
         );
       }
     }
 
-    traverse(root, const []);
+    traverse(root, const [], null);
     return items;
   }
 

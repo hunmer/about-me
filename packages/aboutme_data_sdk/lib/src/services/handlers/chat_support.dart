@@ -64,8 +64,6 @@ void _user(Map value, {bool stored = false}) {
   _fields(value, {
     'username': (v) => v is String,
     'name': (v) => v is String,
-    'iconPath': (v) => v == null || v is String,
-    'avatarPath': (v) => v == null || v is String,
     'isAI': (v) => v is bool,
     'metadata': (v) => v == null || v is Map<String, dynamic>,
   }, stored: stored);
@@ -219,8 +217,6 @@ PluginHandlers createChatSupportHandlers(PluginData data) {
       };
       if (params.containsKey('name') && !params.containsKey('username'))
         next['username'] = params['name'];
-      if (params.containsKey('avatarPath') && !params.containsKey('iconPath'))
-        next['iconPath'] = params['avatarPath'];
       _user(next, stored: false);
       if (next['username'] is! String) _invalid('新用户需要 username');
       if (index < 0) {

@@ -5,6 +5,8 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/live2d_zip_import.dart';
+import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 本地模型库：管理 zip 导入的模型，点击选中返回模型定义，
@@ -67,8 +69,21 @@ class _Live2DImportedModelsScreenState
     Navigator.of(context).pop(model);
   }
 
-  Future<void> _delete(Live2DModelDefinition model) async {
-    final usage = plugin.archivesUsingModel(model);
+  /// 上传/更换缩略图（1:1 裁剪，持久化到导入记录）
+  Future<void> _uploadThumb(Live2DModelDefinition model) async {
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      initialUrl: model.thumbPath,
+      enableCrop: true,
+      cropAspectRatio: 1,
+    );
+    final url = result?['url'] as String?;
+    if (url == null || url.isEmpty) return;
+    await plugin.setImportedModelThumb(model, url);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _delete(Live2DModelDefinition model) async {    final usage = plugin.archivesUsingModel(model);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -103,6 +118,55 @@ class _Live2DImportedModelsScreenState
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
+
+  /// 列表缩略图：点击上传/更换（内层手势优先于整行点击），右下角相机角标
+  Widget _buildThumb(AppThemeData theme, Live2DModelDefinition model) {
+    return GestureDetector(
+      onTap: () => _uploadThumb(model),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          AdaptiveImage(
+            imagePath: model.thumbPath,
+            width: 48,
+            height: 48,
+            borderRadius: 10,
+            errorImage: _thumbPlaceholder(theme),
+            defaultImage: _thumbPlaceholder(theme),
+          ),
+          Positioned(
+            right: -4,
+            bottom: -4,
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.primary,
+                border: Border.all(color: theme.background, width: 1.5),
+              ),
+              child: Icon(
+                Icons.photo_camera,
+                size: 10,
+                color: theme.background,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _thumbPlaceholder(AppThemeData theme) => Container(
+    width: 48,
+    height: 48,
+    decoration: BoxDecoration(
+      color: theme.primary.mixWhite(0.92),
+      borderRadius: BorderRadius.circular(10),
+    ),
+    alignment: Alignment.center,
+    child: DsIcon(DsIconKind.archive, size: 22, color: theme.primary),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -169,11 +233,7 @@ class _Live2DImportedModelsScreenState
                         return DSListItem(
                           title: model.label,
                           subtitle: model.modelFile,
-                          leading: DsIcon(
-                            DsIconKind.archive,
-                            size: 20,
-                            color: theme.primary,
-                          ),
+                          leading: _buildThumb(theme, model),
                           trailing: _importing
                               ? null
                               : DSIconButton(

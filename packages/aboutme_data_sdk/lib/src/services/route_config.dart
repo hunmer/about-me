@@ -13,6 +13,7 @@ final pluginRouteConfigs = <PluginRouteConfig>[
     PluginRouteDefinition(method: 'post', path: '/', handler: 'upload', resourceName: 'assets'),
     PluginRouteDefinition(method: 'get', path: '/:id/metadata', handler: 'getMetadata', resourceName: 'assets'),
     PluginRouteDefinition(method: 'get', path: '/:id', handler: 'read', resourceName: 'assets'),
+    PluginRouteDefinition(method: 'put', path: '/:id', handler: 'replace', resourceName: 'assets'),
     PluginRouteDefinition(method: 'delete', path: '/:id', handler: 'remove', resourceName: 'assets'),
   ]),
   // ==================== Chat ====================

@@ -119,6 +119,8 @@ class ToolConfigManager {
       await _syncMissingPluginTools('day');
       // goods 旧 find* 快捷查找描述从未在 Dart 侧实现，需从老安装清理
       await _syncMissingPluginTools('goods');
+      // 记忆工具配置新增或升级时，补入老安装缺失的查询工具。
+      await _syncMissingPluginTools('memory');
       // timer.getTimerStatus 的 timerId 已改为可选（无 ID 时返回全部状态概要），
       // 老安装存储中的必填签名会在分发层拦截无参调用，需对齐为新签名
       await _syncTimerStatusOptionalArg();
@@ -264,7 +266,24 @@ class ToolConfigManager {
             ? entry.key.substring(pluginId.length + 1)
             : entry.key;
         if (methodName.startsWith('find')) continue;
-        if (stored.containsKey(entry.key)) continue;
+        if (stored.containsKey(entry.key)) {
+          if (pluginId == 'memory' && entry.key == 'search_memory') {
+            final existing = stored[entry.key];
+            if (existing is Map) {
+              final current = Map<String, dynamic>.from(existing);
+              final bundledTool = Map<String, dynamic>.from(entry.value as Map);
+              if (jsonEncode(current['parameters']) !=
+                      jsonEncode(bundledTool['parameters']) ||
+                  current['description'] != bundledTool['description']) {
+                current['parameters'] = bundledTool['parameters'];
+                current['description'] = bundledTool['description'];
+                stored[entry.key] = current;
+                changed = true;
+              }
+            }
+          }
+          continue;
+        }
         stored[entry.key] = entry.value;
         changed = true;
       }
@@ -342,11 +361,10 @@ class ToolConfigManager {
         }
       }
       if (pluginChanged) {
-        await AboutmeDataService.instance.call(
-          'agent_chat',
-          'saveToolPlugin',
-          {'pluginId': pluginId, 'tools': normalized},
-        );
+        await AboutmeDataService.instance.call('agent_chat', 'saveToolPlugin', {
+          'pluginId': pluginId,
+          'tools': normalized,
+        });
         changed = true;
       }
     }
@@ -528,9 +546,11 @@ class ToolConfigManager {
 
     // 保存新的索引文件
     try {
-      await AboutmeDataService.instance.call('agent_chat', 'saveToolIndexFile', {
-        'index': newIndex,
-      });
+      await AboutmeDataService.instance.call(
+        'agent_chat',
+        'saveToolIndexFile',
+        {'index': newIndex},
+      );
       print('✅ 工具索引已生成 (共 ${newIndex.length} 个工具)');
       _invalidateNativeToolCache();
     } catch (e) {

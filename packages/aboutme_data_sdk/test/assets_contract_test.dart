@@ -81,6 +81,34 @@ void main() {
     expect(await data.assets.read(first.id), [0]);
   });
 
+  test('资源替换：引用不变，内容/元数据/索引同步更新，物化句柄失效', () async {
+    final asset = await data.assets.upload(
+        Uint8List.fromList([1, 2, 3]), fileName: '照片.png', mediaType: 'image/png');
+    final oldPath = await data.assets.resolvePath(asset.id);
+    final updated = await data.assets.replace(asset.id, Uint8List.fromList([9, 9, 9, 9]));
+    expect(updated.id, asset.id);
+    expect(updated.fileName, asset.fileName);
+    expect(updated.createdAt, asset.createdAt);
+    expect(updated.size, 4);
+    expect(updated.sha256, isNot(asset.sha256));
+    expect(await data.assets.read(asset.id), [9, 9, 9, 9]);
+    final listed = await data.assets.list(mediaTypePrefix: 'image/');
+    expect(listed.data.single.id, asset.id);
+    expect(listed.data.single.size, 4);
+    expect(listed.data.single.sha256, updated.sha256);
+    expect(await File(oldPath).exists(), isFalse);
+    expect(await File(await data.assets.resolvePath(asset.id)).readAsBytes(), [9, 9, 9, 9]);
+  });
+
+  test('资源替换：不存在报 NOT_FOUND，非法 ID/非法 base64 拒绝', () async {
+    const missing = '0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a';
+    expect((await data.call('assets', 'replace', {'id': missing, 'content': 'AA=='}))['code'], 'NOT_FOUND');
+    expect((await data.call('assets', 'replace', {'id': '../x', 'content': 'AA=='}))['code'], 'INVALID_PARAMS');
+    expect((await data.call('assets', 'replace', {'id': missing, 'content': '%%'}))['code'], 'INVALID_PARAMS');
+    expect((await data.call('assets', 'replace',
+        {'id': missing, 'content': 'AA==', 'fileName': 'x'}))['code'], 'INVALID_PARAMS');
+  });
+
   test('物化仅生成临时句柄，dispose 可重复且不删除持久资源', () async {
     final asset = await data.assets.upload(Uint8List.fromList([2, 4]), fileName: 'x.PNG');
     final handle = await data.assets.materialize(asset.id);

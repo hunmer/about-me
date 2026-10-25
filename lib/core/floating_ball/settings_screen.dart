@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -5,6 +8,8 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/action/action_manager.dart';
 import 'package:aboutme/core/action/widgets/action_selector_dialog.dart';
+import 'package:aboutme/core/floating_ball/config/floating_ball_config.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/screens/settings_screen/widgets/settings_group.dart';
 import 'package:aboutme/screens/settings_screen/widgets/settings_tile.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -26,6 +31,8 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
   double _sizeScale = 1.0;
   bool _isEnabled = false;
   bool _edgeDockEnabled = false;
+  String _iconKey = FloatingBallIconPresets.defaultKey;
+  String? _customIcon;
   final Map<FloatingBallGesture, GestureActionConfig?> _selectedActions = {};
 
   @override
@@ -53,6 +60,10 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
     // 加载贴边收纳开关
     final edgeDockEnabled = await _manager.isEdgeDockEnabled();
 
+    // 加载图标配置
+    final iconKey = await _manager.getIconKey();
+    final customIcon = await _manager.getCustomIcon();
+
     // 从 ActionManager 加载手势动作配置
     for (var gesture in FloatingBallGesture.values) {
       final config = _actionManager.getGestureAction(gesture);
@@ -64,6 +75,8 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
         _sizeScale = scale;
         _isEnabled = enabled;
         _edgeDockEnabled = edgeDockEnabled;
+        _iconKey = iconKey;
+        _customIcon = customIcon;
       });
     }
   }
@@ -184,6 +197,20 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
                 ),
                 const SizedBox(height: 16),
 
+                // 悬浮球图标设置
+                SettingsGroup(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      child: _buildIconSettings(theme),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
                 // 悬浮球动作设置：为每种手势提供选择入口
                 SettingsGroup(
                   children: _buildGestureActionSelectors(),
@@ -209,6 +236,126 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
             );
           },
         ),
+      ),
+    );
+  }
+
+  // ==================== 悬浮球图标设置 ====================
+
+  /// 选择预设图标（同时清除自定义图片）
+  Future<void> _selectPresetIcon(String key) async {
+    setState(() {
+      _iconKey = key;
+      _customIcon = null;
+    });
+    await _manager.setIcon(iconKey: key, clearCustomIcon: true);
+  }
+
+  /// 上传自定义图片作为图标
+  Future<void> _pickCustomIcon() async {
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
+      context,
+      enableCrop: true,
+      cropAspectRatio: 1.0,
+      enableCompression: true,
+      compressionQuality: 80,
+    );
+
+    final bytes = result?['bytes'] as Uint8List?;
+    if (bytes == null || !mounted) return;
+
+    final base64Str = base64Encode(bytes);
+    setState(() {
+      _customIcon = base64Str;
+    });
+    await _manager.setIcon(customIcon: base64Str);
+  }
+
+  /// 图标选择区：预设网格 + 自定义图片入口
+  Widget _buildIconSettings(AppThemeData theme) {
+    final isPresetSelected = _customIcon == null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'floating_ball_ballIcon'.tr,
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            // 默认图片
+            _buildIconChoice(
+              theme: theme,
+              selected: isPresetSelected &&
+                  _iconKey == FloatingBallIconPresets.defaultKey,
+              onTap: () => _selectPresetIcon(FloatingBallIconPresets.defaultKey),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/icon/icon.png',
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            // 预设图标
+            for (final entry in FloatingBallIconPresets.icons.entries)
+              _buildIconChoice(
+                theme: theme,
+                selected: isPresetSelected && _iconKey == entry.key,
+                onTap: () => _selectPresetIcon(entry.key),
+                child: Icon(entry.value, size: 22, color: theme.text),
+              ),
+            // 自定义图片
+            _buildIconChoice(
+              theme: theme,
+              selected: _customIcon != null,
+              onTap: _pickCustomIcon,
+              child: _customIcon != null
+                  ? ClipOval(
+                      child: Image.memory(
+                        base64Decode(_customIcon!),
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            Icon(Icons.add_a_photo, size: 20, color: theme.textSub),
+                      ),
+                    )
+                  : Icon(Icons.add_a_photo, size: 22, color: theme.textSub),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 单个可选择的圆形图标块
+  Widget _buildIconChoice({
+    required AppThemeData theme,
+    required bool selected,
+    required VoidCallback onTap,
+    required Widget child,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: theme.surfaceAlt,
+          border: Border.all(
+            color: selected ? theme.primary : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: child,
       ),
     );
   }

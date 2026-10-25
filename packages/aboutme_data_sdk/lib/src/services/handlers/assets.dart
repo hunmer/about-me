@@ -235,6 +235,30 @@ PluginHandlers createAssetHandlers(PluginData data) => {
     final record = await _persistAsset(data, index, bytes, name, mediaType);
     return PluginResult.success(assetMetadata(record));
   },
+  // 原地替换资源内容（id/fileName/mediaType/createdAt 不变，size/sha256 随内容更新）。
+  // 用于图片编辑写回等场景：引用不变，持有该资产的业务数据无需变更。
+  'replace': (_, params) async {
+    if (params.keys.any((key) => !{'id', 'content'}.contains(key))) {
+      return const PluginResult.failure('资源替换包含未知字段', 'INVALID_PARAMS');
+    }
+    final content = params['content'];
+    if (content is! String || content.length > maxAssetEncodedLength) {
+      return const PluginResult.failure('无效资源参数，单个资源上限 16 MiB', 'INVALID_PARAMS');
+    }
+    final bytes = base64Decode(content);
+    final id = checkedAssetId(params['id']);
+    final record = await readAsset(data, id);
+    if (record == null) return const PluginResult.failure('资源不存在', 'NOT_FOUND');
+    record
+      ..['content'] = content
+      ..['size'] = bytes.length
+      ..['sha256'] = sha256.convert(bytes).toString();
+    await data.write('assets', '$id.json', record);
+    final index = await _assetIndex(data);
+    index[id] = assetMetadata(record);
+    await data.write('assets', 'index.json', {'schemaVersion': 1, 'assets': index});
+    return PluginResult.success(assetMetadata(record));
+  },
   // 批量迁移分区外旧媒体文件（各域历史本地图片/贴图二进制）为正式资源。
   // 迁移记录保证幂等：同一路径重复迁移返回既有资源；成功后删除旧文件。
   'migrateLegacyAssets': (_, params) async {

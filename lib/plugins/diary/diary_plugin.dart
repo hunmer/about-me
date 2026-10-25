@@ -107,6 +107,9 @@ class _DiaryMainViewState extends State<DiaryMainView> {
   }
 
   /// subbar 右侧圆钮：新建/编辑今日日记（编辑选中日走详情 sheet 的编辑按钮）
+  ///
+  /// 保存后由 SDK watch（DiaryUtils.watchEntries）自动刷新日历 tab，
+  /// 无需手动广播刷新事件。
   Future<void> _createTodayDiary() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -126,10 +129,6 @@ class _DiaryMainViewState extends State<DiaryMainView> {
         initialContent: entry?.content ?? '',
       ),
     );
-    if (mounted) {
-      // 日历 tab 订阅该事件重新加载条目（原 FAB 的 .then 刷新由这里接管）
-      EventManager.instance.broadcast('diary_refresh', EventArgs());
-    }
   }
 
   /// 底部弧形圆盘导航栏：日历/统计双 tab，subbar 右侧圆钮为新建入口
