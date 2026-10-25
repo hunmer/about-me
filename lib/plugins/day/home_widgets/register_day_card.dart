@@ -206,14 +206,13 @@ class _MemorialDayCardHomeWidgetState extends State<_MemorialDayCardHomeWidget> 
                       ? Icon(
                         memorial.icon,
                         size: 16,
-                        color: memorial.iconColor ?? memorial.backgroundColor,
+                        color: memorial.backgroundColor,
                       )
                       : Text(
                         memorial.title.isNotEmpty ? memorial.title[0] : '纪',
                         style: TextStyle(
                           fontSize: 12,
-                          color:
-                              memorial.iconColor ?? memorial.backgroundColor,
+                          color: memorial.backgroundColor,
                         ),
                       ),
             ),

@@ -41,23 +41,60 @@ dart compile exe bin/server.dart -o bin/aboutme-server      # 单文件可执行
 
 在本仓库根目录执行：
 
-```powershell
+```bash
 cd packages/aboutme_server
-Copy-Item .env.example .env
+cp .env.example .env
 ```
 
 编辑 `.env`，为 `JWT_SECRET` 和 `ADMIN_PASSWORD` 设置强随机值，然后构建并启动：
 
-```powershell
+```bash
 docker compose up -d --build
 docker compose logs -f
 ```
 
 服务仅映射到本机 `127.0.0.1:8874`，管理界面地址为 `http://127.0.0.1:8874/admin/`；健康检查为 `http://127.0.0.1:8874/health`。数据持久化在本包的 `data/` 目录。停止服务：
 
-```powershell
+```bash
 docker compose down
 ```
+
+### 导出镜像与服务器部署
+
+导出镜像（gzip 压缩后约为原大小的 1/3，`docker load` 可直接读取）：
+
+```bash
+cd packages/aboutme_server
+docker save aboutme_server-aboutme-server | gzip > aboutme-server.tar.gz
+```
+
+本机为 Apple Silicon（arm64）而目标是 x86 服务器时，必须显式指定平台构建，否则服务器上会报 `exec format error`：
+
+```bash
+docker buildx build --platform linux/amd64 -t aboutme-server:amd64 -f Dockerfile ../.. --load
+docker save aboutme-server:amd64 | gzip > aboutme-server-amd64.tar.gz
+```
+
+服务器上 `docker load -i aboutme-server-amd64.tar.gz` 导入后，用镜像版 compose 启动（与上面 build 模式的区别仅在 `image` 替代 `build`）：
+
+```yaml
+services:
+  aboutme-server:
+    image: aboutme-server:amd64
+    container_name: aboutme-server
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:8874:8874"
+    volumes:
+      - ./data:/app/data
+```
+
+注意事项：
+
+- 容器以非 root 用户（uid/gid 999）运行，Linux 宿主机需先 `chown -R 999:999 ./data`，否则启动时报 `Permission denied`（macOS 的 Docker Desktop 不受影响）
+- 需要公网访问时把端口映射改为 `"8874:8874"` 并在云安全组放行；本服务为明文 HTTP，公网使用建议置于 HTTPS 反代之后，并设置强 `JWT_SECRET`/`ADMIN_PASSWORD`、注册完账号后设置 `ALLOW_REGISTER=false`
+- 镜像内已含管理界面与调试页，升级镜像即可同步更新 `/admin/` 与 `/debug`
 
 ## 管理界面（admin-vue）
 

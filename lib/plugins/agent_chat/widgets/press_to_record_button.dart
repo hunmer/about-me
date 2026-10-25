@@ -5,6 +5,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/speech_recognition_state.dart';
+import 'package:aboutme/widgets/audio_ui_replica/shazam_pill.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 /// 点击录音按钮组件
@@ -93,6 +94,11 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
   StreamSubscription<SpeechRecognitionState>? _stateSubscription;
   StreamSubscription<String>? _errorSubscription;
 
+  // 录音时顶部的 Shazam 风格状态胶囊浮层（实时展示转写文本）
+  OverlayEntry? _pillOverlay;
+  final GlobalKey<_RecordingPillHostState> _pillKey = GlobalKey();
+  String _liveText = '';
+
   // 动画控制器
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -118,6 +124,7 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
 
   @override
   void dispose() {
+    _removeRecordingPill();
     _recognitionSubscription?.cancel();
     _stateSubscription?.cancel();
     _errorSubscription?.cancel();
@@ -137,6 +144,10 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
               _recognizedText = text;
             });
 
+            // 同步实时文本到顶部胶囊
+            _liveText = text;
+            _refreshRecordingPill();
+
             // 实时更新到输入框
             if (_isRecording && text.isNotEmpty) {
               _updateTextController(text);
@@ -151,6 +162,8 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
           setState(() {
             _isRecording = false;
           });
+          // 播放收起动画后再移除浮层
+          _pillKey.currentState?.dismiss();
           _onRecordingComplete();
         }
       });
@@ -189,6 +202,7 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
       setState(() {
         _isRecording = true;
         _recognizedText = '';
+        _liveText = '';
       });
 
       // 启动循环缩放动画
@@ -200,6 +214,7 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
         if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
           HapticFeedback.heavyImpact();
         }
+        _showRecordingPill();
       } else {
         setState(() {
           _isRecording = false;
@@ -291,7 +306,36 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
   /// 处理错误
   void _handleError(String error) {
     debugPrint('语音识别错误: $error');
+    _pillKey.currentState?.dismiss();
     widget.onError?.call(error);
+  }
+
+  /// 顶部展示录音状态胶囊（Shazam 风格，实时转写文本）
+  void _showRecordingPill() {
+    _removeRecordingPill();
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay == null) return;
+
+    _pillOverlay = OverlayEntry(
+      builder:
+          (context) => _RecordingPillHost(
+            key: _pillKey,
+            subtitle: _liveText.isEmpty ? '语音识别中' : _liveText,
+            onClose: _stopRecording,
+            onDismissed: _removeRecordingPill,
+          ),
+    );
+    overlay.insert(_pillOverlay!);
+  }
+
+  void _removeRecordingPill() {
+    _pillOverlay?.remove();
+    _pillOverlay = null;
+  }
+
+  /// 识别文本变化时刷新胶囊内容
+  void _refreshRecordingPill() {
+    _pillOverlay?.markNeedsBuild();
   }
 
   @override
@@ -349,6 +393,89 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
                 },
               ),
             ),
+      ),
+    );
+  }
+}
+
+/// 顶部录音胶囊浮层宿主：负责灵动岛式展开/收起过渡动画
+/// （缩放 0.82↔1.0 + 淡入淡出，350ms 弹性曲线，与 demo 页一致）
+class _RecordingPillHost extends StatefulWidget {
+  const _RecordingPillHost({
+    super.key,
+    required this.subtitle,
+    required this.onClose,
+    required this.onDismissed,
+  });
+
+  final String subtitle;
+  final VoidCallback onClose;
+
+  /// 收起动画完成后回调（由外部移除 OverlayEntry）
+  final VoidCallback onDismissed;
+
+  @override
+  State<_RecordingPillHost> createState() => _RecordingPillHostState();
+}
+
+class _RecordingPillHostState extends State<_RecordingPillHost>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 350),
+    value: 0, // 0 = 收起/透明，1 = 展开
+  );
+  late final CurvedAnimation _curve = CurvedAnimation(
+    parent: _ctrl,
+    curve: const Cubic(0.22, 1, 0.36, 1),
+  );
+  bool _dismissed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _curve.dispose();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  /// 播放收起动画，完成后回调 onDismissed（由外部移除浮层）
+  void dismiss() {
+    if (_dismissed) return;
+    _dismissed = true;
+    _ctrl.reverse().whenCompleteOrCancel(() {
+      if (mounted) widget.onDismissed();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: MediaQuery.paddingOf(context).top + 12,
+          left: 24,
+          right: 24,
+        ),
+        child: FadeTransition(
+          opacity: _curve,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.82, end: 1.0).animate(_curve),
+            child: ShazamPill(
+              animated: !_dismissed,
+              title: '正在聆听…',
+              subtitle: widget.subtitle,
+              onLogoTap: () {},
+              onClose: widget.onClose,
+            ),
+          ),
+        ),
       ),
     );
   }

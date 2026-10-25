@@ -38,7 +38,6 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
   late Color _selectedColor;
   String? _backgroundImageUrl;
   IconData? _selectedIcon;
-  Color? _selectedIconColor;
   RecurrenceUnit? _recurrenceUnit;
 
   @override
@@ -52,7 +51,6 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
     _selectedColor = widget.memorialDay?.backgroundColor ?? Colors.blue[300]!;
     _backgroundImageUrl = widget.memorialDay?.backgroundImageUrl;
     _selectedIcon = widget.memorialDay?.icon;
-    _selectedIconColor = widget.memorialDay?.iconColor;
     _recurrenceUnit = widget.memorialDay?.recurrenceUnit;
     widget.onReady?.call(() => _save(context));
     _updateRouteContext();
@@ -123,7 +121,6 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
       backgroundImageUrl: _backgroundImageUrl,
       creationDate: widget.memorialDay?.creationDate ?? DateTime.now(),
       icon: _selectedIcon,
-      iconColor: _selectedIconColor,
       recurrenceUnit: _recurrenceUnit,
       recurrenceInterval:
           int.tryParse(_intervalController.text.trim())?.clamp(1, 9999) ?? 1,
@@ -237,15 +234,13 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
                 IconAvatarRowField(
                   name: 'memorial_icon',
                   initialIcon: _selectedIcon,
-                  // 圆圈显示主题色（详情页背景用 backgroundColor，非 iconColor）
+                  // 圆圈显示当前主题色
                   initialIconColor: _selectedColor,
                   initialAvatarUrl: _backgroundImageUrl,
                   onChanged: (value) {
                     setState(() {
                       _selectedIcon = value['icon'] as IconData?;
-                      _selectedIconColor = value['iconColor'] as Color?;
-                      // 表单唯一的选色入口即纪念日主题色，同步到背景色，
-                      // 否则保存后详情页背景不生效
+                      // 选色即纪念日主题色（backgroundColor）
                       final color = value['iconColor'];
                       if (color is Color) _selectedColor = color;
                       _backgroundImageUrl = value['avatarUrl'] as String?;

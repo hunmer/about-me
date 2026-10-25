@@ -142,8 +142,7 @@ class _MemorialDayCardWidgetState extends State<MemorialDayCardWidget> {
                             width: 32 * _getScaleFactor(),
                             height: 32 * _getScaleFactor(),
                             decoration: BoxDecoration(
-                              color: memorialDay.iconColor ??
-                                  Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(

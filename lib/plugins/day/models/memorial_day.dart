@@ -20,7 +20,6 @@ class MemorialDay {
   final String? backgroundImageUrl;
   final int sortIndex;
   final IconData? icon;
-  final Color? iconColor;
 
   /// 循环单位；null 表示不循环（targetDate 即截止日期）
   final RecurrenceUnit? recurrenceUnit;
@@ -39,7 +38,6 @@ class MemorialDay {
     this.backgroundImageUrl,
     int? sortIndex,
     this.icon,
-    this.iconColor,
     this.recurrenceUnit,
     int? recurrenceInterval,
   }) : id = id ?? const Uuid().v4(),
@@ -170,14 +168,14 @@ class MemorialDay {
                 (e) => e == null ? null : DateTime.parse(e as String),
               )
               .toList(),
-      backgroundColor: Color(json['backgroundColor']),
+      // 旧版双字段迁移：iconColor 是用户最后选的主题色，优先于 backgroundColor
+      backgroundColor: Color(json['iconColor'] ?? json['backgroundColor']),
       backgroundImageUrl: json['backgroundImageUrl'],
       sortIndex: json['sortIndex'] ?? 0,
       icon:
           json['icon'] != null
               ? dynamicIconData(json['icon'], fontFamily: 'MaterialIcons')
               : null,
-      iconColor: json['iconColor'] != null ? Color(json['iconColor']) : null,
       recurrenceUnit:
           json['recurrenceUnit'] == null
               ? null
@@ -200,7 +198,6 @@ class MemorialDay {
       'backgroundImageUrl': backgroundImageUrl,
       'sortIndex': sortIndex,
       'icon': icon?.codePoint,
-      'iconColor': iconColor?.value,
       'recurrenceUnit': recurrenceUnit?.name,
       'recurrenceInterval': recurrenceInterval,
     };
@@ -238,7 +235,6 @@ class MemorialDay {
     String? backgroundImageUrl,
     int? sortIndex,
     IconData? icon,
-    Color? iconColor,
     RecurrenceUnit? recurrenceUnit,
     int? recurrenceInterval,
   }) {
@@ -253,7 +249,6 @@ class MemorialDay {
       backgroundImageUrl: backgroundImageUrl ?? this.backgroundImageUrl,
       sortIndex: sortIndex ?? this.sortIndex,
       icon: icon ?? this.icon,
-      iconColor: iconColor ?? this.iconColor,
       recurrenceUnit: recurrenceUnit ?? this.recurrenceUnit,
       recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
     );
