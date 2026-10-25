@@ -46,11 +46,9 @@ const mcpConfig = computed(() => {
     {
       mcpServers: {
         'aboutme-sync': {
-          command: 'npx',
-          args: ['-y', '@aboutme/mcp-server'],
-          env: {
-            ABOUTME_SERVER_URL: apiClient.getBaseUrl(),
-            ABOUTME_API_KEY: props.apiKey.key
+          url: `${apiClient.getBaseUrl()}/mcp`,
+          headers: {
+            'X-API-Key': props.apiKey.key
           }
         }
       }

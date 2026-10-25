@@ -23,11 +23,8 @@ class StorageBackendConfig {
   void validate() {
     if (!isHttpEnabled) return;
     final uri = Uri.tryParse(serverUrl);
-    final isLocal = uri?.host == 'localhost' || uri?.host == '127.0.0.1';
-    if (uri == null ||
-        !uri.hasAuthority ||
-        (uri.scheme != 'https' && !(isLocal && uri.scheme == 'http'))) {
-      throw const FormatException('服务器地址必须使用 HTTPS（本机地址允许 HTTP）');
+    if (uri == null || !uri.hasAuthority || (uri.scheme != 'https' && uri.scheme != 'http')) {
+      throw const FormatException('服务器地址必须是有效的 HTTP/HTTPS 地址');
     }
     if (credential.trim().isEmpty) throw const FormatException('认证凭据不能为空');
   }

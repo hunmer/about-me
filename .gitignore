@@ -86,3 +86,5 @@ ios/build/ios/XCBuildData/*
 packages/aboutme_server/admin/
 packages/aboutme_server/data/
 ios/build/*
+packages/aboutme_server/aboutme-server-image.tar.gz
+packages/aboutme_server/aboutme-server-amd64.tar.gz
