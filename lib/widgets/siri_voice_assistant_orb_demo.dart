@@ -37,11 +37,15 @@ class SiriOrbAction {
   /// 主按钮高亮样式（如"确认"）
   final bool highlighted;
 
+  /// 是否显示文字（false = 仅图标，label 作为 tooltip）
+  final bool showLabel;
+
   const SiriOrbAction({
     required this.icon,
     required this.label,
     this.onTap,
     this.highlighted = false,
+    this.showLabel = true,
   });
 }
 
@@ -113,7 +117,7 @@ class SiriOrbCard extends StatefulWidget {
   /// 真实能量流（0.0~1.0，如麦克风音量），有效时优先于模式伪随机动画
   final Stream<double>? energyStream;
 
-  /// 提示文案下方的预览行，超出宽度时自动跑马灯滚动
+  /// 提示文案下方的预览文本，自动换行（限 3 行，超出省略）
   final String? preview;
 
   /// 流光球点击回调；null 时仅播放脉冲动画
@@ -322,8 +326,11 @@ class _SiriOrbCardState extends State<SiriOrbCard>
                     if (widget.preview != null &&
                         widget.preview!.isNotEmpty) ...[
                       const SizedBox(height: 10),
-                      _MarqueeText(
-                        text: widget.preview!,
+                      // 预览文本自动换行，限 3 行防撑爆卡片
+                      Text(
+                        widget.preview!,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.66),
                           fontSize: 14,
@@ -800,9 +807,13 @@ class _ActionButtonState extends State<_ActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final highlighted = widget.action.highlighted;
-    return GestureDetector(
-      onTap: widget.action.onTap,
+    final action = widget.action;
+    final highlighted = action.highlighted;
+    final iconOnly = !action.showLabel;
+    return Tooltip(
+      message: action.label,
+      child: GestureDetector(
+      onTap: action.onTap,
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
@@ -813,7 +824,10 @@ class _ActionButtonState extends State<_ActionButton> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          // 纯图标时对称内边距，呈圆形按钮
+          padding: iconOnly
+              ? const EdgeInsets.all(10)
+              : const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             color: highlighted
                 ? const Color(0xFFF5F5F7)
@@ -838,89 +852,28 @@ class _ActionButtonState extends State<_ActionButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                widget.action.icon,
+                action.icon,
                 size: 16,
                 color: highlighted ? const Color(0xFF111113) : Colors.white,
               ),
-              const SizedBox(width: 7),
-              Text(
-                widget.action.label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: highlighted
-                      ? const Color(0xFF111113)
-                      : Colors.white.withOpacity(0.92),
+              if (!iconOnly) ...[
+                const SizedBox(width: 7),
+                Text(
+                  action.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: highlighted
+                        ? const Color(0xFF111113)
+                        : Colors.white.withOpacity(0.92),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-/// 超宽文本自动往返滚动的跑马灯；不超宽时静态显示
-class _MarqueeText extends StatefulWidget {
-  final String text;
-  final TextStyle style;
-
-  const _MarqueeText({required this.text, required this.style});
-
-  @override
-  State<_MarqueeText> createState() => _MarqueeTextState();
-}
-
-class _MarqueeTextState extends State<_MarqueeText>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final painter = TextPainter(
-          text: TextSpan(text: widget.text, style: widget.style),
-          maxLines: 1,
-          textDirection: TextDirection.ltr,
-        )..layout();
-        final overflow = painter.width - constraints.maxWidth;
-
-        if (overflow <= 0) {
-          if (_controller.isAnimating) _controller.stop();
-          return Text(widget.text, style: widget.style, maxLines: 1);
-        }
-
-        // 滚动时长按溢出长度伸缩；文本识别更新导致时长变化时重启滚动
-        final duration =
-            Duration(milliseconds: (overflow * 55).round() + 1400);
-        if (_controller.duration != duration) {
-          _controller.stop();
-          _controller.value = 0;
-          _controller.duration = duration;
-        }
-        if (!_controller.isAnimating) {
-          _controller.repeat(reverse: true);
-        }
-        // 两端各留 12% 缓动区间，近似阅读停顿
-        const curve = Interval(0.12, 0.88, curve: Curves.easeInOut);
-        return ClipRect(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) => Transform.translate(
-              offset: Offset(-overflow * curve.transform(_controller.value), 0),
-              child: Text(widget.text, style: widget.style, maxLines: 1),
-            ),
-          ),
-        );
-      },
+      ),
     );
   }
 }

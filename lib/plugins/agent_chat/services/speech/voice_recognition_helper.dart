@@ -28,6 +28,7 @@ class VoiceRecognitionHelper {
   static Future<bool> showVoiceInputDialog({
     required BuildContext context,
     required Function(String text) onComplete,
+    bool autoStartRecording = false,
   }) async {
     try {
       // 创建语音识别服务
@@ -49,13 +50,19 @@ class VoiceRecognitionHelper {
               padding: EdgeInsets.only(
                 bottom: MediaQuery.paddingOf(context).bottom,
               ),
-              child: DSThemeBridge(
-                child: Builder(
-                  builder:
-                      (context) => VoiceInputDialog(
-                        recognitionService: recognitionService,
-                        onRecognitionComplete: onComplete,
-                      ),
+              // 卡片固定宽度，需显式水平居中（heightFactor 保持贴顶不撑高）
+              child: Align(
+                alignment: Alignment.topCenter,
+                heightFactor: 1,
+                child: DSThemeBridge(
+                  child: Builder(
+                    builder:
+                        (context) => VoiceInputDialog(
+                          recognitionService: recognitionService,
+                          onRecognitionComplete: onComplete,
+                          autoStartRecording: autoStartRecording,
+                        ),
+                  ),
                 ),
               ),
             ),

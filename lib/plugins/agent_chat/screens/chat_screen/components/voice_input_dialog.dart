@@ -29,10 +29,14 @@ class VoiceInputDialog extends StatefulWidget {
   /// 识别完成回调
   final Function(String text) onRecognitionComplete;
 
+  /// 打开后自动开始录音（默认 false）
+  final bool autoStartRecording;
+
   const VoiceInputDialog({
     super.key,
     required this.recognitionService,
     required this.onRecognitionComplete,
+    this.autoStartRecording = false,
   });
 
   @override
@@ -133,6 +137,11 @@ class _VoiceInputDialogState extends State<VoiceInputDialog> {
         setState(() {});
         _showErrorSnackBar(error);
       });
+
+      // 服务就绪后按需自动开始录音
+      if (widget.autoStartRecording && mounted && !_isRecording) {
+        await _startRecording();
+      }
     } catch (e) {
       _showErrorSnackBar('初始化失败: $e');
     }
@@ -387,6 +396,8 @@ class _VoiceInputDialogState extends State<VoiceInputDialog> {
   Widget build(BuildContext context) {
     final hasText = _textController.text.isNotEmpty;
     final sendingDisabled = _currentState == SpeechRecognitionState.recording;
+    // 完成语音输入（停止录音且有文本）后才展示底部动作按钮
+    final actionsReady = !_isRecording && hasText;
 
     return SheetPopScope<bool>(
       // 录音中拦截下滑/返回键关闭，避免误丢录音；其余状态可下滑关闭
@@ -426,31 +437,37 @@ class _VoiceInputDialogState extends State<VoiceInputDialog> {
         },
         onOrbLongPressStart: (_) => _startRecording(isFromTap: false),
         onOrbLongPressEnd: (_) => _stopRecording(),
-        actions: [
-          SiriOrbAction(
-            icon: Icons.spellcheck,
-            label: '标点替换',
-            highlighted: _enablePunctuationReplacement,
-            onTap: _togglePunctuationReplacement,
-          ),
-          SiriOrbAction(
-            icon: Icons.auto_awesome,
-            label: _isCorrecting ? '纠错中…' : 'AI纠错',
-            highlighted: _isCorrecting,
-            onTap: _isCorrecting ? null : () => _performAICorrection(),
-          ),
-          SiriOrbAction(
-            icon: Icons.delete_sweep_outlined,
-            label: '清空',
-            onTap: hasText ? _clearText : null,
-          ),
-          SiriOrbAction(
-            icon: Icons.send_rounded,
-            label: 'agent_chat_send'.tr,
-            highlighted: true,
-            onTap: sendingDisabled ? null : _confirmSend,
-          ),
-        ],
+        actions: actionsReady
+            ? [
+                SiriOrbAction(
+                  icon: Icons.spellcheck,
+                  label: '标点替换',
+                  showLabel: false,
+                  highlighted: _enablePunctuationReplacement,
+                  onTap: _togglePunctuationReplacement,
+                ),
+                SiriOrbAction(
+                  icon: Icons.auto_awesome,
+                  label: _isCorrecting ? '纠错中…' : 'AI纠错',
+                  showLabel: false,
+                  highlighted: _isCorrecting,
+                  onTap: _isCorrecting ? null : () => _performAICorrection(),
+                ),
+                SiriOrbAction(
+                  icon: Icons.delete_sweep_outlined,
+                  label: '清空',
+                  showLabel: false,
+                  onTap: hasText ? _clearText : null,
+                ),
+                SiriOrbAction(
+                  icon: Icons.send_rounded,
+                  label: 'agent_chat_send'.tr,
+                  showLabel: false,
+                  highlighted: true,
+                  onTap: sendingDisabled ? null : _confirmSend,
+                ),
+              ]
+            : const [],
       ),
     );
   }

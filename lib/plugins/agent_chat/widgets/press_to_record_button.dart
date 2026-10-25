@@ -353,7 +353,9 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
       child: Pressable(
         onPressed: widget.enabled && _isInitialized ? _toggleRecording : null,
         onLongPress:
-            widget.enabled && _isInitialized ? widget.onLongPress : null,
+            widget.enabled && _isInitialized && !_isRecording
+            ? widget.onLongPress
+            : null,
         semanticLabel: tooltipText,
         builder:
             (context, states) => Padding(

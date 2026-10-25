@@ -15,7 +15,6 @@ import 'package:aboutme/widgets/message_input/message_input.dart' as common;
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_drawer.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_builder.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/emoji_handler.dart';
-import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/audio_handler.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
@@ -277,6 +276,21 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
+  /// 长按打开语音输入对话框（整段 ASR 识别，结果写入输入框）
+  Future<void> _showVoiceInputDialog() async {
+    if (!mounted) return;
+
+    await VoiceRecognitionHelper.showVoiceInputDialog(
+      context: context,
+      autoStartRecording: true,
+      onComplete: (text) {
+        widget.controller.text = text;
+        widget.onSaveDraft(text);
+        _focusNode.requestFocus();
+      },
+    );
+  }
+
   /// 打开表情选择器
   void _showEmojiPicker() {
     handleEmojiSelection(
@@ -341,7 +355,7 @@ class _MessageInputState extends State<MessageInput> {
         ),
       ],
       // 录音：点击开始/停止，识别结果实时写入输入框；
-      // 长按打开录音对话框（录语音附件）；未配置时回退为配置入口
+      // 长按打开语音输入对话框（整段识别）；未配置时点击打开配置
       inputSuffix: _recognitionService != null
           ? PressToRecordButton(
               textController: widget.controller,
@@ -352,11 +366,7 @@ class _MessageInputState extends State<MessageInput> {
               onError: (error) {
                 if (mounted) toastService.showToast('语音识别失败: $error');
               },
-              onLongPress: () => handleAudioRecording(
-                context: context,
-                fileService: FileService(),
-                onFileSelected: _handleFileSelected,
-              ),
+              onLongPress: _showVoiceInputDialog,
             )
           : _InlineIconAction(
               icon: DsIconKind.mic,

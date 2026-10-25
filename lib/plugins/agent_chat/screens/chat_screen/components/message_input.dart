@@ -37,7 +37,6 @@ import 'suggested_questions_dialog.dart';
 import 'command_selector.dart';
 import 'tool_template_selector.dart';
 import 'package:aboutme/plugins/agent_chat/widgets/press_to_record_button.dart';
-import 'package:aboutme/widgets/record_audio_dialog.dart';
 import 'package:aboutme/screens/settings_screen/widgets/speech_recognition_settings_dialog.dart';
 import '../../../../../../core/services/toast_service.dart';
 
@@ -480,7 +479,7 @@ class _MessageInputState extends State<MessageInput> {
                     toastService.showToast('语音识别失败: $error');
                   }
                 },
-                onLongPress: _recordAudioAttachment,
+                onLongPress: _showVoiceInputDialog,
               )
             else
               _InlineIconAction(
@@ -1010,15 +1009,17 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  /// 长按录音：录制语音并作为附件加入待发送文件（与 chat 输入框一致）
-  Future<void> _recordAudioAttachment() {
-    return showRecordAudioDialog(
+  /// 长按打开语音输入对话框（整段 ASR 识别，结果写入输入框）
+  Future<void> _showVoiceInputDialog() async {
+    if (!mounted) return;
+
+    await VoiceRecognitionHelper.showVoiceInputDialog(
       context: context,
-      // Web 端无本地文件，字节写临时文件后加入待发送
-      onStopBytes: (bytes, fileName, duration, amplitudes) =>
-          _attachBytesAsFile(fileName, bytes),
-      onStop: (audioFile, duration, amplitudes) async {
-        widget.controller.addFiles([audioFile]);
+      autoStartRecording: true,
+      onComplete: (text) {
+        _textController.text = text;
+        widget.controller.setInputText(text);
+        _focusNode.requestFocus();
       },
     );
   }
