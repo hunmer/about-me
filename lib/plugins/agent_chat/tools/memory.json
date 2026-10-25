@@ -1,48 +1,142 @@
 {
   "search_memory": {
     "title": "查询记忆",
-    "description": "按指定 memoryId 查询长期记忆。memoryId 必须来自当前已启用的记忆库列表；不要使用 agentId 或猜测 ID。query 为空时返回核心记忆。",
+    "description": "按指定 memoryId 查询长期记忆（key-value 结构）。memoryId 必须来自当前已启用的记忆库列表。key 精确匹配单条（含已归档，优先级最高）；prefix 按前缀列出，query 按关键词检索，两者可并用，均不含已归档；都不传时返回最近更新的记忆（最多50条）。每项含 key、value，后续按 key 更新或删除。",
     "parameters": [
-      {"name": "memoryId", "type": "string", "required": true, "description": "目标记忆库 ID"},
-      {"name": "query", "type": "string", "required": false, "description": "检索关键词；留空返回核心记忆"}
+      {
+        "name": "memoryId",
+        "type": "string",
+        "required": true,
+        "description": "目标记忆库 ID"
+      },
+      {
+        "name": "key",
+        "type": "string",
+        "required": false,
+        "description": "精确 key，返回该条记忆（含已归档）"
+      },
+      {
+        "name": "prefix",
+        "type": "string",
+        "required": false,
+        "description": "key 前缀，列出以该前缀开头的记忆（最多50条）"
+      },
+      {
+        "name": "query",
+        "type": "string",
+        "required": false,
+        "description": "关键词检索；可与 prefix 并用（key 优先，其次 prefix，最后 query）"
+      }
     ],
-    "returns": {"type": "Promise<string>", "description": "JSON 对象 {memoryId, fragments}；每项含 fragmentId、content、tags 等字段"},
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象 {memoryId, fragments}；每项含 key、value、revision、updatedAt 等字段"
+    },
     "examples": [
-      {"code": "const result = await Aboutme.plugins.openai.search_memory({memoryId: 'memory-library-id', query: '音乐'});\nsetResult(result);", "comment": "按显式记忆库 ID 检索"}
+      {
+        "code": "const result = await Aboutme.plugins.openai.search_memory({memoryId: 'memory-library-id', key: 'favorite_food'});\nsetResult(result);",
+        "comment": "按精确 key 查询单条记忆"
+      }
     ],
     "enabled": true
   },
   "add_memory": {
     "title": "新增记忆",
-    "description": "向指定记忆库新增一条手动记忆。",
+    "description": "向指定记忆库新增或覆盖一条 key-value 记忆（同 key 覆盖，即 upsert）。key 是稳定的点分标识符（如 user.preference.food），value 是完整的记忆内容。",
     "parameters": [
-      {"name": "memoryId", "type": "string", "required": true, "description": "目标记忆库 ID"},
-      {"name": "content", "type": "string", "required": true, "description": "记忆内容，不能为空"},
-      {"name": "tags", "type": "array", "required": false, "description": "用于检索的标签列表"}
+      {
+        "name": "memoryId",
+        "type": "string",
+        "required": true,
+        "description": "目标记忆库 ID"
+      },
+      {
+        "name": "key",
+        "type": "string",
+        "required": true,
+        "description": "记忆的 key，同库唯一；已存在时覆盖原值"
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "required": true,
+        "description": "记忆内容，不能为空"
+      },
+      {
+        "name": "tags",
+        "type": "array",
+        "required": false,
+        "description": "用于检索的标签列表"
+      }
     ],
-    "returns": {"type": "Promise<string>", "description": "JSON 对象 {success, memoryId, fragmentId}"},
-    "enabled": true
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象 {success, memoryId, key, value, revision, updatedAt}"
+    },
+    "enabled": true,
+    "examples": [
+      {
+        "code": "const result = await Aboutme.plugins.openai.search_memory({memoryId: 'memory-library-id', key: 'user.preference.food'});\nsetResult(result);",
+        "comment": "按精确 key 查询单条记忆"
+      }
+    ]
   },
   "update_memory": {
     "title": "更新记忆",
-    "description": "更新指定记忆库中的一条记忆碎片。fragmentId 使用查询或新增结果中的 ID。",
+    "description": "更新指定记忆库中已有 key 的记忆。key 必须先通过 search_memory 确认存在，不存在时报错。",
     "parameters": [
-      {"name": "memoryId", "type": "string", "required": true, "description": "目标记忆库 ID"},
-      {"name": "fragmentId", "type": "string", "required": true, "description": "要更新的碎片 ID"},
-      {"name": "content", "type": "string", "required": true, "description": "新的记忆内容，不能为空"},
-      {"name": "tags", "type": "array", "required": false, "description": "新的标签列表"}
+      {
+        "name": "memoryId",
+        "type": "string",
+        "required": true,
+        "description": "目标记忆库 ID"
+      },
+      {
+        "name": "key",
+        "type": "string",
+        "required": true,
+        "description": "要更新的记忆 key"
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "required": true,
+        "description": "新的记忆内容，不能为空"
+      },
+      {
+        "name": "tags",
+        "type": "array",
+        "required": false,
+        "description": "新的标签列表"
+      }
     ],
-    "returns": {"type": "Promise<string>", "description": "JSON 对象 {success, memoryId, fragmentId}"},
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象 {success, memoryId, key, value, revision, updatedAt}"
+    },
     "enabled": true
   },
   "delete_memory": {
     "title": "删除记忆",
-    "description": "删除指定记忆库中的一条记忆碎片。fragmentId 使用查询或新增结果中的 ID。",
+    "description": "删除指定记忆库中 key 对应的记忆。key 必须先通过 search_memory 确认存在。",
     "parameters": [
-      {"name": "memoryId", "type": "string", "required": true, "description": "目标记忆库 ID"},
-      {"name": "fragmentId", "type": "string", "required": true, "description": "要删除的碎片 ID"}
+      {
+        "name": "memoryId",
+        "type": "string",
+        "required": true,
+        "description": "目标记忆库 ID"
+      },
+      {
+        "name": "key",
+        "type": "string",
+        "required": true,
+        "description": "要删除的记忆 key"
+      }
     ],
-    "returns": {"type": "Promise<string>", "description": "JSON 对象 {success, memoryId, fragmentId}"},
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象 {success, memoryId, key}"
+    },
     "enabled": true
   }
 }

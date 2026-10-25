@@ -50,6 +50,56 @@ void main() {
     );
   });
 
+  test('精确 key 返回归档记录并保留 key/value 元数据，未命中不回退', () {
+    final archived = MemoryFragment(
+      id: 'archived',
+      key: 'user.preference.drink',
+      content: '喜欢红茶',
+      tags: ['饮品'],
+      category: 'preference',
+      archived: true,
+      revision: 3,
+      source: 'extraction',
+      confidence: 0.8,
+    );
+    final other = MemoryFragment(
+      id: 'other',
+      key: 'user.preference.food',
+      content: '喜欢面条',
+      tags: ['饮食'],
+      category: 'preference',
+    );
+    final retrieval = MemoryExtraction([archived, other])..index();
+
+    final hit = retrieval.search({
+      'subject': 'user',
+      'category': 'preference',
+      'key': 'user.preference.drink',
+    });
+    expect(hit['total'], 1);
+    expect(
+      (hit['memories'] as List).single,
+      allOf([
+        containsPair('key', 'user.preference.drink'),
+        containsPair('value', '喜欢红茶'),
+        containsPair('revision', 3),
+        containsPair('source', 'extraction'),
+        containsPair('confidence', 0.8),
+        containsPair('archived', true),
+      ]),
+    );
+    expect(retrieval.retrievedIds, {'archived'});
+
+    final miss = retrieval.search({
+      'subject': 'user',
+      'category': 'preference',
+      'key': 'user.preference.unknown',
+      'query': '红茶',
+    });
+    expect(miss['memories'], isEmpty);
+    expect(miss['total'], 0);
+  });
+
   test('检索分页每次最多5条，含归档记录供查重', () {
     final fragments = List.generate(7, (i) => fragment('$i'));
     fragments.first.archived = true;

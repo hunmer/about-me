@@ -20,6 +20,7 @@ import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/plugin_base.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/models/memory_fragment.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_extraction_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/proactive_service.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';

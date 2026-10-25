@@ -21,14 +21,22 @@ class ImportedChatText {
 
 /// 提取出的碎片草稿（解析 LLM 输出得到的中间结构，尚未写入）
 class FragmentDraft {
-  final String content;
+  final String key;
+  final String value;
+  String get content => value;
   final List<String> tags;
   final String? emotion;
+  final String category;
+  final double confidence;
   final double importance;
+
   const FragmentDraft({
-    required this.content,
+    required this.key,
+    required this.value,
     required this.tags,
     this.emotion,
+    this.category = 'other',
+    this.confidence = 1.0,
     this.importance = 0.5,
   });
 }
@@ -137,7 +145,10 @@ class ChatImportService {
           final content = _normalize(await file.readAsString());
           if (content.trim().isNotEmpty) {
             texts.add(
-              ImportedChatText(name: _baseName(file.path), content: _clip(content)),
+              ImportedChatText(
+                name: _baseName(file.path),
+                content: _clip(content),
+              ),
             );
           }
         }
@@ -269,7 +280,7 @@ class ChatImportService {
     String? memoryId,
     bool createAgent = false,
     void Function(ChatImportPhase phase, int processed, int total, int added)?
-      onProgress,
+    onProgress,
     bool Function()? shouldCancel,
   }) async {
     if (memoryId == null || memoryId.trim().isEmpty) {
@@ -301,13 +312,11 @@ class ChatImportService {
     //   回答而不是输出 JSON，提取任务只需要纯任务指令
     // - 推理模型 reasoning 单独吃 token，显式给大输出上限
     //   （只影响本次请求，不改 agent 本身配置）
-    final llmAgent = agent.copyWith(
-      promptPresetId: '',
-      messages: [],
-    );
+    final llmAgent = agent.copyWith(promptPresetId: '', messages: []);
 
     final fragments = <MemoryFragment>[];
-    final existing = <String>{};
+    final fragmentIndexes = <String, int>{};
+    final legacyValues = <String>{};
     final observations = <String>[];
     var processed = 0, failed = 0, added = 0;
 
@@ -327,7 +336,14 @@ class ChatImportService {
           cancelled: true,
         );
       }
-      final batch = [for (var i = start; i < chunks.length && i < start + extractConcurrency; i++) i];
+      final batch = [
+        for (
+          var i = start;
+          i < chunks.length && i < start + extractConcurrency;
+          i++
+        )
+          i,
+      ];
       final extractions = await Future.wait(
         batch.map((i) async {
           try {
@@ -343,18 +359,30 @@ class ChatImportService {
         if (extraction == null) continue;
         processed++;
         for (final d in extraction.memories) {
-          if (existing.contains(d.content)) continue;
-          existing.add(d.content);
-          fragments.add(
-            MemoryFragment(
-              id: _uuid.v4(),
-              content: d.content,
-              tags: d.tags,
-              emotionTag: d.emotion,
-              importance: d.importance,
-            ),
+          final value = d.value.trim();
+          if (value.isEmpty) continue;
+          final key = d.key.trim();
+          if (key.isEmpty) continue;
+          final record = MemoryFragment(
+            id: _uuid.v4(),
+            key: key,
+            content: value,
+            tags: d.tags,
+            category: d.category,
+            confidence: d.confidence,
+            source: 'chat_import',
+            emotionTag: d.emotion,
+            importance: d.importance,
           );
-          added++;
+          final index = fragmentIndexes[key];
+          if (index != null) {
+            // 同一批内同 key 的后一个值代表更新，替换而不是追加重复碎片。
+            fragments[index] = record;
+          } else if (!key.startsWith('legacy.') || legacyValues.add(value)) {
+            fragmentIndexes[key] = fragments.length;
+            fragments.add(record);
+            added++;
+          }
         }
         for (final o in extraction.observations) {
           if (!observations.contains(o)) observations.add(o);
@@ -373,13 +401,20 @@ class ChatImportService {
       if (observations.isEmpty) {
         throw const ChatImportException('没有从记录里提取到 TA 的特征，请确认记录里包含 TA 的发言');
       }
-      onProgress?.call(ChatImportPhase.generatingPersona, processed, chunks.length, added);
+      onProgress?.call(
+        ChatImportPhase.generatingPersona,
+        processed,
+        chunks.length,
+        added,
+      );
       final persona = await _generatePersona(llmAgent, observations);
       final newAgent = buildAgentFromPersona(agent, persona);
       await _saveNewAgent(newAgent);
       await _mergeIntoMemory(memoryId, fragments);
-      debugPrint('[Aliveness][导入] 已创建 agent「${persona.name}」| '
-          '碎片=$added 观察=${observations.length}');
+      debugPrint(
+        '[Aliveness][导入] 已创建 agent「${persona.name}」| '
+        '碎片=$added 观察=${observations.length}',
+      );
       return ChatImportResult(
         totalChunks: chunks.length,
         processedChunks: processed,
@@ -392,8 +427,10 @@ class ChatImportService {
     }
 
     await _mergeIntoMemory(memoryId, fragments);
-    debugPrint('[Aliveness][导入] 分析完成 | 块=$processed/${chunks.length} '
-        '失败=$failed 新增碎片=$added');
+    debugPrint(
+      '[Aliveness][导入] 分析完成 | 块=$processed/${chunks.length} '
+      '失败=$failed 新增碎片=$added',
+    );
     return ChatImportResult(
       totalChunks: chunks.length,
       processedChunks: processed,
@@ -422,16 +459,16 @@ class ChatImportService {
   /// maxLength=2000 会被思考吃光导致 content 为空，这里临时提高上限
   /// （只影响本次请求，不改 agent 配置）。
   Future<ChunkExtraction> _extractChunk(AIAgent agent, String chunk) async {
-    final prompt = '下面是用户的一段真实聊天记录片段（用户与 TA 的对话）。请提取两类信息。\n'
+    final prompt =
+        '下面是用户的一段真实聊天记录片段（用户与 TA 的对话）。请提取两类信息。\n'
         '只输出 JSON，格式：\n'
-        '{"memories":[{"content":"一句话事实","tags":["关键词","关键词"],"emotion":"neutral|positive|negative","importance":0.0到1.0}],'
+        '{"memories":[{"key":"user.preference.drink","value":"一句话事实","category":"preference","tags":["关键词","关键词"],"emotion":"neutral|positive|negative","confidence":0.0到1.0,"importance":0.0到1.0}],'
         '"observations":["关于TA的观察"]}\n'
         '规则：\n'
-        '- memories：只提取能确定属于「用户本人」的信息，按这些类目：身份背景（职业/学校/居所）、'
-        '兴趣偏好、习惯作息、性格特点、人际关系、近期计划与待办、重要的情绪事件；'
-        'content 一句话不超过30字，不写猜测；最多 $maxFragmentsPerChunk 条\n'
-        '- tags 2~4 个激活关键词：聊天中再提到相关话题时能命中；'
-        'importance：日常闲聊 0.3，稳定偏好/背景 0.7，重大事件/关系 0.9\n'
+        '- memories：只提取能确定属于「用户本人」的信息，必须明确填写稳定 key 和 value；key 使用稳定点分命名空间：user.（用户事实）、event.（事件，事件唯一 key，包含日期或稳定主题）；不要把变化的 value 拼进普通偏好 key\n'
+        '- category 只能是 profile、preference、relationship、plan、experience、commitment、other；user 记忆使用 user.，事件使用 event.，不要为同一事实生成多个 key；后续同 key 会覆盖旧 value\n'
+        '- 身份背景（职业/学校/居所）、兴趣偏好、习惯作息、性格特点、人际关系、近期计划与待办、重要的情绪事件；value 一句话不超过30字，不写猜测；最多 $maxFragmentsPerChunk 条\n'
+        '- tags 2~4 个激活关键词；confidence 表示事实可信度；importance：日常闲聊 0.3，稳定偏好/背景 0.7，重大事件/关系 0.9\n'
         '- observations：TA（与用户聊天的那个人）在这段对话里表现出的稳定特征：说话风格（语气/句式长短/'
         '标点emoji习惯/口头禅）、性格、兴趣话题、价值观、对用户的态度；一条一句不超过30字，'
         '只写记录能支持的；最多 $maxObservationsPerChunk 条\n'
@@ -463,7 +500,8 @@ class ChatImportService {
     List<String> observations,
   ) async {
     final obs = observations.take(maxObservationsTotal).toList();
-    final prompt = '以下是对某个人（TA）在与用户长期聊天中表现的观察记录。'
+    final prompt =
+        '以下是对某个人（TA）在与用户长期聊天中表现的观察记录。'
         '请基于这些观察为 TA 生成一个 AI 角色扮演人设，用于创建一个"就是 TA"的 AI。\n'
         '只输出 JSON，格式：\n'
         '{"name":"名字","persona":"完整人设"}\n'
@@ -495,8 +533,15 @@ class ChatImportService {
       final memories = (map['memories'] as List<dynamic>? ?? const [])
           .map((raw) {
             final m = Map<String, dynamic>.from(raw as Map);
+            final legacyValue = (m['content'] as String?)?.trim() ?? '';
+            final value = (m['value'] as String?)?.trim() ?? legacyValue;
+            final suppliedKey = (m['key'] as String?)?.trim() ?? '';
+            final key = suppliedKey.isNotEmpty
+                ? suppliedKey
+                : _legacyKey(value);
             return FragmentDraft(
-              content: (m['content'] as String?)?.trim() ?? '',
+              key: key,
+              value: value,
               tags:
                   (m['tags'] as List<dynamic>?)
                       ?.map((t) => t.toString().trim())
@@ -504,19 +549,27 @@ class ChatImportService {
                       .toList() ??
                   const [],
               emotion: m['emotion'] as String?,
-              importance:
-                  ((m['importance'] as num?)?.toDouble() ?? 0.5).clamp(0.0, 1.0),
+              category: (m['category'] as String?)?.trim().isNotEmpty == true
+                  ? (m['category'] as String).trim()
+                  : 'other',
+              confidence: ((m['confidence'] as num?)?.toDouble() ?? 1.0).clamp(
+                0.0,
+                1.0,
+              ),
+              importance: ((m['importance'] as num?)?.toDouble() ?? 0.5).clamp(
+                0.0,
+                1.0,
+              ),
             );
           })
-          .where((d) => d.content.isNotEmpty)
+          .where((d) => d.value.isNotEmpty && d.key.isNotEmpty)
           .take(maxFragmentsPerChunk)
           .toList();
-      final observations =
-          (map['observations'] as List<dynamic>? ?? const [])
-              .map((o) => o.toString().trim())
-              .where((o) => o.isNotEmpty)
-              .take(maxObservationsPerChunk)
-              .toList();
+      final observations = (map['observations'] as List<dynamic>? ?? const [])
+          .map((o) => o.toString().trim())
+          .where((o) => o.isNotEmpty)
+          .take(maxObservationsPerChunk)
+          .toList();
       return ChunkExtraction(memories: memories, observations: observations);
     } catch (_) {
       return null;
@@ -554,15 +607,19 @@ class ChatImportService {
         name: draft.name,
         description: '从聊天记录提取 TA 的人格生成',
         messages: [Prompt(type: 'system', content: draft.persona)],
-        alivenessConfig: template.alivenessConfig?.copyWith(memoryIds: const []),
+        alivenessConfig: template.alivenessConfig?.copyWith(
+          memoryIds: const [],
+        ),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
+  static String _legacyKey(String value) =>
+      'legacy.${const Uuid().v5(Uuid.NAMESPACE_URL, value)}';
+
   static String _ext(String path) => path.split('.').last.toLowerCase();
 
-  static String _baseName(String path) =>
-      path.split('/').last.split('\\').last;
+  static String _baseName(String path) => path.split('/').last.split('\\').last;
 }
 
 /// 生成的人设草稿

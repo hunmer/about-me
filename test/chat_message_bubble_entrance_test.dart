@@ -63,4 +63,34 @@ void main() {
     expect(scales, isNotEmpty);
     expect(scales.every((v) => v == 1.0), isTrue);
   });
+
+  testWidgets('消息气泡隐藏内联 think 思考块', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: chat_bubble.MessageBubble(
+            message: Message(
+              id: 'm-think',
+              content: '<think>隐藏的思考过程</think>这是最终答案',
+              user: User(id: 'u2', username: 'AI'),
+              type: MessageType.received,
+              date: DateTime.now().subtract(const Duration(minutes: 10)),
+            ),
+            isSelected: false,
+            isMultiSelectMode: false,
+            onEdit: () {},
+            onDelete: () {},
+            onCopy: () {},
+            onSetFixedSymbol: (_) {},
+            currentUserId: 'u1',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('这是最终答案'), findsOneWidget);
+    expect(find.textContaining('隐藏的思考过程'), findsNothing);
+    expect(find.textContaining('<think>'), findsNothing);
+  });
 }

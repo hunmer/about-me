@@ -49,7 +49,9 @@ class MemoryService {
       final library = await _store.requireMemoryLibrary(memoryId);
       buffer.writeln('· ${library.name}（memoryId: ${library.id}）');
     }
-    buffer.write('\n读写记忆工具必须传入上述目标库的 memoryId，不得使用 agent ID 或猜测 ID。\n');
+    buffer.write(
+      '\n读写记忆工具必须传入上述目标库的 memoryId。记忆为 key/value，key 在库内唯一；先按 key 查询，同 key 写入更新当前值；不知道 key 时用 prefix 或 query 检索。禁止猜测 ID。\n',
+    );
     return buffer.toString();
   }
 
@@ -96,6 +98,17 @@ class MemoryService {
 
   Future<List<MemoryFragment>> loadFragments(String memoryId) async {
     final data = await _store.loadMemory(memoryId);
+    final entries = data['entries'];
+    if (entries is Map) {
+      return entries.entries
+          .map(
+            (entry) => MemoryFragment.fromJson({
+              ...Map<String, dynamic>.from(entry.value as Map),
+              'key': entry.key as String,
+            }),
+          )
+          .toList();
+    }
     return (data['fragments'] as List<dynamic>? ?? [])
         .map(
           (e) => MemoryFragment.fromJson(Map<String, dynamic>.from(e as Map)),
@@ -103,19 +116,69 @@ class MemoryService {
         .toList();
   }
 
-  Future<void> saveFragments(String memoryId, List<MemoryFragment> fragments) =>
-      _store.saveMemory(memoryId, {
-        'fragments': fragments.map((f) => f.toJson()).toList(),
-      });
+  static String validateKey(String key) {
+    final trimmed = key.trim();
+    if (trimmed.isEmpty ||
+        trimmed.length > 200 ||
+        RegExp(r'\s|[\x00-\x1f]').hasMatch(trimmed)) {
+      throw ArgumentError('记忆 key 必须为 1~200 个字符，不能包含空白或控制字符');
+    }
+    return trimmed;
+  }
+
+  Future<void> saveFragments(
+    String memoryId,
+    List<MemoryFragment> fragments,
+  ) async {
+    final entries = <String, dynamic>{};
+    for (final fragment in fragments) {
+      final key = validateKey(fragment.key);
+      if (entries.containsKey(key)) throw StateError('记忆 key 重复: $key');
+      entries[key] = fragment.toJson()..remove('content');
+    }
+    await _store.saveMemory(memoryId, {'schemaVersion': 2, 'entries': entries});
+  }
+
+  MemoryFragment _updatedRecord(
+    MemoryFragment old,
+    String value,
+    List<String> tags, {
+    required String source,
+    Map<String, dynamic> metadata = const {},
+  }) => MemoryFragment.fromJson({
+    ...old.toJson(),
+    ...metadata,
+    'value': value.trim(),
+    'tags': tags,
+    'archived': false,
+    'updatedAt': DateTime.now().toUtc().toIso8601String(),
+    'revision': old.revision + 1,
+    'source': source,
+  });
 
   Future<void> mergeFragments(
     String memoryId,
     List<MemoryFragment> additions,
   ) => _withLibraryLock(memoryId, () async {
     final fragments = await loadFragments(memoryId);
-    final existing = fragments.map((f) => '${f.isSelf}:${f.content}').toSet();
     for (final fragment in additions) {
-      if (existing.add('${fragment.isSelf}:${fragment.content}')) {
+      final index = fragments.indexWhere((f) => f.key == fragment.key);
+      if (index >= 0) {
+        final old = fragments[index];
+        if (old.userMarked || old.value == fragment.value) continue;
+        fragments[index] = _updatedRecord(
+          old,
+          fragment.value,
+          fragment.tags,
+          source: fragment.source,
+          metadata: {'confidence': fragment.confidence},
+        );
+      } else if (!fragments.any(
+        (f) =>
+            f.isSelf == fragment.isSelf &&
+            f.value == fragment.value &&
+            (f.key.startsWith('legacy.') || fragment.key.startsWith('legacy.')),
+      )) {
         fragments.add(fragment);
       }
     }
@@ -209,7 +272,7 @@ class MemoryService {
     }
     await saveFragments(memoryId, fragments);
     return activated
-        .map((f) => '· ${f.isSelf ? '[自己] ' : ''}${f.content}')
+        .map((f) => '· ${f.isSelf ? '[自己] ' : ''}${f.key}: ${f.value}')
         .join('\n');
   });
 
@@ -229,7 +292,7 @@ class MemoryService {
             .compareTo(a.weight(halfLifeDays: halfLifeDays)),
       );
     if (available.isEmpty) return '';
-    return available.take(k).map((f) => '· ${f.content}').join('\n');
+    return available.take(k).map((f) => '· ${f.key}: ${f.value}').join('\n');
   }
 
   /// 自我记忆摘要（常驻注入）：AI 从自己发言中沉淀的近况/习惯/承诺，
@@ -247,7 +310,7 @@ class MemoryService {
             .compareTo(a.weight(halfLifeDays: halfLifeDays)),
       );
     if (self.isEmpty) return '';
-    return self.take(k).map((f) => '· ${f.content}').join('\n');
+    return self.take(k).map((f) => '· ${f.key}: ${f.value}').join('\n');
   }
 
   /// 记忆独立注入段（仅开启记忆管理、未走活人感编排时拼到 system 提示词后）。
@@ -352,12 +415,15 @@ class MemoryService {
           '每次只检索相关分类和关键词，需要时翻页，不要遍历全库。\n'
           '分类：profile=身份背景，preference=长期偏好，relationship=人物关系，plan=计划，'
           'experience=经历，commitment=承诺，other=其他。\n'
-          '重复事实不写；同一事实有明确变化或补充时输出已检索记忆的 updateId 及合并后的完整事实；'
-          '不修改 userMarked=true 的手动记忆，不把用户和自我记忆混淆。新事实不填 updateId。\n'
+          '重复事实不写；相同事实始终复用相同 key，变化时覆盖其完整 value；'
+          '不修改 userMarked=true 的手动记忆，不把用户和自我记忆混淆。'
+          'key 为稳定点分命名，例如 user.language、user.preference.drink、self.plan.weekend；'
+          '独立事件使用 event.<日期>.<主题>，不要为变化的值新建 key。'
+          '更新已有记录必须先检索到该 key；旧 legacy key 继续复用，不另建重复事实。\n'
           '从下面这轮对话中提取值得长期记住的信息。\n'
           '只输出 JSON，格式：\n'
-          '{"userMemories":[{"content":"一句话事实","category":"分类","updateId":"仅更新已有记忆时填其id","tags":["关键词"],"emotion":"neutral|positive|negative","importance":0.0到1.0}],'
-          '"selfMemories":[{"content":"一句话事实","category":"分类","updateId":"仅更新时填","tags":["关键词"],"importance":0.0到1.0}],'
+          '{"userMemories":[{"key":"user.language","value":"中文","category":"preference","tags":["语言"],"confidence":1.0,"importance":0.7}],'
+          '"selfMemories":[{"key":"self.plan.weekend","value":"完整事实","category":"plan","tags":["周末"],"confidence":1.0,"importance":0.5}],'
           '"openLoops":[{"description":"待跟进事件","days":跟进天数}]}\n'
           '规则：\n'
           '- userMemories 只记关于用户的事实/偏好/计划，最多3条\n'
@@ -381,31 +447,18 @@ class MemoryService {
 
       // 去重写入碎片（兼容旧字段名 memories = 用户记忆）
       final fragments = await loadFragments(memoryId);
-      final existing = fragments.map((f) => '${f.isSelf}:${f.content}').toSet();
       final userMemories =
           data['userMemories'] as List<dynamic>? ??
           data['memories'] as List<dynamic>? ??
           [];
       var added = 0;
       for (final m in userMemories.take(3)) {
-        added += _appendFragment(
-          fragments,
-          m,
-          existing,
-          retrieval,
-          isSelf: false,
-        );
+        added += _appendFragment(fragments, m, retrieval, isSelf: false);
       }
       final selfMemories = data['selfMemories'] as List<dynamic>? ?? [];
       var selfAdded = 0;
       for (final m in selfMemories.take(2)) {
-        selfAdded += _appendFragment(
-          fragments,
-          m,
-          existing,
-          retrieval,
-          isSelf: true,
-        );
+        selfAdded += _appendFragment(fragments, m, retrieval, isSelf: true);
       }
       await saveFragments(memoryId, fragments);
       debugPrint(
@@ -463,111 +516,191 @@ class MemoryService {
   int _appendFragment(
     List<MemoryFragment> fragments,
     dynamic raw,
-    Set<String> existing,
     MemoryExtraction retrieval, {
     required bool isSelf,
   }) {
     final map = Map<String, dynamic>.from(raw as Map);
-    final content = (map['content'] as String?)?.trim();
+    final content = (map['value'] as String? ?? map['content'] as String?)
+        ?.trim();
     final category = map['category'] as String? ?? 'other';
     final subject = isSelf ? 'self' : 'user';
     if (!retrieval.canWrite(subject, category)) {
       debugPrint('[Aliveness][记忆] 跳过未经分类检索的候选 | $subject:$category');
       return 0;
     }
-    if (content == null ||
-        content.isEmpty ||
-        existing.contains('$isSelf:$content')) {
+    final rawKey = map['key'] as String?;
+    if (rawKey == null || content == null || content.isEmpty) return 0;
+    final key = validateKey(rawKey);
+    if ((key.startsWith('self.') && !isSelf) ||
+        (key.startsWith('user.') && isSelf)) {
       return 0;
     }
-    final updateId = map['updateId'] as String?;
+    final index = fragments.indexWhere((f) => f.key == key);
     final tags = (map['tags'] as List<dynamic>? ?? [])
-        .map((t) => t.toString().trim())
+        .whereType<String>()
+        .map((t) => t.trim())
         .where((t) => t.isNotEmpty)
         .take(4)
         .toList();
-    if (updateId != null && updateId.isNotEmpty) {
-      final index = fragments.indexWhere(
-        (f) => f.id == updateId && f.isSelf == isSelf,
-      );
-      if (!retrieval.retrievedIds.contains(updateId) ||
-          index < 0 ||
-          fragments[index].userMarked) {
-        debugPrint('[Aliveness][记忆] 拒绝更新未检索、已删除或手动标记的记忆 | $updateId');
+    final confidence = ((map['confidence'] as num?)?.toDouble() ?? 1.0).clamp(
+      0.0,
+      1.0,
+    );
+    if (index >= 0) {
+      final old = fragments[index];
+      if (old.isSelf != isSelf ||
+          old.userMarked ||
+          old.value == content ||
+          !retrieval.retrievedIds.contains(old.id)) {
         return 0;
       }
-      final old = fragments[index];
-      // 检索后若其他后台任务更新了此条，本轮不覆盖。
-      if (!retrieval.fragments.any(
-        (f) => f.id == updateId && f.content == old.content,
+      fragments[index] = _updatedRecord(
+        old,
+        content,
+        {...old.tags, ...tags}.toList(),
+        source: 'extraction',
+        metadata: {'category': category, 'confidence': confidence},
+      );
+    } else {
+      if (fragments.any(
+        (f) =>
+            f.isSelf == isSelf &&
+            f.value == content &&
+            (f.key.startsWith('legacy.') || key.startsWith('legacy.')),
       )) {
         return 0;
       }
-      fragments[index] = MemoryFragment.fromJson({
-        ...old.toJson(),
-        'content': content,
-        'category': category,
-        'tags': {...old.tags, ...tags}.toList(),
-        'archived': false,
-      });
-      existing.remove('$isSelf:${old.content}');
-      existing.add('$isSelf:$content');
-      debugPrint('[Aliveness][记忆] 更新已有碎片 | $subject:$category id=$updateId');
-      return 1;
-    }
-    existing.add('$isSelf:$content');
-    fragments.add(
-      MemoryFragment(
-        id: _uuid.v4(),
-        content: content,
-        isSelf: isSelf,
-        category: category,
-        tags: tags,
-        emotionTag: map['emotion'] as String?,
-        importance: ((map['importance'] as num?)?.toDouble() ?? 0.5).clamp(
-          0.0,
-          1.0,
+      fragments.add(
+        MemoryFragment(
+          id: _uuid.v4(),
+          key: key,
+          content: content,
+          isSelf: isSelf,
+          category: category,
+          tags: tags,
+          source: 'extraction',
+          confidence: confidence,
+          emotionTag: map['emotion'] as String?,
+          importance: ((map['importance'] as num?)?.toDouble() ?? 0.5).clamp(
+            0.0,
+            1.0,
+          ),
         ),
-      ),
-    );
+      );
+    }
     return 1;
   }
 
-  /// 记忆查询工具（LLM 按需调用）：关键词激活检索，无命中回退核心记忆。
-  /// 返回可直接 JSON 化的列表。
+  /// 精确 key 不受遗忘权重影响；query/prefix 检索只返回实际命中。
   Future<List<Map<String, dynamic>>> searchForTool(
     String memoryId,
-    String? query,
-  ) async {
+    String? query, {
+    String? key,
+    String? prefix,
+  }) async {
     final fragments = await loadFragments(memoryId);
-    final q = query?.trim() ?? '';
-    List<MemoryFragment> hits;
-    if (q.isEmpty) {
-      hits = fragments.where((f) => !f.archived).toList()
-        ..sort((a, b) => b.weight().compareTo(a.weight()));
-    } else {
-      hits = activate(fragments, q, k: 8);
-      if (hits.isEmpty) {
-        // 关键词未命中时回退核心记忆，保证工具总有产出
-        hits = fragments.where((f) => !f.archived).toList()
-          ..sort((a, b) => b.weight().compareTo(a.weight()));
-      }
-    }
-    return hits.take(8).map((f) {
-      return {
-        'id': f.id,
-        'fragmentId': f.id,
-        'memoryId': memoryId,
-        'content': f.content,
-        // subject = self 表示这是 AI 自己的记忆（而非关于用户的）
-        if (f.isSelf) 'subject': 'self',
-        'tags': f.tags,
-        'importance': f.weight().toStringAsFixed(2),
-        'userMarked': f.userMarked,
-        'createdAt': '${f.createdAt.month}/${f.createdAt.day}',
-      };
-    }).toList();
+    final exact = key == null ? null : validateKey(key);
+    final q = query?.trim().toLowerCase() ?? '';
+    final p = prefix?.trim() ?? '';
+    final hits = fragments.where((f) {
+      if (exact != null) return f.key == exact;
+      if (f.archived || (p.isNotEmpty && !f.key.startsWith(p))) return false;
+      return q.isEmpty ||
+          '${f.key} ${f.value} ${f.tags.join(' ')}'.toLowerCase().contains(q);
+    }).toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return hits
+        .take(exact == null ? 50 : 1)
+        .map(
+          (f) => {
+            ...f.toJson(),
+            'fragmentId': f.id,
+            'memoryId': memoryId,
+            'subject': f.isSelf ? 'self' : 'user',
+          },
+        )
+        .toList();
   }
+
+  Future<MemoryFragment> upsertForTool(
+    String memoryId,
+    String key,
+    String value,
+    List<String> tags, {
+    String source = 'agent',
+  }) => _writeByKey(memoryId, key, value, tags, source: source);
+
+  Future<MemoryFragment> updateByKey(
+    String memoryId,
+    String key,
+    String value,
+    List<String> tags, {
+    String source = 'agent',
+  }) => _writeByKey(
+    memoryId,
+    key,
+    value,
+    tags,
+    requireExisting: true,
+    source: source,
+  );
+
+  Future<MemoryFragment> _writeByKey(
+    String memoryId,
+    String key,
+    String value,
+    List<String> tags, {
+    bool requireExisting = false,
+    String source = 'agent',
+  }) => _withLibraryLock(memoryId, () async {
+    final validKey = validateKey(key);
+    if (value.trim().isEmpty) throw ArgumentError('记忆 value 不能为空');
+    final fragments = await loadFragments(memoryId);
+    final index = fragments.indexWhere((f) => f.key == validKey);
+    if (requireExisting && index < 0) throw StateError('未找到记忆 key: $validKey');
+    final normalizedTags = tags
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .toSet()
+        .toList();
+    final record = index < 0
+        ? MemoryFragment(
+            id: _uuid.v4(),
+            key: validKey,
+            content: value.trim(),
+            tags: normalizedTags,
+            isSelf: validKey.startsWith('self.'),
+            source: source,
+            userMarked: source == 'manual',
+            importance: source == 'manual' ? 1.0 : 0.5,
+          )
+        : _updatedRecord(
+            fragments[index],
+            value,
+            normalizedTags,
+            source: source,
+            metadata: source == 'manual'
+                ? {'userMarked': true, 'importance': 1.0}
+                : const {},
+          );
+    if (index < 0) {
+      fragments.add(record);
+    } else {
+      fragments[index] = record;
+    }
+    await saveFragments(memoryId, fragments);
+    return record;
+  });
+
+  Future<void> deleteByKey(String memoryId, String key) =>
+      _withLibraryLock(memoryId, () async {
+        final validKey = validateKey(key);
+        final fragments = await loadFragments(memoryId);
+        if (!fragments.any((f) => f.key == validKey)) {
+          throw StateError('未找到记忆 key: $validKey');
+        }
+        fragments.removeWhere((f) => f.key == validKey);
+        await saveFragments(memoryId, fragments);
+      });
 
   /// 用户手动标记消息重要（消息长按菜单可挂）
   Future<String> addManual(
@@ -583,6 +716,7 @@ class MemoryService {
         id: id,
         content: content.trim(),
         tags: tags,
+        source: 'manual',
         importance: 1.0,
         userMarked: true,
       ),
@@ -601,11 +735,12 @@ class MemoryService {
     final fragments = await loadFragments(memoryId);
     final index = fragments.indexWhere((f) => f.id == fragmentId);
     if (index < 0) throw StateError('未找到记忆碎片: $fragmentId');
-    fragments[index] = MemoryFragment.fromJson({
-      ...fragments[index].toJson(),
-      'content': content.trim(),
-      'tags': tags,
-    });
+    fragments[index] = _updatedRecord(
+      fragments[index],
+      content,
+      tags,
+      source: 'agent',
+    );
     await saveFragments(memoryId, fragments);
   });
 

@@ -22,6 +22,7 @@ import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/models/memory_fragment.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 
@@ -766,6 +767,24 @@ class NativeToolAgentService {
             .toList();
       }
 
+      Map<String, dynamic> memoryToolResult(
+        String memoryId,
+        String key,
+        MemoryFragment fragment,
+      ) {
+        final updatedAt = fragment.updatedAt;
+        return {
+          'success': true,
+          'memoryId': memoryId,
+          'key': key,
+          'value': fragment.content,
+          'revision': fragment.revision,
+          'updatedAt': updatedAt.toIso8601String(),
+          // 兼容元数据：旧版本通过 fragmentId 寻址，现在仅作参考
+          'fragmentId': fragment.id,
+        };
+      }
+
       Future<Map<String, dynamic>> runMemoryTool(
         String method,
         String title,
@@ -811,14 +830,14 @@ class NativeToolAgentService {
             ..error = error.toString()
             ..result = jsonEncode({
               'error': error.toString(),
-              if (memoryId.isNotEmpty) 'memoryId': memoryId,
-              if (args['fragmentId'] != null) 'fragmentId': args['fragmentId'],
+              'memoryId': memoryId,
+              if (args['key'] != null) 'key': args['key'],
             });
           await run.notifySteps();
           return {
             'error': error.toString(),
             'memoryId': memoryId,
-            if (args['fragmentId'] != null) 'fragmentId': args['fragmentId'],
+            if (args['key'] != null) 'key': args['key'],
           };
         }
       }
@@ -840,7 +859,10 @@ class NativeToolAgentService {
       tools.add(
         memoryTool(
           'search_memory',
-          '按指定 memoryId 查询长期记忆。必须使用当前 Agent 已启用的 memoryId；query 为空时返回核心记忆。返回的每项含 fragmentId，后续更新或删除时使用。',
+          '按指定 memoryId 查询长期记忆（key-value 结构）。必须使用当前 Agent 已启用的 memoryId。'
+          'key 精确匹配单条（含已归档，优先级最高）；prefix 按前缀列出，query 按关键词检索，两者可并用，均不含已归档；'
+          '都不传时返回最近更新的记忆（最多50条）。'
+          '返回的每项含 key 和 value，后续按 key 更新或删除。',
           [
             ToolParameter(
               name: 'memoryId',
@@ -848,10 +870,22 @@ class NativeToolAgentService {
               description: '当前 Agent 已启用的目标记忆库 ID',
             ),
             ToolParameter(
+              name: 'key',
+              type: 'string',
+              optional: true,
+              description: '精确 key，返回该条记忆（含已归档）',
+            ),
+            ToolParameter(
+              name: 'prefix',
+              type: 'string',
+              optional: true,
+              description: 'key 前缀，列出以该前缀开头的记忆（最多50条）',
+            ),
+            ToolParameter(
               name: 'query',
               type: 'string',
               optional: true,
-              description: '检索关键词；留空返回核心记忆',
+              description: '关键词检索；可与 prefix 并用（key 优先，其次 prefix，最后 query）',
             ),
           ],
           (args) =>
@@ -859,6 +893,8 @@ class NativeToolAgentService {
                 final results = await MemoryService.instance.searchForTool(
                   memoryId,
                   args['query'] as String?,
+                  key: args['key'] as String?,
+                  prefix: args['prefix'] as String?,
                 );
                 return {'memoryId': memoryId, 'fragments': results};
               }),
@@ -867,7 +903,8 @@ class NativeToolAgentService {
       tools.add(
         memoryTool(
           'add_memory',
-          '向指定 memoryId 新增一条手动记忆。内容不能为空，返回 fragmentId 供后续更新或删除。',
+          '向指定 memoryId 新增或覆盖一条 key-value 记忆（同 key 覆盖，即 upsert）。'
+          'key 是稳定的点分标识符（如 user.preference.food），value 是完整的记忆内容。返回 key/value/revision/updatedAt。',
           [
             ToolParameter(
               name: 'memoryId',
@@ -875,7 +912,12 @@ class NativeToolAgentService {
               description: '当前 Agent 已启用的目标记忆库 ID',
             ),
             ToolParameter(
-              name: 'content',
+              name: 'key',
+              type: 'string',
+              description: '记忆的 key，同库唯一；已存在时覆盖原值',
+            ),
+            ToolParameter(
+              name: 'value',
               type: 'string',
               description: '记忆内容，不能为空',
             ),
@@ -887,27 +929,28 @@ class NativeToolAgentService {
             ),
           ],
           (args) => runMemoryTool('add_memory', '新增记忆', args, (memoryId) async {
-            final content = (args['content'] as String?)?.trim();
-            if (content == null || content.isEmpty) {
+            final key = (args['key'] as String?)?.trim();
+            final value = (args['value'] as String?)?.trim();
+            if (key == null || key.isEmpty) {
+              throw ArgumentError('记忆 key 不能为空');
+            }
+            if (value == null || value.isEmpty) {
               throw ArgumentError('记忆内容不能为空');
             }
-            final fragmentId = await MemoryService.instance.addManual(
+            final fragment = await MemoryService.instance.upsertForTool(
               memoryId,
-              content,
+              key,
+              value,
               memoryTags(args['tags']),
             );
-            return {
-              'success': true,
-              'memoryId': memoryId,
-              'fragmentId': fragmentId,
-            };
+            return memoryToolResult(memoryId, key, fragment);
           }),
         ),
       );
       tools.add(
         memoryTool(
           'update_memory',
-          '更新指定 memoryId 的记忆碎片。fragmentId 使用查询或新增结果中的 ID，内容不能为空。',
+          '更新指定 memoryId 中已有 key 的记忆。key 必须先通过 search_memory 确认存在，不存在时报错。',
           [
             ToolParameter(
               name: 'memoryId',
@@ -915,12 +958,12 @@ class NativeToolAgentService {
               description: '当前 Agent 已启用的目标记忆库 ID',
             ),
             ToolParameter(
-              name: 'fragmentId',
+              name: 'key',
               type: 'string',
-              description: '要更新的碎片 ID',
+              description: '要更新的记忆 key',
             ),
             ToolParameter(
-              name: 'content',
+              name: 'value',
               type: 'string',
               description: '新的记忆内容，不能为空',
             ),
@@ -933,32 +976,28 @@ class NativeToolAgentService {
           ],
           (args) =>
               runMemoryTool('update_memory', '更新记忆', args, (memoryId) async {
-                final fragmentId = (args['fragmentId'] as String?)?.trim();
-                final content = (args['content'] as String?)?.trim();
-                if (fragmentId == null || fragmentId.isEmpty) {
-                  throw ArgumentError('碎片 ID 不能为空');
+                final key = (args['key'] as String?)?.trim();
+                final value = (args['value'] as String?)?.trim();
+                if (key == null || key.isEmpty) {
+                  throw ArgumentError('记忆 key 不能为空');
                 }
-                if (content == null || content.isEmpty) {
+                if (value == null || value.isEmpty) {
                   throw ArgumentError('记忆内容不能为空');
                 }
-                await MemoryService.instance.updateForTool(
+                final fragment = await MemoryService.instance.updateByKey(
                   memoryId,
-                  fragmentId,
-                  content,
+                  key,
+                  value,
                   memoryTags(args['tags']),
                 );
-                return {
-                  'success': true,
-                  'memoryId': memoryId,
-                  'fragmentId': fragmentId,
-                };
+                return memoryToolResult(memoryId, key, fragment);
               }),
         ),
       );
       tools.add(
         memoryTool(
           'delete_memory',
-          '删除指定 memoryId 的记忆碎片。fragmentId 使用查询或新增结果中的 ID。',
+          '删除指定 memoryId 中 key 对应的记忆。key 必须先通过 search_memory 确认存在。',
           [
             ToolParameter(
               name: 'memoryId',
@@ -966,23 +1005,23 @@ class NativeToolAgentService {
               description: '当前 Agent 已启用的目标记忆库 ID',
             ),
             ToolParameter(
-              name: 'fragmentId',
+              name: 'key',
               type: 'string',
-              description: '要删除的碎片 ID',
+              description: '要删除的记忆 key',
             ),
           ],
           (args) => runMemoryTool('delete_memory', '删除记忆', args, (
             memoryId,
           ) async {
-            final fragmentId = (args['fragmentId'] as String?)?.trim();
-            if (fragmentId == null || fragmentId.isEmpty) {
-              throw ArgumentError('碎片 ID 不能为空');
+            final key = (args['key'] as String?)?.trim();
+            if (key == null || key.isEmpty) {
+              throw ArgumentError('记忆 key 不能为空');
             }
-            await MemoryService.instance.deleteFragment(memoryId, fragmentId);
+            await MemoryService.instance.deleteByKey(memoryId, key);
             return {
               'success': true,
               'memoryId': memoryId,
-              'fragmentId': fragmentId,
+              'key': key,
             };
           }),
         ),

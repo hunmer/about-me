@@ -169,6 +169,35 @@ void main() {
     ]);
   });
 
+  test('解析 key/value，兼容旧 content 并保留同 key 的后续更新顺序', () {
+    final extraction = ChatImportService.parseChunkResponse(
+      '{"memories":['
+      '{"key":"user.preference.drink","value":"喜欢咖啡",'
+      '"category":"preference","tags":["咖啡"],"confidence":0.8},'
+      '{"key":"user.preference.drink","value":"喜欢红茶",'
+      '"category":"preference","tags":["红茶"],"confidence":0.9},'
+      '{"content":"用户养猫","tags":["猫"]}]}',
+    )!;
+
+    expect(extraction.memories, hasLength(3));
+    expect(extraction.memories[0].key, 'user.preference.drink');
+    expect(extraction.memories[0].value, '喜欢咖啡');
+    expect(extraction.memories[0].content, '喜欢咖啡');
+    expect(extraction.memories[1].key, extraction.memories[0].key);
+    expect(extraction.memories[1].value, '喜欢红茶');
+    expect(extraction.memories[1].confidence, 0.9);
+    expect(extraction.memories[2].key, startsWith('legacy.'));
+    expect(extraction.memories[2].value, '用户养猫');
+    expect(
+      extraction.memories[2].key,
+      isNot(equals(extraction.memories[2].value)),
+    );
+    final repeated = ChatImportService.parseChunkResponse(
+      '{"memories":[{"content":"用户养猫"}]}',
+    )!;
+    expect(repeated.memories.single.key, extraction.memories[2].key);
+  });
+
   test('无活人感配置的模板创建新 AI 时仍无库', () {
     final noConfig = AIAgent.fromJson(
       template.toJson()..remove('alivenessConfig'),

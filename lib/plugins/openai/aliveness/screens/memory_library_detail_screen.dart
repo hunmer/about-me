@@ -50,7 +50,7 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen>
       if (!mounted) return;
       fragments.sort((a, b) {
         if (a.userMarked != b.userMarked) return a.userMarked ? -1 : 1;
-        return b.createdAt.compareTo(a.createdAt);
+        return b.updatedAt.compareTo(a.updatedAt);
       });
       setState(() {
         _fragments = fragments;
@@ -93,7 +93,10 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen>
   }
 
   Future<void> _deleteFragment(MemoryFragment fragment) async {
-    final confirmed = await _confirm('删除这条记忆？', fragment.content);
+    final confirmed = await _confirm(
+      '删除这条记忆？',
+      '${fragment.key}\n${fragment.value}',
+    );
     if (confirmed != true) return;
     await _runAction(
       () => MemoryService.instance.deleteFragment(widget.memoryId, fragment.id),
@@ -116,68 +119,171 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen>
     });
   }
 
-  Future<void> _addFragment() async {
-    final contentController = TextEditingController();
-    final tagsController = TextEditingController();
-    final confirmed = await showDialog<bool>(
+  Future<void> _addFragment() => _editFragment();
+
+  Future<void> _editFragment([MemoryFragment? fragment]) async {
+    final editing = fragment != null;
+    final keyController = TextEditingController(text: fragment?.key);
+    final valueController = TextEditingController(text: fragment?.value);
+    final tagsController = TextEditingController(
+      text: fragment?.tags.join(', '),
+    );
+    final formKey = GlobalKey<FormState>();
+    var saving = false;
+    String? errorMessage;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final route = DialogRoute<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('添加记忆碎片'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: contentController,
-              autofocus: true,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: '内容',
-                hintText: '例如：用户最近在准备面试',
+      themes: InheritedTheme.capture(from: context, to: navigator.context),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => PopScope(
+          canPop: !saving,
+          child: AlertDialog(
+            scrollable: true,
+            title: Text(editing ? '编辑记忆' : '添加记忆碎片'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: keyController,
+                    readOnly: editing,
+                    enabled: !saving,
+                    autofocus: !editing,
+                    decoration: InputDecoration(
+                      labelText: 'Key（必填）',
+                      hintText: '例如：user.language',
+                      helperText: editing ? 'Key 不可修改' : null,
+                    ),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? '请输入 key'
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: valueController,
+                    enabled: !saving,
+                    autofocus: editing,
+                    minLines: 1,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Value（必填）',
+                      hintText: '例如：简体中文',
+                    ),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? '请输入 value'
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: tagsController,
+                    enabled: !saving,
+                    decoration: const InputDecoration(
+                      labelText: '标签（可选）',
+                      hintText: '用逗号分隔，例如：工作,面试',
+                    ),
+                  ),
+                  if (!editing) ...[
+                    const SizedBox(height: 12),
+                    const Text('同一记忆库中，已有相同 key 时将覆盖其 value 和标签。'),
+                  ],
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      errorMessage!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: tagsController,
-              decoration: const InputDecoration(
-                labelText: '标签（可选）',
-                hintText: '用逗号分隔，例如：工作,面试',
+            actions: [
+              TextButton(
+                onPressed: saving
+                    ? null
+                    : () => Navigator.of(dialogContext).pop(false),
+                child: const Text('取消'),
               ),
-            ),
-          ],
+              FilledButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        final key = keyController.text.trim();
+                        final value = valueController.text.trim();
+                        final tags = tagsController.text
+                            .split(RegExp(r'[,，]'))
+                            .map((tag) => tag.trim())
+                            .where((tag) => tag.isNotEmpty)
+                            .toList();
+                        setDialogState(() {
+                          saving = true;
+                          errorMessage = null;
+                        });
+                        try {
+                          final memory = MemoryService.instance;
+                          if (editing) {
+                            await memory.updateByKey(
+                              widget.memoryId,
+                              key,
+                              value,
+                              tags,
+                              source: 'manual',
+                            );
+                          } else {
+                            await memory.upsertForTool(
+                              widget.memoryId,
+                              key,
+                              value,
+                              tags,
+                              source: 'manual',
+                            );
+                          }
+                          if (!dialogContext.mounted) return;
+                          Navigator.of(dialogContext).pop(true);
+                        } catch (error) {
+                          if (!dialogContext.mounted) return;
+                          setDialogState(() {
+                            saving = false;
+                            errorMessage = '操作失败：$error';
+                          });
+                        }
+                      },
+                child: Text(saving ? '保存中…' : (editing ? '保存' : '添加')),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('添加'),
-          ),
-        ],
       ),
     );
-    final content = contentController.text.trim();
-    final tags = tagsController.text
-        .split(RegExp(r'[,，]'))
-        .map((tag) => tag.trim())
-        .where((tag) => tag.isNotEmpty)
-        .toList();
-    contentController.dispose();
-    tagsController.dispose();
-    if (confirmed != true || content.isEmpty) return;
-    await _runAction(
-      () => MemoryService.instance.addManual(widget.memoryId, content, tags),
-    );
+    bool? saved;
+    try {
+      saved = await navigator.push(route);
+    } finally {
+      // pop 的结果早于退出动画结束，输入框卸载后才能释放控制器。
+      await route.completed;
+      keyController.dispose();
+      valueController.dispose();
+      tagsController.dispose();
+    }
+    if (!mounted || saved != true) return;
+    await _load();
   }
 
   Future<void> _addLoop() async {
     final descController = TextEditingController();
     var days = 1;
-    final confirmed = await showDialog<bool>(
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final route = DialogRoute<bool>(
       context: context,
+      themes: InheritedTheme.capture(from: context, to: navigator.context),
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
+          scrollable: true,
           title: const Text('添加后续事件'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -225,9 +331,11 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen>
         ),
       ),
     );
+    final confirmed = await navigator.push(route);
+    await route.completed;
     final description = descController.text.trim();
     descController.dispose();
-    if (confirmed != true || description.isEmpty) return;
+    if (!mounted || confirmed != true || description.isEmpty) return;
     await _runAction(
       () => MemoryService.instance.addOpenLoop(
         widget.memoryId,
@@ -327,23 +435,44 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen>
           onPressed: () => _toggleMarked(fragment),
         ),
         title: Text(
-          fragment.content,
+          fragment.key,
           style: TextStyle(color: dimmed ? theme.disabledColor : null),
         ),
-        subtitle: Text(
-          [
-            if (fragment.isSelf) '自我记忆',
-            if (fragment.tags.isNotEmpty) fragment.tags.take(4).join(' / '),
-            _formatDate(fragment.createdAt),
-            if (fragment.archived) '已淡忘',
-            if (fragment.activateCount > 0) '想起过 ${fragment.activateCount} 次',
-          ].join(' · '),
-          style: TextStyle(color: theme.disabledColor),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              fragment.value,
+              style: TextStyle(color: dimmed ? theme.disabledColor : null),
+            ),
+            Text(
+              [
+                if (fragment.isSelf) '自我记忆',
+                if (fragment.tags.isNotEmpty) fragment.tags.take(4).join(' / '),
+                '版本 ${fragment.revision}',
+                '更新于 ${_formatDate(fragment.updatedAt)}',
+                if (fragment.archived) '已淡忘',
+                if (fragment.activateCount > 0)
+                  '想起过 ${fragment.activateCount} 次',
+              ].join(' · '),
+              style: TextStyle(color: theme.disabledColor),
+            ),
+          ],
         ),
-        trailing: IconButton(
-          icon: Icon(Icons.delete_outline, color: theme.disabledColor),
-          tooltip: '删除',
-          onPressed: () => _deleteFragment(fragment),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: '编辑',
+              onPressed: () => _editFragment(fragment),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete_outline, color: theme.disabledColor),
+              tooltip: '删除',
+              onPressed: () => _deleteFragment(fragment),
+            ),
+          ],
         ),
       ),
     );

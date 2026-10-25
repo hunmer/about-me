@@ -5,6 +5,15 @@ import 'package:aboutme/plugins/chat/models/message.dart';
 
 /// 消息内容解析工具：Quill/纯文本/Markdown 识别与列表预览占位
 class MessageContentUtils {
+  /// 剥离模型内联输出的 `<think>` 思考块，仅保留可见正文。
+  static String stripThinkContent(String content) {
+    final thinkPattern = RegExp(
+      r'<think>[\s\S]*?(?:</think>|$)',
+      caseSensitive: false,
+    );
+    return content.replaceAll(thinkPattern, '').trim();
+  }
+
   /// 内容解析结果缓存：key 为原始 content，
   /// 避免气泡/列表每次重建（如选中态切换）都重复 jsonDecode 与正则检测
   static final Map<String, (bool, String, bool)> _resolveCache = {};
@@ -12,17 +21,18 @@ class MessageContentUtils {
 
   /// 返回 (是否纯文本, 提取的文本, 是否含 Markdown)
   static (bool, String, bool) resolveContent(String content) {
-    final cached = _resolveCache[content];
+    final visibleContent = stripThinkContent(content);
+    final cached = _resolveCache[visibleContent];
     if (cached != null) return cached;
 
-    final isPlain = _isPlainText(content);
-    final text = _extractPlainText(content);
+    final isPlain = _isPlainText(visibleContent);
+    final text = _extractPlainText(visibleContent);
     final result = (isPlain, text, isPlain && containsMarkdown(text));
 
     if (_resolveCache.length >= _maxCacheEntries) {
       _resolveCache.remove(_resolveCache.keys.first);
     }
-    _resolveCache[content] = result;
+    _resolveCache[visibleContent] = result;
     return result;
   }
 

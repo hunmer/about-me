@@ -1,10 +1,15 @@
 import 'dart:math';
 
-/// 记忆碎片（PRD 5.3.1）：最小记忆单元，按 agentId 独立存储。
-/// 通过 tags 子串匹配实现"聊到才想起"的联想激活，不依赖向量库。
+/// 独立记忆库中的键值记录，tags 用于相关性检索。
 class MemoryFragment {
   final String id;
-  final String content; // 一句话事实，如"用户最近在准备面试"
+  final String key;
+  final String content;
+  String get value => content;
+  final DateTime updatedAt;
+  final int revision;
+  final String source;
+  final double confidence;
   final List<String> tags; // 激活关键词（2~4 个）
   final String? emotionTag; // 情绪标签
   final bool isSelf; // true = 关于 AI 自己的记忆（自我碎片）；false = 关于用户的
@@ -18,8 +23,13 @@ class MemoryFragment {
 
   MemoryFragment({
     required this.id,
+    String? key,
     required this.content,
     required this.tags,
+    DateTime? updatedAt,
+    this.revision = 1,
+    this.source = 'legacy',
+    this.confidence = 1.0,
     this.emotionTag,
     this.isSelf = false,
     this.category = 'other',
@@ -29,18 +39,26 @@ class MemoryFragment {
     DateTime? createdAt,
     this.lastActivatedAt,
     this.activateCount = 0,
-  }) : createdAt = createdAt ?? DateTime.now();
+  }) : key = key ?? 'legacy.$id',
+       createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? createdAt ?? DateTime.now();
 
   /// 当前权重：重要性 × 遗忘曲线（半衰期可配），低于阈值的由服务层归档
   double weight({int halfLifeDays = 14}) {
     if (userMarked) return 1.0;
-    final days = DateTime.now().difference(createdAt).inMinutes / 1440.0;
+    final days = DateTime.now().difference(updatedAt).inMinutes / 1440.0;
     return importance * pow(0.5, days / halfLifeDays);
   }
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'key': key,
+    'value': value,
     'content': content,
+    'updatedAt': updatedAt.toIso8601String(),
+    'revision': revision,
+    'source': source,
+    'confidence': confidence,
     'tags': tags,
     'category': category,
     'emotionTag': emotionTag,
@@ -53,28 +71,35 @@ class MemoryFragment {
     'activateCount': activateCount,
   };
 
-  factory MemoryFragment.fromJson(Map<String, dynamic> json) =>
-      MemoryFragment(
-        id: json['id'] as String,
-        content: json['content'] as String,
-        tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? const [],
-        emotionTag: json['emotionTag'] as String?,
-        isSelf: json['isSelf'] as bool? ?? false,
-        category: json['category'] as String? ?? 'other',
-        importance:
-            ((json['importance'] as num?)?.toDouble() ?? 0.5).clamp(0.0, 1.0),
-        userMarked: json['userMarked'] as bool? ?? false,
-        archived: json['archived'] as bool? ?? false,
-        createdAt:
-            json['createdAt'] != null
-                ? DateTime.parse(json['createdAt'] as String)
-                : DateTime.now(),
-        lastActivatedAt:
-            json['lastActivatedAt'] != null
-                ? DateTime.parse(json['lastActivatedAt'] as String)
-                : null,
-        activateCount: json['activateCount'] as int? ?? 0,
-      );
+  factory MemoryFragment.fromJson(Map<String, dynamic> json) => MemoryFragment(
+    id: json['id'] as String,
+    key: json['key'] as String?,
+    content: (json['value'] ?? json['content']) as String,
+    updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? ''),
+    revision: json['revision'] as int? ?? 1,
+    source: json['source'] as String? ?? 'legacy',
+    confidence: ((json['confidence'] as num?)?.toDouble() ?? 1.0).clamp(
+      0.0,
+      1.0,
+    ),
+    tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? const [],
+    emotionTag: json['emotionTag'] as String?,
+    isSelf: json['isSelf'] as bool? ?? false,
+    category: json['category'] as String? ?? 'other',
+    importance: ((json['importance'] as num?)?.toDouble() ?? 0.5).clamp(
+      0.0,
+      1.0,
+    ),
+    userMarked: json['userMarked'] as bool? ?? false,
+    archived: json['archived'] as bool? ?? false,
+    createdAt: json['createdAt'] != null
+        ? DateTime.parse(json['createdAt'] as String)
+        : DateTime.now(),
+    lastActivatedAt: json['lastActivatedAt'] != null
+        ? DateTime.parse(json['lastActivatedAt'] as String)
+        : null,
+    activateCount: json['activateCount'] as int? ?? 0,
+  );
 }
 
 /// 开环事件（PRD 5.1.2 / Phase 4）：未关闭的"待跟进"事件，
@@ -109,14 +134,12 @@ class OpenLoop {
   factory OpenLoop.fromJson(Map<String, dynamic> json) => OpenLoop(
     id: json['id'] as String,
     description: json['description'] as String,
-    createdAt:
-        json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'] as String)
-            : DateTime.now(),
-    followUpBy:
-        json['followUpBy'] != null
-            ? DateTime.parse(json['followUpBy'] as String)
-            : null,
+    createdAt: json['createdAt'] != null
+        ? DateTime.parse(json['createdAt'] as String)
+        : DateTime.now(),
+    followUpBy: json['followUpBy'] != null
+        ? DateTime.parse(json['followUpBy'] as String)
+        : null,
     closed: json['closed'] as bool? ?? false,
   );
 }

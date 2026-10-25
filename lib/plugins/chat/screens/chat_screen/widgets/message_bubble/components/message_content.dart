@@ -52,6 +52,9 @@ class MessageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final visibleContent = MessageContentUtils.stripThinkContent(
+      message.content,
+    );
     final questionStep = message.metadata?['askUserQuestions'];
     if (questionStep is Map<String, dynamic>) {
       final step = ToolCallStep.fromJson(questionStep);
@@ -103,7 +106,7 @@ class MessageContent extends StatelessWidget {
               );
 
         // 图片消息可能同时带有用户输入的文字，保持在同一个气泡内容列中。
-        if (message.content.trim().isNotEmpty) {
+        if (visibleContent.trim().isNotEmpty) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -273,10 +276,10 @@ class MessageContent extends StatelessWidget {
                 );
               },
             ),
-            if (message.content.isNotEmpty)
+            if (visibleContent.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
-                child: Text(message.content),
+                child: Text(visibleContent),
               ),
           ],
         );
@@ -289,9 +292,12 @@ class MessageContent extends StatelessWidget {
   /// 构建消息正文，供纯文本消息和图片+文字消息共用。
   Widget _buildTextContent(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
+    final visibleContent = MessageContentUtils.stripThinkContent(
+      message.content,
+    );
     // 普通文本消息（解析结果按 content 缓存）
     final (isPlainText, plainText, hasMarkdown) =
-        MessageContentUtils.resolveContent(message.content);
+        MessageContentUtils.resolveContent(visibleContent);
 
     // 判断是否为纯文本（无 Quill 格式）
     if (isPlainText) {
@@ -377,7 +383,7 @@ class MessageContent extends StatelessWidget {
     } else {
       // 包含 Quill 格式，使用 QuillViewer 显示（禁用选择功能以避免与长按菜单冲突）
       return QuillViewer(
-        data: message.content,
+        data: visibleContent,
         selectable: false,
         // 复选框勾选后把最新 Delta 写回消息（广播刷新气泡并持久化）
         onCheckboxToggle: _onCheckboxToggled,

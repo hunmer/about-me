@@ -63,6 +63,12 @@ class MemoryExtraction {
     if (!['user', 'self'].contains(subject) || !categories.contains(category)) {
       return {'error': 'subject 或 category 无效'};
     }
+    final hasKey = args.containsKey('key');
+    final rawKey = args['key'] as String?;
+    final exactKey = rawKey?.trim();
+    if (hasKey && (exactKey == null || exactKey.isEmpty)) {
+      return {'error': 'key 不能为空'};
+    }
     final query = (args['query'] as String? ?? '').trim().toLowerCase();
     final terms = query.split(RegExp(r'\s+')).where((q) => q.isNotEmpty);
     final page = ((args['page'] as num?)?.toInt() ?? 0).clamp(0, 1000);
@@ -70,15 +76,18 @@ class MemoryExtraction {
       if (f.isSelf != (subject == 'self') || f.category != category) {
         return false;
       }
-      final text = '${f.content} ${f.tags.join(' ')}'.toLowerCase();
+      // 精确 key 是封闭查询：未命中时返回空，不能回退到 query 或分类浏览。
+      if (exactKey != null) return f.key == exactKey;
+      final text = '${f.key} ${f.value} ${f.tags.join(' ')}'.toLowerCase();
       return terms.isEmpty || terms.any(text.contains);
-    }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final hits = matches.skip(page * 5).take(5).toList();
+    }).toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     searched.add('$subject:$category');
+    final hits = matches.skip(page * 5).take(5).toList();
     retrievedIds.addAll(hits.map((f) => f.id));
     debugPrint(
       '[Aliveness][记忆检索] subject=$subject category=$category '
-      'query=$query page=$page hits=${hits.length}/${matches.length}',
+      '${exactKey == null ? 'query=$query' : 'key=$exactKey'} '
+      'page=$page hits=${hits.length}/${matches.length}',
     );
     return {
       'total': matches.length,
@@ -86,13 +95,13 @@ class MemoryExtraction {
       'memories': hits
           .map(
             (f) => {
+              // 保留 content 供旧调用方读取，同时以 key/value 为新协议。
+              ...f.toJson(),
               'id': f.id,
+              'key': f.key,
+              'value': f.value,
               'content': f.content,
-              'tags': f.tags,
-              'category': f.category,
               'subject': subject,
-              'archived': f.archived,
-              'userMarked': f.userMarked,
             },
           )
           .toList(),
@@ -110,7 +119,8 @@ class MemoryExtraction {
         name: 'list_memory_categories',
         description: '先查看用户/自我记忆的分类计数和关键词索引，不返回记忆正文。',
         inputSchema: Schema.fromMap({
-          'type': 'object', 'properties': <String, Object?>{},
+          'type': 'object',
+          'properties': <String, Object?>{},
         }),
         onCall: (_) async {
           toolCalls++;
@@ -122,8 +132,8 @@ class MemoryExtraction {
       Tool<Map<String, dynamic>>(
         name: 'search_memories',
         description:
-            '按主体、分类、关键词检索（含归档），每页最多5条。'
-            'query 留空浏览分类；关键词空格分隔，任一命中。不匹配时返回空，不回退无关记忆。',
+            '按主体、分类、关键词或精确 key 检索（含归档），每页最多5条。'
+            'query 留空浏览分类；关键词空格分隔，任一命中。提供 key 时只返回该 key，未命中不回退；其他不匹配返回空。',
         inputSchema: Schema.fromMap({
           'type': 'object',
           'properties': {
@@ -132,10 +142,11 @@ class MemoryExtraction {
               'enum': ['user', 'self'],
             },
             'category': {'type': 'string', 'enum': categories},
+            'key': {'type': 'string'},
             'query': {'type': 'string'},
             'page': {'type': 'integer', 'minimum': 0},
           },
-          'required': ['subject', 'category', 'query'],
+          'required': ['subject', 'category'],
         }),
         onCall: (args) async {
           toolCalls++;
@@ -184,7 +195,10 @@ class MemoryExtraction {
       if (chunk.output.isNotEmpty) output.write(chunk.output);
       for (final message in chunk.messages) {
         if (message.role != ChatMessageRole.model) continue;
-        final text = message.parts.whereType<TextPart>().map((p) => p.text).join();
+        final text = message.parts
+            .whereType<TextPart>()
+            .map((p) => p.text)
+            .join();
         if (text.trim().isNotEmpty) finalText = text;
       }
     }

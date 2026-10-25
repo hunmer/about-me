@@ -382,22 +382,32 @@ void main() {
       }
     });
 
-    test('写入和查询工具声明后续操作所需的 ID 参数', () {
-      final searchParameters = (memoryTools['search_memory']
-          as Map<String, dynamic>)['parameters'] as List<dynamic>;
-      expect(
-        searchParameters.cast<Map>().map((p) => p['name']),
-        contains('query'),
-      );
+    test('写入和查询工具声明后续操作所需的 key 参数', () {
+      final searchNames = ((memoryTools['search_memory'] as Map<String, dynamic>)['parameters']
+              as List<dynamic>)
+          .cast<Map>()
+          .map((p) => p['name'])
+          .toSet();
+      expect(searchNames, containsAll(['query', 'key', 'prefix']));
+      for (final name in ['add_memory', 'update_memory', 'delete_memory']) {
+        final parameters = (memoryTools[name] as Map<String, dynamic>)['parameters']
+            as List<dynamic>;
+        final names = parameters.cast<Map>().map((p) => p['name']).toSet();
+        expect(names, contains('key'), reason: name);
+      }
+      for (final name in ['add_memory', 'update_memory']) {
+        final parameters = (memoryTools[name] as Map<String, dynamic>)['parameters']
+            as List<dynamic>;
+        final names = parameters.cast<Map>().map((p) => p['name']).toSet();
+        expect(names, contains('value'), reason: name);
+        expect(names, isNot(contains('content')), reason: name);
+      }
       for (final name in ['update_memory', 'delete_memory']) {
         final parameters = (memoryTools[name] as Map<String, dynamic>)['parameters']
             as List<dynamic>;
         final names = parameters.cast<Map>().map((p) => p['name']).toSet();
-        expect(names, contains('fragmentId'), reason: name);
+        expect(names, isNot(contains('fragmentId')), reason: name);
       }
-      final addNames = ((memoryTools['add_memory'] as Map<String, dynamic>)['parameters']
-          as List<dynamic>).cast<Map>().map((p) => p['name']).toSet();
-      expect(addNames, contains('content'));
     });
 
     test('索引包含四个记忆工具', () {
