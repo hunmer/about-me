@@ -3,6 +3,27 @@ part of 'openai_plugin.dart';
 // JS API 实现 - 私有方法
 // defineJSAPI() 方法在主插件类中实现
 
+Future<String> _jsListMemoryKeys(Map<String, dynamic> params) async {
+  final memoryId = (params['memoryId'] as String?)?.trim();
+  final prefix = params['prefix'] as String?;
+  if (memoryId == null || memoryId.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: memoryId'});
+  }
+  try {
+    final keys = await MemoryService.instance.listKeysForTool(
+      memoryId,
+      prefix: prefix,
+    );
+    return jsonEncode({
+      'memoryId': memoryId,
+      'prefix': prefix ?? '',
+      'keys': keys,
+    });
+  } catch (e) {
+    return jsonEncode({'error': e.toString(), 'memoryId': memoryId});
+  }
+}
+
 /// 查询 AI 对用户的长期记忆（按显式 memoryId 查询）
 Future<String> _jsSearchMemory(Map<String, dynamic> params) async {
   final memoryId = (params['memoryId'] as String?)?.trim();

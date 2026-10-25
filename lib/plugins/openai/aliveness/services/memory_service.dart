@@ -50,7 +50,7 @@ class MemoryService {
       buffer.writeln('· ${library.name}（memoryId: ${library.id}）');
     }
     buffer.write(
-      '\n读写记忆工具必须传入上述目标库的 memoryId。记忆为 key/value，key 在库内唯一；先按 key 查询，同 key 写入更新当前值；不知道 key 时用 prefix 或 query 检索。禁止猜测 ID。\n',
+      '\n读写记忆工具必须传入上述目标库的 memoryId。记忆为 key/value，key 在库内唯一；先按 key 查询，同 key 写入更新当前值；不知道 key 时先用 list_memory_keys 逐层枚举命名空间（含 legacy 旧记忆），再按完整 key 查询；也可用 prefix 或 query 检索。禁止猜测 ID。\n',
     );
     return buffer.toString();
   }
@@ -114,6 +114,25 @@ class MemoryService {
           (e) => MemoryFragment.fromJson(Map<String, dynamic>.from(e as Map)),
         )
         .toList();
+  }
+
+  Future<List<String>> listKeysForTool(
+    String memoryId, {
+    String? prefix,
+  }) async {
+    final fragments = await loadFragments(memoryId);
+    final parent = (prefix?.trim() ?? '').replaceFirst(RegExp(r'\.+$'), '');
+    if (parent.isNotEmpty) validateKey(parent);
+    final start = parent.isEmpty ? '' : '$parent.';
+    final keys = <String>{};
+    for (final fragment in fragments) {
+      if (!fragment.key.startsWith(start)) continue;
+      final remainder = fragment.key.substring(start.length);
+      if (remainder.isEmpty) continue;
+      final segment = remainder.split('.').first;
+      if (segment.isNotEmpty) keys.add('$start$segment');
+    }
+    return keys.toList()..sort();
   }
 
   static String validateKey(String key) {

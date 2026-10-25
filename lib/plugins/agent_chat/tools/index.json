@@ -155,6 +155,7 @@
   ["habits_startTimer","开始计时"],
   ["habits_stopTimer","停止计时"],
   ["habits_getTimerStatus","获取计时器状态"],
+  ["memory_list_memory_keys","枚举记忆 key"],
   ["memory_search_memory","查询记忆"],
   ["memory_add_memory","新增记忆"],
   ["memory_update_memory","更新记忆"],

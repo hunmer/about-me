@@ -107,6 +107,7 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       'sendMessage': _jsSendMessage,
 
       // 记忆读写工具（均要求显式 memoryId）
+      'list_memory_keys': _jsListMemoryKeys,
       'search_memory': _jsSearchMemory,
       'add_memory': _jsAddMemory,
       'update_memory': _jsUpdateMemory,

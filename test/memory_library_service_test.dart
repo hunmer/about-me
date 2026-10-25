@@ -41,6 +41,88 @@ void main() {
     await root.delete(recursive: true);
   });
 
+  test('逐层枚举key，按层级边界匹配且不返回value', () async {
+    final library = await store.createMemoryLibrary('层级枚举');
+    await memory.saveFragments(library.id, [
+      for (final key in [
+        'user.name',
+        'user.age',
+        'user.preference.drink',
+        'user.preference.food',
+        'event.interview.date',
+        'username',
+        'single',
+      ])
+        MemoryFragment(id: key, key: key, content: '不应出现在枚举结果', tags: []),
+    ]);
+    expect(await memory.listKeysForTool(library.id), [
+      'event',
+      'single',
+      'user',
+      'username',
+    ]);
+    expect(await memory.listKeysForTool(library.id, prefix: 'user'), [
+      'user.age',
+      'user.name',
+      'user.preference',
+    ]);
+    expect(await memory.listKeysForTool(library.id, prefix: ' user. '), [
+      'user.age',
+      'user.name',
+      'user.preference',
+    ]);
+    expect(
+      await memory.listKeysForTool(library.id, prefix: 'user.preference'),
+      ['user.preference.drink', 'user.preference.food'],
+    );
+    expect(
+      await memory.listKeysForTool(library.id, prefix: 'user.name'),
+      isEmpty,
+    );
+    expect(await memory.listKeysForTool(library.id, prefix: 'us'), isEmpty);
+    expect(
+      await memory.listKeysForTool(library.id, prefix: 'missing'),
+      isEmpty,
+    );
+    expect(
+      await memory.listKeysForTool(library.id, prefix: ''),
+      await memory.listKeysForTool(library.id),
+    );
+    final other = await store.createMemoryLibrary('空库');
+    expect(await memory.listKeysForTool(other.id), isEmpty);
+    await expectLater(memory.listKeysForTool('agent-id'), throwsStateError);
+    await expectLater(
+      memory.listKeysForTool(library.id, prefix: 'user name'),
+      throwsArgumentError,
+    );
+  });
+
+  test('旧格式归档记忆可以从legacy枚举，再按完整key读取，枚举不截断', () async {
+    final library = await store.createMemoryLibrary('旧库枚举');
+    await store.saveMemory(library.id, {
+      'fragments': [
+        for (var i = 0; i < 60; i++)
+          {'id': 'old$i', 'content': '旧值$i', 'archived': true},
+      ],
+    });
+    expect(await memory.listKeysForTool(library.id), ['legacy']);
+    final keys = await memory.listKeysForTool(library.id, prefix: 'legacy');
+    expect(keys.length, 60);
+    expect(keys, contains('legacy.old59'));
+    expect(
+      (await memory.searchForTool(
+        library.id,
+        null,
+        key: keys.first,
+      )).single['value'],
+      startsWith('旧值'),
+    );
+    expect(
+      (await store.loadMemory(library.id)).containsKey('fragments'),
+      isTrue,
+    );
+  });
+
   test('同库同key覆盖并递增版本，其他库相同key独立', () async {
     final a = await store.createMemoryLibrary('键值A');
     final b = await store.createMemoryLibrary('键值B');

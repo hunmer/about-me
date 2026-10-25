@@ -1,4 +1,27 @@
 {
+  "list_memory_keys": {
+    "title": "枚举记忆 key",
+    "description": "逐层枚举指定记忆库中的 key 命名空间（含 legacy 旧记忆和已归档记忆）。不传 prefix 时从根开始；传入 user 等命名空间后返回下一层完整路径。建议从根逐层枚举，再用 search_memory 按完整 key 查询内容。",
+    "parameters": [
+      {
+        "name": "memoryId",
+        "type": "string",
+        "required": true,
+        "description": "目标记忆库 ID"
+      },
+      {
+        "name": "prefix",
+        "type": "string",
+        "required": false,
+        "description": "命名空间前缀；可带尾部点，返回其下一层完整路径"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象 {memoryId, prefix, keys}；keys 为去重排序后的下一层完整 key 路径"
+    },
+    "enabled": true
+  },
   "search_memory": {
     "title": "查询记忆",
     "description": "按指定 memoryId 查询长期记忆（key-value 结构）。memoryId 必须来自当前已启用的记忆库列表。key 精确匹配单条（含已归档，优先级最高）；prefix 按前缀列出，query 按关键词检索，两者可并用，均不含已归档；都不传时返回最近更新的记忆（最多50条）。每项含 key、value，后续按 key 更新或删除。",

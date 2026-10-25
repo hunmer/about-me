@@ -80,9 +80,10 @@ void main() {
       expect(builtInMode.map((t) => t.name), ['memory', 'get_current_time']);
     });
 
-    test('JS 模式保留四个记忆读写工具', () {
+    test('JS 模式保留五个记忆读写工具', () {
       final memoryTools = [
         for (final name in [
+          'list_memory_keys',
           'search_memory',
           'add_memory',
           'update_memory',
@@ -102,7 +103,7 @@ void main() {
       );
       expect(
         tools.map((tool) => tool.name),
-        ['search_memory', 'add_memory', 'update_memory', 'delete_memory', 'get_current_time', 'run_js'],
+        ['list_memory_keys', 'search_memory', 'add_memory', 'update_memory', 'delete_memory', 'get_current_time', 'run_js'],
       );
     });
 
@@ -362,8 +363,9 @@ void main() {
       ) as List<dynamic>;
     });
 
-    test('四个记忆工具均已定义并要求显式 memoryId', () {
+    test('五个记忆工具均已定义并要求显式 memoryId', () {
       const names = {
+        'list_memory_keys',
         'search_memory',
         'add_memory',
         'update_memory',
@@ -380,6 +382,23 @@ void main() {
         final schema = ToolSchemaBuilder.buildSchemaMap(parameters);
         expect(schema['required'], contains('memoryId'), reason: name);
       }
+    });
+
+    test('list_memory_keys 的 prefix 参数可选', () {
+      final parameters = (memoryTools['list_memory_keys']
+              as Map<String, dynamic>)['parameters'] as List<dynamic>;
+      final schema = ToolSchemaBuilder.buildSchemaMap(
+        parameters
+            .map((parameter) => ToolParameter.fromJson(
+                  Map<String, dynamic>.from(parameter as Map),
+                ))
+            .toList(),
+      );
+      expect(schema['required'], ['memoryId']);
+      expect(
+        (schema['properties'] as Map).keys,
+        containsAll(['memoryId', 'prefix']),
+      );
     });
 
     test('写入和查询工具声明后续操作所需的 key 参数', () {
@@ -410,9 +429,10 @@ void main() {
       }
     });
 
-    test('索引包含四个记忆工具', () {
+    test('索引包含五个记忆工具', () {
       final names = toolIndex.map((entry) => (entry as List).first).toSet();
       expect(names, containsAll([
+        'memory_list_memory_keys',
         'memory_search_memory',
         'memory_add_memory',
         'memory_update_memory',

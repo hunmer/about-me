@@ -226,6 +226,7 @@ class NativeToolAgentService {
   /// 预筛时始终注入的插件（模糊请求也不丢失生图/记忆等核心能力）
   static const _alwaysIncludePlugins = {'moments', 'openai', 'memory'};
   static const _memoryToolNames = {
+    'list_memory_keys',
     'search_memory',
     'add_memory',
     'update_memory',
@@ -304,6 +305,7 @@ class NativeToolAgentService {
                 tool.name == 'read_image' ||
                 (const {
                       'search_memory',
+                      'list_memory_keys',
                       'add_memory',
                       'update_memory',
                       'delete_memory',
@@ -856,6 +858,42 @@ class NativeToolAgentService {
         onCall: (args) => execute(args),
       );
 
+      tools.add(
+        memoryTool(
+          'list_memory_keys',
+          '逐层枚举指定记忆库中的 key 命名空间（含 legacy 旧记忆和已归档记忆）。不传 prefix 时从根开始；传入 user 等命名空间后返回下一层完整路径。建议从根逐层枚举，再用 search_memory 按完整 key 查询内容。',
+          [
+            ToolParameter(
+              name: 'memoryId',
+              type: 'string',
+              description: '当前 Agent 已启用的目标记忆库 ID',
+            ),
+            ToolParameter(
+              name: 'prefix',
+              type: 'string',
+              optional: true,
+              description: '命名空间前缀；可带尾部点，返回其下一层完整路径',
+            ),
+          ],
+          (args) => runMemoryTool(
+            'list_memory_keys',
+            '枚举记忆 key',
+            args,
+            (memoryId) async {
+              final prefix = args['prefix'] as String?;
+              final keys = await MemoryService.instance.listKeysForTool(
+                memoryId,
+                prefix: prefix,
+              );
+              return {
+                'memoryId': memoryId,
+                'prefix': prefix ?? '',
+                'keys': keys,
+              };
+            },
+          ),
+        ),
+      );
       tools.add(
         memoryTool(
           'search_memory',
