@@ -72,26 +72,29 @@ class _UnlockedCard extends StatelessWidget {
     return Pressable(
       onPressed: () => _openDetail(context),
       builder: (context, states) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AchievementBadge(
-              iconAsset: def.iconAsset,
-              level: level,
-              size: 62,
-              showLevelTag: true,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              def.name,
-              style: DsTypography.label.copyWith(
-                fontSize: 11,
-                color: theme.text,
+        // 外层 Stack 按 topStart 对齐且 Column 宽度会收缩,需 Center 才能整体居中
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AchievementBadge(
+                iconAsset: def.iconAsset,
+                level: level,
+                size: 62,
+                showLevelTag: true,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                def.name,
+                style: DsTypography.label.copyWith(
+                  fontSize: 11,
+                  color: theme.text,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         );
       },
     );

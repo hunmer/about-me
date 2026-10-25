@@ -267,16 +267,20 @@ class ToolConfigManager {
             : entry.key;
         if (methodName.startsWith('find')) continue;
         if (stored.containsKey(entry.key)) {
-          if (pluginId == 'memory' && entry.key == 'search_memory') {
+          if (pluginId == 'memory' &&
+              const {'search_memory', 'batch_search_memory'}.contains(entry.key)) {
             final existing = stored[entry.key];
             if (existing is Map) {
               final current = Map<String, dynamic>.from(existing);
               final bundledTool = Map<String, dynamic>.from(entry.value as Map);
               if (jsonEncode(current['parameters']) !=
                       jsonEncode(bundledTool['parameters']) ||
-                  current['description'] != bundledTool['description']) {
+                  current['description'] != bundledTool['description'] ||
+                  jsonEncode(current['returns']) !=
+                      jsonEncode(bundledTool['returns'])) {
                 current['parameters'] = bundledTool['parameters'];
                 current['description'] = bundledTool['description'];
+                current['returns'] = bundledTool['returns'];
                 stored[entry.key] = current;
                 changed = true;
               }

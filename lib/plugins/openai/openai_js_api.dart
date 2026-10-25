@@ -37,7 +37,7 @@ Future<String> _jsSearchMemory(Map<String, dynamic> params) async {
   try {
     final result = await MemoryService.instance.searchKeysForTool(memoryId, [
       key,
-    ]);
+    ], includeDetails: true);
     return jsonEncode(result);
   } catch (e) {
     return jsonEncode({'error': e.toString(), 'memoryId': memoryId});

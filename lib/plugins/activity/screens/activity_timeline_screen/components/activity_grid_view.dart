@@ -317,14 +317,13 @@ class _ActivityGridViewState extends State<ActivityGridView> {
 
       // 检查选择的时间是否包含未来时间
       final now = DateTime.now();
+      // 网格时间为每格的结束时刻（HH:i*5+5）：开始需减5分钟对齐首格起点，
+      // 结束时刻已是末格的真实结束，再减5分钟会导致末格填不满
       final adjustedStart = rawStart.subtract(const Duration(minutes: 5));
-      final adjustedEnd = rawEnd.subtract(const Duration(minutes: 5));
+      final adjustedEnd = rawEnd;
 
       // 只有当选择时间范围达到最小阈值且不包含未来时间时才创建活动
       if (durationInMinutes >= 5 && adjustedEnd.isBefore(now)) {
-        // 由于网格时间从每小时的05分钟开始，我们需要将开始时间向前调整5分钟
-        // 同时也要将结束时间向前调整5分钟，保持时间段的完整性
-        // 例如：如果选择了8:05-10:05，实际应该是8:00-10:00
         final start = adjustedStart;
         final end = adjustedEnd;
 

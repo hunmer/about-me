@@ -60,13 +60,16 @@ void main() {
       'missing.key',
       'user.archived',
     ]);
-    expect((result['fragments'] as List).map((item) => item['key']), [
+    expect(result, {
+      'memoryId': library.id,
+      'values': {'user.age': '20', 'user.name': '小明', 'user.archived': '旧值'},
+      'missingKeys': ['missing.key'],
+    });
+    expect((result['values'] as Map).keys, [
       'user.age',
       'user.name',
       'user.archived',
     ]);
-    expect(result['missingKeys'], ['missing.key']);
-    expect((result['fragments'] as List).last['value'], '旧值');
     await expectLater(
       memory.searchKeysForTool(library.id, []),
       throwsArgumentError,
@@ -83,6 +86,25 @@ void main() {
 
   test('单条查询要求非空完整key', () async {
     final library = await store.createMemoryLibrary('单条查询');
+    final record = await memory.upsertForTool(library.id, 'user.name', '小明', [
+      '姓名',
+    ]);
+    final result = await memory.searchKeysForTool(library.id, [
+      'user.name',
+    ], includeDetails: true);
+    expect(result, {
+      'memoryId': library.id,
+      'fragments': [
+        {
+          'key': 'user.name',
+          'value': '小明',
+          'tags': ['姓名'],
+          'revision': record.revision,
+          'updatedAt': record.updatedAt.toIso8601String(),
+        },
+      ],
+      'missingKeys': <String>[],
+    });
     await expectLater(
       memory.searchKeysForTool(library.id, [null]),
       throwsArgumentError,

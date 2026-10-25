@@ -908,7 +908,8 @@ class NativeToolAgentService {
           'search_memory',
           '按指定 memoryId 和必填非空完整 key 精确查询单条长期记忆（含已归档）。'
               '必须使用当前 Agent 已启用的 memoryId；不知道 key 时先用 list_memory_keys 枚举。'
-              '多个 key 使用 batch_search_memory。返回 key、value 等元数据。',
+              '返回 key、value、tags、revision、updatedAt；涉及更新操作时优先用本工具确认原值和标签。'
+              '仅需批量读取内容时使用 batch_search_memory。',
           [
             ToolParameter(
               name: 'memoryId',
@@ -927,7 +928,7 @@ class NativeToolAgentService {
               runMemoryTool('search_memory', '查询记忆', args, (memoryId) async {
                 return MemoryService.instance.searchKeysForTool(memoryId, [
                   args['key'],
-                ]);
+                ], includeDetails: true);
               }),
         ),
       );
@@ -936,7 +937,8 @@ class NativeToolAgentService {
           'batch_search_memory',
           '按指定 memoryId 和非空 keys 数组批量精确查询记忆（含已归档）。'
               '每个 key 必须是非空完整路径；不知道 key 时先用 list_memory_keys 枚举。'
-              '返回按请求顺序去重的 fragments，以及未找到的 missingKeys。',
+              '返回 values（key 到 value 的映射）和 missingKeys，不含元数据。'
+              '涉及更新操作时优先用 search_memory 单条查询，确认原值和标签后再更新。',
           [
             ToolParameter(
               name: 'memoryId',

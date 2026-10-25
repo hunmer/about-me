@@ -8,7 +8,6 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/action/action_manager.dart';
 import 'package:aboutme/core/action/widgets/action_selector_dialog.dart';
-import 'package:aboutme/core/floating_ball/config/floating_ball_config.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/screens/settings_screen/widgets/settings_group.dart';
 import 'package:aboutme/screens/settings_screen/widgets/settings_tile.dart';
@@ -31,7 +30,6 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
   double _sizeScale = 1.0;
   bool _isEnabled = false;
   bool _edgeDockEnabled = false;
-  String _iconKey = FloatingBallIconPresets.defaultKey;
   String? _customIcon;
   final Map<FloatingBallGesture, GestureActionConfig?> _selectedActions = {};
 
@@ -61,7 +59,6 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
     final edgeDockEnabled = await _manager.isEdgeDockEnabled();
 
     // 加载图标配置
-    final iconKey = await _manager.getIconKey();
     final customIcon = await _manager.getCustomIcon();
 
     // 从 ActionManager 加载手势动作配置
@@ -75,7 +72,6 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
         _sizeScale = scale;
         _isEnabled = enabled;
         _edgeDockEnabled = edgeDockEnabled;
-        _iconKey = iconKey;
         _customIcon = customIcon;
       });
     }
@@ -242,13 +238,12 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
 
   // ==================== 悬浮球图标设置 ====================
 
-  /// 选择预设图标（同时清除自定义图片）
-  Future<void> _selectPresetIcon(String key) async {
+  /// 恢复默认图片图标
+  Future<void> _useDefaultIcon() async {
     setState(() {
-      _iconKey = key;
       _customIcon = null;
     });
-    await _manager.setIcon(iconKey: key, clearCustomIcon: true);
+    await _manager.setCustomIcon(null);
   }
 
   /// 上传自定义图片作为图标
@@ -268,13 +263,11 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
     setState(() {
       _customIcon = base64Str;
     });
-    await _manager.setIcon(customIcon: base64Str);
+    await _manager.setCustomIcon(base64Str);
   }
 
-  /// 图标选择区：预设网格 + 自定义图片入口
+  /// 图标选择区：默认图片 + 自定义图片入口
   Widget _buildIconSettings(AppThemeData theme) {
-    final isPresetSelected = _customIcon == null;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -290,9 +283,8 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
             // 默认图片
             _buildIconChoice(
               theme: theme,
-              selected: isPresetSelected &&
-                  _iconKey == FloatingBallIconPresets.defaultKey,
-              onTap: () => _selectPresetIcon(FloatingBallIconPresets.defaultKey),
+              selected: _customIcon == null,
+              onTap: _useDefaultIcon,
               child: ClipOval(
                 child: Image.asset(
                   'assets/icon/icon.png',
@@ -302,14 +294,6 @@ class _FloatingBallSettingsScreenState extends State<FloatingBallSettingsScreen>
                 ),
               ),
             ),
-            // 预设图标
-            for (final entry in FloatingBallIconPresets.icons.entries)
-              _buildIconChoice(
-                theme: theme,
-                selected: isPresetSelected && _iconKey == entry.key,
-                onTap: () => _selectPresetIcon(entry.key),
-                child: Icon(entry.value, size: 22, color: theme.text),
-              ),
             // 自定义图片
             _buildIconChoice(
               theme: theme,

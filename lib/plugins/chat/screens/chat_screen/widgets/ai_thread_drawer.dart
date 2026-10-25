@@ -7,6 +7,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/markdown_content.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/services/ai_thread_service.dart';
 import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
@@ -305,10 +306,13 @@ class _AiThreadDrawerState extends State<AiThreadDrawer> {
               'chat_threadThinking'.tr,
               style: DsTypography.body.copyWith(color: theme.textSub),
             )
-          : Text(
+          : isUser
+          ? Text(
               content,
               style: DsTypography.body.copyWith(color: fgColor),
-            ),
+            )
+          // AI 回复可能含 markdown（代码块/列表等），与 agent_chat 消息渲染保持一致
+          : MarkdownContent(content: content, textColor: fgColor),
     );
 
     return Padding(

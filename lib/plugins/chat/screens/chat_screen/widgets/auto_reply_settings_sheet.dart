@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -27,6 +29,8 @@ Map<String, String>? autoReplyAgentOf(Map<String, dynamic> config) {
 /// - 指定的 agent（单选）
 /// - 新建会话附带的上下文长度（默认 0，代表只传入当前这句话）
 /// - 只传入当前的消息（默认开，开启时上下文长度不生效）
+///
+/// 改动即时保存（防抖写入 metadata['autoReply']），无需手动点保存。
 Future<void> showAutoReplySettingsSheet({
   required BuildContext context,
   required String channelId,
@@ -41,15 +45,21 @@ Future<void> showAutoReplySettingsSheet({
     Map<String, dynamic>.from(readAutoReplyConfig(channel)),
   );
 
+  // 防抖落盘：滑条拖动只在停止后写最后一次
+  Timer? persistTimer;
+  void update(Map<String, dynamic> patch) {
+    config.value = {...config.value, ...patch};
+    persistTimer?.cancel();
+    persistTimer = Timer(const Duration(milliseconds: 300), () {
+      channelService.updateChannelMetadata(channelId, {
+        'autoReply': config.value,
+      });
+    });
+  }
+
   return SmoothBottomSheet.showForm<void>(
     context: context,
     title: '自动回复设置',
-    onSave: () async {
-      await channelService.updateChannelMetadata(channelId, {
-        'autoReply': config.value,
-      });
-      if (context.mounted) Navigator.of(context).pop();
-    },
     child: ValueListenableBuilder<Map<String, dynamic>>(
       valueListenable: config,
       builder: (builderContext, cfg, _) {
@@ -59,9 +69,6 @@ Future<void> showAutoReplySettingsSheet({
         final currentOnly = cfg['currentOnly'] != false;
         final contextCount = (cfg['contextCount'] as num?)?.toInt() ?? 0;
         final agent = autoReplyAgentOf(cfg);
-
-        void update(Map<String, dynamic> patch) =>
-            config.value = {...config.value, ...patch};
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),

@@ -95,7 +95,10 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
   }
 
   /// 档案编辑：smooth_sheets 底部弹层
-  Future<void> _showArchiveForm(String archiveId) async {
+  Future<void> _showArchiveForm(
+    String archiveId, {
+    Live2DArchive? draft,
+  }) async {
     VoidCallback? saveArchive;
     VoidCallback? deleteArchive;
     await SmoothBottomSheet.showForm(
@@ -103,23 +106,29 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
       title: 'live2d_editArchiveTitle'.tr,
       child: Live2DArchiveFormScreen(
         archiveId: archiveId,
+        draftArchive: draft,
         embedInSheet: true,
         onReady: (save) => saveArchive = save,
         onDeleteReady: (delete) => deleteArchive = delete,
       ),
       onSave: () => saveArchive?.call(),
-      onDelete: () => deleteArchive?.call(),
+      // 草稿尚未入库，无需删除按钮（关闭即丢弃）
+      onDelete: draft == null ? () => deleteArchive?.call() : null,
     );
   }
 
+  /// 新建档案：草稿先不入库，保存时才经表单 upsert 创建
   Future<void> _createArchive() async {
     final created = Live2DArchive.create(
       modelLabel: 'Mao',
       modelDir: 'assets/models/mao/',
       modelFile: 'mao_pro.model3.json',
     );
-    await plugin.upsert(created);
-    await _openSettings(created);
+    await _showArchiveForm(created.id, draft: created);
+    if (mounted) {
+      setState(() {});
+      _loadAgents();
+    }
   }
 
   @override

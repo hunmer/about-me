@@ -33,7 +33,7 @@ const List<AchievementDefinition> kAchievementDefinitions = [
   AchievementDefinition(id: 'A15', name: '习惯成自然', category: 'life', condition: '最长连续写日记', unit: '天', thresholds: [3, 7, 30, 100, 365]),
   AchievementDefinition(id: 'A16', name: '长篇大论', category: 'life', condition: '单篇日记最长字数', unit: '字', thresholds: [500, 1000, 2000, 5000]),
   AchievementDefinition(id: 'A17', name: '时间记录者', category: 'life', condition: '累计记录活动', unit: '个', thresholds: [1, 50, 200, 1000], event: 'activity_added'),
-  AchievementDefinition(id: 'A18', name: '千时如梭', category: 'life', condition: '累计活动记录时长', unit: '小时', thresholds: [10, 100, 1000, 5000]),
+  AchievementDefinition(id: 'A18', name: '千时如梭', category: 'life', condition: '累计活动记录时长', unit: '分钟', thresholds: [600, 6000, 60000, 300000]),
   AchievementDefinition(id: 'A19', name: '标签收藏家', category: 'life', condition: '使用过的不同活动标签', unit: '个', thresholds: [5, 10, 30, 50]),
   AchievementDefinition(id: 'A20', name: '习惯成瘾', category: 'life', condition: '单个习惯最长连续打卡', unit: '天', thresholds: [7, 30, 100, 365]),
   AchievementDefinition(id: 'A21', name: '技能点满', category: 'life', condition: '累计获得技能点', unit: '点', thresholds: [10, 100, 500, 2000]),

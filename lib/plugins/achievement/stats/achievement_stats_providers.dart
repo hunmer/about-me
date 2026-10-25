@@ -127,12 +127,12 @@ Map<String, (String, StatProvider)> buildStatProviders() {
         })),
 
     // ===== activity =====
-    // A18 千时如梭：累计活动时长（小时）。全量扫描较重，仅全局结算触发。
+    // A18 千时如梭：累计活动时长（分钟，与 activity_duration_added 事件增量同口径）。
+    // 全量扫描较重，仅全局结算触发。
     'A18': ('activity', () => _guard(() async {
           final service = ActivityPlugin.instance.activityService;
           final records = await service.getActivitiesForRange(DateTime(2000), DateTime.now());
-          final minutes = records.fold<int>(0, (sum, r) => sum + r.durationInMinutes);
-          return minutes ~/ 60;
+          return records.fold<int>(0, (sum, r) => sum + r.durationInMinutes);
         })),
     // A19 标签收藏家：活动标签库标签总数
     'A19': ('activity', () => _guard(() async {

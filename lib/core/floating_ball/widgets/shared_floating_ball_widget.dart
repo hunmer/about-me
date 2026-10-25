@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:aboutme/core/floating_ball/adapters/floating_ball_platform_adapter.dart';
 import 'package:aboutme/core/floating_ball/models/floating_ball_gesture.dart';
-import 'package:aboutme/core/floating_ball/config/floating_ball_config.dart';
 import 'package:aboutme/core/floating_ball/floating_ball_manager.dart';
 import 'package:aboutme/core/floating_ball/floating_ball_service.dart';
 
@@ -89,8 +88,7 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
   bool _isDocked = false;
   Timer? _dockTimer;
 
-  // 图标配置
-  String _iconKey = FloatingBallIconPresets.defaultKey;
+  // 自定义图标图片（base64 解码后的字节）
   Uint8List? _customIconBytes;
 
   /// 展开后无操作恢复收纳的时长
@@ -251,9 +249,8 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
 
   double get _currentSize => widget.baseSize * _sizeScale;
 
-  /// 加载图标配置（预设图标 + 自定义图片）
+  /// 加载自定义图标配置（为空时显示默认图片）
   Future<void> _loadIconConfig() async {
-    final iconKey = await _manager.getIconKey();
     final customIcon = await _manager.getCustomIcon();
     if (!mounted) return;
 
@@ -267,7 +264,6 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
     }
 
     setState(() {
-      _iconKey = iconKey;
       _customIconBytes = customBytes;
     });
   }
@@ -692,7 +688,7 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
     );
   }
 
-  /// 球体内容：自定义图片 > 预设图标 > 默认图片
+  /// 球体内容：自定义图片 > 默认图片
   Widget _buildBallContent() {
     if (_customIconBytes != null) {
       return Image.memory(
@@ -702,15 +698,6 @@ class _SharedFloatingBallWidgetState extends State<SharedFloatingBallWidget>
         fit: BoxFit.cover,
         gaplessPlayback: true,
         errorBuilder: (context, error, stackTrace) => _buildDefaultImage(),
-      );
-    }
-
-    final presetIcon = FloatingBallIconPresets.iconOf(_iconKey);
-    if (presetIcon != null) {
-      return Icon(
-        presetIcon,
-        color: Colors.white,
-        size: _currentSize * 0.55,
       );
     }
 

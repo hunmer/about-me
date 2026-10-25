@@ -19,12 +19,17 @@ class Live2DArchiveFormScreen extends StatefulWidget {
   const Live2DArchiveFormScreen({
     super.key,
     required this.archiveId,
+    this.draftArchive,
     this.embedInSheet = false,
     this.onReady,
     this.onDeleteReady,
   });
 
   final String archiveId;
+
+  /// 新建草稿（尚未入库），优先于 [archiveId] 的档案查找；
+  /// 点击保存时才经 upsert 真正创建
+  final Live2DArchive? draftArchive;
 
   /// 以底部弹层形式嵌入（不渲染 Scaffold/顶栏，由外壳提供标题与保存）
   final bool embedInSheet;
@@ -56,9 +61,9 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
   @override
   void initState() {
     super.initState();
-    archive = plugin.archives
-        .where((a) => a.id == widget.archiveId)
-        .firstOrNull;
+    archive =
+        widget.draftArchive ??
+        plugin.archives.where((a) => a.id == widget.archiveId).firstOrNull;
     nameController.text = archive?.name ?? '';
     _coverPath = archive?.coverPath;
     for (final entry in tapControllers.entries) {

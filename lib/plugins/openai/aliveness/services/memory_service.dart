@@ -641,8 +641,9 @@ class MemoryService {
 
   Future<Map<String, dynamic>> searchKeysForTool(
     String memoryId,
-    Object? keys,
-  ) async {
+    Object? keys, {
+    bool includeDetails = false,
+  }) async {
     if (keys is! List || keys.isEmpty) {
       throw ArgumentError('keys 必须是非空的记忆 key 数组');
     }
@@ -659,16 +660,23 @@ class MemoryService {
     };
     return {
       'memoryId': memoryId,
-      'fragments': [
-        for (final key in requested)
-          if (records.containsKey(key))
-            {
-              ...records[key]!.toJson(),
-              'fragmentId': records[key]!.id,
-              'memoryId': memoryId,
-              'subject': records[key]!.isSelf ? 'self' : 'user',
-            },
-      ],
+      if (includeDetails)
+        'fragments': [
+          for (final key in requested)
+            if (records.containsKey(key))
+              {
+                'key': key,
+                'value': records[key]!.value,
+                'tags': records[key]!.tags,
+                'revision': records[key]!.revision,
+                'updatedAt': records[key]!.updatedAt.toIso8601String(),
+              },
+        ]
+      else
+        'values': {
+          for (final key in requested)
+            if (records.containsKey(key)) key: records[key]!.value,
+        },
       'missingKeys': [
         for (final key in requested)
           if (!records.containsKey(key)) key,
