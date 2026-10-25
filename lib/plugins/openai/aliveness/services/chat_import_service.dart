@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:aboutme/plugins/openai/aliveness/models/memory_fragment.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
@@ -70,9 +71,9 @@ class ChatImportResult {
 /// - memories：关于用户本人的关键信息碎片（写入记忆库，让 AI 认识用户）
 /// - observations：关于聊天对方（TA）的稳定特征观察
 /// 两种用法：
-/// 1. 已有 agent：只写入 memories（AI 更了解用户）
-/// 2. 新建 agent：observations 汇总生成 TA 的人设 → 克隆模板 agent 配置创建新 AI，
-///    memories 一并写入新 AI 的记忆库
+/// 1. 只提取 memories，追加到用户显式选择的已有记忆库
+/// 2. observations 汇总生成 TA 的人设 → 克隆模板 agent 配置创建新 AI，
+///    memories 仍追加到所选库，新 AI 默认不绑定任何记忆库
 /// 入口在 agent 编辑页活人感分组。
 class ChatImportService {
   ChatImportService._();
@@ -257,18 +258,28 @@ class ChatImportService {
   // ---------- 分析主流程 ----------
 
   /// 逐块调 agent 的 LLM 双提取（用户碎片 + TA 观察），跨块去重。
+  /// [memoryId] 必须是用户显式选择的已有库，不从 agent 配置推导或自动创建。
   /// [createAgent] = true 时：观察汇总生成 TA 人设 → 克隆 [agent] 配置
-  /// 创建新 agent，碎片写入新 agent；否则碎片写入 [agent]。
+  /// 创建无库的新 agent，两种模式的碎片均追加到 [memoryId]。
   /// [onProgress] 每块/每阶段回调；[shouldCancel] 返回 true 时中止
   /// （已有 agent 模式保留已提取碎片，新建模式取消不产生半成品 agent）。
   Future<ChatImportResult> analyze({
     required AIAgent agent,
     required List<ImportedChatText> texts,
+    String? memoryId,
     bool createAgent = false,
     void Function(ChatImportPhase phase, int processed, int total, int added)?
       onProgress,
     bool Function()? shouldCancel,
   }) async {
+    if (memoryId == null || memoryId.trim().isEmpty) {
+      throw const ChatImportException('请先选择目标记忆库；没有记忆库时请先去记忆管理创建');
+    }
+    final libraries = await AlivenessStore.instance.loadMemoryLibraries();
+    if (!libraries.any((library) => library.id == memoryId)) {
+      throw const ChatImportException('目标记忆库不存在，请先去记忆管理创建或重新选择');
+    }
+
     // 所有文件按顺序拼接成块（块前标注来源文件名）
     final chunks = <String>[];
     for (final t in texts) {
@@ -306,7 +317,7 @@ class ChatImportService {
       if (shouldCancel?.call() ?? false) {
         // 取消：已有 agent 模式保留已提取的；新建模式不落任何东西
         if (!createAgent) {
-          await _mergeIntoAgent(agent.id, fragments);
+          await _mergeIntoMemory(memoryId, fragments);
         }
         return ChatImportResult(
           totalChunks: chunks.length,
@@ -366,7 +377,7 @@ class ChatImportService {
       final persona = await _generatePersona(llmAgent, observations);
       final newAgent = buildAgentFromPersona(agent, persona);
       await _saveNewAgent(newAgent);
-      await MemoryService.instance.saveFragments(newAgent.id, fragments);
+      await _mergeIntoMemory(memoryId, fragments);
       debugPrint('[Aliveness][导入] 已创建 agent「${persona.name}」| '
           '碎片=$added 观察=${observations.length}');
       return ChatImportResult(
@@ -380,7 +391,7 @@ class ChatImportService {
       );
     }
 
-    await _mergeIntoAgent(agent.id, fragments);
+    await _mergeIntoMemory(memoryId, fragments);
     debugPrint('[Aliveness][导入] 分析完成 | 块=$processed/${chunks.length} '
         '失败=$failed 新增碎片=$added');
     return ChatImportResult(
@@ -391,14 +402,13 @@ class ChatImportService {
     );
   }
 
-  /// 碎片并入目标 agent 已有记忆（新建模式下 fragments 已是新列表，直接覆盖保存）
-  Future<void> _mergeIntoAgent(
-    String agentId,
+  /// 碎片追加到显式选择的独立记忆库，保留库中的已有数据。
+  Future<void> _mergeIntoMemory(
+    String memoryId,
     List<MemoryFragment> fragments,
   ) async {
     if (fragments.isEmpty) return;
-    final current = await MemoryService.instance.loadFragments(agentId);
-    await MemoryService.instance.saveFragments(agentId, [...current, ...fragments]);
+    await MemoryService.instance.mergeFragments(memoryId, fragments);
   }
 
   Future<void> _saveNewAgent(AIAgent agent) async {
@@ -537,13 +547,14 @@ class ChatImportService {
   }
 
   /// 由模板 agent + 人设构造新 agent（纯逻辑，可单测）：
-  /// 克隆模型/活人感等全部配置，替换 id/名字/人设。
+  /// 克隆模型/活人感等配置，替换 id/名字/人设，清空记忆库绑定。
   static AIAgent buildAgentFromPersona(AIAgent template, PersonaDraft draft) =>
       template.copyWith(
         id: const Uuid().v4(),
         name: draft.name,
         description: '从聊天记录提取 TA 的人格生成',
         messages: [Prompt(type: 'system', content: draft.persona)],
+        alivenessConfig: template.alivenessConfig?.copyWith(memoryIds: const []),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

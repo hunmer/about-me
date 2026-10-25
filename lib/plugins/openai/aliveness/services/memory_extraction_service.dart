@@ -43,10 +43,12 @@ class MemoryExtractionService {
             .join('\n'),
       );
       if (success) {
-        await MemoryService.instance.applyForgetting(
-          agent.id,
-          halfLifeDays: agent.alivenessConfig!.forgettingHalfLifeDays,
-        );
+        for (final memoryId in agent.alivenessConfig!.memoryIds.toSet()) {
+          await MemoryService.instance.applyForgetting(
+            memoryId,
+            halfLifeDays: agent.alivenessConfig!.forgettingHalfLifeDays,
+          );
+        }
       }
       return success;
     },
@@ -102,7 +104,7 @@ class MemoryExtractionService {
     required String assistantText,
   }) async {
     try {
-      if (agent.alivenessConfig?.memoryEnabled != true ||
+      if (agent.alivenessConfig?.hasMemory != true ||
           userText.trim().isEmpty ||
           assistantText.trim().isEmpty) {
         return;
@@ -163,7 +165,7 @@ class MemoryExtractionService {
     final state = _states[key]!;
     final config = agent.alivenessConfig;
     final pending = state['pending'] as List;
-    if (config?.memoryEnabled != true ||
+    if (config?.hasMemory != true ||
         pending.isEmpty ||
         _inFlight.contains(key)) {
       return;

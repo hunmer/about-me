@@ -41,8 +41,15 @@ class AlivenessConfig {
   final int humanScoreThreshold;
 
   /// 记忆管理独立开关：不依赖总开关，单独开启时普通聊天路径
-  /// 也会注入记忆并在回复后提取。旧数据无此字段时跟随 enabled。
+  /// 也会注入记忆并在回复后提取。旧数据无此字段时关闭。
   final bool memoryEnabled;
+
+  /// 当前 agent 启用的记忆库 ID。记忆库本身独立于 agent 生命周期。
+  final List<String> memoryIds;
+
+  /// 是否实际启用了可用的记忆库。
+  bool get hasMemory => memoryEnabled && memoryIds.isNotEmpty;
+
   /// rounds / interval 二选一，默认累计 10 轮；时间模式默认 10 分钟。
   final String memoryExtractionMode;
   final int memoryExtractionRounds;
@@ -66,6 +73,7 @@ class AlivenessConfig {
     this.humanScoreEnabled = false,
     this.humanScoreThreshold = 2,
     this.memoryEnabled = false,
+    this.memoryIds = const [],
     this.memoryExtractionMode = 'rounds',
     this.memoryExtractionRounds = 10,
     this.memoryExtractionIntervalMin = 10,
@@ -93,6 +101,7 @@ class AlivenessConfig {
       'threshold': humanScoreThreshold,
     },
     'memoryEnabled': memoryEnabled,
+    'memoryIds': memoryIds,
     'memoryExtractionMode': memoryExtractionMode,
     'memoryExtractionRounds': memoryExtractionRounds,
     'memoryExtractionIntervalMin': memoryExtractionIntervalMin,
@@ -127,11 +136,17 @@ class AlivenessConfig {
       ttsServiceId: json['ttsServiceId'] as String?,
       humanScoreEnabled: humanScore?['enabled'] as bool? ?? false,
       humanScoreThreshold: (humanScore?['threshold'] as int? ?? 2).clamp(0, 3),
-      // 旧数据无此字段：活人感开启的老 agent 此前一直带记忆，保持开启
-      memoryEnabled: json['memoryEnabled'] as bool? ?? enabled,
-      memoryExtractionMode: json['memoryExtractionMode'] == 'interval' ? 'interval' : 'rounds',
-      memoryExtractionRounds: (json['memoryExtractionRounds'] as int? ?? 10).clamp(1, 100),
-      memoryExtractionIntervalMin: (json['memoryExtractionIntervalMin'] as int? ?? 10).clamp(1, 1440),
+      memoryEnabled: json['memoryEnabled'] as bool? ?? false,
+      memoryIds: (json['memoryIds'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList(),
+      memoryExtractionMode: json['memoryExtractionMode'] == 'interval'
+          ? 'interval'
+          : 'rounds',
+      memoryExtractionRounds: (json['memoryExtractionRounds'] as int? ?? 10)
+          .clamp(1, 100),
+      memoryExtractionIntervalMin:
+          (json['memoryExtractionIntervalMin'] as int? ?? 10).clamp(1, 1440),
     );
   }
 
@@ -153,6 +168,7 @@ class AlivenessConfig {
     bool? humanScoreEnabled,
     int? humanScoreThreshold,
     bool? memoryEnabled,
+    List<String>? memoryIds,
     String? memoryExtractionMode,
     int? memoryExtractionRounds,
     int? memoryExtractionIntervalMin,
@@ -179,9 +195,12 @@ class AlivenessConfig {
       humanScoreEnabled: humanScoreEnabled ?? this.humanScoreEnabled,
       humanScoreThreshold: humanScoreThreshold ?? this.humanScoreThreshold,
       memoryEnabled: memoryEnabled ?? this.memoryEnabled,
+      memoryIds: memoryIds ?? this.memoryIds,
       memoryExtractionMode: memoryExtractionMode ?? this.memoryExtractionMode,
-      memoryExtractionRounds: memoryExtractionRounds ?? this.memoryExtractionRounds,
-      memoryExtractionIntervalMin: memoryExtractionIntervalMin ?? this.memoryExtractionIntervalMin,
+      memoryExtractionRounds:
+          memoryExtractionRounds ?? this.memoryExtractionRounds,
+      memoryExtractionIntervalMin:
+          memoryExtractionIntervalMin ?? this.memoryExtractionIntervalMin,
     );
   }
 }

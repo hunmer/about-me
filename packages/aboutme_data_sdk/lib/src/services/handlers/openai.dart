@@ -8,7 +8,8 @@ import 'record_domain_support.dart';
 ///
 /// 数据布局（全 JSON）：
 /// - agents.json / providers.json / prompt_presets.json：{xxx:[...]} 整文件读写
-/// - aliveness/{agentId}/ 下的 state/stats/fragments/open_loops/schedule
+/// - aliveness/{agentId}/ 下的 state/stats/旧 fragments/open_loops/schedule
+/// - aliveness/memory_libraries.json 与 aliveness/memory_libraries/{memoryId}/ 下的新记忆数据
 ///   与 aliveness/memory_extraction.json、aliveness/settings.json（单例读写）
 /// - aliveness/{agentId}/decisions.log：扩展名 .log 但内容为 JSON
 /// - moments/ 的 posts/ui_state/profile_bg/{agentId}/assets
@@ -58,15 +59,27 @@ PluginHandlers createOpenaiHandlers(PluginData data) {
     'openLoops': 'aliveness/{a}/memory/open_loops.json',
     'schedule': 'aliveness/{a}/schedule.json',
   };
+  const memoryDocFiles = <String, String>{
+    'memory_library': 'aliveness/memory_libraries/{m}/memory.json',
+    'memory_library_loops': 'aliveness/memory_libraries/{m}/open_loops.json',
+  };
   const globalDocFiles = <String, String>{
     'memoryExtraction': 'aliveness/memory_extraction.json',
     'settings': 'aliveness/settings.json',
+    'memory_libraries': 'aliveness/memory_libraries.json',
   };
 
-  String alivenessDocPath(dynamic kind, dynamic agentId) {
+  String alivenessDocPath(dynamic kind, dynamic agentId, dynamic memoryId) {
     final agentFile = agentDocFiles[kind];
     if (agentFile != null) {
       return agentFile.replaceFirst('{a}', checkId(agentId, 'agentId'));
+    }
+    final memoryFile = memoryDocFiles[kind];
+    if (memoryFile != null) {
+      if (agentId != null) {
+        throw ArgumentError('memoryId required instead of agentId');
+      }
+      return memoryFile.replaceFirst('{m}', checkId(memoryId, 'memoryId'));
     }
     final globalFile = globalDocFiles[kind];
     if (globalFile != null) return globalFile;
@@ -89,10 +102,12 @@ PluginHandlers createOpenaiHandlers(PluginData data) {
     ),
     // ---- aliveness 文档类（kind 白名单；单例读写）----
     'alivenessGetDoc': domainAction(
-      (p) => readObjectFile(alivenessDocPath(p['kind'], p['agentId'])),
+      (p) => readObjectFile(
+        alivenessDocPath(p['kind'], p['agentId'], p['memoryId']),
+      ),
     ),
     'alivenessSetDoc': domainAction((p) async {
-      final file = alivenessDocPath(p['kind'], p['agentId']);
+      final file = alivenessDocPath(p['kind'], p['agentId'], p['memoryId']);
       return writeObjectFile(file, p['doc'], 'doc');
     }),
     // ---- 决策日志（decisions.log 内容为 JSON；滚动 200 条在客户端）----

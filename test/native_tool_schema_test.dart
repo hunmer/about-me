@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dartantic_ai/dartantic_ai.dart';
 
@@ -75,6 +78,32 @@ void main() {
         builtInOnly: true,
       );
       expect(builtInMode.map((t) => t.name), ['memory', 'get_current_time']);
+    });
+
+    test('JS 模式保留四个记忆读写工具', () {
+      final memoryTools = [
+        for (final name in [
+          'search_memory',
+          'add_memory',
+          'update_memory',
+          'delete_memory',
+        ])
+          Tool<Map<String, dynamic>>(
+            name: name,
+            description: name,
+            inputSchema: Schema.fromMap(ToolSchemaBuilder.buildSchemaMap([])),
+            onCall: (_) async => {'memoryId': 'library'},
+          ),
+      ];
+      final tools = NativeToolAgentService.buildToolSet(
+        pluginTools: memoryTools,
+        onRunJs: (_) async => {},
+        useJsTools: true,
+      );
+      expect(
+        tools.map((tool) => tool.name),
+        ['search_memory', 'add_memory', 'update_memory', 'delete_memory', 'get_current_time', 'run_js'],
+      );
     });
 
     test('开启 JS 模式时保留时间工具与 run_js', () {
@@ -318,6 +347,70 @@ void main() {
     });
   });
 
+  group('记忆工具资源契约', () {
+    late Map<String, dynamic> memoryTools;
+    late List<dynamic> toolIndex;
+
+    setUpAll(() {
+      memoryTools = Map<String, dynamic>.from(
+        jsonDecode(
+          File('lib/plugins/agent_chat/tools/memory.json').readAsStringSync(),
+        ) as Map,
+      );
+      toolIndex = jsonDecode(
+        File('lib/plugins/agent_chat/tools/index.json').readAsStringSync(),
+      ) as List<dynamic>;
+    });
+
+    test('四个记忆工具均已定义并要求显式 memoryId', () {
+      const names = {
+        'search_memory',
+        'add_memory',
+        'update_memory',
+        'delete_memory',
+      };
+      expect(memoryTools.keys.toSet(), containsAll(names));
+      for (final name in names) {
+        final config = memoryTools[name] as Map<String, dynamic>;
+        final parameters = (config['parameters'] as List<dynamic>)
+            .map((parameter) => ToolParameter.fromJson(
+                  Map<String, dynamic>.from(parameter as Map),
+                ))
+            .toList();
+        final schema = ToolSchemaBuilder.buildSchemaMap(parameters);
+        expect(schema['required'], contains('memoryId'), reason: name);
+      }
+    });
+
+    test('写入和查询工具声明后续操作所需的 ID 参数', () {
+      final searchParameters = (memoryTools['search_memory']
+          as Map<String, dynamic>)['parameters'] as List<dynamic>;
+      expect(
+        searchParameters.cast<Map>().map((p) => p['name']),
+        contains('query'),
+      );
+      for (final name in ['update_memory', 'delete_memory']) {
+        final parameters = (memoryTools[name] as Map<String, dynamic>)['parameters']
+            as List<dynamic>;
+        final names = parameters.cast<Map>().map((p) => p['name']).toSet();
+        expect(names, contains('fragmentId'), reason: name);
+      }
+      final addNames = ((memoryTools['add_memory'] as Map<String, dynamic>)['parameters']
+          as List<dynamic>).cast<Map>().map((p) => p['name']).toSet();
+      expect(addNames, contains('content'));
+    });
+
+    test('索引包含四个记忆工具', () {
+      final names = toolIndex.map((entry) => (entry as List).first).toSet();
+      expect(names, containsAll([
+        'memory_search_memory',
+        'memory_add_memory',
+        'memory_update_memory',
+        'memory_delete_memory',
+      ]));
+    });
+  });
+
   group('NativeToolAgentService.supports', () {
     test('启用 function calling 的 OpenAI Agent 使用标准工具调用', () {
       final now = DateTime(2026, 1, 1);
@@ -413,7 +506,11 @@ void main() {
         'serviceProviderId': 'test', 'baseUrl': 'https://example.com/v1',
         'headers': <String, String>{}, 'model': 'test',
         'enableFunctionCalling': false,
-        'alivenessConfig': {'enabled': false, 'memoryEnabled': true},
+        'alivenessConfig': {
+          'enabled': false,
+          'memoryEnabled': true,
+          'memoryIds': ['memory-library'],
+        },
       });
       expect(NativeToolAgentService.instance.supports(agent, false), true);
       expect(NativeToolAgentService.instance.supports(agent, true), true);

@@ -3,22 +3,107 @@ part of 'openai_plugin.dart';
 // JS API 实现 - 私有方法
 // defineJSAPI() 方法在主插件类中实现
 
-/// 查询 AI 对用户的长期记忆（活人感记忆工具，供 LLM 按需调用）
+/// 查询 AI 对用户的长期记忆（按显式 memoryId 查询）
 Future<String> _jsSearchMemory(Map<String, dynamic> params) async {
-  final memory = MemoryService.instance;
-  final agentId = (params['agentId'] as String?) ?? memory.currentAgentId;
-  if (agentId == null) {
-    return jsonEncode({'error': '缺少必需参数: agentId'});
+  final memoryId = (params['memoryId'] as String?)?.trim();
+  if (memoryId == null || memoryId.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: memoryId'});
   }
   try {
-    final results = await memory.searchForTool(
-      agentId,
+    final results = await MemoryService.instance.searchForTool(
+      memoryId,
       params['query'] as String?,
     );
-    return jsonEncode(results);
+    return jsonEncode({
+      'memoryId': memoryId,
+      'fragments': results,
+    });
   } catch (e) {
-    return jsonEncode({'error': e.toString()});
+    return jsonEncode({'error': e.toString(), 'memoryId': memoryId});
   }
+}
+
+Future<String> _jsAddMemory(Map<String, dynamic> params) async {
+  final memoryId = (params['memoryId'] as String?)?.trim();
+  final content = (params['content'] as String?)?.trim();
+  final tags = _memoryTags(params['tags']);
+  if (memoryId == null || memoryId.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: memoryId'});
+  }
+  if (content == null || content.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: content'});
+  }
+  try {
+    final fragmentId = await MemoryService.instance.addManual(
+      memoryId,
+      content,
+      tags,
+    );
+    return jsonEncode({
+      'success': true,
+      'memoryId': memoryId,
+      'fragmentId': fragmentId,
+    });
+  } catch (e) {
+    return jsonEncode({'error': e.toString(), 'memoryId': memoryId});
+  }
+}
+
+Future<String> _jsUpdateMemory(Map<String, dynamic> params) async {
+  final memoryId = (params['memoryId'] as String?)?.trim();
+  final fragmentId = (params['fragmentId'] as String?)?.trim();
+  final content = (params['content'] as String?)?.trim();
+  final tags = _memoryTags(params['tags']);
+  if (memoryId == null || memoryId.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: memoryId'});
+  }
+  if (fragmentId == null || fragmentId.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: fragmentId', 'memoryId': memoryId});
+  }
+  if (content == null || content.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: content', 'memoryId': memoryId, 'fragmentId': fragmentId});
+  }
+  try {
+    await MemoryService.instance.updateForTool(memoryId, fragmentId, content, tags);
+    return jsonEncode({
+      'success': true,
+      'memoryId': memoryId,
+      'fragmentId': fragmentId,
+    });
+  } catch (e) {
+    return jsonEncode({'error': e.toString(), 'memoryId': memoryId, 'fragmentId': fragmentId});
+  }
+}
+
+Future<String> _jsDeleteMemory(Map<String, dynamic> params) async {
+  final memoryId = (params['memoryId'] as String?)?.trim();
+  final fragmentId = (params['fragmentId'] as String?)?.trim();
+  if (memoryId == null || memoryId.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: memoryId'});
+  }
+  if (fragmentId == null || fragmentId.isEmpty) {
+    return jsonEncode({'error': '缺少必需参数: fragmentId', 'memoryId': memoryId});
+  }
+  try {
+    await MemoryService.instance.deleteFragment(memoryId, fragmentId);
+    return jsonEncode({
+      'success': true,
+      'memoryId': memoryId,
+      'fragmentId': fragmentId,
+    });
+  } catch (e) {
+    return jsonEncode({'error': e.toString(), 'memoryId': memoryId, 'fragmentId': fragmentId});
+  }
+}
+
+List<String> _memoryTags(dynamic raw) {
+  if (raw is! List) return const [];
+  return raw
+      .whereType<String>()
+      .map((tag) => tag.trim())
+      .where((tag) => tag.isNotEmpty)
+      .take(8)
+      .toList();
 }
 
 /// 获取所有 AI 助手列表

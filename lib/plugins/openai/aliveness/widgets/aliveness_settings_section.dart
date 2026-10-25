@@ -102,9 +102,8 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                   'score': '${config.humanScoreThreshold}',
                 }),
                 value: config.humanScoreEnabled,
-                onChanged: (v) => widget.onChanged(
-                  config.copyWith(humanScoreEnabled: v),
-                ),
+                onChanged: (v) =>
+                    widget.onChanged(config.copyWith(humanScoreEnabled: v)),
               ),
               if (config.humanScoreEnabled)
                 _sliderRow(
@@ -131,9 +130,8 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                 value: config.maxBubbles.toDouble(),
                 min: 1,
                 max: 5,
-                onChanged: (v) => widget.onChanged(
-                  config.copyWith(maxBubbles: v.round()),
-                ),
+                onChanged: (v) =>
+                    widget.onChanged(config.copyWith(maxBubbles: v.round())),
               ),
               _sliderRow(
                 theme,
@@ -299,51 +297,68 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                 width: double.infinity,
                 value: config.memoryExtractionMode,
                 items: [
-                  DSSelectItem(value: 'rounds', label: 'openai_memoryExtractionByRounds'.tr),
-                  DSSelectItem(value: 'interval', label: 'openai_memoryExtractionByInterval'.tr),
+                  DSSelectItem(
+                    value: 'rounds',
+                    label: 'openai_memoryExtractionByRounds'.tr,
+                  ),
+                  DSSelectItem(
+                    value: 'interval',
+                    label: 'openai_memoryExtractionByInterval'.tr,
+                  ),
                 ],
-                onChanged: (mode) => widget.onChanged(config.copyWith(memoryExtractionMode: mode)),
+                onChanged: (mode) => widget.onChanged(
+                  config.copyWith(memoryExtractionMode: mode),
+                ),
               ),
               if (config.memoryExtractionMode == 'rounds')
-                _sliderRow(theme,
+                _sliderRow(
+                  theme,
                   label: 'openai_memoryExtractionRounds'.tr,
                   valueText: '${config.memoryExtractionRounds}',
                   value: config.memoryExtractionRounds.toDouble(),
-                  min: 1, max: 100,
-                  onChanged: (v) => widget.onChanged(config.copyWith(memoryExtractionRounds: v.round())),
+                  min: 1,
+                  max: 100,
+                  onChanged: (v) => widget.onChanged(
+                    config.copyWith(memoryExtractionRounds: v.round()),
+                  ),
                 )
               else
-                _sliderRow(theme,
+                _sliderRow(
+                  theme,
                   label: 'openai_memoryExtractionInterval'.tr,
                   valueText: '${config.memoryExtractionIntervalMin}',
                   value: config.memoryExtractionIntervalMin.toDouble(),
-                  min: 1, max: 1440,
-                  onChanged: (v) => widget.onChanged(config.copyWith(memoryExtractionIntervalMin: v.round())),
+                  min: 1,
+                  max: 1440,
+                  onChanged: (v) => widget.onChanged(
+                    config.copyWith(memoryExtractionIntervalMin: v.round()),
+                  ),
                 ),
-              Text('openai_memoryExtractionHint'.tr,
-                style: DsTypography.caption.copyWith(color: theme.textSub)),
-              Padding(
-                padding: EdgeInsets.only(left: theme.spacing.sm + 28),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: DSButton(
-                    label: 'openai_memoryManagement'.tr,
-                    size: DSButtonSize.sm,
-                    variant: DSButtonVariant.outline,
-                    icon: DsIconKind.storage,
-                    onPressed: widget.agentId == null
-                        ? null
-                        : () => NavigationHelper.push(
-                            context,
-                            MemoryManagerScreen(
-                              agentId: widget.agentId!,
-                              agentName: widget.agentName,
-                            ),
-                          ),
+              Text(
+                'openai_memoryExtractionHint'.tr,
+                style: DsTypography.caption.copyWith(color: theme.textSub),
+              ),
+            ],
+            SizedBox(height: theme.spacing.sm),
+            Padding(
+              padding: EdgeInsets.only(left: theme.spacing.sm + 28),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: DSButton(
+                  label: 'openai_memoryManagement'.tr,
+                  size: DSButtonSize.sm,
+                  variant: DSButtonVariant.outline,
+                  icon: DsIconKind.storage,
+                  onPressed: () => NavigationHelper.push(
+                    context,
+                    MemoryManagerScreen(
+                      config: config,
+                      onConfigChanged: widget.onChanged,
+                    ),
                   ),
                 ),
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -379,9 +394,7 @@ class _AlivenessSettingsSectionState extends State<AlivenessSettingsSection> {
                   SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: DsTypography.caption.copyWith(
-                      color: theme.textSub,
-                    ),
+                    style: DsTypography.caption.copyWith(color: theme.textSub),
                   ),
                 ],
               ],

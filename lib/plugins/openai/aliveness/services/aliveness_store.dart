@@ -1,5 +1,7 @@
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/agent_state.dart';
+import 'package:aboutme/plugins/openai/aliveness/models/memory_library.dart';
+import 'package:uuid/uuid.dart';
 
 /// 每 agent 独立活人感数据的读写入口。
 /// 数据布局：`app_data/openai/aliveness/<agentId>/` 下的 `state.json`、`stats.json`、`decisions.log`。
@@ -11,6 +13,11 @@ class AlivenessStore {
 
   static const String _defaultJevApiKey =
       'apikey_xxxxx';
+  static const String _memoryLibrariesKind = 'memory_libraries';
+  static const String _memoryKind = 'memory_library';
+  static const String _memoryLoopsKind = 'memory_library_loops';
+  static const Uuid _uuid = Uuid();
+  Future<void> _libraryWrites = Future<void>.value();
 
   /// call 返回的 data 为 dynamic（实际为 dynamic map），
   /// 必须显式转换，否则在 await 边界触发隐式 downcast 崩溃
@@ -22,16 +29,28 @@ class AlivenessStore {
   Future<Map<String, dynamic>?> _getDoc(
     String kind, {
     String? agentId,
+    String? memoryId,
   }) async {
     final res = await AboutmeDataService.instance.call(
       'openai',
       'alivenessGetDoc',
       {
         if (agentId != null) 'agentId': agentId,
+        if (memoryId != null) 'memoryId': memoryId,
         'kind': kind,
       },
     );
-    final data = res['success'] == true ? res['data'] : null;
+    if (res['success'] != true) {
+      if (kind == _memoryLibrariesKind ||
+          kind == _memoryKind ||
+          kind == _memoryLoopsKind) {
+        throw StateError(
+          '读取 aliveness 文档失败: ${res['error'] ?? res['code'] ?? 'unknown'}',
+        );
+      }
+      return null;
+    }
+    final data = res['data'];
     return data is Map ? _asStringMap(data) : null;
   }
 
@@ -39,11 +58,93 @@ class AlivenessStore {
     String kind,
     Map<String, dynamic> doc, {
     String? agentId,
-  }) => AboutmeDataService.instance.call('openai', 'alivenessSetDoc', {
-    if (agentId != null) 'agentId': agentId,
-    'kind': kind,
-    'doc': doc,
-  });
+    String? memoryId,
+  }) async {
+    final res = await AboutmeDataService.instance.call(
+      'openai',
+      'alivenessSetDoc',
+      {
+        if (agentId != null) 'agentId': agentId,
+        if (memoryId != null) 'memoryId': memoryId,
+        'kind': kind,
+        'doc': doc,
+      },
+    );
+    if (res['success'] != true) {
+      throw StateError(
+        '写入 aliveness 文档失败: ${res['error'] ?? res['code'] ?? 'unknown'}',
+      );
+    }
+  }
+
+  // ---------- memory library metadata and independent memory ----------
+
+  Future<List<MemoryLibrary>> loadMemoryLibraries() async {
+    final data = await _getDoc(_memoryLibrariesKind);
+    final libraries = data?['libraries'];
+    if (libraries is! List) return <MemoryLibrary>[];
+    return libraries
+        .whereType<Map>()
+        .map((item) => MemoryLibrary.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
+
+  Future<MemoryLibrary> createMemoryLibrary(String name) {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) throw ArgumentError.value(name, 'name');
+
+    late Future<MemoryLibrary> operation;
+    operation = _libraryWrites.then((_) async {
+      final library = MemoryLibrary(
+        id: _uuid.v4(),
+        name: trimmedName,
+        createdAt: DateTime.now().toUtc(),
+      );
+      final libraries = await loadMemoryLibraries();
+      await _setDoc(_memoryLibrariesKind, {
+        'libraries': [
+          ...libraries.map((item) => item.toJson()),
+          library.toJson(),
+        ],
+      });
+      return library;
+    });
+    _libraryWrites = operation.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace __) {},
+    );
+    return operation;
+  }
+
+  Future<MemoryLibrary> requireMemoryLibrary(String memoryId) async {
+    if (memoryId.trim().isEmpty) throw ArgumentError.value(memoryId, 'memoryId');
+    for (final library in await loadMemoryLibraries()) {
+      if (library.id == memoryId) return library;
+    }
+    throw StateError('Memory library not found: $memoryId');
+  }
+
+  Future<Map<String, dynamic>> loadMemory(String memoryId) async {
+    await requireMemoryLibrary(memoryId);
+    final data = await _getDoc(_memoryKind, memoryId: memoryId);
+    return data ?? <String, dynamic>{};
+  }
+
+  Future<void> saveMemory(String memoryId, Map<String, dynamic> data) async {
+    await requireMemoryLibrary(memoryId);
+    await _setDoc(_memoryKind, data, memoryId: memoryId);
+  }
+
+  Future<Map<String, dynamic>> loadOpenLoops(String memoryId) async {
+    await requireMemoryLibrary(memoryId);
+    final data = await _getDoc(_memoryLoopsKind, memoryId: memoryId);
+    return data ?? <String, dynamic>{};
+  }
+
+  Future<void> saveOpenLoops(String memoryId, Map<String, dynamic> data) async {
+    await requireMemoryLibrary(memoryId);
+    await _setDoc(_memoryLoopsKind, data, memoryId: memoryId);
+  }
 
   // ---------- per-agent 状态 ----------
 
@@ -90,24 +191,6 @@ class AlivenessStore {
 
   Future<void> saveMemoryExtractionState(Map<String, dynamic> data) =>
       _setDoc('memoryExtraction', data);
-
-  Future<Map<String, dynamic>> loadMemory(String agentId) async {
-    final data = await _getDoc('fragments', agentId: agentId);
-    return data ?? <String, dynamic>{};
-  }
-
-  Future<void> saveMemory(String agentId, Map<String, dynamic> data) async {
-    await _setDoc('fragments', data, agentId: agentId);
-  }
-
-  Future<Map<String, dynamic>> loadOpenLoops(String agentId) async {
-    final data = await _getDoc('openLoops', agentId: agentId);
-    return data ?? <String, dynamic>{};
-  }
-
-  Future<void> saveOpenLoops(String agentId, Map<String, dynamic> data) async {
-    await _setDoc('openLoops', data, agentId: agentId);
-  }
 
   // ---------- 决策日志（可观测性，滚动保留最近 200 条） ----------
 

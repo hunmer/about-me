@@ -141,16 +141,15 @@ class AgentChainExecutor {
     if (alivenessSystemSuffix == null &&
         !latestConversation.isChainMode &&
         agentChain.isNotEmpty &&
-        agentChain.first.alivenessConfig?.memoryEnabled == true) {
+        agentChain.first.alivenessConfig?.hasMemory == true) {
       memoryAgent = agentChain.first;
       MemoryService.instance.currentAgentId = memoryAgent.id;
     }
     String? memorySuffix;
     if (memoryAgent != null) {
-      memorySuffix = await MemoryService.instance.buildInjectionSuffix(
-        memoryAgent.id,
+      memorySuffix = await MemoryService.instance.buildAgentInjectionSuffix(
+        memoryAgent,
         userInput,
-        halfLifeDays: memoryAgent.alivenessConfig!.forgettingHalfLifeDays,
       );
     }
     final effectiveSuffix = alivenessSystemSuffix ?? memorySuffix;

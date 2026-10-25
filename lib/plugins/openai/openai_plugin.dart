@@ -105,8 +105,11 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
       'getAgent': _jsGetAgent,
       'sendMessage': _jsSendMessage,
 
-      // 活人感记忆查询（LLM 工具调用）
+      // 记忆读写工具（均要求显式 memoryId）
       'search_memory': _jsSearchMemory,
+      'add_memory': _jsAddMemory,
+      'update_memory': _jsUpdateMemory,
+      'delete_memory': _jsDeleteMemory,
 
       // 朋友圈 / 资产图 / 生图（LLM 工具调用）
       'generate_image': _jsGenerateImage,

@@ -1,381 +1,196 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-import 'package:aboutme/plugins/openai/aliveness/models/memory_fragment.dart';
-import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
+import 'package:aboutme/plugins/openai/aliveness/models/memory_library.dart';
+import 'package:aboutme/plugins/openai/aliveness/screens/memory_library_detail_screen.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 
-import 'package:get/get.dart';
-/// 记忆碎片管理页：查看/手动标记重要/删除碎片，管理开环事件。
-/// 对应 PRD「人工可标记重要记忆」与记忆可观测性。
+/// 记忆库管理页：创建、查看和选择 agent 要使用的独立记忆库。
 class MemoryManagerScreen extends StatefulWidget {
-  final String agentId;
-  final String agentName;
+  final AlivenessConfig? config;
+  final ValueChanged<AlivenessConfig>? onConfigChanged;
 
-  const MemoryManagerScreen({
-    super.key,
-    required this.agentId,
-    required this.agentName,
-  });
+  const MemoryManagerScreen({super.key, this.config, this.onConfigChanged});
 
   @override
   State<MemoryManagerScreen> createState() => _MemoryManagerScreenState();
 }
 
-class _MemoryManagerScreenState extends State<MemoryManagerScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-  List<MemoryFragment> _fragments = [];
-  List<OpenLoop> _loops = [];
+class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
+  List<MemoryLibrary> _libraries = const [];
+  late Set<String> _selectedIds;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      if (mounted) setState(() {}); // 切 Tab 时刷新 FAB 显隐
-    });
+    _selectedIds = {...?widget.config?.memoryIds};
     _load();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _load() async {
-    final memory = MemoryService.instance;
-    final fragments = await memory.loadFragments(widget.agentId);
-    final loops = await memory.loadOpenLoops(widget.agentId);
-    if (!mounted) return;
-    setState(() {
-      // 重要度优先，同级新的在前
-      fragments.sort((a, b) {
-        if (a.userMarked != b.userMarked) return a.userMarked ? -1 : 1;
-        return b.createdAt.compareTo(a.createdAt);
+    try {
+      final libraries = await AlivenessStore.instance.loadMemoryLibraries();
+      if (!mounted) return;
+      setState(() {
+        _libraries = libraries;
+        _loading = false;
       });
-      _fragments = fragments;
-      _loops = loops;
-      _loading = false;
-    });
-  }
-
-  Future<void> _toggleMarked(MemoryFragment fragment) async {
-    final memory = MemoryService.instance;
-    if (fragment.userMarked) {
-      await memory.unmarkFragment(widget.agentId, fragment.id);
-    } else {
-      await memory.markFragmentImportant(widget.agentId, fragment.id);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ToastService.instance.showToast('加载记忆库失败：$error');
     }
-    _load();
   }
 
-  Future<void> _deleteFragment(MemoryFragment fragment) async {
-    final confirmed = await _confirm('删除这条记忆？', fragment.content);
-    if (confirmed != true) return;
-    await MemoryService.instance.deleteFragment(widget.agentId, fragment.id);
-    _load();
+  void _toggleLibrary(MemoryLibrary library, bool enabled) {
+    setState(() {
+      if (enabled) {
+        _selectedIds.add(library.id);
+      } else {
+        _selectedIds.remove(library.id);
+      }
+    });
+    final config = widget.config;
+    final onChanged = widget.onConfigChanged;
+    if (config != null && onChanged != null) {
+      onChanged(config.copyWith(memoryIds: _selectedIds.toList()));
+    }
   }
 
-  Future<void> _closeLoop(OpenLoop loop) async {
-    loop.closed = true;
-    await MemoryService.instance.saveOpenLoops(widget.agentId, _loops);
-    _load();
-  }
-
-  Future<void> _deleteLoop(OpenLoop loop) async {
-    final confirmed = await _confirm('删除这个开环事件？', loop.description);
-    if (confirmed != true) return;
-    _loops.removeWhere((l) => l.id == loop.id);
-    await MemoryService.instance.saveOpenLoops(widget.agentId, _loops);
-    _load();
-  }
-
-  /// 手动录入开环事件（如"周五体检"），到期后 AI 会主动跟进
-  Future<void> _addLoop() async {
-    final descCtrl = TextEditingController();
-    var days = 1;
-    final confirmed = await showDialog<bool>(
+  Future<void> _createLibrary() async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => AlertDialog(
-          title: Text('openai_addFollowUpEvent'.tr),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: descCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: '事件描述',
-                  hintText: '例如：用户周五要体检',
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text('openai_followUpTimeColon'.tr),
-                  const SizedBox(width: 8),
-                  DropdownButton<int>(
-                    value: days,
-                    items: [
-                      for (final d in [1, 2, 3, 5, 7])
-                        DropdownMenuItem(value: d, child: Text('$d 天后')),
-                    ],
-                    onChanged: (v) =>
-                        v != null ? setDlgState(() => days = v) : null,
-                  ),
-                ],
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('创建记忆库'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 80,
+          decoration: const InputDecoration(
+            labelText: '名称',
+            hintText: '例如：工作与计划',
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text('app_cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text('app_add'.tr),
-            ),
-          ],
+          onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('创建'),
+          ),
+        ],
       ),
     );
-    if (confirmed != true) return;
-    final desc = descCtrl.text.trim();
-    if (desc.isEmpty) return;
-    await MemoryService.instance.addOpenLoop(
-      widget.agentId,
-      desc,
-      followUpDays: days,
-    );
-    _load();
+    controller.dispose();
+    if (name == null || name.trim().isEmpty) return;
+
+    try {
+      await AlivenessStore.instance.createMemoryLibrary(name.trim());
+      await _load();
+    } catch (error) {
+      if (mounted) ToastService.instance.showToast('创建记忆库失败：$error');
+    }
   }
 
-  Future<bool?> _confirm(String title, String body) => showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(title),
-      content: Text(body, maxLines: 3, overflow: TextOverflow.ellipsis),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: Text('app_cancel'.tr),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: Text('app_ok'.tr),
-        ),
-      ],
-    ),
-  );
+  Future<void> _copyId(String id) async {
+    await Clipboard.setData(ClipboardData(text: id));
+    if (mounted) ToastService.instance.showToast('记忆库 ID 已复制');
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final active =
-        _fragments.where((f) => !f.archived).toList();
-    final archived = _fragments.where((f) => f.archived).toList();
-    final openLoops = _loops.where((l) => !l.closed).toList();
-
+    final canSelect = widget.config != null && widget.onConfigChanged != null;
     return Scaffold(
-      appBar: AppBar(
-        title: Text('记忆管理 · ${widget.agentName}'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: '记忆碎片 (${active.length})'),
-            Tab(text: '开环事件 (${openLoops.length})'),
-          ],
-        ),
-      ),
-      floatingActionButton: _tabController.index == 1
-          ? FloatingActionButton.extended(
-              onPressed: _addLoop,
-              icon: const Icon(Icons.add),
-              label: Text('app_addEvent'.tr),
-            )
-          : null,
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildFragmentsTab(theme, active, archived),
-                _buildLoopsTab(theme, openLoops),
-              ],
+      appBar: AppBar(title: const Text('记忆库')),
+      body: Column(
+        children: [
+          if (canSelect)
+            const MaterialBanner(
+              content: Text('选择供当前 agent 使用的库；返回编辑页保存生效'),
+              actions: [SizedBox.shrink()],
             ),
-    );
-  }
-
-  Widget _buildFragmentsTab(
-    ThemeData theme,
-    List<MemoryFragment> active,
-    List<MemoryFragment> archived,
-  ) {
-    if (_fragments.isEmpty) {
-      return Center(
-        child: Text(
-          '暂无记忆\n与该 AI 聊天后会自动积累记忆碎片',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.disabledColor,
-          ),
-        ),
-      );
-    }
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        for (final f in active) _buildFragmentTile(theme, f),
-        if (archived.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
-            child: Text(
-              '已淡忘 (${archived.length})',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.disabledColor,
-              ),
-            ),
-          ),
-          for (final f in archived)
-            _buildFragmentTile(theme, f, dimmed: true),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildFragmentTile(ThemeData theme, MemoryFragment f,
-      {bool dimmed = false}) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      color: dimmed ? theme.disabledColor.withValues(alpha: 0.08) : null,
-      child: ListTile(
-        leading: IconButton(
-          icon: Icon(
-            f.userMarked ? Icons.star : Icons.star_border,
-            color: f.userMarked ? Colors.amber : theme.disabledColor,
-          ),
-          tooltip: f.userMarked ? '取消重要标记' : '标记为重要（永不淡忘）',
-          onPressed: () => _toggleMarked(f),
-        ),
-        title: Text(
-          f.content,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: dimmed ? theme.disabledColor : null,
-          ),
-        ),
-        subtitle: Text(
-          [
-            if (f.isSelf) '自我记忆',
-            if (f.tags.isNotEmpty) f.tags.take(4).join(' / '),
-            _formatDate(f.createdAt),
-            if (f.archived) '已淡忘',
-            if (f.activateCount > 0) '想起过 ${f.activateCount} 次',
-          ].join(' · '),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.disabledColor,
-          ),
-        ),
-        trailing: IconButton(
-          icon: Icon(Icons.delete_outline, size: 20, color: theme.disabledColor),
-          tooltip: '删除',
-          onPressed: () => _deleteFragment(f),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoopsTab(ThemeData theme, List<OpenLoop> openLoops) {
-    final closed = _loops.where((l) => l.closed).toList();
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        if (openLoops.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 48),
-              child: Text(
-                '暂无待跟进事件\nAI 记下你的面试/约会/出行等安排后会出现在这里',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.disabledColor,
-                ),
-              ),
-            ),
-          ),
-        for (final l in openLoops)
-          Card(
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            child: ListTile(
-              leading: const Icon(Icons.pending_actions_outlined),
-              title: Text(l.description),
-              subtitle: Text(
-                '记录于 ${_formatDate(l.createdAt)}'
-                '${l.followUpBy != null ? ' · 建议 ${_formatDate(l.followUpBy!)} 跟进' : ''}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.disabledColor,
-                ),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.check_circle_outline, size: 20),
-                    tooltip: '标记已跟进（AI 不再主动提起）',
-                    onPressed: () => _closeLoop(l),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.delete_outline,
-                      size: 20,
-                      color: theme.disabledColor,
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _libraries.isEmpty
+                ? const Center(
+                    child: Text(
+                      '暂无记忆库\n创建后可由多个 agent 共同使用',
+                      textAlign: TextAlign.center,
                     ),
-                    tooltip: '删除',
-                    onPressed: () => _deleteLoop(l),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+                    itemCount: _libraries.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final library = _libraries[index];
+                      final selected = _selectedIds.contains(library.id);
+                      return Card(
+                        child: ListTile(
+                          leading: canSelect
+                              ? Checkbox(
+                                  value: selected,
+                                  onChanged: (value) =>
+                                      _toggleLibrary(library, value ?? false),
+                                )
+                              : const Icon(Icons.storage_outlined),
+                          title: Text(library.name),
+                          subtitle: Text(
+                            'ID: ${library.id}\n创建于 ${_formatDate(library.createdAt)}',
+                          ),
+                          isThreeLine: true,
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (action) {
+                              if (action == 'copy') _copyId(library.id);
+                              if (action == 'open') {
+                                NavigationHelper.push(
+                                  context,
+                                  MemoryLibraryDetailScreen(
+                                    memoryId: library.id,
+                                    memoryName: library.name,
+                                  ),
+                                );
+                              }
+                            },
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(value: 'open', child: Text('打开')),
+                              PopupMenuItem(
+                                value: 'copy',
+                                child: Text('复制 ID'),
+                              ),
+                            ],
+                          ),
+                          onTap: () => NavigationHelper.push(
+                            context,
+                            MemoryLibraryDetailScreen(
+                              memoryId: library.id,
+                              memoryName: library.name,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ],
-              ),
-            ),
           ),
-        if (closed.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
-            child: Text(
-              '已跟进 (${closed.length})',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.disabledColor,
-              ),
-            ),
-          ),
-          for (final l in closed)
-            Card(
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              color: theme.disabledColor.withValues(alpha: 0.08),
-              child: ListTile(
-                leading: const Icon(Icons.check_circle, size: 20),
-                title: Text(
-                  l.description,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.disabledColor,
-                    decoration: TextDecoration.lineThrough,
-                  ),
-                ),
-                trailing: IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    size: 20,
-                    color: theme.disabledColor,
-                  ),
-                  onPressed: () => _deleteLoop(l),
-                ),
-              ),
-            ),
         ],
-      ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _createLibrary,
+        icon: const Icon(Icons.add),
+        label: const Text('新建记忆库'),
+      ),
     );
   }
 
-  String _formatDate(DateTime d) => '${d.month}/${d.day}';
+  String _formatDate(DateTime date) =>
+      '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
 }

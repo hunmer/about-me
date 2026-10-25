@@ -173,6 +173,114 @@ void main() {
     );
   });
 
+  test('aliveness 独立 memoryId 库：专用 kind 隔离且禁止隐式写入', () async {
+    const firstId = 'memory-one';
+    const secondId = 'memory-two';
+
+    // 专用 kind 必须使用 memoryId，不能复用 agentId 或省略 ID。
+    expect(
+      (await fail('alivenessGetDoc', {
+        'kind': 'memory_library',
+        'agentId': 'agent-1',
+      }))['success'],
+      false,
+    );
+    expect(
+      (await fail('alivenessSetDoc', {
+        'kind': 'memory_library',
+        'doc': {'value': 'no-id'},
+      }))['success'],
+      false,
+    );
+    expect(
+      (await fail('alivenessSetDoc', {
+        'kind': 'memory_library',
+        'memoryId': '../escape',
+        'doc': {'value': 'invalid-id'},
+      }))['success'],
+      false,
+    );
+
+    ok(
+      await data.call('openai', 'alivenessSetDoc', {
+        'kind': 'memory_libraries',
+        'doc': {
+          'libraries': [
+            {'id': firstId, 'name': '第一库'},
+            {'id': secondId, 'name': '第二库'},
+          ],
+        },
+      }),
+    );
+    final libraries =
+        ok(
+              await data.get('openai', 'alivenessGetDoc', {
+                'kind': 'memory_libraries',
+              }),
+            )
+            as Map;
+    expect((libraries['libraries'] as List).length, 2);
+    for (final id in [firstId, secondId]) {
+      expect(
+        ok(
+          await data.get('openai', 'alivenessGetDoc', {
+            'memoryId': id,
+            'kind': 'memory_library',
+          }),
+        ),
+        isNull,
+      );
+      ok(
+        await data.call('openai', 'alivenessSetDoc', {
+          'memoryId': id,
+          'kind': 'memory_library',
+          'doc': {'value': id},
+        }),
+      );
+      ok(
+        await data.call('openai', 'alivenessSetDoc', {
+          'memoryId': id,
+          'kind': 'memory_library_loops',
+          'doc': {'loop': id},
+        }),
+      );
+    }
+
+    expect(
+      (ok(
+            await data.get('openai', 'alivenessGetDoc', {
+              'memoryId': firstId,
+              'kind': 'memory_library',
+            }),
+          )
+          as Map)['value'],
+      firstId,
+    );
+    expect(
+      (ok(
+            await data.get('openai', 'alivenessGetDoc', {
+              'memoryId': secondId,
+              'kind': 'memory_library',
+            }),
+          )
+          as Map)['value'],
+      secondId,
+    );
+    expect(
+      File(
+        root.path + '/openai/aliveness/memory_libraries/$firstId/memory.json',
+      ).existsSync(),
+      isTrue,
+    );
+    expect(
+      File(
+        root.path +
+            '/openai/aliveness/memory_libraries/$firstId/open_loops.json',
+      ).existsSync(),
+      isTrue,
+    );
+  });
+
   test('aliveness decisions：.log 扩展名 JSON 读写、滚动留在客户端', () async {
     expect(
       ok(await data.get('openai', 'alivenessGetDecisions', {'agentId': 'ag1'})),

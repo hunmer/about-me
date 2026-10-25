@@ -51,7 +51,10 @@ void main() {
       'description': '',
       'serviceProviderId': 'test',
       'baseUrl': 'https://example.com/v1',
-      'alivenessConfig': {'memoryEnabled': true},
+      'alivenessConfig': {
+        'memoryEnabled': true,
+        'memoryIds': ['library'],
+      },
     });
     service = createService();
   });
@@ -177,6 +180,31 @@ void main() {
     await first;
     expect((disk.values.single['pending'] as List).single['id'], '2');
     expect(disk.values.single['lastTurnId'], '1');
+  });
+
+  test('未选择记忆库时不积累或提取记忆', () async {
+    agent = agent.copyWith(
+      alivenessConfig: agent.alivenessConfig!.copyWith(memoryIds: []),
+    );
+    for (var i = 1; i <= 10; i++) {
+      await turn(i);
+    }
+    await service.checkDue();
+    expect(batches, isEmpty);
+    expect(disk, isEmpty);
+  });
+
+  test('清空已启用库后暂停积累的批次', () async {
+    await turn(1);
+    agent = agent.copyWith(
+      alivenessConfig: agent.alivenessConfig!.copyWith(
+        memoryIds: [],
+        memoryExtractionRounds: 1,
+      ),
+    );
+    await service.checkDue();
+    expect(batches, isEmpty);
+    expect((disk.values.single['pending'] as List).length, 1);
   });
 
   test('关闭记忆管理后暂停已持久化批次，重新启用可继续', () async {

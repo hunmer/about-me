@@ -1,29 +1,48 @@
 {
   "search_memory": {
     "title": "查询记忆",
-    "description": "查询你对某位用户的长期记忆（喜好、习惯、聊过的事）。当用户问起关于他/她自己的信息（如'我的兴趣''你知道我什么''我之前说过什么'）而你不确定时，调用此工具按关键词检索。关键词用简短词语（如'音乐'、'工作'、'喜好'），留空则返回该用户最重要的核心记忆。",
+    "description": "按指定 memoryId 查询长期记忆。memoryId 必须来自当前已启用的记忆库列表；不要使用 agentId 或猜测 ID。query 为空时返回核心记忆。",
     "parameters": [
-      {
-        "name": "query",
-        "type": "string",
-        "optional": true,
-        "description": "检索关键词，如'音乐'、'语音'、'工作'；留空返回核心记忆"
-      }
+      {"name": "memoryId", "type": "string", "required": true, "description": "目标记忆库 ID"},
+      {"name": "query", "type": "string", "required": false, "description": "检索关键词；留空返回核心记忆"}
     ],
-    "returns": {
-      "type": "Promise<string>",
-      "description": "JSON 数组，每项为 {content: 记忆内容, tags: 标签, importance: 重要性, createdAt: 记录时间}"
-    },
+    "returns": {"type": "Promise<string>", "description": "JSON 对象 {memoryId, fragments}；每项含 fragmentId、content、tags 等字段"},
     "examples": [
-      {
-        "code": "const memories = await Aboutme.plugins.openai.search_memory({query: '音乐'});\nsetResult(memories);",
-        "comment": "检索与音乐相关的记忆"
-      },
-      {
-        "code": "const core = await Aboutme.plugins.openai.search_memory({});\nsetResult(core);",
-        "comment": "查看核心记忆"
-      }
+      {"code": "const result = await Aboutme.plugins.openai.search_memory({memoryId: 'memory-library-id', query: '音乐'});\nsetResult(result);", "comment": "按显式记忆库 ID 检索"}
     ],
+    "enabled": true
+  },
+  "add_memory": {
+    "title": "新增记忆",
+    "description": "向指定记忆库新增一条手动记忆。",
+    "parameters": [
+      {"name": "memoryId", "type": "string", "required": true, "description": "目标记忆库 ID"},
+      {"name": "content", "type": "string", "required": true, "description": "记忆内容，不能为空"},
+      {"name": "tags", "type": "array", "required": false, "description": "用于检索的标签列表"}
+    ],
+    "returns": {"type": "Promise<string>", "description": "JSON 对象 {success, memoryId, fragmentId}"},
+    "enabled": true
+  },
+  "update_memory": {
+    "title": "更新记忆",
+    "description": "更新指定记忆库中的一条记忆碎片。fragmentId 使用查询或新增结果中的 ID。",
+    "parameters": [
+      {"name": "memoryId", "type": "string", "required": true, "description": "目标记忆库 ID"},
+      {"name": "fragmentId", "type": "string", "required": true, "description": "要更新的碎片 ID"},
+      {"name": "content", "type": "string", "required": true, "description": "新的记忆内容，不能为空"},
+      {"name": "tags", "type": "array", "required": false, "description": "新的标签列表"}
+    ],
+    "returns": {"type": "Promise<string>", "description": "JSON 对象 {success, memoryId, fragmentId}"},
+    "enabled": true
+  },
+  "delete_memory": {
+    "title": "删除记忆",
+    "description": "删除指定记忆库中的一条记忆碎片。fragmentId 使用查询或新增结果中的 ID。",
+    "parameters": [
+      {"name": "memoryId", "type": "string", "required": true, "description": "目标记忆库 ID"},
+      {"name": "fragmentId", "type": "string", "required": true, "description": "要删除的碎片 ID"}
+    ],
+    "returns": {"type": "Promise<string>", "description": "JSON 对象 {success, memoryId, fragmentId}"},
     "enabled": true
   }
 }

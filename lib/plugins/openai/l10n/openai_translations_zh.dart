@@ -243,7 +243,7 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_memoryExtractionRounds': '提取轮数',
   'openai_memoryExtractionInterval': '间隔（分钟）',
   'openai_memoryExtractionHint': '每个频道独立累计，一问一答计为一轮；达到所选条件后批量提取，暂无新对话时不提取。',
-  'openai_memoryManagementDesc': '开启后，AI 会自动记住对话中的重要信息并在聊天时联想（无需开启活人感增强）',
+  'openai_memoryManagementDesc': '先在记忆管理中创建并选择记忆库；开启后使用所选库，可同时启用多个库（无需开启活人感增强）',
   'openai_decisionLog': '决策日志',
   'openai_ttsServiceNotFound': '未找到 TTS 服务',
   'openai_followGlobalSettings': '跟随全局设置',

@@ -212,7 +212,7 @@ class NativeToolAgentService {
     if (!hasNativeApiFormat) return false;
     return (enableToolCalling && agent.enableFunctionCalling) ||
         agent.alivenessConfig?.enabled == true ||
-        agent.alivenessConfig?.memoryEnabled == true;
+        agent.alivenessConfig?.hasMemory == true;
   }
 
   Map<String, Map<String, ToolConfig>>? _toolConfigCache;
@@ -224,6 +224,12 @@ class NativeToolAgentService {
 
   /// 预筛时始终注入的插件（模糊请求也不丢失生图/记忆等核心能力）
   static const _alwaysIncludePlugins = {'moments', 'openai', 'memory'};
+  static const _memoryToolNames = {
+    'search_memory',
+    'add_memory',
+    'update_memory',
+    'delete_memory',
+  };
 
   /// 按用户消息匹配候选插件（别名关键词包含匹配）
   ///
@@ -295,8 +301,13 @@ class NativeToolAgentService {
           .where(
             (tool) =>
                 tool.name == 'read_image' ||
-                (tool.name == 'memory' &&
-                    agent.alivenessConfig?.memoryEnabled == true) ||
+                (const {
+                      'search_memory',
+                      'add_memory',
+                      'update_memory',
+                      'delete_memory',
+                    }.contains(tool.name) &&
+                    agent.alivenessConfig?.hasMemory == true) ||
                 (tool.name == 'moments' &&
                     agent.alivenessConfig?.enabled == true),
           )
@@ -307,6 +318,7 @@ class NativeToolAgentService {
           .where(
             (t) =>
                 t.name == 'read_image' ||
+                _memoryToolNames.contains(t.name) ||
                 const {
                   'list_files',
                   'read_file',
@@ -375,10 +387,11 @@ class NativeToolAgentService {
               '并按角色需要引用已有的「三视图」或其他资产做图生图；没有合适参考图时直接文生图。'
               '不要只回复“没有这张图”“无法生成”或解释自己是 AI。'
         : toolResultSystem;
-    final memorySystem = agent.alivenessConfig?.memoryEnabled == true
+    final memorySystem = agent.alivenessConfig?.hasMemory == true
         ? '$effectiveSystem\n\n[历史记忆检索]\n'
               '需要回忆用户或你自己的过往、偏好、计划等信息时，调用 memory 工具按关键词检索。'
               '当前注入的摘要只是部分记忆，未命中时应换关键词查询；不要编造，也不要仅凭摘要说没有记忆。'
+              '\n${await MemoryService.instance.buildLibraryContext(agent.alivenessConfig!.memoryIds)}'
         : effectiveSystem;
 
     final isAnthropic = agent.apiFormat.toLowerCase() == 'anthropic';
@@ -579,7 +592,10 @@ class NativeToolAgentService {
       if (!useJsTools || builtInOnly)
         ...pluginTools.where((tool) => tool.name != 'read_image'),
       if (useJsTools && !builtInOnly)
-        ...pluginTools.where((tool) => tool.name == 'memory'),
+        ...pluginTools.where(
+          (tool) =>
+              tool.name == 'memory' || _memoryToolNames.contains(tool.name),
+        ),
       Tool<Map<String, dynamic>>(
         name: 'get_current_time',
         description: '获取设备当前日期、时间和时区。处理今天、明天等相对日期前调用；日期时间参数需保留返回的时区偏移。',
@@ -674,7 +690,7 @@ class NativeToolAgentService {
     final tools = <Tool<Map<String, dynamic>>>[];
     for (final entry in _toolConfigCache!.entries) {
       final pluginId = entry.key;
-      // 记忆作为内置只读能力，不依赖插件工具配置和 JS 桥接。
+      // 记忆工具单独构建，按当前 agent 已启用的库校验。
       if (pluginId == 'memory') continue;
       final methods = entry.value;
       final methodNames = methods.keys.toList()..sort();
@@ -737,58 +753,238 @@ class NativeToolAgentService {
         ),
       );
     }
-    if (imageAgent.alivenessConfig?.memoryEnabled == true) {
+    final memoryConfig = imageAgent.alivenessConfig;
+    if (memoryConfig?.hasMemory == true) {
+      final enabledMemoryIds = memoryConfig!.memoryIds.toSet();
+      List<String> memoryTags(dynamic raw) {
+        if (raw is! List) return const [];
+        return raw
+            .whereType<String>()
+            .map((tag) => tag.trim())
+            .where((tag) => tag.isNotEmpty)
+            .take(8)
+            .toList();
+      }
+
+      Future<Map<String, dynamic>> runMemoryTool(
+        String method,
+        String title,
+        Map<String, dynamic> args,
+        Future<Map<String, dynamic>> Function(String memoryId) execute,
+      ) async {
+        final memoryId = (args['memoryId'] as String?)?.trim();
+        if (memoryId == null || memoryId.isEmpty) {
+          return _rejectToolCall(run, method, args, '缺少必填参数：memoryId');
+        }
+        if (!enabledMemoryIds.contains(memoryId)) {
+          return _rejectToolCall(
+            run,
+            method,
+            args,
+            'memoryId 未在当前 Agent 启用的记忆库列表中',
+            extra: {'memoryId': memoryId},
+          );
+        }
+        if (++run.toolCallCount > maxToolCallsPerLoop) {
+          return _rejectToolCall(run, method, args, '记忆工具调用已达上限，请基于已有结果回答');
+        }
+        final argsJson = jsonEncode(args);
+        final step = ToolCallStep(
+          method: method,
+          title: title,
+          desc: '参数：$argsJson',
+          data: argsJson,
+          status: ToolCallStatus.running,
+        );
+        run.steps.add(step);
+        await run.notifySteps();
+        try {
+          final result = await execute(memoryId);
+          step
+            ..status = ToolCallStatus.success
+            ..result = jsonEncode(result);
+          await run.notifySteps();
+          return result;
+        } catch (error) {
+          step
+            ..status = ToolCallStatus.failed
+            ..error = error.toString()
+            ..result = jsonEncode({
+              'error': error.toString(),
+              if (memoryId.isNotEmpty) 'memoryId': memoryId,
+              if (args['fragmentId'] != null) 'fragmentId': args['fragmentId'],
+            });
+          await run.notifySteps();
+          return {
+            'error': error.toString(),
+            'memoryId': memoryId,
+            if (args['fragmentId'] != null) 'fragmentId': args['fragmentId'],
+          };
+        }
+      }
+
+      Tool<Map<String, dynamic>> memoryTool(
+        String name,
+        String description,
+        List<ToolParameter> parameters,
+        Future<Map<String, dynamic>> Function(Map<String, dynamic>) execute,
+      ) => Tool<Map<String, dynamic>>(
+        name: name,
+        description: description,
+        inputSchema: Schema.fromMap(
+          ToolSchemaBuilder.buildSchemaMap(parameters),
+        ),
+        onCall: (args) => execute(args),
+      );
+
       tools.add(
-        Tool<Map<String, dynamic>>(
-          name: 'memory',
-          description: '检索当前 Agent 的历史记忆（包括关于用户与自己的记忆）。query 为相关关键词；为空时读取核心记忆。',
-          inputSchema: Schema.fromMap(<String, Object?>{
-            'type': 'object',
-            'properties': <String, Object?>{
-              'query': <String, Object?>{'type': 'string'},
-            },
-          }),
-          onCall: (args) async {
-            run.toolCallCount++;
-            if (run.toolCallCount > maxToolCallsPerLoop) {
-              return _rejectToolCall(
-                run,
-                'memory',
-                args,
-                '记忆检索已达工具调用上限，请基于已有结果回答',
-              );
+        memoryTool(
+          'search_memory',
+          '按指定 memoryId 查询长期记忆。必须使用当前 Agent 已启用的 memoryId；query 为空时返回核心记忆。返回的每项含 fragmentId，后续更新或删除时使用。',
+          [
+            ToolParameter(
+              name: 'memoryId',
+              type: 'string',
+              description: '当前 Agent 已启用的目标记忆库 ID',
+            ),
+            ToolParameter(
+              name: 'query',
+              type: 'string',
+              optional: true,
+              description: '检索关键词；留空返回核心记忆',
+            ),
+          ],
+          (args) =>
+              runMemoryTool('search_memory', '查询记忆', args, (memoryId) async {
+                final results = await MemoryService.instance.searchForTool(
+                  memoryId,
+                  args['query'] as String?,
+                );
+                return {'memoryId': memoryId, 'fragments': results};
+              }),
+        ),
+      );
+      tools.add(
+        memoryTool(
+          'add_memory',
+          '向指定 memoryId 新增一条手动记忆。内容不能为空，返回 fragmentId 供后续更新或删除。',
+          [
+            ToolParameter(
+              name: 'memoryId',
+              type: 'string',
+              description: '当前 Agent 已启用的目标记忆库 ID',
+            ),
+            ToolParameter(
+              name: 'content',
+              type: 'string',
+              description: '记忆内容，不能为空',
+            ),
+            ToolParameter(
+              name: 'tags',
+              type: 'array',
+              optional: true,
+              description: '用于检索的标签列表',
+            ),
+          ],
+          (args) => runMemoryTool('add_memory', '新增记忆', args, (memoryId) async {
+            final content = (args['content'] as String?)?.trim();
+            if (content == null || content.isEmpty) {
+              throw ArgumentError('记忆内容不能为空');
             }
-            final step = ToolCallStep(
-              method: 'memory',
-              title: '检索记忆',
-              desc: '关键词：${args['query'] ?? ''}',
-              data: jsonEncode(args),
-              status: ToolCallStatus.running,
+            final fragmentId = await MemoryService.instance.addManual(
+              memoryId,
+              content,
+              memoryTags(args['tags']),
             );
-            run.steps.add(step);
-            await run.notifySteps();
-            try {
-              final results = await MemoryService.instance.searchForTool(
-                run.agentId,
-                args['query'] as String?,
-              );
-              step
-                ..status = ToolCallStatus.success
-                ..result = jsonEncode({'memories': results});
-              await run.notifySteps();
-              debugPrint(
-                '[NativeTool][记忆读取] agent=${run.agentId} '
-                'query=${args['query']} hits=${results.length}',
-              );
-              return {'memories': results};
-            } catch (error) {
-              step
-                ..status = ToolCallStatus.failed
-                ..error = error.toString();
-              await run.notifySteps();
-              return {'error': error.toString()};
+            return {
+              'success': true,
+              'memoryId': memoryId,
+              'fragmentId': fragmentId,
+            };
+          }),
+        ),
+      );
+      tools.add(
+        memoryTool(
+          'update_memory',
+          '更新指定 memoryId 的记忆碎片。fragmentId 使用查询或新增结果中的 ID，内容不能为空。',
+          [
+            ToolParameter(
+              name: 'memoryId',
+              type: 'string',
+              description: '当前 Agent 已启用的目标记忆库 ID',
+            ),
+            ToolParameter(
+              name: 'fragmentId',
+              type: 'string',
+              description: '要更新的碎片 ID',
+            ),
+            ToolParameter(
+              name: 'content',
+              type: 'string',
+              description: '新的记忆内容，不能为空',
+            ),
+            ToolParameter(
+              name: 'tags',
+              type: 'array',
+              optional: true,
+              description: '新的标签列表',
+            ),
+          ],
+          (args) =>
+              runMemoryTool('update_memory', '更新记忆', args, (memoryId) async {
+                final fragmentId = (args['fragmentId'] as String?)?.trim();
+                final content = (args['content'] as String?)?.trim();
+                if (fragmentId == null || fragmentId.isEmpty) {
+                  throw ArgumentError('碎片 ID 不能为空');
+                }
+                if (content == null || content.isEmpty) {
+                  throw ArgumentError('记忆内容不能为空');
+                }
+                await MemoryService.instance.updateForTool(
+                  memoryId,
+                  fragmentId,
+                  content,
+                  memoryTags(args['tags']),
+                );
+                return {
+                  'success': true,
+                  'memoryId': memoryId,
+                  'fragmentId': fragmentId,
+                };
+              }),
+        ),
+      );
+      tools.add(
+        memoryTool(
+          'delete_memory',
+          '删除指定 memoryId 的记忆碎片。fragmentId 使用查询或新增结果中的 ID。',
+          [
+            ToolParameter(
+              name: 'memoryId',
+              type: 'string',
+              description: '当前 Agent 已启用的目标记忆库 ID',
+            ),
+            ToolParameter(
+              name: 'fragmentId',
+              type: 'string',
+              description: '要删除的碎片 ID',
+            ),
+          ],
+          (args) => runMemoryTool('delete_memory', '删除记忆', args, (
+            memoryId,
+          ) async {
+            final fragmentId = (args['fragmentId'] as String?)?.trim();
+            if (fragmentId == null || fragmentId.isEmpty) {
+              throw ArgumentError('碎片 ID 不能为空');
             }
-          },
+            await MemoryService.instance.deleteFragment(memoryId, fragmentId);
+            return {
+              'success': true,
+              'memoryId': memoryId,
+              'fragmentId': fragmentId,
+            };
+          }),
         ),
       );
     }
@@ -1277,9 +1473,7 @@ class NativeToolAgentService {
     if (!meta.methods.containsKey(methodName)) {
       final cleaned = resolveMethodName(meta.methods.keys.toSet(), methodName);
       if (cleaned != null) {
-        debugPrint(
-          '[NativeTool] ⚠️ method 名含杂质，已纠正: $methodName -> $cleaned',
-        );
+        debugPrint('[NativeTool] ⚠️ method 名含杂质，已纠正: $methodName -> $cleaned');
         methodName = cleaned;
       }
     }

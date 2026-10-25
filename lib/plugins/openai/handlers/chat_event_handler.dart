@@ -498,16 +498,15 @@ class ChatEventHandler {
 }
 
 /// 记忆独立模式（开启记忆管理、未走活人感编排）：
-/// 在 system 提示词后拼接记忆注入段，并定位记忆工具的 agent 上下文
+/// 在 system 提示词后拼接已启用记忆库的注入段。
 Future<String> _systemWithMemory(AIAgent agent, String queryText) async {
   var prompt = await RequestService.getEffectiveSystemPrompt(agent);
   final cfg = agent.alivenessConfig;
-  if (cfg?.memoryEnabled == true) {
+  if (cfg?.hasMemory == true) {
     MemoryService.instance.currentAgentId = agent.id;
-    final suffix = await MemoryService.instance.buildInjectionSuffix(
-      agent.id,
+    final suffix = await MemoryService.instance.buildAgentInjectionSuffix(
+      agent,
       queryText,
-      halfLifeDays: cfg!.forgettingHalfLifeDays,
     );
     if (suffix.isNotEmpty) prompt = '$prompt\n$suffix';
   }
@@ -523,7 +522,7 @@ void _extractMemoryInBackground(
   required String turnId,
 }) {
   final cfg = agent.alivenessConfig;
-  if (cfg?.memoryEnabled != true) return;
+  if (cfg?.hasMemory != true) return;
   if (userText.trim().isEmpty || assistantText.trim().isEmpty) return;
   unawaited(
     MemoryExtractionService.instance.recordTurn(

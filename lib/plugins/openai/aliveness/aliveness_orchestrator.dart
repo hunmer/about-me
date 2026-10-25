@@ -157,32 +157,45 @@ class AlivenessOrchestrator {
   ) async {
     final channel = session.channel;
     try {
-      // 0) 设置当前 agent 上下文（记忆工具调用时定位记忆库）
+      // 0) 保留活人感 agent 上下文，记忆库由 config.memoryIds 明确指定。
       _memory.currentAgentId = agent.id;
 
       // 1) 记忆：核心常驻（元问题兜底）+ 自我近况 + 话题激活联想 + 今日日程
       //    （记忆管理为独立开关，关闭时跳过注入，由回复后提取一并跳过）
       final mergedText = session.texts.join('\n');
       final state = _states.cached(agent.id);
-      final coreMemory = config.memoryEnabled
-          ? await _memory.buildCoreMemorySummary(
-              agent.id,
-              halfLifeDays: config.forgettingHalfLifeDays,
-            )
-          : '';
-      final selfMemory = config.memoryEnabled
-          ? await _memory.buildSelfSummary(
-              agent.id,
-              halfLifeDays: config.forgettingHalfLifeDays,
-            )
-          : '';
-      final activatedMemory = config.memoryEnabled
-          ? await _memory.buildMemorySummary(
-              agent.id,
-              mergedText,
-              halfLifeDays: config.forgettingHalfLifeDays,
-            )
-          : '';
+      final memoryIds = config.hasMemory
+          ? config.memoryIds.toSet()
+          : <String>{};
+      final coreSummaries = <String>[];
+      final selfSummaries = <String>[];
+      final activatedSummaries = <String>[];
+      for (final memoryId in memoryIds) {
+        final library = await _store.requireMemoryLibrary(memoryId);
+        final label = '【${library.name}；memoryId: $memoryId】';
+        final core = await _memory.buildCoreMemorySummary(
+          memoryId,
+          halfLifeDays: config.forgettingHalfLifeDays,
+        );
+        final self = await _memory.buildSelfSummary(
+          memoryId,
+          halfLifeDays: config.forgettingHalfLifeDays,
+        );
+        final activated = await _memory.buildMemorySummary(
+          memoryId,
+          mergedText,
+          halfLifeDays: config.forgettingHalfLifeDays,
+        );
+        if (core.isNotEmpty) coreSummaries.add('$label\n$core');
+        if (self.isNotEmpty) selfSummaries.add('$label\n$self');
+        if (activated.isNotEmpty) activatedSummaries.add('$label\n$activated');
+      }
+      final coreMemory = coreSummaries.join('\n');
+      final selfMemory = selfSummaries.join('\n');
+      final activatedMemory = activatedSummaries.join('\n');
+      final libraryContext = memoryIds.isEmpty
+          ? ''
+          : await _memory.buildLibraryContext(memoryIds);
       final schedule = await ScheduleService.instance.loadToday(agent.id);
       final scheduleContext = schedule == null
           ? ''
@@ -248,15 +261,17 @@ class AlivenessOrchestrator {
       }
 
       // 5) 注入段 + 生成（宿主通道：chat 流式 / agent_chat executeChain）
-      final suffix = _buildSuffix(
-        state,
-        coreMemory,
-        selfMemory,
-        activatedMemory,
-        scheduleContext,
-        decision,
-        config,
-      );
+      final suffix =
+          libraryContext +
+          _buildSuffix(
+            state,
+            coreMemory,
+            selfMemory,
+            activatedMemory,
+            scheduleContext,
+            decision,
+            config,
+          );
       var content = await channel.generate(
         AlivenessGenerationInput(
           mergedText: mergedText,
@@ -347,13 +362,14 @@ class AlivenessOrchestrator {
               ),
             ),
       );
-      if (config.memoryEnabled) {
+      if (config.hasMemory) {
         unawaited(
           MemoryExtractionService.instance.recordTurn(
             agent: agent,
             scope: channel.scope,
             channelId: session.targetId,
-            turnId: '${session.targetId}_${DateTime.now().microsecondsSinceEpoch}',
+            turnId:
+                '${session.targetId}_${DateTime.now().microsecondsSinceEpoch}',
             userText: mergedText,
             assistantText: fullContent,
           ),

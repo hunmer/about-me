@@ -13,6 +13,7 @@ import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/models/user.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/agent_state.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
+import 'package:aboutme/plugins/openai/aliveness/models/memory_fragment.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/behavior_executor.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/keepalive_service.dart';
@@ -34,10 +35,13 @@ class ProactiveService {
   static final ProactiveService instance = ProactiveService._();
 
   static const _tickInterval = Duration(minutes: 1);
+
   /// 闲置思念的触发门槛：距上次互动超过该时长才可能主动
   static const _idleThreshold = Duration(hours: 4);
+
   /// 每次 tick 的闲置触发概率（期望约 20 分钟内命中一次）
   static const _idleChance = 0.05;
+
   /// 闲置思念命中后改发朋友圈（而非聊天消息）的概率：
   /// 发动态不打扰用户、不依赖上次互动频道，可适度更活跃
   static const _momentChance = 0.3;
@@ -101,16 +105,14 @@ class ProactiveService {
 
     // ---- 硬限制：每日上限 ----
     final todayKey = '${now.year}-${now.month}-${now.day}';
-    final countToday =
-        stats['proactiveDateKey'] == todayKey
-            ? (stats['proactiveCountToday'] as int? ?? 0)
-            : 0;
+    final countToday = stats['proactiveDateKey'] == todayKey
+        ? (stats['proactiveCountToday'] as int? ?? 0)
+        : 0;
     if (countToday >= config.proactiveDailyLimit) return;
 
     // ---- 硬限制：冷却 ----
     final cooldownUntil = stats['cooldownUntil'] as String?;
-    if (cooldownUntil != null &&
-        now.isBefore(DateTime.parse(cooldownUntil))) {
+    if (cooldownUntil != null && now.isBefore(DateTime.parse(cooldownUntil))) {
       return;
     }
 
@@ -121,20 +123,34 @@ class ProactiveService {
 
     // ---- 触发源 1：开环事件到期（如"用户明天面试"）----
     String triggerInstruction;
-    final loops = await _memory.loadOpenLoops(agent.id);
-    final dueLoop = loops
-        .where(
-          (l) =>
-              !l.closed && l.followUpBy != null && now.isAfter(l.followUpBy!),
-        )
-        .firstOrNull;
+    String? dueMemoryId;
+    OpenLoop? dueLoop;
+    var loops = <OpenLoop>[];
+    if (config.hasMemory) {
+      for (final memoryId in config.memoryIds.toSet()) {
+        final candidates = await _memory.loadOpenLoops(memoryId);
+        final candidate = candidates
+            .where(
+              (l) =>
+                  !l.closed &&
+                  l.followUpBy != null &&
+                  now.isAfter(l.followUpBy!),
+            )
+            .firstOrNull;
+        if (candidate == null) continue;
+        dueMemoryId = memoryId;
+        dueLoop = candidate;
+        loops = candidates;
+        break;
+      }
+    }
     if (dueLoop != null) {
       debugPrint('[Aliveness][主动] 开环到期触发 | "${dueLoop.description}"');
       triggerInstruction =
           '你之前记住了用户的一件事：「${dueLoop.description}」，现在到了该跟进的时间。'
           '自然地问问这件事怎么样了，像朋友想起来随口一问。';
       dueLoop.closed = true; // 主动跟进一次后关闭该开环
-      await _memory.saveOpenLoops(agent.id, loops);
+      await _memory.saveOpenLoops(dueMemoryId!, loops);
     } else {
       // ---- 触发源 2：闲置思念（距上次互动久 + 关系够近 + 概率）----
       final last = state.lastInteractionAt;
@@ -145,9 +161,11 @@ class ProactiveService {
           _rng.nextDouble() < _idleChance)) {
         return;
       }
-      debugPrint('[Aliveness][主动] 闲置思念触发 | '
-          '距上次互动=${last == null ? "从未" : "${now.difference(last).inHours}h"} '
-          '亲密度=${state.intimacy.toStringAsFixed(2)}');
+      debugPrint(
+        '[Aliveness][主动] 闲置思念触发 | '
+        '距上次互动=${last == null ? "从未" : "${now.difference(last).inHours}h"} '
+        '亲密度=${state.intimacy.toStringAsFixed(2)}',
+      );
       // 分流：按概率改为发朋友圈（不打扰用户、不依赖上次互动频道）
       if (_rng.nextDouble() < _momentChance) {
         await _postProactiveMoment(agent, state);
@@ -194,7 +212,8 @@ class ProactiveService {
   Future<void> _postProactiveMoment(AIAgent agent, AgentState state) async {
     final basePrompt = await RequestService.getEffectiveSystemPrompt(agent);
     final tagKeys = MomentTags.all.map((t) => t.key).join('/');
-    final system = '$basePrompt\n\n【你的当前状态】${state.describe()}。\n'
+    final system =
+        '$basePrompt\n\n【你的当前状态】${state.describe()}。\n'
         '【任务】你现在想发一条朋友圈动态，分享此刻的心情、见闻或生活琐事。\n'
         '输出两行：\n'
         '第一行：动态文案（1~2句话，像真人发朋友圈的语气，不要引号）\n'
@@ -228,10 +247,9 @@ class ProactiveService {
     // 零成本配图：若已有生成好的资产图，一半概率随机引用一张
     var images = const <String>[];
     try {
-      final ready =
-          (await AgentAssetsService.instance.getAssets(agent.id))
-              .where((a) => a.hasImage)
-              .toList();
+      final ready = (await AgentAssetsService.instance.getAssets(
+        agent.id,
+      )).where((a) => a.hasImage).toList();
       if (ready.isNotEmpty && _rng.nextBool()) {
         images = [ready[_rng.nextInt(ready.length)].path!];
       }
@@ -245,8 +263,10 @@ class ProactiveService {
       tag: tag,
     );
     final preview = text.length > 30 ? '${text.substring(0, 30)}…' : text;
-    debugPrint('[Aliveness][主动] 已发朋友圈 | agent=${agent.name} '
-        '配图=${images.isEmpty ? "无" : "资产图"} 标签=$tag 内容="$preview"');
+    debugPrint(
+      '[Aliveness][主动] 已发朋友圈 | agent=${agent.name} '
+      '配图=${images.isEmpty ? "无" : "资产图"} 标签=$tag 内容="$preview"',
+    );
   }
 
   /// 免打扰：支持跨午夜区间（如 [23, 8]）
@@ -264,16 +284,14 @@ class ProactiveService {
     String triggerInstruction,
   ) async {
     // 记忆联想：按触发内容激活相关记忆碎片（记忆管理关闭时跳过）
-    final memorySummary = agent.alivenessConfig?.memoryEnabled != true
-        ? ''
-        : await _memory.buildMemorySummary(
-            agent.id,
-            triggerInstruction,
-            halfLifeDays: agent.alivenessConfig?.forgettingHalfLifeDays ?? 14,
-          );
+    final memorySummary = await _memory.buildAgentMemorySummary(
+      agent,
+      triggerInstruction,
+    );
 
     final basePrompt = await RequestService.getEffectiveSystemPrompt(agent);
-    final system = '$basePrompt\n\n【你的当前状态】${state.describe()}。\n'
+    final system =
+        '$basePrompt\n\n【你的当前状态】${state.describe()}。\n'
         '${memorySummary.isEmpty ? '' : '你想起关于用户的这些事：\n$memorySummary\n'}'
         '【任务】$triggerInstruction\n'
         '只输出消息内容本身（1~2句话），不要任何前缀、引号或解释。';
@@ -307,8 +325,7 @@ class ProactiveService {
         );
       }
       final message = await Message.create(
-        id:
-            'ai_proactive_${agent.id}_${DateTime.now().millisecondsSinceEpoch}_$i',
+        id: 'ai_proactive_${agent.id}_${DateTime.now().millisecondsSinceEpoch}_$i',
         content: bubbles[i],
         channelId: channelId,
         user: aiUser,
@@ -332,8 +349,10 @@ class ProactiveService {
     final preview = bubbles.first.length > 30
         ? '${bubbles.first.substring(0, 30)}…'
         : bubbles.first;
-    debugPrint('[Aliveness][主动] 已发送 | agent=${agent.name} 频道=$channelId '
-        '共${bubbles.length}条 内容="$preview"');
+    debugPrint(
+      '[Aliveness][主动] 已发送 | agent=${agent.name} 频道=$channelId '
+      '共${bubbles.length}条 内容="$preview"',
+    );
   }
 
   void _notify(AIAgent agent, String preview) {
