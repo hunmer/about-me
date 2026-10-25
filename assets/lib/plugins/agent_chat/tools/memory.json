@@ -24,7 +24,7 @@
   },
   "search_memory": {
     "title": "查询记忆",
-    "description": "按指定 memoryId 查询长期记忆（key-value 结构）。memoryId 必须来自当前已启用的记忆库列表。key 精确匹配单条（含已归档，优先级最高）；prefix 按前缀列出，query 按关键词检索，两者可并用，均不含已归档；都不传时返回最近更新的记忆（最多50条）。每项含 key、value，后续按 key 更新或删除。",
+    "description": "按指定 memoryId 和必填非空完整 key 精确查询单条长期记忆（含已归档）。不知道 key 时先用 list_memory_keys 枚举。涉及更新操作时优先用本工具单条查询，确认原值和标签；仅需批量读取内容时使用 batch_search_memory。memoryId 必须来自当前已启用的记忆库列表。",
     "parameters": [
       {
         "name": "memoryId",
@@ -35,30 +35,55 @@
       {
         "name": "key",
         "type": "string",
-        "required": false,
-        "description": "精确 key，返回该条记忆（含已归档）"
-      },
-      {
-        "name": "prefix",
-        "type": "string",
-        "required": false,
-        "description": "key 前缀，列出以该前缀开头的记忆（最多50条）"
-      },
-      {
-        "name": "query",
-        "type": "string",
-        "required": false,
-        "description": "关键词检索；可与 prefix 并用（key 优先，其次 prefix，最后 query）"
+        "required": true,
+        "minLength": 1,
+        "pattern": "^\\S+$",
+        "description": "必填非空的完整 key，返回该条记忆（含已归档）"
       }
     ],
     "returns": {
       "type": "Promise<string>",
-      "description": "JSON 对象 {memoryId, fragments}；每项含 key、value、revision、updatedAt 等字段"
+      "description": "JSON 对象 {memoryId, fragments, missingKeys}；每条命中仅含 key、value、tags、revision、updatedAt，不返回 content 等重复字段"
     },
     "examples": [
       {
         "code": "const result = await Aboutme.plugins.openai.search_memory({memoryId: 'memory-library-id', key: 'favorite_food'});\nsetResult(result);",
         "comment": "按精确 key 查询单条记忆"
+      }
+    ],
+    "enabled": true
+  },
+  "batch_search_memory": {
+    "title": "批量查询记忆",
+    "description": "按指定 memoryId 和非空 keys 数组批量精确查询记忆（含已归档）。每个 key 必须是非空完整路径；不知道 key 时先用 list_memory_keys 枚举。仅用于批量读取 value；涉及更新操作时优先用 search_memory 单条查询，确认原值和标签后再更新。memoryId 必须来自当前已启用的记忆库列表。",
+    "parameters": [
+      {
+        "name": "memoryId",
+        "type": "string",
+        "required": true,
+        "description": "目标记忆库 ID"
+      },
+      {
+        "name": "keys",
+        "type": "array",
+        "required": true,
+        "minItems": 1,
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^\\S+$"
+        },
+        "description": "要精确查询的非空 key 数组"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象 {memoryId, values, missingKeys}；values 为 key 到 value 的映射，按请求顺序去重，不含元数据；missingKeys 列出未找到的 key"
+    },
+    "examples": [
+      {
+        "code": "const result = await Aboutme.plugins.openai.batch_search_memory({memoryId: 'memory-library-id', keys: ['user.name', 'user.age']});\nsetResult(result);",
+        "comment": "批量查询多个完整 key"
       }
     ],
     "enabled": true
