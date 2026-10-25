@@ -65,9 +65,6 @@ class ChatTranslationsEn {
     'chat_favoriteMessages': 'Favorite Messages',
 
     // Recording and file related
-    'chat_recordingFailed': 'Recording failed',
-    'chat_recordingStopError':
-        'An error occurred while stopping recording. The recording may not have been saved.',
     'chat_fileNotAccessible': 'File does not exist or is not accessible',
     'chat_fileProcessingFailed': 'File processing failed: @processingError',
     'chat_fileSelectionFailed': 'File selection failed: @e',
@@ -105,7 +102,6 @@ class ChatTranslationsEn {
     'chat_recordVideo': 'Record Video',
     'chat_video': 'Video',
     'chat_file': 'File',
-    'chat_audioRecording': 'Audio Recording',
     'chat_smartAgent': 'Smart Agent',
 
     // Widget related
@@ -126,7 +122,6 @@ class ChatTranslationsEn {
     // Other UI elements
     'chat_errorFilePreviewFailed': 'Failed to preview file: @e',
     'chat_audioMessageBubbleErrorText': 'Failed to load audio message: @e',
-    'chat_stopRecordingHint': 'Tap to stop recording...',
     'chat_metadataFilters': 'Metadata filters',
 
     // Channel related

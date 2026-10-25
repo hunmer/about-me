@@ -41,7 +41,6 @@ import 'components/message_input.dart';
 import 'components/save_tool_dialog.dart';
 import 'components/markdown_content.dart';
 import 'components/tool_detail_dialog.dart';
-import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
 import 'package:aboutme/plugins/moments/screens/moments_home_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
 // 复用 chat 插件的通用聊天壳与消息列表
@@ -396,11 +395,6 @@ class _ChatScreenState extends State<ChatScreen> {
         icon: DsIconKind.clipboard,
         tooltip: '工具模板',
         onPressed: _openToolTemplateManagement,
-      ),
-      MessageInputQuickAction(
-        icon: DsIconKind.gear,
-        tooltip: 'agent_chat_toolManagement'.tr,
-        onPressed: _openToolManagement,
       ),
       MessageInputQuickAction(
         icon: DsIconKind.image,

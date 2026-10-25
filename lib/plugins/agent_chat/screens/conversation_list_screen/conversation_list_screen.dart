@@ -11,7 +11,6 @@ import 'package:aboutme/plugins/agent_chat/controllers/conversation_controller.d
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/agent_chat_settings_screen.dart';
-import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -124,11 +123,6 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
       context,
       AgentChatSettingsScreen(plugin: AgentChatPlugin.instance),
     );
-  }
-
-  /// 打开工具管理页面
-  void _openToolManagement() {
-    NavigationHelper.push(context, const ToolManagementScreen());
   }
 
   /// 打开工具模板页面
@@ -300,15 +294,6 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
                     onPressed: _showAddChannelDialog,
                     tooltip: '添加频道',
                   ),
-                  // 工具管理按钮
-                  DSIconButton(
-                    icon: DsIconKind.gear,
-                    size: 40,
-                    color: theme.surfaceAlt,
-                    iconColor: theme.textSub,
-                    onPressed: _openToolManagement,
-                    tooltip: '工具管理',
-                  ),
                   // 工具模板按钮
                   DSIconButton(
                     icon: DsIconKind.clipboard,
@@ -343,12 +328,11 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
           _controller.toggleGroupFilter(group);
         }
       },
-      body:
-          _controller.isLoading
-              ? const Center(child: DSThemeBridge(child: DSLoadingDots()))
-              : hasAnyConversations
-              ? _buildConversationList()
-              : _buildEmptyState(),
+      body: _controller.isLoading
+          ? const Center(child: DSThemeBridge(child: DSLoadingDots()))
+          : hasAnyConversations
+          ? _buildConversationList()
+          : _buildEmptyState(),
     );
   }
 
@@ -432,10 +416,9 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
           // 共享 SwipeAction 组件 API 需要 IconData，刻意保留 Material 图标
           SwipeActionOption(
             label: conversation.isPinned ? '取消置顶' : '置顶',
-            icon:
-                conversation.isPinned
-                    ? Icons.push_pin_outlined
-                    : Icons.push_pin,
+            icon: conversation.isPinned
+                ? Icons.push_pin_outlined
+                : Icons.push_pin,
             backgroundColor: Colors.purple,
             onTap: () => _controller.togglePin(conversation.id),
           ),
@@ -450,25 +433,22 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
           icon: conversation.isPinned ? DsIconKind.pin : DsIconKind.chat,
           subtitle: conversation.lastMessagePreview,
           trailingText: _formatDateTime(conversation.lastMessageAt),
-          trailing:
-              conversation.unreadCount > 0
-                  ? Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.danger,
-                      borderRadius: theme.radii.pill,
-                    ),
-                    child: Text(
-                      '${conversation.unreadCount}',
-                      style: DsTypography.caption.copyWith(
-                        color: theme.onDanger,
-                      ),
-                    ),
-                  )
-                  : null,
+          trailing: conversation.unreadCount > 0
+              ? Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.danger,
+                    borderRadius: theme.radii.pill,
+                  ),
+                  child: Text(
+                    '${conversation.unreadCount}',
+                    style: DsTypography.caption.copyWith(color: theme.onDanger),
+                  ),
+                )
+              : null,
           onTap: () {
             NavigationHelper.openContainerWithHero(
               context,
@@ -514,72 +494,69 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
       final result = await showDSDialog<bool>(
         context: context,
         theme: DSThemeBridge.resolve(context),
-        builder:
-            (dialogContext) => DSThemeBridge(
-              child: Builder(
-                builder: (ctx) {
-                  final theme = DSThemeBridge.resolve(ctx);
-                  return JellyBox(
-                    radius: theme.radii.xxl,
-                    padding: EdgeInsets.all(theme.spacing.xl),
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+        builder: (dialogContext) => DSThemeBridge(
+          child: Builder(
+            builder: (ctx) {
+              final theme = DSThemeBridge.resolve(ctx);
+              return JellyBox(
+                radius: theme.radii.xxl,
+                padding: EdgeInsets.all(theme.spacing.xl),
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'agent_chat_editConversation'.tr,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.title.copyWith(color: theme.text),
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    DSInput(controller: titleController, label: '会话标题'),
+                    SizedBox(height: theme.spacing.md),
+                    DSInput(
+                      controller: groupsController,
+                      label: '分组',
+                      hint: '用逗号分隔多个分组，例如：工作, 生活',
+                    ),
+                    SizedBox(height: theme.spacing.lg),
+                    Row(
                       children: [
-                        Text(
-                          'agent_chat_editConversation'.tr,
-                          textAlign: TextAlign.center,
-                          style: DsTypography.title.copyWith(color: theme.text),
+                        Expanded(
+                          child: DSButton(
+                            label: 'agent_chat_cancel'.tr,
+                            variant: DSButtonVariant.outline,
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, false),
+                          ),
                         ),
-                        SizedBox(height: theme.spacing.md),
-                        DSInput(controller: titleController, label: '会话标题'),
-                        SizedBox(height: theme.spacing.md),
-                        DSInput(
-                          controller: groupsController,
-                          label: '分组',
-                          hint: '用逗号分隔多个分组，例如：工作, 生活',
-                        ),
-                        SizedBox(height: theme.spacing.lg),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DSButton(
-                                label: 'agent_chat_cancel'.tr,
-                                variant: DSButtonVariant.outline,
-                                onPressed:
-                                    () => Navigator.pop(dialogContext, false),
-                              ),
-                            ),
-                            SizedBox(width: theme.spacing.md),
-                            Expanded(
-                              child: DSButton(
-                                label: 'agent_chat_save'.tr,
-                                onPressed:
-                                    () => Navigator.pop(dialogContext, true),
-                              ),
-                            ),
-                          ],
+                        SizedBox(width: theme.spacing.md),
+                        Expanded(
+                          child: DSButton(
+                            label: 'agent_chat_save'.tr,
+                            onPressed: () => Navigator.pop(dialogContext, true),
+                          ),
                         ),
                       ],
                     ),
-                  );
-                },
-              ),
-            ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
       );
 
       if (result == true && titleController.text.isNotEmpty) {
         // 解析分组字符串
         final groupsText = groupsController.text.trim();
-        final groups =
-            groupsText.isEmpty
-                ? <String>[]
-                : groupsText
-                    .split(',')
-                    .map((g) => g.trim())
-                    .where((g) => g.isNotEmpty)
-                    .toList();
+        final groups = groupsText.isEmpty
+            ? <String>[]
+            : groupsText
+                  .split(',')
+                  .map((g) => g.trim())
+                  .where((g) => g.isNotEmpty)
+                  .toList();
 
         final updated = conversation.copyWith(
           title: titleController.text,
@@ -603,23 +580,21 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
     final result = await showDSDialog<bool>(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder:
-          (dialogContext) => DSThemeBridge(
-            child: Builder(
-              builder:
-                  (ctx) => DSDialog(
-                    title: 'agent_chat_confirmDelete'.tr,
-                    message: 'agent_chat_confirmDeleteConversation'.trParams({
-                      'title': conversation.title,
-                    }),
-                    cancelText: 'agent_chat_cancel'.tr,
-                    confirmText: 'agent_chat_delete'.tr,
-                    confirmVariant: DSButtonVariant.destructive,
-                    onConfirm: () => Navigator.pop(dialogContext, true),
-                    onCancel: () => Navigator.pop(dialogContext, false),
-                  ),
-            ),
+      builder: (dialogContext) => DSThemeBridge(
+        child: Builder(
+          builder: (ctx) => DSDialog(
+            title: 'agent_chat_confirmDelete'.tr,
+            message: 'agent_chat_confirmDeleteConversation'.trParams({
+              'title': conversation.title,
+            }),
+            cancelText: 'agent_chat_cancel'.tr,
+            confirmText: 'agent_chat_delete'.tr,
+            confirmVariant: DSButtonVariant.destructive,
+            onConfirm: () => Navigator.pop(dialogContext, true),
+            onCancel: () => Navigator.pop(dialogContext, false),
           ),
+        ),
+      ),
     );
 
     if (result == true) {

@@ -159,7 +159,7 @@ class MessageInputActionsBuilder {
       actions.add(
         MessageInputAction(
           id: 'audio_recording',
-          title: 'chat_audioRecording'.tr,
+          title: 'record_title'.tr,
           icon: DsIconKind.mic,
           onTap:
               () => handleAudioRecording(

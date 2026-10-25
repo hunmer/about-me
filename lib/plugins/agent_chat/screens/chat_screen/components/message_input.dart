@@ -37,6 +37,8 @@ import 'suggested_questions_dialog.dart';
 import 'command_selector.dart';
 import 'tool_template_selector.dart';
 import 'package:aboutme/plugins/agent_chat/widgets/press_to_record_button.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/audio_handler.dart';
+import 'package:aboutme/screens/settings_screen/widgets/speech_recognition_settings_dialog.dart';
 import '../../../../../../core/services/toast_service.dart';
 
 /// 消息输入框组件
@@ -462,12 +464,11 @@ class _MessageInputState extends State<MessageInput> {
                 ),
               ),
             // 录音：点击开始/停止，识别结果实时写入输入框；
-            // 未配置时回退为对话框输入
+            // 长按打开录音对话框（录语音附件）；未配置时点击打开配置
             if (_recognitionService != null)
               PressToRecordButton(
                 textController: _textController,
                 recognitionService: _recognitionService!,
-                enabled: agentReady,
                 size: 20,
                 tooltip: '录音',
                 onRecognitionComplete: (text) {
@@ -479,13 +480,14 @@ class _MessageInputState extends State<MessageInput> {
                     toastService.showToast('语音识别失败: $error');
                   }
                 },
+                onLongPress: _recordAudioAttachment,
               )
             else
               _InlineIconAction(
                 icon: DsIconKind.mic,
                 color: theme.textSub,
-                onPressed: agentReady ? _showVoiceInputDialog : null,
-                tooltip: '语音输入（未配置）',
+                onPressed: () => SpeechRecognitionSettingsDialog.show(context),
+                tooltip: '语音输入（未配置，点击配置）',
               ),
           ],
         ),
@@ -1008,19 +1010,15 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  /// 显示语音输入对话框
-  Future<void> _showVoiceInputDialog() async {
-    if (!mounted) return;
-
-    await VoiceRecognitionHelper.showVoiceInputDialog(
+  /// 长按录音：录制语音并作为附件加入待发送文件（与 chat 输入框一致）
+  Future<void> _recordAudioAttachment() {
+    return showRecordAudioDialog(
       context: context,
-      onComplete: (text) {
-        // 将识别的文本填充到输入框
-        _textController.text = text;
-        widget.controller.setInputText(text);
-
-        // 聚焦到输入框
-        _focusNode.requestFocus();
+      // Web 端无本地文件，字节写临时文件后加入待发送
+      onStopBytes: (bytes, fileName, duration, amplitudes) =>
+          _attachBytesAsFile(fileName, bytes),
+      onStop: (audioFile, duration, amplitudes) async {
+        widget.controller.addFiles([audioFile]);
       },
     );
   }

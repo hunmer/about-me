@@ -55,6 +55,9 @@ class PressToRecordButton extends StatefulWidget {
   /// 录音失败回调（可选）
   final Function(String error)? onError;
 
+  /// 长按回调（可选，如打开录音对话框）
+  final VoidCallback? onLongPress;
+
   const PressToRecordButton({
     super.key,
     required this.textController,
@@ -67,6 +70,7 @@ class PressToRecordButton extends StatefulWidget {
     this.tooltip,
     this.onRecognitionComplete,
     this.onError,
+    this.onLongPress,
   });
 
   @override
@@ -191,7 +195,12 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
       _animationController.repeat(reverse: true);
 
       final success = await widget.recognitionService.startRecording();
-      if (!success) {
+      if (success) {
+        // 录音激活确认反馈（移动端）
+        if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+          HapticFeedback.heavyImpact();
+        }
+      } else {
         setState(() {
           _isRecording = false;
         });
@@ -219,6 +228,11 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
     _animationController.stop();
     _animationController.reset();
 
+    // 停止确认反馈（移动端）
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+      HapticFeedback.lightImpact();
+    }
+
     try {
       await widget.recognitionService.stopRecording();
     } catch (e) {
@@ -228,11 +242,6 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
 
   /// 切换录音状态（点击时调用）
   Future<void> _toggleRecording() async {
-    // 在移动端触发震动反馈
-    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
-      HapticFeedback.mediumImpact();
-    }
-
     if (_isRecording) {
       await _stopRecording();
     } else {
@@ -299,6 +308,8 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
       message: tooltipText,
       child: Pressable(
         onPressed: widget.enabled && _isInitialized ? _toggleRecording : null,
+        onLongPress:
+            widget.enabled && _isInitialized ? widget.onLongPress : null,
         semanticLabel: tooltipText,
         builder:
             (context, states) => Padding(
@@ -310,13 +321,30 @@ class _PressToRecordButtonState extends State<PressToRecordButton>
 
                   return Transform.scale(
                     scale: scale,
-                    child: IconTheme(
-                      data: IconThemeData(
-                        color: buttonColor,
-                        size: widget.size ?? 24.0,
-                      ),
-                      child: iconWidget,
-                    ),
+                    child:
+                        _isRecording
+                            ? Container(
+                              // 录音激活：红色圆形背景 + 白色图标
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: buttonColor,
+                              ),
+                              child: IconTheme(
+                                data: IconThemeData(
+                                  color: Colors.white,
+                                  size: widget.size ?? 24.0,
+                                ),
+                                child: iconWidget,
+                              ),
+                            )
+                            : IconTheme(
+                              data: IconThemeData(
+                                color: buttonColor,
+                                size: widget.size ?? 24.0,
+                              ),
+                              child: iconWidget,
+                            ),
                   );
                 },
               ),

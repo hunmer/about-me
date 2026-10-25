@@ -15,9 +15,14 @@ import 'package:aboutme/widgets/message_input/message_input.dart' as common;
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_drawer.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/message_input_actions_builder.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/emoji_handler.dart';
+import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/handlers/audio_handler.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/voice_recognition_helper.dart';
+import 'package:aboutme/plugins/agent_chat/widgets/press_to_record_button.dart';
+import 'package:aboutme/screens/settings_screen/widgets/speech_recognition_settings_dialog.dart';
+import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
 class MessageInput extends StatefulWidget {
   final TextEditingController controller;
@@ -272,23 +277,6 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  /// 显示语音输入对话框
-  Future<void> _showVoiceInputDialog() async {
-    if (!mounted) return;
-
-    await VoiceRecognitionHelper.showVoiceInputDialog(
-      context: context,
-      onComplete: (text) {
-        // 将识别的文本填充到输入框
-        widget.controller.text = text;
-        widget.onSaveDraft(text);
-
-        // 聚焦到输入框
-        _focusNode.requestFocus();
-      },
-    );
-  }
-
   /// 打开表情选择器
   void _showEmojiPicker() {
     handleEmojiSelection(
@@ -344,19 +332,38 @@ class _MessageInputState extends State<MessageInput> {
       hintText: 'chat_enterMessage'.tr,
       onChanged: (text) => widget.onSaveDraft(text),
       quickActions: _buildQuickActions(),
-      // 工具栏右组：表情/语音（原输入框内嵌后缀）
+      // 工具栏右组：表情（语音入口移至输入框内嵌后缀，与 agent_chat 对齐）
       trailingQuickActions: [
         common.MessageInputQuickAction(
           icon: DsIconKind.mood,
           tooltip: '表情',
           onPressed: _showEmojiPicker,
         ),
-        common.MessageInputQuickAction(
-          icon: DsIconKind.mic,
-          tooltip: _recognitionService != null ? '语音输入' : '语音输入（未配置）',
-          onPressed: _recognitionService != null ? _showVoiceInputDialog : null,
-        ),
       ],
+      // 录音：点击开始/停止，识别结果实时写入输入框；
+      // 长按打开录音对话框（录语音附件）；未配置时回退为配置入口
+      inputSuffix: _recognitionService != null
+          ? PressToRecordButton(
+              textController: widget.controller,
+              recognitionService: _recognitionService!,
+              size: 20,
+              tooltip: '录音',
+              onRecognitionComplete: (_) => _focusNode.requestFocus(),
+              onError: (error) {
+                if (mounted) toastService.showToast('语音识别失败: $error');
+              },
+              onLongPress: () => handleAudioRecording(
+                context: context,
+                fileService: FileService(),
+                onFileSelected: _handleFileSelected,
+              ),
+            )
+          : _InlineIconAction(
+              icon: DsIconKind.mic,
+              color: DSThemeBridge.resolve(context).textSub,
+              onPressed: () => SpeechRecognitionSettingsDialog.show(context),
+              tooltip: '语音输入（未配置，点击配置）',
+            ),
       onOpenActionsDrawer: _showActionsDrawer,
       header: MetadataDisplay(
         selectedFiles: selectedFiles,
@@ -366,6 +373,46 @@ class _MessageInputState extends State<MessageInput> {
       ),
       onSend: _handleSendMessage,
       onKeyEvent: (event) => _messageInputState.handleKeyPress(event),
+    );
+  }
+}
+
+/// 输入框内嵌的无边框小图标按钮（语音未配置时的回退入口）
+class _InlineIconAction extends StatelessWidget {
+  const _InlineIconAction({
+    required this.icon,
+    required this.color,
+    this.onPressed,
+    this.tooltip,
+  });
+
+  final DsIconKind icon;
+  final Color color;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onPressed == null;
+    return Pressable(
+      onPressed: onPressed,
+      semanticLabel: tooltip,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return AnimatedScale(
+          scale: pressed && !disabled ? 0.85 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+            child: DsIcon(
+              icon,
+              size: 18,
+              color: disabled ? color.withValues(alpha: 0.4) : color,
+            ),
+          ),
+        );
+      },
     );
   }
 }

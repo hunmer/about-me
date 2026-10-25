@@ -88,7 +88,7 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
                 child: Builder(
                   builder:
                       (context) => DSDialog(
-                        title: 'chat_recordingFailed'.tr,
+                        title: 'record_failed'.tr,
                         message: e.toString(),
                         confirmText: 'app_ok'.tr,
                       ),
@@ -186,8 +186,8 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
                 child: Builder(
                   builder:
                       (context) => DSDialog(
-                        title: 'chat_recordingFailed'.tr,
-                        message: 'chat_recordingStopError'.tr,
+                        title: 'record_failed'.tr,
+                        message: 'record_stopError'.tr,
                         confirmText: 'app_ok'.tr,
                       ),
                 ),
@@ -222,7 +222,7 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'chat_audioRecording'.tr,
+                  'record_title'.tr,
                   textAlign: TextAlign.center,
                   style: DsTypography.title.copyWith(color: theme.text),
                 ),
@@ -242,7 +242,7 @@ class _RecordAudioDialogState extends State<RecordAudioDialog> {
                 ),
                 SizedBox(height: theme.spacing.lg),
                 Text(
-                  'chat_stopRecordingHint'.tr,
+                  'record_stopHint'.tr,
                   style: DsTypography.caption.copyWith(color: theme.textSub),
                 ),
               ],

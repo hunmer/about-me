@@ -1,26 +1,38 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/plugins/chat/models/file_message.dart';
 import 'package:aboutme/plugins/chat/services/file_service.dart';
-import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/record_audio_dialog.dart';
+import 'package:aboutme/widgets/record_audio_dialog.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/utils.dart';
 import 'package:aboutme/plugins/chat/screens/chat_screen/widgets/message_input_actions/types.dart';
 import '../../../../../../../../core/services/toast_service.dart';
 
-Future<void> handleAudioRecording({
+/// 打开录音对话框（通用入口）：产物回调由调用方接入各自发送管道，
+/// 成功/失败提示由此处统一处理（chat / agent_chat 共用）
+Future<void> showRecordAudioDialog({
   required BuildContext context,
-  required FileService fileService,
-  required OnFileSelected? onFileSelected,
+  required FutureOr<void> Function(
+    File audioFile,
+    Duration duration,
+    List<double> amplitudes,
+  ) onStop,
+  required FutureOr<void> Function(
+    Uint8List bytes,
+    String fileName,
+    Duration duration,
+    List<double> amplitudes,
+  ) onStopBytes,
 }) async {
   if (!context.mounted) return;
 
-  // 显示录音对话框 - 权限检查和录音逻辑在对话框内部处理
   showDSDialog(
     context: context,
     theme: DSThemeBridge.resolve(context),
@@ -29,69 +41,67 @@ Future<void> handleAudioRecording({
         (dialogContext) => RecordAudioDialog(
           onStopBytes: (bytes, fileName, duration, amplitudes) async {
             try {
-              final storagePath = await fileService.saveAudioBytes(
-                bytes,
-                fileName,
-              );
-
-              final Map<String, dynamic> metadata = _buildAudioMetadata(
-                storagePath,
-                fileName: fileName,
-                size: bytes.length,
-                duration: duration,
-                amplitudes: amplitudes,
-              );
-              onFileSelected?.call(metadata);
+              await onStopBytes(bytes, fileName, duration, amplitudes);
               toastService.showToast(
-                '${'chat_audioRecording'.tr}: ${formatDuration(duration)}',
+                '${'record_title'.tr}: ${formatDuration(duration)}',
               );
             } catch (e) {
               debugPrint('处理音频时出错: $e');
-              toastService.showToast('${'chat_recordingFailed'.tr}: $e');
+              toastService.showToast('${'record_failed'.tr}: $e');
             }
           },
-          onStop: (File audioFile, Duration duration, List<double> amplitudes) async {
+          onStop: (audioFile, duration, amplitudes) async {
             try {
-              debugPrint(
-                '音频录制完成: ${audioFile.path}, 时长: ${duration.inSeconds}秒',
-              );
-
-              // 获取原始文件名
-              final originalFileName = path.basename(audioFile.path);
-
-              // 保存音频到应用目录
-              debugPrint('开始保存音频...');
-              final savedFile = await fileService.saveAudio(audioFile);
-              debugPrint('音频已保存: ${savedFile.path}');
-
-              // 创建文件消息
-              final fileMessage = await FileMessage.fromFile(
-                savedFile,
-                originalFileName: originalFileName,
-              );
-
-              // 标准化文件信息结构
-              final Map<String, dynamic> metadata = _buildAudioMetadata(
-                fileMessage.filePath,
-                fileName: originalFileName,
-                size: fileMessage.fileSize,
-                duration: duration,
-                amplitudes: amplitudes,
-              );
-
-              // 调用回调函数
-              onFileSelected?.call(metadata);
-
-              // 显示音频发送成功的提示
+              await onStop(audioFile, duration, amplitudes);
               toastService.showToast(
-                '${'chat_audioRecording'.tr}: ${formatDuration(duration)}',
+                '${'record_title'.tr}: ${formatDuration(duration)}',
               );
             } catch (e) {
               debugPrint('处理音频时出错: $e');
-              toastService.showToast('${'chat_recordingFailed'.tr}: $e');
+              toastService.showToast('${'record_failed'.tr}: $e');
             }
           },
         ),
+  );
+}
+
+Future<void> handleAudioRecording({
+  required BuildContext context,
+  required FileService fileService,
+  required OnFileSelected? onFileSelected,
+}) {
+  return showRecordAudioDialog(
+    context: context,
+    // 保存到 chat 应用目录并构造标准化元数据，交给待发送列表
+    onStopBytes: (bytes, fileName, duration, amplitudes) async {
+      final storagePath = await fileService.saveAudioBytes(bytes, fileName);
+      onFileSelected?.call(
+        _buildAudioMetadata(
+          storagePath,
+          fileName: fileName,
+          size: bytes.length,
+          duration: duration,
+          amplitudes: amplitudes,
+        ),
+      );
+    },
+    onStop: (audioFile, duration, amplitudes) async {
+      final originalFileName = path.basename(audioFile.path);
+      final savedFile = await fileService.saveAudio(audioFile);
+      final fileMessage = await FileMessage.fromFile(
+        savedFile,
+        originalFileName: originalFileName,
+      );
+      onFileSelected?.call(
+        _buildAudioMetadata(
+          fileMessage.filePath,
+          fileName: originalFileName,
+          size: fileMessage.fileSize,
+          duration: duration,
+          amplitudes: amplitudes,
+        ),
+      );
+    },
   );
 }
 

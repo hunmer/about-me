@@ -64,8 +64,6 @@ class ChatTranslationsZh {
     'chat_favoriteMessages': '收藏的消息',
 
     // 录音与文件相关
-    'chat_recordingFailed': '录音失败',
-    'chat_recordingStopError': '停止录音时出现错误,录音可能未能保存。',
     'chat_fileNotAccessible': '文件不存在或无法访问',
     'chat_fileProcessingFailed': '处理文件失败: @processingError',
     'chat_fileSelectionFailed': '选择文件失败: @e',
@@ -101,7 +99,6 @@ class ChatTranslationsZh {
     'chat_recordVideo': '录像',
     'chat_video': '视频',
     'chat_file': '文件',
-    'chat_audioRecording': '录音',
     'chat_smartAgent': '智能体',
 
     // 小组件相关
@@ -122,7 +119,6 @@ class ChatTranslationsZh {
     // 其他UI元素
     'chat_errorFilePreviewFailed': '预览文件失败: @e',
     'chat_audioMessageBubbleErrorText': '音频消息气泡错误文本',
-    'chat_stopRecordingHint': '点击停止录音',
     'chat_metadataFilters': '元数据筛选器',
 
     // 频道相关

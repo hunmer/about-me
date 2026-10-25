@@ -5,7 +5,6 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/form_fields/index.dart';
 import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
-import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 
@@ -167,24 +166,54 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
 
     final isEditing = widget.memorialDay != null;
 
-    return SuperCupertinoNavigationWrapper(
-      title: Text(
-        isEditing ? 'day_editMemorialDay'.tr : 'day_addMemorialDay'.tr,
-      ),
-      previousPageTitle: 'day_memorialDays'.tr,
-      // SuperAppBar 的 actions 经 Overlay 渲染,DS 组件需自带 DSThemeBridge
-      actions: [
-        DSThemeBridge(
-          child: Builder(
-            builder: (context) => DSButton(
-              label: 'day_save'.tr,
-              size: DSButtonSize.sm,
-              onPressed: () => _save(context),
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Scaffold(
+            backgroundColor: dsScaffoldBackground(theme),
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  // 轻量手绘顶栏（design.md §2.1）：保存/删除经尾部图标触发
+                  DSLightHeader(
+                    title: isEditing
+                        ? 'day_editMemorialDay'.tr
+                        : 'day_addMemorialDay'.tr,
+                    trailingWidth: isEditing ? 84 : 38,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isEditing) ...[
+                          DSIconButton(
+                            icon: DsIconKind.trash,
+                            size: 38,
+                            color: theme.surface,
+                            iconColor: theme.danger,
+                            onPressed: _showDeleteConfirm,
+                            tooltip: 'day_delete'.tr,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        DSIconButton(
+                          icon: DsIconKind.check,
+                          size: 38,
+                          color: theme.surface,
+                          iconColor: theme.text,
+                          onPressed: () => _save(context),
+                          tooltip: 'day_save'.tr,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(child: _buildFormBody()),
+                ],
+              ),
             ),
-          ),
-        ),
-      ],
-      body: _buildFormBody(),
+          );
+        },
+      ),
     );
   }
 
@@ -279,8 +308,8 @@ class _EditMemorialDayPageState extends State<EditMemorialDayPage> {
                 ],
                 const SizedBox(height: 32),
 
-                // 删除按钮（仅编辑模式显示）
-                if (widget.memorialDay != null)
+                // 删除按钮仅 sheet 模式在表单底部（外壳无删除入口）；全页模式在顶栏
+                if (widget.embedInSheet && widget.memorialDay != null)
                   DSThemeBridge(
                     child: Builder(
                       builder: (context) => DSButton(

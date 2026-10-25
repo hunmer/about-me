@@ -329,26 +329,6 @@ extension _ChatScreenDialogsExt on _ChatScreenState {
     );
   }
 
-  /// 打开工具管理界面
-  void _openToolManagement() {
-    NavigationHelper.push(
-      context,
-      ToolManagementScreen(
-        conversationId: widget.conversation.id,
-        onAddToChat: (pluginId, toolId, config) async {
-          await _controller.addToolToConversation(
-            pluginId,
-            toolId,
-            config.title,
-          );
-          if (mounted) {
-            toastService.showToast('已添加工具: ${config.title}');
-          }
-        },
-      ),
-    );
-  }
-
   /// 打开 agent 朋友圈
   void _openMoments() {
     NavigationHelper.push(context, const MomentsHomeScreen());

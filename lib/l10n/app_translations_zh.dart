@@ -289,4 +289,10 @@ const Map<String, String> appTranslationsZh = {
   'app_tags_deleteTagConfirm': '确定要删除标签「@name」吗？',
   'app_tags_deleteSelectedConfirm': '确定要删除选中的 @count 个标签吗？',
     'app_deleteSuccess': '删除成功',
+
+  // Recording dialog (chat / agent_chat 共用)
+  'record_title': '录音',
+  'record_failed': '录音失败',
+  'record_stopError': '停止录音时出现错误,录音可能未能保存。',
+  'record_stopHint': '点击停止录音',
 };

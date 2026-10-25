@@ -303,4 +303,11 @@ const Map<String, String> appTranslationsEn = {
   'app_tags_deleteTagConfirm': 'Delete tag "@name"?',
   'app_tags_deleteSelectedConfirm': 'Delete @count selected tags?',
     'app_deleteSuccess': 'Deleted successfully',
+
+  // Recording dialog (shared by chat / agent_chat)
+  'record_title': 'Audio Recording',
+  'record_failed': 'Recording failed',
+  'record_stopError':
+      'An error occurred while stopping recording. The recording may not have been saved.',
+  'record_stopHint': 'Tap to stop recording...',
 };

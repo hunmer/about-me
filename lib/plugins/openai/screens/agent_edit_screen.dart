@@ -28,6 +28,7 @@ import 'package:aboutme/plugins/openai/services/agentlib_resource_service.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_resource_selector.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/aliveness/widgets/aliveness_settings_section.dart';
+import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/services/agent_file_space_service.dart';
@@ -995,13 +996,26 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     ],
   ];
 
-  /// 基础 Tab：表单字段 + Skills / MCP 资源选择 + 底部测试入口
+  /// 打开工具管理页面
+  void _openToolManagement() {
+    NavigationHelper.push(context, const ToolManagementScreen());
+  }
+
+  /// 基础 Tab：表单字段 + Skills / MCP 资源选择 + 工具管理 + 底部测试入口
   Widget _buildBasicTab(List<Widget> fieldWidgets) => _tabList([
     ..._spaced(fieldWidgets),
     const SizedBox(height: 16),
     _buildResourceSelector(skills: true),
     const SizedBox(height: 8),
     _buildResourceSelector(skills: false),
+    const SizedBox(height: 8),
+    DSListItem(
+      leading: const DsIcon(DsIconKind.gear, size: 22),
+      title: '工具管理',
+      subtitle: '配置可供 Agent 使用的插件工具',
+      showChevron: true,
+      onTap: _openToolManagement,
+    ),
     const SizedBox(height: 16),
     DSButton(label: 'openai_testAgent'.tr, expand: true, onPressed: _testAgent),
   ]);
