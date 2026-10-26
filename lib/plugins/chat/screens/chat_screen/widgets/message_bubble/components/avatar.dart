@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -113,6 +111,20 @@ class _MessageAvatarState extends State<MessageAvatar> {
     );
   }
 
+  /// 个人主页同款默认头像资产（未设置自定义头像时与 profile 展示一致）
+  static const _defaultAvatarAsset = 'assets/images/default_avatar.jpg';
+
+  Widget _buildDefaultAssetAvatar(BuildContext context) {
+    return AdaptiveImage(
+      imagePath: _defaultAvatarAsset,
+      width: 32,
+      height: 32,
+      fit: BoxFit.cover,
+      shape: BoxShape.circle,
+      errorImage: _buildDefaultAvatar(context),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -146,29 +158,22 @@ class _MessageAvatarState extends State<MessageAvatar> {
       );
     }
 
-    // 当前用户：实时读取全局头像（个人主页数据源）
+    // 当前用户：实时读取全局头像（个人主页数据源），渲染链路与个人主页一致
     final userService = ChatPlugin.instance.userService;
     if (user.id == userService.currentUser.id) {
       final avatarPath = userService.currentUserAvatarPath;
       if (avatarPath != null && avatarPath.isNotEmpty) {
-        return FutureBuilder<String>(
-          future: ImageUtils.getAbsolutePath(avatarPath),
-          builder: (context, snapshot) {
-            if (snapshot.hasData && snapshot.data != null) {
-              return ClipOval(
-                child: Image.file(
-                  File(snapshot.data!),
-                  width: 32,
-                  height: 32,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _buildDefaultAvatar(context),
-                ),
-              );
-            }
-            return _buildDefaultAvatar(context);
-          },
+        return AdaptiveImage(
+          imagePath: avatarPath,
+          width: 32,
+          height: 32,
+          fit: BoxFit.cover,
+          shape: BoxShape.circle,
+          errorImage: _buildDefaultAssetAvatar(context),
         );
       }
+      // 未设置自定义头像：回退默认头像资产，与个人主页展示保持一致
+      return _buildDefaultAssetAvatar(context);
     }
 
     // 其他用户：不再有独立头像来源，显示默认首字母

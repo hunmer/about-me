@@ -255,6 +255,7 @@ class AIAgent {
     AlivenessConfig? alivenessConfig,
     bool? ttsEnabled,
     String? ttsServiceId,
+    bool clearTtsServiceId = false,
   }) {
     return AIAgent(
       id: id ?? this.id,
@@ -291,7 +292,9 @@ class AIAgent {
       resourceSlots: resourceSlots ?? this.resourceSlots,
       alivenessConfig: alivenessConfig ?? this.alivenessConfig,
       ttsEnabled: ttsEnabled ?? this.ttsEnabled,
-      ttsServiceId: ttsServiceId ?? this.ttsServiceId,
+      ttsServiceId: clearTtsServiceId
+          ? null
+          : ttsServiceId ?? this.ttsServiceId,
     );
   }
 }

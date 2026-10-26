@@ -22,7 +22,7 @@ import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart'
 import 'package:aboutme/plugins/agent_chat/services/suggested_questions_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/voice_call/voice_call_manager.dart';
 import 'package:aboutme/plugins/agent_chat/models/voice_call_config.dart'
-    show VoiceCallConfig, TTSConfig;
+    show VoiceCallConfig;
 import 'package:aboutme/plugins/agent_chat/services/voice_call/voice_call_config_dialog.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/voice_call_screen.dart';
 import 'package:aboutme/plugins/agent_chat/services/speech/tencent_asr_service.dart';
@@ -178,21 +178,12 @@ class _ChatScreenState extends State<ChatScreen> {
     _initializeVoiceCall();
   }
 
-  /// 加载聊天设置（从会话配置中加载）
+  /// 加载聊天设置（语音通话从会话配置加载，语音设置统一从绑定 Agent 加载）
   void _loadChatSettings() {
     // 从 ConversationService 获取最新的会话对象（而非 widget.conversation）
     final latestConversation = _controller.conversationService.getConversation(
       widget.conversation.id,
     );
-
-    // 从会话中加载 TTS 配置；未配置时回退到 agent 的语音设置
-    final ttsConfig = latestConversation?.ttsConfig;
-    if (ttsConfig != null) {
-      _autoReadEnabled = ttsConfig.enabled;
-      _selectedTTSServiceId = ttsConfig.serviceId;
-    } else {
-      _loadAgentTtsSettings();
-    }
 
     // 从会话中加载语音通话配置
     final voiceCallConfig = latestConversation?.voiceCallConfig;
@@ -200,12 +191,15 @@ class _ChatScreenState extends State<ChatScreen> {
       _voiceCallConfig = voiceCallConfig;
     }
 
+    // 语音设置统一从绑定 Agent 加载
+    _loadAgentTtsSettings();
+
     debugPrint(
       '📖 已加载会话设置: autoReadEnabled=$_autoReadEnabled, voiceCallConfig=${voiceCallConfig != null}',
     );
   }
 
-  /// 会话未配置 TTS 时，回退到 agent 的语音设置（链模式取首个 agent）
+  /// 语音设置统一从绑定 agent 加载（链模式取首个 agent）
   Future<void> _loadAgentTtsSettings() async {
     final chain = widget.conversation.agentChain;
     final agentId =
@@ -228,15 +222,11 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// 保存聊天设置（保存到会话配置）
+  /// 保存聊天设置（语音通话配置保存到会话；语音设置统一存 agent）
   Future<void> _saveChatSettings() async {
     try {
       // 更新会话配置
       final updatedConversation = widget.conversation.copyWith(
-        ttsConfig: TTSConfig(
-          enabled: _autoReadEnabled,
-          serviceId: _selectedTTSServiceId,
-        ),
         voiceCallConfig: _voiceCallConfig,
       );
 

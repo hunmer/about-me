@@ -225,6 +225,18 @@ class _TTSSettingsDialogState extends State<TTSSettingsDialog> {
                           ),
                         ),
                       ),
+                      if (widget.agent != null)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+                          child: Text(
+                            'tts_agentScopeHint'.trParams({
+                              'name': widget.agent!.name,
+                            }),
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ),
                       for (final service in _services)
                         _buildServiceRow(context, service),
                     ],

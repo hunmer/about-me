@@ -857,6 +857,46 @@ class _ThemeBackgroundSettingsScreenState
     );
   }
 
+  /// 底栏磨砂参数滑条：标题 + 滑条 + 数值，拖动即时全局生效并持久化
+  Widget _buildFrostSlider(
+    AppThemeData theme, {
+    required String title,
+    required double value,
+    required double min,
+    required double max,
+    required String Function(double value) format,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: DsTypography.heading.copyWith(color: theme.text),
+        ),
+        SizedBox(height: theme.spacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: DSSlider(
+                value: ((value - min) / (max - min)).clamp(0.0, 1.0),
+                onChanged: (t) => onChanged(min + t * (max - min)),
+              ),
+            ),
+            SizedBox(
+              width: 60,
+              child: Text(
+                format(value),
+                style: DsTypography.body.copyWith(color: theme.text),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   /// 贴条样式选择:全局默认样式,点击即时生效
   Widget _buildTapeStylePicker(AppThemeData theme) {
     return Wrap(
@@ -1289,7 +1329,8 @@ class _ThemeBackgroundSettingsScreenState
 
                     SizedBox(height: theme.spacing.lg),
 
-                    // 底部导航栏磨砂玻璃：全局开关（默认开），切换即时生效
+                    // 底部导航栏磨砂玻璃：全局开关（默认开）+ 参数调节，
+                    // 开关与滑条均即时生效
                     ListenableBuilder(
                       listenable: BottomBarStyleController(),
                       builder: (context, _) {
@@ -1310,6 +1351,42 @@ class _ThemeBackgroundSettingsScreenState
                                 onChanged: controller.setFrosted,
                               ),
                             ),
+                            if (controller.frosted) ...[
+                              SizedBox(height: theme.spacing.md),
+                              _buildFrostSlider(
+                                theme,
+                                title:
+                                    'settings_screen_bottomBarBlurTitle'.tr,
+                                value: controller.blurSigma,
+                                min: 0,
+                                max: 30,
+                                format: (v) => v.round().toString(),
+                                onChanged: controller.setBlurSigma,
+                              ),
+                              SizedBox(height: theme.spacing.md),
+                              _buildFrostSlider(
+                                theme,
+                                title:
+                                    'settings_screen_bottomBarFeatherTitle'
+                                    .tr,
+                                value: controller.featherRadius,
+                                min: 0,
+                                max: 48,
+                                format: (v) => v.round().toString(),
+                                onChanged: controller.setFeatherRadius,
+                              ),
+                              SizedBox(height: theme.spacing.md),
+                              _buildFrostSlider(
+                                theme,
+                                title: 'settings_screen_bottomBarFadeTitle'
+                                    .tr,
+                                value: controller.tintFade,
+                                min: 0,
+                                max: 0.5,
+                                format: (v) => '${(v * 100).round()}%',
+                                onChanged: controller.setTintFade,
+                              ),
+                            ],
                           ],
                         );
                       },

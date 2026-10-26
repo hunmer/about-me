@@ -194,7 +194,9 @@ class DSBottomNavigation extends StatelessWidget {
       // 全宽磨砂面板：顶部圆角、底部延伸出屏幕（viewport 自然裁掉），
       // dock 叠在面板之上。宿主容器通常窄于屏宽（如 0.85 比例外壳），
       // 用 OverflowBox 突破约束铺满屏宽；BackdropFilter 的作用范围是
-      // 最近祖先裁剪，ClipRRect 同时负责限定模糊区域与顶部圆角
+      // 最近祖先裁剪，ClipRRect 同时负责限定模糊区域与顶部圆角。
+      // 模糊/羽化/渐变参数来自设置页全局调节
+      final barStyle = BottomBarStyleController();
       final screenW = MediaQuery.sizeOf(context).width;
       bar = Stack(
         clipBehavior: Clip.none,
@@ -213,12 +215,19 @@ class DSBottomNavigation extends StatelessWidget {
                 child: BackdropFilter(
                   // dilate(inner) + blur(outer)：模糊量在面板边缘渐弱，
                   // 形成羽化过渡（Flutter 官方 frosted/feathered 配方）；
-                  // dilate 半径即羽化宽度，取大值让边缘充分渐隐
+                  // dilate 半径即羽化宽度
                   filter: ImageFilter.compose(
-                    outer: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    inner: ImageFilter.dilate(radiusX: 24, radiusY: 24),
+                    outer: ImageFilter.blur(
+                      sigmaX: barStyle.blurSigma,
+                      sigmaY: barStyle.blurSigma,
+                    ),
+                    inner: ImageFilter.dilate(
+                      radiusX: barStyle.featherRadius,
+                      radiusY: barStyle.featherRadius,
+                    ),
                   ),
-                  // tint 顶部同步长渐入（前 ~100px），避免纸色留下硬边线
+                  // tint 顶部同步渐入，避免纸色留下硬边线；
+                  // 渐入长度下限 0.01 防止 stops 两端重合
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -230,7 +239,10 @@ class DSBottomNavigation extends StatelessWidget {
                             alpha: theme.isDark ? 0.4 : 0.3,
                           ),
                         ],
-                        stops: const [0.0, 0.2],
+                        stops: [
+                          0.0,
+                          barStyle.tintFade.clamp(0.01, 1.0).toDouble(),
+                        ],
                       ),
                     ),
                   ),

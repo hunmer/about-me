@@ -212,10 +212,13 @@ extension _ChatScreenTtsVoiceExt on _ChatScreenState {
     );
   }
 
-  /// 打开TTS设置对话框
+  /// 打开TTS设置对话框（语音设置统一保存到当前 Agent）
   Future<void> _openTTSSettings() async {
+    final agent = _currentAgent;
+    if (agent == null) return;
     final result = await showTTSSettingsDialog(
       context,
+      agent: agent,
       initialEnabled: _autoReadEnabled,
       initialServiceId: _selectedTTSServiceId,
     );
@@ -226,8 +229,18 @@ extension _ChatScreenTtsVoiceExt on _ChatScreenState {
         _selectedTTSServiceId = result.serviceId;
       });
 
-      // 保存设置到插件配置
-      await _saveChatSettings();
+      // 语音设置写回 agent，对该 agent 的所有会话与 Live2D 播报生效
+      try {
+        await AgentController().updateAgent(
+          agent.copyWith(
+            ttsEnabled: result.enabled,
+            ttsServiceId: result.serviceId,
+            clearTtsServiceId: result.serviceId == null,
+          ),
+        );
+      } catch (e) {
+        debugPrint('保存 agent 语音设置失败: $e');
+      }
 
       // 显示提示
       if (mounted) {

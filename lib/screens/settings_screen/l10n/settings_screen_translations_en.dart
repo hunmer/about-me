@@ -86,6 +86,9 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settings_screen_bottomBarFrostedTitle': 'Frosted Glass',
   'settings_screen_bottomBarFrostedSubtitle':
       'Apply frosted blur effect to the radial bottom bar',
+  'settings_screen_bottomBarBlurTitle': 'Blur Strength',
+  'settings_screen_bottomBarFeatherTitle': 'Edge Feathering',
+  'settings_screen_bottomBarFadeTitle': 'Fade Length',
   'settings_screen_speechRecognitionSettings': 'Speech Recognition Settings',
   'settings_screen_confirmClear': 'Confirm Clear',
   'settings_screen_confirmClearAiCorrection': 'Clear AI correction agent settings?',

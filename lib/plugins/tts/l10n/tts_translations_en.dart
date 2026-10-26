@@ -142,4 +142,6 @@ const Map<String, String> ttsTranslationsEn = {
   // Settings sheet
   'tts_currentAgentVoice': 'Current Agent',
   'tts_preview': 'Preview',
+  'tts_agentScopeHint':
+      'Applies to all chats and Live2D voice of "@name" after saving',
 };

@@ -142,4 +142,5 @@ const Map<String, String> ttsTranslationsZh = {
   // 设置弹层
   'tts_currentAgentVoice': '当前Agent',
   'tts_preview': '试听',
+  'tts_agentScopeHint': '保存后对「@name」的全部会话与 Live2D 播报生效',
 };

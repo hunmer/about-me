@@ -109,9 +109,6 @@ class Conversation {
   /// 元数据（扩展字段）
   Map<String, dynamic>? metadata;
 
-  /// TTS 自动朗读配置
-  TTSConfig? ttsConfig;
-
   /// 语音通话配置
   VoiceCallConfig? voiceCallConfig;
 
@@ -129,7 +126,6 @@ class Conversation {
     this.lastMessagePreview,
     this.unreadCount = 0,
     this.metadata,
-    this.ttsConfig,
     this.voiceCallConfig,
   });
 
@@ -220,9 +216,6 @@ class Conversation {
       lastMessagePreview: json['lastMessagePreview'] as String?,
       unreadCount: json['unreadCount'] as int? ?? 0,
       metadata: json['metadata'] as Map<String, dynamic>?,
-      ttsConfig: json['ttsConfig'] != null
-          ? TTSConfig.fromJson(json['ttsConfig'] as Map<String, dynamic>)
-          : null,
       voiceCallConfig: json['voiceCallConfig'] != null
           ? VoiceCallConfig.fromJson(
               json['voiceCallConfig'] as Map<String, dynamic>,
@@ -248,7 +241,6 @@ class Conversation {
       'lastMessagePreview': lastMessagePreview,
       'unreadCount': unreadCount,
       'metadata': metadata,
-      if (ttsConfig != null) 'ttsConfig': ttsConfig!.toJson(),
       if (voiceCallConfig != null) 'voiceCallConfig': voiceCallConfig!.toJson(),
     };
   }
@@ -268,7 +260,6 @@ class Conversation {
     String? lastMessagePreview,
     int? unreadCount,
     Map<String, dynamic>? metadata,
-    TTSConfig? ttsConfig,
     VoiceCallConfig? voiceCallConfig,
   }) {
     return Conversation(
@@ -287,7 +278,6 @@ class Conversation {
       lastMessagePreview: lastMessagePreview ?? this.lastMessagePreview,
       unreadCount: unreadCount ?? this.unreadCount,
       metadata: metadata ?? this.metadata,
-      ttsConfig: ttsConfig ?? this.ttsConfig,
       voiceCallConfig: voiceCallConfig ?? this.voiceCallConfig,
     );
   }

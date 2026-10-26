@@ -25,7 +25,6 @@ class Live2DPlugin extends BasePlugin {
       _instance ??= PluginManager.instance.getPlugin('live2d') as Live2DPlugin;
   static const fixedGroup = 'live2d';
   static const defaultTypingIntervalMs = 70;
-  static const defaultAutoReadEnabled = false;
   static const defaultBubbleAsset = 'assets/bubbles/可拉伸兔子聊天气泡素材.webp';
   static const defaultBackgroundBlur = 0.0;
   static const defaultBackgroundOpacity = 1.0;
@@ -38,12 +37,8 @@ class Live2DPlugin extends BasePlugin {
         settings['typingIntervalMs'] as int? ?? defaultTypingIntervalMs,
   );
 
-  bool get autoReadEnabled =>
-      settings['autoReadEnabled'] as bool? ?? defaultAutoReadEnabled;
-
   String get bubbleAsset =>
       settings['bubbleAsset'] as String? ?? defaultBubbleAsset;
-
   Future<void> setBubbleAsset(String asset) async {
     await updateSettings({'bubbleAsset': asset});
   }
@@ -193,16 +188,20 @@ class Live2DPlugin extends BasePlugin {
     await updateSettings({'bubbleRegions': next});
   }
 
-  String? get ttsServiceId => settings['ttsServiceId'] as String?;
-
   Future<void> speakReply(String reply) async {
-    if (!autoReadEnabled || reply.trim().isEmpty) return;
+    if (reply.trim().isEmpty) return;
     // 聊天请求失败（❌）或用户取消（🛑）的错误提示不朗读
     if (reply.startsWith('❌') || reply.startsWith('🛑')) return;
+
+    // 语音设置统一存档绑定的 Agent 上；服务未指定时走全局默认服务
+    final agentId = selected?.agentId;
+    if (agentId == null) return;
     try {
+      final agent = await AgentController().getAgent(agentId);
+      if (agent == null || !agent.ttsEnabled) return;
       await TTSPlugin.instance.speak(
         reply,
-        serviceId: ttsServiceId,
+        serviceId: agent.ttsServiceId,
         onError: (error) => debugPrint('[Live2DChat] TTS failed: $error'),
       );
       // 成就系统计数（A13 播报员）
@@ -268,8 +267,6 @@ class Live2DPlugin extends BasePlugin {
   Future<void> initialize() async {
     await loadSettings({
       'typingIntervalMs': defaultTypingIntervalMs,
-      'autoReadEnabled': defaultAutoReadEnabled,
-      'ttsServiceId': null,
       'bubbleAsset': defaultBubbleAsset,
       'backgroundAsset': null,
       'backgroundBlur': defaultBackgroundBlur,

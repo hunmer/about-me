@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/plugins/tts/widgets/tts_settings_dialog.dart';
@@ -32,8 +35,11 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
       (plugin.settings['typingIntervalMs'] as int? ??
               Live2DPlugin.defaultTypingIntervalMs)
           .toDouble();
-  late bool _autoReadEnabled = plugin.autoReadEnabled;
-  late String? _selectedTTSServiceId = plugin.ttsServiceId;
+
+  /// 语音设置统一存档绑定的 Agent 上
+  AIAgent? _boundAgent;
+  bool _autoReadEnabled = false;
+  String? _selectedTTSServiceId;
   TTSServiceConfig? _selectedTTSService;
 
   /// 向预览中的 JellyLive2D 发送动作播放请求（置空再赋值以便重复触发同一动作）
@@ -49,7 +55,28 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
             .firstOrNull ??
         plugin.selected ??
         (plugin.archives.isNotEmpty ? plugin.archives.first : null);
-    _loadSelectedTTSService();
+    _loadBoundAgent();
+  }
+
+  /// 加载当前存档绑定的 Agent 语音设置；未绑定时语音区不可用
+  Future<void> _loadBoundAgent() async {
+    _boundAgent = null;
+    _autoReadEnabled = false;
+    _selectedTTSServiceId = null;
+    final agentId = archive?.agentId;
+    if (agentId != null) {
+      try {
+        _boundAgent = await AgentController().getAgent(agentId);
+      } catch (error) {
+        debugPrint('加载存档绑定 Agent 失败: $error');
+      }
+    }
+    if (_boundAgent != null) {
+      _autoReadEnabled = _boundAgent!.ttsEnabled;
+      _selectedTTSServiceId = _boundAgent!.ttsServiceId;
+    }
+    if (mounted) setState(() {});
+    await _loadSelectedTTSService();
   }
 
   Future<void> _loadSelectedTTSService() async {
@@ -65,13 +92,24 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   }
 
   Future<void> _setAutoReadEnabled(bool enabled) async {
+    final agent = _boundAgent;
+    if (agent == null) {
+      ToastService.instance.showToast('live2d_bindAgentFirst'.tr);
+      return;
+    }
     setState(() => _autoReadEnabled = enabled);
-    await plugin.updateSettings({'autoReadEnabled': enabled});
+    await AgentController().updateAgent(agent.copyWith(ttsEnabled: enabled));
   }
 
   Future<void> _openTTSSettings() async {
+    final agent = _boundAgent;
+    if (agent == null) {
+      ToastService.instance.showToast('live2d_bindAgentFirst'.tr);
+      return;
+    }
     final result = await showTTSSettingsDialog(
       context,
+      agent: agent,
       initialEnabled: _autoReadEnabled,
       initialServiceId: _selectedTTSServiceId,
     );
@@ -80,10 +118,13 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
       _autoReadEnabled = result.enabled;
       _selectedTTSServiceId = result.serviceId;
     });
-    await plugin.updateSettings({
-      'autoReadEnabled': result.enabled,
-      'ttsServiceId': result.serviceId,
-    });
+    await AgentController().updateAgent(
+      agent.copyWith(
+        ttsEnabled: result.enabled,
+        ttsServiceId: result.serviceId,
+        clearTtsServiceId: result.serviceId == null,
+      ),
+    );
     await _loadSelectedTTSService();
   }
 
@@ -202,6 +243,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                         archive = item;
                         plugin.selectedId = item.id;
                       });
+                      _loadBoundAgent();
                     },
                     onUpload: () => _uploadAvatar(item),
                   );
