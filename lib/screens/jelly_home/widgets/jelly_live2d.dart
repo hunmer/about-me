@@ -144,6 +144,8 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   double _voiceGazeTargetRemaining = 0;
   DateTime? _voiceGazeLastTick;
   bool _voiceGazeUpdateInFlight = false;
+  double? _pendingVoiceGazeX;
+  double? _pendingVoiceGazeY;
 
   /// 可点击区域（HitAreas）调试叠加层的开关状态，不持久化；
   /// 用 ValueNotifier 让已打开的控制面板能实时刷新
@@ -355,7 +357,12 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   }
 
   Future<void> _sendVoiceGazeParameters(double x, double y) async {
-    if (_voiceGazeUpdateInFlight || !mounted || !_controller.value.isLoaded) {
+    if (!mounted || !_controller.value.isLoaded) {
+      return;
+    }
+    if (_voiceGazeUpdateInFlight) {
+      _pendingVoiceGazeX = x;
+      _pendingVoiceGazeY = y;
       return;
     }
     _voiceGazeUpdateInFlight = true;
@@ -367,6 +374,13 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
       debugPrint('[Live2D][Voice] gaze update failed: $error');
     } finally {
       _voiceGazeUpdateInFlight = false;
+      final pendingX = _pendingVoiceGazeX;
+      final pendingY = _pendingVoiceGazeY;
+      _pendingVoiceGazeX = null;
+      _pendingVoiceGazeY = null;
+      if (pendingX != null && pendingY != null) {
+        unawaited(_sendVoiceGazeParameters(pendingX, pendingY));
+      }
     }
   }
 
@@ -382,6 +396,8 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     _voiceGazeTargetX = 0;
     _voiceGazeTargetY = 0;
     _voiceGazeTargetRemaining = 0;
+    _pendingVoiceGazeX = 0;
+    _pendingVoiceGazeY = 0;
     unawaited(_sendVoiceGazeParameters(0, 0));
   }
 
