@@ -70,7 +70,7 @@
     "title": "更新数据库",
     "description": "更新数据库的名称、描述或字段定义",
     "parameters": [
-      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID"},
+      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID（来自 getDatabases 返回的 id）"},
       {"name": "name", "type": "string", "required": false, "description": "新名称"},
       {"name": "description", "type": "string", "required": false, "description": "新描述"},
       {"name": "fieldsJson", "type": "string", "required": false, "description": "新字段定义"}
@@ -92,7 +92,7 @@
     "title": "删除数据库",
     "description": "删除指定的数据库（包括所有记录）",
     "parameters": [
-      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID"}
+      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID（来自 getDatabases 返回的 id）"}
     ],
     "returns": {
       "type": "boolean",
@@ -109,10 +109,10 @@
   },
   "getRecords": {
     "title": "获取记录列表",
-    "description": "获取指定数据库的所有记录，支持分页",
+    "description": "获取指定数据库的记录，支持分页",
     "parameters": [
-      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID"},
-      {"name": "limit", "type": "number", "required": false, "description": "限制返回记录数（返回最新的N条）"},
+      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID（来自 getDatabases 返回的 id）"},
+      {"name": "limit", "type": "number", "required": false, "description": "限制返回记录数（取前N条，等同 count）"},
       {
         "name": "offset",
         "type": "number",
@@ -159,7 +159,7 @@
     "title": "创建记录",
     "description": "在指定数据库中创建新记录",
     "parameters": [
-      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID"},
+      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID（来自 getDatabases 返回的 id）"},
       {"name": "fieldsJson", "type": "string", "required": true, "description": "字段数据（JSON对象字符串，键为字段名，可包含id字段用于自定义记录ID）"},
       {"name": "id", "type": "string", "required": false, "description": "记录ID(可选,不提供则自动生成)"}
     ],
@@ -188,8 +188,8 @@
     "title": "更新记录",
     "description": "更新指定记录的字段值",
     "parameters": [
-      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID"},
-      {"name": "recordId", "type": "string", "required": true, "description": "记录ID"},
+      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID（来自 getDatabases 返回的 id）"},
+      {"name": "recordId", "type": "string", "required": true, "description": "记录ID（来自 getRecords 返回的 id）"},
       {"name": "fieldsJson", "type": "string", "required": true, "description": "要更新的字段数据"}
     ],
     "returns": {
@@ -209,8 +209,8 @@
     "title": "删除记录",
     "description": "删除指定的记录",
     "parameters": [
-      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID"},
-      {"name": "recordId", "type": "string", "required": true, "description": "记录ID"}
+      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID（来自 getDatabases 返回的 id）"},
+      {"name": "recordId", "type": "string", "required": true, "description": "记录ID（来自 getRecords 返回的 id）"}
     ],
     "returns": {
       "type": "boolean",
@@ -229,8 +229,8 @@
     "title": "查询记录",
     "description": "根据条件查询记录，支持分页",
     "parameters": [
-      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID"},
-      {"name": "filtersJson", "type": "string", "required": false, "description": "过滤条件（JSON对象，键值对精确匹配）"},
+      {"name": "databaseId", "type": "string", "required": true, "description": "数据库ID（来自 getDatabases 返回的 id）"},
+      {"name": "filtersJson", "type": "string", "required": false, "description": "过滤条件（JSON对象字符串，键为字段名，值精确匹配；不传则返回全部记录）"},
       {
         "name": "offset",
         "type": "number",
@@ -290,7 +290,7 @@
         "code": "const count = await Aboutme.plugins.database.getCount({type: 'records', databaseId: 'db123'});\nsetResult(`该数据库有 ${count} 条记录`);"
       }
     ],
-    "notes": "type 参数只接受 'databases' 或 'records' 两个值",
+    "notes": "type 参数只接受 'databases' 或 'records' 两个值；type='records' 时必须提供 databaseId，否则返回错误",
     "enabled": true
   },
   "findDatabaseBy": {
