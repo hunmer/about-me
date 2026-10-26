@@ -75,7 +75,12 @@ class Live2DZipImport {
     required String zipName,
     Directory? targetDir,
   }) async {
-    final archive = ZipDecoder().decodeBytes(bytes);
+    final decoder = ZipDecoder();
+    final archive = decoder.decodeBytes(bytes);
+    final entryNames = <String, String>{
+      for (final header in decoder.directory.fileHeaders)
+        header.file!.filename: _unicodeEntryName(header, bytes),
+    };
     final zipLabel = p.basenameWithoutExtension(zipName);
     Directory target;
     if (targetDir != null) {
@@ -91,7 +96,9 @@ class Live2DZipImport {
       await target.create(recursive: true);
       for (final entry in archive) {
         if (!entry.isFile) continue;
-        final relative = _normalizeEntryName(entry.name);
+        final relative = _normalizeEntryName(
+          entryNames[entry.name] ?? entry.name,
+        );
         if (relative == null) continue;
         final file = File(p.join(target.path, relative));
         await file.parent.create(recursive: true);
@@ -134,9 +141,7 @@ class Live2DZipImport {
       }
       definitions.add(
         Live2DModelDefinition(
-          label: definitions.isEmpty
-              ? zipLabel
-              : '$zipLabel · $modelName',
+          label: definitions.isEmpty ? zipLabel : '$zipLabel · $modelName',
           modelDir: '${file.parent.path}/',
           modelFile: p.basename(file.path),
           motions: modelJson == null
@@ -146,6 +151,42 @@ class Live2DZipImport {
       );
     }
     return definitions;
+  }
+
+  // Windows ZIP tools may store GBK names alongside the Info-ZIP Unicode
+  // Path extra field (0x7075). JSON resource references use the Unicode name.
+  static String _unicodeEntryName(ZipFileHeader header, List<int> bytes) {
+    final extra = header.extraField;
+    if (extra == null) return header.file!.filename;
+    final offset = header.localHeaderOffset;
+    if (offset < 0 || offset + 30 > bytes.length) {
+      return header.file!.filename;
+    }
+    final nameLength = bytes[offset + 26] | (bytes[offset + 27] << 8);
+    final nameEnd = offset + 30 + nameLength;
+    if (nameEnd > bytes.length) return header.file!.filename;
+    final nameCrc = getCrc32(bytes.sublist(offset + 30, nameEnd));
+    final data = ByteData.sublistView(extra);
+    for (var start = 0; start + 4 <= extra.length;) {
+      final id = data.getUint16(start, Endian.little);
+      final length = data.getUint16(start + 2, Endian.little);
+      final payload = start + 4;
+      final end = payload + length;
+      if (end > extra.length) break;
+      if (id == 0x7075 &&
+          length >= 5 &&
+          extra[payload] == 1 &&
+          data.getUint32(payload + 1, Endian.little) == nameCrc) {
+        try {
+          final name = utf8.decode(extra.sublist(payload + 5, end));
+          if (name.isNotEmpty) return name;
+        } on FormatException {
+          // Ignore invalid optional metadata and retain the decoded ZIP name.
+        }
+      }
+      start = end;
+    }
+    return header.file!.filename;
   }
 
   /// 规范化压缩包内路径：反斜杠转正斜杠、拒绝目录穿越/绝对路径，

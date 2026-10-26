@@ -1,12 +1,17 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 
+import 'package:get/get.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/memory_library.dart';
 import 'package:aboutme/plugins/openai/aliveness/screens/memory_library_detail_screen.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
+import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// 记忆库管理页：创建、查看和选择 agent 要使用的独立记忆库。
 class MemoryManagerScreen extends StatefulWidget {
@@ -42,7 +47,7 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ToastService.instance.showToast('加载记忆库失败：$error');
+      Toast.error('openai_memoryLibraryLoadFailed'.trParams({'@error': '$error'}));
     }
   }
 
@@ -73,7 +78,9 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
       );
       await _load();
     } catch (error) {
-      if (mounted) ToastService.instance.showToast('创建记忆库失败：$error');
+      if (mounted) {
+        Toast.error('openai_memoryLibraryCreateFailed'.trParams({'@error': '$error'}));
+      }
     }
   }
 
@@ -90,7 +97,9 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
       );
       await _load();
     } catch (error) {
-      if (mounted) ToastService.instance.showToast('更新记忆库失败：$error');
+      if (mounted) {
+        Toast.error('openai_memoryLibraryUpdateFailed'.trParams({'@error': '$error'}));
+      }
     }
   }
 
@@ -104,70 +113,67 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
     final prefixesController = TextEditingController(
       text: library?.allowedKeyPrefixes.join(', ') ?? '',
     );
-    final result = await showDialog<_MemoryLibraryFormResult>(
+    String? nameError;
+    final result = await showDSDialog<_MemoryLibraryFormResult>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(library == null ? '创建记忆库' : '编辑记忆库'),
-        content: SingleChildScrollView(
-          child: Column(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => DSDialog(
+          title: (library == null
+                  ? 'openai_memoryLibraryCreate'
+                  : 'openai_memoryLibraryEdit')
+              .tr,
+          content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
+              DSInput(
                 controller: nameController,
-                autofocus: true,
-                maxLength: 80,
-                decoration: const InputDecoration(
-                  labelText: '名称',
-                  hintText: '例如：工作与计划',
-                ),
+                label: 'openai_memoryLibraryNameLabel'.tr,
+                hint: 'openai_memoryLibraryNameHint'.tr,
+                errorText: nameError,
               ),
-              TextField(
+              const SizedBox(height: 12),
+              DSInput(
                 controller: descriptionController,
-                maxLength: 200,
-                decoration: const InputDecoration(
-                  labelText: '说明（可选）',
-                  hintText: '例如：只保存用户长期偏好',
-                ),
+                label: 'openai_memoryLibraryDescriptionLabel'.tr,
+                hint: 'openai_memoryLibraryDescriptionHint'.tr,
               ),
-              TextField(
+              const SizedBox(height: 12),
+              DSInput(
                 controller: prefixesController,
-                maxLength: 200,
-                decoration: const InputDecoration(
-                  labelText: '允许 AI 写入的 key 前缀（可选）',
-                  hintText: '例如：user, event；留空表示不限',
-                ),
+                label: 'openai_memoryLibraryPrefixLabel'.tr,
+                hint: 'openai_memoryLibraryPrefixHint'.tr,
               ),
             ],
           ),
+          confirmText: (library == null ? 'app_create' : 'app_save').tr,
+          cancelText: 'app_cancel'.tr,
+          onConfirm: () {
+            final name = nameController.text.trim();
+            if (name.isEmpty) {
+              setDialogState(() => nameError = 'openai_memoryLibraryNameRequired'.tr);
+              return;
+            }
+            final prefixes = prefixesController.text
+                .split(RegExp(r'[,，\n]'))
+                .map((prefix) => prefix.trim())
+                .where((prefix) => prefix.isNotEmpty)
+                .toSet()
+                .toList();
+            Navigator.of(dialogContext).pop(
+              _MemoryLibraryFormResult(
+                name: name,
+                description: descriptionController.text.trim(),
+                allowedKeyPrefixes: prefixes,
+              ),
+            );
+          },
+          onCancel: () => Navigator.of(dialogContext).pop(),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final name = nameController.text.trim();
-              if (name.isEmpty) return;
-              final prefixes = prefixesController.text
-                  .split(RegExp(r'[,，\n]'))
-                  .map((prefix) => prefix.trim())
-                  .where((prefix) => prefix.isNotEmpty)
-                  .toSet()
-                  .toList();
-              Navigator.of(context).pop(
-                _MemoryLibraryFormResult(
-                  name: name,
-                  description: descriptionController.text.trim(),
-                  allowedKeyPrefixes: prefixes,
-                ),
-              );
-            },
-            child: Text(library == null ? '创建' : '保存'),
-          ),
-        ],
       ),
     );
+    // pop 结果早于退出动画结束，等输入框卸载后再释放控制器
+    await Future.delayed(const Duration(milliseconds: 400));
     nameController.dispose();
     descriptionController.dispose();
     prefixesController.dispose();
@@ -176,103 +182,165 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
 
   Future<void> _copyId(String id) async {
     await Clipboard.setData(ClipboardData(text: id));
-    if (mounted) ToastService.instance.showToast('记忆库 ID 已复制');
+    if (mounted) Toast.success('openai_memoryLibraryIdCopied'.tr);
   }
 
   @override
   Widget build(BuildContext context) {
     final canSelect = widget.config != null && widget.onConfigChanged != null;
-    return Scaffold(
-      appBar: AppBar(title: const Text('记忆库')),
-      body: Column(
-        children: [
-          if (canSelect)
-            const MaterialBanner(
-              content: Text('选择供当前 agent 使用的库；返回编辑页保存生效'),
-              actions: [SizedBox.shrink()],
-            ),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _libraries.isEmpty
-                ? const Center(
-                    child: Text(
-                      '暂无记忆库\n创建后可由多个 agent 共同使用',
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
-                    itemCount: _libraries.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final library = _libraries[index];
-                      final selected = _selectedIds.contains(library.id);
-                      return Card(
-                        child: ListTile(
-                          leading: canSelect
-                              ? Checkbox(
-                                  value: selected,
-                                  onChanged: (value) =>
-                                      _toggleLibrary(library, value ?? false),
-                                )
-                              : const Icon(Icons.storage_outlined),
-                          title: Text(library.name),
-                          subtitle: Text(
-                            [
-                              if (library.description.isNotEmpty)
-                                library.description,
-                              'ID: ${library.id}',
-                              '创建于 ${_formatDate(library.createdAt)}',
-                              if (library.allowedKeyPrefixes.isNotEmpty)
-                                'AI 写入限制：${library.allowedKeyPrefixes.join('、')}',
-                            ].join('\n'),
-                          ),
-                          isThreeLine: true,
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (action) {
-                              if (action == 'copy') _copyId(library.id);
-                              if (action == 'edit') _editLibrary(library);
-                              if (action == 'open') {
-                                NavigationHelper.push(
-                                  context,
-                                  MemoryLibraryDetailScreen(
-                                    memoryId: library.id,
-                                    memoryName: library.name,
-                                  ),
-                                );
-                              }
-                            },
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(value: 'open', child: Text('打开')),
-                              PopupMenuItem(
-                                value: 'edit',
-                                child: Text('编辑库设置'),
-                              ),
-                              PopupMenuItem(
-                                value: 'copy',
-                                child: Text('复制 ID'),
-                              ),
-                            ],
-                          ),
-                          onTap: () => NavigationHelper.push(
-                            context,
-                            MemoryLibraryDetailScreen(
-                              memoryId: library.id,
-                              memoryName: library.name,
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return SuperCupertinoNavigationWrapper(
+            title: Text('openai_memoryManagerTitle'.tr),
+            largeTitle: 'openai_memoryManagerTitle'.tr,
+            previousPageTitle: 'openai_pluginSettingsTitle'.tr,
+            actions: [
+              DSThemeBridge(
+                child: Builder(
+                  builder: (context) {
+                    final theme = DSThemeBridge.resolve(context);
+                    return DSIconButton(
+                      icon: DsIconKind.plus,
+                      size: 36,
+                      color: theme.primary,
+                      iconColor: theme.onPrimary,
+                      onPressed: _createLibrary,
+                    );
+                  },
+                ),
+              ),
+            ],
+            body: Column(
+              children: [
+                if (canSelect)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+                    child: Row(
+                      children: [
+                        DsIcon(
+                          DsIconKind.info,
+                          size: 16,
+                          color: theme.textSub,
+                        ),
+                        SizedBox(width: theme.spacing.sm),
+                        Expanded(
+                          child: Text(
+                            'openai_memoryLibrariesSelectHint'.tr,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
                             ),
                           ),
                         ),
-                      );
-                    },
+                      ],
+                    ),
                   ),
+                Expanded(
+                  child: _loading
+                      ? Center(child: DSLoadingDots(color: theme.primary))
+                      : _libraries.isEmpty
+                      ? Center(
+                          child: DSEmptyState(
+                            icon: DsIconKind.layers,
+                            title: 'openai_memoryLibrariesEmptyTitle'.tr,
+                            message: 'openai_memoryLibrariesEmptyMessage'.tr,
+                            actionLabel: 'openai_memoryLibraryCreate'.tr,
+                            onAction: _createLibrary,
+                          ),
+                        )
+                      : HandDrawnListView(
+                          padding: EdgeInsets.fromLTRB(
+                            theme.spacing.lg,
+                            12, // 贴条顶部出血
+                            theme.spacing.lg,
+                            MediaQuery.paddingOf(context).bottom,
+                          ),
+                          itemCount: _libraries.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 16),
+                          tiltKeyOf: (index) => _libraries[index].id,
+                          itemBuilder: (context, index) =>
+                              _buildLibraryCard(context, index, canSelect),
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLibraryCard(BuildContext context, int index, bool canSelect) {
+    final library = _libraries[index];
+    final theme = DSThemeBridge.resolve(context);
+    final selected = _selectedIds.contains(library.id);
+    return DSCard(
+      onTap: () => NavigationHelper.push(
+        context,
+        MemoryLibraryDetailScreen(
+          memoryId: library.id,
+          memoryName: library.name,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (canSelect) ...[
+                DSCheckbox(
+                  value: selected,
+                  onChanged: (value) =>
+                      _toggleLibrary(library, value ?? false),
+                ),
+                SizedBox(width: theme.spacing.sm),
+              ],
+              Expanded(
+                child: Text(
+                  library.name,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+              ),
+              DSIconButton(
+                icon: DsIconKind.edit,
+                size: 34,
+                color: theme.surface,
+                iconColor: theme.textSub,
+                onPressed: () => _editLibrary(library),
+              ),
+              DSIconButton(
+                icon: DsIconKind.copy,
+                size: 34,
+                color: theme.surface,
+                iconColor: theme.textSub,
+                onPressed: () => _copyId(library.id),
+              ),
+            ],
+          ),
+          if (library.description.isNotEmpty) ...[
+            SizedBox(height: theme.spacing.sm),
+            Text(
+              library.description,
+              style: DsTypography.body.copyWith(color: theme.textSub),
+            ),
+          ],
+          SizedBox(height: theme.spacing.sm),
+          Text(
+            [
+              'openai_memoryLibraryId'.trParams({'@id': library.id}),
+              'openai_memoryLibraryCreatedAt'.trParams({
+                '@date': _formatDate(library.createdAt),
+              }),
+              if (library.allowedKeyPrefixes.isNotEmpty)
+                'openai_memoryLibraryWriteLimit'.trParams({
+                  '@prefixes': library.allowedKeyPrefixes.join('、'),
+                }),
+            ].join('\n'),
+            style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _createLibrary,
-        icon: const Icon(Icons.add),
-        label: const Text('新建记忆库'),
       ),
     );
   }

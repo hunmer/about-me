@@ -29,14 +29,14 @@ Widget buildFixedSymbolChild(
   return Text(value, style: style);
 }
 
-/// 气泡角落的固定符号角标，点击弹出编辑弹层（onTap 由父级注入）
+/// 气泡角落的固定符号角标（无背景，仅符号内容），点击弹出编辑弹层（onTap 由父级注入）
 class FixedSymbolWidget extends StatelessWidget {
   final String symbol;
 
   /// 点击角标回调（null 时不可点击）
   final VoidCallback? onTap;
 
-  /// 角标边长（父级 Stack 以其一半作偏移实现半进半出）
+  /// 角标占位边长（父级 Stack 以其一半作偏移实现半进半出）
   static const double badgeSize = 45;
 
   const FixedSymbolWidget({
@@ -49,23 +49,19 @@ class FixedSymbolWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         width: badgeSize,
         height: badgeSize,
-        decoration: BoxDecoration(
-          color: Colors.amber.shade100,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.amber.shade200),
-        ),
-        alignment: Alignment.center,
-        child: buildFixedSymbolChild(
-          symbol,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.amber.shade800,
+        child: Center(
+          child: buildFixedSymbolChild(
+            symbol,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.amber.shade800,
+            ),
+            imageSize: 33,
           ),
-          imageSize: 33,
         ),
       ),
     );

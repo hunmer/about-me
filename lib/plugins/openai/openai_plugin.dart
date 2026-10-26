@@ -29,14 +29,12 @@ import 'package:aboutme/plugins/openai/moments/services/agent_assets_service.dar
 import 'package:aboutme/plugins/openai/moments/services/image_gen_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:shared_models/usecases/openai/openai_usecase.dart';
-import 'package:aboutme/widgets/preset_edit_form.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart'
     show AgentChatMainView;
 import 'repositories/client_openai_repository.dart';
 import 'screens/agent_list_screen.dart';
 import 'screens/plugin_settings_screen.dart';
-import 'screens/prompt_preset_screen.dart';
 import 'screens/agent_edit_screen.dart';
 import 'screens/topic_collection_screen.dart';
 import 'handlers/chat_event_handler.dart';
@@ -645,7 +643,7 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
   void initState() {
     super.initState();
     _currentPage = 0;
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.animation?.addListener(() {
       final value = _tabController.animation!.value.round();
       if (value != _currentPage && mounted) {
@@ -670,14 +668,10 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
 
     switch (tabIndex) {
       case 1:
-        pageId = '/openai/presets';
-        title = 'openai_promptPreset'.tr;
-        break;
-      case 2:
         pageId = '/openai/chat';
         title = 'agent_chat_aiChat'.tr;
         break;
-      case 3:
+      case 2:
         pageId = '/openai/topics';
         title = 'openai_topicsTab'.tr;
         break;
@@ -699,43 +693,15 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
     super.dispose();
   }
 
-  void _showPresetEditPage() async {
-    // 预设编辑页为无名路由，手动上报编辑上下文，关闭后恢复当前tab上下文
-    RouteHistoryManager.updateCurrentContext(
-      pageId: '/openai/preset_edit',
-      title: 'openai_promptPreset'.tr,
-      params: {'mode': '新建', 'name': ''},
-    );
-    await showPresetEditPage(
-      context: context,
-      onSave: (preset, prompts) async {
-        final service = PromptPresetService();
-        await service.addPreset(preset);
-
-        if (mounted) {
-          Toast.success('openai_presetSaved'.tr);
-          setState(() {});
-        }
-      },
-    );
-    if (mounted) _updateRouteContext(_currentPage);
-  }
-
   /// 构建 FAB
   Widget _buildFab() {
     return DSThemeBridge(
       // DSFab 内部取 AppTheme，需包桥
       child: DSFab(
-        onPressed: () {
-          if (_currentPage == 0) {
-            _showCreateAgentMenu();
-          } else {
-            _showPresetEditPage();
-          }
-        },
+        onPressed: _showCreateAgentMenu,
         color: Colors.deepOrange,
         iconColor: Colors.white,
-        icon: _currentPage == 0 ? DsIconKind.bot : DsIconKind.clipboard,
+        icon: DsIconKind.bot,
       ),
     );
   }
@@ -790,17 +756,15 @@ class _OpenAIMainViewState extends State<OpenAIMainView>
         physics: const NeverScrollableScrollPhysics(),
         children: const [
           AgentListScreen(),
-          PromptPresetScreen(),
           AgentChatMainView(),
           TopicCollectionScreen(),
         ],
       ),
       // 会话列表自带导航栏"+"入口，话题 tab 的操作在页内，
       // 该两个 tab 下隐藏 FAB 避免重复
-      fab: _currentPage >= 2 ? null : _buildFab(),
+      fab: _currentPage == 0 ? _buildFab() : null,
       items: [
         DSNavItem(icon: DsIconKind.bot, label: 'openai_agentsTab'.tr),
-        DSNavItem(icon: DsIconKind.book, label: 'openai_promptPreset'.tr),
         DSNavItem(icon: DsIconKind.chat, label: 'agent_chat_aiChat'.tr),
         DSNavItem(icon: DsIconKind.category, label: 'openai_topicsTab'.tr),
       ],

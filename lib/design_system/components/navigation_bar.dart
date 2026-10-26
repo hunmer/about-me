@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/widgets.dart';
 import 'package:radial_disc_bottom_bar/radial_disc_bottom_bar.dart';
 
@@ -153,7 +155,9 @@ class DSBottomNavigation extends StatelessWidget {
       activeIndex: currentIndex.clamp(0, items.length - 1),
       onTabChange: onTap,
       floatingAction: floatingAction,
-      frosted: frosted,
+      // 整域磨砂改由外层 BackdropFilter 承担，扇环不再单独
+      // 背景模糊，避免同区域双重 backdrop 采样
+      frosted: false,
       subBarBehavior:
           subBarBehavior ??
           (subLabels == null &&
@@ -182,6 +186,24 @@ class DSBottomNavigation extends StatelessWidget {
       heightFactor: 1,
       child: FittedBox(fit: BoxFit.scaleDown, child: bar),
     );
+    if (frosted) {
+      // 整域磨砂：dock 占位矩形整体背景模糊 + 淡纸色玻璃底。
+      // BackdropFilter 的作用范围是最近的祖先裁剪而非自身 bounds，
+      // 不加 ClipRect 模糊会一路扩散到 viewport（整屏磨砂）；
+      // ClipRect 内留 6px 余量，顶部溢出画布的圆钮/FAB 不被裁掉
+      bar = ClipRect(
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: ColoredBox(
+              color: theme.paper.withValues(alpha: theme.isDark ? 0.4 : 0.3),
+              child: bar,
+            ),
+          ),
+        ),
+      );
+    }
     if (onTap == null) bar = IgnorePointer(child: bar);
     return bar;
   }

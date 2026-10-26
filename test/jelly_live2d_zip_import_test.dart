@@ -47,19 +47,22 @@ void main() {
       }),
     );
     final zip = ZipEncoder().encode(
-      buildZip([
-        'hitori/character.model3.json',
-        'hitori/textures/texture_00.png',
-        '__MACOSX/hitori/._character.model3.json',
-        'hitori/.DS_Store',
-        '../evil.txt',
-      ], {
-        'hitori/character.model3.json': modelJson,
-        'hitori/textures/texture_00.png': [1, 2, 3],
-        '__MACOSX/hitori/._character.model3.json': utf8.encode('junk'),
-        'hitori/.DS_Store': utf8.encode('junk'),
-        '../evil.txt': utf8.encode('evil'),
-      }),
+      buildZip(
+        [
+          'hitori/character.model3.json',
+          'hitori/textures/texture_00.png',
+          '__MACOSX/hitori/._character.model3.json',
+          'hitori/.DS_Store',
+          '../evil.txt',
+        ],
+        {
+          'hitori/character.model3.json': modelJson,
+          'hitori/textures/texture_00.png': [1, 2, 3],
+          '__MACOSX/hitori/._character.model3.json': utf8.encode('junk'),
+          'hitori/.DS_Store': utf8.encode('junk'),
+          '../evil.txt': utf8.encode('evil'),
+        },
+      ),
     );
 
     final models = await Live2DZipImport.importBytes(
@@ -72,26 +75,30 @@ void main() {
     final model = models.single;
     expect(model.label, 'hitori');
     expect(model.modelFile, 'character.model3.json');
-    expect(model.modelDir, '${tempDir.path}/hitori/');
+    expect(model.modelDir, '${p.join(tempDir.path, 'hitori')}/');
     expect(model.motions, hasLength(1));
     expect(model.motions.single.label, '待机');
     // 垃圾文件与目录穿越条目不落盘
-    expect(await File(p.join(tempDir.path, 'hitori', '.DS_Store')).exists(),
-        isFalse);
-    expect(await File(p.join(tempDir.parent.path, 'evil.txt')).exists(),
-        isFalse);
+    expect(
+      await File(p.join(tempDir.path, 'hitori', '.DS_Store')).exists(),
+      isFalse,
+    );
+    expect(
+      await File(p.join(tempDir.parent.path, 'evil.txt')).exists(),
+      isFalse,
+    );
   });
 
   test('多模型 zip 按目录深度排序，浅层在前', () async {
     final emptyJson = utf8.encode(jsonEncode({'FileReferences': {}}));
     final zip = ZipEncoder().encode(
-      buildZip([
-        'pack/inner/deep.model3.json',
-        'pack/top.model3.json',
-      ], {
-        'pack/inner/deep.model3.json': emptyJson,
-        'pack/top.model3.json': emptyJson,
-      }),
+      buildZip(
+        ['pack/inner/deep.model3.json', 'pack/top.model3.json'],
+        {
+          'pack/inner/deep.model3.json': emptyJson,
+          'pack/top.model3.json': emptyJson,
+        },
+      ),
     );
 
     final models = await Live2DZipImport.importBytes(
@@ -104,6 +111,38 @@ void main() {
     expect(models.first.modelFile, 'top.model3.json');
     expect(models.first.label, 'pack');
     expect(models.last.label, 'pack · deep');
+  });
+
+  test('GBK ZIP 使用 Unicode Path 信息恢复中文文件名和资源路径', () async {
+    // Fixture: GBK names, UTF-8 flag unset, valid 0x7075 Unicode Path fields.
+    final bytes = await File(
+      'test/fixtures/live2d_gbk_unicode.zip',
+    ).readAsBytes();
+    final models = await Live2DZipImport.importBytes(
+      bytes,
+      zipName: '大肥鱼-B站.zip',
+      targetDir: tempDir,
+    );
+
+    expect(models, hasLength(1));
+    final model = models.single;
+    expect(model.modelFile, '大肥鱼.model3.json');
+    expect(p.basename(p.normalize(model.modelDir)), '大肥鱼-B站');
+    final json =
+        jsonDecode(
+              await File(
+                p.join(model.modelDir, model.modelFile),
+              ).readAsString(),
+            )
+            as Map<String, dynamic>;
+    final refs = json['FileReferences'] as Map<String, dynamic>;
+    for (final resource in [refs['Moc'], ...refs['Textures'] as List]) {
+      expect(
+        await File(p.join(model.modelDir, resource as String)).exists(),
+        isTrue,
+      );
+    }
+    expect(await File(p.join(tempDir.parent.path, '越界.txt')).exists(), isFalse);
   });
 
   test('无 model3.json 的 zip 返回空列表并清理目录', () async {
@@ -161,7 +200,10 @@ void main() {
                 'thumbUrl': 'pics/001.png',
                 'files': ['a/xxx.model3.json'],
               },
-              {'name': '002', 'files': ['b/yyy.model3.json']},
+              {
+                'name': '002',
+                'files': ['b/yyy.model3.json'],
+              },
             ],
           },
         ],
@@ -208,7 +250,10 @@ void main() {
     expect(matched, isNotNull);
     expect(matched!.motions, hasLength(1));
     // 未匹配导入记录时回退为无动作定义
-    final fallback = modelDefinitionForArchive(archive, importedModels: const []);
+    final fallback = modelDefinitionForArchive(
+      archive,
+      importedModels: const [],
+    );
     expect(fallback!.motions, isEmpty);
   });
 }

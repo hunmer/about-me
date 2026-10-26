@@ -11,6 +11,7 @@ import 'prompt_preset_screen.dart';
 import '../services/agentlib_resource_service.dart';
 import 'package:agentlib/agent_slots.dart';
 import '../aliveness/widgets/jev_settings_dialog.dart';
+import '../aliveness/screens/memory_manager_screen.dart';
 import '../openai_plugin.dart';
 import '../services/soul_forge_service.dart';
 import '../services/chat_assistant_service.dart';
@@ -384,6 +385,23 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
                               NavigationHelper.push(
                                 context,
                                 const PromptPresetScreen(),
+                              );
+                            },
+                          ),
+                          SizedBox(height: theme.spacing.sm),
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.layers,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: 'openai_memoryManagerTitle'.tr,
+                            subtitle: 'openai_memoryManagerDescription'.tr,
+                            showChevron: true,
+                            onTap: () {
+                              NavigationHelper.push(
+                                context,
+                                const MemoryManagerScreen(),
                               );
                             },
                           ),

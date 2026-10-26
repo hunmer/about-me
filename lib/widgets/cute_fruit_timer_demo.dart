@@ -702,33 +702,6 @@ class _FruitFocusTimerState extends State<_FruitFocusTimer>
             ),
           ),
         ),
-        const SizedBox(height: 20),
-        Column(
-          children: [
-            const Text(
-              'Stay focused,',
-              style: TextStyle(
-                fontSize: 31,
-                height: 1.15,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.3,
-                color: Color(0xFF574C43),
-              ),
-            ),
-            Text(
-              isMixed ? 'get cute fruits' : _currentTheme.slogan,
-              style: TextStyle(
-                fontSize: 31,
-                height: 1.15,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.3,
-                color: isMixed
-                    ? const Color(0xFFE89143)
-                    : _currentTheme.sloganColor,
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
