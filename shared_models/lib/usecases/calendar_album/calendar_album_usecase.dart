@@ -199,8 +199,12 @@ class CalendarAlbumUseCase {
   Future<Result<Map<String, dynamic>>> createEntry(
     Map<String, dynamic> params,
   ) async {
-    // 参数验证
-    final titleValidation = ParamValidator.requireString(params, 'title');
+    // 参数验证（标题允许为空：纯图片日记由客户端保证"标题或图片至少一项"）
+    final titleValidation = ParamValidator.requireString(
+      params,
+      'title',
+      allowEmpty: true,
+    );
     if (!titleValidation.isValid) {
       return Result.failure(
         titleValidation.errorMessage!,
@@ -208,7 +212,11 @@ class CalendarAlbumUseCase {
       );
     }
 
-    final contentValidation = ParamValidator.requireString(params, 'content');
+    final contentValidation = ParamValidator.requireString(
+      params,
+      'content',
+      allowEmpty: true,
+    );
     if (!contentValidation.isValid) {
       return Result.failure(
         contentValidation.errorMessage!,

@@ -199,7 +199,7 @@ class CalendarController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addEntry(CalendarEntry entry) async {
+  Future<bool> addEntry(CalendarEntry entry) async {
     final date = DateTime(
       entry.createdAt.year,
       entry.createdAt.month,
@@ -210,7 +210,7 @@ class CalendarController extends ChangeNotifier {
       'create',
       entry.toJson(),
     );
-    if (!_ok(result)) return;
+    if (!_ok(result)) return false;
     _entries.putIfAbsent(date, () => []);
     _entries[date]!.add(entry);
     notifyListeners();
@@ -228,18 +228,19 @@ class CalendarController extends ChangeNotifier {
 
     // 同步小组件数据
     await PluginWidgetSyncHelper.instance.syncCalendarAlbum();
+    return true;
   }
 
-  Future<void> updateEntry(CalendarEntry entry) async {
+  Future<bool> updateEntry(CalendarEntry entry) async {
     final date = DateTime(
       entry.createdAt.year,
       entry.createdAt.month,
       entry.createdAt.day,
     );
     final bucket = _entries[date];
-    if (bucket == null) return;
+    if (bucket == null) return false;
     final index = bucket.indexWhere((e) => e.id == entry.id);
-    if (index == -1) return;
+    if (index == -1) return false;
 
     // 成就系统计数（A38 定格瞬间）：编辑新增的照片张数（差集）
     final oldImages = bucket[index].imageUrls;
@@ -252,7 +253,7 @@ class CalendarController extends ChangeNotifier {
       'update',
       {'date': _dateStr(date), ...entry.toJson()},
     );
-    if (!_ok(result)) return;
+    if (!_ok(result)) return false;
     bucket[index] = entry;
     notifyListeners();
     if (addedImages > 0) {
@@ -267,6 +268,7 @@ class CalendarController extends ChangeNotifier {
 
     // 同步小组件数据
     await PluginWidgetSyncHelper.instance.syncCalendarAlbum();
+    return true;
   }
 
   Future<void> deleteEntry(CalendarEntry entry) async {

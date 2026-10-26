@@ -104,16 +104,19 @@ class EntryEditorController {
     locationController.dispose();
   }
 
-  CalendarEntry? saveEntry(CalendarController calendarController) {
+  Future<CalendarEntry?> saveEntry(
+    CalendarController calendarController,
+  ) async {
+    final title = titleController.text.trim();
     // 如果标题为空且没有图片,则提示错误
-    if (titleController.text.isEmpty && imageUrls.isEmpty) {
+    if (title.isEmpty && imageUrls.isEmpty) {
       toastService.showToast('calendar_album_title_cannot_be_empty'.tr);
       return null;
     }
 
     if (isEditing && entry != null) {
       final updatedEntry = entry!.copyWith(
-        title: titleController.text,
+        title: title,
         content: contentController.text,
         tags: selectedTags.toList(),
         location: locationController.text.isEmpty
@@ -126,11 +129,11 @@ class EntryEditorController {
         thumbUrls: thumbUrls,
         liveVideoUrls: liveVideoUrls,
       );
-      calendarController.updateEntry(updatedEntry);
-      return updatedEntry;
+      final saved = await calendarController.updateEntry(updatedEntry);
+      return saved ? updatedEntry : null;
     } else {
       final newEntry = CalendarEntry.create(
-        title: titleController.text,
+        title: title,
         content: contentController.text,
         tags: selectedTags.toList(),
         location: locationController.text.isEmpty
@@ -147,8 +150,8 @@ class EntryEditorController {
             ? dateGroupCounts.first.key
             : initialDate ?? DateTime.now(),
       );
-      calendarController.addEntry(newEntry);
-      return newEntry;
+      final saved = await calendarController.addEntry(newEntry);
+      return saved ? newEntry : null;
     }
   }
 }

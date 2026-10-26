@@ -147,9 +147,9 @@ class _CalendarAlbumEntryFormBodyState extends State<_CalendarAlbumEntryFormBody
   }
 
   /// 保存日记，成功后关闭弹层
-  void save() {
+  Future<void> save() async {
     if (!mounted) return;
-    final result = _controller.saveEntry(widget.calendarController);
+    final result = await _controller.saveEntry(widget.calendarController);
     if (result != null) {
       Navigator.of(context).pop();
     }
