@@ -30,9 +30,42 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
           JellyLive2dPanel.status =>
             widget.statusPanel ?? const SizedBox.shrink(),
           JellyLive2dPanel.archive => _buildArchiveStrip(theme),
+          JellyLive2dPanel.appearance => _buildAppearanceStrip(theme),
         },
       ),
     );
+  }
+
+  Widget _buildAppearanceStrip(AppThemeData theme) {
+    final expressions = _selectedModel.expressions;
+    if (expressions.isEmpty) {
+      return Text('当前模型没有可用表情', style: DsTypography.caption.copyWith(color: theme.textSub));
+    }
+    return SizedBox(
+      height: 58,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: expressions.length,
+        separatorBuilder: (_, _) => SizedBox(width: theme.spacing.sm),
+        itemBuilder: (_, index) {
+          final expression = expressions[index];
+          return DSButton(
+            label: expression.label,
+            size: DSButtonSize.sm,
+            onPressed: () => _applyExpression(expression),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _applyExpression(Live2DExpressionDefinition expression) async {
+    if (!_controller.value.isLoaded) return;
+    try {
+      await _controller.setExpression(expression.index);
+    } on Live2DException {
+      // Ignore unsupported expressions on older native runtimes.
+    }
   }
 
   /// 档案条：头像 + 名称，点击切换档案（并即时重载对应模型）；

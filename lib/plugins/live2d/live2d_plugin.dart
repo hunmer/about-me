@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/live2d_zip_import.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/decision_service.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'screens/live2d_main_screen.dart';
 import 'screens/live2d_settings_screen.dart';
@@ -377,6 +378,19 @@ class Live2DPlugin extends BasePlugin {
     );
     return response;
   }
+
+  Future<Map<String, String>> decideAppearance(
+    String reply, {
+    required Live2DModelDefinition model,
+  }) => DecisionService.instance.decideLive2D(
+        reply: reply,
+        note: selected?.note ?? '',
+        expressions: model.expressions.map((item) => item.label).toList(),
+        motions: model.motions
+            .where((item) => item.group.toLowerCase() != 'idle')
+            .map((item) => item.label)
+            .toList(),
+      );
 
   @override
   Widget buildMainView(BuildContext context) => const Live2DMainScreen();

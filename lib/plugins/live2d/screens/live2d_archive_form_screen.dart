@@ -48,6 +48,7 @@ class Live2DArchiveFormScreen extends StatefulWidget {
 class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
   final plugin = Live2DPlugin.instance;
   final nameController = TextEditingController();
+  final noteController = TextEditingController();
 
   /// 点击台词按部位的输入控制器（部位 id -> 多行文本，每行一条）
   final Map<String, TextEditingController> tapControllers = {
@@ -65,6 +66,7 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         widget.draftArchive ??
         plugin.archives.where((a) => a.id == widget.archiveId).firstOrNull;
     nameController.text = archive?.name ?? '';
+    noteController.text = archive?.note ?? '';
     _coverPath = archive?.coverPath;
     for (final entry in tapControllers.entries) {
       entry.value.text = archive?.tapMessages[entry.key] ?? '';
@@ -79,6 +81,7 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
   @override
   void dispose() {
     nameController.dispose();
+    noteController.dispose();
     for (final controller in tapControllers.values) {
       controller.dispose();
     }
@@ -178,6 +181,7 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         ? 'Live2D'
         : nameController.text.trim();
     current.coverPath = _coverPath;
+    current.note = noteController.text.trim();
     current.tapMessages = {
       for (final entry in tapControllers.entries) entry.key: entry.value.text,
     };
@@ -309,7 +313,19 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         ),
         const SizedBox(height: 20),
         DSInput(controller: nameController, label: 'live2d_nameLabel'.tr),
+        const SizedBox(height: 12),
+        DSInput(controller: noteController, label: '模型注释（可选）', maxLines: 3, minLines: 2),
         const SizedBox(height: 20),
+        DSListItem(
+          title: 'Jev 智能表情与动作',
+          subtitle: '根据 AI 回复自动选择合适的表情和动作',
+          leading: DsIcon(DsIconKind.moon, color: theme.primary),
+          trailing: DSSwitch(
+            value: current.jevEnabled,
+            onChanged: (value) => setState(() => current.jevEnabled = value),
+          ),
+        ),
+        const SizedBox(height: 12),
         DSListItem(
           title: 'live2d_modelSection'.tr,
           subtitle: current.modelLabel,

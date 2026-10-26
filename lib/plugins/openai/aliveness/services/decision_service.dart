@@ -54,6 +54,60 @@ class DecisionService {
     ),
   );
 
+  /// 为 Live2D 回复选择表达式和动作。Jev 只返回候选名称，不生成文本。
+  Future<Map<String, String>> decideLive2D({
+    required String reply,
+    required List<String> expressions,
+    required List<String> motions,
+    String note = '',
+  }) async {
+    final fallback = <String, String>{};
+    final settings = await _store.loadSettings();
+    final key = settings['jevApiKey'] as String?;
+    if (key == null || key.isEmpty || (expressions.isEmpty && motions.isEmpty)) {
+      return fallback;
+    }
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        settings['jevBaseUrl'] as String? ?? 'https://api.typesafe.ai/v1/systemone',
+        options: Options(headers: {'Authorization': 'Bearer $key', 'Content-Type': 'application/json'}),
+        data: {
+          'model': settings['jevModel'] as String? ?? 'jev-latest',
+          'state': 'Live2D模型注释：$note\nAI回复：$reply',
+          'questions': {
+            if (expressions.isNotEmpty)
+              'expression': {
+                'type': 'choice',
+                'instructions': '选择最符合回复情绪的表情；没有合适时选择不改变',
+                'criteria': {for (final item in expressions) item: item, '不改变': '保持当前表情'},
+              },
+            if (motions.isNotEmpty)
+              'motion': {
+                'type': 'choice',
+                'instructions': '选择最符合回复语气的动作；没有合适时选择不改变',
+                'criteria': {for (final item in motions) item: item, '不改变': '保持当前动作'},
+              },
+          },
+        },
+      );
+      final answers = response.data?['answers'];
+      if (answers is! Map) return fallback;
+      final result = <String, String>{};
+      for (final key in const ['expression', 'motion']) {
+        final answer = answers[key];
+        if (answer is Map && (answer['confidence'] as num?)?.toDouble() != null &&
+            (answer['confidence'] as num).toDouble() >= 0.55) {
+          final choice = answer['choice']?.toString();
+          if (choice != null && choice != '不改变') result[key] = choice;
+        }
+      }
+      return result;
+    } catch (error) {
+      debugPrint('[Live2D][Jev] 表情动作决策失败: $error');
+      return fallback;
+    }
+  }
+
   /// 使用 Jev Score 评估回复的拟人度（0=AI味重，3=像真人）。
   /// 返回 null 表示未配置或调用失败，由上层保留原回复。
   Future<int?> scoreHumanity({

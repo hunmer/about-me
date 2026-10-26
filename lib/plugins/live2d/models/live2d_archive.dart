@@ -27,7 +27,7 @@ const List<Live2DTapPart> live2DTapParts = [
 /// Live2D 存档：只保存 Agent 的 id，使用时经 [AgentController.getAgent]
 /// 按 id 读取最新配置，避免存档里残留过期的 Agent 快照
 class Live2DArchive {
-  Live2DArchive({required this.id, required this.name, required this.modelLabel, required this.modelDir, required this.modelFile, required this.agentId, this.coverPath, this.tapMessagesEnabled = false, Map<String, String>? tapMessages}) : tapMessages = tapMessages ?? {};
+  Live2DArchive({required this.id, required this.name, required this.modelLabel, required this.modelDir, required this.modelFile, required this.agentId, this.coverPath, this.note = '', this.jevEnabled = false, this.tapMessagesEnabled = false, Map<String, String>? tapMessages}) : tapMessages = tapMessages ?? {};
   final String id;
   String name;
   String modelLabel;
@@ -35,6 +35,8 @@ class Live2DArchive {
   String modelFile;
   String? agentId;
   String? coverPath;
+  String note;
+  bool jevEnabled;
 
   /// 点击台词总开关：开启后点击气泡优先使用 [tapMessages] 中的自定义台词
   bool tapMessagesEnabled;
@@ -58,11 +60,13 @@ class Live2DArchive {
     modelFile: json['modelFile'] as String? ?? '',
     agentId: json['agentId'] as String?,
     coverPath: json['coverPath'] as String?,
+    note: json['note'] as String? ?? '',
+    jevEnabled: json['jevEnabled'] as bool? ?? false,
     tapMessagesEnabled: json['tapMessagesEnabled'] as bool? ?? false,
     tapMessages:
         (json['tapMessages'] as Map<String, dynamic>?)
             ?.map((key, value) => MapEntry(key, value as String)) ??
         {},
   );
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'modelLabel': modelLabel, 'modelDir': modelDir, 'modelFile': modelFile, 'agentId': agentId, 'coverPath': coverPath, 'tapMessagesEnabled': tapMessagesEnabled, 'tapMessages': tapMessages};
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'modelLabel': modelLabel, 'modelDir': modelDir, 'modelFile': modelFile, 'agentId': agentId, 'coverPath': coverPath, 'note': note, 'jevEnabled': jevEnabled, 'tapMessagesEnabled': tapMessagesEnabled, 'tapMessages': tapMessages};
 }

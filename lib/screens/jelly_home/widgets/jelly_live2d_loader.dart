@@ -126,6 +126,27 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     }
   }
 
+  Future<void> _applyJevReply(String reply) async {
+    final archive = Live2DPlugin.instance.selected;
+    if (archive?.jevEnabled != true || reply.trim().isEmpty) return;
+    final result = await Live2DPlugin.instance.decideAppearance(
+      reply,
+      model: _selectedModel,
+    );
+    final expression = _selectedModel.expressions
+        .where((item) => item.label == result['expression'])
+        .firstOrNull;
+    if (expression != null) {
+      try {
+        await _controller.setExpression(expression.index);
+      } on Live2DException {}
+    }
+    final motion = _selectedModel.motions
+        .where((item) => item.label == result['motion'])
+        .firstOrNull;
+    if (motion != null) await _startMotion(motion);
+  }
+
   String _loadStageLabel(String? stage) {
     return switch (stage) {
       'preparing' => 'screens_jellyLive2dLoadStagePreparing'.tr,

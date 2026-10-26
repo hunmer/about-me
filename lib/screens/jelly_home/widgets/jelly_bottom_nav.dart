@@ -138,6 +138,14 @@ class JellyBottomNav extends StatelessWidget {
                   activePanel,
                   theme,
                 ),
+                _live2dPanelAction(
+                  live2dPanel!,
+                  JellyLive2dPanel.appearance,
+                  '表情外观',
+                  DsIconKind.mood,
+                  activePanel,
+                  theme,
+                ),
               ]
             : null,
       );

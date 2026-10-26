@@ -155,6 +155,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     super.didUpdateWidget(oldWidget);
     if (widget.message != null && widget.message != oldWidget.message) {
       _showBubble(widget.message!, streaming: widget.streaming);
+      if (!widget.streaming) unawaited(_applyJevReply(widget.message!));
     }
     if (widget.reaction != null && widget.reaction != oldWidget.reaction) {
       _playReaction();

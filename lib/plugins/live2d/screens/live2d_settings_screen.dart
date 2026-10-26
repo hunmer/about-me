@@ -45,8 +45,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   /// 向预览中的 JellyLive2D 发送动作播放请求（置空再赋值以便重复触发同一动作）
   final ValueNotifier<Live2DMotionDefinition?> _motionRequest =
       ValueNotifier<Live2DMotionDefinition?>(null);
-  final ValueNotifier<Live2DExpressionDefinition?> _expressionRequest =
-      ValueNotifier<Live2DExpressionDefinition?>(null);
 
   @override
   void initState() {
@@ -146,7 +144,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   @override
   void dispose() {
     _motionRequest.dispose();
-    _expressionRequest.dispose();
     super.dispose();
   }
 
@@ -306,7 +303,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                   key: ValueKey('${current.modelDir}${current.modelFile}'),
                   initialModel: modelFor(current),
                   motionRequest: _motionRequest,
-                  expressionRequest: _expressionRequest,
                   typingInterval: Duration(
                     milliseconds: _typingIntervalMs.round(),
                   ),
@@ -335,22 +331,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                     onTap: () {
                       _motionRequest.value = null;
                       _motionRequest.value = motion;
-                    },
-                  ),
-              const SizedBox(height: 12),
-              const Text('表情 / 皮肤 / 饰品', style: TextStyle(fontWeight: FontWeight.bold)),
-              if ((modelFor(current)?.expressions ?? const []).isEmpty)
-                const Text('当前模型没有可用表情')
-              else
-                for (final expression in modelFor(current)!.expressions)
-                  ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.face_retouching_natural),
-                    title: Text(expression.label),
-                    onTap: () {
-                      _expressionRequest.value = null;
-                      _expressionRequest.value = expression;
                     },
                   ),
             ],
