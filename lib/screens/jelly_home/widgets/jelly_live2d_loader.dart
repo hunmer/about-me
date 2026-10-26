@@ -1,7 +1,19 @@
 part of 'jelly_live2d.dart';
 
 /// 模型加载功能：模型切换/重载、档案选择、动作播放请求、视线重置
+const _appearanceDuration = Duration(seconds: 8);
+
 extension _JellyLive2DLoader on _JellyLive2DState {
+
+  void _scheduleAppearanceReset() {
+    _appearanceResetTimer?.cancel();
+    _appearanceResetTimer = Timer(_appearanceDuration, () async {
+      if (!mounted || !_controller.value.isLoaded || _isSwitchingModel) return;
+      debugPrint('[Live2D] 表情展示结束，重新加载模型恢复 Idle');
+      await _loadModel(_selectedModel);
+    });
+  }
+
   Future<void> _playReaction() async {
     if (_isSwitchingModel || !_controller.value.isLoaded) return;
     final candidates = _selectedModel.motions
@@ -121,6 +133,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
         index: motion.index,
         priority: 3,
       );
+      _scheduleAppearanceReset();
     } on Live2DException {
       // 动作播放失败时保持当前动作，不打断交互
     }
@@ -151,6 +164,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       } on Live2DException catch (error) {
         debugPrint('[Live2D][Jev] 表达式执行失败: $error');
       }
+      _scheduleAppearanceReset();
     } else {
       debugPrint('[Live2D][Jev] 未选择表达式');
     }
@@ -160,6 +174,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     if (motion != null) {
       debugPrint('[Live2D][Jev] 执行动作: ${motion.label} (${motion.group}#${motion.index})');
       await _startMotion(motion);
+      _scheduleAppearanceReset();
     } else {
       debugPrint('[Live2D][Jev] 未选择动作');
     }

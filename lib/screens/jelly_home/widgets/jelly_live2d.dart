@@ -148,14 +148,17 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   bool _bubbleStreaming = false;
   Timer? _bubbleTimer;
   Timer? _bubbleResumeTimer;
+  Timer? _jevReplyTimer;
+  Timer? _appearanceResetTimer;
   String? _lastBubbleMessage;
+  String? _lastJevReply;
 
   @override
   void didUpdateWidget(covariant JellyLive2D oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.message != null && widget.message != oldWidget.message) {
       _showBubble(widget.message!, streaming: widget.streaming);
-      if (!widget.streaming) unawaited(_applyJevReply(widget.message!));
+      _scheduleJevReply(widget.message!, widget.streaming);
     }
     if (widget.reaction != null && widget.reaction != oldWidget.reaction) {
       _playReaction();
@@ -252,11 +255,24 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     _controller.removeListener(_onViewStateChanged);
     _bubbleTimer?.cancel();
     _bubbleResumeTimer?.cancel();
+    _jevReplyTimer?.cancel();
+    _appearanceResetTimer?.cancel();
     _size.dispose();
     _hitAreasVisible.dispose();
     _borderVisible.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  /// 流式回复会多次更新 message；等待内容稳定后只触发一次 JEV。
+  void _scheduleJevReply(String reply, bool streaming) {
+    _jevReplyTimer?.cancel();
+    if (streaming || reply.trim().isEmpty || reply == _lastJevReply) return;
+    _jevReplyTimer = Timer(const Duration(milliseconds: 700), () {
+      if (!mounted || _bubbleStreaming) return;
+      _lastJevReply = reply;
+      unawaited(_applyJevReply(reply));
+    });
   }
 
   @override

@@ -63,6 +63,7 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
     if (!_controller.value.isLoaded) return;
     try {
       await _controller.setExpression(expression.index);
+      _scheduleAppearanceReset();
     } on Live2DException {
       // Ignore unsupported expressions on older native runtimes.
     }
