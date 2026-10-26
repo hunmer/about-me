@@ -212,6 +212,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       await initializeFlutterFloatingBall();
       // Web 平台检查 HTTP 存储服务器配置，未配置则弹设置对话框
       unawaited(ensureWebStorageBackend());
+      // 远端存储服务器连接失败时提示用户并引导打开存储设置
+      unawaited(promptRemoteStorageUnavailable());
       // App 累计使用时长统计（设置页信息栏展示）
       unawaited(AppUsageService.instance.init());
     });

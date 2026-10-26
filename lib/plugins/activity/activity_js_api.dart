@@ -171,6 +171,33 @@ Future<String> _jsGetTagGroups(Map<String, dynamic> params) async {
   }
 }
 
+/// 获取所有标签（所有分组的标签合并去重）
+/// 参数: params - {} (无需参数)
+Future<String> _jsGetAllTags(Map<String, dynamic> params) async {
+  try {
+    final result = await ActivityPlugin.instance._activityUseCase.getTagGroups(params);
+
+    if (result.isFailure) {
+      return jsonEncode({'error': result.errorOrNull?.message});
+    }
+
+    final tagGroups = result.dataOrNull as List<dynamic>;
+    final allTags = <String>[];
+    for (final group in tagGroups) {
+      final tags = group['tags'];
+      if (tags is List) {
+        for (final tag in tags) {
+          final name = '$tag';
+          if (!allTags.contains(name)) allTags.add(name);
+        }
+      }
+    }
+    return jsonEncode(allTags);
+  } catch (e) {
+    return jsonEncode({'error': '获取所有标签失败: $e'});
+  }
+}
+
 /// 获取最近使用的标签
 /// 参数: params - {} (无需参数)
 Future<String> _jsGetRecentTags(Map<String, dynamic> params) async {

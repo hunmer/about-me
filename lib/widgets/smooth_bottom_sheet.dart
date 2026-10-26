@@ -210,8 +210,8 @@ class _SheetContent extends StatelessWidget {
   Widget _buildDragHandle(AppThemeData theme) {
     return Padding(
       padding: EdgeInsets.only(
-        top: theme.spacing.md,
-        bottom: theme.spacing.sm,
+        top: theme.spacing.sm,
+        bottom: theme.spacing.xs,
       ),
       child: const SizedBox(width: 60, child: DSDivider()),
     );
@@ -247,7 +247,7 @@ class _SheetWithTitle extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   theme.spacing.lg,
-                  theme.spacing.sm,
+                  theme.spacing.xs,
                   theme.spacing.lg,
                   theme.spacing.xs,
                 ),
@@ -329,7 +329,7 @@ class _FormSheetContent extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         theme.spacing.lg,
-        theme.spacing.sm,
+        theme.spacing.xs,
         theme.spacing.lg,
         theme.spacing.xs,
       ),

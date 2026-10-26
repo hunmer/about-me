@@ -40,6 +40,8 @@ import 'package:aboutme/core/storage/storage_backend_config.dart';
 import 'package:aboutme/core/storage/device_identity.dart';
 import 'package:aboutme/core/storage/storage_websocket_service.dart';
 import 'package:aboutme/core/route/route_refresh_manager.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/settings_screen/widgets/storage_backend_settings_dialog.dart';
 import 'package:aboutme/utils/blob_url.dart';
 import 'global_flags.dart';
@@ -265,14 +267,8 @@ Future<void> initializeApp() async {
     // 初始化 Toast 服务
     Toast.setNavigatorKey(navigatorKey);
 
-    // 远端存储离线回退本地时，等首帧渲染完提示用户当前处于离线模式
-    if (globalStorage.remoteFallbackReason != null) {
-      unawaited(
-        Future<void>.delayed(const Duration(seconds: 1)).then((_) {
-          Toast.warning('远端存储不可用，已回退本地存储（离线模式）');
-        }),
-      );
-    }
+    // 远端存储连接失败的提示在真实 UI 首帧后由 MyApp 触发
+    // （promptRemoteStorageUnavailable），启动壳期间导航器尚不可用。
 
     // 在初始化通知服务之前先清理历史通知和计时器状态
     // 这是防止应用重启后通知自动复原的关键步骤
@@ -698,6 +694,47 @@ Future<void> initializeFlutterFloatingBall() async {
   } catch (e, stack) {
     debugPrint('Flutter悬浮球初始化失败: $e');
     debugPrint('堆栈: $stack');
+  }
+}
+
+/// 远端存储服务器连接失败时提示用户，确认后打开存储后端设置对话框。
+/// 与 [ensureWebStorageBackend] 同样在真实导航树首帧后由 MyApp 调用，
+/// 此时 [globalStorage] 已完成初始化并记录失败原因。
+Future<void> promptRemoteStorageUnavailable() async {
+  try {
+    if (globalStorage.remoteFallbackReason == null) return;
+
+    // 让过启动期其他弹层，避免多弹窗叠加
+    await Future.delayed(const Duration(milliseconds: 500));
+    final context = navigatorKey.currentContext;
+    if (context == null) {
+      debugPrint('[StorageFallback] 导航器未就绪，跳过远端存储不可用提示');
+      return;
+    }
+
+    final openSettings = await showDSDialog<bool>(
+      context: context,
+      theme: DSThemeBridge.resolve(context),
+      builder:
+          (context) => DSDialog(
+            title: '远程服务器不可用',
+            message: '无法连接远端存储服务器，数据暂时无法同步。是否打开存储设置检查配置？',
+            confirmText: '打开设置',
+            cancelText: '忽略',
+          ),
+    );
+    if (openSettings != true) return;
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => const StorageBackendSettingsDialog(),
+    );
+    if (saved == true && kIsWeb) {
+      // Web 保存新配置后刷新页面立即生效，避免继续使用失效的连接
+      reloadPage();
+    }
+  } catch (e) {
+    debugPrint('[StorageFallback] 远端存储不可用提示失败: $e');
   }
 }
 

@@ -45,6 +45,22 @@ const Map<String, String> calendarTranslationsEn = {
   'calendar_sevenDaysActivity': '7-Day Activities',
   'calendar_expiredActivity': 'Expired Activities',
 
+  // Onboarding
+  'calendar_onboardingWelcomeTitle': 'Welcome to Calendar',
+  'calendar_onboardingWelcomeDesc':
+      'Manage your schedule with multiple views, smart reminders and seamless system calendar sync.',
+  'calendar_onboardingSystemCalendarTitle': 'Import System Calendar',
+  'calendar_onboardingSystemCalendarDesc':
+      'Show events from your device calendar in the app',
+  'calendar_importSystemCalendar': 'Import system calendar',
+  'calendar_importSystemCalendarDesc':
+      'Read events from the device calendar and display them in calendar views',
+  'calendar_importHolidays': 'Import holidays',
+  'calendar_importHolidaysDesc':
+      'Show the system holiday calendar (e.g. public holidays)',
+  'calendar_systemCalendarPermissionDenied':
+      'Calendar permission not granted. Please enable it in system settings.',
+
   // Home Widget Strings
   'calendar_widgetName': 'Calendar',
   'calendar_widgetDescription': 'Quick access to calendar',

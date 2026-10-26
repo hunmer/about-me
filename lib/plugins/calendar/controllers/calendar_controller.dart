@@ -9,6 +9,7 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/plugins/calendar/models/event.dart';
 import 'package:aboutme/plugins/calendar/services/system_calendar_manager.dart';
+import 'package:aboutme/plugins/calendar/services/system_calendar_settings.dart';
 import 'package:aboutme/plugins/calendar/services/calendar_mapping_manager.dart';
 
 /// 日历总控制器，负责管理日历的所有状态和服务
@@ -93,8 +94,17 @@ class CalendarController extends ChangeNotifier {
   }
 
   /// 加载系统日历事件和映射关系
+  ///
+  /// 按导入设置执行：关闭导入时清空缓存；开启时按需过滤节假日日历
   Future<void> loadSystemEvents() async {
     try {
+      final settings = await SystemCalendarSettings.load();
+      if (!settings.enabled) {
+        _systemEvents = [];
+        notifyListeners();
+        return;
+      }
+
       final systemManager = SystemCalendarManager.instance;
       final mappingManager = CalendarMappingManager.instance;
 
@@ -102,7 +112,9 @@ class CalendarController extends ChangeNotifier {
       await mappingManager.loadMapping();
 
       // 获取系统日历事件（包括 Aboutme 日历）
-      _systemEvents = await systemManager.getSystemEvents();
+      _systemEvents = await systemManager.getSystemEvents(
+        includeHolidays: settings.includeHolidays,
+      );
 
       notifyListeners();
     } catch (e) {

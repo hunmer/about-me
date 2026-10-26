@@ -59,35 +59,59 @@ class _ActivityEditScreenState extends State<ActivityEditScreen> {
       return;
     }
 
-    // 如果是编辑模式或已提供 selectedDate，则不需要设置默认时间
-    if (widget.activity != null || widget.selectedDate != null) {
+    // 编辑模式无需默认时间
+    if (widget.activity != null) {
       return;
     }
 
     try {
-      // 获取上一个活动
-      final lastActivity =
-          await ActivityPlugin.instance.activityService.getLastActivity();
-
-      DateTime startTime;
       final now = DateTime.now();
-      final todayStart = DateTime(now.year, now.month, now.day);
+      final selected = widget.selectedDate;
+      final dayStart = selected == null
+          ? DateTime(now.year, now.month, now.day)
+          : DateTime(selected.year, selected.month, selected.day);
+      final isToday = selected == null ||
+          (selected.year == now.year &&
+              selected.month == now.month &&
+              selected.day == now.day);
 
-      if (lastActivity != null) {
-        // 使用上一个活动的结束时间作为开始时间
-        startTime = lastActivity.endTime;
-
-        // 如果小于今日00:00，则使用今日00:00
-        if (startTime.isBefore(todayStart)) {
-          startTime = todayStart;
-        }
+      // 空闲区间起点：当天最后一个活动的结束时间
+      DateTime startTime;
+      if (selected == null) {
+        final lastActivity =
+            await ActivityPlugin.instance.activityService.getLastActivity();
+        startTime = lastActivity?.endTime ?? dayStart;
       } else {
-        // 没有上一个活动，使用今日00:00
-        startTime = todayStart;
+        final activities = await ActivityPlugin.instance.activityService
+            .getActivitiesForDate(selected);
+        DateTime? lastEndTime;
+        for (final activity in activities) {
+          if (lastEndTime == null || activity.endTime.isAfter(lastEndTime)) {
+            lastEndTime = activity.endTime;
+          }
+        }
+        startTime = lastEndTime ?? dayStart;
+      }
+      if (startTime.isBefore(dayStart)) {
+        startTime = dayStart;
       }
 
-      // 结束时间就是现在
-      final endTime = now;
+      // 结束时间：今天用当前时刻，其他日期默认1小时，且不超过23:59
+      final dayEnd = DateTime(
+        dayStart.year,
+        dayStart.month,
+        dayStart.day,
+        23,
+        59,
+      );
+      var endTime = isToday ? now : startTime.add(const Duration(hours: 1));
+      if (endTime.isAfter(dayEnd)) {
+        endTime = dayEnd;
+      }
+      if (!endTime.isAfter(startTime)) {
+        // 当天已无空闲区间，回退到当天最后1分钟
+        startTime = endTime.subtract(const Duration(minutes: 1));
+      }
 
       if (mounted) {
         setState(() {

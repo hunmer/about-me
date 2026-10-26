@@ -230,12 +230,25 @@ class SystemCalendarManager {
     }
   }
 
+  /// 节假日日历名称关键词（不区分大小写）
+  /// 系统节假日日历常见名称：中国节假日 / Holidays / US Holidays 等
+  static const List<String> _holidayCalendarKeywords = ['假日', 'holiday'];
+
+  /// 判断是否为节假日日历
+  bool _isHolidayCalendar(String? name) {
+    if (name == null || name.isEmpty) return false;
+    final lower = name.toLowerCase();
+    return _holidayCalendarKeywords.any(lower.contains);
+  }
+
   /// 获取系统日历中的所有事件（包括 Aboutme 日历）
   /// 注意：调用方需要自行处理去重逻辑，避免与本地事件重复
+  /// [includeHolidays] 为 false 时跳过节假日日历
   /// 仅在移动端 (Android/iOS) 执行
   Future<List<CalendarEvent>> getSystemEvents({
     DateTime? startDate,
     DateTime? endDate,
+    bool includeHolidays = true,
   }) async {
     // 非移动端平台直接返回空列表
     if (!UniversalPlatform.isAndroid && !UniversalPlatform.isIOS) {
@@ -268,6 +281,12 @@ class SystemCalendarManager {
 
       // 遍历所有日历（包括 Aboutme 日历）
       for (final calendar in calendars) {
+        if (!includeHolidays && _isHolidayCalendar(calendar.name)) {
+          debugPrint(
+            "SystemCalendarManager: 跳过节假日日历: ${calendar.name}",
+          );
+          continue;
+        }
         debugPrint(
           "SystemCalendarManager: 正在处理日历: ${calendar.name} (ID: ${calendar.id})",
         );

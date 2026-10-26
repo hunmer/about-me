@@ -240,6 +240,7 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
       // 标签管理
       'getTagGroups': _jsGetTagGroups,
+      'getAllTags': _jsGetAllTags,
       'getRecentTags': _jsGetRecentTags,
 
       // 通知管理
@@ -1286,7 +1287,13 @@ class _ActivityMainViewState extends State<ActivityMainView>
             : Colors.white,
         onPressed: () {
           if (!context.mounted) return;
-          ActivityController.showAddActivityScreen(context);
+          ActivityController.showAddActivityScreen(
+            context,
+            // 时间轴 tab 下跟随其选中的日期，其余 tab 默认今天
+            selectedDate: _tabController.index == 0
+                ? ActivityController.timelineSelectedDate
+                : null,
+          );
         },
       ),
     );

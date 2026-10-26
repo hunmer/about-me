@@ -19,6 +19,7 @@ import './models/event.dart';
 import './pages/event_edit_page.dart';
 import './pages/event_list_page.dart';
 import './widgets/event_detail_card.dart';
+import './widgets/onboarding_system_calendar_setup.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -26,6 +27,7 @@ import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'services/system_calendar_settings.dart';
 
 // UseCase 架构导入
 import 'package:shared_models/usecases/calendar/calendar_usecase.dart';
@@ -127,6 +129,42 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
     _registerDataSelectors();
 
     await registerJSAPI();
+  }
+
+  @override
+  List<PluginOnboardingStep> getOnboardingSteps(BuildContext context) => [
+    PluginOnboardingStep(
+      icon: Icons.calendar_month,
+      title: 'calendar_onboardingWelcomeTitle'.tr,
+      description: 'calendar_onboardingWelcomeDesc'.tr,
+    ),
+    // 系统日历导入仅移动端可用
+    if (PlatformUtils.isMobile)
+      PluginOnboardingStep(
+        icon: Icons.sync,
+        title: 'calendar_onboardingSystemCalendarTitle'.tr,
+        description: 'calendar_onboardingSystemCalendarDesc'.tr,
+        builder: (context, values) =>
+            OnboardingSystemCalendarSetup(values: values),
+      ),
+  ];
+
+  /// 应用引导收集的系统日历导入设置并立即生效
+  ///
+  /// 跳过引导（values 未收集）时保持默认设置不变
+  @override
+  Future<void> onOnboardingComplete(
+    BuildContext context,
+    Map<String, dynamic> values,
+  ) async {
+    final importSystemCalendar = values['importSystemCalendar'] as bool?;
+    if (importSystemCalendar != null) {
+      final settings = await SystemCalendarSettings.load()
+        ..enabled = importSystemCalendar
+        ..includeHolidays = (values['importHolidays'] as bool?) ?? true;
+      await settings.save();
+    }
+    await controller.loadSystemEvents();
   }
 
   @override

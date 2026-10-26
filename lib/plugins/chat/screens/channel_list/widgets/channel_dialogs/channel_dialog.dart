@@ -230,7 +230,13 @@ class _ChannelDialogState extends State<ChannelDialog> {
 
           if (widget.asSheet) {
             return Padding(
-              padding: EdgeInsets.all(theme.spacing.xl),
+              // sheet 顶部已有拖拽指示条，标题侧仅留小间距
+              padding: EdgeInsets.fromLTRB(
+                theme.spacing.xl,
+                theme.spacing.sm,
+                theme.spacing.xl,
+                theme.spacing.xl,
+              ),
               child: form,
             );
           }

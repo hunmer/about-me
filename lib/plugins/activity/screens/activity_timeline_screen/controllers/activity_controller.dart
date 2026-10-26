@@ -56,13 +56,18 @@ class ActivityController {
     onActivitiesChanged();
   }
 
+  /// 时间轴当前选中的日期，供插件页 FAB 等无日期上下文的入口使用
+  static DateTime? timelineSelectedDate;
+
   /// 显示活动编辑界面（用于创建新活动）
   /// 使用 SmoothBottomSheet 显示 ActivityEditScreen
   /// [start] 和 [end] 可选，用于预填充时间
+  /// [selectedDate] 可选，用于按所选日期计算默认空闲区间
   static Future<void> showAddActivityScreen(
     BuildContext context, {
     DateTime? start,
     DateTime? end,
+    DateTime? selectedDate,
   }) {
     return SmoothBottomSheet.show(
       context: context,
@@ -75,6 +80,7 @@ class ActivityController {
           height: contentHeight,
           child: ActivityEditScreen(
             showAsBottomSheet: true,
+            selectedDate: selectedDate,
             startTime: start,
             endTime: end,
           ),

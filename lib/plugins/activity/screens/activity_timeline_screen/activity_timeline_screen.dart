@@ -103,6 +103,7 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
     _viewModeController.addListener(() {
       if (mounted) setState(() {});
     });
+    ActivityController.timelineSelectedDate = _selectedDate;
 
     await _tagController.initialize();
     await _activityController.loadActivities(_selectedDate);
@@ -117,6 +118,7 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
     setState(() {
       _selectedDate = date;
     });
+    ActivityController.timelineSelectedDate = _selectedDate;
     _activityController.loadActivities(_selectedDate);
 
     // 更新路由上下文
@@ -215,7 +217,10 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
     if (!mounted) return;
 
     try {
-      ActivityController.showAddActivityScreen(context);
+      ActivityController.showAddActivityScreen(
+        context,
+        selectedDate: _selectedDate,
+      );
     } catch (e) {
       debugPrint('[ActivityTimelineScreen] 打开活动表单失败: $e');
 
@@ -696,7 +701,10 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
                   size: 40,
                   tooltip: '添加活动',
                   onPressed: () =>
-                      ActivityController.showAddActivityScreen(context),
+                      ActivityController.showAddActivityScreen(
+                        context,
+                        selectedDate: _selectedDate,
+                      ),
                 );
               },
             ),
