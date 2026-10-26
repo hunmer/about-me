@@ -28,16 +28,13 @@ class SystemTTSService extends TTSBaseService {
       // iOS 音频通道配置
       if (!kIsWeb && UniversalPlatform.isIOS) {
         await _flutterTts.setSharedInstance(true);
-        await _flutterTts.setIosAudioCategory(
-          IosTextToSpeechAudioCategory.playback,
-          [
-            IosTextToSpeechAudioCategoryOptions.allowBluetooth,
-            IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
-            IosTextToSpeechAudioCategoryOptions.mixWithOthers,
-            IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
-          ],
-          IosTextToSpeechAudioMode.defaultMode,
-        );
+        await _flutterTts
+            .setIosAudioCategory(IosTextToSpeechAudioCategory.playback, [
+              IosTextToSpeechAudioCategoryOptions.allowBluetooth,
+              IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
+              IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+              IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
+            ], IosTextToSpeechAudioMode.defaultMode);
       }
 
       // 设置参数
@@ -81,6 +78,7 @@ class SystemTTSService extends TTSBaseService {
     TTSCallback? onStart,
     TTSCallback? onComplete,
     TTSErrorCallback? onError,
+    TTSAudioDataCallback? onAudioData,
   }) async {
     try {
       _onStart = onStart;
@@ -103,7 +101,10 @@ class SystemTTSService extends TTSBaseService {
         if (!kIsWeb && UniversalPlatform.isWindows) {
           // Windows 需要使用 setVoice 方法设置具体的语音
           try {
-            await _flutterTts.setVoice({'name': config.voice!, 'locale': config.voice!});
+            await _flutterTts.setVoice({
+              'name': config.voice!,
+              'locale': config.voice!,
+            });
           } catch (e) {
             _log.warning('Windows 设置语音失败，回退到 setLanguage: $e');
             await _flutterTts.setLanguage(config.voice!);
@@ -115,34 +116,34 @@ class SystemTTSService extends TTSBaseService {
             final voices = await _flutterTts.getVoices;
             if (voices != null && voices.isNotEmpty) {
               // 查找完全匹配的语音（按 name 或 locale）
-              var matchedVoice = voices.firstWhere(
-                (v) {
-                  final voice = v as Map;
-                  final name = voice['name']?.toString() ?? '';
-                  final locale = voice['locale']?.toString() ?? '';
-                  return name == config.voice || locale == config.voice;
-                },
-                orElse: () => null,
-              );
+              var matchedVoice = voices.firstWhere((v) {
+                final voice = v as Map;
+                final name = voice['name']?.toString() ?? '';
+                final locale = voice['locale']?.toString() ?? '';
+                return name == config.voice || locale == config.voice;
+              }, orElse: () => null);
 
               // 如果没有完全匹配，尝试前缀匹配（如 zh-CN 匹配 zh-CN-*）
               if (matchedVoice == null && config.voice!.contains('-')) {
-                final prefix = config.voice!.split('-').take(2).join('-'); // zh-CN
-                matchedVoice = voices.firstWhere(
-                  (v) {
-                    final voice = v as Map;
-                    final locale = voice['locale']?.toString() ?? '';
-                    return locale.startsWith(prefix);
-                  },
-                  orElse: () => null,
-                );
+                final prefix = config.voice!
+                    .split('-')
+                    .take(2)
+                    .join('-'); // zh-CN
+                matchedVoice = voices.firstWhere((v) {
+                  final voice = v as Map;
+                  final locale = voice['locale']?.toString() ?? '';
+                  return locale.startsWith(prefix);
+                }, orElse: () => null);
               }
 
               if (matchedVoice != null) {
                 final voice = matchedVoice as Map;
                 final voiceName = voice['name']?.toString() ?? '';
                 final voiceLocale = voice['locale']?.toString() ?? '';
-                await _flutterTts.setVoice({'name': voiceName, 'locale': voiceLocale});
+                await _flutterTts.setVoice({
+                  'name': voiceName,
+                  'locale': voiceLocale,
+                });
               } else {
                 await _flutterTts.setLanguage(config.voice!);
               }
@@ -214,7 +215,10 @@ class SystemTTSService extends TTSBaseService {
               // iOS/macOS: name, locale, quality, gender, identifier
               // Android: name, locale, quality, latency, network_required, features
 
-              final name = voiceMap['name']?.toString() ?? voiceMap['locale']?.toString() ?? '';
+              final name =
+                  voiceMap['name']?.toString() ??
+                  voiceMap['locale']?.toString() ??
+                  '';
               final locale = voiceMap['locale']?.toString() ?? '';
               final gender = voiceMap['gender']?.toString();
 
@@ -222,12 +226,14 @@ class SystemTTSService extends TTSBaseService {
               final id = name.isNotEmpty ? name : locale;
 
               if (id.isNotEmpty) {
-                voiceList.add(TTSVoice(
-                  id: id,
-                  name: name,
-                  language: locale,
-                  gender: gender,
-                ));
+                voiceList.add(
+                  TTSVoice(
+                    id: id,
+                    name: name,
+                    language: locale,
+                    gender: gender,
+                  ),
+                );
               }
             } catch (e) {
               _log.warning('解析语音数据失败: $e, voice: $voice');
@@ -252,11 +258,9 @@ class SystemTTSService extends TTSBaseService {
       final languageList = <TTSVoice>[];
       for (final lang in languages) {
         final langStr = lang.toString();
-        languageList.add(TTSVoice(
-          id: langStr,
-          name: langStr,
-          language: langStr,
-        ));
+        languageList.add(
+          TTSVoice(id: langStr, name: langStr, language: langStr),
+        );
       }
       return languageList;
     } catch (e) {

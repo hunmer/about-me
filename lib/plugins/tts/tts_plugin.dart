@@ -54,18 +54,22 @@ class TTSPlugin extends BasePlugin {
       storagePrefix: storageDir,
       readStorage: (key) async {
         try {
-          final res = await AboutmeDataService.instance
-              .call('tts', 'getSnapshot', {});
+          final res = await AboutmeDataService.instance.call(
+            'tts',
+            'getSnapshot',
+            {},
+          );
           final d = res['success'] == true ? res['data'] : null;
           return d is Map<String, dynamic> ? d : {};
         } catch (_) {
           return {};
         }
       },
-      writeStorage: (key, data) =>
-          AboutmeDataService.instance.call('tts', 'saveSnapshot', {
-            'snapshot': data,
-          }),
+      writeStorage: (key, data) => AboutmeDataService.instance.call(
+        'tts',
+        'saveSnapshot',
+        {'snapshot': data},
+      ),
     );
 
     // 初始化默认数据
@@ -173,6 +177,7 @@ class TTSPlugin extends BasePlugin {
     TTSCallback? onStart,
     TTSCallback? onComplete,
     TTSErrorCallback? onError,
+    TTSAudioDataCallback? onAudioData,
   }) async {
     // 成就系统计数（A61 播音员）
     EventManager.instance.broadcast('tts_spoken', EventArgs('tts_spoken'));
@@ -182,6 +187,7 @@ class TTSPlugin extends BasePlugin {
       onStart: onStart,
       onComplete: onComplete,
       onError: onError,
+      onAudioData: onAudioData,
     );
   }
 

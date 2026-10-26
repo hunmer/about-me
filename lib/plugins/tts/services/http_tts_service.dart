@@ -48,15 +48,19 @@ class HttpTTSService extends TTSBaseService {
     TTSCallback? onStart,
     TTSCallback? onComplete,
     TTSErrorCallback? onError,
+    TTSAudioDataCallback? onAudioData,
   }) async {
     try {
       onStart?.call();
       _isPlaying = true;
       _isPaused = false;
 
-      _log.info('HTTP TTS 朗读: ${text.substring(0, text.length > 50 ? 50 : text.length)}...');
+      _log.info(
+        'HTTP TTS 朗读: ${text.substring(0, text.length > 50 ? 50 : text.length)}...',
+      );
 
       final audioBytes = await _synthesizeBytes(text);
+      onAudioData?.call(audioBytes, config.audioFormat);
 
       // 播放音频
       await _playAudioFromBytes(audioBytes);
@@ -169,7 +173,9 @@ class HttpTTSService extends TTSBaseService {
 
       // 保存到临时文件
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/tts_temp_${DateTime.now().millisecondsSinceEpoch}.${config.audioFormat ?? 'mp3'}');
+      final tempFile = File(
+        '${tempDir.path}/tts_temp_${DateTime.now().millisecondsSinceEpoch}.${config.audioFormat ?? 'mp3'}',
+      );
 
       await tempFile.writeAsBytes(audioBytes);
       _log.info('音频临时文件: ${tempFile.path}');

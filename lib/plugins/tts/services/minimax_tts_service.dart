@@ -84,15 +84,19 @@ class MiniMaxTTSService extends TTSBaseService {
     TTSCallback? onStart,
     TTSCallback? onComplete,
     TTSErrorCallback? onError,
+    TTSAudioDataCallback? onAudioData,
   }) async {
     try {
       onStart?.call();
       _isPlaying = true;
       _isPaused = false;
 
-      _log.info('MiniMax TTS 朗读: ${text.substring(0, text.length > 50 ? 50 : text.length)}...');
+      _log.info(
+        'MiniMax TTS 朗读: ${text.substring(0, text.length > 50 ? 50 : text.length)}...',
+      );
 
       final audioBytes = await _synthesizeBytes(text);
+      onAudioData?.call(audioBytes, config.audioFormat);
 
       // 播放音频
       await _playAudioFromBytes(audioBytes);
@@ -123,7 +127,9 @@ class MiniMaxTTSService extends TTSBaseService {
     // 构建请求体
     final requestBody = _buildRequestBody(text);
 
-    _log.info('MiniMax 请求: model=${requestBody['model']}, voiceId=${config.voiceId}');
+    _log.info(
+      'MiniMax 请求: model=${requestBody['model']}, voiceId=${config.voiceId}',
+    );
 
     // 发送请求
     final response = await _dio.post(
@@ -161,15 +167,21 @@ class MiniMaxTTSService extends TTSBaseService {
     return audioBytes;
   }
 
-  Map<String, dynamic> _buildRequestBody(String text) {    return {
+  Map<String, dynamic> _buildRequestBody(String text) {
+    return {
       'model': config.model ?? 'speech-2.8-hd',
       'text': text,
       'stream': false,
       'voice_setting': {
         'voice_id': config.voiceId,
         'speed': config.speed,
-        'vol': ((config.volume * 10).clamp(1, 10)).toInt(), // MiniMax vol 范围 (0,10]，我们的 volume 是 0-1
-        'pitch': ((config.pitch - 1) * 12).clamp(-12, 12).toInt(), // MiniMax pitch 范围 [-12,12]，我们的 pitch 是 0.5-2.0
+        'vol': ((config.volume * 10).clamp(
+          1,
+          10,
+        )).toInt(), // MiniMax vol 范围 (0,10]，我们的 volume 是 0-1
+        'pitch': ((config.pitch - 1) * 12)
+            .clamp(-12, 12)
+            .toInt(), // MiniMax pitch 范围 [-12,12]，我们的 pitch 是 0.5-2.0
         if (config.emotion != null && config.emotion!.isNotEmpty)
           'emotion': config.emotion,
       },
@@ -187,9 +199,11 @@ class MiniMaxTTSService extends TTSBaseService {
   List<int> _hexToBytes(String hexString) {
     final buffer = StringBuffer();
     for (int i = 0; i < hexString.length; i += 2) {
-      buffer.write(String.fromCharCode(
-        int.parse(hexString.substring(i, i + 2), radix: 16),
-      ));
+      buffer.write(
+        String.fromCharCode(
+          int.parse(hexString.substring(i, i + 2), radix: 16),
+        ),
+      );
     }
     return latin1.encode(buffer.toString());
   }
@@ -206,7 +220,9 @@ class MiniMaxTTSService extends TTSBaseService {
 
       // 保存到临时文件
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/minimax_tts_${DateTime.now().millisecondsSinceEpoch}.${config.audioFormat ?? 'mp3'}');
+      final tempFile = File(
+        '${tempDir.path}/minimax_tts_${DateTime.now().millisecondsSinceEpoch}.${config.audioFormat ?? 'mp3'}',
+      );
 
       await tempFile.writeAsBytes(audioBytes);
       _log.info('音频临时文件: ${tempFile.path}');
@@ -300,10 +316,12 @@ class MiniMaxTTSService extends TTSBaseService {
   }
 
   /// 获取可用模型列表
-  static List<String> getAvailableModels() => List.unmodifiable(_availableModels);
+  static List<String> getAvailableModels() =>
+      List.unmodifiable(_availableModels);
 
   /// 获取可用情绪列表
-  static List<String> getAvailableEmotions() => List.unmodifiable(_availableEmotions);
+  static List<String> getAvailableEmotions() =>
+      List.unmodifiable(_availableEmotions);
 
   @override
   Future<bool> testConnection() async {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/live2d_zip_import.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/decision_service.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'live2d_voice_analyzer.dart';
 import 'screens/live2d_main_screen.dart';
 import 'screens/live2d_settings_screen.dart';
 
@@ -32,6 +34,64 @@ class Live2DPlugin extends BasePlugin {
 
   /// 选中档案变化时广播的事件名（状态面板等据此同步头像）
   static const archiveSelectedEvent = 'live2d_archive_selected';
+
+  /// 当前语音分析帧；JellyLive2D 订阅此值并更新 ParamMouthOpenY。
+  final ValueNotifier<Live2DVoiceFrame?> voiceFrame =
+      ValueNotifier<Live2DVoiceFrame?>(null);
+  final Live2DVoiceAnalyzer voiceAnalyzer = Live2DVoiceAnalyzer();
+  Timer? _voiceAnalysisTimer;
+
+  Map<String, double> get vowelConfidence =>
+      voiceFrame.value?.vowels ??
+      const {
+        'VoiceSilence': 1,
+        'VoiceA': 0,
+        'VoiceI': 0,
+        'VoiceU': 0,
+        'VoiceE': 0,
+        'VoiceO': 0,
+      };
+
+  void pushAudioPcm(List<double> samples, int sampleRate) {
+    voiceFrame.value = voiceAnalyzer.processPcm(samples, sampleRate);
+  }
+
+  void pushAudioPcm16(List<int> bytes, int sampleRate) {
+    voiceFrame.value = voiceAnalyzer.processPcm16(bytes, sampleRate);
+  }
+
+  /// 按播放节奏切分 PCM，避免整段音频只产生一个口型帧。
+  void startPcm16Analysis(List<int> bytes, int sampleRate) {
+    _voiceAnalysisTimer?.cancel();
+    var offset =
+        bytes.length >= 44 &&
+            String.fromCharCodes(bytes.sublist(0, 4)) == 'RIFF'
+        ? 44
+        : 0;
+    const chunkBytes = 8192; // 4096 samples @ 32 kHz ~= 128 ms
+    void processChunk() {
+      if (offset >= bytes.length) {
+        _voiceAnalysisTimer?.cancel();
+        _voiceAnalysisTimer = null;
+        return;
+      }
+      final end = (offset + chunkBytes).clamp(offset, bytes.length);
+      pushAudioPcm16(bytes.sublist(offset, end), sampleRate);
+      offset = end;
+    }
+
+    processChunk();
+    _voiceAnalysisTimer = Timer.periodic(
+      const Duration(milliseconds: 128),
+      (_) => processChunk(),
+    );
+  }
+
+  void resetVoiceAnalysis() {
+    _voiceAnalysisTimer?.cancel();
+    _voiceAnalysisTimer = null;
+    voiceFrame.value = null;
+  }
 
   Duration get bubbleTypingInterval => Duration(
     milliseconds:
@@ -53,8 +113,7 @@ class Live2DPlugin extends BasePlugin {
 
   /// 背景高斯模糊 sigma（0 = 不模糊）
   double get backgroundBlur =>
-      (settings['backgroundBlur'] as num?)?.toDouble() ??
-      defaultBackgroundBlur;
+      (settings['backgroundBlur'] as num?)?.toDouble() ?? defaultBackgroundBlur;
 
   Future<void> setBackgroundBlur(double value) async {
     await updateSettings({'backgroundBlur': value});
@@ -92,8 +151,7 @@ class Live2DPlugin extends BasePlugin {
   /// 存档选中导入模型时据此找回完整定义（含动作列表）
   List<Live2DModelDefinition> get importedModels => [
     for (final item in (settings['importedModels'] as List? ?? const []))
-      if (item is Map)
-        importedModelFromJson(Map<String, dynamic>.from(item)),
+      if (item is Map) importedModelFromJson(Map<String, dynamic>.from(item)),
   ];
 
   /// 新增/更新导入记录：同目录+同入口文件视为同一模型，覆盖旧记录
@@ -145,21 +203,21 @@ class Live2DPlugin extends BasePlugin {
     Live2DModelDefinition model,
     String? thumbPath,
   ) async {
-    final next = _rawImportedModels()
-        .map((item) {
-          if (item['modelDir'] == model.modelDir &&
-              item['modelFile'] == model.modelFile) {
-            return {...item, 'thumbPath': thumbPath};
-          }
-          return Map<String, dynamic>.from(item);
-        })
-        .toList();
+    final next = _rawImportedModels().map((item) {
+      if (item['modelDir'] == model.modelDir &&
+          item['modelFile'] == model.modelFile) {
+        return {...item, 'thumbPath': thumbPath};
+      }
+      return Map<String, dynamic>.from(item);
+    }).toList();
     await updateSettings({'importedModels': next});
   }
 
   /// 引用指定导入模型的存档数量（删除前提示用）
   int archivesUsingModel(Live2DModelDefinition model) => archives
-      .where((a) => a.modelDir == model.modelDir && a.modelFile == model.modelFile)
+      .where(
+        (a) => a.modelDir == model.modelDir && a.modelFile == model.modelFile,
+      )
       .length;
 
   List<Map<String, dynamic>> _rawImportedModels() => [
@@ -203,6 +261,17 @@ class Live2DPlugin extends BasePlugin {
       await TTSPlugin.instance.speak(
         reply,
         serviceId: agent.ttsServiceId,
+        onAudioData: (bytes, format) {
+          // WAV/PCM 服务可直接分析；压缩音频需由服务端配置为 pcm 才能提供采样数据。
+          final normalizedFormat = format?.toLowerCase();
+          if (normalizedFormat == 'wav' ||
+              normalizedFormat == 'pcm' ||
+              normalizedFormat == 's16le' ||
+              normalizedFormat == 'pcm_s16le') {
+            startPcm16Analysis(bytes, 32000);
+          }
+        },
+        onComplete: resetVoiceAnalysis,
         onError: (error) => debugPrint('[Live2DChat] TTS failed: $error'),
       );
       // 成就系统计数（A13 播报员）
@@ -277,8 +346,11 @@ class Live2DPlugin extends BasePlugin {
       'customBubbleAssets': <String>[],
       'importedModels': <Map<String, dynamic>>[],
     });
-    final res = await AboutmeDataService.instance
-        .call('live2d', 'getSnapshot', {});
+    final res = await AboutmeDataService.instance.call(
+      'live2d',
+      'getSnapshot',
+      {},
+    );
     final data = res['success'] == true ? res['data'] : null;
     final rawArchives = data is Map ? data['archives'] : null;
     archives
@@ -383,14 +455,14 @@ class Live2DPlugin extends BasePlugin {
     String reply, {
     required Live2DModelDefinition model,
   }) => DecisionService.instance.decideLive2D(
-        reply: reply,
-        note: selected?.note ?? '',
-        expressions: model.expressions.map((item) => item.label).toList(),
-        motions: model.motions
-            .where((item) => item.group.toLowerCase() != 'idle')
-            .map((item) => item.label)
-            .toList(),
-      );
+    reply: reply,
+    note: selected?.note ?? '',
+    expressions: model.expressions.map((item) => item.label).toList(),
+    motions: model.motions
+        .where((item) => item.group.toLowerCase() != 'idle')
+        .map((item) => item.label)
+        .toList(),
+  );
 
   @override
   Widget buildMainView(BuildContext context) => const Live2DMainScreen();

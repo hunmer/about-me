@@ -20,7 +20,8 @@ class TTSManagerService extends ChangeNotifier {
   final Future<Map<String, dynamic>> Function(String key) readStorage;
 
   /// 写入存储的回调
-  final Future<void> Function(String key, Map<String, dynamic> data) writeStorage;
+  final Future<void> Function(String key, Map<String, dynamic> data)
+  writeStorage;
 
   /// 当前正在使用的服务实例
   TTSBaseService? _currentService;
@@ -68,7 +69,9 @@ class TTSManagerService extends ChangeNotifier {
       final services = await getAllServices();
 
       // 优先返回标记为默认的已启用服务
-      final defaultService = services.where((s) => s.isDefault && s.isEnabled).firstOrNull;
+      final defaultService = services
+          .where((s) => s.isDefault && s.isEnabled)
+          .firstOrNull;
       if (defaultService != null) {
         return defaultService;
       }
@@ -115,10 +118,9 @@ class TTSManagerService extends ChangeNotifier {
         _log.info('新增服务配置: ${config.name}');
       }
 
-      await writeStorage(
-        '$storagePrefix/services.json',
-        {'services': services.map((s) => s.toJson()).toList()},
-      );
+      await writeStorage('$storagePrefix/services.json', {
+        'services': services.map((s) => s.toJson()).toList(),
+      });
 
       notifyListeners();
     } catch (e) {
@@ -136,10 +138,9 @@ class TTSManagerService extends ChangeNotifier {
       services.removeWhere((s) => s.id == id);
 
       if (services.length < originalLength) {
-        await writeStorage(
-          '$storagePrefix/services.json',
-          {'services': services.map((s) => s.toJson()).toList()},
-        );
+        await writeStorage('$storagePrefix/services.json', {
+          'services': services.map((s) => s.toJson()).toList(),
+        });
 
         _log.info('删除服务: $id');
         notifyListeners();
@@ -169,6 +170,7 @@ class TTSManagerService extends ChangeNotifier {
     TTSCallback? onStart,
     TTSCallback? onComplete,
     TTSErrorCallback? onError,
+    TTSAudioDataCallback? onAudioData,
   }) async {
     try {
       // 获取服务配置
@@ -202,6 +204,7 @@ class TTSManagerService extends ChangeNotifier {
         onStart: onStart,
         onComplete: onComplete,
         onError: onError,
+        onAudioData: onAudioData,
       );
 
       _log.info('朗读完成: ${config.name}');
@@ -256,10 +259,7 @@ class TTSManagerService extends ChangeNotifier {
 
   /// 添加到队列
   void addToQueue(String text, {String? serviceId}) {
-    final item = TTSQueueItem(
-      text: text,
-      serviceId: serviceId,
-    );
+    final item = TTSQueueItem(text: text, serviceId: serviceId);
 
     _queue.add(item);
     _log.info('添加到队列: ${item.id}, 队列长度: ${_queue.length}');
@@ -274,10 +274,7 @@ class TTSManagerService extends ChangeNotifier {
   /// 批量添加到队列
   void addBatchToQueue(List<String> texts, {String? serviceId}) {
     for (final text in texts) {
-      final item = TTSQueueItem(
-        text: text,
-        serviceId: serviceId,
-      );
+      final item = TTSQueueItem(text: text, serviceId: serviceId);
       _queue.add(item);
     }
 

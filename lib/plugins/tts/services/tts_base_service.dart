@@ -4,6 +4,7 @@ import 'package:aboutme/plugins/tts/models/tts_voice.dart';
 /// TTS服务回调
 typedef TTSCallback = void Function();
 typedef TTSErrorCallback = void Function(String error);
+typedef TTSAudioDataCallback = void Function(List<int> bytes, String? format);
 
 /// TTS服务抽象基类
 abstract class TTSBaseService {
@@ -26,6 +27,7 @@ abstract class TTSBaseService {
     TTSCallback? onStart,
     TTSCallback? onComplete,
     TTSErrorCallback? onError,
+    TTSAudioDataCallback? onAudioData,
   });
 
   /// 停止朗读

@@ -7,6 +7,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
+import 'package:aboutme/plugins/live2d/live2d_voice_analyzer.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/live2d/screens/live2d_archive_form_screen.dart';
 import 'package:aboutme/plugins/live2d/screens/live2d_main_screen.dart';
@@ -114,6 +115,8 @@ class JellyLive2D extends StatefulWidget {
 
 class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   final Live2DViewController _controller = Live2DViewController();
+  late final ValueNotifier<Live2DVoiceFrame?> _voiceFrame =
+      Live2DPlugin.instance.voiceFrame;
   final ValueNotifier<double> _size = ValueNotifier<double>(_defaultSize);
   final GlobalKey _modelCaptureKey = GlobalKey();
   late Live2DModelDefinition _selectedModel =
@@ -187,6 +190,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     // 点击事件同样由原生侧经 onTap 转发（含 hit area 判定结果）
     _controller.onTap = _handleTap;
     _controller.addListener(_onViewStateChanged);
+    _voiceFrame.addListener(_handleVoiceFrame);
     widget.motionRequest?.addListener(_handleMotionRequest);
     widget.expressionRequest?.addListener(_handleExpressionRequest);
     _loadSavedCropRegion(_selectedModel);
@@ -253,6 +257,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     widget.motionRequest?.removeListener(_handleMotionRequest);
     widget.expressionRequest?.removeListener(_handleExpressionRequest);
     _controller.removeListener(_onViewStateChanged);
+    _voiceFrame.removeListener(_handleVoiceFrame);
     _bubbleTimer?.cancel();
     _bubbleResumeTimer?.cancel();
     _jevReplyTimer?.cancel();
@@ -262,6 +267,15 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     _borderVisible.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _handleVoiceFrame() {
+    final frame = _voiceFrame.value;
+    if (!_controller.value.isLoaded) return;
+    // Live2D 标准口型参数范围为 0~1；元音置信度保留在插件 voiceFrame 中供外部使用。
+    unawaited(
+      _controller.setParameter('ParamMouthOpenY', frame?.mouthOpenY ?? 0),
+    );
   }
 
   /// 流式回复会多次更新 message；等待内容稳定后只触发一次 JEV。

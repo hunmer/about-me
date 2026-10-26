@@ -9,8 +9,13 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     _appearanceResetTimer?.cancel();
     _appearanceResetTimer = Timer(_appearanceDuration, () async {
       if (!mounted || !_controller.value.isLoaded || _isSwitchingModel) return;
-      debugPrint('[Live2D] 表情展示结束，重新加载模型恢复 Idle');
-      await _loadModel(_selectedModel);
+      debugPrint('[Live2D] 表情/动作展示结束，原地恢复 Idle');
+      try {
+        // 保留当前模型、纹理和视图，只切回待机动作，避免整模型重载。
+        await _controller.startMotion(group: 'Idle', index: 0, priority: 1);
+      } on Live2DException catch (error) {
+        debugPrint('[Live2D] 原地恢复 Idle 失败: $error');
+      }
     });
   }
 
