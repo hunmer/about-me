@@ -26,6 +26,8 @@ import 'package:aboutme/plugins/openai/services/chat_assistant_service.dart';
 import 'package:aboutme/plugins/openai/services/prompt_preset_service.dart';
 import 'package:aboutme/plugins/openai/services/agentlib_resource_service.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_resource_selector.dart';
+import 'package:aboutme/plugins/tts/tts_plugin.dart';
+import 'package:aboutme/plugins/tts/widgets/tts_settings_dialog.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/aliveness/widgets/aliveness_settings_section.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_management_screen/tool_management_screen.dart';
@@ -84,6 +86,11 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
   List<AgentResourceItem> _selectedMcpServers = [];
   AlivenessConfig _alivenessConfig = const AlivenessConfig();
 
+  // 语音设置（自动朗读 + 绑定的 TTS 服务）
+  bool _ttsEnabled = false;
+  String? _ttsServiceId;
+  final Map<String, String> _ttsServiceNames = {};
+
   /// 当前标签页：0 基础 / 1 活人感 / 2 素材库 / 3 文件管理
   int _tabIndex = 0;
 
@@ -107,8 +114,11 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       _selectedMcpServers = List.of(widget.agent!.resourceSlots.mcpServers);
       _alivenessConfig =
           widget.agent!.alivenessConfig ?? const AlivenessConfig();
+      _ttsEnabled = widget.agent!.ttsEnabled;
+      _ttsServiceId = widget.agent!.ttsServiceId;
     }
     _loadAgentFileDir();
+    _loadTtsServiceNames();
     // 上报路由上下文，供"询问当前上下文"识别（页面多经无名路由/容器打开）
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateRouteContext());
     if (widget.autoOpenSoulForge) {
@@ -159,6 +169,47 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
     _presets = await _presetService.loadPresets();
     if (mounted) {
       setState(() {});
+    }
+  }
+
+  /// 加载 TTS 服务名（供语音设置副标题展示）
+  Future<void> _loadTtsServiceNames() async {
+    try {
+      final services = await TTSPlugin.instance.managerService.getAllServices();
+      if (mounted) {
+        setState(() {
+          _ttsServiceNames
+            ..clear()
+            ..addEntries(services.map((s) => MapEntry(s.id, s.name)));
+        });
+      }
+    } catch (_) {
+      // 服务加载失败不影响编辑页其它功能
+    }
+  }
+
+  /// 语音设置副标题：朗读开关 + 当前绑定的服务名
+  String _ttsSettingsSubtitle() {
+    final status = '自动朗读${_ttsEnabled ? '已开启' : '已关闭'}';
+    final serviceName = _ttsServiceId == null
+        ? null
+        : _ttsServiceNames[_ttsServiceId];
+    return serviceName == null ? status : '$status · $serviceName';
+  }
+
+  /// 打开语音设置弹层（传入 agent，列表中标记其绑定语音并默认选中）
+  Future<void> _openTtsSettings() async {
+    final result = await showTTSSettingsDialog(
+      context,
+      agent: _editingAgent,
+      initialEnabled: _ttsEnabled,
+      initialServiceId: _ttsServiceId,
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _ttsEnabled = result.enabled;
+        _ttsServiceId = result.serviceId;
+      });
     }
   }
 
@@ -296,6 +347,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       apiFormat: values['apiFormat'] as String? ?? 'openai',
       resourceSlots: resourceSlots,
       alivenessConfig: _alivenessConfig,
+      ttsEnabled: _ttsEnabled,
+      ttsServiceId: _ttsServiceId,
     );
 
     try {
@@ -572,6 +625,8 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
         mcpServers: _selectedMcpServers,
       ),
       alivenessConfig: _alivenessConfig,
+      ttsEnabled: _ttsEnabled,
+      ttsServiceId: _ttsServiceId,
     );
 
     try {
@@ -1015,6 +1070,14 @@ class _AgentEditScreenState extends State<AgentEditScreen> {
       subtitle: '配置可供 Agent 使用的插件工具',
       showChevron: true,
       onTap: _openToolManagement,
+    ),
+    const SizedBox(height: 8),
+    DSListItem(
+      leading: const DsIcon(DsIconKind.volumeUp, size: 22),
+      title: '语音设置',
+      subtitle: _ttsSettingsSubtitle(),
+      showChevron: true,
+      onTap: _openTtsSettings,
     ),
     const SizedBox(height: 16),
     DSButton(label: 'openai_testAgent'.tr, expand: true, onPressed: _testAgent),

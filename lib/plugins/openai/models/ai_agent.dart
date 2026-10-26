@@ -56,6 +56,12 @@ class AIAgent {
   /// 「活人感」增强配置：null = 从未配置 = 关闭（走原有直接生成路径）
   final AlivenessConfig? alivenessConfig;
 
+  /// 语音设置：是否启用自动朗读
+  final bool ttsEnabled;
+
+  /// 语音设置：绑定的 TTS 服务 ID
+  final String? ttsServiceId;
+
   /// 从 messages 中获取 system 类型的提示词
   /// 优先级：messages 中 type="system" 的第一条 > systemPrompt（兼容旧数据）
   String get effectiveSystemPrompt {
@@ -99,6 +105,8 @@ class AIAgent {
     this.apiFormat = 'openai',
     this.resourceSlots = const AgentResourceSlots(),
     this.alivenessConfig,
+    this.ttsEnabled = false,
+    this.ttsServiceId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -133,6 +141,8 @@ class AIAgent {
     'apiFormat': apiFormat,
     'resourceSlots': resourceSlots.toJson(),
     if (alivenessConfig != null) 'alivenessConfig': alivenessConfig!.toJson(),
+    'ttsEnabled': ttsEnabled,
+    if (ttsServiceId != null) 'ttsServiceId': ttsServiceId,
   };
 
   factory AIAgent.fromJson(Map<String, dynamic> json) {
@@ -206,6 +216,8 @@ class AIAgent {
                 json['alivenessConfig'] as Map<dynamic, dynamic>,
               ),
             ),
+      ttsEnabled: json['ttsEnabled'] as bool? ?? false,
+      ttsServiceId: json['ttsServiceId'] as String?,
     );
   }
 
@@ -241,6 +253,8 @@ class AIAgent {
     String? apiFormat,
     AgentResourceSlots? resourceSlots,
     AlivenessConfig? alivenessConfig,
+    bool? ttsEnabled,
+    String? ttsServiceId,
   }) {
     return AIAgent(
       id: id ?? this.id,
@@ -276,6 +290,8 @@ class AIAgent {
       apiFormat: apiFormat ?? this.apiFormat,
       resourceSlots: resourceSlots ?? this.resourceSlots,
       alivenessConfig: alivenessConfig ?? this.alivenessConfig,
+      ttsEnabled: ttsEnabled ?? this.ttsEnabled,
+      ttsServiceId: ttsServiceId ?? this.ttsServiceId,
     );
   }
 }

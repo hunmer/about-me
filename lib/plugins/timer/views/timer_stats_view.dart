@@ -144,6 +144,9 @@ class _TimerStatsViewState extends State<TimerStatsView> {
       // 收缩态标题；大标题与日期胶囊由导航栏承担（原页面内 header 移除）
       title: Text('timer_focusStats'.tr),
       largeTitle: '专注统计',
+      // 与任务 tab 的 wrapper 同处 IndexedStack（同一路由子树），
+      // 必须关闭导航栏 Hero 转场，否则默认 Hero tag 冲突
+      transitionBetweenRoutes: false,
       enableSearchBar: false,
       largeTitleActions: [_buildWeekPill(theme)],
       // Tab 切换挂载时墨线描画入场（design.md §10）

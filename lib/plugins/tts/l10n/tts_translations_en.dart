@@ -138,4 +138,8 @@ const Map<String, String> ttsTranslationsEn = {
   'tts_emotionFluent': 'Fluent',
   'tts_emotionWhisper': 'Whisper',
   'tts_serviceStatusSummary': '@total services configured, @enabled enabled',
+
+  // Settings sheet
+  'tts_currentAgentVoice': 'Current Agent',
+  'tts_preview': 'Preview',
 };

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/widgets/agent_list_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -184,11 +185,13 @@ class _ChatScreenState extends State<ChatScreen> {
       widget.conversation.id,
     );
 
-    // 从会话中加载 TTS 配置
+    // 从会话中加载 TTS 配置；未配置时回退到 agent 的语音设置
     final ttsConfig = latestConversation?.ttsConfig;
     if (ttsConfig != null) {
       _autoReadEnabled = ttsConfig.enabled;
       _selectedTTSServiceId = ttsConfig.serviceId;
+    } else {
+      _loadAgentTtsSettings();
     }
 
     // 从会话中加载语音通话配置
@@ -200,6 +203,29 @@ class _ChatScreenState extends State<ChatScreen> {
     debugPrint(
       '📖 已加载会话设置: autoReadEnabled=$_autoReadEnabled, voiceCallConfig=${voiceCallConfig != null}',
     );
+  }
+
+  /// 会话未配置 TTS 时，回退到 agent 的语音设置（链模式取首个 agent）
+  Future<void> _loadAgentTtsSettings() async {
+    final chain = widget.conversation.agentChain;
+    final agentId =
+        widget.conversation.agentId ??
+        (chain != null && chain.isNotEmpty ? chain.first.agentId : null);
+    if (agentId == null) return;
+    try {
+      final agent = await AgentController().getAgent(agentId);
+      if (agent == null || !mounted) return;
+      // 延迟到首帧后回填，避免构建期间 setState
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _autoReadEnabled = agent.ttsEnabled;
+          _selectedTTSServiceId = agent.ttsServiceId;
+        });
+      });
+    } catch (e) {
+      debugPrint('📖 回退加载 agent 语音设置失败: $e');
+    }
   }
 
   /// 保存聊天设置（保存到会话配置）

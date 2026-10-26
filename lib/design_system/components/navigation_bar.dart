@@ -211,10 +211,27 @@ class DSBottomNavigation extends StatelessWidget {
                   top: Radius.circular(20),
                 ),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: ColoredBox(
-                    color: theme.paper.withValues(
-                      alpha: theme.isDark ? 0.4 : 0.3,
+                  // dilate(inner) + blur(outer)：模糊量在面板边缘渐弱，
+                  // 形成羽化过渡（Flutter 官方 frosted/feathered 配方）；
+                  // dilate 半径即羽化宽度，取大值让边缘充分渐隐
+                  filter: ImageFilter.compose(
+                    outer: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    inner: ImageFilter.dilate(radiusX: 24, radiusY: 24),
+                  ),
+                  // tint 顶部同步长渐入（前 ~100px），避免纸色留下硬边线
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          theme.paper.withValues(alpha: 0),
+                          theme.paper.withValues(
+                            alpha: theme.isDark ? 0.4 : 0.3,
+                          ),
+                        ],
+                        stops: const [0.0, 0.2],
+                      ),
                     ),
                   ),
                 ),

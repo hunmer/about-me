@@ -6,6 +6,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 
 /// TTS设置底部抽屉（smooth_sheets ModalSheet 底部弹出）
 ///
@@ -19,10 +20,14 @@ class TTSSettingsDialog extends StatefulWidget {
   /// 初始选择的服务ID
   final String? initialServiceId;
 
+  /// 关联的智能体：传入后在语音列表里标记其绑定的语音并作为默认选择
+  final AIAgent? agent;
+
   const TTSSettingsDialog({
     super.key,
     this.initialEnabled = false,
     this.initialServiceId,
+    this.agent,
   });
 
   @override
@@ -35,12 +40,49 @@ class _TTSSettingsDialogState extends State<TTSSettingsDialog> {
   List<TTSServiceConfig> _services = [];
   bool _isLoading = true;
 
+  /// 正在试听的服务ID
+  String? _previewingServiceId;
+
   @override
   void initState() {
     super.initState();
     _enabled = widget.initialEnabled;
-    _selectedServiceId = widget.initialServiceId;
+    // 未显式指定服务时，优先用 agent 绑定的语音作为默认选择
+    _selectedServiceId = widget.initialServiceId ?? widget.agent?.ttsServiceId;
     _loadServices();
+  }
+
+  @override
+  void dispose() {
+    // 弹层关闭时停止试听
+    if (_previewingServiceId != null) {
+      TTSPlugin.instance.stop();
+    }
+    super.dispose();
+  }
+
+  /// 试听服务语音：再次点击同一服务则停止
+  Future<void> _previewService(TTSServiceConfig service) async {
+    try {
+      await TTSPlugin.instance.stop();
+      if (_previewingServiceId == service.id) {
+        setState(() => _previewingServiceId = null);
+        return;
+      }
+      setState(() => _previewingServiceId = service.id);
+      await TTSPlugin.instance.speak(
+        'tts_voiceTestText'.tr,
+        serviceId: service.id,
+        onComplete: () {
+          if (mounted) setState(() => _previewingServiceId = null);
+        },
+        onError: (_) {
+          if (mounted) setState(() => _previewingServiceId = null);
+        },
+      );
+    } catch (_) {
+      if (mounted) setState(() => _previewingServiceId = null);
+    }
   }
 
   /// 加载TTS服务列表
@@ -259,6 +301,10 @@ class _TTSSettingsDialogState extends State<TTSSettingsDialog> {
     );
   }
 
+  /// 该服务是否为当前 agent 绑定的语音
+  bool _isAgentBoundService(TTSServiceConfig service) =>
+      widget.agent != null && service.id == widget.agent!.ttsServiceId;
+
   /// 服务选择行：名称 + 默认徽章 + 类型说明 + 单选框
   Widget _buildServiceRow(BuildContext context, TTSServiceConfig service) {
     final theme = DSThemeBridge.resolve(context);
@@ -301,6 +347,13 @@ class _TTSSettingsDialogState extends State<TTSSettingsDialog> {
                               fontSize: 10,
                             ),
                           ],
+                          if (_isAgentBoundService(service)) ...[
+                            const SizedBox(width: 8),
+                            DSBadge(
+                              label: 'tts_currentAgentVoice'.tr,
+                              fontSize: 10,
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 2),
@@ -315,6 +368,19 @@ class _TTSSettingsDialogState extends State<TTSSettingsDialog> {
                     ],
                   ),
                 ),
+                DSIconButton(
+                  icon: _previewingServiceId == service.id
+                      ? DsIconKind.stop
+                      : DsIconKind.play,
+                  size: 34,
+                  color: theme.primary,
+                  iconColor: theme.onPrimary,
+                  onPressed: disabled
+                      ? null
+                      : () => _previewService(service),
+                  tooltip: 'tts_preview'.tr,
+                ),
+                const SizedBox(width: 8),
                 DSRadio<String>(
                   value: service.id,
                   groupValue: _selectedServiceId,
@@ -366,6 +432,7 @@ Future<TTSSettingsResult?> showTTSSettingsDialog(
   BuildContext context, {
   bool initialEnabled = false,
   String? initialServiceId,
+  AIAgent? agent,
 }) {
   return Navigator.of(context).push<TTSSettingsResult>(
     ModalSheetRoute(
@@ -377,6 +444,7 @@ Future<TTSSettingsResult?> showTTSSettingsDialog(
               child: TTSSettingsDialog(
                 initialEnabled: initialEnabled,
                 initialServiceId: initialServiceId,
+                agent: agent,
               ),
             ),
           ),
