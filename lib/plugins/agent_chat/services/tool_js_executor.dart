@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
 import 'package:aboutme/plugins/webview/services/js_tool_service.dart';
 
 /// 工具 JS 执行器
@@ -74,9 +75,77 @@ class ToolJsExecutor {
     }
   }
 
+  /// 按顺序执行批量调用，首项失败后停止，保留已完成的结果。
+  static Future<Map<String, dynamic>> executeBatch(
+    Map<String, dynamic> args,
+    Future<dynamic> Function(String tool, Map<String, dynamic> args) execute,
+  ) async {
+    final calls = args['calls'];
+    if (calls is! List || calls.isEmpty) {
+      return {'error': 'calls 必须是非空数组'};
+    }
+    for (final call in calls) {
+      if (call is! Map<String, dynamic> ||
+          call['tool'] is! String ||
+          (call['tool'] as String).trim().isEmpty ||
+          call['tool'] == 'batch_run' ||
+          call['args'] is! Map<String, dynamic>) {
+        return {'error': '每项调用必须包含非空 tool 和对象 args，且不能嵌套 batch_run'};
+      }
+    }
+    final results = <Map<String, dynamic>>[];
+    for (var index = 0; index < calls.length; index++) {
+      final call = calls[index] as Map<String, dynamic>;
+      dynamic result;
+      try {
+        result = await execute(
+          call['tool'] as String,
+          Map<String, dynamic>.from(call['args'] as Map),
+        );
+      } catch (error) {
+        result = {'error': error.toString()};
+      }
+      dynamic decoded = result;
+      if (result is String) {
+        try {
+          decoded = jsonDecode(result);
+        } on FormatException {
+          decoded = result;
+        }
+      }
+      results.add({'tool': call['tool'], 'result': decoded});
+      final error = ToolSchemaBuilder.resultError(decoded);
+      if (error != null) {
+        return {
+          'success': false,
+          'error': error,
+          'failedIndex': index,
+          'results': results,
+        };
+      }
+    }
+    return {'success': true, 'results': results};
+  }
+
   /// 执行单个工具步骤
   static Future<String> executeToolStep(ToolCallStep step) async {
     switch (step.method) {
+      case 'batch_run':
+        final args = jsonDecode(step.data) as Map<String, dynamic>;
+        return jsonEncode(
+          await executeBatch(args, (tool, args) {
+            return executeToolStep(
+              ToolCallStep(
+                method: tool,
+                title: tool,
+                desc: '',
+                data: tool == 'run_js'
+                    ? args['code'] as String
+                    : jsonEncode(args),
+              ),
+            );
+          }),
+        );
       case 'plugin_tool':
         final call = jsonDecode(step.data) as Map<String, dynamic>;
         final result = await JSBridgeManager.instance.pluginTools.invoke(

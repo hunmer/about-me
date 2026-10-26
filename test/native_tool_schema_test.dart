@@ -14,8 +14,10 @@ void main() {
   test('时间工具返回可解析的时间和时区', () {
     final now = DateTime(2026, 10, 19, 18, 21);
     final result = NativeToolAgentService.currentTimeData(now);
-    expect(DateTime.parse(result['datetime'] as String).millisecondsSinceEpoch,
-        now.millisecondsSinceEpoch);
+    expect(
+      DateTime.parse(result['datetime'] as String).millisecondsSinceEpoch,
+      now.millisecondsSinceEpoch,
+    );
     expect(result['timezone'], now.timeZoneName);
     expect(result['utcOffset'], matches(RegExp(r'^[+-]\d{2}:\d{2}$')));
     expect(result['year'], 2026);
@@ -52,10 +54,21 @@ void main() {
         pluginTools: [pluginTool],
         onRunJs: (args) async => {'result': args['code']},
       );
-      expect(tools.map((t) => t.name), ['bill', 'get_current_time', 'run_js']);
+      expect(tools.map((t) => t.name), [
+        'bill',
+        'get_current_time',
+        'run_js',
+        'batch_run',
+      ]);
       expect(tools.first, same(pluginTool));
-      expect(tools.last.description, contains('专用工具可完成的操作应直接调用'));
-      expect(tools.last.description, isNot(contains('账单插件')));
+      expect(
+        tools.singleWhere((tool) => tool.name == 'run_js').description,
+        contains('专用工具可完成的操作应直接调用'),
+      );
+      expect(
+        tools.singleWhere((tool) => tool.name == 'run_js').description,
+        isNot(contains('账单插件')),
+      );
     });
 
     test('JS 模式仍保留内置记忆，关闭通用工具时不提供 run_js', () {
@@ -70,14 +83,23 @@ void main() {
         onRunJs: (_) async => {},
         useJsTools: true,
       );
-      expect(jsMode.map((t) => t.name), ['memory', 'get_current_time', 'run_js']);
+      expect(jsMode.map((t) => t.name), [
+        'memory',
+        'get_current_time',
+        'run_js',
+        'batch_run',
+      ]);
       final builtInMode = NativeToolAgentService.buildToolSet(
         pluginTools: [memory],
         onRunJs: (_) async => {},
         useJsTools: true,
         builtInOnly: true,
       );
-      expect(builtInMode.map((t) => t.name), ['memory', 'get_current_time']);
+      expect(builtInMode.map((t) => t.name), [
+        'memory',
+        'get_current_time',
+        'batch_run',
+      ]);
     });
 
     test('JS 模式保留六个记忆读写工具', () {
@@ -102,10 +124,17 @@ void main() {
         onRunJs: (_) async => {},
         useJsTools: true,
       );
-      expect(
-        tools.map((tool) => tool.name),
-        ['list_memory_keys', 'search_memory', 'batch_search_memory', 'add_memory', 'update_memory', 'delete_memory', 'get_current_time', 'run_js'],
-      );
+      expect(tools.map((tool) => tool.name), [
+        'list_memory_keys',
+        'search_memory',
+        'batch_search_memory',
+        'add_memory',
+        'update_memory',
+        'delete_memory',
+        'get_current_time',
+        'run_js',
+        'batch_run',
+      ]);
     });
 
     test('开启 JS 模式时保留时间工具与 run_js', () {
@@ -114,8 +143,15 @@ void main() {
         onRunJs: (args) async => {'result': args['code']},
         useJsTools: true,
       );
-      expect(tools.map((t) => t.name), ['get_current_time', 'run_js']);
-      expect(tools.last.description, '执行 JavaScript 代码。');
+      expect(tools.map((t) => t.name), [
+        'get_current_time',
+        'run_js',
+        'batch_run',
+      ]);
+      expect(
+        tools.singleWhere((tool) => tool.name == 'run_js').description,
+        '执行 JavaScript 代码。',
+      );
     });
 
     test('开启 JS 模式时仍保留 read_image 标准工具', () {
@@ -140,7 +176,80 @@ void main() {
         useJsTools: true,
       );
 
-      expect(tools.map((tool) => tool.name), ['read_image', 'get_current_time', 'run_js']);
+      expect(tools.map((tool) => tool.name), [
+        'read_image',
+        'get_current_time',
+        'run_js',
+        'batch_run',
+      ]);
+    });
+  });
+
+  group('batch_run', () {
+    test('等待前项完成，业务失败后停止并保留结果', () async {
+      final events = <String>[];
+      final tools = NativeToolAgentService.buildToolSet(
+        pluginTools: [
+          Tool<Map<String, dynamic>>(
+            name: 'test',
+            description: '',
+            inputSchema: Schema.fromMap(ToolSchemaBuilder.buildSchemaMap([])),
+            onCall: (args) async {
+              final id = args['id'];
+              events.add('start$id');
+              await Future<void>.delayed(Duration.zero);
+              events.add('end$id');
+              return id == 2
+                  ? {'success': false, 'error': 'failed'}
+                  : {'id': id};
+            },
+          ),
+        ],
+        onRunJs: (_) async => {},
+      );
+      final result =
+          await tools.last.call({
+                'calls': [
+                  for (final id in [1, 2, 3])
+                    {
+                      'tool': 'test',
+                      'args': {'id': id},
+                    },
+                ],
+              })
+              as Map;
+      expect(events, ['start1', 'end1', 'start2', 'end2']);
+      expect(result['success'], false);
+      expect(result['failedIndex'], 1);
+      expect(result['results'], hasLength(2));
+    });
+
+    test('JS 模式无法批量调用被过滤的插件工具', () async {
+      var called = false;
+      final tools = NativeToolAgentService.buildToolSet(
+        pluginTools: [
+          Tool<Map<String, dynamic>>(
+            name: 'hidden',
+            description: '',
+            inputSchema: Schema.fromMap(ToolSchemaBuilder.buildSchemaMap([])),
+            onCall: (_) async {
+              called = true;
+              return {};
+            },
+          ),
+        ],
+        onRunJs: (_) async => {},
+        useJsTools: true,
+      );
+      final result =
+          await tools.last.call({
+                'calls': [
+                  {'tool': 'hidden', 'args': <String, dynamic>{}},
+                ],
+              })
+              as Map;
+      expect(result['success'], false);
+      expect(called, false);
     });
   });
 
@@ -152,11 +261,7 @@ void main() {
         'required': true,
         'description': '要查询的 key 列表',
         'minItems': 1,
-        'items': {
-          'type': 'string',
-          'minLength': 1,
-          'pattern': r'^\S+$',
-        },
+        'items': {'type': 'string', 'minLength': 1, 'pattern': r'^\S+$'},
       });
 
       expect(param.minItems, 1);
@@ -337,12 +442,14 @@ void main() {
         ),
       ]);
 
-      final groups = (schema['properties'] as Map<String, dynamic>)['groups']
-          as Map<String, dynamic>;
+      final groups =
+          (schema['properties'] as Map<String, dynamic>)['groups']
+              as Map<String, dynamic>;
       expect(groups['minItems'], 1);
       final item = groups['items'] as Map<String, dynamic>;
-      final keys = (item['properties'] as Map<String, dynamic>)['keys']
-          as Map<String, dynamic>;
+      final keys =
+          (item['properties'] as Map<String, dynamic>)['keys']
+              as Map<String, dynamic>;
       expect(keys['minItems'], 1);
       expect(keys['items'], {
         'type': 'string',
@@ -440,12 +547,19 @@ void main() {
     setUpAll(() {
       memoryTools = Map<String, dynamic>.from(
         jsonDecode(
-          File('lib/plugins/agent_chat/tools/memory.json').readAsStringSync(),
-        ) as Map,
+              File(
+                'lib/plugins/agent_chat/tools/memory.json',
+              ).readAsStringSync(),
+            )
+            as Map,
       );
-      toolIndex = jsonDecode(
-        File('lib/plugins/agent_chat/tools/index.json').readAsStringSync(),
-      ) as List<dynamic>;
+      toolIndex =
+          jsonDecode(
+                File(
+                  'lib/plugins/agent_chat/tools/index.json',
+                ).readAsStringSync(),
+              )
+              as List<dynamic>;
     });
 
     test('六个记忆工具均已定义并要求显式 memoryId', () {
@@ -461,9 +575,11 @@ void main() {
       for (final name in names) {
         final config = memoryTools[name] as Map<String, dynamic>;
         final parameters = (config['parameters'] as List<dynamic>)
-            .map((parameter) => ToolParameter.fromJson(
-                  Map<String, dynamic>.from(parameter as Map),
-                ))
+            .map(
+              (parameter) => ToolParameter.fromJson(
+                Map<String, dynamic>.from(parameter as Map),
+              ),
+            )
             .toList();
         final schema = ToolSchemaBuilder.buildSchemaMap(parameters);
         expect(schema['required'], contains('memoryId'), reason: name);
@@ -471,13 +587,17 @@ void main() {
     });
 
     test('list_memory_keys 的 prefix 参数可选', () {
-      final parameters = (memoryTools['list_memory_keys']
-              as Map<String, dynamic>)['parameters'] as List<dynamic>;
+      final parameters =
+          (memoryTools['list_memory_keys']
+                  as Map<String, dynamic>)['parameters']
+              as List<dynamic>;
       final schema = ToolSchemaBuilder.buildSchemaMap(
         parameters
-            .map((parameter) => ToolParameter.fromJson(
-                  Map<String, dynamic>.from(parameter as Map),
-                ))
+            .map(
+              (parameter) => ToolParameter.fromJson(
+                Map<String, dynamic>.from(parameter as Map),
+              ),
+            )
             .toList(),
       );
       expect(schema['required'], ['memoryId']);
@@ -488,13 +608,16 @@ void main() {
     });
 
     test('search_memory 和 batch_search_memory 透传 key 约束', () {
-      final searchParameters = (memoryTools['search_memory']
-              as Map<String, dynamic>)['parameters'] as List<dynamic>;
+      final searchParameters =
+          (memoryTools['search_memory'] as Map<String, dynamic>)['parameters']
+              as List<dynamic>;
       final searchSchema = ToolSchemaBuilder.buildSchemaMap(
         searchParameters
-            .map((parameter) => ToolParameter.fromJson(
-                  Map<String, dynamic>.from(parameter as Map),
-                ))
+            .map(
+              (parameter) => ToolParameter.fromJson(
+                Map<String, dynamic>.from(parameter as Map),
+              ),
+            )
             .toList(),
       );
       expect(searchSchema['required'], ['memoryId', 'key']);
@@ -502,13 +625,17 @@ void main() {
       expect(key['minLength'], 1);
       expect(key['pattern'], r'^\S+$');
 
-      final batchParameters = (memoryTools['batch_search_memory']
-              as Map<String, dynamic>)['parameters'] as List<dynamic>;
+      final batchParameters =
+          (memoryTools['batch_search_memory']
+                  as Map<String, dynamic>)['parameters']
+              as List<dynamic>;
       final batchSchema = ToolSchemaBuilder.buildSchemaMap(
         batchParameters
-            .map((parameter) => ToolParameter.fromJson(
-                  Map<String, dynamic>.from(parameter as Map),
-                ))
+            .map(
+              (parameter) => ToolParameter.fromJson(
+                Map<String, dynamic>.from(parameter as Map),
+              ),
+            )
             .toList(),
       );
       expect(batchSchema['required'], ['memoryId', 'keys']);
@@ -522,28 +649,32 @@ void main() {
       });
     });
     test('写入和查询工具声明后续操作所需的 key 参数', () {
-      final searchNames = ((memoryTools['search_memory']
-                  as Map<String, dynamic>)['parameters'] as List<dynamic>)
+      final searchNames =
+          ((memoryTools['search_memory'] as Map<String, dynamic>)['parameters']
+                  as List<dynamic>)
               .cast<Map>()
               .map((p) => p['name'])
               .toSet();
       expect(searchNames, {'memoryId', 'key'});
       for (final name in ['add_memory', 'update_memory', 'delete_memory']) {
-        final parameters = (memoryTools[name] as Map<String, dynamic>)['parameters']
-            as List<dynamic>;
+        final parameters =
+            (memoryTools[name] as Map<String, dynamic>)['parameters']
+                as List<dynamic>;
         final names = parameters.cast<Map>().map((p) => p['name']).toSet();
         expect(names, contains('key'), reason: name);
       }
       for (final name in ['add_memory', 'update_memory']) {
-        final parameters = (memoryTools[name] as Map<String, dynamic>)['parameters']
-            as List<dynamic>;
+        final parameters =
+            (memoryTools[name] as Map<String, dynamic>)['parameters']
+                as List<dynamic>;
         final names = parameters.cast<Map>().map((p) => p['name']).toSet();
         expect(names, contains('value'), reason: name);
         expect(names, isNot(contains('content')), reason: name);
       }
       for (final name in ['update_memory', 'delete_memory']) {
-        final parameters = (memoryTools[name] as Map<String, dynamic>)['parameters']
-            as List<dynamic>;
+        final parameters =
+            (memoryTools[name] as Map<String, dynamic>)['parameters']
+                as List<dynamic>;
         final names = parameters.cast<Map>().map((p) => p['name']).toSet();
         expect(names, isNot(contains('fragmentId')), reason: name);
       }
@@ -551,14 +682,17 @@ void main() {
 
     test('索引包含六个记忆工具', () {
       final names = toolIndex.map((entry) => (entry as List).first).toSet();
-      expect(names, containsAll([
-        'memory_list_memory_keys',
-        'memory_search_memory',
-        'memory_batch_search_memory',
-        'memory_add_memory',
-        'memory_update_memory',
-        'memory_delete_memory',
-      ]));
+      expect(
+        names,
+        containsAll([
+          'memory_list_memory_keys',
+          'memory_search_memory',
+          'memory_batch_search_memory',
+          'memory_add_memory',
+          'memory_update_memory',
+          'memory_delete_memory',
+        ]),
+      );
     });
   });
 
@@ -653,9 +787,13 @@ void main() {
 
     test('独立记忆开启时不依赖通用工具调用或活人感开关', () {
       final agent = AIAgent.fromJson({
-        'id': 'memory-agent', 'name': 'Memory', 'description': '',
-        'serviceProviderId': 'test', 'baseUrl': 'https://example.com/v1',
-        'headers': <String, String>{}, 'model': 'test',
+        'id': 'memory-agent',
+        'name': 'Memory',
+        'description': '',
+        'serviceProviderId': 'test',
+        'baseUrl': 'https://example.com/v1',
+        'headers': <String, String>{},
+        'model': 'test',
         'enableFunctionCalling': false,
         'alivenessConfig': {
           'enabled': false,
@@ -665,9 +803,15 @@ void main() {
       });
       expect(NativeToolAgentService.instance.supports(agent, false), true);
       expect(NativeToolAgentService.instance.supports(agent, true), true);
-      expect(NativeToolAgentService.instance.supports(agent.copyWith(
-        alivenessConfig: const AlivenessConfig(memoryEnabled: false),
-      ), false), false);
+      expect(
+        NativeToolAgentService.instance.supports(
+          agent.copyWith(
+            alivenessConfig: const AlivenessConfig(memoryEnabled: false),
+          ),
+          false,
+        ),
+        false,
+      );
     });
 
     test('活人感开启时不依赖通用工具调用开关', () {

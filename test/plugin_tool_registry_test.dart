@@ -10,32 +10,53 @@ import 'dart:io';
 
 void main() {
   test('待办 schema 的 params 包装转换为 Dart 回调实参，保存后可重放', () async {
-    final configs = jsonDecode(
-      File('lib/plugins/agent_chat/tools/todo.json').readAsStringSync(),
-    ) as Map<String, dynamic>;
+    final configs =
+        jsonDecode(
+              File('lib/plugins/agent_chat/tools/todo.json').readAsStringSync(),
+            )
+            as Map<String, dynamic>;
     final config = ToolConfig.fromJson(
       configs['todo_createTask'] as Map<String, dynamic>,
     );
-    final args = {'params': {'title': '健身', 'priority': 'medium'}};
+    final args = {
+      'params': {'title': '健身', 'priority': 'medium'},
+    };
     final invocationArgs = ToolSchemaBuilder.invocationArgs(config, args);
     expect(invocationArgs['title'], '健身');
     expect(args.containsKey('params'), isTrue);
     JSBridgeManager.instance.pluginTools.register('test_todo', {
-      'createTask': (Map<String, dynamic> params) =>
-          params['title'] == null ? {'error': '缺少 title'} : {'title': params['title']},
+      'createTask': (Map<String, dynamic> params) => params['title'] == null
+          ? {'error': '缺少 title'}
+          : {'title': params['title']},
     });
-    final result = await ToolService.executeToolStep(ToolCallStep(
-      method: 'plugin_tool', title: '创建任务', desc: '',
-      data: jsonEncode({'pluginId': 'test_todo', 'method': 'createTask', 'args': invocationArgs}),
-    ));
+    final result = await ToolService.executeToolStep(
+      ToolCallStep(
+        method: 'plugin_tool',
+        title: '创建任务',
+        desc: '',
+        data: jsonEncode({
+          'pluginId': 'test_todo',
+          'method': 'createTask',
+          'args': invocationArgs,
+        }),
+      ),
+    );
     expect(jsonDecode(result), {'title': '健身'});
   });
 
   test('业务失败识别 error 和 success=false，不误报成功', () {
-    expect(ToolSchemaBuilder.resultError({'error': '缺少必需参数: title'}),
-        '缺少必需参数: title');
-    expect(ToolSchemaBuilder.resultError({'success': false, 'message': '失败'}), '失败');
-    expect(ToolSchemaBuilder.resultError({'success': true, 'data': {}}), isNull);
+    expect(
+      ToolSchemaBuilder.resultError({'error': '缺少必需参数: title'}),
+      '缺少必需参数: title',
+    );
+    expect(
+      ToolSchemaBuilder.resultError({'success': false, 'message': '失败'}),
+      '失败',
+    );
+    expect(
+      ToolSchemaBuilder.resultError({'success': true, 'data': {}}),
+      isNull,
+    );
   });
 
   test('plugin_tool 步骤无需 JS 引擎即可重放', () async {
@@ -51,6 +72,53 @@ void main() {
       ),
     );
     expect(result, '{"id":3}');
+  });
+
+  test('batch_run 步骤按顺序重放插件调用', () async {
+    final seen = <int>[];
+    JSBridgeManager.instance.pluginTools.register('test_batch', {
+      'append': (Map<String, dynamic> args) async {
+        await Future<void>.delayed(Duration.zero);
+        seen.add(args['id'] as int);
+        return {'count': seen.length};
+      },
+    });
+    final result =
+        jsonDecode(
+              await ToolService.executeToolStep(
+                ToolCallStep(
+                  method: 'batch_run',
+                  title: '批量执行',
+                  desc: '',
+                  data: jsonEncode({
+                    'calls': [
+                      for (final id in [1, 2])
+                        {
+                          'tool': 'plugin_tool',
+                          'args': {
+                            'pluginId': 'test_batch',
+                            'method': 'append',
+                            'args': {'id': id},
+                          },
+                        },
+                    ],
+                  }),
+                ),
+              ),
+            )
+            as Map;
+    expect(seen, [1, 2]);
+    expect(result['success'], true);
+    expect(result['results'], [
+      {
+        'tool': 'plugin_tool',
+        'result': {'count': 1},
+      },
+      {
+        'tool': 'plugin_tool',
+        'result': {'count': 2},
+      },
+    ]);
   });
 
   test('无需 JS 引擎即可直接执行注册的同步和异步接口', () async {

@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/agent_chat/services/ask_user_questions_service.d
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/ask_user_questions_card.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_schema_builder.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_js_executor.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_service.dart';
 import 'package:aboutme/plugins/openai/controllers/model_controller.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
@@ -592,7 +593,7 @@ class NativeToolAgentService {
       ),
       onCall: onRunJs,
     );
-    return [
+    final tools = <Tool<Map<String, dynamic>>>[
       ...pluginTools.where((tool) => tool.name == 'read_image'),
       if (!useJsTools || builtInOnly)
         ...pluginTools.where((tool) => tool.name != 'read_image'),
@@ -654,6 +655,41 @@ class NativeToolAgentService {
           onCall: onAskUserQuestions,
         ),
     ];
+    final toolMap = {for (final tool in tools) tool.name: tool};
+    tools.add(
+      Tool<Map<String, dynamic>>(
+        name: 'batch_run',
+        description:
+            '按 calls 顺序逐个执行当前可用工具，等待上一项完成后再执行下一项。'
+            '遇到错误立即停止，返回已执行的结果和从 0 开始的 failedIndex。'
+            '每项仍计入工具调用次数限制；不支持嵌套批量调用或引用前项结果。',
+        inputSchema: Schema.fromMap({
+          'type': 'object',
+          'properties': {
+            'calls': {
+              'type': 'array',
+              'minItems': 1,
+              'items': {
+                'type': 'object',
+                'properties': {
+                  'tool': {'type': 'string', 'enum': toolMap.keys.toList()},
+                  'args': {'type': 'object', 'description': '目标工具的完整参数对象'},
+                },
+                'required': ['tool', 'args'],
+              },
+            },
+          },
+          'required': ['calls'],
+        }),
+        onCall: (args) =>
+            ToolJsExecutor.executeBatch(args, (name, arguments) async {
+              final tool = toolMap[name];
+              if (tool == null) return {'error': '工具 $name 不可用'};
+              return await tool.call(arguments);
+            }),
+      ),
+    );
+    return tools;
   }
 
   (List<Tool<Map<String, dynamic>>>, Map<String, NativeToolMeta>) _buildTools(
