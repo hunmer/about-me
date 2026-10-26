@@ -7,14 +7,14 @@ import 'package:aboutme/screens/home_screen/models/home_folder_item.dart';
 import '../../../../core/services/toast_service.dart';
 
 /// 创建文件夹对话框
-class CreateFolderDialog extends StatefulWidget {
-  const CreateFolderDialog({super.key});
+class HomeFolderForm extends StatefulWidget {
+  const HomeFolderForm({super.key});
 
   @override
-  State<CreateFolderDialog> createState() => _CreateFolderDialogState();
+  State<HomeFolderForm> createState() => _HomeFolderFormState();
 }
 
-class _CreateFolderDialogState extends State<CreateFolderDialog> {
+class _HomeFolderFormState extends State<HomeFolderForm> {
   final TextEditingController _nameController = TextEditingController();
   final FocusNode _nameFocus = FocusNode();
   IconData _selectedIcon = Icons.folder;

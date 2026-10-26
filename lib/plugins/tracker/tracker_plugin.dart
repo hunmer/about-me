@@ -32,7 +32,7 @@ export 'controllers/tracker_controller.dart';
 export 'widgets/goal_card.dart';
 export 'widgets/goal_detail_page.dart';
 export 'widgets/goal_edit_page.dart';
-export 'widgets/record_dialog.dart';
+export 'widgets/tracker_record_form.dart';
 export 'utils/date_utils.dart';
 export 'utils/tracker_notification_utils.dart';
 

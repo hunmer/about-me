@@ -10,7 +10,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/screens/channel_list/controllers/channel_list_controller.dart';
-import 'package:aboutme/plugins/chat/screens/channel_list/widgets/channel_dialogs/channel_dialog.dart';
+import 'package:aboutme/plugins/chat/screens/channel_list/widgets/chat_channel_form.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 
@@ -114,7 +114,7 @@ class _ChatBottomBarState extends State<ChatBottomBar>
     SmoothBottomSheet.show(
       context: context,
       builder:
-          (context) => ChannelDialog(
+          (context) => ChatChannelForm(
             asSheet: true,
             onAddChannel: (channel) async {
               await _channelListController.addChannel(channel);

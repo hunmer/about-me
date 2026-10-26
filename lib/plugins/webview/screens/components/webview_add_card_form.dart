@@ -16,25 +16,25 @@ import '../../webview_plugin.dart';
 ///
 /// 在线 URL / 本地项目目录复制，由宿主页底部导航圆钮调用
 void showAddCardSheet(BuildContext context) {
-  final formKey = GlobalKey<_WebViewAddCardSheetState>();
+  final formKey = GlobalKey<_WebViewAddCardFormState>();
 
   SmoothBottomSheet.showForm(
     context: context,
     title: 'webview_add_card'.tr,
     onSave: () => formKey.currentState?.save(),
-    child: WebViewAddCardSheet(key: formKey),
+    child: WebViewAddCardForm(key: formKey),
   );
 }
 
 /// 添加卡片表单
-class WebViewAddCardSheet extends StatefulWidget {
-  const WebViewAddCardSheet({super.key});
+class WebViewAddCardForm extends StatefulWidget {
+  const WebViewAddCardForm({super.key});
 
   @override
-  State<WebViewAddCardSheet> createState() => _WebViewAddCardSheetState();
+  State<WebViewAddCardForm> createState() => _WebViewAddCardFormState();
 }
 
-class _WebViewAddCardSheetState extends State<WebViewAddCardSheet> {
+class _WebViewAddCardFormState extends State<WebViewAddCardForm> {
   final _titleController = TextEditingController();
   final _urlController = TextEditingController();
   final _descController = TextEditingController();

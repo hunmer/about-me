@@ -11,7 +11,7 @@ import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor/calendar_album_entry_form.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
@@ -299,7 +299,7 @@ Future<void> _openDateAlbum(
 ) async {
   if (entry != null) {
     // 有日记，打开日记编辑弹层
-    EntryEditorSheet.show(
+    CalendarAlbumEntryForm.show(
       context,
       entry: entry,
       calendarController: plugin.calendarController,

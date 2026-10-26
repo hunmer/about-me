@@ -7,13 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:aboutme/widgets/form_fields/date_picker_field.dart';
 
-class CheckinRecordDialog extends StatefulWidget {
+class CheckinRecordForm extends StatefulWidget {
   final CheckinItem item;
   final CheckinListController controller;
   final VoidCallback onCheckinCompleted;
   final DateTime? selectedDate;
 
-  const CheckinRecordDialog({
+  const CheckinRecordForm({
     super.key,
     required this.item,
     required this.controller,
@@ -22,10 +22,10 @@ class CheckinRecordDialog extends StatefulWidget {
   });
 
   @override
-  State<CheckinRecordDialog> createState() => _CheckinRecordDialogState();
+  State<CheckinRecordForm> createState() => _CheckinRecordFormState();
 }
 
-class _CheckinRecordDialogState extends State<CheckinRecordDialog> {
+class _CheckinRecordFormState extends State<CheckinRecordForm> {
   late TextEditingController _noteController;
   late DateTime _selectedDate;
   late DateTime _startTime;

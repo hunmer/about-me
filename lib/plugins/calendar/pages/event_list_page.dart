@@ -5,7 +5,10 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/utils/platform_utils.dart';
+import 'package:aboutme/plugins/calendar/calendar_plugin.dart';
 import 'package:aboutme/plugins/calendar/models/event.dart';
+import 'package:aboutme/plugins/calendar/services/system_calendar_settings.dart';
 import 'package:aboutme/plugins/calendar/widgets/event_detail_card.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
@@ -42,6 +45,16 @@ class _EventListPageState extends State<EventListPage> {
   /// 状态过滤：null = 全部，'active' = 未完成，'completed' = 已完成
   String? _statusFilter;
 
+  /// 是否隐藏节假日（null = 设置尚未加载完成）
+  bool? _hideHolidays;
+
+  /// 是否开启了系统日历导入（null = 设置尚未加载完成）
+  bool? _systemCalendarEnabled;
+
+  /// 节假日过滤初始值（按已保存设置一次性注入，此后不随用户切换变化，
+  /// 避免触发 wrapper 的 initialMultiFilters 重置逻辑清掉其他过滤项）
+  Map<String, dynamic>? _initialFilters;
+
   /// 状态过滤选项（id -> 文案）
   Map<String, String> get _statusOptions => {
     'active': 'calendar_filterActive'.tr,
@@ -54,10 +67,36 @@ class _EventListPageState extends State<EventListPage> {
     // 合并未完成与已完成活动，按开始时间排序
     _syncEvents();
 
+    _loadSystemCalendarSettings();
+
     // 初始化时设置路由上下文
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateRouteContext();
     });
+  }
+
+  /// 读取系统日历导入设置，决定是否显示节假日过滤项及其初始值
+  Future<void> _loadSystemCalendarSettings() async {
+    final settings = await SystemCalendarSettings.load();
+    if (!mounted) return;
+    setState(() {
+      _systemCalendarEnabled = settings.enabled;
+      _hideHolidays = !settings.includeHolidays;
+      if (settings.enabled &&
+          PlatformUtils.isMobile &&
+          !settings.includeHolidays) {
+        _initialFilters = const {'holidays': 'hide'};
+      }
+    });
+  }
+
+  /// 节假日显隐切换：写入设置并重载系统日历事件（日历视图立即生效）
+  Future<void> _applyHolidaysVisibility(bool includeHolidays) async {
+    final settings = await SystemCalendarSettings.load();
+    if (settings.includeHolidays == includeHolidays) return;
+    settings.includeHolidays = includeHolidays;
+    await settings.save();
+    await CalendarPlugin.instance.controller.loadSystemEvents();
   }
 
   @override
@@ -153,7 +192,7 @@ class _EventListPageState extends State<EventListPage> {
     );
   }
 
-  /// 构建状态过滤项（单选：全部/未完成/已完成）
+  /// 构建过滤项（状态单选 + 移动端节假日显隐）
   List<FilterItem> _buildFilterItems() {
     return [
       FilterItem(
@@ -178,16 +217,53 @@ class _EventListPageState extends State<EventListPage> {
           _statusOptions,
         ),
       ),
+      // 节假日显隐：仅在移动端且开启系统日历导入时显示
+      if (_systemCalendarEnabled == true && PlatformUtils.isMobile)
+        FilterItem(
+          id: 'holidays',
+          title: 'calendar_filterHolidays'.tr,
+          type: FilterType.tagsSingle,
+          builder: (context, value, onChanged) {
+            return DSThemeBridge(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  DSChip(
+                    label: 'calendar_holidaysShow'.tr,
+                    selected: value != 'hide',
+                    onSelected: (_) => onChanged(null, done: true),
+                  ),
+                  DSChip(
+                    label: 'calendar_holidaysHide'.tr,
+                    selected: value == 'hide',
+                    onSelected: (_) => onChanged('hide', done: true),
+                  ),
+                ],
+              ),
+            );
+          },
+          getBadge: (value) =>
+              value == 'hide' ? 'calendar_holidaysHide'.tr : null,
+        ),
     ];
   }
 
-  /// MultiFilterBar 过滤变更：提取状态过滤选中项
+  /// MultiFilterBar 过滤变更：提取状态过滤选中项与节假日显隐
   void _onMultiFilterChanged(Map<String, dynamic> filters) {
+    final hideHolidays = filters['holidays'] == 'hide';
+    // 设置加载完成后才响应用户切换（加载前的初始化回写不落盘）
+    final holidaysChanged =
+        _hideHolidays != null && _hideHolidays != hideHolidays;
     setState(() {
       final status = filters['status'];
       _statusFilter =
           status is String && status != 'all' ? status : null;
+      _hideHolidays = hideHolidays;
     });
+    if (holidaysChanged) {
+      _applyHolidaysVisibility(!hideHolidays);
+    }
   }
 
   @override
@@ -201,6 +277,7 @@ class _EventListPageState extends State<EventListPage> {
       enableLargeTitle: true,
       enableMultiFilter: true,
       multiFilterItems: _buildFilterItems(),
+      initialMultiFilters: _initialFilters,
       onMultiFilterChanged: _onMultiFilterChanged,
       body:
           filtered.isEmpty

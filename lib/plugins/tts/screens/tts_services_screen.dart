@@ -7,7 +7,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_config.dart';
 import 'package:aboutme/plugins/tts/models/tts_service_type.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
-import 'package:aboutme/plugins/tts/widgets/service_editor_sheet.dart';
+import 'package:aboutme/plugins/tts/widgets/tts_service_form.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -144,7 +144,7 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
 
   /// 创建新服务（smooth_sheets 底部弹层）
   Future<void> _createService() async {
-    final result = await ServiceEditorSheet.show(context);
+    final result = await TtsServiceForm.show(context);
 
     if (result != null) {
       try {
@@ -164,7 +164,7 @@ class _TTSServicesScreenState extends State<TTSServicesScreen> {
 
   /// 编辑服务（smooth_sheets 底部弹层）
   Future<void> _editService(TTSServiceConfig service) async {
-    final result = await ServiceEditorSheet.show(context, service: service);
+    final result = await TtsServiceForm.show(context, service: service);
 
     if (result != null) {
       try {

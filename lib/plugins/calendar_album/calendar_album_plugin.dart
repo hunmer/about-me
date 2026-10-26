@@ -14,7 +14,7 @@ import 'controllers/calendar_controller.dart';
 import 'controllers/tag_controller.dart';
 import 'repositories/client_calendar_album_repository.dart';
 import 'models/calendar_entry.dart';
-import 'screens/entry_editor/entry_editor_sheet.dart';
+import 'screens/entry_editor/calendar_album_entry_form.dart';
 
 // HTTP 服务器导入
 import 'package:aboutme/plugins/webview/services/local_http_server.dart';
@@ -84,7 +84,7 @@ class CalendarAlbumPlugin extends BasePlugin with JSBridgePlugin {
       final tags = tagController;
       final entry = calendar?.getEntryById(id);
       if (calendar == null || tags == null || entry == null) return;
-      EntryEditorSheet.show(
+      CalendarAlbumEntryForm.show(
         context,
         entry: entry,
         calendarController: calendar,

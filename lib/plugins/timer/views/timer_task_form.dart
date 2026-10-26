@@ -11,17 +11,17 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 /// 添加/编辑计时器任务对话框
 ///
 /// 使用 FormBuilderWrapper 进行表单管理
-class AddTimerTaskDialog extends StatefulWidget {
+class TimerTaskForm extends StatefulWidget {
   final List<String> groups;
   final TimerTask? initialTask;
 
-  const AddTimerTaskDialog({super.key, required this.groups, this.initialTask});
+  const TimerTaskForm({super.key, required this.groups, this.initialTask});
 
   @override
-  State<AddTimerTaskDialog> createState() => _AddTimerTaskDialogState();
+  State<TimerTaskForm> createState() => _TimerTaskFormState();
 }
 
-class _AddTimerTaskDialogState extends State<AddTimerTaskDialog> {
+class _TimerTaskFormState extends State<TimerTaskForm> {
   late final String _id;
   late final Color _selectedColor;
 

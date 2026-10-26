@@ -12,11 +12,11 @@ import 'package:aboutme/plugins/tts/services/minimax_tts_service.dart';
 import 'package:aboutme/plugins/tts/services/system_tts_service.dart';
 
 /// TTS服务编辑底部弹层（smooth_sheets ModalSheet，支持新建和编辑）
-class ServiceEditorSheet extends StatefulWidget {
+class TtsServiceForm extends StatefulWidget {
   /// 要编辑的服务配置（null表示新建）
   final TTSServiceConfig? service;
 
-  const ServiceEditorSheet({super.key, this.service});
+  const TtsServiceForm({super.key, this.service});
 
   /// 以 smooth_sheets 模态底部弹层打开，返回编辑结果（null 表示取消）
   static Future<TTSServiceConfig?> show(
@@ -26,16 +26,16 @@ class ServiceEditorSheet extends StatefulWidget {
     return Navigator.of(context).push<TTSServiceConfig>(
       ModalSheetRoute(
         swipeDismissible: true,
-        builder: (context) => ServiceEditorSheet(service: service),
+        builder: (context) => TtsServiceForm(service: service),
       ),
     );
   }
 
   @override
-  State<ServiceEditorSheet> createState() => _ServiceEditorSheetState();
+  State<TtsServiceForm> createState() => _TtsServiceFormState();
 }
 
-class _ServiceEditorSheetState extends State<ServiceEditorSheet> {
+class _TtsServiceFormState extends State<TtsServiceForm> {
   // 基础配置
   late TextEditingController _nameController;
   late TTSServiceType _selectedType;

@@ -12,7 +12,7 @@ import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
-import '../widgets/moments_compose_sheet.dart';
+import '../widgets/moments_compose_form.dart';
 import '../widgets/moments_shared.dart';
 import 'moments_feed_screen.dart';
 import 'moments_memories_screen.dart';
@@ -58,7 +58,7 @@ class _MomentsHomeScreenState extends State<MomentsHomeScreen> {
     await SmoothBottomSheet.showWithTitle<void>(
       context: context,
       title: 'moments_composeTitle'.tr,
-      child: const MomentsComposeSheet(),
+      child: const MomentsComposeForm(),
     );
   }
 

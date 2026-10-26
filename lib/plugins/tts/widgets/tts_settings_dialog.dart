@@ -76,7 +76,7 @@ class _TTSSettingsDialogState extends State<TTSSettingsDialog> {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
-    // 大容器走手绘面板：纸底 + 淡排线 + 墨线框（与 ServiceEditorSheet 同款）
+    // 大容器走手绘面板：纸底 + 淡排线 + 墨线框（与 TtsServiceForm 同款）
     return DsSketchPanel(
       theme: theme,
       width: double.infinity,

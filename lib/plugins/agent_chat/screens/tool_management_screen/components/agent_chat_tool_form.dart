@@ -9,13 +9,13 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
 /// 工具编辑对话框
-class ToolEditorDialog extends StatefulWidget {
+class AgentChatToolForm extends StatefulWidget {
   final String pluginId;
   final String? toolId;
   final ToolConfig? config;
   final bool isNew;
 
-  const ToolEditorDialog({
+  const AgentChatToolForm({
     super.key,
     required this.pluginId,
     this.toolId,
@@ -24,10 +24,10 @@ class ToolEditorDialog extends StatefulWidget {
   });
 
   @override
-  State<ToolEditorDialog> createState() => _ToolEditorDialogState();
+  State<AgentChatToolForm> createState() => _AgentChatToolFormState();
 }
 
-class _ToolEditorDialogState extends State<ToolEditorDialog>
+class _AgentChatToolFormState extends State<AgentChatToolForm>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
 
@@ -63,7 +63,7 @@ class _ToolEditorDialogState extends State<ToolEditorDialog>
       if (!_uiHandlersRegistered && mounted) {
         JSBridgeManager.instance.registerUIHandlers(context);
         _uiHandlersRegistered = true;
-        debugPrint('✓ ToolEditorDialog: UI 处理器已注册');
+        debugPrint('✓ AgentChatToolForm: UI 处理器已注册');
       }
     });
 

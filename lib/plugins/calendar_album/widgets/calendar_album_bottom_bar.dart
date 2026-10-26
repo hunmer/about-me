@@ -8,7 +8,7 @@ import 'package:aboutme/plugins/calendar_album/screens/calendar_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/tag_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/album_screen.dart';
 import 'package:aboutme/plugins/calendar_album/screens/stats_screen.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor/calendar_album_entry_form.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/expandable_fab.dart';
@@ -93,7 +93,7 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
 
   /// 打开日记表单，[date] / [photos] 为新建模式的初始日期与图片
   Future<void> _showEditor(DateTime? date, [List<Map<String, dynamic>>? photos]) {
-    return EntryEditorSheet.show(
+    return CalendarAlbumEntryForm.show(
       context,
       initialDate: date,
       initialImages: photos,

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:floating_ball_plugin/floating_ball_plugin.dart';
 import 'package:aboutme/core/floating_ball/floating_widget_controller.dart';
-import 'package:aboutme/core/floating_ball/widgets/floating_button_edit_dialog.dart';
+import 'package:aboutme/core/floating_ball/widgets/floating_ball_button_form.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -37,7 +37,7 @@ class _FloatingButtonManagerScreenState
 
   /// 添加按钮
   Future<void> _addButton() async {
-    final result = await FloatingButtonEditDialog.show(context);
+    final result = await FloatingBallButtonForm.show(context);
 
     if (result != null) {
       setState(() {
@@ -49,7 +49,7 @@ class _FloatingButtonManagerScreenState
 
   /// 编辑按钮
   Future<void> _editButton(int index) async {
-    final result = await FloatingButtonEditDialog.show(
+    final result = await FloatingBallButtonForm.show(
       context,
       initialButton: _buttons[index],
       index: index,

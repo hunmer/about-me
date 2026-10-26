@@ -10,7 +10,7 @@ import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 import 'package:aboutme/plugins/day/controllers/day_controller.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/plugins/day/widgets/memorial_background.dart';
-import 'package:aboutme/plugins/day/widgets/edit_memorial_day_dialog/edit_memorial_day_page.dart';
+import 'package:aboutme/plugins/day/widgets/day_memorial_form/edit_memorial_day_page.dart';
 
 /// 纪念日详情页（Warm Paper Sketch · 复刻参考图 UI）
 ///

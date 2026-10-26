@@ -4,14 +4,14 @@ import 'package:intl/intl.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
-class AddUsageRecordDialog extends StatefulWidget {
-  const AddUsageRecordDialog({super.key});
+class GoodsUsageRecordForm extends StatefulWidget {
+  const GoodsUsageRecordForm({super.key});
 
   @override
-  State<AddUsageRecordDialog> createState() => _AddUsageRecordDialogState();
+  State<GoodsUsageRecordForm> createState() => _GoodsUsageRecordFormState();
 }
 
-class _AddUsageRecordDialogState extends State<AddUsageRecordDialog> {
+class _GoodsUsageRecordFormState extends State<GoodsUsageRecordForm> {
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();

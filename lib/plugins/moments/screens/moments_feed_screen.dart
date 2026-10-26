@@ -15,7 +15,7 @@ import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart'
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
-import '../widgets/moments_compose_sheet.dart';
+import '../widgets/moments_compose_form.dart';
 import '../widgets/moments_shared.dart';
 import 'moments_profile_screen.dart';
 
@@ -160,7 +160,7 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
     await SmoothBottomSheet.showWithTitle(
       context: context,
       title: 'moments_composeTitle'.tr,
-      child: const MomentsComposeSheet(),
+      child: const MomentsComposeForm(),
     );
   }
 

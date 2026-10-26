@@ -12,7 +12,7 @@ import 'entry_editor_controller.dart';
 import 'entry_editor_ui.dart';
 
 /// 日记编辑底部弹层（基于通用 [SmoothBottomSheet.showForm]，支持新建与编辑）
-class EntryEditorSheet {
+class CalendarAlbumEntryForm {
   /// 以底部弹层打开日记表单，保存成功后自动关闭
   ///
   /// [entry] 非空为编辑模式（标题栏提供删除，带确认）；否则为新建模式
@@ -35,14 +35,14 @@ class EntryEditorSheet {
     final resolvedTagController =
         tagController ?? Provider.of<TagController>(context, listen: false);
 
-    _EntryEditorSheetBodyState? bodyState;
+    _CalendarAlbumEntryFormBodyState? bodyState;
     return SmoothBottomSheet.showForm(
       context: context,
       title:
           entry == null
               ? 'calendar_album_new_post'.tr
               : 'calendar_album_edit_post'.tr,
-      child: _EntryEditorSheetBody(
+      child: _CalendarAlbumEntryFormBody(
         entry: entry,
         initialDate: initialDate,
         initialImages: initialImages,
@@ -89,15 +89,15 @@ class EntryEditorSheet {
   }
 }
 
-class _EntryEditorSheetBody extends StatefulWidget {
+class _CalendarAlbumEntryFormBody extends StatefulWidget {
   final CalendarEntry? entry;
   final DateTime? initialDate;
   final List<Map<String, dynamic>>? initialImages;
   final CalendarController calendarController;
   final TagController tagController;
-  final ValueChanged<_EntryEditorSheetBodyState> onStateReady;
+  final ValueChanged<_CalendarAlbumEntryFormBodyState> onStateReady;
 
-  const _EntryEditorSheetBody({
+  const _CalendarAlbumEntryFormBody({
     required this.entry,
     required this.initialDate,
     this.initialImages,
@@ -107,10 +107,10 @@ class _EntryEditorSheetBody extends StatefulWidget {
   });
 
   @override
-  State<_EntryEditorSheetBody> createState() => _EntryEditorSheetBodyState();
+  State<_CalendarAlbumEntryFormBody> createState() => _CalendarAlbumEntryFormBodyState();
 }
 
-class _EntryEditorSheetBodyState extends State<_EntryEditorSheetBody> {
+class _CalendarAlbumEntryFormBodyState extends State<_CalendarAlbumEntryFormBody> {
   late EntryEditorController _controller;
 
   @override

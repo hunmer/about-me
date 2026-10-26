@@ -16,11 +16,11 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
 /// 悬浮按钮编辑对话框（手绘风）
-class FloatingButtonEditDialog extends StatefulWidget {
+class FloatingBallButtonForm extends StatefulWidget {
   final FloatingBallButtonData? initialButton;
   final int? index;
 
-  const FloatingButtonEditDialog({
+  const FloatingBallButtonForm({
     super.key,
     this.initialButton,
     this.index,
@@ -35,7 +35,7 @@ class FloatingButtonEditDialog extends StatefulWidget {
     return showDSDialog<FloatingBallButtonData>(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder: (context) => FloatingButtonEditDialog(
+      builder: (context) => FloatingBallButtonForm(
         initialButton: initialButton,
         index: index,
       ),
@@ -43,11 +43,11 @@ class FloatingButtonEditDialog extends StatefulWidget {
   }
 
   @override
-  State<FloatingButtonEditDialog> createState() =>
-      _FloatingButtonEditDialogState();
+  State<FloatingBallButtonForm> createState() =>
+      _FloatingBallButtonFormState();
 }
 
-class _FloatingButtonEditDialogState extends State<FloatingButtonEditDialog> {
+class _FloatingBallButtonFormState extends State<FloatingBallButtonForm> {
   late TextEditingController _titleController;
   late TextEditingController _dataController;
   String _selectedIcon = 'ic_menu_info_details';

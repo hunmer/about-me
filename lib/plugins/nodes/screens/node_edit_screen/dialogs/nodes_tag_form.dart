@@ -1,16 +1,16 @@
 import 'package:get/get.dart' hide Node;
 import 'package:flutter/material.dart';
 
-class AddTagDialog extends StatefulWidget {
+class NodesTagForm extends StatefulWidget {
   final Function(String) onTagAdded;
 
-  const AddTagDialog({super.key, required this.onTagAdded});
+  const NodesTagForm({super.key, required this.onTagAdded});
 
   @override
-  State<AddTagDialog> createState() => AddTagDialogState();
+  State<NodesTagForm> createState() => NodesTagFormState();
 }
 
-class AddTagDialogState extends State<AddTagDialog> {
+class NodesTagFormState extends State<NodesTagForm> {
   final TextEditingController _controller = TextEditingController();
 
   @override

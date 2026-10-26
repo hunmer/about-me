@@ -7,14 +7,14 @@ import 'package:aboutme/plugins/tracker/models/goal.dart';
 import 'package:aboutme/plugins/tracker/models/record.dart';
 import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 
-class RecordDialog extends StatefulWidget {
+class TrackerRecordForm extends StatefulWidget {
   final Goal goal;
   final TrackerController controller;
 
   /// 初始记录时间（缺省为当前时刻），供快速新建预填日期
   final DateTime? initialRecordedAt;
 
-  const RecordDialog({
+  const TrackerRecordForm({
     super.key,
     required this.goal,
     required this.controller,
@@ -22,10 +22,10 @@ class RecordDialog extends StatefulWidget {
   });
 
   @override
-  State<RecordDialog> createState() => _RecordDialogState();
+  State<TrackerRecordForm> createState() => _TrackerRecordFormState();
 }
 
-class _RecordDialogState extends State<RecordDialog> {
+class _TrackerRecordFormState extends State<TrackerRecordForm> {
   late DateTime _recordedAt;
   final _valueController = TextEditingController();
   final _noteController = TextEditingController();

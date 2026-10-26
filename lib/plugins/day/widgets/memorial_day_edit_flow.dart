@@ -4,7 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/day/controllers/day_controller.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
-import 'package:aboutme/plugins/day/widgets/edit_memorial_day_dialog.dart';
+import 'package:aboutme/plugins/day/widgets/day_memorial_form.dart';
 
 /// 共享的纪念日控制器
 ///

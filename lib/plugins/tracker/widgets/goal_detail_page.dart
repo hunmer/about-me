@@ -5,7 +5,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart' as flutter show Row, SizedBox, ListTile;
 import 'package:aboutme/plugins/tracker/models/goal.dart';
 import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
-import 'record_dialog.dart';
+import 'tracker_record_form.dart';
 import 'goal_edit_page.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
@@ -123,7 +123,7 @@ class GoalDetailPage extends StatelessWidget {
   void _showRecordDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => RecordDialog(goal: goal, controller: controller),
+      builder: (context) => TrackerRecordForm(goal: goal, controller: controller),
     );
   }
 

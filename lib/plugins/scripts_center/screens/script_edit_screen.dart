@@ -8,7 +8,7 @@ import 'package:aboutme/plugins/scripts_center/models/script_input.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_profile.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_trigger.dart';
 import 'package:aboutme/plugins/scripts_center/services/script_manager.dart';
-import 'package:aboutme/plugins/scripts_center/widgets/script_input_edit_dialog.dart';
+import 'package:aboutme/plugins/scripts_center/widgets/script_input_form.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/widgets/form_fields/form_builder_wrapper.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
@@ -505,7 +505,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
   Future<void> _addInput() async {
     final input = await showDialog<ScriptInput>(
       context: context,
-      builder: (context) => const ScriptInputEditDialog(),
+      builder: (context) => const ScriptInputForm(),
     );
 
     if (input != null) {
@@ -519,7 +519,7 @@ class _ScriptEditScreenState extends State<ScriptEditScreen> {
   Future<void> _editInput(int index) async {
     final input = await showDialog<ScriptInput>(
       context: context,
-      builder: (context) => ScriptInputEditDialog(input: _inputs[index]),
+      builder: (context) => ScriptInputForm(input: _inputs[index]),
     );
 
     if (input != null) {

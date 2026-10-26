@@ -8,31 +8,31 @@ import 'package:get/get.dart';
 
 import '../../models/webview_card.dart';
 import '../../webview_plugin.dart';
-import 'webview_add_card_sheet.dart' show buildFolderPickerSuffix;
+import 'webview_add_card_form.dart' show buildFolderPickerSuffix;
 
 /// 弹出编辑卡片表单（底部抽屉，标题栏自带保存按钮）
 void showEditCardSheet(BuildContext context, WebViewCard card) {
-  final formKey = GlobalKey<_WebViewCardEditSheetState>();
+  final formKey = GlobalKey<_WebViewCardFormState>();
 
   SmoothBottomSheet.showForm(
     context: context,
     title: 'webview_edit_card'.tr,
     onSave: () => formKey.currentState?.save(),
-    child: WebViewCardEditSheet(key: formKey, card: card),
+    child: WebViewCardForm(key: formKey, card: card),
   );
 }
 
 /// 编辑卡片表单
-class WebViewCardEditSheet extends StatefulWidget {
-  const WebViewCardEditSheet({super.key, required this.card});
+class WebViewCardForm extends StatefulWidget {
+  const WebViewCardForm({super.key, required this.card});
 
   final WebViewCard card;
 
   @override
-  State<WebViewCardEditSheet> createState() => _WebViewCardEditSheetState();
+  State<WebViewCardForm> createState() => _WebViewCardFormState();
 }
 
-class _WebViewCardEditSheetState extends State<WebViewCardEditSheet> {
+class _WebViewCardFormState extends State<WebViewCardForm> {
   late final _titleController = TextEditingController(text: widget.card.title);
   late final _urlController = TextEditingController(text: widget.card.url);
   late final _descController = TextEditingController(

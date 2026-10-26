@@ -1,1 +1,1 @@
-export 'edit_memorial_day_dialog/index.dart';
+export 'day_memorial_form/index.dart';

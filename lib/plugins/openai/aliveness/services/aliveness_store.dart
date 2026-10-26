@@ -89,7 +89,11 @@ class AlivenessStore {
         .toList();
   }
 
-  Future<MemoryLibrary> createMemoryLibrary(String name) {
+  Future<MemoryLibrary> createMemoryLibrary(
+    String name, {
+    String description = '',
+    List<String> allowedKeyPrefixes = const [],
+  }) {
     final trimmedName = name.trim();
     if (trimmedName.isEmpty) throw ArgumentError.value(name, 'name');
 
@@ -98,6 +102,8 @@ class AlivenessStore {
       final library = MemoryLibrary(
         id: _uuid.v4(),
         name: trimmedName,
+        description: description.trim(),
+        allowedKeyPrefixes: _normalizeKeyPrefixes(allowedKeyPrefixes),
         createdAt: DateTime.now().toUtc(),
       );
       final libraries = await loadMemoryLibraries();
@@ -115,6 +121,60 @@ class AlivenessStore {
     );
     return operation;
   }
+
+  Future<MemoryLibrary> updateMemoryLibrary(
+    String memoryId, {
+    String? name,
+    String? description,
+    List<String>? allowedKeyPrefixes,
+  }) {
+    late Future<MemoryLibrary> operation;
+    operation = _libraryWrites.then((_) async {
+      final libraries = await loadMemoryLibraries();
+      final index = libraries.indexWhere((library) => library.id == memoryId);
+      if (index < 0) throw StateError('Memory library not found: $memoryId');
+      final old = libraries[index];
+      final updated = MemoryLibrary(
+        id: old.id,
+        name: name == null ? old.name : _requireName(name),
+        description: description == null ? old.description : description.trim(),
+        allowedKeyPrefixes: allowedKeyPrefixes == null
+            ? old.allowedKeyPrefixes
+            : _normalizeKeyPrefixes(allowedKeyPrefixes),
+        createdAt: old.createdAt,
+      );
+      final next = [...libraries]..[index] = updated;
+      await _setDoc(_memoryLibrariesKind, {
+        'libraries': next.map((item) => item.toJson()).toList(),
+      });
+      return updated;
+    });
+    _libraryWrites = operation.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace __) {},
+    );
+    return operation;
+  }
+
+  String _requireName(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) throw ArgumentError.value(name, 'name');
+    return trimmed;
+  }
+
+  List<String> _normalizeKeyPrefixes(List<String> prefixes) {
+    final normalized = <String>{};
+    for (final raw in prefixes) {
+      final prefix = raw.trim().replaceFirst(RegExp(r'\.+$'), '');
+      if (prefix.isEmpty) continue;
+      if (prefix.length > 200 || RegExp(r'\s|[\x00-\x1f]').hasMatch(prefix)) {
+        throw ArgumentError('记忆 key 前缀必须为 1~200 个字符，不能包含空白或控制字符');
+      }
+      normalized.add(prefix);
+    }
+    return normalized.toList(growable: false);
+  }
+
 
   Future<MemoryLibrary> requireMemoryLibrary(String memoryId) async {
     if (memoryId.trim().isEmpty) throw ArgumentError.value(memoryId, 'memoryId');

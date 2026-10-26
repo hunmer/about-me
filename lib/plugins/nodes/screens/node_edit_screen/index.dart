@@ -4,5 +4,5 @@ export '../../../../widgets/picker/color_picker_section.dart';
 export 'components/date_section.dart';
 export 'components/status_dropdown.dart';
 export 'components/tags_section.dart';
-export 'dialogs/add_tag_dialog.dart';
-export 'dialogs/add_custom_field_dialog.dart';
+export 'dialogs/nodes_tag_form.dart';
+export 'dialogs/nodes_custom_field_form.dart';

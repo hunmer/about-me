@@ -4,7 +4,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import '../form_field_wrapper.dart';
 import '../config.dart';
 import 'package:aboutme/plugins/timer/models/timer_item.dart';
-import 'package:aboutme/plugins/timer/views/add_timer_item_dialog.dart';
+import 'package:aboutme/plugins/timer/views/timer_item_form.dart';
 import 'package:aboutme/plugins/contact/models/custom_activity_event_model.dart';
 import '../prompt_editor_field.dart';
 import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
@@ -196,7 +196,7 @@ Widget buildTimerItemsField(
         onAdd: () {
           showDialog(
             context: context,
-            builder: (context) => const AddTimerItemDialog(),
+            builder: (context) => const TimerItemForm(),
           ).then((newTimer) {
             if (newTimer != null) {
               final currentItems = fieldState.value ?? [];

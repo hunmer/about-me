@@ -7,7 +7,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/goods/models/warehouse.dart';
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
-import 'package:aboutme/plugins/goods/dialogs/add_usage_record_dialog.dart';
+import 'package:aboutme/plugins/goods/dialogs/goods_usage_record_form.dart';
 import 'package:aboutme/plugins/goods/screens/goods_item_history_page.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_form/goods_item_form.dart';
 import 'package:intl/intl.dart';
@@ -509,7 +509,7 @@ class _GoodsItemDetailScreenState extends State<GoodsItemDetailScreen> {
     final result = await showDSDialog<Map<String, dynamic>>(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder: (context) => const DSThemeBridge(child: AddUsageRecordDialog()),
+      builder: (context) => const DSThemeBridge(child: GoodsUsageRecordForm()),
     );
     if (result == null) return;
 

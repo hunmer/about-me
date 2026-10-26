@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aboutme/plugins/nodes/screens/node_edit_screen/dialogs/add_tag_dialog.dart';
+import 'package:aboutme/plugins/nodes/screens/node_edit_screen/dialogs/nodes_tag_form.dart';
 
 class TagsSection extends StatelessWidget {
   final List<String> tags;
@@ -32,7 +32,7 @@ class TagsSection extends StatelessWidget {
   void _showAddTagDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AddTagDialog(onTagAdded: onTagAdded),
+      builder: (context) => NodesTagForm(onTagAdded: onTagAdded),
     );
   }
 }

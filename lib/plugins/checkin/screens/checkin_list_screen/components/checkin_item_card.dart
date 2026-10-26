@@ -3,7 +3,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 import 'package:aboutme/plugins/checkin/screens/checkin_record_screen.dart';
-import 'package:aboutme/plugins/checkin/widgets/checkin_record_dialog.dart';
+import 'package:aboutme/plugins/checkin/widgets/checkin_record_form.dart';
 import 'package:aboutme/widgets/common/checkin_item_card.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
@@ -60,7 +60,7 @@ class CheckinItemCard extends StatelessWidget {
     SmoothBottomSheet.show(
       context: context,
       builder:
-          (context) => CheckinRecordDialog(
+          (context) => CheckinRecordForm(
             item: item,
             controller: controller,
             onCheckinCompleted: onStateChanged,

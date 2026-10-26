@@ -7,7 +7,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:infinite_carousel/infinite_carousel.dart';
 import 'package:aboutme/utils/image_utils.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor/calendar_album_entry_form.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import '../data.dart';
 
@@ -145,7 +145,7 @@ class PhotoCarouselWidgetState extends State<PhotoCarouselWidget>
 
   /// 打开图片对应的日记编辑弹层
   void _openPhotoDetail(PhotoItem photo) {
-    EntryEditorSheet.show(
+    CalendarAlbumEntryForm.show(
       context,
       entry: photo.entry,
       calendarController: widget.plugin.calendarController,

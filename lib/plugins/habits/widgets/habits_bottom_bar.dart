@@ -5,7 +5,7 @@ import 'package:aboutme/plugins/habits/controllers/skill_controller.dart';
 import 'package:aboutme/plugins/habits/widgets/habits_list/habits_view.dart';
 import 'package:aboutme/plugins/habits/widgets/habits_stats_view.dart';
 import 'package:aboutme/plugins/habits/widgets/skills_list.dart';
-import 'package:aboutme/plugins/habits/widgets/habit_form_sheet.dart';
+import 'package:aboutme/plugins/habits/widgets/habit_form.dart';
 import 'package:aboutme/plugins/habits/widgets/skill_form.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
@@ -123,7 +123,7 @@ class _HabitsBottomBarState extends State<HabitsBottomBar>
         onPressed: () {
           if (_currentPage == 0) {
             // 新建习惯：smooth_sheets 底部弹层
-            HabitFormSheet.show(
+            HabitForm.show(
               context,
               onSave: (habit) async {
                 await _habitController.saveHabit(habit);

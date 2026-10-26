@@ -8,7 +8,7 @@ import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'components/plugin_section.dart';
-import 'components/tool_editor_dialog.dart';
+import 'components/agent_chat_tool_form.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 
 /// 工具管理界面
@@ -160,7 +160,7 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
             child: Builder(
               builder:
                   (context) =>
-                      ToolEditorDialog(pluginId: selectedPlugin, isNew: true),
+                      AgentChatToolForm(pluginId: selectedPlugin, isNew: true),
             ),
           ),
     );

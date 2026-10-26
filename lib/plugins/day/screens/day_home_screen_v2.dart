@@ -11,7 +11,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/plugins/day/controllers/day_controller.dart';
 import 'package:aboutme/plugins/day/widgets/sketch_milestone_card.dart';
 import 'package:aboutme/plugins/day/screens/memorial_day_detail_screen.dart';
-import 'package:aboutme/plugins/day/widgets/edit_memorial_day_dialog/edit_memorial_day_page.dart';
+import 'package:aboutme/plugins/day/widgets/day_memorial_form/edit_memorial_day_page.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';

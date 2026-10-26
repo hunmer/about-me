@@ -228,7 +228,7 @@ class GoalDetailScreen extends StatelessWidget {
                   context: context,
                   theme: theme,
                   builder:
-                      (context) => RecordDialog(
+                      (context) => TrackerRecordForm(
                         goal: targetGoal,
                         controller: controller,
                       ),

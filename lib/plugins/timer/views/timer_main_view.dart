@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'dart:async';
 import 'package:aboutme/core/plugin_manager.dart';
-import 'package:aboutme/plugins/timer/views/add_timer_task_dialog.dart';
+import 'package:aboutme/plugins/timer/views/timer_task_form.dart';
 import 'package:aboutme/plugins/timer/views/timer_task_details_page.dart';
 import 'package:aboutme/plugins/timer/views/timer_stats_view.dart';
 import 'package:flutter/material.dart';
@@ -172,7 +172,7 @@ class _TimerMainViewState extends State<TimerMainView> {
       showDragHandle: false,
       builder: (context) => SizedBox(
         height: MediaQuery.of(context).size.height * 0.85,
-        child: AddTimerTaskDialog(
+        child: TimerTaskForm(
           groups: _plugin.timerController.getGroups(),
         ),
       ),
@@ -330,7 +330,7 @@ class _TimerMainViewState extends State<TimerMainView> {
     final editedTask = await showDialog<TimerTask>(
       context: context,
       builder:
-          (context) => AddTimerTaskDialog(
+          (context) => TimerTaskForm(
             groups: _plugin.timerController.getGroups(),
             initialTask: task,
           ),

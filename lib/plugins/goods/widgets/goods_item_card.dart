@@ -6,7 +6,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'dart:io' show File;
 import 'package:aboutme/plugins/goods/models/goods_item.dart';
-import 'package:aboutme/plugins/goods/dialogs/add_usage_record_dialog.dart';
+import 'package:aboutme/plugins/goods/dialogs/goods_usage_record_form.dart';
 import 'package:aboutme/plugins/goods/screens/goods_item_history_page.dart';
 import 'package:aboutme/plugins/goods/goods_plugin.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -140,7 +140,7 @@ class _GoodsItemCardState extends State<GoodsItemCard> {
                                 theme: DSThemeBridge.resolve(context),
                                 builder:
                                     (context) => const DSThemeBridge(
-                                      child: AddUsageRecordDialog(),
+                                      child: GoodsUsageRecordForm(),
                                     ),
                               );
                           if (result != null) {

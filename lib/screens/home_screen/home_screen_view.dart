@@ -24,7 +24,7 @@ import 'models/plugin_widget_config.dart';
 import 'models/layout_config.dart';
 import 'widgets/add_widget_dialog.dart';
 import 'widgets/background_settings_page.dart';
-import 'widgets/create_folder_dialog.dart';
+import 'widgets/home_folder_form.dart';
 import 'widgets/home_grid.dart';
 import 'widgets/layout_manager_dialog.dart';
 import 'widgets/selector_widget_types.dart';
@@ -480,7 +480,7 @@ class HomeScreenView extends StatelessWidget {
     showDSDialog(
       context: context,
       theme: DSThemeBridge.resolve(context),
-      builder: (context) => const CreateFolderDialog(),
+      builder: (context) => const HomeFolderForm(),
     );
   }
 

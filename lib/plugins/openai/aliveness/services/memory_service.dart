@@ -47,10 +47,16 @@ class MemoryService {
     final buffer = StringBuffer('\n【已启用的记忆库】\n');
     for (final memoryId in memoryIds.toSet()) {
       final library = await _store.requireMemoryLibrary(memoryId);
-      buffer.writeln('· ${library.name}（memoryId: ${library.id}）');
+      final description = library.description.isEmpty ? '未设置' : library.description;
+      final prefixes = library.allowedKeyPrefixes.isEmpty
+          ? '不限（请按库说明选择）'
+          : library.allowedKeyPrefixes.map((prefix) => '$prefix.').join('、');
+      buffer.writeln(
+        '· ${library.name}（memoryId: ${library.id}；说明：$description；允许写入 key：$prefixes）',
+      );
     }
     buffer.write(
-      '\n读写记忆工具必须传入上述目标库的 memoryId。记忆为 key/value，key 在库内唯一；先按 key 查询，同 key 写入更新当前值；不知道 key 时先用 list_memory_keys 逐层枚举命名空间（含 legacy 旧记忆），再用 search_memory 传入非空完整 key 查询；多个 key 使用 batch_search_memory 的非空 keys 数组批量查询。禁止猜测 ID。\n',
+      '\n读写记忆工具必须传入上述目标库的 memoryId。记忆为 key/value，key 在库内唯一；先按 key 查询，同 key 写入更新当前值；不知道 key 时先用 list_memory_keys 逐层枚举命名空间（含 legacy 旧记忆），再用 search_memory 传入非空完整 key 查询；多个 key 使用 batch_search_memory 的非空 keys 数组批量查询。新增或更新记忆时必须遵守目标记忆库的允许写入 key 前缀和说明，禁止将无关信息写入该库。禁止猜测 ID。\n',
     );
     return buffer.toString();
   }
@@ -144,6 +150,20 @@ class MemoryService {
     return key;
   }
 
+  Future<void> _validateAgentWriteKey(String memoryId, String key) async {
+    final library = await _store.requireMemoryLibrary(memoryId);
+    final prefixes = library.allowedKeyPrefixes;
+    if (prefixes.isEmpty) return;
+    final allowed = prefixes.any(
+      (prefix) => key == prefix || key.startsWith('$prefix.'),
+    );
+    if (!allowed) {
+      throw ArgumentError(
+        '记忆 key 不符合记忆库「${library.name}」的写入限制，允许前缀：${prefixes.join('、')}',
+      );
+    }
+  }
+
   Future<void> saveFragments(
     String memoryId,
     List<MemoryFragment> fragments,
@@ -180,6 +200,7 @@ class MemoryService {
   ) => _withLibraryLock(memoryId, () async {
     final fragments = await loadFragments(memoryId);
     for (final fragment in additions) {
+      await _validateAgentWriteKey(memoryId, validateKey(fragment.key));
       final index = fragments.indexWhere((f) => f.key == fragment.key);
       if (index >= 0) {
         final old = fragments[index];

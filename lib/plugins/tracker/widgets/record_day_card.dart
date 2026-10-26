@@ -228,7 +228,7 @@ Future<void> openRecordCreateFlow(BuildContext context, DateTime date) async {
     context: context,
     theme: DSThemeBridge.resolve(context),
     builder:
-        (context) => RecordDialog(
+        (context) => TrackerRecordForm(
           goal: goal,
           controller: controller,
           initialRecordedAt: recordedAt,

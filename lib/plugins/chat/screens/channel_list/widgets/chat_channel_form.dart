@@ -7,7 +7,7 @@ import 'package:aboutme/plugins/chat/models/channel.dart';
 import 'package:aboutme/widgets/picker/circle_icon_picker.dart';
 import '../../../../../../../core/services/toast_service.dart';
 
-class ChannelDialog extends StatefulWidget {
+class ChatChannelForm extends StatefulWidget {
   // 用于区分是添加还是编辑模式
   final bool isEditMode;
   // 编辑模式时传入的频道
@@ -21,7 +21,7 @@ class ChannelDialog extends StatefulWidget {
   // 是否作为底部弹层内容展示（去掉对话框卡片外壳，由 sheet 提供容器）
   final bool asSheet;
 
-  const ChannelDialog({
+  const ChatChannelForm({
     super.key,
     this.isEditMode = false,
     this.channel,
@@ -36,10 +36,10 @@ class ChannelDialog extends StatefulWidget {
        );
 
   @override
-  State<ChannelDialog> createState() => _ChannelDialogState();
+  State<ChatChannelForm> createState() => _ChatChannelFormState();
 }
 
-class _ChannelDialogState extends State<ChannelDialog> {
+class _ChatChannelFormState extends State<ChatChannelForm> {
   late TextEditingController _titleController;
   late TextEditingController _groupController;
   late IconData _selectedIcon;

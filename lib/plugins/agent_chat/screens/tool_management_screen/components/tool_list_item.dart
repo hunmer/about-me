@@ -4,7 +4,7 @@ import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'tool_editor_dialog.dart';
+import 'agent_chat_tool_form.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 
 /// 工具列表项组件
@@ -48,7 +48,7 @@ class ToolListItem extends StatelessWidget {
           (context) => DSThemeBridge(
             child: Builder(
               builder:
-                  (context) => ToolEditorDialog(
+                  (context) => AgentChatToolForm(
                     pluginId: pluginId,
                     toolId: toolId,
                     config: config,

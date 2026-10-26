@@ -137,6 +137,10 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settings_screen_storageMigrateFailed': 'Migration failed: @error',
   'settings_screen_storageCopied': 'Copied',
   'settings_screen_storageSavedRestart': 'Settings saved. Please restart the app',
+  'settings_screen_storageRemoteUnavailable': 'Remote Server Unavailable',
+  'settings_screen_storageRemoteUnavailableDesc':
+      'Cannot connect to the remote storage server. Data sync is temporarily unavailable. Open storage settings to check the configuration?',
+  'settings_screen_storageOpenSettings': 'Open Settings',
   'settings_screen_importExportGroup': 'Import & Export',
   'settings_screen_backupRestoreGroup': 'Backup & Restore',
   'settings_screen_storageGroup': 'Storage',

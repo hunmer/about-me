@@ -12,7 +12,7 @@ import 'package:path/path.dart' as path;
 import '../../models/webview_card.dart';
 import '../../webview_plugin.dart';
 import 'webview_card_actions.dart';
-import 'webview_card_edit_sheet.dart';
+import 'webview_card_form.dart';
 
 /// 弹出卡片长按操作菜单
 void showCardOptionsSheet(BuildContext screenContext, WebViewCard card) {

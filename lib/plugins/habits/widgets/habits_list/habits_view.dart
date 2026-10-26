@@ -7,7 +7,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/habits/models/habit.dart';
-import 'package:aboutme/plugins/habits/widgets/habit_form_sheet.dart';
+import 'package:aboutme/plugins/habits/widgets/habit_form.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/habits/controllers/habit_controller.dart';
 import 'package:aboutme/plugins/habits/widgets/habits_list/habit_card.dart';
@@ -369,7 +369,7 @@ class _CombinedHabitsViewState extends State<CombinedHabitsView> {
   }
 
   Future<void> _showHabitForm(BuildContext context, [Habit? habit]) async {
-    await HabitFormSheet.show(
+    await HabitForm.show(
       context,
       habit: habit,
       onSave: (updated) async {

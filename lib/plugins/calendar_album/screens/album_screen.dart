@@ -1,4 +1,4 @@
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor/calendar_album_entry_form.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -80,7 +80,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
             .toList(),
         initialIndex: index,
         // 点击信息区打开照片所属日记编辑弹层
-        onInfoTap: (i) => EntryEditorSheet.show(
+        onInfoTap: (i) => CalendarAlbumEntryForm.show(
           context,
           entry: photos[i].entry,
           calendarController: Provider.of<CalendarController>(
@@ -336,7 +336,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                     void openViewer() => _openGallery(photos, index);
 
                     void editEntry() {
-                      EntryEditorSheet.show(
+                      CalendarAlbumEntryForm.show(
                         context,
                         entry: record.entry,
                         calendarController: calendarController,

@@ -5,16 +5,16 @@ import 'package:aboutme/plugins/timer/models/timer_item.dart';
 import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'package:flutter/material.dart';
 
-class AddTimerItemDialog extends StatefulWidget {
+class TimerItemForm extends StatefulWidget {
   final TimerItem? initialItem;
 
-  const AddTimerItemDialog({super.key, this.initialItem});
+  const TimerItemForm({super.key, this.initialItem});
 
   @override
-  _AddTimerItemDialogState createState() => _AddTimerItemDialogState();
+  _TimerItemFormState createState() => _TimerItemFormState();
 }
 
-class _AddTimerItemDialogState extends State<AddTimerItemDialog> {
+class _TimerItemFormState extends State<TimerItemForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;

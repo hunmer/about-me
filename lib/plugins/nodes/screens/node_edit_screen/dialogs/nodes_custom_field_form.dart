@@ -2,16 +2,16 @@ import 'package:get/get.dart' hide Node;
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/nodes/models/node.dart';
 
-class AddCustomFieldDialog extends StatefulWidget {
+class NodesCustomFieldForm extends StatefulWidget {
   final Function(NodeCustomField) onCustomFieldAdded;
 
-  const AddCustomFieldDialog({super.key, required this.onCustomFieldAdded});
+  const NodesCustomFieldForm({super.key, required this.onCustomFieldAdded});
 
   @override
-  State<AddCustomFieldDialog> createState() => AddCustomFieldDialogState();
+  State<NodesCustomFieldForm> createState() => NodesCustomFieldFormState();
 }
 
-class AddCustomFieldDialogState extends State<AddCustomFieldDialog> {
+class NodesCustomFieldFormState extends State<NodesCustomFieldForm> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _valueController = TextEditingController();
 

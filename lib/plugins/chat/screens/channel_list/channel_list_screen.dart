@@ -11,7 +11,7 @@ import 'controllers/channel_list_controller.dart';
 import 'widgets/channel_tile.dart';
 import 'widgets/channel_group_selector.dart';
 import 'widgets/channel_action_sheet.dart';
-import 'widgets/channel_dialogs/channel_dialog.dart';
+import 'widgets/chat_channel_form.dart';
 
 class ChannelListScreen extends StatefulWidget {
   final List<Channel> channels;
@@ -158,7 +158,7 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
     SmoothBottomSheet.show(
       context: context,
       builder:
-          (context) => ChannelDialog(
+          (context) => ChatChannelForm(
             isEditMode: true,
             asSheet: true,
             channel: channel,

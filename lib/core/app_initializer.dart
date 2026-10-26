@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:get/get.dart';
 
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/notification_controller.dart';
@@ -717,10 +718,10 @@ Future<void> promptRemoteStorageUnavailable() async {
       theme: DSThemeBridge.resolve(context),
       builder:
           (context) => DSDialog(
-            title: '远程服务器不可用',
-            message: '无法连接远端存储服务器，数据暂时无法同步。是否打开存储设置检查配置？',
-            confirmText: '打开设置',
-            cancelText: '忽略',
+            title: 'settings_screen_storageRemoteUnavailable'.tr,
+            message: 'settings_screen_storageRemoteUnavailableDesc'.tr,
+            confirmText: 'settings_screen_storageOpenSettings'.tr,
+            cancelText: 'app_cancel'.tr,
           ),
     );
     if (openSettings != true) return;

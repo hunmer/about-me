@@ -10,7 +10,7 @@ import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor/calendar_album_entry_form.dart';
 import 'package:aboutme/plugins/calendar_album/widgets/album_day_card.dart';
 
 /// 获取指定日期的相册条目（存储按日分片，同步读取）
@@ -73,7 +73,7 @@ class _AlbumDayCardHomeWidgetState extends State<_AlbumDayCardHomeWidget> {
   /// 打开日记编辑弹层（编辑器保存依赖 CalendarController Provider 祖先）
   void _openEditor({CalendarEntry? entry, DateTime? initialDate, required bool isEditing}) {
     final plugin = CalendarAlbumPlugin.instance;
-    EntryEditorSheet.show(
+    CalendarAlbumEntryForm.show(
       context,
       entry: entry,
       initialDate: initialDate,

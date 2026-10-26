@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/screens/home_screen/managers/quick_create_registry.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
-import 'package:aboutme/plugins/calendar_album/screens/entry_editor/entry_editor_sheet.dart';
+import 'package:aboutme/plugins/calendar_album/screens/entry_editor/calendar_album_entry_form.dart';
 
 /// 注册相册的快速创建项（主页底部 ＋ 按钮，条目日期预填选中日期）
 void registerQuickCreate(QuickCreateRegistry registry) {
@@ -18,7 +18,7 @@ void registerQuickCreate(QuickCreateRegistry registry) {
       color: const Color.fromARGB(255, 245, 210, 52),
       onCreate: (context, date) {
         final plugin = CalendarAlbumPlugin.instance;
-        EntryEditorSheet.show(
+        CalendarAlbumEntryForm.show(
           context,
           initialDate: date,
           calendarController: plugin.calendarController,

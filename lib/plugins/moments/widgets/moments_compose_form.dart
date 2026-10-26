@@ -16,15 +16,15 @@ import 'package:aboutme/utils/file_picker_helper.dart';
 import 'moments_shared.dart';
 
 /// 发布投稿面板内容（由 SmoothBottomSheet 提供标题/把手/关闭）
-class MomentsComposeSheet extends StatefulWidget {
-  const MomentsComposeSheet({super.key});
+class MomentsComposeForm extends StatefulWidget {
+  const MomentsComposeForm({super.key});
 
   @override
-  State<MomentsComposeSheet> createState() =>
-      _MomentsComposeSheetState();
+  State<MomentsComposeForm> createState() =>
+      _MomentsComposeFormState();
 }
 
-class _MomentsComposeSheetState extends State<MomentsComposeSheet> {
+class _MomentsComposeFormState extends State<MomentsComposeForm> {
   final _textController = TextEditingController();
   final _imagePromptController = TextEditingController();
   final List<File> _images = [];

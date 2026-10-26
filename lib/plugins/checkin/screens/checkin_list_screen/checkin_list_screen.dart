@@ -11,7 +11,7 @@ import 'package:aboutme/widgets/common/checkin_item_card.dart'
     show CheckinWeekdayHeader;
 import 'package:aboutme/plugins/checkin/services/group_sort_service.dart';
 import 'package:aboutme/plugins/checkin/controllers/checkin_list_controller.dart';
-import 'package:aboutme/plugins/checkin/widgets/checkin_record_dialog.dart';
+import 'package:aboutme/plugins/checkin/widgets/checkin_record_form.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -399,7 +399,7 @@ class _CheckinListScreenState extends State<CheckinListScreen> {
 
       SmoothBottomSheet.show(
         context: context,
-        builder: (context) => CheckinRecordDialog(
+        builder: (context) => CheckinRecordForm(
           item: item,
           controller: controller,
           onCheckinCompleted: _handleStateChanged,

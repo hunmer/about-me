@@ -18,7 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skribble/skribble.dart';
 
-import 'entry_editor/entry_editor_sheet.dart';
+import 'entry_editor/calendar_album_entry_form.dart';
 
 final DateTime _calendarMinMonth = DateTime(2010, 1, 1);
 const int _calendarLoadBatchSize = 3;
@@ -236,7 +236,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         Provider.of<CalendarController>(context, listen: false);
     // 关闭后恢复选中日期并刷新
     final selectedDate = controller.selectedDate;
-    return EntryEditorSheet.show(
+    return CalendarAlbumEntryForm.show(
       context,
       entry: entry,
       initialDate: initialDate,

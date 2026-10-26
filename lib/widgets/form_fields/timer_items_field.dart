@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/timer/models/timer_item.dart';
-import 'package:aboutme/plugins/timer/views/add_timer_item_dialog.dart';
+import 'package:aboutme/plugins/timer/views/timer_item_form.dart';
 import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'builders/index.dart' show createRoundedContainerDecoration;
 
@@ -160,7 +160,7 @@ class TimerItemsField extends StatelessWidget {
               onPressed: () async {
                 final result = await showDialog<TimerItem>(
                   context: context,
-                  builder: (context) => AddTimerItemDialog(initialItem: timer),
+                  builder: (context) => TimerItemForm(initialItem: timer),
                 );
                 if (result != null) {
                   onEdit(index, result);

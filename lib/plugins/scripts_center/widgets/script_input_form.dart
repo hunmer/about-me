@@ -4,17 +4,17 @@ import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/scripts_center/models/script_input.dart';
 
 /// 脚本输入参数编辑对话框
-class ScriptInputEditDialog extends StatefulWidget {
+class ScriptInputForm extends StatefulWidget {
   /// 如果为null则为创建模式，否则为编辑模式
   final ScriptInput? input;
 
-  const ScriptInputEditDialog({super.key, this.input});
+  const ScriptInputForm({super.key, this.input});
 
   @override
-  State<ScriptInputEditDialog> createState() => _ScriptInputEditDialogState();
+  State<ScriptInputForm> createState() => _ScriptInputFormState();
 }
 
-class _ScriptInputEditDialogState extends State<ScriptInputEditDialog> {
+class _ScriptInputFormState extends State<ScriptInputForm> {
   final _formKey = GlobalKey<FormState>();
 
   // 表单控制器

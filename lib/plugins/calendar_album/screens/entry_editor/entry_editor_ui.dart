@@ -13,7 +13,7 @@ import 'entry_editor_controller.dart';
 import 'entry_editor_image_handler.dart';
 import 'entry_editor_tag_handler.dart';
 
-/// 日记编辑表单正文（图片、内容、标签、元数据），由底部弹层 [EntryEditorSheet] 使用
+/// 日记编辑表单正文（图片、内容、标签、元数据），由底部弹层 [CalendarAlbumEntryForm] 使用
 class EntryEditorForm extends StatefulWidget {
   final EntryEditorController controller;
 
