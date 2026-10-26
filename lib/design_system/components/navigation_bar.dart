@@ -1,11 +1,10 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/widgets.dart';
 import 'package:radial_disc_bottom_bar/radial_disc_bottom_bar.dart';
 
 import 'package:aboutme/core/services/bottom_bar_style_controller.dart';
 
 import '../theme/app_theme.dart';
+import 'bottom_bar_frost_panel.dart';
 import 'icons.dart';
 
 // 公开 API 用到的包类型透出给 design_system 使用方
@@ -59,7 +58,7 @@ class DSBottomNavigation extends StatelessWidget {
   /// 子栏右圆钮位置的常驻浮动操作钮（如添加按钮），自带手势与外观
   final Widget? floatingAction;
 
-  /// 扇环磨砂玻璃（降低填充不透明度 + 背景模糊）
+  /// 底栏整域磨砂玻璃（背景模糊 + 顶部渐入）
   final bool frosted;
 
   /// 上层子栏双选项文案（null 则不启用子栏）
@@ -106,7 +105,8 @@ class DSBottomNavigation extends StatelessWidget {
     final controller = BottomBarStyleController();
     return ListenableBuilder(
       listenable: controller,
-      builder: (context, _) => _buildBar(context, frosted && controller.frosted),
+      builder: (context, _) =>
+          _buildBar(context, frosted && controller.frosted),
     );
   }
 
@@ -149,8 +149,7 @@ class DSBottomNavigation extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: theme.danger,
                       shape: BoxShape.circle,
-                      border:
-                          Border.all(color: theme.stroke, width: 1.4),
+                      border: Border.all(color: theme.stroke, width: 1.4),
                     ),
                   )
                 : null,
@@ -165,11 +164,11 @@ class DSBottomNavigation extends StatelessWidget {
       subBarBehavior:
           subBarBehavior ??
           (subLabels == null &&
-              subActions == null &&
-              leadingAction == null &&
-              trailingAction == null
-          ? RadialSubBarBehavior.never
-          : RadialSubBarBehavior.auto),
+                  subActions == null &&
+                  leadingAction == null &&
+                  trailingAction == null
+              ? RadialSubBarBehavior.never
+              : RadialSubBarBehavior.auto),
       subLabels: subLabels,
       subActions: subActions,
       subOption: subOption,
@@ -191,11 +190,8 @@ class DSBottomNavigation extends StatelessWidget {
       child: FittedBox(fit: BoxFit.scaleDown, child: bar),
     );
     if (frosted) {
-      // 全宽磨砂面板：顶部圆角、底部延伸出屏幕（viewport 自然裁掉），
-      // dock 叠在面板之上。宿主容器通常窄于屏宽（如 0.85 比例外壳），
-      // 用 OverflowBox 突破约束铺满屏宽；BackdropFilter 的作用范围是
-      // 最近祖先裁剪，ClipRRect 同时负责限定模糊区域与顶部圆角。
-      // 模糊/羽化/渐变参数来自设置页全局调节
+      // 全宽面板延伸到屏幕底部；顶部过渡带渐入实际的背景模糊强度。
+      // OverflowBox 突破宿主（如 0.85 屏宽）的限制，不改变 dock 布局。
       final barStyle = BottomBarStyleController();
       final screenW = MediaQuery.sizeOf(context).width;
       bar = Stack(
@@ -208,44 +204,12 @@ class DSBottomNavigation extends StatelessWidget {
               maxWidth: screenW,
               minHeight: _frostPanelHeight,
               maxHeight: _frostPanelHeight,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
-                ),
-                child: BackdropFilter(
-                  // dilate(inner) + blur(outer)：模糊量在面板边缘渐弱，
-                  // 形成羽化过渡（Flutter 官方 frosted/feathered 配方）；
-                  // dilate 半径即羽化宽度
-                  filter: ImageFilter.compose(
-                    outer: ImageFilter.blur(
-                      sigmaX: barStyle.blurSigma,
-                      sigmaY: barStyle.blurSigma,
-                    ),
-                    inner: ImageFilter.dilate(
-                      radiusX: barStyle.featherRadius,
-                      radiusY: barStyle.featherRadius,
-                    ),
-                  ),
-                  // tint 顶部同步渐入，避免纸色留下硬边线；
-                  // 渐入长度下限 0.01 防止 stops 两端重合
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          theme.paper.withValues(alpha: 0),
-                          theme.paper.withValues(
-                            alpha: theme.isDark ? 0.4 : 0.3,
-                          ),
-                        ],
-                        stops: [
-                          0.0,
-                          barStyle.tintFade.clamp(0.01, 1.0).toDouble(),
-                        ],
-                      ),
-                    ),
-                  ),
+              child: BottomBarFrostPanel(
+                blurSigma: barStyle.blurSigma,
+                featherRadius: barStyle.featherRadius,
+                tintFade: barStyle.tintFade,
+                tintColor: theme.paper.withValues(
+                  alpha: theme.isDark ? 0.22 : 0.18,
                 ),
               ),
             ),

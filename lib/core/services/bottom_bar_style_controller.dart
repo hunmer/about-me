@@ -22,7 +22,7 @@ class BottomBarStyleController extends ChangeNotifier {
 
   bool _frosted = true;
 
-  /// 是否启用扇环磨砂玻璃（背景模糊 + 半透明填充）
+  /// 是否启用底栏整域磨砂玻璃（背景模糊 + 半透明填充）
   bool get frosted => _frosted;
 
   double _blurSigma = 12;
@@ -32,7 +32,7 @@ class BottomBarStyleController extends ChangeNotifier {
 
   double _featherRadius = 24;
 
-  /// 边缘羽化宽度（dilate 半径，0 = 硬边）
+  /// 顶部背景模糊从零渐入的宽度（逻辑像素，0 = 硬边）
   double get featherRadius => _featherRadius;
 
   double _tintFade = 0.2;
@@ -49,8 +49,7 @@ class BottomBarStyleController extends ChangeNotifier {
       if (config != null) {
         _frosted = config['frosted'] as bool? ?? true;
         _blurSigma = (config['blurSigma'] as num?)?.toDouble() ?? 12;
-        _featherRadius =
-            (config['featherRadius'] as num?)?.toDouble() ?? 24;
+        _featherRadius = (config['featherRadius'] as num?)?.toDouble() ?? 24;
         _tintFade = (config['tintFade'] as num?)?.toDouble() ?? 0.2;
       }
     } catch (e) {
