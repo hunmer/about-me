@@ -11,7 +11,7 @@ import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
-import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
@@ -203,7 +203,10 @@ class MomentsFeedScreenState extends State<MomentsFeedScreen> {
             ? MomentsCover(path: coverPath, height: 210)
             : _buildFeedBanner(theme),
       ),
-      SliverToBoxAdapter(child: _buildStories(theme)),
+      SliverPersistentHeader(
+        pinned: true,
+        delegate: _StoriesHeaderDelegate(_buildStories(theme)),
+      ),
       SliverToBoxAdapter(child: _buildFilters()),
       if (posts.isEmpty)
         SliverToBoxAdapter(
@@ -810,8 +813,13 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
   void _openViewer() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PhotoViewerScreen(
-          imageRelativePaths: widget.post.images,
+        builder: (_) => GalleryViewer(
+          title: widget.author.name,
+          entranceAnimation: true,
+          showFileActions: true,
+          photos: [
+            for (final p in widget.post.images) GalleryPhoto(url: p),
+          ],
           initialIndex: _activeImage,
         ),
       ),
@@ -1359,4 +1367,32 @@ class _SegmentFillState extends State<_SegmentFill>
       ),
     );
   }
+}
+
+/// 顶部 stories 固定头：滚动时钉在列表顶端，不透底（内容从其下方滚过）
+class _StoriesHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _StoriesHeaderDelegate(this.child);
+
+  final Widget child;
+
+  @override
+  double get minExtent => 104;
+
+  @override
+  double get maxExtent => 104;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return ColoredBox(
+      color: AppTheme.of(context).background,
+      child: child,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_StoriesHeaderDelegate oldDelegate) => true;
 }

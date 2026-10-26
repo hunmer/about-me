@@ -23,6 +23,7 @@ class ToolConfigManager {
 
   // 配置文件列表
   static const List<String> _pluginIds = [
+    'builtin', // 原生内置工具（脚本/文件等，实现在 NativeToolAgentService，仅描述与开关走配置）
     'system', // 系统级工具（时间、设备信息等）
     'activity',
     'bill',

@@ -13,6 +13,7 @@ import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/shortcut_manager.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/system_widget_service.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
@@ -353,6 +354,14 @@ Future<void> _initializeBackgroundServices() async {
     unawaited(
       JSBridgeManager.instance.initialize().catchError((e) {
         debugPrint('JS Bridge 初始化失败: $e');
+      }),
+    );
+
+    // 初始化 AI 工具配置（agent_chat 工具描述/启用状态），
+    // 不阻塞启动；失败保持未初始化态，聊天/工具页入口会重试
+    unawaited(
+      ToolConfigManager.instance.initialize().catchError((e) {
+        debugPrint('ToolConfigManager 初始化失败: $e');
       }),
     );
 

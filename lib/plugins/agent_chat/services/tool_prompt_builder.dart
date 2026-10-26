@@ -179,6 +179,8 @@ class ToolPromptBuilder {
       buffer.writeln('### 📚 可用工具\n');
 
       allPluginTools.forEach((pluginId, toolSet) {
+        // builtin 工具是原生 FC 硬编码实现，JS 模式无对应分发，不进 JS 文档
+        if (pluginId == 'builtin') return;
         final enabledTools =
             toolSet.tools.entries.where((e) => e.value.enabled).toList();
 
@@ -435,6 +437,8 @@ return result;
     for (final item in toolIndex) {
       // 跳过系统工具，因为它们不作为独立步骤
       if (item[0].startsWith('system_')) continue;
+      // builtin 工具是原生 FC 硬编码实现，不进 JS 索引
+      if (item[0].startsWith('builtin_')) continue;
       buffer.writeln('- ${item[0]}: ${item[1]}');
     }
 

@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
-import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 import '../widgets/moments_shared.dart';
@@ -162,8 +162,13 @@ class _MomentsMemoriesScreenState extends State<MomentsMemoriesScreen> {
   void _openViewer(List<String> images, int index) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) =>
-            PhotoViewerScreen(imageRelativePaths: images, initialIndex: index),
+        builder: (_) => GalleryViewer(
+          title: 'moments_tabMemories'.tr,
+          entranceAnimation: true,
+          showFileActions: true,
+          photos: [for (final p in images) GalleryPhoto(url: p)],
+          initialIndex: index,
+        ),
       ),
     );
   }

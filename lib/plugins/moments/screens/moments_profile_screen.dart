@@ -15,7 +15,7 @@ import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
-import 'package:aboutme/plugins/openai/moments/widgets/photo_viewer_screen.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -674,8 +674,13 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
   void _openGroupViewer(_TagGroup group, int initialIndex) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PhotoViewerScreen(
-          imageRelativePaths: group.images,
+        builder: (_) => GalleryViewer(
+          title: '${group.tag.emoji} ${group.tag.label}',
+          entranceAnimation: true,
+          showFileActions: true,
+          photos: [
+            for (final p in group.images) GalleryPhoto(url: p),
+          ],
           initialIndex: initialIndex,
         ),
       ),

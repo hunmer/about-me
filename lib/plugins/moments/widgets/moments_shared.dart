@@ -166,7 +166,7 @@ class MomentsCover extends StatelessWidget {
   }
 }
 
-/// 朋友圈本地相对路径图片（等比裁切填充，失败显示占位）
+/// 朋友圈本地相对路径图片（固定高度内保持比例完整显示，失败显示占位）
 class MomentImage extends StatelessWidget {
   final String path;
   final double? height;
@@ -176,7 +176,7 @@ class MomentImage extends StatelessWidget {
     super.key,
     required this.path,
     this.height,
-    this.fit = BoxFit.cover,
+    this.fit = BoxFit.contain,
   });
 
   @override

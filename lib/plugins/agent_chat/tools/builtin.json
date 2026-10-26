@@ -1,0 +1,56 @@
+{
+  "run_js": {
+    "title": "执行脚本",
+    "description": "执行 JavaScript 代码，用于专用工具无法完成的计算任务。",
+    "parameters": [
+      {"name": "code", "type": "string", "required": true, "description": "要执行的 JavaScript 代码"}
+    ],
+    "returns": {"type": "Object", "description": "脚本执行结果"},
+    "enabled": true
+  },
+  "batch_run": {
+    "title": "批量执行",
+    "description": "按 calls 顺序逐个执行当前可用工具，等待上一项完成后再执行下一项。遇到错误立即停止，返回已执行的结果和从 0 开始的 failedIndex。",
+    "parameters": [
+      {"name": "calls", "type": "Array", "required": true, "description": "按序执行的工具调用数组，每项包含 tool（工具名）和 args（完整参数对象）"}
+    ],
+    "returns": {"type": "Object", "description": "各项执行结果与 failedIndex"},
+    "notes": "每项仍计入工具调用次数限制；不支持嵌套批量调用或引用前项结果。",
+    "enabled": true
+  },
+  "list_files": {
+    "title": "枚举文件",
+    "description": "枚举当前 Agent 和频道文件空间。Agent 空间优先，最多查询两个空间。",
+    "parameters": [
+      {"name": "path", "type": "string", "optional": true, "description": "空间内的相对目录，默认为根目录"},
+      {"name": "recursive", "type": "boolean", "optional": true, "description": "是否递归枚举子目录"},
+      {"name": "space", "type": "string", "optional": true, "description": "auto、agent 或 channel，默认 auto"}
+    ],
+    "returns": {"type": "Array", "description": "文件和目录列表，包含 space、path、name、type、size、modifiedAt"},
+    "notes": "路径必须是相对路径；工具会自动使用当前 Agent 与频道上下文。",
+    "enabled": true
+  },
+  "read_file": {
+    "title": "读取文件",
+    "description": "读取 Agent 或频道文件空间中的文本文件，默认 Agent 空间优先。",
+    "parameters": [
+      {"name": "path", "type": "string", "required": true, "description": "空间内的相对文件路径"},
+      {"name": "space", "type": "string", "optional": true, "description": "auto、agent 或 channel，默认 auto"}
+    ],
+    "returns": {"type": "Object", "description": "包含 path 和 content 的对象"},
+    "notes": "禁止绝对路径和 .. 路径。",
+    "enabled": true
+  },
+  "write_file": {
+    "title": "写入文件",
+    "description": "向 Agent 或频道文件空间写入文本文件，默认写入 Agent 空间。",
+    "parameters": [
+      {"name": "path", "type": "string", "required": true, "description": "空间内的相对文件路径"},
+      {"name": "content", "type": "string", "required": true, "description": "要写入的文本内容"},
+      {"name": "space", "type": "string", "optional": true, "description": "agent 或 channel，默认 agent"}
+    ],
+    "returns": {"type": "Object", "description": "包含 space、path 和 size 的写入结果"},
+    "notes": "写入会创建父目录并覆盖同名文件；禁止绝对路径和 .. 路径。",
+    "enabled": true
+  }
+}

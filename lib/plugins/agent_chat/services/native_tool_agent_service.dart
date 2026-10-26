@@ -577,6 +577,12 @@ class NativeToolAgentService {
     bool useJsTools = false,
     bool builtInOnly = false,
   }) {
+    // builtin 插件配置只提供硬编码工具的开关；未初始化或缺失时默认启用
+    final builtinConfig = ToolConfigManager.instance.getPluginTools('builtin');
+    final jsEnabled =
+        builtinConfig?.tools['builtin_run_js']?.enabled ?? true;
+    final batchRunEnabled =
+        builtinConfig?.tools['builtin_batch_run']?.enabled ?? true;
     final jsTool = Tool<Map<String, dynamic>>(
       name: 'run_js',
       description:
@@ -609,7 +615,7 @@ class NativeToolAgentService {
         onCall:
             onGetCurrentTime ?? (_) async => currentTimeData(DateTime.now()),
       ),
-      if (!builtInOnly) jsTool,
+      if (!builtInOnly && jsEnabled) jsTool,
       if (onAskUserQuestions != null)
         Tool<Map<String, dynamic>>(
           name: 'askuserquestions',
@@ -656,39 +662,47 @@ class NativeToolAgentService {
         ),
     ];
     final toolMap = {for (final tool in tools) tool.name: tool};
-    tools.add(
-      Tool<Map<String, dynamic>>(
-        name: 'batch_run',
-        description:
-            '按 calls 顺序逐个执行当前可用工具，等待上一项完成后再执行下一项。'
-            '遇到错误立即停止，返回已执行的结果和从 0 开始的 failedIndex。'
-            '每项仍计入工具调用次数限制；不支持嵌套批量调用或引用前项结果。',
-        inputSchema: Schema.fromMap({
-          'type': 'object',
-          'properties': {
-            'calls': {
-              'type': 'array',
-              'minItems': 1,
-              'items': {
-                'type': 'object',
-                'properties': {
-                  'tool': {'type': 'string', 'enum': toolMap.keys.toList()},
-                  'args': {'type': 'object', 'description': '目标工具的完整参数对象'},
+    if (batchRunEnabled) {
+      tools.add(
+        Tool<Map<String, dynamic>>(
+          name: 'batch_run',
+          description:
+              '按 calls 顺序逐个执行当前可用工具，等待上一项完成后再执行下一项。'
+              '遇到错误立即停止，返回已执行的结果和从 0 开始的 failedIndex。'
+              '每项仍计入工具调用次数限制；不支持嵌套批量调用或引用前项结果。',
+          inputSchema: Schema.fromMap({
+            'type': 'object',
+            'properties': {
+              'calls': {
+                'type': 'array',
+                'minItems': 1,
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'tool': {
+                      'type': 'string',
+                      'enum': toolMap.keys.toList(),
+                    },
+                    'args': {
+                      'type': 'object',
+                      'description': '目标工具的完整参数对象',
+                    },
+                  },
+                  'required': ['tool', 'args'],
                 },
-                'required': ['tool', 'args'],
               },
             },
-          },
-          'required': ['calls'],
-        }),
-        onCall: (args) =>
-            ToolJsExecutor.executeBatch(args, (name, arguments) async {
-              final tool = toolMap[name];
-              if (tool == null) return {'error': '工具 $name 不可用'};
-              return await tool.call(arguments);
-            }),
-      ),
-    );
+            'required': ['calls'],
+          }),
+          onCall: (args) =>
+              ToolJsExecutor.executeBatch(args, (name, arguments) async {
+                final tool = toolMap[name];
+                if (tool == null) return {'error': '工具 $name 不可用'};
+                return await tool.call(arguments);
+              }),
+        ),
+      );
+    }
     return tools;
   }
 
@@ -702,6 +716,8 @@ class NativeToolAgentService {
       for (final (toolId, pluginId, config)
           in ToolConfigManager.instance.getEnabledToolsWithPlugin()) {
         if (toolId.startsWith('system_')) continue;
+        // builtin 工具实现在本服务硬编码，不走插件分发，仅提供开关与描述
+        if (pluginId == 'builtin') continue;
         final methodName = toolId.startsWith('${pluginId}_')
             ? toolId.substring(pluginId.length + 1)
             : toolId;
@@ -1232,6 +1248,10 @@ class NativeToolAgentService {
 
   List<Tool<Map<String, dynamic>>> _buildFileTools(_NativeToolRunContext run) {
     final files = AgentFileSpaceService.instance;
+    // builtin 插件配置提供文件工具开关；未初始化或缺失时默认启用
+    final builtinConfig = ToolConfigManager.instance.getPluginTools('builtin');
+    bool fileToolEnabled(String name) =>
+        builtinConfig?.tools['builtin_$name']?.enabled ?? true;
     Future<Object?> executeFileTool(
       String method,
       String title,
@@ -1372,7 +1392,7 @@ class NativeToolAgentService {
           ),
         ),
       ),
-    ];
+    ].where((tool) => fileToolEnabled(tool.name)).toList();
   }
 
   /// 解析「默认识图能力」agent（无会话上下文的场景直接调用，

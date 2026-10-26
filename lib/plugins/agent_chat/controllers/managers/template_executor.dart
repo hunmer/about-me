@@ -308,6 +308,8 @@ class TemplateExecutor {
         ToolConfigManager.instance
             .getToolIndex(enabledOnly: true)
             .map((tool) => tool.first)
+            // builtin 工具是原生 FC 硬编码实现，JS 模板场景无对应分发
+            .where((toolId) => !toolId.startsWith('builtin_'))
             .toList(),
         includeCallFormat: false,
       );
