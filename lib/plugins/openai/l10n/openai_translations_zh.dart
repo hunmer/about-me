@@ -258,6 +258,14 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_memoryLoopCreatedAt': '记录于 @date',
   'openai_memoryLoopFollowUp': '建议 @date 跟进',
   'openai_memoryMarkFollowed': '标记已跟进',
+  'openai_memoryFilterKeyword': '关键词',
+  'openai_memoryFilterKeywordPlaceholder': '搜索 key / 内容',
+  'openai_memoryFilterTags': '标签',
+  'openai_memoryFilterStatus': '状态',
+  'openai_memoryFilterMarked': '星标',
+  'openai_memoryFilterArchived': '已淡忘',
+  'openai_memoryFilterSelf': '自我记忆',
+  'openai_memoryFilterNoMatch': '没有匹配的条目',
 
   // Clipboard Share & Import
   'openai_shareAgent': '分享智能体',

@@ -8,8 +8,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('25:00'), findsOneWidget);
-    expect(find.text('Stay focused,'), findsOneWidget);
-    expect(find.text('get cute oranges'), findsOneWidget);
 
     await tester.tap(find.text('Start Focus'));
     await tester.pump(const Duration(seconds: 4));
@@ -26,14 +24,39 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.close));
     await tester.pump(const Duration(milliseconds: 250));
-    await tester.tap(find.text('+ 掉一颗'));
-    await tester.tap(find.text('铺满'));
-    await tester.tap(find.text('清空'));
     await tester.tap(find.text('Reset Timer'));
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Start Focus'), findsOneWidget);
     expect(find.text('05:00'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('水果卡片外部驱动模式：全屏 + 自定义按钮 + 进度果堆', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CuteFruitTimerCard(
+            fruitKind: CuteFruitKind.lemon,
+            fullscreen: true,
+            progress: 0.5,
+            timeText: '12:34',
+            subtitle: '写作',
+            isRunning: true,
+            controls: ElevatedButton(
+              onPressed: () {},
+              child: const Text('自定义按钮'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('12:34'), findsOneWidget);
+    expect(find.text('写作'), findsOneWidget);
+    expect(find.text('自定义按钮'), findsOneWidget);
+    expect(find.textContaining('已收获'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

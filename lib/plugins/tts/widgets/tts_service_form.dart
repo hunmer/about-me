@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:get/get.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 import 'package:uuid/uuid.dart';
@@ -36,6 +37,9 @@ class TtsServiceForm extends StatefulWidget {
 }
 
 class _TtsServiceFormState extends State<TtsServiceForm> {
+  final _sheetController = SheetController();
+  bool _expandingForWheel = false;
+
   // 基础配置
   late TextEditingController _nameController;
   late TTSServiceType _selectedType;
@@ -107,6 +111,7 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
 
   @override
   void dispose() {
+    _sheetController.dispose();
     _nameController.dispose();
     _voiceController.dispose();
     _urlController.dispose();
@@ -276,12 +281,12 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
           // 双档吸附：半屏档（视口65%）+ 满屏档；表单不足半屏时
           // SheetOffset(1)（内容全显）像素更小，自动成为最低档
           return Sheet(
+            controller: _sheetController,
+            // 显式启用联动滚动，让 primary 滚动视图在滚动前先展开弹层。
+            scrollConfiguration: const SheetScrollConfiguration(),
             initialOffset: const SheetOffset.proportionalToViewport(0.65),
             snapGrid: const SheetSnapGrid(
-              snaps: [
-                SheetOffset.proportionalToViewport(0.65),
-                SheetOffset(1),
-              ],
+              snaps: [SheetOffset.proportionalToViewport(0.65), SheetOffset(1)],
             ),
             child: DsSketchPanel(
               theme: theme,
@@ -294,16 +299,28 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
                   _buildDragHandle(theme),
                   _buildTitleBar(theme, isEditing),
                   Flexible(
-                    child: SingleChildScrollView(
-                      // Join the sheet's coordinated scroll controller so form drags work.
-                      primary: true,
-                      padding: EdgeInsets.fromLTRB(
-                        theme.spacing.xl,
-                        theme.spacing.sm,
-                        theme.spacing.xl,
-                        theme.spacing.lg,
+                    child: Listener(
+                      onPointerSignal: _handleFormPointerSignal,
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification.depth == 0 &&
+                              notification is ScrollEndNotification) {
+                            _debugScrollMetrics(notification.metrics);
+                          }
+                          return false;
+                        },
+                        child: SingleChildScrollView(
+                          // Join the sheet's coordinated scroll controller so form drags work.
+                          primary: true,
+                          padding: EdgeInsets.fromLTRB(
+                            theme.spacing.xl,
+                            theme.spacing.sm,
+                            theme.spacing.xl,
+                            theme.spacing.lg,
+                          ),
+                          child: _buildForm(theme),
+                        ),
                       ),
-                      child: _buildForm(theme),
                     ),
                   ),
                   _buildBottomBar(theme),
@@ -315,6 +332,48 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
         },
       ),
     );
+  }
+
+  void _debugScrollMetrics(ScrollMetrics scroll) {
+    assert(() {
+      final sheet = _sheetController.metrics;
+      debugPrint(
+        '[TtsServiceForm] type=$_selectedType '
+        'sheetOffset=${sheet?.offset} sheetHeight=${sheet?.contentSize.height} '
+        'scroll=${scroll.pixels}/${scroll.maxScrollExtent} '
+        'viewport=${scroll.viewportDimension}',
+      );
+      return true;
+    }());
+  }
+
+  void _handleFormPointerSignal(PointerSignalEvent event) {
+    // smooth_sheets 0.15 的滚轮只滚动内容，不会像触摸拖动一样展开面板。
+    if (event is! PointerScrollEvent ||
+        event.scrollDelta.dy <= 0 ||
+        _expandingForWheel) {
+      return;
+    }
+    final metrics = _sheetController.metrics;
+    if (metrics == null ||
+        metrics.offset >= const SheetOffset(1).resolve(metrics) - 1) {
+      return;
+    }
+    _expandingForWheel = true;
+    // 等滚轮自身的 pointerScroll/goBallistic 完成，避免展开动画被取消。
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      try {
+        await _sheetController.animateTo(const SheetOffset(1));
+        assert(() {
+          debugPrint('[TtsServiceForm] wheel expanded: '
+              'sheetOffset=${_sheetController.metrics?.offset}');
+          return true;
+        }());
+      } finally {
+        _expandingForWheel = false;
+      }
+    });
   }
 
   /// 拖拽把手（与 SmoothBottomSheet 同款手绘样式）

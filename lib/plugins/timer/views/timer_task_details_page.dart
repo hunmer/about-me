@@ -12,17 +12,16 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/plugins/timer/services/white_noise_service.dart';
 import 'package:aboutme/plugins/timer/timer_plugin.dart';
+import 'package:aboutme/widgets/cute_fruit_timer_demo.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// 专注详情页（手绘纸墨风）：
 /// 纸底 + 任务色主卡片（墨线框 / 阶段行 / 进度环 / 目标 pill）+ 手绘三圆控制 + 呼吸提示。
 class TimerTaskDetailsPage extends StatefulWidget {
   final String taskId;
 
-  const TimerTaskDetailsPage({
-    super.key,
-    required this.taskId,
-  });
+  const TimerTaskDetailsPage({super.key, required this.taskId});
 
   @override
   State<TimerTaskDetailsPage> createState() => _TimerTaskDetailsPageState();
@@ -40,6 +39,14 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   // 结算弹窗防重弹：本会话任务运行过 + 尚未弹过
   bool _taskHasRun = false;
   bool _settlementShown = false;
+  // 水果卡片模式（持久化）：开启后专注卡片替换为水果物理堆叠卡片
+  static const _fruitBgPrefKey = 'timer_details_fruit_bg';
+  static const _fruitKindPrefKey = 'timer_details_fruit_kind';
+  bool _fruitBg = false;
+  CuteFruitKind? _fruitKind = CuteFruitKind.orange;
+  // Header 水果设置 popover（Overlay 挂载）
+  final GlobalKey _fruitBtnKey = GlobalKey();
+  OverlayEntry? _fruitPopover;
   late final AnimationController _pulse = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1600),
@@ -50,6 +57,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     super.initState();
     _plugin = PluginManager.instance.getPlugin('timer') as TimerPlugin;
     _loadTask();
+    _loadFruitPrefs();
     _subscribeToEvents();
     _updateRouteContext();
     WhiteNoiseService.instance.error.addListener(_onNoiseError);
@@ -73,6 +81,53 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
       _isRunning = _currentTask.isRunning;
       _taskHasRun = _isRunning;
     }
+  }
+
+  /// 加载水果卡片模式偏好（开关 + 水果类型）
+  Future<void> _loadFruitPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _fruitBg = prefs.getBool(_fruitBgPrefKey) ?? false;
+      final index = prefs.getInt(_fruitKindPrefKey);
+      if (index != null) {
+        _fruitKind = index < 0
+            ? null
+            : index < CuteFruitKind.values.length
+            ? CuteFruitKind.values[index]
+            : CuteFruitKind.orange;
+      }
+    });
+  }
+
+  void _setFruitBg(bool value) {
+    setState(() => _fruitBg = value);
+    _fruitPopover?.markNeedsBuild();
+    SharedPreferences.getInstance().then(
+      (prefs) => prefs.setBool(_fruitBgPrefKey, value),
+    );
+  }
+
+  void _setFruitKind(CuteFruitKind? kind) {
+    setState(() => _fruitKind = kind);
+    _fruitPopover?.markNeedsBuild();
+    SharedPreferences.getInstance().then(
+      (prefs) => prefs.setInt(_fruitKindPrefKey, kind?.index ?? -1),
+    );
+  }
+
+  /// 任务总进度：所有阶段已完成时长 / 总时长（0..1），驱动果堆数量
+  double _taskTotalProgress() {
+    final total = _currentTask.timerItems.fold<int>(
+      0,
+      (sum, item) => sum + item.duration.inSeconds,
+    );
+    if (total <= 0) return 0;
+    final done = _currentTask.timerItems.fold<int>(
+      0,
+      (sum, item) => sum + item.completedDuration.inSeconds,
+    );
+    return (done / total).clamp(0.0, 1.0);
   }
 
   void _subscribeToEvents() {
@@ -110,8 +165,9 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
         _currentTask.timerItems.any((item) => item.id == args.timer.id)) {
       if (mounted) {
         setState(() {
-          _currentTimerIndex = _currentTask.timerItems
-              .indexWhere((item) => item.id == args.timer.id);
+          _currentTimerIndex = _currentTask.timerItems.indexWhere(
+            (item) => item.id == args.timer.id,
+          );
         });
         _updateRouteContext();
         _maybeShowSettlement();
@@ -144,10 +200,14 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
 
   @override
   void dispose() {
+    _closeFruitPopover();
     _pulse.dispose();
     WhiteNoiseService.instance.error.removeListener(_onNoiseError);
     EventManager.instance.unsubscribe('timer_task_changed', onTimerTaskChanged);
-    EventManager.instance.unsubscribe('timer_item_progress', onTimerItemProgress);
+    EventManager.instance.unsubscribe(
+      'timer_item_progress',
+      onTimerItemProgress,
+    );
     EventManager.instance.unsubscribe('timer_item_changed', onTimerItemChanged);
     super.dispose();
   }
@@ -181,7 +241,11 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   }
 
   void _showComingSoon() {
-    showDSToast(context, message: 'timer_comingSoon'.tr, type: DSToastType.info);
+    showDSToast(
+      context,
+      message: 'timer_comingSoon'.tr,
+      type: DSToastType.info,
+    );
   }
 
   /// 专注结算对话框（手绘面板：达成徽章 + 总时长 + 统计格 + 心情自评）
@@ -189,7 +253,8 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     final theme = _dsTheme;
     final accent = _currentTask.color;
 
-    final totalDuration = _currentTask.timerItems.fold<Duration>(
+    final totalDuration =
+        _currentTask.timerItems.fold<Duration>(
           Duration.zero,
           (sum, item) => sum + item.duration,
         ) *
@@ -214,8 +279,10 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
             children: [
               // 达成徽章：手绘胶囊
               JellyBox(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
                 radius: DsRadii.pill,
                 color: theme.hatch,
                 child: Row(
@@ -468,7 +535,10 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSectionLabel(theme, 'timer_noise_local'.tr),
-                          _buildNoiseGrid(theme, WhiteNoiseService.localPresets),
+                          _buildNoiseGrid(
+                            theme,
+                            WhiteNoiseService.localPresets,
+                          ),
                           const SizedBox(height: 14),
                           _buildSectionLabel(theme, 'timer_noise_online'.tr),
                           _buildNoiseGrid(
@@ -516,8 +586,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 3,
-                thumbShape:
-                    const RoundSliderThumbShape(enabledThumbRadius: 8),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
                 overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
               ),
               child: Slider(
@@ -669,10 +738,39 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
 
     final theme = _dsTheme;
     final currentTimer = _currentTask.timerItems[_currentTimerIndex];
-    final progress = (currentTimer.completedDuration.inSeconds /
-            currentTimer.duration.inSeconds)
-        .clamp(0.0, 1.0);
+    final progress =
+        (currentTimer.completedDuration.inSeconds /
+                currentTimer.duration.inSeconds)
+            .clamp(0.0, 1.0);
     final cardColor = _currentTask.color;
+
+    // 水果模式：全屏水果卡片 + 顶部工具条，三个控制按钮传入卡片内部
+    if (_fruitBg) {
+      return Scaffold(
+        backgroundColor: dsTransparentWhenGlobalBackground(theme.paper),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: CuteFruitTimerCard(
+                  fruitKind: _fruitKind,
+                  fullscreen: true,
+                  progress: _taskTotalProgress(),
+                  timeText: _formatClock(currentTimer.remainingDuration),
+                  subtitle: _currentTask.name,
+                  isRunning: _isRunning,
+                  controls: _buildControls(theme, cardColor),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: _buildTopBar(theme, cardColor),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: dsTransparentWhenGlobalBackground(theme.paper),
@@ -702,7 +800,12 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: _buildFocusCard(theme, currentTimer, progress, cardColor),
+                    child: _buildFocusCard(
+                      theme,
+                      currentTimer,
+                      progress,
+                      cardColor,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -732,65 +835,249 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
           iconColor: theme.text,
           onTap: () => Navigator.of(context).pop(),
         ),
-        AnimatedBuilder(
-          animation: Listenable.merge([
-            WhiteNoiseService.instance.currentId,
-            WhiteNoiseService.instance.loadingId,
-          ]),
-          builder: (context, _) {
-            final service = WhiteNoiseService.instance;
-            final playing = service.currentId.value != null;
-            final loading = service.loadingId.value != null;
-            return Pressable(
-              onPressed: _openSoundscapeSheet,
-              builder: (context, states) {
-                final pressed = states.contains(WidgetState.pressed);
-                return Transform.scale(
-                  scale: pressed ? 0.96 : 1.0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: dsSketchDecoration(
-                      theme: theme,
-                      fillColor: theme.surfaceAlt,
-                      radius: DsRadii.pill,
-                      strokeWidth: 1.4,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (loading)
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: cardColor,
-                            ),
-                          )
-                        else
-                          DsIcon(DsIconKind.graphicEq,
-                              size: 16, color: cardColor),
-                        const SizedBox(width: 6),
-                        Text(
-                          playing
-                              ? service.currentPreset!.nameKey.tr
-                              : 'timer_whiteNoise'.tr,
-                          style: DsTypography.label.copyWith(
-                            color: theme.textSub,
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 水果设置按钮：点击弹出 popover（总开关 + 水果类型）
+              _buildFruitPopoverButton(theme, cardColor),
+              const SizedBox(width: 8),
+              AnimatedBuilder(
+                animation: Listenable.merge([
+                  WhiteNoiseService.instance.currentId,
+                  WhiteNoiseService.instance.loadingId,
+                ]),
+                builder: (context, _) {
+                  final service = WhiteNoiseService.instance;
+                  final playing = service.currentId.value != null;
+                  final loading = service.loadingId.value != null;
+                  return Pressable(
+                    onPressed: _openSoundscapeSheet,
+                    builder: (context, states) {
+                      final pressed = states.contains(WidgetState.pressed);
+                      return Transform.scale(
+                        scale: pressed ? 0.96 : 1.0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: dsSketchDecoration(
+                            theme: theme,
+                            fillColor: theme.surfaceAlt,
+                            radius: DsRadii.pill,
+                            strokeWidth: 1.4,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (loading)
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: cardColor,
+                                  ),
+                                )
+                              else
+                                DsIcon(
+                                  DsIconKind.graphicEq,
+                                  size: 16,
+                                  color: cardColor,
+                                ),
+                              const SizedBox(width: 6),
+                              Text(
+                                playing
+                                    ? service.currentPreset!.nameKey.tr
+                                    : 'timer_whiteNoise'.tr,
+                                style: DsTypography.label.copyWith(
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ],
+    );
+  }
+
+  /// Header 水果设置按钮（手绘水果徽标），点击弹出设置 popover
+  Widget _buildFruitPopoverButton(AppThemeData theme, Color cardColor) {
+    return Pressable(
+      key: _fruitBtnKey,
+      onPressed: _toggleFruitPopover,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Transform.scale(
+          scale: pressed ? 0.9 : 1.0,
+          child: Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: dsSketchDecoration(
+              theme: theme,
+              circle: true,
+              fillColor: _fruitBg ? cardColor : theme.paper,
+              stroke: _fruitBg ? cardColor : null,
+              strokeWidth: 1.8,
+            ),
+            child: CuteFruitBadge(kind: _fruitKind, size: _fruitBg ? 24 : 20),
+          ),
+        );
+      },
+    );
+  }
+
+  void _toggleFruitPopover() {
+    if (_fruitPopover != null) {
+      _closeFruitPopover();
+      return;
+    }
+    final btnContext = _fruitBtnKey.currentContext;
+    if (btnContext == null || !mounted) return;
+    final box = btnContext.findRenderObject() as RenderBox?;
+    final overlay = Overlay.of(context);
+    final overlayBox = overlay.context.findRenderObject() as RenderBox?;
+    if (box == null || overlayBox == null) return;
+    final position = box.localToGlobal(Offset.zero, ancestor: overlayBox);
+    const panelWidth = 254.0;
+    final screen = overlayBox.size;
+    final left = (position.dx + box.size.width - panelWidth).clamp(
+      12.0,
+      screen.width - panelWidth - 12,
+    );
+    _fruitPopover = OverlayEntry(
+      builder: (_) => Stack(
+        children: [
+          // 点击空白处关闭
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _closeFruitPopover,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          Positioned(
+            left: left,
+            top: position.dy + box.size.height + 8,
+            child: _buildFruitPanel(_dsTheme, _currentTask.color),
+          ),
+        ],
+      ),
+    );
+    overlay.insert(_fruitPopover!);
+  }
+
+  void _closeFruitPopover() {
+    _fruitPopover?.remove();
+    _fruitPopover = null;
+  }
+
+  /// 水果设置 popover 面板：总开关 + 掉落水果类型
+  Widget _buildFruitPanel(AppThemeData theme, Color cardColor) {
+    return SizedBox(
+      width: 254,
+      child: DsSketchPanel(
+        theme: theme,
+        radius: BorderRadius.circular(22),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CuteFruitBadge(kind: _fruitKind, size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '水果专注模式',
+                    style: DsTypography.label.copyWith(color: theme.text),
+                  ),
+                ),
+                Transform.scale(
+                  scale: 0.8,
+                  child: Switch(
+                    value: _fruitBg,
+                    onChanged: _setFruitBg,
+                    activeColor: cardColor,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '掉落水果',
+              style: DsTypography.caption.copyWith(
+                color: theme.textSub.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final kind in CuteFruitKind.values)
+                  _buildFruitChip(theme, cardColor, kind),
+                _buildFruitChip(theme, cardColor, null),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFruitChip(
+    AppThemeData theme,
+    Color cardColor,
+    CuteFruitKind? kind,
+  ) {
+    final selected = _fruitKind == kind;
+    return Pressable(
+      onPressed: () => _setFruitKind(kind),
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        return Transform.scale(
+          scale: pressed ? 0.94 : 1.0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+            decoration: dsSketchDecoration(
+              theme: theme,
+              fillColor: selected
+                  ? cardColor.withValues(alpha: 0.12)
+                  : theme.surfaceAlt,
+              stroke: selected ? cardColor : null,
+              strokeWidth: 1.2,
+              radius: DsRadii.pill,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CuteFruitBadge(kind: kind, size: 17),
+                const SizedBox(width: 5),
+                Text(
+                  kind == null ? '混合' : cuteFruitKindName(kind),
+                  style: DsTypography.caption.copyWith(
+                    color: selected ? cardColor : theme.textSub,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -846,7 +1133,11 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
     );
   }
 
-  Widget _buildCardHeader(AppThemeData theme, Color onCard, TimerItem currentTimer) {
+  Widget _buildCardHeader(
+    AppThemeData theme,
+    Color onCard,
+    TimerItem currentTimer,
+  ) {
     return Row(
       children: [
         _PulsingDot(controller: _pulse, color: onCard),
@@ -887,8 +1178,10 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
         _currentTask.timerItems[_currentTimerIndex].remainingDuration;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final size =
-            min(280.0, min(constraints.maxWidth, constraints.maxHeight));
+        final size = min(
+          280.0,
+          min(constraints.maxWidth, constraints.maxHeight),
+        );
         final hasHours = remaining.inHours > 0;
         return SizedBox(
           width: size,
@@ -947,8 +1240,10 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
   }
 
   Widget _buildHabitPill(AppThemeData theme, Color onCard) {
-    final totalMinutes = _currentTask.timerItems
-        .fold<int>(0, (sum, item) => sum + item.duration.inMinutes);
+    final totalMinutes = _currentTask.timerItems.fold<int>(
+      0,
+      (sum, item) => sum + item.duration.inMinutes,
+    );
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -969,10 +1264,7 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
                 '${_currentTask.timerItems.length} ${'timer_phase'.tr} · $totalMinutes min',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: DsTypography.body.copyWith(
-                  fontSize: 13,
-                  color: onCard,
-                ),
+                style: DsTypography.body.copyWith(fontSize: 13, color: onCard),
               ),
             ),
           ],
@@ -1095,10 +1387,7 @@ class _PulsingDot extends StatelessWidget {
   final AnimationController controller;
   final Color color;
 
-  const _PulsingDot({
-    required this.controller,
-    required this.color,
-  });
+  const _PulsingDot({required this.controller, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -1127,10 +1416,7 @@ class _PulsingDot extends StatelessWidget {
           Container(
             width: size,
             height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color,
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
           ),
         ],
       ),

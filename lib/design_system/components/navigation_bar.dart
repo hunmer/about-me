@@ -96,6 +96,10 @@ class DSBottomNavigation extends StatelessWidget {
   /// 收起后子栏不可命中
   final bool? subBarVisible;
 
+  /// 磨砂面板高度：从 dock 顶延伸到屏幕底始终足够（dock 高 ≤146 +
+  /// 底部偏移/安全区），超出屏幕的部分由 viewport 自然裁掉
+  static const double _frostPanelHeight = 500;
+
   @override
   Widget build(BuildContext context) {
     // 全局磨砂开关（设置页）关闭时回落为非磨砂，调用点显式关闭同样不磨砂
@@ -187,21 +191,38 @@ class DSBottomNavigation extends StatelessWidget {
       child: FittedBox(fit: BoxFit.scaleDown, child: bar),
     );
     if (frosted) {
-      // 整域磨砂：dock 占位矩形整体背景模糊 + 淡纸色玻璃底。
-      // BackdropFilter 的作用范围是最近的祖先裁剪而非自身 bounds，
-      // 不加 ClipRect 模糊会一路扩散到 viewport（整屏磨砂）；
-      // ClipRect 内留 6px 余量，顶部溢出画布的圆钮/FAB 不被裁掉
-      bar = ClipRect(
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: ColoredBox(
-              color: theme.paper.withValues(alpha: theme.isDark ? 0.4 : 0.3),
-              child: bar,
+      // 全宽磨砂面板：顶部圆角、底部延伸出屏幕（viewport 自然裁掉），
+      // dock 叠在面板之上。宿主容器通常窄于屏宽（如 0.85 比例外壳），
+      // 用 OverflowBox 突破约束铺满屏宽；BackdropFilter 的作用范围是
+      // 最近祖先裁剪，ClipRRect 同时负责限定模糊区域与顶部圆角
+      final screenW = MediaQuery.sizeOf(context).width;
+      bar = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: OverflowBox(
+              alignment: Alignment.topCenter,
+              minWidth: screenW,
+              maxWidth: screenW,
+              minHeight: _frostPanelHeight,
+              maxHeight: _frostPanelHeight,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: ColoredBox(
+                    color: theme.paper.withValues(
+                      alpha: theme.isDark ? 0.4 : 0.3,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+          bar,
+        ],
       );
     }
     if (onTap == null) bar = IgnorePointer(child: bar);

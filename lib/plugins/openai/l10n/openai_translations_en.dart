@@ -276,6 +276,14 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_memoryLoopCreatedAt': 'Recorded @date',
   'openai_memoryLoopFollowUp': 'Suggested follow-up @date',
   'openai_memoryMarkFollowed': 'Mark as followed up',
+  'openai_memoryFilterKeyword': 'Keyword',
+  'openai_memoryFilterKeywordPlaceholder': 'Search key / value',
+  'openai_memoryFilterTags': 'Tags',
+  'openai_memoryFilterStatus': 'Status',
+  'openai_memoryFilterMarked': 'Marked',
+  'openai_memoryFilterArchived': 'Faded',
+  'openai_memoryFilterSelf': 'Self memory',
+  'openai_memoryFilterNoMatch': 'No matching items',
 
   // Clipboard Share & Import
   'openai_shareAgent': 'Share Agent',

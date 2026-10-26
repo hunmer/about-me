@@ -7,6 +7,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/memory_fragment.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 
 /// 单个记忆库的碎片与开环事件管理页。
 class MemoryLibraryDetailScreen extends StatefulWidget {
@@ -30,10 +31,20 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen> {
   List<OpenLoop> _loops = [];
   bool _loading = true;
 
+  final MultiFilterState _fragmentFilters = MultiFilterState();
+  final MultiFilterState _loopFilters = MultiFilterState();
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _fragmentFilters.dispose();
+    _loopFilters.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -344,9 +355,15 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final active = _fragments.where((fragment) => !fragment.archived).toList();
-    final archived = _fragments.where((fragment) => fragment.archived).toList();
-    final openLoops = _loops.where((loop) => !loop.closed).toList();
+    final filteredFragments = _applyFragmentFilters(_fragments);
+    final active = filteredFragments
+        .where((fragment) => !fragment.archived)
+        .toList();
+    final archived = filteredFragments
+        .where((fragment) => fragment.archived)
+        .toList();
+    final filteredLoops = _applyLoopFilters(_loops);
+    final openLoops = filteredLoops.where((loop) => !loop.closed).toList();
 
     return DSThemeBridge(
       child: Builder(
@@ -384,6 +401,7 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen> {
                       onChanged: (index) => setState(() => _tab = index),
                     ),
                   ),
+                  _buildFilterBar(),
                   Expanded(
                     child: _loading
                         ? Center(child: DSLoadingDots(color: theme.primary))
@@ -404,6 +422,121 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen> {
     );
   }
 
+  /// 过滤栏：随 tab 切换碎片/开环两组条件
+  Widget _buildFilterBar() {
+    if (_tab == 0) {
+      return MultiFilterBar(
+        filterState: _fragmentFilters,
+        filterItems: _buildFragmentFilterItems(),
+        onFilterChanged: (_) => setState(() {}),
+      );
+    }
+    return MultiFilterBar(
+      filterState: _loopFilters,
+      filterItems: [_buildKeywordFilterItem(_loopFilters)],
+      onFilterChanged: (_) => setState(() {}),
+    );
+  }
+
+  static const _statusFilterOptions = {
+    'marked': 'openai_memoryFilterMarked',
+    'archived': 'openai_memoryFilterArchived',
+    'self': 'openai_memoryFilterSelf',
+  };
+
+  List<FilterItem> _buildFragmentFilterItems() {
+    final availableTags = _fragments
+        .expand((fragment) => fragment.tags)
+        .toSet()
+        .toList()
+      ..sort();
+    final statusLabels = {
+      for (final entry in _statusFilterOptions.entries)
+        entry.key: entry.value.tr,
+    };
+    return [
+      _buildKeywordFilterItem(_fragmentFilters),
+      FilterItem(
+        id: 'tags',
+        title: 'openai_memoryFilterTags'.tr,
+        type: FilterType.tagsMultiple,
+        builder: (context, value, onChanged) => FilterBuilders.buildTagsFilter(
+          context: context,
+          currentValue: value,
+          onChanged: onChanged,
+          availableTags: availableTags,
+        ),
+        getBadge: FilterBuilders.tagsBadge,
+      ),
+      FilterItem(
+        id: 'status',
+        title: 'openai_memoryFilterStatus'.tr,
+        type: FilterType.tagsSingle,
+        builder: (context, value, onChanged) =>
+            FilterBuilders.buildSingleChoiceFilter(
+              context: context,
+              currentValue: value,
+              onChanged: onChanged,
+              options: statusLabels,
+            ),
+        getBadge: (value) =>
+            FilterBuilders.singleChoiceBadge(value, statusLabels),
+      ),
+    ];
+  }
+
+  FilterItem _buildKeywordFilterItem(MultiFilterState state) {
+    return FilterItem(
+      id: 'keyword',
+      title: 'openai_memoryFilterKeyword'.tr,
+      type: FilterType.input,
+      builder: (context, value, onChanged) =>
+          FilterBuilders.buildKeywordFilter(
+            context: context,
+            currentValue: value,
+            onChanged: onChanged,
+            placeholder: 'openai_memoryFilterKeywordPlaceholder'.tr,
+          ),
+      getBadge: FilterBuilders.keywordBadge,
+    );
+  }
+
+  List<MemoryFragment> _applyFragmentFilters(List<MemoryFragment> source) {
+    final keyword = ((_fragmentFilters.getValue('keyword') as String?) ?? '')
+        .trim()
+        .toLowerCase();
+    final tags = (_fragmentFilters.getValue('tags') as List?)
+        ?.cast<String>() ?? const <String>[];
+    final status = _fragmentFilters.getValue('status') as String?;
+    return source.where((fragment) {
+      if (keyword.isNotEmpty &&
+          !fragment.key.toLowerCase().contains(keyword) &&
+          !fragment.value.toLowerCase().contains(keyword)) {
+        return false;
+      }
+      if (tags.isNotEmpty && !fragment.tags.any(tags.contains)) return false;
+      switch (status) {
+        case 'marked':
+          if (!fragment.userMarked) return false;
+        case 'archived':
+          if (!fragment.archived) return false;
+        case 'self':
+          if (!fragment.isSelf) return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  List<OpenLoop> _applyLoopFilters(List<OpenLoop> source) {
+    final keyword = ((_loopFilters.getValue('keyword') as String?) ?? '')
+        .trim()
+        .toLowerCase();
+    if (keyword.isEmpty) return source;
+    return source
+        .where((loop) => loop.description.toLowerCase().contains(keyword))
+        .toList();
+  }
+
   Widget _buildFragments(
     List<MemoryFragment> active,
     List<MemoryFragment> archived,
@@ -413,6 +546,14 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen> {
         child: DSEmptyState(
           icon: DsIconKind.book,
           title: 'openai_memoryFragmentsEmpty'.tr,
+        ),
+      );
+    }
+    if (active.isEmpty && archived.isEmpty) {
+      return Center(
+        child: DSEmptyState(
+          icon: DsIconKind.search,
+          title: 'openai_memoryFilterNoMatch'.tr,
         ),
       );
     }
@@ -429,12 +570,17 @@ class _MemoryLibraryDetailScreenState extends State<MemoryLibraryDetailScreen> {
   }
 
   Widget _buildLoops(List<OpenLoop> openLoops) {
-    final closed = _loops.where((loop) => loop.closed).toList();
+    // 分区同样基于过滤后全集，与 openLoops 数据链路一致
+    final closed = _applyLoopFilters(_loops)
+        .where((loop) => loop.closed)
+        .toList();
     if (openLoops.isEmpty && closed.isEmpty) {
       return Center(
         child: DSEmptyState(
-          icon: DsIconKind.clock,
-          title: 'openai_memoryLoopsEmpty'.tr,
+          icon: _loops.isEmpty ? DsIconKind.clock : DsIconKind.search,
+          title: _loops.isEmpty
+              ? 'openai_memoryLoopsEmpty'.tr
+              : 'openai_memoryFilterNoMatch'.tr,
         ),
       );
     }

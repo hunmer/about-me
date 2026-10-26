@@ -4,8 +4,15 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-class CuteFruitTimerDemo extends StatelessWidget {
+class CuteFruitTimerDemo extends StatefulWidget {
   const CuteFruitTimerDemo({super.key});
+
+  @override
+  State<CuteFruitTimerDemo> createState() => _CuteFruitTimerDemoState();
+}
+
+class _CuteFruitTimerDemoState extends State<CuteFruitTimerDemo> {
+  CuteFruitKind? _kind = CuteFruitKind.orange;
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +27,37 @@ class CuteFruitTimerDemo extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.topCenter,
-                  child: const SizedBox(
+                  child: SizedBox(
                     width: 420,
-                    height: 904,
-                    child: _FruitFocusTimer(),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: 43,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: _Toolbar(
+                              children: [
+                                for (final kind in CuteFruitKind.values)
+                                  _ToolbarButton(
+                                    label: cuteFruitKindLabel(kind),
+                                    selected: _kind == kind,
+                                    onTap: () => setState(() => _kind = kind),
+                                  ),
+                                _ToolbarButton(
+                                  label: cuteFruitKindLabel(null),
+                                  selected: _kind == null,
+                                  onTap: () => setState(() => _kind = null),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        CuteFruitTimerCard(fruitKind: _kind),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -35,7 +69,87 @@ class CuteFruitTimerDemo extends StatelessWidget {
   }
 }
 
-enum _FruitKind { orange, tomato, lemon, peach, apple, blueberry, watermelon }
+enum CuteFruitKind {
+  orange,
+  tomato,
+  lemon,
+  peach,
+  apple,
+  blueberry,
+  watermelon,
+}
+
+String cuteFruitEmoji(CuteFruitKind kind) => switch (kind) {
+  CuteFruitKind.orange => '🍊',
+  CuteFruitKind.tomato => '🍅',
+  CuteFruitKind.lemon => '🍋',
+  CuteFruitKind.peach => '🍑',
+  CuteFruitKind.apple => '🍏',
+  CuteFruitKind.blueberry => '🫐',
+  CuteFruitKind.watermelon => '🍉',
+};
+
+/// dropdown 展示用标签；null 表示混合随机
+String cuteFruitKindLabel(CuteFruitKind? kind) => kind == null
+    ? '🧺 混合'
+    : '${cuteFruitEmoji(kind)} ${_fruitThemes[kind]!.name}';
+
+/// 水果中文名；null 表示混合
+String cuteFruitKindName(CuteFruitKind? kind) =>
+    kind == null ? '混合' : _fruitThemes[kind]!.name;
+
+/// 手绘风水果徽标：Header 按钮 / 选项 chip 等小场景复用同一套水果绘制
+class CuteFruitBadge extends StatelessWidget {
+  const CuteFruitBadge({super.key, this.kind, this.size = 22});
+
+  final CuteFruitKind? kind;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final fruits = <_FruitBody>[
+      if (kind != null)
+        _badgeFruit(
+          kind!,
+          Offset(size / 2, size / 2 + size * 0.06),
+          size * 0.36,
+        )
+      else ...[
+        _badgeFruit(
+          CuteFruitKind.orange,
+          Offset(size * 0.28, size * 0.68),
+          size * 0.24,
+        ),
+        _badgeFruit(
+          CuteFruitKind.apple,
+          Offset(size * 0.68, size * 0.6),
+          size * 0.22,
+        ),
+        _badgeFruit(
+          CuteFruitKind.blueberry,
+          Offset(size * 0.5, size * 0.28),
+          size * 0.2,
+        ),
+      ],
+    ];
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _FruitPainter(fruits)),
+    );
+  }
+
+  _FruitBody _badgeFruit(CuteFruitKind kind, Offset position, double radius) =>
+      _FruitBody(
+        position: position,
+        radius: radius,
+        kind: kind,
+        color: _fruitThemes[kind]!.colors.first,
+        faceOffset: Offset.zero,
+        leafTilt: 0,
+        angle: 0,
+      );
+}
 
 class _FruitTheme {
   const _FruitTheme({
@@ -55,8 +169,8 @@ class _FruitTheme {
   final Color leafColor;
 }
 
-const _fruitThemes = <_FruitKind, _FruitTheme>{
-  _FruitKind.orange: _FruitTheme(
+const _fruitThemes = <CuteFruitKind, _FruitTheme>{
+  CuteFruitKind.orange: _FruitTheme(
     name: '橙子',
     slogan: 'get cute oranges',
     sloganColor: Color(0xFFE89143),
@@ -68,7 +182,7 @@ const _fruitThemes = <_FruitKind, _FruitTheme>{
       Color(0xFFF9D448),
     ],
   ),
-  _FruitKind.tomato: _FruitTheme(
+  CuteFruitKind.tomato: _FruitTheme(
     name: '小番茄',
     slogan: 'get cute tomatoes',
     sloganColor: Color(0xFFE88B3E),
@@ -80,7 +194,7 @@ const _fruitThemes = <_FruitKind, _FruitTheme>{
       Color(0xFFF9D448),
     ],
   ),
-  _FruitKind.lemon: _FruitTheme(
+  CuteFruitKind.lemon: _FruitTheme(
     name: '柠檬',
     slogan: 'get cute lemons',
     sloganColor: Color(0xFFE0B422),
@@ -93,7 +207,7 @@ const _fruitThemes = <_FruitKind, _FruitTheme>{
     ],
     leafColor: Color(0xFF2EB84B),
   ),
-  _FruitKind.peach: _FruitTheme(
+  CuteFruitKind.peach: _FruitTheme(
     name: '水蜜桃',
     slogan: 'get cute peaches',
     sloganColor: Color(0xFFF2827F),
@@ -106,7 +220,7 @@ const _fruitThemes = <_FruitKind, _FruitTheme>{
     ],
     leafColor: Color(0xFF34B850),
   ),
-  _FruitKind.apple: _FruitTheme(
+  CuteFruitKind.apple: _FruitTheme(
     name: '青苹果',
     slogan: 'get cute apples',
     sloganColor: Color(0xFF68B836),
@@ -119,7 +233,7 @@ const _fruitThemes = <_FruitKind, _FruitTheme>{
     ],
     leafColor: Color(0xFF259E3E),
   ),
-  _FruitKind.blueberry: _FruitTheme(
+  CuteFruitKind.blueberry: _FruitTheme(
     name: '蓝莓',
     slogan: 'get cute blueberries',
     sloganColor: Color(0xFF6279D9),
@@ -132,7 +246,7 @@ const _fruitThemes = <_FruitKind, _FruitTheme>{
     ],
     eyeColor: Color(0xFF252136),
   ),
-  _FruitKind.watermelon: _FruitTheme(
+  CuteFruitKind.watermelon: _FruitTheme(
     name: '小西瓜',
     slogan: 'get cute melons',
     sloganColor: Color(0xFF3EA859),
@@ -162,7 +276,7 @@ class _FruitBody {
   Offset position;
   Offset velocity;
   final double radius;
-  _FruitKind kind;
+  CuteFruitKind kind;
   Color color;
   final Offset faceOffset;
   final double leafTilt;
@@ -172,26 +286,76 @@ class _FruitBody {
   double blinkFor = 0;
 }
 
-class _FruitFocusTimer extends StatefulWidget {
-  const _FruitFocusTimer();
+/// 水果物理堆叠专注卡片（设计稿固定 372 宽，嵌入任意容器时等比缩小）。
+/// 掉落的水果类型由 [fruitKind] 外部控制，null 表示混合随机。
+/// 水果物理堆叠专注卡片。
+/// - 画框模式（默认）：设计稿固定 372 宽，等比缩小；
+/// - [fullscreen] 全屏模式：填满父容器；
+/// - 外部驱动模式（[timeText] 非空）：时间/文案/控制按钮由外部提供，
+///   果堆数量 = [progress] × 容量（最大堆高为卡片高度的 80%），
+///   重新进入时按进度恢复正确数量的水果。
+class CuteFruitTimerCard extends StatefulWidget {
+  const CuteFruitTimerCard({
+    super.key,
+    this.fruitKind = CuteFruitKind.orange,
+    this.fullscreen = false,
+    this.progress,
+    this.timeText,
+    this.subtitle,
+    this.isRunning,
+    this.controls,
+  });
+
+  final CuteFruitKind? fruitKind;
+  final bool fullscreen;
+
+  /// 0..1，外部驱动的水果数量进度
+  final double? progress;
+
+  /// 外部驱动的大字时间文本（非空即启用外部模式）
+  final String? timeText;
+  final String? subtitle;
+  final bool? isRunning;
+
+  /// 替代内部 Start/Reset 的自定义控制按钮
+  final Widget? controls;
 
   @override
-  State<_FruitFocusTimer> createState() => _FruitFocusTimerState();
+  State<CuteFruitTimerCard> createState() => _CuteFruitTimerCardState();
 }
 
-class _FruitFocusTimerState extends State<_FruitFocusTimer>
+class _CuteFruitTimerCardState extends State<CuteFruitTimerCard>
     with SingleTickerProviderStateMixin {
-  static const _cardSize = Size(354, 652);
-  static const _buttonCenter = Offset(177, 348.82);
-  static const _buttonSize = Size(148, 55);
-  static const _fruitKinds = _FruitKind.values;
+  // 果区坐标系：画框模式为设计稿 354x652，全屏模式取实际约束
+  Size _cardSize = const Size(354, 652);
+  bool _sized = false;
+  static const _fruitKinds = CuteFruitKind.values;
+
+  bool get _external => widget.timeText != null;
+
+  /// 中部控制按钮中心（设计稿 53.5% 高度处）
+  Offset get _buttonCenter =>
+      Offset(_cardSize.width / 2, _cardSize.height * 0.535);
+
+  /// 控制按钮区的物理障碍尺寸
+  Size get _buttonSize => _external
+      ? Size(math.min(_cardSize.width * 0.78, 320), 88)
+      : const Size(148, 55);
+
+  int get _fruitsPerRow => ((_cardSize.width - 64) / 48.3).floor() + 1;
+
+  /// 果堆容量：最大堆高（80% 高度）能码放的行数 × 每行颗数
+  int get _pileCapacity {
+    final rows = ((_cardSize.height * 0.8 - 35) / 44).floor();
+    return math.max(1, math.max(0, rows) * _fruitsPerRow);
+  }
 
   late final Ticker _ticker;
   final _random = math.Random();
   final _fruits = <_FruitBody>[];
   final _tags = const ['Focus Tag', 'Reading', 'Coding', 'Design', 'Study'];
 
-  _FruitKind? _selectedKind = _FruitKind.orange;
+  CuteFruitKind? _selectedKind = CuteFruitKind.orange;
   Duration _lastElapsed = Duration.zero;
   Duration _secondAccumulator = Duration.zero;
   Duration _dropElapsed = Duration.zero;
@@ -205,13 +369,37 @@ class _FruitFocusTimerState extends State<_FruitFocusTimer>
   bool _isConfigOpen = false;
 
   _FruitTheme get _currentTheme =>
-      _fruitThemes[_selectedKind ?? _FruitKind.orange]!;
+      _fruitThemes[_selectedKind ?? CuteFruitKind.orange]!;
 
   @override
   void initState() {
+    _selectedKind = widget.fruitKind;
     super.initState();
-    _populateInitialPile();
     _ticker = createTicker(_onTick)..start();
+  }
+
+  @override
+  void didUpdateWidget(covariant CuteFruitTimerCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.fruitKind != oldWidget.fruitKind) {
+      _selectFruit(widget.fruitKind);
+    }
+    if (_external && widget.progress != oldWidget.progress) {
+      _reconcileFruitCount();
+    }
+  }
+
+  /// 外部进度变化时对齐果堆数量：前进则补掉落，回退/重置则重建
+  void _reconcileFruitCount() {
+    final target = ((widget.progress ?? 0).clamp(0.0, 1.0) * _pileCapacity)
+        .round();
+    if (target < _fruits.length) {
+      _populateForProgress(widget.progress ?? 0);
+    } else {
+      while (_fruits.length < target) {
+        _spawnFruit();
+      }
+    }
   }
 
   @override
@@ -241,7 +429,7 @@ class _FruitFocusTimerState extends State<_FruitFocusTimer>
       }
     }
 
-    if (_isRunning && _remainingSeconds > 0) {
+    if (!_external && _isRunning && _remainingSeconds > 0) {
       _secondAccumulator += delta;
       _dropElapsed += delta;
       final interval = Duration(seconds: _dropIntervalSeconds);
@@ -353,9 +541,9 @@ class _FruitFocusTimerState extends State<_FruitFocusTimer>
     if (!identical(b, _draggedFruit)) b.velocity += impulse;
   }
 
-  Color _pickColor(_FruitKind kind, {bool forceYellow = false}) {
+  Color _pickColor(CuteFruitKind kind, {bool forceYellow = false}) {
     if (forceYellow ||
-        ((kind == _FruitKind.orange || kind == _FruitKind.tomato) &&
+        ((kind == CuteFruitKind.orange || kind == CuteFruitKind.tomato) &&
             _random.nextDouble() < 0.15)) {
       return const Color(0xFFF9D448);
     }
@@ -366,7 +554,7 @@ class _FruitFocusTimerState extends State<_FruitFocusTimer>
   _FruitBody _createFruit(
     Offset position, {
     double? radius,
-    _FruitKind? kind,
+    CuteFruitKind? kind,
     bool forceYellow = false,
   }) {
     final resolvedKind =
@@ -400,35 +588,36 @@ class _FruitFocusTimerState extends State<_FruitFocusTimer>
           : 0,
     );
     _fruits.add(fruit);
-    if (_fruits.length > 85) _fruits.removeAt(0);
+    if (_fruits.length > _pileCapacity) _fruits.removeAt(0);
     return fruit;
   }
 
   void _spawnFruit() {
-    _createFruit(Offset(38 + _random.nextDouble() * 278, -28));
+    _createFruit(
+      Offset(38 + _random.nextDouble() * (_cardSize.width - 76), -28),
+    );
   }
 
-  void _populateInitialPile() {
+  /// 按进度铺底堆：数量 = progress × 容量，自底向上按行码放
+  void _populateForProgress(double progress) {
     _fruits.clear();
-    _createFruit(const Offset(287, 606), radius: 37);
-    _createFruit(const Offset(198, 560), radius: 32);
-    for (var i = 0; i < 43; i++) {
-      final col = i % 7;
-      final row = i ~/ 7;
+    final target = (progress.clamp(0.0, 1.0) * _pileCapacity).round();
+    final perRow = _fruitsPerRow;
+    for (var i = 0; i < target; i++) {
+      final col = i % perRow;
+      final row = i ~/ perRow;
       var x = 32 + col * 48.3 + (_random.nextDouble() - 0.5) * 18;
-      var y = 617 - row * 44 + (_random.nextDouble() - 0.5) * 12;
+      var y =
+          _cardSize.height - 35 - row * 44 + (_random.nextDouble() - 0.5) * 12;
       if ((x - _buttonCenter.dx).abs() < 86 &&
           (y - _buttonCenter.dy).abs() < 42) {
         y -= 75;
       }
-      _createFruit(
-        Offset(x, y),
-        forceYellow: const [5, 12, 19, 24, 31, 38].contains(i),
-      );
+      _createFruit(Offset(x, y), forceYellow: i % 7 == 0);
     }
   }
 
-  void _selectFruit(_FruitKind? kind) {
+  void _selectFruit(CuteFruitKind? kind) {
     setState(() {
       _selectedKind = kind;
       for (var i = 0; i < _fruits.length; i++) {
@@ -480,226 +669,253 @@ class _FruitFocusTimerState extends State<_FruitFocusTimer>
 
   @override
   Widget build(BuildContext context) {
-    final isMixed = _selectedKind == null;
+    if (widget.fullscreen) {
+      return _buildCardArea();
+    }
+    // 画框模式：设计稿固定 372 宽，等比缩小
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.topCenter,
+      child: SizedBox(width: 372, height: 670, child: _buildFrame()),
+    );
+  }
+
+  void _syncCardSize(BoxConstraints constraints) {
+    _cardSize = Size(constraints.maxWidth, constraints.maxHeight);
+    if (!_sized) {
+      _sized = true;
+      // 首次拿到真实尺寸后按进度铺底堆（外部模式用任务进度，demo 给固定初始堆）
+      _populateForProgress(widget.progress ?? (_external ? 0 : 0.55));
+    }
+  }
+
+  Widget _buildFrame() {
+    return Container(
+      padding: const EdgeInsets.all(9),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6DFD5),
+        borderRadius: BorderRadius.circular(46),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x21574C43),
+            blurRadius: 48,
+            offset: Offset(0, 24),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(37),
+        child: _buildCardArea(),
+      ),
+    );
+  }
+
+  Widget _buildCardArea() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _syncCardSize(constraints);
+        final h = _cardSize.height;
+        final isMixed = _selectedKind == null;
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFFFEFE0),
+                Color(0xFFFFF8F1),
+                Colors.white,
+                Colors.white,
+              ],
+              stops: [0, 0.24, 0.45, 1],
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onPanStart: _onPanStart,
+                  onPanUpdate: _onPanUpdate,
+                  onPanEnd: (_) => _draggedFruit = null,
+                  onPanCancel: () => _draggedFruit = null,
+                  child: CustomPaint(painter: _FruitPainter(_fruits)),
+                ),
+              ),
+              Positioned(
+                top: h * 0.064,
+                left: 0,
+                right: 0,
+                child: _buildTopContent(isMixed),
+              ),
+              if (_external)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: _buttonCenter.dy - 44,
+                  child: Center(child: widget.controls),
+                )
+              else ...[
+                Positioned(
+                  left: _buttonCenter.dx - 74,
+                  top: _buttonCenter.dy - 27.5,
+                  child: _StartButton(
+                    label: _isRunning
+                        ? 'Pause Focus'
+                        : _hasStarted && _remainingSeconds > 0
+                        ? 'Resume Focus'
+                        : 'Start Focus',
+                    running: _isRunning,
+                    onTap: _toggleFocus,
+                  ),
+                ),
+                if (_hasStarted)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: _buttonCenter.dy + 45,
+                    child: Center(child: _ResetButton(onTap: _resetTimer)),
+                  ),
+                Positioned(
+                  top: h * 0.238,
+                  left: _cardSize.width * 0.051,
+                  child: IgnorePointer(
+                    ignoring: !_isConfigOpen,
+                    child: AnimatedOpacity(
+                      opacity: _isConfigOpen ? 1 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: AnimatedScale(
+                        scale: _isConfigOpen ? 1 : 0.96,
+                        duration: const Duration(milliseconds: 200),
+                        child: _buildConfigPanel(),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 顶部大字时间与说明区：外部模式用外部数据，内部模式保留 tag/掉落提示
+  Widget _buildTopContent(bool isMixed) {
+    if (_external) {
+      final running = widget.isRunning ?? false;
+      return Column(
+        children: [
+          Text(
+            widget.timeText!,
+            style: const TextStyle(
+              fontSize: 72,
+              height: 1,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -1.5,
+              color: Color(0xFF574C43),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            widget.subtitle ?? '',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF5A4F46),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            running
+                ? '已收获 ${_fruits.length} 颗${isMixed ? '水果' : _currentTheme.name}'
+                : '暂停中 · 已收获 ${_fruits.length} 颗',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF9E948A),
+            ),
+          ),
+        ],
+      );
+    }
     return Column(
       children: [
-        SizedBox(
-          height: 43,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+        GestureDetector(
+          onTap: () => setState(() => _isConfigOpen = !_isConfigOpen),
+          child: Text(
+            _formattedTime,
+            style: const TextStyle(
+              fontSize: 78,
+              height: 1,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -1.5,
+              color: Color(0xFF574C43),
+              fontFeatures: [],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () => setState(() => _isConfigOpen = !_isConfigOpen),
+          child: Container(
+            color: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _Toolbar(
-                  children: [
-                    for (final kind in _fruitKinds)
-                      _ToolbarButton(
-                        label:
-                            '${_fruitEmoji(kind)} ${_fruitThemes[kind]!.name}',
-                        selected: _selectedKind == kind,
-                        onTap: () => _selectFruit(kind),
-                      ),
-                    _ToolbarButton(
-                      label: '🧺 混合',
-                      selected: isMixed,
-                      onTap: () => _selectFruit(null),
-                    ),
-                  ],
+                Text(
+                  _tag,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF5A4F46),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                AnimatedRotation(
+                  turns: _isConfigOpen ? 0.25 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: const Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: Color(0xFF9E948A),
+                  ),
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 6),
-        _Toolbar(
-          children: [
-            _ToolbarButton(
-              label: '+ 掉一颗',
-              color: const Color(0xFFD97724),
-              onTap: () => setState(_spawnFruit),
-            ),
-            _ToolbarButton(
-              label: '铺满',
-              onTap: () => setState(_populateInitialPile),
-            ),
-            _ToolbarButton(label: '清空', onTap: () => setState(_fruits.clear)),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: 372,
-          height: 670,
-          padding: const EdgeInsets.all(9),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE6DFD5),
-            borderRadius: BorderRadius.circular(46),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x21574C43),
-                blurRadius: 48,
-                offset: Offset(0, 24),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(37),
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFFFEFE0),
-                    Color(0xFFFFF8F1),
-                    Colors.white,
-                    Colors.white,
-                  ],
-                  stops: [0, 0.24, 0.45, 1],
+        const SizedBox(height: 8),
+        AnimatedOpacity(
+          opacity: _isRunning ? 1 : 0,
+          duration: const Duration(milliseconds: 250),
+          child: Column(
+            children: [
+              SizedBox(
+                width: 64,
+                height: 3,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value:
+                        _dropElapsed.inMilliseconds /
+                        (_dropIntervalSeconds * 1000),
+                    backgroundColor: const Color(0x14574C43),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFFE89143)),
+                  ),
                 ),
               ),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onPanStart: _onPanStart,
-                      onPanUpdate: _onPanUpdate,
-                      onPanEnd: (_) => _draggedFruit = null,
-                      onPanCancel: () => _draggedFruit = null,
-                      child: CustomPaint(painter: _FruitPainter(_fruits)),
-                    ),
-                  ),
-                  Positioned(
-                    top: 42,
-                    left: 0,
-                    right: 0,
-                    child: Column(
-                      children: [
-                        GestureDetector(
-                          onTap: () =>
-                              setState(() => _isConfigOpen = !_isConfigOpen),
-                          child: Text(
-                            _formattedTime,
-                            style: const TextStyle(
-                              fontSize: 78,
-                              height: 1,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: -1.5,
-                              color: Color(0xFF574C43),
-                              fontFeatures: [],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        GestureDetector(
-                          onTap: () =>
-                              setState(() => _isConfigOpen = !_isConfigOpen),
-                          child: Container(
-                            color: Colors.transparent,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 5,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _tag,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF5A4F46),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                AnimatedRotation(
-                                  turns: _isConfigOpen ? 0.25 : 0,
-                                  duration: const Duration(milliseconds: 200),
-                                  child: const Icon(
-                                    Icons.chevron_right,
-                                    size: 16,
-                                    color: Color(0xFF9E948A),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        AnimatedOpacity(
-                          opacity: _isRunning ? 1 : 0,
-                          duration: const Duration(milliseconds: 250),
-                          child: Column(
-                            children: [
-                              SizedBox(
-                                width: 64,
-                                height: 3,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(3),
-                                  child: LinearProgressIndicator(
-                                    value:
-                                        _dropElapsed.inMilliseconds /
-                                        (_dropIntervalSeconds * 1000),
-                                    backgroundColor: const Color(0x14574C43),
-                                    valueColor: const AlwaysStoppedAnimation(
-                                      Color(0xFFE89143),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                '每 $_dropIntervalSeconds 秒掉落一颗${isMixed ? '随机水果' : _currentTheme.name}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF9E948A),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    left: 103,
-                    top: 321.32,
-                    child: _StartButton(
-                      label: _isRunning
-                          ? 'Pause Focus'
-                          : _hasStarted && _remainingSeconds > 0
-                          ? 'Resume Focus'
-                          : 'Start Focus',
-                      running: _isRunning,
-                      onTap: _toggleFocus,
-                    ),
-                  ),
-                  if (_hasStarted)
-                    Positioned(
-                      left: 134,
-                      top: 394,
-                      child: _ResetButton(onTap: _resetTimer),
-                    ),
-                  Positioned(
-                    top: 155,
-                    left: 18,
-                    child: IgnorePointer(
-                      ignoring: !_isConfigOpen,
-                      child: AnimatedOpacity(
-                        opacity: _isConfigOpen ? 1 : 0,
-                        duration: const Duration(milliseconds: 200),
-                        child: AnimatedScale(
-                          scale: _isConfigOpen ? 1 : 0.96,
-                          duration: const Duration(milliseconds: 200),
-                          child: _buildConfigPanel(),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 5),
+              Text(
+                '每 $_dropIntervalSeconds 秒掉落一颗${isMixed ? '随机水果' : _currentTheme.name}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF9E948A),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ],
@@ -822,16 +1038,6 @@ class _FruitFocusTimerState extends State<_FruitFocusTimer>
       ),
     );
   }
-
-  static String _fruitEmoji(_FruitKind kind) => switch (kind) {
-    _FruitKind.orange => '🍊',
-    _FruitKind.tomato => '🍅',
-    _FruitKind.lemon => '🍋',
-    _FruitKind.peach => '🍑',
-    _FruitKind.apple => '🍏',
-    _FruitKind.blueberry => '🫐',
-    _FruitKind.watermelon => '🍉',
-  };
 }
 
 class _Toolbar extends StatelessWidget {
@@ -865,13 +1071,11 @@ class _ToolbarButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.selected = false,
-    this.color,
   });
 
   final String label;
   final VoidCallback onTap;
   final bool selected;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -890,7 +1094,7 @@ class _ToolbarButton extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : color ?? const Color(0xFF786B5F),
+            color: selected ? Colors.white : const Color(0xFF786B5F),
           ),
         ),
       ),
@@ -1045,11 +1249,11 @@ class _FruitPainter extends CustomPainter {
     final bodyRect = Rect.fromCenter(
       center: Offset(0, r * 0.02),
       width: r * 2.02,
-      height: r * (fruit.kind == _FruitKind.lemon ? 1.84 : 1.92),
+      height: r * (fruit.kind == CuteFruitKind.lemon ? 1.84 : 1.92),
     );
     canvas.drawOval(bodyRect, fill);
 
-    if (fruit.kind == _FruitKind.watermelon) {
+    if (fruit.kind == CuteFruitKind.watermelon) {
       canvas.save();
       canvas.clipPath(Path()..addOval(bodyRect));
       final stripe = Paint()
@@ -1070,7 +1274,7 @@ class _FruitPainter extends CustomPainter {
         );
       }
       canvas.restore();
-    } else if (fruit.kind == _FruitKind.peach) {
+    } else if (fruit.kind == CuteFruitKind.peach) {
       canvas.drawArc(
         Rect.fromCircle(center: Offset(-r * 0.15, 0), radius: r * 0.72),
         -0.35 * math.pi,
@@ -1084,7 +1288,7 @@ class _FruitPainter extends CustomPainter {
     }
 
     _paintCalyx(canvas, r, theme.leafColor, fruit.leafTilt);
-    if (fruit.kind == _FruitKind.orange) {
+    if (fruit.kind == CuteFruitKind.orange) {
       final dots = Paint()..color = const Color(0x38D65A12);
       for (final point in [
         Offset(r * .38, r * .28),
