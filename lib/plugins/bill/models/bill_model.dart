@@ -13,6 +13,9 @@ class BillModel {
   final String? note;
   final bool isExpense;
 
+  /// 订阅按日摊销的虚拟条目（非用户手动记录，无对应持久化账单）
+  final bool isSubscription;
+
   BillModel({
     String? id,
     required this.title,
@@ -23,6 +26,7 @@ class BillModel {
     required this.category,
     this.note,
     required this.isExpense,
+    this.isSubscription = false,
   }) : id = id ?? const Uuid().v4();
 
   BillModel copyWith({
@@ -35,6 +39,7 @@ class BillModel {
     String? category,
     String? note,
     bool? isExpense,
+    bool? isSubscription,
   }) {
     return BillModel(
       id: id ?? this.id,
@@ -46,6 +51,7 @@ class BillModel {
       category: category ?? this.category,
       note: note ?? this.note,
       isExpense: isExpense ?? this.isExpense,
+      isSubscription: isSubscription ?? this.isSubscription,
     );
   }
 
@@ -63,6 +69,7 @@ class BillModel {
       'category': category,
       'note': note,
       'isExpense': isExpense,
+      'isSubscription': isSubscription,
     };
   }
 
@@ -81,6 +88,7 @@ class BillModel {
       category: map['category'],
       note: map['note'],
       isExpense: map['isExpense'],
+      isSubscription: map['isSubscription'] as bool? ?? false,
     );
   }
 }

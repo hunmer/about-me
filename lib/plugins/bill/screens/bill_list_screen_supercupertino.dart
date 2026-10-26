@@ -45,6 +45,8 @@ class _BillListScreenSupercupertinoState
 
   // Data State
   List<BillModel> _allMonthBills = []; // All bills for the focused month
+  // 订阅按日摊销的虚拟条目（当月，不落库，实时由订阅数据计算）
+  List<BillModel> _monthSubscriptionBills = [];
   final _dailyStats = ValueNotifier<Map<DateTime, _DailyStats>>({});
 
   String _filterCategory =
@@ -130,6 +132,7 @@ class _BillListScreenSupercupertinoState
         );
         setState(() {
           _allMonthBills = [];
+          _monthSubscriptionBills = [];
         });
         _dailyStats.value = {};
         return;
@@ -150,7 +153,9 @@ class _BillListScreenSupercupertinoState
             bill.date.isAfter(
               monthStart.subtract(const Duration(seconds: 1)),
             ) &&
-            bill.date.isBefore(monthEnd.add(const Duration(seconds: 1))),
+            bill.date.isBefore(monthEnd.add(const Duration(seconds: 1))) &&
+            // 历史遗留的自动生成订阅账单不展示（已由虚拟条目替代）
+            !bill.isFromSubscription,
       );
 
       final bills = filteredBills
@@ -169,12 +174,19 @@ class _BillListScreenSupercupertinoState
           )
           .toList();
 
+      // 订阅虚拟条目：当月每天按订阅周期摊销
+      final subscriptionBills = widget
+          .billPlugin
+          .controller
+          .subscriptions
+          .subscriptionBillsForMonth(_focusedDay);
+
       // Sort by date descending
       bills.sort((a, b) => b.date.compareTo(a.date));
 
-      // Calculate daily stats
+      // Calculate daily stats（手动 + 订阅摊销，保持"一天支出"完整）
       final stats = <DateTime, _DailyStats>{};
-      for (var bill in bills) {
+      for (var bill in [...bills, ...subscriptionBills]) {
         final date = DateTime(bill.date.year, bill.date.month, bill.date.day);
         if (!stats.containsKey(date)) {
           stats[date] = _DailyStats();
@@ -189,6 +201,7 @@ class _BillListScreenSupercupertinoState
       if (mounted) {
         setState(() {
           _allMonthBills = bills;
+          _monthSubscriptionBills = subscriptionBills;
         });
         _dailyStats.value = stats;
         debugPrint(
@@ -256,6 +269,12 @@ class _BillListScreenSupercupertinoState
         }
       }
 
+      // 订阅摊销支出计入当月统计（虚拟条目不落库）
+      for (final subscription
+          in widget.billPlugin.controller.subscriptions.subscriptionBillsForMonth(month)) {
+        expense += subscription.amount;
+      }
+
       return {
         'income': income,
         'expense': expense,
@@ -274,7 +293,7 @@ class _BillListScreenSupercupertinoState
 
   RunReceiptData _buildReceiptData() {
     final day = _selectedDay ?? DateTime.now();
-    final bills = [..._selectedDayBills]
+    final bills = [..._selectedDayBills, ..._selectedDaySubscriptions]
       ..sort((a, b) => a.date.compareTo(b.date));
     final accountName =
         widget.billPlugin.accounts
@@ -289,7 +308,10 @@ class _BillListScreenSupercupertinoState
         RunReceiptSegment(
           label: bill.title.isEmpty ? bill.category : bill.title,
           pace: (bill.isExpense ? '-' : '+') + _formatCurrency(bill.amount),
-          time: DateFormat('HH:mm').format(bill.date),
+          // 订阅摊销无固定时刻，用日期代替时间
+          time: bill.isSubscription
+              ? DateFormat('MM/dd').format(bill.date)
+              : DateFormat('HH:mm').format(bill.date),
           hr: i + 1,
           zoneColor: bill.isExpense ? _expenseColor : _incomeColor,
         ),
@@ -488,6 +510,22 @@ class _BillListScreenSupercupertinoState
     );
 
     return _allMonthBills.where((bill) {
+      final billDate = DateTime(bill.date.year, bill.date.month, bill.date.day);
+      return _isSameDay(billDate, selectedDate);
+    }).toList();
+  }
+
+  /// 选中日的订阅摊销虚拟条目
+  List<BillModel> get _selectedDaySubscriptions {
+    if (_selectedDay == null) return [];
+
+    final selectedDate = DateTime(
+      _selectedDay!.year,
+      _selectedDay!.month,
+      _selectedDay!.day,
+    );
+
+    return _monthSubscriptionBills.where((bill) {
       final billDate = DateTime(bill.date.year, bill.date.month, bill.date.day);
       return _isSameDay(billDate, selectedDate);
     }).toList();
@@ -716,69 +754,28 @@ class _BillListScreenSupercupertinoState
                 );
               },
             ),
-            if (_selectedDayBills.isEmpty)
+            if (_selectedDayBills.isEmpty && _selectedDaySubscriptions.isEmpty)
               DSThemeBridge(
                 child: DSEmptyState(emoji: '📭', title: '这一天没有账单'),
               )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _selectedDayBills.length,
-                itemBuilder: (context, index) {
-                  final bill = _selectedDayBills[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    child: DSThemeBridge(
-                      child: JellyBox(
-                        color: DSThemeBridge.resolve(context).surface,
-                        radius: BorderRadius.circular(14),
-                        raised: false,
-                        child: SwipeActionWrapper(
-                          key: ValueKey(bill.id),
-                          leadingActions: [
-                            SwipeActionPresets.edit(
-                              onTap: () => _editBillSheet(context, bill),
-                            ),
-                          ],
-                          trailingActions: [
-                            SwipeActionPresets.delete(
-                              onTap: () async {
-                                try {
-                                  final currentAccount = widget
-                                      .billPlugin
-                                      .accounts
-                                      .firstWhere(
-                                        (account) =>
-                                            account.id == widget.accountId,
-                                      );
-                                  await widget.billPlugin.controller.deleteBill(
-                                    currentAccount.id,
-                                    bill.id,
-                                  );
-                                  _loadMonthBills();
-                                } catch (e) {
-                                  Toast.error('删除失败: $e');
-                                }
-                              },
-                            ),
-                          ],
-                          child: _buildBillRow(
-                            context,
-                            bill,
-                            showNote: false,
-                            onTap: () => _editBillSheet(context, bill),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+            else ...[
+              // 手动记账组（可编辑/删除）
+              if (_selectedDayBills.isNotEmpty) ...[
+                _buildGroupHeader('bill_groupManual'.tr),
+                _buildDayBillList(_selectedDayBills),
+              ],
+              // 订阅摊销组（虚拟条目，只读）
+              if (_selectedDaySubscriptions.isNotEmpty) ...[
+                _buildGroupHeader(
+                  'bill_groupSubscription'.tr,
+                  amount: _selectedDaySubscriptions.fold<double>(
+                    0,
+                    (sum, bill) => sum + bill.amount,
+                  ),
+                ),
+                _buildDayBillList(_selectedDaySubscriptions),
+              ],
+            ],
           ] else
             DSThemeBridge(
               child: DSEmptyState(emoji: '🗓️', title: '请选择一天查看账单'),
@@ -791,8 +788,11 @@ class _BillListScreenSupercupertinoState
   }
 
   Widget _buildSearchBody() {
-    // 过滤账单
-    List<BillModel> filteredBills = _allMonthBills;
+    // 过滤账单（手动 + 订阅摊销，按日期倒序）
+    List<BillModel> filteredBills = [
+      ..._allMonthBills,
+      ..._monthSubscriptionBills,
+    ]..sort((a, b) => b.date.compareTo(a.date));
 
     if (_searchQuery.isNotEmpty) {
       filteredBills = filteredBills.where((bill) {
@@ -843,8 +843,107 @@ class _BillListScreenSupercupertinoState
                 context,
                 bill,
                 showNote: true,
-                onTap: () => _editBillSheet(context, bill),
+                onTap: bill.isSubscription
+                    ? () => Toast.info('bill_subscriptionBillHint'.tr)
+                    : () => _editBillSheet(context, bill),
               ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 分组标题（订阅组右侧显示当日摊销小计）
+  Widget _buildGroupHeader(String title, {double? amount}) {
+    return Builder(
+      builder: (context) {
+        final theme = DSThemeBridge.resolve(context);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Row(
+            children: [
+              Text(
+                title,
+                style: DsTypography.body.copyWith(
+                  color: theme.textSub,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              if (amount != null)
+                Text(
+                  '-${_formatCurrency(amount)}',
+                  style: DsTypography.body.copyWith(
+                    color: _expenseColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 单日账单行列表：手动账单可滑动编辑/删除，订阅摊销条目只读
+  Widget _buildDayBillList(List<BillModel> bills) {
+    return ListView.builder(
+      shrinkWrap: true,
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: bills.length,
+      itemBuilder: (context, index) {
+        final bill = bills[index];
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: DSThemeBridge(
+            child: JellyBox(
+              color: DSThemeBridge.resolve(context).surface,
+              radius: BorderRadius.circular(14),
+              raised: false,
+              child: bill.isSubscription
+                  ? _buildBillRow(
+                      context,
+                      bill,
+                      showNote: false,
+                      onTap: () => Toast.info('bill_subscriptionBillHint'.tr),
+                    )
+                  : SwipeActionWrapper(
+                      key: ValueKey(bill.id),
+                      leadingActions: [
+                        SwipeActionPresets.edit(
+                          onTap: () => _editBillSheet(context, bill),
+                        ),
+                      ],
+                      trailingActions: [
+                        SwipeActionPresets.delete(
+                          onTap: () async {
+                            try {
+                              final currentAccount = widget
+                                  .billPlugin
+                                  .accounts
+                                  .firstWhere(
+                                    (account) => account.id == widget.accountId,
+                                  );
+                              await widget.billPlugin.controller.deleteBill(
+                                currentAccount.id,
+                                bill.id,
+                              );
+                              _loadMonthBills();
+                            } catch (e) {
+                              Toast.error('删除失败: $e');
+                            }
+                          },
+                        ),
+                      ],
+                      child: _buildBillRow(
+                        context,
+                        bill,
+                        showNote: false,
+                        onTap: () => _editBillSheet(context, bill),
+                      ),
+                    ),
             ),
           ),
         );
@@ -929,7 +1028,9 @@ class _BillListScreenSupercupertinoState
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      DateFormat('yyyy-MM-dd HH:mm').format(bill.date),
+                      bill.isSubscription
+                          ? DateFormat('yyyy-MM-dd').format(bill.date)
+                          : DateFormat('yyyy-MM-dd HH:mm').format(bill.date),
                       style: DsTypography.caption.copyWith(
                         color: theme.textSub,
                       ),

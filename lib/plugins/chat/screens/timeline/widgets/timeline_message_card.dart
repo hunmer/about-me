@@ -49,315 +49,291 @@ class TimelineMessageCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(isGridView ? 12 : 8),
         boxShadow: isGridView ? theme.shadows.soft : null,
         border: isGridView
-            ? Border.all(
-                color: bubbleColor ?? theme.primary,
-                width: 1.8,
-              )
+            ? Border.all(color: bubbleColor ?? theme.primary, width: 1.8)
             : null,
       ),
-      child: InkWell(
-        onLongPress: () {
-          MessageOptionsHandler.showOptionsDialog(
-            context: context,
-            message: message,
-            onMessageEdit: (_) => controller.handleMessageEdit(message),
-            onMessageDelete: (_) => controller.handleMessageDelete(message),
-            onMessageCopy: (_) => controller.handleMessageCopy(message),
-            onSetFixedSymbol:
-                (msg, symbol) =>
+      child: Stack(
+        children: [
+          InkWell(
+            onLongPress: () {
+              MessageOptionsHandler.showOptionsDialog(
+                context: context,
+                message: message,
+                onMessageEdit: (_) => controller.handleMessageEdit(message),
+                onMessageDelete: (_) => controller.handleMessageDelete(message),
+                onMessageCopy: (_) => controller.handleMessageCopy(message),
+                onSetFixedSymbol: (msg, symbol) =>
                     controller.handleSetFixedSymbol(message, symbol),
-            onSetBubbleColor:
-                (msg, color) => controller.handleSetBubbleColor(message, color),
-            onToggleFavorite: (_) => controller.handleToggleFavorite(message),
-          );
-        },
-        onTap: () async {
-          // 设置当前活跃频道，这是关键步骤！
-          ChatPlugin.instance.channelService.setCurrentChannel(channel);
+                onSetBubbleColor: (msg, color) =>
+                    controller.handleSetBubbleColor(message, color),
+                onToggleFavorite: (_) =>
+                    controller.handleToggleFavorite(message),
+              );
+            },
+            onTap: () async {
+              // 设置当前活跃频道，这是关键步骤！
+              ChatPlugin.instance.channelService.setCurrentChannel(channel);
 
-          // 导航到频道页面并定位到消息
-          // 使用 MaterialPageRoute 直接构建 ChatScreen 页面
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder:
-                  (_) => ChatScreen(
+              // 导航到频道页面并定位到消息
+              // 使用 MaterialPageRoute 直接构建 ChatScreen 页面
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ChatScreen(
                     channel: channel,
                     initialMessage: message, // 用于初始滚动定位
                     highlightMessage: message, // 用于高亮显示
                     autoScroll: true, // 明确指示需要自动滚动
                   ),
-            ),
-          );
-        },
-        child: Padding(
-          padding: EdgeInsets.all(isGridView ? 8 : 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 时间
-              Text(
-                DateFormatter.formatDateTime(message.date, context),
-                style:
-                    isGridView
-                        ? DsTypography.caption.copyWith(fontSize: 10)
-                        : DsTypography.caption,
-              ),
-
-              SizedBox(height: isGridView ? 8 : 12),
-
-              // 消息内容（带高亮）和固定字符
-              Row(
+                ),
+              );
+            },
+            child: Padding(
+              padding: EdgeInsets.all(isGridView ? 8 : 12),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 显示固定字符（如果有）
-                  if (message.fixedSymbol != null) ...[
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isGridView ? 4 : 6,
-                        vertical: isGridView ? 1 : 2,
-                      ),
-                      margin: EdgeInsets.only(right: isGridView ? 4 : 8),
-                      decoration: BoxDecoration(
-                        color: theme.primary.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: buildFixedSymbolChild(
-                        message.fixedSymbol!,
-                        style: TextStyle(
-                          color: theme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: isGridView ? 10 : 12,
-                        ),
-                        imageSize: isGridView ? 12 : 14,
-                      ),
-                    ),
-                  ],
+                  // 时间
+                  Text(
+                    DateFormatter.formatDateTime(message.date, context),
+                    style: isGridView
+                        ? DsTypography.caption.copyWith(fontSize: 10)
+                        : DsTypography.caption,
+                  ),
 
-                  // 消息内容
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        // 检查消息类型
-                        if (message.metadata?[Message.metadataKeyFileInfo] !=
-                            null) {
-                          final fileInfo = FileMessage.fromJson(
-                            Map<String, dynamic>.from(
-                              message.metadata![Message.metadataKeyFileInfo],
-                            ),
-                          );
+                  SizedBox(height: isGridView ? 8 : 12),
 
-                          // 根据文件类型显示不同的预览
-                          switch (fileInfo.type) {
-                            case FileMessageType.image:
-                              return GestureDetector(
-                                onTap: () {
-                                  GalleryViewer.showFilePreview(
-                                    context,
-                                    filePath: fileInfo.filePath,
-                                    fileName: fileInfo.fileName,
-                                    mimeType:
-                                        fileInfo.mimeType ?? 'image/jpeg',
-                                    fileSize: fileInfo.fileSize,
-                                  );
-                                },
-                                child: Container(
-                                  constraints: BoxConstraints(
-                                    maxWidth: isGridView ? 120 : 200,
-                                    maxHeight: isGridView ? 120 : 200,
-                                  ),
-                                  child: ImageMessageWidget(
-                                    message: message,
-                                    isOutgoing: false,
-                                  ),
-                                ),
-                              );
+                  // 消息内容（带高亮）
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      // 检查消息类型
+                      if (message.metadata?[Message.metadataKeyFileInfo] !=
+                          null) {
+                        final fileInfo = FileMessage.fromJson(
+                          Map<String, dynamic>.from(
+                            message.metadata![Message.metadataKeyFileInfo],
+                          ),
+                        );
 
-                            case FileMessageType.document:
-                            case FileMessageType.audio:
-                              return Container(
+                        // 根据文件类型显示不同的预览
+                        switch (fileInfo.type) {
+                          case FileMessageType.image:
+                            return GestureDetector(
+                              onTap: () {
+                                GalleryViewer.showFilePreview(
+                                  context,
+                                  filePath: fileInfo.filePath,
+                                  fileName: fileInfo.fileName,
+                                  mimeType: fileInfo.mimeType ?? 'image/jpeg',
+                                  fileSize: fileInfo.fileSize,
+                                );
+                              },
+                              child: Container(
                                 constraints: BoxConstraints(
-                                  maxWidth:
-                                      isGridView
-                                          ? constraints.maxWidth * 0.8
-                                          : constraints.maxWidth,
+                                  maxWidth: isGridView ? 120 : 200,
+                                  maxHeight: isGridView ? 120 : 200,
                                 ),
-                                child: AudioPlayerWidget(
-                                  audioPath: fileInfo.filePath,
-                                  durationInSeconds: message.audioDuration,
-                                  isLocalFile: true,
-                                  primaryColor: theme.primary,
-                                  backgroundColor: theme.surface,
-                                  progressColor: theme.primary,
+                                child: ImageMessageWidget(
+                                  message: message,
+                                  isOutgoing: false,
                                 ),
-                              );
+                              ),
+                            );
 
-                            case FileMessageType.video:
-                              return GestureDetector(
-                                onTap: () {
-                                  GalleryViewer.showFilePreview(
-                                    context,
-                                    filePath: fileInfo.filePath,
-                                    fileName: fileInfo.fileName,
-                                    mimeType:
-                                        fileInfo.mimeType ?? 'video/mp4',
-                                    fileSize: fileInfo.fileSize,
-                                  );
-                                },
-                                child: Container(
-                                  constraints: BoxConstraints(
-                                    maxWidth: isGridView ? 120 : 200,
-                                    maxHeight: isGridView ? 120 : 200,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: theme.surface,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      DsIcon(
-                                        DsIconKind.video,
-                                        size: isGridView ? 24.0 : 32.0,
-                                        color: theme.primary,
+                          case FileMessageType.document:
+                          case FileMessageType.audio:
+                            return Container(
+                              constraints: BoxConstraints(
+                                maxWidth: isGridView
+                                    ? constraints.maxWidth * 0.8
+                                    : constraints.maxWidth,
+                              ),
+                              child: AudioPlayerWidget(
+                                audioPath: fileInfo.filePath,
+                                durationInSeconds: message.audioDuration,
+                                isLocalFile: true,
+                                primaryColor: theme.primary,
+                                backgroundColor: theme.surface,
+                                progressColor: theme.primary,
+                              ),
+                            );
+
+                          case FileMessageType.video:
+                            return GestureDetector(
+                              onTap: () {
+                                GalleryViewer.showFilePreview(
+                                  context,
+                                  filePath: fileInfo.filePath,
+                                  fileName: fileInfo.fileName,
+                                  mimeType: fileInfo.mimeType ?? 'video/mp4',
+                                  fileSize: fileInfo.fileSize,
+                                );
+                              },
+                              child: Container(
+                                constraints: BoxConstraints(
+                                  maxWidth: isGridView ? 120 : 200,
+                                  maxHeight: isGridView ? 120 : 200,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.surface,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    DsIcon(
+                                      DsIconKind.video,
+                                      size: isGridView ? 24.0 : 32.0,
+                                      color: theme.primary,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        fileInfo.originalFileName,
+                                        style: TextStyle(
+                                          fontSize: isGridView ? 10 : 12,
+                                          color: theme.text,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
+                                    ),
+                                    SizedBox(width: 8),
+                                  ],
+                                ),
+                              ),
+                            );
+
+                          default: // 文档和其他类型文件
+                            return GestureDetector(
+                              onTap: () {
+                                GalleryViewer.showFilePreview(
+                                  context,
+                                  filePath: fileInfo.filePath,
+                                  fileName: fileInfo.fileName,
+                                  mimeType:
+                                      fileInfo.mimeType ??
+                                      'application/octet-stream',
+                                  fileSize: fileInfo.fileSize,
+                                );
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    fileInfo.getIcon(),
+                                    size: isGridView ? 16 : 24,
+                                    color: theme.primary,
+                                  ),
+                                  SizedBox(width: isGridView ? 4 : 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
                                           fileInfo.originalFileName,
                                           style: TextStyle(
-                                            fontSize: isGridView ? 10 : 12,
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: isGridView ? 12 : 14,
                                             color: theme.text,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                      SizedBox(width: 8),
-                                    ],
+                                        Text(
+                                          fileInfo.formattedSize,
+                                          style: TextStyle(
+                                            fontSize: isGridView ? 10 : 12,
+                                            color: theme.textSub,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
+                                ],
+                              ),
+                            );
+                        }
+                      }
+                      final (_, text, hasMarkdown) =
+                          MessageContentUtils.resolveContent(message.content);
+                      // Markdown 内容用 MarkdownBody 渲染；
+                      // 搜索时退回纯文本以保留关键词高亮
+                      if (hasMarkdown && controller.searchQuery.isEmpty) {
+                        return _buildMarkdownBody(context, text);
+                      }
+                      return RichText(
+                        maxLines: isGridView
+                            ? 12
+                            : null, // 增加最大行数，但仍保持一定限制以避免过长
+                        overflow: TextOverflow.ellipsis,
+                        text: TextSpan(
+                          children: TextHighlight.highlightText(
+                            text: text,
+                            query: controller.searchQuery,
+                            style: isGridView
+                                ? DsTypography.body.copyWith(
+                                    fontSize: 13,
+                                    height: 1.3, // 调整行高使文本更紧凑
+                                    color: theme.text,
+                                  )
+                                : DsTypography.body.copyWith(color: theme.text),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
 
-                            default: // 文档和其他类型文件
-                              return GestureDetector(
-                                onTap: () {
-                                  GalleryViewer.showFilePreview(
-                                    context,
-                                    filePath: fileInfo.filePath,
-                                    fileName: fileInfo.fileName,
-                                    mimeType:
-                                        fileInfo.mimeType ??
-                                        'application/octet-stream',
-                                    fileSize: fileInfo.fileSize,
-                                  );
-                                },
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      fileInfo.getIcon(),
-                                      size: isGridView ? 16 : 24,
-                                      color: theme.primary,
-                                    ),
-                                    SizedBox(width: isGridView ? 4 : 8),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            fileInfo.originalFileName,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: isGridView ? 12 : 14,
-                                              color: theme.text,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          Text(
-                                            fileInfo.formattedSize,
-                                            style: TextStyle(
-                                              fontSize: isGridView ? 10 : 12,
-                                              color: theme.textSub,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                          }
-                        }
-                        final (_, text, hasMarkdown) =
-                            MessageContentUtils.resolveContent(message.content);
-                        // Markdown 内容用 MarkdownBody 渲染；
-                        // 搜索时退回纯文本以保留关键词高亮
-                        if (hasMarkdown && controller.searchQuery.isEmpty) {
-                          return _buildMarkdownBody(context, text);
-                        }
-                        return RichText(
-                          maxLines:
-                              isGridView ? 12 : null, // 增加最大行数，但仍保持一定限制以避免过长
-                          overflow: TextOverflow.ellipsis,
-                          text: TextSpan(
-                            children: TextHighlight.highlightText(
-                              text: text,
-                              query: controller.searchQuery,
-                              style:
-                                  isGridView
-                                      ? DsTypography.body.copyWith(
-                                        fontSize: 13,
-                                        height: 1.3, // 调整行高使文本更紧凑
-                                        color: theme.text,
-                                      )
-                                      : DsTypography.body.copyWith(
-                                        color: theme.text,
-                                      ),
+                  SizedBox(height: isGridView ? 8 : 12),
+
+                  // 频道信息
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      DsIcon(
+                        DsIconKind.chat,
+                        size: isGridView ? 12.0 : 16.0,
+                        color: theme.textSub,
+                      ),
+                      SizedBox(width: isGridView ? 2 : 4),
+                      RichText(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        text: TextSpan(
+                          children: TextHighlight.highlightText(
+                            text: channel.title,
+                            query: controller.searchQuery,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                              fontSize: isGridView ? 10 : null,
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: isGridView ? 8 : 12),
-
-              // 频道信息
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  DsIcon(
-                    DsIconKind.chat,
-                    size: isGridView ? 12.0 : 16.0,
-                    color: theme.textSub,
-                  ),
-                  SizedBox(width: isGridView ? 2 : 4),
-                  RichText(
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    text: TextSpan(
-                      children: TextHighlight.highlightText(
-                        text: channel.title,
-                        query: controller.searchQuery,
-                        style: DsTypography.caption.copyWith(
-                          color: theme.textSub,
-                          fontSize: isGridView ? 10 : null,
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+          // 固定符号：卡片右上角直出，无外容器
+          if (message.fixedSymbol != null)
+            Positioned(
+              top: isGridView ? 4.0 : 6.0,
+              right: isGridView ? 4.0 : 6.0,
+              child: buildFixedSymbolChild(
+                message.fixedSymbol!,
+                style: TextStyle(
+                  color: theme.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: isGridView ? 10 : 12,
+                ),
+                imageSize: isGridView ? 14 : 16,
+              ),
+            ),
+        ],
       ),
     );
   }

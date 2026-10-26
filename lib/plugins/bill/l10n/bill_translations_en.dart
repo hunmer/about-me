@@ -114,6 +114,10 @@ class BillTranslationsEn {
     'bill_subscriptionUpdated': 'Subscription updated',
     'bill_saveFailed': 'Save failed',
     'bill_subscriptionDaysError': 'Subscription days must be greater than 0',
+    'bill_groupManual': 'Manual Records',
+    'bill_groupSubscription': 'Subscription Proration',
+    'bill_subscriptionBillHint':
+        'Daily prorated from a subscription; edit it in subscription management',
     'bill_nextDate': 'Next:',
     'bill_autoRenew': 'Auto-renew',
     'bill_days': 'Days',

@@ -58,13 +58,8 @@ class TagController extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    // 初始化默认标签组
-    tagGroups = [
-      TagGroup(name: '最近使用', tags: []),
-      TagGroup(name: '地点', tags: ['家', '工作', '旅行']),
-      TagGroup(name: '活动', tags: ['生日', '聚会', '会议']),
-      TagGroup(name: '心情', tags: ['开心', '平静', '兴奋', '思考']),
-    ];
+    // 初始仅保留「最近使用」分组，不预置默认标签
+    tagGroups = [TagGroup(name: '最近使用', tags: [])];
 
     try {
       // 加载标签数据（tag 三文件合一命令）
@@ -83,9 +78,6 @@ class TagController extends ChangeNotifier {
         tagGroups = groups
             .map((e) => TagGroup.fromJson(Map<String, dynamic>.from(e)))
             .toList();
-      } else {
-        // 如果文件为空，保存默认标签组
-        await _saveTagGroups();
       }
 
       // 尝试加载最近使用的标签

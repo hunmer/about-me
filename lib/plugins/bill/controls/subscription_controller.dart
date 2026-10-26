@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import '../models/subscription.dart';
-import '../models/bill.dart';
-import '../bill_plugin.dart';
+import '../models/bill_model.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 
 /// 订阅服务事件参数
@@ -37,15 +35,9 @@ class SubscriptionController with ChangeNotifier {
   static const String subscriptionTerminatedEvent = 'subscription_terminated';
   static const String subscriptionDeletedEvent = 'subscription_deleted';
 
-  late final BillPlugin _plugin;
   final List<Subscription> _subscriptions = [];
 
   List<Subscription> get subscriptions => List.unmodifiable(_subscriptions);
-
-  /// 设置BillPlugin实例
-  void setPlugin(BillPlugin plugin) {
-    _plugin = plugin;
-  }
 
   /// 调用统一数据 SDK 的订阅命令（失败抛错；tolerateNotFound 时忽略 NOT_FOUND，
   /// 保持旧行为中对已不存在的订阅静默成功的语义）
@@ -80,9 +72,9 @@ class SubscriptionController with ChangeNotifier {
       final subscriptionsJson = (response['data'] as Map)['data'] as List;
       _subscriptions.clear();
       _subscriptions.addAll(
-        subscriptionsJson
-            .whereType<Map<String, dynamic>>()
-            .map(Subscription.fromJson),
+        subscriptionsJson.whereType<Map<String, dynamic>>().map(
+          Subscription.fromJson,
+        ),
       );
 
       notifyListeners();
@@ -102,9 +94,6 @@ class SubscriptionController with ChangeNotifier {
       subscriptionAddedEvent,
       SubscriptionAddedEventArgs(subscription),
     );
-
-    // 检查并生成今日的订阅账单
-    await _generateBillsForSubscription(subscription);
   }
 
   /// 更新订阅服务
@@ -130,7 +119,10 @@ class SubscriptionController with ChangeNotifier {
       orElse: () => throw Exception('订阅服务不存在'),
     );
 
-    final updatedSubscription = subscription.copyWith(isActive: false);
+    final updatedSubscription = subscription.copyWith(
+      isActive: false,
+      terminatedAt: DateTime.now(),
+    );
 
     await _sdkCall(
       'updateSubscription',
@@ -151,11 +143,9 @@ class SubscriptionController with ChangeNotifier {
 
   /// 删除订阅服务
   Future<void> deleteSubscription(String subscriptionId) async {
-    await _sdkCall(
-      'deleteSubscription',
-      {'id': subscriptionId},
-      tolerateNotFound: true,
-    );
+    await _sdkCall('deleteSubscription', {
+      'id': subscriptionId,
+    }, tolerateNotFound: true);
     _subscriptions.removeWhere((s) => s.id == subscriptionId);
     notifyListeners();
 
@@ -171,89 +161,69 @@ class SubscriptionController with ChangeNotifier {
     return _subscriptions.where((s) => s.isActive).toList();
   }
 
-  /// 检查并生成缺失的订阅账单
-  Future<void> checkAndGenerateMissingBills() async {
-    for (final subscription in getActiveSubscriptions()) {
-      await _generateBillsForSubscription(subscription);
-    }
+  /// 返回指定日期应计费的订阅列表（订阅不再生成真实账单，
+  /// 账单列表按天动态摊销展示）。
+  ///
+  /// 计费日 = [startDate, 最后计费日]，最后计费日取 endDate、
+  /// startDate+days-1、今天三者的最早值；已终止的订阅再与终止日取更早者
+  List<Subscription> subscriptionsForDate(DateTime date) {
+    final day = DateTime(date.year, date.month, date.day);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (day.isAfter(today)) return [];
+
+    return _subscriptions.where((s) {
+      final start = DateTime(
+        s.startDate.year,
+        s.startDate.month,
+        s.startDate.day,
+      );
+      if (day.isBefore(start)) return false;
+
+      var last = start.add(Duration(days: s.days - 1));
+      final endDate = s.endDate;
+      if (endDate != null) {
+        final endDay = DateTime(endDate.year, endDate.month, endDate.day);
+        if (endDay.isBefore(last)) last = endDay;
+      }
+      final terminatedAt = s.terminatedAt;
+      if (!s.isActive && terminatedAt != null) {
+        final termDay = DateTime(
+          terminatedAt.year,
+          terminatedAt.month,
+          terminatedAt.day,
+        );
+        if (termDay.isBefore(last)) last = termDay;
+      }
+      return !day.isAfter(last);
+    }).toList();
   }
 
-  /// 为订阅服务生成账单
-  Future<void> _generateBillsForSubscription(Subscription subscription) async {
-    // 获取订阅账户（如果有多个账户，可以选择默认账户）
-    final account = _plugin.selectedAccount;
-    if (account == null) return;
+  /// 构建指定月份的订阅摊销虚拟条目（每天每个应计费订阅一条，
+  /// 供账单列表/统计页展示，不落库）
+  List<BillModel> subscriptionBillsForMonth(DateTime month) {
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final result = <BillModel>[];
 
-    // 获取已存在的订阅账单
-    final existingBills =
-        account.bills
-            .where((bill) => bill.subscriptionId == subscription.id)
-            .toList();
-
-    // 创建已存在账单的日期集合
-    final existingDates = <String>{};
-    for (final bill in existingBills) {
-      final dateStr =
-          '${bill.date.year}-${bill.date.month.toString().padLeft(2, '0')}-${bill.date.day.toString().padLeft(2, '0')}';
-      existingDates.add(dateStr);
-    }
-
-    // 生成应该存在的日期列表
-    final shouldHaveDates = <String>{};
-    final now = DateTime.now();
-    final lastDate =
-        subscription.endDate != null && subscription.endDate!.isBefore(now)
-            ? subscription.endDate!
-            : now;
-
-    for (int i = 0; i < subscription.days; i++) {
-      final billDate = DateTime(
-        subscription.startDate.year,
-        subscription.startDate.month,
-        subscription.startDate.day,
-      ).add(Duration(days: i));
-
-      if (billDate.isAfter(lastDate)) break;
-
-      final dateStr =
-          '${billDate.year}-${billDate.month.toString().padLeft(2, '0')}-${billDate.day.toString().padLeft(2, '0')}';
-      shouldHaveDates.add(dateStr);
-    }
-
-    // 找出缺失的日期
-    final missingDates = shouldHaveDates.difference(existingDates);
-
-    // 生成缺失的账单
-    for (final dateStr in missingDates) {
-      final parts = dateStr.split('-');
-      final billDate = DateTime(
-        int.parse(parts[0]),
-        int.parse(parts[1]),
-        int.parse(parts[2]),
-      );
-
-      // 只有过去的日期才生成账单
-      if (billDate.isBefore(DateTime.now())) {
-        final bill = Bill(
-          id: const Uuid().v4(),
-          title: '[订阅] ${subscription.name}',
-          amount: -subscription.dailyAmount, // 支出为负数
-          accountId: account.id,
-          category: subscription.category,
-          date: billDate,
-          note:
-              '自动生成的订阅账单 - ${subscription.days}天总金额¥${subscription.totalAmount.toStringAsFixed(2)}',
-          icon: subscription.icon,
-          iconColor: subscription.iconColor,
-          isSubscription: true,
-          subscriptionId: subscription.id,
-          subscriptionStartDate: subscription.startDate,
-          subscriptionEndDate: subscription.endDate,
+    for (var d = 1; d <= daysInMonth; d++) {
+      final day = DateTime(month.year, month.month, d);
+      for (final subscription in subscriptionsForDate(day)) {
+        result.add(
+          BillModel(
+            id: 'sub_${subscription.id}_${day.year}${day.month}${day.day}',
+            title: subscription.name,
+            amount: subscription.dailyAmount,
+            date: day,
+            icon: subscription.icon,
+            color: subscription.iconColor,
+            category: subscription.category,
+            isExpense: true,
+            isSubscription: true,
+          ),
         );
-
-        await _plugin.controller.saveBill(bill);
       }
     }
+    return result;
   }
 
   /// 根据ID查找订阅服务

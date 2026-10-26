@@ -198,10 +198,7 @@ Future<String> _jsDeleteBill(Map<String, dynamic> params) async {
     });
   }
 
-  return jsonEncode({
-    'success': true,
-    'billId': adapted['id'],
-  });
+  return jsonEncode({'success': true, 'billId': adapted['id']});
 }
 
 /// 获取统计信息
@@ -289,12 +286,11 @@ Future<String> _jsFindAccountBy(Map<String, dynamic> params) async {
   }
 
   if (findAll) {
-    final accountsJson =
-        matchedAccounts.map((a) {
-          final json = a.toJson();
-          json.remove('bills');
-          return json;
-        }).toList();
+    final accountsJson = matchedAccounts.map((a) {
+      final json = a.toJson();
+      json.remove('bills');
+      return json;
+    }).toList();
 
     // 检查是否需要分页
     if (offset != null || count != null) {
@@ -327,13 +323,12 @@ Future<String> _jsFindAccountById(Map<String, dynamic> params) async {
 
   final account = BillPlugin.instance.controller.accounts.firstWhere(
     (a) => a.id == id,
-    orElse:
-        () => Account(
-          id: '',
-          title: '',
-          icon: Icons.error,
-          backgroundColor: Colors.transparent,
-        ),
+    orElse: () => Account(
+      id: '',
+      title: '',
+      icon: Icons.error,
+      backgroundColor: Colors.transparent,
+    ),
   );
 
   if (account.id.isEmpty) {
@@ -380,12 +375,11 @@ Future<String> _jsFindAccountByName(Map<String, dynamic> params) async {
   }
 
   if (findAll) {
-    final accountsJson =
-        matchedAccounts.map((a) {
-          final json = a.toJson();
-          json.remove('bills');
-          return json;
-        }).toList();
+    final accountsJson = matchedAccounts.map((a) {
+      final json = a.toJson();
+      json.remove('bills');
+      return json;
+    }).toList();
 
     // 检查是否需要分页
     if (offset != null || count != null) {
@@ -618,20 +612,19 @@ Future<String> _jsFindBillsByCategory(Map<String, dynamic> params) async {
   );
 
   // 过滤账单
-  final matchedBills =
-      allBills.where((bill) {
-        // 匹配分类
-        if (bill.category != category) return false;
+  final matchedBills = allBills.where((bill) {
+    // 匹配分类
+    if (bill.category != category) return false;
 
-        // 如果指定了 accountId，过滤账户
-        if (accountId != null &&
-            accountId.isNotEmpty &&
-            bill.accountId != accountId) {
-          return false;
-        }
+    // 如果指定了 accountId，过滤账户
+    if (accountId != null &&
+        accountId.isNotEmpty &&
+        bill.accountId != accountId) {
+      return false;
+    }
 
-        return true;
-      }).toList();
+    return true;
+  }).toList();
 
   final billsJson = matchedBills.map((b) => b.toJson()).toList();
 
@@ -646,4 +639,190 @@ Future<String> _jsFindBillsByCategory(Map<String, dynamic> params) async {
   }
 
   return jsonEncode(billsJson);
+}
+
+// ==================== 订阅服务方法 ====================
+
+num? _subscriptionNumber(dynamic value) {
+  if (value is num) return value;
+  if (value is String) return num.tryParse(value);
+  return null;
+}
+
+DateTime? _subscriptionDate(dynamic value) {
+  if (value is DateTime) return value;
+  if (value is String && value.isNotEmpty) return DateTime.tryParse(value);
+  return null;
+}
+
+IconData _subscriptionIcon(dynamic value, IconData fallback) {
+  final codePoint = _subscriptionNumber(value)?.toInt();
+  return codePoint == null
+      ? fallback
+      : dynamicIconData(codePoint, fontFamily: 'MaterialIcons');
+}
+
+Color _subscriptionColor(dynamic value, Color fallback) {
+  final colorValue = _subscriptionNumber(value)?.toInt();
+  return colorValue == null ? fallback : Color(colorValue);
+}
+
+String? _requiredSubscriptionString(Map<String, dynamic> params, String key) {
+  final value = params[key];
+  if (value is String && value.trim().isNotEmpty) return value.trim();
+  return null;
+}
+
+Future<String> _jsGetSubscriptions(Map<String, dynamic> params) async {
+  try {
+    var subscriptions =
+        BillPlugin.instance.controller.subscriptions.subscriptions;
+    final isActive = params['isActive'];
+    final category = params['category'];
+    final name = params['name'];
+    if (isActive is bool) {
+      subscriptions = subscriptions
+          .where((item) => item.isActive == isActive)
+          .toList();
+    }
+    if (category is String && category.isNotEmpty) {
+      subscriptions = subscriptions
+          .where((item) => item.category == category)
+          .toList();
+    }
+    if (name is String && name.isNotEmpty) {
+      subscriptions = subscriptions
+          .where((item) => item.name.contains(name))
+          .toList();
+    }
+    final data = subscriptions.map((item) => item.toJson()).toList();
+    if (params.containsKey('offset') || params.containsKey('count')) {
+      return jsonEncode(
+        _paginate(
+          data,
+          offset: (_subscriptionNumber(params['offset'])?.toInt() ?? 0).clamp(
+            0,
+            data.length,
+          ),
+          count: (_subscriptionNumber(params['count'])?.toInt() ?? 100).clamp(
+            0,
+            1000,
+          ),
+        ),
+      );
+    }
+    return jsonEncode(data);
+  } catch (e) {
+    return jsonEncode({'error': '获取订阅服务失败: $e'});
+  }
+}
+
+Future<String> _jsCreateSubscription(Map<String, dynamic> params) async {
+  final name = _requiredSubscriptionString(params, 'name');
+  final totalAmount = _subscriptionNumber(params['totalAmount'])?.toDouble();
+  final days = _subscriptionNumber(params['days'])?.toInt();
+  final startDate = _subscriptionDate(params['startDate']);
+  if (name == null) return jsonEncode({'error': '缺少必需参数: name'});
+  if (totalAmount == null) return jsonEncode({'error': '缺少或无效参数: totalAmount'});
+  if (days == null || days <= 0) return jsonEncode({'error': '参数 days 必须是正整数'});
+  if (startDate == null) return jsonEncode({'error': '缺少或无效参数: startDate'});
+  try {
+    final subscription = Subscription(
+      id: _requiredSubscriptionString(params, 'id'),
+      name: name,
+      totalAmount: totalAmount,
+      days: days,
+      category: _requiredSubscriptionString(params, 'category') ?? '订阅',
+      startDate: startDate,
+      endDate: _subscriptionDate(params['endDate']),
+      isActive: params['isActive'] is bool ? params['isActive'] as bool : true,
+      note: params['note'] as String?,
+      icon: _subscriptionIcon(params['icon'], Icons.subscriptions),
+      iconColor: _subscriptionColor(params['iconColor'], Colors.blue),
+      createdAt: _subscriptionDate(params['createdAt']),
+      terminatedAt: _subscriptionDate(params['terminatedAt']),
+    );
+    await BillPlugin.instance.controller.subscriptions.createSubscription(
+      subscription,
+    );
+    return jsonEncode(subscription.toJson());
+  } catch (e) {
+    return jsonEncode({'error': '创建订阅服务失败: $e'});
+  }
+}
+
+Future<String> _jsUpdateSubscription(Map<String, dynamic> params) async {
+  final id = _requiredSubscriptionString(params, 'id');
+  if (id == null) return jsonEncode({'error': '缺少必需参数: id'});
+  final controller = BillPlugin.instance.controller.subscriptions;
+  final current = controller.findSubscriptionById(id);
+  if (current == null) return jsonEncode({'error': '订阅服务不存在: $id'});
+  final totalAmount = params.containsKey('totalAmount')
+      ? _subscriptionNumber(params['totalAmount'])?.toDouble()
+      : current.totalAmount;
+  final days = params.containsKey('days')
+      ? _subscriptionNumber(params['days'])?.toInt()
+      : current.days;
+  final startDate = params.containsKey('startDate')
+      ? _subscriptionDate(params['startDate'])
+      : current.startDate;
+  if (totalAmount == null) return jsonEncode({'error': '参数 totalAmount 无效'});
+  if (days == null || days <= 0) return jsonEncode({'error': '参数 days 必须是正整数'});
+  if (startDate == null) return jsonEncode({'error': '参数 startDate 无效'});
+  try {
+    final updated = current.copyWith(
+      name: params['name'] is String
+          ? (params['name'] as String).trim()
+          : current.name,
+      totalAmount: totalAmount,
+      days: days,
+      category: params['category'] is String
+          ? params['category'] as String
+          : current.category,
+      startDate: startDate,
+      endDate: params.containsKey('endDate')
+          ? _subscriptionDate(params['endDate'])
+          : current.endDate,
+      isActive: params['isActive'] is bool
+          ? params['isActive'] as bool
+          : current.isActive,
+      note: params['note'] is String ? params['note'] as String : current.note,
+      icon: params.containsKey('icon')
+          ? _subscriptionIcon(params['icon'], current.icon)
+          : current.icon,
+      iconColor: params.containsKey('iconColor')
+          ? _subscriptionColor(params['iconColor'], current.iconColor)
+          : current.iconColor,
+      createdAt: current.createdAt,
+      terminatedAt: current.terminatedAt,
+    );
+    await controller.updateSubscription(updated);
+    return jsonEncode(updated.toJson());
+  } catch (e) {
+    return jsonEncode({'error': '更新订阅服务失败: $e'});
+  }
+}
+
+Future<String> _jsTerminateSubscription(Map<String, dynamic> params) async {
+  final id = _requiredSubscriptionString(params, 'id');
+  if (id == null) return jsonEncode({'success': false, 'error': '缺少必需参数: id'});
+  try {
+    await BillPlugin.instance.controller.subscriptions.terminateSubscription(
+      id,
+    );
+    return jsonEncode({'success': true, 'id': id});
+  } catch (e) {
+    return jsonEncode({'success': false, 'id': id, 'error': '终止订阅服务失败: $e'});
+  }
+}
+
+Future<String> _jsDeleteSubscription(Map<String, dynamic> params) async {
+  final id = _requiredSubscriptionString(params, 'id');
+  if (id == null) return jsonEncode({'success': false, 'error': '缺少必需参数: id'});
+  try {
+    await BillPlugin.instance.controller.subscriptions.deleteSubscription(id);
+    return jsonEncode({'success': true, 'id': id});
+  } catch (e) {
+    return jsonEncode({'success': false, 'id': id, 'error': '删除订阅服务失败: $e'});
+  }
 }

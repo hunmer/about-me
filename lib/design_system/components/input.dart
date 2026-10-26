@@ -369,11 +369,45 @@ class _DSInputState extends State<DSInput>
     _selectionGestureBuilder = TextSelectionGestureDetectorBuilder(
       delegate: this,
     );
+    _effectiveController.addListener(_handleControllerChange);
+    _handleControllerChange();
     _effectiveFocus.addListener(_handleFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant DSInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      (oldWidget.controller ?? _internalController)?.removeListener(
+        _handleControllerChange,
+      );
+      _effectiveController.addListener(_handleControllerChange);
+      _handleControllerChange();
+    }
   }
 
   void _handleFocusChange() {
     if (mounted) setState(() {});
+  }
+
+  /// TextEditingController(text:) 构造与 text = 赋值都会留下无效 selection
+  /// （collapsed(-1) 或超出文本长度），该状态进入聚焦中的 EditableText 会
+  /// 触发 TextPainter selection 断言，且 IME 会把插入点落在开头（表现为
+  /// 输入总被加在 "0." 之类前缀前面）。这里归位到文本末尾，保证手势与
+  /// 键盘路径读到的 selection 恒有效。
+  void _handleControllerChange() {
+    final value = _effectiveController.value;
+    if (value.text.isEmpty) return;
+    final selection = value.selection;
+    final valid =
+        selection.isValid &&
+        selection.start <= value.text.length &&
+        selection.end <= value.text.length;
+    if (!valid) {
+      _effectiveController.value = value.copyWith(
+        selection: TextSelection.collapsed(offset: value.text.length),
+      );
+    }
   }
 }
 

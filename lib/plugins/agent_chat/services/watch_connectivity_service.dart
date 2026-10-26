@@ -788,9 +788,11 @@ class WatchConnectivityService {
       final allBills = <Map<String, dynamic>>[];
       for (final account in controller.accounts) {
         for (final bill in account.bills) {
-          // 筛选最近 7 天的账单
-          if (bill.date.isAfter(startDate) ||
-              bill.date.isAtSameMomentAs(startDate)) {
+          // 筛选最近 7 天的账单（历史遗留的自动生成订阅账单跳过，
+          // 由下方虚拟摊销条目替代）
+          if ((bill.date.isAfter(startDate) ||
+                  bill.date.isAtSameMomentAs(startDate)) &&
+              !bill.isFromSubscription) {
             final data = <String, dynamic>{
               'id': bill.id,
               'title': bill.title,
@@ -808,6 +810,33 @@ class WatchConnectivityService {
             data.removeWhere((key, value) => value == null);
             allBills.add(data);
           }
+        }
+      }
+
+      // 订阅摊销虚拟条目（订阅不落账单，按天动态计算补齐）
+      for (var i = 0; i <= 7; i++) {
+        final day = DateTime(now.year, now.month, now.day - i);
+        if (day.isBefore(DateTime(
+          startDate.year,
+          startDate.month,
+          startDate.day,
+        ))) {
+          break;
+        }
+        for (final subscription
+            in controller.subscriptions.subscriptionsForDate(day)) {
+          allBills.add({
+            'id':
+                'sub_${subscription.id}_${day.year}${day.month}${day.day}',
+            'title': subscription.name,
+            'category': subscription.category,
+            'amount': -subscription.dailyAmount,
+            'date': DateFormat('yyyy-MM-dd').format(day),
+            'isExpense': true,
+            'icon': subscription.icon.codePoint,
+            'iconColor': subscription.iconColor.toARGB32(),
+            'isSubscription': true,
+          });
         }
       }
 

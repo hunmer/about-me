@@ -324,7 +324,8 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
               type: FormFieldType.number,
               labelText: 'bill_subscriptionPrice'.tr,
               hintText: '0.00',
-              initialValue: sub?.totalAmount ?? 0.0,
+              // 新建时不预填 0.0，避免输入框带着清不掉的 "0." 前缀
+              initialValue: sub?.totalAmount,
               required: true,
               validationMessage: 'bill_requiredField'.tr,
               extra: {'inline': true, 'suffix': '¥'},

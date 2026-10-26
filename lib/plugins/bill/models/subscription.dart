@@ -100,6 +100,8 @@ class Subscription {
     String? note,
     IconData? icon,
     Color? iconColor,
+    DateTime? createdAt,
+    DateTime? terminatedAt,
   }) {
     return Subscription(
       id: id ?? this.id,
@@ -113,6 +115,8 @@ class Subscription {
       note: note ?? this.note,
       icon: icon ?? this.icon,
       iconColor: iconColor ?? this.iconColor,
+      createdAt: createdAt ?? this.createdAt,
+      terminatedAt: terminatedAt ?? this.terminatedAt,
     );
   }
 
@@ -143,19 +147,17 @@ class Subscription {
       days: json['days'] as int,
       category: json['category'] as String,
       startDate: DateTime.parse(json['startDate'] as String),
-      endDate:
-          json['endDate'] != null
-              ? DateTime.parse(json['endDate'] as String)
-              : null,
+      endDate: json['endDate'] != null
+          ? DateTime.parse(json['endDate'] as String)
+          : null,
       isActive: json['isActive'] as bool,
       note: json['note'] as String?,
       icon: dynamicIconData(json['icon'] as int, fontFamily: 'MaterialIcons'),
       iconColor: Color(json['iconColor'] as int),
       createdAt: DateTime.parse(json['createdAt'] as String),
-      terminatedAt:
-          json['terminatedAt'] != null
-              ? DateTime.parse(json['terminatedAt'] as String)
-              : null,
+      terminatedAt: json['terminatedAt'] != null
+          ? DateTime.parse(json['terminatedAt'] as String)
+          : null,
     );
   }
 }

@@ -13,6 +13,7 @@ import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:flutter/gestures.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/core/plugin_base.dart';
@@ -36,6 +37,7 @@ import 'models/account.dart';
 import 'models/bill.dart';
 import 'models/bill_statistics.dart';
 import 'models/statistic_range.dart';
+import 'models/subscription.dart';
 
 part 'bill_js_api.dart';
 part 'bill_data_selectors.dart';
@@ -306,7 +308,6 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
   // loadSettings/saveSettings/updateSettings 继承 PluginBase：
   // 已统一走 system 域 config 命令（configs/bill/settings.json 原位）。
 
-
   // ==================== JS API 定义 ====================
 
   @override
@@ -323,6 +324,13 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
       'createBill': _jsCreateBill,
       'updateBill': _jsUpdateBill,
       'deleteBill': _jsDeleteBill,
+
+      // 订阅服务相关
+      'getSubscriptions': _jsGetSubscriptions,
+      'createSubscription': _jsCreateSubscription,
+      'updateSubscription': _jsUpdateSubscription,
+      'terminateSubscription': _jsTerminateSubscription,
+      'deleteSubscription': _jsDeleteSubscription,
 
       // 统计相关
       'getStats': _jsGetStats,
@@ -463,9 +471,7 @@ class _BillMainViewState extends State<BillMainView>
 
   /// 拍照记账：选图 → 默认识图能力分析 → 识别结果勾选后批量入库
   Future<void> _handleScanBill() async {
-    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
-      context,
-    );
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(context);
     if (result == null || !mounted) return;
 
     // 优先用返回的字节（相册/拍照/表情包均有），无字节再回退本地路径
@@ -868,7 +874,10 @@ class _BillStatsConfigFormState extends State<_BillStatsConfigForm> {
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: DSButton(label: 'core_confirm'.tr, onPressed: _confirm),
+                      child: DSButton(
+                        label: 'core_confirm'.tr,
+                        onPressed: _confirm,
+                      ),
                     ),
                   ],
                 ),

@@ -73,10 +73,12 @@ class _BillStatsScreenSupercupertinoState
             bill.date.isAfter(
               monthStart.subtract(const Duration(seconds: 1)),
             ) &&
-            bill.date.isBefore(monthEnd.add(const Duration(seconds: 1))),
+            bill.date.isBefore(monthEnd.add(const Duration(seconds: 1))) &&
+            // 历史遗留的自动生成订阅账单不展示（已由虚拟条目替代）
+            !bill.isFromSubscription,
       );
 
-      return bills
+      final manualBills = bills
           .map(
             (bill) => BillModel(
               id: bill.id,
@@ -91,6 +93,16 @@ class _BillStatsScreenSupercupertinoState
             ),
           )
           .toList();
+
+      // 订阅摊销虚拟条目计入当月统计（总览/每日曲线/分类排行）
+      return [
+        ...manualBills,
+        ...widget
+            .billPlugin
+            .controller
+            .subscriptions
+            .subscriptionBillsForMonth(month),
+      ];
     } catch (e) {
       return [];
     }
@@ -122,6 +134,12 @@ class _BillStatsScreenSupercupertinoState
         } else {
           income += bill.absoluteAmount;
         }
+      }
+
+      // 订阅摊销支出计入当月统计（虚拟条目不落库）
+      for (final subscription
+          in widget.billPlugin.controller.subscriptions.subscriptionBillsForMonth(month)) {
+        expense += subscription.amount;
       }
 
       return {

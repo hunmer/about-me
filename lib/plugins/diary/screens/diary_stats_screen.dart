@@ -23,36 +23,6 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 /// 心情罐分类（开心系 / 平静系 / 低能量系）
 enum JarMood { perfect, good, nice }
 
-class _JarMoodSpec {
-  final JarMood type;
-  final String nameKey;
-  final String repEmoji; // 概览列代表表情
-
-  const _JarMoodSpec({
-    required this.type,
-    required this.nameKey,
-    required this.repEmoji,
-  });
-}
-
-const Map<JarMood, _JarMoodSpec> _jarMoodSpecs = {
-  JarMood.perfect: _JarMoodSpec(
-    type: JarMood.perfect,
-    nameKey: 'diary_stats_perfectDay',
-    repEmoji: '😊',
-  ),
-  JarMood.good: _JarMoodSpec(
-    type: JarMood.good,
-    nameKey: 'diary_stats_goodDay',
-    repEmoji: '🤔',
-  ),
-  JarMood.nice: _JarMoodSpec(
-    type: JarMood.nice,
-    nameKey: 'diary_stats_niceDay',
-    repEmoji: '😴',
-  ),
-};
-
 /// 分类主题色（禁止硬编码数据色，走主题语义色）
 Color _jarMoodColor(AppThemeData theme, JarMood mood) => switch (mood) {
   JarMood.perfect => theme.primary,
@@ -804,10 +774,13 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
   }
 
   Widget _buildSummaryCard(AppThemeData theme) {
-    final counts = {for (final m in JarMood.values) m: 0};
+    final counts = <String, int>{};
     for (final b in _badges) {
-      counts[b.type] = counts[b.type]! + 1;
+      final mood = b.entry.mood!;
+      counts[mood] = (counts[mood] ?? 0) + 1;
     }
+    final sortedMoods = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -817,25 +790,29 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
         child: Column(
           children: [
-            IntrinsicHeight(
-              child: Row(
-                children: [
-                  for (final m in JarMood.values) ...[
-                    if (m != JarMood.perfect)
-                      Container(
-                        width: 1,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        color: theme.ink.withValues(alpha: 0.18),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: IntrinsicHeight(
+                child: Row(
+                  children: [
+                    for (var i = 0; i < sortedMoods.length; i++) ...[
+                      if (i > 0)
+                        Container(
+                          width: 1,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          color: theme.ink.withValues(alpha: 0.18),
+                        ),
+                      SizedBox(
+                        width: 76,
+                        child: _MoodColumn(
+                          theme: theme,
+                          mood: sortedMoods[i].key,
+                          count: sortedMoods[i].value,
+                        ),
                       ),
-                    Expanded(
-                      child: _MoodColumn(
-                        theme: theme,
-                        type: m,
-                        count: counts[m]!,
-                      ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -889,39 +866,41 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
 
 class _MoodColumn extends StatelessWidget {
   final AppThemeData theme;
-  final JarMood type;
+  final String mood;
   final int count;
 
   const _MoodColumn({
     required this.theme,
-    required this.type,
+    required this.mood,
     required this.count,
   });
 
   @override
   Widget build(BuildContext context) {
-    final spec = _jarMoodSpecs[type]!;
+    final jarMood = _jarMoodOf(mood);
     return Column(
       children: [
         _MoodFaceBadge(
           theme: theme,
-          spec: diaryMoodSpecOf(spec.repEmoji),
+          spec: diaryMoodSpecOf(mood),
           size: 44,
         ),
         const SizedBox(height: 8),
         Text(
-          spec.nameKey.tr,
+          diaryMoodNameKeys[mood]?.tr ?? mood,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: DsTypography.body.copyWith(color: theme.text),
         ),
         const SizedBox(height: 8),
         JellyBox(
-          color: _jarMoodColor(theme, type),
+          color: _jarMoodColor(theme, jarMood),
           radius: theme.radii.circle,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           child: Text(
             'x$count',
             style: DsTypography.caption.copyWith(
-              color: _jarMoodOnColor(theme, type),
+              color: _jarMoodOnColor(theme, jarMood),
               fontWeight: FontWeight.bold,
             ),
           ),

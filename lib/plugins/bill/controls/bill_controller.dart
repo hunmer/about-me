@@ -155,7 +155,9 @@ class BillController with ChangeNotifier {
   /// 初始化订阅控制器
   void _initSubscriptionController() {
     _subscriptionController = SubscriptionController();
-    _subscriptionController.setPlugin(_plugin);
+    // 订阅数据不落账单（虚拟摊销展示），其变更需转发通知，
+    // 否则账单列表等监听方不会刷新
+    _subscriptionController.addListener(notifyListeners);
   }
 
   /// 重新加载账户数据（供同步后刷新使用）
@@ -197,6 +199,23 @@ class BillController with ChangeNotifier {
             .whereType<Map<String, dynamic>>()
             .map(Account.fromJson),
       );
+
+      // 订阅账单已改为虚拟摊销展示，清理历史生成的真实订阅账单
+      // （subscriptionId 仅由自动生成逻辑写入，幂等：无残留时不保存）
+      var hasSubscriptionBills = false;
+      for (var i = 0; i < _accounts.length; i++) {
+        final bills =
+            _accounts[i].bills
+                .where((bill) => bill.subscriptionId == null)
+                .toList();
+        if (bills.length != _accounts[i].bills.length) {
+          hasSubscriptionBills = true;
+          _accounts[i] = _accounts[i].copyWith(bills: bills);
+        }
+      }
+      if (hasSubscriptionBills) {
+        await _saveAccounts();
+      }
 
       notifyListeners();
     } catch (e) {
@@ -612,10 +631,5 @@ class BillController with ChangeNotifier {
   // 同步小组件数据
   Future<void> _syncWidget() async {
     await PluginWidgetSyncHelper.instance.syncBill();
-  }
-
-  /// 检查并生成缺失的订阅账单
-  Future<void> checkAndGenerateSubscriptionBills() async {
-    await _subscriptionController.checkAndGenerateMissingBills();
   }
 }

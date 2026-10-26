@@ -176,6 +176,8 @@ class PluginToolRegistry {
         'accounts': 'getAccounts',
         'bill': 'getBills',
         'bills': 'getBills',
+        'subscription': 'getSubscriptions',
+        'subscriptions': 'getSubscriptions',
       },
       'calendar': {'event': 'getEvents', 'events': 'getEvents'},
       'calendar_album': {

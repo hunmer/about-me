@@ -494,5 +494,68 @@
     ],
     "notes": "等价于 findBillBy({field: 'category', value: category, findAll: true}) 但支持日期过滤。使用分页参数可以控制返回数据量，提高性能。推荐每页 20-50 条数据",
     "enabled": true
+  },
+  "getSubscriptions": {
+    "title": "获取订阅服务",
+    "description": "获取订阅服务列表，支持状态、分类、名称筛选和分页",
+    "parameters": [
+      {"name": "isActive", "type": "boolean", "required": false, "description": "是否仅返回活跃订阅"},
+      {"name": "category", "type": "string", "required": false, "description": "订阅分类"},
+      {"name": "name", "type": "string", "required": false, "description": "按名称模糊筛选"},
+      {"name": "offset", "type": "number", "required": false, "description": "分页起始位置"},
+      {"name": "count", "type": "number", "required": false, "description": "返回数量"}
+    ],
+    "returns": {"type": "Array|Object", "description": "订阅数组；指定分页参数时返回 {data,total,offset,count,hasMore}"},
+    "examples": [{"title": "获取活跃订阅", "code": "const result = await Aboutme.plugins.bill.getSubscriptions({isActive: true});\nsetResult(JSON.stringify(result, null, 2));"}],
+    "enabled": true
+  },
+  "createSubscription": {
+    "title": "创建订阅服务",
+    "description": "创建一个按天分摊金额的订阅服务",
+    "parameters": [
+      {"name": "name", "type": "string", "required": true, "description": "订阅名称"},
+      {"name": "totalAmount", "type": "number", "required": true, "description": "订阅总金额"},
+      {"name": "days", "type": "number", "required": true, "description": "订阅天数，必须为正整数"},
+      {"name": "startDate", "type": "string", "required": true, "description": "开始日期，ISO8601 格式"},
+      {"name": "endDate", "type": "string", "required": false, "description": "结束日期"},
+      {"name": "category", "type": "string", "required": false, "description": "分类，默认订阅"},
+      {"name": "note", "type": "string", "required": false, "description": "备注"},
+      {"name": "id", "type": "string", "required": false, "description": "自定义订阅ID"}
+    ],
+    "returns": {"type": "Object", "description": "新创建的订阅服务对象"},
+    "examples": [{"title": "创建订阅", "code": "const subscription = await Aboutme.plugins.bill.createSubscription({name: '视频会员', totalAmount: 120, days: 365, startDate: '2026-01-01'});\nsetResult(`订阅已创建: ${subscription.id}`);"}],
+    "enabled": true
+  },
+  "updateSubscription": {
+    "title": "更新订阅服务",
+    "description": "更新订阅服务，未提供的字段保持不变",
+    "parameters": [
+      {"name": "id", "type": "string", "required": true, "description": "订阅ID"},
+      {"name": "name", "type": "string", "required": false, "description": "订阅名称"},
+      {"name": "totalAmount", "type": "number", "required": false, "description": "总金额"},
+      {"name": "days", "type": "number", "required": false, "description": "订阅天数"},
+      {"name": "startDate", "type": "string", "required": false, "description": "开始日期"},
+      {"name": "endDate", "type": "string", "required": false, "description": "结束日期"},
+      {"name": "isActive", "type": "boolean", "required": false, "description": "是否活跃"}
+    ],
+    "returns": {"type": "Object", "description": "更新后的订阅服务对象"},
+    "examples": [{"title": "更新金额", "code": "const updated = await Aboutme.plugins.bill.updateSubscription({id: 'sub123', totalAmount: 199});\nsetResult(JSON.stringify(updated));"}],
+    "enabled": true
+  },
+  "terminateSubscription": {
+    "title": "终止订阅服务",
+    "description": "终止指定订阅并记录终止时间",
+    "parameters": [{"name": "id", "type": "string", "required": true, "description": "订阅ID"}],
+    "returns": {"type": "Object", "description": "包含 success 和 id 的结果对象"},
+    "examples": [{"title": "终止订阅", "code": "const result = await Aboutme.plugins.bill.terminateSubscription({id: 'sub123'});\nsetResult(result.success ? '已终止' : result.error);"}],
+    "enabled": true
+  },
+  "deleteSubscription": {
+    "title": "删除订阅服务",
+    "description": "删除指定订阅服务，已生成的历史账单会保留",
+    "parameters": [{"name": "id", "type": "string", "required": true, "description": "订阅ID"}],
+    "returns": {"type": "Object", "description": "包含 success 和 id 的结果对象"},
+    "examples": [{"title": "删除订阅", "code": "const result = await Aboutme.plugins.bill.deleteSubscription({id: 'sub123'});\nsetResult(result.success ? '已删除' : result.error);"}],
+    "enabled": true
   }
 }

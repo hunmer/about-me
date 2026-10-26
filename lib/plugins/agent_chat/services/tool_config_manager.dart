@@ -116,6 +116,7 @@ class ToolConfigManager {
       await _syncMissingPluginTools('openai');
       await _syncMissingPluginTools('tracker');
       await _syncMissingPluginTools('checkin');
+      await _syncMissingPluginTools('bill');
       // day 方法已从 getMemorialDays 等简化为 getDays 等，老安装需同步清理
       await _syncMissingPluginTools('day');
       // goods 旧 find* 快捷查找描述从未在 Dart 侧实现，需从老安装清理
@@ -269,7 +270,10 @@ class ToolConfigManager {
         if (methodName.startsWith('find')) continue;
         if (stored.containsKey(entry.key)) {
           if (pluginId == 'memory' &&
-              const {'search_memory', 'batch_search_memory'}.contains(entry.key)) {
+              const {
+                'search_memory',
+                'batch_search_memory',
+              }.contains(entry.key)) {
             final existing = stored[entry.key];
             if (existing is Map) {
               final current = Map<String, dynamic>.from(existing);
