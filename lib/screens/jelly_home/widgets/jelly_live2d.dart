@@ -133,16 +133,17 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   int _lastAppliedVoiceVersion = -1;
   int _lastAppliedVoiceLoadGeneration = -1;
   bool _wasModelLoaded = false;
-  Timer? _voiceSwayTimer;
+  Timer? _voiceGazeTimer;
   bool _jevMotionActive = false;
-  double _voiceSwayValue = 0;
-  double _voiceSwayLastSent = 0;
-  double _voiceSwayPhase = 0;
-  double _voiceSwaySecondaryPhase = 0;
-  double _voiceSwayPrimaryHz = 0.38;
-  double _voiceSwaySecondaryHz = 0.16;
-  DateTime? _voiceSwayLastTick;
-  bool _voiceSwayUpdateInFlight = false;
+  double _voiceGazeXValue = 0;
+  double _voiceGazeYValue = 0;
+  double _voiceGazeLastSentX = 0;
+  double _voiceGazeLastSentY = 0;
+  double _voiceGazeTargetX = 0;
+  double _voiceGazeTargetY = 0;
+  double _voiceGazeTargetRemaining = 0;
+  DateTime? _voiceGazeLastTick;
+  bool _voiceGazeUpdateInFlight = false;
 
   /// 可点击区域（HitAreas）调试叠加层的开关状态，不持久化；
   /// 用 ValueNotifier 让已打开的控制面板能实时刷新
@@ -281,7 +282,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     _bubbleResumeTimer?.cancel();
     _jevReplyTimer?.cancel();
     _appearanceResetTimer?.cancel();
-    _voiceSwayTimer?.cancel();
+    _voiceGazeTimer?.cancel();
     _size.dispose();
     _hitAreasVisible.dispose();
     _borderVisible.dispose();
@@ -293,89 +294,95 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     _lastVoiceFrame = _voiceFrame.value;
     final version = ++_voiceFrameVersion;
     _queueVoiceParameter(_lastVoiceFrame, version);
-    _syncVoiceSway();
+    _syncVoiceGaze();
   }
 
-  void _syncVoiceSway() {
+  void _syncVoiceGaze() {
     final frame = _voiceFrame.value;
     if (!mounted ||
         !_controller.value.isLoaded ||
         _jevMotionActive ||
         frame == null ||
         frame.mouthOpenY < 0.02) {
-      _stopVoiceSway(
+      _stopVoiceGaze(
         resetParameter:
             !_jevMotionActive && (frame == null || frame.mouthOpenY < 0.02),
       );
       return;
     }
-    if (_voiceSwayTimer != null) return;
-    // Randomize each speech segment, then use continuous phases so the head
-    // does not jump between unrelated target points.
-    _voiceSwayPhase = _random.nextDouble() * 2 * math.pi;
-    _voiceSwaySecondaryPhase = _random.nextDouble() * 2 * math.pi;
-    _voiceSwayPrimaryHz = 0.32 + _random.nextDouble() * 0.16;
-    _voiceSwaySecondaryHz = 0.11 + _random.nextDouble() * 0.08;
-    _voiceSwayLastTick = DateTime.now();
-    _voiceSwayTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
+    if (_voiceGazeTimer != null) return;
+    // Pick a new cursor-like target at irregular intervals and ease toward it.
+    // This avoids the visibly repetitive left-right path of a sine wave.
+    _voiceGazeTargetX = _random.nextDouble() * 1.4 - 0.7;
+    _voiceGazeTargetY = _random.nextDouble() * 0.7 - 0.35;
+    _voiceGazeTargetRemaining = 0.7 + _random.nextDouble() * 0.9;
+    _voiceGazeLastTick = DateTime.now();
+    _voiceGazeTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
       final currentFrame = _voiceFrame.value;
       if (!mounted ||
           !_controller.value.isLoaded ||
           _jevMotionActive ||
           currentFrame == null ||
           currentFrame.mouthOpenY < 0.02) {
-        _stopVoiceSway(resetParameter: !_jevMotionActive);
+        _stopVoiceGaze(resetParameter: !_jevMotionActive);
         return;
       }
       final now = DateTime.now();
-      final previous = _voiceSwayLastTick ?? now;
+      final previous = _voiceGazeLastTick ?? now;
       final dt = (now.difference(previous).inMicroseconds / 1000000)
           .clamp(0.0, 0.1)
           .toDouble();
-      _voiceSwayLastTick = now;
+      _voiceGazeLastTick = now;
       if (dt <= 0) return;
-      _voiceSwayPhase += 2 * math.pi * _voiceSwayPrimaryHz * dt;
-      _voiceSwaySecondaryPhase += 2 * math.pi * _voiceSwaySecondaryHz * dt;
-      final target =
-          math.sin(_voiceSwayPhase) * 15.0 +
-          math.sin(_voiceSwaySecondaryPhase) * 5.0;
-      final smoothing = (dt * 8.0).clamp(0.0, 1.0).toDouble();
-      _voiceSwayValue += (target - _voiceSwayValue) * smoothing;
-      if ((_voiceSwayValue - _voiceSwayLastSent).abs() < 0.3) return;
-      if (_voiceSwayUpdateInFlight) return;
-      _voiceSwayLastSent = _voiceSwayValue;
-      unawaited(_sendVoiceSwayParameter(_voiceSwayValue));
+      _voiceGazeTargetRemaining -= dt;
+      if (_voiceGazeTargetRemaining <= 0) {
+        _voiceGazeTargetX = _random.nextDouble() * 1.4 - 0.7;
+        _voiceGazeTargetY = _random.nextDouble() * 0.7 - 0.35;
+        _voiceGazeTargetRemaining = 0.7 + _random.nextDouble() * 0.9;
+      }
+      final smoothing = (dt * 3.8).clamp(0.0, 1.0).toDouble();
+      _voiceGazeXValue += (_voiceGazeTargetX - _voiceGazeXValue) * smoothing;
+      _voiceGazeYValue += (_voiceGazeTargetY - _voiceGazeYValue) * smoothing;
+      if ((_voiceGazeXValue - _voiceGazeLastSentX).abs() < 0.015 &&
+          (_voiceGazeYValue - _voiceGazeLastSentY).abs() < 0.015) {
+        return;
+      }
+      if (_voiceGazeUpdateInFlight) return;
+      _voiceGazeLastSentX = _voiceGazeXValue;
+      _voiceGazeLastSentY = _voiceGazeYValue;
+      unawaited(_sendVoiceGazeParameters(_voiceGazeXValue, _voiceGazeYValue));
     });
   }
 
-  Future<void> _sendVoiceSwayParameter(double value) async {
-    if (_voiceSwayUpdateInFlight || !mounted || !_controller.value.isLoaded) {
+  Future<void> _sendVoiceGazeParameters(double x, double y) async {
+    if (_voiceGazeUpdateInFlight || !mounted || !_controller.value.isLoaded) {
       return;
     }
-    _voiceSwayUpdateInFlight = true;
+    _voiceGazeUpdateInFlight = true;
     try {
-      await _controller.setParameter('ParamAngleX', value);
+      // Use Cubism's native drag input so the model's own look and physics
+      // chain reproduces the same response as hovering the mouse over it.
+      await _controller.setDragging(x, y);
     } catch (error) {
-      debugPrint('[Live2D][Voice] sway update failed: $error');
+      debugPrint('[Live2D][Voice] gaze update failed: $error');
     } finally {
-      _voiceSwayUpdateInFlight = false;
+      _voiceGazeUpdateInFlight = false;
     }
   }
 
-  void _stopVoiceSway({required bool resetParameter}) {
-    _voiceSwayTimer?.cancel();
-    _voiceSwayTimer = null;
-    _voiceSwayLastTick = null;
+  void _stopVoiceGaze({required bool resetParameter}) {
+    _voiceGazeTimer?.cancel();
+    _voiceGazeTimer = null;
+    _voiceGazeLastTick = null;
     if (!resetParameter || !_controller.value.isLoaded) return;
-    _voiceSwayValue = 0;
-    _voiceSwayLastSent = 0;
-    unawaited(
-      _controller
-          .setParameter('ParamAngleX', 0)
-          .catchError(
-            (error) => debugPrint('[Live2D][Voice] sway reset failed: $error'),
-          ),
-    );
+    _voiceGazeXValue = 0;
+    _voiceGazeYValue = 0;
+    _voiceGazeLastSentX = 0;
+    _voiceGazeLastSentY = 0;
+    _voiceGazeTargetX = 0;
+    _voiceGazeTargetY = 0;
+    _voiceGazeTargetRemaining = 0;
+    unawaited(_sendVoiceGazeParameters(0, 0));
   }
 
   void _queueVoiceParameter(Live2DVoiceFrame? frame, int version) {

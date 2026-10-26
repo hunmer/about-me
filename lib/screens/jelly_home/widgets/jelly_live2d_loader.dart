@@ -9,7 +9,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     _appearanceResetTimer = Timer(_appearanceDuration, () async {
       if (!mounted || !_controller.value.isLoaded || _isSwitchingModel) return;
       _jevMotionActive = false;
-      _syncVoiceSway();
+      _syncVoiceGaze();
       debugPrint('[Live2D] 表情/动作展示结束，原地恢复 Idle');
       try {
         // 保留当前模型、纹理和视图，只切回待机动作，避免整模型重载。
@@ -39,14 +39,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
   }
 
   Future<void> _resetGaze() async {
-    // flutter_live2d exposes parameter updates rather than a resetGaze command.
-    await Future.wait([
-      _controller.setParameter('ParamAngleX', 0),
-      _controller.setParameter('ParamAngleY', 0),
-      _controller.setParameter('ParamAngleZ', 0),
-      _controller.setParameter('ParamEyeBallX', 0),
-      _controller.setParameter('ParamEyeBallY', 0),
-    ]);
+    await _controller.setDragging(0, 0);
   }
 
   /// 模型身份按目录 + 文件名判定（在线模型每次都会生成新实例，不能比较引用）
@@ -131,7 +124,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
         '(version=$_voiceFrameVersion)',
       );
       _queueVoiceParameter(_lastVoiceFrame, _voiceFrameVersion);
-      _syncVoiceSway();
+      _syncVoiceGaze();
     }
     _wasModelLoaded = loaded;
 
@@ -169,7 +162,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       return;
     }
     _jevMotionActive = false;
-    _syncVoiceSway();
+    _syncVoiceGaze();
     debugPrint('[Live2D][Jev] 收到完整回复，准备选择表情动作');
     final result = await Live2DPlugin.instance.decideAppearance(
       reply,
@@ -196,7 +189,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
         .firstOrNull;
     if (motion != null) {
       _jevMotionActive = true;
-      _syncVoiceSway();
+      _syncVoiceGaze();
       debugPrint(
         '[Live2D][Jev] 执行动作: ${motion.label} (${motion.group}#${motion.index})',
       );
@@ -204,7 +197,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       _scheduleAppearanceReset();
     } else {
       debugPrint('[Live2D][Jev] 未选择动作');
-      _syncVoiceSway();
+      _syncVoiceGaze();
     }
   }
 
