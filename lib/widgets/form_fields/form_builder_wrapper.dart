@@ -158,6 +158,9 @@ class FormBuilderWrapperState extends State<FormBuilderWrapper> {
 
   void patchValue(Map<String, dynamic> values) {
     _actualFormKey.currentState?.patchValue(values);
+    for (final entry in values.entries) {
+      _fieldKeys[entry.key]?.currentState?.setValue(entry.value);
+    }
   }
 
   void _submitFormInternal() {

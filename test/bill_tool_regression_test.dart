@@ -8,6 +8,8 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
+import 'package:aboutme/plugins/bill/controls/subscription_controller.dart';
+import 'package:aboutme/plugins/bill/models/subscription.dart';
 import 'package:aboutme/plugins/bill/screens/account_edit_screen.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_call_step.dart';
@@ -88,6 +90,70 @@ void main() {
     plugin.dispose();
     PathProviderPlatform.instance = originalPaths;
     await temporary.delete(recursive: true);
+  });
+
+  test('订阅摊销覆盖完整期间及跨月日期，并遵守结束日和终止日', () async {
+    final controller = SubscriptionController();
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day - 2);
+    final subscription = Subscription(
+      id: 'amortization-regression',
+      name: '订阅摊销回归',
+      totalAmount: 400,
+      days: 40,
+      startDate: start,
+    );
+    await controller.createSubscription(subscription);
+    try {
+      final bills = [
+        ...controller.subscriptionBillsForMonth(start),
+        ...controller.subscriptionBillsForMonth(
+          DateTime(start.year, start.month + 1),
+        ),
+        ...controller.subscriptionBillsForMonth(
+          DateTime(start.year, start.month + 2),
+        ),
+      ];
+      expect(bills, hasLength(40));
+      expect(bills.first.date, start);
+      expect(
+        bills.last.date,
+        DateTime(start.year, start.month, start.day + 39),
+      );
+      expect(
+        bills.every((bill) => bill.isSubscription && bill.amount == 10),
+        isTrue,
+      );
+      expect(
+        controller.subscriptionsForDate(start.subtract(const Duration(days: 1))),
+        isEmpty,
+      );
+      expect(
+        controller.subscriptionsForDate(start.add(const Duration(days: 40))),
+        isEmpty,
+      );
+
+      final end = DateTime(start.year, start.month, start.day + 10);
+      await controller.updateSubscription(subscription.copyWith(endDate: end));
+      expect(controller.subscriptionsForDate(end), hasLength(1));
+      expect(
+        controller.subscriptionsForDate(end.add(const Duration(days: 1))),
+        isEmpty,
+      );
+
+      final terminated = DateTime(start.year, start.month, start.day + 5);
+      await controller.updateSubscription(
+        subscription.copyWith(isActive: false, terminatedAt: terminated),
+      );
+      expect(controller.subscriptionsForDate(terminated), hasLength(1));
+      expect(
+        controller.subscriptionsForDate(terminated.add(const Duration(days: 1))),
+        isEmpty,
+      );
+    } finally {
+      await controller.deleteSubscription(subscription.id);
+      controller.dispose();
+    }
   });
 
   test('按 schema 参数名(title/iconCodePoint/backgroundColor)创建账户', () async {

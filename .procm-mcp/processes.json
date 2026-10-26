@@ -1787,6 +1787,36 @@
       "stdoutLogPath": "D:\\about-me\\.procm-mcp\\xF4C7m(17636)\\processes\\xccNHLVP-stdout.log",
       "stderrLogPath": "D:\\about-me\\.procm-mcp\\xF4C7m(17636)\\processes\\xccNHLVP-stderr.log",
       "envs": {}
+    },
+    {
+      "id": "4HivvLkN",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:/about-me",
+      "status": "exited",
+      "pid": 5144,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1793002497637,
+      "lastStartedAt": 1793002497637,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\-gVtMW(3496)\\processes\\4HivvLkN-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\-gVtMW(3496)\\processes\\4HivvLkN-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
     }
   ]
 }

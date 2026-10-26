@@ -174,13 +174,10 @@ class SubscriptionController with ChangeNotifier {
   /// 账单列表按天动态摊销展示）。
   ///
   /// 计费日 = [startDate, 最后计费日]，最后计费日取 endDate、
-  /// startDate+days-1、今天三者的最早值；已终止的订阅再与终止日取更早者
+  /// startDate+days-1 两者的最早值；已终止的订阅再与终止日取更早者。
+  /// 未来日期也按订阅有效期展示摊销。
   List<Subscription> subscriptionsForDate(DateTime date) {
     final day = DateTime(date.year, date.month, date.day);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    if (day.isAfter(today)) return [];
-
     return _subscriptions.where((s) {
       final start = DateTime(
         s.startDate.year,
