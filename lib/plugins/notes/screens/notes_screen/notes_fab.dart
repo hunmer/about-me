@@ -15,6 +15,7 @@ mixin NotesFab on NotesMainViewState, NoteOperations, FolderOperations {
   Widget buildExpandableFab() {
     return ExpandableFab(
       icon: DsIconKind.plus,
+      circularActions: true,
       actions: [
         ExpandableFabAction(
           icon: DsIconKind.layers,

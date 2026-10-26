@@ -26,6 +26,10 @@ Map<String, dynamic> importedModelToJson(Live2DModelDefinition model) => {
         'hasSound': motion.hasSound,
       },
   ],
+  'expressions': [
+    for (final expression in model.expressions)
+      {'index': expression.index, 'label': expression.label},
+  ],
 };
 
 Live2DModelDefinition importedModelFromJson(Map<String, dynamic> json) =>
@@ -42,6 +46,14 @@ Live2DModelDefinition importedModelFromJson(Map<String, dynamic> json) =>
               index: (motion['index'] as num?)?.toInt() ?? 0,
               label: motion['label']?.toString() ?? '',
               hasSound: motion['hasSound'] == true,
+            ),
+      ],
+      expressions: [
+        for (final expression in (json['expressions'] as List? ?? const []))
+          if (expression is Map)
+            Live2DExpressionDefinition(
+              index: (expression['index'] as num?)?.toInt() ?? 0,
+              label: expression['label']?.toString() ?? '',
             ),
       ],
     );
@@ -100,6 +112,7 @@ class Live2DZipImport {
           entryNames[entry.name] ?? entry.name,
         );
         if (relative == null) continue;
+        if (relative.toLowerCase().endsWith('.vtube.json')) continue;
         final file = File(p.join(target.path, relative));
         await file.parent.create(recursive: true);
         await file.writeAsBytes(entry.content as List<int>, flush: true);
@@ -147,6 +160,9 @@ class Live2DZipImport {
           motions: modelJson == null
               ? const []
               : Live2DOnlineCatalog.parseMotions(modelJson),
+          expressions: modelJson == null
+              ? const []
+              : Live2DOnlineCatalog.parseExpressions(modelJson),
         ),
       );
     }

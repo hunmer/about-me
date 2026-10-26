@@ -182,7 +182,7 @@ class _CircularFabAction extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: theme.surface,
             borderRadius: theme.radii.pill,
@@ -191,7 +191,7 @@ class _CircularFabAction extends StatelessWidget {
           child: Text(
             action.label,
             style: DsTypography.button.copyWith(
-              fontSize: 13,
+              fontSize: 14,
               color: theme.text,
             ),
           ),
@@ -199,7 +199,7 @@ class _CircularFabAction extends StatelessWidget {
         const SizedBox(width: 12),
         DSFab(
           icon: action.icon,
-          size: 44,
+          size: 56,
           color: color,
           iconColor: iconColor,
           onPressed: onPressed,

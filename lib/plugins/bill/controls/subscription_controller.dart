@@ -229,10 +229,6 @@ class SubscriptionController with ChangeNotifier {
         );
       }
     }
-    debugPrint(
-      '[Sub] 月度虚拟条目: ${month.year}-${month.month} '
-      '生成${result.length}条 (订阅数=${_subscriptions.length})',
-    );
     return result;
   }
 

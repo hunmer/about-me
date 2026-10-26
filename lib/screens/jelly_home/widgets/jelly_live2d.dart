@@ -63,6 +63,7 @@ class JellyLive2D extends StatefulWidget {
     this.streaming = false,
     this.typingInterval = const Duration(milliseconds: 70),
     this.motionRequest,
+    this.expressionRequest,
     this.fill = false,
     this.fitContainer = false,
     this.topInset = 0,
@@ -96,6 +97,9 @@ class JellyLive2D extends StatefulWidget {
   /// 外部（如 Live2D 设置页的动作列表）请求播放动作的通道；
   /// 模型未就绪时挂起，加载完成后自动播放
   final ValueListenable<Live2DMotionDefinition?>? motionRequest;
+
+  /// 外部请求切换表达式（表情、皮肤、饰品）。
+  final ValueListenable<Live2DExpressionDefinition?>? expressionRequest;
 
   /// 底部资源面板开关（由底部导航子栏图标驱动）：
   /// 值非空时在底部导航上方展示水平可滚动的资源列表
@@ -164,6 +168,10 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
       oldWidget.motionRequest?.removeListener(_handleMotionRequest);
       widget.motionRequest?.addListener(_handleMotionRequest);
     }
+    if (widget.expressionRequest != oldWidget.expressionRequest) {
+      oldWidget.expressionRequest?.removeListener(_handleExpressionRequest);
+      widget.expressionRequest?.addListener(_handleExpressionRequest);
+    }
   }
 
   @override
@@ -176,6 +184,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     _controller.onTap = _handleTap;
     _controller.addListener(_onViewStateChanged);
     widget.motionRequest?.addListener(_handleMotionRequest);
+    widget.expressionRequest?.addListener(_handleExpressionRequest);
     _loadSavedCropRegion(_selectedModel);
     unawaited(_initialize());
   }
@@ -238,6 +247,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   void dispose() {
     RouteHistoryManager.instance.unsubscribe(this);
     widget.motionRequest?.removeListener(_handleMotionRequest);
+    widget.expressionRequest?.removeListener(_handleExpressionRequest);
     _controller.removeListener(_onViewStateChanged);
     _bubbleTimer?.cancel();
     _bubbleResumeTimer?.cancel();

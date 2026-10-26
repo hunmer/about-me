@@ -88,6 +88,21 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     _startMotion(motion);
   }
 
+  void _handleExpressionRequest() {
+    final expression = widget.expressionRequest?.value;
+    if (expression == null) return;
+    if (_isSwitchingModel || !_controller.value.isLoaded) return;
+    unawaited(_setExpression(expression));
+  }
+
+  Future<void> _setExpression(Live2DExpressionDefinition expression) async {
+    try {
+      await _controller.setExpression(expression.index);
+    } on Live2DException {
+      // 表情播放失败时保持当前模型状态。
+    }
+  }
+
   void _onViewStateChanged() {
     final pending = _pendingMotion;
     if (pending == null) return;

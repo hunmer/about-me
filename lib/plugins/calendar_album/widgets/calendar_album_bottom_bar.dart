@@ -78,9 +78,7 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
         ExpandableFabAction(
           icon: DsIconKind.edit,
           label: 'calendar_album_create_entry'.tr,
-          onPressed: () => _showEditor(
-            _calendarController.selectedDate,
-          ),
+          onPressed: () => _showEditor(_calendarController.selectedDate),
         ),
         ExpandableFabAction(
           icon: DsIconKind.image,
@@ -92,7 +90,10 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
   }
 
   /// 打开日记表单，[date] / [photos] 为新建模式的初始日期与图片
-  Future<void> _showEditor(DateTime? date, [List<Map<String, dynamic>>? photos]) {
+  Future<void> _showEditor(
+    DateTime? date, [
+    List<Map<String, dynamic>>? photos,
+  ]) {
     return CalendarAlbumEntryForm.show(
       context,
       initialDate: date,
@@ -191,47 +192,53 @@ class _CalendarAlbumBottomBarState extends State<CalendarAlbumBottomBar>
 
   @override
   Widget build(BuildContext context) {
+    final fab = _buildFab();
     return CustomBottomBar(
       currentIndex: _currentPage,
       tabController: _tabController,
       bottomBarKey: _bottomBarKey,
-      body: (context, controller) => TabBarView(
-        controller: _tabController,
-        dragStartBehavior: DragStartBehavior.start,
-        physics: const NeverScrollableScrollPhysics(),
+      body: (context, controller) => Stack(
         children: [
-          // Tab0: 日历视图
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(value: _calendarController),
-              ChangeNotifierProvider.value(value: _tagController),
+          TabBarView(
+            controller: _tabController,
+            dragStartBehavior: DragStartBehavior.start,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              // Tab0: 日历视图
+              MultiProvider(
+                providers: [
+                  ChangeNotifierProvider.value(value: _calendarController),
+                  ChangeNotifierProvider.value(value: _tagController),
+                ],
+                child: CalendarScreen(key: const PageStorageKey('calendar')),
+              ),
+              // Tab1: 标签视图
+              MultiProvider(
+                providers: [
+                  ChangeNotifierProvider.value(value: _calendarController),
+                  ChangeNotifierProvider.value(value: _tagController),
+                ],
+                child: TagScreen(key: const PageStorageKey('tags')),
+              ),
+              // Tab2: 相册视图
+              MultiProvider(
+                providers: [
+                  ChangeNotifierProvider.value(value: _calendarController),
+                  ChangeNotifierProvider.value(value: _tagController),
+                ],
+                child: AlbumScreen(key: const PageStorageKey('album')),
+              ),
+              // Tab3: 统计视图
+              CalendarAlbumStatsView(
+                calendarController: _calendarController,
+                tagController: _tagController,
+              ),
             ],
-            child: CalendarScreen(key: const PageStorageKey('calendar')),
           ),
-          // Tab1: 标签视图
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(value: _calendarController),
-              ChangeNotifierProvider.value(value: _tagController),
-            ],
-            child: TagScreen(key: const PageStorageKey('tags')),
-          ),
-          // Tab2: 相册视图
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(value: _calendarController),
-              ChangeNotifierProvider.value(value: _tagController),
-            ],
-            child: AlbumScreen(key: const PageStorageKey('album')),
-          ),
-          // Tab3: 统计视图
-          CalendarAlbumStatsView(
-            calendarController: _calendarController,
-            tagController: _tagController,
-          ),
+          // 独立 FAB：不占用 dock 槽位，悬浮于底部栏上方右侧
+          if (fab != null) Positioned(bottom: 104, right: 16, child: fab),
         ],
       ),
-      fab: _buildFab(),
       items: [
         DSNavItem(
           icon: DsIconKind.calendar,

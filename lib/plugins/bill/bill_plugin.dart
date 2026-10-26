@@ -30,6 +30,7 @@ import 'screens/bill_list_screen_supercupertino.dart';
 import 'screens/bill_stats_screen_supercupertino.dart';
 import 'screens/bill_scan_sheet.dart';
 import 'screens/subscription_list_screen.dart';
+import 'screens/subscription_edit_screen.dart';
 import 'screens/account_list_screen.dart';
 import 'screens/bill_edit_screen.dart';
 import 'screens/account_edit_screen.dart';
@@ -113,6 +114,20 @@ class BillPlugin extends PluginBase with ChangeNotifier, JSBridgePlugin {
             );
             return;
           }
+        };
+      case 'createSubscription':
+        return () {
+          final subscription = controller.subscriptions.findSubscriptionById(
+            id,
+          );
+          if (subscription == null) return;
+          SmoothBottomSheet.showScreen(
+            context: context,
+            screen: SubscriptionEditScreen(
+              billPlugin: this,
+              subscription: subscription,
+            ),
+          );
         };
     }
     return null;

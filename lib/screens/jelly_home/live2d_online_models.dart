@@ -29,12 +29,20 @@ class Live2DMotionDefinition {
   final bool hasSound;
 }
 
+class Live2DExpressionDefinition {
+  const Live2DExpressionDefinition({required this.label, required this.index});
+
+  final String label;
+  final int index;
+}
+
 class Live2DModelDefinition {
   const Live2DModelDefinition({
     required this.label,
     required this.modelDir,
     required this.modelFile,
     required this.motions,
+    this.expressions = const [],
     this.category,
     this.isOnline = false,
     this.thumbPath,
@@ -44,6 +52,7 @@ class Live2DModelDefinition {
   final String modelDir;
   final String modelFile;
   final List<Live2DMotionDefinition> motions;
+  final List<Live2DExpressionDefinition> expressions;
   final String? category;
   final bool isOnline;
 
@@ -244,6 +253,7 @@ class Live2DOnlineCatalog {
       modelDir: modelUri.resolve('.').toString(),
       modelFile: modelUri.pathSegments.last,
       motions: parseMotions(data),
+      expressions: parseExpressions(data),
       category: item.category,
       isOnline: true,
     );
@@ -316,6 +326,7 @@ class Live2DOnlineCatalog {
       modelDir: '${cacheDir.path}${Platform.pathSeparator}',
       modelFile: model.modelFile,
       motions: model.motions,
+      expressions: model.expressions,
       category: model.category,
     );
   }
@@ -414,5 +425,27 @@ class Live2DOnlineCatalog {
       if (!selected.contains(motion)) selected.add(motion);
     }
     return selected;
+  }
+
+  static List<Live2DExpressionDefinition> parseExpressions(
+    Map<String, dynamic> modelJson,
+  ) {
+    final refs = modelJson['FileReferences'];
+    if (refs is! Map) return const [];
+    final expressions = refs['Expressions'];
+    if (expressions is! List) return const [];
+    final result = <Live2DExpressionDefinition>[];
+    for (var index = 0; index < expressions.length; index++) {
+      final expression = expressions[index];
+      if (expression is! Map) continue;
+      final file = expression['File']?.toString().trim();
+      if (file == null || file.isEmpty) continue;
+      final name = expression['Name']?.toString().trim();
+      result.add(Live2DExpressionDefinition(
+        index: index,
+        label: name == null || name.isEmpty ? file : name,
+      ));
+    }
+    return result;
   }
 }
