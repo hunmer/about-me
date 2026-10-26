@@ -89,22 +89,24 @@ void main() {
       };
 
       // 启动壳不读取全局存储/配置，首帧显示后才加载真实应用。
-      runApp(AppBootstrap(
-        initialize: () async {
-          await WidgetsBinding.instance.waitUntilFirstFrameRasterized;
-          registerSkribbleMaterialIcons();
-          timeago.setLocaleMessages('zh', timeago.ZhMessages());
-          setupLoggerFromEnv().info('Aboutme 启动', {
-            'platform': defaultTargetPlatform.name,
-          });
-          await StartupTrace.measure('core', initializeApp);
-          await StartupTrace.measure(
-            'window',
-            WindowGeometryService.instance.initialize,
-          );
-        },
-        builder: (_) => const MyApp(),
-      ));
+      runApp(
+        AppBootstrap(
+          initialize: () async {
+            await WidgetsBinding.instance.waitUntilFirstFrameRasterized;
+            registerSkribbleMaterialIcons();
+            timeago.setLocaleMessages('zh', timeago.ZhMessages());
+            setupLoggerFromEnv().info('Aboutme 启动', {
+              'platform': defaultTargetPlatform.name,
+            });
+            await StartupTrace.measure('core', initializeApp);
+            await StartupTrace.measure(
+              'window',
+              WindowGeometryService.instance.initialize,
+            );
+          },
+          builder: (_) => const MyApp(),
+        ),
+      );
       StartupTrace.mark('runApp');
       WidgetsBinding.instance.waitUntilFirstFrameRasterized.then((_) {
         StartupTrace.mark('first_frame_rasterized');
@@ -273,13 +275,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           foregroundColor: Colors.black,
           elevation: 0,
         ),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ).copyWith(
-          surface: Colors.white, // 表面颜色设为纯白色
-          secondaryContainer: Colors.white, // 次要容器颜色设为纯白色
-        ),
+        colorScheme:
+            ColorScheme.fromSeed(
+              seedColor: Colors.blue,
+              brightness: Brightness.light,
+            ).copyWith(
+              surface: Colors.white, // 表面颜色设为纯白色
+              secondaryContainer: Colors.white, // 次要容器颜色设为纯白色
+            ),
       ),
       dark: ThemeData(
         brightness: Brightness.dark,
@@ -287,93 +290,84 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         fontFamily: 'TegakiZatsu',
       ),
       initial: savedThemeMode ?? AdaptiveThemeMode.light,
-      builder:
-          (theme, darkTheme) {
-            return ListenableBuilder(
-              listenable: AppBackgroundController(),
-              builder: (context, _) {
-                // 设置全局主题背景（背景图/纯色）后，Scaffold/AppBar 纯色背景改为透明以透出背景
-                final hasCustomBackground =
-                    AppBackgroundController().hasCustomBackground;
-                return GetMaterialApp(
-                  translations: UnifiedTranslations(),
-                  locale: _getInitialLocale(globalConfigManager.getLocale()),
-                  fallbackLocale: const Locale('zh', 'CN'),
-                  scaffoldMessengerKey: scaffoldMessengerKey,
-                  navigatorKey: navigatorKey,
-                  title: 'Aboutme',
-                  debugShowCheckedModeBanner: false,
-                  localizationsDelegates: const [
-                    // 仅保留第三方库的国际化
-                    SfGlobalLocalizations.delegate,
-                    GlobalMaterialLocalizations.delegate,
-                    GlobalWidgetsLocalizations.delegate,
-                    GlobalCupertinoLocalizations.delegate,
-                    FlutterQuillLocalizations.delegate,
-                    // pro_image_editor v14 基于 material_ui，需要其本地化
-                    //（否则编辑器内弹窗/按钮报 No MaterialLocalizations found）
-                    ...material_ui.GlobalMaterialLocalizations.delegates,
-                  ],
-                  supportedLocales: const [
-                    Locale('zh', 'CN'), // 中文
-                    Locale('en', 'US'), // 英文
-                  ],
-                  theme:
-                      hasCustomBackground ? _transparentSurfaces(theme) : theme,
-                  darkTheme:
-                      hasCustomBackground
-                          ? _transparentSurfaces(darkTheme)
-                          : darkTheme,
-                      builder: (context, child) {
-                        // 确保字体大小不受系统设置影响
-                        // 根部全局包一层 DS 桥:根 Overlay/残留 Material 屏幕里的 DS 组件
-                        // 不再因缺 AppTheme 祖树而 Null check 崩溃(幂等,已有桥处就近生效)
-                        return ListenableBuilder(
-                          // 全局墨线入场动画时长/开关（设置页可调，0 = 关闭）
-                          listenable: DsInkMotionController(),
-                          builder: (context, _) {
-                            final motion = DsInkMotionController();
-                            return WiredMotion(
-                              enabled: motion.enabled,
-                              drawDuration: Duration(
-                                milliseconds: motion.durationMs,
+      builder: (theme, darkTheme) {
+        return ListenableBuilder(
+          listenable: AppBackgroundController(),
+          builder: (context, _) {
+            // 设置全局主题背景（背景图/纯色）后，Scaffold/AppBar 纯色背景改为透明以透出背景
+            final hasCustomBackground =
+                AppBackgroundController().hasCustomBackground;
+            return GetMaterialApp(
+              translations: UnifiedTranslations(),
+              locale: _getInitialLocale(globalConfigManager.getLocale()),
+              fallbackLocale: const Locale('zh', 'CN'),
+              scaffoldMessengerKey: scaffoldMessengerKey,
+              navigatorKey: navigatorKey,
+              title: 'Aboutme',
+              debugShowCheckedModeBanner: false,
+              localizationsDelegates: const [
+                // 仅保留第三方库的国际化
+                SfGlobalLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+                FlutterQuillLocalizations.delegate,
+                // pro_image_editor v14 基于 material_ui，需要其本地化
+                //（否则编辑器内弹窗/按钮报 No MaterialLocalizations found）
+                ...material_ui.GlobalMaterialLocalizations.delegates,
+              ],
+              supportedLocales: const [
+                Locale('zh', 'CN'), // 中文
+                Locale('en', 'US'), // 英文
+              ],
+              theme: hasCustomBackground ? _transparentSurfaces(theme) : theme,
+              darkTheme: hasCustomBackground
+                  ? _transparentSurfaces(darkTheme)
+                  : darkTheme,
+              builder: (context, child) {
+                // 确保字体大小不受系统设置影响
+                // 根部全局包一层 DS 桥:根 Overlay/残留 Material 屏幕里的 DS 组件
+                // 不再因缺 AppTheme 祖树而 Null check 崩溃(幂等,已有桥处就近生效)
+                return ListenableBuilder(
+                  // 全局墨线入场动画时长/开关（设置页可调，0 = 关闭）
+                  listenable: DsInkMotionController(),
+                  builder: (context, _) {
+                    final motion = DsInkMotionController();
+                    return WiredMotion(
+                      enabled: motion.enabled,
+                      drawDuration: Duration(milliseconds: motion.durationMs),
+                      child: DSThemeBridge(
+                        // 全局主题背景：垫在根 Navigator 之下，所有界面共用
+                        child: AppBackground(
+                          child: MediaQuery(
+                            data: MediaQuery.of(context).copyWith(
+                              textScaler: const TextScaler.linear(1.0),
+                            ),
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () =>
+                                  FocusManager.instance.primaryFocus?.unfocus(),
+                              child: StyledToast(
+                                child: WidgetUriHandler(child: child!),
                               ),
-                              child: DSThemeBridge(
-                                // 全局主题背景：垫在根 Navigator 之下，所有界面共用
-                                child: AppBackground(
-                                  child: MediaQuery(
-                                    data: MediaQuery.of(
-                                      context,
-                                    ).copyWith(
-                                      textScaler: const TextScaler.linear(1.0),
-                                    ),
-                                    child: GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: () => FocusManager
-                                          .instance
-                                          .primaryFocus
-                                          ?.unfocus(),
-                                      child: StyledToast(
-                                        child: WidgetUriHandler(child: child!),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                  initialRoute: AppRoutes.initialRoute,
-                  onGenerateInitialRoutes: AppRoutes.generateInitialRoutes,
-                  routes: AppRoutes.routes,
-                  onGenerateRoute: AppRoutes.generateRoute,
-                  navigatorObservers: [RouteHistoryManager()],
-                  onGenerateTitle: (BuildContext context) => 'app_appTitle'.tr,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
+              initialRoute: AppRoutes.initialRoute,
+              onGenerateInitialRoutes: AppRoutes.generateInitialRoutes,
+              routes: AppRoutes.routes,
+              onGenerateRoute: AppRoutes.generateRoute,
+              navigatorObservers: [RouteHistoryManager()],
+              onGenerateTitle: (BuildContext context) => 'app_appTitle'.tr,
             );
           },
+        );
+      },
     );
   }
 
