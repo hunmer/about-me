@@ -459,7 +459,8 @@ class _CuteFruitTimerCardState extends State<CuteFruitTimerCard>
       _collideWithButton(fruit);
     }
 
-    for (var pass = 0; pass < 2; pass++) {
+    // 果堆较深时 2 轮不够收敛，多解一轮减少残留穿透
+    for (var pass = 0; pass < 3; pass++) {
       for (var i = 0; i < _fruits.length; i++) {
         for (var j = i + 1; j < _fruits.length; j++) {
           _collidePair(_fruits[i], _fruits[j]);
@@ -484,10 +485,9 @@ class _CuteFruitTimerCardState extends State<CuteFruitTimerCard>
     if (fruit.position.dy > _cardSize.height - r - 4) {
       fruit.position = Offset(fruit.position.dx, _cardSize.height - r - 4);
       if (fruit.velocity.dy > 0) {
-        fruit.velocity = Offset(
-          fruit.velocity.dx * 0.88,
-          -fruit.velocity.dy * 0.25,
-        );
+        // 低速落地不反弹（法向速度归零），消除底部持续微弹跳
+        final bounce = fruit.velocity.dy > 60 ? -fruit.velocity.dy * 0.25 : 0.0;
+        fruit.velocity = Offset(fruit.velocity.dx * 0.88, bounce);
         fruit.angularVelocity += fruit.velocity.dx * 0.0008;
       }
     }
@@ -520,7 +520,13 @@ class _CuteFruitTimerCardState extends State<CuteFruitTimerCard>
     fruit.position += normal * (fruit.radius - distance + 0.2);
     final speed = fruit.velocity.dx * normal.dx + fruit.velocity.dy * normal.dy;
     if (speed < 0) {
-      fruit.velocity -= normal * (speed * 1.35);
+      // 原反弹系数 1.35 会放大能量，贴附在按钮上的水果被反复踢起；
+      // 改为慢速贴附归零、快速撞击保留 35% 反弹
+      if (speed < -60) {
+        fruit.velocity -= normal * (speed * 1.35);
+      } else {
+        fruit.velocity -= normal * speed;
+      }
     }
   }
 
@@ -530,13 +536,16 @@ class _CuteFruitTimerCardState extends State<CuteFruitTimerCard>
     final distance = delta.distance;
     if (distance >= minDistance || distance < 0.001) return;
     final normal = delta / distance;
-    final overlap = minDistance - distance;
+    // 限制单次分离量并按比例校正，避免深堆叠穿透修正过冲互相顶开
+    final overlap = (minDistance - distance).clamp(0.0, 6.0);
     if (!identical(a, _draggedFruit)) a.position -= normal * (overlap / 2);
     if (!identical(b, _draggedFruit)) b.position += normal * (overlap / 2);
     final relative = b.velocity - a.velocity;
     final speed = relative.dx * normal.dx + relative.dy * normal.dy;
     if (speed >= 0) return;
-    final impulse = normal * (-(1 + 0.28) * speed / 2);
+    // 低速接触用非弹性（恢复系数 0）替代 0.28，果堆内部不再持续微弹跳
+    final restitution = speed < -60 ? 0.28 : 0.0;
+    final impulse = normal * (-(1 + restitution) * speed / 2);
     if (!identical(a, _draggedFruit)) a.velocity -= impulse;
     if (!identical(b, _draggedFruit)) b.velocity += impulse;
   }

@@ -421,6 +421,14 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
   void initState() {
     super.initState();
     eventManager.subscribe('plugin_loaded', _onPluginLoaded);
+    eventManager.subscribe(Live2DPlugin.archiveSelectedEvent, _onArchiveChanged);
+  }
+
+  /// 切换/编辑 Live2D 存档后 selected 变化不会自动触发本组件重建，
+  /// 需监听事件让 build 里的 key 比较逻辑重建会话 controller
+  void _onArchiveChanged(EventArgs args) {
+    if (!mounted || _initializedKey == _currentKey) return;
+    setState(() {});
   }
 
   void _onPluginLoaded(EventArgs args) {
@@ -450,6 +458,16 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
           routeName: 'live2d:${archive.id}',
           agentId: agentId,
         );
+    // 临时会话跟随存档当前绑定的 Agent：存档换绑后旧会话仍指向旧 Agent
+    //（如通用助手），这里校正为新绑定的 Agent 并退出链式模式
+    if (conversation.agentId != agentId ||
+        conversation.agentChain != null) {
+      conversation = conversation.copyWith(
+        agentId: agentId,
+        clearAgentChain: true,
+      );
+      await agentChat.conversationService.updateConversation(conversation);
+    }
     if (!conversation.groups.contains(Live2DPlugin.fixedGroup)) {
       conversation = conversation.copyWith(
         groups: [...conversation.groups, Live2DPlugin.fixedGroup],
@@ -510,6 +528,10 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
   @override
   void dispose() {
     eventManager.unsubscribe('plugin_loaded', _onPluginLoaded);
+    eventManager.unsubscribe(
+      Live2DPlugin.archiveSelectedEvent,
+      _onArchiveChanged,
+    );
     _messageService?.removeListener(_onMessagesChanged);
     _controller?.dispose();
     super.dispose();

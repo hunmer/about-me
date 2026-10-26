@@ -762,9 +762,16 @@ class _TimerTaskDetailsPageState extends State<TimerTaskDetailsPage>
                   controls: _buildControls(theme, cardColor),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: _buildTopBar(theme, cardColor),
+              // 顶栏必须 Positioned 定位：否则作为非定位子节点把 Stack 压成顶栏高度，
+              // Positioned.fill 的全屏卡片随之只剩几十像素高
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: _buildTopBar(theme, cardColor),
+                ),
               ),
             ],
           ),
