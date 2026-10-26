@@ -1,4 +1,7 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:glint_audio_pure/glint_audio_pure.dart';
 
 /// 一帧语音分析结果。元音置信度总和约为 1，口型开合值始终在 0~1。
 class Live2DVoiceFrame {
@@ -28,6 +31,18 @@ class Live2DVoiceFrame {
     'VoiceE': e,
     'VoiceO': o,
   };
+}
+
+class Live2DDecodedPcm {
+  const Live2DDecodedPcm({
+    required this.samples,
+    required this.channels,
+    required this.sampleRate,
+  });
+
+  final List<double> samples;
+  final int channels;
+  final int sampleRate;
 }
 
 /// pymouth 的 VowelAnalyser 的 Dart 移植：MFCC + DTW + 温度 softmax。
@@ -186,6 +201,26 @@ class Live2DVoiceAnalyzer {
       samples.add(value / 32768.0);
     }
     return processPcm(samples, rate, channels: channels);
+  }
+
+  /// 解码 MP3 并分析一帧。解码结果为交错浮点 PCM，随后按声道混音。
+  Live2DVoiceFrame processMp3(Uint8List bytes) {
+    if (bytes.isEmpty) return _silence(mouth: _mouth);
+    final decoded = decodeMp3(bytes);
+    return processPcm(
+      decoded.samples,
+      decoded.sampleRate,
+      channels: decoded.channels,
+    );
+  }
+
+  Live2DDecodedPcm decodeMp3(Uint8List bytes) {
+    final decoded = mp3Decode(bytes);
+    return Live2DDecodedPcm(
+      samples: decoded.samples,
+      channels: decoded.channels,
+      sampleRate: decoded.sampleRate,
+    );
   }
 
   Live2DVoiceFrame _silence({double mouth = 0}) => Live2DVoiceFrame(

@@ -667,7 +667,7 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
               for (final model in MiniMaxTTSService.getAvailableModels())
                 DSSelectItem(value: model, label: model),
             ],
-            onChanged: (value) => _modelController.text = value,
+            onChanged: (value) => setState(() => _modelController.text = value),
           ),
           SizedBox(height: theme.spacing.lg),
 
@@ -681,7 +681,7 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
               for (final emotion in MiniMaxTTSService.getAvailableEmotions())
                 DSSelectItem(value: emotion, label: _emotionLabel(emotion)),
             ],
-            onChanged: (value) => _emotionController.text = value,
+            onChanged: (value) => setState(() => _emotionController.text = value),
           ),
           SizedBox(height: theme.spacing.xs),
           Text(
@@ -700,7 +700,7 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
               DSSelectItem(value: 'pcm', label: 'PCM'),
               DSSelectItem(value: 'flac', label: 'FLAC'),
             ],
-            onChanged: (value) => _audioFormatController.text = value,
+            onChanged: (value) => setState(() => _audioFormatController.text = value),
           ),
         ],
       ],

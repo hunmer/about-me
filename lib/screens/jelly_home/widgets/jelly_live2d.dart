@@ -126,6 +126,13 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   bool _routeVisible = true;
   Future<void>? _routeUnload;
   Live2DMotionDefinition? _pendingMotion;
+  Live2DVoiceFrame? _lastVoiceFrame;
+  Future<void> _voiceParameterQueue = Future<void>.value();
+  int _voiceFrameVersion = 0;
+  int _voiceLoadGeneration = 0;
+  int _lastAppliedVoiceVersion = -1;
+  int _lastAppliedVoiceLoadGeneration = -1;
+  bool _wasModelLoaded = false;
 
   /// 可点击区域（HitAreas）调试叠加层的开关状态，不持久化；
   /// 用 ValueNotifier 让已打开的控制面板能实时刷新
@@ -201,7 +208,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
-    if (route != null) {
+    if (route is PageRoute<dynamic>) {
       RouteHistoryManager.instance.subscribe(this, route);
     }
   }
@@ -270,12 +277,39 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   }
 
   void _handleVoiceFrame() {
-    final frame = _voiceFrame.value;
-    if (!_controller.value.isLoaded) return;
-    // Live2D 标准口型参数范围为 0~1；元音置信度保留在插件 voiceFrame 中供外部使用。
-    unawaited(
-      _controller.setParameter('ParamMouthOpenY', frame?.mouthOpenY ?? 0),
-    );
+    _lastVoiceFrame = _voiceFrame.value;
+    final version = ++_voiceFrameVersion;
+    _queueVoiceParameter(_lastVoiceFrame, version);
+  }
+
+  void _queueVoiceParameter(Live2DVoiceFrame? frame, int version) {
+    final loadGeneration = _voiceLoadGeneration;
+    _voiceParameterQueue = _voiceParameterQueue.then((_) async {
+      if (!mounted ||
+          !_controller.value.isLoaded ||
+          loadGeneration != _voiceLoadGeneration) {
+        return;
+      }
+      // 音频帧可能在模型加载期间快速到达，只应用队列中最新的一帧。
+      if (version != _voiceFrameVersion) return;
+      if (version == _lastAppliedVoiceVersion &&
+          loadGeneration == _lastAppliedVoiceLoadGeneration) {
+        return;
+      }
+      final value = frame?.mouthOpenY ?? 0;
+      try {
+        await _controller.setParameter('ParamMouthOpenY', value);
+        _lastAppliedVoiceVersion = version;
+        _lastAppliedVoiceLoadGeneration = loadGeneration;
+        debugPrint(
+          '[Live2D][Voice] ParamMouthOpenY=$value '
+          '(version=$version, load=$loadGeneration)',
+        );
+      } catch (error) {
+        debugPrint('[Live2D][Voice] set ParamMouthOpenY failed: $error');
+      }
+    });
+    unawaited(_voiceParameterQueue);
   }
 
   /// 流式回复会多次更新 message；等待内容稳定后只触发一次 JEV。

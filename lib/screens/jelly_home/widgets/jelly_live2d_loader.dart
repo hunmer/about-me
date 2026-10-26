@@ -4,7 +4,6 @@ part of 'jelly_live2d.dart';
 const _appearanceDuration = Duration(seconds: 8);
 
 extension _JellyLive2DLoader on _JellyLive2DState {
-
   void _scheduleAppearanceReset() {
     _appearanceResetTimer?.cancel();
     _appearanceResetTimer = Timer(_appearanceDuration, () async {
@@ -121,6 +120,17 @@ extension _JellyLive2DLoader on _JellyLive2DState {
   }
 
   void _onViewStateChanged() {
+    final loaded = _controller.value.isLoaded;
+    if (loaded && !_wasModelLoaded) {
+      _voiceLoadGeneration++;
+      debugPrint(
+        '[Live2D][Voice] 模型已加载，补应用最新口型帧 '
+        '(version=$_voiceFrameVersion)',
+      );
+      _queueVoiceParameter(_lastVoiceFrame, _voiceFrameVersion);
+    }
+    _wasModelLoaded = loaded;
+
     final pending = _pendingMotion;
     if (pending == null) return;
     if (_controller.value.lastError != null) {
@@ -163,7 +173,9 @@ extension _JellyLive2DLoader on _JellyLive2DState {
         .where((item) => item.label == result['expression'])
         .firstOrNull;
     if (expression != null) {
-      debugPrint('[Live2D][Jev] 执行表达式: ${expression.label} (#${expression.index})');
+      debugPrint(
+        '[Live2D][Jev] 执行表达式: ${expression.label} (#${expression.index})',
+      );
       try {
         await _controller.setExpression(expression.index);
       } on Live2DException catch (error) {
@@ -177,7 +189,9 @@ extension _JellyLive2DLoader on _JellyLive2DState {
         .where((item) => item.label == result['motion'])
         .firstOrNull;
     if (motion != null) {
-      debugPrint('[Live2D][Jev] 执行动作: ${motion.label} (${motion.group}#${motion.index})');
+      debugPrint(
+        '[Live2D][Jev] 执行动作: ${motion.label} (${motion.group}#${motion.index})',
+      );
       await _startMotion(motion);
       _scheduleAppearanceReset();
     } else {

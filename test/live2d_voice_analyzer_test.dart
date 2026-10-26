@@ -1,5 +1,7 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
+import 'package:glint_audio_pure/glint_audio_pure.dart';
 import 'package:aboutme/plugins/live2d/live2d_voice_analyzer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -17,6 +19,23 @@ void main() {
     expect(loud.mouthOpenY, inInclusiveRange(0, 1));
     expect(
       loud.vowels.values.fold<double>(0, (sum, value) => sum + value),
+      closeTo(1, 1e-9),
+    );
+  });
+
+  test('MP3 可以解码为 PCM 并进入 DTW 分析', () {
+    final source = Float64List.fromList(
+      List<double>.generate(
+        2304,
+        (i) => math.sin(i * 2 * math.pi * 440 / 32000) * 0.3,
+      ),
+    );
+    final mp3 = mp3EncodeMono(source, sampleRate: 32000, bitrate: 32);
+    final frame = Live2DVoiceAnalyzer().processMp3(mp3);
+
+    expect(frame.mouthOpenY, inInclusiveRange(0, 1));
+    expect(
+      frame.vowels.values.fold<double>(0, (sum, value) => sum + value),
       closeTo(1, 1e-9),
     );
   });

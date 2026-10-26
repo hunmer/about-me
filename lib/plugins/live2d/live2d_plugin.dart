@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
@@ -40,6 +41,7 @@ class Live2DPlugin extends BasePlugin {
       ValueNotifier<Live2DVoiceFrame?>(null);
   final Live2DVoiceAnalyzer voiceAnalyzer = Live2DVoiceAnalyzer();
   Timer? _voiceAnalysisTimer;
+  int _voiceAnalysisGeneration = 0;
 
   Map<String, double> get vowelConfidence =>
       voiceFrame.value?.vowels ??
@@ -60,9 +62,14 @@ class Live2DPlugin extends BasePlugin {
     voiceFrame.value = voiceAnalyzer.processPcm16(bytes, sampleRate);
   }
 
+  void pushAudioMp3(Uint8List bytes) {
+    voiceFrame.value = voiceAnalyzer.processMp3(bytes);
+  }
+
   /// 按播放节奏切分 PCM，避免整段音频只产生一个口型帧。
   void startPcm16Analysis(List<int> bytes, int sampleRate) {
     _voiceAnalysisTimer?.cancel();
+    final generation = ++_voiceAnalysisGeneration;
     var offset =
         bytes.length >= 44 &&
             String.fromCharCodes(bytes.sublist(0, 4)) == 'RIFF'
@@ -70,6 +77,7 @@ class Live2DPlugin extends BasePlugin {
         : 0;
     const chunkBytes = 8192; // 4096 samples @ 32 kHz ~= 128 ms
     void processChunk() {
+      if (generation != _voiceAnalysisGeneration) return;
       if (offset >= bytes.length) {
         _voiceAnalysisTimer?.cancel();
         _voiceAnalysisTimer = null;
@@ -77,6 +85,10 @@ class Live2DPlugin extends BasePlugin {
       }
       final end = (offset + chunkBytes).clamp(offset, bytes.length);
       pushAudioPcm16(bytes.sublist(offset, end), sampleRate);
+      debugPrint(
+        '[Live2D][Voice] PCM frame bytes=${end - offset} '
+        'mouth=${voiceFrame.value?.mouthOpenY.toStringAsFixed(3)}',
+      );
       offset = end;
     }
 
@@ -87,7 +99,74 @@ class Live2DPlugin extends BasePlugin {
     );
   }
 
+  /// MP3 先完整解码，再按 PCM 采样块实时送入分析器。
+  Future<void> startMp3Analysis(Uint8List bytes) async {
+    _voiceAnalysisTimer?.cancel();
+    final generation = ++_voiceAnalysisGeneration;
+    if (bytes.isEmpty) {
+      debugPrint('[Live2D][Voice] MP3 audio callback returned empty bytes');
+      return;
+    }
+    debugPrint('[Live2D][Voice] MP3 analysis started: ${bytes.length} bytes');
+    late final Live2DDecodedPcm decoded;
+    try {
+      decoded = await Future<Live2DDecodedPcm>.microtask(
+        () => voiceAnalyzer.decodeMp3(bytes),
+      );
+    } catch (error) {
+      debugPrint('[Live2D][Voice] MP3 decode failed: $error');
+      return;
+    }
+    if (generation != _voiceAnalysisGeneration) return;
+    if (decoded.samples.isEmpty ||
+        decoded.channels <= 0 ||
+        decoded.sampleRate <= 0) {
+      debugPrint(
+        '[Live2D][Voice] MP3 decode returned no usable PCM: '
+        'samples=${decoded.samples.length}, channels=${decoded.channels}, '
+        'sampleRate=${decoded.sampleRate}',
+      );
+      return;
+    }
+    debugPrint(
+      '[Live2D][Voice] MP3 decoded: samples=${decoded.samples.length}, '
+      'channels=${decoded.channels}, sampleRate=${decoded.sampleRate}',
+    );
+    var offset = 0;
+    const samplesPerChunk = 4096;
+    void processChunk() {
+      if (generation != _voiceAnalysisGeneration) return;
+      if (offset >= decoded.samples.length) {
+        _voiceAnalysisTimer?.cancel();
+        _voiceAnalysisTimer = null;
+        return;
+      }
+      final end = (offset + samplesPerChunk * decoded.channels).clamp(
+        offset,
+        decoded.samples.length,
+      );
+      voiceFrame.value = voiceAnalyzer.processPcm(
+        decoded.samples.sublist(offset, end),
+        decoded.sampleRate,
+        channels: decoded.channels,
+      );
+      debugPrint(
+        '[Live2D][Voice] MP3 frame samples=${end - offset} '
+        'mouth=${voiceFrame.value?.mouthOpenY.toStringAsFixed(3)}',
+      );
+      offset = end;
+    }
+
+    processChunk();
+    final intervalMs = (samplesPerChunk * 1000 / decoded.sampleRate).round();
+    _voiceAnalysisTimer = Timer.periodic(
+      Duration(milliseconds: intervalMs.clamp(1, 1000)),
+      (_) => processChunk(),
+    );
+  }
+
   void resetVoiceAnalysis() {
+    _voiceAnalysisGeneration++;
     _voiceAnalysisTimer?.cancel();
     _voiceAnalysisTimer = null;
     voiceFrame.value = null;
@@ -262,13 +341,31 @@ class Live2DPlugin extends BasePlugin {
         reply,
         serviceId: agent.ttsServiceId,
         onAudioData: (bytes, format) {
+          debugPrint(
+            '[Live2D][Voice] TTS audio callback: format=$format, '
+            'bytes=${bytes.length}',
+          );
           // WAV/PCM 服务可直接分析；压缩音频需由服务端配置为 pcm 才能提供采样数据。
-          final normalizedFormat = format?.toLowerCase();
+          final normalizedFormat = format
+              ?.toLowerCase()
+              .replaceFirst('audio/', '')
+              .replaceFirst('.', '');
+          final looksLikeMp3 =
+              bytes.length >= 3 &&
+              ((bytes[0] == 0x49 && bytes[1] == 0x44 && bytes[2] == 0x33) ||
+                  (bytes[0] == 0xff && (bytes[1] & 0xe0) == 0xe0));
           if (normalizedFormat == 'wav' ||
               normalizedFormat == 'pcm' ||
               normalizedFormat == 's16le' ||
               normalizedFormat == 'pcm_s16le') {
             startPcm16Analysis(bytes, 32000);
+          } else if (normalizedFormat == 'mp3' ||
+              normalizedFormat == 'mpeg' ||
+              normalizedFormat == 'mpeg3' ||
+              (normalizedFormat == null && looksLikeMp3)) {
+            unawaited(startMp3Analysis(Uint8List.fromList(bytes)));
+          } else {
+            debugPrint('[Live2D][Voice] unsupported TTS audio format: $format');
           }
         },
         onComplete: resetVoiceAnalysis,
