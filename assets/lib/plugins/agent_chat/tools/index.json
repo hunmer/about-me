@@ -5,6 +5,7 @@
   ["activity_deleteActivity","删除活动记录"],
   ["activity_getTodayStats","获取今日统计"],
   ["activity_getTagGroups","获取标签分组"],
+  ["activity_getAllTags","获取所有标签"],
   ["activity_getRecentTags","获取最近使用的标签"],
   ["bill_getAccounts","获取所有账户"],
   ["bill_createAccount","创建账户"],

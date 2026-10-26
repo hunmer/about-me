@@ -160,6 +160,25 @@
     "notes": "标签分组用于组织和快速选择标签",
     "enabled": true
   },
+  "getAllTags": {
+    "title": "获取所有标签",
+    "description": "获取所有标签分组中的全部标签（合并去重）",
+    "parameters": [
+      {"name": "params", "type": "object", "required": true, "description": "参数对象（可为空对象 {}）"}
+    ],
+    "returns": {
+      "type": "Array",
+      "description": "所有标签名称的字符串数组（去重后）"
+    },
+    "examples": [
+      {
+        "title": "获取所有标签",
+        "code": "const tags = await Aboutme.plugins.activity.getAllTags({});\nsetResult(`共有 ${tags.length} 个标签: ${tags.join(', ')}`);"
+      }
+    ],
+    "notes": "返回所有标签分组中的标签合并去重后的列表，不含分组信息；需要分组信息请使用 getTagGroups",
+    "enabled": true
+  },
   "getRecentTags": {
     "title": "获取最近使用的标签",
     "description": "获取最近使用的标签列表",
