@@ -307,20 +307,26 @@ struct MoodTestView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let scale = min(geo.size.width / dialSize.width, geo.size.height / dialSize.height)
             TabView {
-                scaledPage(geo: geo, scale: scale) { feelingDial }.tag(0)
-                scaledPage(geo: geo, scale: scale) { todayDial }.tag(1)
-                scaledPage(geo: geo, scale: scale) { historyDial }.tag(2)
-                scaledPage(geo: geo, scale: scale) { updateDial }.tag(3)
+                scaledPage(geo: geo) { feelingDial }.tag(0)
+                scaledPage(geo: geo) { todayDial }.tag(1)
+                scaledPage(geo: geo) { historyDial }.tag(2)
+                scaledPage(geo: geo) { updateDial }.tag(3)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
         }
+        // 全屏铺满：隐藏导航栏并忽略安全区，系统时间会悬浮在表盘顶部
+        // （返回仍可用屏幕左缘右滑手势）
+        .ignoresSafeArea()
+        .toolbar(.hidden, for: .navigationBar)
     }
 
-    private func scaledPage(geo: GeometryProxy, scale: CGFloat, @ViewBuilder content: () -> some View) -> some View {
+    // x/y 独立缩放铺满可用区域（设计稿与手表屏比例仅差约 4%，拉伸无感）
+    private func scaledPage(geo: GeometryProxy, @ViewBuilder content: () -> some View) -> some View {
         content()
-            .scaleEffect(scale)
+            .scaleEffect(x: geo.size.width / dialSize.width,
+                         y: geo.size.height / dialSize.height,
+                         anchor: .center)
             .frame(width: geo.size.width, height: geo.size.height)
     }
 
