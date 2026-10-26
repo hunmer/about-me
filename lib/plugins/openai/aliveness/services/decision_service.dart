@@ -64,15 +64,32 @@ class DecisionService {
     final fallback = <String, String>{};
     final settings = await _store.loadSettings();
     final key = settings['jevApiKey'] as String?;
-    if (key == null || key.isEmpty || (expressions.isEmpty && motions.isEmpty)) {
+    debugPrint(
+      '[Live2D][Jev] 开始决策 | reply=${_debugPreview(reply)} '
+      'expressions=${expressions.length} motions=${motions.length} '
+      'note=${_debugPreview(note)}',
+    );
+    if (key == null || key.isEmpty) {
+      debugPrint('[Live2D][Jev] 未配置 Jev API Key，跳过决策');
+      return fallback;
+    }
+    if (expressions.isEmpty && motions.isEmpty) {
+      debugPrint('[Live2D][Jev] 模型没有可用表达式或动作，跳过决策');
       return fallback;
     }
     try {
+      final baseUrl = settings['jevBaseUrl'] as String? ??
+          'https://api.typesafe.ai/v1/systemone';
+      final model = settings['jevModel'] as String? ?? 'jev-latest';
+      debugPrint(
+        '[Live2D][Jev] 发起请求 | model=$model baseUrl=$baseUrl '
+        'replyLength=${reply.length}',
+      );
       final response = await _dio.post<Map<String, dynamic>>(
-        settings['jevBaseUrl'] as String? ?? 'https://api.typesafe.ai/v1/systemone',
+        baseUrl,
         options: Options(headers: {'Authorization': 'Bearer $key', 'Content-Type': 'application/json'}),
         data: {
-          'model': settings['jevModel'] as String? ?? 'jev-latest',
+          'model': model,
           'state': 'Live2D模型注释：$note\nAI回复：$reply',
           'questions': {
             if (expressions.isNotEmpty)
@@ -91,21 +108,38 @@ class DecisionService {
         },
       );
       final answers = response.data?['answers'];
-      if (answers is! Map) return fallback;
+      if (answers is! Map) {
+        debugPrint('[Live2D][Jev] 响应缺少 answers，原始类型=${answers.runtimeType}');
+        return fallback;
+      }
       final result = <String, String>{};
       for (final key in const ['expression', 'motion']) {
         final answer = answers[key];
-        if (answer is Map && (answer['confidence'] as num?)?.toDouble() != null &&
-            (answer['confidence'] as num).toDouble() >= 0.55) {
-          final choice = answer['choice']?.toString();
-          if (choice != null && choice != '不改变') result[key] = choice;
+        final confidence = answer is Map
+            ? (answer['confidence'] as num?)?.toDouble()
+            : null;
+        final choice = answer is Map ? answer['choice']?.toString() : null;
+        debugPrint(
+          '[Live2D][Jev] $key | choice=${choice ?? "null"} '
+          'confidence=${confidence?.toStringAsFixed(3) ?? "null"}',
+        );
+        if (choice != null && confidence != null && confidence >= 0.55) {
+          if (choice != '不改变') result[key] = choice;
         }
       }
+      debugPrint('[Live2D][Jev] 决策完成 | result=$result');
       return result;
     } catch (error) {
       debugPrint('[Live2D][Jev] 表情动作决策失败: $error');
       return fallback;
     }
+  }
+
+  String _debugPreview(String value) {
+    final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return normalized.length <= 80
+        ? normalized
+        : '${normalized.substring(0, 80)}...';
   }
 
   /// 使用 Jev Score 评估回复的拟人度（0=AI味重，3=像真人）。

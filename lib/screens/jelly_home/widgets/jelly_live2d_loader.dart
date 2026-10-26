@@ -128,7 +128,15 @@ extension _JellyLive2DLoader on _JellyLive2DState {
 
   Future<void> _applyJevReply(String reply) async {
     final archive = Live2DPlugin.instance.selected;
-    if (archive?.jevEnabled != true || reply.trim().isEmpty) return;
+    if (archive?.jevEnabled != true) {
+      debugPrint('[Live2D][Jev] 当前档案未开启 JEV，跳过自动表情动作');
+      return;
+    }
+    if (reply.trim().isEmpty) {
+      debugPrint('[Live2D][Jev] 回复为空，跳过自动表情动作');
+      return;
+    }
+    debugPrint('[Live2D][Jev] 收到完整回复，准备选择表情动作');
     final result = await Live2DPlugin.instance.decideAppearance(
       reply,
       model: _selectedModel,
@@ -137,14 +145,24 @@ extension _JellyLive2DLoader on _JellyLive2DState {
         .where((item) => item.label == result['expression'])
         .firstOrNull;
     if (expression != null) {
+      debugPrint('[Live2D][Jev] 执行表达式: ${expression.label} (#${expression.index})');
       try {
         await _controller.setExpression(expression.index);
-      } on Live2DException {}
+      } on Live2DException catch (error) {
+        debugPrint('[Live2D][Jev] 表达式执行失败: $error');
+      }
+    } else {
+      debugPrint('[Live2D][Jev] 未选择表达式');
     }
     final motion = _selectedModel.motions
         .where((item) => item.label == result['motion'])
         .firstOrNull;
-    if (motion != null) await _startMotion(motion);
+    if (motion != null) {
+      debugPrint('[Live2D][Jev] 执行动作: ${motion.label} (${motion.group}#${motion.index})');
+      await _startMotion(motion);
+    } else {
+      debugPrint('[Live2D][Jev] 未选择动作');
+    }
   }
 
   String _loadStageLabel(String? stage) {
