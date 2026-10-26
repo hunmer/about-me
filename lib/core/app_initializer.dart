@@ -710,15 +710,15 @@ Future<void> initializeFlutterFloatingBall() async {
 /// 此时 [globalStorage] 已完成初始化并记录失败原因。
 Future<void> promptRemoteStorageUnavailable() async {
   try {
-    if (globalStorage.remoteFallbackReason == null) return;
+    final reason = globalStorage.remoteFallbackReason;
+    debugPrint('[StorageFallback] 启动检查: reason=$reason');
+    if (reason == null) return;
 
     // 让过启动期其他弹层，避免多弹窗叠加
     await Future.delayed(const Duration(milliseconds: 500));
     final context = navigatorKey.currentContext;
-    if (context == null) {
-      debugPrint('[StorageFallback] 导航器未就绪，跳过远端存储不可用提示');
-      return;
-    }
+    debugPrint('[StorageFallback] 导航器: ${context == null ? '未就绪' : '已就绪'}');
+    if (context == null) return;
 
     final openSettings = await showDSDialog<bool>(
       context: context,
@@ -731,15 +731,20 @@ Future<void> promptRemoteStorageUnavailable() async {
             cancelText: 'app_cancel'.tr,
           ),
     );
+    debugPrint('[StorageFallback] 确认框结果: openSettings=$openSettings');
     if (openSettings != true) return;
 
     final saved = await showDialog<bool>(
       context: context,
       builder: (_) => const StorageBackendSettingsDialog(),
     );
-    if (saved == true && kIsWeb) {
+    if (saved != true) return;
+    if (kIsWeb) {
       // Web 保存新配置后刷新页面立即生效，避免继续使用失效的连接
       reloadPage();
+    } else {
+      // 桌面/移动端配置重启后生效，与设置页保存提示一致
+      Toast.show('settings_screen_storageSavedRestart'.tr);
     }
   } catch (e) {
     debugPrint('[StorageFallback] 远端存储不可用提示失败: $e');

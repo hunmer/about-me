@@ -50,7 +50,7 @@ void main() {
   });
 
   group('computeJellyLive2DViewportLayout', () {
-    test('Windows resizes the native viewport without composited scaling', () {
+    test('resizable platform views use the painted viewport size', () {
       expect(
         computeJellyLive2DViewportLayout(
           displaySize: 851,
@@ -61,15 +61,21 @@ void main() {
       );
     });
 
-    test('other platforms retain the fixed viewport scaling path', () {
-      expect(
-        computeJellyLive2DViewportLayout(
-          displaySize: 851,
+    test('Windows scales its fixed texture to the current display size', () {
+      // Growing, shrinking and restoring the window must keep the texture
+      // dimensions stable while the painted model follows the display size.
+      for (final displaySize in [851.0, 400.0, 200.0, 851.0]) {
+        final layout = computeJellyLive2DViewportLayout(
+          displaySize: displaySize,
           baseViewportHeight: 360,
           useResizableViewport: false,
-        ),
-        (viewportHeight: 360, scale: 851 / 360),
-      );
+        );
+        expect(layout.viewportHeight, 360);
+        expect(
+          layout.viewportHeight * layout.scale,
+          closeTo(displaySize, 1e-9),
+        );
+      }
     });
   });
 

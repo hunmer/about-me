@@ -1735,6 +1735,58 @@
       "stdoutLogPath": "D:\\about-me\\.procm-mcp\\gDzc4w(21536)\\processes\\qKDem-Xl-stdout.log",
       "stderrLogPath": "D:\\about-me\\.procm-mcp\\gDzc4w(21536)\\processes\\qKDem-Xl-stderr.log",
       "envs": {}
+    },
+    {
+      "id": "QmWMa-Fc",
+      "name": "app-windows-verify",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:\\about-me",
+      "status": "exited",
+      "pid": 24396,
+      "exitCode": 1,
+      "error": null,
+      "desc": "验证远端存储不可用弹窗（临时）",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792979457257,
+      "lastStartedAt": 1792979457257,
+      "stoppedAt": 1792979786062,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\xF4C7m(17636)\\processes\\QmWMa-Fc-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\xF4C7m(17636)\\processes\\QmWMa-Fc-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "xccNHLVP",
+      "name": "app-windows-verify",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:\\about-me",
+      "status": "exited",
+      "pid": 10836,
+      "exitCode": 1,
+      "error": null,
+      "desc": "验证远端存储不可用弹窗（临时）",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1792979791638,
+      "lastStartedAt": 1792979791638,
+      "stoppedAt": 1792980142665,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\xF4C7m(17636)\\processes\\xccNHLVP-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\xF4C7m(17636)\\processes\\xccNHLVP-stderr.log",
+      "envs": {}
     }
   ]
 }

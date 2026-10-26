@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'data/aboutme_data_service.dart';
 import 'storage/storage_manager.dart';
@@ -39,7 +39,12 @@ class ConfigManager {
       }
     } catch (e) {
       _appConfig.addAll(_getDefaultConfig());
-      await saveAppConfig(); // 保存默认配置到文件
+      try {
+        await saveAppConfig(); // 保存默认配置到文件
+      } catch (saveError) {
+        // 远端存储不可用时保存失败不阻塞启动，内存默认配置继续使用
+        debugPrint('[ConfigManager] 默认配置保存失败（离线容错）: $saveError');
+      }
     }
   }
 

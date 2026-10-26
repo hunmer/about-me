@@ -288,16 +288,15 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
             navigationPadding: navigationPadding,
             fitContainer: fitHeight != null,
           );
-          // Resize supported native views to the painted size. Scaling a fixed
-          // 360px viewport blurs mobile rendering and can leave platform-view
-          // bounds and hit-test coordinates out of sync with the model.
+          // Resize platform views to the painted size. On Windows, keep the
+          // D3D texture stable and scale it in Flutter so interactive window
+          // resizing does not depend on native texture recreation.
           final viewportLayout = computeJellyLive2DViewportLayout(
             displaySize: displaySize,
             baseViewportHeight: _defaultSize,
             useResizableViewport:
                 kIsWeb ||
-                (defaultTargetPlatform == TargetPlatform.windows ||
-                    defaultTargetPlatform == TargetPlatform.macOS ||
+                (defaultTargetPlatform == TargetPlatform.macOS ||
                     defaultTargetPlatform == TargetPlatform.iOS ||
                     defaultTargetPlatform == TargetPlatform.android),
           );

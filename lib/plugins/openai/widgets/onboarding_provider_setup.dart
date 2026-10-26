@@ -184,10 +184,7 @@ class _OnboardingProviderSetupState extends State<OnboardingProviderSetup> {
           hint: 'openai_pleaseSelectProvider'.tr,
           items: _presets
               .map(
-                (preset) => DSSelectItem(
-                  label: preset.label,
-                  value: preset.id,
-                ),
+                (preset) => DSSelectItem(label: preset.label, value: preset.id),
               )
               .toList(),
           onChanged: (value) {
@@ -208,47 +205,52 @@ class _OnboardingProviderSetupState extends State<OnboardingProviderSetup> {
             style: DsTypography.caption.copyWith(color: theme.textSub),
           ),
           SizedBox(height: theme.spacing.sm),
-          Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: _models.length,
-              itemBuilder: (context, index) {
-                final model = _models[index];
-                final isSelected = model.id == _selectedModelId;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: DSCard(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: theme.spacing.md,
-                      vertical: theme.spacing.sm,
-                    ),
-                    onTap: () {
-                      setState(() => _selectedModelId = model.id);
-                      widget.values['model'] = model.id;
-                    },
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            model.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: DsTypography.body.copyWith(
-                              color: theme.text,
+          // 按内容收缩并封顶高度，避免列表撑满剩余空间把 API Key 输入框压到页面底部
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 260),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: _models.length,
+                itemBuilder: (context, index) {
+                  final model = _models[index];
+                  final isSelected = model.id == _selectedModelId;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: DSCard(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: theme.spacing.md,
+                        vertical: theme.spacing.sm,
+                      ),
+                      onTap: () {
+                        setState(() => _selectedModelId = model.id);
+                        widget.values['model'] = model.id;
+                      },
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              model.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: DsTypography.body.copyWith(
+                                color: theme.text,
+                              ),
                             ),
                           ),
-                        ),
-                        if (isSelected)
-                          DsIcon(
-                            DsIconKind.check,
-                            size: 22,
-                            color: theme.success,
-                          ),
-                      ],
+                          if (isSelected)
+                            DsIcon(
+                              DsIconKind.check,
+                              size: 22,
+                              color: theme.success,
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ] else
