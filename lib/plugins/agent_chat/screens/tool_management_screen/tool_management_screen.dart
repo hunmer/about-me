@@ -521,71 +521,11 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
                               ),
                             ),
                   ),
-
-                  // 底部统计信息
-                  Divider(
-                    height: 1,
-                    color: theme.textSub.withValues(alpha: 0.2),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: _buildStatistics(),
-                  ),
                 ],
               ),
     );
   }
-
-  /// 构建统计信息卡片
-  Widget _buildStatistics() {
-    final theme = DSThemeBridge.resolve(context);
-    // 直接从内存中的工具配置计算统计，确保与 _showDisabledTools 一致
-    int totalTools = 0;
-    int enabledTools = 0;
-
-    _allPluginTools.forEach((pluginId, toolSet) {
-      toolSet.tools.forEach((toolId, config) {
-        totalTools++;
-        if (config.enabled) {
-          enabledTools++;
-        }
-      });
-    });
-
-    final disabledCount = totalTools - enabledTools;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.surface,
-        borderRadius: theme.radii.md,
-        border: Border.all(color: theme.textSub.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem('总工具数', totalTools.toString(), DsIconKind.gear),
-          _buildStatItem(
-            '已启用',
-            enabledTools.toString(),
-            DsIconKind.check,
-            color: theme.success,
-          ),
-          _buildStatItem(
-            '已禁用',
-            disabledCount.toString(),
-            DsIconKind.block,
-            color: theme.textSub,
-            onTap: disabledCount > 0 ? _showDisabledTools : null,
-          ),
-        ],
-      ),
-    );
-  }
-
+  
   Widget _buildStatItem(
     String label,
     String value,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/agent_chat/models/tool_config.dart';
+import 'package:aboutme/plugins/agent_chat/services/tool_config_manager.dart';
 import 'tool_list_item.dart';
 
 /// 插件分组展示组件
@@ -29,11 +31,32 @@ class PluginSection extends StatefulWidget {
 class _PluginSectionState extends State<PluginSection> {
   bool _isExpanded = true;
 
+  /// 分组总开关：批量切换组内全部工具的启用状态
+  Future<void> _toggleAll(bool enabled) async {
+    try {
+      for (final toolId in widget.visibleToolIds) {
+        final tool = widget.toolSet.tools[toolId];
+        if (tool == null || tool.enabled == enabled) continue;
+        await ToolConfigManager.instance.toggleToolEnabled(
+          widget.pluginId,
+          toolId,
+          enabled,
+        );
+      }
+      widget.onRefresh();
+    } catch (e) {
+      toastService.showToast('切换分组状态失败: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     final enabledCount = widget.toolSet.enabledToolCount;
     final totalCount = widget.visibleToolIds.length;
+    final allEnabled = widget.visibleToolIds.every(
+      (id) => widget.toolSet.tools[id]?.enabled ?? false,
+    );
 
     if (totalCount == 0) {
       return const SizedBox.shrink();
@@ -90,6 +113,12 @@ class _PluginSectionState extends State<PluginSection> {
                           ],
                         ),
                       ),
+                      DSSwitch(
+                        value: allEnabled,
+                        onChanged: _toggleAll,
+                        semanticLabel: '${widget.pluginId} 总开关',
+                      ),
+                      const SizedBox(width: 4),
                       DsIcon(
                         _isExpanded
                             ? DsIconKind.chevronUp

@@ -33,6 +33,65 @@ Map<String, Function> _defineJSAPI() {
   };
 }
 
+// ==================== 参数归一化 ====================
+// 对外（工具 schema / JS API）声明 databaseId/recordId/fieldsJson 等参数名，
+// UseCase 层实际使用 tableId/id/fields，在此层统一转换。
+// 注意 fields 参数在 PluginToolRegistry 中会被 cleanParams 当作输出过滤器删除，
+// 因此结构化数据只能通过 fieldsJson(JSON字符串) 传入。
+
+/// 解析 JSON 参数：Map/List 原样返回，字符串则 jsonDecode，无法解析返回 null
+dynamic _parseJsonParam(dynamic value) {
+  if (value is Map || value is List) return value;
+  if (value is String && value.isNotEmpty) {
+    try {
+      return jsonDecode(value);
+    } catch (_) {}
+  }
+  return null;
+}
+
+/// databaseId -> tableId
+Map<String, dynamic> _toTableParams(Map<String, dynamic> params) {
+  final normalized = Map<String, dynamic>.from(params);
+  final databaseId = normalized.remove('databaseId');
+  if (databaseId != null) {
+    normalized.putIfAbsent('tableId', () => databaseId);
+  }
+  return normalized;
+}
+
+/// recordId/databaseId -> id（recordId 优先，UseCase 的记录和数据库更新/删除均按 id 操作）
+Map<String, dynamic> _toIdParams(Map<String, dynamic> params) {
+  final normalized = Map<String, dynamic>.from(params);
+  dynamic idValue;
+  for (final key in ['recordId', 'databaseId']) {
+    final value = normalized.remove(key);
+    if (value != null && idValue == null) idValue = value;
+  }
+  if (idValue != null) {
+    normalized.putIfAbsent('id', () => idValue);
+  }
+  return normalized;
+}
+
+/// fieldsJson(JSON字符串) -> fields(Map/List)，解析失败返回错误信息
+String? _applyFieldsJson(Map<String, dynamic> normalized) {
+  if (!normalized.containsKey('fieldsJson')) return null;
+  final parsed = _parseJsonParam(normalized.remove('fieldsJson'));
+  if (parsed == null) return '参数 fieldsJson 不是合法的 JSON';
+  normalized.putIfAbsent('fields', () => parsed);
+  return null;
+}
+
+/// 校验数据库ID（databaseId 或 tableId 均可）
+String? _checkTableId(Map<String, dynamic> params) {
+  final value = params['databaseId'] ?? params['tableId'];
+  if (value == null || (value is String && value.isEmpty)) {
+    return '缺少必需参数: databaseId（数据库ID，可先调用 getDatabases 获取数据库列表）';
+  }
+  return null;
+}
+
 // ==================== JS API 实现 ====================
 
 /// 获取所有数据库
@@ -49,7 +108,11 @@ Future<String> _jsGetDatabases(Map<String, dynamic> params) async {
 
 /// 创建数据库
 Future<String> _jsCreateDatabase(Map<String, dynamic> params) async {
-  final result = await DatabasePlugin.instance.useCase.createDatabase(params);
+  final normalized = Map<String, dynamic>.from(params);
+  final error = _applyFieldsJson(normalized);
+  if (error != null) return jsonEncode({'error': error});
+
+  final result = await DatabasePlugin.instance.useCase.createDatabase(normalized);
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message});
@@ -60,7 +123,9 @@ Future<String> _jsCreateDatabase(Map<String, dynamic> params) async {
 
 /// 更新数据库
 Future<String> _jsUpdateDatabase(Map<String, dynamic> params) async {
-  final result = await DatabasePlugin.instance.useCase.updateDatabase(params);
+  final result = await DatabasePlugin.instance.useCase.updateDatabase(
+    _toIdParams(params),
+  );
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message});
@@ -71,7 +136,9 @@ Future<String> _jsUpdateDatabase(Map<String, dynamic> params) async {
 
 /// 删除数据库
 Future<String> _jsDeleteDatabase(Map<String, dynamic> params) async {
-  final result = await DatabasePlugin.instance.useCase.deleteDatabase(params);
+  final result = await DatabasePlugin.instance.useCase.deleteDatabase(
+    _toIdParams(params),
+  );
 
   if (result.isFailure) {
     return jsonEncode({'success': false, 'error': result.errorOrNull?.message});
@@ -81,9 +148,19 @@ Future<String> _jsDeleteDatabase(Map<String, dynamic> params) async {
 }
 
 /// 获取数据库的所有记录
-/// 支持分页参数: offset, count
+/// 支持分页参数: offset, count, limit
 Future<String> _jsGetRecords(Map<String, dynamic> params) async {
-  final result = await DatabasePlugin.instance.useCase.getRecords(params);
+  final checkError = _checkTableId(params);
+  if (checkError != null) return jsonEncode({'error': checkError});
+
+  final normalized = _toTableParams(params);
+  // limit 与 count 语义一致：限制返回条数
+  final limit = normalized.remove('limit');
+  if (limit != null && !normalized.containsKey('count')) {
+    normalized['count'] = limit is num ? limit.toInt() : int.tryParse('$limit');
+  }
+
+  final result = await DatabasePlugin.instance.useCase.getRecords(normalized);
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message});
@@ -94,7 +171,11 @@ Future<String> _jsGetRecords(Map<String, dynamic> params) async {
 
 /// 创建记录
 Future<String> _jsCreateRecord(Map<String, dynamic> params) async {
-  final result = await DatabasePlugin.instance.useCase.createRecord(params);
+  final normalized = _toTableParams(params);
+  final error = _applyFieldsJson(normalized);
+  if (error != null) return jsonEncode({'error': error});
+
+  final result = await DatabasePlugin.instance.useCase.createRecord(normalized);
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message});
@@ -105,7 +186,11 @@ Future<String> _jsCreateRecord(Map<String, dynamic> params) async {
 
 /// 更新记录
 Future<String> _jsUpdateRecord(Map<String, dynamic> params) async {
-  final result = await DatabasePlugin.instance.useCase.updateRecord(params);
+  final normalized = _toIdParams(params);
+  final error = _applyFieldsJson(normalized);
+  if (error != null) return jsonEncode({'error': error});
+
+  final result = await DatabasePlugin.instance.useCase.updateRecord(normalized);
 
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message});
@@ -116,7 +201,9 @@ Future<String> _jsUpdateRecord(Map<String, dynamic> params) async {
 
 /// 删除记录
 Future<String> _jsDeleteRecord(Map<String, dynamic> params) async {
-  final result = await DatabasePlugin.instance.useCase.deleteRecord(params);
+  final result = await DatabasePlugin.instance.useCase.deleteRecord(
+    _toIdParams(params),
+  );
 
   if (result.isFailure) {
     return jsonEncode({'success': false, 'error': result.errorOrNull?.message});
@@ -126,37 +213,93 @@ Future<String> _jsDeleteRecord(Map<String, dynamic> params) async {
 }
 
 /// 查询记录
-/// 支持分页参数: offset, count
+/// 支持参数: databaseId, filtersJson, offset, count
 Future<String> _jsQuery(Map<String, dynamic> params) async {
-  final result = await DatabasePlugin.instance.useCase.searchRecords(params);
+  final checkError = _checkTableId(params);
+  if (checkError != null) return jsonEncode({'error': checkError});
 
+  // 过滤必须发生在分页之前：先取全量，过滤后手动分页
+  final normalized = _toTableParams(params)
+    ..remove('offset')
+    ..remove('count');
+  final filters = _parseJsonParam(normalized.remove('filtersJson')) ??
+      normalized.remove('filters');
+  if (filters != null && filters is! Map<String, dynamic>) {
+    return jsonEncode({'error': '参数 filtersJson 不是合法的 JSON 对象'});
+  }
+
+  final result = await DatabasePlugin.instance.useCase.searchRecords(normalized);
   if (result.isFailure) {
     return jsonEncode({'error': result.errorOrNull?.message});
   }
 
-  return jsonEncode(result.dataOrNull);
+  var records = (result.dataOrNull as List)
+      .whereType<Map>()
+      .map((r) => Map<String, dynamic>.from(r))
+      .toList();
+  if (filters != null) {
+    records = records
+        .where((record) => (filters as Map<String, dynamic>).entries.every(
+              (e) => _recordFieldMatches(record, e.key, e.value),
+            ))
+        .toList();
+  }
+
+  if (!params.containsKey('offset') && !params.containsKey('count')) {
+    return jsonEncode(records);
+  }
+
+  final offset = (params['offset'] as num?)?.toInt() ?? 0;
+  final count = (params['count'] as num?)?.toInt() ?? 100;
+  final start = offset.clamp(0, records.length);
+  final end = (start + count).clamp(start, records.length);
+  return jsonEncode({
+    'data': records.sublist(start, end),
+    'total': records.length,
+    'offset': start,
+    'count': end - start,
+    'hasMore': end < records.length,
+  });
+}
+
+/// 内置字段（id/tableId 等）或 fields 内自定义字段是否与期望值精确匹配
+bool _recordFieldMatches(
+  Map<String, dynamic> record,
+  String key,
+  dynamic value,
+) {
+  if (record[key]?.toString() == value?.toString()) return true;
+  final fields = record['fields'] as Map<String, dynamic>?;
+  return fields?[key]?.toString() == value?.toString();
 }
 
 /// 获取数据库或记录数量
-Future<int> _jsGetCount(Map<String, dynamic> params) async {
-  // 必需参数
+Future<dynamic> _jsGetCount(Map<String, dynamic> params) async {
   final String? type = params['type'];
   if (type == null) {
-    return 0;
+    return jsonEncode({
+      'error': "缺少必需参数: type（'databases' 数据库总数 或 'records' 记录数）",
+    });
   }
-
-  // 可选参数
-  final String? databaseId = params['databaseId'];
 
   if (type == 'databases') {
     return await DatabasePlugin.instance.service.getDatabaseCount();
-  } else if (type == 'records' && databaseId != null) {
+  }
+
+  if (type == 'records') {
+    final String? databaseId = params['databaseId'];
+    if (databaseId == null || databaseId.isEmpty) {
+      return jsonEncode({
+        'error': "type='records' 时必须提供 databaseId（可先调用 getDatabases 获取）",
+      });
+    }
     final records = await DatabasePlugin.instance.controller.getRecords(
       databaseId,
     );
     return records.length;
   }
-  return 0;
+
+  return jsonEncode({'error': "type 只接受 'databases' 或 'records'，收到: $type"});
 }
 
 // ==================== 数据库查找方法 ====================

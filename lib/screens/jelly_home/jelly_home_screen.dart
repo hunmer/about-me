@@ -16,7 +16,7 @@ import 'package:aboutme/screens/profile_screen/profile_screen.dart';
 
 import 'companion_controller.dart';
 import 'widgets/jelly_bottom_nav.dart';
-import 'widgets/jelly_assistant_tab.dart';
+import 'package:aboutme/plugins/personal_assistant/screens/personal_assistant_screen.dart';
 import 'widgets/jelly_companion_card.dart';
 import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_live2d_panel.dart';
@@ -99,7 +99,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
           ),
           (_) => HeroMode(
             enabled: _tabIndex == 1,
-            child: const JellyAssistantTab(),
+            child: const PersonalAssistantScreen(),
           ),
           (_) => HeroMode(
             enabled: _tabIndex == 2,

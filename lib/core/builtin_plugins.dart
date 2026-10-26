@@ -16,6 +16,7 @@ import 'package:aboutme/plugins/habits/habits_plugin.dart';
 import 'package:aboutme/plugins/nfc/nfc_plugin.dart';
 import 'package:aboutme/plugins/nodes/nodes_plugin.dart';
 import 'package:aboutme/plugins/notes/notes_plugin.dart';
+import 'package:aboutme/plugins/personal_assistant/personal_assistant_plugin.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/reminder/reminder_plugin.dart';
 import 'package:aboutme/plugins/scripts_center/scripts_center_plugin.dart';
@@ -64,6 +65,7 @@ class BuiltinPlugins {
     () => MomentsPlugin(),
     () => AchievementPlugin(),
     () => ToolboxPlugin(),
+    () => PersonalAssistantPlugin(),
   ];
 
   static List<PluginBase> createAll() {

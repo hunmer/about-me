@@ -47,6 +47,8 @@ import '../plugins/nodes/l10n/nodes_translations_zh.dart';
 import '../plugins/nodes/l10n/nodes_translations_en.dart';
 import '../plugins/notes/l10n/notes_translations_zh.dart';
 import '../plugins/notes/l10n/notes_translations_en.dart';
+import '../plugins/personal_assistant/l10n/personal_assistant_translations_zh.dart';
+import '../plugins/personal_assistant/l10n/personal_assistant_translations_en.dart';
 import '../plugins/openai/l10n/openai_translations_zh.dart';
 import '../plugins/openai/l10n/openai_translations_en.dart';
 import '../plugins/toolbox/l10n/toolbox_translations_zh.dart';
@@ -168,6 +170,9 @@ class UnifiedTranslations extends Translations {
 
     zhDict.addAll(notesTranslationsZh);
     enDict.addAll(notesTranslationsEn);
+
+    zhDict.addAll(personalAssistantTranslationsZh);
+    enDict.addAll(personalAssistantTranslationsEn);
 
     zhDict.addAll(openaiTranslationsZh);
     enDict.addAll(openaiTranslationsEn);

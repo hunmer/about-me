@@ -32,16 +32,18 @@ import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/marquee_b
 import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:get/get.dart' hide Value;
 
-/// 聊天助手页签：手绘风快捷速记入口，
-/// 绑定内置「聊天助手」agent（[ChatAssistantService]）的临时会话
-class JellyAssistantTab extends StatefulWidget {
-  const JellyAssistantTab({super.key});
+/// 个人助手主视图：手绘风快捷速记入口，
+/// 绑定内置「聊天助手」agent（[ChatAssistantService]）的临时会话；
+/// 也作为果冻小屋主页的助手页签复用
+class PersonalAssistantScreen extends StatefulWidget {
+  const PersonalAssistantScreen({super.key});
 
   @override
-  State<JellyAssistantTab> createState() => _JellyAssistantTabState();
+  State<PersonalAssistantScreen> createState() =>
+      _PersonalAssistantScreenState();
 }
 
-class _JellyAssistantTabState extends State<JellyAssistantTab> {
+class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
   Future<ChatController?>? _controllerFuture;
   ChatController? _controller;
   MessageService? _messageService;

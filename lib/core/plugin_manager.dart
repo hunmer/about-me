@@ -291,8 +291,12 @@ class PluginManager {
     if (currentRouteName == '/plugin/${plugin.id}') {
       return;
     }
-    // 当前停在该插件的子页面时（栈顶路由不带 /plugin/ 前缀），同样不重复入栈
-    if (getCurrentRoutePluginId() == plugin.id) {
+    // 栈顶是不带 /plugin/ 前缀的子页面（OpenContainer 登记路由）时不重复
+    // 入栈；/plugin/<id>/settings 等带前缀的正式子页面放行，否则停在
+    // 插件设置页时无法跳回该插件主页面
+    final onFormalPluginRoute =
+        currentRouteName?.startsWith('/plugin/') ?? false;
+    if (!onFormalPluginRoute && getCurrentRoutePluginId() == plugin.id) {
       return;
     }
     // 记录打开历史
