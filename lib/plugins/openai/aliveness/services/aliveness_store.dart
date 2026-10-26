@@ -11,8 +11,7 @@ class AlivenessStore {
   AlivenessStore._();
   static final AlivenessStore instance = AlivenessStore._();
 
-  static const String _defaultJevApiKey =
-      'apikey_xxxxx';
+  static const String _defaultJevApiKey = 'apikey_xxxxx';
   static const String _memoryLibrariesKind = 'memory_libraries';
   static const String _memoryKind = 'memory_library';
   static const String _memoryLoopsKind = 'memory_library_loops';
@@ -31,15 +30,12 @@ class AlivenessStore {
     String? agentId,
     String? memoryId,
   }) async {
-    final res = await AboutmeDataService.instance.call(
-      'openai',
-      'alivenessGetDoc',
-      {
-        if (agentId != null) 'agentId': agentId,
-        if (memoryId != null) 'memoryId': memoryId,
-        'kind': kind,
-      },
-    );
+    final res = await AboutmeDataService.instance
+        .call('openai', 'alivenessGetDoc', {
+          if (agentId != null) 'agentId': agentId,
+          if (memoryId != null) 'memoryId': memoryId,
+          'kind': kind,
+        });
     if (res['success'] != true) {
       if (kind == _memoryLibrariesKind ||
           kind == _memoryKind ||
@@ -60,16 +56,13 @@ class AlivenessStore {
     String? agentId,
     String? memoryId,
   }) async {
-    final res = await AboutmeDataService.instance.call(
-      'openai',
-      'alivenessSetDoc',
-      {
-        if (agentId != null) 'agentId': agentId,
-        if (memoryId != null) 'memoryId': memoryId,
-        'kind': kind,
-        'doc': doc,
-      },
-    );
+    final res = await AboutmeDataService.instance
+        .call('openai', 'alivenessSetDoc', {
+          if (agentId != null) 'agentId': agentId,
+          if (memoryId != null) 'memoryId': memoryId,
+          'kind': kind,
+          'doc': doc,
+        });
     if (res['success'] != true) {
       throw StateError(
         '写入 aliveness 文档失败: ${res['error'] ?? res['code'] ?? 'unknown'}',
@@ -175,9 +168,10 @@ class AlivenessStore {
     return normalized.toList(growable: false);
   }
 
-
   Future<MemoryLibrary> requireMemoryLibrary(String memoryId) async {
-    if (memoryId.trim().isEmpty) throw ArgumentError.value(memoryId, 'memoryId');
+    if (memoryId.trim().isEmpty) {
+      throw ArgumentError.value(memoryId, 'memoryId');
+    }
     for (final library in await loadMemoryLibraries()) {
       if (library.id == memoryId) return library;
     }
@@ -217,11 +211,10 @@ class AlivenessStore {
   }
 
   Future<void> saveState(String agentId, AgentState state) async {
-    await _setDoc(
-      'state',
-      {...state.toJson(), 'agentId': agentId},
-      agentId: agentId,
-    );
+    await _setDoc('state', {
+      ...state.toJson(),
+      'agentId': agentId,
+    }, agentId: agentId);
   }
 
   // ---------- per-agent 统计（主动消息冷却/计数，Phase 3 使用，先落盘） ----------
@@ -231,15 +224,8 @@ class AlivenessStore {
     return data != null && data.isNotEmpty ? data : <String, dynamic>{};
   }
 
-  Future<void> saveStats(
-    String agentId,
-    Map<String, dynamic> stats,
-  ) async {
-    await _setDoc(
-      'stats',
-      {...stats, 'agentId': agentId},
-      agentId: agentId,
-    );
+  Future<void> saveStats(String agentId, Map<String, dynamic> stats) async {
+    await _setDoc('stats', {...stats, 'agentId': agentId}, agentId: agentId);
   }
 
   // ---------- per-agent 记忆（Phase 2） ----------
@@ -254,14 +240,15 @@ class AlivenessStore {
 
   // ---------- 决策日志（可观测性，滚动保留最近 200 条） ----------
 
-  Future<void> appendDecision(String agentId, Map<String, dynamic> entry) async {
+  Future<void> appendDecision(
+    String agentId,
+    Map<String, dynamic> entry,
+  ) async {
     final data = await _getDecisions(agentId);
-    final List<dynamic> logs =
-        data != null ? (data['logs'] as List<dynamic>? ?? []) : [];
-    logs.add({
-      'ts': DateTime.now().toIso8601String(),
-      ...entry,
-    });
+    final List<dynamic> logs = data != null
+        ? (data['logs'] as List<dynamic>? ?? [])
+        : [];
+    logs.add({'ts': DateTime.now().toIso8601String(), ...entry});
     if (logs.length > 200) {
       logs.removeRange(0, logs.length - 200);
     }
@@ -293,10 +280,7 @@ class AlivenessStore {
     return data != null && data.isNotEmpty ? data : null;
   }
 
-  Future<void> saveSchedule(
-    String agentId,
-    Map<String, dynamic> data,
-  ) async {
+  Future<void> saveSchedule(String agentId, Map<String, dynamic> data) async {
     await _setDoc('schedule', data, agentId: agentId);
   }
 
@@ -307,11 +291,11 @@ class AlivenessStore {
     return data != null && data.isNotEmpty
         ? data
         : {
-          'jevBaseUrl': 'https://api.typesafe.ai/v1/systemone',
-          'jevApiKey': _defaultJevApiKey,
-          'jevModel': 'jev-latest',
-          'confidenceThreshold': 0.65,
-        };
+            'jevBaseUrl': 'https://api.typesafe.ai/v1/systemone',
+            'jevApiKey': _defaultJevApiKey,
+            'jevModel': 'jev-latest',
+            'confidenceThreshold': 0.65,
+          };
   }
 
   Future<void> saveSettings(Map<String, dynamic> settings) async {

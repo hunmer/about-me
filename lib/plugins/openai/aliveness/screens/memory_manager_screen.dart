@@ -62,20 +62,83 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
   }
 
   Future<void> _createLibrary() async {
-    final controller = TextEditingController();
-    final name = await showDialog<String>(
+    final result = await _showLibraryEditor();
+    if (result == null) return;
+
+    try {
+      await AlivenessStore.instance.createMemoryLibrary(
+        result.name,
+        description: result.description,
+        allowedKeyPrefixes: result.allowedKeyPrefixes,
+      );
+      await _load();
+    } catch (error) {
+      if (mounted) ToastService.instance.showToast('创建记忆库失败：$error');
+    }
+  }
+
+  Future<void> _editLibrary(MemoryLibrary library) async {
+    final result = await _showLibraryEditor(library: library);
+    if (result == null) return;
+
+    try {
+      await AlivenessStore.instance.updateMemoryLibrary(
+        library.id,
+        name: result.name,
+        description: result.description,
+        allowedKeyPrefixes: result.allowedKeyPrefixes,
+      );
+      await _load();
+    } catch (error) {
+      if (mounted) ToastService.instance.showToast('更新记忆库失败：$error');
+    }
+  }
+
+  Future<_MemoryLibraryFormResult?> _showLibraryEditor({
+    MemoryLibrary? library,
+  }) async {
+    final nameController = TextEditingController(text: library?.name ?? '');
+    final descriptionController = TextEditingController(
+      text: library?.description ?? '',
+    );
+    final prefixesController = TextEditingController(
+      text: library?.allowedKeyPrefixes.join(', ') ?? '',
+    );
+    final result = await showDialog<_MemoryLibraryFormResult>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('创建记忆库'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 80,
-          decoration: const InputDecoration(
-            labelText: '名称',
-            hintText: '例如：工作与计划',
+        title: Text(library == null ? '创建记忆库' : '编辑记忆库'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                autofocus: true,
+                maxLength: 80,
+                decoration: const InputDecoration(
+                  labelText: '名称',
+                  hintText: '例如：工作与计划',
+                ),
+              ),
+              TextField(
+                controller: descriptionController,
+                maxLength: 200,
+                decoration: const InputDecoration(
+                  labelText: '说明（可选）',
+                  hintText: '例如：只保存用户长期偏好',
+                ),
+              ),
+              TextField(
+                controller: prefixesController,
+                maxLength: 200,
+                decoration: const InputDecoration(
+                  labelText: '允许 AI 写入的 key 前缀（可选）',
+                  hintText: '例如：user, event；留空表示不限',
+                ),
+              ),
+            ],
           ),
-          onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
         ),
         actions: [
           TextButton(
@@ -83,21 +146,32 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
             child: const Text('取消'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('创建'),
+            onPressed: () {
+              final name = nameController.text.trim();
+              if (name.isEmpty) return;
+              final prefixes = prefixesController.text
+                  .split(RegExp(r'[,，\n]'))
+                  .map((prefix) => prefix.trim())
+                  .where((prefix) => prefix.isNotEmpty)
+                  .toSet()
+                  .toList();
+              Navigator.of(context).pop(
+                _MemoryLibraryFormResult(
+                  name: name,
+                  description: descriptionController.text.trim(),
+                  allowedKeyPrefixes: prefixes,
+                ),
+              );
+            },
+            child: Text(library == null ? '创建' : '保存'),
           ),
         ],
       ),
     );
-    controller.dispose();
-    if (name == null || name.trim().isEmpty) return;
-
-    try {
-      await AlivenessStore.instance.createMemoryLibrary(name.trim());
-      await _load();
-    } catch (error) {
-      if (mounted) ToastService.instance.showToast('创建记忆库失败：$error');
-    }
+    nameController.dispose();
+    descriptionController.dispose();
+    prefixesController.dispose();
+    return result;
   }
 
   Future<void> _copyId(String id) async {
@@ -145,12 +219,20 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
                               : const Icon(Icons.storage_outlined),
                           title: Text(library.name),
                           subtitle: Text(
-                            'ID: ${library.id}\n创建于 ${_formatDate(library.createdAt)}',
+                            [
+                              if (library.description.isNotEmpty)
+                                library.description,
+                              'ID: ${library.id}',
+                              '创建于 ${_formatDate(library.createdAt)}',
+                              if (library.allowedKeyPrefixes.isNotEmpty)
+                                'AI 写入限制：${library.allowedKeyPrefixes.join('、')}',
+                            ].join('\n'),
                           ),
                           isThreeLine: true,
                           trailing: PopupMenuButton<String>(
                             onSelected: (action) {
                               if (action == 'copy') _copyId(library.id);
+                              if (action == 'edit') _editLibrary(library);
                               if (action == 'open') {
                                 NavigationHelper.push(
                                   context,
@@ -163,6 +245,10 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
                             },
                             itemBuilder: (_) => const [
                               PopupMenuItem(value: 'open', child: Text('打开')),
+                              PopupMenuItem(
+                                value: 'edit',
+                                child: Text('编辑库设置'),
+                              ),
                               PopupMenuItem(
                                 value: 'copy',
                                 child: Text('复制 ID'),
@@ -193,4 +279,16 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
 
   String _formatDate(DateTime date) =>
       '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
+}
+
+class _MemoryLibraryFormResult {
+  const _MemoryLibraryFormResult({
+    required this.name,
+    required this.description,
+    required this.allowedKeyPrefixes,
+  });
+
+  final String name;
+  final String description;
+  final List<String> allowedKeyPrefixes;
 }

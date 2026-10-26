@@ -12,6 +12,7 @@ import 'package:aboutme/core/services/ds_ink_motion_controller.dart';
 import 'package:aboutme/core/services/ds_ink_style_controller.dart';
 import 'package:aboutme/core/services/hand_drawn_style_controller.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
+import 'package:aboutme/core/services/bottom_bar_style_controller.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/picker/app_color_picker.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -1284,6 +1285,34 @@ class _ThemeBackgroundSettingsScreenState
                               ? 'screens_gridBackgroundSet'.tr
                               : 'screens_gridBackgroundNotSet'.tr,
                       onTap: _showGridDialog,
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
+                    // 底部导航栏磨砂玻璃：全局开关（默认开），切换即时生效
+                    ListenableBuilder(
+                      listenable: BottomBarStyleController(),
+                      builder: (context, _) {
+                        final controller = BottomBarStyleController();
+                        return SettingsGroup(
+                          title: 'settings_screen_bottomBarGroupTitle'.tr,
+                          children: [
+                            SettingsTile(
+                              icon: DsIconKind.blur,
+                              iconColor: DsAccentColors.sky,
+                              title: 'settings_screen_bottomBarFrostedTitle'.tr,
+                              subtitle:
+                                  'settings_screen_bottomBarFrostedSubtitle'
+                                  .tr,
+                              showChevron: false,
+                              trailing: DSSwitch(
+                                value: controller.frosted,
+                                onChanged: controller.setFrosted,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
 
                     SizedBox(height: theme.spacing.lg),

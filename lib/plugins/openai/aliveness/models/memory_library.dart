@@ -18,8 +18,7 @@ class MemoryLibrary {
     'name': name,
     'createdAt': createdAt.toIso8601String(),
     if (description.isNotEmpty) 'description': description,
-    if (allowedKeyPrefixes.isNotEmpty)
-      'allowedKeyPrefixes': allowedKeyPrefixes,
+    if (allowedKeyPrefixes.isNotEmpty) 'allowedKeyPrefixes': allowedKeyPrefixes,
   };
 
   factory MemoryLibrary.fromJson(Map<String, dynamic> json) => MemoryLibrary(

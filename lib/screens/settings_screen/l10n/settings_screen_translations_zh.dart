@@ -81,6 +81,10 @@ const Map<String, String> settingsScreenTranslationsZh = {
   'settings_screen_tapeStyleWashiTape': '和纸胶带',
   'settings_screen_tapeStyleCornerTapes': '双角斜贴',
   'settings_screen_tapeStyleStaple': '订书钉',
+  // 底部导航栏磨砂玻璃设置
+  'settings_screen_bottomBarGroupTitle': '底部导航栏',
+  'settings_screen_bottomBarFrostedTitle': '磨砂玻璃',
+  'settings_screen_bottomBarFrostedSubtitle': '弧形底栏启用背景模糊磨砂效果',
   'settings_screen_speechRecognitionSettings': '语音识别设置',
   'settings_screen_confirmClear': '确认清除',
   'settings_screen_confirmClearAiCorrection': '确定清除AI纠错Agent设置吗？',

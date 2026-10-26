@@ -81,6 +81,11 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settings_screen_tapeStyleWashiTape': 'Washi Tape',
   'settings_screen_tapeStyleCornerTapes': 'Corner Tapes',
   'settings_screen_tapeStyleStaple': 'Staples',
+  // Bottom bar frosted glass settings
+  'settings_screen_bottomBarGroupTitle': 'Bottom Navigation Bar',
+  'settings_screen_bottomBarFrostedTitle': 'Frosted Glass',
+  'settings_screen_bottomBarFrostedSubtitle':
+      'Apply frosted blur effect to the radial bottom bar',
   'settings_screen_speechRecognitionSettings': 'Speech Recognition Settings',
   'settings_screen_confirmClear': 'Confirm Clear',
   'settings_screen_confirmClearAiCorrection': 'Clear AI correction agent settings?',

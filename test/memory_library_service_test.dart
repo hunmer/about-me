@@ -5,6 +5,7 @@ import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/memory_fragment.dart';
+import 'package:aboutme/plugins/openai/aliveness/models/memory_library.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/memory_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
@@ -400,6 +401,79 @@ void main() {
     expect((await memory.loadFragments(library.id)).length, 5);
   });
 
+  test('记忆库说明和AI写入前缀可持久化并限制命名空间', () async {
+    final library = await store.createMemoryLibrary(
+      '受限库',
+      description: '只保存用户资料和事件',
+      allowedKeyPrefixes: ['user', 'event.'],
+    );
+    expect(library.description, '只保存用户资料和事件');
+    expect(library.allowedKeyPrefixes, ['user', 'event']);
+
+    final loaded = (await store.loadMemoryLibraries()).singleWhere(
+      (item) => item.id == library.id,
+    );
+    expect(loaded.description, '只保存用户资料和事件');
+    expect(loaded.allowedKeyPrefixes, ['user', 'event']);
+
+    await memory.upsertForTool(library.id, 'user.name', '小明', []);
+    await memory.upsertForTool(library.id, 'event.today', '体检', []);
+    await expectLater(
+      memory.upsertForTool(library.id, 'username', '不应写入', []),
+      throwsArgumentError,
+    );
+    await expectLater(
+      memory.updateByKey(library.id, 'other.value', '不应写入', []),
+      throwsArgumentError,
+    );
+
+    await store.updateMemoryLibrary(
+      library.id,
+      description: '只保存偏好',
+      allowedKeyPrefixes: ['preference'],
+    );
+    final updated = await store.requireMemoryLibrary(library.id);
+    expect(updated.description, '只保存偏好');
+    expect(updated.allowedKeyPrefixes, ['preference']);
+  });
+
+  test('自动合并遵守记忆库前缀，手动写入仍可维护历史key', () async {
+    final library = await store.createMemoryLibrary(
+      '自动提取受限库',
+      allowedKeyPrefixes: ['user'],
+    );
+    await expectLater(
+      memory.mergeFragments(library.id, [
+        MemoryFragment(
+          id: 'event-1',
+          key: 'event.today',
+          content: '不应写入',
+          tags: [],
+        ),
+      ]),
+      throwsArgumentError,
+    );
+    expect(await memory.loadFragments(library.id), isEmpty);
+
+    await memory.upsertForTool(
+      library.id,
+      'event.today',
+      '管理员维护的历史事件',
+      [],
+      source: 'manual',
+    );
+    expect((await memory.loadFragments(library.id)).single.key, 'event.today');
+  });
+
+  test('旧记忆库缺少新字段时按默认值读取', () {
+    final library = MemoryLibrary.fromJson({
+      'id': 'legacy-library',
+      'name': '旧库',
+      'createdAt': '2024-01-01T00:00:00.000Z',
+    });
+    expect(library.description, isEmpty);
+    expect(library.allowedKeyPrefixes, isEmpty);
+  });
   test('无库不注入，多库提示包含准确库名与memoryId', () async {
     final a = await store.createMemoryLibrary('用户偏好');
     final b = await store.createMemoryLibrary('用户计划');

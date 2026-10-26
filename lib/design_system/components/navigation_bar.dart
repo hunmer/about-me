@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:radial_disc_bottom_bar/radial_disc_bottom_bar.dart';
 
+import 'package:aboutme/core/services/bottom_bar_style_controller.dart';
+
 import '../theme/app_theme.dart';
 import 'icons.dart';
 
@@ -94,6 +96,15 @@ class DSBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 全局磨砂开关（设置页）关闭时回落为非磨砂，调用点显式关闭同样不磨砂
+    final controller = BottomBarStyleController();
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) => _buildBar(context, frosted && controller.frosted),
+    );
+  }
+
+  Widget _buildBar(BuildContext context, bool frosted) {
     final theme = AppTheme.of(context);
 
     var style = RadialDiscBarStyle.fromBrightness(theme.isDark).copyWith(

@@ -20,6 +20,7 @@ import 'package:aboutme/core/services/app_background_controller.dart';
 import 'package:aboutme/core/services/ds_ink_motion_controller.dart';
 import 'package:aboutme/core/services/ds_ink_style_controller.dart';
 import 'package:aboutme/core/services/hand_drawn_style_controller.dart';
+import 'package:aboutme/core/services/bottom_bar_style_controller.dart';
 import 'package:aboutme/core/services/grok_bot_style_controller.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
 import 'package:aboutme/core/services/timer/unified_timer_controller.dart';
@@ -237,6 +238,12 @@ Future<void> initializeApp() async {
     await StartupTrace.measure(
       'hand_drawn_style',
       HandDrawnStyleController().initialize,
+    );
+
+    // 初始化底栏风格（全局磨砂玻璃开关）
+    await StartupTrace.measure(
+      'bottom_bar_style',
+      BottomBarStyleController().initialize,
     );
 
     // 初始化 grokbot 外观（首页角色身形/墨色）

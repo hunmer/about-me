@@ -974,7 +974,7 @@ class NativeToolAgentService {
         memoryTool(
           'add_memory',
           '向指定 memoryId 新增或覆盖一条 key-value 记忆（同 key 覆盖，即 upsert）。'
-              'key 是稳定的点分标识符（如 user.preference.food），value 是完整的记忆内容。返回 key/value/revision/updatedAt。',
+              'key 是稳定的点分标识符（如 user.preference.food），必须遵守目标记忆库配置的允许写入前缀和用途说明；value 是完整的记忆内容。返回 key/value/revision/updatedAt。',
           [
             ToolParameter(
               name: 'memoryId',
@@ -1020,7 +1020,7 @@ class NativeToolAgentService {
       tools.add(
         memoryTool(
           'update_memory',
-          '更新指定 memoryId 中已有 key 的记忆。key 必须先通过 search_memory 确认存在，不存在时报错。',
+          '更新指定 memoryId 中已有 key 的记忆。key 必须先通过 search_memory 确认存在，并遵守目标记忆库配置的允许写入前缀和用途说明，不存在时报错。',
           [
             ToolParameter(
               name: 'memoryId',
