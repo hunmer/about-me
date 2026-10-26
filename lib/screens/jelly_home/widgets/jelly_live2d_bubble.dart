@@ -81,16 +81,16 @@ extension _JellyLive2DBubble on _JellyLive2DState {
       partId =
           live2DTapParts
               .where(
-                (part) => part.keywords.any((keyword) =>
-                    lower.contains(keyword.toLowerCase())),
+                (part) => part.keywords.any(
+                  (keyword) => lower.contains(keyword.toLowerCase()),
+                ),
               )
               .map((part) => part.id)
               .firstOrNull ??
           'body';
     }
     final archive = Live2DPlugin.instance.selected;
-    final custom =
-        archive != null && archive.tapMessagesEnabled
+    final custom = archive != null && archive.tapMessagesEnabled
         ? archive.tapMessageList(partId)
         : const <String>[];
     final List<String> pool = custom.isNotEmpty
@@ -144,17 +144,18 @@ extension _JellyLive2DBubble on _JellyLive2DState {
     const margin = 12.0;
     const bubbleBaseWidth = 288.0;
     const bubbleBaseHeight = 150.0;
-    final availableWidth = max(0.0, width - margin * 2);
-    final availableHeight = max(0.0, height);
-    final bubbleWidth = min(
-      min(_displaySize * 0.8, availableWidth),
+    final availableWidth = math.max(0.0, width - margin * 2);
+    final availableHeight = math.max(0.0, height);
+    final bubbleWidth = math.min(
+      math.min(_displaySize * 0.8, availableWidth),
       availableHeight * bubbleBaseWidth / bubbleBaseHeight,
     );
     if (bubbleWidth <= 0) return const SizedBox.shrink();
     final bubbleScale = bubbleWidth / bubbleBaseWidth;
     final bubbleHeight = bubbleBaseHeight * bubbleScale;
-    final top = ((height - bubbleHeight) / 2 + height * _bubbleOffsetY)
-            .clamp(0.0, max(0.0, height - bubbleHeight))
+    final top =
+        ((height - bubbleHeight) / 2 + height * _bubbleOffsetY)
+            .clamp(0.0, math.max(0.0, height - bubbleHeight))
             .toDouble() +
         topInset;
     final left = ((width - bubbleWidth) / 2 + width * _bubbleOffsetX).clamp(
@@ -255,65 +256,67 @@ extension _JellyLive2DBubble on _JellyLive2DState {
         context: context,
         title: '气泡位置',
         minHeight: MediaQuery.sizeOf(context).height * 0.3,
-        child: Builder(builder: (sheetContext) {
-          final theme = AppTheme.of(sheetContext);
-          return StatefulBuilder(
-            builder: (context, setSheetState) => Padding(
-              padding: EdgeInsets.fromLTRB(
-                theme.spacing.xl,
-                theme.spacing.md,
-                theme.spacing.xl,
-                theme.spacing.md,
+        child: Builder(
+          builder: (sheetContext) {
+            final theme = AppTheme.of(sheetContext);
+            return StatefulBuilder(
+              builder: (context, setSheetState) => Padding(
+                padding: EdgeInsets.fromLTRB(
+                  theme.spacing.xl,
+                  theme.spacing.md,
+                  theme.spacing.xl,
+                  theme.spacing.md,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '水平位置',
+                      style: DsTypography.label.copyWith(color: theme.text),
+                    ),
+                    SizedBox(height: theme.spacing.sm),
+                    DSSlider(
+                      value: ((_bubbleOffsetX + 0.45) / 0.9).clamp(0.0, 1.0),
+                      onChanged: (value) {
+                        setState(() => _bubbleOffsetX = value * 0.9 - 0.45);
+                        setSheetState(() {});
+                      },
+                      onChangeEnd: (_) => _saveBubblePosition(),
+                    ),
+                    SizedBox(height: theme.spacing.sm),
+                    Text(
+                      '垂直位置',
+                      style: DsTypography.label.copyWith(color: theme.text),
+                    ),
+                    SizedBox(height: theme.spacing.sm),
+                    DSSlider(
+                      value: ((_bubbleOffsetY + 0.45) / 0.9).clamp(0.0, 1.0),
+                      onChanged: (value) {
+                        setState(() => _bubbleOffsetY = value * 0.9 - 0.45);
+                        setSheetState(() {});
+                      },
+                      onChangeEnd: (_) => _saveBubblePosition(),
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    DSButton(
+                      label: '恢复居中',
+                      size: DSButtonSize.sm,
+                      onPressed: () {
+                        setState(() {
+                          _bubbleOffsetX = 0;
+                          _bubbleOffsetY = 0;
+                        });
+                        setSheetState(() {});
+                        unawaited(_saveBubblePosition());
+                      },
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    '水平位置',
-                    style: DsTypography.label.copyWith(color: theme.text),
-                  ),
-                  SizedBox(height: theme.spacing.sm),
-                  DSSlider(
-                    value: ((_bubbleOffsetX + 0.45) / 0.9).clamp(0.0, 1.0),
-                    onChanged: (value) {
-                      setState(() => _bubbleOffsetX = value * 0.9 - 0.45);
-                      setSheetState(() {});
-                    },
-                    onChangeEnd: (_) => _saveBubblePosition(),
-                  ),
-                  SizedBox(height: theme.spacing.sm),
-                  Text(
-                    '垂直位置',
-                    style: DsTypography.label.copyWith(color: theme.text),
-                  ),
-                  SizedBox(height: theme.spacing.sm),
-                  DSSlider(
-                    value: ((_bubbleOffsetY + 0.45) / 0.9).clamp(0.0, 1.0),
-                    onChanged: (value) {
-                      setState(() => _bubbleOffsetY = value * 0.9 - 0.45);
-                      setSheetState(() {});
-                    },
-                    onChangeEnd: (_) => _saveBubblePosition(),
-                  ),
-                  SizedBox(height: theme.spacing.md),
-                  DSButton(
-                    label: '恢复居中',
-                    size: DSButtonSize.sm,
-                    onPressed: () {
-                      setState(() {
-                        _bubbleOffsetX = 0;
-                        _bubbleOffsetY = 0;
-                      });
-                      setSheetState(() {});
-                      unawaited(_saveBubblePosition());
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
+            );
+          },
+        ),
       );
     } finally {
       if (mounted) setState(() => _bubblePositionPreview = false);
@@ -359,9 +362,7 @@ extension _JellyLive2DBubble on _JellyLive2DState {
   }
 
   Future<void> _uploadCustomBubble(BuildContext context) async {
-    final result = await ImagePickerDialog.show<Map<String, dynamic>>(
-      context,
-    );
+    final result = await ImagePickerDialog.show<Map<String, dynamic>>(context);
     final asset = result?['url'] as String?;
     if (asset == null || asset.isEmpty) return;
     await Live2DPlugin.instance.addCustomBubbleAsset(asset);
