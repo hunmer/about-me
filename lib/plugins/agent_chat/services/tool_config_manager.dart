@@ -857,6 +857,36 @@ class ToolConfigManager {
     await _savePluginConfig(pluginId);
   }
 
+  /// 按规则批量更新全部工具启用状态；返回 null 表示该工具保持不变。
+  /// 每个插件只在有变化时落盘一次，避免全局操作时逐工具写存储
+  Future<void> _batchApplyEnabled(
+    bool? Function(ToolConfig tool) resolve,
+  ) async {
+    for (final entry in _pluginTools.entries) {
+      final toolSet = entry.value;
+      var changed = false;
+      for (final toolEntry in toolSet.tools.entries) {
+        final enabled = resolve(toolEntry.value);
+        if (enabled == null || enabled == toolEntry.value.enabled) continue;
+        toolSet.tools[toolEntry.key] = toolEntry.value.copyWith(
+          enabled: enabled,
+        );
+        changed = true;
+      }
+      if (changed) await _savePluginConfig(entry.key);
+    }
+  }
+
+  /// 批量启用全部工具
+  Future<void> enableAllTools() async {
+    await _batchApplyEnabled((tool) => tool.enabled ? null : true);
+  }
+
+  /// 批量翻转全部工具的启用状态
+  Future<void> invertAllTools() async {
+    await _batchApplyEnabled((tool) => !tool.enabled);
+  }
+
   /// 导出配置到指定文件
   Future<void> exportConfig(String filePath) async {
     try {

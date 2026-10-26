@@ -55,6 +55,10 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
     });
 
     try {
+      // 悬浮球等入口不经过聊天流程，工具配置可能尚未初始化，这里兜底
+      if (!ToolConfigManager.instance.isInitialized) {
+        await ToolConfigManager.instance.initialize();
+      }
       _allPluginTools = ToolConfigManager.instance.getAllPluginTools();
       _applySearch();
     } catch (e) {
@@ -304,6 +308,57 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
     }
   }
 
+  /// 导航栏图标按钮（与 more 菜单按钮同规格）
+  Widget _buildHeaderAction({
+    required DsIconKind icon,
+    required String label,
+    required VoidCallback onTap,
+    required AppThemeData theme,
+  }) {
+    return Pressable(
+      onPressed: onTap,
+      semanticLabel: label,
+      builder:
+          (context, states) => JellyBox(
+            width: 40,
+            height: 40,
+            radius: theme.radii.md,
+            color: theme.primary,
+            child: Center(
+              child: DsIcon(icon, size: 20, color: theme.onPrimary),
+            ),
+          ),
+    );
+  }
+
+  /// 全局全选：启用全部插件的所有工具
+  Future<void> _selectAllTools() async {
+    try {
+      setState(() => _isLoading = true);
+      await ToolConfigManager.instance.enableAllTools();
+      await _loadTools();
+      _showSuccess('已启用全部工具');
+    } catch (e) {
+      _showError('全选失败: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// 全局反选：翻转全部插件所有工具的启用状态
+  Future<void> _invertAllTools() async {
+    try {
+      setState(() => _isLoading = true);
+      await ToolConfigManager.instance.invertAllTools();
+      await _loadTools();
+      _showSuccess('已反选全部工具');
+    } catch (e) {
+      _showError('反选失败: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   /// 显示错误消息
   void _showError(String message) {
     toastService.showToast(message);
@@ -415,7 +470,24 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
               // 与原 PopupMenuButton 一致：加载中禁用菜单
               return IgnorePointer(
                 ignoring: _isLoading,
-                child: DSPopover(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildHeaderAction(
+                      icon: DsIconKind.check,
+                      label: '全选',
+                      onTap: _selectAllTools,
+                      theme: theme,
+                    ),
+                    const SizedBox(width: 8),
+                    _buildHeaderAction(
+                      icon: DsIconKind.flip,
+                      label: '反选',
+                      onTap: _invertAllTools,
+                      theme: theme,
+                    ),
+                    const SizedBox(width: 8),
+                    DSPopover(
                   width: 190,
                   contentBuilder: (popoverContext, close) {
                     final popoverTheme = DSThemeBridge.resolve(popoverContext);
@@ -476,6 +548,8 @@ class _ToolManagementScreenState extends State<ToolManagementScreen> {
                       ),
                     ),
                   ),
+                ),
+                  ],
                 ),
               );
             },

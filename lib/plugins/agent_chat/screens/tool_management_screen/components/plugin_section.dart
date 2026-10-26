@@ -28,8 +28,13 @@ class PluginSection extends StatefulWidget {
   State<PluginSection> createState() => _PluginSectionState();
 }
 
-class _PluginSectionState extends State<PluginSection> {
+class _PluginSectionState extends State<PluginSection>
+    with AutomaticKeepAliveClientMixin {
   bool _isExpanded = true;
+
+  /// 滚出视口后保留 State，避免折叠状态在滚动后被重置
+  @override
+  bool get wantKeepAlive => true;
 
   /// 分组总开关：批量切换组内全部工具的启用状态
   Future<void> _toggleAll(bool enabled) async {
@@ -51,6 +56,7 @@ class _PluginSectionState extends State<PluginSection> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin 要求
     final theme = DSThemeBridge.resolve(context);
     final enabledCount = widget.toolSet.enabledToolCount;
     final totalCount = widget.visibleToolIds.length;
