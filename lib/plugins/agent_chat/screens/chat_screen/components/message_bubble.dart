@@ -136,7 +136,11 @@ class AgentMessageContent extends StatelessWidget {
                 ),
                 if (streaming.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  MarkdownContent(content: streaming, textColor: textColor),
+                  MarkdownContent(
+                    content: streaming,
+                    textColor: textColor,
+                    selectable: false,
+                  ),
                 ],
                 const SizedBox(height: 8),
                 Row(
@@ -163,14 +167,22 @@ class AgentMessageContent extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          MarkdownContent(content: _extractFinalReply(), textColor: textColor),
+          MarkdownContent(
+            content: _extractFinalReply(),
+            textColor: textColor,
+            selectable: false,
+          ),
           CollapsibleProcessSection(message: message, onRerunStep: onRerun),
         ],
       );
     }
 
     // 降级到普通文本显示
-    return MarkdownContent(content: message.content, textColor: textColor);
+    return MarkdownContent(
+      content: message.content,
+      textColor: textColor,
+      selectable: false,
+    );
   }
 
   /// 生成中可见的流式正文：剥内联 think 标签，截掉结构化展示过的工具结果段
@@ -527,6 +539,7 @@ class AgentMessageContent extends StatelessWidget {
       return MarkdownContent(
         content: ChatMessage.splitThink(content).$2,
         textColor: textColor,
+        selectable: false,
       );
     }
 
@@ -567,7 +580,11 @@ class AgentMessageContent extends StatelessWidget {
         return _buildToolLoadingState();
       } else {
         // 显示最终回复
-        return MarkdownContent(content: finalReply, textColor: textColor);
+        return MarkdownContent(
+          content: finalReply,
+          textColor: textColor,
+          selectable: false,
+        );
       }
     } else {
       // 没有找到最终回复，说明还在执行中，显示加载状态
@@ -839,7 +856,11 @@ class AgentMessageContent extends StatelessWidget {
             ],
             // 显示文本内容（如果有）
             if (hasContent)
-              MarkdownContent(content: visibleContent, textColor: textColor),
+              MarkdownContent(
+                content: visibleContent,
+                textColor: textColor,
+                selectable: false,
+              ),
           ],
         );
       },

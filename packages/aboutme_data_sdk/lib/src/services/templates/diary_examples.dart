@@ -17,7 +17,7 @@ class DiarySampleData {
 下午去了图书馆，看了一本很有趣的书。《人类简史》真的让我对历史有了新的认识。
 
 晚上和朋友一起吃了晚餐，聊了很多有趣的话题。真是充实的一天！''',
-        mood: '😊',
+        mood: 'happy', // 心情 id，取值见 shared_models 的 kDiaryMoodIds
         createdAt: now.subtract(const Duration(days: 7)),
         updatedAt: now.subtract(const Duration(days: 7)),
       ),
@@ -31,7 +31,7 @@ class DiarySampleData {
 特别感谢我的导师，在这个项目中给了我很多指导。
 
 明天要开始新的项目了，期待新的挑战！''',
-        mood: '🎉',
+        mood: 'excited',
         createdAt: now.subtract(const Duration(days: 3)),
         updatedAt: now.subtract(const Duration(days: 3)),
       ),
@@ -45,7 +45,7 @@ class DiarySampleData {
 有时候觉得，生活就像这雨，有时急有时缓。但不管怎样，雨后总会有彩虹。
 
 希望明天是个好天气。''',
-        mood: '🤔',
+        mood: 'thinking',
         createdAt: now.subtract(const Duration(days: 1)),
         updatedAt: now.subtract(const Duration(days: 1)),
       ),
@@ -59,7 +59,7 @@ class DiarySampleData {
 虽然大家都走上了不同的道路，但友谊依然如初。这大概就是最珍贵的财富吧。
 
 期待下次的相聚！''',
-        mood: '🥳',
+        mood: 'hysterical',
         createdAt: now.subtract(const Duration(days: 5)),
         updatedAt: now.subtract(const Duration(days: 5)),
       ),
@@ -73,7 +73,7 @@ class DiarySampleData {
 今天完成了第一个小应用，虽然很简单，但很有成就感。
 
 继续加油！''',
-        mood: '💪',
+        mood: 'cool',
         createdAt: now.subtract(const Duration(days: 2)),
         updatedAt: now.subtract(const Duration(days: 2)),
       ),

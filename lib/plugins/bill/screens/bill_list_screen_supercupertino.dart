@@ -204,10 +204,15 @@ class _BillListScreenSupercupertinoState
           _monthSubscriptionBills = subscriptionBills;
         });
         _dailyStats.value = stats;
+        final today = DateTime.now();
+        final todayStats =
+            stats[DateTime(today.year, today.month, today.day)];
         debugPrint(
           '[BillList] 加载完成: accountId=${widget.accountId}, '
           'month=${_focusedDay.year}-${_focusedDay.month}, '
-          'bills=${bills.length}, days=${stats.length}',
+          'bills=${bills.length}, subs=${subscriptionBills.length}, '
+          'days=${stats.length}, '
+          '今日支出=${todayStats?.expense ?? 0}',
         );
       }
     } catch (e) {

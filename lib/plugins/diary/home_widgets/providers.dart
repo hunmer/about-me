@@ -11,6 +11,7 @@ import '../widgets/diary_query_guard.dart';
 import '../diary_plugin.dart';
 import '../models/diary_entry.dart';
 import '../utils/diary_utils.dart';
+import '../widgets/diary_mood_face.dart';
 import 'utils.dart';
 
 /// 公共小组件提供者函数 - 本月日记列表
@@ -144,7 +145,7 @@ Future<Map<String, Map<String, dynamic>>> provideMonthlyDiaryListWidgets(
       'messages': sortedEntries.take(5).map((e) {
         final dateStr = DateFormat('MM月dd日 EEEE', 'zh_CN').format(e.key);
         final title = e.value.title.isNotEmpty ? e.value.title : '无标题日记';
-        final mood = e.value.mood ?? '';
+        final mood = _moodEmojiOf(e.value.mood);
         return {
           'title': '$mood $title',
           'sender': dateStr,
@@ -162,7 +163,7 @@ Future<Map<String, Map<String, dynamic>>> provideMonthlyDiaryListWidgets(
       'tasks': sortedEntries.map((e) {
         final title = e.value.title.isNotEmpty ? e.value.title : '无标题日记';
         final dateStr = DateFormat('MM月dd日').format(e.key);
-        final mood = e.value.mood ?? '😊';
+        final mood = _moodEmojiOf(e.value.mood, '😊');
         // 根据心情映射颜色
         int colorValue;
         switch (mood) {
@@ -193,7 +194,7 @@ Future<Map<String, Map<String, dynamic>>> provideMonthlyDiaryListWidgets(
       'messages': sortedEntries.take(6).map((e) {
         final title = e.value.title.isNotEmpty ? e.value.title : '无标题日记';
         final dateStr = DateFormat('MM月dd日').format(e.key);
-        final mood = e.value.mood ?? '';
+        final mood = _moodEmojiOf(e.value.mood);
         final text = DiaryUtils.contentToPlainText(e.value.content).trim();
         final preview = text.length > 50 ? '${text.substring(0, 50)}...' : text;
         return {
@@ -216,7 +217,7 @@ Future<Map<String, Map<String, dynamic>>> provideMonthlyDiaryListWidgets(
       'tasks': sortedEntries.take(4).map((e) {
         final title = e.value.title.isNotEmpty ? e.value.title : '无标题日记';
         final dateStr = DateFormat('MM月dd日').format(e.key);
-        final mood = e.value.mood ?? '😊';
+        final mood = _moodEmojiOf(e.value.mood, '😊');
         int colorValue = Colors.indigo.value;
         if (mood == '😊') {
           colorValue = Colors.yellow.value;
@@ -377,7 +378,8 @@ Map<String, dynamic>? _getMonthlyDiaryListDataSync(
     final moodStats = <String, int>{};
     for (final entry in entriesMap.values) {
       if (entry.mood != null && entry.mood!.isNotEmpty) {
-        moodStats[entry.mood!] = (moodStats[entry.mood!] ?? 0) + 1;
+        final id = diaryMoodIdOf(entry.mood!);
+        moodStats[id] = (moodStats[id] ?? 0) + 1;
       }
     }
 
@@ -472,7 +474,7 @@ Map<String, dynamic>? _getMonthlyDiaryListDataSync(
           'messages': sortedEntries.take(5).map((e) {
             final dateStr = DateFormat('MM月dd日 EEEE', 'zh_CN').format(e.$1);
             final title = e.$2.title.isNotEmpty ? e.$2.title : '无标题日记';
-            final mood = e.$2.mood ?? '';
+            final mood = _moodEmojiOf(e.$2.mood);
             return {
               'title': '$mood $title',
               'sender': dateStr,
@@ -490,7 +492,7 @@ Map<String, dynamic>? _getMonthlyDiaryListDataSync(
           'tasks': sortedEntries.map((e) {
             final title = e.$2.title.isNotEmpty ? e.$2.title : '无标题日记';
             final dateStr = DateFormat('MM月dd日').format(e.$1);
-            final mood = e.$2.mood ?? '😊';
+            final mood = _moodEmojiOf(e.$2.mood, '😊');
             int colorValue;
             switch (mood) {
               case '😊':
@@ -520,7 +522,7 @@ Map<String, dynamic>? _getMonthlyDiaryListDataSync(
           'messages': sortedEntries.take(6).map((e) {
             final title = e.$2.title.isNotEmpty ? e.$2.title : '无标题日记';
             final dateStr = DateFormat('MM月dd日').format(e.$1);
-            final mood = e.$2.mood ?? '';
+            final mood = _moodEmojiOf(e.$2.mood);
             final text = DiaryUtils.contentToPlainText(e.$2.content).trim();
             final preview = text.length > 50
                 ? '${text.substring(0, 50)}...'
@@ -545,7 +547,7 @@ Map<String, dynamic>? _getMonthlyDiaryListDataSync(
           'tasks': sortedEntries.take(4).map((e) {
             final title = e.$2.title.isNotEmpty ? e.$2.title : '无标题日记';
             final dateStr = DateFormat('MM月dd日').format(e.$1);
-            final mood = e.$2.mood ?? '😊';
+            final mood = _moodEmojiOf(e.$2.mood, '😊');
             int colorValue = Colors.indigo.value;
             if (mood == '😊') {
               colorValue = Colors.yellow.value;
@@ -614,7 +616,7 @@ Future<Map<String, Map<String, dynamic>>> provideWeeklyDiaryWidgets(
 
   // 创建心情图表数据
   final moodChartData = moodStats.entries.map((e) {
-    final emoji = e.key;
+    final emoji = diaryMoodSpecOf(e.key).emoji;
     final label = _getMoodLabel(emoji);
     final value = e.value;
     return {'emoji': emoji, 'label': label, 'value': value};
@@ -640,6 +642,10 @@ Future<Map<String, Map<String, dynamic>>> provideWeeklyDiaryWidgets(
 }
 
 /// 获取心情标签
+/// 心情值 -> 显示用 emoji（mood 存储 id，旧数据可能是 emoji）
+String _moodEmojiOf(String? mood, [String fallback = '']) =>
+    mood == null || mood.isEmpty ? fallback : diaryMoodSpecOf(mood).emoji;
+
 String _getMoodLabel(String emoji) {
   final moodLabels = {
     '😊': '开心',
@@ -795,7 +801,7 @@ Map<String, dynamic>? _getWeeklyDiaryDataSync(
 
         // 创建心情图表数据
         final moodChartData = moodStats.entries.map((e) {
-          final emoji = e.key;
+          final emoji = diaryMoodSpecOf(e.key).emoji;
           final label = _getMoodLabel(emoji);
           final value = e.value;
           return {'emoji': emoji, 'label': label, 'value': value};

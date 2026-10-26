@@ -41,7 +41,9 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedMood = widget.initialMood;
+    _selectedMood = widget.initialMood != null
+        ? diaryMoodIdOf(widget.initialMood!)
+        : null;
     _loadCurrentEntry();
   }
 
@@ -53,7 +55,9 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
         _entry = snapshot.entry;
         _version = snapshot.version;
         if (_entry != null) {
-          _selectedMood = _entry!.mood;
+          _selectedMood = _entry!.mood != null
+              ? diaryMoodIdOf(_entry!.mood!)
+              : null;
           _tags = _entry!.tags;
         }
         _loading = false;
@@ -96,13 +100,13 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
               runSpacing: theme.spacing.sm,
               alignment: WrapAlignment.center,
               children: [
-                for (final mood in diaryMoodEmojis)
+                for (final spec in kDiaryMoods)
                   _MoodOption(
-                    emoji: mood,
-                    selected: mood == _selectedMood,
+                    emoji: spec.emoji,
+                    selected: spec.id == _selectedMood,
                     theme: theme,
                     onTap: () {
-                      setState(() => _selectedMood = mood);
+                      setState(() => _selectedMood = spec.id);
                       Navigator.pop(dialogContext);
                     },
                   ),
@@ -158,9 +162,10 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
     final dateStr = DateFormat.yMMMMd(
       Localizations.localeOf(context).toString(),
     ).format(widget.date);
-    final moodName = _selectedMood != null
-        ? (diaryMoodNameKeys[_selectedMood]?.tr ?? _selectedMood!)
+    final moodSpec = _selectedMood != null
+        ? diaryMoodSpecOf(_selectedMood!)
         : null;
+    final moodName = moodSpec?.nameKey.tr;
 
     return RichEditorScreen(
       initialTitle: _entry?.title ?? widget.initialTitle,
@@ -185,7 +190,7 @@ class _DiaryEditorScreenState extends State<DiaryEditorScreen> {
         if (_selectedMood != null)
           EditorTagPill(
             theme: theme,
-            label: '$_selectedMood $moodName',
+            label: '${moodSpec!.emoji} $moodName',
             highlight: true,
           ),
       ],

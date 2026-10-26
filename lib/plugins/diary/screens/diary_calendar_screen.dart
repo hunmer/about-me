@@ -267,9 +267,10 @@ class _DiaryCalendarScreenState extends State<DiaryCalendarScreen> {
     }
 
     final mood = today.mood;
+    final moodSpec = mood != null ? diaryMoodSpecOf(mood) : null;
     setState(() {
-      _moodNotice = mood != null
-          ? '${'diary_todayMoodPrefix'.tr} $mood ${diaryMoodNameKeys[mood]?.tr ?? ''}'
+      _moodNotice = moodSpec != null
+          ? '${'diary_todayMoodPrefix'.tr} ${moodSpec.emoji} ${moodSpec.nameKey.tr}'
                 .trim()
           : 'diary_todayMoodNone'.tr;
     });

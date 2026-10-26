@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:aboutme/widgets/quill_viewer/index.dart';
 import 'package:aboutme/plugins/diary/models/diary_entry.dart';
+import 'package:aboutme/plugins/diary/widgets/diary_mood_face.dart';
 
 /// 日记条目卡片 - 展示一篇日记的摘要
 ///
@@ -66,7 +67,10 @@ class DiaryEntryCard extends StatelessWidget {
                     ),
                   ),
                   if (entry.mood != null)
-                    Text(entry.mood!, style: const TextStyle(fontSize: 20)),
+                    Text(
+                      diaryMoodSpecOf(entry.mood!).emoji,
+                      style: const TextStyle(fontSize: 20),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),

@@ -66,7 +66,7 @@ class _DiaryCalendarHeaderState extends State<DiaryCalendarHeader> {
     final palette = widget.palette;
     final mood = widget.selectedEntry?.mood;
     final moodName = mood != null
-        ? (diaryMoodNameKeys[mood]?.tr ?? mood)
+        ? diaryMoodSpecOf(mood).nameKey.tr
         : 'diary_noMoodRecord'.tr;
 
     return Stack(
@@ -185,12 +185,12 @@ class _DiaryCalendarHeaderState extends State<DiaryCalendarHeader> {
                   padding: const EdgeInsets.symmetric(
                     horizontal: _kListPadding,
                   ),
-                  itemCount: diaryMoodEmojis.length,
+                  itemCount: kDiaryMoods.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
-                    final emoji = diaryMoodEmojis[index];
-                    final spec = diaryMoodSpecOf(emoji);
-                    final isTodayMood = emoji == widget.todayMood;
+                    final spec = kDiaryMoods[index];
+                    final isTodayMood = widget.todayMood != null &&
+                        diaryMoodIdOf(widget.todayMood!) == spec.id;
 
                     // 中间放大：item 中心离视口中心越近缩放越大
                     final itemCenter =
@@ -210,7 +210,7 @@ class _DiaryCalendarHeaderState extends State<DiaryCalendarHeader> {
                           cursor: SystemMouseCursors.click,
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
-                            onTap: () => widget.onMoodTap(emoji),
+                            onTap: () => widget.onMoodTap(spec.id),
                             child: Container(
                               padding: const EdgeInsets.all(2.5),
                               decoration: BoxDecoration(

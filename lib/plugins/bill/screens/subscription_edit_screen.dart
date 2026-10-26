@@ -25,6 +25,19 @@ class SubscriptionEditScreen extends StatefulWidget {
 class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
   /// 表单 wrapper 状态（onStateReady 回传），供 AppBar 保存按钮触发提交
   FormBuilderWrapperState? _formWrapperState;
+  DateTime? _autoEndDate;
+
+  void _updateEndDate(dynamic value) {
+    final values = _formWrapperState?.currentValues;
+    final startDate = values?['startDate'];
+    final endDate = values?['endDate'];
+    if (value is! int || value <= 0 || startDate is! DateTime) return;
+    if (endDate != null && endDate != _autoEndDate) return;
+
+    // 自动填入的日期继续跟随周期变化，手动设置的日期保持不变。
+    _autoEndDate = startDate.add(Duration(days: value));
+    _formWrapperState?.patchValue({'endDate': _autoEndDate});
+  }
 
   @override
   void initState() {
@@ -352,6 +365,9 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
               labelText: 'bill_endDate'.tr,
               hintText: 'bill_none'.tr,
               initialValue: sub?.endDate,
+              onChanged: (value) {
+                if (value != _autoEndDate) _autoEndDate = null;
+              },
               extra: {
                 'inline': true,
                 'format': 'yyyy-MM-dd',
@@ -365,6 +381,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
               name: 'days',
               type: FormFieldType.subscriptionCycle,
               initialValue: sub?.days ?? 30,
+              onChanged: _updateEndDate,
               extra: {
                 'monthlyLabel': 'bill_monthly'.tr,
                 'quarterlyLabel': 'bill_quarterly'.tr,

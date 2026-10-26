@@ -776,7 +776,7 @@ class _DiaryStatsScreenState extends State<DiaryStatsScreen>
   Widget _buildSummaryCard(AppThemeData theme) {
     final counts = <String, int>{};
     for (final b in _badges) {
-      final mood = b.entry.mood!;
+      final mood = diaryMoodIdOf(b.entry.mood!);
       counts[mood] = (counts[mood] ?? 0) + 1;
     }
     final sortedMoods = counts.entries.toList()
@@ -877,17 +877,18 @@ class _MoodColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final spec = diaryMoodSpecOf(mood);
     final jarMood = _jarMoodOf(mood);
     return Column(
       children: [
         _MoodFaceBadge(
           theme: theme,
-          spec: diaryMoodSpecOf(mood),
+          spec: spec,
           size: 44,
         ),
         const SizedBox(height: 8),
         Text(
-          diaryMoodNameKeys[mood]?.tr ?? mood,
+          spec.nameKey.tr,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: DsTypography.body.copyWith(color: theme.text),
@@ -996,8 +997,7 @@ class _MoodModalCardState extends State<_MoodModalCard>
   Widget build(BuildContext context) {
     final theme = widget.theme;
     final mood = widget.badge.entry.mood!;
-    final moodNameKey = diaryMoodNameKeys[mood];
-    final moodName = moodNameKey != null ? moodNameKey.tr : mood;
+    final moodName = diaryMoodSpecOf(mood).nameKey.tr;
     final entry = widget.badge.entry;
     final hasContent = entry.content.trim().isNotEmpty;
 

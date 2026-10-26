@@ -71,11 +71,15 @@ class SubscriptionController with ChangeNotifier {
 
       final subscriptionsJson = (response['data'] as Map)['data'] as List;
       _subscriptions.clear();
-      _subscriptions.addAll(
-        subscriptionsJson.whereType<Map<String, dynamic>>().map(
-          Subscription.fromJson,
-        ),
-      );
+      for (final json in subscriptionsJson.whereType<Map<String, dynamic>>()) {
+        try {
+          _subscriptions.add(Subscription.fromJson(json));
+        } catch (e) {
+          // 单条损坏不阻断整体加载，避免一条坏数据清空订阅列表
+          debugPrint('解析订阅数据失败（已跳过）: $e');
+        }
+      }
+      debugPrint('[Sub] 加载完成: ${_subscriptions.length} 条订阅');
 
       notifyListeners();
     } catch (e) {
@@ -87,6 +91,11 @@ class SubscriptionController with ChangeNotifier {
   Future<void> createSubscription(Subscription subscription) async {
     await _sdkCall('createSubscription', subscription.toJson());
     _subscriptions.add(subscription);
+    debugPrint(
+      '[Sub] 创建成功: ${subscription.name}, '
+      'start=${subscription.startDate}, days=${subscription.days}, '
+      '当前订阅数=${_subscriptions.length}',
+    );
     notifyListeners();
 
     // 广播事件
@@ -223,6 +232,10 @@ class SubscriptionController with ChangeNotifier {
         );
       }
     }
+    debugPrint(
+      '[Sub] 月度虚拟条目: ${month.year}-${month.month} '
+      '生成${result.length}条 (订阅数=${_subscriptions.length})',
+    );
     return result;
   }
 

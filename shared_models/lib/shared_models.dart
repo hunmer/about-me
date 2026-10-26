@@ -11,6 +11,8 @@ export 'data_contracts/asset.dart';
 
 export 'data_contracts/diary_codec.dart';
 
+export 'data_contracts/diary_moods.dart';
+
 export 'data_contracts/chat_codec.dart';
 export 'data_contracts/chat_commands.dart';
 

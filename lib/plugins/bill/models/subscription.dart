@@ -140,11 +140,13 @@ class Subscription {
   }
 
   factory Subscription.fromJson(Map<String, dynamic> json) {
+    // 数字字段经 HTTP/JSON 边界可能丢失 double 形态（30.0 -> 30），
+    // 统一走 num 宽容转换，避免 as double/as int 抛错导致订阅列表清空
     return Subscription(
       id: json['id'] as String,
       name: json['name'] as String,
-      totalAmount: json['totalAmount'] as double,
-      days: json['days'] as int,
+      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0,
+      days: (json['days'] as num?)?.toInt() ?? 0,
       category: json['category'] as String,
       startDate: DateTime.parse(json['startDate'] as String),
       endDate: json['endDate'] != null
@@ -152,8 +154,13 @@ class Subscription {
           : null,
       isActive: json['isActive'] as bool,
       note: json['note'] as String?,
-      icon: dynamicIconData(json['icon'] as int, fontFamily: 'MaterialIcons'),
-      iconColor: Color(json['iconColor'] as int),
+      icon: dynamicIconData(
+        (json['icon'] as num?)?.toInt() ?? Icons.subscriptions.codePoint,
+        fontFamily: 'MaterialIcons',
+      ),
+      iconColor: Color(
+        (json['iconColor'] as num?)?.toInt() ?? Colors.blue.value,
+      ),
       createdAt: DateTime.parse(json['createdAt'] as String),
       terminatedAt: json['terminatedAt'] != null
           ? DateTime.parse(json['terminatedAt'] as String)
