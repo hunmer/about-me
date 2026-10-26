@@ -468,6 +468,348 @@ const Map<String, String> cuteNotepadStickerBodies = {
   <path d="M3 6 Q6 9 9 7" fill="none" stroke-width="1.8"/>
 </g>
 ''',
+
+  // ---- 生日涂鸦贴图集（code_artifact 生日卡片移植，深棕勾线 + 马卡龙粉彩） ----
+  'smileyStar': '''
+<g transform="translate(30,30)">
+  <path d="M 0,-26 C 3,-26 7,-11 9,-9 C 11,-7 26,-6 27,-3 C 28,0 16,9 15,12 C 14,15 18,28 15,30 C 12,32 2,23 -1,23 C -4,23 -14,32 -17,30 C -20,28 -15,15 -16,12 C -17,9 -28,0 -27,-3 C -26,-6 -11,-7 -9,-9 C -7,-11 -3,-26 0,-26 Z" fill="#FDE075" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="-5.5" cy="2" r="1.7" fill="#291F1C"/>
+  <circle cx="5.5" cy="2" r="1.7" fill="#291F1C"/>
+  <path d="M -2.5,5.5 Q 0,8 2.5,5.5" fill="none" stroke="#291F1C" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="-8.5" cy="4.5" rx="2.5" ry="1.4" fill="#F4978E" opacity="0.7"/>
+  <ellipse cx="8.5" cy="4.5" rx="2.5" ry="1.4" fill="#F4978E" opacity="0.7"/>
+</g>
+''',
+  'pinkHeart': '''
+<g transform="translate(17,6)">
+  <path d="M 0,4 C -4,-4 -14,-2 -13,6 C -12,13 -2,17 0,21 C 2,17 12,13 13,6 C 14,-2 4,-4 0,4 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+''',
+  'miniHeart': '''
+<g transform="translate(11,5)">
+  <path d="M 0,2.5 C -2.5,-2.5 -8,-1 -7.5,3.5 C -7,7.5 -1,10 0,12 C 1,10 7,7.5 7.5,3.5 C 8,-1 2.5,-2.5 0,2.5 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+''',
+  'pinkFlower': '''
+<g transform="translate(18,17)">
+  <path d="M 0,-4 C -3,-13 5,-15 4,-5 C 12,-10 16,-2 6,1 C 14,7 7,15 1,6 C -2,15 -11,11 -5,3 C -15,2 -12,-8 -3,-4 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="0" cy="0" r="3.2" fill="#FDE075" stroke="#291F1C" stroke-width="1.8"/>
+</g>
+''',
+  'birthdayCake': '''
+<g transform="translate(2,-8)">
+  <ellipse cx="48" cy="112" rx="48" ry="10" fill="#FFFFFF" stroke="#291F1C" stroke-width="2.3"/>
+  <path d="M 10,66 L 10,106 C 10,114 86,114 86,106 L 86,66 Z" fill="#FAD2D8" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <ellipse cx="48" cy="66" rx="38" ry="10" fill="#FCE3E6" stroke="#291F1C" stroke-width="2.3"/>
+  <path d="M 10,68 Q 18,79 26,70 Q 36,81 48,71 Q 60,81 70,70 Q 79,79 86,68" fill="none" stroke="#F299A6" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 10,68 Q 18,79 26,70 Q 36,81 48,71 Q 60,81 70,70 Q 79,79 86,68" fill="none" stroke="#291F1C" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M 10,89 Q 20,97 30,89 Q 40,97 48,89 Q 58,97 68,89 Q 78,97 86,89" fill="none" stroke="#F299A6" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 10,89 Q 20,97 30,89 Q 40,97 48,89 Q 58,97 68,89 Q 78,97 86,89" fill="none" stroke="#291F1C" stroke-width="2" stroke-linecap="round"/>
+  <rect x="24" y="36" width="7" height="28" rx="2" fill="#FFFDF9" stroke="#291F1C" stroke-width="2" transform="rotate(-4 27 50)"/>
+  <line x1="24" y1="45" x2="31" y2="43" stroke="#F299A6" stroke-width="2.2"/>
+  <line x1="25" y1="55" x2="31" y2="53" stroke="#F299A6" stroke-width="2.2"/>
+  <path d="M 26,32 C 22,26 26,18 26,15 C 29,19 31,26 26,32 Z" fill="#FDE075" stroke="#291F1C" stroke-width="1.8"/>
+  <rect x="44.5" y="32" width="7" height="31" rx="2" fill="#FFFDF9" stroke="#291F1C" stroke-width="2"/>
+  <line x1="45" y1="42" x2="51.5" y2="40" stroke="#F299A6" stroke-width="2.2"/>
+  <line x1="45" y1="52" x2="51.5" y2="50" stroke="#F299A6" stroke-width="2.2"/>
+  <path d="M 48,28 C 44,22 48,13 48,10 C 52,14 53,22 48,28 Z" fill="#FDE075" stroke="#291F1C" stroke-width="1.8"/>
+  <rect x="65" y="37" width="7" height="27" rx="2" fill="#FFFDF9" stroke="#291F1C" stroke-width="2" transform="rotate(5 68 50)"/>
+  <line x1="65" y1="46" x2="72" y2="48" stroke="#F299A6" stroke-width="2.2"/>
+  <line x1="65" y1="55" x2="72" y2="57" stroke="#F299A6" stroke-width="2.2"/>
+  <path d="M 69,33 C 65,27 70,19 70,16 C 73,20 74,27 69,33 Z" fill="#FDE075" stroke="#291F1C" stroke-width="1.8"/>
+</g>
+''',
+  'giftBoxYellow': '''
+<g transform="translate(3,8) rotate(-3)">
+  <rect x="4" y="24" width="64" height="44" rx="3" fill="#FCD770" stroke="#291F1C" stroke-width="2.3"/>
+  <rect x="0" y="14" width="72" height="12" rx="3" fill="#FDE28A" stroke="#291F1C" stroke-width="2.3"/>
+  <rect x="30" y="14" width="12" height="54" fill="#F69CA9" stroke="#291F1C" stroke-width="2.2"/>
+  <path d="M 36,14 C 24,-4 10,4 20,13 C 25,16 32,14 36,14 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.2"/>
+  <path d="M 36,14 C 48,-4 62,4 52,13 C 47,16 40,14 36,14 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.2"/>
+  <circle cx="36" cy="13" r="3.5" fill="#F69CA9" stroke="#291F1C" stroke-width="2"/>
+</g>
+''',
+  'buntingBanner': '''
+<g transform="translate(-10,-18)">
+  <path d="M 32,36 Q 180,105 328,32" fill="none" stroke="#291F1C" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M 55,46 L 60,92 L 92,60 Z" fill="#DCE9EE" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <circle cx="67" cy="64" r="2.2" fill="#8CC0D0"/>
+  <circle cx="76" cy="62" r="2.2" fill="#8CC0D0"/>
+  <circle cx="65" cy="76" r="2.2" fill="#8CC0D0"/>
+  <path d="M 98,62 L 111,106 L 140,70 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <circle cx="114" cy="75" r="2.5" fill="#FFFDF9"/>
+  <circle cx="124" cy="78" r="2.5" fill="#FFFDF9"/>
+  <circle cx="113" cy="89" r="2.5" fill="#FFFDF9"/>
+  <path d="M 145,70 L 164,114 L 188,72 Z" fill="#FCD770" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <circle cx="162" cy="82" r="2.4" fill="#FFFDF9"/>
+  <circle cx="173" cy="84" r="2.4" fill="#FFFDF9"/>
+  <circle cx="165" cy="96" r="2.4" fill="#FFFDF9"/>
+  <path d="M 194,72 L 216,112 L 236,66 Z" fill="#9AC4D5" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <circle cx="210" cy="82" r="2.4" fill="#FFFDF9"/>
+  <circle cx="222" cy="80" r="2.4" fill="#FFFDF9"/>
+  <circle cx="215" cy="95" r="2.4" fill="#FFFDF9"/>
+  <path d="M 242,64 L 268,102 L 281,53 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <circle cx="258" cy="72" r="2.5" fill="#FFFDF9"/>
+  <circle cx="270" cy="68" r="2.5" fill="#FFFDF9"/>
+  <circle cx="265" cy="84" r="2.5" fill="#FFFDF9"/>
+  <path d="M 286,50 L 312,84 L 315,38 Z" fill="#FAD2D8" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <line x1="298" y1="46" x2="301" y2="69" stroke="#F299A6" stroke-width="2"/>
+  <line x1="307" y1="42" x2="310" y2="76" stroke="#F299A6" stroke-width="2"/>
+  <g transform="translate(32, 36)">
+    <path d="M 0,0 C -14,-12 -18,4 -2,2 C 12,-12 18,2 0,0 Z" fill="none" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="M -1,2 L -10,16 M 1,2 L 6,18" stroke="#291F1C" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(328, 32)">
+    <path d="M 0,0 C -14,-12 -18,4 -2,2 C 12,-12 18,2 0,0 Z" fill="none" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="M -1,2 L -8,17 M 1,2 L 10,16" stroke="#291F1C" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+</g>
+''',
+  'pinkBalloon': '''
+<g transform="translate(26,33)">
+  <ellipse cx="0" cy="0" rx="24" ry="30" fill="#F69CA9" stroke="#291F1C" stroke-width="2.3"/>
+  <path d="M 10,-16 Q 17,-6 14,8" fill="none" stroke="#FAD2D8" stroke-width="3.5" stroke-linecap="round"/>
+  <polygon points="-4,30 4,30 6,35 -6,35" fill="#F69CA9" stroke="#291F1C" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M 0,35 Q 8,48 -2,60 Q -8,70 0,80" fill="none" stroke="#291F1C" stroke-width="2" stroke-linecap="round"/>
+</g>
+''',
+  'partyHat': '''
+<g transform="translate(38,23)">
+  <path d="M -32,56 Q -24,64 -14,58 Q -4,65 6,58 Q 16,65 24,58 Q 34,62 32,52 Q 26,48 -30,50 Z" fill="#FDE075" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M 2,-10 L -28,51 Q 0,58 29,51 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <circle cx="1" cy="14" r="4" fill="#FFFDF9"/>
+  <circle cx="-9" cy="30" r="4.5" fill="#FFFDF9"/>
+  <circle cx="11" cy="29" r="4" fill="#FFFDF9"/>
+  <circle cx="-17" cy="44" r="3.8" fill="#FFFDF9"/>
+  <circle cx="2" cy="43" r="4.5" fill="#FFFDF9"/>
+  <circle cx="19" cy="43" r="4" fill="#FFFDF9"/>
+  <path d="M 2,-18 C 6,-20 10,-16 9,-12 C 12,-9 9,-4 5,-5 C 2,-2 -3,-4 -4,-7 C -8,-9 -6,-15 -2,-15 C -2,-18 0,-19 2,-18 Z" fill="#FDE075" stroke="#291F1C" stroke-width="2.1" stroke-linejoin="round"/>
+</g>
+''',
+  'yellowBalloon': '''
+<g transform="translate(28,34)">
+  <ellipse cx="0" cy="0" rx="25" ry="31" fill="#FCD770" stroke="#291F1C" stroke-width="2.3"/>
+  <path d="M -12,-16 Q -18,-6 -15,8" fill="none" stroke="#FEF0B5" stroke-width="3.2" stroke-linecap="round"/>
+  <polygon points="-4,31 4,31 6,36 -6,36" fill="#FCD770" stroke="#291F1C" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M 1,36 Q 10,48 4,58 Q -2,68 8,78 Q 14,85 6,92" fill="none" stroke="#291F1C" stroke-width="2" stroke-linecap="round"/>
+</g>
+''',
+  'wavingGirl': '''
+<g transform="translate(0,2)">
+  <path d="M 16,28 C 2,18 6,2 18,8 C 22,0 36,2 34,14 C 42,18 38,30 28,30 Z" fill="#8C583A" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <path d="M 16,30 C 20,22 32,22 36,29 C 32,34 20,34 16,30 Z" fill="#F299A6" stroke="#291F1C" stroke-width="2"/>
+  <path d="M 12,60 C 2,52 10,30 42,30 C 74,30 82,52 74,64 C 82,68 80,78 70,78 L 14,78 C 4,78 2,66 12,60 Z" fill="#8C583A" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <path d="M 72,94 L 94,78 C 98,74 103,77 100,82 L 82,102 Z" fill="#FFE3D3" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <g transform="translate(96,78)">
+    <path d="M -3,-2 L -6,-10 C -7,-13 -3,-14 -1,-10 L 1,-4 L 5,-11 C 7,-14 10,-12 8,-8 L 4,-2 L 10,-7 C 13,-9 15,-6 12,-3 L 6,1 L 12,-1 C 15,0 14,3 10,3 L 3,5" fill="#FFE3D3" stroke="#291F1C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <path d="M 18,88 C 22,78 64,78 70,88 L 78,104 L 12,104 Z" fill="#FFFDF9" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <path d="M 16,94 L 72,94" stroke="#FCD770" stroke-width="5"/>
+  <path d="M 14,101 L 75,101" stroke="#FCD770" stroke-width="5"/>
+  <path d="M 18,88 C 22,78 64,78 70,88 L 78,104 L 12,104 Z" fill="none" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <circle cx="11" cy="64" r="6" fill="#FFE3D3" stroke="#291F1C" stroke-width="2.2"/>
+  <circle cx="75" cy="64" r="6" fill="#FFE3D3" stroke="#291F1C" stroke-width="2.2"/>
+  <ellipse cx="43" cy="62" rx="31" ry="25" fill="#FFE3D3" stroke="#291F1C" stroke-width="2.3"/>
+  <path d="M 12,58 C 16,38 38,38 46,42 C 36,48 22,56 12,58 Z" fill="#8C583A" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M 44,40 C 56,40 70,48 74,58 C 62,54 50,48 44,40 Z" fill="#8C583A" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M 25,54 Q 29,51 32,53" fill="none" stroke="#291F1C" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M 54,53 Q 57,51 61,54" fill="none" stroke="#291F1C" stroke-width="1.8" stroke-linecap="round"/>
+  <circle cx="29" cy="62" r="2.3" fill="#291F1C"/>
+  <circle cx="57" cy="62" r="2.3" fill="#291F1C"/>
+  <ellipse cx="22" cy="67" rx="5" ry="2.8" fill="#F4978E" opacity="0.65"/>
+  <ellipse cx="64" cy="67" rx="5" ry="2.8" fill="#F4978E" opacity="0.65"/>
+  <path d="M 39,67 Q 43,72 47,67" fill="none" stroke="#291F1C" stroke-width="2" stroke-linecap="round"/>
+</g>
+''',
+  'tulipPink': '''
+<g transform="translate(25,13)">
+  <path d="M 0,14 Q -2,30 -1,44" fill="none" stroke="#291F1C" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M -1,42 C -18,38 -22,24 -12,24 C -6,24 -2,34 -1,42 Z" fill="#A8D08D" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M -1,42 C 14,38 20,24 10,24 C 4,24 0,34 -1,42 Z" fill="#A8D08D" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M -16,-6 C -20,10 -10,18 0,18 C 10,18 20,10 16,-6 C 12,-6 8,0 6,2 C 4,-6 2,-10 0,-10 C -2,-10 -4,-6 -6,2 C -8,0 -12,-6 -16,-6 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+</g>
+''',
+  'smileyCloud': '''
+<g transform="translate(47,30)">
+  <path d="M -32,12 C -42,12 -44,-2 -32,-6 C -34,-18 -18,-24 -8,-16 C 0,-26 18,-22 20,-10 C 32,-12 38,0 30,8 C 36,16 24,24 14,18 C 6,24 -8,24 -14,18 C -22,22 -32,18 -32,12 Z" fill="#FFFFFF" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <circle cx="-8" cy="2" r="2" fill="#291F1C"/>
+  <circle cx="8" cy="2" r="2" fill="#291F1C"/>
+  <path d="M -2.5,5 Q 0,7.5 2.5,5" fill="none" stroke="#291F1C" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="-13" cy="5" rx="3" ry="1.6" fill="#F69CA9" opacity="0.65"/>
+  <ellipse cx="13" cy="5" rx="3" ry="1.6" fill="#F69CA9" opacity="0.65"/>
+</g>
+''',
+  'rainbowClouds': '''
+<g transform="translate(52,39)">
+  <path d="M -36,8 A 36,36 0 0,1 36,8" fill="none" stroke="#F69CA9" stroke-width="8"/>
+  <path d="M -29,8 A 29,29 0 0,1 29,8" fill="none" stroke="#FDE075" stroke-width="7"/>
+  <path d="M -22,8 A 22,22 0 0,1 22,8" fill="none" stroke="#9AC4D5" stroke-width="7"/>
+  <path d="M -40,8 A 40,40 0 0,1 40,8" fill="none" stroke="#291F1C" stroke-width="2.2"/>
+  <path d="M -32,8 A 32,32 0 0,1 32,8" fill="none" stroke="#291F1C" stroke-width="1.8"/>
+  <path d="M -25,8 A 25,25 0 0,1 25,8" fill="none" stroke="#291F1C" stroke-width="1.8"/>
+  <path d="M -18,8 A 18,18 0 0,1 18,8" fill="none" stroke="#291F1C" stroke-width="2.2"/>
+  <g transform="translate(-30, 10)">
+    <path d="M -14,4 C -19,4 -19,-4 -12,-5 C -12,-12 -2,-13 2,-7 C 8,-11 16,-5 13,2 C 17,7 10,12 4,9 C -1,13 -9,11 -11,7 C -14,8 -16,6 -14,4 Z" fill="#FFFFFF" stroke="#291F1C" stroke-width="2.1" stroke-linejoin="round"/>
+    <circle cx="-4" cy="1" r="1.4" fill="#291F1C"/>
+    <circle cx="4" cy="1" r="1.4" fill="#291F1C"/>
+    <path d="M -1.5,3 Q 0,5 1.5,3" fill="none" stroke="#291F1C" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(30, 12)">
+    <path d="M -14,4 C -19,4 -19,-4 -12,-5 C -12,-12 -2,-13 2,-7 C 8,-11 16,-5 13,2 C 17,7 10,12 4,9 C -1,13 -9,11 -11,7 C -14,8 -16,6 -14,4 Z" fill="#FFFFFF" stroke="#291F1C" stroke-width="2.1" stroke-linejoin="round"/>
+    <circle cx="-4" cy="1" r="1.4" fill="#291F1C"/>
+    <circle cx="4" cy="1" r="1.4" fill="#291F1C"/>
+    <path d="M -1.5,3 Q 0,5 1.5,3" fill="none" stroke="#291F1C" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</g>
+''',
+  'cupcake': '''
+<g transform="translate(33,57)">
+  <path d="M -22,12 L -16,42 C -15,46 15,46 16,42 L 22,12 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <line x1="-11" y1="14" x2="-8" y2="43" stroke="#291F1C" stroke-width="1.9" stroke-linecap="round"/>
+  <line x1="0" y1="15" x2="0" y2="44" stroke="#291F1C" stroke-width="1.9" stroke-linecap="round"/>
+  <line x1="11" y1="14" x2="8" y2="43" stroke="#291F1C" stroke-width="1.9" stroke-linecap="round"/>
+  <path d="M -22,14 C -30,12 -28,-2 -18,0 C -20,-10 -10,-14 -4,-12 C 0,-16 8,-14 14,-8 C 20,-10 26,-2 20,4 C 28,6 26,16 18,15 C 12,18 4,16 0,14 C -6,18 -16,17 -22,14 Z" fill="#FFFDF9" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <path d="M -12,4 Q 0,9 12,3" fill="none" stroke="#291F1C" stroke-width="1.8" stroke-linecap="round"/>
+  <circle cx="-8" cy="-3" r="1.4" fill="#F69CA9"/>
+  <circle cx="7" cy="-2" r="1.4" fill="#E5B968"/>
+  <circle cx="2" cy="10" r="1.4" fill="#9AC4D5"/>
+  <rect x="-3" y="-34" width="6" height="22" rx="1.5" fill="#FAD2D8" stroke="#291F1C" stroke-width="2"/>
+  <line x1="-3" y1="-26" x2="3" y2="-28" stroke="#291F1C" stroke-width="1.8"/>
+  <line x1="-3" y1="-19" x2="3" y2="-21" stroke="#291F1C" stroke-width="1.8"/>
+  <path d="M 0,-37 C -4,-43 0,-51 0,-54 C 4,-50 4,-42 0,-37 Z" fill="#FDE075" stroke="#291F1C" stroke-width="1.9"/>
+</g>
+''',
+  'partyBear': '''
+<g transform="translate(53,60)">
+  <path d="M -28,22 C -42,10 -50,2 -46,-3 C -42,-8 -32,0 -20,12 Z" fill="#D5A687" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <path d="M -28,36 C -26,18 -16,12 0,12 C 16,12 24,20 28,36" fill="#D5A687" stroke="#291F1C" stroke-width="2.3" stroke-linecap="round"/>
+  <circle cx="-22" cy="-18" r="10" fill="#D5A687" stroke="#291F1C" stroke-width="2.3"/>
+  <circle cx="-22" cy="-18" r="5" fill="#ECC8B0"/>
+  <circle cx="26" cy="-10" r="10" fill="#D5A687" stroke="#291F1C" stroke-width="2.3"/>
+  <circle cx="26" cy="-10" r="5" fill="#ECC8B0"/>
+  <ellipse cx="1" cy="0" rx="28" ry="23" transform="rotate(8 1 0)" fill="#D5A687" stroke="#291F1C" stroke-width="2.3"/>
+  <g transform="translate(8, -22) rotate(14)">
+    <path d="M 0,-24 L -13,4 Q 0,8 13,4 Z" fill="#FFFDF9" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="M -7,-9 L 7,-9 L 10,-2 L -10,-2 Z" fill="#F69CA9"/>
+    <path d="M -4,-17 L 4,-17 L 6,-13 L -6,-13 Z" fill="#F69CA9"/>
+    <path d="M 0,-24 L -13,4 Q 0,8 13,4 Z" fill="none" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+    <circle cx="0" cy="-27" r="4.5" fill="#FDE075" stroke="#291F1C" stroke-width="2"/>
+  </g>
+  <ellipse cx="0" cy="4" rx="10" ry="8" fill="#FFFDF9"/>
+  <circle cx="-10" cy="-3" r="2.2" fill="#291F1C"/>
+  <circle cx="11" cy="0" r="2.2" fill="#291F1C"/>
+  <ellipse cx="-16" cy="2" rx="4" ry="2.2" fill="#F4978E" opacity="0.65"/>
+  <ellipse cx="16" cy="6" rx="4" ry="2.2" fill="#F4978E" opacity="0.65"/>
+  <ellipse cx="0" cy="2" rx="3.2" ry="2.2" fill="#291F1C"/>
+  <path d="M 0,4 L -3,8 M 0,4 L 3,8" fill="none" stroke="#291F1C" stroke-width="1.9" stroke-linecap="round"/>
+</g>
+''',
+  'loveEnvelope': '''
+<g transform="translate(5,17) rotate(-14)">
+  <rect x="0" y="0" width="58" height="38" rx="3" fill="#FDE28A" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <path d="M 2,36 L 24,18 M 56,36 L 34,18" stroke="#291F1C" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 1,1 L 29,22 L 57,1" fill="#FCD770" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <g transform="translate(29,15) scale(0.85)">
+    <path d="M 0,2.5 C -2.5,-2.5 -8,-1 -7.5,3.5 C -7,7.5 -1,10 0,12 C 1,10 7,7.5 7.5,3.5 C 8,-1 2.5,-2.5 0,2.5 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</g>
+''',
+  'sixPetalFlower': '''
+<g transform="translate(25,24)">
+  <path d="M 0,12 L 0,44" stroke="#291F1C" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M 0,42 C -16,38 -22,26 -12,26 C -6,26 -1,34 0,42 Z" fill="#A8D08D" stroke="#291F1C" stroke-width="2.1" stroke-linejoin="round"/>
+  <path d="M 0,42 C 16,38 22,26 12,26 C 6,26 1,34 0,42 Z" fill="#A8D08D" stroke="#291F1C" stroke-width="2.1" stroke-linejoin="round"/>
+  <g transform="translate(0, 2)">
+    <ellipse cx="0" cy="-12" rx="5.5" ry="9" fill="#F69CA9" stroke="#291F1C" stroke-width="2.1"/>
+    <ellipse cx="0" cy="12" rx="5.5" ry="9" fill="#F69CA9" stroke="#291F1C" stroke-width="2.1"/>
+    <ellipse cx="0" cy="-12" rx="5.5" ry="9" transform="rotate(60)" fill="#F69CA9" stroke="#291F1C" stroke-width="2.1"/>
+    <ellipse cx="0" cy="12" rx="5.5" ry="9" transform="rotate(60)" fill="#F69CA9" stroke="#291F1C" stroke-width="2.1"/>
+    <ellipse cx="0" cy="-12" rx="5.5" ry="9" transform="rotate(120)" fill="#F69CA9" stroke="#291F1C" stroke-width="2.1"/>
+    <ellipse cx="0" cy="12" rx="5.5" ry="9" transform="rotate(120)" fill="#F69CA9" stroke="#291F1C" stroke-width="2.1"/>
+    <circle cx="0" cy="0" r="5.5" fill="#FDE075" stroke="#291F1C" stroke-width="2.1"/>
+  </g>
+</g>
+''',
+  'sparkleBunny': '''
+<g transform="translate(42,78)">
+  <path d="M -22,-22 C -30,-56 -22,-74 -14,-72 C -6,-70 -4,-48 -8,-22 Z" fill="#FFFFFF" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <path d="M -18,-26 C -22,-48 -18,-62 -14,-60 C -10,-58 -9,-42 -12,-26 Z" fill="#FAD2D8"/>
+  <path d="M 8,-22 C 6,-50 12,-72 20,-70 C 28,-68 28,-48 20,-20 Z" fill="#FFFFFF" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <path d="M 12,-25 C 11,-44 15,-60 19,-58 C 23,-56 22,-42 17,-24 Z" fill="#FAD2D8"/>
+  <path d="M -32,26 C -38,6 -32,-24 0,-24 C 32,-24 38,6 32,26 Z" fill="#FFFFFF" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <circle cx="-12" cy="2" r="2.4" fill="#291F1C"/>
+  <circle cx="12" cy="2" r="2.4" fill="#291F1C"/>
+  <ellipse cx="-20" cy="8" rx="4.8" ry="2.5" fill="#F69CA9" opacity="0.65"/>
+  <ellipse cx="20" cy="8" rx="4.8" ry="2.5" fill="#F69CA9" opacity="0.65"/>
+  <ellipse cx="0" cy="6" rx="2.5" ry="1.8" fill="#291F1C"/>
+  <path d="M -5,10 Q -2.5,13 0,9 Q 2.5,13 5,10" fill="none" stroke="#291F1C" stroke-width="1.9" stroke-linecap="round"/>
+  <ellipse cx="-24" cy="26" rx="10" ry="6.5" fill="#FFFFFF" stroke="#291F1C" stroke-width="2.2"/>
+  <ellipse cx="24" cy="26" rx="10" ry="6.5" fill="#FFFFFF" stroke="#291F1C" stroke-width="2.2"/>
+</g>
+''',
+  'bowGirl': '''
+<g transform="translate(66,70)">
+  <path d="M -52,22 C -62,14 -56,-4 -48,-12 C -50,-42 -28,-62 0,-62 C 28,-62 50,-42 48,-12 C 56,-4 62,14 52,22 C 60,28 54,38 42,34 L -42,34 C -54,38 -60,28 -52,22 Z" fill="#8C583A" stroke="#291F1C" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M -38,-22 C -32,-52 32,-52 38,-22" fill="none" stroke="#F69CA9" stroke-width="9" stroke-linecap="round"/>
+  <path d="M -40,-20 C -34,-54 34,-54 40,-20" fill="none" stroke="#291F1C" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M -36,-16 C -30,-46 30,-46 36,-16" fill="none" stroke="#291F1C" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M 2,-50 C -8,-66 -22,-58 -12,-48 C -6,-44 0,-48 2,-50 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M 2,-50 C 12,-66 26,-58 16,-48 C 10,-44 4,-48 2,-50 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <circle cx="2" cy="-50" r="3.5" fill="#F69CA9" stroke="#291F1C" stroke-width="2"/>
+  <circle cx="-40" cy="4" r="7.5" fill="#FFE3D3" stroke="#291F1C" stroke-width="2.2"/>
+  <circle cx="40" cy="4" r="7.5" fill="#FFE3D3" stroke="#291F1C" stroke-width="2.2"/>
+  <ellipse cx="0" cy="2" rx="38" ry="30" fill="#FFE3D3" stroke="#291F1C" stroke-width="2.4"/>
+  <path d="M -38,-6 C -32,-28 -6,-34 10,-30 C -4,-20 -22,-10 -38,-6 Z" fill="#8C583A" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M 8,-30 C 24,-28 36,-16 38,-4 C 24,-10 14,-20 8,-30 Z" fill="#8C583A" stroke="#291F1C" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M -20,-8 Q -16,-11 -12,-9" fill="none" stroke="#291F1C" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 12,-9 Q 16,-11 20,-8" fill="none" stroke="#291F1C" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="-16" cy="2" r="2.6" fill="#291F1C"/>
+  <circle cx="16" cy="2" r="2.6" fill="#291F1C"/>
+  <ellipse cx="-24" cy="9" rx="6" ry="3.2" fill="#F4978E" opacity="0.7"/>
+  <ellipse cx="24" cy="9" rx="6" ry="3.2" fill="#F4978E" opacity="0.7"/>
+  <path d="M 0,4 L -1,7" stroke="#291F1C" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M -5,11 Q 0,16 5,11" fill="none" stroke="#291F1C" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M -42,40 C -46,26 -30,22 -16,28 L -6,42 C -22,46 -38,46 -42,40 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <path d="M 42,40 C 46,26 30,22 16,28 L 6,42 C 22,46 38,46 42,40 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.3" stroke-linejoin="round"/>
+  <ellipse cx="-8" cy="32" rx="9" ry="7" fill="#FFE3D3" stroke="#291F1C" stroke-width="2.2"/>
+  <ellipse cx="8" cy="32" rx="9" ry="7" fill="#FFE3D3" stroke="#291F1C" stroke-width="2.2"/>
+</g>
+''',
+  'partyBalloonBig': '''
+<g transform="translate(31,38)">
+  <ellipse cx="0" cy="0" rx="28" ry="35" fill="#FCD770" stroke="#291F1C" stroke-width="2.4"/>
+  <path d="M 12,-18 Q 20,-6 16,10" fill="none" stroke="#FEF0B5" stroke-width="3.8" stroke-linecap="round"/>
+  <polygon points="-5,35 5,35 7,41 -7,41" fill="#FCD770" stroke="#291F1C" stroke-width="2.1" stroke-linejoin="round"/>
+  <path d="M 0,41 C 16,64 6,88 18,108" fill="none" stroke="#291F1C" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M 30,98 C 44,116 32,140 42,164" fill="none" stroke="#291F1C" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+''',
+  'twinGiftBoxes': '''
+<g transform="translate(3,12)">
+  <g transform="translate(0, 26)">
+    <rect x="4" y="10" width="50" height="32" rx="2" fill="#C6DFE6" stroke="#291F1C" stroke-width="2.2"/>
+    <rect x="0" y="2" width="58" height="10" rx="2" fill="#DCE9EE" stroke="#291F1C" stroke-width="2.2"/>
+    <rect x="24" y="2" width="10" height="40" fill="#F69CA9" stroke="#291F1C" stroke-width="2.1"/>
+    <path d="M 29,2 C 18,-10 8,-2 17,2 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.1"/>
+    <path d="M 29,2 C 40,-10 50,-2 41,2 Z" fill="#F69CA9" stroke="#291F1C" stroke-width="2.1"/>
+  </g>
+  <g transform="translate(52, 6)">
+    <rect x="4" y="14" width="62" height="48" rx="2" fill="#F69CA9" stroke="#291F1C" stroke-width="2.3"/>
+    <circle cx="16" cy="28" r="3" fill="#FFFDF9"/>
+    <circle cx="14" cy="46" r="3" fill="#FFFDF9"/>
+    <circle cx="24" cy="38" r="2.8" fill="#FFFDF9"/>
+    <circle cx="52" cy="28" r="3" fill="#FFFDF9"/>
+    <circle cx="54" cy="46" r="3" fill="#FFFDF9"/>
+    <circle cx="44" cy="38" r="2.8" fill="#FFFDF9"/>
+    <rect x="0" y="4" width="70" height="12" rx="2" fill="#FAD2D8" stroke="#291F1C" stroke-width="2.3"/>
+    <rect x="29" y="4" width="12" height="58" fill="#FDE075" stroke="#291F1C" stroke-width="2.2"/>
+    <path d="M 35,4 C 22,-14 6,-4 18,4 C 24,7 30,4 35,4 Z" fill="#FDE075" stroke="#291F1C" stroke-width="2.2"/>
+    <path d="M 35,4 C 48,-14 64,-4 52,4 C 46,7 40,4 35,4 Z" fill="#FDE075" stroke="#291F1C" stroke-width="2.2"/>
+    <path d="M 32,4 L 20,16 M 38,4 L 50,16" stroke="#291F1C" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="35" cy="4" r="3.5" fill="#FDE075" stroke="#291F1C" stroke-width="2"/>
+  </g>
+</g>
+''',
 };
 
 /// 贴纸 viewBox 完整尺寸（宽, 高）
@@ -515,6 +857,30 @@ const Map<String, List<int>> cuteNotepadStickerViewBoxes = {
   'yellowStar': [50, 50],
   'heartPaperclip': [44, 60],
   'crescentMoon': [50, 58],
+
+  // 生日涂鸦贴图集
+  'smileyStar': [60, 60],
+  'pinkHeart': [34, 30],
+  'miniHeart': [22, 20],
+  'pinkFlower': [36, 36],
+  'birthdayCake': [100, 120],
+  'giftBoxYellow': [78, 80],
+  'buntingBanner': [340, 100],
+  'pinkBalloon': [52, 116],
+  'partyHat': [76, 92],
+  'yellowBalloon': [56, 130],
+  'wavingGirl': [116, 110],
+  'tulipPink': [48, 60],
+  'smileyCloud': [90, 58],
+  'rainbowClouds': [102, 70],
+  'cupcake': [64, 106],
+  'partyBear': [98, 102],
+  'loveEnvelope': [66, 62],
+  'sixPetalFlower': [50, 70],
+  'sparkleBunny': [84, 116],
+  'bowGirl': [132, 122],
+  'partyBalloonBig': [78, 206],
+  'twinGiftBoxes': [128, 84],
 };
 
 /// 获取贴纸的完整 SVG 文档字符串（供 SvgPicture.string 使用）

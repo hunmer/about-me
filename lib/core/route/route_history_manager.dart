@@ -8,7 +8,7 @@ import 'page_visit_record.dart';
 ///
 /// 负责记录和管理页面访问历史，支持持久化存储
 /// 可作为 NavigatorObserver 自动记录路由变化
-// RouteAware 只接收页面切换通知，避免弹层触发页面资源的释放与重载。
+// RouteAware 只接收遮住底层页面的路由通知；部分弹层也继承 PageRoute。
 class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   static final RouteHistoryManager _instance = RouteHistoryManager._internal();
   factory RouteHistoryManager() => _instance;
@@ -295,7 +295,11 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    super.didPush(route, previousRoute);
+    if (route is PageRoute<dynamic> && route.opaque) {
+      super.didPush(route, previousRoute);
+    } else {
+      debugPrint('RouteHistoryManager: 跳过弹层 didPushNext type=${route.runtimeType}');
+    }
     debugPrint(
       'RouteHistoryManager: didPush name=${route.settings.name} '
       'type=${route.runtimeType}');
@@ -309,7 +313,11 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
 
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    super.didPop(route, previousRoute);
+    if (route is PageRoute<dynamic> && route.opaque) {
+      super.didPop(route, previousRoute);
+    } else {
+      debugPrint('RouteHistoryManager: 跳过弹层 didPopNext type=${route.runtimeType}');
+    }
     _trackPluginRoute(route, -1, previousRoute);
     // pop 操作不记录新路由，但可以更新当前上下文到前一个路由。
     // 弹出的若是弹层/对话框（无路由名），上下文一直描述其下方页面，无需恢复

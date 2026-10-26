@@ -8,6 +8,8 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     _appearanceResetTimer?.cancel();
     _appearanceResetTimer = Timer(_appearanceDuration, () async {
       if (!mounted || !_controller.value.isLoaded || _isSwitchingModel) return;
+      _jevMotionActive = false;
+      _syncVoiceSway();
       debugPrint('[Live2D] 表情/动作展示结束，原地恢复 Idle');
       try {
         // 保留当前模型、纹理和视图，只切回待机动作，避免整模型重载。
@@ -53,6 +55,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
 
   Future<void> _loadModel(Live2DModelDefinition model) async {
     if (!_routeVisible) return;
+    debugPrint('[Live2D][Load] 请求加载模型: ${model.modelDir}/${model.modelFile}');
     if (mounted) {
       _bubbleTimer?.cancel();
       setState(() {
@@ -128,6 +131,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
         '(version=$_voiceFrameVersion)',
       );
       _queueVoiceParameter(_lastVoiceFrame, _voiceFrameVersion);
+      _syncVoiceSway();
     }
     _wasModelLoaded = loaded;
 
@@ -164,6 +168,8 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       debugPrint('[Live2D][Jev] 回复为空，跳过自动表情动作');
       return;
     }
+    _jevMotionActive = false;
+    _syncVoiceSway();
     debugPrint('[Live2D][Jev] 收到完整回复，准备选择表情动作');
     final result = await Live2DPlugin.instance.decideAppearance(
       reply,
@@ -189,6 +195,8 @@ extension _JellyLive2DLoader on _JellyLive2DState {
         .where((item) => item.label == result['motion'])
         .firstOrNull;
     if (motion != null) {
+      _jevMotionActive = true;
+      _syncVoiceSway();
       debugPrint(
         '[Live2D][Jev] 执行动作: ${motion.label} (${motion.group}#${motion.index})',
       );
@@ -196,6 +204,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       _scheduleAppearanceReset();
     } else {
       debugPrint('[Live2D][Jev] 未选择动作');
+      _syncVoiceSway();
     }
   }
 

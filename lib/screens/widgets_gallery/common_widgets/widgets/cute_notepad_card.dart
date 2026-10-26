@@ -1378,6 +1378,15 @@ class _CuteNotepadPainter extends CustomPainter {
         for (var i = 0; i < 7; i++) {
           _topHole(canvas, 36.0 + i * 37);
         }
+      case CuteNotepadBackground.scallopFrame:
+        _paper(canvas, h, radius: 6, stroke: true);
+        _strokePath(canvas, _scallopFramePath(h), variant.innerStrokeColor, 3);
+      case CuteNotepadBackground.dotsFrame:
+        _paper(canvas, h, radius: 6, stroke: true);
+        _dotsFrame(canvas, h);
+      case CuteNotepadBackground.dashedFrame:
+        _paper(canvas, h, radius: 6, stroke: true);
+        _dashedFrame(canvas, h);
     }
   }
 
@@ -1541,6 +1550,56 @@ class _CuteNotepadPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
+  }
+
+  /// 彩色圆点边框（生日涂鸦卡片 2，大小点交替、沿边循环取色）
+  void _dotsFrame(Canvas canvas, double h) {
+    final colors = variant.frameDotColors;
+    if (colors == null || colors.isEmpty) return;
+    final topY = 34.0, botY = h - 32.0, leftX = 38.0, rightX = 262.0;
+    var i = 0;
+    void dot(Offset c, double r) =>
+        canvas.drawCircle(c, r, Paint()..color = colors[i++ % colors.length]);
+
+    const segTop = 6, segSide = 5;
+    for (var k = 0; k <= segTop; k++) {
+      final x = leftX + k * (rightX - leftX) / segTop;
+      dot(Offset(x, topY), k % 2 == 0 ? 3.8 : 2.8);
+      dot(Offset(x, botY), k % 2 == 0 ? 3.0 : 3.6);
+    }
+    for (var k = 1; k < segSide; k++) {
+      final y = topY + k * (botY - topY) / segSide;
+      dot(Offset(leftX, y), k % 2 == 0 ? 3.4 : 2.8);
+      dot(Offset(rightX, y), k % 2 == 0 ? 2.8 : 3.6);
+    }
+  }
+
+  /// 圆头虚线边框（生日涂鸦卡片 5）
+  void _dashedFrame(Canvas canvas, double h) {
+    final color = variant.innerStrokeColor;
+    if (color == null) return;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 3.2
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    void dashed(Offset a, Offset b) {
+      final len = (b - a).distance;
+      if (len <= 0) return;
+      const dash = 9.0, gap = 17.0;
+      final dir = (b - a) / len;
+      var t = 0.0;
+      while (t < len) {
+        final end = math.min(t + dash, len);
+        canvas.drawLine(a + dir * t, a + dir * end, paint);
+        t = end + gap;
+      }
+    }
+
+    dashed(const Offset(58, 28), const Offset(242, 28));
+    dashed(Offset(78, h - 28), Offset(230, h - 28));
+    dashed(Offset(28, 122), Offset(28, h - 132));
+    dashed(const Offset(272, 126), Offset(272, h - 108));
   }
 
   // ---- 待办行（复选框 + 手绘底线） ----
@@ -1818,6 +1877,34 @@ Path _wavyRectPath(double x1, double y1, double x2, double y2,
   quad(Offset(x1 - amp, (y2 + midY) / 2), Offset(x1, midY));
   smooth(Offset(x1, y1));
 
+  return path..close();
+}
+
+/// 外凸半圆波浪花边框（生日涂鸦卡片 1/4，四边随 H 无缝延展）
+Path _scallopFramePath(double h) {
+  const left = 32.0, right = 268.0, top = 36.0, bulge = 20.0;
+  final bottom = h - 34;
+  const topSteps = 6;
+  final topW = (right - left) / topSteps;
+  final sideSteps = math.max(4, ((bottom - top) / 40).round());
+  final sideH = (bottom - top) / sideSteps;
+  final path = Path()..moveTo(left, top);
+  for (var i = 1; i <= topSteps; i++) {
+    final xa = left + (i - 1) * topW;
+    path.quadraticBezierTo(xa + topW / 2, top - bulge, xa + topW, top);
+  }
+  for (var i = 1; i <= sideSteps; i++) {
+    final ya = top + (i - 1) * sideH;
+    path.quadraticBezierTo(right + bulge, ya + sideH / 2, right, ya + sideH);
+  }
+  for (var i = 1; i <= topSteps; i++) {
+    final xb = right - (i - 1) * topW;
+    path.quadraticBezierTo(xb - topW / 2, bottom + bulge, xb - topW, bottom);
+  }
+  for (var i = 1; i <= sideSteps; i++) {
+    final yb = bottom - (i - 1) * sideH;
+    path.quadraticBezierTo(left - bulge, yb - sideH / 2, left, yb - sideH);
+  }
   return path..close();
 }
 

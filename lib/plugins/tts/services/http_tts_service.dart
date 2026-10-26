@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:logging/logging.dart';
 import 'tts_base_service.dart';
+import 'tts_audio_utils.dart';
 import 'package:aboutme/plugins/tts/models/tts_voice.dart';
 
 /// HTTP TTS服务实现
@@ -164,9 +165,14 @@ class HttpTTSService extends TTSBaseService {
   /// 从字节数组播放音频
   Future<void> _playAudioFromBytes(List<int> audioBytes) async {
     try {
+      final pcm = isPcmAudioFormat(config.audioFormat);
+      final playbackBytes = pcm ? pcm16ToWav(audioBytes) : audioBytes;
+      if (pcm) {
+        _log.info('PCM16 音频已包装为 WAV 播放: ${playbackBytes.length} bytes');
+      }
       if (kIsWeb) {
         // Web 无本地临时文件，直接从字节播放（audioplayers Web 走 blob）
-        await _audioPlayer.play(BytesSource(Uint8List.fromList(audioBytes)));
+        await _audioPlayer.play(BytesSource(Uint8List.fromList(playbackBytes)));
         await _audioPlayer.onPlayerComplete.first;
         return;
       }
@@ -174,10 +180,10 @@ class HttpTTSService extends TTSBaseService {
       // 保存到临时文件
       final tempDir = await getTemporaryDirectory();
       final tempFile = File(
-        '${tempDir.path}/tts_temp_${DateTime.now().millisecondsSinceEpoch}.${config.audioFormat ?? 'mp3'}',
+        '${tempDir.path}/tts_temp_${DateTime.now().millisecondsSinceEpoch}.${pcm ? 'wav' : config.audioFormat ?? 'mp3'}',
       );
 
-      await tempFile.writeAsBytes(audioBytes);
+      await tempFile.writeAsBytes(playbackBytes);
       _log.info('音频临时文件: ${tempFile.path}');
 
       // 播放音频

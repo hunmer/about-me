@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:aboutme/design_system/design_system.dart';
@@ -52,7 +52,7 @@ const double _fillBottomReserve = 92;
 // bounds via OverflowBox/Transform.translate.
 const double _radialDockOverflowTop = 28;
 
-final Random _random = Random();
+final math.Random _random = math.Random();
 
 class JellyLive2D extends StatefulWidget {
   const JellyLive2D({
@@ -133,6 +133,16 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   int _lastAppliedVoiceVersion = -1;
   int _lastAppliedVoiceLoadGeneration = -1;
   bool _wasModelLoaded = false;
+  Timer? _voiceSwayTimer;
+  bool _jevMotionActive = false;
+  double _voiceSwayValue = 0;
+  double _voiceSwayLastSent = 0;
+  double _voiceSwayPhase = 0;
+  double _voiceSwaySecondaryPhase = 0;
+  double _voiceSwayPrimaryHz = 0.38;
+  double _voiceSwaySecondaryHz = 0.16;
+  DateTime? _voiceSwayLastTick;
+  bool _voiceSwayUpdateInFlight = false;
 
   /// 可点击区域（HitAreas）调试叠加层的开关状态，不持久化；
   /// 用 ValueNotifier 让已打开的控制面板能实时刷新
@@ -215,12 +225,14 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
 
   @override
   void didPushNext() {
+    debugPrint('[Live2D][Route] 页面被覆盖，准备卸载模型');
     _routeVisible = false;
     _routeUnload = _unloadModel();
   }
 
   @override
   void didPopNext() {
+    debugPrint('[Live2D][Route] 返回页面，准备恢复模型');
     _routeVisible = true;
     unawaited(_restoreModel());
   }
@@ -269,6 +281,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     _bubbleResumeTimer?.cancel();
     _jevReplyTimer?.cancel();
     _appearanceResetTimer?.cancel();
+    _voiceSwayTimer?.cancel();
     _size.dispose();
     _hitAreasVisible.dispose();
     _borderVisible.dispose();
@@ -280,6 +293,89 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     _lastVoiceFrame = _voiceFrame.value;
     final version = ++_voiceFrameVersion;
     _queueVoiceParameter(_lastVoiceFrame, version);
+    _syncVoiceSway();
+  }
+
+  void _syncVoiceSway() {
+    final frame = _voiceFrame.value;
+    if (!mounted ||
+        !_controller.value.isLoaded ||
+        _jevMotionActive ||
+        frame == null ||
+        frame.mouthOpenY < 0.02) {
+      _stopVoiceSway(
+        resetParameter:
+            !_jevMotionActive && (frame == null || frame.mouthOpenY < 0.02),
+      );
+      return;
+    }
+    if (_voiceSwayTimer != null) return;
+    // Randomize each speech segment, then use continuous phases so the head
+    // does not jump between unrelated target points.
+    _voiceSwayPhase = _random.nextDouble() * 2 * math.pi;
+    _voiceSwaySecondaryPhase = _random.nextDouble() * 2 * math.pi;
+    _voiceSwayPrimaryHz = 0.32 + _random.nextDouble() * 0.16;
+    _voiceSwaySecondaryHz = 0.11 + _random.nextDouble() * 0.08;
+    _voiceSwayLastTick = DateTime.now();
+    _voiceSwayTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
+      final currentFrame = _voiceFrame.value;
+      if (!mounted ||
+          !_controller.value.isLoaded ||
+          _jevMotionActive ||
+          currentFrame == null ||
+          currentFrame.mouthOpenY < 0.02) {
+        _stopVoiceSway(resetParameter: !_jevMotionActive);
+        return;
+      }
+      final now = DateTime.now();
+      final previous = _voiceSwayLastTick ?? now;
+      final dt = (now.difference(previous).inMicroseconds / 1000000)
+          .clamp(0.0, 0.1)
+          .toDouble();
+      _voiceSwayLastTick = now;
+      if (dt <= 0) return;
+      _voiceSwayPhase += 2 * math.pi * _voiceSwayPrimaryHz * dt;
+      _voiceSwaySecondaryPhase += 2 * math.pi * _voiceSwaySecondaryHz * dt;
+      final target =
+          math.sin(_voiceSwayPhase) * 15.0 +
+          math.sin(_voiceSwaySecondaryPhase) * 5.0;
+      final smoothing = (dt * 8.0).clamp(0.0, 1.0).toDouble();
+      _voiceSwayValue += (target - _voiceSwayValue) * smoothing;
+      if ((_voiceSwayValue - _voiceSwayLastSent).abs() < 0.3) return;
+      if (_voiceSwayUpdateInFlight) return;
+      _voiceSwayLastSent = _voiceSwayValue;
+      unawaited(_sendVoiceSwayParameter(_voiceSwayValue));
+    });
+  }
+
+  Future<void> _sendVoiceSwayParameter(double value) async {
+    if (_voiceSwayUpdateInFlight || !mounted || !_controller.value.isLoaded) {
+      return;
+    }
+    _voiceSwayUpdateInFlight = true;
+    try {
+      await _controller.setParameter('ParamAngleX', value);
+    } catch (error) {
+      debugPrint('[Live2D][Voice] sway update failed: $error');
+    } finally {
+      _voiceSwayUpdateInFlight = false;
+    }
+  }
+
+  void _stopVoiceSway({required bool resetParameter}) {
+    _voiceSwayTimer?.cancel();
+    _voiceSwayTimer = null;
+    _voiceSwayLastTick = null;
+    if (!resetParameter || !_controller.value.isLoaded) return;
+    _voiceSwayValue = 0;
+    _voiceSwayLastSent = 0;
+    unawaited(
+      _controller
+          .setParameter('ParamAngleX', 0)
+          .catchError(
+            (error) => debugPrint('[Live2D][Voice] sway reset failed: $error'),
+          ),
+    );
   }
 
   void _queueVoiceParameter(Live2DVoiceFrame? frame, int version) {
@@ -510,7 +606,10 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
                           left: 0,
                           right: 0,
                           bottom: modelBottomInset,
-                          height: max(0.0, layoutHeight - modelBottomInset),
+                          height: math.max(
+                            0.0,
+                            layoutHeight - modelBottomInset,
+                          ),
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: error == null
@@ -600,7 +699,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
                     ),
                     _buildBubbleInContainer(
                       width: layoutWidth,
-                      height: max(0.0, layoutHeight - widget.topInset),
+                      height: math.max(0.0, layoutHeight - widget.topInset),
                       topInset: widget.topInset,
                     ),
                     // 子栏图标驱动的资源条：悬浮在底部导航（含其向上溢出的

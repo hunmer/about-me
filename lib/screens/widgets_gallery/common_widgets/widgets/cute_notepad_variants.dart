@@ -41,6 +41,9 @@ enum CuteNotepadBackground {
   plaidCloudFrame, // 格纹 + 云朵框
   wavyFrame, // 单波浪手绘框
   topBinderHoles, // 顶部打孔
+  scallopFrame, // 外凸半圆波浪花边框（生日涂鸦卡片）
+  dotsFrame, // 彩色圆点边框（生日涂鸦卡片）
+  dashedFrame, // 圆头虚线边框（生日涂鸦卡片）
 }
 
 /// 标题位置（viewBox 300×H 坐标系）
@@ -152,6 +155,9 @@ class CuteNotepadVariant {
   final Color? holeBgColor;
   final Color? holeStrokeColor;
 
+  /// 圆点边框配色（dotsFrame，沿边循环取色）
+  final List<Color>? frameDotColors;
+
   // ---- 文字与布局 ----
   final String? title;
   final CuteNotepadTitlePos? titlePos;
@@ -198,6 +204,7 @@ class CuteNotepadVariant {
     this.bannerStrokeColor,
     this.holeBgColor,
     this.holeStrokeColor,
+    this.frameDotColors,
     this.title,
     this.titlePos,
     required this.textColor,
@@ -803,6 +810,208 @@ const List<CuteNotepadVariant> cuteNotepadPresets = [
       CuteNotepadSticker(asset: 'greenPlaidTape', anchor: CuteNotepadStickerAnchor.topCenter, w: 118, h: 47, dy: 0),
       CuteNotepadSticker(asset: 'pottedSucculent', anchor: CuteNotepadStickerAnchor.bottomRight, w: 44, h: 59, dx: -8, dy: -4),
       CuteNotepadSticker(asset: 'leafBranch', anchor: CuteNotepadStickerAnchor.bottomLeft, w: 36, h: 66, dx: 8, dy: -6),
+    ],
+  ),
+
+  // 23 生日蛋糕许愿便签（生日涂鸦卡片 1）
+  CuteNotepadVariant(
+    id: 'birthdayCakeFrame',
+    name: '23 · 生日蛋糕许愿便签',
+    type: CuteNotepadNoteType.freeform,
+    checkStyle: CuteNotepadCheckStyle.heart,
+    background: CuteNotepadBackground.scallopFrame,
+    shadowColor: Color(0x66A08C73),
+    paperColor: Color(0xFFFAF5EA),
+    paperStroke: Color(0xFFE6DEC8),
+    innerStrokeColor: Color(0xFFDA8A94),
+    lineColor: Color(0xFFE5A3AE),
+    title: 'Happy Birthday! ♡',
+    titlePos: CuteNotepadTitlePos(top: 46, left: 60, width: 180, fontSize: 16, center: true),
+    textColor: Color(0xFF4A3B36),
+    placeholder: '点击输入生日祝福...',
+    contentStartY: 84,
+    minFreeformLines: 4,
+    freeformLeft: 46,
+    freeformWidth: 208,
+    stickers: [
+      CuteNotepadSticker(asset: 'smileyStar', anchor: CuteNotepadStickerAnchor.topLeft, w: 44, h: 44, dx: 10, dy: 8, rotation: -12),
+      CuteNotepadSticker(asset: 'pinkHeart', anchor: CuteNotepadStickerAnchor.topRight, w: 32, h: 30, dx: -16, dy: 12, rotation: 10),
+      CuteNotepadSticker(asset: 'pinkFlower', anchor: CuteNotepadStickerAnchor.center, w: 30, h: 30, dx: -122, dy: -52),
+      CuteNotepadSticker(asset: 'birthdayCake', anchor: CuteNotepadStickerAnchor.bottomLeft, w: 78, h: 94, dx: 2, dy: 0),
+      CuteNotepadSticker(asset: 'giftBoxYellow', anchor: CuteNotepadStickerAnchor.bottomRight, w: 60, h: 62, dx: -8, dy: -6),
+    ],
+  ),
+
+  // 24 派对彩旗便签（生日涂鸦卡片 2）
+  CuteNotepadVariant(
+    id: 'buntingPartyFrame',
+    name: '24 · 派对彩旗便签',
+    type: CuteNotepadNoteType.freeform,
+    checkStyle: CuteNotepadCheckStyle.circle,
+    background: CuteNotepadBackground.dotsFrame,
+    shadowColor: Color(0x66A08C73),
+    paperColor: Color(0xFFFAF5EA),
+    paperStroke: Color(0xFFE6DEC8),
+    frameDotColors: [
+      Color(0xFFE8A568),
+      Color(0xFF8CC0D0),
+      Color(0xFFF299A6),
+      Color(0xFFF4C867),
+      Color(0xFFE07A5F),
+      Color(0xFF9BB8CD),
+      Color(0xFFA8D08D),
+    ],
+    lineColor: Color(0xFFD98A94),
+    title: 'Party Time! ♡',
+    titlePos: CuteNotepadTitlePos(top: 102, left: 60, width: 180, fontSize: 16, center: true),
+    textColor: Color(0xFF4A3B36),
+    placeholder: '点击输入派对寄语...',
+    contentStartY: 138,
+    minFreeformLines: 4,
+    freeformLeft: 46,
+    freeformWidth: 208,
+    stickers: [
+      CuteNotepadSticker(asset: 'buntingBanner', anchor: CuteNotepadStickerAnchor.topCenter, w: 288, h: 85, dy: -2),
+      CuteNotepadSticker(asset: 'pinkBalloon', anchor: CuteNotepadStickerAnchor.topRight, w: 42, h: 94, dx: 2, dy: 94),
+      CuteNotepadSticker(asset: 'partyHat', anchor: CuteNotepadStickerAnchor.bottomRight, w: 62, h: 76, dx: -8, dy: -10),
+      CuteNotepadSticker(asset: 'pinkHeart', anchor: CuteNotepadStickerAnchor.bottomLeft, w: 40, h: 36, dx: 16, dy: -16),
+    ],
+  ),
+
+  // 25 挥手女孩便签（生日涂鸦卡片 3）
+  CuteNotepadVariant(
+    id: 'wavingGirlFrame',
+    name: '25 · 挥手女孩便签',
+    type: CuteNotepadNoteType.freeform,
+    checkStyle: CuteNotepadCheckStyle.heart,
+    background: CuteNotepadBackground.plain,
+    shadowColor: Color(0x66A08C73),
+    paperColor: Color(0xFFFAF5EA),
+    paperStroke: Color(0xFFE6DEC8),
+    lineColor: Color(0xFFD98A94),
+    title: 'Hi, Little Star ♡',
+    titlePos: CuteNotepadTitlePos(top: 20, left: 60, width: 180, fontSize: 15.5, rotate: -3, center: true),
+    textColor: Color(0xFF4A3B36),
+    placeholder: '点击输入手账内容...',
+    contentStartY: 58,
+    minFreeformLines: 4,
+    freeformLeft: 62,
+    freeformWidth: 196,
+    stickers: [
+      CuteNotepadSticker(asset: 'yellowBalloon', anchor: CuteNotepadStickerAnchor.topLeft, w: 42, h: 96, dx: 8, dy: 96),
+      CuteNotepadSticker(asset: 'smileyStar', anchor: CuteNotepadStickerAnchor.topRight, w: 40, h: 40, dx: -14, dy: 10, rotation: 8),
+      CuteNotepadSticker(asset: 'wavingGirl', anchor: CuteNotepadStickerAnchor.bottomLeft, w: 92, h: 88, dx: -2, dy: -4),
+      CuteNotepadSticker(asset: 'tulipPink', anchor: CuteNotepadStickerAnchor.bottomRight, w: 40, h: 50, dx: -12, dy: -6),
+    ],
+  ),
+
+  // 26 彩虹小熊便签（生日涂鸦卡片 4）
+  CuteNotepadVariant(
+    id: 'rainbowBearFrame',
+    name: '26 · 彩虹小熊便签',
+    type: CuteNotepadNoteType.freeform,
+    checkStyle: CuteNotepadCheckStyle.heart,
+    background: CuteNotepadBackground.scallopFrame,
+    shadowColor: Color(0x66A08C73),
+    paperColor: Color(0xFFFFF8E8),
+    paperStroke: Color(0xFFEADFC0),
+    innerStrokeColor: Color(0xFFE5B968),
+    lineColor: Color(0xFFCBA76B),
+    textColor: Color(0xFF6B4A2A),
+    placeholder: '点击输入甜美寄语...',
+    contentStartY: 80,
+    minFreeformLines: 4,
+    freeformLeft: 46,
+    freeformWidth: 208,
+    stickers: [
+      CuteNotepadSticker(asset: 'smileyCloud', anchor: CuteNotepadStickerAnchor.topLeft, w: 72, h: 46, dx: 6, dy: 10),
+      CuteNotepadSticker(asset: 'rainbowClouds', anchor: CuteNotepadStickerAnchor.topRight, w: 82, h: 56, dx: -8, dy: 12),
+      CuteNotepadSticker(asset: 'cupcake', anchor: CuteNotepadStickerAnchor.bottomLeft, w: 50, h: 82, dx: 8, dy: -4),
+      CuteNotepadSticker(asset: 'partyBear', anchor: CuteNotepadStickerAnchor.bottomRight, w: 80, h: 82, dx: -10, dy: -6),
+    ],
+  ),
+
+  // 27 爱心信件便签（生日涂鸦卡片 5）
+  CuteNotepadVariant(
+    id: 'loveLetterFrame',
+    name: '27 · 爱心信件便签',
+    type: CuteNotepadNoteType.freeform,
+    checkStyle: CuteNotepadCheckStyle.heart,
+    background: CuteNotepadBackground.dashedFrame,
+    shadowColor: Color(0x66A08C73),
+    paperColor: Color(0xFFFFF9F0),
+    paperStroke: Color(0xFFEFE5D0),
+    innerStrokeColor: Color(0xFFE08D98),
+    lineColor: Color(0xFFE5A3AE),
+    title: 'Dear You ♡',
+    titlePos: CuteNotepadTitlePos(top: 44, left: 90, width: 140, fontSize: 16, center: true),
+    textColor: Color(0xFF7A4B52),
+    placeholder: '点击写一封小信件...',
+    contentStartY: 82,
+    minFreeformLines: 4,
+    freeformLeft: 46,
+    freeformWidth: 208,
+    stickers: [
+      CuteNotepadSticker(asset: 'pinkHeart', anchor: CuteNotepadStickerAnchor.topLeft, w: 36, h: 32, dx: 4, dy: 6, rotation: -10),
+      CuteNotepadSticker(asset: 'pinkHeart', anchor: CuteNotepadStickerAnchor.topRight, w: 36, h: 32, dx: -4, dy: 6, rotation: 12),
+      CuteNotepadSticker(asset: 'pinkFlower', anchor: CuteNotepadStickerAnchor.center, w: 30, h: 30, dx: -122, dy: -62),
+      CuteNotepadSticker(asset: 'loveEnvelope', anchor: CuteNotepadStickerAnchor.bottomLeft, w: 58, h: 54, dx: 4, dy: -12),
+      CuteNotepadSticker(asset: 'sixPetalFlower', anchor: CuteNotepadStickerAnchor.bottomRight, w: 42, h: 58, dx: -10, dy: -6),
+    ],
+  ),
+
+  // 28 星光兔子便签（生日涂鸦卡片 6）
+  CuteNotepadVariant(
+    id: 'sparkleBunnyFrame',
+    name: '28 · 星光兔子便签',
+    type: CuteNotepadNoteType.freeform,
+    checkStyle: CuteNotepadCheckStyle.star,
+    background: CuteNotepadBackground.plain,
+    shadowColor: Color(0x66B8AFA0),
+    paperColor: Color(0xFFFFFDF9),
+    paperStroke: Color(0xFFE8E0D2),
+    lineColor: Color(0xFFD9C9A8),
+    title: 'Make a Wish ♡',
+    titlePos: CuteNotepadTitlePos(top: 26, left: 65, width: 170, fontSize: 15.5, center: true),
+    textColor: Color(0xFF4A3B36),
+    placeholder: '和小白兔一起许个愿望...',
+    contentStartY: 64,
+    minFreeformLines: 4,
+    freeformLeft: 40,
+    freeformWidth: 216,
+    stickers: [
+      CuteNotepadSticker(asset: 'smileyStar', anchor: CuteNotepadStickerAnchor.topLeft, w: 42, h: 42, dx: 8, dy: 8, rotation: -10),
+      CuteNotepadSticker(asset: 'pinkHeart', anchor: CuteNotepadStickerAnchor.topRight, w: 38, h: 34, dx: -12, dy: 10, rotation: 8),
+      CuteNotepadSticker(asset: 'yellowSparkle', anchor: CuteNotepadStickerAnchor.topCenter, w: 24, h: 24, dx: -44, dy: 12),
+      CuteNotepadSticker(asset: 'pinkFlower', anchor: CuteNotepadStickerAnchor.center, w: 32, h: 32, dx: 46, dy: 52),
+      CuteNotepadSticker(asset: 'sparkleBunny', anchor: CuteNotepadStickerAnchor.bottomRight, w: 80, h: 110, dx: -6, dy: -6),
+    ],
+  ),
+
+  // 29 蝴蝶结女孩便签（生日涂鸦卡片 7）
+  CuteNotepadVariant(
+    id: 'bowGirlFrame',
+    name: '29 · 蝴蝶结女孩便签',
+    type: CuteNotepadNoteType.freeform,
+    checkStyle: CuteNotepadCheckStyle.heart,
+    background: CuteNotepadBackground.plain,
+    shadowColor: Color(0x66A08C73),
+    paperColor: Color(0xFFFAF5EA),
+    paperStroke: Color(0xFFE6DEC8),
+    lineColor: Color(0xFFD98A94),
+    title: 'Wishing you ♡',
+    titlePos: CuteNotepadTitlePos(top: 72, left: 65, width: 170, fontSize: 16, center: true),
+    textColor: Color(0xFF4A3B36),
+    placeholder: '写下最甜甜的祝福...',
+    contentStartY: 108,
+    minFreeformLines: 3,
+    freeformLeft: 46,
+    freeformWidth: 208,
+    stickers: [
+      CuteNotepadSticker(asset: 'smileyCloud', anchor: CuteNotepadStickerAnchor.topLeft, w: 84, h: 54, dx: 2, dy: 6),
+      CuteNotepadSticker(asset: 'partyBalloonBig', anchor: CuteNotepadStickerAnchor.topRight, w: 52, h: 138, dx: -4, dy: 8),
+      CuteNotepadSticker(asset: 'bowGirl', anchor: CuteNotepadStickerAnchor.bottomLeft, w: 106, h: 98, dx: -2, dy: -4),
+      CuteNotepadSticker(asset: 'twinGiftBoxes', anchor: CuteNotepadStickerAnchor.bottomRight, w: 104, h: 68, dx: -6, dy: -8),
     ],
   ),
 ];
