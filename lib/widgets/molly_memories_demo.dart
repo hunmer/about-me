@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import 'phone_mock.dart';
+
 /// Molly 2024 - iOS Memories UI 动效复刻
 /// 点击手机屏幕在「散落拼贴态」与「九宫格态」之间做弹簧过渡
 class MollyMemoriesDemo extends StatefulWidget {
@@ -50,10 +52,6 @@ class _MollyMemoriesDemoState extends State<MollyMemoriesDemo> {
   static const Duration _duration = Duration(milliseconds: 720);
   static const Cubic _spring = Cubic(0.22, 1.08, 0.36, 1);
   static const Cubic _fade = Cubic(0.25, 0.8, 0.25, 1);
-
-  static const double _shellW = 380;
-  static const double _shellH = 790;
-  static const double _shellPadding = 11;
 
   bool _isGrid = false;
   bool _liked = false;
@@ -156,82 +154,8 @@ class _MollyMemoriesDemoState extends State<MollyMemoriesDemo> {
           child: Center(
             child: FittedBox(
               fit: BoxFit.contain,
-              child: _buildPhoneShell(),
+              child: PhoneMock(onTap: _toggle, child: _buildScreen()),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPhoneShell() {
-    return SizedBox(
-      width: _shellW,
-      height: _shellH,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1C),
-              borderRadius: BorderRadius.circular(56),
-              boxShadow: const [
-                BoxShadow(color: Color(0xFF404044), spreadRadius: 2),
-                BoxShadow(color: Color(0xFF18181B), spreadRadius: 4),
-                BoxShadow(
-                  color: Color(0x610F172A),
-                  blurRadius: 70,
-                  offset: Offset(0, 30),
-                  spreadRadius: -15,
-                ),
-                BoxShadow(
-                  color: Color(0x330F172A),
-                  blurRadius: 25,
-                  offset: Offset(0, 10),
-                  spreadRadius: -5,
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(_shellPadding),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(45),
-              child: GestureDetector(
-                onTap: _toggle,
-                child: Container(
-                  color: Colors.white,
-                  child: _buildScreen(),
-                ),
-              ),
-            ),
-          ),
-          _hwButton(left: -6, top: 145, height: 28),
-          _hwButton(left: -6, top: 195, height: 52),
-          _hwButton(left: -6, top: 260, height: 52),
-          _hwButton(right: -6, top: 215, height: 76),
-        ],
-      ),
-    );
-  }
-
-  Widget _hwButton({
-    double? left,
-    double? right,
-    required double top,
-    required double height,
-  }) {
-    return Positioned(
-      left: left,
-      right: right,
-      top: top,
-      child: Container(
-        width: 3,
-        height: height,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(2),
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF3F3F46), Color(0xFF18181B), Color(0xFF3F3F46)],
           ),
         ),
       ),
@@ -249,8 +173,6 @@ class _MollyMemoriesDemoState extends State<MollyMemoriesDemo> {
         for (final p in sorted) _buildPhotoCard(p),
         _buildMatchedTexts(),
         _buildActionBar(),
-        _buildStatusBar(),
-        _buildHomeIndicator(),
         _buildToast(),
       ],
     );
@@ -534,156 +456,6 @@ class _MollyMemoriesDemoState extends State<MollyMemoriesDemo> {
           width: 36,
           height: 36,
           child: Icon(icon, size: 19, color: color ?? const Color(0xFF94A3B8)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBar() {
-    const dark = Color(0xFF0F172A);
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 48,
-      child: IgnorePointer(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Stack(
-            children: [
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '9:41',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: dark,
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.topCenter,
-                child: Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  width: 112,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 12),
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFF121324),
-                        border: Border.all(color: const Color(0xFF1F243D)),
-                      ),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: Container(
-                          margin: const EdgeInsets.all(2),
-                          width: 4,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.blue.withValues(alpha: 0.4),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _signalBars(),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.wifi, size: 15, color: dark),
-                    const SizedBox(width: 6),
-                    _battery(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _signalBars() {
-    const heights = [4.5, 6.5, 9.0, 11.5];
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        for (final h in heights)
-          Container(
-            width: 3,
-            height: h,
-            margin: const EdgeInsets.only(right: 1.5),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(1),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _battery() {
-    return Row(
-      children: [
-        Container(
-          width: 22,
-          height: 11,
-          padding: const EdgeInsets.all(1.5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(3.5),
-            border: Border.all(color: const Color(0x660F172A)),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(1.5),
-            ),
-          ),
-        ),
-        const SizedBox(width: 1),
-        Container(
-          width: 1.5,
-          height: 4,
-          decoration: const BoxDecoration(
-            color: Color(0x660F172A),
-            borderRadius: BorderRadius.horizontal(right: Radius.circular(2)),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHomeIndicator() {
-    return Positioned(
-      bottom: 8,
-      left: 0,
-      right: 0,
-      child: IgnorePointer(
-        child: Center(
-          child: Container(
-            width: 134,
-            height: 5,
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(2.5),
-            ),
-          ),
         ),
       ),
     );

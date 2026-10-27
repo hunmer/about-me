@@ -5,6 +5,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:skribble/skribble.dart';
 
 /// 照片日历某天的展示信息（标题 + 图片路径列表）
 class PhotoCalendarDayInfo {
@@ -14,11 +15,14 @@ class PhotoCalendarDayInfo {
   const PhotoCalendarDayInfo({required this.title, this.photos = const []});
 }
 
-/// 照片日历视图：垂直滚动的月份列表，样式参考 `PhotoCalendarCard`：
-/// - 深色卡片 + 周表头 + 日期数字打底
-/// - 有图片的日期展示徽章（白边圆角 + 轻微倾斜 + 阴影），入场时逐日错峰弹出
-/// - 点击徽章在日期行上方展开横向图片条（其余格子变暗，当前格显示关闭按钮），
-///   点击图片条内图片触发 [onPhotoTap]，点击空白或关闭按钮收起
+/// 照片日历视图：垂直滚动的月份列表，手绘纸墨风（design.md §9）：
+/// - 月份卡走 `DsSketchPanel`（纸底 + 排线 + 墨线框 + 相机贴纸），
+///   挂载时 `WiredDraw` 墨线描画入场
+/// - 有图片的日期展示徽章：墨线描边白底 + 按日期哈希稳定倾斜，
+///   错峰逐日描出（同一天 rebuild 不抖变）
+/// - 点击徽章在日期行上方展开横向图片条（墨线描画入场、其余格子变暗、
+///   当前格显示关闭按钮），点击图片条内图片触发 [onPhotoTap]，
+///   点击空白或关闭按钮收起
 ///
 /// 与业务数据解耦：[dayInfoBuilder] 按月提供数据（内部按月缓存），
 /// [dataListenable] 变化时自动清空缓存重新构建。
@@ -30,7 +34,7 @@ class PhotoCalendarView extends StatefulWidget {
   /// 数据源监听（如 ChangeNotifier），变化时清空缓存
   final Listenable? dataListenable;
 
-  /// 选中的日期（无图日期高亮底、徽章描边）
+  /// 选中的日期（无图日期圆环高亮、徽章描边高亮）
   final DateTime? selectedDate;
 
   /// 点击无图片的日期回调
@@ -42,8 +46,8 @@ class PhotoCalendarView extends StatefulWidget {
   /// 月份标题点击回调
   final ValueChanged<DateTime>? onHeaderTapped;
 
-  /// 点击展开图片条中的某张图片
-  final void Function(DateTime day, String photo)? onPhotoTap;
+  /// 点击展开图片条中某张图片（index 与当天 photos 列表对齐）
+  final void Function(DateTime day, int photoIndex)? onPhotoTap;
 
   /// 月份标题格式化，默认 `yyyy年MM月`
   final String Function(DateTime month)? monthTitleBuilder;
@@ -264,7 +268,7 @@ class _PhotoCalendarViewState extends State<PhotoCalendarView>
   }
 }
 
-/// 单个月份卡片：深色底 + 日期格子 + 可展开图片条
+/// 单个月份卡片：手绘面板 + 日期格子 + 可展开图片条
 class _MonthCard extends StatefulWidget {
   final DateTime month;
   final Map<DateTime, PhotoCalendarDayInfo> dayData;
@@ -274,7 +278,7 @@ class _MonthCard extends StatefulWidget {
   final ValueChanged<DateTime>? onDateSelected;
   final ValueChanged<DateTime>? onDayLongPressed;
   final ValueChanged<DateTime>? onHeaderTapped;
-  final void Function(DateTime day, String photo)? onPhotoTap;
+  final void Function(DateTime day, int photoIndex)? onPhotoTap;
   final String monthTitle;
   final List<String> weekdayLabels;
 
@@ -299,14 +303,12 @@ class _MonthCard extends StatefulWidget {
 
 class _MonthCardState extends State<_MonthCard>
     with SingleTickerProviderStateMixin {
-  static const _spring = Cubic(0.34, 1.56, 0.64, 1);
-
   static const double _cellH = 62;
   static const double _rowGap = 10;
   static const double _badgeSize = 58;
   static const double _stripH = 74;
-  static const Color _accent = Color(0xFF38BDF8);
 
+  /// 徽章错峰描画总时长（面板 WiredDraw 画完后逐日描出徽章）
   late final AnimationController _entrance = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1200),
@@ -323,6 +325,7 @@ class _MonthCardState extends State<_MonthCard>
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     final month = widget.month;
     final dayData = widget.dayData;
     final firstDay = DateTime(month.year, month.month, 1);
@@ -349,7 +352,7 @@ class _MonthCardState extends State<_MonthCard>
       rows.add(currentRow);
     }
 
-    // 展开图片条的定位：贴在目标日期所在行上方，从点击列弹出
+    // 展开图片条的定位：贴在目标日期所在行上方
     final expanded = widget.expandedDay;
     final expandedInfo = expanded == null ? null : dayData[expanded];
     final expandedInMonth =
@@ -365,107 +368,111 @@ class _MonthCardState extends State<_MonthCard>
               .toDouble();
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF181818),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.055)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.75),
-            blurRadius: 60,
-            offset: const Offset(0, 30),
-            spreadRadius: -15,
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => widget.onHeaderTapped?.call(month),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: Text(
-                  widget.monthTitle,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFF4F4F6),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+    // 挂载即描画入场：墨线 + 贴纸一起动画（与垂直视图一致）
+    return WiredDraw(
+      child: Builder(
+        builder: (context) {
+          final progress = WiredDrawTransition.progressOf(context);
+          return DsSketchPanel(
+            theme: theme,
+            radius: theme.radii.xl,
+            padding: const EdgeInsets.all(12),
+            seed: month.year * 12 + month.month,
+            progress: progress,
+            // 相机贴纸：压在边框右上角外侧，小倾斜增加手账感
+            stickers: const [
+              DsSketchSticker(
+                alignment: Alignment.topRight,
+                offset: Offset(10, -30),
+                size: 52,
+                rotation: 0.18,
+                svg: 'assets/icons/svg/camera.svg',
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              for (final label in widget.weekdayLabels)
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF8A8A8E),
+            ],
+            child: Column(
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => widget.onHeaderTapped?.call(month),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Text(
+                        widget.monthTitle,
+                        style: DsTypography.heading.copyWith(
+                          color: theme.text,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            // 点击空白区域收起图片条
-            onTap: () => widget.onExpandedChanged(null),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Column(
+                Row(
                   children: [
-                    for (var r = 0; r < rows.length; r++) ...[
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (final day in rows[r])
-                            Expanded(
-                              child: day == null
-                                  ? const SizedBox(height: _cellH)
-                                  : _buildDayCell(day, dayData[day]),
+                    for (final label in widget.weekdayLabels)
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            label,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
                             ),
-                        ],
+                          ),
+                        ),
                       ),
-                      if (r < rows.length - 1)
-                        const SizedBox(height: _rowGap),
-                    ],
                   ],
                 ),
-                if (expandedInMonth)
-                  Positioned(
-                    left: -14,
-                    right: -14,
-                    top: stripTop,
-                    height: _stripH,
-                    child: _buildPhotoStrip(expanded, expandedInfo!),
+                const SizedBox(height: 4),
+                GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  // 点击空白区域收起图片条
+                  onTap: () => widget.onExpandedChanged(null),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Column(
+                        children: [
+                          for (var r = 0; r < rows.length; r++) ...[
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (final day in rows[r])
+                                  Expanded(
+                                    child: day == null
+                                        ? const SizedBox(height: _cellH)
+                                        : _buildDayCell(day, dayData[day]),
+                                  ),
+                              ],
+                            ),
+                            if (r < rows.length - 1)
+                              const SizedBox(height: _rowGap),
+                          ],
+                        ],
+                      ),
+                      if (expandedInMonth)
+                        Positioned(
+                          left: -10,
+                          right: -10,
+                          top: stripTop,
+                          height: _stripH,
+                          child: _buildPhotoStrip(expanded, expandedInfo!),
+                        ),
+                    ],
                   ),
+                ),
               ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
   Widget _buildDayCell(DateTime day, PhotoCalendarDayInfo? info) {
     final hasPhotos = (info?.photos.isNotEmpty) ?? false;
-    final isActive = widget.expandedDay != null && _isSameDay(widget.expandedDay!, day);
+    final isActive =
+        widget.expandedDay != null && _isSameDay(widget.expandedDay!, day);
     final dimByStrip = widget.expandedDay != null && !isActive;
     final isToday = _isSameDay(day, DateTime.now());
     final isSelected =
@@ -499,10 +506,7 @@ class _MonthCardState extends State<_MonthCard>
                   duration: const Duration(milliseconds: 250),
                   opacity: isActive ? 0 : 1,
                   child: IgnorePointer(
-                    child: _buildEntrance(
-                      day: day.day,
-                      child: _buildPhotoBadge(day, info!, isSelected),
-                    ),
+                    child: _buildPhotoBadge(day, info!, isToday || isSelected),
                   ),
                 ),
               if (isActive) _buildCloseButton(),
@@ -513,6 +517,8 @@ class _MonthCardState extends State<_MonthCard>
     );
   }
 
+  /// 日期数字：无图日期居中（今日墨底圆 / 选中主色圆环），
+  /// 有图日期缩小垫在徽章下方
   Widget _buildDateNumber(
     DateTime day,
     bool covered,
@@ -520,105 +526,85 @@ class _MonthCardState extends State<_MonthCard>
     bool isToday,
     bool isSelected,
   ) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 350),
-      curve: _spring,
-      width: 46,
-      height: 46,
-      transformAlignment: Alignment.center,
-      transform: Matrix4.identity()
-        ..scale(covered && !hiddenByStrip ? 0.5 : (isSelected && !covered ? 1.1 : 1.0)),
-      decoration: BoxDecoration(
-        color: isSelected && !covered
-            ? Colors.white.withValues(alpha: 0.07)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      alignment: Alignment.center,
-      child: AnimatedOpacity(
+    final theme = DSThemeBridge.resolve(context);
+
+    if (covered) {
+      return AnimatedOpacity(
         duration: const Duration(milliseconds: 250),
         opacity: hiddenByStrip ? 0 : 1,
         child: Text(
           '${day.day}',
-          style: TextStyle(
-            fontSize: covered ? 13 : 22,
-            fontWeight: covered
-                ? FontWeight.w600
-                : (isToday || isSelected ? FontWeight.w700 : FontWeight.w400),
-            color: covered
-                ? Colors.white.withValues(alpha: 0.55)
-                : (isToday ? _accent : const Color(0xFFF4F4F6)),
-          ),
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        ),
+      );
+    }
+
+    final Color? bg = isToday ? theme.text : null;
+    final bool ring = !isToday && isSelected;
+    return Container(
+      width: 36,
+      height: 36,
+      alignment: Alignment.center,
+      decoration: (bg != null || ring)
+          ? dsSketchDecoration(
+              theme: theme,
+              circle: true,
+              fillColor: bg,
+              stroke: ring ? theme.primary : null,
+              strokeWidth: 1.8,
+              seed: day.day,
+            )
+          : null,
+      child: Text(
+        '${day.day}',
+        style: DsTypography.body.copyWith(
+          fontSize: 17,
+          color: isToday ? theme.surface : theme.text,
         ),
       ),
     );
   }
 
-  /// 徽章入场：按日期错峰 弹性淡入 + 上移 + 放大
-  Widget _buildEntrance({required int day, required Widget child}) {
-    final start = (0.15 + day * 0.02).clamp(0.0, 0.8).toDouble();
-    return AnimatedBuilder(
-      animation: _entrance,
-      builder: (context, _) {
-        final t = CurvedAnimation(
-          parent: _entrance,
-          curve: Interval(start, 1, curve: _spring),
-        ).value;
-        return Opacity(
-          opacity: t.clamp(0.0, 1.0).toDouble(),
-          child: Transform.translate(
-            offset: Offset(0, 15 * (1 - t)),
-            child: Transform.scale(scale: 0.3 + 0.7 * t, child: child),
-          ),
-        );
-      },
-    );
-  }
-
-  /// 图片徽章：白边圆角 + 按日期哈希取稳定倾角 + 阴影
-  Widget _buildPhotoBadge(
-    DateTime day,
-    PhotoCalendarDayInfo info,
-    bool isSelected,
-  ) {
+  /// 图片徽章：白底 + 墨线描边（错峰描画入场）+ 按日期哈希稳定倾斜
+  Widget _buildPhotoBadge(DateTime day, PhotoCalendarDayInfo info, bool highlight) {
+    final theme = DSThemeBridge.resolve(context);
     const tilts = [-6.0, -3.0, 3.0, 6.0];
     final rot = tilts[(day.day * 31 + day.month * 7) % tilts.length];
-    return Container(
-      width: _badgeSize,
-      height: _badgeSize,
-      transformAlignment: Alignment.center,
-      transform: Matrix4.identity()..rotateZ(rot * math.pi / 180),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: isSelected ? _accent : Colors.white.withValues(alpha: 0.55),
-          width: isSelected ? 2 : 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.75),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-            spreadRadius: -4,
+    // 错峰区间：按日号顺延，面板描画完成后逐日描出
+    final start = (0.15 + day.day * 0.02).clamp(0.0, 0.8).toDouble();
+    return Transform.rotate(
+      angle: rot * math.pi / 180,
+      child: Container(
+        width: _badgeSize,
+        height: _badgeSize,
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surface,
+          radius: BorderRadius.circular(14),
+          stroke: highlight ? theme.primary : null,
+          strokeWidth: highlight ? 2.2 : 1.8,
+          seed: day.day * 31 + day.month,
+          progress: CurvedAnimation(
+            parent: _entrance,
+            curve: Interval(start, 1),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(13.5),
-        // Web/远端存储下 File 路径不可用，统一走 createImageProvider
-        // （内部按 network/asset/file/存储分发，含 StorageImageProvider 解密）
-        child: Image(
-          image: ImageUtils.createImageProvider(info.photos.first),
-          width: double.infinity,
-          height: double.infinity,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            color: const Color(0xFF2A2A2E),
-            alignment: Alignment.center,
-            child: DsIcon(
-              DsIconKind.image,
-              size: 16,
-              color: Colors.white54,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(3),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            // Web/远端存储下 File 路径不可用，统一走 createImageProvider
+            // （内部按 network/asset/file/存储分发，含 StorageImageProvider 解密）
+            child: Image(
+              image: ImageUtils.createImageProvider(info.photos.first),
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: theme.surfaceAlt,
+                alignment: Alignment.center,
+                child: DsIcon(DsIconKind.image, size: 16, color: theme.textSub),
+              ),
             ),
           ),
         ),
@@ -627,114 +613,86 @@ class _MonthCardState extends State<_MonthCard>
   }
 
   Widget _buildCloseButton() {
+    final theme = DSThemeBridge.resolve(context);
     return GestureDetector(
       onTap: () => widget.onExpandedChanged(null),
       child: Container(
         width: 38,
         height: 38,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: 0.12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.6),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+        decoration: dsSketchDecoration(
+          theme: theme,
+          circle: true,
+          fillColor: theme.surfaceAlt,
+          strokeWidth: 1.6,
         ),
-        child: const Icon(
-          Icons.close,
-          size: 16,
-          color: Colors.white70,
-        ),
+        child: DsIcon(DsIconKind.close, size: 16, color: theme.text),
       ),
     );
   }
 
-  /// 展开的横向图片条：贴在目标行上方，从点击列弹性放大弹出
+  /// 展开的横向图片条：贴在目标行上方，展开时墨线描画入场，
+  /// 点击图片回调宿主（index 与当天 photos 对齐）
   Widget _buildPhotoStrip(DateTime day, PhotoCalendarDayInfo info) {
-    final cellIndex =
-        DateTime(day.year, day.month, 1).weekday % 7 + day.day - 1;
-    final col = cellIndex % 7;
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 480),
-      curve: _spring,
-      builder: (context, t, child) => Opacity(
-        opacity: t.clamp(0.0, 1.0).toDouble(),
-        child: Transform(
-          alignment: Alignment(((col + 0.5) / 7) * 2 - 1, 1),
-          transform: Matrix4.identity()
-            ..translate(0.0, 24 * (1 - t))
-            ..scale(0.22 + 0.78 * t, 0.5 + 0.5 * t),
-          child: child,
-        ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2E2C2A).withValues(alpha: 0.96),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.18),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.88),
-              blurRadius: 50,
-              offset: const Offset(0, 26),
-              spreadRadius: -10,
+    final theme = DSThemeBridge.resolve(context);
+    return WiredDraw(
+      child: Builder(
+        builder: (context) {
+          final progress = WiredDrawTransition.progressOf(context);
+          return Container(
+            padding: const EdgeInsets.all(6),
+            decoration: dsSketchDecoration(
+              theme: theme,
+              fillColor: theme.surface,
+              radius: BorderRadius.circular(18),
+              strokeWidth: 1.8,
+              seed: day.day,
+              progress: progress,
             ),
-          ],
-        ),
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.zero,
-          itemCount: info.photos.length,
-          itemBuilder: (context, index) {
-            final photo = info.photos[index];
-            return GestureDetector(
-              onTap: () => widget.onPhotoTap?.call(day, photo),
-              child: Container(
-                width: _stripH - 12,
-                height: _stripH - 12,
-                margin: const EdgeInsets.only(right: 6),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.zero,
+              itemCount: info.photos.length,
+              itemBuilder: (context, index) {
+                final photo = info.photos[index];
+                return GestureDetector(
+                  onTap: () => widget.onPhotoTap?.call(day, index),
+                  child: Container(
+                    width: _stripH - 12,
+                    height: _stripH - 12,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: dsSketchDecoration(
+                      theme: theme,
+                      radius: BorderRadius.circular(12),
+                      strokeWidth: 1.4,
+                      seed: index + 1,
+                      progress: progress,
                     ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image(
-                    image: ImageUtils.createImageProvider(photo),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: const Color(0xFF2A2A2E),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '${index + 1}',
-                        style: const TextStyle(color: Colors.white54),
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(9),
+                        child: Image(
+                          image: ImageUtils.createImageProvider(photo),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: theme.surfaceAlt,
+                            alignment: Alignment.center,
+                            child: Text(
+                              '${index + 1}',
+                              style: DsTypography.caption.copyWith(
+                                color: theme.textSub,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            );
-          },
-        ),
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }

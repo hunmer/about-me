@@ -70,4 +70,5 @@ export 'checkin_item_card.dart' show CheckinItemCardWidget, CheckinWeekdayHeader
 export 'contact_card.dart' show ContactCardWidget, ContactCardData, ContactCardGender;
 
 // 导出人设介绍对话框组件
-export 'persona_intro_dialog.dart' show PersonaIntroCard, showPersonaIntroDialog;
+export 'persona_intro_dialog.dart'
+    show PersonaIntroCard, PersonaIntroButton, showPersonaIntroDialog;

@@ -216,7 +216,6 @@ class _ScrapbookListScreenState extends State<ScrapbookListScreen> {
 
   Widget _buildCardItem(BuildContext context, ScrapbookPage page, int index) {
     final theme = DSThemeBridge.resolve(context);
-    final created = page.createdAt;
     return Dismissible(
       key: ValueKey('scrapbook_${page.id}'),
       direction: DismissDirection.endToStart,
@@ -234,11 +233,9 @@ class _ScrapbookListScreenState extends State<ScrapbookListScreen> {
         subtitle: page.subtitle ?? '',
         updatedLabel: _relativeLabel(page.updatedAt),
         itemCount: page.items.length,
-        noteTitle: page.title,
-        noteAuthor: '${created.month}.${created.day}',
-        noteContent: page.summary.isEmpty
-            ? 'scrapbook_noSummary'.tr
-            : page.summary,
+        // 画布实际元素 + 涂鸦笔画直接上卡（替代占位便签）
+        canvasItems: page.items,
+        canvasStrokes: page.strokes,
         onOpen: () => _openCanvas(page),
       ),
     );

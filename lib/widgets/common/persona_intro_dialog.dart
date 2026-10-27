@@ -34,25 +34,53 @@ const String _waveSvg = '''
 ''';
 
 
+/// 底部操作按钮配置
+class PersonaIntroButton {
+  const PersonaIntroButton({
+    required this.label,
+    this.onPressed,
+    this.primary = false,
+    this.icon,
+  });
+
+  /// 按钮文字
+  final String label;
+
+  /// 点击回调，为空时仅关闭对话框
+  final VoidCallback? onPressed;
+
+  /// true 为黑底白字主按钮，false 为白底黑字描边次按钮
+  final bool primary;
+
+  /// 按钮图标（可选）
+  final IconData? icon;
+}
+
 /// 人设介绍对话框卡片
 ///
 /// 纯矢量绘制（参考设计稿）：顶部淡紫蓝渐变圆角卡片，突出的微倾斜拍立得相框
 /// （角标四角星 + 吊牌穿孔 + 图片人像 + 涂鸦装饰），底部蓝白波浪飘带分隔，
-/// 下方标题 + 副标题 + 主操作按钮，不依赖相框图片资源。
+/// 下方标题 + 副标题 + 自定义内容区 + 底部操作按钮（支持多个），不依赖相框图片资源。
 class PersonaIntroCard extends StatelessWidget {
   const PersonaIntroCard({
     super.key,
-    required this.image,
+    this.image,
+    this.portrait,
     required this.title,
     this.badgeText = '全新上线',
     this.subtitle,
+    this.content,
     this.buttonText = '知道了',
     this.onButtonPressed,
+    this.buttons,
     this.width = 326,
   });
 
   /// 相框内显示的人像图片
-  final ImageProvider image;
+  final ImageProvider? image;
+
+  /// 相框人像区的自定义内容（优先级高于 [image]，支持 SVG/网络图等任意 Widget）
+  final Widget? portrait;
 
   /// 角标文字（相框顶部，两侧自动配四角星图标）
   final String badgeText;
@@ -63,11 +91,18 @@ class PersonaIntroCard extends StatelessWidget {
   /// 副标题
   final String? subtitle;
 
-  /// 按钮文字
+  /// 标题区与按钮区之间的自定义内容（标签、详情信息等）
+  final Widget? content;
+
+  /// 按钮文字（[buttons] 为空时生效）
   final String buttonText;
 
-  /// 按钮点击回调，为空时仅关闭对话框
+  /// 按钮点击回调，为空时仅关闭对话框（[buttons] 为空时生效）
   final VoidCallback? onButtonPressed;
+
+  /// 底部多按钮（非空时替代 [buttonText]/[onButtonPressed]，横向等分排列，
+  /// primary 按钮黑底白字，其余白底描边）
+  final List<PersonaIntroButton>? buttons;
 
   /// 卡片宽度（设计稿基准 326，所有尺寸按此等比缩放）
   final double width;
@@ -149,32 +184,91 @@ class PersonaIntroCard extends StatelessWidget {
                   ],
                 ),
               ),
+              // 自定义内容区（标题区与按钮区之间）
+              if (content != null) ...[
+                SizedBox(height: 16 * s),
+                content!,
+              ],
               SizedBox(height: 28 * s),
-              // 主操作按钮
-              SizedBox(
-                width: double.infinity,
-                height: 52 * s,
-                child: TextButton(
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    shape: const StadiumBorder(),
-                  ),
-                  onPressed: onButtonPressed,
-                  child: Text(
-                    buttonText,
-                    style: TextStyle(
-                      fontSize: 16 * s,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.5,
-                    ),
+              _buildButtons(s),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 底部操作按钮：单按钮占满宽，多按钮横向等分
+  Widget _buildButtons(double s) {
+    final list = buttons;
+    // 未传多按钮时退回单按钮模式
+    if (list == null || list.isEmpty) {
+      return SizedBox(
+        width: double.infinity,
+        height: 52 * s,
+        child: TextButton(
+          style: TextButton.styleFrom(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            shape: const StadiumBorder(),
+          ),
+          onPressed: onButtonPressed,
+          child: Text(
+            buttonText,
+            style: TextStyle(
+              fontSize: 16 * s,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      );
+    }
+    Widget buildButton(PersonaIntroButton button) {
+      final primary = button.primary;
+      return SizedBox(
+        height: 52 * s,
+        child: TextButton(
+          style: TextButton.styleFrom(
+            backgroundColor: primary ? Colors.black : Colors.white,
+            foregroundColor: primary ? Colors.white : const Color(0xFF141414),
+            shape: const StadiumBorder(
+              side: BorderSide(color: Color(0x1F141414)),
+            ),
+          ),
+          onPressed: button.onPressed,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (button.icon != null) ...[
+                Icon(button.icon, size: 18 * s),
+                SizedBox(width: 4 * s),
+              ],
+              Flexible(
+                child: Text(
+                  button.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15 * s,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ),
             ],
           ),
         ),
-      ),
+      );
+    }
+
+    return Row(
+      children: [
+        for (var i = 0; i < list.length; i++) ...[
+          if (i > 0) SizedBox(width: 10 * s),
+          Expanded(child: buildButton(list[i])),
+        ],
+      ],
     );
   }
 
@@ -323,19 +417,22 @@ class PersonaIntroCard extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
-          // 人像图片，底部渐隐融入背景
-          Positioned.fill(
-            child: ShaderMask(
-              blendMode: BlendMode.dstIn,
-              shaderCallback: (bounds) => const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.white, Colors.white, Colors.transparent],
-                stops: [0, 0.82, 1],
-              ).createShader(bounds),
-              child: Image(image: image, fit: BoxFit.cover),
+          // 人像内容（自定义 portrait 优先，其次 image 图片），底部渐隐融入背景
+          if (portrait != null || image != null)
+            Positioned.fill(
+              child: ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.white, Colors.white, Colors.transparent],
+                  stops: [0, 0.82, 1],
+                ).createShader(bounds),
+                child:
+                    portrait ??
+                    Image(image: image!, fit: BoxFit.cover),
+              ),
             ),
-          ),
           // 左上浅蓝涂鸦
           Positioned(
             top: 26 * s,
@@ -361,12 +458,15 @@ class PersonaIntroCard extends StatelessWidget {
 /// 弹出人设介绍对话框（卡片下方带关闭按钮）
 Future<T?> showPersonaIntroDialog<T>({
   required BuildContext context,
-  required ImageProvider image,
+  ImageProvider? image,
+  Widget? portrait,
   required String title,
   String badgeText = '全新上线',
   String? subtitle,
+  Widget? content,
   String buttonText = '知道了',
   VoidCallback? onButtonPressed,
+  List<PersonaIntroButton>? buttons,
   double width = 326,
   bool barrierDismissible = true,
 }) {
@@ -374,14 +474,17 @@ Future<T?> showPersonaIntroDialog<T>({
     context: context,
     barrierDismissible: barrierDismissible,
     barrierColor: Colors.black54,
-    builder: (context) {
+    builder: (dialogContext) {
       final card = PersonaIntroCard(
         image: image,
+        portrait: portrait,
         title: title,
         badgeText: badgeText,
         subtitle: subtitle,
+        content: content,
         buttonText: buttonText,
-        onButtonPressed: onButtonPressed ?? () => Navigator.of(context).pop(),
+        onButtonPressed: onButtonPressed ?? () => Navigator.of(dialogContext).pop(),
+        buttons: buttons,
         width: width,
       );
       return Center(
@@ -393,7 +496,7 @@ Future<T?> showPersonaIntroDialog<T>({
               const SizedBox(height: 24),
               // 关闭按钮
               GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
+                onTap: () => Navigator.of(dialogContext).pop(),
                 child: Container(
                   width: 44,
                   height: 44,

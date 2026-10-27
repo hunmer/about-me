@@ -2,7 +2,16 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:skribble/skribble.dart';
+
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
+
+import 'scrapbook_canvas_card/scrapbook_item_content.dart'
+    show buildScrapItemContent;
+import 'scrapbook_canvas_card/scrapbook_item_models.dart'
+    show ScrapItemData, ScrapStroke;
 
 enum SpatialListItemKind {
   note,
@@ -82,6 +91,14 @@ class SpatialListCardWidget extends StatefulWidget {
   final String noteAuthor;
   final String noteContent;
   final List<SpatialListItemData> items;
+
+  /// 画布实际元素（手账页条目）：非空时画布按真实 x/y/rotation/zIndex
+  /// 还原整页内容，替代 [items]/[noteContent] 占位展示
+  final List<ScrapItemData> canvasItems;
+
+  /// 画布实际涂鸦笔画（与 [canvasItems] 同坐标系）
+  final List<ScrapStroke> canvasStrokes;
+
   final bool initialExpanded;
   final ValueChanged<bool>? onExpandedChanged;
 
@@ -101,6 +118,8 @@ class SpatialListCardWidget extends StatefulWidget {
     this.noteContent =
         'Check the produce aisle for any discounts, crooked carrots and flat fruit still work in the snack plate',
     this.items = const [],
+    this.canvasItems = const [],
+    this.canvasStrokes = const [],
     this.initialExpanded = false,
     this.onExpandedChanged,
     this.onOpen,
@@ -134,6 +153,26 @@ class SpatialListCardWidget extends StatefulWidget {
                 )
                 .toList()
           : defaultItems,
+      canvasItems:
+          (props['canvasItems'] as List?)
+              ?.whereType<Map>()
+              .map(
+                (item) => ScrapItemData.fromMap(
+                  Map<String, dynamic>.from(item),
+                ),
+              )
+              .toList() ??
+          const [],
+      canvasStrokes:
+          (props['canvasStrokes'] as List?)
+              ?.whereType<Map>()
+              .map(
+                (stroke) => ScrapStroke.fromMap(
+                  Map<String, dynamic>.from(stroke),
+                ),
+              )
+              .toList() ??
+          const [],
       initialExpanded: props['initialExpanded'] as bool? ?? false,
       inline: props['inline'] as bool? ?? false,
       size: size,
@@ -247,6 +286,9 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
 
   bool get _expanded => _controller.value > 0.5;
 
+  bool get _useCanvas =>
+      widget.canvasItems.isNotEmpty || widget.canvasStrokes.isNotEmpty;
+
   @override
   void initState() {
     super.initState();
@@ -283,45 +325,44 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
   @override
   Widget build(BuildContext context) {
     final scale = widget.size.scale;
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        final progress = _animation.value;
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          key: const Key('spatial_list_card'),
-          width: widget.inline ? double.maxFinite : 384 * scale,
-          height: (204 + 234 * progress) * scale,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF6F6F4),
-            borderRadius: BorderRadius.circular(28 * scale),
-          ),
-          child: Column(
-            children: [
-              _buildHeader(scale),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    10 * scale,
-                    (6 + 8 * progress) * scale,
-                    10 * scale,
-                    10 * progress * scale,
+    // 手绘纸卡（纸底 + 淡排线 + rough 墨线框），WiredDraw 描画入场
+    return WiredDraw(
+      child: DSThemeBridge(
+        child: AnimatedBuilder(
+          animation: _animation,
+          builder: (context, _) {
+            final progress = _animation.value;
+            final theme = AppTheme.of(context);
+            return DsSketchPanel(
+              key: const Key('spatial_list_card'),
+              theme: theme,
+              width: widget.inline ? double.maxFinite : 384 * scale,
+              height: (204 + 234 * progress) * scale,
+              radius: BorderRadius.circular(28 * scale),
+              child: Column(
+                children: [
+                  _buildHeader(theme, scale),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        10 * scale,
+                        (6 + 8 * progress) * scale,
+                        10 * scale,
+                        10 * progress * scale,
+                      ),
+                      child: _buildCanvas(theme, progress, scale),
+                    ),
                   ),
-                  child: _buildCanvas(progress, scale, isDark),
-                ),
+                ],
               ),
-            ],
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader(double scale) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = isDark ? Colors.white : const Color(0xFF111111);
-    final secondary = isDark ? Colors.white60 : const Color(0xFF7C7C78);
+  Widget _buildHeader(AppThemeData theme, double scale) {
     return GestureDetector(
       key: const Key('spatial_list_header'),
       behavior: HitTestBehavior.opaque,
@@ -335,46 +376,45 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
               children: [
                 Row(
                   children: [
-                    Icon(Icons.schedule, size: 13 * scale, color: secondary),
+                    DsIcon(
+                      DsIconKind.clock,
+                      size: 13 * scale,
+                      color: theme.textSub,
+                    ),
                     SizedBox(width: 6 * scale),
                     Text(
                       widget.updatedLabel,
-                      style: TextStyle(fontSize: 12 * scale, color: secondary),
+                      style: TextStyle(
+                        fontSize: 12 * scale,
+                        color: theme.textSub,
+                      ),
                     ),
                   ],
                 ),
                 Row(
                   children: [
-                    Icon(Icons.notes, size: 13 * scale, color: secondary),
+                    DsIcon(
+                      DsIconKind.stickyNote,
+                      size: 13 * scale,
+                      color: theme.textSub,
+                    ),
                     SizedBox(width: 4 * scale),
                     Text(
                       '${widget.itemCount}',
                       style: TextStyle(
                         fontSize: 12 * scale,
                         fontWeight: FontWeight.w600,
-                        color: primary,
+                        color: theme.text,
                       ),
                     ),
                     if (widget.onOpen != null) ...[
                       SizedBox(width: 10 * scale),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: widget.onOpen,
-                        child: Container(
-                          width: 26 * scale,
-                          height: 26 * scale,
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white24
-                                : const Color(0xFF111111),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.edit_outlined,
-                            size: 14 * scale,
-                            color: Colors.white,
-                          ),
-                        ),
+                      DSIconButton(
+                        icon: DsIconKind.edit,
+                        size: 26 * scale,
+                        color: theme.primary,
+                        iconColor: theme.onPrimary,
+                        onPressed: widget.onOpen,
                       ),
                     ],
                   ],
@@ -392,7 +432,7 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
                 height: 1.15,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.6 * scale,
-                color: primary,
+                color: theme.text,
               ),
             ),
             SizedBox(height: 4 * scale),
@@ -401,7 +441,7 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12.5 * scale, color: secondary),
+              style: TextStyle(fontSize: 12.5 * scale, color: theme.textSub),
             ),
           ],
         ),
@@ -409,7 +449,7 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
     );
   }
 
-  Widget _buildCanvas(double progress, double scale, bool isDark) {
+  Widget _buildCanvas(AppThemeData theme, double progress, double scale) {
     final items = widget.items.isEmpty
         ? SpatialListCardWidget.defaultItems
         : widget.items;
@@ -439,27 +479,30 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
           child: ClipRRect(
             borderRadius: BorderRadius.circular(22 * scale),
             child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Color.lerp(
-                  Colors.transparent,
-                  isDark ? const Color(0xFF242426) : Colors.white,
+              decoration: dsSketchDecoration(
+                theme: theme,
+                fillColor: Color.lerp(
+                  theme.surface,
+                  theme.surfaceAlt,
                   progress,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03 * progress),
-                    blurRadius: 12 * scale,
-                    offset: Offset(0, 2 * scale),
-                  ),
-                ],
+                radius: BorderRadius.circular(22 * scale),
+                progress: WiredDrawTransition.progressOf(context),
               ),
               child: CustomPaint(
-                painter: _DotGridPainter(progress: progress, scale: scale),
+                painter: _DotGridPainter(
+                  color: theme.ink,
+                  progress: progress,
+                  scale: scale,
+                ),
                 child: Stack(
                   clipBehavior: Clip.hardEdge,
                   children: [
-                    for (final item in items)
-                      _buildItem(item, constraints, progress, scale),
+                    if (_useCanvas)
+                      _buildCanvasWorld(theme, constraints, progress, scale)
+                    else
+                      for (final item in items)
+                        _buildItem(theme, item, constraints, progress, scale),
                     Positioned(
                       right: 12 * scale,
                       bottom: 12 * scale,
@@ -467,7 +510,7 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
                         opacity: progress,
                         child: Transform.scale(
                           scale: 0.82 + 0.18 * progress,
-                          child: _buildMinimap(scale),
+                          child: _buildMinimap(theme, scale),
                         ),
                       ),
                     ),
@@ -481,7 +524,92 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
     );
   }
 
+  /// 画布实际元素层：条目与涂鸦笔画按真实 x/y/rotation/zIndex 还原整页
+  /// 手账，包围盒等比缩放（≤1 不放大）居中适配视口，折叠→展开随视口
+  /// 变高自动放大；平移由外层手势 _pan 驱动
+  Widget _buildCanvasWorld(
+    AppThemeData theme,
+    BoxConstraints constraints,
+    double progress,
+    double scale,
+  ) {
+    var left = double.infinity;
+    var top = double.infinity;
+    var right = double.negativeInfinity;
+    var bottom = double.negativeInfinity;
+    for (final item in widget.canvasItems) {
+      left = math.min(left, item.x);
+      top = math.min(top, item.y);
+      right = math.max(right, item.x + item.width);
+      bottom = math.max(bottom, item.y + item.height);
+    }
+    for (final stroke in widget.canvasStrokes) {
+      for (final point in stroke.points) {
+        left = math.min(left, point.dx);
+        top = math.min(top, point.dy);
+        right = math.max(right, point.dx);
+        bottom = math.max(bottom, point.dy);
+      }
+    }
+    final worldSize = Size(
+      math.max(right - left, 1),
+      math.max(bottom - top, 1),
+    );
+    final fit = math
+        .min(
+          constraints.maxWidth / worldSize.width,
+          constraints.maxHeight / worldSize.height,
+        )
+        .clamp(0.12, 1.0);
+    final origin = Offset(
+      (constraints.maxWidth - worldSize.width * fit) / 2,
+      (constraints.maxHeight - worldSize.height * fit) / 2,
+    );
+    final topLeft = Offset(left, top);
+    final sorted = [...widget.canvasItems]
+      ..sort((a, b) => a.zIndex.compareTo(b.zIndex));
+    return Transform.translate(
+      offset: _pan * progress,
+      child: SizedBox.expand(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            if (widget.canvasStrokes.isNotEmpty)
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _CanvasStrokesPainter(
+                    strokes: widget.canvasStrokes,
+                    origin: origin,
+                    topLeft: topLeft,
+                    fit: fit,
+                  ),
+                ),
+              ),
+            for (final item in sorted)
+              Positioned(
+                left: origin.dx + (item.x - topLeft.dx) * fit,
+                top: origin.dy + (item.y - topLeft.dy) * fit,
+                child: Transform.rotate(
+                  angle: item.rotation * math.pi / 180,
+                  child: Transform.scale(
+                    scale: fit,
+                    alignment: Alignment.topLeft,
+                    child: buildScrapItemContent(
+                      item,
+                      theme.isDark,
+                      (_) {},
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildItem(
+    AppThemeData theme,
     SpatialListItemData item,
     BoxConstraints constraints,
     double progress,
@@ -536,21 +664,15 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
                               width: 24 * scale,
                               height: 24 * scale,
                               alignment: Alignment.center,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF141414),
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Color(0x38000000),
-                                    blurRadius: 8,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
+                              decoration: dsSketchDecoration(
+                                theme: theme,
+                                fillColor: theme.ink,
+                                circle: true,
                               ),
                               child: Text(
                                 '${item.quantity}',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: theme.paper,
                                   fontSize: 11 * scale,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -583,21 +705,14 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
     return SvgPicture.string(svg, fit: BoxFit.contain);
   }
 
-  Widget _buildMinimap(double scale) {
+  Widget _buildMinimap(AppThemeData theme, double scale) {
     return Container(
       width: 68 * scale,
       height: 68 * scale,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(16 * scale),
-        border: Border.all(color: const Color(0x0F000000)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F000000),
-            blurRadius: 20,
-            offset: Offset(0, 6),
-          ),
-        ],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.surface,
+        radius: BorderRadius.circular(16 * scale),
       ),
       child: Stack(
         children: [
@@ -607,7 +722,7 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
             child: Container(
               width: 10 * scale,
               height: 10 * scale,
-              color: const Color(0x99FDE68A),
+              color: theme.hatch,
             ),
           ),
           Positioned(
@@ -616,8 +731,8 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
             child: Container(
               width: 8 * scale,
               height: 8 * scale,
-              decoration: const BoxDecoration(
-                color: Color(0x9986EFAC),
+              decoration: BoxDecoration(
+                color: theme.primary.withValues(alpha: 0.55),
                 shape: BoxShape.circle,
               ),
             ),
@@ -632,9 +747,9 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
                 width: 28 * scale,
                 height: 29 * scale,
                 decoration: BoxDecoration(
-                  color: const Color(0x0A3B82F6),
+                  color: theme.primary.withValues(alpha: 0.1),
                   border: Border.all(
-                    color: const Color(0xFF3B82F6),
+                    color: theme.primary,
                     width: 1.6 * scale,
                   ),
                   borderRadius: BorderRadius.circular(5 * scale),
@@ -663,23 +778,13 @@ class _SpatialNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
     return Container(
       padding: EdgeInsets.all(14 * scale),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A), Color(0xFFFCD34D)],
-        ),
-        borderRadius: BorderRadius.circular(22 * scale),
-        border: Border.all(color: const Color(0x33F59E0B)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x38B48214),
-            blurRadius: 24,
-            offset: Offset(0, 10),
-          ),
-        ],
+      decoration: dsSketchDecoration(
+        theme: theme,
+        fillColor: theme.hatch,
+        radius: BorderRadius.circular(22 * scale),
       ),
       child: Column(
         children: [
@@ -692,7 +797,7 @@ class _SpatialNote extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: const Color(0xBF451A03),
+                    color: theme.text,
                     fontSize: 9.5 * scale,
                     fontWeight: FontWeight.w700,
                   ),
@@ -704,17 +809,18 @@ class _SpatialNote extends StatelessWidget {
                   horizontal: 6 * scale,
                   vertical: 2 * scale,
                 ),
-                decoration: BoxDecoration(
-                  color: const Color(0xCCFDE047),
-                  borderRadius: BorderRadius.circular(20 * scale),
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillColor: theme.primary,
+                  radius: BorderRadius.circular(20 * scale),
                 ),
                 child: Row(
                   children: [
                     Container(
                       width: 10 * scale,
                       height: 10 * scale,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFD97706),
+                      decoration: BoxDecoration(
+                        color: theme.onPrimary,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -722,7 +828,7 @@ class _SpatialNote extends StatelessWidget {
                     Text(
                       author,
                       style: TextStyle(
-                        color: const Color(0xFF451A03),
+                        color: theme.onPrimary,
                         fontSize: 8.5 * scale,
                         fontWeight: FontWeight.w600,
                       ),
@@ -739,7 +845,7 @@ class _SpatialNote extends StatelessWidget {
               maxLines: 5,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: const Color(0xFF291504),
+                color: theme.text,
                 fontSize: 9.5 * scale,
                 height: 1.32,
                 fontWeight: FontWeight.w600,
@@ -754,16 +860,20 @@ class _SpatialNote extends StatelessWidget {
 }
 
 class _DotGridPainter extends CustomPainter {
+  final Color color;
   final double progress;
   final double scale;
 
-  const _DotGridPainter({required this.progress, required this.scale});
+  const _DotGridPainter({
+    required this.color,
+    required this.progress,
+    required this.scale,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (progress == 0) return;
-    final paint = Paint()
-      ..color = const Color(0xFFE6E6E1).withValues(alpha: progress);
+    final paint = Paint()..color = color.withValues(alpha: 0.16 * progress);
     final spacing = 16 * scale;
     for (var x = spacing / 2; x < size.width; x += spacing) {
       for (var y = spacing / 2; y < size.height; y += spacing) {
@@ -774,7 +884,56 @@ class _DotGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DotGridPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.scale != scale;
+      oldDelegate.progress != progress ||
+      oldDelegate.scale != scale ||
+      oldDelegate.color != color;
+}
+
+/// 画布涂鸦笔画：世界坐标 → 视口坐标（与条目同一映射）后按原色描线
+class _CanvasStrokesPainter extends CustomPainter {
+  final List<ScrapStroke> strokes;
+  final Offset origin;
+  final Offset topLeft;
+  final double fit;
+
+  const _CanvasStrokesPainter({
+    required this.strokes,
+    required this.origin,
+    required this.topLeft,
+    required this.fit,
+  });
+
+  Offset _map(Offset point) =>
+      origin + Offset(
+        (point.dx - topLeft.dx) * fit,
+        (point.dy - topLeft.dy) * fit,
+      );
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final strokeWidth = math.max(2.4 * fit, 0.9);
+    for (final stroke in strokes) {
+      if (stroke.points.length < 2) continue;
+      final path = Path()..moveTo(_map(stroke.points.first).dx, _map(stroke.points.first).dy);
+      for (final point in stroke.points.skip(1)) {
+        final mapped = _map(point);
+        path.lineTo(mapped.dx, mapped.dy);
+      }
+      final paint = Paint()
+        ..color = stroke.color
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke;
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CanvasStrokesPainter oldDelegate) =>
+      oldDelegate.fit != fit ||
+      oldDelegate.origin != origin ||
+      oldDelegate.topLeft != topLeft;
 }
 
 const _noteDoodle = '''

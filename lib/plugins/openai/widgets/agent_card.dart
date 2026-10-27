@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 import 'package:aboutme/plugins/openai/services/soul_forge_service.dart';
 import 'package:aboutme/plugins/openai/services/chat_assistant_service.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/widgets/common/agent_card.dart';
@@ -29,54 +29,28 @@ class _AgentCardState extends State<AgentCard> {
 
   AIAgent get agent => widget.agent;
 
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用；内置 agent 不可删除）
+  List<ArcMenuItem> _agentActions() => [
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: '编辑',
+          onTap: _editAgent,
+        ),
+        if (!SoulForgeService.isBuiltinAgent(agent.id) &&
+            !ChatAssistantService.isBuiltinAgent(agent.id))
+          ArcMenuItem(
+            icon: DsIconKind.trash,
+            label: '删除',
+            destructive: true,
+            onTap: _deleteAgent,
+          ),
+      ];
+
   /// 显示操作菜单
   void _showActionMenu(BuildContext context) {
-    SmoothBottomSheet.show(
+    SmoothBottomSheet.showActionList(
       context: context,
-      backgroundColor: DSThemeBridge.resolve(context).surface,
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _AgentSheetActionRow(
-                      icon: DsIcon(
-                        DsIconKind.edit,
-                        size: 20,
-                        color: theme.primary,
-                      ),
-                      label: '编辑',
-                      theme: theme,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _editAgent();
-                      },
-                    ),
-                    // 内置 agent 不可删除
-                    if (!SoulForgeService.isBuiltinAgent(agent.id) &&
-                !ChatAssistantService.isBuiltinAgent(agent.id))
-                      _AgentSheetActionRow(
-                        icon: DsIcon(
-                          DsIconKind.trash,
-                          size: 20,
-                          color: theme.danger,
-                        ),
-                        label: '删除',
-                        theme: theme,
-                        danger: true,
-                        onTap: () {
-                          Navigator.pop(context);
-                          _deleteAgent();
-                        },
-                      ),
-                  ],
-                );
-              },
-            ),
-          ),
+      actions: _agentActions(),
     );
   }
 
@@ -115,61 +89,8 @@ class _AgentCardState extends State<AgentCard> {
       iconCodePoint: agent.icon?.codePoint,
       iconColorValue: agent.iconColor?.value,
       onTap: () => _showAgentDetail(),
-      onLongPress: () => _showActionMenu(context),
-    );
-  }
-}
-
-/// Agent 卡片长按菜单行(果冻风格)
-class _AgentSheetActionRow extends StatelessWidget {
-  const _AgentSheetActionRow({
-    required this.icon,
-    required this.label,
-    required this.theme,
-    required this.onTap,
-    this.danger = false,
-  });
-
-  final Widget icon;
-  final String label;
-  final AppThemeData theme;
-  final VoidCallback onTap;
-  final bool danger;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = danger ? theme.danger : theme.primary;
-    return Padding(
-      padding: EdgeInsets.only(bottom: theme.spacing.sm),
-      child: Pressable(
-        onPressed: onTap,
-        builder: (context, states) {
-          final pressed = states.contains(WidgetState.pressed);
-          return JellyBox(
-            radius: theme.radii.lg,
-            raised: false,
-            color: pressed ? accent.mixWhite(0.9) : theme.surfaceAlt,
-            padding: EdgeInsets.symmetric(
-              horizontal: theme.spacing.md,
-              vertical: theme.spacing.md,
-            ),
-            child: Row(
-              children: [
-                icon,
-                SizedBox(width: theme.spacing.md),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: DsTypography.body.copyWith(
-                      color: danger ? theme.danger : theme.text,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+      arcActions: _agentActions(),
+      onMore: () => _showActionMenu(context),
     );
   }
 }

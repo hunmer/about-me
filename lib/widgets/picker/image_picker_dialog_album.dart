@@ -189,13 +189,30 @@ extension _ImagePickerDialogAlbumExt on _ImagePickerDialogState {
       return;
     }
     final bytes = await ImageUtils.readStorageBytes(key);
-    if (mounted) {
-      Navigator.of(context).pop(<String, dynamic>{
-        'url': ImageUtils.sdkAssetId(key) != null ? key : './$key',
-        'thumbUrl': _thumbUrlFor(key),
-        'bytes': bytes,
-      });
+    if (!mounted) return;
+    // 启用裁剪时默认进入裁切（svg 矢量 / gif 动图不可裁剪，原样返回）；
+    // 取消裁剪则留在选择器
+    final ext = path.extension(key).toLowerCase();
+    if (widget.enableCrop &&
+        bytes != null &&
+        ext != '.svg' &&
+        ext != '.gif') {
+      final cropped = await _showCropDialog(context, bytes);
+      if (cropped == null) return;
+      final result = await SdkMediaService.saveImage(
+        cropped,
+        fileName: '${path.basenameWithoutExtension(key)}.png',
+        enableCompression: widget.enableCompression,
+        quality: widget.compressionQuality,
+      );
+      if (mounted) Navigator.of(context).pop(result);
+      return;
     }
+    Navigator.of(context).pop(<String, dynamic>{
+      'url': ImageUtils.sdkAssetId(key) != null ? key : './$key',
+      'thumbUrl': _thumbUrlFor(key),
+      'bytes': bytes,
+    });
   }
 
   /// 取消多选：退回单选模式并清空已选

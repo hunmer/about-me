@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -41,6 +42,11 @@ class AgentCardWidget extends StatefulWidget {
   /// 长按回调（用于显示操作菜单）
   final VoidCallback? onLongPress;
 
+  /// 长按圆盘菜单项（传入时替代 [onLongPress]，
+  /// 与 [onMore]（"更多"弹底部 sheet）配套）
+  final List<ArcMenuItem>? arcActions;
+  final VoidCallback? onMore;
+
   const AgentCardWidget({
     super.key,
     required this.name,
@@ -53,6 +59,8 @@ class AgentCardWidget extends StatefulWidget {
     this.size,
     this.onTap,
     this.onLongPress,
+    this.arcActions,
+    this.onMore,
   });
 
   /// 从 props 创建实例（用于公共小组件系统）
@@ -153,12 +161,14 @@ class _AgentCardWidgetState extends State<AgentCardWidget> {
         : _getColorForServiceProvider(theme, widget.serviceProviderId);
 
     // Material 壳为 Hero 动画源(经 openContainerWithHero),手绘外观交给 JellyBox
-    return Material(
+    Widget card = Material(
       key: _cardKey,
       type: MaterialType.transparency,
       child: InkWell(
         onTap: widget.onTap,
-        onLongPress: widget.onLongPress,
+        // 圆盘菜单接管长按时不再注册，避免手势竞争
+        onLongPress:
+            widget.arcActions != null ? null : widget.onLongPress,
         child: JellyBox(
           color: theme.surface,
           radius: BorderRadius.circular(12),
@@ -211,6 +221,13 @@ class _AgentCardWidgetState extends State<AgentCardWidget> {
           ),
         ),
       ),
+    );
+    final actions = widget.arcActions;
+    if (actions == null) return card;
+    return ArcContextMenu.actions(
+      actions: actions,
+      showMore: () => widget.onMore?.call(),
+      child: card,
     );
   }
 

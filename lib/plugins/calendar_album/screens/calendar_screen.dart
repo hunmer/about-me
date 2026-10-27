@@ -1,5 +1,6 @@
 import 'dart:io' show File;
 
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -10,6 +11,7 @@ import 'package:aboutme/plugins/calendar_album/widgets/entry_list.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/enhanced_calendar/photo_calendar_view.dart';
 import 'package:aboutme/widgets/enhanced_calendar/syncfusion_calendar.dart';
+import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:flutter/material.dart';
@@ -437,8 +439,9 @@ class _CalendarScreenState extends State<CalendarScreen>
         // 有图片的日期点击被展开占用，长按触发选中弹抽屉
         onDayLongPressed: onDateSelected,
         onHeaderTapped: onHeaderTapped,
-        // 点击图片条里的图片：选中该日期并弹当日抽屉
-        onPhotoTap: (day, photo) => onDateSelected(day),
+        // 点击图片条里的图片：打开当天大图预览
+        onPhotoTap: (day, index) =>
+            _openDayGallery(calendarController, day, index),
       );
     }
 
@@ -459,6 +462,49 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
+  /// 当天图片集合：逐张「缩略图显示 + 原图预览」配对
+  /// （thumbUrls 与 imageUrls 按索引对应，无缩略图的张目回落原图；
+  ///  无 imageUrls 时回落 Markdown 内嵌图）
+  List<({String title, String display, String original, String dateText})>
+  _collectDayPhotos(List<CalendarEntry> entries) {
+    final result = <({String title, String display, String original, String dateText})>[];
+    for (final entry in entries) {
+      final dateText = DateFormat('yyyy/MM/dd').format(entry.createdAt);
+      if (entry.thumbUrls.length == entry.imageUrls.length &&
+          entry.imageUrls.isNotEmpty) {
+        for (var i = 0; i < entry.imageUrls.length; i++) {
+          result.add((
+            title: entry.title,
+            display: entry.thumbUrls[i].isNotEmpty
+                ? entry.thumbUrls[i]
+                : entry.imageUrls[i],
+            original: entry.imageUrls[i],
+            dateText: dateText,
+          ));
+        }
+      } else if (entry.imageUrls.isNotEmpty) {
+        for (final url in entry.imageUrls) {
+          result.add((
+            title: entry.title,
+            display: url,
+            original: url,
+            dateText: dateText,
+          ));
+        }
+      } else {
+        for (final url in entry.extractImagesFromMarkdown()) {
+          result.add((
+            title: entry.title,
+            display: url,
+            original: url,
+            dateText: dateText,
+          ));
+        }
+      }
+    }
+    return result;
+  }
+
   /// 照片视图某月数据适配：每天汇总全部笔记的图片（缩略图优先）
   Map<DateTime, PhotoCalendarDayInfo> _buildPhotoMonthInfo(
     CalendarController calendarController,
@@ -474,24 +520,42 @@ class _CalendarScreenState extends State<CalendarScreen>
           !date.isBefore(nextMonth)) {
         return;
       }
-      // 图片优先取缩略图（过滤空字符串占位），其次原图 / Markdown 内嵌图
-      final photos = <String>[];
-      for (final entry in entries) {
-        final thumbs = entry.thumbUrls.where((t) => t.isNotEmpty).toList();
-        if (thumbs.isNotEmpty) {
-          photos.addAll(thumbs);
-        } else if (entry.imageUrls.isNotEmpty) {
-          photos.addAll(entry.imageUrls);
-        } else {
-          photos.addAll(entry.extractImagesFromMarkdown());
-        }
-      }
       dayData[date] = PhotoCalendarDayInfo(
         title: entries.first.title,
-        photos: photos,
+        photos: [
+          for (final p in _collectDayPhotos(entries)) p.display,
+        ],
       );
     });
     return dayData;
+  }
+
+  /// 打开当天图片大图预览（复用 GalleryViewer，原图优先显示）
+  void _openDayGallery(
+    CalendarController calendarController,
+    DateTime day,
+    int initialIndex,
+  ) {
+    final photos = _collectDayPhotos(
+      calendarController.getEntriesForDate(day),
+    );
+    if (photos.isEmpty) return;
+    NavigationHelper.push(
+      context,
+      GalleryViewer(
+        title: 'calendar_album_calendar_diary'.tr,
+        entranceAnimation: true,
+        initialIndex: initialIndex.clamp(0, photos.length - 1),
+        photos: [
+          for (final p in photos)
+            GalleryPhoto(
+              url: p.original,
+              caption: p.title,
+              dateText: p.dateText,
+            ),
+        ],
+      ),
+    );
   }
 
   void _showEntryDrawer(
