@@ -94,6 +94,20 @@ class CutoutStatGridCardExample extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
+              _buildSectionTitle('无框模式（无外层纸卡与标题）'),
+              const SizedBox(height: 8),
+              Center(
+                child: SizedBox(
+                  width: 384,
+                  height: 120,
+                  child: CutoutStatGridCardWidget(
+                    framed: false,
+                    items: _items.take(3).toList(),
+                    size: const WideSize(scale: 0.85),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

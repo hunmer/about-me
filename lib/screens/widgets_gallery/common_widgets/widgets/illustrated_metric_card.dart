@@ -55,6 +55,10 @@ class IllustratedMetricCardWidget extends StatefulWidget {
   /// 整卡点击回调
   final VoidCallback? onTap;
 
+  /// 是否套外层纸卡面板（纸底 + 墨线框 + 右下切角动作钮）。
+  /// 无框模式直接渲染插画与标题数值（嵌入已有卡片容器用），动作钮不显示
+  final bool framed;
+
   final bool inline;
   final HomeWidgetSize size;
 
@@ -68,6 +72,7 @@ class IllustratedMetricCardWidget extends StatefulWidget {
     this.showIllustration = true,
     this.illustration,
     this.onTap,
+    this.framed = true,
     this.inline = false,
     this.size = const Large3Size(),
   });
@@ -94,6 +99,7 @@ class IllustratedMetricCardWidget extends StatefulWidget {
       ),
       showAction: props['showAction'] as bool? ?? true,
       showIllustration: props['showIllustration'] as bool? ?? true,
+      framed: props['framed'] as bool? ?? true,
       actionIcon: _parseIcon(props['actionIcon'], Icons.north_east_rounded),
       actionCutoutColor: props['actionCutoutColor'] == null
           ? null
@@ -183,6 +189,79 @@ class _IllustratedMetricCardWidgetState
       );
     }
 
+    // 内容布局：插画区（可选，可替换自定义内容）+ 标题数值列
+    Widget buildContent() {
+      return Padding(
+        padding: EdgeInsets.all(14 * scale),
+        child: Row(
+          children: [
+            // 插画区：数据色实底 + 墨线描边 + 出血圆装饰
+            //（可隐藏或替换为自定义内容）
+            if (showIllustration) ...[
+              Container(
+                width: illustrationSize,
+                height: illustrationSize,
+                clipBehavior: Clip.antiAlias,
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  radius: BorderRadius.circular(24 * scale),
+                  fillColor: illustrationBackground,
+                ),
+                child: widget.illustration != null
+                    ? Center(child: widget.illustration)
+                    : Stack(
+                        children: [
+                          Positioned(
+                            top: -illustrationSize * 0.18,
+                            right: -illustrationSize * 0.12,
+                            child: Container(
+                              width: illustrationSize * 0.68,
+                              height: illustrationSize * 0.68,
+                              decoration: BoxDecoration(
+                                color: iconColor.withOpacity(0.08),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: -illustrationSize * 0.24,
+                            left: -illustrationSize * 0.16,
+                            child: Container(
+                              width: illustrationSize * 0.72,
+                              height: illustrationSize * 0.72,
+                              decoration: BoxDecoration(
+                                color: theme.surface.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                          if (widget.data.icon != null)
+                            Center(
+                              child: WiredIcon(
+                                icon: widget.data.icon!,
+                                size: illustrationSize * 0.52,
+                                color: iconColor,
+                                drawConfig: theme.wired.drawConfig,
+                              ),
+                            ),
+                        ],
+                      ),
+              ),
+              SizedBox(width: 16 * scale),
+            ],
+            Expanded(child: buildTitleValueColumn()),
+          ],
+        ),
+      );
+    }
+
+    // 无框模式：不套纸卡面板/切角/动作钮，直接渲染内容撑满可用空间
+    if (!widget.framed) {
+      return SizedBox.expand(
+        child: GestureDetector(onTap: widget.onTap, child: buildContent()),
+      );
+    }
+
     // 手绘纸卡：数据色纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
     return WiredDraw(
       child: SizedBox(
@@ -204,74 +283,7 @@ class _IllustratedMetricCardWidgetState
                     fillColor: widget.data.backgroundColor,
                     padding: EdgeInsets.all(14 * scale),
                     child: Stack(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.all(14 * scale),
-                          child: Row(
-                            children: [
-                              // 插画区：数据色实底 + 墨线描边 + 出血圆装饰
-                              //（可隐藏或替换为自定义内容）
-                              if (showIllustration) ...[
-                                Container(
-                                  width: illustrationSize,
-                                  height: illustrationSize,
-                                  clipBehavior: Clip.antiAlias,
-                                  decoration: dsSketchDecoration(
-                                    theme: theme,
-                                    radius: BorderRadius.circular(24 * scale),
-                                    fillColor: illustrationBackground,
-                                  ),
-                                  child: widget.illustration != null
-                                      ? Center(child: widget.illustration)
-                                      : Stack(
-                                          children: [
-                                            Positioned(
-                                              top: -illustrationSize * 0.18,
-                                              right: -illustrationSize * 0.12,
-                                              child: Container(
-                                                width: illustrationSize * 0.68,
-                                                height: illustrationSize * 0.68,
-                                                decoration: BoxDecoration(
-                                                  color: iconColor.withOpacity(
-                                                    0.08,
-                                                  ),
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                            ),
-                                            Positioned(
-                                              bottom: -illustrationSize * 0.24,
-                                              left: -illustrationSize * 0.16,
-                                              child: Container(
-                                                width: illustrationSize * 0.72,
-                                                height: illustrationSize * 0.72,
-                                                decoration: BoxDecoration(
-                                                  color: theme.surface
-                                                      .withValues(alpha: 0.2),
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                            ),
-                                            if (widget.data.icon != null)
-                                              Center(
-                                                child: WiredIcon(
-                                                  icon: widget.data.icon!,
-                                                  size: illustrationSize * 0.52,
-                                                  color: iconColor,
-                                                  drawConfig:
-                                                      theme.wired.drawConfig,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                ),
-                                SizedBox(width: 16 * scale),
-                              ],
-                              Expanded(child: buildTitleValueColumn()),
-                            ],
-                          ),
-                        ),
-                      ],
+                      children: [Positioned.fill(child: buildContent())],
                     ),
                   ),
                 ),

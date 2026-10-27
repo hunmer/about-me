@@ -240,9 +240,12 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
   }
 
   int _tileHeight(HomeWidget widgetDef) {
-    if (_statsById[widgetDef.id] == null) {
+    final stats = _statsById[widgetDef.id];
+    if (stats == null) {
       return _clampCells(widgetDef.defaultSize.height, 2);
     }
+    // 切角统计卡单条统计用 1 格高，避免一项撑满空卡
+    if (!_useIllustrated(widgetDef) && stats.length == 1) return 1;
     return 2;
   }
 
@@ -335,7 +338,7 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
         : _buildCutoutCard(theme, widgetDef, stats, color, cardScale, onTap);
   }
 
-  /// 插画指标卡：插件主题色纸底 + 手绘图标插画 + 首条统计（占整行）
+  /// 插画指标卡：无框模式，插件色插画 + 首条统计（占整行）
   Widget _buildIllustratedCard(
     AppThemeData theme,
     HomeWidget widgetDef,
@@ -345,8 +348,7 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     VoidCallback? onTap,
   ) {
     return IllustratedMetricCardWidget(
-      inline: true,
-      showAction: false,
+      framed: false,
       onTap: onTap,
       size: WideSize(scale: cardScale),
       data: IllustratedMetricData(
@@ -361,7 +363,7 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     );
   }
 
-  /// 切角统计卡：各统计项竖排（窄半行卡片），插件图标徽章点缀
+  /// 切角统计卡：无框模式，各统计项竖排（窄半行卡片），插件图标徽章点缀
   Widget _buildCutoutCard(
     AppThemeData theme,
     HomeWidget widgetDef,
@@ -371,12 +373,10 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     VoidCallback? onTap,
   ) {
     return CutoutStatGridCardWidget(
-      inline: true,
+      framed: false,
       direction: Axis.vertical,
       onItemTap: onTap == null ? null : (_) => onTap(),
       size: LargeSize(scale: cardScale),
-      title: widgetDef.name,
-      backgroundColor: color.withValues(alpha: 0.12),
       items: [
         for (final stat in stats.take(2))
           CutoutStatItemData(

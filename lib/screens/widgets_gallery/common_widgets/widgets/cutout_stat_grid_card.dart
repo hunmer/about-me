@@ -41,6 +41,10 @@ class CutoutStatGridCardWidget extends StatefulWidget {
   /// 统计项排列方向：horizontal 横排（默认，宽卡）/ vertical 竖排（窄卡）
   final Axis direction;
 
+  /// 是否套外层纸卡面板（纸底 + 墨线框 + 标题）。
+  /// 无框模式直接排布统计项（各自带切角装饰），适合嵌入已有卡片容器
+  final bool framed;
+
   /// 点击统计项回调（参数为条目索引）
   final void Function(int index)? onItemTap;
   final HomeWidgetSize size;
@@ -52,6 +56,7 @@ class CutoutStatGridCardWidget extends StatefulWidget {
     this.backgroundColor,
     this.inline = false,
     this.direction = Axis.horizontal,
+    this.framed = true,
     this.onItemTap,
     this.size = const Large3Size(),
   });
@@ -95,6 +100,7 @@ class CutoutStatGridCardWidget extends StatefulWidget {
       direction: props['direction'] == 'vertical'
           ? Axis.vertical
           : Axis.horizontal,
+      framed: props['framed'] as bool? ?? true,
       size: size,
     );
   }
@@ -115,6 +121,32 @@ class _CutoutStatGridCardWidgetState extends State<CutoutStatGridCardWidget> {
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final scale = widget.size.scale;
+
+    // 统计项布局（横排/竖排，撑满可用空间）
+    Widget buildItems() {
+      return widget.direction == Axis.vertical
+          ? Column(
+              children: [
+                for (var index = 0; index < widget.items.length; index++) ...[
+                  if (index > 0) SizedBox(height: 9 * scale),
+                  Expanded(child: _buildItem(index, vertical: true)),
+                ],
+              ],
+            )
+          : Row(
+              children: [
+                for (var index = 0; index < widget.items.length; index++) ...[
+                  if (index > 0) SizedBox(width: 9 * scale),
+                  Expanded(child: _buildItem(index, vertical: false)),
+                ],
+              ],
+            );
+    }
+
+    // 无框模式：不套纸卡面板与标题，直接排布统计项（嵌入已有卡片容器用）
+    if (!widget.framed) {
+      return SizedBox.expand(child: buildItems());
+    }
 
     // 手绘纸卡：纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
     return WiredDraw(
@@ -142,33 +174,7 @@ class _CutoutStatGridCardWidgetState extends State<CutoutStatGridCardWidget> {
               ),
               SizedBox(height: 14 * scale),
             ],
-            Expanded(
-              child: widget.direction == Axis.vertical
-                  ? Column(
-                      children: [
-                        for (
-                          var index = 0;
-                          index < widget.items.length;
-                          index++
-                        ) ...[
-                          if (index > 0) SizedBox(height: 9 * scale),
-                          Expanded(child: _buildItem(index, vertical: true)),
-                        ],
-                      ],
-                    )
-                  : Row(
-                      children: [
-                        for (
-                          var index = 0;
-                          index < widget.items.length;
-                          index++
-                        ) ...[
-                          if (index > 0) SizedBox(width: 9 * scale),
-                          Expanded(child: _buildItem(index, vertical: false)),
-                        ],
-                      ],
-                    ),
-            ),
+            Expanded(child: buildItems()),
           ],
         ),
       ),

@@ -116,6 +116,20 @@ class IllustratedMetricCardExample extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
+              _buildSectionTitle('无框模式（无外层纸卡与动作钮）'),
+              const SizedBox(height: 8),
+              Center(
+                child: SizedBox(
+                  width: 384,
+                  height: 150,
+                  child: IllustratedMetricCardWidget(
+                    data: _learningUnits,
+                    size: const WideSize(),
+                    framed: false,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
