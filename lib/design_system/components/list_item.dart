@@ -19,10 +19,14 @@ class DSListItem extends StatelessWidget {
     this.trailingText,
     this.onTap,
     this.showChevron = false,
+    this.subtitleMaxLines,
   });
 
   final String title;
   final String? subtitle;
+
+  /// 副标题最大行数，超出截断显示省略号；null 则不限制
+  final int? subtitleMaxLines;
   final Widget? leading;
   final Widget? trailing;
 
@@ -77,6 +81,11 @@ class DSListItem extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         subtitle!,
+                        maxLines: subtitleMaxLines,
+                        overflow:
+                            subtitleMaxLines != null
+                                ? TextOverflow.ellipsis
+                                : null,
                         style: DsTypography.caption.copyWith(
                           color: theme.textSub,
                         ),

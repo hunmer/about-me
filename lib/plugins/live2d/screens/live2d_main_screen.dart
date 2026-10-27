@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -193,20 +194,17 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
               ),
             );
           }
-          return GridView.builder(
+          return MasonryGridView.count(
             padding: EdgeInsets.fromLTRB(
               16,
               16,
               16,
               16 + MediaQuery.paddingOf(context).bottom,
             ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              // ≥ 贴条出血,避免上一行贴条压盖
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.82,
-            ),
+            crossAxisCount: 2,
+            // ≥ 贴条出血,避免上一列贴条压盖
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 12,
             itemCount: archives.length,
             // 手绘便签:随机倾斜 + 贴条(角度由 archive.id 哈希确定)
             itemBuilder: (context, index) => HandDrawnStickyItem(
@@ -246,59 +244,54 @@ class _Live2DArchiveCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Column 给子项的高度约束是无界的，StackFit.expand 无法在无界约束下
-          // 展开，必须用 AspectRatio 先确定封面高度
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: AdaptiveImage(
-                key: ValueKey(archive.coverPath),
-                imagePath: archive.coverPath,
-                fit: BoxFit.cover,
-                borderRadius: 0,
-                defaultImage: _buildCoverPlaceholder(theme),
-              ),
+          // 瀑布流 item 高度无界，Image 在有界宽度下按自身宽高比布局，
+          // 封面即保持原图比例（此处盒子比例=图片比例，cover 不产生裁切）
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: AdaptiveImage(
+              key: ValueKey(archive.coverPath),
+              imagePath: archive.coverPath,
+              fit: BoxFit.cover,
+              borderRadius: 0,
+              defaultImage: _buildCoverPlaceholder(theme),
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    archive.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: DsTypography.title.copyWith(color: theme.text),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    archive.modelLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: DsTypography.caption.copyWith(color: theme.primary),
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      DsIcon(DsIconKind.bot, size: 14, color: theme.textSub),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          agentName ?? 'live2d_noAgentSelected'.tr,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
-                          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  archive.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  archive.modelLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTypography.caption.copyWith(color: theme.primary),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    DsIcon(DsIconKind.bot, size: 14, color: theme.textSub),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        agentName ?? 'live2d_noAgentSelected'.tr,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: DsTypography.caption.copyWith(
+                          color: theme.textSub,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -307,6 +300,8 @@ class _Live2DArchiveCard extends StatelessWidget {
   }
 
   Widget _buildCoverPlaceholder(AppThemeData theme) => Container(
+    // 无界高度下塌陷为 0，给兜底高度保持卡片可点击区域
+    height: 160,
     color: theme.hatch,
     alignment: Alignment.center,
     child: DsIcon(DsIconKind.mood, size: 40, color: theme.primary),

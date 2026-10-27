@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/account.dart';
@@ -167,26 +166,7 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
       await widget.billPlugin.controller.createAccount(newAccount);
 
       if (mounted) {
-        // 检查是否是第一个账户
-        if (widget.billPlugin.accounts.length == 1) {
-          // 如果是第一个账户，自动设置为选中账户并进入
-          widget.billPlugin.selectedAccount = widget.billPlugin.accounts.first;
-          // 先关闭BottomSheet
-          Navigator.pop(context);
-          // 使用WidgetsBinding确保在下一帧执行导航,避免导航冲突
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                NavigationHelper.createRoute(
-                  widget.billPlugin.buildMainView(context),
-                ),
-              );
-            }
-          });
-          return;
-        }
-        Navigator.pop(context);
+        Navigator.pop(context, newAccount);
       }
     } else {
       // 更新现有账户

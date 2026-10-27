@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/screens/routing/route_helpers.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
@@ -72,13 +72,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
               child: DSFab(
                 size: 64,
                 icon: DsIconKind.plus,
-                onPressed:
-                    () => SmoothBottomSheet.show(
-                      context: context,
-                      builder:
-                          (context) =>
-                              AccountEditScreen(billPlugin: widget.billPlugin),
-                    ),
+                onPressed: _createAccount,
               ),
             ),
           );
@@ -110,7 +104,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
         items: [
           for (final account in accounts) _buildAccountCardData(account),
         ],
-        onCardTap: (index) => _openAccountBills(context, accounts[index]),
+        onCardTap: (index) => _openAccountBills(accounts[index]),
         onCardLongPress: (index) => _showAccountActions(context, accounts[index]),
       ),
     );
@@ -164,7 +158,7 @@ class _AccountListScreenState extends State<AccountListScreen> {
                     title: const Text('查看账单'),
                     onTap: () {
                       Navigator.of(context).pop();
-                      _openAccountBills(context, account);
+                      _openAccountBills(account);
                     },
                   ),
                   ListTile(
@@ -220,13 +214,25 @@ class _AccountListScreenState extends State<AccountListScreen> {
     }
   }
 
-  void _openAccountBills(BuildContext context, Account account) {
-    // 设置选中的账户
+  Future<void> _createAccount() async {
+    final account = await SmoothBottomSheet.show<Account>(
+      context: context,
+      builder: (context) => AccountEditScreen(billPlugin: widget.billPlugin),
+    );
+    if (!mounted || account == null) return;
+
+    if (widget.billPlugin.accounts.length == 1) {
+      _openAccountBills(widget.billPlugin.accounts.first);
+    }
+  }
+
+  void _openAccountBills(Account account) {
     widget.billPlugin.selectedAccount = account;
-    // 返回到主视图并显示选中账户的账单
-    NavigationHelper.pushReplacement(
-      context,
-      widget.billPlugin.buildMainView(context),
+    Navigator.of(context).pushReplacement(
+      RouteHelpers.createRoute(
+        widget.billPlugin.buildMainView(context),
+        settings: const RouteSettings(name: '/plugin/bill'),
+      ),
     );
   }
 

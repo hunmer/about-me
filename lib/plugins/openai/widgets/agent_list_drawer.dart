@@ -322,6 +322,7 @@ class _AgentListDrawerState extends State<AgentListDrawer>
               leading: _buildAgentIcon(agent),
               title: agent.name,
               subtitle: agent.description,
+              subtitleMaxLines: 2,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
