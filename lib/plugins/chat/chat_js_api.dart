@@ -15,6 +15,7 @@ Map<String, Function> buildChatJSAPI() {
     'getMessages': _jsGetMessages,
     'getMessagesByDate': _jsGetMessagesByDate, // 按日期范围获取所有消息
     'deleteMessage': _jsDeleteMessage,
+    'selectMessages': _jsSelectMessages, // 弹出多选消息选择器（chat.messages）
 
     // 用户相关
     'getCurrentUser': _jsGetCurrentUser,
@@ -276,6 +277,53 @@ Future<String> _jsGetMessagesByDate(Map<String, dynamic> params) async {
   } catch (e) {
     debugPrint('Error in getMessagesByDate: $e');
     return '{"error": "获取消息失败: $e", "messages": []}';
+  }
+}
+
+// ==================== 消息选择器 ====================
+
+/// 弹出多选消息选择器（频道 -> 多选消息）
+/// @param params 无必需参数
+/// @return {cancelled, messages: [{id, content, date, type, username, channelId}]}
+Future<String> _jsSelectMessages(Map<String, dynamic> params) async {
+  try {
+    final context = Get.context;
+    if (context == null) {
+      return '{"error": "无可用 UI 上下文，无法打开选择器"}';
+    }
+
+    final result = await pluginDataSelectorService.showSelector(
+      context,
+      'chat.messages',
+      config: const SelectorConfig(title: '选择消息'),
+    );
+
+    if (result == null || result.cancelled) {
+      return '{"cancelled": true, "messages": []}';
+    }
+
+    // MultiSelectorResult.selectedItems 的 rawData 即 Message
+    final items = result is MultiSelectorResult
+        ? result.selectedItems
+        : const <SelectableItem>[];
+
+    final messages = items
+        .map((item) => item.rawData)
+        .whereType<Message>()
+        .map((m) => {
+              'id': m.id,
+              'content': m.content,
+              'date': m.date.toIso8601String(),
+              'type': m.type.name,
+              'username': m.user.username,
+              'channelId': m.channelId,
+            })
+        .toList();
+
+    return jsonEncode({'cancelled': false, 'messages': messages});
+  } catch (e) {
+    debugPrint('Error in selectMessages: $e');
+    return '{"error": "打开消息选择器失败: $e", "messages": []}';
   }
 }
 

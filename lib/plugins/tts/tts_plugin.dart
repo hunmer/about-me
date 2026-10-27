@@ -6,6 +6,7 @@ import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'models/tts_service_config.dart';
 import 'models/tts_service_type.dart';
 import 'services/tts_manager_service.dart';
@@ -74,6 +75,9 @@ class TTSPlugin extends BasePlugin {
 
     // 初始化默认数据
     await initializeDefaultData();
+
+    // 注册数据选择器
+    _registerDataSelectors();
   }
 
   @override

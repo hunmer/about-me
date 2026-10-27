@@ -55,14 +55,15 @@ void _registerDataSelectors() {
     ],
   ));
 
-  // 2. 消息选择器（两级：频道 -> 消息）
+  // 3. 多条消息选择器（两级：频道 -> 多选消息，供 webview app 等 JSAPI 场景使用）
   pluginDataSelectorService.registerSelector(SelectorDefinition(
-    id: 'chat.message',
+    id: 'chat.messages',
     pluginId: ChatPlugin.instance.id,
-    name: '选择消息',
-    description: '选择一条聊天消息',
-    icon: Icons.message,
+    name: '选择多条消息',
+    description: '从频道中选择多条聊天消息',
+    icon: Icons.format_quote,
     color: ChatPlugin.instance.color,
+    selectionMode: SelectionMode.multiple,
     steps: [
       // 第一级：选择频道
       SelectorStep(
@@ -82,7 +83,7 @@ void _registerDataSelectors() {
           )).toList();
         },
       ),
-      // 第二级：选择消息
+      // 第二级：多选消息
       SelectorStep(
         id: 'message',
         title: '选择消息',
@@ -91,7 +92,6 @@ void _registerDataSelectors() {
         emptyText: '该频道暂无消息',
         dataLoader: (previousSelections) async {
           final channel = previousSelections['channel'] as Channel;
-          // 加载频道消息
           final messages = await ChatPlugin.instance.dataService.getChannelMessages(channel.id);
           if (messages == null) return [];
 
@@ -100,7 +100,7 @@ void _registerDataSelectors() {
             title: message.content.length > 50
                 ? '${message.content.substring(0, 50)}...'
                 : message.content,
-            subtitle: _formatMessageDate(message.date),
+            subtitle: '${message.user.username} · ${_formatMessageDate(message.date)}',
             icon: _getMessageIcon(message.type),
             rawData: message,
             metadata: {'channelId': channel.id},

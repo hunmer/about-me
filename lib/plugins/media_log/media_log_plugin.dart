@@ -10,6 +10,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 
 import 'models/media_item.dart';
 import 'sample_data.dart';
@@ -18,6 +19,7 @@ import 'screens/media_list_screen.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 part 'media_log_js_api.dart';
+part 'media_log_data_selectors.dart';
 
 /// 媒体记录插件：阅读记录 + 观影记录（瀑布流封面网格，手绘纸墨风）
 class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
@@ -82,6 +84,9 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
     await _loadItems();
     // 注册 JS API（最后一步）
     await registerJSAPI();
+
+    // 注册数据选择器
+    _registerDataSelectors();
   }
 
   @override

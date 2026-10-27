@@ -30,6 +30,8 @@ class SelectorConfig {
   final double initialHeightRatio;
 
   /// 初始选择（用于编辑模式）
+  ///
+  /// 多选最终步骤格式: `{stepId: List<String> itemIds}`，未命中的 ID 会被忽略
   final Map<String, dynamic>? initialSelection;
 
   /// 是否显示搜索框

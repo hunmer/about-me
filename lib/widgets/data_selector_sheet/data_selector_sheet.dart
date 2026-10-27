@@ -82,6 +82,7 @@ class _DataSelectorSheetState extends State<DataSelectorSheet> {
         setState(() {
           _currentItems = items;
           _isLoading = false;
+          _applyInitialSelection();
         });
       }
     } catch (e) {
@@ -93,6 +94,25 @@ class _DataSelectorSheetState extends State<DataSelectorSheet> {
       }
       debugPrint('加载选择器数据失败: $e');
     }
+  }
+
+  /// 应用配置的初始选择（多选最终步骤）
+  ///
+  /// 格式: `{stepId: List<String>}`，仅命中已加载项，超出数量上限时截断
+  void _applyInitialSelection() {
+    final preset = widget.config.initialSelection?[_currentStep.id];
+    if (widget.definition.selectionMode != SelectionMode.multiple ||
+        !_currentStep.isFinalStep ||
+        preset is! List) {
+      return;
+    }
+    var ids = preset.whereType<String>().where(
+          (id) => _currentItems.any((item) => item.id == id),
+        );
+    if (widget.definition.maxSelectionCount > 0) {
+      ids = ids.take(widget.definition.maxSelectionCount);
+    }
+    _selectedIds.addAll(ids);
   }
 
   void _onItemSelected(SelectableItem item) {

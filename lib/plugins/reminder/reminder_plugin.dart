@@ -3,9 +3,13 @@ import 'package:get/get.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
+import 'models/reminder.dart';
 import 'services/reminder_service.dart';
 import 'services/reminder_scheduler.dart';
 import 'screens/reminder_list_screen.dart';
+
+part 'reminder_data_selectors.dart';
 
 /// 定时提醒插件
 class ReminderPlugin extends BasePlugin {
@@ -42,6 +46,9 @@ class ReminderPlugin extends BasePlugin {
 
     // 初始化调度器
     _scheduler = ReminderScheduler();
+
+    // 注册数据选择器
+    _registerDataSelectors();
   }
 
   @override

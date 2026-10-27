@@ -61,6 +61,7 @@ class _RouteViewerDialogState extends State<RouteViewerDialog> {
         icon: Icons.extension,
       ),
       const RouteInfo(path: '/jelly_home', name: '小屋', icon: Icons.cottage),
+      const RouteInfo(path: '/data_selector_debug', name: '数据选择器调试', icon: Icons.data_object),
     ],
     '插件': [
       const RouteInfo(path: '/chat', name: '聊天', icon: Icons.chat),

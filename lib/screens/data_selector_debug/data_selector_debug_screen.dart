@@ -55,11 +55,15 @@ class _DataSelectorDebugScreenState extends State<DataSelectorDebugScreen> {
     });
   }
 
-  Future<void> _runSelector(SelectorDefinition selector) async {
+  Future<void> _runSelector(
+    SelectorDefinition selector, {
+    Map<String, dynamic>? initialSelection,
+  }) async {
     try {
       final result = await pluginDataSelectorService.showSelector(
         context,
         selector.id,
+        config: SelectorConfig(initialSelection: initialSelection),
       );
       if (!mounted) return;
       _showResultDialog(selector, result);
@@ -67,6 +71,68 @@ class _DataSelectorDebugScreenState extends State<DataSelectorDebugScreen> {
       if (!mounted) return;
       _showErrorDialog(selector, e);
     }
+  }
+
+  /// 多选选择器的预设初始选择对话框
+  ///
+  /// 输入最终步骤的 item ID（逗号分隔），以 initialSelection 打开
+  Future<void> _showPresetDialog(SelectorDefinition selector) async {
+    SelectorStep finalStep = selector.steps.last;
+    for (final step in selector.steps) {
+      if (step.isFinalStep) finalStep = step;
+    }
+
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('预设初始选择: ${selector.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('最终步骤: ${finalStep.title}（${finalStep.id}）'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: '预设 ID（逗号分隔）',
+                hintText: '如: id1, id2',
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '未命中的 ID 会被忽略；超过数量上限时截断',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('运行'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    final ids = controller.text
+        .split(RegExp(r'[,，]'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (!mounted) return;
+    if (ids.isEmpty) {
+      _runSelector(selector);
+      return;
+    }
+    _runSelector(selector, initialSelection: {finalStep.id: ids});
   }
 
   void _showResultDialog(SelectorDefinition selector, SelectorResult? result) {
@@ -259,6 +325,13 @@ class _DataSelectorDebugScreenState extends State<DataSelectorDebugScreen> {
       ),
       isThreeLine: true,
       onTap: () => _runSelector(selector),
+      trailing: selector.selectionMode == SelectionMode.multiple
+          ? IconButton(
+              icon: const Icon(Icons.tune, size: 20),
+              tooltip: '预设初始选择',
+              onPressed: () => _showPresetDialog(selector),
+            )
+          : null,
     );
   }
 }

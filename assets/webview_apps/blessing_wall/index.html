@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MULȚUMIM MULT - Interactive Collage & Image Exporter</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cormorant Garamond for the exact serif title & Inter for bubbles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+    <!-- html2canvas for Full Poster Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --poster-width: 540px;
+            --poster-height: 960px;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0f141c;
+            color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Serif Header Typography matching the image */
+        .serif-title {
+            font-family: 'Cormorant Garamond', 'Noto Serif SC', Georgia, serif;
+            text-shadow: 0 2px 14px rgba(0, 0, 0, 0.22);
+        }
+
+        /* Vertical Hanging String Lines */
+        .hanging-line {
+            position: absolute;
+            top: 0;
+            width: 1.5px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.65) 85%, rgba(255, 255, 255, 0) 100%);
+            transform-origin: top center;
+            pointer-events: none;
+            z-index: 4;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
+        }
+
+        /* Line draw entrance animation */
+        @keyframes drawLine {
+            0% {
+                transform: scaleY(0);
+                opacity: 0;
+            }
+            100% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+        }
+
+        .animate-line {
+            animation: drawLine 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Floating Message Cluster Wrapper */
+        .bubble-cluster {
+            position: absolute;
+            transform-origin: center center;
+            cursor: grab;
+            z-index: 10;
+            transition: filter 0.25s ease, box-shadow 0.25s ease;
+            will-change: transform;
+        }
+
+        .bubble-cluster:active {
+            cursor: grabbing;
+        }
+
+        .bubble-cluster:hover {
+            z-index: 45 !important;
+            filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.28));
+        }
+
+        /* Inner container that handles ambient floating motion */
+        .float-inner {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            gap: 5px;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .bubble-cluster:hover .float-inner {
+            transform: scale(1.06) translateY(-3px);
+        }
+
+        /* Continuous gentle floating animation */
+        @keyframes gentleFloatA {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+            50% { transform: translate(1.5px, -5px) rotate(0.7deg); }
+        }
+
+        @keyframes gentleFloatB {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+            50% { transform: translate(-2px, -4px) rotate(-0.8deg); }
+        }
+
+        @keyframes gentleFloatC {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+            33% { transform: translate(2px, -3.5px) rotate(0.5deg); }
+            66% { transform: translate(-1.5px, 2px) rotate(-0.5deg); }
+        }
+
+        .floating-enabled .float-a { animation: gentleFloatA 4.6s ease-in-out infinite; }
+        .floating-enabled .float-b { animation: gentleFloatB 5.4s ease-in-out infinite; }
+        .floating-enabled .float-c { animation: gentleFloatC 6.2s ease-in-out infinite; }
+
+        /* Instagram DM Message Card */
+        .msg-bubble {
+            background: rgba(246, 246, 248, 0.96);
+            color: #18181b;
+            border-radius: 15px;
+            padding: 7px 11px 8px 11px;
+            font-size: 10.6px;
+            line-height: 1.32;
+            font-weight: 450;
+            letter-spacing: -0.01em;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            position: relative;
+            word-break: break-word;
+        }
+
+        /* User Avatar Circle */
+        .avatar-circle {
+            width: 22px;
+            height: 22px;
+            border-radius: 9999px;
+            flex-shrink: 0;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            background: #334155;
+            position: relative;
+        }
+
+        /* Reaction Pill Badge (Heart / Laugh at bottom-left of bubble) */
+        .reaction-pill {
+            position: absolute;
+            bottom: -11px;
+            left: 4px;
+            background: #f8f9fa;
+            border: 1.5px solid rgba(220, 224, 230, 0.9);
+            border-radius: 999px;
+            padding: 1px 5px;
+            font-size: 9.5px;
+            line-height: 1.1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+            cursor: pointer;
+            z-index: 5;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .reaction-pill:hover {
+            transform: scale(1.28);
+        }
+
+        @keyframes pulseHeart {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.13); }
+        }
+
+        .floating-enabled .reaction-pill {
+            animation: pulseHeart 2.8s ease-in-out infinite;
+        }
+
+        /* Center Photo Reveal Cards */
+        .photo-card {
+            position: absolute;
+            border-radius: 14px;
+            overflow: visible;
+            cursor: grab;
+            z-index: 8;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+        }
+
+        .photo-card:hover {
+            z-index: 40 !important;
+            filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.35));
+        }
+
+        .photo-card-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        /* Spring Entrance Keyframes */
+        @keyframes popInSpring {
+            0% {
+                opacity: 0;
+                transform: translate3d(0, 28px, 0) scale(0.4) rotate(var(--rot, 0deg));
+            }
+            65% {
+                opacity: 1;
+                transform: translate3d(0, -4px, 0) scale(1.06) rotate(var(--rot, 0deg));
+            }
+            85% {
+                transform: translate3d(0, 2px, 0) scale(0.98) rotate(var(--rot, 0deg));
+            }
+            100% {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1) rotate(var(--rot, 0deg));
+            }
+        }
+
+        .pop-in-item {
+            opacity: 0;
+            animation: popInSpring 0.78s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Title Entrance Animation */
+        @keyframes titleReveal {
+            0% {
+                opacity: 0;
+                transform: translateY(14px) scale(0.96);
+                filter: blur(6px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0px);
+            }
+        }
+
+        .animate-title {
+            opacity: 0;
+            animation: titleReveal 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+        }
+
+        /* Floating Burst Particle */
+        @keyframes floatUpFade {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(0.6) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--dx, 10px), var(--dy, -55px)) scale(1.35) rotate(var(--drot, 20deg));
+            }
+        }
+
+        .burst-particle {
+            position: absolute;
+            pointer-events: none;
+            z-index: 60;
+            font-size: 15px;
+            animation: floatUpFade 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.4);
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col lg:flex-row items-center justify-center p-3 sm:p-6 gap-6 bg-slate-950 text-slate-100">
+
+    <!-- ================= LEFT / TOP INTERACTIVE CONTROL PANEL (Excluded from Image Export) ================= -->
+    <aside class="w-full max-w-[540px] lg:w-80 xl:w-96 bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-5 shadow-2xl flex flex-col gap-4 order-2 lg:order-1 z-30">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30 mb-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+                    1:1 UI 视觉复刻
+                </span>
+                <h1 class="text-lg font-semibold text-white tracking-tight">祝福墙海报生成器</h1>
+                <p class="text-xs text-slate-400">支持拖拽排版、烟雾粒子与一键导出图片</p>
+            </div>
+        </div>
+
+        <!-- Primary Action Buttons -->
+        <div class="grid grid-cols-2 gap-2.5">
+            <button id="btnExportImg" class="col-span-2 relative overflow-hidden group bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-medium py-3 px-4 rounded-2xl shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                <svg class="w-5 h-5 transition-transform group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                <span>导出整个页面为高清图片</span>
+            </button>
+
+            <button id="btnPickChatMessages" class="col-span-2 relative overflow-hidden group bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 text-white font-medium py-3 px-4 rounded-2xl shadow-lg shadow-teal-600/25 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                <svg class="w-5 h-5 transition-transform group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                <span>从聊天记录选择祝福消息</span>
+            </button>
+
+            <button id="btnReplayAnim" class="bg-slate-800 hover:bg-slate-700/90 text-slate-200 border border-slate-700/80 text-xs font-medium py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                <span>重播入场动画</span>
+            </button>
+
+            <button id="btnCelebrate" class="bg-slate-800 hover:bg-slate-700/90 text-slate-200 border border-slate-700/80 text-xs font-medium py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                <span class="text-sm">💙</span>
+                <span>释放蓝色烟雾庆典</span>
+            </button>
+        </div>
+
+        <!-- Language & Preset Toggle -->
+        <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3 space-y-2.5">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-300">文案语言切换</span>
+                <div class="inline-flex rounded-xl bg-slate-900 p-0.5 border border-slate-800">
+                    <button id="langRoBtn" class="px-2.5 py-1 text-xs rounded-lg bg-sky-500/20 text-sky-300 font-medium transition">原版罗马尼亚语</button>
+                    <button id="langZhBtn" class="px-2.5 py-1 text-xs rounded-lg text-slate-400 hover:text-slate-200 transition">中文翻译版</button>
+                </div>
+            </div>
+
+            <!-- Floating Animation Switch -->
+            <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                <span class="text-xs text-slate-300">悬浮微动效 & 呼吸粒子</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggleFloat" class="sr-only peer" checked>
+                    <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-500"></div>
+                </label>
+            </div>
+
+            <!-- Film Grain Slider -->
+            <div class="space-y-1 pt-1 border-t border-slate-800/60">
+                <div class="flex justify-between text-xs">
+                    <span class="text-slate-300">胶片颗粒噪点强度</span>
+                    <span id="grainValLabel" class="text-sky-400 font-mono">65%</span>
+                </div>
+                <input id="grainSlider" type="range" min="0" max="100" value="65" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-400">
+            </div>
+        </div>
+
+        <!-- Custom Title & Add New Blessing Bubble -->
+        <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 space-y-3">
+            <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">添加自定义祝福气泡</h2>
+            <textarea id="newBubbleText" rows="2" placeholder="输入新的祝福语，例如：恭喜喜得贵子！💙🎉" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 select-text"></textarea>
+            <div class="flex items-center gap-2">
+                <select id="newBubbleReaction" class="bg-slate-900 border border-slate-700/80 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none">
+                    <option value="❤️">❤️ 爱心回应</option>
+                    <option value="💙">💙 蓝心回应</option>
+                    <option value="😂">😂 大笑回应</option>
+                    <option value="🎉">🎉 礼花回应</option>
+                    <option value="">无回应角标</option>
+                </select>
+                <button id="btnAddBubble" class="flex-1 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 text-xs font-medium py-2 px-3 rounded-xl transition active:scale-95">
+                    + 添加到画布
+                </button>
+            </div>
+        </div>
+
+        <!-- Replace Center Photos Option -->
+        <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3 space-y-2">
+            <span class="text-xs font-medium text-slate-300 block">自定义中心合照 (可选)</span>
+            <div class="grid grid-cols-2 gap-2">
+                <label class="cursor-pointer bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl py-2 px-2.5 text-center text-[11px] text-slate-300 transition">
+                    📷 更换上方照片
+                    <input type="file" id="uploadPhoto1" accept="image/*" class="hidden">
+                </label>
+                <label class="cursor-pointer bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl py-2 px-2.5 text-center text-[11px] text-slate-300 transition">
+                    📷 更换下方照片
+                    <input type="file" id="uploadPhoto2" accept="image/*" class="hidden">
+                </label>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+                💡 提示：直接<strong>按住任意气泡或照片拖动</strong>即可自由调整位置，点击气泡底部红心可切换表情并触发粒子特效。
+            </p>
+        </div>
+    </aside>
+
+    <!-- ================= CENTER POSTER CANVAS CONTAINER (9:16 Aspect Ratio) ================= -->
+    <main class="order-1 lg:order-2 flex flex-col items-center justify-center w-full overflow-hidden">
+        <!-- Responsive scaling wrapper so the 540x960 poster fits any mobile or desktop screen cleanly -->
+        <div id="posterViewport" class="relative flex items-center justify-center">
+            
+            <!-- ACTUAL EXPORTABLE POSTER NODE -->
+            <div id="posterCanvas" class="floating-enabled relative overflow-hidden shadow-2xl rounded-[24px]"
+                 style="width: 540px; height: 960px; background: #6b7d8c;">
+
+                <!-- 1. Multi-layer Gradient Background (Replicating the exact blue-grey top & warm earthy bronze bottom-left/right) -->
+                <div class="absolute inset-0 pointer-events-none" style="
+                    background:
+                        radial-gradient(circle at 8% 31%, rgba(96, 152, 198, 0.92) 0%, rgba(96, 152, 198, 0) 46%),
+                        radial-gradient(circle at 52% 16%, rgba(164, 186, 204, 0.85) 0%, rgba(164, 186, 204, 0) 55%),
+                        radial-gradient(circle at 88% 48%, rgba(175, 165, 152, 0.75) 0%, rgba(175, 165, 152, 0) 52%),
+                        radial-gradient(circle at 38% 62%, rgba(145, 152, 160, 0.70) 0%, rgba(145, 152, 160, 0) 50%),
+                        radial-gradient(circle at 22% 88%, rgba(126, 98, 56, 0.94) 0%, rgba(95, 73, 42, 0.4) 48%, transparent 75%),
+                        radial-gradient(circle at 85% 92%, rgba(82, 76, 68, 0.92) 0%, transparent 60%),
+                        linear-gradient(168deg, #7f97ab 0%, #6d89a0 28%, #8d8980 62%, #685538 88%, #544632 100%);
+                "></div>
+
+                <!-- 2. Baked Film Grain / Frosted Noise Canvas (Capturable by html2canvas!) -->
+                <canvas id="grainCanvas" width="540" height="960" class="absolute inset-0 pointer-events-none z-[2]" style="opacity: 0.65; mix-blend-mode: overlay;"></canvas>
+
+                <!-- 3. Interactive Ambient Particle Layer (Soft Bokeh & Gender Reveal Blue Smoke Wisps) -->
+                <canvas id="fxCanvas" width="540" height="960" class="absolute inset-0 pointer-events-none z-[3]"></canvas>
+
+                <!-- 4. Five Vertical White Hanging Lines from Top (Exact positions from reference image) -->
+                <div class="hanging-line animate-line" style="left: 14.3%; height: 285px; animation-delay: 0.05s;"></div>
+                <div class="hanging-line animate-line" style="left: 18.2%; height: 615px; animation-delay: 0.15s;"></div>
+                <div class="hanging-line animate-line" style="left: 27.8%; height: 390px; animation-delay: 0.25s;"></div>
+                <div class="hanging-line animate-line" style="left: 73.6%; height: 435px; animation-delay: 0.20s;"></div>
+                <div class="hanging-line animate-line" style="left: 93.2%; height: 300px; animation-delay: 0.30s;"></div>
+
+                <!-- 5. Main Serif Header ("MULȚUMIM MULT / căci ne-ați felicitat") -->
+                <header id="posterHeader" class="animate-title absolute w-full text-center z-[12] pointer-events-none" style="top: 162px; left: 0;">
+                    <h1 id="titleLine1" class="serif-title text-[28px] tracking-[0.06em] font-normal text-white/95 leading-none mb-1">
+                        MULȚUMIM MULT
+                    </h1>
+                    <p id="titleLine2" class="serif-title text-[23px] tracking-[0.02em] font-normal text-white/90 leading-tight">
+                        căci ne-ați felicitat
+                    </p>
+                </header>
+
+                <!-- 6. Two Central Gender Reveal Photo Cards (Couple & Toddler with Blue Smoke Bombs) -->
+                <!-- Upper Center Photo Card -->
+                <div id="photoCard1" class="photo-card pop-in-item" style="left: 213px; top: 382px; width: 64px; height: 98px; --rot: 0deg; animation-delay: 0.35s;">
+                    <div class="photo-card-inner">
+                        <img id="photoImg1" alt="Family Gender Reveal 1" class="w-full h-full object-cover" src="" />
+                        <!-- Subtle curved "Happy" watermark at bottom-left like in the screenshot -->
+                        <svg class="absolute -bottom-1 -left-1 w-10 h-10 opacity-75 pointer-events-none" viewBox="0 0 60 60">
+                            <path id="curve1" d="M 6,38 A 24,24 0 0,0 46,52" fill="transparent"/>
+                            <text font-size="6.5" fill="#ffffff" font-family="serif" letter-spacing="0.5">
+                                <textPath href="#curve1">Happy Happy</textPath>
+                            </text>
+                        </svg>
+                    </div>
+                    <!-- Party Popper Sticker on Bottom Right -->
+                    <span class="absolute -bottom-1.5 -right-2.5 text-[18px] drop-shadow pointer-events-none select-none">🎉</span>
+                    <!-- Reaction Heart Pill on Bottom Left -->
+                    <button class="reaction-pill" style="bottom: -12px; left: 2px;" data-reaction="❤️" title="点击切换表情">❤️</button>
+                </div>
+
+                <!-- Lower Center Photo Card -->
+                <div id="photoCard2" class="photo-card pop-in-item" style="left: 241px; top: 498px; width: 78px; height: 122px; --rot: 0deg; animation-delay: 0.48s;">
+                    <div class="photo-card-inner">
+                        <img id="photoImg2" alt="Family Gender Reveal 2" class="w-full h-full object-cover" src="" />
+                        <!-- Curved "Happy Happy" watermark at bottom-left -->
+                        <svg class="absolute -bottom-1 -left-1 w-12 h-12 opacity-80 pointer-events-none" viewBox="0 0 60 60">
+                            <path id="curve2" d="M 5,34 A 26,26 0 0,0 50,52" fill="transparent"/>
+                            <text font-size="6.2" fill="#ffffff" font-family="serif" letter-spacing="0.6">
+                                <textPath href="#curve2">Happy Happy</textPath>
+                            </text>
+                        </svg>
+                    </div>
+                    <!-- Fire Sticker on Bottom Right -->
+                    <span class="absolute -bottom-2 -right-2.5 text-[24px] drop-shadow-md pointer-events-none select-none">🔥</span>
+                </div>
+
+                <!-- 7. Dynamic Container for All 17+ Floating Message Bubbles -->
+                <div id="bubblesLayer" class="absolute inset-0 z-[15]"></div>
+
+                <!-- 8. Interactive Burst Particles Container -->
+                <div id="burstLayer" class="absolute inset-0 pointer-events-none z-[55] overflow-hidden"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ================= EXPORT IMAGE PREVIEW MODAL ================= -->
+    <div id="exportModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-5 shadow-2xl flex flex-col items-center gap-4 animate-[popInSpring_0.4s_ease_forwards]">
+            <div class="w-full flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    <h3 class="text-sm font-semibold text-white">海报图片已生成 (1080 × 1920 高清)</h3>
+                </div>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-white text-sm px-2 py-1 rounded-lg bg-slate-800">✕</button>
+            </div>
+
+            <div class="relative w-full max-h-[62vh] overflow-auto rounded-2xl bg-slate-950 p-2 border border-slate-800 flex justify-center">
+                <img id="exportedPreviewImg" alt="Exported Poster" class="max-h-[58vh] w-auto rounded-xl shadow-lg" />
+            </div>
+
+            <div class="w-full flex gap-3">
+                <a id="downloadLinkBtn" download="multumim-mult-poster.png" class="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white text-xs font-semibold py-3 px-4 rounded-xl text-center shadow-lg transition">
+                    ⬇️ 保存 PNG 到本地设备
+                </a>
+                <button id="closeModalBtn2" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium py-3 px-4 rounded-xl transition">
+                    返回继续编辑
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= APPLICATION LOGIC ================= -->
+    <script>
+        /********************************************************************
+         * 1. PROCEDURAL CORS-SAFE AVATARS & GENDER REVEAL PHOTO GENERATOR
+         * Ensures 100% crisp rendering and zero CORS taint when exporting
+         * via html2canvas!
+         ********************************************************************/
+        function createAvatarDataURI(seed, paletteType) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            const palettes = [
+                ['#93c5fd', '#1e3a8a', '#f8fafc', '#d97706'],
+                ['#fda4af', '#881337', '#fff1f2', '#4c1d95'],
+                ['#fcd34d', '#78350f', '#fef3c7', '#065f46'],
+                ['#a7f3d0', '#064e3b', '#ecfdf5', '#9d174d'],
+                ['#c4b5fd', '#31102f', '#f5f3ff', '#1e40af'],
+                ['#fdba74', '#7c2d12', '#fff7ed', '#115e59']
+            ];
+            const pal = palettes[seed % palettes.length];
+
+            // Background sky/nature gradient
+            const grad = ctx.createLinearGradient(0, 0, 64, 64);
+            grad.addColorStop(0, pal[0]);
+            grad.addColorStop(1, pal[1]);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 64, 64);
+
+            // Soft bokeh background circle
+            ctx.fillStyle = 'rgba(255,255,255,0.18)';
+            ctx.beginPath();
+            ctx.arc(16 + (seed * 7) % 32, 18, 14, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Shoulders / Body silhouette
+            ctx.fillStyle = pal[3];
+            ctx.beginPath();
+            ctx.arc(32, 62, 22, Math.PI, 0, false);
+            ctx.fill();
+
+            // Hair back
+            ctx.fillStyle = seed % 2 === 0 ? '#271c19' : '#4a3525';
+            ctx.beginPath();
+            ctx.arc(32, 26, 14, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Head / Face
+            ctx.fillStyle = '#f3d2c1';
+            ctx.beginPath();
+            ctx.arc(32, 27, 10.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Smile & Eyes
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.arc(28.5, 25.5, 1.3, 0, Math.PI * 2);
+            ctx.arc(35.5, 25.5, 1.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#b45309';
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.arc(32, 28, 4, 0.15 * Math.PI, 0.85 * Math.PI);
+            ctx.stroke();
+
+            return canvas.toDataURL('image/png');
+        }
+
+        // Generate the two center Gender Reveal Meadow Photos (Couple + Child + Blue Smoke Plumes)
+        function createGenderRevealPhoto(variant) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 240;
+            canvas.height = 360;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Overcast soft sky
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, 175);
+            skyGrad.addColorStop(0, '#c7d2da');
+            skyGrad.addColorStop(1, '#dde3e8');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, 240, 175);
+
+            // 2. Distant hills & autumn/late-summer meadow
+            const hillGrad = ctx.createLinearGradient(0, 140, 0, 360);
+            hillGrad.addColorStop(0, '#8f8b6e');
+            hillGrad.addColorStop(0.35, '#7c7654');
+            hillGrad.addColorStop(1, '#585237');
+            ctx.fillStyle = hillGrad;
+            ctx.beginPath();
+            ctx.moveTo(0, 155);
+            ctx.quadraticCurveTo(120, 138, 240, 162);
+            ctx.lineTo(240, 360);
+            ctx.lineTo(0, 360);
+            ctx.closePath();
+            ctx.fill();
+
+            // Grass texture strokes
+            ctx.strokeStyle = 'rgba(210, 198, 150, 0.25)';
+            ctx.lineWidth = 1.2;
+            for (let i = 0; i < 90; i++) {
+                const gx = (i * 19) % 240;
+                const gy = 165 + ((i * 37) % 190);
+                ctx.beginPath();
+                ctx.moveTo(gx, gy);
+                ctx.lineTo(gx + 3, gy - 9);
+                ctx.stroke();
+            }
+
+            if (variant === 1) {
+                // PHOTO 1: Couple standing close together holding child in yellow jacket + blue smoke cloud on top-left
+                // Blue smoke plume
+                const smokeCenters = [
+                    [58, 115, 34], [42, 92, 28], [75, 96, 25], [30, 72, 22]
+                ];
+                smokeCenters.forEach(([sx, sy, sr]) => {
+                    const sg = ctx.createRadialGradient(sx, sy, 2, sx, sy, sr);
+                    sg.addColorStop(0, 'rgba(56, 165, 235, 0.92)');
+                    sg.addColorStop(0.6, 'rgba(72, 180, 245, 0.55)');
+                    sg.addColorStop(1, 'rgba(56, 165, 235, 0)');
+                    ctx.fillStyle = sg;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Dad (left-center)
+                ctx.fillStyle = '#1f2937'; // dark trousers
+                ctx.fillRect(92, 215, 11, 68);
+                ctx.fillRect(106, 215, 11, 68);
+                ctx.fillStyle = '#9ca3af'; // light sweater
+                ctx.fillRect(88, 158, 32, 60);
+                // Raised arm holding smoke flare
+                ctx.strokeStyle = '#9ca3af';
+                ctx.lineWidth = 9;
+                ctx.beginPath();
+                ctx.moveTo(92, 166);
+                ctx.lineTo(68, 128);
+                ctx.stroke();
+                // Dad head
+                ctx.fillStyle = '#e5bfa8';
+                ctx.beginPath();
+                ctx.arc(105, 144, 11, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#271c15';
+                ctx.beginPath();
+                ctx.arc(105, 140, 11, Math.PI, 0);
+                ctx.fill();
+
+                // Mom (right-center)
+                ctx.fillStyle = '#64748b'; // skirt/coat
+                ctx.beginPath();
+                ctx.moveTo(126, 168);
+                ctx.lineTo(158, 168);
+                ctx.lineTo(166, 260);
+                ctx.lineTo(120, 260);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#1e293b'; // boots
+                ctx.fillRect(131, 260, 8, 25);
+                ctx.fillRect(145, 260, 8, 25);
+                // Mom head
+                ctx.fillStyle = '#ecc8b2';
+                ctx.beginPath();
+                ctx.arc(140, 150, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Toddler Amadeo in bright yellow jacket held in arms
+                ctx.fillStyle = '#eab308';
+                ctx.beginPath();
+                ctx.roundRect(142, 164, 24, 30, 6);
+                ctx.fill();
+                ctx.fillStyle = '#f3d2c1';
+                ctx.beginPath();
+                ctx.arc(154, 154, 8, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // PHOTO 2: Wide celebration in meadow with two vibrant blue smoke clouds rising high
+                const smokePlumes = [
+                    [92, 68, 38], [108, 48, 32], [78, 44, 28],
+                    [152, 82, 42], [168, 58, 36], [138, 56, 30], [182, 40, 25]
+                ];
+                smokePlumes.forEach(([sx, sy, sr]) => {
+                    const sg = ctx.createRadialGradient(sx, sy, 4, sx, sy, sr);
+                    sg.addColorStop(0, 'rgba(38, 152, 228, 0.95)');
+                    sg.addColorStop(0.65, 'rgba(66, 175, 245, 0.55)');
+                    sg.addColorStop(1, 'rgba(56, 165, 235, 0)');
+                    ctx.fillStyle = sg;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Dad on left raising flare high
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(46, 212, 9, 64);
+                ctx.fillRect(58, 212, 10, 64);
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fillRect(44, 162, 26, 52);
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 7;
+                ctx.beginPath();
+                ctx.moveTo(66, 168);
+                ctx.lineTo(86, 114);
+                ctx.stroke();
+                ctx.fillStyle = '#e5bfa8';
+                ctx.beginPath();
+                ctx.arc(57, 150, 9.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Mom & Toddler on right raising flare
+                ctx.fillStyle = '#475569';
+                ctx.fillRect(142, 185, 24, 85);
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 6.5;
+                ctx.beginPath();
+                ctx.moveTo(146, 185);
+                ctx.lineTo(136, 125);
+                ctx.stroke();
+                // Toddler in yellow
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.roundRect(158, 180, 20, 28, 5);
+                ctx.fill();
+                ctx.fillStyle = '#ecc8b2';
+                ctx.beginPath();
+                ctx.arc(152, 172, 9, 0, Math.PI * 2);
+                ctx.arc(168, 171, 7.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            return canvas.toDataURL('image/png');
+        }
+
+        /********************************************************************
+         * 2. ALL 17 MESSAGE BUBBLES DATA (1:1 Coordinates, Angles & Texts)
+         ********************************************************************/
+        const INITIAL_BUBBLES = [
+            {
+                id: 'b1',
+                left: 69, top: 224, width: 196, rot: -5.5,
+                reaction: '❤️', avatarSeed: 1, floatClass: 'float-a',
+                ro: 'Ehehei! Am ghicit! Felicitări! O să facă echipă bună cu Amadeo 🥰',
+                zh: '哇哦！我就猜到啦！恭喜！他一定会和哥哥 Amadeo 成为最佳拍档 🥰'
+            },
+            {
+                id: 'b2',
+                left: 342, top: 223, width: 88, rot: 0,
+                reaction: '❤️', avatarSeed: 2, floatClass: 'float-b',
+                ro: 'Crutoooo',
+                zh: '太酷啦啊啊啊'
+            },
+            {
+                id: 'b3',
+                left: 368, top: 256, width: 164, rot: 15.5,
+                reaction: '', avatarSeed: 3, floatClass: 'float-c',
+                ro: 'Ouuu felicitări!!! Un frățior pentru Amadeo!!!😍😍😍',
+                zh: '噢噢噢恭喜！！！Amadeo 有小弟弟啦！！！😍😍😍'
+            },
+            {
+                id: 'b4',
+                left: 215, top: 288, width: 176, rot: -6.5,
+                reaction: '', avatarSeed: 4, floatClass: 'float-a',
+                ro: 'Felicitari , vei fi mamă de băieți ❤️🎉',
+                zh: '恭喜呀，你要成为两个男孩的妈妈啦 ❤️🎉'
+            },
+            {
+                id: 'b5',
+                left: 6, top: 306, width: 198, rot: 0,
+                reaction: '❤️', avatarSeed: 5, floatClass: 'float-b',
+                extraRightAvatar: true,
+                ro: 'Hai ca ii bun ai sa fii mama de baieti!',
+                zh: '太棒啦，当男孩们的妈妈超幸福的！'
+            },
+            {
+                id: 'b6',
+                left: 190, top: 350, width: 162, rot: 11,
+                reaction: '', avatarSeed: 6, floatClass: 'float-c',
+                ro: 'Felicitări ,sa fie sănătos !💙',
+                zh: '衷心恭喜，愿宝宝健康平安！💙'
+            },
+            {
+                id: 'b7',
+                left: 340, top: 325, width: 185, rot: 0,
+                reaction: '', avatarSeed: 7, floatClass: 'float-a',
+                ro: 'Felicitari dragilor!😊 sa aveti parte de multe clipe fericite si cele mai frumoase momente alaturi de 2 baietei. Sa cresteti mari si sanatosi! Ma bucur pentru voi😇😊💙💙',
+                zh: '恭喜亲爱的你们！😊 愿你们和两个小王子拥有无数幸福美好的时光，健康快乐成长！真为你们开心 😇😊💙💙'
+            },
+            {
+                id: 'b8',
+                left: 52, top: 372, width: 136, rot: -8,
+                reaction: '❤️', avatarSeed: 8, floatClass: 'float-b',
+                ro: 'Felicitări Veruța!!!',
+                zh: '恭喜你呀 Veruța！！！'
+            },
+            {
+                id: 'b9',
+                left: 2, top: 414, width: 84, rot: 0,
+                reaction: '❤️', avatarSeed: 9, floatClass: 'float-c',
+                ro: 'Felicitări!',
+                zh: '新喜祝贺！'
+            },
+            {
+                id: 'b10',
+                left: 12, top: 444, width: 175, rot: -12,
+                reaction: '', avatarSeed: 10, floatClass: 'float-a',
+                ro: 'Felicitări ! 😍😍😍😍😍😍😍😍😍',
+                zh: '太替你们开心啦！😍😍😍😍😍😍😍😍😍'
+            },
+            {
+                id: 'b11',
+                left: 274, top: 422, width: 176, rot: 8.5,
+                reaction: '❤️', avatarSeed: 11, floatClass: 'float-b',
+                ro: 'Felicitării domnu sa va binecuvinteze cu inca un sufletel mic sa creasca mare si cu credinta lui dumnezeu in inimioara lui',
+                zh: '恭喜！愿上天眷顾这个新降临的小生命，愿他带着满满的爱与信仰健康长大'
+            },
+            {
+                id: 'b12',
+                left: 62, top: 486, width: 146, rot: 0,
+                reaction: '', avatarSeed: 12, floatClass: 'float-c',
+                ro: 'Felicitări 🎊💙 naștere sănătoasă 🙏',
+                zh: '恭喜恭喜 🎊💙 祝顺遂平安生产 🙏'
+            },
+            {
+                id: 'b13',
+                left: 334, top: 500, width: 178, rot: -8,
+                reaction: '', avatarSeed: 13, floatClass: 'float-a',
+                ro: 'Serios??? Felicitariiiiiii draga Veruta! Am presimțit eu cumva 🥰💕❤️ sa fiți fericiți cu toți împreună!',
+                zh: '真的吗？？？太恭喜啦亲爱的 Veruța！我之前就有预感 🥰💕❤️ 祝你们全家人永远幸福美满！'
+            },
+            {
+                id: 'b14',
+                left: 4, top: 536, width: 212, rot: 0,
+                reaction: '❤️', avatarSeed: 14, floatClass: 'float-b',
+                ro: 'Felicitări🥰🥰🥰Amadeo mi se pare ca sa speriat un pic 🤗ca și Simona',
+                zh: '恭喜🥰🥰🥰 看起来小 Amadeo 被礼花吓了一小跳呢 🤗 真可爱'
+            },
+            {
+                id: 'b15',
+                left: 326, top: 598, width: 186, rot: 8.5,
+                reaction: '❤️', avatarSeed: 15, floatClass: 'float-c',
+                ro: 'Să vă bucurați de eii!!💙💙\nSunteti o familie frumoasă împreună!!🤍',
+                zh: '好好享受和宝贝们的时光吧！！💙💙\n你们真是无比幸福美丽的一家人！！🤍'
+            },
+            {
+                id: 'b16',
+                left: 44, top: 618, width: 208, rot: 8,
+                reaction: '😂', avatarSeed: 16, floatClass: 'float-a',
+                ro: 'Daaaaa,am ghicit😎\nÎn neamu Nicu așa-i,băieți doar.\nFetele deja o să le aducă ei😁',
+                zh: '哈哈我就说猜对了吧😎\n咱们家族传统就是生男孩！\n以后就等兄弟俩带儿媳妇回家啦😁'
+            },
+            {
+                id: 'b17',
+                left: 364, top: 688, width: 148, rot: -5,
+                reaction: '❤️', avatarSeed: 17, floatClass: 'float-b',
+                ro: 'Felicitări ❤️💕💞🧸',
+                zh: '满满的祝福 ❤️💕💞🧸'
+            }
+        ];
+
+        let currentLang = 'ro';
+        let bubblesState = JSON.parse(JSON.stringify(INITIAL_BUBBLES));
+
+        /********************************************************************
+         * 3. RENDER BUBBLES & INITIALIZE PHOTOS
+         ********************************************************************/
+        const bubblesLayer = document.getElementById('bubblesLayer');
+        const burstLayer = document.getElementById('burstLayer');
+
+        function renderAllBubbles(replayAnimation = true) {
+            bubblesLayer.innerHTML = '';
+
+            bubblesState.forEach((item, index) => {
+                const cluster = document.createElement('div');
+                cluster.className = `bubble-cluster ${replayAnimation ? 'pop-in-item' : ''}`;
+                cluster.dataset.id = item.id;
+                cluster.style.left = `${item.left}px`;
+                cluster.style.top = `${item.top}px`;
+                cluster.style.width = `${item.width}px`;
+                cluster.style.setProperty('--rot', `${item.rot}deg`);
+                cluster.style.transform = `rotate(${item.rot}deg)`;
+                if (replayAnimation) {
+                    cluster.style.animationDelay = `${0.12 + index * 0.055}s`;
+                }
+
+                const floatInner = document.createElement('div');
+                floatInner.className = `float-inner ${item.floatClass || 'float-a'}`;
+                floatInner.style.animationDelay = `${(index * 0.37) % 3}s`;
+
+                // Left User Avatar
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar-circle';
+                const avatarImg = document.createElement('img');
+                avatarImg.src = createAvatarDataURI(item.avatarSeed);
+                avatarImg.className = 'w-full h-full object-cover pointer-events-none';
+                avatar.appendChild(avatarImg);
+
+                // Message Bubble Box
+                const msgBox = document.createElement('div');
+                msgBox.className = 'msg-bubble flex-1';
+                const textContent = currentLang === 'ro' ? item.ro : item.zh;
+                msgBox.innerText = textContent;
+
+                // Optional Reaction Pill (❤️ / 😂)
+                if (item.reaction) {
+                    const pill = document.createElement('button');
+                    pill.className = 'reaction-pill';
+                    pill.innerText = item.reaction;
+                    pill.title = '点击切换回应表情';
+                    pill.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        cycleReaction(item, pill, e);
+                    });
+                    msgBox.appendChild(pill);
+                }
+
+                // Optional extra small avatar badge on right corner (like bubble #5 in original image)
+                if (item.extraRightAvatar) {
+                    const rightAv = document.createElement('div');
+                    rightAv.className = 'avatar-circle';
+                    rightAv.style.position = 'absolute';
+                    rightAv.style.right = '-8px';
+                    rightAv.style.bottom = '-12px';
+                    rightAv.style.width = '23px';
+                    rightAv.style.height = '23px';
+                    rightAv.style.zIndex = '6';
+                    const rImg = document.createElement('img');
+                    rImg.src = createAvatarDataURI(item.avatarSeed + 9);
+                    rImg.className = 'w-full h-full object-cover pointer-events-none';
+                    rightAv.appendChild(rImg);
+                    msgBox.appendChild(rightAv);
+                }
+
+                floatInner.appendChild(avatar);
+                floatInner.appendChild(msgBox);
+                cluster.appendChild(floatInner);
+
+                // Make cluster draggable & interactive
+                enableDragAndBurst(cluster, item);
+
+                bubblesLayer.appendChild(cluster);
+            });
+        }
+
+        /********************************************************************
+         * 4. DRAGGING & INTERACTIVE HEART BURST ANIMATIONS
+         ********************************************************************/
+        const REACTIONS_POOL = ['❤️', '💙', '😂', '🥰', '🎉', '🔥'];
+
+        function cycleReaction(item, pillEl, event) {
+            const idx = REACTIONS_POOL.indexOf(pillEl.innerText);
+            const nextEmoji = REACTIONS_POOL[(idx + 1) % REACTIONS_POOL.length];
+            item.reaction = nextEmoji;
+            pillEl.innerText = nextEmoji;
+
+            const rect = document.getElementById('posterCanvas').getBoundingClientRect();
+            const scale = getPosterScale();
+            const x = (event.clientX - rect.left) / scale;
+            const y = (event.clientY - rect.top) / scale;
+            spawnEmojiBurst(x, y, nextEmoji, 7);
+        }
+
+        function spawnEmojiBurst(x, y, emoji = '❤️', count = 6) {
+            const emojis = [emoji, '💙', '✨', '❤️'];
+            for (let i = 0; i < count; i++) {
+                const span = document.createElement('span');
+                span.className = 'burst-particle';
+                span.innerText = emojis[i % emojis.length];
+                span.style.left = `${x - 8}px`;
+                span.style.top = `${y - 8}px`;
+                const dx = (Math.random() - 0.5) * 90;
+                const dy = -35 - Math.random() * 65;
+                const drot = (Math.random() - 0.5) * 60;
+                span.style.setProperty('--dx', `${dx}px`);
+                span.style.setProperty('--dy', `${dy}px`);
+                span.style.setProperty('--drot', `${drot}deg`);
+                burstLayer.appendChild(span);
+                setTimeout(() => span.remove(), 960);
+            }
+        }
+
+        function enableDragAndBurst(el, stateObj) {
+            let isDragging = false;
+            let startX = 0, startY = 0;
+            let initialLeft = 0, initialTop = 0;
+            let movedDistance = 0;
+
+            const onPointerDown = (e) => {
+                if (e.target.classList.contains('reaction-pill')) return;
+                isDragging = true;
+                movedDistance = 0;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                startX = clientX;
+                startY = clientY;
+                initialLeft = parseFloat(el.style.left) || 0;
+                initialTop = parseFloat(el.style.top) || 0;
+
+                // Ensure rotation stays intact after entrance animation finishes
+                el.classList.remove('pop-in-item');
+                el.style.opacity = '1';
+                el.style.zIndex = 48;
+
+                window.addEventListener('mousemove', onPointerMove);
+                window.addEventListener('mouseup', onPointerUp);
+                window.addEventListener('touchmove', onPointerMove, { passive: false });
+                window.addEventListener('touchend', onPointerUp);
+            };
+
+            const onPointerMove = (e) => {
+                if (!isDragging) return;
+                if (e.cancelable) e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const scale = getPosterScale();
+                const dx = (clientX - startX) / scale;
+                const dy = (clientY - startY) / scale;
+                movedDistance = Math.hypot(dx, dy);
+
+                const newLeft = initialLeft + dx;
+                const newTop = initialTop + dy;
+                el.style.left = `${newLeft}px`;
+                el.style.top = `${newTop}px`;
+                if (stateObj) {
+                    stateObj.left = Math.round(newLeft);
+                    stateObj.top = Math.round(newTop);
+                }
+            };
+
+            const onPointerUp = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                el.style.zIndex = '';
+                window.removeEventListener('mousemove', onPointerMove);
+                window.removeEventListener('mouseup', onPointerUp);
+                window.removeEventListener('touchmove', onPointerMove);
+                window.removeEventListener('touchend', onPointerUp);
+
+                // If it was a quick tap/click without dragging, trigger heart burst!
+                if (movedDistance < 5) {
+                    const rect = document.getElementById('posterCanvas').getBoundingClientRect();
+                    const scale = getPosterScale();
+                    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+                    const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+                    const x = (clientX - rect.left) / scale;
+                    const y = (clientY - rect.top) / scale;
+                    spawnEmojiBurst(x, y, stateObj?.reaction || '💙', 6);
+                }
+            };
+
+            el.addEventListener('mousedown', onPointerDown);
+            el.addEventListener('touchstart', onPointerDown, { passive: true });
+        }
+
+        /********************************************************************
+         * 5. FILM GRAIN TEXTURE & AMBIENT BLUE SMOKE PARTICLE ENGINE
+         ********************************************************************/
+        function generateFilmGrain() {
+            const canvas = document.getElementById('grainCanvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            const imgData = ctx.createImageData(w, h);
+            const data = imgData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                // Fine monochrome film grain with warm/cool micro variation
+                const noise = (Math.random() - 0.5) * 95;
+                const val = 128 + noise;
+                data[i] = val + 3;
+                data[i + 1] = val + 1;
+                data[i + 2] = val - 2;
+                data[i + 3] = 88; // subtle alpha blended with overlay
+            }
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        // Ambient Floating Particles (Blue Gender-Reveal Smoke & Golden Bokeh)
+        const fxCanvas = document.getElementById('fxCanvas');
+        const fxCtx = fxCanvas.getContext('2d');
+        let particles = [];
+        let animationEnabled = true;
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < 28; i++) {
+                particles.push({
+                    x: Math.random() * 540,
+                    y: Math.random() * 960,
+                    r: 2 + Math.random() * 14,
+                    vx: (Math.random() - 0.5) * 0.35,
+                    vy: -0.25 - Math.random() * 0.45,
+                    alpha: 0.08 + Math.random() * 0.22,
+                    isBlueSmoke: i % 3 === 0
+                });
+            }
+        }
+
+        function triggerBlueSmokeCelebration() {
+            // Add a rich wave of blue gender-reveal smoke particles from the center photos
+            for (let i = 0; i < 36; i++) {
+                particles.push({
+                    x: 245 + (Math.random() - 0.5) * 90,
+                    y: 460 + (Math.random() - 0.5) * 120,
+                    r: 12 + Math.random() * 28,
+                    vx: (Math.random() - 0.5) * 1.6,
+                    vy: -0.9 - Math.random() * 1.5,
+                    alpha: 0.42 + Math.random() * 0.25,
+                    isBlueSmoke: true,
+                    temporary: true
+                });
+            }
+            spawnEmojiBurst(255, 420, '💙', 10);
+            spawnEmojiBurst(280, 520, '🎉', 10);
+        }
+
+        function animateFxLoop() {
+            if (animationEnabled) {
+                fxCtx.clearRect(0, 0, 540, 960);
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.temporary) {
+                        p.alpha *= 0.985;
+                        p.r += 0.15;
+                        if (p.alpha < 0.01) {
+                            particles.splice(i, 1);
+                            continue;
+                        }
+                    } else {
+                        if (p.y < -30) p.y = 980;
+                        if (p.x < -30) p.x = 570;
+                        if (p.x > 570) p.x = -30;
+                    }
+
+                    const grad = fxCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+                    if (p.isBlueSmoke) {
+                        grad.addColorStop(0, `rgba(72, 178, 250, ${p.alpha})`);
+                        grad.addColorStop(1, 'rgba(72, 178, 250, 0)');
+                    } else {
+                        grad.addColorStop(0, `rgba(255, 255, 255, ${p.alpha})`);
+                        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    }
+                    fxCtx.fillStyle = grad;
+                    fxCtx.beginPath();
+                    fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    fxCtx.fill();
+                }
+            }
+            requestAnimationFrame(animateFxLoop);
+        }
+
+        /********************************************************************
+         * 6. RESPONSIVE SCALING FOR MOBILE / SMALL SCREENS
+         ********************************************************************/
+        function getPosterScale() {
+            const poster = document.getElementById('posterCanvas');
+            const transform = poster.style.transform;
+            const match = transform && transform.match(/scale\(([0-9.]+)\)/);
+            return match ? parseFloat(match[1]) : 1;
+        }
+
+        function adjustViewportScale() {
+            const viewport = document.getElementById('posterViewport');
+            const poster = document.getElementById('posterCanvas');
+            const availWidth = Math.min(window.innerWidth - 24, 540);
+            const scale = Math.min(1, availWidth / 540);
+
+            if (scale < 1) {
+                poster.style.transformOrigin = 'top center';
+                poster.style.transform = `scale(${scale})`;
+                viewport.style.height = `${Math.round(960 * scale)}px`;
+                viewport.style.width = `${Math.round(540 * scale)}px`;
+            } else {
+                poster.style.transform = 'scale(1)';
+                viewport.style.height = '960px';
+                viewport.style.width = '540px';
+            }
+        }
+
+        /********************************************************************
+         * 7. EXPORT ENTIRE POSTER AS HIGH-RES IMAGE (html2canvas)
+         ********************************************************************/
+        async function exportPosterAsImage() {
+            const btn = document.getElementById('btnExportImg');
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span>正在渲染 1080×1920 高清海报...</span>
+            `;
+
+            const poster = document.getElementById('posterCanvas');
+            const prevTransform = poster.style.transform;
+            const wasFloating = poster.classList.contains('floating-enabled');
+
+            try {
+                // Temporarily normalize scale and freeze CSS keyframe animations so html2canvas captures exact rotations cleanly
+                poster.style.transform = 'none';
+                poster.classList.remove('floating-enabled');
+
+                // Ensure all pop-in items have finished their entrance animation
+                poster.querySelectorAll('.pop-in-item, .animate-title, .animate-line').forEach(el => {
+                    el.style.animation = 'none';
+                    el.style.opacity = '1';
+                    const rot = el.style.getPropertyValue('--rot');
+                    if (rot) {
+                        el.style.transform = `rotate(${rot})`;
+                    }
+                });
+
+                await new Promise(r => setTimeout(r, 120));
+
+                const renderedCanvas = await html2canvas(poster, {
+                    scale: 2, // 1080 x 1920 Full HD Portrait output
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#6b7d8c',
+                    logging: false
+                });
+
+                const dataUrl = renderedCanvas.toDataURL('image/png', 1.0);
+
+                // Show Preview Modal & Trigger Download
+                const previewImg = document.getElementById('exportedPreviewImg');
+                const downloadLink = document.getElementById('downloadLinkBtn');
+                previewImg.src = dataUrl;
+                downloadLink.href = dataUrl;
+
+                const modal = document.getElementById('exportModal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                // Also automatically trigger browser download
+                downloadLink.click();
+            } catch (err) {
+                console.error('Export error:', err);
+            } finally {
+                poster.style.transform = prevTransform;
+                if (wasFloating) poster.classList.add('floating-enabled');
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+
+        /********************************************************************
+         * 7.5 IMPORT MESSAGES FROM ABOUTME CHAT VIA JSAPI
+         * 调用 Aboutme.plugins.chat.selectMessages() 弹出原生多选选择器，
+         * 选中后把消息追加为海报上的祝福气泡
+         ********************************************************************/
+        const TYPE_LABELS = { image: '[图片]', video: '[视频]', audio: '[语音]', file: '[文件]' };
+
+        function hashString(str) {
+            let h = 0;
+            for (let i = 0; i < str.length; i++) {
+                h = (h * 31 + str.charCodeAt(i)) & 0x7fffffff;
+            }
+            return h;
+        }
+
+        function notifyUser(message) {
+            if (window.Aboutme && Aboutme.ui && Aboutme.ui.toast) {
+                Aboutme.ui.toast(message);
+            } else {
+                console.log('[blessing-wall]', message);
+            }
+        }
+
+        function messageToBubble(msg, index) {
+            const content = (msg && msg.content ? String(msg.content) : '').trim() || '（空消息）';
+            const prefix = TYPE_LABELS[msg.type] || '';
+            const text = prefix ? `${prefix} ${content}` : content;
+            // 交错分布在海报下方区域，避免堆叠在一起
+            const lane = index % 4;
+            const laneLeft = [6, 145, 285, 400][lane];
+            const laneTop = [560, 640, 720, 800][Math.floor(index / 4) % 4];
+            return {
+                id: 'chat_' + (msg.id || Date.now() + '_' + index),
+                left: laneLeft + Math.round((Math.random() - 0.5) * 24),
+                top: laneTop + Math.round((Math.random() - 0.5) * 18),
+                width: Math.min(205, Math.max(115, text.length * 6.5 + 36)),
+                rot: Math.round((Math.random() - 0.5) * 16),
+                reaction: '',
+                avatarSeed: hashString(msg.username || 'chat') % 20 + 1,
+                floatClass: ['float-a', 'float-b', 'float-c'][index % 3],
+                ro: text,
+                zh: text
+            };
+        }
+
+        async function pickMessagesFromChat() {
+            if (!window.Aboutme || !Aboutme.plugins) {
+                notifyUser('当前不在 Aboutme WebView 环境中，无法选择聊天消息');
+                return;
+            }
+            const btn = document.getElementById('btnPickChatMessages');
+            btn.disabled = true;
+            try {
+                const result = await Aboutme.plugins.chat.selectMessages({});
+                if (result && result.error) {
+                    notifyUser('选择失败: ' + result.error);
+                    return;
+                }
+                if (!result || result.cancelled || !Array.isArray(result.messages) || result.messages.length === 0) {
+                    return;
+                }
+                const offset = bubblesState.length;
+                result.messages.forEach((msg, i) => {
+                    bubblesState.push(messageToBubble(msg, offset + i));
+                });
+                renderAllBubbles(false);
+                notifyUser(`已添加 ${result.messages.length} 条消息`);
+                spawnEmojiBurst(260, 600, '💙', 10);
+            } catch (e) {
+                console.error('pickMessagesFromChat error:', e);
+                notifyUser('调用聊天选择器失败: ' + e);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        /********************************************************************
+         * 8. WIRE UP CONTROLS & INITIALIZATION ON LOAD
+         ********************************************************************/
+        window.onload = function () {
+            // 1. Render grain and photos
+            generateFilmGrain();
+            document.getElementById('photoImg1').src = createGenderRevealPhoto(1);
+            document.getElementById('photoImg2').src = createGenderRevealPhoto(2);
+
+            // Enable drag on center photo cards
+            enableDragAndBurst(document.getElementById('photoCard1'), null);
+            enableDragAndBurst(document.getElementById('photoCard2'), null);
+
+            // Photo card 1 reaction pill click
+            const photoPill = document.querySelector('#photoCard1 .reaction-pill');
+            photoPill.addEventListener('click', (e) => {
+                e.stopPropagation();
+                cycleReaction({}, photoPill, e);
+            });
+
+            // 2. Render all 17 bubbles with staggered entrance animation
+            renderAllBubbles(true);
+
+            // 3. Start ambient particle engine
+            initParticles();
+            animateFxLoop();
+
+            // 4. Responsive scaling
+            adjustViewportScale();
+            window.addEventListener('resize', adjustViewportScale);
+
+            // 5. Replay Animation Button
+            document.getElementById('btnReplayAnim').addEventListener('click', () => {
+                // Re-trigger hanging lines
+                document.querySelectorAll('.hanging-line').forEach(line => {
+                    line.classList.remove('animate-line');
+                    void line.offsetWidth;
+                    line.classList.add('animate-line');
+                });
+                // Re-trigger title
+                const header = document.getElementById('posterHeader');
+                header.classList.remove('animate-title');
+                void header.offsetWidth;
+                header.classList.add('animate-title');
+
+                // Re-trigger photos
+                ['photoCard1', 'photoCard2'].forEach((id, i) => {
+                    const card = document.getElementById(id);
+                    card.style.animation = '';
+                    card.classList.remove('pop-in-item');
+                    void card.offsetWidth;
+                    card.style.animationDelay = `${0.35 + i * 0.13}s`;
+                    card.classList.add('pop-in-item');
+                });
+
+                // Re-render bubbles with staggered spring pop
+                renderAllBubbles(true);
+                triggerBlueSmokeCelebration();
+            });
+
+            // 6. Blue Smoke Celebration Button
+            document.getElementById('btnCelebrate').addEventListener('click', () => {
+                triggerBlueSmokeCelebration();
+            });
+
+            // 7. Language Toggle (Original Romanian vs Chinese)
+            const langRoBtn = document.getElementById('langRoBtn');
+            const langZhBtn = document.getElementById('langZhBtn');
+            const titleLine1 = document.getElementById('titleLine1');
+            const titleLine2 = document.getElementById('titleLine2');
+
+            langRoBtn.addEventListener('click', () => {
+                currentLang = 'ro';
+                titleLine1.innerText = 'MULȚUMIM MULT';
+                titleLine2.innerText = 'căci ne-ați felicitat';
+                langRoBtn.className = 'px-2.5 py-1 text-xs rounded-lg bg-sky-500/20 text-sky-300 font-medium transition';
+                langZhBtn.className = 'px-2.5 py-1 text-xs rounded-lg text-slate-400 hover:text-slate-200 transition';
+                renderAllBubbles(false);
+            });
+
+            langZhBtn.addEventListener('click', () => {
+                currentLang = 'zh';
+                titleLine1.innerText = '衷 心 感 谢 大 家';
+                titleLine2.innerText = '送来的真挚祝福';
+                langZhBtn.className = 'px-2.5 py-1 text-xs rounded-lg bg-sky-500/20 text-sky-300 font-medium transition';
+                langRoBtn.className = 'px-2.5 py-1 text-xs rounded-lg text-slate-400 hover:text-slate-200 transition';
+                renderAllBubbles(false);
+            });
+
+            // 8. Toggle Floating Animation
+            document.getElementById('toggleFloat').addEventListener('change', (e) => {
+                animationEnabled = e.target.checked;
+                const poster = document.getElementById('posterCanvas');
+                if (animationEnabled) {
+                    poster.classList.add('floating-enabled');
+                } else {
+                    poster.classList.remove('floating-enabled');
+                    fxCtx.clearRect(0, 0, 540, 960);
+                }
+            });
+
+            // 9. Grain Intensity Slider
+            document.getElementById('grainSlider').addEventListener('input', (e) => {
+                const val = e.target.value;
+                document.getElementById('grainValLabel').innerText = `${val}%`;
+                document.getElementById('grainCanvas').style.opacity = (val / 100).toFixed(2);
+            });
+
+            // 10. Add Custom Blessing Bubble
+            document.getElementById('btnAddBubble').addEventListener('click', () => {
+                const input = document.getElementById('newBubbleText');
+                const text = input.value.trim() || (currentLang === 'ro' ? 'Felicitări din toată inima! 💙✨' : '衷心祝贺！愿小王子健康快乐成长 💙✨');
+                const reaction = document.getElementById('newBubbleReaction').value;
+                const randomRot = Math.round((Math.random() - 0.5) * 18);
+                const newItem = {
+                    id: 'b_' + Date.now(),
+                    left: 140 + Math.round((Math.random() - 0.5) * 120),
+                    top: 660 + Math.round((Math.random() - 0.5) * 80),
+                    width: Math.min(205, Math.max(115, text.length * 6.5 + 36)),
+                    rot: randomRot,
+                    reaction: reaction,
+                    avatarSeed: Math.floor(Math.random() * 20) + 1,
+                    floatClass: 'float-a',
+                    ro: text,
+                    zh: text
+                };
+                bubblesState.push(newItem);
+                input.value = '';
+                renderAllBubbles(false);
+                spawnEmojiBurst(newItem.left + 60, newItem.top, reaction || '💙', 8);
+            });
+
+            // 11. Custom Photo Upload Handlers (100% Local DataURL -> Safe for Image Export)
+            function handlePhotoUpload(inputEl, targetImgId) {
+                inputEl.addEventListener('change', (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        document.getElementById(targetImgId).src = ev.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+            handlePhotoUpload(document.getElementById('uploadPhoto1'), 'photoImg1');
+            handlePhotoUpload(document.getElementById('uploadPhoto2'), 'photoImg2');
+
+            // 13. Pick chat messages via Aboutme JSAPI
+            document.getElementById('btnPickChatMessages').addEventListener('click', pickMessagesFromChat);
+
+            // 12. Export Image & Modal Controls
+            document.getElementById('btnExportImg').addEventListener('click', exportPosterAsImage);
+            const closeModal = () => {
+                const modal = document.getElementById('exportModal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+            document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+            document.getElementById('closeModalBtn2').addEventListener('click', closeModal);
+        };
+    </script>
+</body>
+</html>

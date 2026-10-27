@@ -181,15 +181,101 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     return completer.future;
   }
 
-  // ===== 画布手势 =====
+  String? _pointerItemId;
+  Offset? _pointerLastPosition;
+  bool _pointerItemMoved = false;
+
+  ScrapItemData? _hitTestItem(Offset localPosition) {
+    final point = _screenToCanvas(localPosition);
+    final sorted = _sortedItems().reversed;
+    for (final item in sorted) {
+      final hitRect = Rect.fromLTWH(
+        item.x - 12,
+        item.y - 12,
+        math.max(item.width, 24) + 24,
+        math.max(item.height, 24) + 24,
+      );
+      if (hitRect.contains(point)) return item;
+    }
+    return null;
+  }
+
+  bool _isSelectedControlHit(Offset localPosition) {
+    final selectedId = _selectedId;
+    if (selectedId == null) return false;
+    ScrapItemData? item;
+    for (final candidate in _items) {
+      if (candidate.id == selectedId) {
+        item = candidate;
+        break;
+      }
+    }
+    if (item == null) return false;
+    final point = _screenToCanvas(localPosition);
+    return Rect.fromLTWH(
+      item.x + item.width - 10,
+      item.y - 30,
+      48,
+      22,
+    ).contains(point);
+  }
+
+  void _onCanvasPointerDown(PointerDownEvent event) {
+    if (_isSelectedControlHit(event.localPosition)) {
+      _pointerItemId = null;
+      _pointerLastPosition = event.localPosition;
+      _pointerItemMoved = false;
+      return;
+    }
+    if (_doodleMode || widget.readOnly) return;
+    final item = _hitTestItem(event.localPosition);
+    _pointerItemId = item?.id;
+    _pointerLastPosition = event.localPosition;
+    _pointerItemMoved = false;
+    if (item != null) {
+      _pushHistory();
+      _selectItem(item);
+    }
+  }
+
+  void _onCanvasPointerMove(PointerMoveEvent event) {
+    final itemId = _pointerItemId;
+    final previous = _pointerLastPosition;
+    _pointerLastPosition = event.localPosition;
+    if (itemId == null || previous == null) return;
+    ScrapItemData? item;
+    for (final candidate in _items) {
+      if (candidate.id == itemId) {
+        item = candidate;
+        break;
+      }
+    }
+    if (item == null) return;
+    final delta = event.localPosition - previous;
+    if (delta.distanceSquared < 0.01) return;
+    _pointerItemMoved = true;
+    setState(() {
+      item!.x += delta.dx / _zoom;
+      item.y += delta.dy / _zoom;
+    });
+  }
+
+  void _onCanvasPointerUp(PointerEvent event) {
+    if (_pointerItemMoved) _notifyChanged();
+    _pointerItemId = null;
+    _pointerLastPosition = null;
+    _pointerItemMoved = false;
+  }
 
   void _onScaleStart(ScaleStartDetails details) {
+    if (_pointerItemId != null) return;
     _startFocal = details.localFocalPoint;
     _startPan = Offset(_panX, _panY);
     _startZoom = _zoom;
   }
 
   void _onScaleUpdate(ScaleUpdateDetails details) {
+    if (_pointerItemId != null) return;
     setState(() {
       final nextZoom = (_startZoom * details.scale).clamp(_minZoom, _maxZoom);
       // 起始焦点对应的画布坐标保持不变（单指平移时 scale=1 同样成立）
@@ -548,6 +634,10 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
             Positioned.fill(
               child: Listener(
                 onPointerSignal: _onPointerSignal,
+                onPointerDown: _onCanvasPointerDown,
+                onPointerMove: _onCanvasPointerMove,
+                onPointerUp: _onCanvasPointerUp,
+                onPointerCancel: _onCanvasPointerUp,
                 child: RepaintBoundary(
                   key: _exportBoundaryKey,
                   child: _doodleMode
@@ -664,9 +754,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () {
-              setState(() => _selectedId = null);
-            },
+            onTap: () {},
             onScaleStart: _onScaleStart,
             onScaleUpdate: _onScaleUpdate,
             child: CustomPaint(
@@ -764,23 +852,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
             behavior: HitTestBehavior.opaque,
             // 只读模式下条目不可拖拽/选中；注册 onTap 供双击检测使用
             onTap: () => _handleItemTap(item),
-            onPanStart: _doodleMode || widget.readOnly
-                ? null
-                : (_) {
-                    _pushHistory();
-                    _selectItem(item);
-                  },
-            onPanUpdate: _doodleMode || widget.readOnly
-                ? null
-                : (details) {
-                    setState(() {
-                      item.x += details.delta.dx / _zoom;
-                      item.y += details.delta.dy / _zoom;
-                    });
-                  },
-            onPanEnd: _doodleMode || widget.readOnly
-                ? null
-                : (_) => _notifyChanged(),
+            onPanStart: null,
+            onPanUpdate: null,
+            onPanEnd: null,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -801,6 +875,12 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     );
   }
 
+  void _runSelectedAction(ScrapItemData item, VoidCallback action) {
+    if (!_items.any((candidate) => candidate.id == item.id)) return;
+    if (_selectedId != item.id) _selectItem(item);
+    action();
+  }
+
   Widget _buildSelectedControls() {
     ScrapItemData? item;
     for (final candidate in _items) {
@@ -817,9 +897,21 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildControlChip('↻', () => _rotateItem(selectedItem)),
+          _buildControlChip(
+            '↻',
+            () => _runSelectedAction(
+              selectedItem,
+              () => _rotateItem(selectedItem),
+            ),
+          ),
           const SizedBox(width: 4),
-          _buildControlChip('×', () => _deleteItem(selectedItem)),
+          _buildControlChip(
+            '×',
+            () => _runSelectedAction(
+              selectedItem,
+              () => _deleteItem(selectedItem),
+            ),
+          ),
         ],
       ),
     );
