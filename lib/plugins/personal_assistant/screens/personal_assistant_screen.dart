@@ -940,9 +940,10 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
               fillColor: theme.primary,
               radius: BorderRadius.circular(18),
             ),
-            child: Text(
-              message.content,
-              style: DsTypography.body.copyWith(color: theme.onPrimary),
+            child: AgentMessageContent(
+              message: message,
+              textColor: theme.onPrimary,
+              messageService: _messageService,
             ),
           ),
         ),

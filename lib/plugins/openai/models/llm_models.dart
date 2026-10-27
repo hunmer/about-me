@@ -7,6 +7,7 @@ class LLMModel {
   final bool? supportsVision;
   final bool? supportsReasoning;
   final int? contextLimit;
+  final int? maxOutput;
 
   const LLMModel({
     required this.id,
@@ -15,6 +16,7 @@ class LLMModel {
     this.supportsVision,
     this.supportsReasoning,
     this.contextLimit,
+    this.maxOutput,
   });
 
   Map<String, dynamic> toJson() => {
@@ -24,6 +26,7 @@ class LLMModel {
     if (supportsVision != null) 'supportsVision': supportsVision,
     if (supportsReasoning != null) 'supportsReasoning': supportsReasoning,
     if (contextLimit != null) 'contextLimit': contextLimit,
+    if (maxOutput != null) 'maxOutput': maxOutput,
   };
 
   factory LLMModel.fromJson(Map<String, dynamic> json) => LLMModel(
@@ -33,6 +36,7 @@ class LLMModel {
     supportsVision: json['supportsVision'] as bool?,
     supportsReasoning: json['supportsReasoning'] as bool?,
     contextLimit: (json['contextLimit'] as num?)?.toInt(),
+    maxOutput: (json['maxOutput'] as num?)?.toInt(),
   );
 
   /// 用远端数据补齐本地缺失的能力字段
@@ -43,6 +47,7 @@ class LLMModel {
     supportsVision: supportsVision ?? other.supportsVision,
     supportsReasoning: supportsReasoning ?? other.supportsReasoning,
     contextLimit: contextLimit ?? other.contextLimit,
+    maxOutput: maxOutput ?? other.maxOutput,
   );
 }
 

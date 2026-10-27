@@ -107,6 +107,16 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_setDefaultModelFailed': '设置默认模型失败',
   'openai_groupFilterTitle': '分组',
   'openai_allGroups': '全部分组',
+  'openai_modelCapabilities': '能力设置',
+  'openai_supportsVision': '多模态（视觉输入）',
+  'openai_supportsReasoning': '支持思考',
+  'openai_contextLimit': '输入长度限制',
+  'openai_maxOutput': '输出长度限制',
+  'openai_limitHint': '未设置',
+  'openai_capUnset': '未设置',
+  'openai_capYes': '支持',
+  'openai_capNo': '不支持',
+  'openai_pleaseEnterValidNumber': '请输入有效的数字',
 
   // Test Service
   'openai_lastInputLoadFailed': '加载上次输入失败',

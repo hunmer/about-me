@@ -114,6 +114,16 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_setDefaultModelFailed': 'Failed to set default model',
   'openai_groupFilterTitle': 'Group',
   'openai_allGroups': 'All groups',
+  'openai_modelCapabilities': 'Capabilities',
+  'openai_supportsVision': 'Multimodal (vision)',
+  'openai_supportsReasoning': 'Reasoning',
+  'openai_contextLimit': 'Context limit',
+  'openai_maxOutput': 'Output limit',
+  'openai_limitHint': 'Not set',
+  'openai_capUnset': 'Not set',
+  'openai_capYes': 'Yes',
+  'openai_capNo': 'No',
+  'openai_pleaseEnterValidNumber': 'Please enter a valid number',
 
   // Test Service
   'openai_lastInputLoadFailed': 'Failed to load last input',

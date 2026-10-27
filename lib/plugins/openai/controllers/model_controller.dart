@@ -225,6 +225,7 @@ class ModelController {
           supportsVision: _parseSupportsVision(m),
           supportsReasoning: m['reasoning'] as bool?,
           contextLimit: ((m['limit'] as Map?)?['context'] as num?)?.toInt(),
+          maxOutput: ((m['limit'] as Map?)?['output'] as num?)?.toInt(),
         ));
       });
       if (models.isEmpty) return;
@@ -287,7 +288,8 @@ class ModelController {
             existing.models[index] = merged;
             if (merged.supportsVision != current.supportsVision ||
                 merged.supportsReasoning != current.supportsReasoning ||
-                merged.contextLimit != current.contextLimit) {
+                merged.contextLimit != current.contextLimit ||
+                merged.maxOutput != current.maxOutput) {
               needsSave = true;
             }
           }

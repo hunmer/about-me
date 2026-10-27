@@ -224,27 +224,6 @@ class _AgentDetailContent extends StatelessWidget {
         _buildInfoRow('服务商', agent.serviceProviderId, labelText, valueText),
         const SizedBox(height: 6),
         _buildInfoRow('模型', agent.model, labelText, valueText),
-        if (agent.effectiveSystemPrompt.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          const Text('角色设定', style: labelText),
-          const SizedBox(height: 4),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.04),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              agent.effectiveSystemPrompt,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF595959),
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }
