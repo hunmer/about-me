@@ -201,11 +201,14 @@ class _ProductListState extends State<ProductList> {
       enableSearchBar: true,
       searchPlaceholder: 'store_searchProductPlaceholder'.tr,
       onSearchChanged: _handleSearchChanged,
-      // 多条件过滤栏，尾部为视图切换 + 排序入口
+      // 导航栏右侧视图切换按钮（大标题态与折叠态 header 均显示）
+      actions: [_buildViewToggle()],
+      largeTitleActions: [_buildViewToggle()],
+      // 多条件过滤栏，排序入口合并到过滤栏尾部圆形按钮
       enableMultiFilter: true,
       multiFilterItems: _buildFilterItems(),
       onMultiFilterChanged: _applyMultiFilters,
-      multiFilterBarTrailing: _buildTrailingActions(),
+      multiFilterBarTrailing: _buildSortButton(),
     );
   }
 
@@ -458,69 +461,64 @@ class _ProductListState extends State<ProductList> {
     return true;
   }
 
-  /// 过滤栏尾部动作：视图切换（网格/列表）+ 排序入口
-  /// （DSPopover 经根 Overlay 展示需 DSThemeBridge 包裹）
-  Widget _buildTrailingActions() {
+  /// 导航栏右侧视图切换按钮（图标显示待切换的目标模式），
+  /// 大标题态与折叠态 header 共用；插件子树无 AppTheme 祖先需 Bridge 提供
+  Widget _buildViewToggle() {
     return DSThemeBridge(
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 视图切换：图标显示待切换的目标模式
-              Pressable(
-                onPressed:
-                    () => setState(() => _isListView = !_isListView),
-                builder: (context, states) => JellyBox(
-                  width: 36,
-                  height: 36,
-                  radius: theme.radii.circle,
-                  color: theme.surfaceAlt,
-                  child: Center(
-                    child: DsIcon(
-                      _isListView ? DsIconKind.grid : DsIconKind.list,
-                      size: 18,
-                      color: theme.textSub,
+          return DSIconButton(
+            icon: _isListView ? DsIconKind.grid : DsIconKind.list,
+            size: 36,
+            color: theme.surfaceAlt,
+            iconColor: theme.primary,
+            tooltip: _isListView ? 'store_gridView'.tr : 'store_listView'.tr,
+            onPressed: () => setState(() => _isListView = !_isListView),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 过滤栏尾部圆形排序入口（DSPopover 经根 Overlay 展示需 DSThemeBridge 包裹）
+  Widget _buildSortButton() {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return DSPopover(
+            width: 170,
+            contentBuilder: (context, close) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (index, label) in _sortLabels.indexed)
+                    SmoothSheetAction(
+                      icon: _sortIndex == index
+                          ? DsIconKind.check
+                          : DsIconKind.sort,
+                      label: label.tr,
+                      onTap: () {
+                        close();
+                        setState(() {
+                          _sortIndex = index;
+                        });
+                      },
                     ),
-                  ),
-                ),
+                ],
+              );
+            },
+            child: JellyBox(
+              width: 36,
+              height: 36,
+              radius: theme.radii.circle,
+              color: theme.surfaceAlt,
+              child: Center(
+                child: DsIcon(DsIconKind.sort, size: 18, color: theme.textSub),
               ),
-              const SizedBox(width: 8),
-              DSPopover(
-                width: 170,
-                contentBuilder: (context, close) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final (index, label) in _sortLabels.indexed)
-                        SmoothSheetAction(
-                          icon: _sortIndex == index
-                              ? DsIconKind.check
-                              : DsIconKind.sort,
-                          label: label.tr,
-                          onTap: () {
-                            close();
-                            setState(() {
-                              _sortIndex = index;
-                            });
-                          },
-                        ),
-                    ],
-                  );
-                },
-                child: JellyBox(
-                  width: 36,
-                  height: 36,
-                  radius: theme.radii.circle,
-                  color: theme.surfaceAlt,
-                  child: Center(
-                    child: DsIcon(DsIconKind.sort, size: 18, color: theme.textSub),
-                  ),
-                ),
-              ),
-            ],
+            ),
           );
         },
       ),

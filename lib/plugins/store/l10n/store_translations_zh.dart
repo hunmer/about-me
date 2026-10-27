@@ -81,6 +81,8 @@ const Map<String, String> storeTranslationsZh = {
   'store_noProducts': '暂无商品',
   'store_productList': '商品列表',
   'store_productDetail': '商品详情',
+  'store_gridView': '切换为网格视图',
+  'store_listView': '切换为列表视图',
   'store_exchangePeriod': '兑换时间',
   'store_useDurationLabel': '兑换后有效期',
   'store_useDurationDays': '@days 天',

@@ -16,7 +16,7 @@ class ImageSearchController extends ChangeNotifier {
   String query = '';
   String imageUrl = '';
   String provider = 'unsplash';
-  String imageType = 'photo'; // 仅 pixabay
+  String imageType = 'photo'; // pixabay/magnific
   String orientation = 'any';
   String sort = 'relevant';
   int perPage = 10;
@@ -53,9 +53,12 @@ class ImageSearchController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 当前图源是否支持翻页（仅 unsplash/pixabay）
+  /// 当前图源是否支持翻页（unsplash/pixabay/magnific）
   bool get canPaging =>
-      mode == 'keyword' && (provider == 'unsplash' || provider == 'pixabay');
+      mode == 'keyword' &&
+      (provider == 'unsplash' ||
+          provider == 'pixabay' ||
+          provider == 'magnific');
 
   /// 缩略图字节缓存（key=图片 URL），走系统代理下载，
   /// google/bing 等被墙图源的缓存缩略图才能显示（Image.network 不走代理）

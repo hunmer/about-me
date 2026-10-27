@@ -225,6 +225,7 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
   Widget _buildFilters(AppThemeData theme) {
     final c = _controller;
     final isPixabay = c.provider == 'pixabay';
+    final isMagnific = c.provider == 'magnific';
     final supportsOrientation = c.provider == 'unsplash' || isPixabay;
     final supportsSort = c.provider == 'unsplash' || isPixabay;
 
@@ -241,9 +242,12 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
                 onSelected: (_) => c.setPerPage(n),
               ),
           ]),
-          if (isPixabay)
+          // magnific 仅支持 photo/vector 两种类型
+          if (isPixabay || isMagnific)
             _filterRow(theme, 'toolbox_imageType', [
-              for (final t in const ['photo', 'illustration', 'vector', 'all'])
+              for (final t in (isMagnific
+                  ? const ['photo', 'vector']
+                  : const ['photo', 'illustration', 'vector', 'all']))
                 DSChip(
                   label: 'toolbox_imageType_$t'.tr,
                   selected: c.imageType == t,

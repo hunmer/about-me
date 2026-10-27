@@ -190,15 +190,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 商品大图：Hero 与列表/网格卡片图片联动，点击全屏预览
-                  DsSketchPanel(
-                    theme: theme,
-                    radius: BorderRadius.circular(20),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: _buildHeroImage(theme, product),
-                    ),
-                  ),
+                  // 商品大图：无描边框，Hero 与列表/网格卡片图片联动，点击全屏预览
+                  _buildHeroImage(theme, product),
                   const SizedBox(height: 16),
 
                   // 名称 + 价格
@@ -318,7 +311,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final url = product.image;
     final hasImage = url != null && url.isNotEmpty;
     Widget image = ClipRRect(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: SizedBox(
         height: 220,
         width: double.infinity,
