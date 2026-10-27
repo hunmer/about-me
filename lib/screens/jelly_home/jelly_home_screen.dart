@@ -30,6 +30,10 @@ import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/message_input.dart';
+import 'package:aboutme/widgets/chat_thread_sheet.dart';
+import 'package:aboutme/widgets/message_input/message_input.dart'
+    as common_message_input;
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import 'package:get/get.dart' hide Value;
 
@@ -546,9 +550,38 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     return controller;
   }
 
+  /// 打开当前 Live2D 会话的聊天记录
+  ///
+  /// bottomSheet 为独立路由、外部 setState 不会刷新，故传入消息快照
+  Future<void> _showChatHistory() async {
+    final controller = _controller;
+    if (controller == null) return;
+    final agentName = controller.currentAgent?.name;
+    final bubbles = controller.messages
+        .map(
+          (m) => ChatThreadBubbleData(
+            id: m.id,
+            content: m.content,
+            isUser: m.isUser,
+            agentName: m.isUser ? null : agentName,
+            status: m.isGenerating ? 'thinking' : null,
+          ),
+        )
+        .toList();
+    // ChatThreadSheet 自带表面/高度/拖拽条，外壳保持透明并关闭默认拖拽条
+    await SmoothBottomSheet.show(
+      context: context,
+      backgroundColor: Colors.transparent,
+      showDragHandle: false,
+      builder: (_) => ChatThreadSheet(
+        title: Live2DPlugin.instance.selected?.name ?? '聊天记录',
+        bubbles: bubbles,
+      ),
+    );
+  }
+
   void _onMessagesChanged() {
-    final messages = _messageService?.currentMessages ?? const [];
-    final latestUserIndex = messages.lastIndexWhere(
+    final messages = _messageService?.currentMessages ?? const [];    final latestUserIndex = messages.lastIndexWhere(
       (message) => message.isUser,
     );
     if (latestUserIndex < 0) return;
@@ -639,7 +672,16 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
                   color: const Color(0x59FFFFFF),
                   borderRadius: BorderRadius.circular(28),
                 ),
-                child: MessageInput(controller: controller),
+                child: MessageInput(
+                  controller: controller,
+                  extraQuickActions: [
+                    common_message_input.MessageInputQuickAction(
+                      icon: DsIconKind.clock,
+                      tooltip: '聊天记录',
+                      onPressed: _showChatHistory,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

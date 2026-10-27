@@ -674,19 +674,19 @@ class ChatController extends ChangeNotifier {
     _isCancelling = true;
     notifyListeners();
 
-    // 停止当前正在生成的消息：已产出内容的保留并标记完成，
-    // 仍是空占位的直接删除（否则会残留一条空 AI 气泡）
+    // 立即显示取消提示，避免依赖异步请求回调更新消息。
     final generatingMessages = messageService.currentMessages
         .where((msg) => msg.isGenerating && !msg.isUser)
         .toList();
 
     for (var msg in generatingMessages) {
-      final hasToolSteps = msg.toolCall?.steps.isNotEmpty ?? false;
-      if (msg.content.trim().isEmpty && !hasToolSteps) {
-        messageService.deleteMessage(msg.conversationId, msg.id);
-      } else {
-        messageService.updateMessage(msg.copyWith(isGenerating: false));
-      }
+      messageService.updateMessage(
+        msg.copyWith(
+          content: '🛑 用户已取消操作',
+          tokenCount: 0,
+          isGenerating: false,
+        ),
+      );
     }
 
     _isSending = false;

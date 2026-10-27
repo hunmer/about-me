@@ -148,11 +148,14 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
                   // 图片预览区域
                   GestureDetector(
                     onTap: widget.enabled ? () => _showPicker(ctx) : null,
-                    child: AdaptiveImage(
-                      imagePath: imagePath,
-                      width: widget.previewWidth,
-                      height: widget.previewHeight,
-                      borderRadius: widget.borderRadius,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
+                      child: AdaptiveImage(
+                        imagePath: imagePath,
+                        width: widget.previewWidth,
+                        height: widget.previewHeight,
+                        borderRadius: widget.borderRadius,
+                      ),
                     ),
                   ),
                   // 选择按钮

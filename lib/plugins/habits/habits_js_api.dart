@@ -35,7 +35,32 @@ Future<String> _jsGetHabitById(Map<String, dynamic> params) async {
 
 /// 创建习惯
 Future<String> _jsCreateHabit(Map<String, dynamic> params) async {
-  final result = await HabitsPlugin.instance._useCase.createHabit(params);
+  final useCaseParams = Map<String, dynamic>.from(params);
+  final rawSkillId = useCaseParams['skillId'];
+  final skillId = rawSkillId is String ? rawSkillId.trim() : null;
+
+  if (skillId == null || skillId.isEmpty) {
+    // 扁平化 schema 会把未用参数填成空串，空值须视为未传。
+    useCaseParams.remove('skillId');
+  } else {
+    final plugin = HabitsPlugin.instance;
+    await plugin.getSkillController().initialized;
+    final existingSkill = plugin.getSkillController().getSkillById(skillId);
+
+    if (existingSkill == null) {
+      final skillResult = await plugin._useCase.createSkill({
+        'id': skillId,
+        'title': skillId,
+      });
+      if (skillResult.isFailure) {
+        return jsonEncode({'error': skillResult.errorOrNull?.message});
+      }
+    }
+
+    useCaseParams['skillId'] = skillId;
+  }
+
+  final result = await HabitsPlugin.instance._useCase.createHabit(useCaseParams);
 
   if (result.isSuccess) {
     return jsonEncode(result.dataOrNull);

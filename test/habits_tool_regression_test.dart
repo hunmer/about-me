@@ -119,8 +119,66 @@ void main() {
     final list = (habits as Map)["data"] as List;
     expect(list.any((h) => h["id"] == habitId), isTrue);
 
+    final habit = await invoke("getHabitById", {"habitId": habitId});
+    expect(habit["skillId"], anyOf(isNull, isNot("")));
+
     expect(
       (await invoke("deleteHabit", {"habitId": habitId}))["success"],
+      isTrue,
+    );
+  });
+
+  test("createHabit 传入不存在的 skillId 时自动创建并绑定技能", () async {
+    const skillId = "skill-auto-created-regression";
+    final created = await invoke("createHabit", {
+      "title": "学习 React",
+      "durationMinutes": 90,
+      "skillId": skillId,
+    });
+    expect(created.containsKey("error"), isFalse, reason: '$created');
+    expect(created["skillId"], skillId);
+
+    final habitId = created["id"] as String;
+    final skill = await invoke("getSkillById", {"skillId": skillId});
+    expect(skill.containsKey("error"), isFalse, reason: '$skill');
+    expect(skill["id"], skillId);
+    expect(skill["title"], skillId);
+
+    expect(
+      (await invoke("deleteHabit", {"habitId": habitId}))["success"],
+      isTrue,
+    );
+    expect(
+      (await invoke("deleteSkill", {"skillId": skillId}))["success"],
+      isTrue,
+    );
+  });
+
+  test("createHabit 传入已有 skillId 时复用技能", () async {
+    const skillId = "skill-existing-regression";
+    final createdSkill = await invoke("createSkill", {
+      "id": skillId,
+      "title": "已有技能",
+    });
+    expect(createdSkill.containsKey("error"), isFalse, reason: '$createdSkill');
+
+    final created = await invoke("createHabit", {
+      "title": "练习已有技能",
+      "durationMinutes": 30,
+      "skillId": skillId,
+    });
+    expect(created.containsKey("error"), isFalse, reason: '$created');
+    expect(created["skillId"], skillId);
+
+    final skill = await invoke("getSkillById", {"skillId": skillId});
+    expect(skill["title"], "已有技能");
+
+    expect(
+      (await invoke("deleteHabit", {"habitId": created["id"]}))["success"],
+      isTrue,
+    );
+    expect(
+      (await invoke("deleteSkill", {"skillId": skillId}))["success"],
       isTrue,
     );
   });
