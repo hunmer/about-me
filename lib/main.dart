@@ -103,6 +103,10 @@ void main() {
               'window',
               WindowGeometryService.instance.initialize,
             );
+            // 插件注册提前到启动壳期间执行，壳等待目标插件就绪后再显示
+            // 真实应用，冷启动全程只显示一层 Aboutme loading。
+            unawaited(initializeBackgroundServices());
+            await AppStartupState.instance.whenCriticalPluginsReady;
           },
           builder: (_) => const MyApp(),
         ),
@@ -207,8 +211,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       StartupTrace.mark('app_shell_frame');
-      // 真实导航树出现后才启动插件，不和启动壳首帧争用主线程。
-      unawaited(initializeBackgroundServices());
+      // 插件注册已在启动壳期间启动（见 main 的 AppBootstrap.initialize），
+      // 此处接管依赖真实导航树的权限引导弹窗。
+      unawaited(showStartupPermissionOnboarding());
       _setupAutoUpdate();
       // 初始化Flutter悬浮球
       await initializeFlutterFloatingBall();

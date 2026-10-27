@@ -413,28 +413,10 @@ Future<void> _initializeBackgroundServices() async {
       }),
     );
 
-    // 延迟执行权限检查和小组件同步
+    // 延迟执行小组件同步
+    // （权限引导已抽到 showStartupPermissionOnboarding，由 MyApp 首帧后调用：
+    // 插件注册提前到启动壳期间执行时，Navigator 尚未挂载，弹窗必须等真实导航树）
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final context = navigatorKey.currentContext;
-      if (context != null && _shouldHandlePermissionsForPlatform()) {
-        _permissionController = PermissionController();
-        final hasCompletedPermissions = globalConfigManager
-            .getAppConfigValue<bool>(_permissionOnboardingKey, false);
-
-        if (!hasCompletedPermissions) {
-          await showPermissionRequestDialog(
-            context: context,
-            controller: _permissionController,
-            barrierDismissible: false,
-            showSkipButton: true,
-          );
-          await globalConfigManager.setAppConfigValue(
-            _permissionOnboardingKey,
-            true,
-          );
-        }
-      }
-
       // 发布插件初始化完成事件
       eventManager.broadcast(
         'plugins_initialized',
@@ -454,6 +436,30 @@ Future<void> _initializeBackgroundServices() async {
     // 即使后台注册整体失败，也不要让启动闸门永久等待。
     startupState._setCriticalPluginsReady();
     startupState._setFullyReady();
+  }
+}
+
+/// 首次安装的权限引导弹窗（移动端）。
+/// 插件注册已提前到启动壳期间，此处依赖真实导航树，由 MyApp 首帧后调用；
+/// 沿用原时序：等插件注册完成后再弹，避开启动期其他弹层。
+Future<void> showStartupPermissionOnboarding() async {
+  if (!_shouldHandlePermissionsForPlatform()) return;
+  await AppStartupState.instance.whenPluginsReady;
+  final context = navigatorKey.currentContext;
+  if (context == null) return;
+
+  _permissionController = PermissionController();
+  final hasCompletedPermissions = globalConfigManager
+      .getAppConfigValue<bool>(_permissionOnboardingKey, false);
+
+  if (!hasCompletedPermissions) {
+    await showPermissionRequestDialog(
+      context: context,
+      controller: _permissionController,
+      barrierDismissible: false,
+      showSkipButton: true,
+    );
+    await globalConfigManager.setAppConfigValue(_permissionOnboardingKey, true);
   }
 }
 

@@ -147,6 +147,7 @@ class _AiImageScreenState extends State<AiImageScreen> {
               final theme = DSThemeBridge.resolve(context);
               return Row(
                 mainAxisSize: MainAxisSize.min,
+                spacing: 8,
                 children: [
                   DSIconButton(
                     icon: DsIconKind.sparkle,

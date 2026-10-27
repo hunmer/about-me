@@ -221,13 +221,7 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
             StaggeredGridTile.count(
               crossAxisCellCount: _tileWidth(shown[index]),
               mainAxisCellCount: _tileHeight(shown[index]),
-              // 手绘便签:随机倾斜 + 小号贴条(4 列窄卡片,§11.2)
-              child: HandDrawnStickyItem(
-                tiltKey: shown[index].id,
-                tapeWidth: 56,
-                tapeHeight: 18,
-                child: _buildCard(context, theme, shown[index], index),
-              ),
+              child: _buildCard(context, theme, shown[index], index),
             ),
         ],
       ),
@@ -281,9 +275,10 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
 
   /// 构建单个日期卡片
   ///
-  /// 提供了当日统计的小组件用公共展示组件渲染：
+  /// 提供了当日统计的小组件用公共展示组件渲染（自带纸卡装饰，不外包容器）：
   /// 插画指标卡（单指标 + 插画）/ 切角统计卡（多指标竖排）；
-  /// 未提供统计的回退小组件自身的 builder（手绘墨线底，见 design.md §9）
+  /// 未提供统计的回退小组件自身的 builder
+  /// （手绘便签外壳 + 墨线底，见 design.md §9、§11.2）
   Widget _buildCard(
     BuildContext context,
     AppThemeData theme,
@@ -292,18 +287,24 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
   ) {
     final stats = _statsById[widgetDef.id];
     if (stats == null || stats.isEmpty) {
-      return WiredDraw(
-        child: ClipRRect(
-          borderRadius: theme.radii.md,
-          child: Container(
-            decoration: dsSketchDecoration(
-              theme: theme,
-              fillColor: theme.surfaceAlt,
-              radius: theme.radii.md,
-              // 列表项传唯一 seed 让墨迹有变化(§9.4)
-              seed: widgetDef.id.hashCode & 0x7fffffff,
+      // 手绘便签:随机倾斜 + 小号贴条(4 列窄卡片)
+      return HandDrawnStickyItem(
+        tiltKey: widgetDef.id,
+        tapeWidth: 56,
+        tapeHeight: 18,
+        child: WiredDraw(
+          child: ClipRRect(
+            borderRadius: theme.radii.md,
+            child: Container(
+              decoration: dsSketchDecoration(
+                theme: theme,
+                fillColor: theme.surfaceAlt,
+                radius: theme.radii.md,
+                // 列表项传唯一 seed 让墨迹有变化(§9.4)
+                seed: widgetDef.id.hashCode & 0x7fffffff,
+              ),
+              child: widgetDef.build(context, const {}, widgetDef.defaultSize),
             ),
-            child: widgetDef.build(context, const {}, widgetDef.defaultSize),
           ),
         ),
       );

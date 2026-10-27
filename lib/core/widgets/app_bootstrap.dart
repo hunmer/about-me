@@ -22,6 +22,9 @@ class AppSplash extends StatelessWidget {
                 style: TextStyle(
                   color: Color(0xFF72594D),
                   fontSize: 28,
+                  // 与 MyApp 主题字体一致：壳期间即预热字体资产，
+                  // 避免进入真实应用时文字从默认字体跳变为手写体
+                  fontFamily: 'TegakiZatsu',
                   decoration: TextDecoration.none,
                 ),
               ),
@@ -32,6 +35,7 @@ class AppSplash extends StatelessWidget {
                   style: TextStyle(
                     color: Color(0xFF72594D),
                     fontSize: 14,
+                    fontFamily: 'TegakiZatsu',
                     decoration: TextDecoration.none,
                   ),
                 )
