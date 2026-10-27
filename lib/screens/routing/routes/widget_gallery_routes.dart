@@ -116,6 +116,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/roadmap_timeline_card_ex
 import 'package:aboutme/screens/widgets_gallery/screens/folder_deck_card_example.dart';
 import 'package:aboutme/widgets/drink_checkin_calendar.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/spatial_list_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/photo_folder_reel_card_example.dart';
 
 /// 组件展示路由注册表
 class WidgetGalleryRoutes implements RouteRegistry {
@@ -1027,6 +1028,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
       description: '空间清单卡片',
     ),
     RouteDefinition(
+      path: '/widgets_gallery/photo_folder_reel_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const PhotoFolderReelCardExample(),
+        settings: settings,
+      ),
+      description: '3D 毛玻璃照片文件夹轮播卡片',
+    ),
+    RouteDefinition(
       path: '/widgets_gallery/newspaper_stand',
       handler: (settings) => RouteHelpers.createRoute(
         const NewspaperStandDemo(),
@@ -1041,6 +1050,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '定期付款日历（头像徽章 + 订阅堆叠 + 横向照片条展开）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/molly_memories',
+      handler: (settings) => RouteHelpers.createRoute(
+        const MollyMemoriesDemo(),
+        settings: settings,
+      ),
+      description: 'Molly 2024 回忆动效（iOS 散落拼贴 ↔ 九宫格弹簧过渡）',
     ),
   ];
 }
@@ -1534,6 +1551,13 @@ final List<WidgetPreviewItem> _defaultWidgetItems = [
     title: '空间清单卡片',
     subtitle: 'SpatialListCard - 可折叠清单与可拖动空间画布',
     route: '/widgets_gallery/spatial_list_card',
+  ),
+  WidgetPreviewItem(
+    category: '内容类',
+    icon: Icons.photo_library,
+    title: '3D 毛玻璃照片文件夹轮播卡片',
+    subtitle: 'PhotoFolderReelCard - 文件夹轮播与扇形照片展开',
+    route: '/widgets_gallery/photo_folder_reel_card',
   ),
   // 财务类
   WidgetPreviewItem(

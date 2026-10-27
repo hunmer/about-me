@@ -101,6 +101,7 @@ import 'widgets/linked_task_flow_card.dart';
 import 'widgets/roadmap_timeline_card.dart';
 import 'widgets/folder_deck_card.dart';
 import 'widgets/spatial_list_card.dart';
+import 'widgets/photo_folder_reel_card.dart';
 
 /// 公共小组件 ID 枚举
 enum CommonWidgetId {
@@ -203,6 +204,7 @@ enum CommonWidgetId {
   roadmapTimelineCard,
   folderDeckCard,
   spatialListCard,
+  photoFolderReelCard,
 }
 
 /// 公共小组件元数据
@@ -1009,6 +1011,14 @@ class CommonWidgetsRegistry {
       defaultSize: Large3Size(),
       supportedSizes: [Large3Size()],
     ),
+    CommonWidgetId.photoFolderReelCard: const CommonWidgetMetadata(
+      id: CommonWidgetId.photoFolderReelCard,
+      name: '3D 毛玻璃照片文件夹轮播卡片',
+      description: '深色文件夹轮播（弹簧拖拽 + 前盖 3D 倾角），点击中央文件夹展开扇形照片条，展开态拖照片/下滑收起',
+      icon: Icons.photo_library,
+      defaultSize: Large3Size(),
+      supportedSizes: [LargeSize(), Large3Size()],
+    ),
   };
 
   /// 获取元数据
@@ -1272,6 +1282,8 @@ class CommonWidgetBuilder {
         return FolderDeckCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.spatialListCard:
         return SpatialListCardWidget.fromProps(finalProps, effectiveSize);
+      case CommonWidgetId.photoFolderReelCard:
+        return PhotoFolderReelCardWidget.fromProps(finalProps, effectiveSize);
       case CommonWidgetId.timerCard:
         return TimerCardWidget.fromProps(finalProps, effectiveSize);
     }

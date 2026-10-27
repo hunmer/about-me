@@ -40,66 +40,49 @@ class NoteCard extends StatelessWidget {
     this.onToggleArchive,
   });
 
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用，动态）
+  List<ArcMenuItem> _noteActions(BuildContext context) => [
+        ArcMenuItem(
+          icon: DsIconKind.copy,
+          label: 'app_copy'.tr,
+          onTap: _copyNoteContent,
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: 'app_edit'.tr,
+          onTap: () {
+            if (onEdit != null) {
+              onEdit!();
+            } else {
+              onTap();
+            }
+          },
+        ),
+        if (onEditStyle != null)
+          ArcMenuItem(
+            icon: DsIconKind.palette,
+            label: 'notes_color'.tr,
+            onTap: () => _showStyleEditor(context),
+          ),
+        if (onToggleArchive != null)
+          ArcMenuItem(
+            icon: DsIconKind.archive,
+            label: note.isArchived ? 'notes_unarchive'.tr : 'notes_archive'.tr,
+            onTap: onToggleArchive!,
+          ),
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'app_delete'.tr,
+          destructive: true,
+          onTap: () => onDelete?.call(),
+        ),
+      ];
+
   /// 显示底部抽屉菜单
   void _showBottomSheet(BuildContext context) {
-    SmoothBottomSheet.show(
+    SmoothBottomSheet.showActionList(
       context: context,
-      builder: (context) => DSThemeBridge(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SmoothSheetAction(
-              icon: DsIconKind.copy,
-              label: 'app_copy'.tr,
-              onTap: () {
-                Navigator.pop(context);
-                _copyNoteContent();
-              },
-            ),
-            SmoothSheetAction(
-              icon: DsIconKind.edit,
-              label: 'app_edit'.tr,
-              onTap: () {
-                Navigator.pop(context);
-                if (onEdit != null) {
-                  onEdit!();
-                } else {
-                  onTap();
-                }
-              },
-            ),
-            if (onEditStyle != null)
-              SmoothSheetAction(
-                icon: DsIconKind.palette,
-                label: 'notes_color'.tr,
-                onTap: () {
-                  Navigator.pop(context);
-                  _showStyleEditor(context);
-                },
-              ),
-            if (onToggleArchive != null)
-              SmoothSheetAction(
-                icon: DsIconKind.archive,
-                label: note.isArchived
-                    ? 'notes_unarchive'.tr
-                    : 'notes_archive'.tr,
-                onTap: () {
-                  Navigator.pop(context);
-                  onToggleArchive!();
-                },
-              ),
-            SmoothSheetAction(
-              icon: DsIconKind.trash,
-              label: 'app_delete'.tr,
-              destructive: true,
-              onTap: () {
-                Navigator.pop(context);
-                onDelete?.call();
-              },
-            ),
-          ],
-        ),
-      ),
+      actions: _noteActions(context),
     );
   }
 
@@ -189,45 +172,10 @@ class NoteCard extends StatelessWidget {
     // 水印位于内容层之下，溢出被裁剪
     final radius = BorderRadius.circular(14);
 
-    // 长按弹圆盘快捷菜单（与底部 sheet 按钮一致，动态）
+    // 长按弹圆盘快捷菜单（与底部 sheet 按钮共用一份数据，动态）
     return ArcContextMenu.actions(
       onTap: onTap,
-      actions: [
-        ArcMenuItem(
-          icon: DsIconKind.copy,
-          label: 'app_copy'.tr,
-          onTap: _copyNoteContent,
-        ),
-        ArcMenuItem(
-          icon: DsIconKind.edit,
-          label: 'app_edit'.tr,
-          onTap: () {
-            if (onEdit != null) {
-              onEdit!();
-            } else {
-              onTap();
-            }
-          },
-        ),
-        if (onEditStyle != null)
-          ArcMenuItem(
-            icon: DsIconKind.palette,
-            label: 'notes_color'.tr,
-            onTap: () => _showStyleEditor(context),
-          ),
-        if (onToggleArchive != null)
-          ArcMenuItem(
-            icon: DsIconKind.archive,
-            label: note.isArchived ? 'notes_unarchive'.tr : 'notes_archive'.tr,
-            onTap: onToggleArchive!,
-          ),
-        ArcMenuItem(
-          icon: DsIconKind.trash,
-          label: 'app_delete'.tr,
-          destructive: true,
-          onTap: () => onDelete?.call(),
-        ),
-      ],
+      actions: _noteActions(context),
       showMore: () => _showBottomSheet(context),
       child: ClipRRect(
         borderRadius: radius,

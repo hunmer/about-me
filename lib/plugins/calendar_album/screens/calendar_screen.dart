@@ -434,7 +434,11 @@ class _CalendarScreenState extends State<CalendarScreen>
         dataListenable: calendarController,
         selectedDate: selectedDate,
         onDateSelected: onDateSelected,
+        // 有图片的日期点击被展开占用，长按触发选中弹抽屉
+        onDayLongPressed: onDateSelected,
         onHeaderTapped: onHeaderTapped,
+        // 点击图片条里的图片：选中该日期并弹当日抽屉
+        onPhotoTap: (day, photo) => onDateSelected(day),
       );
     }
 
@@ -455,7 +459,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  /// 照片视图某月数据适配：每天取首篇笔记的标题 + 首图
+  /// 照片视图某月数据适配：每天汇总全部笔记的图片（缩略图优先）
   Map<DateTime, PhotoCalendarDayInfo> _buildPhotoMonthInfo(
     CalendarController calendarController,
     DateTime month,
@@ -470,21 +474,22 @@ class _CalendarScreenState extends State<CalendarScreen>
           !date.isBefore(nextMonth)) {
         return;
       }
-      final first = entries.first;
-      // 首图优先取缩略图（过滤空字符串占位），其次原图 / Markdown 内嵌图
-      String? image;
-      final thumbs = first.thumbUrls.where((t) => t.isNotEmpty);
-      if (thumbs.isNotEmpty) {
-        image = thumbs.first;
-      } else if (first.imageUrls.isNotEmpty) {
-        image = first.imageUrls.first;
-      } else {
-        final markdownImages = first.extractImagesFromMarkdown();
-        if (markdownImages.isNotEmpty) {
-          image = markdownImages.first;
+      // 图片优先取缩略图（过滤空字符串占位），其次原图 / Markdown 内嵌图
+      final photos = <String>[];
+      for (final entry in entries) {
+        final thumbs = entry.thumbUrls.where((t) => t.isNotEmpty).toList();
+        if (thumbs.isNotEmpty) {
+          photos.addAll(thumbs);
+        } else if (entry.imageUrls.isNotEmpty) {
+          photos.addAll(entry.imageUrls);
+        } else {
+          photos.addAll(entry.extractImagesFromMarkdown());
         }
       }
-      dayData[date] = PhotoCalendarDayInfo(title: first.title, imagePath: image);
+      dayData[date] = PhotoCalendarDayInfo(
+        title: entries.first.title,
+        photos: photos,
+      );
     });
     return dayData;
   }

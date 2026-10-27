@@ -143,25 +143,7 @@ class _PluginListDialogState extends State<PluginListDialog> {
     return GestureDetector(
       onSecondaryTapUp: (_) => _showPluginMenu(context, plugin),
       child: ArcContextMenu.actions(
-        actions: [
-          ArcMenuItem(
-            icon: DsIconKind.pin,
-            label: isPinned ? 'core_unpinPlugin'.tr : 'core_pinPlugin'.tr,
-            onTap: () {
-              PluginManager.instance.togglePluginPin(plugin.id);
-              // 刷新列表，固定项移动到最前
-              setState(() {});
-            },
-          ),
-          ArcMenuItem(
-            icon: DsIconKind.pictureInPicture,
-            label: 'core_openInOverlay'.tr,
-            onTap: () {
-              Navigator.of(context).pop(); // 关闭插件列表对话框
-              PluginOverlayManager().showPluginOverlay(context, plugin);
-            },
-          ),
-        ],
+        actions: _pluginActions(plugin),
         showMore: () => _showPluginMenu(context, plugin),
         child: WiredDraw(
         child: DSCard(
@@ -251,36 +233,36 @@ class _PluginListDialogState extends State<PluginListDialog> {
      );
    }
 
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）：固定/取消固定、小窗打开
+  List<ArcMenuItem> _pluginActions(PluginBase plugin) {
+    final isPinned = PluginManager.instance.isPluginPinned(plugin.id);
+    return [
+      ArcMenuItem(
+        icon: DsIconKind.pin,
+        label: isPinned ? 'core_unpinPlugin'.tr : 'core_pinPlugin'.tr,
+        onTap: () {
+          PluginManager.instance.togglePluginPin(plugin.id);
+          // 刷新列表，固定项移动到最前
+          setState(() {});
+        },
+      ),
+      ArcMenuItem(
+        icon: DsIconKind.pictureInPicture,
+        label: 'core_openInOverlay'.tr,
+        onTap: () {
+          Navigator.of(context).pop(); // 关闭插件列表对话框
+          PluginOverlayManager().showPluginOverlay(context, plugin);
+        },
+      ),
+    ];
+  }
+
   /// 长按卡片弹出快捷操作面板：固定/取消固定、小窗打开
   Future<void> _showPluginMenu(BuildContext cardContext, PluginBase plugin) {
-    final isPinned = PluginManager.instance.isPluginPinned(plugin.id);
-    return SmoothBottomSheet.showWithTitle(
+    return SmoothBottomSheet.showActionList(
       context: cardContext,
       title: plugin.getPluginName(cardContext) ?? plugin.id,
-      child: Builder(builder: (sheetContext) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SmoothSheetAction(
-            icon: DsIconKind.pin,
-            label: isPinned ? 'core_unpinPlugin'.tr : 'core_pinPlugin'.tr,
-            onTap: () {
-              Navigator.of(sheetContext).pop();
-              PluginManager.instance.togglePluginPin(plugin.id);
-              // 刷新列表，固定项移动到最前
-              setState(() {});
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.pictureInPicture,
-            label: 'core_openInOverlay'.tr,
-            onTap: () {
-              Navigator.of(sheetContext).pop(); // 关闭操作面板
-              Navigator.of(context).pop(); // 关闭插件列表对话框
-              PluginOverlayManager().showPluginOverlay(context, plugin);
-            },
-          ),
-        ],
-      )),
+      actions: _pluginActions(plugin),
     );
   }
 }

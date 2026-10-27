@@ -196,20 +196,7 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
     }
     // 长按封面弹圆盘快捷菜单：有自定义背景时可恢复默认
     return ArcContextMenu.actions(
-      actions: hasExplicit
-          ? [
-              ArcMenuItem(
-                icon: DsIconKind.refresh,
-                label: 'moments_bgReset'.tr,
-                onTap: () async {
-                  await _moments.clearProfileBg(_authorKey);
-                  if (mounted) {
-                    ToastService.instance.showToast('moments_bgResetDone'.tr);
-                  }
-                },
-              ),
-            ]
-          : const [],
+      actions: hasExplicit ? _bgActions() : const [],
       showMore: _showBgOptions,
       child: MomentsCover(
         path: path,
@@ -247,21 +234,25 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
     }
   }
 
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _bgActions() => [
+        ArcMenuItem(
+          icon: DsIconKind.refresh,
+          label: 'moments_bgReset'.tr,
+          onTap: () async {
+            await _moments.clearProfileBg(_authorKey);
+            if (mounted) {
+              ToastService.instance.showToast('moments_bgResetDone'.tr);
+            }
+          },
+        ),
+      ];
+
   void _showBgOptions() {
-    SmoothBottomSheet.showWithTitle<void>(
+    SmoothBottomSheet.showActionList(
       context: context,
       title: 'moments_imageActions'.tr,
-      child: SmoothSheetAction(
-        icon: DsIconKind.refresh,
-        label: 'moments_bgReset'.tr,
-        onTap: () async {
-          Navigator.pop(context);
-          await _moments.clearProfileBg(_authorKey);
-          if (mounted) {
-            ToastService.instance.showToast('moments_bgResetDone'.tr);
-          }
-        },
-      ),
+      actions: _bgActions(),
     );
   }
 

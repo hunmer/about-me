@@ -275,6 +275,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
             subtitle: 'NewspaperStandDemo（报纸堆叠 / 轮播拖拽 + 日期滚轮）',
             route: '/widgets_gallery/newspaper_stand',
           ),
+          _buildListItem(
+            context,
+            icon: Icons.photo_library,
+            title: 'Molly 2024 回忆动效',
+            subtitle: 'MollyMemoriesDemo（iOS 散落拼贴 ↔ 九宫格弹簧过渡）',
+            route: '/widgets_gallery/molly_memories',
+          ),
         ],
       ),
     );

@@ -670,20 +670,7 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
     return ArcContextMenu.actions(
       onTap: _openViewer,
       onDoubleTap: _doubleTapLike,
-      actions: [
-        ArcMenuItem(
-          icon: DsIconKind.image,
-          label: 'moments_setBg'.trParams({'name': widget.author.name}),
-          onTap: () async {
-            await MomentsService.instance.setProfileBg(
-              post.isUserPost ? MomentPost.userAuthorId : post.agentId,
-              post.images[_activeImage],
-              copy: true,
-            );
-            ToastService.instance.showToast('moments_bgSet'.tr);
-          },
-        ),
-      ],
+      actions: _imageActions(),
       showMore: _showImageActions,
       child: Container(
         height: 225,
@@ -805,16 +792,14 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
   }
 
   /// 长按帖子图片：设为该作者的主页背景（拷贝归档，帖子删除不受影响）
-  void _showImageActions() {
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _imageActions() {
     final post = widget.post;
-    SmoothBottomSheet.showWithTitle<void>(
-      context: context,
-      title: 'moments_imageActions'.tr,
-      child: SmoothSheetAction(
+    return [
+      ArcMenuItem(
         icon: DsIconKind.image,
         label: 'moments_setBg'.trParams({'name': widget.author.name}),
         onTap: () async {
-          Navigator.pop(context);
           await MomentsService.instance.setProfileBg(
             post.isUserPost ? MomentPost.userAuthorId : post.agentId,
             post.images[_activeImage],
@@ -823,6 +808,14 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
           ToastService.instance.showToast('moments_bgSet'.tr);
         },
       ),
+    ];
+  }
+
+  void _showImageActions() {
+    SmoothBottomSheet.showActionList(
+      context: context,
+      title: 'moments_imageActions'.tr,
+      actions: _imageActions(),
     );
   }
 

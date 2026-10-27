@@ -33,68 +33,8 @@ class FolderCard extends StatelessWidget {
     this.onToggleArchive,
   });
 
-  /// 底部抽屉菜单（重命名 / 归档 / 删除）
-  void _showBottomSheet(BuildContext context) {
-    if (onEdit == null && onDelete == null && onToggleArchive == null) return;
-    SmoothBottomSheet.show(
-      context: context,
-      builder:
-          (context) => DSThemeBridge(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (onEdit != null)
-                  SmoothSheetAction(
-                    icon: DsIconKind.edit,
-                    label: 'notes_renameFolder'.tr,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onEdit!();
-                    },
-                  ),
-                if (onToggleArchive != null)
-                  SmoothSheetAction(
-                    icon: DsIconKind.archive,
-                    label: folder.isArchived
-                        ? 'notes_unarchive'.tr
-                        : 'notes_archive'.tr,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onToggleArchive!();
-                    },
-                  ),
-                if (onDelete != null)
-                  SmoothSheetAction(
-                    icon: DsIconKind.trash,
-                    label: 'app_delete'.tr,
-                    destructive: true,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onDelete!();
-                    },
-                  ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DSThemeBridge.resolve(context);
-    // 环境描画动画（列表项外层 WiredDraw 注入）；null = 已画完
-    final progress = WiredDrawTransition.progressOf(context);
-    // 墨迹按文件夹稳定变化（rebuild 不抖变）
-    final seed = folder.id.hashCode & 0x7fffffff;
-
-    // 彩色底上文字按亮度切换深墨/纸白，保证可读
-    final onFolder =
-        folder.color.computeLuminance() > 0.45 ? DsColors.text : Colors.white;
-
-    // 长按弹圆盘快捷菜单（与底部 sheet 按钮一致，动态；无可用操作时为空）
-    return ArcContextMenu.actions(
-      onTap: onTap,
-      actions: [
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用，动态；无可用操作时为空）
+  List<ArcMenuItem> _folderActions() => [
         if (onEdit != null)
           ArcMenuItem(
             icon: DsIconKind.edit,
@@ -114,7 +54,33 @@ class FolderCard extends StatelessWidget {
             destructive: true,
             onTap: onDelete!,
           ),
-      ],
+      ];
+
+  /// 底部抽屉菜单（重命名 / 归档 / 删除）
+  void _showBottomSheet(BuildContext context) {
+    if (onEdit == null && onDelete == null && onToggleArchive == null) return;
+    SmoothBottomSheet.showActionList(
+      context: context,
+      actions: _folderActions(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    // 环境描画动画（列表项外层 WiredDraw 注入）；null = 已画完
+    final progress = WiredDrawTransition.progressOf(context);
+    // 墨迹按文件夹稳定变化（rebuild 不抖变）
+    final seed = folder.id.hashCode & 0x7fffffff;
+
+    // 彩色底上文字按亮度切换深墨/纸白，保证可读
+    final onFolder =
+        folder.color.computeLuminance() > 0.45 ? DsColors.text : Colors.white;
+
+    // 长按弹圆盘快捷菜单（与底部 sheet 按钮共用一份数据，动态）
+    return ArcContextMenu.actions(
+      onTap: onTap,
+      actions: _folderActions(),
       showMore: () => _showBottomSheet(context),
       child: Padding(
         // 顶部留白给文件夹舌头与露出的纸张

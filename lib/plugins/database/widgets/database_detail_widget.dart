@@ -509,24 +509,7 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
 
     // 长按弹圆盘快捷菜单（编辑/删除；tap 由 DSCard 内部 Pressable 处理）
     return ArcContextMenu.actions(
-      actions: [
-        ArcMenuItem(
-          icon: DsIconKind.edit,
-          label: 'database_edit'.tr,
-          onTap: () => _editRecord(context, record),
-        ),
-        ArcMenuItem(
-          icon: DsIconKind.trash,
-          label: 'database_delete'.tr,
-          destructive: true,
-          onTap: () async {
-            final shouldDelete = await _confirmDelete(context, record);
-            if (shouldDelete) {
-              await _deleteRecord(record);
-            }
-          },
-        ),
-      ],
+      actions: _recordActions(context, record),
       showMore: () => _showRecordMenu(context, record),
       child: DSCard(
         onTap: () => _showRecordEditor(database, record),

@@ -298,69 +298,54 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
   }
 
   /// 显示底部操作菜单（手绘 sheet）
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _scriptActions(ScriptInfo script) => [
+        ArcMenuItem(
+          icon: script.enabled ? DsIconKind.block : DsIconKind.check,
+          label: script.enabled
+              ? 'scripts_center_disableScript'.tr
+              : 'scripts_center_enableScript'.tr,
+          destructive: script.enabled,
+          onTap: () => _toggleScript(script),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: 'app_edit'.tr,
+          onTap: () => _showScriptDialog(script: script),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.clock,
+          label: 'scripts_center_executionLogs'.tr,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ScriptExecutionLogScreen(
+                logger: widget.scriptExecutor!.executionLogger,
+                executor: widget.scriptExecutor,
+                scriptId: script.id,
+              ),
+            ),
+          ),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.share,
+          label: 'scripts_center_exportScript'.tr,
+          onTap: () => _exportScript(script),
+        ),
+        if (!script.isBuiltIn)
+          ArcMenuItem(
+            icon: DsIconKind.trash,
+            label: 'app_delete'.tr,
+            destructive: true,
+            onTap: () => _deleteScript(script),
+          ),
+      ];
+
   void _showActionSheet(ScriptInfo script) {
-    SmoothBottomSheet.showWithTitle(
+    SmoothBottomSheet.showActionList(
       context: context,
       title: script.name,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SmoothSheetAction(
-            icon: script.enabled ? DsIconKind.block : DsIconKind.check,
-            label: script.enabled
-                ? 'scripts_center_disableScript'.tr
-                : 'scripts_center_enableScript'.tr,
-            destructive: script.enabled,
-            onTap: () {
-              Navigator.pop(context);
-              _toggleScript(script);
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.edit,
-            label: 'app_edit'.tr,
-            onTap: () {
-              Navigator.pop(context);
-              _showScriptDialog(script: script);
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.clock,
-            label: 'scripts_center_executionLogs'.tr,
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ScriptExecutionLogScreen(
-                    logger: widget.scriptExecutor!.executionLogger,
-                    executor: widget.scriptExecutor,
-                    scriptId: script.id,
-                  ),
-                ),
-              );
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.share,
-            label: 'scripts_center_exportScript'.tr,
-            onTap: () {
-              Navigator.pop(context);
-              _exportScript(script);
-            },
-          ),
-          if (!script.isBuiltIn)
-            SmoothSheetAction(
-              icon: DsIconKind.trash,
-              label: 'app_delete'.tr,
-              destructive: true,
-              onTap: () {
-                Navigator.pop(context);
-                _deleteScript(script);
-              },
-            ),
-        ],
-      ),
+      actions: _scriptActions(script),
     );
   }
 
@@ -414,51 +399,9 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
                 return HandDrawnStickyItem(
                   tiltKey: script.id,
                   child: WiredDraw(
-                    // 长按弹圆盘快捷菜单（与底部 sheet 按钮一致）
+                    // 长按弹圆盘快捷菜单（与底部 sheet 按钮共用一份数据）
                     child: ArcContextMenu.actions(
-                      actions: [
-                        ArcMenuItem(
-                          icon: script.enabled
-                              ? DsIconKind.block
-                              : DsIconKind.check,
-                          label: script.enabled
-                              ? 'scripts_center_disableScript'.tr
-                              : 'scripts_center_enableScript'.tr,
-                          destructive: script.enabled,
-                          onTap: () => _toggleScript(script),
-                        ),
-                        ArcMenuItem(
-                          icon: DsIconKind.edit,
-                          label: 'app_edit'.tr,
-                          onTap: () => _showScriptDialog(script: script),
-                        ),
-                        ArcMenuItem(
-                          icon: DsIconKind.clock,
-                          label: 'scripts_center_executionLogs'.tr,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ScriptExecutionLogScreen(
-                                logger: widget.scriptExecutor!.executionLogger,
-                                executor: widget.scriptExecutor,
-                                scriptId: script.id,
-                              ),
-                            ),
-                          ),
-                        ),
-                        ArcMenuItem(
-                          icon: DsIconKind.share,
-                          label: 'scripts_center_exportScript'.tr,
-                          onTap: () => _exportScript(script),
-                        ),
-                        if (!script.isBuiltIn)
-                          ArcMenuItem(
-                            icon: DsIconKind.trash,
-                            label: 'app_delete'.tr,
-                            destructive: true,
-                            onTap: () => _deleteScript(script),
-                          ),
-                      ],
+                      actions: _scriptActions(script),
                       showMore: () => _showActionSheet(script),
                       child: ScriptCard(
                         script: script,

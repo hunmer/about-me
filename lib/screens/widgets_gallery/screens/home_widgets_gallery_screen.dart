@@ -604,6 +604,13 @@ class _HomeWidgetsGalleryScreenState extends State<HomeWidgetsGalleryScreen>
         subtitle: 'SpatialListCard - 可折叠清单与可拖动空间画布',
         route: '/widgets_gallery/spatial_list_card',
       ),
+      _buildListItem(
+        context,
+        icon: Icons.photo_library,
+        title: '3D 毛玻璃照片文件夹轮播卡片',
+        subtitle: 'PhotoFolderReelCard - 弹簧轮播 + 点击展开扇形照片条',
+        route: '/widgets_gallery/photo_folder_reel_card',
+      ),
     ];
   }
 
