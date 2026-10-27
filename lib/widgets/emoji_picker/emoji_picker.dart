@@ -35,6 +35,9 @@ const String kEmojiFaceAssetDir = 'assets/emoji_faces';
 /// 内置 SVG 贴纸资源目录（assets/svg/items）
 const String kSvgAssetDir = 'assets/svg/items';
 
+/// 手账素材资源目录（assets/svg/scrapbook，scrapbook 画布手绘素材转写）
+const String kScrapbookSvgAssetDir = 'assets/svg/scrapbook';
+
 /// 手绘风表情选择器（原 packages/material_emoji_picker 迁为内部组件）
 ///
 /// 搜索框 + 分类 chip 横滚条 + 表情网格；滚动时选中分类自动跟随，
@@ -157,6 +160,16 @@ class _EmojiPickerState extends ConsumerState<EmojiPicker> {
     final categories = <EmojiCategory>[];
     try {
       if (widget.types.contains(kEmojiPickerTypeSvg)) {
+        final scrapAssets = await _listAssetDir(
+          kScrapbookSvgAssetDir,
+          const ['.svg'],
+        );
+        if (scrapAssets.isNotEmpty) {
+          categories.add(
+            _buildAssetCategory(scrapAssets, 'emoji_category_scrapbook'.tr,
+                svg: true),
+          );
+        }
         final assets = await _listAssetDir(kSvgAssetDir, const ['.svg']);
         if (assets.isNotEmpty) {
           categories.add(

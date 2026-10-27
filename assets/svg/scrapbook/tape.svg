@@ -1,0 +1,11 @@
+<svg viewBox="0 0 44 16" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tape" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#EBF4F1EA"/>
+      <stop offset="1" stop-color="#E0E8E4DB"/>
+    </linearGradient>
+  </defs>
+  <rect x="0.5" y="0.5" width="43" height="15" rx="8" fill="url(#tape)" stroke="#1F000000" stroke-width="1"/>
+  <line x1="13" y1="3" x2="13" y2="13" stroke="#73A09A8E" stroke-width="1"/>
+  <line x1="31" y1="3" x2="31" y2="13" stroke="#73A09A8E" stroke-width="1"/>
+</svg>

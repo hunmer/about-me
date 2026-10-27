@@ -32,6 +32,7 @@ const Map<String, String> appTranslationsZh = {
   'app_save': '保存',
   'app_searchEmoji': '搜索表情',
   'emoji_category_svg': 'SVG 贴纸',
+  'emoji_category_scrapbook': '手账素材',
   'emoji_category_faces': '方块表情',
   'emoji_category_builtin': '内置表情',
   'app_close': '关闭',

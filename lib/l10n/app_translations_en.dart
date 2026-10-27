@@ -33,6 +33,7 @@ const Map<String, String> appTranslationsEn = {
   'app_save': 'Save',
   'app_searchEmoji': 'Search emoji',
   'emoji_category_svg': 'SVG Stickers',
+  'emoji_category_scrapbook': 'Scrapbook Stickers',
   'emoji_category_faces': 'Emoji Faces',
   'emoji_category_builtin': 'Built-in Emojis',
   'app_close': 'Close',

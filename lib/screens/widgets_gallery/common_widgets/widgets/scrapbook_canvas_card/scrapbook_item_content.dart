@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'scrapbook_item_models.dart';
 import 'scrapbook_painters.dart';
@@ -21,11 +22,22 @@ Widget buildScrapItemContent(
       return _buildTextItem(item, isDark);
     case ScrapItemKind.companions:
       return _buildCompanionsItem(item, isDark);
-    case ScrapItemKind.sticker:
-      return _buildStickerItem(item);
     case ScrapItemKind.gift:
       return _buildGiftItem(isDark, showToast);
+    case ScrapItemKind.svg:
+      return _buildSvgItem(item);
   }
+}
+
+/// SVG 贴纸：由源码直接渲染，不依赖文件系统
+Widget _buildSvgItem(ScrapItemData item) {
+  final source = item.svgSource;
+  if (source == null || source.isEmpty) return const SizedBox.shrink();
+  return SizedBox(
+    width: item.width,
+    height: item.height,
+    child: SvgPicture.string(source, fit: BoxFit.contain),
+  );
 }
 
 Widget _buildHeaderItem(ScrapItemData item, bool isDark) {
@@ -259,7 +271,7 @@ Widget _buildTextItem(ScrapItemData item, bool isDark) {
         Text(
           line,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: item.fontSize ?? 11.5,
             fontWeight: FontWeight.w600,
             letterSpacing: -0.2,
             height: 1.25,
@@ -383,46 +395,7 @@ Widget _buildCompanionsItem(ScrapItemData item, bool isDark) {
   );
 }
 
-Widget _buildStickerItem(ScrapItemData item) {
-  switch (item.stickerType) {
-    case ScrapStickerType.tape:
-      return buildScrapTape();
-    case ScrapStickerType.cloud:
-      return _buildCloudBubble(item.stickerText ?? 'omg!!');
-    case ScrapStickerType.price:
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF3D5B5),
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x14000000),
-              blurRadius: 4,
-              offset: Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Text(
-          '💸 ${item.stickerText ?? '-\$45'}',
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
-            color: Color(0xFF1E1E1E),
-          ),
-        ),
-      );
-    case ScrapStickerType.sparkles:
-      return const SizedBox(
-        width: 38,
-        height: 36,
-        child: CustomPaint(painter: ScrapSparklesPainter()),
-      );
-  }
-}
-
-/// 胶带贴纸（贴纸条目与创建抽屉预览共用）
+/// 胶带贴纸（照片条目的 tape 装饰）
 Widget buildScrapTape() {
   return Container(
     width: 44,

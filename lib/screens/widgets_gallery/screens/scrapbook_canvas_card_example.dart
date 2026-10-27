@@ -272,7 +272,7 @@ class ScrapbookCanvasCardExample extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   '拖动空白处平移画布，双指捏合或滚轮缩放；左右下边缘外藏有 bonus 照片，平移即可发现。\n'
-                  '点选条目可拖拽、↻ 旋转、× 删除；右下角 + 号打开创建抽屉（贴纸/照片/文字/涂鸦）。',
+                  '点选条目可拖拽、↻ 旋转、× 删除；底部工具栏：撤销/重做/文字/涂鸦/添加素材（照片与手账贴纸）。',
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.5,

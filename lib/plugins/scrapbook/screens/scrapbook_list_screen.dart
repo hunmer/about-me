@@ -179,7 +179,6 @@ class _ScrapbookListScreenState extends State<ScrapbookListScreen> {
       largeTitle: 'scrapbook_listTitle'.tr,
       enableLargeTitle: true,
       actions: [_buildAddButton()],
-      largeTitleActions: [_buildAddButton()],
       body: pages == null
           ? const Center(child: CircularProgressIndicator())
           : pages.isEmpty

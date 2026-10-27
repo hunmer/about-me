@@ -454,6 +454,14 @@ final pluginRouteConfigs = <PluginRouteConfig>[
     PluginRouteDefinition(method: 'get', path: '/snapshot', handler: 'getSnapshot', resourceName: 'services'),
     PluginRouteDefinition(method: 'put', path: '/snapshot', handler: 'saveSnapshot', resourceName: 'services'),
   ]),
+  // ==================== Scrapbook（手账：通用 CRUD，handler 走 factory 默认分支）====================
+  PluginRouteConfig(pluginId: 'scrapbook', routes: [
+    PluginRouteDefinition(method: 'get', path: '/items', handler: 'getList', resourceName: 'items'),
+    PluginRouteDefinition(method: 'get', path: '/items/:id', handler: 'getById', resourceName: 'items'),
+    PluginRouteDefinition(method: 'post', path: '/items', handler: 'create', resourceName: 'items'),
+    PluginRouteDefinition(method: 'put', path: '/items/:id', handler: 'update', resourceName: 'items'),
+    PluginRouteDefinition(method: 'delete', path: '/items/:id', handler: 'delete', resourceName: 'items'),
+  ]),
   // ==================== Toolbox（工具箱：AI 生图 / 图片搜索）====================
   PluginRouteConfig(pluginId: 'toolbox', routes: [
     // config 读取为 POST：首次含旧脚本配置迁移落盘（查询不得写入）

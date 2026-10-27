@@ -1,0 +1,22 @@
+<svg viewBox="0 0 90 124" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#6B7A99"/>
+      <stop offset="0.35" stop-color="#9A8FA6"/>
+      <stop offset="0.62" stop-color="#D49B94"/>
+      <stop offset="0.78" stop-color="#E59872"/>
+      <stop offset="0.9" stop-color="#3E323B"/>
+      <stop offset="1" stop-color="#221C24"/>
+    </linearGradient>
+    <clipPath id="win">
+      <rect x="0" y="0" width="90" height="124" rx="24"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#win)">
+    <rect x="0" y="0" width="90" height="124" fill="url(#dawn)"/>
+    <ellipse cx="45" cy="90.5" width="117" height="15.5" rx="58" ry="8" fill="#A6FFAE78"/>
+    <path d="M0 96.7 Q28.8 89.3 61.2 94.1 Q76.5 96.7 90 91.7 L90 124 L0 124 Z" fill="#2A2229"/>
+    <path d="M0 102.9 Q39.6 98 90 101.7 L90 124 L0 124 Z" fill="#1A151B"/>
+  </g>
+  <rect x="1.25" y="1.25" width="87.5" height="121.5" rx="22.75" fill="none" stroke="#2C2933" stroke-width="2.5"/>
+</svg>

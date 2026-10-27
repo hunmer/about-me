@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 /// 手帐画布条目类型
-enum ScrapItemKind { header, photo, text, companions, sticker, gift }
-
-/// 贴纸子类型
-enum ScrapStickerType { tape, cloud, price, sparkles }
+///
+/// 贴纸统一走 [svg]（源码自带渲染）；旧数据的 `sticker` kind
+/// 解析时回退为 [text]（空内容不可见，可直接删除）
+enum ScrapItemKind { header, photo, text, companions, gift, svg }
 
 /// 同行人数据
 class ScrapCompanionData {
@@ -106,27 +106,13 @@ ScrapItemKind _parseKind(dynamic value) {
       return ScrapItemKind.photo;
     case 'companions':
       return ScrapItemKind.companions;
-    case 'sticker':
-      return ScrapItemKind.sticker;
     case 'gift':
       return ScrapItemKind.gift;
+    case 'svg':
+      return ScrapItemKind.svg;
     case 'text':
     default:
       return ScrapItemKind.text;
-  }
-}
-
-ScrapStickerType _parseStickerType(dynamic value) {
-  switch (value) {
-    case 'cloud':
-      return ScrapStickerType.cloud;
-    case 'price':
-      return ScrapStickerType.price;
-    case 'sparkles':
-      return ScrapStickerType.sparkles;
-    case 'tape':
-    default:
-      return ScrapStickerType.tape;
   }
 }
 
@@ -162,10 +148,11 @@ class ScrapItemData {
   // companions
   final List<ScrapCompanionData> companions;
 
-  // sticker
-  final ScrapStickerType stickerType;
-  final String? stickerText;
-  final Color? stickerColor;
+  // svg 贴纸：SVG 源码（自带渲染，不依赖文件系统）
+  final String? svgSource;
+
+  // text：字号（默认 11.5；大号 emoji 等场景覆盖）
+  final double? fontSize;
 
   ScrapItemData({
     required this.id,
@@ -189,9 +176,8 @@ class ScrapItemData {
     this.narutomakiBorder = false,
     this.sparklesDecor = false,
     this.companions = const [],
-    this.stickerType = ScrapStickerType.tape,
-    this.stickerText,
-    this.stickerColor,
+    this.svgSource,
+    this.fontSize,
   });
 
   factory ScrapItemData.fromMap(Map<String, dynamic> map) {
@@ -235,12 +221,8 @@ class ScrapItemData {
               .map(ScrapCompanionData.fromMap)
               .toList(growable: false) ??
           const [],
-      stickerType: _parseStickerType(map['stickerType']),
-      stickerText: map['stickerText'] as String?,
-      stickerColor:
-          map['stickerColor'] != null
-              ? _parseColor(map['stickerColor'], const Color(0xFFD9388A))
-              : null,
+      svgSource: map['svgSource'] as String?,
+      fontSize: (map['fontSize'] as num?)?.toDouble(),
     );
   }
 
@@ -271,8 +253,17 @@ class ScrapItemData {
         for (final c in companions)
           {'name': c.name, 'emoji': c.emoji, 'color': _colorToHex(c.color)},
       ],
-    'stickerType': stickerType.name,
-    if (stickerText != null) 'stickerText': stickerText,
-    if (stickerColor != null) 'stickerColor': _colorToHex(stickerColor!),
+    if (svgSource != null) 'svgSource': svgSource,
+    if (fontSize != null) 'fontSize': fontSize,
   };
+}
+
+/// 外部选图回调的结果（三选一）：
+/// 图片（本地绝对路径或网络 URL）/ SVG 素材源码 / Unicode 表情字符
+class ScrapPickedAsset {
+  final String? imageUrl;
+  final String? svgSource;
+  final String? emoji;
+
+  const ScrapPickedAsset({this.imageUrl, this.svgSource, this.emoji});
 }

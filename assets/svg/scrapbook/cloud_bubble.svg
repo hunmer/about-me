@@ -1,0 +1,7 @@
+<svg viewBox="0 0 64 50" xmlns="http://www.w3.org/2000/svg">
+  <path d="M16 34 C9 34 6 28 9 23 C6 17 11 11 18 12 C21 6 31 5 36 10 C43 6 52 10 52 17 C58 19 59 27 54 31 C55 36 48 40 42 38 C38 42 28 42 25 38 C21 40 16 38 16 34 Z"
+        fill="#FFFFFF" stroke="#D4D0C8" stroke-width="1.5" stroke-linejoin="round"/>
+  <circle cx="14" cy="42" r="2.6" fill="#FFFFFF" stroke="#D4D0C8" stroke-width="1.2"/>
+  <circle cx="9" cy="46" r="1.6" fill="#FFFFFF" stroke="#D4D0C8" stroke-width="1.1"/>
+  <text x="33" y="27" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#D9388A">omg!!</text>
+</svg>

@@ -1,0 +1,20 @@
+<svg viewBox="0 0 44 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="arch">
+      <path d="M22 0 L38.7 13.4 L44 48 L0 48 L5.3 13.4 Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#arch)">
+    <rect x="0" y="0" width="44" height="48" fill="#87A8C4"/>
+    <rect x="0" y="0" width="44" height="48" fill="#CFE2F3" opacity="0.5"/>
+    <path d="M4 34 L17 11 L27 11 L40 34 Z" fill="#4A6984"/>
+    <path d="M17 11 L27 11 L31 19 L26 17 L22 20 L18 17 L13 19 Z" fill="#FFFFFF"/>
+    <circle cx="6" cy="28" r="9" fill="#C84B31"/>
+    <circle cx="38" cy="28" r="9" fill="#D96B27"/>
+    <circle cx="4" cy="36" r="8" fill="#5C8244"/>
+    <circle cx="40" cy="36" r="8" fill="#4E7338"/>
+    <path d="M18 32 L11 48 L33 48 L26 32 Z" fill="#D9D2C5"/>
+    <line x1="19" y1="32" x2="14" y2="48" stroke="#333333" stroke-width="1.2"/>
+    <line x1="25" y1="32" x2="30" y2="48" stroke="#333333" stroke-width="1.2"/>
+  </g>
+</svg>

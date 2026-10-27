@@ -47,6 +47,10 @@ class ScrapbookCanvasCardWidget extends StatefulWidget {
   /// Back pill 回调（注册时接管退出；未注册保持内置视图重置行为）
   final VoidCallback? onClose;
 
+  /// 添加素材回调（工具栏"+"）：由外部弹选择器，返回
+  /// 图片/SVG 素材/emoji 三选一，组件负责落为画布条目
+  final Future<ScrapPickedAsset?> Function()? onPickAsset;
+
   /// 组件尺寸
   final HomeWidgetSize size;
 
@@ -59,6 +63,7 @@ class ScrapbookCanvasCardWidget extends StatefulWidget {
     this.initialStrokes = const [],
     this.onChanged,
     this.onClose,
+    this.onPickAsset,
     this.size = const Large3Size(),
   });
 
@@ -104,37 +109,19 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
 
   String? _selectedId;
   int _highestZ = 35;
-  bool _menuOpen = false;
   bool _doodleMode = false;
   Color _penColor = const Color(0xFF56A8E8);
-  Color _noteColor = const Color(0xFFD9388A);
   final List<ScrapStroke> _strokes = [];
-  final TextEditingController _noteController = TextEditingController();
+
+  // undo/redo 历史栈（items+strokes 深拷贝快照，上限 50 步）
+  final List<_ScrapSnapshot> _undoStack = [];
+  final List<_ScrapSnapshot> _redoStack = [];
 
   String? _toastMessage;
   Timer? _toastTimer;
-  int _snapIndex = 0;
 
   final GlobalKey _exportBoundaryKey = GlobalKey();
   bool _exporting = false;
-
-  static const _tokyoSnaps = [
-    (
-      'https://images.unsplash.com/photo-1554797589-7241bb691973?auto=format&fit=crop&w=400&q=80',
-      'harajuku backstreets 🛹',
-      Color(0xFFD9388A),
-    ),
-    (
-      'https://images.unsplash.com/photo-1528164344705-475426879c0d?auto=format&fit=crop&w=400&q=80',
-      'tokyo sky view 🌇',
-      Color(0xFFD4842A),
-    ),
-    (
-      'https://images.unsplash.com/photo-1580442151529-343f2f6e0e27?auto=format&fit=crop&w=400&q=80',
-      'konbini egg sando 🥪',
-      Color(0xFF3B9E4C),
-    ),
-  ];
 
   @override
   void initState() {
@@ -153,7 +140,6 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   @override
   void dispose() {
     _entryController.dispose();
-    _noteController.dispose();
     _toastTimer?.cancel();
     super.dispose();
   }
@@ -174,7 +160,6 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     _startFocal = details.localFocalPoint;
     _startPan = Offset(_panX, _panY);
     _startZoom = _zoom;
-    if (_menuOpen) setState(() => _menuOpen = false);
   }
 
   void _onScaleUpdate(ScaleUpdateDetails details) {
@@ -213,6 +198,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   }
 
   void _rotateItem(ScrapItemData item) {
+    _pushHistory();
     setState(() {
       item.rotation = ((item.rotation + 8 + 180) % 360) - 180;
     });
@@ -220,6 +206,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   }
 
   void _deleteItem(ScrapItemData item) {
+    _pushHistory();
     setState(() {
       _items.removeWhere((e) => e.id == item.id);
       if (_selectedId == item.id) _selectedId = null;
@@ -248,9 +235,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   }
 
   void _spawnItem(ScrapItemData item) {
+    _pushHistory();
     setState(() {
       _items.add(item);
-      _menuOpen = false;
       _selectedId = item.id;
       item.zIndex = ++_highestZ;
     });
@@ -260,102 +247,209 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   /// 时间戳 id：重开画布后新增条目不与已存条目冲突
   String _nextId() => 'spawn_${DateTime.now().microsecondsSinceEpoch}';
 
-  void _addSticker(ScrapStickerType type) {
-    final center = _canvasCenter();
-    switch (type) {
-      case ScrapStickerType.tape:
-        _spawnItem(
-          ScrapItemData(
-            id: _nextId(),
-            kind: ScrapItemKind.sticker,
-            stickerType: ScrapStickerType.tape,
-            x: center.dx,
-            y: center.dy,
-            rotation: 28,
-          ),
-        );
-        _showToast('🩹 Added masking tape sticker');
-      case ScrapStickerType.cloud:
-        _spawnItem(
-          ScrapItemData(
-            id: _nextId(),
-            kind: ScrapItemKind.sticker,
-            stickerType: ScrapStickerType.cloud,
-            stickerText: 'omg!!',
-            x: center.dx,
-            y: center.dy,
-            rotation: -6,
-          ),
-        );
-        _showToast('☁️ Added thought bubble');
-      case ScrapStickerType.price:
-        const amounts = ['-\$18', '-\$45', '-\$120', '-¥3,800'];
-        final pick = amounts[math.Random().nextInt(amounts.length)];
-        _spawnItem(
-          ScrapItemData(
-            id: _nextId(),
-            kind: ScrapItemKind.sticker,
-            stickerType: ScrapStickerType.price,
-            stickerText: pick,
-            x: center.dx,
-            y: center.dy,
-            rotation: -4,
-          ),
-        );
-        _showToast('💸 Added price tag');
-      case ScrapStickerType.sparkles:
-        _spawnItem(
-          ScrapItemData(
-            id: _nextId(),
-            kind: ScrapItemKind.sticker,
-            stickerType: ScrapStickerType.sparkles,
-            x: center.dx,
-            y: center.dy,
-            rotation: 5,
-          ),
-        );
-        _showToast('✨ Added hand-drawn sparkles');
-    }
+  // ===== undo / redo =====
+
+  void _pushHistory() {
+    _undoStack.add(_snapshot());
+    if (_undoStack.length > 50) _undoStack.removeAt(0);
+    _redoStack.clear();
   }
 
-  void _addTokyoSnap() {
-    final snap = _tokyoSnaps[_snapIndex % _tokyoSnaps.length];
-    _snapIndex += 1;
-    final center = _canvasCenter();
-    final rot = math.Random().nextDouble() * 10 - 5;
-    _spawnItem(
-      ScrapItemData(
-        id: _nextId(),
-        kind: ScrapItemKind.photo,
-        imageUrl: snap.$1,
-        x: center.dx,
-        y: center.dy,
-        rotation: rot,
-        captions: [snap.$2],
-        captionColor: snap.$3,
-        tape: const ScrapTapeData(dx: 64, dy: -8, angle: 34),
+  _ScrapSnapshot _snapshot() => _ScrapSnapshot(
+    items: [
+      for (final item in _items) ScrapItemData.fromMap(item.toMap()),
+    ],
+    strokes: [
+      for (final stroke in _strokes) ScrapStroke.fromMap(stroke.toMap()),
+    ],
+  );
+
+  void _restore(_ScrapSnapshot snapshot) {
+    setState(() {
+      _items
+        ..clear()
+        ..addAll(snapshot.items);
+      _strokes
+        ..clear()
+        ..addAll(snapshot.strokes);
+      _selectedId = null;
+      _highestZ = 35;
+      for (final item in _items) {
+        if (item.zIndex > _highestZ) _highestZ = item.zIndex;
+      }
+    });
+    _notifyChanged();
+  }
+
+  void _undo() {
+    if (_undoStack.isEmpty) return;
+    _redoStack.add(_snapshot());
+    _restore(_undoStack.removeLast());
+  }
+
+  void _redo() {
+    if (_redoStack.isEmpty) return;
+    _undoStack.add(_snapshot());
+    _restore(_redoStack.removeLast());
+  }
+
+  // ===== 添加素材（图片 / SVG 贴纸 / emoji） =====
+
+  /// 文字条目快捷入口：弹输入对话框（文字 + 4 色点），确认后落到画布中心
+  Future<void> _addTextItem() async {
+    final controller = TextEditingController();
+    var color = const Color(0xFFD9388A);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const noteColors = [
+      Color(0xFFD9388A),
+      Color(0xFF3B9E4C),
+      Color(0xFFD4842A),
+      Color(0xFF111111),
+    ];
+
+    void submit(BuildContext dialogContext) => Navigator.pop(dialogContext, true);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor:
+            isDark ? const Color(0xF21E293B) : const Color(0xF2FAF8F2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF3B4A61) : const Color(0xFFE5E0D5),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                autofocus: true,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF333333),
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  border: InputBorder.none,
+                  hintText: 'Write a cute caption...',
+                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                onSubmitted: (_) => submit(dialogContext),
+              ),
+              const SizedBox(height: 10),
+              StatefulBuilder(
+                builder: (context, setDialogState) => Row(
+                  children: [
+                    for (final c in noteColors)
+                      GestureDetector(
+                        onTap: () => setDialogState(() => color = c),
+                        child: Container(
+                          width: 18,
+                          height: 18,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: c,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: color == c ? c : Colors.transparent,
+                              width: 2.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => submit(dialogContext),
+                      child: const Text('Add'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
-    _showToast('📸 Added new Tokyo photo!');
-  }
+    final text = controller.text.trim();
+    controller.dispose();
+    if (!mounted || confirmed != true || text.isEmpty) return;
 
-  void _addCustomNote() {
-    final text = _noteController.text.trim().isEmpty
-        ? 'tokyo memories ✨'
-        : _noteController.text.trim();
     final center = _canvasCenter();
     _spawnItem(
       ScrapItemData(
         id: _nextId(),
         kind: ScrapItemKind.text,
         captions: [text],
-        captionColor: _noteColor,
+        captionColor: color,
         x: center.dx,
         y: center.dy,
       ),
     );
-    _noteController.clear();
     _showToast('🏷️ Added caption to canvas');
+  }
+
+  Future<void> _pickAsset() async {
+    final picker = widget.onPickAsset;
+    if (picker == null) {
+      _showToast('🧷 Picker not available');
+      return;
+    }
+    final asset = await picker();
+    if (asset == null || !mounted) return;
+
+    if (asset.svgSource != null && asset.svgSource!.isNotEmpty) {
+      _spawnItem(
+        ScrapItemData(
+          id: _nextId(),
+          kind: ScrapItemKind.svg,
+          svgSource: asset.svgSource,
+          x: _canvasCenter().dx,
+          y: _canvasCenter().dy,
+          width: 96,
+          height: 96,
+          rotation: (math.Random().nextDouble() * 10 - 5),
+        ),
+      );
+      _showToast('🧷 Added sticker');
+      return;
+    }
+    if (asset.emoji != null && asset.emoji!.isNotEmpty) {
+      _spawnItem(
+        ScrapItemData(
+          id: _nextId(),
+          kind: ScrapItemKind.text,
+          captions: [asset.emoji!],
+          x: _canvasCenter().dx,
+          y: _canvasCenter().dy,
+          fontSize: 34,
+        ),
+      );
+      return;
+    }
+    if (asset.imageUrl != null && asset.imageUrl!.isNotEmpty) {
+      _spawnItem(
+        ScrapItemData(
+          id: _nextId(),
+          kind: ScrapItemKind.photo,
+          imageUrl: asset.imageUrl,
+          x: _canvasCenter().dx,
+          y: _canvasCenter().dy,
+          width: 120,
+          height: 120,
+          rotation: (math.Random().nextDouble() * 8 - 4),
+        ),
+      );
+      _showToast('📸 Added photo');
+    }
   }
 
   // ===== 涂鸦模式 =====
@@ -364,7 +458,6 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     setState(() {
       _doodleMode = active;
       if (active) {
-        _menuOpen = false;
         _selectedId = null;
       }
     });
@@ -372,6 +465,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   }
 
   void _onDoodleStart(DragStartDetails details) {
+    _pushHistory();
     final pt = _screenToCanvas(details.localPosition);
     setState(() => _strokes.add(ScrapStroke(_penColor, [pt])));
   }
@@ -431,7 +525,6 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                           onTap: () {
                             setState(() {
                               _selectedId = null;
-                              _menuOpen = false;
                             });
                           },
                           onScaleStart: _onScaleStart,
@@ -484,58 +577,13 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                 right: 0,
                 child: Center(child: _buildDoodleBanner()),
               ),
-            // FAB（只读模式下隐藏，无入口则创建抽屉也不会弹出）
+            // 底部工具栏：undo / redo / 涂鸦 / 添加素材（只读模式下隐藏）
             if (!widget.readOnly)
               Positioned(
-                right: 16,
+                left: 0,
+                right: 0,
                 bottom: 18,
-                child: GestureDetector(
-                  onTap: () {
-                    if (_doodleMode) {
-                      _setDoodleMode(false);
-                      return;
-                    }
-                    setState(() => _menuOpen = !_menuOpen);
-                  },
-                  child: AnimatedRotation(
-                    turns: _menuOpen ? 0.125 : 0,
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOutBack,
-                    child: Container(
-                      width: 52,
-                      height: 52,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF001AFF),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x59001AFF),
-                            blurRadius: 20,
-                            offset: Offset(0, 8),
-                          ),
-                          BoxShadow(
-                            color: Color(0x26000000),
-                            blurRadius: 6,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.add,
-                        color: Colors.white,
-                        size: 26,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            // 创建抽屉
-            if (_menuOpen)
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 82,
-                child: _buildCreatorDrawer(isDark),
+                child: Center(child: _buildToolbar(isDark)),
               ),
             // Toast
             Positioned(
@@ -682,6 +730,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
             onPanStart: _doodleMode || widget.readOnly
                 ? null
                 : (_) {
+                    _pushHistory();
                     _selectItem(item);
                   },
             onPanUpdate: _doodleMode || widget.readOnly
@@ -886,7 +935,6 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       _exporting = true;
       // 隐藏选中虚线框与控制按钮，避免拍进图里
       _selectedId = null;
-      _menuOpen = false;
     });
 
     try {
@@ -928,7 +976,112 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     }
   }
 
-  // ===== 创建抽屉 & 涂鸦横幅 =====
+  // ===== 底部工具栏 =====
+
+  /// undo / redo / 涂鸦 / 添加素材（pill 风格与顶部导航一致）
+  Widget _buildToolbar(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xD92A3648) : const Color(0xD9FBF9F4),
+        border: Border.all(
+          color: isDark ? const Color(0xFF3B4A61) : const Color(0xFFE5E0D4),
+        ),
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildToolbarButton(
+            icon: Icons.undo,
+            label: 'Undo',
+            isDark: isDark,
+            onPressed: _undoStack.isEmpty ? null : _undo,
+          ),
+          _buildToolbarButton(
+            icon: Icons.redo,
+            label: 'Redo',
+            isDark: isDark,
+            onPressed: _redoStack.isEmpty ? null : _redo,
+          ),
+          _buildToolbarDivider(isDark),
+          _buildToolbarButton(
+            icon: Icons.text_fields,
+            label: 'Text',
+            isDark: isDark,
+            onPressed: _addTextItem,
+          ),
+          _buildToolbarButton(
+            icon: Icons.edit,
+            label: 'Doodle',
+            isDark: isDark,
+            active: _doodleMode,
+            onPressed: () => _setDoodleMode(!_doodleMode),
+          ),
+          _buildToolbarButton(
+            icon: Icons.add_photo_alternate_outlined,
+            label: 'Add',
+            isDark: isDark,
+            onPressed: _pickAsset,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolbarButton({
+    required IconData icon,
+    required String label,
+    required bool isDark,
+    required VoidCallback? onPressed,
+    bool active = false,
+  }) {
+    final enabled = onPressed != null;
+    return Tooltip(
+      message: label,
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          width: 42,
+          height: 42,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: active
+                ? const Color(0xFF001AFF)
+                : (isDark ? Colors.white12 : const Color(0x0F000000)),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: active
+                ? Colors.white
+                : (isDark
+                      ? (enabled ? Colors.white : Colors.white38)
+                      : (enabled ? const Color(0xFF1A1A1A) : const Color(0x611A1A1A))),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToolbarDivider(bool isDark) {
+    return Container(
+      width: 1,
+      height: 20,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      color: isDark ? Colors.white24 : const Color(0x14202020),
+    );
+  }
+
+  // ===== 涂鸦横幅 =====
 
   Widget _buildDoodleBanner() {
     const penColors = [
@@ -1013,308 +1166,13 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     );
   }
 
-  Widget _buildCreatorDrawer(bool isDark) {
-    final noteColors = [
-      const Color(0xFFD9388A),
-      const Color(0xFF3B9E4C),
-      const Color(0xFFD4842A),
-      const Color(0xFF111111),
-    ];
-    final cardColor = isDark ? const Color(0xFF2A3648) : Colors.white;
-    final borderColor = isDark
-        ? const Color(0xFF3B4A61)
-        : const Color(0xFFE5E0D5);
-    final textColor = isDark ? Colors.white : const Color(0xFF333333);
+}
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xF21E293B) : const Color(0xF2FAF8F2),
-        border: Border.all(color: borderColor),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x2E000000),
-            blurRadius: 40,
-            offset: Offset(0, 16),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'ADD TO TOKYO DAY 1',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: isDark ? Colors.white54 : Colors.grey,
-                ),
-              ),
-              const Text(
-                'Tap to drop on canvas',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFFD9388A),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // 贴纸行
-          Row(
-            children: [
-              _buildDrawerButton(
-                cardColor,
-                borderColor,
-                child: Transform.scale(scale: 0.75, child: buildScrapTape()),
-                label: 'Tape',
-                textColor: textColor,
-                onTap: () => _addSticker(ScrapStickerType.tape),
-              ),
-              _buildDrawerButton(
-                cardColor,
-                borderColor,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFDF0F6),
-                    border: Border.all(color: const Color(0xFFF3C6DD)),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'omg!!',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFFD9388A),
-                    ),
-                  ),
-                ),
-                label: 'Cloud',
-                textColor: textColor,
-                onTap: () => _addSticker(ScrapStickerType.cloud),
-              ),
-              _buildDrawerButton(
-                cardColor,
-                borderColor,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3D5B5),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    '💸 -\$45',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                label: 'Price Tag',
-                textColor: textColor,
-                onTap: () => _addSticker(ScrapStickerType.price),
-              ),
-              _buildDrawerButton(
-                cardColor,
-                borderColor,
-                child: const Text(
-                  '✦✧',
-                  style: TextStyle(fontSize: 14, color: Color(0xFFD93829)),
-                ),
-                label: 'Sparkles',
-                textColor: textColor,
-                onTap: () => _addSticker(ScrapStickerType.sparkles),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // 照片 / 涂鸦行
-          Row(
-            children: [
-              Expanded(
-                child: _buildWideDrawerButton(
-                  cardColor,
-                  borderColor,
-                  '📸 Add Tokyo Snap',
-                  textColor,
-                  _addTokyoSnap,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildWideDrawerButton(
-                  cardColor,
-                  borderColor,
-                  '✏️ Draw Doodle',
-                  const Color(0xFF001AFF),
-                  () => _setDoodleMode(true),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // 自定义文字 + 颜色点 + Add
-          Container(
-            padding: const EdgeInsets.only(
-              left: 12,
-              right: 4,
-              top: 4,
-              bottom: 4,
-            ),
-            decoration: BoxDecoration(
-              color: cardColor,
-              border: Border.all(color: borderColor),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _noteController,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                    ),
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      hintText: 'Write a cute caption...',
-                      hintStyle: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    onSubmitted: (_) => _addCustomNote(),
-                  ),
-                ),
-                for (final c in noteColors)
-                  GestureDetector(
-                    onTap: () => setState(() => _noteColor = c),
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      margin: const EdgeInsets.only(right: 5),
-                      decoration: BoxDecoration(
-                        color: c,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _noteColor == c ? c : Colors.transparent,
-                          width: 2,
-                        ),
-                        boxShadow: _noteColor == c
-                            ? [
-                                BoxShadow(
-                                  color: c.withOpacity(0.5),
-                                  blurRadius: 4,
-                                ),
-                              ]
-                            : null,
-                      ),
-                    ),
-                  ),
-                GestureDetector(
-                  onTap: _addCustomNote,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111111),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: const Text(
-                      'Add',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildDrawerButton(
-    Color cardColor,
-    Color borderColor, {
-    required Widget child,
-    required String label,
-    required Color textColor,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.only(right: 6),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: cardColor,
-            border: Border.all(color: borderColor),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 22, child: Center(child: child)),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+/// undo/redo 历史快照（条目与涂鸦的深拷贝）
+class _ScrapSnapshot {
+  final List<ScrapItemData> items;
+  final List<ScrapStroke> strokes;
 
-  Widget _buildWideDrawerButton(
-    Color cardColor,
-    Color borderColor,
-    String label,
-    Color textColor,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: cardColor,
-          border: Border.all(color: borderColor),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: textColor,
-          ),
-        ),
-      ),
-    );
-  }
+  const _ScrapSnapshot({required this.items, required this.strokes});
 }
