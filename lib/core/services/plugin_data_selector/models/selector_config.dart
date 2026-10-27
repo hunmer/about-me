@@ -31,7 +31,8 @@ class SelectorConfig {
 
   /// 初始选择（用于编辑模式）
   ///
-  /// 多选最终步骤格式: `{stepId: List<String> itemIds}`，未命中的 ID 会被忽略
+  /// - 多选最终步骤: `{stepId: List<String> itemIds}`，未命中的 ID 会被忽略
+  /// - 单选非最终步骤: `{stepId: String itemId}`，命中后自动进入下一步（可链式）
   final Map<String, dynamic>? initialSelection;
 
   /// 是否显示搜索框

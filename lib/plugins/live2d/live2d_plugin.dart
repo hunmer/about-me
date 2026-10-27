@@ -8,6 +8,7 @@ import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/config_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
@@ -22,6 +23,8 @@ import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'live2d_voice_analyzer.dart';
 import 'screens/live2d_main_screen.dart';
 import 'screens/live2d_settings_screen.dart';
+
+part 'live2d_data_selectors.dart';
 
 class Live2DPlugin extends BasePlugin {
   static Live2DPlugin? _instance;
@@ -458,6 +461,9 @@ class Live2DPlugin extends BasePlugin {
         ),
       );
     selectedId = data is Map ? data['selectedId'] as String? : null;
+
+    // 注册数据选择器
+    _registerDataSelectors();
   }
 
   Future<void> save() async =>

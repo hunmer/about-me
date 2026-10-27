@@ -185,19 +185,13 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   Offset? _pointerLastPosition;
   bool _pointerItemMoved = false;
 
-  ScrapItemData? _hitTestItem(Offset localPosition) {
-    final point = _screenToCanvas(localPosition);
-    final sorted = _sortedItems().reversed;
-    for (final item in sorted) {
-      final hitRect = Rect.fromLTWH(
-        item.x - 12,
-        item.y - 12,
-        math.max(item.width, 24) + 24,
-        math.max(item.height, 24) + 24,
-      );
-      if (hitRect.contains(point)) return item;
-    }
-    return null;
+  void _onItemPointerDown(ScrapItemData item) {
+    if (_doodleMode || widget.readOnly) return;
+    _pointerItemId = item.id;
+    _pointerLastPosition = null;
+    _pointerItemMoved = false;
+    _pushHistory();
+    _selectItem(item);
   }
 
   bool _isSelectedControlHit(Offset localPosition) {
@@ -215,27 +209,15 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     return Rect.fromLTWH(
       item.x + item.width - 10,
       item.y - 30,
-      48,
+      74,
       22,
     ).contains(point);
   }
 
   void _onCanvasPointerDown(PointerDownEvent event) {
-    if (_isSelectedControlHit(event.localPosition)) {
-      _pointerItemId = null;
-      _pointerLastPosition = event.localPosition;
-      _pointerItemMoved = false;
-      return;
-    }
-    if (_doodleMode || widget.readOnly) return;
-    final item = _hitTestItem(event.localPosition);
-    _pointerItemId = item?.id;
+    if (_isSelectedControlHit(event.localPosition)) return;
     _pointerLastPosition = event.localPosition;
     _pointerItemMoved = false;
-    if (item != null) {
-      _pushHistory();
-      _selectItem(item);
-    }
   }
 
   void _onCanvasPointerMove(PointerMoveEvent event) {
@@ -310,10 +292,15 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     });
   }
 
-  void _rotateItem(ScrapItemData item) {
+  void _rotateItem(ScrapItemData item) => _rotateItemBy(item, 8);
+
+  void _rotateItemCounterClockwise(ScrapItemData item) =>
+      _rotateItemBy(item, -8);
+
+  void _rotateItemBy(ScrapItemData item, double degrees) {
     _pushHistory();
     setState(() {
-      item.rotation = ((item.rotation + 8 + 180) % 360) - 180;
+      item.rotation = ((item.rotation + degrees + 180) % 360) - 180;
     });
     _notifyChanged();
   }
@@ -846,28 +833,28 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
             child: Transform.scale(scale: 0.6 + 0.4 * t, child: child),
           );
         },
-        child: Transform.rotate(
-          angle: item.rotation * math.pi / 180,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            // 只读模式下条目不可拖拽/选中；注册 onTap 供双击检测使用
-            onTap: () => _handleItemTap(item),
-            onPanStart: null,
-            onPanUpdate: null,
-            onPanEnd: null,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                CustomPaint(
-                  painter: selected
-                      ? ScrapDashedRectPainter(
-                          color: const Color(0x8C001AFF),
-                          inset: -6,
-                        )
-                      : null,
-                  child: buildScrapItemContent(item, isDark, _showToast),
-                ),
-              ],
+        child: Listener(
+          onPointerDown: (_) => _onItemPointerDown(item),
+          child: Transform.rotate(
+            angle: item.rotation * math.pi / 180,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              // 只读模式下条目不可拖拽/选中；注册 onTap 供双击检测使用
+              onTap: () => _handleItemTap(item),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CustomPaint(
+                    painter: selected
+                        ? ScrapDashedRectPainter(
+                            color: const Color(0x8C001AFF),
+                            inset: -6,
+                          )
+                        : null,
+                    child: buildScrapItemContent(item, isDark, _showToast),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -897,6 +884,14 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          _buildControlChip(
+            '↺',
+            () => _runSelectedAction(
+              selectedItem,
+              () => _rotateItemCounterClockwise(selectedItem),
+            ),
+          ),
+          const SizedBox(width: 4),
           _buildControlChip(
             '↻',
             () => _runSelectedAction(

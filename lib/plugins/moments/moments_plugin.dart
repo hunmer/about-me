@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 

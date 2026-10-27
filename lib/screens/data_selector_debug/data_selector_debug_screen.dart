@@ -73,14 +73,15 @@ class _DataSelectorDebugScreenState extends State<DataSelectorDebugScreen> {
     }
   }
 
-  /// 多选选择器的预设初始选择对话框
+  /// 预设初始选择对话框
   ///
-  /// 输入最终步骤的 item ID（逗号分隔），以 initialSelection 打开
+  /// 输入按步骤顺序的 item ID（逗号分隔）：
+  /// - 单选步骤每个 ID 触发自动跳步，可链式直达后续步骤
+  /// - 多选最终步骤把剩余全部 ID 作为预选集
   Future<void> _showPresetDialog(SelectorDefinition selector) async {
-    SelectorStep finalStep = selector.steps.last;
-    for (final step in selector.steps) {
-      if (step.isFinalStep) finalStep = step;
-    }
+    final stepHints = selector.steps
+        .map((s) => '${s.id}${s.isFinalStep ? '（最终）' : ''}')
+        .join(' → ');
 
     final controller = TextEditingController();
     final confirmed = await showDialog<bool>(
@@ -91,19 +92,19 @@ class _DataSelectorDebugScreenState extends State<DataSelectorDebugScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('最终步骤: ${finalStep.title}（${finalStep.id}）'),
+            Text('步骤: $stepHints'),
             const SizedBox(height: 8),
             TextField(
               controller: controller,
               decoration: const InputDecoration(
-                labelText: '预设 ID（逗号分隔）',
-                hintText: '如: id1, id2',
+                labelText: '预设 ID（按步骤顺序，逗号分隔）',
+                hintText: '如: 2026-10-27, entry_id',
                 isDense: true,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              '未命中的 ID 会被忽略；超过数量上限时截断',
+              '单选步骤命中后自动进入下一步；多选最终步骤取剩余全部 ID',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -122,17 +123,30 @@ class _DataSelectorDebugScreenState extends State<DataSelectorDebugScreen> {
     );
 
     if (confirmed != true) return;
-    final ids = controller.text
+    final remaining = controller.text
         .split(RegExp(r'[,，]'))
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList();
     if (!mounted) return;
-    if (ids.isEmpty) {
+    if (remaining.isEmpty) {
       _runSelector(selector);
       return;
     }
-    _runSelector(selector, initialSelection: {finalStep.id: ids});
+
+    final initialSelection = <String, dynamic>{};
+    for (final step in selector.steps) {
+      if (remaining.isEmpty) break;
+      final isMultiFinal =
+          selector.selectionMode == SelectionMode.multiple && step.isFinalStep;
+      if (isMultiFinal) {
+        initialSelection[step.id] = List<String>.from(remaining);
+        remaining.clear();
+      } else {
+        initialSelection[step.id] = remaining.removeAt(0);
+      }
+    }
+    _runSelector(selector, initialSelection: initialSelection);
   }
 
   void _showResultDialog(SelectorDefinition selector, SelectorResult? result) {
@@ -325,7 +339,8 @@ class _DataSelectorDebugScreenState extends State<DataSelectorDebugScreen> {
       ),
       isThreeLine: true,
       onTap: () => _runSelector(selector),
-      trailing: selector.selectionMode == SelectionMode.multiple
+      trailing: selector.selectionMode == SelectionMode.multiple ||
+              selector.steps.length > 1
           ? IconButton(
               icon: const Icon(Icons.tune, size: 20),
               tooltip: '预设初始选择',

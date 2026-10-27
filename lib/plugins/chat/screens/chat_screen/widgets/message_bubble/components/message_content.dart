@@ -106,7 +106,8 @@ class MessageContent extends StatelessWidget {
               );
 
         // 图片消息可能同时带有用户输入的文字，保持在同一个气泡内容列中。
-        if (visibleContent.trim().isNotEmpty) {
+        if (visibleContent.trim().isNotEmpty &&
+            visibleContent.trim() != filePath.trim()) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,

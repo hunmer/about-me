@@ -19,22 +19,20 @@ void _registerDataSelectors() {
           isFinalStep: true,
           dataLoader: (_) async {
             final posts = MomentsService.instance.posts;
-            return posts
-                .map((p) {
-                  final firstLine = p.text.split('\n').first;
-                  final title =
+            return Future.wait(posts.map((p) async {
+              final firstLine = p.text.split('\n').first;
+              final title =
                       firstLine.length > 30 ? '${firstLine.substring(0, 30)}…' : firstLine;
                   final date =
                       '${p.createdAt.year}-${p.createdAt.month.toString().padLeft(2, '0')}-${p.createdAt.day.toString().padLeft(2, '0')}';
                   return SelectableItem(
                     id: p.id,
                     title: title,
-                    subtitle: '${p.agentId} · $date · ${p.images.length}图',
+                    subtitle: '${await _authorName(p.agentId)} · $date · ${p.images.length}图',
                     icon: Icons.photo_camera_outlined,
                     rawData: p,
                   );
-                })
-                .toList();
+            }));
           },
           searchFilter: (items, query) {
             if (query.isEmpty) return items;
@@ -50,4 +48,15 @@ void _registerDataSelectors() {
       ],
     ),
   );
+}
+
+/// 解析作者显示名：用户投稿显示"我"，agent 显示昵称，查询失败回退 agentId
+Future<String> _authorName(String agentId) async {
+  if (agentId == MomentPost.userAuthorId) return '我';
+  try {
+    final agent = await AgentController().getAgent(agentId);
+    return agent?.name ?? agentId;
+  } catch (_) {
+    return agentId;
+  }
 }

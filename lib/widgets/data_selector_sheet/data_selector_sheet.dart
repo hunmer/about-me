@@ -82,8 +82,9 @@ class _DataSelectorSheetState extends State<DataSelectorSheet> {
         setState(() {
           _currentItems = items;
           _isLoading = false;
-          _applyInitialSelection();
+          _applyPresetSelectionIds();
         });
+        _applyPresetStepAdvance();
       }
     } catch (e) {
       if (mounted) {
@@ -96,10 +97,10 @@ class _DataSelectorSheetState extends State<DataSelectorSheet> {
     }
   }
 
-  /// 应用配置的初始选择（多选最终步骤）
+  /// 预填多选最终步骤的选中项
   ///
-  /// 格式: `{stepId: List<String>}`，仅命中已加载项，超出数量上限时截断
-  void _applyInitialSelection() {
+  /// 格式: `{stepId: List<String> itemIds}`，仅命中已加载项，超出数量上限时截断
+  void _applyPresetSelectionIds() {
     final preset = widget.config.initialSelection?[_currentStep.id];
     if (widget.definition.selectionMode != SelectionMode.multiple ||
         !_currentStep.isFinalStep ||
@@ -113,6 +114,24 @@ class _DataSelectorSheetState extends State<DataSelectorSheet> {
       ids = ids.take(widget.definition.maxSelectionCount);
     }
     _selectedIds.addAll(ids);
+  }
+
+  /// 单选非最终步骤应用预设后自动进入下一步（链式：每步加载后依次生效）
+  ///
+  /// 格式: `{stepId: String itemId}`
+  void _applyPresetStepAdvance() {
+    final preset = widget.config.initialSelection?[_currentStep.id];
+    if (preset is! String ||
+        widget.definition.selectionMode == SelectionMode.multiple ||
+        _currentStep.isFinalStep) {
+      return;
+    }
+    final item = _currentItems
+        .where((item) => item.id == preset && item.selectable)
+        .firstOrNull;
+    if (item != null) {
+      _onItemSelected(item);
+    }
   }
 
   void _onItemSelected(SelectableItem item) {

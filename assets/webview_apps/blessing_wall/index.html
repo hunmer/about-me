@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ro">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -314,28 +314,14 @@
                 </svg>
                 <span>从聊天记录选择祝福消息</span>
             </button>
-
-            <button id="btnReplayAnim" class="bg-slate-800 hover:bg-slate-700/90 text-slate-200 border border-slate-700/80 text-xs font-medium py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95">
-                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                <span>重播入场动画</span>
-            </button>
-
-            <button id="btnCelebrate" class="bg-slate-800 hover:bg-slate-700/90 text-slate-200 border border-slate-700/80 text-xs font-medium py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95">
-                <span class="text-sm">💙</span>
-                <span>释放蓝色烟雾庆典</span>
-            </button>
         </div>
 
         <!-- Language & Preset Toggle -->
         <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3 space-y-2.5">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-medium text-slate-300">文案语言切换</span>
-                <div class="inline-flex rounded-xl bg-slate-900 p-0.5 border border-slate-800">
-                    <button id="langRoBtn" class="px-2.5 py-1 text-xs rounded-lg bg-sky-500/20 text-sky-300 font-medium transition">原版罗马尼亚语</button>
-                    <button id="langZhBtn" class="px-2.5 py-1 text-xs rounded-lg text-slate-400 hover:text-slate-200 transition">中文翻译版</button>
-                </div>
+            <div class="space-y-1.5">
+                <span class="text-xs font-medium text-slate-300 block">海报标题（两行，实时生效）</span>
+                <input id="titleLine1Input" type="text" value="MULȚUMIM MULT" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 select-text serif-title">
+                <input id="titleLine2Input" type="text" value="căci ne-ați felicitat" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 select-text serif-title">
             </div>
 
             <!-- Floating Animation Switch -->
@@ -744,133 +730,9 @@
         }
 
         /********************************************************************
-         * 2. ALL 17 MESSAGE BUBBLES DATA (1:1 Coordinates, Angles & Texts)
+         * 2. MESSAGE BUBBLES STATE（初始为空，通过聊天导入或手动添加）
          ********************************************************************/
-        const INITIAL_BUBBLES = [
-            {
-                id: 'b1',
-                left: 69, top: 224, width: 196, rot: -5.5,
-                reaction: '❤️', avatarSeed: 1, floatClass: 'float-a',
-                ro: 'Ehehei! Am ghicit! Felicitări! O să facă echipă bună cu Amadeo 🥰',
-                zh: '哇哦！我就猜到啦！恭喜！他一定会和哥哥 Amadeo 成为最佳拍档 🥰'
-            },
-            {
-                id: 'b2',
-                left: 342, top: 223, width: 88, rot: 0,
-                reaction: '❤️', avatarSeed: 2, floatClass: 'float-b',
-                ro: 'Crutoooo',
-                zh: '太酷啦啊啊啊'
-            },
-            {
-                id: 'b3',
-                left: 368, top: 256, width: 164, rot: 15.5,
-                reaction: '', avatarSeed: 3, floatClass: 'float-c',
-                ro: 'Ouuu felicitări!!! Un frățior pentru Amadeo!!!😍😍😍',
-                zh: '噢噢噢恭喜！！！Amadeo 有小弟弟啦！！！😍😍😍'
-            },
-            {
-                id: 'b4',
-                left: 215, top: 288, width: 176, rot: -6.5,
-                reaction: '', avatarSeed: 4, floatClass: 'float-a',
-                ro: 'Felicitari , vei fi mamă de băieți ❤️🎉',
-                zh: '恭喜呀，你要成为两个男孩的妈妈啦 ❤️🎉'
-            },
-            {
-                id: 'b5',
-                left: 6, top: 306, width: 198, rot: 0,
-                reaction: '❤️', avatarSeed: 5, floatClass: 'float-b',
-                extraRightAvatar: true,
-                ro: 'Hai ca ii bun ai sa fii mama de baieti!',
-                zh: '太棒啦，当男孩们的妈妈超幸福的！'
-            },
-            {
-                id: 'b6',
-                left: 190, top: 350, width: 162, rot: 11,
-                reaction: '', avatarSeed: 6, floatClass: 'float-c',
-                ro: 'Felicitări ,sa fie sănătos !💙',
-                zh: '衷心恭喜，愿宝宝健康平安！💙'
-            },
-            {
-                id: 'b7',
-                left: 340, top: 325, width: 185, rot: 0,
-                reaction: '', avatarSeed: 7, floatClass: 'float-a',
-                ro: 'Felicitari dragilor!😊 sa aveti parte de multe clipe fericite si cele mai frumoase momente alaturi de 2 baietei. Sa cresteti mari si sanatosi! Ma bucur pentru voi😇😊💙💙',
-                zh: '恭喜亲爱的你们！😊 愿你们和两个小王子拥有无数幸福美好的时光，健康快乐成长！真为你们开心 😇😊💙💙'
-            },
-            {
-                id: 'b8',
-                left: 52, top: 372, width: 136, rot: -8,
-                reaction: '❤️', avatarSeed: 8, floatClass: 'float-b',
-                ro: 'Felicitări Veruța!!!',
-                zh: '恭喜你呀 Veruța！！！'
-            },
-            {
-                id: 'b9',
-                left: 2, top: 414, width: 84, rot: 0,
-                reaction: '❤️', avatarSeed: 9, floatClass: 'float-c',
-                ro: 'Felicitări!',
-                zh: '新喜祝贺！'
-            },
-            {
-                id: 'b10',
-                left: 12, top: 444, width: 175, rot: -12,
-                reaction: '', avatarSeed: 10, floatClass: 'float-a',
-                ro: 'Felicitări ! 😍😍😍😍😍😍😍😍😍',
-                zh: '太替你们开心啦！😍😍😍😍😍😍😍😍😍'
-            },
-            {
-                id: 'b11',
-                left: 274, top: 422, width: 176, rot: 8.5,
-                reaction: '❤️', avatarSeed: 11, floatClass: 'float-b',
-                ro: 'Felicitării domnu sa va binecuvinteze cu inca un sufletel mic sa creasca mare si cu credinta lui dumnezeu in inimioara lui',
-                zh: '恭喜！愿上天眷顾这个新降临的小生命，愿他带着满满的爱与信仰健康长大'
-            },
-            {
-                id: 'b12',
-                left: 62, top: 486, width: 146, rot: 0,
-                reaction: '', avatarSeed: 12, floatClass: 'float-c',
-                ro: 'Felicitări 🎊💙 naștere sănătoasă 🙏',
-                zh: '恭喜恭喜 🎊💙 祝顺遂平安生产 🙏'
-            },
-            {
-                id: 'b13',
-                left: 334, top: 500, width: 178, rot: -8,
-                reaction: '', avatarSeed: 13, floatClass: 'float-a',
-                ro: 'Serios??? Felicitariiiiiii draga Veruta! Am presimțit eu cumva 🥰💕❤️ sa fiți fericiți cu toți împreună!',
-                zh: '真的吗？？？太恭喜啦亲爱的 Veruța！我之前就有预感 🥰💕❤️ 祝你们全家人永远幸福美满！'
-            },
-            {
-                id: 'b14',
-                left: 4, top: 536, width: 212, rot: 0,
-                reaction: '❤️', avatarSeed: 14, floatClass: 'float-b',
-                ro: 'Felicitări🥰🥰🥰Amadeo mi se pare ca sa speriat un pic 🤗ca și Simona',
-                zh: '恭喜🥰🥰🥰 看起来小 Amadeo 被礼花吓了一小跳呢 🤗 真可爱'
-            },
-            {
-                id: 'b15',
-                left: 326, top: 598, width: 186, rot: 8.5,
-                reaction: '❤️', avatarSeed: 15, floatClass: 'float-c',
-                ro: 'Să vă bucurați de eii!!💙💙\nSunteti o familie frumoasă împreună!!🤍',
-                zh: '好好享受和宝贝们的时光吧！！💙💙\n你们真是无比幸福美丽的一家人！！🤍'
-            },
-            {
-                id: 'b16',
-                left: 44, top: 618, width: 208, rot: 8,
-                reaction: '😂', avatarSeed: 16, floatClass: 'float-a',
-                ro: 'Daaaaa,am ghicit😎\nÎn neamu Nicu așa-i,băieți doar.\nFetele deja o să le aducă ei😁',
-                zh: '哈哈我就说猜对了吧😎\n咱们家族传统就是生男孩！\n以后就等兄弟俩带儿媳妇回家啦😁'
-            },
-            {
-                id: 'b17',
-                left: 364, top: 688, width: 148, rot: -5,
-                reaction: '❤️', avatarSeed: 17, floatClass: 'float-b',
-                ro: 'Felicitări ❤️💕💞🧸',
-                zh: '满满的祝福 ❤️💕💞🧸'
-            }
-        ];
-
-        let currentLang = 'ro';
-        let bubblesState = JSON.parse(JSON.stringify(INITIAL_BUBBLES));
+        let bubblesState = [];
 
         /********************************************************************
          * 3. RENDER BUBBLES & INITIALIZE PHOTOS
@@ -909,8 +771,7 @@
                 // Message Bubble Box
                 const msgBox = document.createElement('div');
                 msgBox.className = 'msg-bubble flex-1';
-                const textContent = currentLang === 'ro' ? item.ro : item.zh;
-                msgBox.innerText = textContent;
+                msgBox.innerText = item.text;
 
                 // Optional Reaction Pill (❤️ / 😂)
                 if (item.reaction) {
@@ -1028,8 +889,13 @@
                 const dy = (clientY - startY) / scale;
                 movedDistance = Math.hypot(dx, dy);
 
-                const newLeft = initialLeft + dx;
-                const newTop = initialTop + dy;
+                // 限制在 540x960 海报画布内，避免气泡被裁剪或超出屏幕
+                const elWidth = el.offsetWidth || parseFloat(el.style.width) || 0;
+                const elHeight = el.offsetHeight || 40;
+                const maxLeft = Math.max(0, 540 - elWidth);
+                const maxTop = Math.max(0, 960 - elHeight);
+                const newLeft = Math.max(0, Math.min(initialLeft + dx, maxLeft));
+                const newTop = Math.max(0, Math.min(initialTop + dy, maxTop));
                 el.style.left = `${newLeft}px`;
                 el.style.top = `${newTop}px`;
                 if (stateObj) {
@@ -1105,24 +971,6 @@
                     isBlueSmoke: i % 3 === 0
                 });
             }
-        }
-
-        function triggerBlueSmokeCelebration() {
-            // Add a rich wave of blue gender-reveal smoke particles from the center photos
-            for (let i = 0; i < 36; i++) {
-                particles.push({
-                    x: 245 + (Math.random() - 0.5) * 90,
-                    y: 460 + (Math.random() - 0.5) * 120,
-                    r: 12 + Math.random() * 28,
-                    vx: (Math.random() - 0.5) * 1.6,
-                    vy: -0.9 - Math.random() * 1.5,
-                    alpha: 0.42 + Math.random() * 0.25,
-                    isBlueSmoke: true,
-                    temporary: true
-                });
-            }
-            spawnEmojiBurst(255, 420, '💙', 10);
-            spawnEmojiBurst(280, 520, '🎉', 10);
         }
 
         function animateFxLoop() {
@@ -1266,6 +1114,27 @@
          ********************************************************************/
         const TYPE_LABELS = { image: '[图片]', video: '[视频]', audio: '[语音]', file: '[文件]' };
 
+        // 估算气泡文本宽度：全角字符(CJK/emoji)按 10.5px，半角按 5.5px
+        function estimateTextWidth(text) {
+            let w = 0;
+            for (const ch of String(text)) {
+                w += ch.codePointAt(0) > 0x2E80 ? 10.5 : 5.5;
+            }
+            return w;
+        }
+
+        function bubbleWidthFor(text) {
+            return Math.min(205, Math.max(110, Math.round(estimateTextWidth(text)) + 34));
+        }
+
+        // 限制气泡位置在 540x960 画布内，避免小屏幕/极端文本下超出边界
+        function clampBubble(bubble) {
+            bubble.width = bubbleWidthFor(bubble.text);
+            bubble.left = Math.max(4, Math.min(bubble.left, 540 - bubble.width - 4));
+            bubble.top = Math.max(190, Math.min(bubble.top, 940 - 60));
+            return bubble;
+        }
+
         function hashString(str) {
             let h = 0;
             for (let i = 0; i < str.length; i++) {
@@ -1286,22 +1155,22 @@
             const content = (msg && msg.content ? String(msg.content) : '').trim() || '（空消息）';
             const prefix = TYPE_LABELS[msg.type] || '';
             const text = prefix ? `${prefix} ${content}` : content;
-            // 交错分布在海报下方区域，避免堆叠在一起
-            const lane = index % 4;
-            const laneLeft = [6, 145, 285, 400][lane];
-            const laneTop = [560, 640, 720, 800][Math.floor(index / 4) % 4];
-            return {
+            // 3 列泳道交错分布（列宽按最大气泡宽度 205 设计，确保不越界）
+            const lane = index % 3;
+            const row = Math.floor(index / 3);
+            const laneLeft = [6, 170, 334][lane];
+            const rowTop = [235, 350, 465, 580, 695, 810][row % 6];
+            return clampBubble({
                 id: 'chat_' + (msg.id || Date.now() + '_' + index),
-                left: laneLeft + Math.round((Math.random() - 0.5) * 24),
-                top: laneTop + Math.round((Math.random() - 0.5) * 18),
-                width: Math.min(205, Math.max(115, text.length * 6.5 + 36)),
+                left: laneLeft + Math.round((Math.random() - 0.5) * 20),
+                top: rowTop + (row >= 6 ? Math.round((Math.random() - 0.5) * 30) : Math.round((Math.random() - 0.5) * 14)),
+                width: 0,
                 rot: Math.round((Math.random() - 0.5) * 16),
                 reaction: '',
                 avatarSeed: hashString(msg.username || 'chat') % 20 + 1,
                 floatClass: ['float-a', 'float-b', 'float-c'][index % 3],
-                ro: text,
-                zh: text
-            };
+                text: text
+            });
         }
 
         async function pickMessagesFromChat() {
@@ -1366,62 +1235,14 @@
             adjustViewportScale();
             window.addEventListener('resize', adjustViewportScale);
 
-            // 5. Replay Animation Button
-            document.getElementById('btnReplayAnim').addEventListener('click', () => {
-                // Re-trigger hanging lines
-                document.querySelectorAll('.hanging-line').forEach(line => {
-                    line.classList.remove('animate-line');
-                    void line.offsetWidth;
-                    line.classList.add('animate-line');
-                });
-                // Re-trigger title
-                const header = document.getElementById('posterHeader');
-                header.classList.remove('animate-title');
-                void header.offsetWidth;
-                header.classList.add('animate-title');
-
-                // Re-trigger photos
-                ['photoCard1', 'photoCard2'].forEach((id, i) => {
-                    const card = document.getElementById(id);
-                    card.style.animation = '';
-                    card.classList.remove('pop-in-item');
-                    void card.offsetWidth;
-                    card.style.animationDelay = `${0.35 + i * 0.13}s`;
-                    card.classList.add('pop-in-item');
-                });
-
-                // Re-render bubbles with staggered spring pop
-                renderAllBubbles(true);
-                triggerBlueSmokeCelebration();
-            });
-
-            // 6. Blue Smoke Celebration Button
-            document.getElementById('btnCelebrate').addEventListener('click', () => {
-                triggerBlueSmokeCelebration();
-            });
-
-            // 7. Language Toggle (Original Romanian vs Chinese)
-            const langRoBtn = document.getElementById('langRoBtn');
-            const langZhBtn = document.getElementById('langZhBtn');
+            // 5. Custom Poster Title (two lines, live sync)
             const titleLine1 = document.getElementById('titleLine1');
             const titleLine2 = document.getElementById('titleLine2');
-
-            langRoBtn.addEventListener('click', () => {
-                currentLang = 'ro';
-                titleLine1.innerText = 'MULȚUMIM MULT';
-                titleLine2.innerText = 'căci ne-ați felicitat';
-                langRoBtn.className = 'px-2.5 py-1 text-xs rounded-lg bg-sky-500/20 text-sky-300 font-medium transition';
-                langZhBtn.className = 'px-2.5 py-1 text-xs rounded-lg text-slate-400 hover:text-slate-200 transition';
-                renderAllBubbles(false);
+            document.getElementById('titleLine1Input').addEventListener('input', (e) => {
+                titleLine1.innerText = e.target.value;
             });
-
-            langZhBtn.addEventListener('click', () => {
-                currentLang = 'zh';
-                titleLine1.innerText = '衷 心 感 谢 大 家';
-                titleLine2.innerText = '送来的真挚祝福';
-                langZhBtn.className = 'px-2.5 py-1 text-xs rounded-lg bg-sky-500/20 text-sky-300 font-medium transition';
-                langRoBtn.className = 'px-2.5 py-1 text-xs rounded-lg text-slate-400 hover:text-slate-200 transition';
-                renderAllBubbles(false);
+            document.getElementById('titleLine2Input').addEventListener('input', (e) => {
+                titleLine2.innerText = e.target.value;
             });
 
             // 8. Toggle Floating Animation
@@ -1446,21 +1267,20 @@
             // 10. Add Custom Blessing Bubble
             document.getElementById('btnAddBubble').addEventListener('click', () => {
                 const input = document.getElementById('newBubbleText');
-                const text = input.value.trim() || (currentLang === 'ro' ? 'Felicitări din toată inima! 💙✨' : '衷心祝贺！愿小王子健康快乐成长 💙✨');
+                const text = input.value.trim() || '衷心祝贺！愿小王子健康快乐成长 💙✨';
                 const reaction = document.getElementById('newBubbleReaction').value;
                 const randomRot = Math.round((Math.random() - 0.5) * 18);
-                const newItem = {
+                const newItem = clampBubble({
                     id: 'b_' + Date.now(),
                     left: 140 + Math.round((Math.random() - 0.5) * 120),
-                    top: 660 + Math.round((Math.random() - 0.5) * 80),
-                    width: Math.min(205, Math.max(115, text.length * 6.5 + 36)),
+                    top: 700 + Math.round((Math.random() - 0.5) * 80),
+                    width: 0,
                     rot: randomRot,
                     reaction: reaction,
                     avatarSeed: Math.floor(Math.random() * 20) + 1,
                     floatClass: 'float-a',
-                    ro: text,
-                    zh: text
-                };
+                    text: text
+                });
                 bubblesState.push(newItem);
                 input.value = '';
                 renderAllBubbles(false);

@@ -12,14 +12,17 @@ import 'package:shared_models/usecases/calendar_album/calendar_album_usecase.dar
 import 'widgets/calendar_album_bottom_bar.dart';
 import 'controllers/calendar_controller.dart';
 import 'controllers/tag_controller.dart';
+import 'models/calendar_entry.dart';
 import 'repositories/client_calendar_album_repository.dart';
 import 'screens/entry_editor/calendar_album_entry_form.dart';
 
 // HTTP 服务器导入
 import 'package:aboutme/plugins/webview/services/local_http_server.dart';
+import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'calendar_album_widget_methods.dart';
 
 part 'calendar_album_js_api.dart';
+part 'calendar_album_data_selectors.dart';
 
 /// 日历相册插件主视图
 class CalendarAlbumMainView extends StatelessWidget {
@@ -149,6 +152,9 @@ class CalendarAlbumPlugin extends BasePlugin
 
     // 注册 JS API（最后一步）
     await registerJSAPI();
+
+    // 注册数据选择器
+    _registerDataSelectors();
   }
 
   @override
