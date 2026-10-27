@@ -150,6 +150,7 @@ class Conversation {
     ToolAgentConfig? toolAgentConfig,
     List<String>? groups,
     int? contextMessageCount,
+    Map<String, dynamic>? metadata,
   }) {
     final now = DateTime.now();
     return Conversation(
@@ -162,6 +163,7 @@ class Conversation {
       contextMessageCount: contextMessageCount,
       createdAt: now,
       lastMessageAt: now,
+      metadata: metadata,
     );
   }
 

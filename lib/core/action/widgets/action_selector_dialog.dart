@@ -490,8 +490,8 @@ class _ActionSelectorDialogState extends State<ActionSelectorDialog> {
                 ),
         ),
 
-        // 配置表单（如果选择了动作）
-        if (_selectedDefinition != null) ...[
+        // 配置表单（选择了动作且需要额外配置时才展示）
+        if (_selectedDefinition?.form?.fields.isNotEmpty == true) ...[
           SizedBox(height: theme.spacing.md),
           Container(
             height: 1,

@@ -13,6 +13,8 @@ import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart'
 import 'package:aboutme/plugins/agent_chat/screens/agent_chat_settings_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/tool_template_screen/tool_template_screen.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
+import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
+import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -30,6 +32,9 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
   late ConversationController _controller;
   late ToolTemplateService _templateService;
 
+  /// Agent 过滤选项（角色卡列表）
+  List<AIAgent> _agents = [];
+
   /// 缓存的会话数量，用于检测实际变化
   int _cachedConversationCount = 0;
 
@@ -44,6 +49,11 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
     // 初始化工具模板服务
     _templateService = ToolTemplateService(_controller.storage);
+
+    // 加载 Agent 过滤选项（角色卡/Live2D 会话通过 Agent 过滤显示）
+    AgentController().loadVisibleAgents().then((agents) {
+      if (mounted) setState(() => _agents = agents);
+    });
 
     // 延迟添加监听器，避免在build期间触发setState
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -215,6 +225,85 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
     ];
   }
 
+  /// 构建 Agent 过滤的 FilterItem（单选：全部 + 各角色卡）
+  ///
+  /// 带 agentId 的会话（角色卡/Live2D 入口创建）默认不展示，
+  /// 选中具体 Agent 后仅显示该 Agent 的会话
+  List<FilterItem> _buildAgentFilterItems() {
+    if (_agents.isEmpty) {
+      return [];
+    }
+
+    return [
+      FilterItem(
+        id: 'agent',
+        title: 'Agent',
+        type: FilterType.tagsSingle,
+        builder: (context, currentValue, onChanged) {
+          final selectedAgentId = currentValue as String? ?? '';
+
+          // 第三方过滤面板回调内构建 DS 组件需包 DSThemeBridge
+          return DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                return Row(
+                  children: [
+                    // "全部"按钮：清除 Agent 过滤，仅显示无 Agent 的普通会话
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Center(
+                        child: DSChip(
+                          label: '全部',
+                          selected: selectedAgentId.isEmpty,
+                          onSelected: (selected) {
+                            if (selected || selectedAgentId.isNotEmpty) {
+                              onChanged('', done: true);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    // 各 Agent 按钮
+                    ..._agents.map((agent) {
+                      final isSelected = selectedAgentId == agent.id;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Center(
+                          child: DSChip(
+                            label: agent.name,
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) {
+                                onChanged(agent.id, done: true);
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                );
+              },
+            ),
+          );
+        },
+        getBadge: (value) {
+          final id = value as String? ?? '';
+          if (id.isEmpty) return null;
+          for (final agent in _agents) {
+            if (agent.id == id) {
+              return agent.name.length > 6
+                  ? '${agent.name.substring(0, 6)}…'
+                  : agent.name;
+            }
+          }
+          return null;
+        },
+        initialValue: '',
+      ),
+    ];
+  }
+
   /// 显示添加频道底部弹层（smooth_sheets）
   Future<void> _showAddChannelDialog() async {
     final nameController = TextEditingController();
@@ -318,7 +407,10 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
       ],
       // 多条件过滤配置
       enableMultiFilter: true,
-      multiFilterItems: _buildGroupFilterItems(),
+      multiFilterItems: [
+        ..._buildGroupFilterItems(),
+        ..._buildAgentFilterItems(),
+      ],
       onMultiFilterChanged: (filters) {
         final selectedGroups = filters['groups'] as List<String>? ?? [];
         // 清空现有过滤
@@ -327,6 +419,9 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
         for (final group in selectedGroups) {
           _controller.toggleGroupFilter(group);
         }
+        // 应用 Agent 过滤（空串表示未选择，显示普通会话）
+        final agentId = filters['agent'] as String? ?? '';
+        _controller.setAgentFilter(agentId.isEmpty ? null : agentId);
       },
       body: _controller.isLoading
           ? const Center(child: DSThemeBridge(child: DSLoadingDots()))

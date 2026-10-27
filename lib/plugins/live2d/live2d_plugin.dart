@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/live2d_zip_import.dart';
@@ -514,6 +515,55 @@ class Live2DPlugin extends BasePlugin {
     );
   }
 
+  /// 确保当前存档有对应的聊天会话
+  ///
+  /// 正式会话：携带存档绑定的 agentId 保存到频道数据，不在会话列表默认
+  /// 展示（仅通过 Agent 过滤显示）；旧版临时会话（7 天过期）在此迁移为
+  /// 正式会话，聊天记录保留
+  Future<Conversation> ensureConversation() async {
+    final archive = selected;
+    final agentId = archive?.agentId;
+    final controller = AgentChatPlugin.instance.conversationController;
+    if (archive == null || agentId == null || controller == null) {
+      throw StateError('请先在 Live2D 存档中选择 Agent');
+    }
+    final service = controller.conversationService;
+    var conversation = service.getTemporaryConversationForRoute(
+      'live2d:${archive.id}',
+    );
+    if (conversation != null) {
+      conversation = conversation.copyWith(
+        metadata: {'live2dArchiveId': archive.id},
+      );
+      await service.updateConversation(conversation);
+    }
+    conversation ??= service.getConversationByMetadata(
+      'live2dArchiveId',
+      archive.id,
+    );
+    conversation ??= await controller.createConversation(
+      title: archive.name,
+      agentId: agentId,
+      groups: [fixedGroup],
+      metadata: {'live2dArchiveId': archive.id},
+    );
+    // 会话跟随存档当前绑定的 Agent：存档换绑后校正为新 Agent 并退出链式模式
+    if (conversation.agentId != agentId || conversation.agentChain != null) {
+      conversation = conversation.copyWith(
+        agentId: agentId,
+        clearAgentChain: true,
+      );
+      await service.updateConversation(conversation);
+    }
+    if (!conversation.groups.contains(fixedGroup)) {
+      conversation = conversation.copyWith(
+        groups: [...conversation.groups, fixedGroup],
+      );
+      await service.updateConversation(conversation);
+    }
+    return conversation;
+  }
+
   Future<String> sendMessage(String text) async {
     final archive = selected;
     if (archive?.agentId == null) throw StateError('请先在 Live2D 存档中选择 Agent');
@@ -521,20 +571,7 @@ class Live2DPlugin extends BasePlugin {
     if (agent == null) throw StateError('Agent 不存在');
     final controller = AgentChatPlugin.instance.conversationController;
     if (controller == null) throw StateError('Agent Chat 尚未初始化');
-    var conversation = controller.conversationService
-        .getTemporaryConversationForRoute('live2d:${archive.id}');
-    conversation ??= await controller.conversationService
-        .createTemporaryConversation(
-          title: archive.name,
-          routeName: 'live2d:${archive.id}',
-          agentId: agent.id,
-        );
-    if (!conversation.groups.contains(fixedGroup)) {
-      conversation = conversation.copyWith(
-        groups: [...conversation.groups, fixedGroup],
-      );
-      await controller.conversationService.updateConversation(conversation);
-    }
+    final conversation = await ensureConversation();
     await controller.messageService.addMessage(
       ChatMessage.user(conversationId: conversation.id, content: text),
     );

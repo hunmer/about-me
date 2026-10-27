@@ -28,7 +28,7 @@ class ConversationController extends ChangeNotifier {
   /// 选中的分组过滤器（空列表表示显示所有）
   final List<String> _selectedGroupFilters = [];
 
-  /// 选中的Agent过滤器（null表示显示所有）
+  /// 选中的Agent过滤器（null表示不显示带 Agent 的会话）
   String? _selectedAgentFilter;
 
   /// 默认上下文消息数量（全局设置）
@@ -138,12 +138,14 @@ class ConversationController extends ChangeNotifier {
     String? agentId,
     List<String>? groups,
     int? contextMessageCount,
+    Map<String, dynamic>? metadata,
   }) async {
     final conversation = await conversationService.createConversation(
       title: title,
       agentId: agentId,
       groups: groups,
       contextMessageCount: contextMessageCount,
+      metadata: metadata,
     );
 
     // 触发会话创建事件
@@ -243,10 +245,13 @@ class ConversationController extends ChangeNotifier {
       }).toList();
     }
 
-    // 应用Agent过滤
+    // 应用Agent过滤：带 Agent 的会话（角色卡/Live2D 入口创建）默认不进
+    // 主列表，仅在选中具体 Agent 时显示该 Agent 的会话
     if (_selectedAgentFilter != null) {
       filtered =
           filtered.where((conv) => conv.agentId == _selectedAgentFilter).toList();
+    } else {
+      filtered = filtered.where((conv) => conv.agentId == null).toList();
     }
 
     return filtered;

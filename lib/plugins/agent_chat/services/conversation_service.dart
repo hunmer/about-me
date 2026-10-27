@@ -172,12 +172,14 @@ class ConversationService extends ChangeNotifier {
     String? agentId,
     List<String>? groups,
     int? contextMessageCount,
+    Map<String, dynamic>? metadata,
   }) async {
     final conversation = Conversation.create(
       title: title,
       agentId: agentId,
       groups: groups,
       contextMessageCount: contextMessageCount,
+      metadata: metadata,
     );
 
     _conversations.add(conversation);
@@ -201,6 +203,14 @@ class ConversationService extends ChangeNotifier {
     } catch (e) {
       return null;
     }
+  }
+
+  /// 按 metadata 字段值查找会话（如 live2dArchiveId）
+  Conversation? getConversationByMetadata(String key, Object value) {
+    for (final c in _conversations) {
+      if (c.metadata?[key] == value) return c;
+    }
+    return null;
   }
 
   /// 更新会话

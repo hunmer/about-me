@@ -28,6 +28,7 @@ import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
+import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/message_input.dart';
 
 import 'package:get/get.dart' hide Value;
@@ -509,32 +510,17 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
 
   Future<ChatController?> _initialize() async {
     final archive = Live2DPlugin.instance.selected;
-    final agentId = archive?.agentId;
     final agentChat = AgentChatPlugin.instance.conversationController;
-    if (archive == null || agentId == null || agentChat == null) return null;
+    if (archive?.agentId == null || agentChat == null) return null;
 
-    var conversation = agentChat.conversationService
-        .getTemporaryConversationForRoute('live2d:${archive.id}');
-    conversation ??= await agentChat.conversationService
-        .createTemporaryConversation(
-          title: archive.name,
-          routeName: 'live2d:${archive.id}',
-          agentId: agentId,
-        );
-    // 临时会话跟随存档当前绑定的 Agent：存档换绑后旧会话仍指向旧 Agent
-    //（如通用助手），这里校正为新绑定的 Agent 并退出链式模式
-    if (conversation.agentId != agentId || conversation.agentChain != null) {
-      conversation = conversation.copyWith(
-        agentId: agentId,
-        clearAgentChain: true,
-      );
-      await agentChat.conversationService.updateConversation(conversation);
-    }
-    if (!conversation.groups.contains(Live2DPlugin.fixedGroup)) {
-      conversation = conversation.copyWith(
-        groups: [...conversation.groups, Live2DPlugin.fixedGroup],
-      );
-      await agentChat.conversationService.updateConversation(conversation);
+    // 正式会话（携带存档绑定的 agentId 保存到频道数据）：
+    // 会话列表默认不展示，仅通过 Agent 过滤显示
+    final Conversation conversation;
+    try {
+      conversation = await Live2DPlugin.instance.ensureConversation();
+    } catch (e) {
+      debugPrint('[ChatClear] Live2D 会话初始化失败: $e');
+      return null;
     }
 
     final messageService = MessageService(
