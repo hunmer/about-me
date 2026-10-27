@@ -355,12 +355,13 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
     // 自动恢复通知栏显示（如果之前是开启的）
     try {
-      final res = await AboutmeDataService.instance
-          .call('activity', 'getNotificationSettings');
-      final settings =
-          res['success'] == true && res['data'] is Map
-              ? res['data'] as Map
-              : const {};
+      final res = await AboutmeDataService.instance.call(
+        'activity',
+        'getNotificationSettings',
+      );
+      final settings = res['success'] == true && res['data'] is Map
+          ? res['data'] as Map
+          : const {};
       if (settings.isNotEmpty && settings['isEnabled'] == true) {
         debugPrint('[ActivityPlugin] 检测到之前开启了通知栏显示，正在自动恢复...');
         await enableActivityNotification();
@@ -371,12 +372,13 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
     // 自动恢复播报服务（如果之前是开启的）
     try {
-      final res = await AboutmeDataService.instance
-          .call('activity', 'getTtsSettings');
-      final ttsSettings =
-          res['success'] == true && res['data'] is Map
-              ? res['data'] as Map
-              : const {};
+      final res = await AboutmeDataService.instance.call(
+        'activity',
+        'getTtsSettings',
+      );
+      final ttsSettings = res['success'] == true && res['data'] is Map
+          ? res['data'] as Map
+          : const {};
       if (ttsSettings.isNotEmpty && ttsSettings['isEnabled'] == true) {
         debugPrint('[ActivityPlugin] 检测到之前开启了播报服务，正在自动恢复...');
         await _loadTTSAnnouncementSettings();
@@ -681,11 +683,12 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
       await _notificationService.enable();
       // 保存设置
-      await AboutmeDataService.instance.call('activity', 'updateNotificationSettings', {
-        'isEnabled': true,
-        'minimumReminderInterval': minInterval,
-        'updateInterval': updateInt,
-      });
+      await AboutmeDataService.instance
+          .call('activity', 'updateNotificationSettings', {
+            'isEnabled': true,
+            'minimumReminderInterval': minInterval,
+            'updateInterval': updateInt,
+          });
       debugPrint('[ActivityPlugin] 通知栏显示已启用并保存');
     } catch (e) {
       debugPrint('[ActivityPlugin] 启用活动通知失败: $e');
@@ -698,9 +701,11 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
     try {
       await _notificationService.disable();
       // 保存设置
-      await AboutmeDataService.instance.call('activity', 'updateNotificationSettings', {
-        'isEnabled': false,
-      });
+      await AboutmeDataService.instance.call(
+        'activity',
+        'updateNotificationSettings',
+        {'isEnabled': false},
+      );
       debugPrint('[ActivityPlugin] 通知栏显示已禁用并保存');
     } catch (e) {
       debugPrint('[ActivityPlugin] 禁用活动通知失败: $e');
@@ -716,10 +721,13 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 获取最小提醒间隔（分钟）
   Future<int> getMinimumReminderInterval() async {
     try {
-      final res = await AboutmeDataService.instance
-          .call('activity', 'getNotificationSettings');
+      final res = await AboutmeDataService.instance.call(
+        'activity',
+        'getNotificationSettings',
+      );
       if (res['success'] == true && res['data'] is Map) {
-        return (res['data'] as Map)['minimumReminderInterval'] as int? ?? 30; // 默认30分钟
+        return (res['data'] as Map)['minimumReminderInterval'] as int? ??
+            30; // 默认30分钟
       }
       return 30; // 默认30分钟
     } catch (e) {
@@ -731,9 +739,11 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 设置最小提醒间隔（分钟）
   Future<void> setMinimumReminderInterval(int minutes) async {
     try {
-      await AboutmeDataService.instance.call('activity', 'updateNotificationSettings', {
-        'minimumReminderInterval': minutes,
-      });
+      await AboutmeDataService.instance.call(
+        'activity',
+        'updateNotificationSettings',
+        {'minimumReminderInterval': minutes},
+      );
       debugPrint('[ActivityPlugin] 最小提醒间隔已设置为 $minutes 分钟');
 
       // 更新通知服务
@@ -747,8 +757,10 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 获取通知更新频率（分钟）
   Future<int> getUpdateInterval() async {
     try {
-      final res = await AboutmeDataService.instance
-          .call('activity', 'getNotificationSettings');
+      final res = await AboutmeDataService.instance.call(
+        'activity',
+        'getNotificationSettings',
+      );
       if (res['success'] == true && res['data'] is Map) {
         return (res['data'] as Map)['updateInterval'] as int? ?? 1; // 默认1分钟
       }
@@ -762,9 +774,11 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 设置通知更新频率（分钟）
   Future<void> setUpdateInterval(int minutes) async {
     try {
-      await AboutmeDataService.instance.call('activity', 'updateNotificationSettings', {
-        'updateInterval': minutes,
-      });
+      await AboutmeDataService.instance.call(
+        'activity',
+        'updateNotificationSettings',
+        {'updateInterval': minutes},
+      );
       debugPrint('[ActivityPlugin] 通知更新频率已设置为 $minutes 分钟');
 
       // 更新通知服务
@@ -910,12 +924,13 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
   /// 获取工作时间设置
   Future<Map<String, dynamic>> getWorkHoursSettings() async {
     try {
-      final res = await AboutmeDataService.instance
-          .call('activity', 'getTtsSettings');
-      final settings =
-          res['success'] == true && res['data'] is Map
-              ? res['data'] as Map
-              : const {};
+      final res = await AboutmeDataService.instance.call(
+        'activity',
+        'getTtsSettings',
+      );
+      final settings = res['success'] == true && res['data'] is Map
+          ? res['data'] as Map
+          : const {};
       return {
         'checkOnlyWorkHours': settings['checkOnlyWorkHours'] as bool? ?? false,
         'workHoursStart': settings['workHoursStart'] as int? ?? 9,
@@ -1210,7 +1225,10 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
 /// 活动插件主视图
 class ActivityMainView extends StatefulWidget {
-  const ActivityMainView({super.key});
+  const ActivityMainView({super.key, this.initialDate});
+
+  /// 初始选中日期（透传给时间线 tab，如从主页日期视图跳转带入）
+  final DateTime? initialDate;
 
   @override
   State<ActivityMainView> createState() => _ActivityMainViewState();
@@ -1328,7 +1346,7 @@ class _ActivityMainViewState extends State<ActivityMainView>
         // 会触发 "Cannot hit test a render box that has never
         // been laid out" 崩溃
         children: [
-          const ActivityTimelineScreen(),
+          ActivityTimelineScreen(initialDate: widget.initialDate),
           ActivityStatisticsScreen(
             activityService: ActivityPlugin.instance.activityService,
           ),

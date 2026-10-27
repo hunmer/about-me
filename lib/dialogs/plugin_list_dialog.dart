@@ -65,8 +65,10 @@ class _PluginListDialogState extends State<PluginListDialog> {
       // 手绘面板外壳：纸底 + 墨线框随 showDSDialog 的描画动画入场
       child: DsSketchPanel(
         theme: theme,
-        radius: theme.radii.xxl,
+        radius: theme.radii.xxxl,
         progress: WiredDrawTransition.progressOf(context),
+        // 网格滚动内容裁在圆角内，不越出面板
+        clipBehavior: Clip.antiAlias,
         // 去掉状态栏内边距，避免对话框内的导航栏被顶下来
         child: MediaQuery.removePadding(
           context: context,

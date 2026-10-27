@@ -313,11 +313,15 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     // 窄屏（列数减少）时同步缩小公共展示卡的内部布局
     final cardScale = ((widget.crossAxisCount / 4).clamp(0.6, 1.0) * 0.85)
         .toDouble();
-    // 点击跳转插件页（如 AppRoutes.todo）
+    // 点击跳转插件页（如 AppRoutes.todo），携带选中日期供插件页定位
     final route = widgetDef.dateCardRoute;
     final onTap = route == null
         ? null
-        : () => NavigationHelper.pushNamed(context, route);
+        : () => NavigationHelper.pushNamed(
+            context,
+            route,
+            arguments: {'date': HomeDateController().date.toIso8601String()},
+          );
     return _useIllustrated(widgetDef)
         ? _buildIllustratedCard(
             theme,

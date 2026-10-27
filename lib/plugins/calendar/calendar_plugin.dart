@@ -665,7 +665,10 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
 
 /// 日历插件主视图
 class CalendarMainView extends StatefulWidget {
-  const CalendarMainView({super.key});
+  const CalendarMainView({super.key, this.initialDate});
+
+  /// 初始选中日期（如从主页日期视图跳转带入）
+  final DateTime? initialDate;
 
   @override
   State<CalendarMainView> createState() => _CalendarMainViewState();
@@ -684,6 +687,15 @@ class _CalendarMainViewState extends State<CalendarMainView>
   void initState() {
     super.initState();
     plugin = PluginManager.instance.getPlugin('calendar') as CalendarPlugin;
+
+    // 定位到路由带入的日期（选中日 + 聚焦月份）
+    final initialDate = widget.initialDate;
+    if (initialDate != null) {
+      plugin.controller.selectDate(initialDate);
+      plugin.controller.setFocusedMonth(
+        DateTime(initialDate.year, initialDate.month),
+      );
+    }
 
     _currentPage = 0;
     _tabController = TabController(length: 2, vsync: this);

@@ -21,7 +21,10 @@ import 'controllers/tag_controller.dart';
 import 'controllers/view_mode_controller.dart';
 
 class ActivityTimelineScreen extends StatefulWidget {
-  const ActivityTimelineScreen({super.key});
+  const ActivityTimelineScreen({super.key, this.initialDate});
+
+  /// 初始选中日期（如从主页日期视图跳转带入，默认今天）
+  final DateTime? initialDate;
 
   @override
   State<ActivityTimelineScreen> createState() => _ActivityTimelineScreenState();
@@ -48,7 +51,7 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
+    _selectedDate = widget.initialDate ?? DateTime.now();
 
     // 监听通知点击事件
     eventManager.subscribe(
@@ -700,11 +703,10 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
                   icon: DsIconKind.plus,
                   size: 40,
                   tooltip: '添加活动',
-                  onPressed: () =>
-                      ActivityController.showAddActivityScreen(
-                        context,
-                        selectedDate: _selectedDate,
-                      ),
+                  onPressed: () => ActivityController.showAddActivityScreen(
+                    context,
+                    selectedDate: _selectedDate,
+                  ),
                 );
               },
             ),

@@ -4,6 +4,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/startup_trace.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
+import 'package:aboutme/core/widgets/app_bootstrap.dart';
 import 'package:aboutme/screens/route.dart';
 
 /// 启动分流页：插件恢复前不创建主页，避免先初始化 Live2D 再跳转。
@@ -78,8 +79,7 @@ class _StartupGateState extends State<StartupGate> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: CircularProgressIndicator()));
+  Widget build(BuildContext context) => const AppSplash();
 }
 
 /// 启动时恢复的插件页：系统左滑完成 pop 后，将底层启动闸门切换为主页。
