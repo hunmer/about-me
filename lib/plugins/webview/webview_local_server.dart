@@ -15,6 +15,55 @@ extension WebViewPluginLocalServer on WebViewPlugin {
     return url.startsWith('file://') || url.contains(localFilesPath);
   }
 
+  /// 确保内置 webview app 卡片存在（幂等，每次启动调用）：
+  /// - 已有指向 app_data 拷贝（`http_server/<project>/`）的旧卡片 → 就地迁移为内置 URL
+  /// - 没有对应卡片 → 新建内置卡片
+  /// - 清理 app_data/webview/http_server 下已内置化项目的拷贝目录
+  Future<void> _ensureBuiltinAppCards() async {
+    for (final app in WebViewPlugin.builtinApps) {
+      final project = app['project']!;
+      final builtinUrl = './$kBuiltinAppsUrlPrefix/$project/index.html';
+      if (cardManager.getCardByUrl(builtinUrl) != null) continue;
+
+      // 查找指向 app_data 拷贝的旧卡片
+      WebViewCard? legacy;
+      for (final card in cardManager.cards) {
+        if (card.type == CardType.localFile &&
+            card.url.contains('/http_server/$project/')) {
+          legacy = card;
+          break;
+        }
+      }
+
+      if (legacy != null) {
+        legacy.url = builtinUrl;
+        legacy.sourcePath = null; // 内置卡片无原始本地路径，不提供同步
+        await cardManager.updateCard(legacy);
+        debugPrint('[WebViewPlugin] 已迁移内置卡片: $project');
+      } else {
+        await cardManager.addCard(
+          title: app['title']!,
+          url: builtinUrl,
+          type: CardType.localFile,
+          description: app['description'],
+        );
+        debugPrint('[WebViewPlugin] 已创建内置卡片: $project');
+      }
+    }
+
+    // 清理已内置化项目的 app_data 拷贝目录
+    if (!kIsWeb) {
+      final httpServerDir = await _getWebViewHttpServerDir();
+      for (final app in WebViewPlugin.builtinApps) {
+        final dir = Directory(path.join(httpServerDir, app['project']!));
+        if (await dir.exists()) {
+          await dir.delete(recursive: true);
+          debugPrint('[WebViewPlugin] 已清理内置项目的 app_data 拷贝: ${app['project']}');
+        }
+      }
+    }
+  }
+
   /// 启动本地 HTTP 服务器
   Future<void> _startLocalHttpServer() async {
     // 使用统一的 HTTP 服务器根目录

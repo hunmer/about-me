@@ -8,6 +8,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/plugins/chat/widgets/message_options_dialog.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'components/avatar.dart';
 import 'components/favorite_icon.dart';
 import 'components/fixed_symbol.dart';
@@ -308,7 +309,6 @@ class _MessageBubbleState extends State<MessageBubble>
     // 不再用右滑手势（多选模式点选与滑动易冲突）
     return DSThemeBridge(
       child: GestureDetector(
-        onLongPress: widget.isMultiSelectMode ? null : widget.onLongPress,
         onTap: widget.onTap,
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
@@ -472,28 +472,60 @@ class _MessageBubbleState extends State<MessageBubble>
   ) {
     final bubble = _buildBubble(theme, backgroundColor, textColor);
     final symbol = _currentMessage.fixedSymbol;
-    if (symbol == null) return bubble;
 
-    final half = FixedSymbolWidget.badgeSize / 2;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        bubble,
-        Positioned(
-          top: -half,
-          left: _isCurrentUser ? -half : null,
-          right: _isCurrentUser ? null : -half,
-          child: FixedSymbolWidget(
-            symbol: symbol,
-            onTap: () => MessageOptionsDialog.showFixedSymbolDialog(
-              context,
-              message: _currentMessage,
-              onSetFixedSymbol: (_, symbol) => widget.onSetFixedSymbol(symbol),
+    Widget content;
+    if (symbol == null) {
+      content = bubble;
+    } else {
+      final half = FixedSymbolWidget.badgeSize / 2;
+      content = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          bubble,
+          Positioned(
+            top: -half,
+            left: _isCurrentUser ? -half : null,
+            right: _isCurrentUser ? null : -half,
+            child: FixedSymbolWidget(
+              symbol: symbol,
+              onTap: () => MessageOptionsDialog.showFixedSymbolDialog(
+                context,
+                message: _currentMessage,
+                onSetFixedSymbol: (_, symbol) => widget.onSetFixedSymbol(symbol),
+              ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    }
+
+    return ArcContextMenu(items: _arcMenuItems, child: content);
+  }
+
+  /// 长按气泡的圆盘菜单：编辑/复制/删除/更多（更多弹出完整选项 sheet）。
+  /// 多选模式或使用方未提供长按入口时为空，长按不弹菜单
+  List<ArcMenuItem> get _arcMenuItems {
+    final more = widget.onLongPress;
+    if (widget.isMultiSelectMode || more == null) return const [];
+    return [
+      ArcMenuItem(
+        icon: DsIconKind.edit,
+        label: 'chat_edit'.tr,
+        onTap: widget.onEdit,
+      ),
+      ArcMenuItem(
+        icon: DsIconKind.copy,
+        label: 'chat_copy'.tr,
+        onTap: widget.onCopy,
+      ),
+      ArcMenuItem(
+        icon: DsIconKind.trash,
+        label: 'chat_delete'.tr,
+        onTap: widget.onDelete,
+        destructive: true,
+      ),
+      ArcMenuItem(icon: DsIconKind.more, label: 'app_more'.tr, onTap: more),
+    ];
   }
 
   Widget _buildBubble(

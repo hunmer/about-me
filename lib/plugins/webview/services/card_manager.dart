@@ -234,6 +234,10 @@ class CardManager extends ChangeNotifier {
   Future<String> getCardPath(WebViewCard card) async {
     // 如果是本地文件类型，构建本地 HTTP 服务器路径
     if (card.type == CardType.localFile) {
+      // 内置 app（/builtin/ 路由）文件打包在应用 assets 内，无本地目录
+      if (card.url.startsWith('./builtin/') || card.url.contains('/builtin/')) {
+        return '';
+      }
       // 从 URL 中提取路径部分，例如：./password_manager/index.html
       final uri = Uri.parse(card.url);
       final pathSegments = uri.pathSegments.where((s) => s.isNotEmpty).toList();

@@ -185,6 +185,23 @@ class _MessageListState extends State<MessageList> {
 
           final isFirstOfGroup =
               prevItem is! Message || prevItem.user.id != item.user.id;
+
+          // 完整消息选项 sheet：气泡长按圆盘菜单的"更多"与双击触发
+          void showOptionsSheet({bool initiallyShowFixedSymbolDialog = false}) {
+            MessageOptionsHandler.showOptionsDialog(
+              context: context,
+              message: item,
+              onMessageEdit: widget.onMessageEdit,
+              onMessageDelete: widget.onMessageDelete,
+              onMessageCopy: widget.onMessageCopy,
+              onSetFixedSymbol: widget.onSetFixedSymbol,
+              onSetBubbleColor: widget.onSetBubbleColor,
+              onReply: widget.onReply,
+              onToggleFavorite: widget.onToggleFavorite,
+              initiallyShowFixedSymbolDialog: initiallyShowFixedSymbolDialog,
+            );
+          }
+
           return AutoScrollTag(
             key: ValueKey(item.id),
             controller: widget.scrollController,
@@ -193,35 +210,9 @@ class _MessageListState extends State<MessageList> {
               children: [
                 if (dateSeparator != null) dateSeparator,
                 GestureDetector(
-                  onLongPress: () {
-                    // 使用统一的消息选项处理器
-                    MessageOptionsHandler.showOptionsDialog(
-                      context: context,
-                      message: item,
-                      onMessageEdit: widget.onMessageEdit,
-                      onMessageDelete: widget.onMessageDelete,
-                      onMessageCopy: widget.onMessageCopy,
-                      onSetFixedSymbol: widget.onSetFixedSymbol,
-                      onSetBubbleColor: widget.onSetBubbleColor,
-                      onReply: widget.onReply,
-                      onToggleFavorite: widget.onToggleFavorite,
-                    );
-                  },
-                  onDoubleTap: () {
-                    // 使用统一的消息选项处理器，直接显示固态符号编辑对话框
-                    MessageOptionsHandler.showOptionsDialog(
-                      context: context,
-                      message: item,
-                      onMessageEdit: widget.onMessageEdit,
-                      onMessageDelete: widget.onMessageDelete,
-                      onMessageCopy: widget.onMessageCopy,
-                      onSetFixedSymbol: widget.onSetFixedSymbol,
-                      onSetBubbleColor: widget.onSetBubbleColor,
-                      onReply: widget.onReply,
-                      onToggleFavorite: widget.onToggleFavorite,
-                      initiallyShowFixedSymbolDialog: true, // 直接显示固态符号编辑对话框
-                    );
-                  },
+                  // 双击直接显示固态符号编辑对话框
+                  onDoubleTap: () =>
+                      showOptionsSheet(initiallyShowFixedSymbolDialog: true),
                   child: _SelectableMessageBubble(
                     selectedMessageIds: widget.selectedMessageIds,
                     messageId: item.id,
@@ -236,7 +227,8 @@ class _MessageListState extends State<MessageList> {
                           MessageOptionsHandler.shareMessage(context, item),
                       onSetFixedSymbol: (symbol) =>
                           widget.onSetFixedSymbol(item, symbol),
-                      onLongPress: null, // 移除重复的长按处理
+                      // 气泡长按圆盘菜单的"更多"项：弹出完整选项 sheet
+                      onLongPress: showOptionsSheet,
                       onTap: widget.isMultiSelectMode
                           ? () => widget.onToggleMessageSelection(item.id)
                           : () {

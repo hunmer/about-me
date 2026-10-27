@@ -1,6 +1,7 @@
 import 'dart:io'
     show Platform, HttpServer, HttpRequest, File, HttpStatus, ContentType;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:universal_platform/universal_platform.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
@@ -9,6 +10,14 @@ import 'package:path/path.dart' as path;
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/webview/webview_plugin.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
+
+/// 内置 webview app 在 Flutter assets 中的根目录
+const String kBuiltinAppsAssetRoot = 'assets/webview_apps';
+
+/// 内置 webview app 的 URL 路由前缀
+/// 卡片 url 形如 `./builtin/<project>/index.html`，
+/// 经本地 HTTP 服务器映射到 `$kBuiltinAppsAssetRoot/<project>/index.html`
+const String kBuiltinAppsUrlPrefix = 'builtin';
 
 /// 本地 HTTP 服务器
 /// 用于在 Windows 等平台上提供本地文件访问，绕过 file:// 协议的安全限制
@@ -87,6 +96,12 @@ class LocalHttpServer {
         path = '/index.html';
       }
 
+      // 内置 webview app：从 Flutter assets 提供（不依赖 app_data 拷贝）
+      if (path.startsWith('/$kBuiltinAppsUrlPrefix/')) {
+        await _serveBuiltinAsset(request, path);
+        return;
+      }
+
       // 构建文件路径
       var filePath = _rootDir + path.replaceAll('/', Platform.pathSeparator);
       var file = File(filePath);
@@ -152,6 +167,30 @@ class LocalHttpServer {
       request.response.write('Internal server error: $e');
 
       debugPrint('[LocalHttpServer] 处理请求错误: $e');
+    } finally {
+      await request.response.close();
+    }
+  }
+
+  /// 从 Flutter assets 提供内置 webview app 文件
+  ///
+  /// [requestPath] 形如 `/builtin/<project>/index.html`，
+  /// 映射到 `assets/webview_apps/<project>/index.html`
+  Future<void> _serveBuiltinAsset(HttpRequest request, String requestPath) async {
+    final assetPath = requestPath.substring('/$kBuiltinAppsUrlPrefix/'.length);
+    try {
+      final data = await rootBundle.load('$kBuiltinAppsAssetRoot/$assetPath');
+
+      request.response.headers.contentType = ContentType.parse(
+        _getMimeType(assetPath),
+      );
+      request.response.headers.add('Access-Control-Allow-Origin', '*');
+      request.response.headers.add('Cache-Control', 'no-cache, no-store, must-revalidate');
+      request.response.add(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+    } catch (e) {
+      request.response.statusCode = HttpStatus.notFound;
+      request.response.write('Built-in app asset not found: $assetPath');
+      debugPrint('[LocalHttpServer] 内置资源不存在: $assetPath');
     } finally {
       await request.response.close();
     }

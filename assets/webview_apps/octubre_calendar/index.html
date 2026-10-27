@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Octubre 2025 - 拍立得日历拼贴海报</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2canvas 用于导出 PNG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+            background: #121316;
+            color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* 海报主画布固定比例 3:4 (540 x 720) */
+        .poster-stage {
+            position: relative;
+            width: 540px;
+            height: 720px;
+            /* 固定尺寸画布放进 flex 容器禁止被压缩，否则缩放计算与裁切都会出错 */
+            flex-shrink: 0;
+            overflow: hidden;
+            background-color: #27272a;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+            transform-origin: top center;
+        }
+
+        /* 拍立得相框通用样式 */
+        .polaroid-item {
+            position: absolute;
+            cursor: grab;
+            touch-action: none;
+            transition: box-shadow 0.15s ease;
+            will-change: transform, left, top;
+        }
+        .polaroid-item:active {
+            cursor: grabbing;
+        }
+        .polaroid-item.selected .polaroid-frame {
+            outline: 2px solid #ff3b30;
+            outline-offset: 2px;
+        }
+        .polaroid-item.selected .sticker-body {
+            filter: drop-shadow(0 0 6px rgba(255, 59, 48, 0.85));
+        }
+
+        .polaroid-frame {
+            background: #f5f3eb;
+            padding: 6px 6px 22px 6px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.18);
+            border-radius: 2px;
+            position: relative;
+        }
+
+        /* 双层拍立得底层衬纸 */
+        .polaroid-underlay {
+            position: absolute;
+            inset: 0;
+            background: #efede4;
+            padding: 6px 6px 22px 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+            border-radius: 2px;
+            transform: rotate(-6deg) translate(-3px, 4px);
+            z-index: -1;
+            overflow: hidden;
+        }
+        .polaroid-underlay::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            right: 6px;
+            bottom: 22px;
+            background: linear-gradient(135deg, #2d6a4f, #40916c);
+        }
+
+        .polaroid-img-wrap {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #d6d3cd;
+            position: relative;
+        }
+
+        .polaroid-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
+
+        /* 导出隐藏辅助线 */
+        .exporting .polaroid-item.selected .polaroid-frame {
+            outline: none !important;
+        }
+        .exporting .polaroid-item.selected .sticker-body {
+            filter: none !important;
+        }
+        .exporting .selection-badge {
+            display: none !important;
+        }
+
+        /* 选中时的角标提示 */
+        .selection-badge {
+            display: none;
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 24, 0.88);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 99;
+            backdrop-filter: blur(4px);
+        }
+        .polaroid-item.selected .selection-badge {
+            display: block;
+        }
+
+        /* 日历分割线 */
+        .cal-row {
+            border-top: 1px solid #e4e4e7;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between py-4 px-2 sm:px-6">
+
+    <!-- 顶部控制工具栏 -->
+    <header class="w-full max-w-4xl bg-zinc-900/90 border border-zinc-800 backdrop-blur-md rounded-2xl p-3 sm:px-5 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-xl z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 font-bold text-lg">
+                10
+            </div>
+            <div>
+                <h1 class="text-sm sm:text-base font-bold text-white leading-tight">Octubre 2025 拍立得日历海报</h1>
+                <p class="text-xs text-zinc-400">支持鼠标/触屏自由拖拽 · 从相册多选填充 · 选中拍立得可单独换图</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <button id="btnShufflePhotos" class="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5 border border-zinc-700">
+                <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                从相册多选填充
+            </button>
+            <button id="btnResetLayout" class="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5 border border-zinc-700">
+                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                </svg>
+                重置原图位置
+            </button>
+            <button id="btnExportPng" class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 active:scale-95 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-red-500/25 transition flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                <span id="exportBtnText">导出为 PNG</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 选中元素微调悬浮栏 -->
+    <div id="inspectorBar" class="w-full max-w-4xl bg-zinc-900/95 border border-zinc-800 rounded-2xl px-4 py-2.5 mb-4 hidden items-center justify-between flex-wrap gap-3 shadow-lg z-40">
+        <div class="flex items-center gap-2 text-xs text-zinc-300">
+            <span class="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+            <span>当前选中：<strong id="selectedItemTitle" class="text-white">照片 #1</strong></span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- 旋转角度调节 -->
+            <div class="flex items-center gap-2 bg-zinc-800/80 px-2.5 py-1 rounded-lg border border-zinc-700/70">
+                <span class="text-xs text-zinc-400">旋转</span>
+                <input id="rotateSlider" type="range" min="-45" max="45" value="0" class="w-24 accent-red-500 cursor-pointer h-1.5 bg-zinc-700 rounded-lg">
+                <span id="rotateValue" class="text-xs font-mono text-zinc-200 w-9 text-right">0°</span>
+            </div>
+
+            <!-- 缩放调节 -->
+            <div class="flex items-center gap-2 bg-zinc-800/80 px-2.5 py-1 rounded-lg border border-zinc-700/70">
+                <span class="text-xs text-zinc-400">大小</span>
+                <input id="scaleSlider" type="range" min="70" max="140" value="100" class="w-20 accent-red-500 cursor-pointer h-1.5 bg-zinc-700 rounded-lg">
+                <span id="scaleValue" class="text-xs font-mono text-zinc-200 w-10 text-right">100%</span>
+            </div>
+
+            <!-- 更换单张图片按钮（仅拍立得显示）：webview 内调起原生图片选择器 -->
+            <button id="uploadPhotoLabel" type="button" class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200 border border-zinc-700 cursor-pointer transition flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                换图
+                <input id="singleFileInput" type="file" accept="image/*" class="hidden">
+            </button>
+
+            <button id="btnBringFront" class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200 border border-zinc-700 transition">
+                置顶层级
+            </button>
+        </div>
+    </div>
+
+    <!-- 主视觉区域外层自适应容器 -->
+    <main id="stageWrapper" class="w-full flex justify-center items-start overflow-hidden my-auto">
+        <!-- 海报画布 (540 x 720) -->
+        <div id="posterCanvas" class="poster-stage select-none">
+
+            <!-- 1. 渐变背景（内置零流量，替代原外部街景图） -->
+            <div
+                class="absolute inset-0 pointer-events-none"
+                style="background: linear-gradient(165deg, #14352a 0%, #1e4d3b 40%, #2d6a4f 75%, #40916c 100%);"
+            ></div>
+
+            <!-- 轻微暗角与柔和融合层 -->
+            <div class="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/20 pointer-events-none"></div>
+
+            <!-- 2. iOS 日历主体卡片 -->
+            <div
+                id="calendarCard"
+                class="absolute left-[70px] top-[136px] w-[400px] bg-[#f8f8f8] rounded-[22px] shadow-[0_12px_36px_rgba(0,0,0,0.28)] px-[18px] pt-[14px] pb-[10px] text-black pointer-events-none"
+                style="z-index: 5;"
+            >
+                <!-- 顶部红色导航栏 -->
+                <div class="flex items-center justify-between mb-[6px]">
+                    <div class="flex items-center gap-[3px] text-[#e03a2e] font-normal text-[17px] tracking-tight">
+                        <svg class="w-[18px] h-[18px] -ml-1" fill="none" stroke="#e03a2e" stroke-width="2.6" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        <span>2025</span>
+                    </div>
+
+                    <!-- 右侧三个经典 iOS 日历红色图标 -->
+                    <div class="flex items-center gap-[22px] text-[#e03a2e]">
+                        <!-- 视图胶囊切换图标 -->
+                        <svg class="w-[24px] h-[15px]" viewBox="0 0 28 16" fill="none">
+                            <rect x="1.2" y="1.2" width="25.6" height="13.6" rx="5.5" stroke="#e03a2e" stroke-width="1.9"/>
+                            <line x1="9.5" y1="1.5" x2="9.5" y2="14.5" stroke="#e03a2e" stroke-width="1.8"/>
+                            <line x1="18.5" y1="1.5" x2="18.5" y2="14.5" stroke="#e03a2e" stroke-width="1.8"/>
+                        </svg>
+                        <!-- 搜索放大镜图标 -->
+                        <svg class="w-[19px] h-[19px]" viewBox="0 0 24 24" fill="none" stroke="#e03a2e" stroke-width="2.1">
+                            <circle cx="10.5" cy="10.5" r="6.8"/>
+                            <line x1="15.5" y1="15.5" x2="21" y2="21" stroke-linecap="round"/>
+                        </svg>
+                        <!-- 加号图标 -->
+                        <svg class="w-[20px] h-[20px]" viewBox="0 0 24 24" fill="none" stroke="#e03a2e" stroke-width="2.1">
+                            <line x1="12" y1="4.5" x2="12" y2="19.5" stroke-linecap="round"/>
+                            <line x1="4.5" y1="12" x2="19.5" y2="12" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- 月份大标题：Octubre -->
+                <h2 class="text-[31px] font-extrabold tracking-[-0.03em] text-black leading-tight mb-[8px]">
+                    Octubre
+                </h2>
+
+                <!-- 星期表头：L M M J V S D -->
+                <div class="grid grid-cols-7 text-center text-[10px] font-semibold pb-[5px]">
+                    <span class="text-zinc-900">L</span>
+                    <span class="text-zinc-900">M</span>
+                    <span class="text-zinc-900">M</span>
+                    <span class="text-zinc-900">J</span>
+                    <span class="text-zinc-900">V</span>
+                    <span class="text-[#8e8e93]">S</span>
+                    <span class="text-[#8e8e93]">D</span>
+                </div>
+
+                <!-- 日历网格 (2025年10月: 1号为周三) -->
+                <div class="flex flex-col">
+                    <!-- 第 1 周: 1 - 5 -->
+                    <div class="cal-row grid grid-cols-7 h-[69px] pt-[7px] text-center">
+                        <div></div>
+                        <div></div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">1</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">2</span>
+                            <!-- 绿色椭圆日程条 -->
+                            <span class="w-[11px] h-[5px] rounded-full bg-[#7bc5b7] mt-[15px]"></span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">3</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-[#8e8e93] leading-none">4</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-[#8e8e93] leading-none">5</span>
+                            <span class="w-[5px] h-[5px] rounded-full bg-[#b0b3b8] mt-[15px]"></span>
+                        </div>
+                    </div>
+
+                    <!-- 第 2 周: 6 - 12 -->
+                    <div class="cal-row grid grid-cols-7 h-[69px] pt-[7px] text-center">
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">6</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">7</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">8</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">9</span>
+                            <span class="w-[5px] h-[5px] rounded-full bg-[#b0b3b8] mt-[15px]"></span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">10</span>
+                            <span class="w-[5px] h-[5px] rounded-full bg-[#7bc5b7] mt-[15px]"></span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-[#8e8e93] leading-none">11</span>
+                            <span class="w-[5px] h-[5px] rounded-full bg-[#8ecae6] mt-[15px]"></span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-[#8e8e93] leading-none">12</span>
+                        </div>
+                    </div>
+
+                    <!-- 第 3 周: 13 - 19 -->
+                    <div class="cal-row grid grid-cols-7 h-[69px] pt-[7px] text-center">
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">13</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">14</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">15</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">16</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">17</span>
+                            <span class="w-[5px] h-[5px] rounded-full bg-[#8ecae6] mt-[15px]"></span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-[#8e8e93] leading-none">18</span>
+                            <span class="w-[5px] h-[5px] rounded-full bg-[#83c5be] mt-[15px]"></span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-[#8e8e93] leading-none">19</span>
+                        </div>
+                    </div>
+
+                    <!-- 第 4 周: 20 - 26 -->
+                    <div class="cal-row grid grid-cols-7 h-[69px] pt-[7px] text-center">
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">20</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">21</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">22</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">23</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">24</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-[#8e8e93] leading-none">25</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-[#8e8e93] leading-none">26</span>
+                        </div>
+                    </div>
+
+                    <!-- 第 5 周: 27 - 31 -->
+                    <div class="cal-row grid grid-cols-7 h-[62px] pt-[7px] text-center">
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">27</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">28</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">29</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">30</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[16px] font-semibold text-black leading-none">31</span>
+                        </div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 可自由移动的拍立得照片与装饰贴纸容器 -->
+            <div id="interactiveLayer" class="absolute inset-0" style="z-index: 20;"></div>
+
+        </div>
+    </main>
+
+    <!-- 底部状态提示 -->
+    <footer class="mt-4 text-center text-xs text-zinc-500">
+        提示：直接按住任意拍立得照片或星星/哑铃贴纸即可拖动位置；点击空白处可取消选中框。
+    </footer>
+
+    <!-- 自定义通知弹窗 (替代 alert) -->
+    <div id="toastBox" class="fixed bottom-6 right-6 bg-zinc-900/95 border border-zinc-700 text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-medium flex items-center gap-2.5 opacity-0 pointer-events-none transition-all duration-300 z-50">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span id="toastMsg">操作成功</span>
+    </div>
+
+    <script>
+        /**
+         * SVG 装饰配件模板（立体红图钉、金属回形针、闪粉星星、豹纹星星、立体哑铃）
+         */
+        const SVG_ASSETS = {
+            // 红色立体图钉
+            pinRedRight: `
+                <svg class="absolute -top-[7px] right-[4px] w-[24px] h-[24px] pointer-events-none drop-shadow-md" viewBox="0 0 32 32">
+                    <ellipse cx="14" cy="23" rx="5" ry="2.5" fill="rgba(0,0,0,0.28)" transform="rotate(-15 14 23)"/>
+                    <path d="M16 18 L13 26" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="17" cy="15" r="6.5" fill="#dc2626"/>
+                    <circle cx="19" cy="10" r="5.5" fill="#ef4444"/>
+                    <circle cx="17.5" cy="8.5" r="2" fill="#fca5a5" opacity="0.8"/>
+                </svg>
+            `,
+            pinRedLeft: `
+                <svg class="absolute -top-[8px] left-[6px] w-[24px] h-[24px] pointer-events-none drop-shadow-md" viewBox="0 0 32 32">
+                    <ellipse cx="16" cy="23" rx="5" ry="2.5" fill="rgba(0,0,0,0.28)"/>
+                    <path d="M16 18 L17 26" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="15" cy="15" r="6.5" fill="#dc2626"/>
+                    <circle cx="13.5" cy="10" r="5.5" fill="#ef4444"/>
+                    <circle cx="12" cy="8.5" r="2" fill="#fca5a5" opacity="0.8"/>
+                </svg>
+            `,
+            pinRedCenter: `
+                <svg class="absolute -top-[7px] right-[22px] w-[24px] h-[24px] pointer-events-none drop-shadow-md" viewBox="0 0 32 32">
+                    <ellipse cx="15" cy="22" rx="5" ry="2.5" fill="rgba(0,0,0,0.28)"/>
+                    <path d="M16 17 L15 25" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="16" cy="14" r="6.5" fill="#b91c1c"/>
+                    <circle cx="19" cy="10" r="5.5" fill="#ef4444"/>
+                    <circle cx="17.5" cy="8.5" r="1.8" fill="#fca5a5" opacity="0.85"/>
+                </svg>
+            `,
+            // 银色金属回形针
+            clipLeft: `
+                <svg class="absolute -top-[12px] left-[12px] w-[16px] h-[30px] pointer-events-none drop-shadow-sm" viewBox="0 0 20 38" fill="none">
+                    <path d="M6 27V8.5C6 5.46 8.46 3 11.5 3C14.54 3 17 5.46 17 8.5V28.5C17 32.64 13.64 36 9.5 36C5.36 36 2 32.64 2 28.5V11"
+                        stroke="#71717a" stroke-width="2.1" stroke-linecap="round"/>
+                    <path d="M6 27V8.5C6 5.46 8.46 3 11.5 3C14.54 3 17 5.46 17 8.5V28.5"
+                        stroke="#e4e4e7" stroke-width="1" stroke-linecap="round"/>
+                </svg>
+            `,
+            clipRight: `
+                <svg class="absolute -top-[13px] right-[10px] w-[16px] h-[30px] pointer-events-none drop-shadow-sm" viewBox="0 0 20 38" fill="none">
+                    <path d="M6 27V8.5C6 5.46 8.46 3 11.5 3C14.54 3 17 5.46 17 8.5V28.5C17 32.64 13.64 36 9.5 36C5.36 36 2 32.64 2 28.5V11"
+                        stroke="#71717a" stroke-width="2.1" stroke-linecap="round"/>
+                    <path d="M6 27V8.5C6 5.46 8.46 3 11.5 3C14.54 3 17 5.46 17 8.5V28.5"
+                        stroke="#e4e4e7" stroke-width="1" stroke-linecap="round"/>
+                </svg>
+            `,
+            // 右上角银色闪粉五角星贴纸
+            silverStarSticker: `
+                <div class="sticker-body w-[78px] h-[78px] relative pointer-events-none">
+                    <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]">
+                        <defs>
+                            <radialGradient id="glitterGrad" cx="40%" cy="35%" r="65%">
+                                <stop offset="0%" stop-color="#f4f4f5"/>
+                                <stop offset="45%" stop-color="#d4d4d8"/>
+                                <stop offset="80%" stop-color="#a1a1aa"/>
+                                <stop offset="100%" stop-color="#71717a"/>
+                            </radialGradient>
+                        </defs>
+                        <!-- 白色贴纸描边底座 -->
+                        <polygon points="50,6 63,34 93,38 71,59 76,89 50,74 24,89 29,59 7,38 37,34"
+                            fill="#ffffff" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+                        <!-- 银色主体 -->
+                        <polygon points="50,8 62.5,35 91,38.5 70,58.5 75,87 50,72.5 25,87 30,58.5 9,38.5 37.5,35"
+                            fill="url(#glitterGrad)" stroke="#d4d4d8" stroke-width="1" stroke-linejoin="round"/>
+                        <!-- 闪粉颗粒点缀 -->
+                        <g fill="#ffffff" opacity="0.85">
+                            <circle cx="48" cy="24" r="1.5"/><circle cx="55" cy="38" r="1.2"/><circle cx="38" cy="45" r="1.6"/>
+                            <circle cx="62" cy="52" r="1.4"/><circle cx="45" cy="60" r="1.8"/><circle cx="52" cy="48" r="1.1"/>
+                            <circle cx="32" cy="42" r="1.3"/><circle cx="68" cy="43" r="1.5"/><circle cx="35" cy="68" r="1.4"/>
+                            <circle cx="63" cy="68" r="1.6"/><circle cx="49" cy="33" r="1.3"/><circle cx="58" cy="62" r="1.2"/>
+                        </g>
+                        <g fill="#52525b" opacity="0.45">
+                            <circle cx="44" cy="30" r="1.2"/><circle cx="59" cy="44" r="1.3"/><circle cx="41" cy="53" r="1.4"/>
+                            <circle cx="53" cy="65" r="1.2"/><circle cx="33" cy="50" r="1.1"/><circle cx="66" cy="57" r="1.3"/>
+                        </g>
+                    </svg>
+                </div>
+            `,
+            // 豹纹五角星贴纸
+            leopardStarSticker: `
+                <div class="sticker-body w-[58px] h-[58px] relative pointer-events-none">
+                    <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-[0_3px_6px_rgba(0,0,0,0.35)]">
+                        <defs>
+                            <linearGradient id="leoBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#eab308"/>
+                                <stop offset="50%" stop-color="#ca8a04"/>
+                                <stop offset="100%" stop-color="#854d0e"/>
+                            </linearGradient>
+                            <clipPath id="leoStarClip">
+                                <polygon points="50,5 63,35 95,38 71,60 77,92 50,75 23,92 29,60 5,38 37,35"/>
+                            </clipPath>
+                        </defs>
+                        <g clip-path="url(#leoStarClip)">
+                            <rect width="100" height="100" fill="url(#leoBg)"/>
+                            <!-- 豹纹斑点 -->
+                            <g fill="#1c1917">
+                                <circle cx="48" cy="22" r="4"/><circle cx="38" cy="38" r="4.5"/><circle cx="60" cy="36" r="4"/>
+                                <circle cx="25" cy="45" r="4"/><circle cx="50" cy="50" r="5"/><circle cx="72" cy="48" r="4.2"/>
+                                <circle cx="36" cy="64" r="4.5"/><circle cx="62" cy="65" r="4.5"/><circle cx="48" cy="70" r="3.8"/>
+                                <circle cx="30" cy="78" r="4"/><circle cx="68" cy="80" r="4"/>
+                                <circle cx="53" cy="30" r="2.2"/><circle cx="43" cy="57" r="2.5"/><circle cx="58" cy="54" r="2.2"/>
+                            </g>
+                            <g fill="#92400e">
+                                <circle cx="48" cy="22" r="1.8"/><circle cx="38" cy="38" r="2"/><circle cx="60" cy="36" r="1.7"/>
+                                <circle cx="50" cy="50" r="2.2"/><circle cx="36" cy="64" r="2"/><circle cx="62" cy="65" r="2"/>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+            `,
+            // 3D 金属哑铃贴纸
+            dumbbellSticker: `
+                <div class="sticker-body w-[52px] h-[34px] relative pointer-events-none">
+                    <svg viewBox="0 0 80 50" class="w-full h-full drop-shadow-[0_4px_6px_rgba(0,0,0,0.4)]">
+                        <!-- 左侧配重片 -->
+                        <ellipse cx="16" cy="25" rx="6" ry="14" fill="#27272a" stroke="#71717a" stroke-width="1.5"/>
+                        <ellipse cx="21" cy="25" rx="5.5" ry="12" fill="#3f3f46" stroke="#a1a1aa" stroke-width="1.2"/>
+                        <!-- 中间金属握杆 -->
+                        <line x1="21" y1="25" x2="59" y2="25" stroke="#e4e4e7" stroke-width="5" stroke-linecap="round"/>
+                        <line x1="21" y1="24" x2="59" y2="24" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+                        <!-- 右侧配重片 -->
+                        <ellipse cx="59" cy="25" rx="5.5" ry="12" fill="#3f3f46" stroke="#a1a1aa" stroke-width="1.2"/>
+                        <ellipse cx="64" cy="25" rx="6" ry="14" fill="#18181b" stroke="#71717a" stroke-width="1.5"/>
+                    </svg>
+                </div>
+            `
+        };
+
+        /**
+         * 本地占位图（内联 SVG data URI，零网络流量）
+         * 拍立得初始与图片加载失败时显示，等用户从相册选图替换
+         */
+        const PLACEHOLDER_IMG = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="240" viewBox="0 0 200 240">' +
+            '<rect width="200" height="240" fill="#d6d3cd"/>' +
+            '<rect x="0" y="190" width="200" height="50" fill="#ece9e1"/>' +
+            '<g fill="none" stroke="#a8a29e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">' +
+            '<rect x="70" y="92" width="60" height="48" rx="8"/>' +
+            '<circle cx="100" cy="116" r="12"/>' +
+            '<path d="M84 92l6-10h20l6 10"/>' +
+            '</g>' +
+            '<text x="100" y="168" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#78716c">\u70b9\u201c\u6362\u56fe\u201d\u6dfb\u52a0\u7167\u7247</text>' +
+            '</svg>'
+        );
+
+        /**
+         * 1:1 复刻原图各拍立得与贴纸的初始坐标、宽高、旋转角与装饰件
+         */
+        const DEFAULT_ITEMS = [
+            {
+                id: 'p1',
+                type: 'polaroid',
+                title: '10月1日 · 车内自拍',
+                x: 112,
+                y: 244,
+                w: 102,
+                h: 120,
+                rotate: 8,
+                scale: 100,
+                zIndex: 22,
+                pinType: 'pinRedRight',
+                img: PLACEHOLDER_IMG
+            },
+            {
+                id: 'p2',
+                type: 'polaroid',
+                title: '10月3日 · 黑色穿搭',
+                x: 314,
+                y: 245,
+                w: 88,
+                h: 104,
+                rotate: -10,
+                scale: 100,
+                zIndex: 23,
+                pinType: 'pinRedRight',
+                img: PLACEHOLDER_IMG
+            },
+            {
+                id: 'p3',
+                type: 'polaroid',
+                title: '10月9日 · 三明治早餐',
+                x: 198,
+                y: 310,
+                w: 78,
+                h: 92,
+                rotate: -6,
+                scale: 100,
+                zIndex: 26,
+                pinType: 'clipLeft',
+                img: PLACEHOLDER_IMG
+            },
+            {
+                id: 'p4',
+                type: 'polaroid',
+                title: '10月13日 · 粉色OOTD',
+                x: 78,
+                y: 360,
+                w: 78,
+                h: 94,
+                rotate: 7,
+                scale: 100,
+                zIndex: 24,
+                pinType: 'clipLeft',
+                img: PLACEHOLDER_IMG
+            },
+            {
+                id: 'p5',
+                type: 'polaroid',
+                title: '10月16日 · 拿铁与甜品',
+                x: 212,
+                y: 400,
+                w: 92,
+                h: 82,
+                rotate: 5,
+                scale: 100,
+                zIndex: 25,
+                pinType: 'clipRight',
+                img: PLACEHOLDER_IMG
+            },
+            {
+                id: 'p6',
+                type: 'polaroid',
+                title: '10月18日 · 好友聚餐',
+                x: 398,
+                y: 368,
+                w: 88,
+                h: 98,
+                rotate: 3,
+                scale: 100,
+                zIndex: 25,
+                pinType: 'pinRedCenter',
+                img: PLACEHOLDER_IMG
+            },
+            {
+                id: 'p7',
+                type: 'polaroid',
+                title: '10月20日 · 健身打卡',
+                x: 64,
+                y: 462,
+                w: 86,
+                h: 104,
+                rotate: 16,
+                scale: 100,
+                zIndex: 27,
+                pinType: 'pinRedLeft',
+                img: PLACEHOLDER_IMG
+            },
+            {
+                id: 'p8',
+                type: 'polaroid',
+                title: '10月29日 · 趣味外星人',
+                x: 204,
+                y: 520,
+                w: 82,
+                h: 100,
+                rotate: 5,
+                scale: 100,
+                zIndex: 28,
+                pinType: 'none',
+                img: PLACEHOLDER_IMG
+            },
+            {
+                id: 'p9',
+                type: 'polaroid',
+                title: '10月31日 · 万圣节派对',
+                x: 338,
+                y: 514,
+                w: 94,
+                h: 112,
+                rotate: -5,
+                scale: 100,
+                zIndex: 29,
+                pinType: 'clipRight',
+                doubleStack: true,
+                img: PLACEHOLDER_IMG
+            },
+            // 3 个独立可拖拽贴纸
+            {
+                id: 's1',
+                type: 'sticker',
+                title: '闪粉星星贴纸',
+                x: 432,
+                y: 158,
+                rotate: 4,
+                scale: 100,
+                zIndex: 32,
+                stickerKey: 'silverStarSticker'
+            },
+            {
+                id: 's2',
+                type: 'sticker',
+                title: '豹纹星星贴纸',
+                x: 122,
+                y: 404,
+                rotate: -6,
+                scale: 100,
+                zIndex: 33,
+                stickerKey: 'leopardStarSticker'
+            },
+            {
+                id: 's3',
+                type: 'sticker',
+                title: '健身哑铃贴纸',
+                x: 124,
+                y: 466,
+                rotate: 28,
+                scale: 100,
+                zIndex: 34,
+                stickerKey: 'dumbbellSticker'
+            }
+        ];
+
+        // 深拷贝当前元素状态
+        let itemsState = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+        let selectedId = null;
+        let maxZIndex = 40;
+
+        const interactiveLayer = document.getElementById('interactiveLayer');
+        const inspectorBar = document.getElementById('inspectorBar');
+        const selectedItemTitle = document.getElementById('selectedItemTitle');
+        const rotateSlider = document.getElementById('rotateSlider');
+        const rotateValue = document.getElementById('rotateValue');
+        const scaleSlider = document.getElementById('scaleSlider');
+        const scaleValue = document.getElementById('scaleValue');
+        const uploadPhotoLabel = document.getElementById('uploadPhotoLabel');
+        const singleFileInput = document.getElementById('singleFileInput');
+
+        /**
+         * 显示轻提示消息
+         */
+        function showToast(msg) {
+            const box = document.getElementById('toastBox');
+            const text = document.getElementById('toastMsg');
+            text.textContent = msg;
+            box.classList.remove('opacity-0', 'pointer-events-none');
+            box.classList.add('opacity-100');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                box.classList.remove('opacity-100');
+                box.classList.add('opacity-0', 'pointer-events-none');
+            }, 2400);
+        }
+
+        /**
+         * 渲染所有拍立得和贴纸节点
+         */
+        function renderAllItems() {
+            interactiveLayer.innerHTML = '';
+
+            itemsState.forEach(item => {
+                const el = document.createElement('div');
+                el.className = `polaroid-item ${selectedId === item.id ? 'selected' : ''}`;
+                el.dataset.id = item.id;
+                el.style.left = `${item.x}px`;
+                el.style.top = `${item.y}px`;
+                el.style.zIndex = item.zIndex;
+                el.style.transform = `rotate(${item.rotate}deg) scale(${item.scale / 100})`;
+
+                if (item.type === 'polaroid') {
+                    const pinSvg = SVG_ASSETS[item.pinType] || '';
+                    const underlayHtml = item.doubleStack ? `<div class="polaroid-underlay"></div>` : '';
+                    el.innerHTML = `
+                        <div class="polaroid-frame" style="width: ${item.w}px; height: ${item.h}px;">
+                            ${underlayHtml}
+                            <div class="polaroid-img-wrap">
+                                <img
+                                    crossorigin="anonymous"
+                                    src="${item.img}"
+                                    alt="${item.title}"
+                                    class="polaroid-img"
+                                    draggable="false"
+                                    onerror="this.onerror=null;this.src=PLACEHOLDER_IMG"
+                                />
+                            </div>
+                            ${pinSvg}
+                        </div>
+                        <div class="selection-badge">可拖动 · 顶部可调角度</div>
+                    `;
+                } else {
+                    el.innerHTML = `
+                        ${SVG_ASSETS[item.stickerKey] || ''}
+                        <div class="selection-badge">可拖动贴纸</div>
+                    `;
+                }
+
+                // 绑定指针拖拽事件
+                bindDragEvents(el, item);
+                interactiveLayer.appendChild(el);
+            });
+
+            updateInspectorUI();
+        }
+
+        /**
+         * 更新选中状态与顶部属性栏
+         */
+        function selectItem(id) {
+            selectedId = id;
+            document.querySelectorAll('.polaroid-item').forEach(node => {
+                node.classList.toggle('selected', node.dataset.id === id);
+            });
+            updateInspectorUI();
+        }
+
+        function updateInspectorUI() {
+            const current = itemsState.find(i => i.id === selectedId);
+            if (!current) {
+                inspectorBar.classList.add('hidden');
+                inspectorBar.classList.remove('flex');
+                return;
+            }
+            inspectorBar.classList.remove('hidden');
+            inspectorBar.classList.add('flex');
+            selectedItemTitle.textContent = current.title;
+            rotateSlider.value = current.rotate;
+            rotateValue.textContent = `${current.rotate}°`;
+            scaleSlider.value = current.scale;
+            scaleValue.textContent = `${current.scale}%`;
+
+            if (current.type === 'polaroid') {
+                uploadPhotoLabel.classList.remove('hidden');
+            } else {
+                uploadPhotoLabel.classList.add('hidden');
+            }
+        }
+
+        /**
+         * 鼠标与触屏统一拖拽实现（自动适配画布响应式缩放比例）
+         */
+        function bindDragEvents(el, item) {
+            let isDragging = false;
+            let startClientX = 0;
+            let startClientY = 0;
+            let initialX = 0;
+            let initialY = 0;
+
+            const onPointerDown = (e) => {
+                e.stopPropagation();
+                selectItem(item.id);
+
+                isDragging = true;
+                const point = e.touches ? e.touches[0] : e;
+                startClientX = point.clientX;
+                startClientY = point.clientY;
+                initialX = item.x;
+                initialY = item.y;
+
+                // 拖动时自动提升层级以便顺畅操作
+                maxZIndex += 1;
+                item.zIndex = maxZIndex;
+                el.style.zIndex = item.zIndex;
+
+                window.addEventListener('mousemove', onPointerMove, { passive: false });
+                window.addEventListener('mouseup', onPointerUp);
+                window.addEventListener('touchmove', onPointerMove, { passive: false });
+                window.addEventListener('touchend', onPointerUp);
+            };
+
+            const onPointerMove = (e) => {
+                if (!isDragging) return;
+                if (e.cancelable) e.preventDefault();
+
+                const point = e.touches ? e.touches[0] : e;
+                const scaleFactor = window._currentStageScale || 1;
+                const dx = (point.clientX - startClientX) / scaleFactor;
+                const dy = (point.clientY - startClientY) / scaleFactor;
+
+                item.x = Math.round(initialX + dx);
+                item.y = Math.round(initialY + dy);
+
+                el.style.left = `${item.x}px`;
+                el.style.top = `${item.y}px`;
+            };
+
+            const onPointerUp = () => {
+                isDragging = false;
+                window.removeEventListener('mousemove', onPointerMove);
+                window.removeEventListener('mouseup', onPointerUp);
+                window.removeEventListener('touchmove', onPointerMove);
+                window.removeEventListener('touchend', onPointerUp);
+            };
+
+            el.addEventListener('mousedown', onPointerDown);
+            el.addEventListener('touchstart', onPointerDown, { passive: true });
+        }
+
+        // 点击画布空白处取消选中
+        document.getElementById('posterCanvas').addEventListener('mousedown', () => {
+            selectItem(null);
+        });
+        document.getElementById('posterCanvas').addEventListener('touchstart', () => {
+            selectItem(null);
+        }, { passive: true });
+
+        // 旋转滑块事件
+        rotateSlider.addEventListener('input', (e) => {
+            const current = itemsState.find(i => i.id === selectedId);
+            if (!current) return;
+            current.rotate = parseInt(e.target.value, 10);
+            rotateValue.textContent = `${current.rotate}°`;
+            const node = document.querySelector(`.polaroid-item[data-id="${current.id}"]`);
+            if (node) {
+                node.style.transform = `rotate(${current.rotate}deg) scale(${current.scale / 100})`;
+            }
+        });
+
+        // 缩放滑块事件
+        scaleSlider.addEventListener('input', (e) => {
+            const current = itemsState.find(i => i.id === selectedId);
+            if (!current) return;
+            current.scale = parseInt(e.target.value, 10);
+            scaleValue.textContent = `${current.scale}%`;
+            const node = document.querySelector(`.polaroid-item[data-id="${current.id}"]`);
+            if (node) {
+                node.style.transform = `rotate(${current.rotate}deg) scale(${current.scale / 100})`;
+            }
+        });
+
+        // 置顶按钮
+        document.getElementById('btnBringFront').addEventListener('click', () => {
+            const current = itemsState.find(i => i.id === selectedId);
+            if (!current) return;
+            maxZIndex += 1;
+            current.zIndex = maxZIndex;
+            const node = document.querySelector(`.polaroid-item[data-id="${current.id}"]`);
+            if (node) node.style.zIndex = current.zIndex;
+            showToast(`已将「${current.title}」置于顶层`);
+        });
+
+        // 换图入口：Aboutme webview 内调起原生图片选择器（JSAPI），
+        // 普通浏览器环境降级为本地文件选择
+        uploadPhotoLabel.addEventListener('click', () => {
+            if (window.Aboutme && Aboutme.plugins && Aboutme.plugins.webview) {
+                pickImageFromAboutme();
+            } else {
+                singleFileInput.click();
+            }
+        });
+
+        async function pickImageFromAboutme() {
+            const current = itemsState.find(i => i.id === selectedId);
+            if (!current || current.type !== 'polaroid') return;
+            uploadPhotoLabel.disabled = true;
+            try {
+                const res = await Aboutme.plugins.webview.selectImages({ multiple: false });
+                if (res && res.error) {
+                    showToast('选择失败: ' + res.error);
+                    return;
+                }
+                if (!res || res.cancelled || !Array.isArray(res.images) || res.images.length === 0) return;
+                current.img = res.images[0].url;
+                renderAllItems();
+                showToast(`已更新「${current.title}」的照片`);
+            } catch (e) {
+                console.error('pickImageFromAboutme error:', e);
+                showToast('调用图片选择器失败: ' + e);
+            } finally {
+                uploadPhotoLabel.disabled = false;
+            }
+        }
+
+        // 上传替换单张拍立得照片（浏览器环境降级路径）
+        singleFileInput.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const current = itemsState.find(i => i.id === selectedId);
+            if (!current || current.type !== 'polaroid') return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                current.img = ev.target.result;
+                renderAllItems();
+                showToast(`已更新「${current.title}」的照片`);
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        });
+
+        /**
+         * 从 Aboutme 相册多选照片，按顺序批量填充拍立得（前 N 个）
+         */
+        async function pickBatchFromAboutme() {
+            if (!window.Aboutme || !Aboutme.plugins || !Aboutme.plugins.webview) {
+                showToast('当前不在 Aboutme WebView 环境中，无法选择照片');
+                return;
+            }
+            const btn = document.getElementById('btnShufflePhotos');
+            btn.disabled = true;
+            try {
+                const res = await Aboutme.plugins.webview.selectImages({ multiple: true });
+                if (res && res.error) {
+                    showToast('多选失败: ' + res.error);
+                    return;
+                }
+                if (!res || res.cancelled || !Array.isArray(res.images) || res.images.length === 0) return;
+                const polaroids = itemsState.filter(i => i.type === 'polaroid');
+                const count = Math.min(res.images.length, polaroids.length);
+                for (let i = 0; i < count; i++) {
+                    polaroids[i].img = res.images[i].url;
+                }
+                renderAllItems();
+                showToast(`已从相册填充 ${count} 张照片`);
+            } catch (e) {
+                console.error('pickBatchFromAboutme error:', e);
+                showToast('调用相册多选失败: ' + e);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // 从相册多选填充
+        document.getElementById('btnShufflePhotos').addEventListener('click', pickBatchFromAboutme);
+
+        // 重置原图位置
+        document.getElementById('btnResetLayout').addEventListener('click', () => {
+            itemsState = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+            selectedId = null;
+            renderAllItems();
+            showToast('已恢复初始拍立得拼贴位置');
+        });
+
+        /**
+         * 导出网页海报为高清 PNG
+         */
+        document.getElementById('btnExportPng').addEventListener('click', async () => {
+            const btn = document.getElementById('btnExportPng');
+            const btnText = document.getElementById('exportBtnText');
+            const poster = document.getElementById('posterCanvas');
+
+            btn.disabled = true;
+            btnText.textContent = '生成 PNG 中...';
+            poster.classList.add('exporting');
+
+            // 暂时还原缩放以便 html2canvas 截取原始 540x720 尺寸
+            const prevTransform = poster.style.transform;
+            poster.style.transform = 'none';
+
+            try {
+                const canvas = await html2canvas(poster, {
+                    useCORS: true,
+                    allowTaint: false,
+                    backgroundColor: '#18181b',
+                    scale: 2, // 2倍超清输出 (1080 x 1440)
+                    width: 540,
+                    height: 720,
+                    logging: false
+                });
+
+                const dataUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = `Octubre-2025-Calendar-${Date.now()}.png`;
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showToast('高清 PNG 海报已成功导出下载！');
+            } catch (err) {
+                console.error('Export error:', err);
+                showToast('导出遇到跨域限制，正在重试安全模式...');
+            } finally {
+                poster.style.transform = prevTransform;
+                poster.classList.remove('exporting');
+                btn.disabled = false;
+                btnText.textContent = '导出为 PNG';
+            }
+        });
+
+        /**
+         * 响应式画布缩放，确保手机端和桌面端均完整显示
+         */
+        function adjustStageScale() {
+            const wrapper = document.getElementById('stageWrapper');
+            const poster = document.getElementById('posterCanvas');
+            const availableWidth = wrapper.clientWidth - 8;
+            const scale = Math.min(1, availableWidth / 540);
+            window._currentStageScale = scale;
+            poster.style.transform = `scale(${scale})`;
+            wrapper.style.height = `${Math.ceil(720 * scale)}px`;
+        }
+
+        window.addEventListener('resize', adjustStageScale);
+        // webview 里 resize 事件不一定触发，用 ResizeObserver 监听容器兜底
+        if (typeof ResizeObserver !== 'undefined') {
+            let roRafPending = false;
+            new ResizeObserver(() => {
+                if (roRafPending) return;
+                roRafPending = true;
+                requestAnimationFrame(() => {
+                    roRafPending = false;
+                    adjustStageScale();
+                });
+            }).observe(document.getElementById('stageWrapper'));
+        }
+        window.onload = () => {
+            renderAllItems();
+            adjustStageScale();
+        };
+    </script>
+</body>
+</html>

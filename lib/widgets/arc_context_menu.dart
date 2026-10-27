@@ -159,8 +159,15 @@ class _ArcMenuOverlayState extends State<_ArcMenuOverlay> {
   /// 圆形按钮尺寸（小尺寸，弧线更紧凑）
   static const double _buttonSize = 44;
 
-  /// 相邻菜单项的弧度间隔（≈52°），固定间隔保证任意数量都呈弧形
+  /// 相邻菜单项的默认弧度间隔（≈52°），固定间隔保证任意数量都呈弧形
   static const double _angleStep = 0.92;
+
+  /// 项数多时压缩间隔，保证总跨度不超过半圆（否则弧线翻到朝向背面）
+  static double _stepFor(int count) =>
+      count <= 1 ? 0 : math.min(_angleStep, math.pi / (count - 1));
+
+  /// 压缩间隔时相邻按钮中心的最小弧长，保证滑选命中区不重叠
+  static const double _minArcGap = 70;
 
   /// 滑动选中的命中半径
   static const double _hitRadius = 34;
@@ -256,15 +263,20 @@ class _ArcMenuOverlayState extends State<_ArcMenuOverlay> {
     final size = MediaQuery.sizeOf(context);
     final padding = MediaQuery.paddingOf(context);
     final center = widget.targetRect.center;
-    final radius =
-        math.max(widget.targetRect.width, widget.targetRect.height) / 2 + 62;
-    final centerAngle = _pickFacingAngle(center, size, padding, radius);
     final n = widget.items.length;
+    final step = _stepFor(n);
+    final radius = math.max(
+      math.max(widget.targetRect.width, widget.targetRect.height) / 2 + 62,
+      step > 0 ? _minArcGap / step : 0.0,
+    );
+    final centerAngle = _pickFacingAngle(center, size, padding, radius);
 
-    // 菜单项沿半圆弧按固定弧度间隔排布（以朝向中心角对称展开）
+    // 菜单项沿半圆弧按弧度间隔排布（以朝向中心角对称展开）；
+    // 朝左展开时反转角度方向，保证 items[0] 始终位于弧的最上方（视觉从上到下排列）
     final centers = <Offset>[];
+    final dir = math.cos(centerAngle) >= 0 ? 1.0 : -1.0;
     for (var i = 0; i < n; i++) {
-      final angle = centerAngle - (n - 1) * _angleStep / 2 + i * _angleStep;
+      final angle = centerAngle + dir * ((i - (n - 1) / 2) * step);
       final dx = (center.dx + radius * math.cos(angle)).clamp(
         _buttonSize / 2 + 10,
         size.width - _buttonSize / 2 - 10,

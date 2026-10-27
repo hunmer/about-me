@@ -8,6 +8,10 @@ import 'package:provider/provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
+import 'package:aboutme/core/storage/storage_manager.dart';
+import 'package:aboutme/models/file_path_converter.dart';
+import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_plugin.dart';
 import 'package:aboutme/core/js_bridge/js_bridge_manager.dart';
 import 'package:aboutme/core/plugin_manager.dart';
@@ -37,6 +41,21 @@ part 'webview_local_server.dart';
 /// - 网址卡片管理（在线/本地）
 /// - Aboutme JS Bridge 集成
 class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
+  /// 内置 webview app 清单（打包于 assets/webview_apps/，
+  /// 经本地 HTTP 服务器 /builtin/ 路由提供，不复制到 app_data）
+  static const List<Map<String, String>> builtinApps = [
+    {
+      'project': 'blessing_wall',
+      'title': '祝福墙海报生成器',
+      'description': '从聊天记录多选祝福消息，生成可导出的祝福墙海报',
+    },
+    {
+      'project': 'octubre_calendar',
+      'title': '十月拍立得日历',
+      'description': '拍立得日历拼贴海报，从相册多选照片填充',
+    },
+  ];
+
   static WebViewPlugin? _instance;
 
   static WebViewPlugin get instance {
@@ -84,6 +103,9 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
       'goBack': _jsGoBack,
       'goForward': _jsGoForward,
       'reload': _jsReload,
+
+      // 图片选择
+      'selectImages': _jsSelectImages,
     };
   }
 
@@ -134,6 +156,9 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
 
     // 初始化卡片服务
     await cardManager.initialize();
+
+    // 确保内置 webview app 卡片存在（首次启动创建/迁移旧卡片）
+    await _ensureBuiltinAppCards();
 
     // 初始化应用商场
     await appStoreManager.initialize();

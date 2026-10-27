@@ -178,3 +178,118 @@ Future<String> _jsReload(Map<String, dynamic> params) async {
   }
   return jsonEncode({'success': false, 'error': '没有活动的标签页'});
 }
+
+// ==================== 图片选择器 ====================
+
+/// 弹出原生图片选择器（ImagePickerDialog，相册/表情包/拍照/在线URL）
+/// @param params.multiple 是否多选 (可选，默认 false)
+/// @return {cancelled, images: [{url, thumbUrl?}]}，url 已转为本地 HTTP URL
+Future<String> _jsSelectImages(Map<String, dynamic> params) async {
+  try {
+    final context = Get.context;
+    if (context == null) {
+      return '{"error": "无可用 UI 上下文，无法打开图片选择器"}';
+    }
+
+    final multiple = params['multiple'] == true;
+    final result = await ImagePickerDialog.show<dynamic>(
+      context,
+      multiple: multiple,
+    );
+
+    if (result == null) return '{"cancelled": true, "images": []}';
+
+    // 单选返回 Map，多选返回 List<Map>；url/thumbUrl 为
+    // './xxx' 相对路径 / asset:// 引用 / http(s) / emoji: 前缀
+    final rawList = (result is List ? result : [result])
+        .whereType<Map>()
+        .toList();
+
+    final images = <Map<String, dynamic>>[];
+    for (final e in rawList) {
+      final url = await _pickerPathToHttpUrl(e['url']?.toString());
+      if (url == null) continue; // emoji: 等无法转为图片 URL 的结果
+      final thumbUrl = await _pickerPathToHttpUrl(e['thumbUrl']?.toString());
+      images.add({
+        'url': url,
+        if (thumbUrl != null) 'thumbUrl': thumbUrl,
+      });
+    }
+
+    return jsonEncode({'cancelled': false, 'images': images});
+  } catch (e) {
+    debugPrint('Error in selectImages: $e');
+    return '{"error": "打开图片选择器失败: $e", "images": []}';
+  }
+}
+
+/// 选择器返回的媒体路径 → 本地 HTTP 服务器 URL
+///
+/// 与 chat 插件 _localPathToHttpUrl 同款逻辑：
+/// asset:// 资源需物化到缓存目录；'./'/绝对路径按 app_data 根拼接；
+/// http(s) 原样返回；emoji: 等非图片引用返回 null
+Future<String?> _pickerPathToHttpUrl(String? rawPath) async {
+  if (rawPath == null || rawPath.isEmpty) return null;
+
+  final assetId = ImageUtils.sdkAssetId(rawPath);
+  if (assetId != null) return _pickerAssetToHttpUrl(assetId);
+
+  if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) {
+    return rawPath;
+  }
+  if (rawPath.contains('://') && !rawPath.startsWith('file://')) return null;
+
+  try {
+    final plugin = WebViewPlugin.instance;
+    if (!plugin.localHttpServer.isRunning) return null;
+
+    var rel = rawPath;
+    if (!rel.startsWith('./') && !rel.startsWith('file://')) {
+      // 绝对路径 → './app_data/xxx'（相对 Documents 目录）
+      rel = await FilePathConverter.toRelativePath(rel);
+    }
+    if (rel.startsWith('./app_data/')) {
+      rel = './${rel.substring('./app_data/'.length)}';
+    }
+
+    return await LocalHttpServer.convertImageToHttpUrl(
+      imagePath: rel,
+      httpServerRoot: await plugin.getHttpServerRootDir(),
+      port: plugin.localHttpServer.port,
+    );
+  } catch (e) {
+    debugPrint('[_pickerPathToHttpUrl] 转换失败: $rawPath - $e');
+    return null;
+  }
+}
+
+/// asset:// 资源 → 物化字节复制到 webview/.assets_cache/ 后返回 http URL
+Future<String?> _pickerAssetToHttpUrl(String assetId) async {
+  try {
+    final plugin = WebViewPlugin.instance;
+    if (!plugin.localHttpServer.isRunning) return null;
+
+    final assets = AboutmeDataService.instance.data.assets;
+    final meta = await assets.getMetadata(assetId);
+    final handle = await assets.materialize(assetId);
+    try {
+      final rawExt = meta.fileName.contains('.')
+          ? meta.fileName.substring(meta.fileName.lastIndexOf('.'))
+          : '';
+      final ext = RegExp(r'^\.[a-zA-Z0-9]{1,6}$').hasMatch(rawExt) ? rawExt : '';
+
+      final appData = await StorageManager.appDataDirectory();
+      final cacheDir = Directory('${appData.path}/webview/.assets_cache');
+      await cacheDir.create(recursive: true);
+      await File(handle.path).copy('${cacheDir.path}/$assetId$ext');
+
+      return 'http://localhost:${plugin.localHttpServer.port}'
+          '/webview/.assets_cache/$assetId$ext';
+    } finally {
+      await handle.dispose();
+    }
+  } catch (e) {
+    debugPrint('[_pickerAssetToHttpUrl] 物化失败: $assetId - $e');
+    return null;
+  }
+}
