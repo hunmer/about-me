@@ -222,7 +222,7 @@ class _JellyLive2DState extends State<JellyLive2D>
   @override
   void initState() {
     super.initState();
-    widget.onAppearanceAvailabilityChanged?.call(_hasAppearanceResources);
+    _notifyAppearanceAvailabilityChanged();
     // macOS 上平台视图会吃掉鼠标事件（WKWebView 默认弹 Reload 菜单），
     // 原生侧拦截后经 onContextMenu 回调转发到这里
     _controller.onContextMenu = _showControls;
@@ -234,6 +234,14 @@ class _JellyLive2DState extends State<JellyLive2D>
     widget.expressionRequest?.addListener(_handleExpressionRequest);
     _loadSavedCropRegion(_selectedModel);
     unawaited(_initialize());
+  }
+
+  void _notifyAppearanceAvailabilityChanged() {
+    final callback = widget.onAppearanceAvailabilityChanged;
+    if (callback == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) callback(_hasAppearanceResources);
+    });
   }
 
   @override

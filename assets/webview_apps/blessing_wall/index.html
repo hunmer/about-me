@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MULȚUMIM MULT - Interactive Collage & Image Exporter</title>
+    <title>祝福墙海报生成器</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Cormorant Garamond for the exact serif title & Inter for bubbles -->
@@ -134,6 +134,16 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
             position: relative;
             word-break: break-word;
+        }
+
+        /* 真实消息图片（同源 http 加载，html2canvas 可直接导出） */
+        .bubble-image {
+            display: block;
+            width: 100%;
+            max-height: 110px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 4px;
         }
 
         /* User Avatar Circle */
@@ -282,12 +292,29 @@
             background: rgba(148, 163, 184, 0.4);
             border-radius: 999px;
         }
+
+        /* 关键：poster 在 viewport(flex 容器) 中不允许被压缩，
+           否则布局宽度 < 540 后再乘 transform 缩放会导致海报不满宽、
+           气泡坐标系错位而溢出裁剪 */
+        #posterCanvas {
+            flex-shrink: 0;
+        }
+
+        /* 禁止图片原生拖拽（避免与气泡拖拽冲突） */
+        #posterCanvas img {
+            -webkit-user-drag: none;
+            user-drag: none;
+        }
+        .bubble-image,
+        .avatar-circle img {
+            pointer-events: none;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col lg:flex-row items-center justify-center p-3 sm:p-6 gap-6 bg-slate-950 text-slate-100">
+<body class="min-h-screen flex flex-col lg:flex-row items-center justify-center p-0 lg:p-6 gap-4 lg:gap-6 bg-slate-950 text-slate-100">
 
     <!-- ================= LEFT / TOP INTERACTIVE CONTROL PANEL (Excluded from Image Export) ================= -->
-    <aside class="w-full max-w-[540px] lg:w-80 xl:w-96 bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-5 shadow-2xl flex flex-col gap-4 order-2 lg:order-1 z-30">
+    <aside class="w-full max-w-[540px] lg:w-80 xl:w-96 bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-5 shadow-2xl flex flex-col gap-4 order-2 lg:order-1 z-30 mx-3 mb-3 lg:mx-0 lg:mb-0">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <div>
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30 mb-1">
@@ -320,8 +347,8 @@
         <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3 space-y-2.5">
             <div class="space-y-1.5">
                 <span class="text-xs font-medium text-slate-300 block">海报标题（两行，实时生效）</span>
-                <input id="titleLine1Input" type="text" value="MULȚUMIM MULT" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 select-text serif-title">
-                <input id="titleLine2Input" type="text" value="căci ne-ați felicitat" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 select-text serif-title">
+                <input id="titleLine1Input" type="text" value="" placeholder="第一行标题（可选，如：衷心感谢）" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 select-text serif-title">
+                <input id="titleLine2Input" type="text" value="" placeholder="第二行标题（可选，如：送来的真挚祝福）" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 select-text serif-title">
             </div>
 
             <!-- Floating Animation Switch -->
@@ -359,29 +386,14 @@
                     + 添加到画布
                 </button>
             </div>
-        </div>
-
-        <!-- Replace Center Photos Option -->
-        <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3 space-y-2">
-            <span class="text-xs font-medium text-slate-300 block">自定义中心合照 (可选)</span>
-            <div class="grid grid-cols-2 gap-2">
-                <label class="cursor-pointer bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl py-2 px-2.5 text-center text-[11px] text-slate-300 transition">
-                    📷 更换上方照片
-                    <input type="file" id="uploadPhoto1" accept="image/*" class="hidden">
-                </label>
-                <label class="cursor-pointer bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl py-2 px-2.5 text-center text-[11px] text-slate-300 transition">
-                    📷 更换下方照片
-                    <input type="file" id="uploadPhoto2" accept="image/*" class="hidden">
-                </label>
-            </div>
             <p class="text-[11px] text-slate-400 leading-relaxed">
-                💡 提示：直接<strong>按住任意气泡或照片拖动</strong>即可自由调整位置，点击气泡底部红心可切换表情并触发粒子特效。
+                💡 提示：直接<strong>按住气泡拖动</strong>可调整位置，点击气泡底部红心可切换表情。
             </p>
         </div>
     </aside>
 
     <!-- ================= CENTER POSTER CANVAS CONTAINER (9:16 Aspect Ratio) ================= -->
-    <main class="order-1 lg:order-2 flex flex-col items-center justify-center w-full overflow-hidden">
+    <main id="posterMain" class="order-1 lg:order-2 flex flex-col items-center justify-center w-full">
         <!-- Responsive scaling wrapper so the 540x960 poster fits any mobile or desktop screen cleanly -->
         <div id="posterViewport" class="relative flex items-center justify-center">
             
@@ -417,49 +429,12 @@
                 <!-- 5. Main Serif Header ("MULȚUMIM MULT / căci ne-ați felicitat") -->
                 <header id="posterHeader" class="animate-title absolute w-full text-center z-[12] pointer-events-none" style="top: 162px; left: 0;">
                     <h1 id="titleLine1" class="serif-title text-[28px] tracking-[0.06em] font-normal text-white/95 leading-none mb-1">
-                        MULȚUMIM MULT
                     </h1>
                     <p id="titleLine2" class="serif-title text-[23px] tracking-[0.02em] font-normal text-white/90 leading-tight">
-                        căci ne-ați felicitat
                     </p>
                 </header>
 
-                <!-- 6. Two Central Gender Reveal Photo Cards (Couple & Toddler with Blue Smoke Bombs) -->
-                <!-- Upper Center Photo Card -->
-                <div id="photoCard1" class="photo-card pop-in-item" style="left: 213px; top: 382px; width: 64px; height: 98px; --rot: 0deg; animation-delay: 0.35s;">
-                    <div class="photo-card-inner">
-                        <img id="photoImg1" alt="Family Gender Reveal 1" class="w-full h-full object-cover" src="" />
-                        <!-- Subtle curved "Happy" watermark at bottom-left like in the screenshot -->
-                        <svg class="absolute -bottom-1 -left-1 w-10 h-10 opacity-75 pointer-events-none" viewBox="0 0 60 60">
-                            <path id="curve1" d="M 6,38 A 24,24 0 0,0 46,52" fill="transparent"/>
-                            <text font-size="6.5" fill="#ffffff" font-family="serif" letter-spacing="0.5">
-                                <textPath href="#curve1">Happy Happy</textPath>
-                            </text>
-                        </svg>
-                    </div>
-                    <!-- Party Popper Sticker on Bottom Right -->
-                    <span class="absolute -bottom-1.5 -right-2.5 text-[18px] drop-shadow pointer-events-none select-none">🎉</span>
-                    <!-- Reaction Heart Pill on Bottom Left -->
-                    <button class="reaction-pill" style="bottom: -12px; left: 2px;" data-reaction="❤️" title="点击切换表情">❤️</button>
-                </div>
-
-                <!-- Lower Center Photo Card -->
-                <div id="photoCard2" class="photo-card pop-in-item" style="left: 241px; top: 498px; width: 78px; height: 122px; --rot: 0deg; animation-delay: 0.48s;">
-                    <div class="photo-card-inner">
-                        <img id="photoImg2" alt="Family Gender Reveal 2" class="w-full h-full object-cover" src="" />
-                        <!-- Curved "Happy Happy" watermark at bottom-left -->
-                        <svg class="absolute -bottom-1 -left-1 w-12 h-12 opacity-80 pointer-events-none" viewBox="0 0 60 60">
-                            <path id="curve2" d="M 5,34 A 26,26 0 0,0 50,52" fill="transparent"/>
-                            <text font-size="6.2" fill="#ffffff" font-family="serif" letter-spacing="0.6">
-                                <textPath href="#curve2">Happy Happy</textPath>
-                            </text>
-                        </svg>
-                    </div>
-                    <!-- Fire Sticker on Bottom Right -->
-                    <span class="absolute -bottom-2 -right-2.5 text-[24px] drop-shadow-md pointer-events-none select-none">🔥</span>
-                </div>
-
-                <!-- 7. Dynamic Container for All 17+ Floating Message Bubbles -->
+                <!-- 7. Dynamic Container for All Floating Message Bubbles -->
                 <div id="bubblesLayer" class="absolute inset-0 z-[15]"></div>
 
                 <!-- 8. Interactive Burst Particles Container -->
@@ -564,171 +539,6 @@
             return canvas.toDataURL('image/png');
         }
 
-        // Generate the two center Gender Reveal Meadow Photos (Couple + Child + Blue Smoke Plumes)
-        function createGenderRevealPhoto(variant) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 240;
-            canvas.height = 360;
-            const ctx = canvas.getContext('2d');
-
-            // 1. Overcast soft sky
-            const skyGrad = ctx.createLinearGradient(0, 0, 0, 175);
-            skyGrad.addColorStop(0, '#c7d2da');
-            skyGrad.addColorStop(1, '#dde3e8');
-            ctx.fillStyle = skyGrad;
-            ctx.fillRect(0, 0, 240, 175);
-
-            // 2. Distant hills & autumn/late-summer meadow
-            const hillGrad = ctx.createLinearGradient(0, 140, 0, 360);
-            hillGrad.addColorStop(0, '#8f8b6e');
-            hillGrad.addColorStop(0.35, '#7c7654');
-            hillGrad.addColorStop(1, '#585237');
-            ctx.fillStyle = hillGrad;
-            ctx.beginPath();
-            ctx.moveTo(0, 155);
-            ctx.quadraticCurveTo(120, 138, 240, 162);
-            ctx.lineTo(240, 360);
-            ctx.lineTo(0, 360);
-            ctx.closePath();
-            ctx.fill();
-
-            // Grass texture strokes
-            ctx.strokeStyle = 'rgba(210, 198, 150, 0.25)';
-            ctx.lineWidth = 1.2;
-            for (let i = 0; i < 90; i++) {
-                const gx = (i * 19) % 240;
-                const gy = 165 + ((i * 37) % 190);
-                ctx.beginPath();
-                ctx.moveTo(gx, gy);
-                ctx.lineTo(gx + 3, gy - 9);
-                ctx.stroke();
-            }
-
-            if (variant === 1) {
-                // PHOTO 1: Couple standing close together holding child in yellow jacket + blue smoke cloud on top-left
-                // Blue smoke plume
-                const smokeCenters = [
-                    [58, 115, 34], [42, 92, 28], [75, 96, 25], [30, 72, 22]
-                ];
-                smokeCenters.forEach(([sx, sy, sr]) => {
-                    const sg = ctx.createRadialGradient(sx, sy, 2, sx, sy, sr);
-                    sg.addColorStop(0, 'rgba(56, 165, 235, 0.92)');
-                    sg.addColorStop(0.6, 'rgba(72, 180, 245, 0.55)');
-                    sg.addColorStop(1, 'rgba(56, 165, 235, 0)');
-                    ctx.fillStyle = sg;
-                    ctx.beginPath();
-                    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-
-                // Dad (left-center)
-                ctx.fillStyle = '#1f2937'; // dark trousers
-                ctx.fillRect(92, 215, 11, 68);
-                ctx.fillRect(106, 215, 11, 68);
-                ctx.fillStyle = '#9ca3af'; // light sweater
-                ctx.fillRect(88, 158, 32, 60);
-                // Raised arm holding smoke flare
-                ctx.strokeStyle = '#9ca3af';
-                ctx.lineWidth = 9;
-                ctx.beginPath();
-                ctx.moveTo(92, 166);
-                ctx.lineTo(68, 128);
-                ctx.stroke();
-                // Dad head
-                ctx.fillStyle = '#e5bfa8';
-                ctx.beginPath();
-                ctx.arc(105, 144, 11, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#271c15';
-                ctx.beginPath();
-                ctx.arc(105, 140, 11, Math.PI, 0);
-                ctx.fill();
-
-                // Mom (right-center)
-                ctx.fillStyle = '#64748b'; // skirt/coat
-                ctx.beginPath();
-                ctx.moveTo(126, 168);
-                ctx.lineTo(158, 168);
-                ctx.lineTo(166, 260);
-                ctx.lineTo(120, 260);
-                ctx.closePath();
-                ctx.fill();
-                ctx.fillStyle = '#1e293b'; // boots
-                ctx.fillRect(131, 260, 8, 25);
-                ctx.fillRect(145, 260, 8, 25);
-                // Mom head
-                ctx.fillStyle = '#ecc8b2';
-                ctx.beginPath();
-                ctx.arc(140, 150, 10, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Toddler Amadeo in bright yellow jacket held in arms
-                ctx.fillStyle = '#eab308';
-                ctx.beginPath();
-                ctx.roundRect(142, 164, 24, 30, 6);
-                ctx.fill();
-                ctx.fillStyle = '#f3d2c1';
-                ctx.beginPath();
-                ctx.arc(154, 154, 8, 0, Math.PI * 2);
-                ctx.fill();
-            } else {
-                // PHOTO 2: Wide celebration in meadow with two vibrant blue smoke clouds rising high
-                const smokePlumes = [
-                    [92, 68, 38], [108, 48, 32], [78, 44, 28],
-                    [152, 82, 42], [168, 58, 36], [138, 56, 30], [182, 40, 25]
-                ];
-                smokePlumes.forEach(([sx, sy, sr]) => {
-                    const sg = ctx.createRadialGradient(sx, sy, 4, sx, sy, sr);
-                    sg.addColorStop(0, 'rgba(38, 152, 228, 0.95)');
-                    sg.addColorStop(0.65, 'rgba(66, 175, 245, 0.55)');
-                    sg.addColorStop(1, 'rgba(56, 165, 235, 0)');
-                    ctx.fillStyle = sg;
-                    ctx.beginPath();
-                    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-
-                // Dad on left raising flare high
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(46, 212, 9, 64);
-                ctx.fillRect(58, 212, 10, 64);
-                ctx.fillStyle = '#cbd5e1';
-                ctx.fillRect(44, 162, 26, 52);
-                ctx.strokeStyle = '#cbd5e1';
-                ctx.lineWidth = 7;
-                ctx.beginPath();
-                ctx.moveTo(66, 168);
-                ctx.lineTo(86, 114);
-                ctx.stroke();
-                ctx.fillStyle = '#e5bfa8';
-                ctx.beginPath();
-                ctx.arc(57, 150, 9.5, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Mom & Toddler on right raising flare
-                ctx.fillStyle = '#475569';
-                ctx.fillRect(142, 185, 24, 85);
-                ctx.strokeStyle = '#cbd5e1';
-                ctx.lineWidth = 6.5;
-                ctx.beginPath();
-                ctx.moveTo(146, 185);
-                ctx.lineTo(136, 125);
-                ctx.stroke();
-                // Toddler in yellow
-                ctx.fillStyle = '#facc15';
-                ctx.beginPath();
-                ctx.roundRect(158, 180, 20, 28, 5);
-                ctx.fill();
-                ctx.fillStyle = '#ecc8b2';
-                ctx.beginPath();
-                ctx.arc(152, 172, 9, 0, Math.PI * 2);
-                ctx.arc(168, 171, 7.5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            return canvas.toDataURL('image/png');
-        }
-
         /********************************************************************
          * 2. MESSAGE BUBBLES STATE（初始为空，通过聊天导入或手动添加）
          ********************************************************************/
@@ -760,11 +570,12 @@
                 floatInner.className = `float-inner ${item.floatClass || 'float-a'}`;
                 floatInner.style.animationDelay = `${(index * 0.37) % 3}s`;
 
-                // Left User Avatar
+                // Left User Avatar（真实头像优先，回退到按用户名生成的头像）
                 const avatar = document.createElement('div');
                 avatar.className = 'avatar-circle';
                 const avatarImg = document.createElement('img');
-                avatarImg.src = createAvatarDataURI(item.avatarSeed);
+                avatarImg.draggable = false;
+                avatarImg.src = item.avatar || createAvatarDataURI(item.avatarSeed);
                 avatarImg.className = 'w-full h-full object-cover pointer-events-none';
                 avatar.appendChild(avatarImg);
 
@@ -772,6 +583,20 @@
                 const msgBox = document.createElement('div');
                 msgBox.className = 'msg-bubble flex-1';
                 msgBox.innerText = item.text;
+
+                // 真实消息图片（image/video 类型消息）；加载失败回退为文字
+                if (item.image) {
+                    const bubbleImg = document.createElement('img');
+                    bubbleImg.className = 'bubble-image';
+                    bubbleImg.draggable = false;
+                    bubbleImg.src = item.image;
+                    bubbleImg.alt = '消息图片';
+                    bubbleImg.onerror = () => {
+                        bubbleImg.remove();
+                        msgBox.innerText = msgBox.innerText || '[图片] 加载失败';
+                    };
+                    msgBox.appendChild(bubbleImg);
+                }
 
                 // Optional Reaction Pill (❤️ / 😂)
                 if (item.reaction) {
@@ -1024,19 +849,15 @@
         function adjustViewportScale() {
             const viewport = document.getElementById('posterViewport');
             const poster = document.getElementById('posterCanvas');
-            const availWidth = Math.min(window.innerWidth - 24, 540);
-            const scale = Math.min(1, availWidth / 540);
+            const main = document.getElementById('posterMain');
+            // 占满可用宽度（桌面并排布局取 main 实际宽度；不设上限，海报随之放大）
+            const availWidth = Math.max(280, (main && main.clientWidth) || window.innerWidth);
+            const scale = availWidth / 540;
 
-            if (scale < 1) {
-                poster.style.transformOrigin = 'top center';
-                poster.style.transform = `scale(${scale})`;
-                viewport.style.height = `${Math.round(960 * scale)}px`;
-                viewport.style.width = `${Math.round(540 * scale)}px`;
-            } else {
-                poster.style.transform = 'scale(1)';
-                viewport.style.height = '960px';
-                viewport.style.width = '540px';
-            }
+            poster.style.transformOrigin = 'top center';
+            poster.style.transform = `scale(${scale})`;
+            viewport.style.height = `${Math.round(960 * scale)}px`;
+            viewport.style.width = `${Math.round(540 * scale)}px`;
         }
 
         /********************************************************************
@@ -1123,13 +944,14 @@
             return w;
         }
 
-        function bubbleWidthFor(text) {
+        function bubbleWidthFor(text, hasImage) {
+            if (hasImage) return 150;
             return Math.min(205, Math.max(110, Math.round(estimateTextWidth(text)) + 34));
         }
 
         // 限制气泡位置在 540x960 画布内，避免小屏幕/极端文本下超出边界
         function clampBubble(bubble) {
-            bubble.width = bubbleWidthFor(bubble.text);
+            bubble.width = bubbleWidthFor(bubble.text, !!bubble.image);
             bubble.left = Math.max(4, Math.min(bubble.left, 540 - bubble.width - 4));
             bubble.top = Math.max(190, Math.min(bubble.top, 940 - 60));
             return bubble;
@@ -1153,8 +975,9 @@
 
         function messageToBubble(msg, index) {
             const content = (msg && msg.content ? String(msg.content) : '').trim() || '（空消息）';
-            const prefix = TYPE_LABELS[msg.type] || '';
-            const text = prefix ? `${prefix} ${content}` : content;
+            // 有真实图片 URL 时气泡只显示图片；无图时非文本消息带类型前缀
+            const hasImage = !!(msg && msg.image);
+            const text = hasImage ? '' : (TYPE_LABELS[msg.type] ? `${TYPE_LABELS[msg.type]} ${content}` : content);
             // 3 列泳道交错分布（列宽按最大气泡宽度 205 设计，确保不越界）
             const lane = index % 3;
             const row = Math.floor(index / 3);
@@ -1169,7 +992,9 @@
                 reaction: '',
                 avatarSeed: hashString(msg.username || 'chat') % 20 + 1,
                 floatClass: ['float-a', 'float-b', 'float-c'][index % 3],
-                text: text
+                text: text,
+                avatar: msg.avatar || null,
+                image: msg.image || null
             });
         }
 
@@ -1208,32 +1033,27 @@
          * 8. WIRE UP CONTROLS & INITIALIZATION ON LOAD
          ********************************************************************/
         window.onload = function () {
-            // 1. Render grain and photos
+            // 1. Render grain
             generateFilmGrain();
-            document.getElementById('photoImg1').src = createGenderRevealPhoto(1);
-            document.getElementById('photoImg2').src = createGenderRevealPhoto(2);
 
-            // Enable drag on center photo cards
-            enableDragAndBurst(document.getElementById('photoCard1'), null);
-            enableDragAndBurst(document.getElementById('photoCard2'), null);
-
-            // Photo card 1 reaction pill click
-            const photoPill = document.querySelector('#photoCard1 .reaction-pill');
-            photoPill.addEventListener('click', (e) => {
-                e.stopPropagation();
-                cycleReaction({}, photoPill, e);
-            });
-
-            // 2. Render all 17 bubbles with staggered entrance animation
+            // 2. Render bubbles with staggered entrance animation
             renderAllBubbles(true);
 
             // 3. Start ambient particle engine
             initParticles();
             animateFxLoop();
 
-            // 4. Responsive scaling
+            // 4. Responsive scaling（ResizeObserver 兜底：部分 webview 尺寸变化不派发 resize）
             adjustViewportScale();
             window.addEventListener('resize', adjustViewportScale);
+            window.addEventListener('orientationchange', adjustViewportScale);
+            if (window.ResizeObserver) {
+                let scaleRaf = 0;
+                new ResizeObserver(() => {
+                    cancelAnimationFrame(scaleRaf);
+                    scaleRaf = requestAnimationFrame(adjustViewportScale);
+                }).observe(document.getElementById('posterMain'));
+            }
 
             // 5. Custom Poster Title (two lines, live sync)
             const titleLine1 = document.getElementById('titleLine1');
@@ -1287,25 +1107,10 @@
                 spawnEmojiBurst(newItem.left + 60, newItem.top, reaction || '💙', 8);
             });
 
-            // 11. Custom Photo Upload Handlers (100% Local DataURL -> Safe for Image Export)
-            function handlePhotoUpload(inputEl, targetImgId) {
-                inputEl.addEventListener('change', (e) => {
-                    const file = e.target.files && e.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        document.getElementById(targetImgId).src = ev.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
-            handlePhotoUpload(document.getElementById('uploadPhoto1'), 'photoImg1');
-            handlePhotoUpload(document.getElementById('uploadPhoto2'), 'photoImg2');
-
-            // 13. Pick chat messages via Aboutme JSAPI
+            // 12. Pick chat messages via Aboutme JSAPI
             document.getElementById('btnPickChatMessages').addEventListener('click', pickMessagesFromChat);
 
-            // 12. Export Image & Modal Controls
+            // 13. Export Image & Modal Controls
             document.getElementById('btnExportImg').addEventListener('click', exportPosterAsImage);
             const closeModal = () => {
                 const modal = document.getElementById('exportModal');

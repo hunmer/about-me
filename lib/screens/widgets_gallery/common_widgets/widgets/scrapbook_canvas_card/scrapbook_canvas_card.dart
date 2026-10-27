@@ -839,8 +839,8 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
             angle: item.rotation * math.pi / 180,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              // 只读模式下条目不可拖拽/选中；注册 onTap 供双击检测使用
-              onTap: () => _handleItemTap(item),
+              // 只读模式下注册 onTap 供双击检测使用
+              onTap: widget.readOnly ? () => _handleItemTap(item) : null,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [

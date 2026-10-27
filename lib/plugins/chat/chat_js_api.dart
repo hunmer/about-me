@@ -282,9 +282,83 @@ Future<String> _jsGetMessagesByDate(Map<String, dynamic> params) async {
 
 // ==================== 消息选择器 ====================
 
+/// 本地文件路径 → 本地 HTTP 服务器 URL（供 webview 页面加载图片/头像）
+///
+/// 支持 asset:// 资源引用、'./' 相对路径、绝对路径、file:// URL；
+/// http(s) 直接返回原值
+Future<String?> _localPathToHttpUrl(String? rawPath) async {
+  if (rawPath == null || rawPath.isEmpty) return null;
+
+  // asset://<uuid> 资源：内容 base64 存在 assets/<uuid>.json，无独立磁盘文件，
+  // 需物化成文件放入缓存目录后才能经 HTTP 服务器提供
+  final assetId = ImageUtils.sdkAssetId(rawPath);
+  if (assetId != null) return _assetRefToHttpUrl(assetId);
+
+  if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) {
+    return rawPath;
+  }
+
+  try {
+    final webPlugin = WebViewPlugin.instance;
+    if (!webPlugin.localHttpServer.isRunning) return null;
+
+    var rel = rawPath;
+    if (!rel.startsWith('./') && !rel.startsWith('file://')) {
+      // 绝对路径 → './app_data/xxx'（相对 Documents 目录）
+      rel = await FilePathConverter.toRelativePath(rel);
+    }
+    if (rel.startsWith('./app_data/')) {
+      rel = './${rel.substring('./app_data/'.length)}';
+    }
+
+    final root = await webPlugin.getHttpServerRootDir();
+    return await LocalHttpServer.convertImageToHttpUrl(
+      imagePath: rel,
+      httpServerRoot: root,
+      port: webPlugin.localHttpServer.port,
+    );
+  } catch (e) {
+    debugPrint('[_localPathToHttpUrl] 转换失败: $rawPath - $e');
+    return null;
+  }
+}
+
+/// asset:// 资源 → 物化字节复制到 webview/.assets_cache/ 后返回 http URL
+Future<String?> _assetRefToHttpUrl(String assetId) async {
+  try {
+    final webPlugin = WebViewPlugin.instance;
+    if (!webPlugin.localHttpServer.isRunning) return null;
+
+    final assets = AboutmeDataService.instance.data.assets;
+    final meta = await assets.getMetadata(assetId);
+    final handle = await assets.materialize(assetId);
+    try {
+      // 扩展名白名单校验，避免文件名异常字符进入缓存路径
+      final rawExt = meta.fileName.contains('.')
+          ? meta.fileName.substring(meta.fileName.lastIndexOf('.'))
+          : '';
+      final ext = RegExp(r'^\.[a-zA-Z0-9]{1,6}$').hasMatch(rawExt) ? rawExt : '';
+
+      final appData = await StorageManager.appDataDirectory();
+      final cacheDir = Directory('${appData.path}/webview/.assets_cache');
+      await cacheDir.create(recursive: true);
+      await File(handle.path).copy('${cacheDir.path}/$assetId$ext');
+
+      return 'http://localhost:${webPlugin.localHttpServer.port}'
+          '/webview/.assets_cache/$assetId$ext';
+    } finally {
+      await handle.dispose();
+    }
+  } catch (e) {
+    debugPrint('[_assetRefToHttpUrl] 物化失败: $assetId - $e');
+    return null;
+  }
+}
+
 /// 弹出多选消息选择器（频道 -> 多选消息）
 /// @param params 无必需参数
-/// @return {cancelled, messages: [{id, content, date, type, username, channelId}]}
+/// @return {cancelled, messages: [{id, content, date, type, username, channelId, avatar?, image?}]}
+///         avatar 仅当前用户可取到（个人主页头像）；image 为 image/video 消息的 http URL
 Future<String> _jsSelectMessages(Map<String, dynamic> params) async {
   try {
     final context = Get.context;
@@ -307,18 +381,44 @@ Future<String> _jsSelectMessages(Map<String, dynamic> params) async {
         ? result.selectedItems
         : const <SelectableItem>[];
 
-    final messages = items
-        .map((item) => item.rawData)
-        .whereType<Message>()
-        .map((m) => {
-              'id': m.id,
-              'content': m.content,
-              'date': m.date.toIso8601String(),
-              'type': m.type.name,
-              'username': m.user.username,
-              'channelId': m.channelId,
-            })
-        .toList();
+    // 当前用户头像（个人主页数据源）；其他用户模型不含头像
+    final currentUserAvatar = await _localPathToHttpUrl(
+      ChatPlugin.instance.configService.currentUserAvatarPath,
+    );
+
+    final messages = <Map<String, dynamic>>[];
+    for (final item in items) {
+      final m = item.rawData;
+      if (m is! Message) continue;
+
+      // image/video 消息带 fileInfo 中的文件路径
+      // （注意：历史消息路径字段为 path，新消息为 filePath，两者都兼容）
+      String? imagePath;
+      if (m.type == MessageType.image || m.type == MessageType.video) {
+        final fileInfo = m.metadata?[Message.metadataKeyFileInfo];
+        if (fileInfo is Map<String, dynamic>) {
+          final filePath = fileInfo['filePath'] ?? fileInfo['path'];
+          if (m.type == MessageType.video) {
+            // 视频文件本身 <img> 无法显示，优先用缩略图
+            imagePath = (fileInfo['thumbPath'] ?? filePath) as String?;
+          } else {
+            imagePath = filePath as String?;
+          }
+        }
+      }
+
+      messages.add({
+        'id': m.id,
+        'content': m.content,
+        'date': m.date.toIso8601String(),
+        'type': m.type.name,
+        'username': m.user.username,
+        'channelId': m.channelId,
+        if (currentUserAvatar != null && m.user.id == 'default_user')
+          'avatar': currentUserAvatar,
+        if (await _localPathToHttpUrl(imagePath) case final url?) 'image': url,
+      });
+    }
 
     return jsonEncode({'cancelled': false, 'messages': messages});
   } catch (e) {

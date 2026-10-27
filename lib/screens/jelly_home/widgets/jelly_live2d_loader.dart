@@ -85,7 +85,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       _selectedModel = model;
       _cropRegion = const JellyLive2DCropRegion.full();
     });
-    widget.onAppearanceAvailabilityChanged?.call(_hasAppearanceResources);
+    _notifyAppearanceAvailabilityChanged();
     await _loadSavedCropRegion(model);
     await _loadModel(model);
   }
