@@ -33,7 +33,7 @@ mixin SearchControllerMixin on BaseTimelineController {
       filteredMessages = List<Message>.from(allMessages);
 
       // 重置分页并加载第一页
-      resetPagination();
+      resetPagination(saveState: saveState);
       loadCurrentPage();
       return;
     }
@@ -53,15 +53,16 @@ mixin SearchControllerMixin on BaseTimelineController {
         }
 
         if (filter.includeUsernames) {
-          matches = matches ||
-              message.user.username.toLowerCase().contains(query);
+          matches =
+              matches || message.user.username.toLowerCase().contains(query);
         }
 
         if (filter.includeChannels) {
           final channelInfo =
               message.metadata?['channelInfo'] as Map<String, dynamic>?;
           final channelName = channelInfo?['channelName'] as String?;
-          matches = matches || channelName?.toLowerCase().contains(query) == true;
+          matches =
+              matches || channelName?.toLowerCase().contains(query) == true;
         }
 
         return matches;
@@ -74,8 +75,11 @@ mixin SearchControllerMixin on BaseTimelineController {
       if (filter.selectedChannelIds.isNotEmpty) {
         result = result.where((message) {
           // 优先从 message.channelId 获取，如果没有则从 metadata 获取
-          final channelId = message.channelId ??
-              (message.metadata?['channelInfo'] as Map<String, dynamic>?)?['channelId'] as String?;
+          final channelId =
+              message.channelId ??
+              (message.metadata?['channelInfo']
+                      as Map<String, dynamic>?)?['channelId']
+                  as String?;
           return channelId != null &&
               filter.selectedChannelIds.contains(channelId);
         }).toList();
@@ -100,7 +104,8 @@ mixin SearchControllerMixin on BaseTimelineController {
               filter.startDate!.month,
               filter.startDate!.day,
             );
-            matchesStartDate = messageDate.isAfter(startDate) ||
+            matchesStartDate =
+                messageDate.isAfter(startDate) ||
                 messageDate.isAtSameMomentAs(startDate);
           }
 
@@ -115,7 +120,8 @@ mixin SearchControllerMixin on BaseTimelineController {
               59,
               999,
             );
-            matchesEndDate = messageDate.isBefore(endDate) ||
+            matchesEndDate =
+                messageDate.isBefore(endDate) ||
                 messageDate.isAtSameMomentAs(endDate);
           }
 
@@ -143,7 +149,7 @@ mixin SearchControllerMixin on BaseTimelineController {
     filteredMessages = result;
 
     // 重置分页状态
-    resetPagination();
+    resetPagination(saveState: saveState);
 
     // 使用微任务确保在当前构建周期之后加载数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -167,7 +173,8 @@ mixin SearchControllerMixin on BaseTimelineController {
       filter.isFavorite = newFilter.isFavorite;
 
       // 检查过滤器是否有效
-      isFilterActive = filter.selectedChannelIds.isNotEmpty ||
+      isFilterActive =
+          filter.selectedChannelIds.isNotEmpty ||
           filter.selectedUserIds.isNotEmpty ||
           filter.startDate != null ||
           filter.endDate != null ||
@@ -220,7 +227,7 @@ mixin SearchControllerMixin on BaseTimelineController {
   }
 
   // 需要实现的方法
-  void resetPagination();
+  void resetPagination({bool saveState = true});
   void loadCurrentPage();
   void ensureScrollListener();
 }

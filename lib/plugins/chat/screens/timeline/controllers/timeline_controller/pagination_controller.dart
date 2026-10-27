@@ -33,10 +33,9 @@ mixin PaginationControllerMixin on BaseTimelineController {
     }
 
     // 获取当前页的消息
-    final actualEndIndex =
-        endIndex < filteredMessages.length
-            ? endIndex
-            : filteredMessages.length;
+    final actualEndIndex = endIndex < filteredMessages.length
+        ? endIndex
+        : filteredMessages.length;
     final pageMessages = filteredMessages.sublist(startIndex, actualEndIndex);
 
     if (currentPage == 1) {
@@ -48,9 +47,7 @@ mixin PaginationControllerMixin on BaseTimelineController {
     // 更新是否还有更多消息
     hasMoreMessages = actualEndIndex < filteredMessages.length;
 
-    // 保存当前状态
-    saveTimelineState();
-    
+    // 分页计算只更新内存状态，避免触发时间线状态写入与消息监听反馈循环
     notifyListeners();
   }
 
@@ -82,11 +79,12 @@ mixin PaginationControllerMixin on BaseTimelineController {
   }
 
   /// 重置分页状态
-  void resetPagination() {
+  void resetPagination({bool saveState = true}) {
     currentPage = 1;
     hasMoreMessages = true;
     displayMessages = [];
-    // 保存重置后的状态
-    saveTimelineState();
+    if (saveState) {
+      saveTimelineState();
+    }
   }
 }

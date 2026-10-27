@@ -449,6 +449,9 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_topicCreateFailed': 'Failed to create conversation',
   'openai_topicChatUnavailable': 'Chat service is not ready yet',
   'openai_topicEditAgent': 'Edit collection AI',
-    'openai_cloneProviderFailed': 'Failed to clone provider',
+  'openai_topicQuestions': 'Questions',
+  'openai_topicAnswered': 'Answered',
+  'openai_topicOpenDetail': 'View details',
+  'openai_cloneProviderFailed': 'Failed to clone provider',
     'openai_cloneProviderSuccess': 'Cloned successfully',
 };

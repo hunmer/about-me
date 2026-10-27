@@ -96,6 +96,13 @@ class WidgetsGalleryScreen extends StatelessWidget {
                 'DrinkCheckinCalendar（SfCalendar 自定义格子 + 贴纸打卡 + SmoothBottomSheet）',
             route: '/widgets_gallery/drink_checkin_calendar',
           ),
+          _buildListItem(
+            context,
+            icon: Icons.payments,
+            title: '定期付款日历',
+            subtitle: 'ScheduledPaymentsCalendar（头像徽章 + 订阅堆叠 + 照片条展开）',
+            route: '/widgets_gallery/scheduled_payments_calendar',
+          ),
 
           const Divider(),
 

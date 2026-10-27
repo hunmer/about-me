@@ -1,8 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Node, Value;
-import 'package:graphview/GraphView.dart';
 import 'package:intl/intl.dart';
-import 'package:skribble/skribble.dart' show WiredDraw, WiredDrawTransition;
 
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -17,14 +17,16 @@ import 'package:aboutme/plugins/openai/models/topic_collection.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/plugins/openai/screens/agent_edit_screen.dart';
 import 'package:aboutme/plugins/openai/services/topic_chat_service.dart';
-import 'package:aboutme/plugins/openai/widgets/sketch_tree_edge_renderer.dart';
+import 'package:aboutme/widgets/newspaper_sheet.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
-/// 话题合集 tab：合集选择 + graphview 手绘话题树
+/// 话题合集 tab：合集选择 + 报刊架（分类报纸）
 ///
-/// - 话题树无限层级（分组下可以有分组或话题）；
-///   分组节点点按展开/收起子树，叶子话题点按弹出该话题的会话列表
+/// - 每个顶层分类渲染为一张报纸卡片（见 NewspaperSheet）：
+///   报头（分类标题）+ 问题/已回答统计 + 进入详情按钮
+/// - 详情页列出分类（含子分组）下的叶子话题，
+///   点按弹出该话题的会话列表
 /// - 会话经 TopicChatService 创建（hideInList，不进 agent_chat 列表），
 ///   打开后复用 agent_chat 的 ChatScreen
 class TopicCollectionScreen extends StatefulWidget {
@@ -34,19 +36,8 @@ class TopicCollectionScreen extends StatefulWidget {
   State<TopicCollectionScreen> createState() => _TopicCollectionScreenState();
 }
 
-/// 合集对应的图结构缓存（切换合集保留展开状态）
-class _CollectionGraph {
-  _CollectionGraph(this.graph, this.controller, this.rootNode);
-
-  final Graph graph;
-  final GraphViewController controller;
-  final Node rootNode;
-}
-
 class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
   TopicCollection? _selected;
-  final Map<String, _CollectionGraph> _graphCache = {};
-  Map<String, TopicNode> _nodesById = {};
 
   ConversationService? _conversationService;
 
@@ -97,64 +88,15 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
     if (mounted) setState(() {});
   }
 
-  /// 切换合集并重建节点索引
-  void _applyCollection(TopicCollection collection) {
-    _selected = collection;
-    _nodesById = {
-      for (final node in collection.topics)
-        for (final candidate in node.subtree()) candidate.id: candidate,
-    };
-  }
-
-  /// 选择合集（缓存话题图，切换回来保留展开状态）
   void _selectCollection(TopicCollection collection) {
     if (_selected?.id == collection.id) return;
-    _graphCache[collection.id] ??= _buildGraph(collection);
-    setState(() => _applyCollection(collection));
+    setState(() => _selected = collection);
   }
-
-  /// 顶层分组节点初始收起：首屏只展示 根 + 各阶段，
-  /// 点按分组展开子树（graphview 自带展开/收起动画）
-  _CollectionGraph _buildGraph(TopicCollection collection) {
-    final graph = Graph()..isTree = true;
-    final controller = GraphViewController();
-
-    Node addNode(String id) {
-      final node = Node.Id(id);
-      graph.addNode(node);
-      return node;
-    }
-
-    final root = addNode(_rootId);
-    void addTree(Node parent, TopicNode topic) {
-      final node = addNode(topic.id);
-      graph.addEdge(parent, node);
-      for (final child in topic.children) {
-        addTree(node, child);
-      }
-    }
-
-    final groupNodes = <Node>[];
-    for (final topic in collection.topics) {
-      final node = addNode(topic.id);
-      graph.addEdge(root, node);
-      for (final child in topic.children) {
-        addTree(node, child);
-      }
-      if (topic.isGroup) groupNodes.add(node);
-    }
-    controller.setInitiallyCollapsedNodes(graph, groupNodes);
-    return _CollectionGraph(graph, controller, root);
-  }
-
-  static const String _rootId = '__topic_root__';
 
   @override
   Widget build(BuildContext context) {
     final collection = _selected;
-    final bundle =
-        collection == null ? null : _graphCache[collection.id];
-    if (collection == null || bundle == null) {
+    if (collection == null) {
       // 合集目录异步加载中（或为空）：空占位保持布局稳定
       return SuperCupertinoNavigationWrapper(
         title: Text('openai_topicsTab'.tr),
@@ -168,8 +110,6 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
       title: Text('openai_topicsTab'.tr),
       largeTitle: 'openai_topicsTab'.tr,
       enableLargeTitle: false,
-      // 思维导图自持平移/缩放手势，外层滚动锁死
-      forceCollapsed: true,
       body: DSThemeBridge(
         child: Builder(
           builder: (context) {
@@ -178,25 +118,19 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
               children: [
                 _buildCollectionBar(theme),
                 Expanded(
-                  child: WiredDraw(
-                    key: ValueKey('topic_graph_${collection.id}'),
-                    child: GraphView.builder(
-                      graph: bundle.graph,
-                      controller: bundle.controller,
-                      animated: true,
-                      autoZoomToFit: true,
-                      paint:
-                          Paint()
-                            ..color = theme.ink.withValues(alpha: 0.6)
-                            ..strokeWidth = 2
-                            ..style = PaintingStyle.stroke,
-                      algorithm: _buildAlgorithm(theme),
-                      builder: (Node node) => _buildNodeWidget(
-                        theme,
-                        collection,
-                        bundle,
-                        node,
-                      ),
+                  child: ListView.builder(
+                    padding: EdgeInsets.fromLTRB(
+                      theme.spacing.lg,
+                      theme.spacing.xs,
+                      theme.spacing.lg,
+                      theme.spacing.xl,
+                    ),
+                    itemCount: collection.topics.length,
+                    itemBuilder: (context, index) => _buildTopicNewspaper(
+                      theme,
+                      collection,
+                      collection.topics[index],
+                      index,
                     ),
                   ),
                 ),
@@ -222,24 +156,6 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  BuchheimWalkerAlgorithm _buildAlgorithm(AppThemeData theme) {
-    final config =
-        BuchheimWalkerConfiguration()
-          ..siblingSeparation = 48
-          ..subtreeSeparation = 64
-          ..levelSeparation = 96
-          ..orientation = BuchheimWalkerConfiguration.ORIENTATION_LEFT_RIGHT;
-    return BuchheimWalkerAlgorithm(
-      config,
-      SketchTreeEdgeRenderer(
-        config,
-        drawConfig: theme.wired.drawConfig,
-        color: theme.ink.withValues(alpha: 0.6),
-        strokeWidth: 1.8,
-      ),
     );
   }
 
@@ -273,74 +189,429 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
     );
   }
 
-  // ========== 节点 ==========
+  // ========== 报刊架 ==========
 
-  Widget _buildNodeWidget(
+  /// 分类统计：子树内叶子话题数 = 问题数，挂有会话的叶子数 = 已回答数
+  Widget _buildTopicNewspaper(
     AppThemeData theme,
     TopicCollection collection,
-    _CollectionGraph bundle,
-    Node node,
+    TopicNode topic,
+    int index,
   ) {
-    final id = node.key?.value as String;
-    if (id == _rootId) {
-      return _TopicNodePill(
-        collection.name,
-        icon: DsIconKind.sparkle,
-        fillColor: theme.primary,
-        foreground: theme.onPrimary,
-        onTap: () {},
-      );
-    }
-    final topic = _nodesById[id];
-    if (topic == null) return const SizedBox.shrink();
-
-    if (topic.isGroup) {
-      final collapsed = bundle.controller.isNodeCollapsed(node);
-      return _TopicNodePill(
-        topic.title,
-        icon: collapsed ? DsIconKind.chevronRight : DsIconKind.chevronDown,
-        fillColor: theme.surface,
-        foreground: theme.text,
-        badge: _conversationCount(collection, topic),
-        onTap: () {
-          // toggle 的 animate 聚焦的是被点节点本身，这里不启用，
-          // 展开后改为聚焦第一个子节点
-          bundle.controller.toggleNodeExpanded(bundle.graph, node);
-          if (!collapsed) return;
-          final children = bundle.graph.successorsOf(node);
-          if (children.isEmpty) return;
-          // 布局在下一帧完成，届时再定位子节点位置
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            bundle.controller.animateToNode(
-              ValueKey(children.first.key?.value),
-            );
-          });
-        },
-      );
-    }
-
-    return _TopicNodePill(
-      topic.title,
-      sublabel: topic.depthLabel,
-      fillColor: theme.surfaceAlt,
-      foreground: theme.text,
-      badge: _conversationCount(collection, topic),
-      onTap: () => _showTopicSheet(collection, topic),
+    final counts = TopicChatService.instance.conversationCounts(collection);
+    final leaves = topic.subtree().where((node) => !node.isGroup).toList();
+    final answered = leaves
+        .where((node) => (counts[node.id] ?? 0) > 0)
+        .length;
+    return Padding(
+      padding: EdgeInsets.only(bottom: theme.spacing.lg),
+      child: Center(
+        // 报刊架错落感：奇偶交替微微倾斜
+        child: Transform.rotate(
+          angle: (index.isEven ? -1.1 : 1.0) * math.pi / 180,
+          child: _TopicNewspaper(
+            title: topic.title,
+            total: leaves.length,
+            answered: answered,
+            onTap: () => NavigationHelper.push(
+              context,
+              _TopicGroupDetailScreen(collection: collection, group: topic),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
-  int? _conversationCount(TopicCollection collection, TopicNode topic) {
-    final counts = TopicChatService.instance.conversationCounts(collection);
-    final count = collection.conversationCountFor(topic, counts);
+  // ========== 合集 agent 配置 ==========
+
+  /// 打开 agent 编辑页：合集的 AI 是一份完整 agent 配置，
+  /// 独立存储（extra storage），经 AgentEditScreen 编辑。
+  /// 走 onSave 回调模式：保存由回调写独立存储，
+  /// 编辑页的分享/克隆/删除入口（面向全局 agent 列表）不出现
+  Future<void> _editCollectionAgent(TopicCollection collection) async {
+    final agent = await TopicChatService.instance.ensureCollectionAgent(
+      collection,
+    );
+    if (!mounted) return;
+    await NavigationHelper.push(
+      context,
+      AgentEditScreen(
+        agent: agent,
+        onSave: (edited) async {
+          await AgentController().saveAgentToExtraStorage(
+            edited,
+            TopicChatService.storageKeyFor(collection),
+          );
+          return edited;
+        },
+      ),
+    );
+    // 编辑保存写入了独立存储，重新注入临时表让新对话立即生效
+    await TopicChatService.instance.ensureCollectionAgent(collection);
+  }
+}
+
+/// 分类报纸卡片：报头（分类标题）+ 问题/已回答统计 + 进入详情按钮
+class _TopicNewspaper extends StatelessWidget {
+  const _TopicNewspaper({
+    required this.title,
+    required this.total,
+    required this.answered,
+    this.onTap,
+  });
+
+  final String title;
+  final int total;
+  final int answered;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final width = math.min(336.0, size.width - 40);
+    final date = DateFormat('EEE, MMM d, yyyy').format(DateTime.now());
+    return GestureDetector(
+      onTap: onTap,
+      child: NewspaperSheet(
+        width: width,
+        height: 192,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 顶部信息行（报纸日期栏风格）
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'TOPIC EDITION',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: Color(0xFF6B6B6B),
+                    letterSpacing: 2,
+                  ),
+                ),
+                Text(
+                  date.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 9,
+                    color: Color(0xFF6B6B6B),
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ],
+            ),
+            // 报头：分类标题
+            Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 23,
+                  height: 1.1,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF141413),
+                  fontFamilyFallback: ['serif'],
+                ),
+              ),
+            ),
+            // 报纸双线分隔
+            const Padding(
+              padding: EdgeInsets.only(top: 7),
+              child: Column(
+                children: [
+                  ColoredBox(
+                    color: Color(0xFF262626),
+                    child: SizedBox(width: double.infinity, height: 1.5),
+                  ),
+                  SizedBox(height: 1.5),
+                  ColoredBox(
+                    color: Color(0xFF262626),
+                    child: SizedBox(width: double.infinity, height: 0.7),
+                  ),
+                ],
+              ),
+            ),
+            // 统计与按钮
+            Expanded(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _statNumber(
+                            '$total',
+                            'openai_topicQuestions'.tr,
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 42,
+                          color: const Color(0x33262626),
+                        ),
+                        Expanded(
+                          child: _statNumber(
+                            '$answered',
+                            'openai_topicAnswered'.tr,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 11),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '$answered / $total',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF8A8A8A),
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        _buildOpenButton(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statNumber(String number, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          number,
+          style: const TextStyle(
+            fontSize: 30,
+            height: 1,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF141413),
+            fontFamilyFallback: ['serif'],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFF6B6B6B),
+            letterSpacing: 2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOpenButton() {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141413),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'openai_topicOpenDetail'.tr,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(width: 5),
+            const Icon(Icons.arrow_forward, size: 13, color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 分类详情页：列出分类（含子分组）下的叶子话题，点按弹出会话列表
+class _TopicGroupDetailScreen extends StatefulWidget {
+  const _TopicGroupDetailScreen({
+    required this.collection,
+    required this.group,
+  });
+
+  final TopicCollection collection;
+  final TopicNode group;
+
+  @override
+  State<_TopicGroupDetailScreen> createState() =>
+      _TopicGroupDetailScreenState();
+}
+
+class _TopicGroupDetailScreenState extends State<_TopicGroupDetailScreen> {
+  ConversationService? _conversationService;
+
+  List<TopicNode> get _leaves =>
+      widget.group.subtree().where((node) => !node.isGroup).toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _bindConversationService();
+    eventManager.subscribe('plugin_loaded', _onPluginLoaded);
+  }
+
+  void _onPluginLoaded(EventArgs args) {
+    if (args is! Value<String> || args.value != 'agent_chat' || !mounted) {
+      return;
+    }
+    _bindConversationService();
+    setState(() {});
+  }
+
+  void _bindConversationService() {
+    _conversationService?.removeListener(_onConversationsChanged);
+    _conversationService =
+        AgentChatPlugin.instance.conversationController?.conversationService;
+    _conversationService?.addListener(_onConversationsChanged);
+  }
+
+  @override
+  void dispose() {
+    eventManager.unsubscribe('plugin_loaded', _onPluginLoaded);
+    _conversationService?.removeListener(_onConversationsChanged);
+    super.dispose();
+  }
+
+  void _onConversationsChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SuperCupertinoNavigationWrapper(
+      title: Text(widget.group.title),
+      largeTitle: widget.group.title,
+      enableLargeTitle: false,
+      body: DSThemeBridge(
+        child: Builder(
+          builder: (context) {
+            final theme = DSThemeBridge.resolve(context);
+            return ListView.separated(
+              padding: EdgeInsets.fromLTRB(
+                theme.spacing.lg,
+                theme.spacing.md,
+                theme.spacing.lg,
+                theme.spacing.xl,
+              ),
+              itemCount: _leaves.length,
+              separatorBuilder: (_, __) => SizedBox(height: theme.spacing.md),
+              itemBuilder: (context, index) =>
+                  _buildTopicTile(theme, _leaves[index]),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopicTile(AppThemeData theme, TopicNode topic) {
+    final count = _conversationCount(topic);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showTopicSheet(topic),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: theme.spacing.md,
+          vertical: theme.spacing.sm + 2,
+        ),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.surface,
+          radius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    topic.title,
+                    style: DsTypography.body.copyWith(
+                      color: theme.text,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (topic.depthLabel != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      topic.depthLabel!,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (count != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 2,
+                ),
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillColor: theme.primary,
+                  circle: true,
+                ),
+                child: Text(
+                  '$count',
+                  style: DsTypography.caption.copyWith(
+                    fontSize: 10,
+                    color: theme.onPrimary,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(width: 4),
+            DsIcon(DsIconKind.chevronRight, size: 16, color: theme.textSub),
+          ],
+        ),
+      ),
+    );
+  }
+
+  int? _conversationCount(TopicNode topic) {
+    final counts = TopicChatService.instance.conversationCounts(
+      widget.collection,
+    );
+    final count = widget.collection.conversationCountFor(topic, counts);
     return count > 0 ? count : null;
   }
 
   // ========== 话题会话 ==========
 
-  Future<void> _showTopicSheet(
-    TopicCollection collection,
-    TopicNode topic,
-  ) async {
+  Future<void> _showTopicSheet(TopicNode topic) async {
     final theme = DSThemeBridge.resolve(context);
     await SmoothBottomSheet.showWithTitle<void>(
       context: context,
@@ -348,7 +619,7 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
       child: Builder(
         builder: (sheetContext) {
           final conversations = TopicChatService.instance.conversationsFor(
-            collection,
+            widget.collection,
             topic,
           );
           return Column(
@@ -360,7 +631,7 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
                 label: 'openai_topicNewConversation'.tr,
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  await _createAndOpen(collection, topic);
+                  await _createAndOpen(topic);
                 },
               ),
               if (conversations.isNotEmpty) ...[
@@ -381,7 +652,6 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
                 ...conversations.asMap().entries.map(
                   (entry) => _buildConversationTile(
                     theme,
-                    collection,
                     topic,
                     entry.key + 1,
                     entry.value,
@@ -397,7 +667,6 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
 
   Widget _buildConversationTile(
     AppThemeData theme,
-    TopicCollection collection,
     TopicNode topic,
     int index,
     Conversation conversation,
@@ -476,7 +745,7 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
                 iconColor: theme.textSub,
                 tooltip: 'openai_topicDeleteConversation'.tr,
                 onPressed: () =>
-                    _confirmDeleteConversation(collection, topic, conversation),
+                    _confirmDeleteConversation(topic, conversation),
               ),
             ),
           ],
@@ -486,7 +755,6 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
   }
 
   Future<void> _confirmDeleteConversation(
-    TopicCollection collection,
     TopicNode topic,
     Conversation conversation,
   ) async {
@@ -508,28 +776,27 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
     await _conversationService?.deleteConversation(conversation.id);
     if (mounted) {
       toastService.showToast('openai_topicConversationDeleted'.tr);
-      // 会话删完后收起话题 sheet，回到话题树
+      // 会话删完后收起话题 sheet，回到话题列表
       if (TopicChatService.instance
-          .conversationsFor(collection, topic)
+          .conversationsFor(widget.collection, topic)
           .isEmpty) {
         Navigator.of(context).maybePop();
       }
     }
   }
 
-  Future<void> _createAndOpen(
-    TopicCollection collection,
-    TopicNode topic,
-  ) async {
+  Future<void> _createAndOpen(TopicNode topic) async {
     try {
       final conversation = await TopicChatService.instance.createConversation(
-        collection: collection,
+        collection: widget.collection,
         topic: topic,
       );
       if (!mounted) return;
       _openConversation(conversation);
     } catch (e) {
-      if (mounted) toastService.showToast('${'openai_topicCreateFailed'.tr}: $e');
+      if (mounted) {
+        toastService.showToast('${'openai_topicCreateFailed'.tr}: $e');
+      }
     }
   }
 
@@ -555,133 +822,6 @@ class _TopicCollectionScreenState extends State<TopicCollectionScreen> {
         storage: AgentChatPlugin.instance.storage,
         conversationService: controller.conversationService,
         getSettings: () => AgentChatPlugin.instance.settings,
-      ),
-    );
-  }
-
-  // ========== 合集 agent 配置 ==========
-
-  /// 打开 agent 编辑页：合集的 AI 是一份完整 agent 配置，
-  /// 独立存储（extra storage），经 AgentEditScreen 编辑。
-  /// 走 onSave 回调模式：保存由回调写独立存储，
-  /// 编辑页的分享/克隆/删除入口（面向全局 agent 列表）不出现
-  Future<void> _editCollectionAgent(TopicCollection collection) async {
-    final agent = await TopicChatService.instance.ensureCollectionAgent(
-      collection,
-    );
-    if (!mounted) return;
-    await NavigationHelper.push(
-      context,
-      AgentEditScreen(
-        agent: agent,
-        onSave: (edited) async {
-          await AgentController().saveAgentToExtraStorage(
-            edited,
-            TopicChatService.storageKeyFor(collection),
-          );
-          return edited;
-        },
-      ),
-    );
-    // 编辑保存写入了独立存储，重新注入临时表让新对话立即生效
-    await TopicChatService.instance.ensureCollectionAgent(collection);
-  }
-}
-
-/// 话题树节点：手绘胶囊（dsSketchDecoration 墨线 + 实底）
-class _TopicNodePill extends StatelessWidget {
-  const _TopicNodePill(
-    this.label, {
-    this.sublabel,
-    this.icon,
-    this.fillColor,
-    this.foreground,
-    this.badge,
-    this.onTap,
-  });
-
-  final String label;
-  final String? sublabel;
-  final DsIconKind? icon;
-  final Color? fillColor;
-  final Color? foreground;
-  final int? badge;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AppTheme.of(context);
-    final progress = WiredDrawTransition.progressOf(context);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 210),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: fillColor,
-          radius: BorderRadius.circular(999),
-          progress: progress,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              DsIcon(icon!, size: 14, color: foreground ?? theme.textSub),
-              const SizedBox(width: 6),
-            ],
-            Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: DsTypography.caption.copyWith(
-                      color: foreground ?? theme.text,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (sublabel != null) ...[
-                    const SizedBox(height: 1),
-                    Text(
-                      sublabel!,
-                      style: DsTypography.caption.copyWith(
-                        fontSize: 10,
-                        color: foreground?.withValues(alpha: 0.8) ??
-                            theme.textSub,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (badge != null) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 7,
-                  vertical: 2,
-                ),
-                decoration: dsSketchDecoration(
-                  theme: theme,
-                  fillColor: theme.primary,
-                  circle: true,
-                ),
-                child: Text(
-                  '$badge',
-                  style: DsTypography.caption.copyWith(
-                    fontSize: 10,
-                    color: theme.onPrimary,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }

@@ -29,6 +29,7 @@ enum CardDestination: String {
     case goods = "物品"
     case settings = "设置"
     case moodTest = "测试页面1"
+    case chatgptTest = "测试页面2"
 }
 
 struct DemoCard: Identifiable {
@@ -43,6 +44,7 @@ struct DemoCard: Identifiable {
 struct ContentView: View {
     private let demoCards = [
         DemoCard(title: "测试页面1", subtitle: "心情 UI 复刻", icon: "face.smiling", color: Color(red: 251/255, green: 217/255, blue: 117/255), destination: .moodTest),
+        DemoCard(title: "测试页面2", subtitle: "ChatGPT UI 复刻", icon: "sparkles", color: Color(red: 77/255, green: 163/255, blue: 255/255), destination: .chatgptTest),
         DemoCard(title: "待办事项", subtitle: "2个任务", icon: "checkmark.circle", color: .blue, destination: .todo),
         DemoCard(title: "频道聊天", subtitle: "消息频道", icon: "message.fill", color: .indigo, destination: .chat),
         DemoCard(title: "日记", subtitle: "今日记录", icon: "book.fill", color: .purple, destination: .diary),
@@ -107,6 +109,8 @@ struct ContentView: View {
             GoodsWarehouseListView()
         case .moodTest:
             MoodTestView()
+        case .chatgptTest:
+            ChatGPTTestView()
         case .reminder:
             PlaceholderView(title: card.title, icon: card.icon, color: card.color)
         case .settings:

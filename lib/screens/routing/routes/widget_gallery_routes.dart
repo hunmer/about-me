@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/creator_profile_demo.dart';
 import 'package:aboutme/widgets/newspaper_stand_demo.dart';
+import 'package:aboutme/widgets/scheduled_payments_calendar_demo.dart';
 import 'package:aboutme/screens/routing/route_definition.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';
 import 'package:aboutme/screens/widgets_gallery/widgets_gallery_screen.dart';
@@ -1031,6 +1032,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '报刊亭交互 UI（报纸堆叠 / 轮播拖拽切换）',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/scheduled_payments_calendar',
+      handler: (settings) => RouteHelpers.createRoute(
+        const ScheduledPaymentsCalendarDemo(),
+        settings: settings,
+      ),
+      description: '定期付款日历（头像徽章 + 订阅堆叠 + 横向照片条展开）',
     ),
   ];
 }

@@ -416,6 +416,9 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_topicCreateFailed': '创建对话失败',
   'openai_topicChatUnavailable': '聊天服务未就绪，请稍后再试',
   'openai_topicEditAgent': '编辑合集 AI 配置',
-    'openai_cloneProviderFailed': '克隆服务商失败',
+  'openai_topicQuestions': '问题',
+  'openai_topicAnswered': '已回答',
+  'openai_topicOpenDetail': '进入详情',
+  'openai_cloneProviderFailed': '克隆服务商失败',
     'openai_cloneProviderSuccess': '克隆成功',
 };
