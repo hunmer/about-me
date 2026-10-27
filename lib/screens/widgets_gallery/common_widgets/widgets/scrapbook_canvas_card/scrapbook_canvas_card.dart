@@ -154,6 +154,33 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     });
   }
 
+  Future<Size?> _resolveImageSize(String path) async {
+    final ImageProvider provider =
+        path.startsWith('http://') || path.startsWith('https://')
+        ? NetworkImage(path)
+        : FileImage(File(path));
+    final stream = provider.resolve(const ImageConfiguration());
+    final completer = Completer<Size?>();
+    late final ImageStreamListener listener;
+    listener = ImageStreamListener(
+      (info, _) {
+        stream.removeListener(listener);
+        final image = info.image;
+        completer.complete(
+          image.width > 0 && image.height > 0
+              ? Size(image.width.toDouble(), image.height.toDouble())
+              : null,
+        );
+      },
+      onError: (_, __) {
+        stream.removeListener(listener);
+        if (!completer.isCompleted) completer.complete(null);
+      },
+    );
+    stream.addListener(listener);
+    return completer.future;
+  }
+
   // ===== 画布手势 =====
 
   void _onScaleStart(ScaleStartDetails details) {
@@ -256,9 +283,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   }
 
   _ScrapSnapshot _snapshot() => _ScrapSnapshot(
-    items: [
-      for (final item in _items) ScrapItemData.fromMap(item.toMap()),
-    ],
+    items: [for (final item in _items) ScrapItemData.fromMap(item.toMap())],
     strokes: [
       for (final stroke in _strokes) ScrapStroke.fromMap(stroke.toMap()),
     ],
@@ -307,13 +332,15 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       Color(0xFF111111),
     ];
 
-    void submit(BuildContext dialogContext) => Navigator.pop(dialogContext, true);
+    void submit(BuildContext dialogContext) =>
+        Navigator.pop(dialogContext, true);
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => Dialog(
-        backgroundColor:
-            isDark ? const Color(0xF21E293B) : const Color(0xF2FAF8F2),
+        backgroundColor: isDark
+            ? const Color(0xF21E293B)
+            : const Color(0xF2FAF8F2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
           side: BorderSide(
@@ -436,6 +463,15 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       return;
     }
     if (asset.imageUrl != null && asset.imageUrl!.isNotEmpty) {
+      final imageSize = await _resolveImageSize(asset.imageUrl!);
+      const maxDimension = 120.0;
+      final sourceWidth = imageSize?.width ?? maxDimension;
+      final sourceHeight = imageSize?.height ?? maxDimension;
+      final ratio = sourceWidth > 0 && sourceHeight > 0
+          ? sourceWidth / sourceHeight
+          : 1.0;
+      final width = ratio >= 1 ? maxDimension : maxDimension * ratio;
+      final height = ratio >= 1 ? maxDimension / ratio : maxDimension;
       _spawnItem(
         ScrapItemData(
           id: _nextId(),
@@ -443,8 +479,8 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
           imageUrl: asset.imageUrl,
           x: _canvasCenter().dx,
           y: _canvasCenter().dy,
-          width: 120,
-          height: 120,
+          width: width,
+          height: height,
           rotation: (math.Random().nextDouble() * 8 - 4),
         ),
       );
@@ -521,16 +557,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                           onPanEnd: _onDoodleEnd,
                           child: _buildCanvasLayers(gridColor, isDark),
                         )
-                      : GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedId = null;
-                            });
-                          },
-                          onScaleStart: _onScaleStart,
-                          onScaleUpdate: _onScaleUpdate,
-                          child: _buildCanvasLayers(gridColor, isDark),
-                        ),
+                      : _buildCanvasLayers(gridColor, isDark),
                 ),
               ),
             ),
@@ -635,13 +662,21 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       children: [
         // 网格背景（视口坐标，随 pan/zoom 同步）
         Positioned.fill(
-          child: CustomPaint(
-            painter: ScrapGridPainter(
-              panX: _panX,
-              panY: _panY,
-              zoom: _zoom,
-              gridSize: _gridSize,
-              color: gridColor,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              setState(() => _selectedId = null);
+            },
+            onScaleStart: _onScaleStart,
+            onScaleUpdate: _onScaleUpdate,
+            child: CustomPaint(
+              painter: ScrapGridPainter(
+                panX: _panX,
+                panY: _panY,
+                zoom: _zoom,
+                gridSize: _gridSize,
+                color: gridColor,
+              ),
             ),
           ),
         ),
@@ -683,6 +718,8 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                   ),
                 // 手帐条目（z 序升序，大的在上）
                 ..._sortedItems().map((item) => _buildItem(item, isDark)),
+                if (_selectedId != null && !widget.readOnly)
+                  _buildSelectedControls(),
               ],
             ),
           ),
@@ -741,10 +778,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                       item.y += details.delta.dy / _zoom;
                     });
                   },
-            onPanEnd:
-                _doodleMode || widget.readOnly
-                    ? null
-                    : (_) => _notifyChanged(),
+            onPanEnd: _doodleMode || widget.readOnly
+                ? null
+                : (_) => _notifyChanged(),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -757,19 +793,6 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                       : null,
                   child: buildScrapItemContent(item, isDark, _showToast),
                 ),
-                if (selected)
-                  Positioned(
-                    top: -30,
-                    right: -10,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildControlChip('↻', () => _rotateItem(item)),
-                        const SizedBox(width: 4),
-                        _buildControlChip('×', () => _deleteItem(item)),
-                      ],
-                    ),
-                  ),
               ],
             ),
           ),
@@ -778,7 +801,30 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     );
   }
 
-  /// 条目单击：只读模式下 300ms 内两次点击视为双击触发回调，
+  Widget _buildSelectedControls() {
+    ScrapItemData? item;
+    for (final candidate in _items) {
+      if (candidate.id == _selectedId) {
+        item = candidate;
+        break;
+      }
+    }
+    if (item == null) return const SizedBox.shrink();
+    final selectedItem = item;
+    return Positioned(
+      left: selectedItem.x + selectedItem.width - 10,
+      top: selectedItem.y - 30,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildControlChip('↻', () => _rotateItem(selectedItem)),
+          const SizedBox(width: 4),
+          _buildControlChip('×', () => _deleteItem(selectedItem)),
+        ],
+      ),
+    );
+  }
+
   /// 否则走选中逻辑（涂鸦模式忽略）
   DateTime? _lastItemTap;
 
@@ -964,10 +1010,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       );
     } catch (e) {
       if (mounted) {
-        ToastService.instance.showToast(
-          '导出失败：$e',
-          type: ToastType.error,
-        );
+        ToastService.instance.showToast('导出失败：$e', type: ToastType.error);
       }
     } finally {
       if (mounted) {
@@ -1065,7 +1108,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                 ? Colors.white
                 : (isDark
                       ? (enabled ? Colors.white : Colors.white38)
-                      : (enabled ? const Color(0xFF1A1A1A) : const Color(0x611A1A1A))),
+                      : (enabled
+                            ? const Color(0xFF1A1A1A)
+                            : const Color(0x611A1A1A))),
           ),
         ),
       ),
@@ -1165,9 +1210,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       ),
     );
   }
-
 }
-
 
 /// undo/redo 历史快照（条目与涂鸦的深拷贝）
 class _ScrapSnapshot {

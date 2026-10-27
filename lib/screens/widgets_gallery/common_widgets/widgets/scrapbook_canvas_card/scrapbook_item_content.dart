@@ -86,8 +86,7 @@ Widget _buildHeaderItem(ScrapItemData item, bool isDark) {
 
 Widget _buildPhotoItem(ScrapItemData item, bool isDark) {
   final captionColor =
-      item.captionColor ??
-      (isDark ? Colors.white70 : const Color(0xFF1A1A1A));
+      item.captionColor ?? (isDark ? Colors.white70 : const Color(0xFF1A1A1A));
   return Column(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,11 +163,7 @@ Widget _buildPhotoItem(ScrapItemData item, bool isDark) {
 
 Widget _buildPhotoFrame(ScrapItemData item) {
   const shadow = [
-    BoxShadow(
-      color: Color(0x1A000000),
-      blurRadius: 12,
-      offset: Offset(0, 4),
-    ),
+    BoxShadow(color: Color(0x1A000000), blurRadius: 12, offset: Offset(0, 4)),
     BoxShadow(color: Color(0x0F000000), blurRadius: 2, offset: Offset(0, 1)),
   ];
 
@@ -228,41 +223,34 @@ Widget _buildPhotoFrame(ScrapItemData item) {
       return Container(
         width: item.width,
         height: item.height,
-        decoration: BoxDecoration(
-          color: item.fallbackColor,
-          boxShadow: shadow,
-        ),
+        decoration: BoxDecoration(color: item.fallbackColor, boxShadow: shadow),
         clipBehavior: Clip.antiAlias,
-        child:
-            item.imageUrl != null
-                ? (item.imageUrl!.startsWith('http')
-                    ? Image.network(
+        child: item.imageUrl != null
+            ? (item.imageUrl!.startsWith('http')
+                  ? Image.network(
                       item.imageUrl!,
                       width: item.width,
                       height: item.height,
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (_, __, ___) =>
-                              Container(color: item.fallbackColor),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) =>
+                          Container(color: item.fallbackColor),
                     )
-                    : Image.file(
+                  : Image.file(
                       File(item.imageUrl!),
                       width: item.width,
                       height: item.height,
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (_, __, ___) =>
-                              Container(color: item.fallbackColor),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) =>
+                          Container(color: item.fallbackColor),
                     ))
-                : null,
+            : null,
       );
   }
 }
 
 Widget _buildTextItem(ScrapItemData item, bool isDark) {
   final color =
-      item.captionColor ??
-      (isDark ? Colors.white : const Color(0xFF111111));
+      item.captionColor ?? (isDark ? Colors.white : const Color(0xFF111111));
   return Column(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,8 +368,9 @@ Widget _buildCompanionsItem(ScrapItemData item, bool isDark) {
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.2,
-                          color:
-                              isDark ? Colors.white : const Color(0xFF1A1A1A),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1A1A1A),
                         ),
                       ),
                     ],
@@ -468,17 +457,29 @@ Widget _buildGiftItem(bool isDark, void Function(String message) showToast) {
         Positioned(
           left: 6,
           top: 14,
-          child: Container(width: 116, height: 54, color: const Color(0xFF222421)),
+          child: Container(
+            width: 116,
+            height: 54,
+            color: const Color(0xFF222421),
+          ),
         ),
         Positioned(
           left: 16,
           top: 6,
-          child: Container(width: 96, height: 72, color: const Color(0xFF2E302B)),
+          child: Container(
+            width: 96,
+            height: 72,
+            color: const Color(0xFF2E302B),
+          ),
         ),
         Positioned(
           left: 26,
           top: 0,
-          child: Container(width: 76, height: 86, color: const Color(0xFF8E8468)),
+          child: Container(
+            width: 76,
+            height: 86,
+            color: const Color(0xFF8E8468),
+          ),
         ),
         // 黄色礼盒
         Positioned(
@@ -491,7 +492,11 @@ Widget _buildGiftItem(bool isDark, void Function(String message) showToast) {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFFF5D033), Color(0xFFE8BE1E), Color(0xFFC99E10)],
+                colors: [
+                  Color(0xFFF5D033),
+                  Color(0xFFE8BE1E),
+                  Color(0xFFC99E10),
+                ],
               ),
               boxShadow: [
                 BoxShadow(
@@ -566,7 +571,18 @@ Widget _buildGiftItem(bool isDark, void Function(String message) showToast) {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      for (final w in [1.5, 0.8, 2.0, 1.0, 1.5, 2.2, 0.8, 1.5, 1.0, 2.0])
+                      for (final w in [
+                        1.5,
+                        0.8,
+                        2.0,
+                        1.0,
+                        1.5,
+                        2.2,
+                        0.8,
+                        1.5,
+                        1.0,
+                        2.0,
+                      ])
                         Container(width: w, height: 8, color: Colors.black),
                     ],
                   ),
@@ -627,7 +643,10 @@ Widget _buildGiftItem(bool isDark, void Function(String message) showToast) {
           child: GestureDetector(
             onTap: () => showToast('🛍️ Ginza Uniqlo / Luxury Box • \$1,500'),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 3.5,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border.all(color: const Color(0xFFE6E2D8)),

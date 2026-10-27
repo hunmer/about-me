@@ -165,6 +165,7 @@ Aboutme.ready(() => {<br>
 });<br>
 <br>
 Aboutme.system.getCurrentTime().then(time => console.log(time));<br>
+Aboutme.system.formatDate(Date.now(), 'yyyy-MM-dd E').then(s => console.log(s));<br>
 Aboutme.ui.toast('Hello from Aboutme!');<br>
 Aboutme.storage.write('test', { message: 'Hello' });<br>
 Aboutme.storage.read('test').then(data => console.log(data));
@@ -179,6 +180,7 @@ Aboutme.storage.read('test').then(data => console.log(data));
       <button onclick="testGetAppInfo()">获取应用信息</button>
       <button onclick="testFormatDate()">格式化日期</button>
       <button onclick="testGetTimestamp()">获取时间戳</button>
+      <button onclick="testGetCustomDate()">自定义日期</button>
     </div>
 
     <div class="test-section">
@@ -193,7 +195,7 @@ Aboutme.storage.read('test').then(data => console.log(data));
       <button onclick="testWriteData()">写入数据</button>
       <button onclick="testReadData()">读取数据</button>
       <button onclick="testDeleteData()">删除数据</button>
-      <button onclick="testClearStorage()">清空存储</button>
+      <button onclick="testResetStorage()">重置存储(Mock)</button>
       <button onclick="showStorageState()">查看存储状态</button>
     </div>
 
@@ -284,7 +286,7 @@ Aboutme.storage.read('test').then(data => console.log(data));
     async function testGetCurrentTime() {
       addLog('测试系统 API: getCurrentTime');
       const time = await Aboutme.system.getCurrentTime();
-      addLog(`当前时间: ${time}`, 'success');
+      addLog(`当前时间: ${JSON.stringify(time)}`, 'success');
     }
 
     async function testGetDeviceInfo() {
@@ -301,10 +303,8 @@ Aboutme.storage.read('test').then(data => console.log(data));
 
     async function testFormatDate() {
       addLog('测试系统 API: formatDate');
-      const formatted = await Aboutme.system.formatDate({
-        date: new Date().toISOString(),
-        format: 'YYYY年MM月DD日 HH:mm:ss'
-      });
+      // 参数：(dateInput, format)，dateInput 为字符串或毫秒时间戳，token 为小写 yyyy / E
+      const formatted = await Aboutme.system.formatDate(Date.now(), 'yyyy年MM月dd日 HH:mm:ss 星期E');
       addLog(`格式化日期: ${formatted}`, 'success');
     }
 
@@ -314,24 +314,39 @@ Aboutme.storage.read('test').then(data => console.log(data));
       addLog(`时间戳: ${timestamp}`, 'success');
     }
 
+    async function testGetCustomDate() {
+      addLog('测试系统 API: getCustomDate');
+      // 参数：{ baseDate?, timezone?, add?, subtract?, relativePosition?, format? }
+      const startOfMonth = await Aboutme.system.getCustomDate({
+        relativePosition: 'startOfMonth'
+      });
+      const in7Days = await Aboutme.system.getCustomDate({
+        add: { days: 7 },
+        format: 'yyyy-MM-dd'
+      });
+      addLog(`本月起始: ${JSON.stringify(startOfMonth)}；7 天后: ${in7Days}`, 'success');
+    }
+
     function testToast() {
       addLog('测试 UI API: toast');
       Aboutme.ui.toast('这是一个测试 Toast 消息！', { duration: 2000 });
     }
 
     function testAlert() {
-      addLog('测试 UI API: alert');
-      Aboutme.ui.alert('这是一个测试 Alert 消息！');
+      addLog('测试 UI API: alert（返回 boolean）');
+      Aboutme.ui.alert('这是一个测试 Alert 消息！', { title: '提示' }).then(confirmed => {
+        addLog(`Alert 结果: ${confirmed}`, 'success');
+      });
     }
 
     async function testDialog() {
-      addLog('测试 UI API: dialog');
+      addLog('测试 UI API: dialog（返回 boolean|null）');
       const result = await Aboutme.ui.dialog({
         title: '测试对话框',
-        message: '这是一个测试对话框，确认或取消？',
+        content: '这是一个测试对话框，确认或取消？',
         showCancel: true
       });
-      addLog(`对话框结果: ${JSON.stringify(result)}`, 'success');
+      addLog(`对话框结果: ${result}`, 'success');
     }
 
     async function testWriteData() {
@@ -367,10 +382,10 @@ Aboutme.storage.read('test').then(data => console.log(data));
       showStorageState();
     }
 
-    async function testClearStorage() {
-      addLog('测试存储 API: clear');
-      await Aboutme.storage.clear();
-      addLog('存储清空成功', 'success');
+    async function testResetStorage() {
+      addLog('重置 Mock 存储（Aboutme.utils，真实环境无此 API）');
+      await Aboutme.utils.resetStorage();
+      addLog('存储已重置', 'success');
       showStorageState();
     }
 

@@ -4,6 +4,7 @@ import 'package:aboutme/screens/json_dynamic_test/json_dynamic_test_screen.dart'
 import 'package:aboutme/screens/floating_widget_screen/floating_widget_screen.dart';
 import 'package:aboutme/screens/settings_screen/screens/live_activities_test_screen.dart';
 import 'package:aboutme/screens/log_screen/log_screen.dart';
+import 'package:aboutme/screens/data_selector_debug/data_selector_debug_screen.dart';
 
 /// 测试页面路由注册表
 class TestRoutes implements RouteRegistry {
@@ -58,6 +59,20 @@ class TestRoutes implements RouteRegistry {
           path: 'log',
           handler: (settings) => RouteHelpers.createRoute(const LogScreen()),
           description: '日志屏幕（别名）',
+        ),
+
+        // 插件数据选择器调试
+        RouteDefinition(
+          path: '/data_selector_debug',
+          handler: (settings) =>
+              RouteHelpers.createRoute(const DataSelectorDebugScreen()),
+          description: '插件数据选择器调试',
+        ),
+        RouteDefinition(
+          path: 'data_selector_debug',
+          handler: (settings) =>
+              RouteHelpers.createRoute(const DataSelectorDebugScreen()),
+          description: '插件数据选择器调试（别名）',
         ),
       ];
 }

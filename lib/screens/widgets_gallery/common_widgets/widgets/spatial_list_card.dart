@@ -140,11 +140,14 @@ class SpatialListCardWidget extends StatefulWidget {
     );
   }
 
+  /// 手账主题默认物品：中位手绘便签（显示 noteContent 摘要）+ 四周
+  /// 手账素材贴纸（与 assets/svg/scrapbook 同源，内嵌 const 保持同步渲染）
   static const defaultItems = <SpatialListItemData>[
     SpatialListItemData(
-      kind: SpatialListItemKind.mayo,
-      width: 78,
-      height: 105,
+      kind: SpatialListItemKind.custom,
+      svg: _scrapTapeSvg,
+      width: 110,
+      height: 40,
       collapsedOffset: Offset(-155, -35),
       expandedOffset: Offset(-162, -18),
       collapsedScale: 0.75,
@@ -153,10 +156,10 @@ class SpatialListCardWidget extends StatefulWidget {
       expandedOnly: true,
     ),
     SpatialListItemData(
-      kind: SpatialListItemKind.bottle,
-      quantity: 2,
-      width: 82,
-      height: 154,
+      kind: SpatialListItemKind.custom,
+      svg: _scrapAirplaneSvg,
+      width: 84,
+      height: 116,
       collapsedOffset: Offset(-96, 8),
       expandedOffset: Offset(-118, 152),
       collapsedScale: 0.86,
@@ -174,9 +177,10 @@ class SpatialListCardWidget extends StatefulWidget {
       angle: -6,
     ),
     SpatialListItemData(
-      kind: SpatialListItemKind.pesto,
-      width: 86,
-      height: 112,
+      kind: SpatialListItemKind.custom,
+      svg: _scrapCloudSvg,
+      width: 104,
+      height: 82,
       collapsedOffset: Offset(96, 20),
       expandedOffset: Offset(146, 44),
       collapsedScale: 0.88,
@@ -184,21 +188,21 @@ class SpatialListCardWidget extends StatefulWidget {
       angle: 12,
     ),
     SpatialListItemData(
-      kind: SpatialListItemKind.crackers,
+      kind: SpatialListItemKind.custom,
+      svg: _scrapFujiSvg,
       width: 86,
-      height: 110,
+      height: 94,
       collapsedOffset: Offset(8, 265),
       expandedOffset: Offset(-6, 232),
-      collapsedScale: 0.8,
       expandedScale: 0.96,
       angle: -5,
       expandedOnly: true,
     ),
     SpatialListItemData(
-      kind: SpatialListItemKind.spinach,
-      quantity: 2,
-      width: 114,
-      height: 138,
+      kind: SpatialListItemKind.custom,
+      svg: _scrapPlushieSvg,
+      width: 92,
+      height: 130,
       collapsedOffset: Offset(280, 95),
       expandedOffset: Offset(256, 88),
       expandedScale: 0.96,
@@ -206,9 +210,10 @@ class SpatialListCardWidget extends StatefulWidget {
       expandedOnly: true,
     ),
     SpatialListItemData(
-      kind: SpatialListItemKind.cheese,
-      width: 112,
-      height: 118,
+      kind: SpatialListItemKind.custom,
+      svg: _scrapShinkansenSvg,
+      width: 86,
+      height: 128,
       collapsedOffset: Offset(175, 235),
       expandedOffset: Offset(152, 212),
       expandedScale: 0.96,
@@ -216,9 +221,10 @@ class SpatialListCardWidget extends StatefulWidget {
       expandedOnly: true,
     ),
     SpatialListItemData(
-      kind: SpatialListItemKind.hummus,
-      width: 100,
-      height: 88,
+      kind: SpatialListItemKind.custom,
+      svg: _scrapSparklesSvg,
+      width: 96,
+      height: 90,
       collapsedOffset: Offset(300, -25),
       expandedOffset: Offset(274, -26),
       expandedScale: 0.96,
@@ -515,6 +521,7 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
                       child: _buildItemContent(item),
                     ),
                     if (item.kind != SpatialListItemKind.note &&
+                        item.kind != SpatialListItemKind.custom &&
                         item.kind != SpatialListItemKind.crackers &&
                         item.kind != SpatialListItemKind.cheese &&
                         item.kind != SpatialListItemKind.hummus)
@@ -571,7 +578,7 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
         scale: widget.size.scale,
       );
     }
-    final svg = item.svg ?? _defaultSvg[item.kind];
+    final svg = item.svg;
     if (svg == null) return const SizedBox.shrink();
     return SvgPicture.string(svg, fit: BoxFit.contain);
   }
@@ -776,50 +783,111 @@ const _noteDoodle = '''
   <path d="M100 8 L109 10 L105 19 M77 29 C74 24,67 25,67 31 C67 36,75 41,77 44 C79 41,87 36,87 31 C87 25,80 24,77 29 Z" fill="none" stroke="#78350f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>''';
 
-const _defaultSvg = <SpatialListItemKind, String>{
-  SpatialListItemKind.bottle: '''
-<svg viewBox="0 0 100 190" xmlns="http://www.w3.org/2000/svg">
-  <defs><linearGradient id="pink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fbcfe8"/><stop offset=".5" stop-color="#f9a8d4"/><stop offset="1" stop-color="#f472b6"/></linearGradient></defs>
-  <rect x="41" y="4" width="18" height="14" rx="3" fill="#f8fafc" stroke="#e2e8f0"/><rect x="41" y="9" width="18" height="4" fill="#f472b6"/>
-  <path d="M42 18 L40 60 C25 78 22 90 22 112 L22 172 C22 180 28 184 36 184 L64 184 C72 184 78 180 78 172 L78 112 C78 90 75 78 60 60 L58 18 Z" fill="url(#pink)" stroke="#f472b6"/>
-  <path d="M30 85 L30 168" stroke="#fff" stroke-width="4.5" stroke-linecap="round" opacity=".55"/>
-  <rect x="25" y="102" width="50" height="54" rx="6" fill="#fff1f2" stroke="#fecdd3"/>
-  <circle cx="50" cy="120" r="9" fill="#ffe4e6"/><path d="M45 120 Q50 112 55 120 Q50 128 45 120" fill="#fb7185"/>
-  <text x="50" y="139" text-anchor="middle" fill="#9f1239" font-size="8.5" font-weight="700" font-style="italic">Rosé Spritz</text><text x="50" y="148" text-anchor="middle" fill="#be123c" font-size="5.5">SPARKLING</text>
-</svg>''',
-  SpatialListItemKind.pesto: '''
-<svg viewBox="0 0 110 140" xmlns="http://www.w3.org/2000/svg">
-  <rect x="20" y="6" width="70" height="17" rx="5" fill="#4d7c0f" stroke="#3f6212"/><rect x="24" y="22" width="62" height="8" rx="2" fill="#365314"/>
-  <rect x="14" y="28" width="82" height="102" rx="18" fill="#3f6212" stroke="#1a2e05"/><circle cx="30" cy="42" r="6" fill="#4d7c0f"/><circle cx="75" cy="115" r="8" fill="#65a30d" opacity=".4"/>
-  <rect x="16" y="45" width="78" height="62" rx="6" fill="#fef08a"/><path d="M20 58 Q55 46 90 58" stroke="#dc2626" stroke-width="8" fill="none" stroke-linecap="round"/>
-  <text x="55" y="57" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="800">FILIPPO BERIO</text><ellipse cx="55" cy="80" rx="31" ry="18" fill="#1e3a8a" stroke="#fff" stroke-width="1.5"/>
-  <text x="55" y="81" text-anchor="middle" fill="#fff" font-size="11" font-weight="900">PESTO</text><text x="55" y="90" text-anchor="middle" fill="#fde047" font-size="5.5" font-weight="700">CLASSIC BASIL</text>
-  <path d="M24 35 L24 120" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".35"/>
-</svg>''',
-  SpatialListItemKind.mayo: '''
-<svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
-  <rect x="20" y="4" width="60" height="16" rx="5" fill="#1d4ed8"/><rect x="12" y="18" width="76" height="100" rx="22" fill="#f7f2df" stroke="#e5dec2" stroke-width="1.5"/>
-  <path d="M22 28 C22 50 22 90 22 108" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".7"/><rect x="13" y="42" width="74" height="48" fill="#fef08a"/>
-  <polygon points="50,44 84,66 50,88 16,66" fill="#1e3a8a"/><text x="50" y="65" text-anchor="middle" fill="#fff" font-size="8.5" font-weight="800">HELLMANN'S</text><text x="50" y="75" text-anchor="middle" fill="#93c5fd" font-size="6.5" font-weight="700">REAL</text>
-</svg>''',
-  SpatialListItemKind.crackers: '''
-<svg viewBox="0 0 100 126" xmlns="http://www.w3.org/2000/svg">
-  <polygon points="10,6 90,6 86,14 14,14" fill="#1d4ed8"/><polygon points="14,112 86,112 90,120 10,120" fill="#1d4ed8"/><rect x="12" y="12" width="76" height="102" rx="6" fill="#0284c7" stroke="#0369a1" stroke-width="1.5"/>
-  <rect x="20" y="22" width="60" height="82" rx="4" fill="#fff"/><g transform="translate(50 63) rotate(-90)"><text x="0" y="-4" text-anchor="middle" fill="#dc2626" font-size="15" font-weight="900">TWO BY</text><text x="0" y="13" text-anchor="middle" fill="#dc2626" font-size="16" font-weight="900">TWO</text></g><circle cx="30" cy="34" r="6" fill="#fbbf24"/>
-</svg>''',
-  SpatialListItemKind.spinach: '''
-<svg viewBox="0 0 120 145" xmlns="http://www.w3.org/2000/svg">
-  <rect x="14" y="8" width="92" height="128" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/><rect x="18" y="24" width="84" height="92" rx="8" fill="#15803d"/>
-  <circle cx="42" cy="48" r="16" fill="#166534"/><circle cx="72" cy="52" r="18" fill="#22c55e" opacity=".7"/><circle cx="52" cy="85" r="20" fill="#14532d"/><circle cx="80" cy="88" r="15" fill="#4ade80" opacity=".6"/>
-  <rect x="16" y="54" width="88" height="34" fill="#fff" opacity=".95"/><text x="60" y="69" text-anchor="middle" fill="#14532d" font-size="8.5" font-weight="800">ORGANIC</text><text x="60" y="80" text-anchor="middle" fill="#15803d" font-size="7.5" font-weight="700">BABY SPINACH</text>
-</svg>''',
-  SpatialListItemKind.cheese: '''
-<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-  <polygon points="60,12 104,92 18,98" fill="#fef9c3" stroke="#fde047" stroke-width="2" stroke-linejoin="round"/><polygon points="104,92 18,98 24,108 108,102" fill="#fde047"/><polygon points="58,42 82,78 38,81" fill="#1c1917"/>
-  <text x="60" y="69" text-anchor="middle" fill="#fef08a" font-size="6.5" font-weight="700">PARMIGIANO</text><text x="60" y="76" text-anchor="middle" fill="#fff" font-size="5">24 MONTHS</text>
-</svg>''',
-  SpatialListItemKind.hummus: '''
-<svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
-  <ellipse cx="60" cy="56" rx="44" ry="28" fill="#f5e6d3" stroke="#d6c5b3" stroke-width="1.5"/><ellipse cx="60" cy="46" rx="48" ry="30" fill="#b91c1c"/><ellipse cx="60" cy="44" rx="42" ry="25" fill="#fef3c7"/><ellipse cx="60" cy="44" rx="22" ry="12" fill="#991b1b"/><text x="60" y="47" text-anchor="middle" fill="#fff" font-size="7.5" font-weight="800">SABRA</text>
-</svg>''',
-};
+const _scrapTapeSvg = '''
+<svg viewBox="0 0 44 16" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tape" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#EBF4F1EA"/>
+      <stop offset="1" stop-color="#E0E8E4DB"/>
+    </linearGradient>
+  </defs>
+  <rect x="0.5" y="0.5" width="43" height="15" rx="8" fill="url(#tape)" stroke="#1F000000" stroke-width="1"/>
+  <line x1="13" y1="3" x2="13" y2="13" stroke="#73A09A8E" stroke-width="1"/>
+  <line x1="31" y1="3" x2="31" y2="13" stroke="#73A09A8E" stroke-width="1"/>
+</svg>
+''';
+const _scrapCloudSvg = '''
+<svg viewBox="0 0 64 50" xmlns="http://www.w3.org/2000/svg">
+  <path d="M16 34 C9 34 6 28 9 23 C6 17 11 11 18 12 C21 6 31 5 36 10 C43 6 52 10 52 17 C58 19 59 27 54 31 C55 36 48 40 42 38 C38 42 28 42 25 38 C21 40 16 38 16 34 Z"
+        fill="#FFFFFF" stroke="#D4D0C8" stroke-width="1.5" stroke-linejoin="round"/>
+  <circle cx="14" cy="42" r="2.6" fill="#FFFFFF" stroke="#D4D0C8" stroke-width="1.2"/>
+  <circle cx="9" cy="46" r="1.6" fill="#FFFFFF" stroke="#D4D0C8" stroke-width="1.1"/>
+  <text x="33" y="27" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#D9388A">omg!!</text>
+</svg>
+''';
+const _scrapFujiSvg = '''
+<svg viewBox="0 0 44 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="arch">
+      <path d="M22 0 L38.7 13.4 L44 48 L0 48 L5.3 13.4 Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#arch)">
+    <rect x="0" y="0" width="44" height="48" fill="#87A8C4"/>
+    <rect x="0" y="0" width="44" height="48" fill="#CFE2F3" opacity="0.5"/>
+    <path d="M4 34 L17 11 L27 11 L40 34 Z" fill="#4A6984"/>
+    <path d="M17 11 L27 11 L31 19 L26 17 L22 20 L18 17 L13 19 Z" fill="#FFFFFF"/>
+    <circle cx="6" cy="28" r="9" fill="#C84B31"/>
+    <circle cx="38" cy="28" r="9" fill="#D96B27"/>
+    <circle cx="4" cy="36" r="8" fill="#5C8244"/>
+    <circle cx="40" cy="36" r="8" fill="#4E7338"/>
+    <path d="M18 32 L11 48 L33 48 L26 32 Z" fill="#D9D2C5"/>
+    <line x1="19" y1="32" x2="14" y2="48" stroke="#333333" stroke-width="1.2"/>
+    <line x1="25" y1="32" x2="30" y2="48" stroke="#333333" stroke-width="1.2"/>
+  </g>
+</svg>
+''';
+const _scrapShinkansenSvg = '''
+<svg viewBox="0 0 90 134" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="90" height="54" fill="#4B473E"/>
+  <line x1="0" y1="18" x2="90" y2="18" stroke="#38342C" stroke-width="2"/>
+  <line x1="0" y1="36" x2="90" y2="36" stroke="#38342C" stroke-width="2"/>
+  <rect x="0" y="54" width="90" height="38" fill="#DCE7EB"/>
+  <path d="M0 78 Q25 62 55 72 Q75 77 90 66 L90 92 L0 92 Z" fill="#4F6F46"/>
+  <path d="M18 96 C22 76 48 68 90 66 L90 108 L18 108 Z" fill="#F7F7F7"/>
+  <path d="M26 88 C34 78 52 74 68 74 L68 85 L26 88 Z" fill="#1E242B"/>
+  <path d="M18 96 C26 92 55 90 90 90 L90 102 L18 102 Z" fill="#C92424"/>
+  <rect x="0" y="108" width="90" height="26" fill="#18181A"/>
+  <line x1="0" y1="115" x2="90" y2="115" stroke="#555555" stroke-width="1.5"/>
+</svg>
+''';
+const _scrapPlushieSvg = '''
+<svg viewBox="0 0 92 130" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="92" height="130" fill="#D8E2DC"/>
+  <rect x="0" y="0" width="92" height="44" fill="#5A8F48"/>
+  <circle cx="14" cy="24" r="12" fill="#76AA5E"/>
+  <circle cx="38" cy="18" r="14" fill="#467836"/>
+  <circle cx="66" cy="24" r="13" fill="#689F52"/>
+  <circle cx="22" cy="14" r="4" fill="#FF9EBB"/>
+  <circle cx="52" cy="22" r="4.5" fill="#FFD166"/>
+  <ellipse cx="28" cy="96" rx="28" ry="30" fill="#F5CC27"/>
+  <ellipse cx="72" cy="98" rx="26" ry="28" fill="#EBBF1E"/>
+  <circle cx="15" cy="86" r="2.8" fill="#2B1E16"/>
+  <circle cx="32" cy="87" r="2.8" fill="#2B1E16"/>
+  <ellipse cx="23" cy="89.2" rx="2" ry="1.2" fill="#2B1E16"/>
+  <circle cx="9" cy="92" r="4" fill="#B3E85D56"/>
+  <circle cx="38" cy="93" r="4" fill="#B3E85D56"/>
+</svg>
+''';
+const _scrapSparklesSvg = '''
+<svg viewBox="0 0 36 34" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="#D93829" stroke-width="1.3" stroke-linejoin="round">
+    <path d="M18 2 C19 10 21 12 29 13 C21 14 19 16 18 24 C17 16 15 14 7 13 C15 12 17 10 18 2 Z"/>
+    <path d="M9 17 C9.6 22 11 23 16 23.5 C11 24 9.6 25 9 30 C8.4 25 7 24 2 23.5 C7 23 8.4 22 9 17 Z"/>
+  </g>
+</svg>
+''';
+const _scrapAirplaneSvg = '''
+<svg viewBox="0 0 90 124" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#6B7A99"/>
+      <stop offset="0.35" stop-color="#9A8FA6"/>
+      <stop offset="0.62" stop-color="#D49B94"/>
+      <stop offset="0.78" stop-color="#E59872"/>
+      <stop offset="0.9" stop-color="#3E323B"/>
+      <stop offset="1" stop-color="#221C24"/>
+    </linearGradient>
+    <clipPath id="win">
+      <rect x="0" y="0" width="90" height="124" rx="24"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#win)">
+    <rect x="0" y="0" width="90" height="124" fill="url(#dawn)"/>
+    <ellipse cx="45" cy="90.5" width="117" height="15.5" rx="58" ry="8" fill="#A6FFAE78"/>
+    <path d="M0 96.7 Q28.8 89.3 61.2 94.1 Q76.5 96.7 90 91.7 L90 124 L0 124 Z" fill="#2A2229"/>
+    <path d="M0 102.9 Q39.6 98 90 101.7 L90 124 L0 124 Z" fill="#1A151B"/>
+  </g>
+  <rect x="1.25" y="1.25" width="87.5" height="121.5" rx="22.75" fill="none" stroke="#2C2933" stroke-width="2.5"/>
+</svg>
+''';
