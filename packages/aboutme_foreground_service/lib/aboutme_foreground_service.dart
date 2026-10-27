@@ -9,6 +9,7 @@ export 'src/foreground_service_config.dart';
 export 'src/service_result.dart';
 export 'src/timer_service.dart';
 export 'src/activity_notification_service.dart';
+export 'src/finite_background_task.dart';
 
 // 重新导出 flutter_foreground_task 的高级类型，供高级用例使用
 // 这允许用户在需要时访问底层 API（如自定义 TaskHandler、发送数据等）

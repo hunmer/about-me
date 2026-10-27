@@ -69,9 +69,9 @@ class NavigationHelper {
     } else {
       // 零时长路由（MaterialPageRoute 的 300ms 转场会让透明背景页面
       // 透出下层旧页面，造成切换叠影），见 RouteHelpers.createRoute
-      return Navigator.of(context).push<T>(
-        RouteHelpers.createRoute<T>(page, settings: settings),
-      );
+      return Navigator.of(
+        context,
+      ).push<T>(RouteHelpers.createRoute<T>(page, settings: settings));
     }
   }
 
@@ -86,9 +86,9 @@ class NavigationHelper {
     String? routeName,
   }) {
     final settings = routeName != null ? RouteSettings(name: routeName) : null;
-    return Navigator.of(context).push<T>(
-      RouteHelpers.createHeroRoute<T>(page, settings: settings),
-    );
+    return Navigator.of(
+      context,
+    ).push<T>(RouteHelpers.createHeroRoute<T>(page, settings: settings));
   }
 
   /// 推送带转场动画的子页面（常规"打开子页面"入口）
@@ -105,9 +105,9 @@ class NavigationHelper {
       return push<T>(context, page, routeName: routeName);
     }
     final settings = routeName != null ? RouteSettings(name: routeName) : null;
-    return Navigator.of(context).push<T>(
-      RouteHelpers.createAnimatedRoute<T>(page, settings: settings),
-    );
+    return Navigator.of(
+      context,
+    ).push<T>(RouteHelpers.createAnimatedRoute<T>(page, settings: settings));
   }
 
   /// 推送到新页面（带命名路由）
@@ -146,21 +146,24 @@ class NavigationHelper {
   static Future<T?> pushReplacement<T extends Object?, TO extends Object?>(
     BuildContext context,
     Widget newPage, {
+    String? routeName,
     TO? result,
     bool maintainState = true,
   }) {
+    final settings = routeName != null ? RouteSettings(name: routeName) : null;
     if (_isIOS) {
       return Navigator.of(context).pushReplacement<T, TO>(
         CupertinoPageRoute<T>(
           builder: (context) => newPage,
           maintainState: maintainState,
+          settings: settings,
         ),
         result: result,
       );
     } else {
       // 零时长路由，理由同 push
       return Navigator.of(context).pushReplacement<T, TO>(
-        RouteHelpers.createRoute<T>(newPage),
+        RouteHelpers.createRoute<T>(newPage, settings: settings),
         result: result,
       );
     }
@@ -215,11 +218,14 @@ class NavigationHelper {
   static Future<T?> pushAndRemoveUntil<T extends Object?>(
     BuildContext context,
     Widget newPage,
-    RoutePredicate predicate,
-  ) {
-    return Navigator.of(
-      context,
-    ).pushAndRemoveUntil<T>(_createRoute(context, newPage), predicate);
+    RoutePredicate predicate, {
+    String? routeName,
+  }) {
+    final settings = routeName != null ? RouteSettings(name: routeName) : null;
+    return Navigator.of(context).pushAndRemoveUntil<T>(
+      RouteHelpers.createRoute<T>(newPage, settings: settings),
+      predicate,
+    );
   }
 
   /// 推送新页面并移除栈中的页面（带命名路由）
@@ -353,10 +359,7 @@ class NavigationHelper {
     WidgetBuilder builder, {
     bool isScrollControlled = false,
   }) {
-    return SmoothBottomSheet.show<T>(
-      context: context,
-      builder: builder,
-    );
+    return SmoothBottomSheet.show<T>(context: context, builder: builder);
   }
 
   // ==================== iOS 专用导航 ====================
@@ -673,10 +676,7 @@ extension NavigationExtensions on BuildContext {
     WidgetBuilder builder, {
     bool isScrollControlled = false,
   }) {
-    return SmoothBottomSheet.show<T>(
-      context: this,
-      builder: builder,
-    );
+    return SmoothBottomSheet.show<T>(context: this, builder: builder);
   }
 
   /// 打开容器页面

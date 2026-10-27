@@ -718,6 +718,32 @@ enum ResponseKey: String, Codable {
     case error
 }
 
+// MARK: - 语音助手
+
+struct WatchAssistantResponse: Decodable {
+    let status: String
+    let text: String?
+    let transcription: String?
+    let error: String?
+}
+
+private final class WatchAssistantReply {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<WatchAssistantResponse, Error>?
+
+    init(_ continuation: CheckedContinuation<WatchAssistantResponse, Error>) {
+        self.continuation = continuation
+    }
+
+    func finish(_ result: Result<WatchAssistantResponse, Error>) {
+        lock.lock()
+        let pending = continuation
+        continuation = nil
+        lock.unlock()
+        pending?.resume(with: result)
+    }
+}
+
 // MARK: - WCSession Manager
 
 class WCSessionManager: NSObject, ObservableObject {
@@ -726,6 +752,9 @@ class WCSessionManager: NSObject, ObservableObject {
 
     @Published var isConnected = false
     @Published var isReachable = false
+    private let assistantTransferErrorKey = "watchAssistant.transferErrors"
+    private var assistantTransferErrors: [String: String] = UserDefaults.standard.dictionary(
+        forKey: "watchAssistant.transferErrors") as? [String: String] ?? [:]
 
     private override init() {
         super.init()
@@ -742,6 +771,64 @@ class WCSessionManager: NSObject, ObservableObject {
 // MARK: - 公开方法
 
 extension WCSessionManager {
+
+    @MainActor
+    func sendAssistantAudio(url: URL, requestId: String, sessionId: String, duration: Double) throws {
+        guard WCSession.default.activationState == .activated else {
+            throw NSError(domain: "WatchAssistant", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "正在连接 iPhone，请稍后重试"])
+        }
+        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard size > 0, size <= 1_000_000 else {
+            throw NSError(domain: "WatchAssistant", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "录音为空或过大，请重新录音"])
+        }
+        assistantTransferErrors.removeAll()
+        UserDefaults.standard.removeObject(forKey: assistantTransferErrorKey)
+        WCSession.default.transferFile(url, metadata: [
+            "request": "sendAssistantAudio",
+            "requestId": requestId,
+            "sessionId": sessionId,
+            "duration": duration,
+            "createdAt": Date().timeIntervalSince1970,
+        ])
+        logger.info("助手录音已排队: \(requestId), \(size) bytes")
+    }
+
+    @MainActor
+    func getAssistantResponse(requestId: String) async throws -> WatchAssistantResponse {
+        if let error = assistantTransferErrors[requestId] {
+            return WatchAssistantResponse(status: "failed", text: nil, transcription: nil,
+                                          error: "录音传输失败，请重新录音：\(error)")
+        }
+        guard WCSession.default.isReachable else {
+            throw NSError(domain: "WatchAssistant", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "请在 iPhone 打开 aboutme，等待连接后查询结果"])
+        }
+        return try await withCheckedThrowingContinuation { continuation in
+            let reply = WatchAssistantReply(continuation)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                reply.finish(.failure(NSError(domain: "WatchAssistant", code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "iPhone 响应超时，请打开手机 App 后重试查询"])))
+            }
+            WCSession.default.sendMessage([
+                "request": "getAssistantResponse",
+                "requestId": requestId,
+            ], replyHandler: { response in
+                do {
+                    guard response["success"] as? Bool == true,
+                          let data = response["data"] as? [String: Any] else {
+                        throw NSError(domain: "WatchAssistant", code: -1,
+                            userInfo: [NSLocalizedDescriptionKey: response["error"] as? String ?? "无法获取助手结果"])
+                    }
+                    let json = try JSONSerialization.data(withJSONObject: data)
+                    reply.finish(.success(try JSONDecoder().decode(WatchAssistantResponse.self, from: json)))
+                } catch {
+                    reply.finish(.failure(error))
+                }
+            }, errorHandler: { reply.finish(.failure($0)) })
+        }
+    }
 
     /// 获取所有频道
     func getChatChannels() async throws -> [ChatChannel] {
@@ -1416,11 +1503,27 @@ extension WCSessionManager {
 
 extension WCSessionManager: WCSessionDelegate {
 
+    func session(_ session: WCSession, didFinish fileTransfer: WCSessionFileTransfer, error: Error?) {
+        guard fileTransfer.file.metadata?["request"] as? String == "sendAssistantAudio",
+              let requestId = fileTransfer.file.metadata?["requestId"] as? String else { return }
+        Task { @MainActor in
+            if let error {
+                self.assistantTransferErrors[requestId] = error.localizedDescription
+                UserDefaults.standard.set(self.assistantTransferErrors, forKey: self.assistantTransferErrorKey)
+                self.logger.error("助手录音传输失败: \(requestId), \(error.localizedDescription)")
+            } else {
+                self.logger.info("助手录音已送达 iPhone: \(requestId)")
+            }
+            try? FileManager.default.removeItem(at: fileTransfer.file.fileURL)
+        }
+    }
+
     // watchOS 必需方法
     #if os(watchOS)
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {
         Task { @MainActor in
             self.isConnected = (activationState == .activated)
+            self.isReachable = session.isReachable
             if let error = error {
                 self.logger.error("WCSession 激活失败: \(error.localizedDescription)")
             } else {
@@ -1444,6 +1547,7 @@ extension WCSessionManager: WCSessionDelegate {
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {
         Task { @MainActor in
             self.isConnected = (activationState == .activated)
+            self.isReachable = session.isReachable
             if let error = error {
                 self.logger.error("WCSession 激活失败: \(error.localizedDescription)")
             } else {

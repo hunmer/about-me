@@ -43,7 +43,9 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
   late TextEditingController _titleController;
   late TextEditingController _groupController;
   late IconData _selectedIcon;
-  late Color _selectedColor;
+
+  /// 用户选择的颜色；null 表示未设置，展示与保存时按标题自动计算
+  Color? _selectedColor;
 
   /// 频道名称校验错误（DSInput 通过 errorText 展示）
   String? _titleError;
@@ -65,11 +67,11 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
       _selectedIcon = widget.channel!.icon;
       _selectedColor = widget.channel!.backgroundColor;
     } else {
-      // 添加模式，使用默认值
+      // 添加模式，使用默认值；颜色未设置，按标题自动计算
       _titleController = TextEditingController();
       _groupController = TextEditingController(text: widget.defaultGroup ?? '');
       _selectedIcon = Icons.chat;
-      _selectedColor = Colors.blue;
+      _selectedColor = null;
     }
   }
 
@@ -172,7 +174,9 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
                 SizedBox(height: theme.spacing.lg),
                 CircleIconPicker(
                   currentIcon: _selectedIcon,
-                  backgroundColor: _selectedColor,
+                  backgroundColor:
+                      _selectedColor ??
+                      Channel.colorFromTitle(_titleController.text),
                   onIconSelected: (icon) {
                     setState(() {
                       _selectedIcon = icon;
@@ -190,8 +194,8 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
                   label: 'chat_channelName'.tr,
                   errorText: _titleError,
                   onChanged: (_) {
-                    // 输入后清除错误提示
-                    if (_titleError != null) {
+                    // 输入后清除错误提示；未手动选色时预览颜色随标题联动
+                    if (_titleError != null || _selectedColor == null) {
                       setState(() => _titleError = null);
                     }
                   },

@@ -862,7 +862,22 @@ class RequestService {
 
       // 确保资源被清理
       cancelCheckTimer?.cancel();
-      await subscription.cancel();
+      final cancellation = subscription.cancel();
+      if (wasCancelled) {
+        // async* 传输可能仍在等待下一帧；取消终态不能等待服务端继续输出。
+        unawaited(
+          cancellation.catchError((Object error, StackTrace stack) {
+            developer.log(
+              '取消流清理失败',
+              name: 'RequestService',
+              error: error,
+              stackTrace: stack,
+            );
+          }),
+        );
+      } else {
+        await cancellation;
+      }
     } catch (e, stackTrace) {
       final errorDetails = _extractErrorMessage(e);
       final errorMessage = '处理AI响应时出错: $errorDetails';
@@ -912,56 +927,51 @@ class RequestService {
   }) async {
     int attempt = 0;
     String? lastError;
+    var terminalNotified = false;
+
+    void finishError(String error) {
+      if (terminalNotified) return;
+      terminalNotified = true;
+      onError(error);
+    }
+
+    bool cancelIfNeeded([String? error]) {
+      if (shouldCancel?.call() != true && error != '已取消发送') return false;
+      finishError('已取消发送');
+      return true;
+    }
 
     while (attempt < maxRetries) {
+      if (cancelIfNeeded()) return;
       attempt++;
-
-      // 如果不是第一次尝试，等待一段时间后再重试
       if (attempt > 1) {
-        developer.log(
-          '⏳ 等待 $retryDelay ms 后进行第 $attempt 次重试...',
-          name: 'RequestService',
-        );
-        await Future.delayed(Duration(milliseconds: retryDelay));
+        await Future<void>.delayed(Duration(milliseconds: retryDelay));
+        if (cancelIfNeeded()) return;
       }
 
-      developer.log('🔄 开始第 $attempt 次尝试...', name: 'RequestService');
-
+      bool succeeded = false;
+      int totalChars = 0;
+      String? currentError;
       try {
-        // 标记是否成功完成或出错
-        bool succeeded = false;
-        int totalChars = 0;
-        String? currentError;
-
-        // 调用 streamResponse
         await streamResponse(
           agent: agent,
           prompt: prompt,
           onToken: (token) {
+            if (currentError != null || succeeded || terminalNotified) return;
             totalChars += token.length;
             onToken(token);
           },
           onThinking: onThinking,
           onError: (error) {
-            currentError = error;
-            developer.log(
-              '❌ 第 $attempt 次尝试失败: ${error.length > 100 ? "${error.substring(0, 100)}..." : error}',
-              name: 'RequestService',
-            );
+            if (!succeeded) currentError ??= error;
           },
           onComplete: () {
-            if (currentError != null) return;
+            if (currentError != null || succeeded) return;
             if (totalChars == 0) {
               currentError = 'AI响应为空（0字符）';
-              developer.log(
-                '❌ 第 $attempt 次尝试失败: $currentError',
-                name: 'RequestService',
-              );
               return;
             }
             succeeded = true;
-            developer.log('✅ 第 $attempt 次尝试成功', name: 'RequestService');
-            onComplete();
           },
           vision: vision,
           filePath: filePath,
@@ -970,57 +980,28 @@ class RequestService {
           shouldCancel: shouldCancel,
           additionalPrompts: additionalPrompts,
         );
-
-        // 取消属于调用方主动打断，不应继续进入重试，否则新消息无法及时接管生成。
-        if (shouldCancel?.call() == true) {
-          developer.log('🛑 请求已取消，跳过后续重试', name: 'RequestService');
-          return;
-        }
-
-        // 如果成功完成，直接返回
-        if (succeeded && currentError == null) {
-          return;
-        }
-
-        // 保存错误信息用于下次重试
-        lastError = currentError;
-
-        // 如果还有重试机会，继续循环
-        if (attempt < maxRetries) {
-          developer.log(
-            '🔄 第 $attempt 次尝试失败，准备进行第 ${attempt + 1} 次重试...',
-            name: 'RequestService',
-          );
-          continue;
-        }
       } catch (e, stackTrace) {
-        final errorDetails = _extractErrorMessage(e);
-        lastError = '处理AI响应时出错: $errorDetails';
+        currentError ??= '处理AI响应时出错: ${_extractErrorMessage(e)}';
         developer.log(
-          '❌ 第 $attempt 次尝试异常: ${errorDetails.length > 100 ? "${errorDetails.substring(0, 100)}..." : errorDetails}',
+          '第 $attempt 次尝试异常',
           name: 'RequestService',
           error: e,
           stackTrace: stackTrace,
         );
-
-        // 如果还有重试机会，继续循环
-        if (attempt < maxRetries) {
-          developer.log(
-            '🔄 第 $attempt 次尝试异常，准备进行第 ${attempt + 1} 次重试...',
-            name: 'RequestService',
-          );
-          continue;
-        }
       }
-    }
 
-    // 所有重试都失败了，调用错误回调
-    final finalError = lastError ?? '未知错误';
-    developer.log(
-      '❌ 所有 $maxRetries 次重试都失败，最终错误: ${finalError.length > 100 ? "${finalError.substring(0, 100)}..." : finalError}',
-      name: 'RequestService',
-    );
-    onError(finalError);
+      // 无论取消发生在请求前、流内或重试间隔，都必须通知一次终态。
+      if (cancelIfNeeded(currentError)) return;
+      if (succeeded && currentError == null) {
+        if (!terminalNotified) {
+          terminalNotified = true;
+          onComplete();
+        }
+        return;
+      }
+      lastError = currentError ?? 'AI响应未正常结束';
+    }
+    finishError(lastError ?? '未知错误');
   }
 
   /// 生成图片

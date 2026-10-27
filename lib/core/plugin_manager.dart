@@ -279,7 +279,7 @@ class PluginManager {
   void openPlugin(
     BuildContext context,
     PluginBase plugin, {
-    bool replaceCurrent = false,
+    bool replaceCurrent = true,
   }) {
     // 检查当前路由是否已经是该插件主界面（openPlugin 推入的路由名），
     // 防止悬浮球等入口把同一插件叠加多层。
@@ -299,24 +299,31 @@ class PluginManager {
     if (!onFormalPluginRoute && getCurrentRoutePluginId() == plugin.id) {
       return;
     }
-    // 记录打开历史
+
     recordPluginOpen(plugin);
-    // 返回行为由 NavigationHelper.smartBack 的返回路由表统一决策
-    // （/plugin/<id> → 固定回首页），不要在此包 PopScope——canPop:false
-    // 会拦截一切 pop()/popUntil()，与返回逻辑叠加曾导致无限递归崩溃
-    // 使用 NavigationHelper.push 以支持 iOS 左滑返回
     final page = plugin.buildMainView(context);
-    if (replaceCurrent) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          settings: RouteSettings(name: '/plugin/${plugin.id}'),
-          builder: (_) => page,
-        ),
+    final navigator = Navigator.of(context);
+    final targetRouteName = '/plugin/${plugin.id}';
+    final currentPluginId = getCurrentRoutePluginId();
+    final isPluginLauncherRoute = currentRouteName == '/rotary_plugin_launcher';
+
+    if (replaceCurrent && (currentPluginId != null || isPluginLauncherRoute)) {
+      // 插件主页面、其子页面或圆盘启动器切换插件时，保留首页/启动页边界，
+      // 一次性移除旧插件及启动器，避免只替换栈顶后旧页面仍保活。
+      NavigationHelper.pushAndRemoveUntil(context, page, (route) {
+        final name = route.settings.name;
+        return NavigationHelper.isJellyHomeRoute(name) || name == '/startup';
+      }, routeName: targetRouteName);
+    } else if (replaceCurrent && onFormalPluginRoute) {
+      NavigationHelper.pushReplacement(
+        context,
+        page,
+        routeName: targetRouteName,
       );
     } else {
-      NavigationHelper.push(context, page, routeName: '/plugin/${plugin.id}');
+      NavigationHelper.push(context, page, routeName: targetRouteName);
     }
-    maybeShowOnboarding(context, plugin);
+    maybeShowOnboarding(navigator.context, plugin);
   }
 
   /// 首次打开插件时弹出引导页
@@ -336,8 +343,7 @@ class PluginManager {
       plugin: plugin,
       steps: [
         ...steps,
-        if (sampleGroups.isNotEmpty)
-          buildSampleDataSelectionStep(sampleGroups),
+        if (sampleGroups.isNotEmpty) buildSampleDataSelectionStep(sampleGroups),
       ],
     );
   }

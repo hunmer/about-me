@@ -11,12 +11,15 @@ class ForegroundTaskManager {
   factory ForegroundTaskManager() => _instance;
 
   ForegroundTaskManager._internal() {
-    _initialize();
+    _initializationFuture = AboutmeForegroundService.instance.initialize();
   }
 
-  Future<void> _initialize() async {
-    await AboutmeForegroundService.instance.initialize();
-  }
+  late final Future<void> _initializationFuture;
+
+  /// 可等待的初始化屏障。
+  Future<void> get initialization => _initializationFuture;
+
+  Future<void> _waitForInitialization() => _initializationFuture;
 
   /// 启动前台服务
   Future<ServiceResult> startService({
@@ -28,6 +31,7 @@ class ForegroundTaskManager {
     required Function() callback,
     String? notificationInitialRoute,
   }) async {
+    await _waitForInitialization();
     return await AboutmeForegroundService.instance.startService(
       serviceId: serviceId,
       notificationTitle: notificationTitle,
@@ -39,13 +43,14 @@ class ForegroundTaskManager {
     );
   }
 
-  /// 停止前台服务
-  Future<ServiceResult> stopService() {
+  Future<ServiceResult> stopService() async {
+    await _waitForInitialization();
     return AboutmeForegroundService.instance.stopService();
   }
 
   /// 检查服务是否正在运行
-  Future<bool> isServiceRunning() {
+  Future<bool> isServiceRunning() async {
+    await _waitForInitialization();
     return AboutmeForegroundService.instance.isRunning;
   }
 

@@ -28,6 +28,7 @@ class JSBridgeInjector {
   BatchRequestExecutor? _batchExecutor;
   final bool _enableBatchProcessing;
   Timer? _statsTimer;
+  bool _disposed = false;
 
   JSBridgeInjector({
     required this.controller,
@@ -56,15 +57,15 @@ class JSBridgeInjector {
 
   /// 初始化 JS Bridge Handlers（在 onWebViewCreated 中调用）
   Future<void> initialize() async {
-    if (!enabled) return;
+    if (!enabled || _disposed) return;
 
     // 注册核心 handler
     _registerCoreHandlers();
 
     // 启动统计定时器（每30秒打印一次）
-    if (_enableBatchProcessing) {
+    if (_enableBatchProcessing && _statsTimer == null) {
       _statsTimer = Timer.periodic(Duration(seconds: 30), (_) {
-        _batchExecutor?.printStats();
+        if (!_disposed) _batchExecutor?.printStats();
       });
     }
   }
@@ -176,8 +177,9 @@ class JSBridgeInjector {
             return jsonEncode({'error': 'Missing method name'});
           }
 
-          final paramsArg =
-              methodParams != null ? jsonEncode(methodParams) : '';
+          final paramsArg = methodParams != null
+              ? jsonEncode(methodParams)
+              : '';
           // 构建 JS Bridge 调用代码（必须有 return 语句才能获取返回值）
           final code = 'return Aboutme_system_$method($paramsArg)';
 
@@ -245,19 +247,16 @@ class JSBridgeInjector {
           final result = await showDSDialog<bool>(
             context: _context!,
             theme: DSThemeBridge.resolve(_context!),
-            builder:
-                (ctx) => DSThemeBridge(
-                  child: Builder(
-                    builder:
-                        (ctx) => DSDialog(
-                          title: options['title'] as String? ?? '提示',
-                          message: message,
-                          confirmText:
-                              options['confirmText'] as String? ?? '确定',
-                          onConfirm: () => Navigator.of(ctx).pop(true),
-                        ),
-                  ),
+            builder: (ctx) => DSThemeBridge(
+              child: Builder(
+                builder: (ctx) => DSDialog(
+                  title: options['title'] as String? ?? '提示',
+                  message: message,
+                  confirmText: options['confirmText'] as String? ?? '确定',
+                  onConfirm: () => Navigator.of(ctx).pop(true),
                 ),
+              ),
+            ),
           );
           return result ?? false;
         } catch (e) {
@@ -288,27 +287,22 @@ class JSBridgeInjector {
           final result = await showDSDialog<bool>(
             context: _context!,
             theme: DSThemeBridge.resolve(_context!),
-            builder:
-                (ctx) => DSThemeBridge(
-                  child: Builder(
-                    builder:
-                        (ctx) => DSDialog(
-                          title: options['title'] as String? ?? '',
-                          message: options['content'] as String? ?? '',
-                          cancelText:
-                              options['showCancel'] != false
-                                  ? options['cancelText'] as String? ?? '取消'
-                                  : null,
-                          confirmText:
-                              options['confirmText'] as String? ?? '确定',
-                          onCancel:
-                              options['showCancel'] != false
-                                  ? () => Navigator.of(ctx).pop(false)
-                                  : null,
-                          onConfirm: () => Navigator.of(ctx).pop(true),
-                        ),
-                  ),
+            builder: (ctx) => DSThemeBridge(
+              child: Builder(
+                builder: (ctx) => DSDialog(
+                  title: options['title'] as String? ?? '',
+                  message: options['content'] as String? ?? '',
+                  cancelText: options['showCancel'] != false
+                      ? options['cancelText'] as String? ?? '取消'
+                      : null,
+                  confirmText: options['confirmText'] as String? ?? '确定',
+                  onCancel: options['showCancel'] != false
+                      ? () => Navigator.of(ctx).pop(false)
+                      : null,
+                  onConfirm: () => Navigator.of(ctx).pop(true),
                 ),
+              ),
+            ),
           );
           return result;
         } catch (e) {
@@ -349,12 +343,15 @@ class JSBridgeInjector {
           }
 
           // webview/{key} KV 读取走统一数据 SDK 命令
-          final res = await AboutmeDataService.instance
-              .call('webview', 'getWebStorage', {'key': key});
+          final res = await AboutmeDataService.instance.call(
+            'webview',
+            'getWebStorage',
+            {'key': key},
+          );
           if (res['success'] != true) {
-            return jsonEncode(
-              {'error': res['error']?.toString() ?? 'Storage read failed'},
-            );
+            return jsonEncode({
+              'error': res['error']?.toString() ?? 'Storage read failed',
+            });
           }
           final result = res['data'];
 
@@ -414,12 +411,15 @@ class JSBridgeInjector {
           }
 
           // webview/{key} KV 写入走统一数据 SDK 命令
-          final res = await AboutmeDataService.instance
-              .call('webview', 'setWebStorage', {'key': key, 'value': value});
+          final res = await AboutmeDataService.instance.call(
+            'webview',
+            'setWebStorage',
+            {'key': key, 'value': value},
+          );
           if (res['success'] != true) {
-            return jsonEncode(
-              {'error': res['error']?.toString() ?? 'Storage write failed'},
-            );
+            return jsonEncode({
+              'error': res['error']?.toString() ?? 'Storage write failed',
+            });
           }
 
           debugPrint(
@@ -465,12 +465,15 @@ class JSBridgeInjector {
           }
 
           // webview/{key} KV 删除走统一数据 SDK 命令
-          final res = await AboutmeDataService.instance
-              .call('webview', 'deleteWebStorage', {'key': key});
+          final res = await AboutmeDataService.instance.call(
+            'webview',
+            'deleteWebStorage',
+            {'key': key},
+          );
           if (res['success'] != true) {
-            return jsonEncode(
-              {'error': res['error']?.toString() ?? 'Storage delete failed'},
-            );
+            return jsonEncode({
+              'error': res['error']?.toString() ?? 'Storage delete failed',
+            });
           }
 
           return jsonEncode({'success': true});
@@ -519,8 +522,13 @@ class JSBridgeInjector {
 
   /// 释放资源
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     _statsTimer?.cancel();
+    _statsTimer = null;
     _batchExecutor?.dispose();
+    _batchExecutor = null;
+    _context = null;
     debugPrint('[JSBridge] 资源已释放');
   }
 }

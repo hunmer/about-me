@@ -91,9 +91,7 @@ class TabManager extends ChangeNotifier {
     }
 
     // 更新访问时间
-    _tabs[tabIndex] = _tabs[tabIndex].copyWith(
-      lastAccessedAt: DateTime.now(),
-    );
+    _tabs[tabIndex] = _tabs[tabIndex].copyWith(lastAccessedAt: DateTime.now());
 
     _activeTabId = tabId;
     notifyListeners();
@@ -135,7 +133,23 @@ class TabManager extends ChangeNotifier {
 
   /// 设置标签页的 WebView 控制器
   void setController(String tabId, InAppWebViewController controller) {
+    if (!_tabs.any((tab) => tab.id == tabId)) return;
     _controllers[tabId] = controller;
+  }
+
+  /// 仅在当前绑定仍是同一个实例时解除控制器引用。
+  /// WebView widget 的原生 controller 由其自身 State 负责销毁，
+  /// TabManager 只清理运行时映射。
+  void clearController(
+    String tabId,
+    InAppWebViewController? expectedController,
+  ) {
+    final current = _controllers[tabId];
+    if (expectedController == null
+        ? current == null
+        : identical(current, expectedController)) {
+      _controllers.remove(tabId);
+    }
   }
 
   /// 获取标签页的 WebView 控制器

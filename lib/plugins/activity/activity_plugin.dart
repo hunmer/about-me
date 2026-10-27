@@ -394,6 +394,9 @@ class ActivityPlugin extends BasePlugin with JSBridgePlugin {
 
     // 预加载7天活动数据缓存（用于小组件）
     _refreshWeeklyActivitiesCache();
+
+    // 从最近一个月活动记录初始化标签列表（仅插件初始化时执行一次）
+    _activityService.initTagsFromRecentActivities();
   }
 
   // 获取今日活动数

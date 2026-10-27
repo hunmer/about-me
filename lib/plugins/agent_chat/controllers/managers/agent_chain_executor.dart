@@ -21,6 +21,27 @@ import 'tool_orchestrator.dart';
 
 const _uuid = Uuid();
 
+enum AgentChatExecutionStatus { success, failed, cancelled }
+
+class AgentChatExecutionResult {
+  const AgentChatExecutionResult({
+    required this.status,
+    this.messageId,
+    this.content = '',
+    this.tokenCount = 0,
+    this.error,
+  });
+
+  final AgentChatExecutionStatus status;
+  final String? messageId;
+  final String content;
+  final int tokenCount;
+  final String? error;
+
+  bool get isSuccess => status == AgentChatExecutionStatus.success;
+  bool get isCancelled => status == AgentChatExecutionStatus.cancelled;
+}
+
 /// Agent 链执行管理器
 ///
 /// 负责 Agent 链式调用的编排和执行
@@ -81,190 +102,258 @@ class AgentChainExecutor {
 
   /// 执行 Agent 链式调用
   /// 支持真正的链式调用和单agent模式（单agent被视为长度为1的链）
-  Future<void> executeChain({
+  Future<AgentChatExecutionResult> executeChain({
     required String userInput,
     required List<File> files,
     SavedToolTemplate? selectedTemplate,
     String? alivenessSystemSuffix,
     List<ChatMessage>? conversationHistory,
   }) async {
-    // 从服务中获取最新的会话数据，避免使用过时的快照
-    final latestConversation = context.conversationService.getConversation(
-      conversation.id,
-    );
-    if (latestConversation == null) {
-      debugPrint('❌ 未找到会话: ${conversation.id}');
-      return;
-    }
-
-    // 获取 agent 链（单agent模式下会返回长度为1的链）
-    final agentChain = getAgentChain();
-    if (agentChain.isEmpty) {
-      debugPrint('❌ Agent 链为空，无法执行');
-      return;
-    }
-
-    debugPrint(
-      '🔗 开始执行 Agent 链，共 ${agentChain.length} 个 agent (${latestConversation.isChainMode ? "链式模式" : "单agent模式"})',
-    );
-
-    // 生成本次链式执行的统一ID
     final chainExecutionId = _uuid.v4();
-    debugPrint('🆔 链式执行ID: $chainExecutionId');
-
-    // 获取链节点配置（如果是真正的链式模式）
-    // 单agent模式下 chainNodes 为空，我们会临时构造
-    final chainNodes = latestConversation.agentChain ?? [];
-    List<AgentChainNode> sortedNodes;
-
-    if (chainNodes.isNotEmpty) {
-      // 真正的链式模式：使用配置的链节点
-      sortedNodes = List<AgentChainNode>.from(chainNodes)
-        ..sort((a, b) => a.order.compareTo(b.order));
-    } else {
-      // 单agent模式：临时构造一个链节点
-      sortedNodes = [
-        AgentChainNode(
-          agentId: agentChain.first.id,
-          order: 0,
-          contextMode: AgentContextMode.conversationContext,
-        ),
-      ];
-    }
-
-    // 存储每个 agent 的输出消息
-    final chainMessages = <ChatMessage>[];
-
-    // 记忆独立模式：未走活人感编排（无注入段）且单 agent 会话开启了记忆管理时，
-    // 注入记忆上下文并在链完成后提取记忆（链式模式与活人感编排不在此处理）
-    AIAgent? memoryAgent;
-    if (alivenessSystemSuffix == null &&
-        !latestConversation.isChainMode &&
-        agentChain.isNotEmpty &&
-        agentChain.first.alivenessConfig?.hasMemory == true) {
-      memoryAgent = agentChain.first;
-      MemoryService.instance.currentAgentId = memoryAgent.id;
-    }
-    String? memorySuffix;
-    if (memoryAgent != null) {
-      memorySuffix = await MemoryService.instance.buildAgentInjectionSuffix(
-        memoryAgent,
-        userInput,
+    AgentChatExecutionResult buildResult(
+      AgentChatExecutionStatus status, {
+      String? error,
+    }) {
+      final candidates =
+          context.messageService
+              .getChainMessages(conversation.id, chainExecutionId)
+              .toList()
+            ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      final finalMessage =
+          candidates.where((m) => m.isFinalSummary).lastOrNull ??
+          candidates.lastOrNull;
+      return AgentChatExecutionResult(
+        status: status,
+        messageId: finalMessage?.id,
+        content: finalMessage?.content ?? '',
+        tokenCount: finalMessage?.tokenCount ?? 0,
+        error: error,
       );
     }
-    final effectiveSuffix = alivenessSystemSuffix ?? memorySuffix;
 
-    // 遍历执行每个 agent
-    // 注意：在执行过程中，链可能会动态扩展（插入工具调用agent）
-    int i = 0;
-    while (i < sortedNodes.length) {
-      final node = sortedNodes[i];
-      final agent = agentChain[i];
+    try {
+      if (isCancelling()) {
+        return buildResult(AgentChatExecutionStatus.cancelled, error: '已取消发送');
+      }
+      // 从服务中获取最新的会话数据，避免使用过时的快照
+      final latestConversation = context.conversationService.getConversation(
+        conversation.id,
+      );
+      if (latestConversation == null) {
+        debugPrint('❌ 未找到会话: ${conversation.id}');
+        return const AgentChatExecutionResult(
+          status: AgentChatExecutionStatus.failed,
+          error: '未找到会话',
+        );
+      }
+
+      // 获取 agent 链（单agent模式下会返回长度为1的链）
+      final agentChain = getAgentChain();
+      if (agentChain.isEmpty) {
+        debugPrint('❌ Agent 链为空，无法执行');
+        return const AgentChatExecutionResult(
+          status: AgentChatExecutionStatus.failed,
+          error: 'Agent 链为空',
+        );
+      }
 
       debugPrint(
-        '🔗 [链式调用 ${i + 1}/${sortedNodes.length}] 开始执行 Agent: ${agent.name}',
+        '🔗 开始执行 Agent 链，共 ${agentChain.length} 个 agent (${latestConversation.isChainMode ? "链式模式" : "单agent模式"})',
       );
 
-      // 创建此 agent 的 AI 消息占位符
-      final aiMessage = ChatMessage.ai(
-        conversationId: latestConversation.id,
-        content: '',
-        isGenerating: true,
-        generatedByAgentId: agent.id,
-        chainStepIndex: i,
-        chainExecutionId: chainExecutionId,
-      );
-      await context.messageService.addMessage(aiMessage);
-      chainMessages.add(aiMessage);
+      // 本轮链式执行的统一ID
+      debugPrint('🆔 链式执行ID: $chainExecutionId');
 
-      try {
-        // 根据上下文模式构建消息列表
-        final contextMessages = buildChainContextMessages(
-          node: node,
-          stepIndex: i,
-          userInput: userInput,
-          previousMessages: chainMessages,
-          enableToolCalling: agent.enableFunctionCalling,
-          conv: latestConversation,
-          alivenessSystemSuffix: effectiveSuffix,
-          conversationHistory: conversationHistory,
+      // 获取链节点配置（如果是真正的链式模式）
+      // 单agent模式下 chainNodes 为空，我们会临时构造
+      final chainNodes = latestConversation.agentChain ?? [];
+      List<AgentChainNode> sortedNodes;
+
+      if (chainNodes.isNotEmpty) {
+        // 真正的链式模式：使用配置的链节点
+        sortedNodes = List<AgentChainNode>.from(chainNodes)
+          ..sort((a, b) => a.order.compareTo(b.order));
+      } else {
+        // 单agent模式：临时构造一个链节点
+        sortedNodes = [
+          AgentChainNode(
+            agentId: agentChain.first.id,
+            order: 0,
+            contextMode: AgentContextMode.conversationContext,
+          ),
+        ];
+      }
+
+      // 存储每个 agent 的输出消息
+      final chainMessages = <ChatMessage>[];
+
+      // 记忆独立模式：未走活人感编排（无注入段）且单 agent 会话开启了记忆管理时，
+      // 注入记忆上下文并在链完成后提取记忆（链式模式与活人感编排不在此处理）
+      AIAgent? memoryAgent;
+      if (alivenessSystemSuffix == null &&
+          !latestConversation.isChainMode &&
+          agentChain.isNotEmpty &&
+          agentChain.first.alivenessConfig?.hasMemory == true) {
+        memoryAgent = agentChain.first;
+        MemoryService.instance.currentAgentId = memoryAgent.id;
+      }
+      String? memorySuffix;
+      if (memoryAgent != null) {
+        memorySuffix = await MemoryService.instance.buildAgentInjectionSuffix(
+          memoryAgent,
+          userInput,
         );
+      }
+      final effectiveSuffix = alivenessSystemSuffix ?? memorySuffix;
 
-        // 调用当前 agent
-        await _requestAgentInChain(
-          agent: agent,
-          aiMessageId: aiMessage.id,
-          contextMessages: contextMessages,
-          files: i == 0 ? files : [], // 只有第一个 agent 处理文件
-          enableToolCalling: agent.enableFunctionCalling,
-          userInput: userInput,
-        );
+      var executionStatus = AgentChatExecutionStatus.success;
+      String? executionError;
 
-        // 检查是否被取消
+      // 遍历执行每个 agent
+      // 注意：在执行过程中，链可能会动态扩展（插入工具调用agent）
+      int i = 0;
+      while (i < sortedNodes.length) {
         if (isCancelling()) {
-          debugPrint('🛑 链式调用被用户取消');
+          executionStatus = AgentChatExecutionStatus.cancelled;
+          executionError = '已取消发送';
+          break;
+        }
+        final node = sortedNodes[i];
+        final agent = agentChain.where((a) => a.id == node.agentId).firstOrNull;
+        if (agent == null) {
+          executionStatus = AgentChatExecutionStatus.failed;
+          executionError = '未找到 Agent: ${node.agentId}';
           break;
         }
 
-        // 更新 chainMessages 中的消息为最新版本
-        final updatedMessage = context.messageService.getMessage(
-          latestConversation.id,
-          aiMessage.id,
-        );
-        if (updatedMessage != null) {
-          chainMessages[i] = updatedMessage;
-        }
-
         debugPrint(
-          '✅ [链式调用 ${i + 1}/${sortedNodes.length}] Agent ${agent.name} 执行完成',
-        );
-      } catch (e) {
-        debugPrint(
-          '❌ [链式调用 ${i + 1}/${sortedNodes.length}] Agent ${agent.name} 执行失败: $e',
+          '🔗 [链式调用 ${i + 1}/${sortedNodes.length}] 开始执行 Agent: ${agent.name}',
         );
 
-        // 错误处理：标记消息并停止链式调用
-        final errorMessage = context.messageService.getMessage(
-          latestConversation.id,
-          aiMessage.id,
+        // 创建此 agent 的 AI 消息占位符
+        final aiMessage = ChatMessage.ai(
+          conversationId: latestConversation.id,
+          content: '',
+          isGenerating: true,
+          generatedByAgentId: agent.id,
+          chainStepIndex: i,
+          chainExecutionId: chainExecutionId,
         );
-        if (errorMessage != null) {
-          final updated = errorMessage.copyWith(
-            content: '❌ 执行失败: $e',
-            isGenerating: false,
-            metadata: {...?errorMessage.metadata, 'requestError': e.toString()},
+        try {
+          await context.messageService.addMessage(aiMessage);
+          chainMessages.add(aiMessage);
+          // 根据上下文模式构建消息列表
+          final contextMessages = buildChainContextMessages(
+            node: node,
+            stepIndex: i,
+            userInput: userInput,
+            previousMessages: chainMessages,
+            enableToolCalling: agent.enableFunctionCalling,
+            conv: latestConversation,
+            alivenessSystemSuffix: effectiveSuffix,
+            conversationHistory: conversationHistory,
           );
-          await context.messageService.updateMessage(updated);
+
+          // 调用当前 agent
+          await _requestAgentInChain(
+            agent: agent,
+            aiMessageId: aiMessage.id,
+            contextMessages: contextMessages,
+            files: i == 0 ? files : [], // 只有第一个 agent 处理文件
+            enableToolCalling: agent.enableFunctionCalling,
+            userInput: userInput,
+          );
+
+          // 检查是否被取消
+          if (isCancelling()) throw StateError('已取消发送');
+
+          // 更新 chainMessages 中的消息为最新版本
+          final updatedMessage = context.messageService.getMessage(
+            latestConversation.id,
+            aiMessage.id,
+          );
+          if (updatedMessage == null || updatedMessage.isGenerating) {
+            throw StateError('AI 消息未完成');
+          }
+          chainMessages[i] = updatedMessage;
+
+          debugPrint(
+            '✅ [链式调用 ${i + 1}/${sortedNodes.length}] Agent ${agent.name} 执行完成',
+          );
+        } catch (e) {
+          debugPrint(
+            '❌ [链式调用 ${i + 1}/${sortedNodes.length}] Agent ${agent.name} 执行失败: $e',
+          );
+
+          // 错误处理：标记消息并停止链式调用
+          final errorMessage = context.messageService.getMessage(
+            latestConversation.id,
+            aiMessage.id,
+          );
+          final cancelled = isCancelling() || e.toString().contains('已取消发送');
+          if (errorMessage != null) {
+            final updated = errorMessage.copyWith(
+              content: cancelled
+                  ? (errorMessage.content.trim().isNotEmpty
+                        ? errorMessage.content
+                        : '🛑 用户已取消操作')
+                  : '❌ 执行失败: $e',
+              isGenerating: false,
+              metadata: {
+                ...?errorMessage.metadata,
+                'requestError': e.toString(),
+              },
+            );
+            await context.messageService.updateMessage(updated);
+            await context.messageService.completeAIMessage(
+              latestConversation.id,
+              aiMessage.id,
+            );
+          }
+
+          // 停止后续 agent 的执行
+          executionStatus = cancelled
+              ? AgentChatExecutionStatus.cancelled
+              : AgentChatExecutionStatus.failed;
+          executionError = e.toString();
+          break;
         }
 
-        // 停止后续 agent 的执行
-        break;
+        i++;
       }
 
-      i++;
-    }
-
-    // 记忆独立模式：提交批次服务，达到阈值才提取（不阻塞回复完成）
-    final memAgent = memoryAgent;
-    if (memAgent != null && !isCancelling()) {
-      final reply = chainMessages.isNotEmpty
-          ? chainMessages.first.content.trim()
-          : '';
-      if (reply.isNotEmpty) {
-        unawaited(
-          MemoryExtractionService.instance.recordTurn(
-            agent: memAgent,
-            scope: 'agent_chat',
-            channelId: conversation.id,
-            turnId: chainExecutionId,
-            userText: userInput,
-            assistantText: reply,
-          ),
-        );
+      // 记忆独立模式：提交批次服务，达到阈值才提取（不阻塞回复完成）
+      final memAgent = memoryAgent;
+      if (memAgent != null &&
+          executionStatus == AgentChatExecutionStatus.success &&
+          !isCancelling()) {
+        final reply = chainMessages.isNotEmpty
+            ? chainMessages.first.content.trim()
+            : '';
+        if (reply.isNotEmpty) {
+          unawaited(
+            MemoryExtractionService.instance.recordTurn(
+              agent: memAgent,
+              scope: 'agent_chat',
+              channelId: conversation.id,
+              turnId: chainExecutionId,
+              userText: userInput,
+              assistantText: reply,
+            ),
+          );
+        }
       }
-    }
 
-    debugPrint('🏁 链式调用完成');
+      debugPrint('🏁 链式调用完成');
+      return buildResult(executionStatus, error: executionError);
+    } catch (error) {
+      return buildResult(
+        isCancelling() || error.toString().contains('已取消发送')
+            ? AgentChatExecutionStatus.cancelled
+            : AgentChatExecutionStatus.failed,
+        error: error.toString(),
+      );
+    }
   }
 
   /// 根据节点的上下文模式构建消息列表
@@ -290,7 +379,8 @@ class AgentChainExecutor {
     }
 
     // 获取对应的 agent
-    final agent = agentChain[stepIndex];
+    final agent = agentChain.where((a) => a.id == node.agentId).firstOrNull;
+    if (agent == null) throw StateError('未找到 Agent: ${node.agentId}');
 
     // 构建 system prompt（工具列表不再在这里添加，改为通过 additionalPrompts 传递）
     String systemPrompt = agent.systemPrompt;
@@ -439,6 +529,9 @@ class AgentChainExecutor {
 
     // 使用 Completer 确保等待所有操作完成（包括 onComplete 中的异步操作）
     final operationCompleter = Completer<void>();
+    final operationFuture = operationCompleter.future;
+    // 兼容旧阶段异步回调，在 processToolCall 返回前就接住错误。
+    unawaited(operationFuture.catchError((Object _) {}));
 
     try {
       // 处理图片文件
@@ -458,7 +551,7 @@ class AgentChainExecutor {
         tokenCount: tokenCount,
         isCollectingToolCall: isCollectingToolCall,
         onUpdateMessage: (content, count) {
-          context.messageService.updateAIMessageContent(
+          return context.messageService.updateAIMessageContent(
             context.conversationId,
             aiMessageId,
             content,
@@ -471,55 +564,14 @@ class AgentChainExecutor {
           );
           thinkingBuffer.write(thinking);
           // 实时更新消息的 thinkingContent 字段
-          context.messageService.updateAIMessageThinking(
+          return context.messageService.updateAIMessageThinking(
             context.conversationId,
             aiMessageId,
             thinkingBuffer.toString(),
           );
         },
-        onError: (error) {
-          debugPrint('❌ Agent ${agent.name} 响应错误: $error');
-
-          if (error != '已取消发送') {
-            final message = context.messageService.getMessage(
-              context.conversationId,
-              aiMessageId,
-            );
-            if (message != null) {
-              context.messageService.updateMessage(
-                message.copyWith(
-                  metadata: {...?message.metadata, 'requestError': error},
-                ),
-              );
-            }
-          }
-
-          if (error == '已取消发送') {
-            context.messageService.updateAIMessageContent(
-              context.conversationId,
-              aiMessageId,
-              '🛑 用户已取消操作',
-              0,
-            );
-          } else {
-            context.messageService.updateAIMessageContent(
-              context.conversationId,
-              aiMessageId,
-              '❌ 错误: $error',
-              0,
-            );
-          }
-
-          context.messageService.completeAIMessage(
-            context.conversationId,
-            aiMessageId,
-          );
-
-          // 完成操作
-          if (!operationCompleter.isCompleted) {
-            operationCompleter.complete();
-          }
-        },
+        // 编排器会传播异常；统一交给 executeChain 落盘并确定终态。
+        onError: (error) => debugPrint('Agent ${agent.name} 响应错误: $error'),
         onFirstPhaseComplete: (toolCallCode) async {
           // 使用内部的方法处理链式调用的完成逻辑
           await _handleChainAgentComplete(
@@ -537,7 +589,7 @@ class AgentChainExecutor {
 
       // 如果不需要工具调用，直接完成消息
       if (!needsToolCall) {
-        context.messageService.completeAIMessage(
+        await context.messageService.completeAIMessage(
           context.conversationId,
           aiMessageId,
         );
@@ -546,15 +598,10 @@ class AgentChainExecutor {
         if (!operationCompleter.isCompleted) {
           operationCompleter.complete();
         }
-      } else {
-        // 等待所有操作完成（包括工具调用）
-        await operationCompleter.future;
       }
+      await operationFuture;
     } catch (e) {
       debugPrint('❌ 请求 Agent 响应失败: $e');
-      if (!operationCompleter.isCompleted) {
-        operationCompleter.completeError(e);
-      }
       rethrow;
     }
   }
@@ -589,7 +636,7 @@ class AgentChainExecutor {
         operationCompleter.complete();
       } else {
         // 无需工具，直接完成
-        context.messageService.completeAIMessage(
+        await context.messageService.completeAIMessage(
           context.conversationId,
           aiMessageId,
         );
@@ -598,16 +645,6 @@ class AgentChainExecutor {
       }
     } catch (e) {
       debugPrint('❌ [链式调用] 处理 Agent 完成逻辑失败: $e');
-      context.messageService.updateAIMessageContent(
-        context.conversationId,
-        aiMessageId,
-        '❌ 处理失败: $e',
-        0,
-      );
-      context.messageService.completeAIMessage(
-        context.conversationId,
-        aiMessageId,
-      );
       if (!operationCompleter.isCompleted) {
         operationCompleter.completeError(e);
       }
@@ -637,7 +674,7 @@ class AgentChainExecutor {
 
         // 先标记原消息为完成状态（在生成总结之前）
         // 这样UI可以正确显示步骤已完成
-        context.messageService.completeAIMessage(
+        await context.messageService.completeAIMessage(
           context.conversationId,
           aiMessageId,
         );
@@ -680,20 +717,11 @@ class AgentChainExecutor {
         }
       } else {
         // 没有生成工具调用，直接完成
-        _processNormalResponse(aiMessageId, secondResponse);
+        await _processNormalResponse(aiMessageId, secondResponse);
       }
     } catch (e) {
       debugPrint('❌ [链式调用] 第二阶段处理失败: $e');
-      context.messageService.updateAIMessageContent(
-        context.conversationId,
-        aiMessageId,
-        '❌ 工具执行失败: $e',
-        0,
-      );
-      context.messageService.completeAIMessage(
-        context.conversationId,
-        aiMessageId,
-      );
+      if (!completer.isCompleted) completer.completeError(e);
     } finally {
       if (!completer.isCompleted) {
         completer.complete();
@@ -702,17 +730,20 @@ class AgentChainExecutor {
   }
 
   /// 处理正常响应
-  void _processNormalResponse(String messageId, String content) {
+  Future<void> _processNormalResponse(String messageId, String content) async {
     final processedContent = RequestService.processThinkingContent(content);
 
-    context.messageService.updateAIMessageContent(
+    await context.messageService.updateAIMessageContent(
       context.conversationId,
       messageId,
       processedContent,
       0,
     );
 
-    context.messageService.completeAIMessage(context.conversationId, messageId);
+    await context.messageService.completeAIMessage(
+      context.conversationId,
+      messageId,
+    );
   }
 
   /// 生成总结回复
@@ -744,6 +775,18 @@ class AgentChainExecutor {
       final buffer = StringBuffer();
       final thinkingBuffer = StringBuffer(); // 单独收集思考内容
       int tokenCount = 0;
+      String? requestError;
+      Future<void> pendingWrites = Future<void>.value();
+      Object? writeError;
+      void enqueue(Future<void> Function() write) {
+        pendingWrites = pendingWrites.then((_) async {
+          try {
+            await write();
+          } catch (e) {
+            writeError ??= e;
+          }
+        });
+      }
 
       // 流式请求总结回复（带重试机制，最多10次重试）
       await RequestService.streamResponseWithRetry(
@@ -756,51 +799,61 @@ class AgentChainExecutor {
           tokenCount++;
 
           // 实时更新 UI
-          context.messageService.updateAIMessageContent(
-            context.conversationId,
-            summaryMessageId,
-            buffer.toString(),
-            tokenCount,
+          final content = buffer.toString();
+          final count = tokenCount;
+          enqueue(
+            () => context.messageService.updateAIMessageContent(
+              context.conversationId,
+              summaryMessageId,
+              content,
+              count,
+            ),
           );
         },
         onThinking: (thinking) {
           debugPrint('🧠 [链式调用-总结] 收到思考内容: ${thinking.length} 字符');
           thinkingBuffer.write(thinking);
           // 实时更新消息的 thinkingContent 字段
-          context.messageService.updateAIMessageThinking(
-            context.conversationId,
-            summaryMessageId,
-            thinkingBuffer.toString(),
+          final thinkingContent = thinkingBuffer.toString();
+          enqueue(
+            () => context.messageService.updateAIMessageThinking(
+              context.conversationId,
+              summaryMessageId,
+              thinkingContent,
+            ),
           );
         },
-        onComplete: () {
-          // 标记消息为完成状态
-          context.messageService.completeAIMessage(
-            context.conversationId,
-            summaryMessageId,
-          );
-          debugPrint('✅ [链式调用] 总结回复生成完成');
-        },
+        onComplete: () {},
         onError: (error) {
-          debugPrint('❌ [链式调用] 总结回复生成失败: $error');
-
-          final errorMessage = error == '已取消发送'
-              ? '🛑 用户已取消操作'
-              : '❌ 生成总结时出错: $error';
-          context.messageService.updateAIMessageContent(
-            context.conversationId,
-            summaryMessageId,
-            errorMessage,
-            0,
-          );
-          context.messageService.completeAIMessage(
-            context.conversationId,
-            summaryMessageId,
-          );
+          requestError ??= error;
         },
         maxRetries: 10,
         retryDelay: 1000,
       );
+      await pendingWrites;
+      if (writeError != null) throw writeError!;
+      final error = requestError ?? (isCancelling() ? '已取消发送' : null);
+      if (error != null) {
+        final message = context.messageService.getMessage(
+          context.conversationId,
+          summaryMessageId,
+        );
+        if (message != null) {
+          await context.messageService.updateMessage(
+            message.copyWith(
+              content: error == '已取消发送' && message.content.trim().isNotEmpty
+                  ? message.content
+                  : (error == '已取消发送' ? '🛑 用户已取消操作' : '❌ 生成总结时出错: $error'),
+              metadata: {...?message.metadata, 'requestError': error},
+            ),
+          );
+        }
+      }
+      await context.messageService.completeAIMessage(
+        context.conversationId,
+        summaryMessageId,
+      );
+      if (error != null) throw StateError(error);
     } catch (e) {
       debugPrint('❌ [链式调用] 生成总结回复失败: $e');
       rethrow;

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
+import 'package:aboutme/plugins/personal_assistant/services/watch_assistant_service.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/services/conversation_service.dart';
@@ -36,6 +39,8 @@ class WatchConnectivityService {
   final MethodChannel _methodChannel;
   final ConversationService _conversationService;
   final MessageService _messageService;
+  late final WatchAssistantService _assistantService =
+      WatchAssistantService(_methodChannel);
 
   WatchConnectivityService._({
     required ConversationService conversationService,
@@ -76,6 +81,8 @@ class WatchConnectivityService {
 
       try {
         switch (call.method) {
+          case 'onAssistantAudio':
+            return _assistantService.accept(call.arguments);
           case 'getWatchChatChannels':
             return await _getWatchChatChannels();
           case 'getWatchChatMessages':
@@ -136,7 +143,16 @@ class WatchConnectivityService {
       }
     });
 
+    unawaited(_notifyAssistantReady());
     print('[WatchConnectivityService] 初始化完成');
+  }
+
+  Future<void> _notifyAssistantReady() async {
+    try {
+      await _methodChannel.invokeMethod<void>('watchAssistantReady');
+    } catch (error) {
+      print('[WatchConnectivityService] 助手桥接就绪通知失败: $error');
+    }
   }
 
   /// 获取会话列表（供 watchOS 使用）

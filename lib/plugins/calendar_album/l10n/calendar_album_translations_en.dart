@@ -117,7 +117,7 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_switch_photo_view': 'Photo view',
     'calendar_album_switch_calendar_view': 'Calendar view',
     'calendar_album_diary_for_date': ' diary',
-    'calendar_album_title_cannot_be_empty': 'Title cannot be empty',
+    'calendar_album_entry_cannot_be_empty': 'Diary content cannot be empty',
 
     // Tag folders
     'calendar_album_open_folder': 'Open',

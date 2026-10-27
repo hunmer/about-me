@@ -32,6 +32,7 @@ class AgentChatAlivenessHook {
     required void Function() onCancelGenerate,
     required void Function() onReveal,
     void Function()? onIdle,
+    void Function(Object error)? onPublicationError,
   }) async {
     // 仅单 agent 会话支持（链式模式走原路径）
     final agentId = conversation.agentId;
@@ -63,6 +64,7 @@ class AgentChatAlivenessHook {
         onCancelGenerate: onCancelGenerate,
         onReveal: onReveal,
         onIdle: onIdle,
+        onPublicationError: onPublicationError,
       ),
     );
   }

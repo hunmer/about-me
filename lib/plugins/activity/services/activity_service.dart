@@ -272,6 +272,42 @@ class ActivityService {
     }
   }
 
+  /// 从最近一个月的活动记录中提取标签，补充到最近使用标签列表
+  /// 仅在插件数据初始化时调用一次（性能考虑：只做一次区间查询）
+  Future<void> initTagsFromRecentActivities() async {
+    try {
+      final now = DateTime.now();
+      final activities = await getActivitiesForRange(
+        now.subtract(const Duration(days: 30)),
+        now,
+      );
+      if (activities.isEmpty) return;
+
+      // 按开始时间倒序收集，最近用过的标签排前面
+      final sorted = [...activities]
+        ..sort((a, b) => b.startTime.compareTo(a.startTime));
+      final activityTags = <String>{};
+      for (final activity in sorted) {
+        activityTags.addAll(activity.tags);
+      }
+      if (activityTags.isEmpty) return;
+
+      // 已有最近标签保持在前，仅补充活动中出现但列表缺失的标签（上限30，与编辑页一致）
+      final recent = await getRecentTags();
+      if (recent.length >= 30) return;
+      final missing = activityTags
+          .where((tag) => !recent.contains(tag))
+          .take(30 - recent.length)
+          .toList();
+      if (missing.isEmpty) return;
+
+      await saveRecentTags([...recent, ...missing]);
+      debugPrint('[ActivityService] 从最近一个月活动初始化标签: 补充 ${missing.length} 个');
+    } catch (e) {
+      debugPrint('[ActivityService] 从活动初始化标签失败: $e');
+    }
+  }
+
   // 保存最近使用的心情
   Future<void> saveRecentMoods(List<String> moods) async {
     try {

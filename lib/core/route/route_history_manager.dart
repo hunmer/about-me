@@ -86,7 +86,9 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
           for (final item in historyList) {
             try {
               // 使用 Map.from() 进行安全的类型转换
-              final record = PageVisitRecord.fromJson(Map<String, dynamic>.from(item as Map));
+              final record = PageVisitRecord.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              );
               _history.add(record);
             } catch (e) {
               debugPrint('解析历史记录失败: $e');
@@ -127,7 +129,9 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
     final iconCodePoint = icon?.codePoint;
 
     // 查找是否已存在该页面的记录
-    final existingIndex = manager._history.indexWhere((record) => record.pageId == pageId);
+    final existingIndex = manager._history.indexWhere(
+      (record) => record.pageId == pageId,
+    );
 
     if (existingIndex != -1) {
       // 更新现有记录
@@ -163,7 +167,9 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
     // 异步保存
     manager._saveHistory();
 
-    debugPrint('记录页面访问: $pageId ($title), 总访问次数: ${manager._history[manager._history.indexWhere((r) => r.pageId == pageId)].visitCount}');
+    debugPrint(
+      '记录页面访问: $pageId ($title), 总访问次数: ${manager._history[manager._history.indexWhere((r) => r.pageId == pageId)].visitCount}',
+    );
   }
 
   /// 获取上次访问的页面（排除指定页面）
@@ -199,7 +205,9 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
 
     // 排除指定页面
     if (excludePageId != null) {
-      history = history.where((record) => record.pageId != excludePageId).toList();
+      history = history
+          .where((record) => record.pageId != excludePageId)
+          .toList();
     }
 
     // 限制数量
@@ -235,12 +243,8 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
     final manager = instance;
     final record = manager._history.firstWhere(
       (r) => r.pageId == pageId,
-      orElse: () => PageVisitRecord(
-        pageId: '',
-        title: '',
-        timestamp: 0,
-        visitCount: 0,
-      ),
+      orElse: () =>
+          PageVisitRecord(pageId: '', title: '', timestamp: 0, visitCount: 0),
     );
     return record.visitCount;
   }
@@ -268,11 +272,7 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
     final manager = instance;
 
     if (manager._history.isEmpty) {
-      return {
-        'totalPages': 0,
-        'totalVisits': 0,
-        'mostVisitedPage': null,
-      };
+      return {'totalPages': 0, 'totalVisits': 0, 'mostVisitedPage': null};
     }
 
     final totalVisits = manager._history.fold<int>(
@@ -298,11 +298,14 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
     if (route is PageRoute<dynamic> && route.opaque) {
       super.didPush(route, previousRoute);
     } else {
-      debugPrint('RouteHistoryManager: 跳过弹层 didPushNext type=${route.runtimeType}');
+      debugPrint(
+        'RouteHistoryManager: 跳过弹层 didPushNext type=${route.runtimeType}',
+      );
     }
     debugPrint(
       'RouteHistoryManager: didPush name=${route.settings.name} '
-      'type=${route.runtimeType}');
+      'type=${route.runtimeType}',
+    );
     _claimPendingPluginRoute(route);
     _trackPluginRoute(route, 1);
     if (_hasRouteName(route)) {
@@ -316,7 +319,9 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
     if (route is PageRoute<dynamic> && route.opaque) {
       super.didPop(route, previousRoute);
     } else {
-      debugPrint('RouteHistoryManager: 跳过弹层 didPopNext type=${route.runtimeType}');
+      debugPrint(
+        'RouteHistoryManager: 跳过弹层 didPopNext type=${route.runtimeType}',
+      );
     }
     _trackPluginRoute(route, -1, previousRoute);
     // pop 操作不记录新路由，但可以更新当前上下文到前一个路由。
@@ -352,10 +357,11 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   void _claimPendingPluginRoute(Route<dynamic> route) {
     final pending = _pendingPluginId;
     if (pending == null) return;
-    _pendingPluginId = null;
     final name = route.settings.name;
-    // 无名路由（对话框等）与自带插件信息的前缀路由不需要认领
-    if (name == null || name.startsWith('/plugin/')) return;
+    // 无名路由（对话框等）不消耗登记；等下一个有名路由认领。
+    if (name == null) return;
+    _pendingPluginId = null;
+    if (name.startsWith('/plugin/')) return;
     _routePluginOwners[name] = pending;
   }
 
@@ -376,8 +382,11 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   ///
   /// [delta] 入栈为 1、出栈为 -1；[revealedRoute] 出栈后露出的下层路由，
   /// 若它也是插件主界面则回写为栈内最新插件
-  void _trackPluginRoute(Route<dynamic> route, int delta,
-      [Route<dynamic>? revealedRoute]) {
+  void _trackPluginRoute(
+    Route<dynamic> route,
+    int delta, [
+    Route<dynamic>? revealedRoute,
+  ]) {
     final pluginId = _pluginIdOfRoute(route);
     if (pluginId != null) {
       _pluginRouteCount += delta;
@@ -395,11 +404,13 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
         }
       }
     } else if (delta > 0) {
-      // 无关页面（设置页、无名对话框等）入栈后栈顶不再是插件页面：
-      // 清掉栈顶插件标记，pop 回插件主界面时由下方 revealedRoute 逻辑
-      // 恢复。否则压在插件上的页面会被 openPlugin 误判为该插件的
-      // 子页面而拒绝跳转
-      _stackTopPluginId = null;
+      final name = route.settings.name;
+      // 无名路由可能是当前插件的详情/自定义页面；它不提供足够信息
+      // 判断是否离开插件上下文，因此保留当前插件归属。带名称的普通
+      // 页面则明确结束当前插件上下文。
+      if (name != null && name.isNotEmpty) {
+        _stackTopPluginId = null;
+      }
     }
     if (revealedRoute != null) {
       final revealedId = _pluginIdOfRoute(revealedRoute);
@@ -420,7 +431,6 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   /// 栈顶是插件子页面（路由名不带 `/plugin/` 前缀）时，栈内下方
   /// 仍有插件主界面，返回该插件ID；栈内没有插件路由时返回 null
   static String? getStackPluginId() => instance._stackTopPluginId;
-
 
   /// 从 Route 对象记录路由访问
   void _recordRoute(Route<dynamic> route) {
@@ -444,7 +454,9 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
       visitCount: 1,
       params: _extractParams(args),
     );
-    debugPrint('RouteHistoryManager: 更新当前路由上下文 "$routeName"（observer），参数: ${_currentRouteContext!.params}');
+    debugPrint(
+      'RouteHistoryManager: 更新当前路由上下文 "$routeName"（observer），参数: ${_currentRouteContext!.params}',
+    );
 
     // 异步记录到历史（不阻塞 UI）
     _recordToHistory(routeName, args);

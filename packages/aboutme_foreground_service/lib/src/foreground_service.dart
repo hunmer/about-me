@@ -20,6 +20,7 @@ class AboutmeForegroundService {
   AboutmeForegroundService._internal();
 
   bool _isInitialized = false;
+  Future<void>? _initializationFuture;
 
   /// 是否已初始化
   bool get isInitialized => _isInitialized;
@@ -27,75 +28,70 @@ class AboutmeForegroundService {
   /// flutter_foreground_task 仅提供 Android/iOS 原生实现，
   /// 其他平台调用方法通道会抛 MissingPluginException
   bool get _isSupportedPlatform =>
-      !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+      platformOverride ?? (!kIsWeb && (Platform.isAndroid || Platform.isIOS));
 
-  /// 初始化前台服务
+  @visibleForTesting
+  static bool? platformOverride;
+
+  /// 初始化前台服务。
   ///
-  /// [config] 服务配置，如果不传则使用默认配置
-  ///
-  /// 此方法会自动请求必要的权限（通知权限、电池优化豁免、精确闹钟权限）
-  Future<void> initialize({ForegroundServiceConfig? config}) async {
-    if (_isInitialized) return;
+  /// 并发调用会等待同一个 Future，避免构造函数触发的异步初始化与首次
+  /// start/stop 请求竞态。初始化只配置服务，不自动请求权限。
+  Future<void> initialize({ForegroundServiceConfig? config}) {
+    if (_isInitialized) return Future<void>.value();
+    final current = _initializationFuture;
+    if (current != null) return current;
 
-    if (!_isSupportedPlatform) {
-      debugPrint('[AboutmeForegroundService] 当前平台不支持前台服务，跳过初始化');
-      return;
-    }
-
-    final cfg = config ?? const ForegroundServiceConfig();
-
-    // 初始化通信端口
-    FlutterForegroundTask.initCommunicationPort();
-
-    // 请求必要的权限
-    await _requestPermissions();
-
-    // 初始化服务配置
-    FlutterForegroundTask.init(
-      androidNotificationOptions: AndroidNotificationOptions(
-        channelId: cfg.channelId,
-        channelName: cfg.channelName,
-        channelDescription: cfg.channelDescription,
-        onlyAlertOnce: true,
-      ),
-      iosNotificationOptions: IOSNotificationOptions(
-        showNotification: cfg.iosShowNotification,
-        playSound: cfg.iosPlaySound,
-      ),
-      foregroundTaskOptions: ForegroundTaskOptions(
-        eventAction: ForegroundTaskEventAction.repeat(cfg.eventIntervalMs),
-        autoRunOnBoot: cfg.autoRunOnBoot,
-        autoRunOnMyPackageReplaced: cfg.autoRunOnMyPackageReplaced,
-        allowWakeLock: cfg.allowWakeLock,
-        allowWifiLock: cfg.allowWifiLock,
-      ),
-    );
-
-    _isInitialized = true;
-    debugPrint('[AboutmeForegroundService] 初始化完成');
+    final future = _initialize(config ?? const ForegroundServiceConfig());
+    _initializationFuture = future;
+    return future;
   }
 
-  /// 请求必要的权限
-  Future<void> _requestPermissions() async {
-    // 请求通知权限
-    final notificationPermission =
-        await FlutterForegroundTask.checkNotificationPermission();
-    if (notificationPermission != NotificationPermission.granted) {
-      await FlutterForegroundTask.requestNotificationPermission();
-    }
-
-    // Android 特定权限
-    if (Platform.isAndroid) {
-      // 请求电池优化豁免
-      if (!await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
-        await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+  Future<void> _initialize(ForegroundServiceConfig cfg) async {
+    try {
+      if (!_isSupportedPlatform) {
+        debugPrint('[AboutmeForegroundService] 当前平台不支持前台服务，跳过初始化');
+        _isInitialized = true;
+        return;
       }
 
-      // 请求精确闹钟权限
-      if (!await FlutterForegroundTask.canScheduleExactAlarms) {
-        await FlutterForegroundTask.openAlarmsAndRemindersSettings();
-      }
+      FlutterForegroundTask.initCommunicationPort();
+      FlutterForegroundTask.init(
+        androidNotificationOptions: AndroidNotificationOptions(
+          channelId: cfg.channelId,
+          channelName: cfg.channelName,
+          channelDescription: cfg.channelDescription,
+          onlyAlertOnce: true,
+        ),
+        iosNotificationOptions: IOSNotificationOptions(
+          showNotification: cfg.iosShowNotification,
+          playSound: cfg.iosPlaySound,
+        ),
+        foregroundTaskOptions: ForegroundTaskOptions(
+          eventAction: ForegroundTaskEventAction.repeat(cfg.eventIntervalMs),
+          autoRunOnBoot: cfg.autoRunOnBoot,
+          autoRunOnMyPackageReplaced: cfg.autoRunOnMyPackageReplaced,
+          allowWakeLock: cfg.allowWakeLock,
+          allowWifiLock: cfg.allowWifiLock,
+        ),
+      );
+
+      _isInitialized = true;
+      debugPrint('[AboutmeForegroundService] 初始化完成');
+    } catch (_) {
+      _initializationFuture = null;
+      rethrow;
     }
+  }
+
+  /// 将 flutter_foreground_task 的请求结果转换为本插件结果。
+  @visibleForTesting
+  static ServiceResult serviceResultFromRequest(ServiceRequestResult result) {
+    if (result is ServiceRequestSuccess) return ServiceResult.success();
+    if (result is ServiceRequestFailure) {
+      return ServiceResult.failure(result.error.toString());
+    }
+    return ServiceResult.failure(result.toString());
   }
 
   /// 启动前台服务
@@ -121,21 +117,24 @@ class AboutmeForegroundService {
     }
 
     try {
+      await initialize();
       if (await isRunning) {
-        await FlutterForegroundTask.restartService();
-        return ServiceResult.success();
+        final result = await FlutterForegroundTask.restartService();
+        return serviceResultFromRequest(result);
       }
 
       // 转换按钮配置
-      final buttons = notificationButtons
-          ?.map((b) => NotificationButton(id: b.key, text: b.label))
-          .toList();
+      final buttons =
+          notificationButtons
+              ?.map((b) => NotificationButton(id: b.key, text: b.label))
+              .toList();
 
-      await FlutterForegroundTask.startService(
+      final result = await FlutterForegroundTask.startService(
         serviceId: serviceId,
-        notificationIcon: notificationIcon != null
-            ? NotificationIcon(metaDataName: notificationIcon)
-            : null,
+        notificationIcon:
+            notificationIcon != null
+                ? NotificationIcon(metaDataName: notificationIcon)
+                : null,
         notificationButtons: buttons,
         notificationTitle: notificationTitle,
         notificationText: notificationText,
@@ -143,7 +142,7 @@ class AboutmeForegroundService {
         callback: callback,
       );
 
-      return ServiceResult.success();
+      return serviceResultFromRequest(result);
     } catch (e) {
       return ServiceResult.failure('启动服务异常: $e');
     }
@@ -156,8 +155,9 @@ class AboutmeForegroundService {
     }
 
     try {
-      await FlutterForegroundTask.stopService();
-      return ServiceResult.success();
+      await initialize();
+      final result = await FlutterForegroundTask.stopService();
+      return serviceResultFromRequest(result);
     } catch (e) {
       return ServiceResult.failure('停止服务异常: $e');
     }
@@ -200,14 +200,16 @@ class AboutmeForegroundService {
   /// 检查通知权限
   Future<bool> checkNotificationPermission() async {
     if (!_isSupportedPlatform) return false;
-    final permission = await FlutterForegroundTask.checkNotificationPermission();
+    final permission =
+        await FlutterForegroundTask.checkNotificationPermission();
     return permission == NotificationPermission.granted;
   }
 
   /// 请求通知权限
   Future<bool> requestNotificationPermission() async {
     if (!_isSupportedPlatform) return false;
-    final permission = await FlutterForegroundTask.requestNotificationPermission();
+    final permission =
+        await FlutterForegroundTask.requestNotificationPermission();
     return permission == NotificationPermission.granted;
   }
 

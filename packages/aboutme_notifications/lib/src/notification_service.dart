@@ -120,7 +120,7 @@ class AboutmeNotifications {
     Map<String, String>? payload,
     bool autoDismissible = true,
   }) async {
-    await AwesomeNotifications().createNotification(
+    final created = await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: id,
         channelKey: channelKey,
@@ -134,6 +134,11 @@ class AboutmeNotifications {
       ),
       actionButtons: buttons?.map(_convertButton).toList(),
     );
+    if (!created) {
+      throw StateError(
+        '创建通知失败（id=$id, channel=$channelKey）：通知权限可能已关闭或系统拒绝发送',
+      );
+    }
   }
 
   /// 取消指定通知

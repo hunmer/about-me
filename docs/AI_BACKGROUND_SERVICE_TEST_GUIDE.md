@@ -1,5 +1,35 @@
 # AI 聊天后台服务测试指南
 
+## 当前实现与验收（2026-10）
+
+以下说明以当前代码为准，后文的旧日志和逐阶段通知示例仅供历史参考。
+
+- Android 使用前台服务提高存活能力；每轮请求有独立 taskId，多会话共享服务，最后一个任务结束才停止聊天服务。活人感保活会在聊天结束后按最新开关恢复，未知服务不被抢占。
+- iOS 使用原生 `beginBackgroundTask` 申请有限执行时间；系统决定时长，无法保证长 SSE 在后台完成。到期后尽力保存部分正文并取消当前请求；回前台查看结果，必要时手动重新生成。
+- AI 请求仍在应用主 isolate 中执行。系统终止进程后不会自动恢复网络连接或重放工具操作；重新打开会话时，遗留生成状态会标记为中断并保留部分正文。
+- 完成通知在整轮结果保存后由主 isolate 发送；前台完成不弹独立通知，后台成功/失败弹一次，用户取消不弹成功通知。通知发送失败保留内存待重试，回前台重试；进程终止后不保证补发。
+- 运行时通知权限仍需由用户允许。仅修改 Dart 代码的热重载不足以验证 iOS 原生插件变更，需要重新安装构建。
+
+### 自动回归
+
+```bash
+flutter test --no-pub "test/agent_chat_execution_result_test.dart" "test/chat_background_coordinator_test.dart" "test/agent_chat_publication_test.dart" "test/deepseek_thinking_transport_test.dart"
+flutter test --no-pub "packages/aboutme_foreground_service/test/foreground_service_test.dart" "packages/aboutme_foreground_service/test/finite_background_task_test.dart"
+```
+
+### 真机验收
+
+使用 Release/Profile，并脱离调试器运行，避免调试连接改变 iOS 挂起行为。
+
+1. 允许通知，发送长回复后切后台/锁屏。Android 应持续显示运行通知，结束后出现独立完成通知，聊天运行通知退出。
+2. 重新生成、工具调用、多 Agent 链分别重复步骤 1；每轮只出现一次终态通知。前台等待完成应无独立通知。
+3. 同时处理两个会话，完成一个时另一个继续；启用活人感保活后重复，结束后守护通知恢复；关闭保活后不恢复。
+4. 在 Android 运行通知点击取消，回应用查看：已有正文保留，生成状态结束，后续可以重新发送。
+5. iOS 分别测试短请求和超过系统后台窗口的长请求：短请求尽力完成并通知；长请求回前台应保留已有正文，不能永久卡在“生成中”。
+6. 关闭通知权限完成一轮，恢复权限并返回应用，检查失败通知只重试一次；强制关闭应用后重开，不应自动重放请求或工具操作。
+
+---
+
 ## 📋 功能概述
 
 已实现 AI 聊天后台服务，支持在切换到其他应用后继续接收 AI 回复并显示通知。

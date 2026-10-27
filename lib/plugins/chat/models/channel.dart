@@ -27,7 +27,7 @@ class Channel {
     required this.id,
     required this.title,
     required this.icon,
-    this.backgroundColor = Colors.blue, // 默认蓝色背景
+    Color? backgroundColor,
     required this.messages,
     this.priority = 0,
     this.groups = const [], // 默认为空列表，表示不属于任何组
@@ -42,7 +42,8 @@ class Channel {
     this.sdkVersion,
     DateTime? lastMessageTime,
     int? messageCount,
-  }) : lastMessageTime = lastMessageTime ??
+  })  : backgroundColor = backgroundColor ?? colorFromTitle(title),
+        lastMessageTime = lastMessageTime ??
            (messages.isNotEmpty ? messages.last.date : DateTime.fromMillisecondsSinceEpoch(0)),
        messageCount = messageCount ?? messages.length {
     _lastMessage = lastMessage ?? (messages.isNotEmpty ? messages.last : null);
@@ -55,9 +56,35 @@ class Channel {
     _lastMessage = message;
   }
 
+  /// 颜色未设置时的候选色板（白色图标可读的常用色）
+  static const List<Color> _autoColorPalette = [
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.indigo,
+    Colors.blue,
+    Colors.lightBlue,
+    Colors.cyan,
+    Colors.teal,
+    Colors.green,
+    Colors.lightGreen,
+    Colors.orange,
+    Colors.deepOrange,
+    Colors.brown,
+  ];
+
+  /// 颜色未设置时，根据文字哈希计算频道颜色
+  static Color colorFromTitle(String title) {
+    var hash = 0;
+    for (final unit in title.codeUnits) {
+      hash = (hash * 31 + unit) & 0x7fffffff;
+    }
+    return _autoColorPalette[hash % _autoColorPalette.length];
+  }
+
   // 用于排序的比较器
-  static int compare(Channel a, Channel b) {
-    // 固定的频道始终在最前
+  static int compare(Channel a, Channel b) {    // 固定的频道始终在最前
     if (a.isPinned != b.isPinned) {
       return a.isPinned ? -1 : 1;
     }
@@ -142,11 +169,10 @@ class Channel {
       fontPackage: json['iconFontPackage'] as String?,
     );
 
-    // 解析背景颜色
-    final Color backgroundColor =
-        json['backgroundColor'] != null
-            ? HexColor.fromHex(json['backgroundColor'] as String)
-            : Colors.blue;
+    // 解析背景颜色，未设置时为 null（由构造器按标题计算）
+    final Color? backgroundColor = json['backgroundColor'] != null
+        ? HexColor.fromHex(json['backgroundColor'] as String)
+        : null;
 
     return Channel(
       sdkVersion: json['_sdkVersion'] as int?,

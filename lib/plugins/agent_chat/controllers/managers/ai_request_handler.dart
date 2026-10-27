@@ -10,6 +10,7 @@ import 'package:aboutme/utils/file_picker_helper.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 import 'shared/manager_context.dart';
 import 'tool_orchestrator.dart';
+import 'agent_chain_executor.dart';
 
 /// AI 请求处理管理器
 ///
@@ -66,14 +67,28 @@ class AIRequestHandler {
   // ========== 核心方法 ==========
 
   /// 请求 AI 回复，工具调用由 dartantic_ai Agent 自动编排。
-  Future<void> request({
+  Future<AgentChatExecutionResult> request({
     required String aiMessageId,
     required String userInput,
     List<File> files = const [],
     bool enableToolCalling = true,
   }) async {
-    final currentAgent = getCurrentAgent();
-    if (currentAgent == null) return;
+    AgentChatExecutionResult buildResult(
+      AgentChatExecutionStatus status, {
+      String? error,
+    }) {
+      final message = context.messageService.getMessage(
+        context.conversationId,
+        aiMessageId,
+      );
+      return AgentChatExecutionResult(
+        status: status,
+        messageId: message?.id,
+        content: message?.content ?? '',
+        tokenCount: message?.tokenCount ?? 0,
+        error: error,
+      );
+    }
 
     final buffer = StringBuffer();
     final thinkingBuffer = StringBuffer(); // 单独收集思考内容
@@ -81,6 +96,16 @@ class AIRequestHandler {
     bool isCollectingToolCall = false;
 
     try {
+      if (isCancelling()) throw StateError('已取消发送');
+      final currentAgent = getCurrentAgent();
+      if (currentAgent == null) throw StateError('未找到 Agent');
+      if (context.messageService.getMessage(
+            context.conversationId,
+            aiMessageId,
+          ) ==
+          null) {
+        throw StateError('未找到 AI 消息');
+      }
       // 构建上下文消息
       final contextMessages = buildContextMessages(userInput);
 
@@ -117,17 +142,23 @@ class AIRequestHandler {
               context.conversationId,
               aiMessageId,
             );
-            if (message != null) {
+            if (message == null) throw StateError('未找到 AI 消息');
+            {
               final updatedMessage = message.copyWith(
                 matchedTemplateIds: [exactMatchTemplate.id],
                 content: '我找到了完全匹配的工具模板「${exactMatchTemplate.name}」，请选择是否执行：',
                 isGenerating: false,
               );
               await context.messageService.updateMessage(updatedMessage);
+              await context.messageService.completeAIMessage(
+                context.conversationId,
+                aiMessageId,
+              );
             }
 
             debugPrint('✅ [第零阶段-精确匹配] 已保存匹配结果，等待用户选择');
-            return; // 直接返回，跳过后续的 AI 调用和第一阶段
+            if (isCancelling()) throw StateError('已取消发送');
+            return buildResult(AgentChatExecutionStatus.success);
           }
 
           debugPrint('ℹ️ [第零阶段-精确匹配] 未找到精确匹配，继续 AI 匹配流程');
@@ -142,6 +173,10 @@ class AIRequestHandler {
 
           // 使用 Completer 等待 onComplete 完成
           final completer = Completer<bool>();
+          Object? templateError;
+          var terminalReceived = false;
+          Future<void> thinkingWrites = Future<void>.value();
+          Object? thinkingError;
 
           // 第零阶段：请求 AI 匹配模板（带重试机制，最多10次重试）
           await RequestService.streamResponseWithRetry(
@@ -165,13 +200,22 @@ class AIRequestHandler {
             onThinking: (thinking) {
               thinkingBuffer.write(thinking);
               // 实时更新消息的 thinkingContent 字段
-              context.messageService.updateAIMessageThinking(
-                context.conversationId,
-                aiMessageId,
-                thinkingBuffer.toString(),
-              );
+              final content = thinkingBuffer.toString();
+              thinkingWrites = thinkingWrites.then((_) async {
+                try {
+                  await context.messageService.updateAIMessageThinking(
+                    context.conversationId,
+                    aiMessageId,
+                    content,
+                  );
+                } catch (error) {
+                  thinkingError ??= error;
+                }
+              });
             },
             onComplete: () async {
+              if (terminalReceived) return;
+              terminalReceived = true;
               try {
                 final matchResponse = buffer.toString();
                 debugPrint('🔍 [第零阶段] AI 响应: $matchResponse');
@@ -207,11 +251,14 @@ class AIRequestHandler {
 
                   if (validMatches.isNotEmpty) {
                     // 保存匹配的模板 ID 和替换规则到消息元数据
+                    await thinkingWrites;
+                    if (thinkingError != null) throw thinkingError!;
                     final message = context.messageService.getMessage(
                       context.conversationId,
                       aiMessageId,
                     );
-                    if (message != null) {
+                    if (message == null) throw StateError('未找到 AI 消息');
+                    {
                       // 构建元数据，包含替换规则
                       final metadata = <String, dynamic>{
                         'templateMatches': validMatches.map((m) {
@@ -238,6 +285,10 @@ class AIRequestHandler {
                       await context.messageService.updateMessage(
                         updatedMessage,
                       );
+                      await context.messageService.completeAIMessage(
+                        context.conversationId,
+                        aiMessageId,
+                      );
                     }
 
                     debugPrint('✅ [第零阶段] 已保存匹配结果，等待用户选择');
@@ -250,38 +301,33 @@ class AIRequestHandler {
                 completer.complete(false); // 完成，标记为未匹配
               } catch (e) {
                 debugPrint('❌ [第零阶段] 处理匹配结果时出错: $e');
-                completer.complete(false);
+                templateError = e;
+                if (!completer.isCompleted) completer.complete(false);
               }
             },
             onError: (String error) {
-              debugPrint('❌ [第零阶段] AI 响应错误: $error');
-
-              // 如果是用户取消操作，直接更新消息并完成
-              if (error == '已取消发送') {
-                context.messageService.updateAIMessageContent(
-                  context.conversationId,
-                  aiMessageId,
-                  '用户已取消操作',
-                  0,
-                );
-                context.messageService.completeAIMessage(
-                  context.conversationId,
-                  aiMessageId,
-                );
-                completer.complete(true); // 标记为已完成，阻止继续执行
-              } else {
-                completer.complete(false);
-              }
+              if (terminalReceived) return;
+              terminalReceived = true;
+              templateError ??= error;
+              if (!completer.isCompleted) completer.complete(false);
             },
             maxRetries: 10,
             retryDelay: 1000,
           );
 
           // ⚠️ 关键修复：等待 onComplete 完成并检查结果
+          if (!terminalReceived) {
+            templateError ??= 'AI响应未正常结束';
+            completer.complete(false);
+          }
           final templateMatched = await completer.future;
+          await thinkingWrites;
+          if (thinkingError != null) throw thinkingError!;
+          if (isCancelling()) throw StateError('已取消发送');
+          if (templateError != null) throw StateError(templateError.toString());
           if (templateMatched) {
             debugPrint('🛑 [第零阶段] 已匹配模板，跳过后续阶段');
-            return;
+            return buildResult(AgentChatExecutionStatus.success);
           }
 
           // 如果没有匹配，继续执行下面的第一阶段
@@ -312,39 +358,25 @@ class AIRequestHandler {
           final processedContent = RequestService.processThinkingContent(
             content,
           );
-          context.messageService.updateAIMessageContent(
+          return context.messageService.updateAIMessageContent(
             context.conversationId,
             aiMessageId,
             processedContent,
             count,
           );
         },
-        onThinking: (thinking) {
+        onThinking: (thinking) async {
           debugPrint('🧠 [思考内容] 收到: ${thinking.length} 字符');
           thinkingBuffer.write(thinking);
           // 实时更新消息的 thinkingContent 字段
-          context.messageService.updateAIMessageThinking(
+          await context.messageService.updateAIMessageThinking(
             context.conversationId,
             aiMessageId,
             thinkingBuffer.toString(),
           );
           debugPrint('🧠 [思考内容] 已更新，当前总长度: ${thinkingBuffer.length}');
         },
-        onError: (error) {
-          final errorMessage = error == '已取消发送'
-              ? '用户已取消操作'
-              : '抱歉，生成回复时出现错误：$error';
-          context.messageService.updateAIMessageContent(
-            context.conversationId,
-            aiMessageId,
-            errorMessage,
-            0,
-          );
-          context.messageService.completeAIMessage(
-            context.conversationId,
-            aiMessageId,
-          );
-        },
+        onError: (error) => debugPrint('AI 响应错误: $error'),
         onFirstPhaseComplete: (toolCallCode) async {
           // 执行工具调用
           if (ToolService.containsToolCall(toolCallCode)) {
@@ -353,50 +385,82 @@ class AIRequestHandler {
             }
           } else {
             // 没有生成工具调用，直接完成
-            processNormalResponse(aiMessageId, toolCallCode);
+            await processNormalResponse(aiMessageId, toolCallCode);
           }
         },
       );
 
       // 如果不需要工具调用，完成消息
+      if (isCancelling()) throw StateError('已取消发送');
       if (!needsToolCall) {
-        context.messageService.completeAIMessage(
+        await context.messageService.completeAIMessage(
           context.conversationId,
           aiMessageId,
         );
       }
-    } catch (e) {
-      debugPrint('请求 AI 回复失败: $e');
-
-      context.messageService.updateAIMessageContent(
+      final message = context.messageService.getMessage(
         context.conversationId,
         aiMessageId,
-        '抱歉，生成回复时出现错误：$e',
-        0,
       );
-
-      context.messageService.completeAIMessage(
+      if (message == null || message.isGenerating) {
+        throw StateError('AI 消息未完成');
+      }
+      return buildResult(AgentChatExecutionStatus.success);
+    } catch (e) {
+      final cancelled = isCancelling() || e.toString().contains('已取消发送');
+      var error = e.toString();
+      final message = context.messageService.getMessage(
         context.conversationId,
         aiMessageId,
+      );
+      if (message != null) {
+        try {
+          await context.messageService.updateMessage(
+            message.copyWith(
+              content: cancelled
+                  ? (message.content.trim().isNotEmpty
+                        ? message.content
+                        : '用户已取消操作')
+                  : '抱歉，生成回复时出现错误：$e',
+              metadata: {...?message.metadata, 'requestError': error},
+              isGenerating: false,
+            ),
+          );
+          await context.messageService.completeAIMessage(
+            context.conversationId,
+            aiMessageId,
+          );
+        } catch (saveError) {
+          error = '$error; 保存消息失败: $saveError';
+        }
+      }
+      return buildResult(
+        cancelled
+            ? AgentChatExecutionStatus.cancelled
+            : AgentChatExecutionStatus.failed,
+        error: error,
       );
     }
   }
 
   /// 处理正常回复（无需工具调用）
-  void processNormalResponse(String messageId, String content) {
+  Future<void> processNormalResponse(String messageId, String content) async {
     final processedContent = RequestService.processThinkingContent(content);
 
-    context.messageService.updateAIMessageContent(
+    await context.messageService.updateAIMessageContent(
       context.conversationId,
       messageId,
       processedContent,
       TokenCounterService.estimateTokenCount(content),
     );
 
-    context.messageService.completeAIMessage(context.conversationId, messageId);
+    await context.messageService.completeAIMessage(
+      context.conversationId,
+      messageId,
+    );
 
     // 更新会话的最后消息
-    context.conversationService.updateLastMessage(
+    await context.conversationService.updateLastMessage(
       context.conversationId,
       processedContent.length > 50
           ? '${processedContent.substring(0, 50)}...'

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -61,12 +62,17 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
         setActive: true,
         cardId: widget.cardId,
       );
+      if (!mounted) {
+        await plugin.tabManager.closeTab(tab.id);
+        return;
+      }
       setState(() {
         _currentTab = tab;
         _urlController.text = tab.url;
       });
     } else if (plugin.tabManager.activeTab != null) {
       // 使用现有的活动标签页
+      if (!mounted) return;
       setState(() {
         _currentTab = plugin.tabManager.activeTab;
         _urlController.text = _currentTab?.url ?? '';
@@ -78,6 +84,10 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
         title: '新标签页',
         setActive: true,
       );
+      if (!mounted) {
+        await plugin.tabManager.closeTab(tab.id);
+        return;
+      }
       setState(() {
         _currentTab = tab;
         _urlController.text = '';
@@ -88,7 +98,7 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
   @override
   void dispose() {
     _urlController.dispose();
-    // 保存标签页状态
+    // 保存标签页状态；标签模型保留，运行时 WebView 由子组件 dispose 释放。
     WebViewPlugin.instance.saveTabs();
     super.dispose();
   }
@@ -125,49 +135,40 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
 
                       // 使用 IndexedStack 保持标签页状态
                       return IndexedStack(
-                        index:
-                            tabManager.activeTab != null
-                                ? tabManager.getTabIndex(
-                                  tabManager.activeTabId!,
-                                )
-                                : 0,
-                        children:
-                            tabManager.tabs.map((tab) {
-                              return _WebViewTabContent(
-                                key: ValueKey(tab.id),
-                                tab: tab,
-                                onUrlChanged: (url) {
-                                  if (tab.id == tabManager.activeTabId) {
-                                    _urlController.text = url;
-                                  }
-                                },
-                                onTitleChanged: (title) {
-                                  tabManager.updateTab(tab.id, title: title);
-                                },
-                                onProgressChanged: (progress) {
-                                  tabManager.updateTab(
-                                    tab.id,
-                                    progress: progress,
-                                  );
-                                },
-                                onLoadingChanged: (isLoading) {
-                                  tabManager.updateTab(
-                                    tab.id,
-                                    isLoading: isLoading,
-                                  );
-                                },
-                                onNavigationStateChanged: (
-                                  canGoBack,
-                                  canGoForward,
-                                ) {
+                        index: tabManager.activeTab != null
+                            ? tabManager.getTabIndex(tabManager.activeTabId!)
+                            : 0,
+                        children: tabManager.tabs.map((tab) {
+                          return _WebViewTabContent(
+                            key: ValueKey(tab.id),
+                            tab: tab,
+                            onUrlChanged: (url) {
+                              if (tab.id == tabManager.activeTabId) {
+                                _urlController.text = url;
+                              }
+                            },
+                            onTitleChanged: (title) {
+                              tabManager.updateTab(tab.id, title: title);
+                            },
+                            onProgressChanged: (progress) {
+                              tabManager.updateTab(tab.id, progress: progress);
+                            },
+                            onLoadingChanged: (isLoading) {
+                              tabManager.updateTab(
+                                tab.id,
+                                isLoading: isLoading,
+                              );
+                            },
+                            onNavigationStateChanged:
+                                (canGoBack, canGoForward) {
                                   tabManager.updateTab(
                                     tab.id,
                                     canGoBack: canGoBack,
                                     canGoForward: canGoForward,
                                   );
                                 },
-                              );
-                            }).toList(),
+                          );
+                        }).toList(),
                       );
                     },
                   ),
@@ -245,24 +246,22 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
                           );
                         },
                       ),
-                      suffixIcon:
-                          _isUrlBarFocused
-                              ? Pressable(
-                                onPressed: () {
-                                  _urlController.clear();
-                                },
-                                semanticLabel: '清空地址栏',
-                                builder:
-                                    (context, states) => Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: DsIcon(
-                                        DsIconKind.close,
-                                        size: 18,
-                                        color: theme.textSub,
-                                      ),
-                                    ),
-                              )
-                              : null,
+                      suffixIcon: _isUrlBarFocused
+                          ? Pressable(
+                              onPressed: () {
+                                _urlController.clear();
+                              },
+                              semanticLabel: '清空地址栏',
+                              builder: (context, states) => Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: DsIcon(
+                                  DsIconKind.close,
+                                  size: 18,
+                                  color: theme.textSub,
+                                ),
+                              ),
+                            )
+                          : null,
                     ),
                     onTap: () {
                       setState(() {
@@ -293,10 +292,9 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
                 builder: (context, tm, _) {
                   final tab = tm.activeTab;
                   return DSIconButton(
-                    icon:
-                        (tab?.isLoading ?? false)
-                            ? DsIconKind.stop
-                            : DsIconKind.refresh,
+                    icon: (tab?.isLoading ?? false)
+                        ? DsIconKind.stop
+                        : DsIconKind.refresh,
                     size: 40,
                     color: theme.surfaceAlt,
                     iconColor: theme.textSub,
@@ -307,10 +305,9 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
                         tm.reload(tab.id);
                       }
                     },
-                    tooltip:
-                        tab?.isLoading ?? false
-                            ? 'webview_stop'.tr
-                            : 'webview_reload'.tr,
+                    tooltip: tab?.isLoading ?? false
+                        ? 'webview_stop'.tr
+                        : 'webview_reload'.tr,
                   );
                 },
               ),
@@ -353,10 +350,9 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
                 size: 44,
                 color: theme.surfaceAlt,
                 iconColor: theme.textSub,
-                onPressed:
-                    tab?.canGoBack ?? false
-                        ? () => tabManager.goBack(tab!.id)
-                        : null,
+                onPressed: tab?.canGoBack ?? false
+                    ? () => tabManager.goBack(tab!.id)
+                    : null,
                 tooltip: 'webview_go_back'.tr,
               ),
 
@@ -366,10 +362,9 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
                 size: 44,
                 color: theme.surfaceAlt,
                 iconColor: theme.textSub,
-                onPressed:
-                    tab?.canGoForward ?? false
-                        ? () => tabManager.goForward(tab!.id)
-                        : null,
+                onPressed: tab?.canGoForward ?? false
+                    ? () => tabManager.goForward(tab!.id)
+                    : null,
                 tooltip: 'webview_go_forward'.tr,
               ),
 
@@ -641,21 +636,19 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
         final confirm = await showDSDialog<bool>(
           context: context,
           theme: DSThemeBridge.resolve(context),
-          builder:
-              (ctx) => DSThemeBridge(
-                child: Builder(
-                  builder:
-                      (ctx) => DSDialog(
-                        title: 'webview_close_all_tabs'.tr,
-                        message: 'webview_confirm_close_all'.tr,
-                        confirmText: 'app_confirm'.tr,
-                        cancelText: 'app_cancel'.tr,
-                        confirmVariant: DSButtonVariant.destructive,
-                        onConfirm: () => Navigator.of(ctx).pop(true),
-                        onCancel: () => Navigator.of(ctx).pop(false),
-                      ),
-                ),
+          builder: (ctx) => DSThemeBridge(
+            child: Builder(
+              builder: (ctx) => DSDialog(
+                title: 'webview_close_all_tabs'.tr,
+                message: 'webview_confirm_close_all'.tr,
+                confirmText: 'app_confirm'.tr,
+                cancelText: 'app_cancel'.tr,
+                confirmVariant: DSButtonVariant.destructive,
+                onConfirm: () => Navigator.of(ctx).pop(true),
+                onCancel: () => Navigator.of(ctx).pop(false),
               ),
+            ),
+          ),
         );
 
         if (confirm == true) {
@@ -747,9 +740,26 @@ class _WebViewTabContent extends StatefulWidget {
 
 class _WebViewTabContentState extends State<_WebViewTabContent> {
   JSBridgeInjector? _jsBridgeInjector;
+  InAppWebViewController? _controller;
+  Timer? _delayedStatusCheck;
   bool _initialLoadCompleted = false; // 标记初始加载是否完成
   String? _lastProcessedUrl; // 记录最后一次处理的 URL，避免重复处理
   final Set<String> _redirectChain = {}; // 记录重定向链，检测循环重定向
+
+  @override
+  void dispose() {
+    _delayedStatusCheck?.cancel();
+    _delayedStatusCheck = null;
+    _jsBridgeInjector?.dispose();
+    _jsBridgeInjector = null;
+    WebViewPlugin.instance.tabManager.clearController(
+      widget.tab.id,
+      _controller,
+    );
+    _controller = null;
+    _redirectChain.clear();
+    super.dispose();
+  }
 
   /// 创建 Aboutme UserScript（在页面加载前注入）
   UserScript _createAboutmeUserScript() {
@@ -964,10 +974,9 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
         javaScriptEnabled: webviewSettings.enableJavaScript,
         javaScriptCanOpenWindowsAutomatically: !webviewSettings.blockPopups,
         supportZoom: webviewSettings.enableZoom,
-        userAgent:
-            webviewSettings.userAgent.isNotEmpty
-                ? webviewSettings.userAgent
-                : null,
+        userAgent: webviewSettings.userAgent.isNotEmpty
+            ? webviewSettings.userAgent
+            : null,
         mediaPlaybackRequiresUserGesture: false,
         allowsInlineMediaPlayback: true,
         // 允许本地文件访问（用于 file:// URL）
@@ -976,10 +985,9 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
         useHybridComposition: true, // 启用混合组成，提高性能
       ),
       // 使用 UserScript 预加载 JS Bridge
-      initialUserScripts:
-          webviewSettings.enableJSBridge
-              ? UnmodifiableListView<UserScript>([_createAboutmeUserScript()])
-              : null,
+      initialUserScripts: webviewSettings.enableJSBridge
+          ? UnmodifiableListView<UserScript>([_createAboutmeUserScript()])
+          : null,
       shouldOverrideUrlLoading: (controller, navigationAction) async {
         final url = navigationAction.request.url?.toString() ?? '';
 
@@ -1071,6 +1079,7 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
         return NavigationActionPolicy.ALLOW;
       },
       onWebViewCreated: (controller) {
+        _controller = controller;
         plugin.tabManager.setController(widget.tab.id, controller);
 
         // 初始化 JS Bridge
@@ -1084,6 +1093,7 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
         }
       },
       onLoadStart: (controller, url) async {
+        if (!mounted || !identical(_controller, controller)) return;
         widget.onLoadingChanged(true);
         if (url != null) {
           // 在开始新导航时，重置最后处理的 URL（但不重置为 null，避免误判）
@@ -1091,6 +1101,7 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
         }
       },
       onLoadStop: (controller, url) async {
+        if (!mounted || !identical(_controller, controller)) return;
         widget.onLoadingChanged(false);
 
         // 标记初始加载已完成
@@ -1102,9 +1113,15 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
         _redirectChain.clear();
 
         // 更新导航状态
-        final canGoBack = await controller.canGoBack();
-        final canGoForward = await controller.canGoForward();
-        widget.onNavigationStateChanged(canGoBack, canGoForward);
+        try {
+          final canGoBack = await controller.canGoBack();
+          final canGoForward = await controller.canGoForward();
+          if (!mounted || !identical(_controller, controller)) return;
+          widget.onNavigationStateChanged(canGoBack, canGoForward);
+        } catch (e) {
+          debugPrint('[WebView] 导航状态读取失败: $e');
+          return;
+        }
 
         // 注意：JS Bridge 已通过 UserScript 预加载，无需重复注入
         // Handler 已在 onWebViewCreated 中注册
@@ -1195,8 +1212,11 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
           );
 
           // 延迟 3 秒后再次检查页面状态（用于诊断是否卡在加载状态）
-          Future.delayed(const Duration(seconds: 3), () async {
+          _delayedStatusCheck?.cancel();
+          late final Timer statusCheck;
+          statusCheck = Timer(const Duration(seconds: 3), () async {
             try {
+              if (!mounted || !identical(_controller, controller)) return;
               final laterCheck = await controller.evaluateJavascript(
                 source: '''
                 (function() {
@@ -1216,28 +1236,41 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
               debugPrint('[WebView Status After 3s] $laterCheck');
             } catch (e) {
               debugPrint('[WebView Status After 3s] Error: $e');
+            } finally {
+              if (identical(_delayedStatusCheck, statusCheck)) {
+                _delayedStatusCheck = null;
+              }
             }
           });
+          _delayedStatusCheck = statusCheck;
         } catch (e) {
           debugPrint('[WebView DOM Check] Error: $e');
         }
       },
       onProgressChanged: (controller, progress) {
+        if (!mounted || !identical(_controller, controller)) return;
         widget.onProgressChanged(progress / 100);
       },
       onTitleChanged: (controller, title) {
+        if (!mounted || !identical(_controller, controller)) return;
         if (title != null && title.isNotEmpty) {
           widget.onTitleChanged(title);
         }
       },
       onUpdateVisitedHistory: (controller, url, androidIsReload) async {
-        if (url != null) {
-          widget.onUrlChanged(url.toString());
+        if (!mounted || !identical(_controller, controller) || url == null) {
+          return;
+        }
+        widget.onUrlChanged(url.toString());
 
-          // 更新导航状态
+        // 更新导航状态
+        try {
           final canGoBack = await controller.canGoBack();
           final canGoForward = await controller.canGoForward();
+          if (!mounted || !identical(_controller, controller)) return;
           widget.onNavigationStateChanged(canGoBack, canGoForward);
+        } catch (e) {
+          debugPrint('[WebView] 历史导航状态读取失败: $e');
         }
       },
       onConsoleMessage: (controller, consoleMessage) {

@@ -55,15 +55,9 @@ class _RotaryPluginLauncherScreenState
       Navigator.of(context).pop();
       return;
     }
-    // 先在栈顶推出插件页（此时本页 context 仍存活），再把启动器路由
-    // 从栈中移除——避免「先 pop 再用本页 context 推路由」的竞态，
-    // 插件页返回时落在启动器的下层页面
-    final navigator = Navigator.of(context);
-    final launcherRoute = ModalRoute.of(context);
+    // 插件栈替换会保留首页并移除启动器及旧插件页面，避免启动器
+    // 自己再 removeRoute 导致 Navigator 栈状态被重复修改。
     PluginManager.instance.openPlugin(context, plugin);
-    if (launcherRoute != null) {
-      navigator.removeRoute(launcherRoute);
-    }
   }
 
   @override
@@ -74,59 +68,57 @@ class _RotaryPluginLauncherScreenState
     return SuperCupertinoNavigationWrapper(
       title: Text('core_pluginList'.tr),
       enableLargeTitle: false,
-      body:
-          hasPlugins
-              ? Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                    child: DSThemeBridge(
-                      child: Builder(
-                        builder: (context) {
-                          final theme = AppTheme.of(context);
-                          return Text(
-                            'core_rotaryPluginHint'.tr,
-                            style: DsTypography.caption.copyWith(
-                              color: theme.textSub,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ArcRotaryWheelSelector(
-                      items: [
-                        for (final plugin in plugins)
-                          ArcWheelItemData(
-                            id: plugin.id,
-                            label: plugin.getPluginName(context) ?? plugin.id,
-                            icon: plugin.icon ?? Icons.extension,
-                            color: plugin.color,
-                            value: plugin,
+      body: hasPlugins
+          ? Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                  child: DSThemeBridge(
+                    child: Builder(
+                      builder: (context) {
+                        final theme = AppTheme.of(context);
+                        return Text(
+                          'core_rotaryPluginHint'.tr,
+                          style: DsTypography.caption.copyWith(
+                            color: theme.textSub,
                           ),
-                      ],
-                      height: null,
-                      direction: widget.direction,
-                      onItemTap: (index) => _openPlugin(_pluginAt(index)),
-                      onUserSettled:
-                          widget.autoOpen
-                              ? (index) => _openPlugin(_pluginAt(index))
-                              : null,
-                    ),
-                  ),
-                ],
-              )
-              : DSThemeBridge(
-                child: Builder(
-                  builder: (context) => Center(
-                    child: DSEmptyState(
-                      icon: DsIconKind.extension,
-                      title: 'core_noMatchingPlugins'.tr,
+                        );
+                      },
                     ),
                   ),
                 ),
+                Expanded(
+                  child: ArcRotaryWheelSelector(
+                    items: [
+                      for (final plugin in plugins)
+                        ArcWheelItemData(
+                          id: plugin.id,
+                          label: plugin.getPluginName(context) ?? plugin.id,
+                          icon: plugin.icon ?? Icons.extension,
+                          color: plugin.color,
+                          value: plugin,
+                        ),
+                    ],
+                    height: null,
+                    direction: widget.direction,
+                    onItemTap: (index) => _openPlugin(_pluginAt(index)),
+                    onUserSettled: widget.autoOpen
+                        ? (index) => _openPlugin(_pluginAt(index))
+                        : null,
+                  ),
+                ),
+              ],
+            )
+          : DSThemeBridge(
+              child: Builder(
+                builder: (context) => Center(
+                  child: DSEmptyState(
+                    icon: DsIconKind.extension,
+                    title: 'core_noMatchingPlugins'.tr,
+                  ),
+                ),
               ),
+            ),
     );
   }
 }

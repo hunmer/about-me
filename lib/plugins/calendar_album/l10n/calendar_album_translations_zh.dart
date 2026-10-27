@@ -111,7 +111,7 @@ class CalendarAlbumTranslationsZh {
     'calendar_album_switch_photo_view': '照片视图',
     'calendar_album_switch_calendar_view': '日历视图',
     'calendar_album_diary_for_date': '的日记',
-    'calendar_album_title_cannot_be_empty': '标题不能为空',
+    'calendar_album_entry_cannot_be_empty': '日记内容不能为空',
 
     // 标签文件夹
     'calendar_album_open_folder': '打开',

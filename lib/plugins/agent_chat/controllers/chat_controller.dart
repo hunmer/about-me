@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:uuid/uuid.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
-import 'package:aboutme/core/services/foreground_task_manager.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/agent_chat/models/conversation.dart';
@@ -19,7 +20,6 @@ import 'package:aboutme/plugins/agent_chat/services/token_counter_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
-import 'package:aboutme/plugins/agent_chat/services/chat_task_handler.dart';
 export '../services/tool_service.dart'
     show TemplateMatch, ReplacementRule, TemplateStrategy;
 import 'package:aboutme/utils/file_picker_helper.dart';
@@ -37,7 +37,7 @@ import 'managers/managers.dart';
 /// - ForegroundServiceManager: 前台服务管理
 ///
 /// 遵循单一职责原则 (SRP)，提高代码可维护性和可测试性
-class ChatController extends ChangeNotifier {
+class ChatController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _remoteReplyChain = Future.value();
   bool _disposed = false;
   final Conversation conversation;
@@ -75,8 +75,15 @@ class ChatController extends ChangeNotifier {
 
   // ========== 内部状态 ==========
 
-  /// 前台服务管理器（仅 Android）
-  final ForegroundTaskManager _foregroundTaskManager = ForegroundTaskManager();
+  static final Map<String, String> _runningTasks = {};
+  final Set<String> _generationTaskIds = {};
+  final Set<String> _expiredTaskIds = {};
+  final Set<String> _cancelledTaskIds = {};
+  int _alivenessEpoch = 0;
+  final Map<String, AgentChatExecutionResult> _pendingPublications = {};
+  bool _observingLifecycle = false;
+  Timer? _checkpointTimer;
+  Future<void> _checkpointChain = Future.value();
 
   /// 是否正在加载
   bool _isLoading = false;
@@ -151,6 +158,7 @@ class ChatController extends ChangeNotifier {
   }
 
   void revealAlivenessMessages() {
+    _finishPublications();
     if (!_alivenessFlushActive) return;
     _alivenessFlushActive = false;
     notifyListeners();
@@ -343,9 +351,30 @@ class ChatController extends ChangeNotifier {
 
       // 初始化前台服务管理器
       await _foregroundServiceManager.initialize();
+      WidgetsBinding.instance.addObserver(this);
+      FiniteBackgroundTask.instance.addExpirationListener(_onBackgroundExpired);
+      _observingLifecycle = true;
 
       // 加载消息
       await messageService.setCurrentConversation(conversation.id);
+      if (!_runningTasks.containsValue(conversation.id)) {
+        for (final message in List<ChatMessage>.of(
+          messageService.currentMessages,
+        ).where((message) => !message.isUser && message.isGenerating)) {
+          await messageService.updateMessage(
+            message.copyWith(
+              content: message.content.trim().isEmpty
+                  ? '上次生成已中断，请重新生成回复'
+                  : message.content,
+              isGenerating: false,
+              metadata: {
+                ...?message.metadata,
+                'requestError': '上次生成已中断，请重新生成回复',
+              },
+            ),
+          );
+        }
+      }
       messageService.onRemoteUserMessage = (message) {
         debugPrint('[AgentChat][RemoteReply] received message=${message.id}');
         _remoteReplyChain = _remoteReplyChain
@@ -394,7 +423,7 @@ class ChatController extends ChangeNotifier {
   }
 
   /// 工具结果续写
-  Future<void> _continueWithToolResult(
+  Future<AgentChatExecutionResult> _continueWithToolResult(
     String messageId,
     String toolResult,
     String currentContent,
@@ -405,13 +434,17 @@ class ChatController extends ChangeNotifier {
       // 让 AI 基于工具结果继续生成回复
       final aiMessage = messageService.getMessage(conversation.id, messageId);
       if (aiMessage != null) {
-        await _aiRequestHandler.request(
+        return await _aiRequestHandler.request(
           aiMessageId: messageId,
           userInput: toolResult,
           files: [],
           enableToolCalling: true,
         );
       }
+      return const AgentChatExecutionResult(
+        status: AgentChatExecutionStatus.failed,
+        error: '未找到工具续写消息',
+      );
     } catch (e) {
       debugPrint('❌ 工具结果续写失败: $e');
       rethrow;
@@ -419,7 +452,7 @@ class ChatController extends ChangeNotifier {
   }
 
   /// 执行工具模板并回复
-  Future<void> _executeToolTemplateAndRespond({
+  Future<AgentChatExecutionResult> _executeToolTemplateAndRespond({
     required String aiMessageId,
     required ChatMessage userMessage,
     required SavedToolTemplate template,
@@ -456,7 +489,11 @@ class ChatController extends ChangeNotifier {
       final currentContent = aiMessage?.content ?? resultSummary;
 
       // 4. 让 AI 基于工具执行结果继续生成回复（在同一条消息上）
-      await _continueWithToolResult(aiMessageId, resultSummary, currentContent);
+      return await _continueWithToolResult(
+        aiMessageId,
+        resultSummary,
+        currentContent,
+      );
     } catch (e) {
       debugPrint('❌ 执行工具模板失败: $e');
       rethrow;
@@ -559,17 +596,6 @@ class ChatController extends ChangeNotifier {
       debugPrint('[ChatClear] model cleared, notifying listeners');
       notifyListeners();
 
-      // 启动前台服务（仅 Android，且用户启用了后台服务）
-      final settings = getSettings?.call() ?? {};
-      final enableBackgroundService =
-          settings['enableBackgroundService'] as bool? ?? true;
-
-      if (!kIsWeb && UniversalPlatform.isAndroid && enableBackgroundService) {
-        // 使用第一个 agent 的消息 ID
-        final firstMessageId = '${conversation.id}_chain_0';
-        await _startAIChatService(conversation.id, firstMessageId);
-      }
-
       // 工具模板是特殊的执行路径
       // 如果用户选择了工具模板，需要单独处理
       if (selectedTemplate != null) {
@@ -582,43 +608,60 @@ class ChatController extends ChangeNotifier {
         await messageService.addMessage(aiMessage);
 
         // 执行工具模板并回复
-        await _executeToolTemplateAndRespond(
-          aiMessageId: aiMessage.id,
-          userMessage: userMessage,
-          template: selectedTemplate,
+        await _runGeneration(
+          () => _executeToolTemplateAndRespond(
+            aiMessageId: aiMessage.id,
+            userMessage: userMessage,
+            template: selectedTemplate,
+          ),
         );
       } else if (bypassAliveness) {
         // 批量测试必须等待完整工具循环，不能进入延迟触发的活人感缓冲。
-        await _agentChainExecutor.executeChain(
-          userInput: userInput,
-          files: files,
-          selectedTemplate: null,
+        await _runGeneration(
+          () => _agentChainExecutor.executeChain(
+            userInput: userInput,
+            files: files,
+            selectedTemplate: null,
+          ),
         );
       } else {
         // 活人感接管：开启活人感的单 agent 会话先缓冲思考再生成
+        final alivenessEpoch = _alivenessEpoch;
         final handled = await AgentChatAlivenessHook.instance.onUserMessage(
           conversation: conversation,
           userMessage: userMessage,
           messageService: messageService,
           onReveal: revealAlivenessMessages,
+          onPublicationError: (error) => _finishPublications(error: error),
           onIdle: () {
+            _finishPublications(cancelled: true);
             // 已读不回/空内容/出错时复位"正在输入中"标题态
             _isThinking = false;
             notifyListeners();
           },
           onFlushGenerate: (mergedText, systemSuffix) async {
+            if (_disposed || alivenessEpoch != _alivenessEpoch) return null;
+            _finishPublications(cancelled: true);
             _isThinking = false;
             _isSending = true;
             _isCancelling = false;
             _alivenessGenerating = true;
             beginAlivenessFlush();
             try {
-              await _agentChainExecutor.executeChain(
-                userInput: mergedText,
-                files: files,
-                selectedTemplate: null,
-                alivenessSystemSuffix: systemSuffix,
+              final result = await _runGeneration(
+                () => _agentChainExecutor.executeChain(
+                  userInput: mergedText,
+                  files: files,
+                  selectedTemplate: null,
+                  alivenessSystemSuffix: systemSuffix,
+                ),
+                deferPublication: true,
               );
+              final messageId = result.messageId;
+              if (result.isSuccess && messageId != null) {
+                return AgentChatGenerationResult(result.content, messageId);
+              }
+              return null;
             } catch (e) {
               // 生成失败：立即关窗兜底，避免消息永久隐藏
               revealAlivenessMessages();
@@ -628,18 +671,9 @@ class ChatController extends ChangeNotifier {
               _isSending = false;
               notifyListeners();
             }
-            // 返回本次生成的完整回复与其消息 ID（分条直接定位替换）
-            final messages = messageService.currentMessages
-                .where((m) => m.conversationId == conversation.id)
-                .toList();
-            for (final m in messages.reversed) {
-              if (!m.isUser && !m.isGenerating && m.content.trim().isNotEmpty) {
-                return AgentChatGenerationResult(m.content, m.id);
-              }
-            }
-            return null;
           },
           onCancelGenerate: () {
+            _cancelledTaskIds.addAll(_generationTaskIds);
             _isCancelling = true;
             debugPrint('[Aliveness][取消] 新消息到达，取消 agent_chat 当前生成');
           },
@@ -650,10 +684,12 @@ class ChatController extends ChangeNotifier {
         } else {
           // 统一使用链式调用逻辑
           // 单agent会被 AgentManager 包装成长度为1的链，确保工具调用正常触发
-          await _agentChainExecutor.executeChain(
-            userInput: userInput,
-            files: files,
-            selectedTemplate: null, // 工具模板已单独处理
+          await _runGeneration(
+            () => _agentChainExecutor.executeChain(
+              userInput: userInput,
+              files: files,
+              selectedTemplate: null,
+            ),
           );
         }
       }
@@ -669,9 +705,14 @@ class ChatController extends ChangeNotifier {
 
   /// 取消发送
   void cancelSending() {
-    if (!_isSending) return;
+    if (!_isSending && _generationTaskIds.isEmpty && !_isThinking) return;
 
+    _alivenessEpoch++;
+    AgentChatAlivenessHook.instance.discardBuffer(conversation.id);
+    _isThinking = false;
+    _cancelledTaskIds.addAll(_generationTaskIds);
     _isCancelling = true;
+    _finishPublications(cancelled: true);
     notifyListeners();
 
     // 立即显示取消提示，避免依赖异步请求回调更新消息。
@@ -682,8 +723,8 @@ class ChatController extends ChangeNotifier {
     for (var msg in generatingMessages) {
       messageService.updateMessage(
         msg.copyWith(
-          content: '🛑 用户已取消操作',
-          tokenCount: 0,
+          content: msg.content.trim().isEmpty ? '🛑 用户已取消操作' : msg.content,
+          tokenCount: TokenCounterService.estimateTokenCount(msg.content),
           isGenerating: false,
         ),
       );
@@ -729,80 +770,164 @@ class ChatController extends ChangeNotifier {
     return attachments;
   }
 
-  /// 启动 AI 聊天前台服务（仅 Android）
-  Future<void> _startAIChatService(
-    String conversationId,
-    String messageId,
-  ) async {
-    if (kIsWeb || !UniversalPlatform.isAndroid) {
-      debugPrint('ℹ️ [ChatController] 非 Android 平台，跳过前台服务');
-      return;
-    }
-
+  Future<AgentChatExecutionResult> _runGeneration(
+    Future<AgentChatExecutionResult> Function() generate, {
+    bool deferPublication = false,
+  }) async {
+    final taskId = const Uuid().v4();
+    _generationTaskIds.add(taskId);
+    _runningTasks[taskId] = conversation.id;
+    AgentChatExecutionResult? result;
+    var pendingPublication = false;
     try {
-      final isRunning = await _foregroundTaskManager.isServiceRunning();
-
-      if (!isRunning) {
-        debugPrint('🚀 [ChatController] 启动 AI 聊天前台服务');
-
-        await _foregroundTaskManager.startService(
-          serviceId: 257, // 唯一 ID（与 TimerService 区分）
-          notificationTitle: 'AI 助手运行中',
-          notificationText: '正在为您生成回复...',
-          notificationButtons: [
-            const ServiceNotificationButton(key: 'cancel', label: '取消'),
-          ],
-          notificationInitialRoute: '/chat',
-          callback: startAIChatTaskCallback,
+      await _foregroundServiceManager.startService(conversation.id, taskId);
+      if (!kIsWeb && UniversalPlatform.isIOS) {
+        final granted = await FiniteBackgroundTask.instance.begin(taskId);
+        debugPrint('[AgentChat][Background] iOS 后台时间申请: $granted ($taskId)');
+      }
+      _startCheckpointTimer();
+      result = await generate();
+      if (_cancelledTaskIds.contains(taskId) ||
+          _expiredTaskIds.contains(taskId)) {
+        result = AgentChatExecutionResult(
+          status: AgentChatExecutionStatus.cancelled,
+          messageId: result.messageId,
+          content: result.content,
+          tokenCount: result.tokenCount,
         );
       }
-
-      // 发送开始生成的消息到后台服务
-      FlutterForegroundTask.sendDataToTask({
-        'action': 'start_generation',
-        'conversationId': conversationId,
-        'messageId': messageId,
-      });
-
-      debugPrint('✅ [ChatController] 前台服务启动成功');
-    } catch (e) {
-      debugPrint('❌ [ChatController] 启动前台服务失败: $e');
+      if (deferPublication && result.isSuccess && !_disposed) {
+        _pendingPublications[taskId] = result;
+        pendingPublication = true;
+      }
+      return result;
+    } catch (error) {
+      result = AgentChatExecutionResult(
+        status: AgentChatExecutionStatus.failed,
+        error: error.toString(),
+      );
+      rethrow;
+    } finally {
+      if (!pendingPublication) {
+        await _finishGeneration(taskId, result);
+      }
     }
   }
 
-  /// 接收后台服务发送的数据
-  void _onReceiveBackgroundData(Object data) {
-    debugPrint('📨 [ChatController] 收到后台服务数据: $data');
-
-    if (data is Map<String, dynamic>) {
-      final event = data['event'];
-
-      switch (event) {
-        case 'cancel_generation':
-          // 后台服务请求取消生成
-          debugPrint('🛑 [ChatController] 后台服务请求取消生成');
-          cancelSending();
-          break;
-
-        case 'ai_response_ready':
-          // AI 回复完成
-          final messageId = data['messageId'] as String?;
-          debugPrint('✅ [ChatController] AI 回复完成: $messageId');
-          // 刷新消息列表
-          notifyListeners();
-          break;
-
-        case 'ai_response_error':
-          // AI 回复错误
-          final error = data['error'] as String?;
-          debugPrint('❌ [ChatController] AI 回复错误: $error');
-          notifyListeners();
-          break;
-
-        default:
-          debugPrint('⚠️ [ChatController] 未知事件: $event');
+  Future<void> _finishGeneration(
+    String taskId,
+    AgentChatExecutionResult? result,
+  ) async {
+    if (!_generationTaskIds.remove(taskId)) return;
+    _runningTasks.remove(taskId);
+    _cancelledTaskIds.remove(taskId);
+    final expired = _expiredTaskIds.remove(taskId);
+    try {
+      await _saveGenerationProgress();
+      await _foregroundServiceManager.finishTask(
+        taskId,
+        content: result?.content ?? '',
+        tokenCount: result?.tokenCount,
+        messageId: result?.messageId,
+        error: expired ? '后台执行时间已到，已保存当前进度，请回到应用检查回复' : result?.error,
+        cancelled: !expired && (result?.isCancelled ?? true),
+      );
+    } finally {
+      if (!kIsWeb && UniversalPlatform.isIOS) {
+        await FiniteBackgroundTask.instance.end(taskId);
+      }
+      if (_generationTaskIds.isEmpty) {
+        _checkpointTimer?.cancel();
+        _checkpointTimer = null;
+        if (_disposed && _observingLifecycle) {
+          WidgetsBinding.instance.removeObserver(this);
+          FiniteBackgroundTask.instance.removeExpirationListener(
+            _onBackgroundExpired,
+          );
+          _observingLifecycle = false;
+        }
       }
     }
+  }
+
+  void _finishPublications({Object? error, bool cancelled = false}) {
+    final pending = Map<String, AgentChatExecutionResult>.from(
+      _pendingPublications,
+    );
+    _pendingPublications.clear();
+    for (final entry in pending.entries) {
+      var result = entry.value;
+      if (cancelled || error != null) {
+        result = AgentChatExecutionResult(
+          status: cancelled
+              ? AgentChatExecutionStatus.cancelled
+              : AgentChatExecutionStatus.failed,
+          error: error?.toString(),
+        );
+      } else {
+        final published = messageService.currentMessages
+            .where((m) => !m.isUser && !m.isGenerating)
+            .lastOrNull;
+        if (published != null) {
+          result = AgentChatExecutionResult(
+            status: result.status,
+            messageId: published.id,
+            content: result.content,
+            tokenCount: result.tokenCount,
+            error: result.error,
+          );
+        }
+      }
+      unawaited(_finishGeneration(entry.key, result));
+    }
+  }
+
+  void _startCheckpointTimer() {
+    if (_checkpointTimer != null) return;
+    _checkpointTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+        unawaited(_saveGenerationProgress());
+      }
+    });
+  }
+
+  Future<void> _saveGenerationProgress() {
+    final next = _checkpointChain
+        .then((_) async {
+          await messageService.persistConversation(conversation.id);
+        })
+        .catchError((Object error) {
+          debugPrint('[AgentChat][Background] 保存进度失败: $error');
+        });
+    _checkpointChain = next;
+    return next;
+  }
+
+  void _onBackgroundExpired(String taskId) {
+    if (!_generationTaskIds.contains(taskId)) return;
+    _expiredTaskIds.add(taskId);
+    _cancelledTaskIds.add(taskId);
+    _isCancelling = true;
+    debugPrint('[AgentChat][Background] iOS 后台时间到期: $taskId');
+    unawaited(_saveGenerationProgress());
+    _finishPublications(error: StateError('后台执行时间已到，已保存当前进度'));
+    notifyListeners();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_generationTaskIds.isNotEmpty) {
+      unawaited(_saveGenerationProgress());
+    }
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_foregroundServiceManager.retryPendingNotifications());
+      notifyListeners();
+    }
+  }
+
+  @override
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
   }
 
   /// 选择图片
@@ -911,10 +1036,12 @@ class ChatController extends ChangeNotifier {
       if (_isCancelling) return;
 
       await messageService.deleteMessage(conversation.id, messageId);
-      await _agentChainExecutor.executeChain(
-        userInput: userMessage.content,
-        files: userMessage.attachments.map((a) => File(a.filePath)).toList(),
-        conversationHistory: history.sublist(0, userIndex + 1),
+      await _runGeneration(
+        () => _agentChainExecutor.executeChain(
+          userInput: userMessage.content,
+          files: userMessage.attachments.map((a) => File(a.filePath)).toList(),
+          conversationHistory: history.sublist(0, userIndex + 1),
+        ),
       );
     } catch (e) {
       debugPrint('❌ 重新生成失败: $e');
@@ -1075,15 +1202,23 @@ class ChatController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    messageService.onRemoteUserMessage = null;
-    // 释放所有管理器资源
-    _foregroundServiceManager.dispose();
-
-    // 移除前台服务数据回调
-    if (!kIsWeb && UniversalPlatform.isAndroid) {
-      _foregroundTaskManager.removeDataCallback(_onReceiveBackgroundData);
-      debugPrint('📝 已移除前台服务数据回调');
+    _alivenessEpoch++;
+    if (_isThinking && !_alivenessGenerating) {
+      AgentChatAlivenessHook.instance.discardBuffer(conversation.id);
     }
+    messageService.onRemoteUserMessage = null;
+    _finishPublications(cancelled: true);
+    if (_generationTaskIds.isEmpty) {
+      if (_observingLifecycle) {
+        WidgetsBinding.instance.removeObserver(this);
+        FiniteBackgroundTask.instance.removeExpirationListener(
+          _onBackgroundExpired,
+        );
+        _observingLifecycle = false;
+      }
+      _checkpointTimer?.cancel();
+    }
+    _foregroundServiceManager.dispose();
 
     debugPrint('🔌 ChatController 已释放');
 

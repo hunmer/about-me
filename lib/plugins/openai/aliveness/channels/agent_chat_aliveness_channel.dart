@@ -35,6 +35,7 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
     required this.onCancelGenerate,
     required this.onReveal,
     this.onIdle,
+    this.onPublicationError,
   });
 
   final AIAgent agent;
@@ -44,6 +45,7 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
   final CancelFlushCallback onCancelGenerate;
   final void Function() onReveal;
   final void Function()? onIdle;
+  final void Function(Object error)? onPublicationError;
 
   AgentChatGenerationResult? _generated;
 
@@ -87,20 +89,20 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
 
   @override
   Future<bool> sendVoice(String text) async {
-    // 替代模式：删除原 AI 消息后只发语音，失败回退分条文本
-    await _deleteGenerated();
-    return VoiceService.instance.sendVoiceMessageToConversation(
+    // 保留完整文本直到语音落盘，防止合成期间进程终止导致结果丢失。
+    final sent = await VoiceService.instance.sendVoiceMessageToConversation(
       agentId: agent.id,
       conversation: conversation,
       messageService: messageService,
       text: text,
       ttsServiceId: agent.alivenessConfig?.ttsServiceId,
     );
+    if (sent) await _deleteGenerated();
+    return sent;
   }
 
   @override
   Future<void> sendBubbles(List<String> bubbles) async {
-    await _deleteGenerated();
     for (var i = 0; i < bubbles.length; i++) {
       await messageService.addMessage(
         ChatMessage.ai(
@@ -113,6 +115,7 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
         ),
       );
     }
+    if (bubbles.isNotEmpty) await _deleteGenerated();
     _pendingThinking = null;
     debugPrint('[Aliveness][分条] agent_chat 一次性写入 ${bubbles.length} 条');
   }
@@ -124,6 +127,7 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
 
   @override
   Future<void> onError(Object error) async {
+    onPublicationError?.call(error);
     _finish();
   }
 
@@ -137,7 +141,7 @@ class AgentChatAlivenessSession implements AlivenessSessionChannel {
 
   /// 关闭隐藏窗口并复位"正在输入中"状态（无回复/出错的收尾）
   void _finish() {
-    onReveal();
     onIdle?.call();
+    onReveal();
   }
 }

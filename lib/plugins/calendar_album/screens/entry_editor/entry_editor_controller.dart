@@ -108,9 +108,11 @@ class EntryEditorController {
     CalendarController calendarController,
   ) async {
     final title = titleController.text.trim();
-    // 如果标题为空且没有图片,则提示错误
-    if (title.isEmpty && imageUrls.isEmpty) {
-      toastService.showToast('calendar_album_title_cannot_be_empty'.tr);
+    // 标题可空，仅当标题、正文、图片均为空时阻止保存
+    if (title.isEmpty &&
+        contentController.text.trim().isEmpty &&
+        imageUrls.isEmpty) {
+      toastService.showToast('calendar_album_entry_cannot_be_empty'.tr);
       return null;
     }
 
