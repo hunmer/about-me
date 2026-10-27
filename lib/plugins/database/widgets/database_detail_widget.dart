@@ -5,6 +5,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/plugins/database/controllers/database_controller.dart';
@@ -506,9 +507,27 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
         .where((f) => f.showInPreview)
         .toList();
 
-    return GestureDetector(
-      // 长按弹操作菜单（tap 由 DSCard 内部 Pressable 处理）
-      onLongPress: () => _showRecordMenu(context, record),
+    // 长按弹圆盘快捷菜单（编辑/删除；tap 由 DSCard 内部 Pressable 处理）
+    return ArcContextMenu.actions(
+      actions: [
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: 'database_edit'.tr,
+          onTap: () => _editRecord(context, record),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'database_delete'.tr,
+          destructive: true,
+          onTap: () async {
+            final shouldDelete = await _confirmDelete(context, record);
+            if (shouldDelete) {
+              await _deleteRecord(record);
+            }
+          },
+        ),
+      ],
+      showMore: () => _showRecordMenu(context, record),
       child: DSCard(
         onTap: () => _showRecordEditor(database, record),
         child: ConstrainedBox(
@@ -624,36 +643,33 @@ class _DatabaseDetailWidgetState extends State<DatabaseDetailWidget> {
     _applyFilters(_multiFilterState.getAllValues(), _searchKeyword);
   }
 
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _recordActions(
+    BuildContext context,
+    record_model.Record record,
+  ) => [
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: 'database_edit'.tr,
+          onTap: () => _editRecord(context, record),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'database_delete'.tr,
+          destructive: true,
+          onTap: () async {
+            final shouldDelete = await _confirmDelete(context, record);
+            if (shouldDelete) {
+              await _deleteRecord(record);
+            }
+          },
+        ),
+      ];
+
   void _showRecordMenu(BuildContext context, record_model.Record record) {
-    SmoothBottomSheet.show(
+    SmoothBottomSheet.showActionList(
       context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SmoothSheetAction(
-              icon: DsIconKind.edit,
-              label: 'database_edit'.tr,
-              onTap: () {
-                Navigator.of(context).pop();
-                _editRecord(context, record);
-              },
-            ),
-            SmoothSheetAction(
-              icon: DsIconKind.trash,
-              label: 'database_delete'.tr,
-              destructive: true,
-              onTap: () async {
-                Navigator.of(context).pop();
-                final shouldDelete = await _confirmDelete(context, record);
-                if (shouldDelete) {
-                  await _deleteRecord(record);
-                }
-              },
-            ),
-          ],
-        );
-      },
+      actions: _recordActions(context, record),
     );
   }
 

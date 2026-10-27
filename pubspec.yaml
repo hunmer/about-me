@@ -238,6 +238,7 @@ flutter:
     - assets/agents/  # 内置智能体封面（竖版 WebP，切分脚本 tools/agent_covers/）
     - assets/webview_apps/blessing_wall/  # 内置 webview app（经 /builtin/ 路由提供，不复制到 app_data）
     - assets/webview_apps/octubre_calendar/
+    - assets/webview_apps/_libs/  # 内置 webview app 公共依赖（tailwind/html2canvas，离线可用；字体用系统栈）
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

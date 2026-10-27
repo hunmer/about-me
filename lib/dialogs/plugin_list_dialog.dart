@@ -8,6 +8,7 @@ import 'package:aboutme/core/floating_ball/plugin_overlay_manager.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/screens/settings_screen/settings_screen.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
@@ -138,11 +139,31 @@ class _PluginListDialogState extends State<PluginListDialog> {
   Widget _buildPluginCard(BuildContext context, PluginBase plugin) {
     final theme = AppTheme.of(context);
     final isPinned = PluginManager.instance.isPluginPinned(plugin.id);
+    // 移动端长按弹圆盘快捷菜单（固定/浮窗）；桌面端右键直接弹完整 sheet
     return GestureDetector(
-      // 移动端长按 / 桌面端右键弹出快捷操作
-      onLongPressStart: (_) => _showPluginMenu(context, plugin),
       onSecondaryTapUp: (_) => _showPluginMenu(context, plugin),
-      child: WiredDraw(
+      child: ArcContextMenu.actions(
+        actions: [
+          ArcMenuItem(
+            icon: DsIconKind.pin,
+            label: isPinned ? 'core_unpinPlugin'.tr : 'core_pinPlugin'.tr,
+            onTap: () {
+              PluginManager.instance.togglePluginPin(plugin.id);
+              // 刷新列表，固定项移动到最前
+              setState(() {});
+            },
+          ),
+          ArcMenuItem(
+            icon: DsIconKind.pictureInPicture,
+            label: 'core_openInOverlay'.tr,
+            onTap: () {
+              Navigator.of(context).pop(); // 关闭插件列表对话框
+              PluginOverlayManager().showPluginOverlay(context, plugin);
+            },
+          ),
+        ],
+        showMore: () => _showPluginMenu(context, plugin),
+        child: WiredDraw(
         child: DSCard(
           padding: const EdgeInsets.all(6),
           onTap: () {
@@ -222,12 +243,13 @@ class _PluginListDialogState extends State<PluginListDialog> {
                     },
                   ),
                 ),
-            ],
-          ),
-        ),
+             ],
+           ),
+         ),
+       ),
       ),
-    );
-  }
+     );
+   }
 
   /// 长按卡片弹出快捷操作面板：固定/取消固定、小窗打开
   Future<void> _showPluginMenu(BuildContext cardContext, PluginBase plugin) {

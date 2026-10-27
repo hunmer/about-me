@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/creator_profile_demo.dart';
 import 'package:aboutme/widgets/newspaper_stand_demo.dart';
+import 'package:aboutme/widgets/molly_memories_demo.dart';
 import 'package:aboutme/widgets/scheduled_payments_calendar_demo.dart';
 import 'package:aboutme/screens/routing/route_definition.dart';
 import 'package:aboutme/screens/routing/route_helpers.dart';

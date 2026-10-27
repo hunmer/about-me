@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:skribble/skribble.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 
@@ -98,6 +99,40 @@ class SmoothBottomSheet {
         child: child,
       ),
     );
+  }
+
+  /// 弹出按钮列表底部抽屉（数据与 ArcContextMenu.actions 的圆盘菜单共用）
+  ///
+  /// [actions] 与长按圆盘菜单用同一份 [ArcMenuItem] 列表，按钮点击自动
+  /// 关闭抽屉再执行动作；作为圆盘"更多"的完整版弹层。
+  /// [title] 为空时不显示标题栏（与原无标题 sheet 外观一致）。
+  static Future<T?> showActionList<T>({
+    required BuildContext context,
+    required List<ArcMenuItem> actions,
+    String? title,
+  }) {
+    Widget list = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final action in actions)
+          SmoothSheetAction(
+            icon: action.icon,
+            label: action.label,
+            destructive: action.destructive,
+            onTap: () {
+              Navigator.pop(context);
+              action.onTap();
+            },
+          ),
+      ],
+    );
+    return title == null
+        ? show<T>(context: context, builder: (_) => list)
+        : showWithTitle<T>(
+            context: context,
+            title: title,
+            child: list,
+          );
   }
 
   /// 表单底部弹层：高度贴合内容，超高可滚动

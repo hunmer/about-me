@@ -87,7 +87,11 @@ Future<String> _jsSelectMessages(Map<String, dynamic> params) async {
    其他用户让前端按 username 哈希生成固定头像。视频消息 `<img>` 显示不了，取
    `fileInfo['thumbPath'] ?? filePath`。
 
-现成参考实现：`lib/plugins/chat/chat_js_api.dart` 的 `_localPathToHttpUrl` / `_assetRefToHttpUrl` / `_jsSelectMessages`。
+现成参考实现：`lib/plugins/chat/chat_js_api.dart` 的 `_localPathToHttpUrl` / `_assetRefToHttpUrl` / `_jsSelectMessages`；
+原生图片选择器（ImagePickerDialog，相册/表情/拍照/在线URL）已封装为
+`Aboutme.plugins.webview.selectImages({multiple})`，返回
+`{cancelled, images: [{url, thumbUrl?}]}`（url 已转 http，emoji: 结果自动剔除），
+实现见 `lib/plugins/webview/webview_js_api.dart` 的 `_jsSelectImages`。
 
 ## 三、网页侧模板
 
@@ -106,6 +110,34 @@ async function pickFromAboutme() {
 页面经本地 HTTP 服务器加载时图片与页面同源，html2canvas 导出无 CORS 问题。
 
 ## 四、部署为 webview app
+
+### 方式 A：内置 app（推荐，零拷贝）
+
+页面放 `assets/webview_apps/<project>/`，pubspec 声明该子目录（Flutter 目录
+asset 不递归，每个项目目录单独列）：
+
+```yaml
+- assets/webview_apps/<project>/  # 内置 webview app（经 /builtin/ 路由提供）
+```
+
+- HTTP 服务器自动把 `http://localhost:<port>/builtin/<project>/...`
+  映射到 `assets/webview_apps/<project>/...`（rootBundle 读取，
+  见 local_http_server.dart `_serveBuiltinAsset`）。
+- 卡片 url 填 `./builtin/<project>/index.html`；插件启动时按
+  `WebViewPlugin.builtinApps` 清单自动 seed（旧的 app_data 拷贝卡片会就地
+  迁移并清理拷贝目录），**无需手动添加卡片，也无须复制到 app_data**。
+- 内置卡片 sourcePath 置 null，删除卡片不会动文件系统。
+- **公共依赖离线化**：多页面共用的 CDN 资源放 `assets/webview_apps/_libs/`
+  （tailwindcdn.js / html2canvas.min.js），页面内用 `../_libs/xxx` 相对引用
+  （`/builtin/` 前缀映射天然支持跨项目共享），pubspec 声明 `_libs/` 目录。
+- **字体直接用系统字体栈，不要打包网页字体**：Google Fonts 中文字体
+  （Noto Serif SC）全量切片约 6MB，pyftsubset 子集化又费时费力；
+  font-family 写 `-apple-system, BlinkMacSystemFont, 'Segoe UI',
+  'Microsoft YaHei', 'PingFang SC', sans-serif`（衬线标题用
+  `Georgia, 'Times New Roman', 'STSong', 'SimSun', serif`）即可，
+  零体积零请求，各平台观感良好。
+
+### 方式 B：运行时本地文件（用户自导入）
 
 | 位置 | 路径 |
 |------|------|

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:provider/provider.dart';
@@ -413,11 +414,57 @@ class _ScriptsListScreenState extends State<ScriptsListScreen> {
                 return HandDrawnStickyItem(
                   tiltKey: script.id,
                   child: WiredDraw(
-                    child: ScriptCard(
-                      script: script,
-                      onTap: () => _showScriptDialog(script: script),
-                      onLongPress: () => _showActionSheet(script),
-                      onRun: () => _runScript(script),
+                    // 长按弹圆盘快捷菜单（与底部 sheet 按钮一致）
+                    child: ArcContextMenu.actions(
+                      actions: [
+                        ArcMenuItem(
+                          icon: script.enabled
+                              ? DsIconKind.block
+                              : DsIconKind.check,
+                          label: script.enabled
+                              ? 'scripts_center_disableScript'.tr
+                              : 'scripts_center_enableScript'.tr,
+                          destructive: script.enabled,
+                          onTap: () => _toggleScript(script),
+                        ),
+                        ArcMenuItem(
+                          icon: DsIconKind.edit,
+                          label: 'app_edit'.tr,
+                          onTap: () => _showScriptDialog(script: script),
+                        ),
+                        ArcMenuItem(
+                          icon: DsIconKind.clock,
+                          label: 'scripts_center_executionLogs'.tr,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ScriptExecutionLogScreen(
+                                logger: widget.scriptExecutor!.executionLogger,
+                                executor: widget.scriptExecutor,
+                                scriptId: script.id,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ArcMenuItem(
+                          icon: DsIconKind.share,
+                          label: 'scripts_center_exportScript'.tr,
+                          onTap: () => _exportScript(script),
+                        ),
+                        if (!script.isBuiltIn)
+                          ArcMenuItem(
+                            icon: DsIconKind.trash,
+                            label: 'app_delete'.tr,
+                            destructive: true,
+                            onTap: () => _deleteScript(script),
+                          ),
+                      ],
+                      showMore: () => _showActionSheet(script),
+                      child: ScriptCard(
+                        script: script,
+                        onTap: () => _showScriptDialog(script: script),
+                        onRun: () => _runScript(script),
+                      ),
                     ),
                   ),
                 );

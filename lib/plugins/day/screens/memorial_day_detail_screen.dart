@@ -5,6 +5,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/swipe_action/swipe_action_wrapper.dart';
 import 'package:aboutme/plugins/day/controllers/day_controller.dart';
@@ -162,26 +163,21 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
     );
   }
 
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _noteActions(DayController controller, int index) => [
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'day_deleteMemorialDay'.tr,
+          destructive: true,
+          onTap: () => _deleteNote(controller, index),
+        ),
+      ];
+
   void _showNoteMenu(DayController controller, int index) {
-    SmoothBottomSheet.showWithTitle(
+    SmoothBottomSheet.showActionList(
       context: context,
       title: 'day_note'.tr,
-      child: Builder(
-        builder: (sheetContext) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SmoothSheetAction(
-              icon: DsIconKind.trash,
-              label: 'day_deleteMemorialDay'.tr,
-              destructive: true,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _deleteNote(controller, index);
-              },
-            ),
-          ],
-        ),
-      ),
+      actions: _noteActions(controller, index),
     );
   }
 
@@ -507,9 +503,12 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
         ),
       ],
       deleteConfirmContent: 'day_deleteNoteConfirm'.tr,
-      child: Pressable(
-      onLongPress: () => _showNoteMenu(controller, index),
-      builder: (context, states) {
+      // 长按弹圆盘快捷菜单（删除）
+      child: ArcContextMenu.actions(
+        actions: _noteActions(controller, index),
+        showMore: () => _showNoteMenu(controller, index),
+        child: Pressable(
+        builder: (context, states) {
         final pressed = states.contains(WidgetState.pressed);
         return Transform.translate(
           offset: pressed ? const Offset(1, 1) : Offset.zero,
@@ -600,6 +599,7 @@ class _MemorialDayDetailScreenState extends State<MemorialDayDetailScreen> {
           ),
         );
       },
+        ),
       ),
     );
   }

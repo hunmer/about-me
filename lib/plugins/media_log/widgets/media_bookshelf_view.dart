@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
 import '../models/media_item.dart';
@@ -18,12 +19,19 @@ class MediaBookshelfView extends StatelessWidget {
     required this.items,
     required this.onTap,
     this.onLongPress,
+    this.arcActions,
+    this.onMore,
     this.padding,
   });
 
   final List<MediaItem> items;
   final void Function(MediaItem item) onTap;
   final void Function(MediaItem item)? onLongPress;
+
+  /// 每本书的长按圆盘菜单项构造器（传入时替代 [onLongPress]，
+  /// 与 [onMore]（"更多"弹底部 sheet）配套）
+  final List<ArcMenuItem> Function(MediaItem item)? arcActions;
+  final void Function(MediaItem item)? onMore;
   final EdgeInsetsGeometry? padding;
 
   /// 隔板厚度 / 书脊区高度 / 层间距
@@ -153,7 +161,7 @@ class MediaBookshelfView extends StatelessWidget {
   Widget _buildBook(BuildContext context, MediaItem item) {
     final u = handDrawnUnitRandom('media_spine_${item.id}') * 0.5 + 0.5;
     final height = _shelfHeight * (0.78 + 0.22 * u);
-    return Padding(
+    Widget book = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: SizedBox(
         height: _shelfHeight,
@@ -161,7 +169,13 @@ class MediaBookshelfView extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           child: Pressable(
             onPressed: () => onTap(item),
-            onLongPress: onLongPress == null ? null : () => onLongPress!(item),
+            // 圆盘菜单接管长按时不再注册，避免手势竞争
+            onLongPress:
+                arcActions != null
+                    ? null
+                    : onLongPress == null
+                    ? null
+                    : () => onLongPress!(item),
             semanticLabel: item.title,
             builder: (context, states) {
               final pressed = states.contains(WidgetState.pressed);
@@ -195,6 +209,13 @@ class MediaBookshelfView extends StatelessWidget {
           ),
         ),
       ),
+    );
+    final actions = arcActions;
+    if (actions == null) return book;
+    return ArcContextMenu.actions(
+      actions: actions(item),
+      showMore: () => onMore?.call(item),
+      child: book,
     );
   }
 

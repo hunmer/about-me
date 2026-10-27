@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/plugins/openai/models/service_provider.dart';
 import 'package:aboutme/plugins/openai/controllers/provider_controller.dart';
 import 'package:aboutme/plugins/openai/widgets/provider_logo.dart';
@@ -145,40 +146,31 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
   }
 
   /// 长按提供商卡片弹出的操作抽屉
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _providerActions(ServiceProvider provider) => [
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: 'openai_editProvider'.tr,
+          onTap: () => _editProvider(provider),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.copy,
+          label: 'openai_cloneProvider'.tr,
+          onTap: () => _cloneProvider(provider),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'app_delete'.tr,
+          destructive: true,
+          onTap: () => _deleteProvider(provider),
+        ),
+      ];
+
   Future<void> _showProviderActions(ServiceProvider provider) {
-    return SmoothBottomSheet.showWithTitle(
+    return SmoothBottomSheet.showActionList(
       context: context,
       title: provider.label,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SmoothSheetAction(
-            icon: DsIconKind.edit,
-            label: 'openai_editProvider'.tr,
-            onTap: () {
-              Navigator.pop(context);
-              _editProvider(provider);
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.copy,
-            label: 'openai_cloneProvider'.tr,
-            onTap: () {
-              Navigator.pop(context);
-              _cloneProvider(provider);
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.trash,
-            label: 'app_delete'.tr,
-            destructive: true,
-            onTap: () {
-              Navigator.pop(context);
-              _deleteProvider(provider);
-            },
-          ),
-        ],
-      ),
+      actions: _providerActions(provider),
     );
   }
 
@@ -256,9 +248,10 @@ class _ProviderSettingsScreenState extends State<ProviderSettingsScreen> {
             final provider = _providers[index];
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              // 长按弹出操作抽屉（编辑/克隆/删除）
-              child: GestureDetector(
-                onLongPress: () => _showProviderActions(provider),
+              // 长按弹圆盘快捷菜单（编辑/克隆/删除）
+              child: ArcContextMenu.actions(
+                actions: _providerActions(provider),
+                showMore: () => _showProviderActions(provider),
                 child: DSCard(
                   padding: EdgeInsets.symmetric(
                     horizontal: theme.spacing.md,

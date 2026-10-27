@@ -8,6 +8,7 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/aboutme_sf_calendar/aboutme_sf_calendar.dart';
 import 'package:aboutme/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -310,13 +311,15 @@ class ContactMainViewState extends State<ContactMainView> {
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final contact = _searchResults[index];
-        return ContactListTile(
-          key: ValueKey(contact.id),
-          contact: contact,
-          seed: index,
-          onTap: () => _openDetail(contact),
-          onLongPress: () => _showItemActions(contact),
-          onToggleFavorite: () => _toggleFavorite(contact),
+        return _wrapContactActions(
+          contact,
+          ContactListTile(
+            key: ValueKey(contact.id),
+            contact: contact,
+            seed: index,
+            onTap: () => _openDetail(contact),
+            onToggleFavorite: () => _toggleFavorite(contact),
+          ),
         );
       },
     );
@@ -627,13 +630,15 @@ class ContactMainViewState extends State<ContactMainView> {
               remaining--;
               if (remaining < group.value.length) {
                 final contact = group.value[remaining];
-                return ContactListTile(
-                  key: ValueKey(contact.id),
-                  contact: contact,
-                  seed: index,
-                  onTap: () => _openDetail(contact),
-                  onLongPress: () => _showItemActions(contact),
-                  onToggleFavorite: () => _toggleFavorite(contact),
+                return _wrapContactActions(
+                  contact,
+                  ContactListTile(
+                    key: ValueKey(contact.id),
+                    contact: contact,
+                    seed: index,
+                    onTap: () => _openDetail(contact),
+                    onToggleFavorite: () => _toggleFavorite(contact),
+                  ),
                 );
               }
               remaining -= group.value.length;
@@ -739,38 +744,37 @@ class ContactMainViewState extends State<ContactMainView> {
   }
 
   /// 长按快捷操作：收藏切换 + 删除确认
-  Future<void> _showItemActions(Contact contact) async {
-    final theme = DSThemeBridge.resolve(context);
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _contactActions(Contact contact) => [
+        ArcMenuItem(
+          icon: DsIconKind.star,
+          label: contact.isFavorite
+              ? 'contact_removeFromFavorites'.tr
+              : 'contact_addToFavorites'.tr,
+          onTap: () => _toggleFavorite(contact),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'contact_deleteContact'.tr,
+          destructive: true,
+          onTap: () => _confirmDelete(contact),
+        ),
+      ];
 
-    await SmoothBottomSheet.showWithTitle(
+  /// 联系人列表项的长按圆盘快捷菜单包装（收藏/删除）
+  Widget _wrapContactActions(Contact contact, Widget child) {
+    return ArcContextMenu.actions(
+      actions: _contactActions(contact),
+      showMore: () => _showItemActions(contact),
+      child: child,
+    );
+  }
+
+  Future<void> _showItemActions(Contact contact) {
+    return SmoothBottomSheet.showActionList(
       context: context,
       title: contact.name,
-      child: Builder(
-        builder: (context) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SmoothSheetAction(
-              icon: DsIconKind.star,
-              label: contact.isFavorite
-                  ? 'contact_removeFromFavorites'.tr
-                  : 'contact_addToFavorites'.tr,
-              onTap: () {
-                Navigator.pop(context);
-                _toggleFavorite(contact);
-              },
-            ),
-            SmoothSheetAction(
-              icon: DsIconKind.trash,
-              label: 'contact_deleteContact'.tr,
-              destructive: true,
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDelete(contact, theme: theme);
-              },
-            ),
-          ],
-        ),
-      ),
+      actions: _contactActions(contact),
     );
   }
 

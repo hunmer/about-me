@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
@@ -31,8 +32,51 @@ class ArcContextMenu extends StatefulWidget {
     required this.items,
     required this.child,
     this.onTap,
+    this.onDoubleTap,
     this.preview,
   });
+
+  /// 底部 sheet 按钮列表的长按快捷圆盘包装
+  ///
+  /// [actions] 与底部 sheet 内的按钮一一对应：不超过 [maxItems] 个时全部
+  /// 进圆盘（不弹 sheet）；超出时取前 [maxItems] - 1 个并追加"更多"，
+  /// 点击"更多"调 [showMore] 弹出原底部 sheet。
+  ///
+  /// ```dart
+  /// ArcContextMenu.actions(
+  ///   actions: [...], // 与 sheet 按钮一致
+  ///   showMore: () => _showActionSheet(item),
+  ///   child: MyCard(),
+  /// )
+  /// ```
+  static Widget actions({
+    required List<ArcMenuItem> actions,
+    required Widget child,
+    required VoidCallback showMore,
+    VoidCallback? onTap,
+    VoidCallback? onDoubleTap,
+    Widget? preview,
+    int maxItems = 5,
+  }) {
+    final items =
+        actions.length <= maxItems
+        ? actions
+        : [
+            ...actions.take(maxItems - 1),
+            ArcMenuItem(
+              icon: DsIconKind.more,
+              label: 'app_more'.tr,
+              onTap: showMore,
+            ),
+          ];
+    return ArcContextMenu(
+      items: items,
+      onTap: onTap,
+      onDoubleTap: onDoubleTap,
+      preview: preview,
+      child: child,
+    );
+  }
 
   /// 菜单项（沿半圆弧依次排开）
   final List<ArcMenuItem> items;
@@ -42,6 +86,9 @@ class ArcContextMenu extends StatefulWidget {
 
   /// 普通点击回调（可选）
   final VoidCallback? onTap;
+
+  /// 双击回调（可选，如动态图片双击点赞）
+  final VoidCallback? onDoubleTap;
 
   /// 浮层中放大展示的组件（可选）
   ///
@@ -102,6 +149,7 @@ class _ArcContextMenuState extends State<ArcContextMenu> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: widget.onTap,
+      onDoubleTap: widget.onDoubleTap,
       onLongPressStart:
           widget.items.isEmpty
               ? null

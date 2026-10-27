@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/folder.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
@@ -90,9 +91,31 @@ class FolderCard extends StatelessWidget {
     final onFolder =
         folder.color.computeLuminance() > 0.45 ? DsColors.text : Colors.white;
 
-    return GestureDetector(
+    // 长按弹圆盘快捷菜单（与底部 sheet 按钮一致，动态；无可用操作时为空）
+    return ArcContextMenu.actions(
       onTap: onTap,
-      onLongPress: () => _showBottomSheet(context),
+      actions: [
+        if (onEdit != null)
+          ArcMenuItem(
+            icon: DsIconKind.edit,
+            label: 'notes_renameFolder'.tr,
+            onTap: onEdit!,
+          ),
+        if (onToggleArchive != null)
+          ArcMenuItem(
+            icon: DsIconKind.archive,
+            label: folder.isArchived ? 'notes_unarchive'.tr : 'notes_archive'.tr,
+            onTap: onToggleArchive!,
+          ),
+        if (onDelete != null)
+          ArcMenuItem(
+            icon: DsIconKind.trash,
+            label: 'app_delete'.tr,
+            destructive: true,
+            onTap: onDelete!,
+          ),
+      ],
+      showMore: () => _showBottomSheet(context),
       child: Padding(
         // 顶部留白给文件夹舌头与露出的纸张
         padding: const EdgeInsets.only(top: 16),

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
 import 'package:aboutme/plugins/notes/models/note_style_selection.dart';
@@ -188,9 +189,46 @@ class NoteCard extends StatelessWidget {
     // 水印位于内容层之下，溢出被裁剪
     final radius = BorderRadius.circular(14);
 
-    return GestureDetector(
+    // 长按弹圆盘快捷菜单（与底部 sheet 按钮一致，动态）
+    return ArcContextMenu.actions(
       onTap: onTap,
-      onLongPress: () => _showBottomSheet(context),
+      actions: [
+        ArcMenuItem(
+          icon: DsIconKind.copy,
+          label: 'app_copy'.tr,
+          onTap: _copyNoteContent,
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: 'app_edit'.tr,
+          onTap: () {
+            if (onEdit != null) {
+              onEdit!();
+            } else {
+              onTap();
+            }
+          },
+        ),
+        if (onEditStyle != null)
+          ArcMenuItem(
+            icon: DsIconKind.palette,
+            label: 'notes_color'.tr,
+            onTap: () => _showStyleEditor(context),
+          ),
+        if (onToggleArchive != null)
+          ArcMenuItem(
+            icon: DsIconKind.archive,
+            label: note.isArchived ? 'notes_unarchive'.tr : 'notes_archive'.tr,
+            onTap: onToggleArchive!,
+          ),
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'app_delete'.tr,
+          destructive: true,
+          onTap: () => onDelete?.call(),
+        ),
+      ],
+      showMore: () => _showBottomSheet(context),
       child: ClipRRect(
         borderRadius: radius,
         child: Stack(

@@ -18,6 +18,7 @@ class MediaItemCard extends StatelessWidget {
     required this.rotation,
     required this.onTap,
     this.onLongPress,
+    this.enableHero = true,
   });
 
   final MediaItem item;
@@ -25,6 +26,9 @@ class MediaItemCard extends StatelessWidget {
   final double rotation;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+
+  /// 封面 Hero 飞行开关；长按圆盘浮层的无 Hero 预览副本置为 false
+  final bool enableHero;
 
   @override
   Widget build(BuildContext context) {
@@ -54,15 +58,19 @@ class MediaItemCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Hero 飞行时圆角随行：ClipRRect 放进 hero child 内
-                    Hero(
-                      tag: item.coverHeroTag,
-                      child: ClipRRect(
-                        borderRadius: DsRadii.md,
-                        child: AspectRatio(
-                          aspectRatio: 1 / item.aspect,
-                          child: MediaCoverView(item: item),
-                        ),
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final cover = ClipRRect(
+                          borderRadius: DsRadii.md,
+                          child: AspectRatio(
+                            aspectRatio: 1 / item.aspect,
+                            child: MediaCoverView(item: item),
+                          ),
+                        );
+                        return enableHero
+                            ? Hero(tag: item.coverHeroTag, child: cover)
+                            : cover;
+                      },
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),

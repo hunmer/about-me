@@ -16,6 +16,7 @@ import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 
@@ -157,34 +158,26 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
   }
 
   /// 长按卡片弹出操作菜单（编辑/删除）
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _cardActions(MemorialDay memorialDay) => [
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: 'day_editMemorialDay'.tr,
+          onTap: () => _showEditDialog(context, memorialDay),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'day_deleteMemorialDay'.tr,
+          destructive: true,
+          onTap: () => _controller.deleteMemorialDay(memorialDay.id),
+        ),
+      ];
+
   void _showCardMenu(MemorialDay memorialDay) {
-    SmoothBottomSheet.showWithTitle(
+    SmoothBottomSheet.showActionList(
       context: context,
       title: memorialDay.title,
-      child: Builder(
-        builder: (sheetContext) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SmoothSheetAction(
-              icon: DsIconKind.edit,
-              label: 'day_editMemorialDay'.tr,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _showEditDialog(context, memorialDay);
-              },
-            ),
-            SmoothSheetAction(
-              icon: DsIconKind.trash,
-              label: 'day_deleteMemorialDay'.tr,
-              destructive: true,
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _controller.deleteMemorialDay(memorialDay.id);
-              },
-            ),
-          ],
-        ),
-      ),
+      actions: _cardActions(memorialDay),
     );
   }
 
@@ -411,12 +404,16 @@ class _DayHomeScreenV2State extends State<DayHomeScreenV2> {
       return HandDrawnStickyItem(
         key: ValueKey(days[index].id),
         tiltKey: days[index].id,
-        child: SketchMilestoneCard(
-          memorialDay: days[index],
-          index: index,
-          isDraggable: allowReorder,
-          onTap: () => _openDetail(context, days[index]),
-          onLongPress: () => _showCardMenu(days[index]),
+        // 长按弹圆盘快捷菜单（编辑/删除）；拖拽排序模式下禁用避免抢长按手势
+        child: ArcContextMenu.actions(
+          actions: allowReorder ? const [] : _cardActions(days[index]),
+          showMore: () => _showCardMenu(days[index]),
+          child: SketchMilestoneCard(
+            memorialDay: days[index],
+            index: index,
+            isDraggable: allowReorder,
+            onTap: () => _openDetail(context, days[index]),
+          ),
         ),
       );
     }

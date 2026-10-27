@@ -8,6 +8,7 @@ import 'package:aboutme/plugins/calendar_album/controllers/tag_controller.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 import 'package:aboutme/plugins/calendar_album/widgets/entry_list.dart';
 import 'package:aboutme/utils/image_utils.dart';
+import 'package:aboutme/widgets/enhanced_calendar/photo_calendar_view.dart';
 import 'package:aboutme/widgets/enhanced_calendar/syncfusion_calendar.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
@@ -427,8 +428,10 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
 
     if (_usePhotoView) {
-      return _PhotoCalendarView(
-        calendarController: calendarController,
+      return PhotoCalendarView(
+        dayInfoBuilder: (month) =>
+            _buildPhotoMonthInfo(calendarController, month),
+        dataListenable: calendarController,
         selectedDate: selectedDate,
         onDateSelected: onDateSelected,
         onHeaderTapped: onHeaderTapped,
@@ -450,6 +453,40 @@ class _CalendarScreenState extends State<CalendarScreen>
       },
       onHeaderTapped: onHeaderTapped,
     );
+  }
+
+  /// 照片视图某月数据适配：每天取首篇笔记的标题 + 首图
+  Map<DateTime, PhotoCalendarDayInfo> _buildPhotoMonthInfo(
+    CalendarController calendarController,
+    DateTime month,
+  ) {
+    final Map<DateTime, PhotoCalendarDayInfo> dayData = {};
+    final currentMonth = DateTime(month.year, month.month, 1);
+    final nextMonth = DateTime(month.year, month.month + 1, 1);
+
+    calendarController.entries.forEach((date, entries) {
+      if (entries.isEmpty ||
+          date.isBefore(currentMonth) ||
+          !date.isBefore(nextMonth)) {
+        return;
+      }
+      final first = entries.first;
+      // 首图优先取缩略图（过滤空字符串占位），其次原图 / Markdown 内嵌图
+      String? image;
+      final thumbs = first.thumbUrls.where((t) => t.isNotEmpty);
+      if (thumbs.isNotEmpty) {
+        image = thumbs.first;
+      } else if (first.imageUrls.isNotEmpty) {
+        image = first.imageUrls.first;
+      } else {
+        final markdownImages = first.extractImagesFromMarkdown();
+        if (markdownImages.isNotEmpty) {
+          image = markdownImages.first;
+        }
+      }
+      dayData[date] = PhotoCalendarDayInfo(title: first.title, imagePath: image);
+    });
+    return dayData;
   }
 
   void _showEntryDrawer(
@@ -856,426 +893,6 @@ class _VerticalCalendarViewState extends State<_VerticalCalendarView>
                     child: KeyedSubtree(
                       key: ValueKey('vertical_${_getMonthKey(month)}'),
                       child: _buildMonthCalendar(month),
-                    ),
-                  );
-                },
-              ),
-              if (_isLoading)
-                Positioned(
-                  bottom: 16,
-                  left: 0,
-                  right: 0,
-                  child: Center(child: DSLoadingDots(color: theme.textSub)),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// 照片视图中某天的展示信息（当日首篇笔记）
-class _PhotoDayInfo {
-  final String title;
-  final String? imagePath;
-
-  const _PhotoDayInfo({required this.title, this.imagePath});
-}
-
-/// 照片视图：每天格子显示当日首篇笔记的名称（彩色小标签）+ 首图
-/// （白色圆角边框、轻微倾斜的拍立得样式），参考 couple calendar 风格
-class _PhotoCalendarView extends StatefulWidget {
-  final CalendarController calendarController;
-  final DateTime selectedDate;
-  final ValueChanged<DateTime> onDateSelected;
-  final ValueChanged<DateTime> onHeaderTapped;
-
-  const _PhotoCalendarView({
-    required this.calendarController,
-    required this.selectedDate,
-    required this.onDateSelected,
-    required this.onHeaderTapped,
-  });
-
-  @override
-  State<_PhotoCalendarView> createState() => _PhotoCalendarViewState();
-}
-
-class _PhotoCalendarViewState extends State<_PhotoCalendarView>
-    with AutomaticKeepAliveClientMixin {
-  late ScrollController _scrollController;
-  final List<DateTime> _months = [];
-  final Map<String, Map<DateTime, _PhotoDayInfo>> _cachedDayData = {};
-  bool _isLoading = false;
-
-  /// 每行统一行高（有图片的行高；无图片的行留白保持同高）
-  static const double _photoRowHeight = 132;
-
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeMonths();
-    _scrollController = ScrollController();
-    _scrollController.addListener(_handleScroll);
-    // 监听 CalendarController 的变化，数据更新时清除缓存
-    widget.calendarController.addListener(_onCalendarDataChanged);
-  }
-
-  void _onCalendarDataChanged() {
-    if (mounted) {
-      setState(() {
-        _cachedDayData.clear();
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_handleScroll);
-    _scrollController.dispose();
-    widget.calendarController.removeListener(_onCalendarDataChanged);
-    super.dispose();
-  }
-
-  /// 初始化月份列表（从当前月份开始，从大到小显示）
-  void _initializeMonths() {
-    _months.clear();
-    final now = DateTime.now();
-    for (int i = 0; i < 3; i++) {
-      _months.add(DateTime(now.year, now.month - i, 1));
-    }
-  }
-
-  /// 加载更多月份（向下滚动时加载更早的月份）
-  bool _loadMorePreviousMonths() {
-    if (_months.isEmpty || _isLoading) return false;
-
-    setState(() => _isLoading = true);
-
-    final addedMonths = <DateTime>[];
-    final earliestMonth = _months.last;
-    var currentMonth = DateTime(earliestMonth.year, earliestMonth.month - 1, 1);
-
-    for (int i = 0; i < _calendarLoadBatchSize; i++) {
-      if (currentMonth.isBefore(_calendarMinMonth)) break;
-      _months.add(currentMonth);
-      addedMonths.add(currentMonth);
-      currentMonth = DateTime(currentMonth.year, currentMonth.month - 1, 1);
-    }
-
-    setState(() => _isLoading = false);
-
-    for (final added in addedMonths) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _getMonthDayData(added);
-      });
-    }
-
-    return addedMonths.isNotEmpty;
-  }
-
-  void _handleScroll() {
-    if (!_scrollController.hasClients || _isLoading) return;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients || _isLoading) return;
-
-      const threshold = 200.0;
-      final position = _scrollController.position;
-
-      if (position.maxScrollExtent > 0 &&
-          (position.maxScrollExtent - position.pixels) <= threshold) {
-        _loadMorePreviousMonths();
-      }
-    });
-  }
-
-  String _getMonthKey(DateTime month) {
-    return 'photo_${month.year}_${month.month}';
-  }
-
-  /// 获取指定月份每天的首篇笔记信息（带缓存）
-  Map<DateTime, _PhotoDayInfo> _getMonthDayData(DateTime month) {
-    final monthKey = _getMonthKey(month);
-    if (_cachedDayData.containsKey(monthKey)) {
-      return _cachedDayData[monthKey]!;
-    }
-
-    final Map<DateTime, _PhotoDayInfo> dayData = {};
-    final currentMonth = DateTime(month.year, month.month, 1);
-    final nextMonth = DateTime(month.year, month.month + 1, 1);
-
-    widget.calendarController.entries.forEach((date, entries) {
-      if (entries.isEmpty ||
-          date.isBefore(currentMonth) ||
-          !date.isBefore(nextMonth)) {
-        return;
-      }
-      final first = entries.first;
-      // 首图优先取缩略图（过滤空字符串占位），其次原图 / Markdown 内嵌图
-      String? image;
-      final thumbs = first.thumbUrls.where((t) => t.isNotEmpty);
-      if (thumbs.isNotEmpty) {
-        image = thumbs.first;
-      } else if (first.imageUrls.isNotEmpty) {
-        image = first.imageUrls.first;
-      } else {
-        final markdownImages = first.extractImagesFromMarkdown();
-        if (markdownImages.isNotEmpty) {
-          image = markdownImages.first;
-        }
-      }
-      dayData[date] = _PhotoDayInfo(title: first.title, imagePath: image);
-    });
-
-    _cachedDayData[monthKey] = dayData;
-    return dayData;
-  }
-
-  bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
-  Widget _imageFallback(AppThemeData theme) => Container(
-    width: 36,
-    height: 36,
-    color: theme.surfaceAlt,
-    child: DsIcon(DsIconKind.image, size: 16, color: theme.textSub),
-  );
-
-  /// 首图缩略图：白底 + 左右随机小角度倾斜（拍立得效果）。
-  /// 倾斜角按日期哈希稳定取值，同一格 rebuild 不抖变
-  Widget _buildTiltedImage(
-    String imagePath,
-    DateTime day,
-    AppThemeData theme,
-  ) => _buildTiledSlot(
-    // Web/远端存储下 File 路径不可用，统一走 createImageProvider
-    // （内部按 network/asset/file/存储分发，含 StorageImageProvider 解密）
-    Image(
-      image: ImageUtils.createImageProvider(imagePath),
-      width: 36,
-      height: 36,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _imageFallback(theme),
-    ),
-    day,
-    theme,
-  );
-
-  /// 有条目但无图时的占位：同样走拍立得墨盒外框，中间为图片图标
-  Widget _buildTiledPlaceholder(DateTime day, AppThemeData theme) =>
-      _buildTiledSlot(_imageFallback(theme), day, theme);
-
-  Widget _buildTiledSlot(Widget child, DateTime day, AppThemeData theme) {
-    const tilts = [-0.10, -0.05, 0.05, 0.10];
-    final angle = tilts[(day.day * 31 + day.month * 7) % tilts.length];
-    return Transform.rotate(
-      angle: angle,
-      child: Container(
-        padding: const EdgeInsets.all(2),
-        // 纯色实底白边，无描边
-        decoration: BoxDecoration(
-          color: theme.surface,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: ClipRRect(borderRadius: BorderRadius.circular(6), child: child),
-      ),
-    );
-  }
-
-  Widget _buildMonthGrid(DateTime month) {
-    final theme = DSThemeBridge.resolve(context);
-    final dayData = _getMonthDayData(month);
-    final firstDay = DateTime(month.year, month.month, 1);
-    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
-    // 周日开头，与 SyncfusionCalendarWidget（firstDayOfWeek=7）一致
-    final leadingBlanks = firstDay.weekday % 7;
-
-    // 按周分行；所有行统一行高，无图片的格子留白不缩行
-    final rows = <List<DateTime?>>[];
-    var currentRow = List<DateTime?>.filled(
-      leadingBlanks,
-      null,
-      growable: true,
-    );
-    for (var day = 1; day <= daysInMonth; day++) {
-      currentRow.add(DateTime(month.year, month.month, day));
-      if (currentRow.length == 7) {
-        rows.add(currentRow);
-        currentRow = <DateTime?>[];
-      }
-    }
-    if (currentRow.isNotEmpty) {
-      currentRow.addAll(List<DateTime?>.filled(7 - currentRow.length, null));
-      rows.add(currentRow);
-    }
-
-    Widget buildDayCell(DateTime day, _PhotoDayInfo? info) {
-      final isToday = _isSameDay(day, DateTime.now());
-      final isSelected = _isSameDay(day, widget.selectedDate);
-
-      return SizedBox(
-        height: _photoRowHeight,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => widget.onDateSelected(day),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
-            child: Column(
-              children: [
-                // 顶部区域始终占满剩余高度：无条目时留空占位，保证日期固定贴底
-                Expanded(
-                  child: (info != null)
-                      ? Padding(
-                          padding: const EdgeInsets.only(bottom: 2),
-                          child: info.imagePath != null
-                              ? _buildTiltedImage(info.imagePath!, day, theme)
-                              : _buildTiledPlaceholder(day, theme),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-                Container(
-                  width: 26,
-                  height: 26,
-                  alignment: Alignment.center,
-                  decoration: isToday
-                      ? BoxDecoration(color: theme.text, shape: BoxShape.circle)
-                      : isSelected
-                      ? BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: theme.primary, width: 1.5),
-                        )
-                      : null,
-                  child: Text(
-                    '${day.day}',
-                    style: DsTypography.caption.copyWith(
-                      color: isToday ? theme.surface : theme.text,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      // 挂载即描画入场：墨线 + 贴纸一起动画（与垂直视图一致）
-      child: WiredDraw(
-        child: Builder(
-          builder: (context) {
-            final progress = WiredDrawTransition.progressOf(context);
-            // 大容器走手绘面板：纸底 + 淡排线 + 墨线框（与垂直视图一致）
-            return DsSketchPanel(
-              theme: theme,
-              radius: theme.radii.xl,
-              padding: const EdgeInsets.all(8),
-              seed: month.year * 12 + month.month,
-              progress: progress,
-              // 相机贴纸：压在边框右上角外侧，小倾斜增加手账感
-              stickers: const [
-                DsSketchSticker(
-                  alignment: Alignment.topRight,
-                  offset: Offset(10, -30),
-                  size: 52,
-                  rotation: 0.18,
-                  svg: 'assets/icons/svg/camera.svg',
-                ),
-              ],
-              child: Column(
-                children: [
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => widget.onHeaderTapped(month),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Text(
-                          DateFormat('yyyy年MM月').format(month),
-                          style: DsTypography.heading.copyWith(
-                            color: theme.text,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Row(
-                    children: ['日', '一', '二', '三', '四', '五', '六']
-                        .map(
-                          (label) => Expanded(
-                            child: Center(
-                              child: Text(
-                                label,
-                                style: DsTypography.caption.copyWith(
-                                  color: theme.textSub,
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                  const SizedBox(height: 4),
-                  for (final row in rows)
-                    Row(
-                      children: [
-                        for (final day in row)
-                          Expanded(
-                            child: day == null
-                                ? const SizedBox(height: _photoRowHeight)
-                                : buildDayCell(day, dayData[day]),
-                          ),
-                      ],
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    final theme = DSThemeBridge.resolve(context);
-
-    return Column(
-      children: [
-        Expanded(
-          child: Stack(
-            children: [
-              ListView.builder(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                padding: EdgeInsets.fromLTRB(
-                  0,
-                  16,
-                  0,
-                  16 + MediaQuery.paddingOf(context).bottom,
-                ),
-                itemCount: _months.length,
-                itemBuilder: (context, index) {
-                  final month = _months[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: KeyedSubtree(
-                      key: ValueKey('photo_${_getMonthKey(month)}'),
-                      child: _buildMonthGrid(month),
                     ),
                   );
                 },

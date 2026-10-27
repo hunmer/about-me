@@ -11,6 +11,7 @@ import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'package:aboutme/plugins/timer/views/timer_task_details_page.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 
 /// 计时器任务卡片小组件（手绘纸墨风）
 ///
@@ -225,7 +226,6 @@ class _TimerCardWidgetState extends State<TimerCardWidget> {
               setState(() {});
             }
           },
-          onLongPress: () => _showContextMenu(context, widget.task),
           builder: (context, states) {
             final pressed = states.contains(WidgetState.pressed);
             return Transform.scale(
@@ -267,13 +267,20 @@ class _TimerCardWidgetState extends State<TimerCardWidget> {
         ),
       ),
     );
+    final plainCard = card;
     if (widget.enableHero) {
       card = Hero(
         tag: 'timer_task_card_${widget.task.id}',
         child: card,
       );
     }
-    return card;
+    // 长按弹圆盘快捷菜单（3 项以内全量进圆盘）；浮层预览用无 Hero 版本避免 tag 冲突
+    return ArcContextMenu.actions(
+      actions: _menuActions(widget.task),
+      showMore: () => _showContextMenu(context, widget.task),
+      preview: plainCard,
+      child: card,
+    );
   }
 
   // ===== 装饰层：环境圆 + 背景幽灵涂鸦图标 =====
@@ -984,48 +991,32 @@ class _TimerCardWidgetState extends State<TimerCardWidget> {
     }
   }
 
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _menuActions(TimerTask task) => [
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: 'app_edit'.tr,
+          onTap: () => widget.onEdit?.call(task),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.refresh,
+          label: 'timer_reset'.tr,
+          onTap: () => widget.onReset?.call(task),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'app_delete'.tr,
+          destructive: true,
+          onTap: () => widget.onDelete?.call(task),
+        ),
+      ];
+
   void _showContextMenu(BuildContext context, TimerTask task) {
     if (!widget.showActionButtons) return;
-
-    SmoothBottomSheet.showWithTitle(
+    SmoothBottomSheet.showActionList(
       context: context,
       title: task.name,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SmoothSheetAction(
-            icon: DsIconKind.edit,
-            label: 'app_edit'.tr,
-            onTap: () {
-              Navigator.pop(context);
-              if (widget.onEdit != null) {
-                widget.onEdit!(task);
-              }
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.refresh,
-            label: 'timer_reset'.tr,
-            onTap: () {
-              Navigator.pop(context);
-              if (widget.onReset != null) {
-                widget.onReset!(task);
-              }
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.trash,
-            label: 'app_delete'.tr,
-            destructive: true,
-            onTap: () {
-              Navigator.pop(context);
-              if (widget.onDelete != null) {
-                widget.onDelete!(task);
-              }
-            },
-          ),
-        ],
-      ),
+      actions: _menuActions(task),
     );
   }
 

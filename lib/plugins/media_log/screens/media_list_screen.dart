@@ -6,6 +6,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
@@ -394,32 +395,26 @@ class _MediaListScreenState extends State<MediaListScreen> {
   }
 
   /// 长按卡片：编辑 / 删除
-  Future<void> _showItemActions(MediaItem item) async {
-    await SmoothBottomSheet.showWithTitle(
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _itemActions(MediaItem item) => [
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: 'media_edit'.tr,
+          onTap: () => _openItemForm(initial: item),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'media_delete'.tr,
+          destructive: true,
+          onTap: () => _confirmDelete(item),
+        ),
+      ];
+
+  Future<void> _showItemActions(MediaItem item) {
+    return SmoothBottomSheet.showActionList(
       context: context,
       title: item.title,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SmoothSheetAction(
-            icon: DsIconKind.edit,
-            label: 'media_edit'.tr,
-            onTap: () {
-              Navigator.pop(context);
-              _openItemForm(initial: item);
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.trash,
-            label: 'media_delete'.tr,
-            destructive: true,
-            onTap: () {
-              Navigator.pop(context);
-              _confirmDelete(item);
-            },
-          ),
-        ],
-      ),
+      actions: _itemActions(item),
     );
   }
 
@@ -492,7 +487,8 @@ class _MediaListScreenState extends State<MediaListScreen> {
               ),
             )
           else if (_viewMode == _MediaViewMode.shelf)
-            // 手绘书架：items 已过滤排序，不符合条件的书直接不上架
+            // 手绘书架：items 已过滤排序，不符合条件的书直接不上架；
+            // 长按书脊弹圆盘快捷菜单（与瀑布流卡片一致）
             MediaBookshelfView(
               items: items,
               padding: EdgeInsets.fromLTRB(
@@ -505,7 +501,8 @@ class _MediaListScreenState extends State<MediaListScreen> {
                 context,
                 MediaDetailScreen(itemId: item.id),
               ),
-              onLongPress: _showItemActions,
+              arcActions: _itemActions,
+              onMore: _showItemActions,
             )
           else if (_viewMode == _MediaViewMode.grid)
             MasonryGridView.count(
@@ -527,15 +524,27 @@ class _MediaListScreenState extends State<MediaListScreen> {
                 return WiredDraw(
                   child: Padding(
                     padding: EdgeInsets.only(top: column == 1 ? 18 : 0),
-                    child: MediaItemCard(
-                      item: item,
-                      seed: column * 31 + index + 1,
-                      rotation: ((column + index) % 2 == 0) ? -0.025 : 0.02,
-                      onTap: () => NavigationHelper.pushHero(
-                        context,
-                        MediaDetailScreen(itemId: item.id),
+                    // 长按弹圆盘快捷菜单（编辑/删除）
+                    child: ArcContextMenu.actions(
+                      actions: _itemActions(item),
+                      showMore: () => _showItemActions(item),
+                      // 浮层预览用无 Hero 副本避免 tag 冲突
+                      preview: MediaItemCard(
+                        item: item,
+                        seed: column * 31 + index + 1,
+                        rotation: ((column + index) % 2 == 0) ? -0.025 : 0.02,
+                        onTap: () {},
+                        enableHero: false,
                       ),
-                      onLongPress: () => _showItemActions(item),
+                      child: MediaItemCard(
+                        item: item,
+                        seed: column * 31 + index + 1,
+                        rotation: ((column + index) % 2 == 0) ? -0.025 : 0.02,
+                        onTap: () => NavigationHelper.pushHero(
+                          context,
+                          MediaDetailScreen(itemId: item.id),
+                        ),
+                      ),
                     ),
                   ),
                 );

@@ -12,6 +12,7 @@ import 'package:aboutme/plugins/openai/moments/models/moment_post.dart';
 import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
 import 'package:aboutme/widgets/gallery_viewer.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
@@ -665,10 +666,25 @@ class _MomentFeedCardState extends State<MomentFeedCard> {
 
   Widget _buildPhotoFrame(AppThemeData theme) {
     final post = widget.post;
-    return GestureDetector(
+    // 长按弹圆盘快捷菜单（设为背景）
+    return ArcContextMenu.actions(
       onTap: _openViewer,
       onDoubleTap: _doubleTapLike,
-      onLongPress: _showImageActions,
+      actions: [
+        ArcMenuItem(
+          icon: DsIconKind.image,
+          label: 'moments_setBg'.trParams({'name': widget.author.name}),
+          onTap: () async {
+            await MomentsService.instance.setProfileBg(
+              post.isUserPost ? MomentPost.userAuthorId : post.agentId,
+              post.images[_activeImage],
+              copy: true,
+            );
+            ToastService.instance.showToast('moments_bgSet'.tr);
+          },
+        ),
+      ],
+      showMore: _showImageActions,
       child: Container(
         height: 225,
         padding: const EdgeInsets.all(4),

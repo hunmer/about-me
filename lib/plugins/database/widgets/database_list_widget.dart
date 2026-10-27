@@ -10,6 +10,7 @@ import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:skribble/skribble.dart';
@@ -195,9 +196,10 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
   Widget _buildDatabaseCard(DatabaseModel database) {
     final theme = DSThemeBridge.resolve(context);
 
-    return GestureDetector(
-      // 长按弹操作菜单（tap 由 DSCard 内部 Pressable 处理）
-      onLongPress: () => _showBottomSheet(context, database),
+    // 长按弹圆盘快捷菜单（编辑/复制/删除；tap 由 DSCard 内部 Pressable 处理）
+    return ArcContextMenu.actions(
+      actions: _databaseActions(database),
+      showMore: () => _showBottomSheet(context, database),
       child: DSCard(
         padding: EdgeInsets.zero,
         onTap: () {
@@ -257,76 +259,71 @@ class _DatabaseListWidgetState extends State<DatabaseListWidget> {
     );
   }
 
+  /// 长按快捷菜单项（圆盘与底部 sheet 共用）
+  List<ArcMenuItem> _databaseActions(DatabaseModel database) => [
+        ArcMenuItem(
+          icon: DsIconKind.edit,
+          label: 'app_edit'.tr,
+          onTap: () => _showDatabaseEditor(context, database),
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.copy,
+          label: 'app_copy'.tr,
+          onTap: () async {
+            final newDatabase = database.copyWith(id: Uuid().v4());
+            await widget.service.createDatabase(newDatabase);
+            if (mounted) {
+              Toast.success('database_copy_success'.tr);
+              _loadDatabases();
+            }
+          },
+        ),
+        ArcMenuItem(
+          icon: DsIconKind.trash,
+          label: 'database_delete_action'.tr,
+          destructive: true,
+          onTap: () => _confirmDeleteDatabase(database),
+        ),
+      ];
+
   Future<void> _showBottomSheet(
     BuildContext context,
     DatabaseModel database,
-  ) async {
-    await SmoothBottomSheet.show(
+  ) {
+    return SmoothBottomSheet.showActionList(
       context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SmoothSheetAction(
-            icon: DsIconKind.edit,
-            label: 'app_edit'.tr,
-            onTap: () async {
-              Navigator.pop(context);
-              await _showDatabaseEditor(context, database);
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.copy,
-            label: 'app_copy'.tr,
-            onTap: () async {
-              Navigator.pop(context);
-              final newDatabase = database.copyWith(id: Uuid().v4());
-              await widget.service.createDatabase(newDatabase);
-              if (mounted) {
-                Toast.success('database_copy_success'.tr);
-                _loadDatabases();
-              }
-            },
-          ),
-          SmoothSheetAction(
-            icon: DsIconKind.trash,
-            label: 'database_delete_action'.tr,
-            destructive: true,
-            onTap: () async {
-              Navigator.pop(context);
-              final confirm = await showDSDialog<bool>(
-                context: context,
-                builder: (context) => DSDialog(
-                  title: 'database_confirm_delete_title'.tr,
-                  message: 'database_confirm_delete_message'.trParams({
-                    'name': database.name,
-                  }),
-                  confirmText: 'database_delete'.tr,
-                  cancelText: 'app_cancel'.tr,
-                  confirmVariant: DSButtonVariant.destructive,
-                ),
-              );
-              if (confirm == true) {
-                try {
-                  await widget.service.deleteDatabase(database.id);
-                  if (mounted) {
-                    Toast.success('database_delete_success_message'.tr);
-                    _loadDatabases();
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    Toast.error(
-                      'database_delete_failed_message'.trParams({
-                        'error': e.toString(),
-                      }),
-                    );
-                  }
-                }
-              }
-            },
-          ),
-        ],
+      actions: _databaseActions(database),
+    );
+  }
+
+  /// 删除数据库（确认弹窗），长按圆盘与底部 sheet 共用
+  Future<void> _confirmDeleteDatabase(DatabaseModel database) async {
+    final confirm = await showDSDialog<bool>(
+      context: context,
+      builder: (context) => DSDialog(
+        title: 'database_confirm_delete_title'.tr,
+        message: 'database_confirm_delete_message'.trParams({
+          'name': database.name,
+        }),
+        confirmText: 'database_delete'.tr,
+        cancelText: 'app_cancel'.tr,
+        confirmVariant: DSButtonVariant.destructive,
       ),
     );
+    if (confirm != true) return;
+    try {
+      await widget.service.deleteDatabase(database.id);
+      if (mounted) {
+        Toast.success('database_delete_success_message'.tr);
+        _loadDatabases();
+      }
+    } catch (e) {
+      if (mounted) {
+        Toast.error(
+          'database_delete_failed_message'.trParams({'error': e.toString()}),
+        );
+      }
+    }
   }
 
   Widget _buildImageWidget(String imageUrl, AppThemeData theme) {

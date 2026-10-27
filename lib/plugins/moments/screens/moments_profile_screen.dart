@@ -17,6 +17,7 @@ import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/moments/widgets/agent_avatar.dart';
 import 'package:aboutme/widgets/gallery_viewer.dart';
 import 'package:aboutme/utils/file_picker_helper.dart';
+import 'package:aboutme/widgets/arc_context_menu.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
@@ -193,18 +194,34 @@ class _MomentsProfileScreenState extends State<MomentsProfileScreen> {
         ),
       );
     }
-    return MomentsCover(
-      path: path,
-      height: 230,
-      // 长按封面：有自定义背景时可恢复默认
-      onLongPress: hasExplicit ? _showBgOptions : null,
-      overlay: isUser
-          ? InterestPill(
-              label: 'moments_changeBg'.tr,
-              leading: DsIcon(DsIconKind.image, size: 12),
-              onTap: _uploadBg,
-            )
-          : null,
+    // 长按封面弹圆盘快捷菜单：有自定义背景时可恢复默认
+    return ArcContextMenu.actions(
+      actions: hasExplicit
+          ? [
+              ArcMenuItem(
+                icon: DsIconKind.refresh,
+                label: 'moments_bgReset'.tr,
+                onTap: () async {
+                  await _moments.clearProfileBg(_authorKey);
+                  if (mounted) {
+                    ToastService.instance.showToast('moments_bgResetDone'.tr);
+                  }
+                },
+              ),
+            ]
+          : const [],
+      showMore: _showBgOptions,
+      child: MomentsCover(
+        path: path,
+        height: 230,
+        overlay: isUser
+            ? InterestPill(
+                label: 'moments_changeBg'.tr,
+                leading: DsIcon(DsIconKind.image, size: 12),
+                onTap: _uploadBg,
+              )
+            : null,
+      ),
     );
   }
 
