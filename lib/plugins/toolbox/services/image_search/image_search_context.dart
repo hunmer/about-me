@@ -39,7 +39,11 @@ class ImageSearchContext {
       } catch (_) {
         body = utf8.decode(resp.bodyBytes, allowMalformed: true);
       }
-      return {'statusCode': resp.statusCode, 'body': body};
+      return {
+        'statusCode': resp.statusCode,
+        'body': body,
+        'headers': resp.headers,
+      };
     } finally {
       client.close();
     }

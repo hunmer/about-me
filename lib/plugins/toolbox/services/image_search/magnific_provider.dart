@@ -5,10 +5,15 @@ import 'package:aboutme/plugins/toolbox/services/image_search/image_search_provi
 /// Magnific（原 Freepik）站点搜索 API，支持翻页（每页固定 50 条，
 /// 仅 content_type=photo/vector 两种类型，不支持方向/排序）
 ///
-/// 无需 API Key；站点有安全过滤（Akamai），直连可能被 403 拦截，
-/// 可在配置里粘贴浏览器 Cookie 提高通过率。
+/// 逆向结论（参考 E:/programming/nodejs/magnific/magnific_search.mjs）：
+/// 无需登录/签名，过 WAF 的关键是带 user-agent 且带 referer/sec-fetch-* 头；
+/// 403/429 多为 WAF 误判或限频，指数退避重试即可；
+/// 跨请求复用服务端下发的风控 cookie（_fc/_fcid/ak_bmsc）可降低 403 概率。
 class MagnificProvider extends ImageSearchProvider {
   const MagnificProvider();
+
+  /// 服务端下发的风控 cookie，跨请求复用（静态：provider 实例为 const）
+  static final Map<String, String> _cookieStore = {};
 
   @override
   String? validate(ImageSearchContext ctx) => null;
@@ -22,33 +27,18 @@ class MagnificProvider extends ImageSearchProvider {
     // API 仅支持 photo/vector，其余类型统一按 vector 检索
     final contentType = q.imageType == 'photo' ? 'photo' : 'vector';
     final slug = Uri.encodeComponent(q.query);
-    final path = contentType == 'photo' ? 'photos' : 'vectors';
     final url =
         'https://www.magnific.com/api/regular/search'
         '?filters%5Bcontent_type%5D=$contentType&locale=en'
-        '&page=${q.page}&slug=$slug';
-    final headers = {
-      'accept': '*/*',
-      'accept-language': 'en-US,en;q=0.9',
-      'user-agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-          '(KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36',
-      'referer': 'https://www.magnific.com/$path/$slug/${q.page}',
-    };
-    final cookie = ctx.cfg('magnificCookie');
-    if (cookie.isNotEmpty) headers['cookie'] = cookie;
+        '${q.page > 1 ? '&page=${q.page}' : ''}&slug=$slug';
 
-    final resp = await ctx.getText(url, headers: headers);
+    final resp = await _getWithRetry(ctx, url);
     final status = resp['statusCode'] as int;
     final body = resp['body'];
-    if (status == 403) {
-      return const ToolboxToolResult.fail(
-        'HTTP 403: 被 Magnific 安全过滤拦截，可稍后重试，或在配置里粘贴浏览器 Cookie',
-      );
-    }
     if (status >= 400 || body is! Map) {
       return ToolboxToolResult.fail(
-        'HTTP $status: ${ctx.errorDetail(body)}',
+        'HTTP $status: ${ctx.errorDetail(body)}'
+        '${status == 403 ? '（WAF 拦截，稍后重试）' : ''}',
       );
     }
     final items = (body['items'] is List) ? body['items'] as List : [];
@@ -96,5 +86,54 @@ class MagnificProvider extends ImageSearchProvider {
         'images': images,
       },
     );
+  }
+
+  /// 请求 + 指数退避重试（403/429/5xx 视为 WAF 误判/限频，最多 3 次）
+  Future<Map<String, dynamic>> _getWithRetry(
+    ImageSearchContext ctx,
+    String url,
+  ) async {
+    final headers = {
+      'accept': '*/*',
+      'accept-language': 'en-US,en;q=0.9',
+      'user-agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+          '(KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36',
+      'referer': 'https://www.magnific.com/',
+      'sec-fetch-dest': 'empty',
+      'sec-fetch-mode': 'cors',
+      'sec-fetch-site': 'same-origin',
+    };
+    final cookie = _cookieHeader();
+    if (cookie.isNotEmpty) headers['cookie'] = cookie;
+
+    Map<String, dynamic> resp = {};
+    for (var attempt = 0; attempt <= 3; attempt++) {
+      if (attempt > 0) {
+        await Future<void>.delayed(
+          Duration(milliseconds: 1200 * (1 << (attempt - 1))),
+        );
+      }
+      resp = await ctx.getText(url, headers: Map.of(headers));
+      _absorbCookies(resp['headers']);
+      final status = resp['statusCode'] as int;
+      if (status != 403 && status != 429 && status < 500) break;
+    }
+    return resp;
+  }
+
+  static String _cookieHeader() =>
+      _cookieStore.entries.map((e) => '${e.key}=${e.value}').join('; ');
+
+  /// 从合并后的 set-cookie 头中提取已知风控 cookie
+  /// （http 包会把多个 set-cookie 合并成一个字符串， expires 含逗号，仅按名提取）
+  static void _absorbCookies(dynamic headers) {
+    if (headers is! Map) return;
+    final setCookie = headers['set-cookie'];
+    if (setCookie is! String || setCookie.isEmpty) return;
+    for (final name in const ['_fc', '_fcid', 'ak_bmsc']) {
+      final m = RegExp('(?:^|[;,]\\s*)$name=([^;,]+)').firstMatch(setCookie);
+      if (m != null) _cookieStore[name] = m.group(1)!.trim();
+    }
   }
 }

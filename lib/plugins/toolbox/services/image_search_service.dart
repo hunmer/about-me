@@ -84,13 +84,6 @@ class ImageSearchService {
           'serpapi.com 的 API Key，以图搜图（Google Lens）与 google/bing/yahoo/yandex 图源共用，用到时必填',
     ),
     ToolboxConfigField(
-      name: 'magnificCookie',
-      type: 'password',
-      labelText: 'Magnific Cookie（可选）',
-      hintText:
-          'magnific.com（原 Freepik）图源被 403 拦截时，从浏览器开发者工具复制整串 Cookie 粘贴于此',
-    ),
-    ToolboxConfigField(
       name: 'googleHl',
       type: 'text',
       labelText: 'Google 界面语言',
