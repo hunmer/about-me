@@ -12,6 +12,7 @@
 //
 
 import SwiftUI
+import Combine
 
 // MARK: - SVG 采样路径数据（由 svg2swift 脚本生成，viewBox 坐标）
 
@@ -397,12 +398,14 @@ struct ChatGPTTestView: View {
                 AmbientGlowOverlay(active: vm.ambientGlow)
                 GlassReflectionOverlay()
             }
+            .frame(width: dialSize.width, height: dialSize.height)
             .scaleEffect(x: geo.size.width / dialSize.width,
                          y: geo.size.height / dialSize.height,
                          anchor: .center)
             .frame(width: geo.size.width, height: geo.size.height)
         }
         .ignoresSafeArea()
+        .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { vm.runSequence() }
         .onDisappear { vm.stop() }
@@ -901,7 +904,7 @@ private struct StockCardView: View {
             .stroke(green.opacity(0.22), lineWidth: 1))
     }
 
-    private var areaShape: some Shape {
+    private var areaShape: Path {
         Path { p in
             let pts = Self.linePoints
             p.move(to: CGPoint(x: pts[0].0, y: pts[0].1))
@@ -910,7 +913,8 @@ private struct StockCardView: View {
             p.addLine(to: CGPoint(x: 2, y: 60))
             p.closeSubpath()
         }
-        .scaledToFit()
+        // 220x60 viewBox 等比缩放到 198x54 (scaledToFit 是 View 修饰符，Shape 需用变换)
+        .applying(CGAffineTransform(scaleX: 198.0 / 220, y: 198.0 / 220))
     }
 }
 

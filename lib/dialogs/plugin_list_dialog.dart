@@ -54,8 +54,8 @@ class _PluginListDialogState extends State<PluginListDialog> {
     final screenSize = MediaQuery.of(context).size;
     // showDSDialog 外层已留水平 36 安全边距，面板宽度取两者较小值
     final panelWidth = math.min(screenSize.width - 72, screenSize.width * 0.85);
-    // 根据面板实际宽度计算合适的网格列数
-    final crossAxisCount = (panelWidth / 120).floor().clamp(2, 5);
+    // 根据面板实际宽度计算合适的网格列数（每格约 90pt，最多 8 列）
+    final crossAxisCount = (panelWidth / 90).floor().clamp(2, 8);
 
     return ConstrainedBox(
       constraints: BoxConstraints(

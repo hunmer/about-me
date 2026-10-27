@@ -17,7 +17,7 @@ struct aboutme_watchos_Watch_AppApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationView {
-                ContentView()
+                NavigationLink(destination: ChatGPTTestView(), isActive: .constant(true)) { EmptyView() }
             }
         }
     }
