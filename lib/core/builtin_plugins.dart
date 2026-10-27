@@ -20,6 +20,7 @@ import 'package:aboutme/plugins/personal_assistant/personal_assistant_plugin.dar
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/reminder/reminder_plugin.dart';
 import 'package:aboutme/plugins/scripts_center/scripts_center_plugin.dart';
+import 'package:aboutme/plugins/scrapbook/scrapbook_plugin.dart';
 import 'package:aboutme/plugins/store/store_plugin.dart';
 import 'package:aboutme/plugins/timer/timer_plugin.dart';
 import 'package:aboutme/plugins/todo/todo_plugin.dart';
@@ -66,6 +67,7 @@ class BuiltinPlugins {
     () => AchievementPlugin(),
     () => ToolboxPlugin(),
     () => PersonalAssistantPlugin(),
+    () => ScrapbookPlugin(),
   ];
 
   static List<PluginBase> createAll() {

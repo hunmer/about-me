@@ -50,6 +50,33 @@ class ScrapStroke {
   final List<Offset> points;
 
   ScrapStroke(this.color, this.points);
+
+  factory ScrapStroke.fromMap(Map<String, dynamic> map) {
+    return ScrapStroke(
+      _parseColor(map['color'], const Color(0xFF56A8E8)),
+      (map['points'] as List?)
+              ?.whereType<List>()
+              .map(
+                (p) => Offset(
+                  (p[0] as num?)?.toDouble() ?? 0,
+                  (p[1] as num?)?.toDouble() ?? 0,
+                ),
+              )
+              .toList() ??
+          const [],
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+    'color': _colorToHex(color),
+    'points': [for (final p in points) [p.dx, p.dy]],
+  };
+}
+
+/// 颜色序列化为 #RRGGBB（与 [_parseColor] 的 '#' 分支对称）
+String _colorToHex(Color color) {
+  final argb = color.toARGB32() & 0xFFFFFF;
+  return '#${argb.toRadixString(16).padLeft(6, '0')}';
 }
 
 Color _parseColor(dynamic value, Color fallback) {
@@ -216,4 +243,36 @@ class ScrapItemData {
               : null,
     );
   }
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'kind': kind.name,
+    'x': x,
+    'y': y,
+    'rotation': rotation,
+    'zIndex': zIndex,
+    if (dateLabel != null) 'dateLabel': dateLabel,
+    if (title != null) 'title': title,
+    if (subtitle != null) 'subtitle': subtitle,
+    if (imageUrl != null) 'imageUrl': imageUrl,
+    'width': width,
+    'height': height,
+    'fallbackColor': _colorToHex(fallbackColor),
+    if (captions.isNotEmpty) 'captions': captions,
+    if (captionColor != null) 'captionColor': _colorToHex(captionColor!),
+    if (artStyle != null) 'artStyle': artStyle,
+    if (tape != null)
+      'tape': {'dx': tape!.dx, 'dy': tape!.dy, 'angle': tape!.angle},
+    if (bubbleText != null) 'bubbleText': bubbleText,
+    if (narutomakiBorder) 'narutomakiBorder': true,
+    if (sparklesDecor) 'sparklesDecor': true,
+    if (companions.isNotEmpty)
+      'companions': [
+        for (final c in companions)
+          {'name': c.name, 'emoji': c.emoji, 'color': _colorToHex(c.color)},
+      ],
+    'stickerType': stickerType.name,
+    if (stickerText != null) 'stickerText': stickerText,
+    if (stickerColor != null) 'stickerColor': _colorToHex(stickerColor!),
+  };
 }

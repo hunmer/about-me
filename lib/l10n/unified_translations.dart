@@ -71,6 +71,8 @@ import '../plugins/webview/l10n/webview_translations_zh.dart';
 import '../plugins/webview/l10n/webview_translations_en.dart';
 import '../plugins/reminder/l10n/reminder_translations_zh.dart';
 import '../plugins/reminder/l10n/reminder_translations_en.dart';
+import '../plugins/scrapbook/l10n/scrapbook_translations_zh.dart';
+import '../plugins/scrapbook/l10n/scrapbook_translations_en.dart';
 
 // 屏幕层 (5个)
 import '../screens/settings_screen/l10n/settings_screen_translations_zh.dart';
@@ -183,6 +185,10 @@ class UnifiedTranslations extends Translations {
 
     zhDict.addAll(toolboxTranslationsZh);
     enDict.addAll(toolboxTranslationsEn);
+
+    // === 手账插件 ===
+    zhDict.addAll(scrapbookTranslationsZh);
+    enDict.addAll(scrapbookTranslationsEn);
 
     zhDict.addAll(scriptsCenterTranslationsZh);
     enDict.addAll(scriptsCenterTranslationsEn);

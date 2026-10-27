@@ -1,0 +1,20 @@
+/// 手账插件 简体中文翻译
+const Map<String, String> scrapbookTranslationsZh = {
+  'scrapbook_name': '手账',
+  'scrapbook_listTitle': '我的手账',
+  'scrapbook_newPage': '新建手账',
+  'scrapbook_titleHint': '给这页手账起个名字…',
+  'scrapbook_create': '新建',
+  'scrapbook_createFailed': '创建失败',
+  'scrapbook_emptyTitle': '还没有手账',
+  'scrapbook_emptyMessage': '创建第一页，贴上贴纸与心情',
+  'scrapbook_deleteTitle': '删除这页手账？',
+  'scrapbook_deleteMessage': '「@title」将被删除，且无法恢复',
+  'scrapbook_deleteFailed': '删除失败',
+  'scrapbook_noSummary': '还没有写下内容，打开画布开始拼贴吧',
+  'scrapbook_timeJustNow': '刚刚',
+  'scrapbook_timeMinutesAgo': '@n 分钟前',
+  'scrapbook_timeHoursAgo': '@n 小时前',
+  'scrapbook_timeYesterday': '昨天',
+  'scrapbook_timeDaysAgo': '@n 天前',
+};

@@ -37,6 +37,16 @@ class ScrapbookCanvasCardWidget extends StatefulWidget {
   /// 只读模式下未注册本回调时，双击图片条目内建打开 GalleryViewer
   final void Function(ScrapItemData item)? onItemDoubleTap;
 
+  /// 初始涂鸦笔画（恢复上次编辑内容）
+  final List<ScrapStroke> initialStrokes;
+
+  /// 内容变更回调（条目增删/旋转/拖动结束/涂鸦结束），供外部持久化
+  final void Function(List<ScrapItemData> items, List<ScrapStroke> strokes)?
+  onChanged;
+
+  /// Back pill 回调（注册时接管退出；未注册保持内置视图重置行为）
+  final VoidCallback? onClose;
+
   /// 组件尺寸
   final HomeWidgetSize size;
 
@@ -46,6 +56,9 @@ class ScrapbookCanvasCardWidget extends StatefulWidget {
     this.inline = false,
     this.readOnly = false,
     this.onItemDoubleTap,
+    this.initialStrokes = const [],
+    this.onChanged,
+    this.onClose,
     this.size = const Large3Size(),
   });
 
@@ -100,7 +113,6 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
 
   String? _toastMessage;
   Timer? _toastTimer;
-  int _spawnCounter = 0;
   int _snapIndex = 0;
 
   final GlobalKey _exportBoundaryKey = GlobalKey();
@@ -131,6 +143,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     for (final item in _items) {
       if (item.zIndex > _highestZ) _highestZ = item.zIndex;
     }
+    _strokes.addAll(widget.initialStrokes);
     _entryController = AnimationController(
       duration: const Duration(milliseconds: 1400),
       vsync: this,
@@ -203,6 +216,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     setState(() {
       item.rotation = ((item.rotation + 8 + 180) % 360) - 180;
     });
+    _notifyChanged();
   }
 
   void _deleteItem(ScrapItemData item) {
@@ -211,6 +225,15 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       if (_selectedId == item.id) _selectedId = null;
     });
     _showToast('🗑️ Removed sticker');
+    _notifyChanged();
+  }
+
+  /// 内容变更通知外部（供持久化），视图平移缩放不触发
+  void _notifyChanged() {
+    widget.onChanged?.call(
+      List.unmodifiable(_items),
+      List.unmodifiable(_strokes),
+    );
   }
 
   // ===== 创建抽屉 =====
@@ -231,9 +254,11 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
       _selectedId = item.id;
       item.zIndex = ++_highestZ;
     });
+    _notifyChanged();
   }
 
-  String _nextId() => 'spawn_${++_spawnCounter}';
+  /// 时间戳 id：重开画布后新增条目不与已存条目冲突
+  String _nextId() => 'spawn_${DateTime.now().microsecondsSinceEpoch}';
 
   void _addSticker(ScrapStickerType type) {
     final center = _canvasCenter();
@@ -356,6 +381,8 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     setState(() => _strokes.last.points.add(pt));
   }
 
+  void _onDoodleEnd(DragEndDetails details) => _notifyChanged();
+
   // ===== 构建 =====
 
   @override
@@ -397,6 +424,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                       ? GestureDetector(
                           onPanStart: _onDoodleStart,
                           onPanUpdate: _onDoodleUpdate,
+                          onPanEnd: _onDoodleEnd,
                           child: _buildCanvasLayers(gridColor, isDark),
                         )
                       : GestureDetector(
@@ -423,6 +451,10 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildNavPill('Back', isDark, () {
+                      if (widget.onClose != null) {
+                        widget.onClose!();
+                        return;
+                      }
                       setState(() {
                         _panX = 0;
                         _panY = 0;
@@ -660,6 +692,10 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                       item.y += details.delta.dy / _zoom;
                     });
                   },
+            onPanEnd:
+                _doodleMode || widget.readOnly
+                    ? null
+                    : (_) => _notifyChanged(),
             child: Stack(
               clipBehavior: Clip.none,
               children: [

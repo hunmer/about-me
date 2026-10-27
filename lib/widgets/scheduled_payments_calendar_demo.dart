@@ -415,8 +415,6 @@ class _ScheduledPaymentsCalendarDemoState
                 const SizedBox(height: 20),
                 _buildCard(),
                 const SizedBox(height: 20),
-                _buildTotalPill(),
-                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -496,25 +494,6 @@ class _ScheduledPaymentsCalendarDemoState
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Scheduled Recurring Payments',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.4,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Budget your monthly expenses in advance or easily schedule recurring payments to friends and family.',
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.38,
-                  color: Color(0xFF8A8A8E),
-                ),
-              ),
-              const SizedBox(height: 28),
               _buildWeekHeader(),
               const SizedBox(height: 12),
               _buildCalendar(),
@@ -568,7 +547,11 @@ class _ScheduledPaymentsCalendarDemoState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 for (var c = 0; c < 7; c++)
-                  Expanded(child: cells[r * 7 + c]),
+                  Expanded(
+                    child: r * 7 + c < cells.length
+                        ? cells[r * 7 + c]
+                        : const SizedBox(height: _cellH),
+                  ),
               ],
             ),
           );
@@ -1278,38 +1261,6 @@ class _ScheduledPaymentsCalendarDemoState
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTotalPill() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-      decoration: BoxDecoration(
-        color: const Color(0xFF181818),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Monthly Scheduled: ',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-          ),
-          Text(
-            '\$${_monthlyTotal.toStringAsFixed(2)}',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF34D399),
-            ),
-          ),
-        ],
       ),
     );
   }

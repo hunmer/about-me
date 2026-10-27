@@ -209,9 +209,6 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     );
   }
 
-  /// 气泡最大高度：屏幕高的 80%，超长内容在气泡内滚动
-  double get _bubbleMaxHeight => MediaQuery.sizeOf(context).height * 0.8;
-
   @override
   void dispose() {
     eventManager.unsubscribe('plugin_loaded', _onPluginLoaded);
@@ -936,22 +933,16 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
         GestureDetector(
           onLongPress: () => _showMessageOptions(theme, message),
           child: Container(
-            constraints: BoxConstraints(
-              maxWidth: maxWidth,
-              maxHeight: _bubbleMaxHeight,
-            ),
+            constraints: BoxConstraints(maxWidth: maxWidth),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: dsSketchDecoration(
               theme: theme,
               fillColor: theme.primary,
               radius: BorderRadius.circular(18),
             ),
-            // 超长内容（粘贴大段文本）在气泡内滚动，不撑满整屏
-            child: SingleChildScrollView(
-              child: Text(
-                message.content,
-                style: DsTypography.body.copyWith(color: theme.onPrimary),
-              ),
+            child: Text(
+              message.content,
+              style: DsTypography.body.copyWith(color: theme.onPrimary),
             ),
           ),
         ),
@@ -974,22 +965,17 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
         GestureDetector(
           onLongPress: () => _showMessageOptions(theme, message),
           child: Container(
-            constraints: BoxConstraints(
-              maxWidth: maxWidth,
-              maxHeight: _bubbleMaxHeight,
-            ),
+            constraints: BoxConstraints(maxWidth: maxWidth),
             child: DsSketchPanel(
               theme: theme,
               hachure: false,
               radius: BorderRadius.circular(18),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              child: SingleChildScrollView(
-                child: AgentMessageContent(
-                  message: message,
-                  textColor: theme.text,
-                  messageService: _messageService,
-                  getAgentName: (_) => controller.currentAgent?.name,
-                ),
+              child: AgentMessageContent(
+                message: message,
+                textColor: theme.text,
+                messageService: _messageService,
+                getAgentName: (_) => controller.currentAgent?.name,
               ),
             ),
           ),

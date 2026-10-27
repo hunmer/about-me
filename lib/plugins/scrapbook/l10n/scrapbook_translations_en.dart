@@ -1,0 +1,20 @@
+/// 手账插件 English translations
+const Map<String, String> scrapbookTranslationsEn = {
+  'scrapbook_name': 'Scrapbook',
+  'scrapbook_listTitle': 'My Scrapbook',
+  'scrapbook_newPage': 'New Page',
+  'scrapbook_titleHint': 'Name this scrapbook page...',
+  'scrapbook_create': 'Create',
+  'scrapbook_createFailed': 'Failed to create',
+  'scrapbook_emptyTitle': 'No scrapbook yet',
+  'scrapbook_emptyMessage': 'Create your first page with stickers and doodles',
+  'scrapbook_deleteTitle': 'Delete this page?',
+  'scrapbook_deleteMessage': '"@title" will be deleted and cannot be recovered',
+  'scrapbook_deleteFailed': 'Failed to delete',
+  'scrapbook_noSummary': 'Nothing here yet — open the canvas to start',
+  'scrapbook_timeJustNow': 'Just now',
+  'scrapbook_timeMinutesAgo': '@n min ago',
+  'scrapbook_timeHoursAgo': '@n hr ago',
+  'scrapbook_timeYesterday': 'Yesterday',
+  'scrapbook_timeDaysAgo': '@n days ago',
+};

@@ -84,6 +84,9 @@ class SpatialListCardWidget extends StatefulWidget {
   final List<SpatialListItemData> items;
   final bool initialExpanded;
   final ValueChanged<bool>? onExpandedChanged;
+
+  /// 打开回调：非空时 header 右侧显示编辑按钮（用于进入编辑场景）
+  final VoidCallback? onOpen;
   final bool inline;
   final HomeWidgetSize size;
 
@@ -100,6 +103,7 @@ class SpatialListCardWidget extends StatefulWidget {
     this.items = const [],
     this.initialExpanded = false,
     this.onExpandedChanged,
+    this.onOpen,
     this.inline = false,
     this.size = const Large3Size(),
   });
@@ -345,6 +349,28 @@ class _SpatialListCardWidgetState extends State<SpatialListCardWidget>
                         color: primary,
                       ),
                     ),
+                    if (widget.onOpen != null) ...[
+                      SizedBox(width: 10 * scale),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: widget.onOpen,
+                        child: Container(
+                          width: 26 * scale,
+                          height: 26 * scale,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white24
+                                : const Color(0xFF111111),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.edit_outlined,
+                            size: 14 * scale,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
