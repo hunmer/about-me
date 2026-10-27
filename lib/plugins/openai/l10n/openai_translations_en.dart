@@ -124,6 +124,10 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_capYes': 'Yes',
   'openai_capNo': 'No',
   'openai_pleaseEnterValidNumber': 'Please enter a valid number',
+  'openai_tagVision': 'Vision',
+  'openai_tagReasoning': 'Reasoning',
+  'openai_tagContextLimit': 'In @n',
+  'openai_tagMaxOutput': 'Out @n',
 
   // Test Service
   'openai_lastInputLoadFailed': 'Failed to load last input',

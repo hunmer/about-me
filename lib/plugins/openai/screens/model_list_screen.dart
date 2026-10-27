@@ -237,9 +237,25 @@ class _ModelListScreenState extends State<ModelListScreen> {
                     ),
                     SizedBox(width: theme.spacing.sm),
                     Expanded(
-                      child: Text(
-                        model.name,
-                        style: DsTypography.body.copyWith(color: theme.text),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            model.name,
+                            style: DsTypography.body.copyWith(
+                              color: theme.text,
+                            ),
+                          ),
+                          if (_capabilityMarks(theme, model).isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Wrap(
+                              spacing: theme.spacing.md,
+                              runSpacing: 2,
+                              children: _capabilityMarks(theme, model),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     DSIconButton(
@@ -257,6 +273,55 @@ class _ModelListScreenState extends State<ModelListScreen> {
         );
       },
     );
+  }
+
+  /// 能力小标记行：仅展示已知能力（null 不显示）
+  /// 视觉/思考为 true 才有信息量；长度格式化为 128K / 1.5M
+  List<Widget> _capabilityMarks(AppThemeData theme, LLMModel model) {
+    Widget mark({DsIconKind? icon, required String label}) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          DsIcon(icon, size: 14, color: theme.textSub),
+          const SizedBox(width: 2),
+        ],
+        Text(
+          label,
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        ),
+      ],
+    );
+
+    return [
+      if (model.supportsVision == true)
+        mark(icon: DsIconKind.eye, label: 'openai_tagVision'.tr),
+      if (model.supportsReasoning == true)
+        mark(icon: DsIconKind.sparkle, label: 'openai_tagReasoning'.tr),
+      if (model.contextLimit != null)
+        mark(
+          label: 'openai_tagContextLimit'.trParams({
+            'n': _formatLimit(model.contextLimit!),
+          }),
+        ),
+      if (model.maxOutput != null)
+        mark(
+          label: 'openai_tagMaxOutput'.trParams({
+            'n': _formatLimit(model.maxOutput!),
+          }),
+        ),
+    ];
+  }
+
+  String _formatLimit(int n) {
+    if (n >= 1000000) {
+      final v = n / 1000000;
+      return '${v == v.roundToDouble() ? v.toInt() : v.toStringAsFixed(1)}M';
+    }
+    if (n >= 1000) {
+      final v = n / 1000;
+      return '${v == v.roundToDouble() ? v.toInt() : v.toStringAsFixed(1)}K';
+    }
+    return '$n';
   }
 
   // 从 models.dev 拉取最新模型列表，选择来源后合并进本地

@@ -117,6 +117,10 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_capYes': '支持',
   'openai_capNo': '不支持',
   'openai_pleaseEnterValidNumber': '请输入有效的数字',
+  'openai_tagVision': '多模态',
+  'openai_tagReasoning': '思考',
+  'openai_tagContextLimit': '输入 @n',
+  'openai_tagMaxOutput': '输出 @n',
 
   // Test Service
   'openai_lastInputLoadFailed': '加载上次输入失败',
