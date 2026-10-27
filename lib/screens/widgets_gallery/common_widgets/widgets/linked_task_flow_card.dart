@@ -98,8 +98,8 @@ class LinkedTaskFlowCardWidget extends StatefulWidget {
   /// 卡片底色（默认 #FDA882）
   final Color cardColor;
 
-  /// 连线与端点颜色（默认白色）
-  final Color connectorColor;
+  /// 流光与端点颜色（默认白色亮色；整条底线固定使用背景色 backgroundTo）
+  final Color? connectorColor;
 
   /// 是否显示背景斜向细纹理
   final bool showStripes;
@@ -126,7 +126,7 @@ class LinkedTaskFlowCardWidget extends StatefulWidget {
     this.backgroundFrom = const Color(0xFFF87941),
     this.backgroundTo = const Color(0xFFF47238),
     this.cardColor = const Color(0xFFFDA882),
-    this.connectorColor = Colors.white,
+    this.connectorColor,
     this.showStripes = true,
     this.inline = false,
     this.onItemTap,
@@ -187,7 +187,7 @@ class LinkedTaskFlowCardWidget extends StatefulWidget {
       backgroundFrom: parseColor(props['backgroundFrom'], const Color(0xFFF87941)),
       backgroundTo: parseColor(props['backgroundTo'], const Color(0xFFF47238)),
       cardColor: parseColor(props['cardColor'], const Color(0xFFFDA882)),
-      connectorColor: parseColor(props['connectorColor'], Colors.white),
+      connectorColor: tryParseColor(props['connectorColor']),
       showStripes: props['showStripes'] as bool? ?? true,
       inline: props['inline'] as bool? ?? false,
       size: size,
@@ -356,7 +356,8 @@ class _LinkedTaskFlowCardWidgetState extends State<LinkedTaskFlowCardWidget>
                           cardHeight: cardH,
                           gap: gap,
                           scale: k,
-                          color: widget.connectorColor,
+                          baseColor: widget.backgroundTo,
+                          flowColor: widget.connectorColor ?? Colors.white,
                           sequence: _sequence,
                           flow: _flow,
                           lineProgress: (i) =>
@@ -827,7 +828,8 @@ class _ConnectorsPainter extends CustomPainter {
   final double cardHeight;
   final double gap;
   final double scale;
-  final Color color;
+  final Color baseColor;
+  final Color flowColor;
   final Animation<double> sequence;
   final Animation<double> flow;
   final double Function(int index) lineProgress;
@@ -839,7 +841,8 @@ class _ConnectorsPainter extends CustomPainter {
     required this.cardHeight,
     required this.gap,
     required this.scale,
-    required this.color,
+    required this.baseColor,
+    required this.flowColor,
     required this.sequence,
     required this.flow,
     required this.lineProgress,
@@ -849,7 +852,7 @@ class _ConnectorsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final basePaint = Paint()
-      ..color = color
+      ..color = baseColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.3 * scale
       ..strokeCap = StrokeCap.round
@@ -857,13 +860,13 @@ class _ConnectorsPainter extends CustomPainter {
 
     final flowOpacity = this.flowOpacity();
     final flowPaint = Paint()
-      ..color = color.withValues(alpha: 0.95 * flowOpacity)
+      ..color = flowColor.withValues(alpha: 0.95 * flowOpacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.5 * scale
       ..strokeCap = StrokeCap.round
       ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 3);
 
-    final dotPaint = Paint()..color = color;
+    final dotPaint = Paint()..color = flowColor;
 
     for (var i = 0; i < itemCount - 1; i++) {
       final geometry = _connectorGeometry(

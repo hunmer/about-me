@@ -293,7 +293,11 @@ class ProductCard extends StatelessWidget {
     if (url != null && url.isNotEmpty) {
       section = Hero(
         tag: ProductDetailPage.imageHeroTag(product.id),
-        child: section,
+        // 将裁剪放进 Hero 子树，使源/目标的飞行内容结构一致。
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: section,
+        ),
       );
     }
     return section;

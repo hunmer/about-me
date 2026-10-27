@@ -55,7 +55,7 @@ const Map<String, String> storeTranslationsZh = {
   'store_expired': '已过期',
   'store_priceRange': '价格区间',
   'store_exchangeStatus': '兑换状态',
-  'store_exchanging': '兑换中',
+  'store_exchanging': '售卖中',
   'store_notStarted': '未开始',
   'store_exchangeEnded': '已结束',
   'store_stockStatus': '库存',

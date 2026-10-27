@@ -90,6 +90,7 @@ import 'package:aboutme/screens/widgets_gallery/screens/walk_stack_card_example.
 import 'package:aboutme/screens/widgets_gallery/screens/illustrated_metric_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/cutout_stat_grid_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/gradient_progress_card_example.dart';
+import 'package:aboutme/screens/widgets_gallery/screens/revenue_trend_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/striped_weekly_chart_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/sparkle_stat_grid_card_example.dart';
 import 'package:aboutme/screens/widgets_gallery/screens/period_score_gauge_card_example.dart';
@@ -770,6 +771,14 @@ class WidgetGalleryRoutes implements RouteRegistry {
         settings: settings,
       ),
       description: '渐变进度卡片',
+    ),
+    RouteDefinition(
+      path: '/widgets_gallery/revenue_trend_card',
+      handler: (settings) => RouteHelpers.createRoute(
+        const RevenueTrendCardExample(),
+        settings: settings,
+      ),
+      description: '收入趋势卡片',
     ),
     RouteDefinition(
       path: '/widgets_gallery/striped_weekly_chart_card',

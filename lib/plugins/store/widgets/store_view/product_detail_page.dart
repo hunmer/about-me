@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -32,10 +34,17 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
+  /// 商品大图原始宽高比（异步解码得到）；null = 未知（SVG/解析中/失败）
+  double? _imageAspect;
+
+  /// 已解析过比例的图片路径（编辑换图后重新解析）
+  String? _aspectResolvedFor;
+
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_onControllerUpdate);
+    _resolveImageAspect();
   }
 
   @override
@@ -53,7 +62,40 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (_current == null) {
       Navigator.of(context).pop();
     } else {
+      _resolveImageAspect();
       setState(() {});
+    }
+  }
+
+  /// 异步解码图片取原始宽高比，供大图按原比例展示（不裁剪）
+  Future<void> _resolveImageAspect() async {
+    final url = _current?.image ?? widget.product.image;
+    if (url == null || url.isEmpty || AdaptiveImage.isSvgImage(url)) return;
+    if (_aspectResolvedFor == url) return;
+    _aspectResolvedFor = url;
+
+    final completer = Completer<ImageInfo>();
+    late final ImageStreamListener listener;
+    listener = ImageStreamListener((info, _) {
+      if (!completer.isCompleted) completer.complete(info);
+    });
+    ImageStream? stream;
+    try {
+      stream = ImageUtils.createImageProvider(url).resolve(
+        const ImageConfiguration(),
+      );
+      stream.addListener(listener);
+      final info = await completer.future.timeout(const Duration(seconds: 5));
+      if (!mounted) return;
+      final w = info.image.width;
+      final h = info.image.height;
+      if (w > 0 && h > 0) {
+        setState(() => _imageAspect = w / h);
+      }
+    } catch (_) {
+      // 解析失败保持 null：大图走 contain 完整展示兜底
+    } finally {
+      stream?.removeListener(listener);
     }
   }
 
@@ -190,8 +232,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 商品大图：无描边框，Hero 与列表/网格卡片图片联动，点击全屏预览
-                  _buildHeroImage(theme, product),
+                  // 商品大图：飘动展示（参考 moments 贴纸），点击全屏预览
+                  _FloatingSticker(child: _buildHeroImage(theme, product)),
                   const SizedBox(height: 16),
 
                   // 名称 + 价格
@@ -306,22 +348,38 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
-  /// 商品大图：有图时包 Hero 与列表卡图片联动；点击全屏预览
+  /// 商品大图：按原始宽高比完整展示不裁剪；有图时包 Hero 与列表卡图片联动；
+  /// 点击全屏预览。比例未知（SVG/解析中/失败）用 contain 兜底完整显示
   Widget _buildHeroImage(AppThemeData theme, Product product) {
     final url = product.image;
     final hasImage = url != null && url.isNotEmpty;
-    Widget image = ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: SizedBox(
+    final aspect = _imageAspect;
+
+    Widget buildImage(BoxFit fit) => AdaptiveImage(
+      imagePath: hasImage ? url : null,
+      fit: fit,
+      errorImage: _imagePlaceholder(theme),
+      defaultImage: _imagePlaceholder(theme),
+    );
+
+    // 已知比例：按图片原始比例布局（clamp 防极端比例撑爆页面）
+    Widget content;
+    if (aspect != null) {
+      content = AspectRatio(
+        aspectRatio: aspect.clamp(0.75, 2.0),
+        child: buildImage(BoxFit.cover),
+      );
+    } else {
+      content = SizedBox(
         height: 220,
         width: double.infinity,
-        child: AdaptiveImage(
-          imagePath: hasImage ? url : null,
-          fit: BoxFit.cover,
-          errorImage: _imagePlaceholder(theme),
-          defaultImage: _imagePlaceholder(theme),
-        ),
-      ),
+        child: buildImage(BoxFit.contain),
+      );
+    }
+
+    Widget image = ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: content,
     );
     if (hasImage) {
       image = Hero(tag: ProductDetailPage.imageHeroTag(product.id), child: image);
@@ -375,4 +433,52 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     alignment: Alignment.center,
     child: DsIcon(DsIconKind.cart, size: 40, color: theme.textSub),
   );
+}
+
+/// 飘动容器：缓慢正弦漂浮 + 轻微摇摆（参数同 moments 的 MomentSticker）。
+/// 包在 Hero 外层，不参与飞行转场
+class _FloatingSticker extends StatefulWidget {
+  final Widget child;
+
+  const _FloatingSticker({required this.child});
+
+  @override
+  State<_FloatingSticker> createState() => _FloatingStickerState();
+}
+
+class _FloatingStickerState extends State<_FloatingSticker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = _controller.value;
+        // 漂浮 ±4px + 摇摆 0.05rad（相位差 π/3），参数同 moments 贴纸
+        final dy = -4 * math.sin(t * 2 * math.pi);
+        final wobble = 0.05 * math.sin(t * 2 * math.pi + math.pi / 3);
+        return Transform.translate(
+          offset: Offset(0, dy),
+          child: Transform.rotate(angle: wobble, child: widget.child),
+        );
+      },
+    );
+  }
 }
