@@ -7,7 +7,6 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
-import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/todo/models/task.dart';
@@ -76,19 +75,6 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
       category: 'home_categoryTools'.tr,
       isDateDriven: true,
       hasDateData: (date) async => _hasActiveTasksForDate(date),
-      dateCardRoute: AppRoutes.todo,
-      dateStatsProvider: (date) async {
-        final tasks = TodoPlugin.instance.taskController.tasks
-            .where((t) => t.status != TaskStatus.done && _taskDate(t, date))
-            .toList();
-        return [
-          DateStatItem(
-            label: 'todo_dateStatLabel'.tr,
-            value: tasks.length.toString(),
-            unit: '项',
-          ),
-        ];
-      },
       builder: (context, config) => const _TodoDayCardHomeWidget(),
     ),
   );

@@ -4,15 +4,13 @@ class CheckinTranslationsEn {
     'checkin_name': 'Check-in',
     'checkin_dayCardName': 'Check-in day card',
     'checkin_dayCardDesc': 'Show check-in status for the selected date',
-    'checkin_dateStatLabel': 'Check-in',
     'checkin_dayCardEmpty': 'No check-in items on this day',
     'checkin_todayCheckin': 'Today',
     'checkin_totalCheckinCount': 'Total',
     'checkin_createCheckin': 'Create Check-in',
     'checkin_save': 'Save',
     'checkin_confirmDelete': 'Confirm Delete',
-    'checkin_deleteConfirmMessage':
-        'Are you sure you want to delete this check-in item?',
+    'checkin_deleteConfirmMessage': 'Are you sure you want to delete this check-in item?',
     'checkin_noRecords': 'No records yet',
     'checkin_reverseSort': 'Reverse Sort',
     'checkin_groupFilterTitle': 'Group',
@@ -20,8 +18,7 @@ class CheckinTranslationsEn {
     'checkin_allGroups': 'All',
     'checkin_deleteCheckinItemTitle': 'Delete Check-in Item',
     'checkin_resetCheckinRecordsTitle': 'Reset Check-in Records',
-    'checkin_resetCheckinRecordsMessage':
-        'Are you sure you want to reset all check-in records for this item? This will clear all historical data and cannot be undone.',
+    'checkin_resetCheckinRecordsMessage': 'Are you sure you want to reset all check-in records for this item? This will clear all historical data and cannot be undone.',
     'checkin_checkinSuccessTitle': 'Check-in Success',
     'checkin_timeRangeLabel': 'Time Range',
     'checkin_noteLabel': 'Note',
@@ -29,8 +26,7 @@ class CheckinTranslationsEn {
     'checkin_manageGroupsTitle': 'Manage Groups',
     'checkin_renameGroup': 'Rename Group',
     'checkin_deleteGroupTitle': 'Delete Group',
-    'checkin_deleteGroupMessage':
-        'Delete group "@name"? It contains @count check-in items.',
+    'checkin_deleteGroupMessage': 'Delete group "@name"? It contains @count check-in items.',
     'checkin_deleteItemsWithGroup': 'Also delete check-in items in this group',
     'checkin_itemsMoveHint': 'If unchecked, items will be moved to "默认分组"',
     'checkin_groupItemCount': '@count check-in items',
@@ -38,8 +34,7 @@ class CheckinTranslationsEn {
     'checkin_editCheckinItem': 'Edit Check-in Item',
     'checkin_resetCheckinRecords': 'Reset Check-in Records',
     'checkin_confirmReset': 'Confirm Reset',
-    'checkin_resetSuccessMessage':
-        'Check-in records for "@name" have been reset',
+    'checkin_resetSuccessMessage': 'Check-in records for "@name" have been reset',
     'checkin_deleteSuccessMessage': '"@name" has been deleted',
     'checkin_addCheckinItem': 'Add Check-in Item',
     'checkin_editCheckinItemTitle': 'Edit Check-in Item',
@@ -69,8 +64,7 @@ class CheckinTranslationsEn {
     'checkin_daySuffix': '',
     'checkin_checkinRecordsTitle': "@name's Check-in Records",
     'checkin_deleteCheckinRecordTitle': 'Delete Check-in Record',
-    'checkin_deleteCheckinRecordMessage':
-        'Are you sure you want to delete this check-in record? This cannot be undone.',
+    'checkin_deleteCheckinRecordMessage': 'Are you sure you want to delete this check-in record? This cannot be undone.',
     'checkin_checkinButton': 'Check-in',
     'checkin_addCheckinRecord': 'Add Check-in Record',
     'checkin_addSpecificDateCheckin': 'Add Check-in for Specific Date',
@@ -112,8 +106,7 @@ class CheckinTranslationsEn {
     'checkin_quickAccess': 'Quick Access',
     'checkin_quickAccessDesc': 'Tap to go to check-in item',
     'checkin_multiQuickAccess': 'Multi-Item Check-in',
-    'checkin_multiQuickAccessDesc':
-        'Display check-in status for multiple items',
+    'checkin_multiQuickAccessDesc': 'Display check-in status for multiple items',
     'checkin_freqEveryday': 'Every day',
     'checkin_freqNotSet': 'Not set',
     'checkin_freqPerWeek': '@days days/week',
@@ -124,13 +117,13 @@ class CheckinTranslationsEn {
     'checkin_timeYesterday': 'Yesterday',
     'checkin_searchEmptyTitle': 'No matching check-in items',
     'checkin_searchEmptyHint': 'Try searching with other keywords',
+  
+  // const Text 硬编码迁移(en)
+  'checkin_nfcCheckin': 'NFC Check-in',
 
-    // const Text 硬编码迁移(en)
-    'checkin_nfcCheckin': 'NFC Check-in',
-
-    // Empty state placeholders
-    'checkin_noItems': 'No check-in items yet',
-    'checkin_noItemsHint': 'Create check-in items in the Check-in plugin first',
-    'checkin_startRecordingHint': 'Tap the check-in button to start recording',
-  };
+  // Empty state placeholders
+  'checkin_noItems': 'No check-in items yet',
+  'checkin_noItemsHint': 'Create check-in items in the Check-in plugin first',
+  'checkin_startRecordingHint': 'Tap the check-in button to start recording',
+};
 }

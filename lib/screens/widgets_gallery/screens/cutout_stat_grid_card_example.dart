@@ -74,40 +74,6 @@ class CutoutStatGridCardExample extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              _buildSectionTitle('窄卡竖排 + 条目点击'),
-              const SizedBox(height: 8),
-              Center(
-                child: SizedBox(
-                  width: 184,
-                  height: 200,
-                  child: CutoutStatGridCardWidget(
-                    title: '今日概览',
-                    items: _items.take(2).toList(),
-                    size: const LargeSize(scale: 0.85),
-                    direction: Axis.vertical,
-                    onItemTap: (index) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('点击了第 $index 项')));
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildSectionTitle('无框模式（无外层纸卡与标题）'),
-              const SizedBox(height: 8),
-              Center(
-                child: SizedBox(
-                  width: 384,
-                  height: 120,
-                  child: CutoutStatGridCardWidget(
-                    framed: false,
-                    items: _items.take(3).toList(),
-                    size: const WideSize(scale: 0.85),
-                  ),
-                ),
-              ),
             ],
           ),
         ),

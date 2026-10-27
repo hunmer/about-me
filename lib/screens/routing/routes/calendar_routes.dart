@@ -17,101 +17,74 @@ class CalendarRoutes implements RouteRegistry {
 
   @override
   List<RouteDefinition> get routes => [
-    // Calendar 主页面（支持通过 date 参数定位到指定日期）
-    RouteDefinition(
-      path: '/calendar',
-      handler: (settings) => RouteHelpers.createRoute(
-        _buildMainView(settings),
-        settings: settings,
-      ),
-      description: '日历主页面',
-    ),
-    RouteDefinition(
-      path: 'calendar',
-      handler: (settings) => RouteHelpers.createRoute(
-        _buildMainView(settings),
-        settings: settings,
-      ),
-      description: '日历主页面（别名）',
-    ),
+        // Calendar 主页面
+        RouteDefinition(
+          path: '/calendar',
+          handler: (settings) => RouteHelpers.createRoute(const CalendarMainView()),
+          description: '日历主页面',
+        ),
+        RouteDefinition(
+          path: 'calendar',
+          handler: (settings) => RouteHelpers.createRoute(const CalendarMainView()),
+          description: '日历主页面（别名）',
+        ),
 
-    // 日历月视图小组件配置界面
-    RouteDefinition(
-      path: '/calendar_month_selector',
-      handler: (settings) {
-        int? widgetId;
+        // 日历月视图小组件配置界面
+        RouteDefinition(
+          path: '/calendar_month_selector',
+          handler: (settings) {
+            int? widgetId;
 
-        if (settings.arguments is Map<String, dynamic>) {
-          final args = settings.arguments as Map<String, dynamic>;
-          final widgetIdValue = args['widgetId'];
-          if (widgetIdValue is int) {
-            widgetId = widgetIdValue;
-          } else if (widgetIdValue is String) {
-            widgetId = int.tryParse(widgetIdValue);
-          }
-        } else if (settings.arguments is int) {
-          widgetId = settings.arguments as int;
-        }
+            if (settings.arguments is Map<String, dynamic>) {
+              final args = settings.arguments as Map<String, dynamic>;
+              final widgetIdValue = args['widgetId'];
+              if (widgetIdValue is int) {
+                widgetId = widgetIdValue;
+              } else if (widgetIdValue is String) {
+                widgetId = int.tryParse(widgetIdValue);
+              }
+            } else if (settings.arguments is int) {
+              widgetId = settings.arguments as int;
+            }
 
-        return RouteHelpers.createRoute(
-          CalendarMonthSelectorScreen(widgetId: widgetId),
-        );
-      },
-      description: '日历月视图小组件配置界面',
-    ),
-    RouteDefinition(
-      path: 'calendar_month_selector',
-      handler: (settings) {
-        int? widgetId;
+            return RouteHelpers.createRoute(CalendarMonthSelectorScreen(widgetId: widgetId));
+          },
+          description: '日历月视图小组件配置界面',
+        ),
+        RouteDefinition(
+          path: 'calendar_month_selector',
+          handler: (settings) {
+            int? widgetId;
 
-        if (settings.arguments is Map<String, dynamic>) {
-          final args = settings.arguments as Map<String, dynamic>;
-          final widgetIdValue = args['widgetId'];
-          if (widgetIdValue is int) {
-            widgetId = widgetIdValue;
-          } else if (widgetIdValue is String) {
-            widgetId = int.tryParse(widgetIdValue);
-          }
-        } else if (settings.arguments is int) {
-          widgetId = settings.arguments as int;
-        }
+            if (settings.arguments is Map<String, dynamic>) {
+              final args = settings.arguments as Map<String, dynamic>;
+              final widgetIdValue = args['widgetId'];
+              if (widgetIdValue is int) {
+                widgetId = widgetIdValue;
+              } else if (widgetIdValue is String) {
+                widgetId = int.tryParse(widgetIdValue);
+              }
+            } else if (settings.arguments is int) {
+              widgetId = settings.arguments as int;
+            }
 
-        return RouteHelpers.createRoute(
-          CalendarMonthSelectorScreen(widgetId: widgetId),
-        );
-      },
-      description: '日历月视图小组件配置界面（别名）',
-    ),
+            return RouteHelpers.createRoute(CalendarMonthSelectorScreen(widgetId: widgetId));
+          },
+          description: '日历月视图小组件配置界面（别名）',
+        ),
 
-    // 日历事件详情路由（从桌面小组件打开）
-    RouteDefinition(
-      path: '/calendar_month/event',
-      handler: (settings) => _handleCalendarEventRoute(settings),
-      description: '日历事件详情页面',
-    ),
-    RouteDefinition(
-      path: 'calendar_month/event',
-      handler: (settings) => _handleCalendarEventRoute(settings),
-      description: '日历事件详情页面（别名）',
-    ),
-  ];
-
-  /// 构建主页面（解析 arguments 中的 date 参数定位初始日期）
-  static CalendarMainView _buildMainView(RouteSettings settings) {
-    DateTime? initialDate;
-    if (settings.arguments is Map<String, dynamic>) {
-      final args = settings.arguments as Map<String, dynamic>;
-      final dateStr = args['date'] as String?;
-      if (dateStr != null) {
-        try {
-          initialDate = DateTime.parse(dateStr);
-        } catch (e) {
-          debugPrint('解析日期失败: $e');
-        }
-      }
-    }
-    return CalendarMainView(initialDate: initialDate);
-  }
+        // 日历事件详情路由（从桌面小组件打开）
+        RouteDefinition(
+          path: '/calendar_month/event',
+          handler: (settings) => _handleCalendarEventRoute(settings),
+          description: '日历事件详情页面',
+        ),
+        RouteDefinition(
+          path: 'calendar_month/event',
+          handler: (settings) => _handleCalendarEventRoute(settings),
+          description: '日历事件详情页面（别名）',
+        ),
+      ];
 
   static Route<dynamic> _handleCalendarEventRoute(RouteSettings settings) {
     String? eventId;
@@ -119,8 +92,7 @@ class CalendarRoutes implements RouteRegistry {
     if (settings.arguments is Map<String, String>) {
       eventId = (settings.arguments as Map<String, String>)['eventId'];
     } else if (settings.arguments is Map<String, dynamic>) {
-      eventId =
-          (settings.arguments as Map<String, dynamic>)['eventId'] as String?;
+      eventId = (settings.arguments as Map<String, dynamic>)['eventId'] as String?;
     }
 
     if (eventId == null) {
@@ -146,8 +118,7 @@ class CalendarRoutes implements RouteRegistry {
     if (event == null && eventId.startsWith('todo_')) {
       final todoPlugin = TodoPlugin.instance;
       final taskId = eventId.substring(5);
-      final task =
-          todoPlugin.taskController.tasks
+      final task = todoPlugin.taskController.tasks
               .where((t) => t.id == taskId)
               .isNotEmpty
           ? todoPlugin.taskController.tasks.firstWhere((t) => t.id == taskId)

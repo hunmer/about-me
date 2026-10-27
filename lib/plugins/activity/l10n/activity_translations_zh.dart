@@ -5,8 +5,6 @@ class ActivityTranslationsZh {
     'activity_name': '活动',
     'activity_dayCardName': '活动日卡',
     'activity_dayCardDesc': '展示选中日期的活动记录',
-    'activity_dateStatLabel': '活动',
-    'activity_dateStatUnit': '个',
     'activity_dayCardEmpty': '当天没有活动记录',
 
     // 小组件相关
@@ -118,6 +116,6 @@ class ActivityTranslationsZh {
     'activity_sampleTagDataDesc': '创建示例标签分组、最近标签和心情',
     'activity_sampleActivitiesTitle': '示例活动记录',
     'activity_sampleActivitiesDesc': '创建今日与昨日的示例活动记录',
-    'activity_loadFailed': '加载失败',
-  };
+      'activity_loadFailed': '加载失败',
+};
 }

@@ -7,7 +7,6 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
-import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 import 'package:aboutme/plugins/tracker/screens/goal_detail_screen.dart';
@@ -19,7 +18,10 @@ bool _isSameDay(DateTime a, DateTime b) {
 
 /// 获取指定日期的记录（按记录时间归属）
 List<Record> _recordsForDate(DateTime date) {
-  final records = TrackerPlugin.instance.controller.records
+  final records = TrackerPlugin
+      .instance
+      .controller
+      .records
       .where((record) => _isSameDay(record.recordedAt, date))
       .toList();
 
@@ -61,17 +63,6 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
           return false;
         }
       },
-      dateCardRoute: AppRoutes.tracker,
-      dateStatsProvider: (date) async {
-        final records = _recordsForDate(date);
-        return [
-          DateStatItem(
-            label: 'tracker_dateStatLabel'.tr,
-            value: records.length.toString(),
-            unit: 'tracker_dateStatUnit'.tr,
-          ),
-        ];
-      },
       builder: (context, config) => const _TrackerDayCardHomeWidget(),
     ),
   );
@@ -96,8 +87,10 @@ class _TrackerDayCardHomeWidget extends StatelessWidget {
             date: date,
             records: _recordsForDate(date),
             goalById: _goalById(),
-            onRecordTap: (goal) =>
-                NavigationHelper.push(context, GoalDetailScreen(goal: goal)),
+            onRecordTap: (goal) => NavigationHelper.push(
+              context,
+              GoalDetailScreen(goal: goal),
+            ),
             onAddRecord: () => openRecordCreateFlow(context, date),
           );
         },

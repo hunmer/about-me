@@ -8,8 +8,7 @@ class DiaryTranslationsEn {
     'diary_widgetName': 'Diary',
     'diary_widgetDescription': 'Quick access to diary',
     'diary_overviewName': 'Diary Overview',
-    'diary_overviewDescription':
-        'Display today\'s word count and monthly progress',
+    'diary_overviewDescription': 'Display today\'s word count and monthly progress',
     'diary_weeklyName': 'Weekly Diary',
     'diary_weeklyDescription': 'Show this week\'s diary titles and moods',
 
@@ -91,10 +90,7 @@ class DiaryTranslationsEn {
     'diary_save': 'Save',
     'diary_searchPlaceholder': 'Search diary content...',
     'diary_dayCardName': 'Diary Day Card',
-    'diary_dayCardDesc':
-        'Show diary entries of the selected date, tap to view/edit',
-    'diary_dateStatLabel': 'Diary',
-    'diary_dateStatUnit': 'words',
+    'diary_dayCardDesc': 'Show diary entries of the selected date, tap to view/edit',
     'diary_quickCreateEntry': 'New Diary',
     'diary_dayCardEmpty': 'No diary yet',
 

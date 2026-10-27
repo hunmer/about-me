@@ -5,9 +5,6 @@ class BillTranslationsZh {
     'bill_name': '账单',
     'bill_dayCardName': '账单日卡',
     'bill_dayCardDesc': '展示选中日期的账单收支',
-    'bill_dateStatExpenseLabel': '支出',
-    'bill_dateStatIncomeLabel': '收入',
-    'bill_dateStatUnit': '元',
     'bill_dayCardEmpty': '当天没有账单',
     'bill_billList': '账单列表',
     'bill_newBill': '新建账单',
@@ -124,64 +121,64 @@ class BillTranslationsZh {
     'bill_switchToListView': '切换到列表视图',
     'bill_switchToGridView': '切换到网格视图',
     'bill_notesHint': '添加备注、订单号或账户详情...',
+  
+  // const Text 硬编码迁移(zh)
+  'bill_statsReport': '统计报表',
 
-    // const Text 硬编码迁移(zh)
-    'bill_statsReport': '统计报表',
+  // 编辑账单屏幕
+  'bill_addBill': '添加账单',
+  'bill_amountMustBePositive': '请输入有效金额（需大于0）',
+  'bill_pleaseEnterSubscriptionName': '请输入订阅服务名称',
+  'bill_pleaseEnterSubscriptionDays': '请输入订阅天数',
+  'bill_titleHint': '留空则使用分类名称',
+  'bill_enableSubscription': '启用订阅服务',
+  'bill_enableSubscriptionHint': '启用后将自动生成每日账单',
+  'bill_subscriptionNameHint': '例如：Netflix会员',
+  'bill_subscriptionDays': '订阅天数',
+  'bill_subscriptionDaysHint': '例如：30',
+  'bill_dailyAmount': '单日金额',
+  'bill_perDaySuffix': ' / 天',
 
-    // 编辑账单屏幕
-    'bill_addBill': '添加账单',
-    'bill_amountMustBePositive': '请输入有效金额（需大于0）',
-    'bill_pleaseEnterSubscriptionName': '请输入订阅服务名称',
-    'bill_pleaseEnterSubscriptionDays': '请输入订阅天数',
-    'bill_titleHint': '留空则使用分类名称',
-    'bill_enableSubscription': '启用订阅服务',
-    'bill_enableSubscriptionHint': '启用后将自动生成每日账单',
-    'bill_subscriptionNameHint': '例如：Netflix会员',
-    'bill_subscriptionDays': '订阅天数',
-    'bill_subscriptionDaysHint': '例如：30',
-    'bill_dailyAmount': '单日金额',
-    'bill_perDaySuffix': ' / 天',
+  // 统计页(手绘风格)
+  'bill_monthBudget': '每月预算',
+  'bill_budgetHint': '设置每月支出上限, 掌控花销节奏',
+  'bill_budgetSetAmount': '设置预算金额',
+  'bill_budgetInvalid': '请输入有效金额',
+  'bill_budgetUsed': '已用',
+  'bill_budgetRemaining': '剩余',
+  'bill_budgetOverspent': '已超支',
+  'bill_dailyExpenseChart': '每日支出',
+  'bill_monthBillsCount': '@count 笔',
+  'bill_noData': '暂无数据',
 
-    // 统计页(手绘风格)
-    'bill_monthBudget': '每月预算',
-    'bill_budgetHint': '设置每月支出上限, 掌控花销节奏',
-    'bill_budgetSetAmount': '设置预算金额',
-    'bill_budgetInvalid': '请输入有效金额',
-    'bill_budgetUsed': '已用',
-    'bill_budgetRemaining': '剩余',
-    'bill_budgetOverspent': '已超支',
-    'bill_dailyExpenseChart': '每日支出',
-    'bill_monthBillsCount': '@count 笔',
-    'bill_noData': '暂无数据',
+  // 拍照记账（识图识别）
+  'bill_scanTitle': '拍照记账',
+  'bill_scanAnalyzing': '正在识别账单…',
+  'bill_scanNoModel': '未配置识图模型，请先在 OpenAI 插件设置中配置',
+  'bill_scanFailed': '识别失败',
+  'bill_scanNoItems': '未从图片中识别出账单',
+  'bill_scanAddSelected': '添加选中 (@count)',
+  'bill_scanSaving': '保存中…',
+  'bill_scanAdded': '已添加 @count 笔账单',
 
-    // 拍照记账（识图识别）
-    'bill_scanTitle': '拍照记账',
-    'bill_scanAnalyzing': '正在识别账单…',
-    'bill_scanNoModel': '未配置识图模型，请先在 OpenAI 插件设置中配置',
-    'bill_scanFailed': '识别失败',
-    'bill_scanNoItems': '未从图片中识别出账单',
-    'bill_scanAddSelected': '添加选中 (@count)',
-    'bill_scanSaving': '保存中…',
-    'bill_scanAdded': '已添加 @count 笔账单',
+  // 示例数据
+  'bill_sampleAccountsTitle': '示例账户与账单',
+  'bill_sampleAccountsDesc': '创建包含账单记录的示例账户',
 
-    // 示例数据
-    'bill_sampleAccountsTitle': '示例账户与账单',
-    'bill_sampleAccountsDesc': '创建包含账单记录的示例账户',
-
-    // 单日账单小票
-    'bill_receiptTitle': '账单小票',
-    'bill_receiptItem': '项目',
-    'bill_receiptAmount': '金额',
-    'bill_receiptType': '类型',
-    'bill_receiptDate': '时间',
-    'bill_receiptIncome': '收入',
-    'bill_receiptExpense': '支出',
-    'bill_receiptBills': '笔数',
-    'bill_receiptBalance': '结余',
-    'bill_receiptSlogan': '每一笔账单都留下痕迹。',
-    'bill_receiptDescription':
-        '这是您当日账单的汇总小票，\n'
-        '记录每一笔收支与结余，\n'
-        '可作为当日记账的留存凭证。',
-  };
+  // 单日账单小票
+  'bill_receiptTitle': '账单小票',
+  'bill_receiptItem': '项目',
+  'bill_receiptAmount': '金额',
+  'bill_receiptType': '类型',
+  'bill_receiptDate': '时间',
+  'bill_receiptIncome': '收入',
+  'bill_receiptExpense': '支出',
+  'bill_receiptBills': '笔数',
+  'bill_receiptBalance': '结余',
+  'bill_receiptSlogan': '每一笔账单都留下痕迹。',
+  'bill_receiptDescription':
+      '这是您当日账单的汇总小票，\n'
+      '记录每一笔收支与结余，\n'
+      '可作为当日记账的留存凭证。',
+};
 }

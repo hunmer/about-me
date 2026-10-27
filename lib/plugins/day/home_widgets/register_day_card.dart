@@ -10,7 +10,6 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
-import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
@@ -55,17 +54,6 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
           return false;
         }
       },
-      dateCardRoute: AppRoutes.day,
-      dateStatsProvider: (date) async {
-        final memorials = await _memorialsForDate(date);
-        return [
-          DateStatItem(
-            label: 'day_dateStatLabel'.tr,
-            value: memorials.length.toString(),
-            unit: 'day_dateStatUnit'.tr,
-          ),
-        ];
-      },
       builder: (context, config) => const _MemorialDayCardHomeWidget(),
     ),
   );
@@ -80,8 +68,7 @@ class _MemorialDayCardHomeWidget extends StatefulWidget {
       _MemorialDayCardHomeWidgetState();
 }
 
-class _MemorialDayCardHomeWidgetState
-    extends State<_MemorialDayCardHomeWidget> {
+class _MemorialDayCardHomeWidgetState extends State<_MemorialDayCardHomeWidget> {
   List<MemorialDay> _memorials = [];
   DateTime? _loadingFor;
   bool _loading = true;
@@ -157,37 +144,43 @@ class _MemorialDayCardHomeWidgetState
             ),
           ),
           Expanded(
-            child: _memorials.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.celebration_outlined,
-                          size: 32,
-                          color: theme.disabledColor.withValues(alpha: 0.4),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'day_dayCardEmpty'.tr,
-                          style: TextStyle(
+            child:
+                _memorials.isEmpty
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.celebration_outlined,
+                            size: 32,
                             color: theme.disabledColor.withValues(alpha: 0.4),
-                            fontSize: 12,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            'day_dayCardEmpty'.tr,
+                            style: TextStyle(
+                              color: theme.disabledColor.withValues(
+                                alpha: 0.4,
+                              ),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      itemCount: _memorials.length,
+                      itemBuilder: (context, index) {
+                        return _buildMemorialItem(
+                          context,
+                          _memorials[index],
+                        );
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    itemCount: _memorials.length,
-                    itemBuilder: (context, index) {
-                      return _buildMemorialItem(context, _memorials[index]);
-                    },
-                  ),
           ),
         ],
       ),
@@ -208,19 +201,20 @@ class _MemorialDayCardHomeWidgetState
             CircleAvatar(
               radius: 14,
               backgroundColor: memorial.backgroundColor.withValues(alpha: 0.2),
-              child: memorial.icon != null
-                  ? Icon(
-                      memorial.icon,
-                      size: 16,
-                      color: memorial.backgroundColor,
-                    )
-                  : Text(
-                      memorial.title.isNotEmpty ? memorial.title[0] : '纪',
-                      style: TextStyle(
-                        fontSize: 12,
+              child:
+                  memorial.icon != null
+                      ? Icon(
+                        memorial.icon,
+                        size: 16,
                         color: memorial.backgroundColor,
+                      )
+                      : Text(
+                        memorial.title.isNotEmpty ? memorial.title[0] : '纪',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: memorial.backgroundColor,
+                        ),
                       ),
-                    ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -253,7 +247,9 @@ class _MemorialDayCardHomeWidgetState
     if (memorial.isExpired) {
       return 'day_daysPassed'.trParams({'count': '${memorial.daysPassed}'});
     }
-    return 'day_daysRemaining'.trParams({'count': '${memorial.daysRemaining}'});
+    return 'day_daysRemaining'.trParams({
+      'count': '${memorial.daysRemaining}',
+    });
   }
 
   Color _countdownColor(BuildContext context, MemorialDay memorial) {

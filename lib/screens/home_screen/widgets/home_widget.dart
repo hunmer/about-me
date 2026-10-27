@@ -93,31 +93,6 @@ typedef CommonWidgetsProvider =
 /// 主页日期视图中无数据的卡片不显示（避免空占位）
 typedef DateDataChecker = Future<bool> Function(DateTime date);
 
-/// 日期统计项（日期驱动小组件用）
-///
-/// 主页日期视图用公共展示组件（插画指标卡 / 切角统计卡）渲染这些统计
-class DateStatItem {
-  /// 统计项标签（如「待办」「支出」）
-  final String label;
-
-  /// 统计数值（如「3」「128.50」）
-  final String value;
-
-  /// 数值单位（如「项」「元」），可为空
-  final String unit;
-
-  const DateStatItem({
-    required this.label,
-    required this.value,
-    this.unit = '',
-  });
-}
-
-/// 日期统计提供者函数类型（日期驱动小组件用）
-///
-/// 返回指定日期的统计项列表；未提供时日期视图回退到小组件自身的 builder
-typedef DateStatsProvider = Future<List<DateStatItem>> Function(DateTime date);
-
 /// 主页小组件定义
 ///
 /// 每个插件可以注册多个小组件，这些小组件会在"添加组件"对话框中显示
@@ -210,15 +185,6 @@ class HomeWidget {
   /// 未提供时视为始终有数据
   final DateDataChecker? hasDateData;
 
-  /// 日期统计提供者（可选，配合 [isDateDriven] 使用）
-  ///
-  /// 提供时日期视图改用公共展示组件（插画指标卡 / 切角统计卡）
-  /// 渲染该日的统计摘要，而非小组件自身的 builder
-  final DateStatsProvider? dateStatsProvider;
-
-  /// 日期统计卡点击跳转的命名路由（可选，如各插件主页面 AppRoutes.todo）
-  final String? dateCardRoute;
-
   const HomeWidget({
     required this.id,
     required this.pluginId,
@@ -241,8 +207,6 @@ class HomeWidget {
     // 日期视图相关
     this.isDateDriven = false,
     this.hasDateData,
-    this.dateStatsProvider,
-    this.dateCardRoute,
   });
 
   /// 构建小组件
@@ -254,9 +218,8 @@ class HomeWidget {
     HomeWidgetSize? size,
   ]) {
     // 将尺寸信息注入 config，供 builder 使用
-    final effectiveConfig = size != null
-        ? {...config, 'widgetSize': size}
-        : config;
+    final effectiveConfig =
+        size != null ? {...config, 'widgetSize': size} : config;
     return builder(context, effectiveConfig);
   }
 
@@ -271,9 +234,10 @@ class HomeWidget {
   /// 获取有效的支持的尺寸列表
   ///
   /// 如果 supportedSizes 为空，返回所有支持的尺寸（包括自定义尺寸）
-  List<HomeWidgetSize> get effectiveSupportedSizes => supportedSizes.isEmpty
-      ? HomeWidgetSize.allSupportedSizes
-      : supportedSizes;
+  List<HomeWidgetSize> get effectiveSupportedSizes =>
+      supportedSizes.isEmpty
+          ? HomeWidgetSize.allSupportedSizes
+          : supportedSizes;
 
   /// 是否为选择器小组件
   bool get isSelectorWidget => selectorId != null;

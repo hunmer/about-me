@@ -3,8 +3,6 @@ const Map<String, String> calendarTranslationsEn = {
   'calendar_name': 'Calendar',
   'calendar_dayCardName': 'Calendar day card',
   'calendar_dayCardDesc': 'Show events for the selected date',
-  'calendar_dateStatLabel': 'Events',
-  'calendar_dateStatUnit': '',
   'calendar_dayCardEmpty': 'No events on this day',
   'calendar_allDay': 'All day',
   'calendar_calendar': 'Calendar',
@@ -43,8 +41,7 @@ const Map<String, String> calendarTranslationsEn = {
   'calendar_noEvents': 'No events',
   'calendar_reminderSettings': 'Reminder settings',
   'calendar_enterEventTitle': 'Please enter event title',
-  'calendar_endTimeCannotBeEarlier':
-      'End time cannot be earlier than start time',
+  'calendar_endTimeCannotBeEarlier': 'End time cannot be earlier than start time',
   'calendar_dateRange': 'Date range',
   'calendar_complete': 'Complete',
   'calendar_activityCount': 'Activity Count',

@@ -121,8 +121,6 @@ const Map<String, String> todoTranslationsZh = {
   'todo_listWidgetDesc': '显示待办任务列表',
   'todo_dayCardName': '待办日卡',
   'todo_dayCardDesc': '显示所选日期的待办，可直接勾选、新建、查看详情',
-  'todo_dateStatLabel': '待办',
-  'todo_dateStatUnit': '项',
   'todo_quickCreateTask': '新建待办',
 
   // 空状态提示

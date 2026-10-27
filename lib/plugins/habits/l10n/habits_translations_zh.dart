@@ -5,7 +5,6 @@ class HabitsTranslationsZh {
     'habits_name': '习惯',
     'habits_dayCardName': '习惯日卡',
     'habits_dayCardDesc': '展示选中日期的习惯完成情况',
-    'habits_dateStatLabel': '习惯',
     'habits_dayCardEmpty': '还没有习惯',
     'habits_dayCardNotDone': '未完成',
     'habits_habitsList': '习惯列表',
@@ -19,20 +18,20 @@ class HabitsTranslationsZh {
     'habits_habits': '习惯',
     'habits_skills': '技能',
 
-    // 习惯统计
-    'habits_statsTab': '统计',
-    'habits_statsToday': '今日',
-    'habits_statsTodayCheckin': '今日打卡',
-    'habits_statsUnit': '次',
-    'habits_statsVsYesterday': '@diff 较昨日',
-    'habits_statsSummary': '共 @total 次打卡 · @habits 个习惯',
-    'habits_statsStreak': '连续打卡 @count 天',
-    'habits_statsNotStarted': '尚未开始打卡',
-    'habits_statsTodayChart': '今日打卡分布',
-    'habits_statsDailyChart': '每日打卡分布',
-    'habits_statsDailyAvg': '日均 @count 次',
-    'habits_statsCountLabel': '@count 次打卡',
-    'habits_statsRanking': '习惯活跃排行',
+  // 习惯统计
+  'habits_statsTab': '统计',
+  'habits_statsToday': '今日',
+  'habits_statsTodayCheckin': '今日打卡',
+  'habits_statsUnit': '次',
+  'habits_statsVsYesterday': '@diff 较昨日',
+  'habits_statsSummary': '共 @total 次打卡 · @habits 个习惯',
+  'habits_statsStreak': '连续打卡 @count 天',
+  'habits_statsNotStarted': '尚未开始打卡',
+  'habits_statsTodayChart': '今日打卡分布',
+  'habits_statsDailyChart': '每日打卡分布',
+  'habits_statsDailyAvg': '日均 @count 次',
+  'habits_statsCountLabel': '@count 次打卡',
+  'habits_statsRanking': '习惯活跃排行',
     'habits_recordDeleted': '记录已删除',
     'habits_deleteRecord': '删除记录',
     'habits_deleteRecordMessage': '确定要删除此记录吗？',
@@ -105,20 +104,20 @@ class HabitsTranslationsZh {
     'habits_habitActions': '习惯操作',
     'habits_confirmDelete': '确认删除',
     'habits_confirmDeleteHabit': '确定要删除此习惯吗？',
+  
+  // const Text 硬编码迁移(zh)
+  'habits_nfcStartTimer': '通过 NFC 开始计时',
 
-    // const Text 硬编码迁移(zh)
-    'habits_nfcStartTimer': '通过 NFC 开始计时',
+  // 空状态占位
+  'habits_emptyTitle': '暂无习惯',
+  'habits_emptyHint': '请先在习惯插件中创建习惯',
+  'habits_noMatchingSkills': '未找到匹配的技能',
+  'habits_searchKeyword': '搜索词: @query',
 
-    // 空状态占位
-    'habits_emptyTitle': '暂无习惯',
-    'habits_emptyHint': '请先在习惯插件中创建习惯',
-    'habits_noMatchingSkills': '未找到匹配的技能',
-    'habits_searchKeyword': '搜索词: @query',
-
-    // 示例数据
-    'habits_sampleHabitsTitle': '示例习惯与打卡记录',
-    'habits_sampleHabitsDesc': '创建示例习惯和对应的完成记录',
-    'habits_sampleSkillsTitle': '示例技能',
-    'habits_sampleSkillsDesc': '创建示例技能分类，供习惯关联',
-  };
+  // 示例数据
+  'habits_sampleHabitsTitle': '示例习惯与打卡记录',
+  'habits_sampleHabitsDesc': '创建示例习惯和对应的完成记录',
+  'habits_sampleSkillsTitle': '示例技能',
+  'habits_sampleSkillsDesc': '创建示例技能分类，供习惯关联',
+};
 }

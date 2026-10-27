@@ -6,8 +6,6 @@ final Map<String, String> notesTranslationsZh = {
   'notes_name': '笔记',
   'notes_dayCardName': '笔记日卡',
   'notes_dayCardDesc': '展示选中日期创建/修改的笔记',
-  'notes_dateStatLabel': '笔记',
-  'notes_dateStatUnit': '篇',
   'notes_dayCardEmpty': '当天没有笔记',
   'notes_dayCardUntitled': '无标题',
 
@@ -114,9 +112,9 @@ final Map<String, String> notesTranslationsZh = {
   // 示例数据
   'notes_sampleFoldersTitle': '示例文件夹',
   'notes_sampleFoldersDesc': '创建示例笔记文件夹分类',
-  'notes_justNow': '刚刚',
-  'notes_minutesAgo': '@count分钟前',
-  'notes_hoursAgo': '@count小时前',
-  'notes_daysAgo': '@count天前',
-  'notes_optional': '可选',
+    'notes_justNow': '刚刚',
+    'notes_minutesAgo': '@count分钟前',
+    'notes_hoursAgo': '@count小时前',
+    'notes_daysAgo': '@count天前',
+    'notes_optional': '可选',
 };

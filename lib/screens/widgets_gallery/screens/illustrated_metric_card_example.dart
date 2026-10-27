@@ -25,13 +25,6 @@ class IllustratedMetricCardExample extends StatelessWidget {
     iconColor: const Color(0xFF7C52D4),
   );
 
-  // 无插画数据：icon / 颜色均可省略
-  static final _focusMinutes = IllustratedMetricData(
-    title: 'Focus Minutes',
-    value: '96',
-    unit: 'min',
-  );
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -77,56 +70,6 @@ class IllustratedMetricCardExample extends StatelessWidget {
                   child: IllustratedMetricCardWidget(
                     data: _studyHours,
                     size: const Wide2Size(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildSectionTitle('无插画模式（纯文字，可点击）'),
-              const SizedBox(height: 8),
-              Center(
-                child: SizedBox(
-                  width: 384,
-                  height: 170,
-                  child: IllustratedMetricCardWidget(
-                    data: _focusMinutes,
-                    size: const WideSize(),
-                    showIllustration: false,
-                    onTap: () {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('点击了卡片')));
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildSectionTitle('自定义插画内容'),
-              const SizedBox(height: 8),
-              Center(
-                child: SizedBox(
-                  width: 384,
-                  height: 170,
-                  child: IllustratedMetricCardWidget(
-                    data: _studyHours,
-                    size: const WideSize(),
-                    illustration: const Text(
-                      '✏️',
-                      style: TextStyle(fontSize: 44),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildSectionTitle('无框模式（无外层纸卡与动作钮）'),
-              const SizedBox(height: 8),
-              Center(
-                child: SizedBox(
-                  width: 384,
-                  height: 150,
-                  child: IllustratedMetricCardWidget(
-                    data: _learningUnits,
-                    size: const WideSize(),
-                    framed: false,
                   ),
                 ),
               ),

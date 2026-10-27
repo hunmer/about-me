@@ -4,7 +4,6 @@ class CheckinTranslationsZh {
     'checkin_name': '打卡',
     'checkin_dayCardName': '签到日卡',
     'checkin_dayCardDesc': '展示选中日期的签到状态，点击切换',
-    'checkin_dateStatLabel': '签到',
     'checkin_dayCardEmpty': '当天没有签到项',
     'checkin_todayCheckin': '今日打卡',
     'checkin_totalCheckinCount': '总打卡数',
@@ -119,12 +118,12 @@ class CheckinTranslationsZh {
     'checkin_searchEmptyTitle': '未找到相关打卡项目',
     'checkin_searchEmptyHint': '尝试使用其他关键词搜索',
 
-    // const Text 硬编码迁移(zh)
-    'checkin_nfcCheckin': 'NFC 签到',
+  // const Text 硬编码迁移(zh)
+  'checkin_nfcCheckin': 'NFC 签到',
 
-    // 空状态占位
-    'checkin_noItems': '暂无打卡项目',
-    'checkin_noItemsHint': '请先在打卡插件中创建打卡项目',
-    'checkin_startRecordingHint': '点击打卡按钮开始记录',
-  };
+  // 空状态占位
+  'checkin_noItems': '暂无打卡项目',
+  'checkin_noItemsHint': '请先在打卡插件中创建打卡项目',
+  'checkin_startRecordingHint': '点击打卡按钮开始记录',
+};
 }

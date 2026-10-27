@@ -10,7 +10,6 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
-import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
@@ -56,20 +55,6 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
         } catch (_) {
           return false;
         }
-      },
-      dateCardRoute: AppRoutes.checkin,
-      dateStatsProvider: (date) async {
-        final scheduled = _scheduledItems(date);
-        final done = scheduled
-            .where((item) => item.getDateRecords(date).isNotEmpty)
-            .length;
-        return [
-          DateStatItem(
-            label: 'checkin_dateStatLabel'.tr,
-            value: done.toString(),
-            unit: '/${scheduled.length}',
-          ),
-        ];
       },
       builder: (context, config) => const _CheckinDayCardHomeWidget(),
     ),

@@ -4,8 +4,6 @@ class TrackerTranslationsEn {
     'tracker_goalsTitle': 'Goals',
     'tracker_dayCardName': 'Tracker day card',
     'tracker_dayCardDesc': 'Show goal records for the selected date',
-    'tracker_dateStatLabel': 'Records',
-    'tracker_dateStatUnit': '',
     'tracker_dayCardEmpty': 'No records on this day',
     'tracker_noGoals': 'Create a goal first',
     'tracker_goalName': 'Goal Name',
@@ -92,7 +90,7 @@ class TrackerTranslationsEn {
     'tracker_statsGroupChart': 'By Group',
     'tracker_statsNoGoals': 'No goals yet',
     'tracker_statsNoGoalsHint': 'Create a goal to start tracking',
-    'tracker_goalNotFound': 'Goal not found',
+      'tracker_goalNotFound': 'Goal not found',
     'tracker_pluginNotAvailable': 'Plugin not available',
-  };
+};
 }

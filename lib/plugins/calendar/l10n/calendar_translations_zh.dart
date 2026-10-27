@@ -3,8 +3,6 @@ const Map<String, String> calendarTranslationsZh = {
   'calendar_name': '日历',
   'calendar_dayCardName': '日历日卡',
   'calendar_dayCardDesc': '展示选中日期的活动日程',
-  'calendar_dateStatLabel': '日程',
-  'calendar_dateStatUnit': '个',
   'calendar_dayCardEmpty': '当天没有活动',
   'calendar_allDay': '全天',
   'calendar_calendar': '日历',
@@ -52,14 +50,16 @@ const Map<String, String> calendarTranslationsZh = {
 
   // 首次引导
   'calendar_onboardingWelcomeTitle': '欢迎使用日历',
-  'calendar_onboardingWelcomeDesc': '管理你的日程活动：多视图日历、智能提醒、与系统日历无缝同步。',
+  'calendar_onboardingWelcomeDesc':
+      '管理你的日程活动：多视图日历、智能提醒、与系统日历无缝同步。',
   'calendar_onboardingSystemCalendarTitle': '导入系统日历',
   'calendar_onboardingSystemCalendarDesc': '将系统日历中的日程显示到应用内',
   'calendar_importSystemCalendar': '导入系统日历',
   'calendar_importSystemCalendarDesc': '读取设备日历中的日程并显示在日历视图中',
   'calendar_importHolidays': '导入节假日',
   'calendar_importHolidaysDesc': '显示系统节假日日历（如法定节假日）',
-  'calendar_systemCalendarPermissionDenied': '未获得日历权限，请在系统设置中授权后使用',
+  'calendar_systemCalendarPermissionDenied':
+      '未获得日历权限，请在系统设置中授权后使用',
 
   // Home Widget Strings
   'calendar_widgetName': '日历',

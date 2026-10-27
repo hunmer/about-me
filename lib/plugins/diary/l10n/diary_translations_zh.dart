@@ -90,8 +90,6 @@ class DiaryTranslationsZh {
     'diary_searchPlaceholder': '搜索日记内容...',
     'diary_dayCardName': '日记日卡',
     'diary_dayCardDesc': '显示所选日期的日记，点击查看/编辑',
-    'diary_dateStatLabel': '日记',
-    'diary_dateStatUnit': '字',
     'diary_quickCreateEntry': '写日记',
     'diary_dayCardEmpty': '暂无日记',
 

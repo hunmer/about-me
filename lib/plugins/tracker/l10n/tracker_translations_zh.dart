@@ -4,8 +4,6 @@ class TrackerTranslationsZh {
     'tracker_goalsTitle': '目标',
     'tracker_dayCardName': '追踪日卡',
     'tracker_dayCardDesc': '展示选中日期的目标记录',
-    'tracker_dateStatLabel': '记录',
-    'tracker_dateStatUnit': '条',
     'tracker_dayCardEmpty': '当天没有记录',
     'tracker_noGoals': '请先创建目标',
     'tracker_goalName': '目标名称',
@@ -88,7 +86,7 @@ class TrackerTranslationsZh {
     'tracker_statsGroupChart': '分组分布',
     'tracker_statsNoGoals': '还没有目标',
     'tracker_statsNoGoalsHint': '先创建一个目标开始追踪',
-    'tracker_goalNotFound': '未找到目标',
+      'tracker_goalNotFound': '未找到目标',
     'tracker_pluginNotAvailable': '插件不可用',
-  };
+};
 }
