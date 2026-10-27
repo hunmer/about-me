@@ -91,6 +91,15 @@ PluginHandlers createToolboxHandlers(PluginData data) {
       await data.write(plugin, 'ai_image/history.json', rows);
       return {'count': rows.length};
     }),
+    // ---- AI 生图：绘画预设（用户自建，整表读写）----
+    'getAiImagePresets': domainAction(
+      (_) => readHistory('ai_image/presets.json'),
+    ),
+    'saveAiImagePresets': domainAction((p) async {
+      final rows = parseHistoryRows(p['presets'], 'presets');
+      await data.write(plugin, 'ai_image/presets.json', rows);
+      return {'count': rows.length};
+    }),
     // ---- 图片搜索：配置 ----
     // POST 而非 GET：首次读取含旧配置迁移落盘（查询不得写入持久化）。
     'getImageSearchConfig': domainAction((_) => readToolConfig('image_search')),

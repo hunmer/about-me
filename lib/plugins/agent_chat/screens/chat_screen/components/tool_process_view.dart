@@ -357,7 +357,6 @@ class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
                       if (thinking != null && thinking.isNotEmpty) ...[
                         Container(
                           width: double.infinity,
-                          constraints: const BoxConstraints(maxHeight: 240),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 8,
@@ -372,28 +371,26 @@ class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
                               ),
                             ),
                           ),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '思考过程',
-                                  style: DsTypography.caption.copyWith(
-                                    fontStyle: FontStyle.italic,
-                                    color: theme.textSub,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '思考过程',
+                                style: DsTypography.caption.copyWith(
+                                  fontStyle: FontStyle.italic,
+                                  color: theme.textSub,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  thinking,
-                                  style: DsTypography.caption.copyWith(
-                                    color: theme.textSub,
-                                    height: 1.4,
-                                  ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                thinking,
+                                style: DsTypography.caption.copyWith(
+                                  color: theme.textSub,
+                                  height: 1.4,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                         if (turnTexts.isNotEmpty || steps.isNotEmpty)

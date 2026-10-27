@@ -58,6 +58,70 @@ class AiImageService {
     '2:3',
   ];
 
+  /// 内置绘画预设（代码内维护，只读）
+  static const List<AiImagePreset> builtinPresets = [
+    AiImagePreset(
+      id: 'builtin_pixar',
+      name: '3D 卡通角色',
+      emoji: '🧸',
+      prompt: '3D Pixar style cartoon character, big expressive eyes, '
+          'soft cinematic lighting, vibrant colors, high detail, '
+          'clean background',
+    ),
+    AiImagePreset(
+      id: 'builtin_watercolor',
+      name: '水彩插画',
+      emoji: '🖌️',
+      prompt: 'delicate watercolor illustration, soft pastel palette, '
+          'loose brush strokes, textured paper, white margin',
+    ),
+    AiImagePreset(
+      id: 'builtin_cyberpunk',
+      name: '赛博朋克城市',
+      emoji: '🌃',
+      prompt: 'cyberpunk megacity at night, neon signs, rain-soaked streets '
+          'with reflections, flying cars, cinematic wide shot',
+      aspectRatio: '16:9',
+    ),
+    AiImagePreset(
+      id: 'builtin_ghibli',
+      name: '吉卜力风景',
+      emoji: '🌿',
+      prompt: 'Studio Ghibli style anime landscape, lush green hills, '
+          'fluffy cumulus clouds, warm sunlight, hand-painted feel',
+    ),
+    AiImagePreset(
+      id: 'builtin_sticker',
+      name: '极简贴纸',
+      emoji: '✨',
+      prompt: 'cute minimalist sticker of the subject, bold clean outline, '
+          'flat pastel colors, die-cut white border, plain background',
+    ),
+    AiImagePreset(
+      id: 'builtin_product',
+      name: '产品摄影',
+      emoji: '📸',
+      prompt: 'professional product photography, studio lighting, '
+          'soft shadows, minimalist podium, high-end commercial look',
+      aspectRatio: '3:4',
+    ),
+    AiImagePreset(
+      id: 'builtin_pixel',
+      name: '像素艺术',
+      emoji: '👾',
+      prompt: '16-bit pixel art, limited retro palette, crisp pixels, '
+          'side-scrolling game scene',
+    ),
+    AiImagePreset(
+      id: 'builtin_ink',
+      name: '中国水墨',
+      emoji: '🏔️',
+      prompt: 'traditional Chinese ink wash painting (shui-mo), misty '
+          'mountains, pine trees, negative space, subtle brush texture',
+      aspectRatio: '3:4',
+    ),
+  ];
+
   Map<String, dynamic> _config = {};
   bool _loaded = false;
 
@@ -496,6 +560,34 @@ class AiImageService {
     final v = _config[key];
     if (v is num) return v.toInt();
     return int.tryParse(v?.toString() ?? '') ?? fallback;
+  }
+
+  // ── 绘画预设（用户自建，整表读写）─────────────────────
+
+  /// 读取用户预设（新→旧），过滤本地已失效的参考图
+  Future<List<AiImagePreset>> getPresets() async {
+    try {
+      final res = await AboutmeDataService.instance.call(
+        'toolbox',
+        'getAiImagePresets',
+      );
+      final list = res['success'] == true && res['data'] is List
+          ? res['data'] as List
+          : <dynamic>[];
+      return [
+        for (final e in list.whereType<Map<String, dynamic>>())
+          AiImagePreset.fromJson(e),
+      ];
+    } catch (e) {
+      debugPrint('[toolbox] 读取 ai_image 预设失败: $e');
+      return [];
+    }
+  }
+
+  Future<void> savePresets(List<AiImagePreset> presets) async {
+    await AboutmeDataService.instance.call('toolbox', 'saveAiImagePresets', {
+      'presets': [for (final p in presets) p.toJson()],
+    });
   }
 
   // ── 生成历史 ─────────────────────────────────────────

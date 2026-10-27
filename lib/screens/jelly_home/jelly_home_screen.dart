@@ -97,6 +97,16 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
         index,
       ),
     );
+    // Web 端同步地址栏（replace 不产生历史记录）：刷新页面时
+    // URL 作为 defaultRouteName 优先于 initialRoute，直达对应页签
+    if (kIsWeb) {
+      unawaited(
+        SystemNavigator.routeInformationUpdated(
+          uri: Uri(path: index == 0 ? '/jelly_home' : '/jelly_home/$index'),
+          replace: true,
+        ),
+      );
+    }
   }
 
   @override

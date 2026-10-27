@@ -117,12 +117,21 @@ class JellyLive2D extends StatefulWidget {
   State<JellyLive2D> createState() => _JellyLive2DState();
 }
 
-class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
+class _JellyLive2DState extends State<JellyLive2D>
+    with RouteAware, SingleTickerProviderStateMixin {
   final Live2DViewController _controller = Live2DViewController();
   late final ValueNotifier<Live2DVoiceFrame?> _voiceFrame =
       Live2DPlugin.instance.voiceFrame;
   final ValueNotifier<double> _size = ValueNotifier<double>(_defaultSize);
   final GlobalKey _modelCaptureKey = GlobalKey();
+  late final AnimationController _tapSpringController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 520),
+  );
+  late final Animation<double> _tapSpringScale = Tween<double>(begin: 1, end: 1)
+      .animate(
+        CurvedAnimation(parent: _tapSpringController, curve: Curves.elasticOut),
+      );
   late Live2DModelDefinition _selectedModel =
       widget.initialModel ?? availableJellyLive2DModels.first;
   JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
@@ -296,6 +305,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     _appearanceResetTimer?.cancel();
     _voiceGazeTimer?.cancel();
     _tapGazeResetTimer?.cancel();
+    _tapSpringController.dispose();
     _size.dispose();
     _hitAreasVisible.dispose();
     _borderVisible.dispose();
@@ -578,45 +588,53 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
                           child: Transform.scale(
                             scale: modelScale,
                             alignment: Alignment.bottomCenter,
-                            child: SizedBox(
-                              width: viewportSize.width,
-                              height: viewportSize.height,
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  ClipRect(
-                                    child: Transform.translate(
-                                      offset: _cropRegion.sourceTranslation(
-                                        viewportSize,
-                                      ),
-                                      child: Transform.scale(
-                                        scale: _cropRegion.zoom,
-                                        alignment: Alignment.topLeft,
-                                        child: RepaintBoundary(
-                                          key: _modelCaptureKey,
-                                          child: Live2DView(
-                                            controller: _controller,
+                            child: AnimatedBuilder(
+                              animation: _tapSpringScale,
+                              builder: (context, child) => Transform.scale(
+                                scale: _tapSpringScale.value,
+                                alignment: Alignment.bottomCenter,
+                                child: child,
+                              ),
+                              child: SizedBox(
+                                width: viewportSize.width,
+                                height: viewportSize.height,
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    ClipRect(
+                                      child: Transform.translate(
+                                        offset: _cropRegion.sourceTranslation(
+                                          viewportSize,
+                                        ),
+                                        child: Transform.scale(
+                                          scale: _cropRegion.zoom,
+                                          alignment: Alignment.topLeft,
+                                          child: RepaintBoundary(
+                                            key: _modelCaptureKey,
+                                            child: Live2DView(
+                                              controller: _controller,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  ValueListenableBuilder<bool>(
-                                    valueListenable: _borderVisible,
-                                    builder: (context, visible, _) => visible
-                                        ? IgnorePointer(
-                                            child: DecoratedBox(
-                                              decoration: BoxDecoration(
-                                                border: Border.all(
-                                                  color: theme.danger,
-                                                  width: 1.5,
+                                    ValueListenableBuilder<bool>(
+                                      valueListenable: _borderVisible,
+                                      builder: (context, visible, _) => visible
+                                          ? IgnorePointer(
+                                              child: DecoratedBox(
+                                                decoration: BoxDecoration(
+                                                  border: Border.all(
+                                                    color: theme.danger,
+                                                    width: 1.5,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-                                ],
+                                            )
+                                          : const SizedBox.shrink(),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),

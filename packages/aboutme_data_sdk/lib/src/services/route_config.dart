@@ -461,6 +461,8 @@ final pluginRouteConfigs = <PluginRouteConfig>[
     PluginRouteDefinition(method: 'put', path: '/ai-image/config', handler: 'saveAiImageConfig', resourceName: 'aiImageConfig'),
     PluginRouteDefinition(method: 'get', path: '/ai-image/history', handler: 'getAiImageHistory', resourceName: 'aiImageHistory'),
     PluginRouteDefinition(method: 'put', path: '/ai-image/history', handler: 'saveAiImageHistory', resourceName: 'aiImageHistory'),
+    PluginRouteDefinition(method: 'get', path: '/ai-image/presets', handler: 'getAiImagePresets', resourceName: 'aiImagePresets'),
+    PluginRouteDefinition(method: 'put', path: '/ai-image/presets', handler: 'saveAiImagePresets', resourceName: 'aiImagePresets'),
     PluginRouteDefinition(method: 'post', path: '/image-search/config', handler: 'getImageSearchConfig', resourceName: 'imageSearchConfig'),
     PluginRouteDefinition(method: 'put', path: '/image-search/config', handler: 'saveImageSearchConfig', resourceName: 'imageSearchConfig'),
     // 静态路由需先于参数路由注册, 否则 /image-search/history 会被 /image-search/history/:ts 抢先匹配

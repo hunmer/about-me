@@ -25,11 +25,13 @@ import 'package:aboutme/core/utils/network.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
+import 'package:aboutme/plugins/toolbox/screens/ai_image_screen.dart';
 import 'package:aboutme/plugins/toolbox/services/image_search_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/utils/platform_utils.dart';
 import 'package:aboutme/widgets/emoji_picker/index.dart';
 import 'package:aboutme/widgets/photo_editor_screen.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_builders.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/multi_filter_bar.dart';
@@ -256,6 +258,15 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
               tooltip: 'image_picker_onlineUrl'.tr,
               onPressed: () => _showUrlSheet(),
             ),
+            const SizedBox(width: 4),
+            DSIconButton(
+              icon: DsIconKind.sparkle,
+              size: 36,
+              color: theme.surfaceAlt,
+              iconColor: theme.textSub,
+              tooltip: 'toolbox_aiImage_name'.tr,
+              onPressed: _openAiImageSheet,
+            ),
           ],
         ),
         userLargeTitle: null,
@@ -322,6 +333,22 @@ class _ImagePickerDialogState extends State<ImagePickerDialog> {
       'thumbUrl': null,
       'bytes': null,
     });
+  }
+
+  /// AI 图片生成入口：toolbox 的 AiImageScreen 整屏塞进底部抽屉，
+  /// 选择模式下生成结果作为选择结果返回（单选单条 / 多选列表，
+  /// 与图片搜索弹窗同构）；未选择关闭时刷新网格展示新生成的图
+  Future<void> _openAiImageSheet() async {
+    final result = await SmoothBottomSheet.showScreen<dynamic>(
+      context: context,
+      screen: AiImageScreen(pickMode: true, multiple: _multiple),
+    );
+    if (!mounted) return;
+    if (result != null) {
+      Navigator.of(context).pop(result);
+    } else {
+      _loadImages();
+    }
   }
 
   /// 弹出在线 URL 输入的二级底部弹窗，确认后连同主弹窗一起返回结果

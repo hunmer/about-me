@@ -21,7 +21,19 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 /// 文生图（prompt）+ 图生图（prompt + 参考图，可多选融合），
 /// 异步任务轮询，产物保存到 app_data/toolbox/ai_image/。
 class AiImageScreen extends StatefulWidget {
-  const AiImageScreen({super.key});
+  /// 选择模式（由图片选择器的 AI 入口使用）：结果图点击即作为
+  /// 选择结果返回——单选 pop 单条 {'url','thumbUrl','bytes'}，
+  /// 多选勾选后确认 pop 其列表；toolbox 独立入口保持查看大图行为
+  final bool pickMode;
+
+  /// 选择模式下的多选（跟随图片选择器的 multiple）
+  final bool multiple;
+
+  const AiImageScreen({
+    super.key,
+    this.pickMode = false,
+    this.multiple = false,
+  });
 
   @override
   State<AiImageScreen> createState() => _AiImageScreenState();
@@ -31,10 +43,25 @@ class _AiImageScreenState extends State<AiImageScreen> {
   final _controller = AiImageController();
   final _promptController = TextEditingController();
 
+  /// pickMode 多选：已勾选的结果下标
+  final List<int> _picked = [];
+
+  /// 上一批结果的引用，用于检测批次替换（新批次时旧勾选下标失效）
+  List<GeneratedImage>? _lastResults;
+
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() => setState(() {}));
+    _controller.addListener(_onControllerChanged);
+  }
+
+  void _onControllerChanged() {
+    if (!mounted) return;
+    if (!identical(_lastResults, _controller.results)) {
+      _lastResults = _controller.results;
+      _picked.clear();
+    }
+    setState(() {});
   }
 
   @override
@@ -197,13 +224,24 @@ class _AiImageScreenState extends State<AiImageScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: GestureDetector(
-                    onTap: () => _openResultViewer(i),
+                    onTap: () => _onTapResult(i),
                     // 与查看器当前页大图同 tag，形成飞行转场
                     child: Hero(
                       tag: _heroTag(c.results[i]),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: _resultImage(c.results[i]),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: _resultImage(c.results[i]),
+                          ),
+                          if (widget.pickMode && widget.multiple)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: _buildPickBadge(theme, i),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -213,6 +251,13 @@ class _AiImageScreenState extends State<AiImageScreen> {
                 style: DsTypography.caption.copyWith(color: theme.textSub),
                 textAlign: TextAlign.center,
               ),
+              if (widget.pickMode && widget.multiple) ...[
+                SizedBox(height: theme.spacing.md),
+                DSButton(
+                  label: 'app_confirm'.tr,
+                  onPressed: _picked.isEmpty ? null : _confirmPick,
+                ),
+              ],
             ],
           ],
         ),
@@ -224,6 +269,64 @@ class _AiImageScreenState extends State<AiImageScreen> {
   /// Hero/查看器共用的图片标识（与 GalleryPhoto.url 保持一致）
   static String _heroTag(GeneratedImage img) =>
       img.relativePath.isNotEmpty ? img.relativePath : img.absolutePath;
+
+  /// pickMode 结果图的回传 payload（生成图已存 SDK，url 为资源引用）
+  Map<String, dynamic> _resultPayload(int index) {
+    final img = _controller.results[index];
+    return {
+      'url': img.relativePath.isNotEmpty ? img.relativePath : img.absolutePath,
+      'thumbUrl': null,
+      'bytes': img.bytes,
+    };
+  }
+
+  /// 结果图点击：非选择模式查看大图；单选直接返回；多选勾选待确认
+  void _onTapResult(int index) {
+    if (!widget.pickMode) {
+      _openResultViewer(index);
+    } else if (!widget.multiple) {
+      Navigator.of(context).pop(_resultPayload(index));
+    } else {
+      setState(() {
+        _picked.contains(index) ? _picked.remove(index) : _picked.add(index);
+      });
+    }
+  }
+
+  /// 多选确认：回传勾选的结果列表
+  void _confirmPick() {
+    if (_picked.isEmpty) return;
+    Navigator.of(context).pop([for (final i in _picked) _resultPayload(i)]);
+  }
+
+  /// 多选勾选角标（样式与图片选择器网格一致）
+  Widget _buildPickBadge(AppThemeData theme, int index) {
+    final isSelected = _picked.contains(index);
+    final selectedIndex = _picked.indexOf(index) + 1;
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isSelected
+            ? theme.primary
+            : Colors.black.withValues(alpha: 0.25),
+        border: isSelected ? null : Border.all(color: Colors.white70),
+      ),
+      child: Center(
+        // 未选中时角标为空圈，不显示序号（避免 indexOf(-1)+1 显示 0）
+        child: isSelected
+            ? Text(
+                '$selectedIndex',
+                style: DsTypography.caption.copyWith(
+                  color: Colors.white,
+                  fontSize: 11,
+                ),
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
+  }
 
   /// 点击结果图：GalleryViewer 全屏查看本批图片（Hero 飞行转场）
   void _openResultViewer(int index) {

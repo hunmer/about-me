@@ -13,6 +13,12 @@ extension _JellyLive2DTap on _JellyLive2DState {
     }
   }
 
+  void _triggerTapSpring() {
+    if (_selectedModel.motions.isEmpty) {
+      _tapSpringController.forward(from: 0);
+    }
+  }
+
   /// 点击时短暂推动视线；桌面鼠标点击和移动端触屏点击都由原生视图转发到这里。
   void _triggerTapGaze(double x, double y) {
     _tapGazeResetTimer?.cancel();
@@ -45,6 +51,7 @@ extension _JellyLive2DTap on _JellyLive2DState {
       return;
     }
     if (!_controller.value.isLoaded) return;
+    _triggerTapSpring();
     _triggerTapGaze(x, y);
     widget.onTap?.call(hitAreaId, hitAreaName);
     if (!hasJellyLive2DHitArea(hitAreaId, hitAreaName)) {

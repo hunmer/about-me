@@ -98,6 +98,93 @@ class GeneratedImage {
   });
 }
 
+/// AI 绘画预设：绘画表单参数的快照，表单与预设库共用该结构
+///
+/// 内置预设（builtin=true）代码内维护，不可编辑删除；
+/// 用户预设经 SDK 命令持久化到 `toolbox/ai_image/presets.json`。
+class AiImagePreset {
+  final String id;
+
+  /// 预设名（列表展示）
+  final String name;
+
+  /// 卡片占位 emoji（无参考图时展示）
+  final String emoji;
+
+  /// 提示词模板
+  final String prompt;
+
+  /// 模型（空 = 跟随默认配置）
+  final String model;
+
+  /// 宽高比（空 = 跟随默认配置）
+  final String aspectRatio;
+  final int n;
+
+  /// 参考图列表：本地绝对路径或图片 URL
+  final List<String> refImages;
+  final bool builtin;
+
+  const AiImagePreset({
+    required this.id,
+    required this.name,
+    this.emoji = '🎨',
+    this.prompt = '',
+    this.model = '',
+    this.aspectRatio = '',
+    this.n = 1,
+    this.refImages = const [],
+    this.builtin = false,
+  });
+
+  AiImagePreset copyWith({
+    String? name,
+    String? emoji,
+    String? prompt,
+    String? model,
+    String? aspectRatio,
+    int? n,
+    List<String>? refImages,
+  }) => AiImagePreset(
+    id: id,
+    name: name ?? this.name,
+    emoji: emoji ?? this.emoji,
+    prompt: prompt ?? this.prompt,
+    model: model ?? this.model,
+    aspectRatio: aspectRatio ?? this.aspectRatio,
+    n: n ?? this.n,
+    refImages: refImages ?? this.refImages,
+    builtin: builtin,
+  );
+
+  factory AiImagePreset.fromJson(Map<String, dynamic> json) => AiImagePreset(
+    id: json['id']?.toString() ?? '',
+    name: json['name']?.toString() ?? '',
+    emoji: json['emoji']?.toString() ?? '🎨',
+    prompt: json['prompt']?.toString() ?? '',
+    model: json['model']?.toString() ?? '',
+    aspectRatio: json['aspectRatio']?.toString() ?? '',
+    n: int.tryParse(json['n']?.toString() ?? '') ?? 1,
+    refImages: (json['refImages'] as List?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        const [],
+    builtin: json['builtin'] == true,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'emoji': emoji,
+    'prompt': prompt,
+    'model': model,
+    'aspectRatio': aspectRatio,
+    'n': n,
+    'refImages': refImages,
+    'builtin': builtin,
+  };
+}
+
 /// 工具配置表单字段（对应原脚本 metadata 的 configFormFields）
 class ToolboxConfigField {
   final String name;
