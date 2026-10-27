@@ -25,10 +25,6 @@ class DSTabs extends StatefulWidget {
   }) : assert(
          children == null || children.length == labels.length,
          'children 数量须与 labels 一致',
-       ),
-       assert(
-         children == null || contentHeight != null,
-         '提供 children 时必须同时提供 contentHeight',
        );
 
   final List<String> labels;
@@ -38,7 +34,9 @@ class DSTabs extends StatefulWidget {
   /// 可选内容页，提供后启用滑动切换
   final List<Widget>? children;
 
-  /// 内容区固定高度（PageView 需要有界高度）
+  /// 内容区固定高度（PageView 需要有界高度）；
+  /// null 时内容区改为 Expanded 填满外层有界剩余空间
+  /// （外层约束无界会布局报错，须确保父级高度有界）
   final double? contentHeight;
 
   /// 激活标签右上角的小涂鸦装饰（12px 爱心、主题 primary 低透明度，
@@ -163,17 +161,25 @@ class _DSTabsState extends State<DSTabs> {
         SizedBox(height: theme.spacing.xs),
         _buildIndicator(theme),
         if (widget.children != null)
-          SizedBox(
-            height: widget.contentHeight,
-            child: PageView(
-              controller: _controller,
-              // 禁用态禁手势，保留程序化翻页
-              physics: disabled ? const NeverScrollableScrollPhysics() : null,
-              onPageChanged: widget.onChanged,
-              children: widget.children!,
-            ),
-          ),
+          widget.contentHeight == null
+              // 填满外层有界剩余空间（标签行/指示条之外的全部高度）
+              ? Expanded(child: _buildPageView(disabled))
+              : SizedBox(
+                  height: widget.contentHeight,
+                  child: _buildPageView(disabled),
+                ),
       ],
+    );
+  }
+
+  /// 内容页：点击标签与滑动共用同一 PageController
+  Widget _buildPageView(bool disabled) {
+    return PageView(
+      controller: _controller,
+      // 禁用态禁手势，保留程序化翻页
+      physics: disabled ? const NeverScrollableScrollPhysics() : null,
+      onPageChanged: widget.onChanged,
+      children: widget.children!,
     );
   }
 

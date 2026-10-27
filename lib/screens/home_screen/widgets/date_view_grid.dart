@@ -3,6 +3,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
@@ -312,9 +313,21 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     // 窄屏（列数减少）时同步缩小公共展示卡的内部布局
     final cardScale = ((widget.crossAxisCount / 4).clamp(0.6, 1.0) * 0.85)
         .toDouble();
+    // 点击跳转插件页（如 AppRoutes.todo）
+    final route = widgetDef.dateCardRoute;
+    final onTap = route == null
+        ? null
+        : () => NavigationHelper.pushNamed(context, route);
     return _useIllustrated(widgetDef)
-        ? _buildIllustratedCard(theme, widgetDef, stats.first, color, cardScale)
-        : _buildCutoutCard(theme, widgetDef, stats, color, cardScale);
+        ? _buildIllustratedCard(
+            theme,
+            widgetDef,
+            stats.first,
+            color,
+            cardScale,
+            onTap,
+          )
+        : _buildCutoutCard(theme, widgetDef, stats, color, cardScale, onTap);
   }
 
   /// 插画指标卡：插件主题色纸底 + 手绘图标插画 + 首条统计（占整行）
@@ -324,10 +337,12 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     DateStatItem stat,
     Color color,
     double cardScale,
+    VoidCallback? onTap,
   ) {
     return IllustratedMetricCardWidget(
       inline: true,
       showAction: false,
+      onTap: onTap,
       size: WideSize(scale: cardScale),
       data: IllustratedMetricData(
         title: widgetDef.name,
@@ -348,10 +363,12 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     List<DateStatItem> stats,
     Color color,
     double cardScale,
+    VoidCallback? onTap,
   ) {
     return CutoutStatGridCardWidget(
       inline: true,
       direction: Axis.vertical,
+      onItemTap: onTap == null ? null : (_) => onTap(),
       size: LargeSize(scale: cardScale),
       title: widgetDef.name,
       backgroundColor: color.withValues(alpha: 0.12),

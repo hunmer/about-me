@@ -411,6 +411,8 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage> {
       );
     }
 
+    final widgetIds = _availableCommonWidgets.keys.toList();
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -449,33 +451,26 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage> {
           Expanded(
             // 组件样式区在数据选定后新挂载，WiredDraw 触发墨线描画入场
             child: WiredDraw(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final widgetIds = _availableCommonWidgets.keys.toList();
-                  return DSTabs(
-                    labels: [
-                      for (final id in widgetIds)
-                        CommonWidgetsRegistry.getMetadata(
-                          _resolveCommonWidgetId(id),
-                        ).name,
-                    ],
-                    selected: _selectedTabIndex,
-                    onChanged: (index) =>
-                        setState(() => _selectedTabIndex = index),
-                    // PageView 需有界高度，取剩余空间
-                    contentHeight: constraints.maxHeight,
-                    children: [
-                      for (final id in widgetIds)
-                        _buildCommonWidgetPreviews(
-                          theme,
-                          CommonWidgetsRegistry.getMetadata(
-                            _resolveCommonWidgetId(id),
-                          ),
-                          id,
-                        ),
-                    ],
-                  );
-                },
+              child: DSTabs(
+                labels: [
+                  for (final id in widgetIds)
+                    CommonWidgetsRegistry.getMetadata(
+                      _resolveCommonWidgetId(id),
+                    ).name,
+                ],
+                selected: _selectedTabIndex,
+                onChanged: (index) => setState(() => _selectedTabIndex = index),
+                // 不传 contentHeight：内容区 Expanded 填满剩余空间
+                children: [
+                  for (final id in widgetIds)
+                    _buildCommonWidgetPreviews(
+                      theme,
+                      CommonWidgetsRegistry.getMetadata(
+                        _resolveCommonWidgetId(id),
+                      ),
+                      id,
+                    ),
+                ],
               ),
             ),
           ),

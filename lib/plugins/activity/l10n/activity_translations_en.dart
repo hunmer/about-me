@@ -13,9 +13,11 @@ class ActivityTranslationsEn {
     'activity_widgetName': 'Activity',
     'activity_widgetDescription': 'Quick access to activity records',
     'activity_overviewName': 'Activity Overview',
-    'activity_overviewDescription': 'Display today\'s activity count and duration',
+    'activity_overviewDescription':
+        'Display today\'s activity count and duration',
     'activity_commonWidgetsName': 'Activity Widgets',
-    'activity_commonWidgetsDesc': 'Display today\'s activities with various widget styles',
+    'activity_commonWidgetsDesc':
+        'Display today\'s activities with various widget styles',
 
     // Navigation and titles
     'activity_timeline': 'Timeline',
@@ -116,9 +118,11 @@ class ActivityTranslationsEn {
 
     // Sample data
     'activity_sampleTagDataTitle': 'Sample tags & moods',
-    'activity_sampleTagDataDesc': 'Create sample tag groups, recent tags and moods',
+    'activity_sampleTagDataDesc':
+        'Create sample tag groups, recent tags and moods',
     'activity_sampleActivitiesTitle': 'Sample activity records',
-    'activity_sampleActivitiesDesc': 'Create sample activities for today and yesterday',
-      'activity_loadFailed': 'Failed to load',
-};
+    'activity_sampleActivitiesDesc':
+        'Create sample activities for today and yesterday',
+    'activity_loadFailed': 'Failed to load',
+  };
 }

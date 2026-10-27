@@ -4,7 +4,8 @@ class CalendarAlbumTranslationsEn {
     // Basic Info
     'calendar_album_name': 'Album',
     'calendar_album_dayCardName': 'Album day card',
-    'calendar_album_dayCardDesc': 'Show photos and entries for the selected date',
+    'calendar_album_dayCardDesc':
+        'Show photos and entries for the selected date',
     'calendar_album_dateStatLabel': 'Album',
     'calendar_album_dateStatUnit': '',
     'calendar_album_dayCardEmpty': 'No photos on this day',
@@ -112,7 +113,8 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_sort_newest': 'Newest first',
     'calendar_album_sort_oldest': 'Oldest first',
     'calendar_album_route_title_album': 'Album - @count photos',
-    'calendar_album_enter_keyword_to_search': 'Enter keywords to search diaries',
+    'calendar_album_enter_keyword_to_search':
+        'Enter keywords to search diaries',
     'calendar_album_no_matching_diaries': 'No matching diaries found',
     'calendar_album_try_other_keywords': 'Try other keywords',
     'calendar_album_tag': 'Tag',
@@ -151,11 +153,13 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_weekly_name': 'Weekly Album',
     'calendar_album_weekly_description': 'Show photos from this week',
     'calendar_album_photo_carousel_name': 'Photo Carousel',
-    'calendar_album_photo_carousel_description': 'Recent 30 days photo carousel',
+    'calendar_album_photo_carousel_description':
+        'Recent 30 days photo carousel',
 
     // Sample data
     'calendarAlbum_sampleEntriesTitle': 'Sample journal entries',
-    'calendarAlbum_sampleEntriesDesc': 'Create date-grouped sample journal entries',
+    'calendarAlbum_sampleEntriesDesc':
+        'Create date-grouped sample journal entries',
 
     // Stats
     'calendar_album_statsTab': 'Stats',
@@ -163,7 +167,8 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_statsTodayEntries': 'Entries Today',
     'calendar_album_statsUnit': 'entries',
     'calendar_album_statsVsYesterday': '@diff vs yesterday',
-    'calendar_album_statsSummary': '@total entries · @photos photos · @tags tags',
+    'calendar_album_statsSummary':
+        '@total entries · @photos photos · @tags tags',
     'calendar_album_statsStreak': '@count-day streak',
     'calendar_album_statsNoEntries': 'No entries yet',
     'calendar_album_statsTodayChart': 'Today',

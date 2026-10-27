@@ -30,10 +30,12 @@ final Map<String, String> notesTranslationsEn = {
   'notes_styleSettings': 'Style settings',
   'notes_newFolder': 'New Folder',
   'notes_deleteNote': 'Delete',
-  'notes_deleteNoteConfirm': 'Are you sure you want to delete this note? This action cannot be undone.',
+  'notes_deleteNoteConfirm':
+      'Are you sure you want to delete this note? This action cannot be undone.',
   'notes_renameFolder': 'Rename Folder',
   'notes_deleteFolder': 'Delete Folder',
-  'notes_deleteFolderConfirm': 'Are you sure you want to delete this folder? All content in this folder will be deleted and cannot be recovered.',
+  'notes_deleteFolderConfirm':
+      'Are you sure you want to delete this folder? All content in this folder will be deleted and cannot be recovered.',
   'notes_emptyFolder': 'This folder is empty',
 
   // Search
@@ -97,9 +99,11 @@ final Map<String, String> notesTranslationsEn = {
 
   // Notes list widget
   'notes_listWidgetName': 'Notes List',
-  'notes_listWidgetDescription': 'Display notes list with folder, tag, date filters',
+  'notes_listWidgetDescription':
+      'Display notes list with folder, tag, date filters',
   'notes_listConfigSelectorName': 'Notes List Config',
-  'notes_listConfigSelectorDesc': 'Choose folder, tag, date filters and display style',
+  'notes_listConfigSelectorDesc':
+      'Choose folder, tag, date filters and display style',
   'notes_allNotes': 'All Notes',
   'notes_unknownFolder': 'Unknown Folder',
   'notes_untagged': 'Untagged',
@@ -114,9 +118,9 @@ final Map<String, String> notesTranslationsEn = {
   // Sample data
   'notes_sampleFoldersTitle': 'Sample folders',
   'notes_sampleFoldersDesc': 'Create sample note folder categories',
-    'notes_justNow': 'Just now',
-    'notes_minutesAgo': '@count min ago',
-    'notes_hoursAgo': '@count h ago',
-    'notes_daysAgo': '@count d ago',
-    'notes_optional': 'Optional',
+  'notes_justNow': 'Just now',
+  'notes_minutesAgo': '@count min ago',
+  'notes_hoursAgo': '@count h ago',
+  'notes_daysAgo': '@count d ago',
+  'notes_optional': 'Optional',
 };

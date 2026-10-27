@@ -714,6 +714,7 @@ class DsSketchPanel extends StatelessWidget {
     this.stickers = const [],
     this.polka = false,
     this.polkaColor,
+    this.clipBehavior = Clip.none,
   });
 
   final Widget? child;
@@ -752,6 +753,10 @@ class DsSketchPanel extends StatelessWidget {
   /// 波点颜色（null = 主题墨线低透明度，深浅模式自适应）
   final Color? polkaColor;
 
+  /// 按 [radius] 圆角裁剪内容：滚动/出血内容不越过圆角。
+  /// 只裁内容层，手绘墨线与排线层始终完整绘制。
+  final Clip clipBehavior;
+
   @override
   Widget build(BuildContext context) {
     // 结构：底色铺满容器 → 描边/排线铺满容器 → padding 只包裹内容。
@@ -760,6 +765,13 @@ class DsSketchPanel extends StatelessWidget {
     Widget? content = child;
     if (content != null && padding != null) {
       content = Padding(padding: padding!, child: content);
+    }
+    if (content != null && clipBehavior != Clip.none) {
+      content = ClipRRect(
+        borderRadius: radius ?? BorderRadius.zero,
+        clipBehavior: clipBehavior,
+        child: content,
+      );
     }
     Widget panel = Container(
       width: width,

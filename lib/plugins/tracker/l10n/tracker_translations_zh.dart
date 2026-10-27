@@ -88,7 +88,7 @@ class TrackerTranslationsZh {
     'tracker_statsGroupChart': '分组分布',
     'tracker_statsNoGoals': '还没有目标',
     'tracker_statsNoGoalsHint': '先创建一个目标开始追踪',
-      'tracker_goalNotFound': '未找到目标',
+    'tracker_goalNotFound': '未找到目标',
     'tracker_pluginNotAvailable': '插件不可用',
-};
+  };
 }

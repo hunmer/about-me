@@ -118,6 +118,6 @@ class ActivityTranslationsZh {
     'activity_sampleTagDataDesc': '创建示例标签分组、最近标签和心情',
     'activity_sampleActivitiesTitle': '示例活动记录',
     'activity_sampleActivitiesDesc': '创建今日与昨日的示例活动记录',
-      'activity_loadFailed': '加载失败',
-};
+    'activity_loadFailed': '加载失败',
+  };
 }

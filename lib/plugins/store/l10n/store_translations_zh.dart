@@ -192,5 +192,5 @@ const Map<String, String> storeTranslationsZh = {
   'store_otherCategory': '其他',
   'store_prevDay': '前一天',
   'store_nextDay': '后一天',
-    'store_pluginNotAvailable': '插件不可用',
+  'store_pluginNotAvailable': '插件不可用',
 };

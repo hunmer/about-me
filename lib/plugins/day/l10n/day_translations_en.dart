@@ -10,7 +10,8 @@ final Map<String, String> dayTranslationsEn = {
   'day_addMemorialDay': 'Add Memorial Day',
   'day_editMemorialDay': 'Edit Memorial Day',
   'day_deleteMemorialDay': 'Delete Memorial Day',
-  'day_deleteConfirmation': 'Are you sure you want to delete this memorial day?',
+  'day_deleteConfirmation':
+      'Are you sure you want to delete this memorial day?',
   'day_title': 'Title',
   'day_targetDate': 'Target Date',
   'day_selectDate': 'Select Date',

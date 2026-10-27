@@ -43,7 +43,8 @@ const Map<String, String> calendarTranslationsEn = {
   'calendar_noEvents': 'No events',
   'calendar_reminderSettings': 'Reminder settings',
   'calendar_enterEventTitle': 'Please enter event title',
-  'calendar_endTimeCannotBeEarlier': 'End time cannot be earlier than start time',
+  'calendar_endTimeCannotBeEarlier':
+      'End time cannot be earlier than start time',
   'calendar_dateRange': 'Date range',
   'calendar_complete': 'Complete',
   'calendar_activityCount': 'Activity Count',

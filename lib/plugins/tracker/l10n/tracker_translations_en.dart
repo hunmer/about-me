@@ -92,7 +92,7 @@ class TrackerTranslationsEn {
     'tracker_statsGroupChart': 'By Group',
     'tracker_statsNoGoals': 'No goals yet',
     'tracker_statsNoGoalsHint': 'Create a goal to start tracking',
-      'tracker_goalNotFound': 'Goal not found',
+    'tracker_goalNotFound': 'Goal not found',
     'tracker_pluginNotAvailable': 'Plugin not available',
-};
+  };
 }

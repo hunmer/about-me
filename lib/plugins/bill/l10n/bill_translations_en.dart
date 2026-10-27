@@ -129,66 +129,69 @@ class BillTranslationsEn {
     'bill_switchToListView': 'Switch to List View',
     'bill_switchToGridView': 'Switch to Grid View',
     'bill_notesHint': 'Add comments, order numbers, or account details...',
-  
-  // const Text 硬编码迁移(en)
-  'bill_statsReport': 'Statistics Report',
 
-  // Edit bill screen
-  'bill_addBill': 'Add Bill',
-  'bill_amountMustBePositive': 'Please enter a valid amount (must be greater than 0)',
-  'bill_pleaseEnterSubscriptionName': 'Please enter the subscription service name',
-  'bill_pleaseEnterSubscriptionDays': 'Please enter the subscription days',
-  'bill_titleHint': 'Leave blank to use category name',
-  'bill_enableSubscription': 'Enable Subscription',
-  'bill_enableSubscriptionHint': 'When enabled, a daily bill will be generated automatically',
-  'bill_subscriptionNameHint': 'e.g. Netflix membership',
-  'bill_subscriptionDays': 'Subscription Days',
-  'bill_subscriptionDaysHint': 'e.g. 30',
-  'bill_dailyAmount': 'Daily Amount',
-  'bill_perDaySuffix': ' / day',
+    // const Text 硬编码迁移(en)
+    'bill_statsReport': 'Statistics Report',
 
-  // Stats screen (sketch style)
-  'bill_monthBudget': 'Monthly Budget',
-  'bill_budgetHint': 'Set a monthly spending limit',
-  'bill_budgetSetAmount': 'Set Budget Amount',
-  'bill_budgetInvalid': 'Enter a valid amount',
-  'bill_budgetUsed': 'Used',
-  'bill_budgetRemaining': 'Remaining',
-  'bill_budgetOverspent': 'Over budget',
-  'bill_dailyExpenseChart': 'Daily Expenses',
-  'bill_monthBillsCount': '@count bills',
-  'bill_noData': 'No data',
+    // Edit bill screen
+    'bill_addBill': 'Add Bill',
+    'bill_amountMustBePositive':
+        'Please enter a valid amount (must be greater than 0)',
+    'bill_pleaseEnterSubscriptionName':
+        'Please enter the subscription service name',
+    'bill_pleaseEnterSubscriptionDays': 'Please enter the subscription days',
+    'bill_titleHint': 'Leave blank to use category name',
+    'bill_enableSubscription': 'Enable Subscription',
+    'bill_enableSubscriptionHint':
+        'When enabled, a daily bill will be generated automatically',
+    'bill_subscriptionNameHint': 'e.g. Netflix membership',
+    'bill_subscriptionDays': 'Subscription Days',
+    'bill_subscriptionDaysHint': 'e.g. 30',
+    'bill_dailyAmount': 'Daily Amount',
+    'bill_perDaySuffix': ' / day',
 
-  // Bill scan (image recognition)
-  'bill_scanTitle': 'Scan Bill',
-  'bill_scanAnalyzing': 'Analyzing bill…',
-  'bill_scanNoModel':
-      'No image model configured. Set it up in OpenAI plugin settings first',
-  'bill_scanFailed': 'Recognition failed',
-  'bill_scanNoItems': 'No bills recognized from the image',
-  'bill_scanAddSelected': 'Add selected (@count)',
-  'bill_scanSaving': 'Saving…',
-  'bill_scanAdded': '@count bills added',
+    // Stats screen (sketch style)
+    'bill_monthBudget': 'Monthly Budget',
+    'bill_budgetHint': 'Set a monthly spending limit',
+    'bill_budgetSetAmount': 'Set Budget Amount',
+    'bill_budgetInvalid': 'Enter a valid amount',
+    'bill_budgetUsed': 'Used',
+    'bill_budgetRemaining': 'Remaining',
+    'bill_budgetOverspent': 'Over budget',
+    'bill_dailyExpenseChart': 'Daily Expenses',
+    'bill_monthBillsCount': '@count bills',
+    'bill_noData': 'No data',
 
-  // Sample data
-  'bill_sampleAccountsTitle': 'Sample accounts & bills',
-  'bill_sampleAccountsDesc': 'Create sample accounts with bill records',
+    // Bill scan (image recognition)
+    'bill_scanTitle': 'Scan Bill',
+    'bill_scanAnalyzing': 'Analyzing bill…',
+    'bill_scanNoModel':
+        'No image model configured. Set it up in OpenAI plugin settings first',
+    'bill_scanFailed': 'Recognition failed',
+    'bill_scanNoItems': 'No bills recognized from the image',
+    'bill_scanAddSelected': 'Add selected (@count)',
+    'bill_scanSaving': 'Saving…',
+    'bill_scanAdded': '@count bills added',
 
-  // Daily bill receipt
-  'bill_receiptTitle': 'Bill Receipt',
-  'bill_receiptItem': 'ITEM',
-  'bill_receiptAmount': 'AMOUNT',
-  'bill_receiptType': 'TYPE',
-  'bill_receiptDate': 'TIME',
-  'bill_receiptIncome': 'INCOME',
-  'bill_receiptExpense': 'EXPENSE',
-  'bill_receiptBills': 'BILLS',
-  'bill_receiptBalance': 'BALANCE',
-  'bill_receiptSlogan': 'EVERY BILL LEAVES A TRACE.',
-  'bill_receiptDescription':
-      'This receipt summarizes the bills of\n'
-      'the day above, capturing income,\n'
-      'expense and balance as a simple\n'
-      'record of where money went.',
-};
+    // Sample data
+    'bill_sampleAccountsTitle': 'Sample accounts & bills',
+    'bill_sampleAccountsDesc': 'Create sample accounts with bill records',
+
+    // Daily bill receipt
+    'bill_receiptTitle': 'Bill Receipt',
+    'bill_receiptItem': 'ITEM',
+    'bill_receiptAmount': 'AMOUNT',
+    'bill_receiptType': 'TYPE',
+    'bill_receiptDate': 'TIME',
+    'bill_receiptIncome': 'INCOME',
+    'bill_receiptExpense': 'EXPENSE',
+    'bill_receiptBills': 'BILLS',
+    'bill_receiptBalance': 'BALANCE',
+    'bill_receiptSlogan': 'EVERY BILL LEAVES A TRACE.',
+    'bill_receiptDescription':
+        'This receipt summarizes the bills of\n'
+        'the day above, capturing income,\n'
+        'expense and balance as a simple\n'
+        'record of where money went.',
+  };
 }

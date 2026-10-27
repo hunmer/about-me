@@ -119,12 +119,12 @@ class CheckinTranslationsZh {
     'checkin_searchEmptyTitle': '未找到相关打卡项目',
     'checkin_searchEmptyHint': '尝试使用其他关键词搜索',
 
-  // const Text 硬编码迁移(zh)
-  'checkin_nfcCheckin': 'NFC 签到',
+    // const Text 硬编码迁移(zh)
+    'checkin_nfcCheckin': 'NFC 签到',
 
-  // 空状态占位
-  'checkin_noItems': '暂无打卡项目',
-  'checkin_noItemsHint': '请先在打卡插件中创建打卡项目',
-  'checkin_startRecordingHint': '点击打卡按钮开始记录',
-};
+    // 空状态占位
+    'checkin_noItems': '暂无打卡项目',
+    'checkin_noItemsHint': '请先在打卡插件中创建打卡项目',
+    'checkin_startRecordingHint': '点击打卡按钮开始记录',
+  };
 }

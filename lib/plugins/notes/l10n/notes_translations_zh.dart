@@ -114,9 +114,9 @@ final Map<String, String> notesTranslationsZh = {
   // 示例数据
   'notes_sampleFoldersTitle': '示例文件夹',
   'notes_sampleFoldersDesc': '创建示例笔记文件夹分类',
-    'notes_justNow': '刚刚',
-    'notes_minutesAgo': '@count分钟前',
-    'notes_hoursAgo': '@count小时前',
-    'notes_daysAgo': '@count天前',
-    'notes_optional': '可选',
+  'notes_justNow': '刚刚',
+  'notes_minutesAgo': '@count分钟前',
+  'notes_hoursAgo': '@count小时前',
+  'notes_daysAgo': '@count天前',
+  'notes_optional': '可选',
 };

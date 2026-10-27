@@ -102,12 +102,18 @@ class DSDialog extends StatelessWidget {
 
     // 大容器走手绘面板：纸底 + 淡排线 + 墨线框
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 320),
+      // 长内容限高在屏内，超出部分在内容区滚动
+      constraints: BoxConstraints(
+        maxWidth: 320,
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+      ),
       child: DsSketchPanel(
         theme: theme,
         radius: theme.radii.xxxl,
         padding: EdgeInsets.all(theme.spacing.xl),
         progress: progress,
+        // 滚动内容裁在圆角内，不越出面板
+        clipBehavior: Clip.antiAlias,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -120,17 +126,25 @@ class DSDialog extends StatelessWidget {
               style: DsTypography.title.copyWith(color: theme.text),
             ),
             if (content != null)
-              Padding(
-                padding: EdgeInsets.only(top: theme.spacing.md),
-                child: content!,
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: theme.spacing.md),
+                    child: content!,
+                  ),
+                ),
               )
             else if (message != null)
-              Padding(
-                padding: EdgeInsets.only(top: theme.spacing.sm),
-                child: Text(
-                  message!,
-                  textAlign: TextAlign.center,
-                  style: DsTypography.caption.copyWith(color: theme.textSub),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: theme.spacing.sm),
+                    child: Text(
+                      message!,
+                      textAlign: TextAlign.center,
+                      style: DsTypography.caption.copyWith(color: theme.textSub),
+                    ),
+                  ),
                 ),
               ),
             SizedBox(height: theme.spacing.xl),

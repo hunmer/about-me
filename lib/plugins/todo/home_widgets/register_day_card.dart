@@ -82,7 +82,11 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
             .where((t) => t.status != TaskStatus.done && _taskDate(t, date))
             .toList();
         return [
-          DateStatItem(label: 'todo_dateStatLabel'.tr, value: tasks.length.toString(), unit: '项'),
+          DateStatItem(
+            label: 'todo_dateStatLabel'.tr,
+            value: tasks.length.toString(),
+            unit: '项',
+          ),
         ];
       },
       builder: (context, config) => const _TodoDayCardHomeWidget(),

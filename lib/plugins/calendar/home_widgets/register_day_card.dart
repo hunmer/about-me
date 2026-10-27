@@ -80,7 +80,11 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
       dateStatsProvider: (date) async {
         final events = _eventsForDate(date);
         return [
-          DateStatItem(label: 'calendar_dateStatLabel'.tr, value: events.length.toString(), unit: '个'),
+          DateStatItem(
+            label: 'calendar_dateStatLabel'.tr,
+            value: events.length.toString(),
+            unit: '个',
+          ),
         ];
       },
       builder: (context, config) => const _CalendarDayCardHomeWidget(),

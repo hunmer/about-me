@@ -101,7 +101,11 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
       dateStatsProvider: (date) async {
         final notes = _notesForDate(date);
         return [
-          DateStatItem(label: 'notes_dateStatLabel'.tr, value: notes.length.toString(), unit: '篇'),
+          DateStatItem(
+            label: 'notes_dateStatLabel'.tr,
+            value: notes.length.toString(),
+            unit: '篇',
+          ),
         ];
       },
       builder: (context, config) => const _NotesDayCardHomeWidget(),

@@ -19,20 +19,20 @@ class HabitsTranslationsEn {
     'habits_habits': 'Habits',
     'habits_skills': 'Skills',
 
-  // Habit stats
-  'habits_statsTab': 'Stats',
-  'habits_statsToday': 'Today',
-  'habits_statsTodayCheckin': 'Check-ins Today',
-  'habits_statsUnit': 'times',
-  'habits_statsVsYesterday': '@diff vs yesterday',
-  'habits_statsSummary': '@total check-ins · @habits habits',
-  'habits_statsStreak': '@count-day streak',
-  'habits_statsNotStarted': 'No check-ins yet',
-  'habits_statsTodayChart': 'Check-ins Today',
-  'habits_statsDailyChart': 'Last 7 Days',
-  'habits_statsDailyAvg': 'Avg @count / day',
-  'habits_statsCountLabel': '@count check-ins',
-  'habits_statsRanking': 'Top Habits',
+    // Habit stats
+    'habits_statsTab': 'Stats',
+    'habits_statsToday': 'Today',
+    'habits_statsTodayCheckin': 'Check-ins Today',
+    'habits_statsUnit': 'times',
+    'habits_statsVsYesterday': '@diff vs yesterday',
+    'habits_statsSummary': '@total check-ins · @habits habits',
+    'habits_statsStreak': '@count-day streak',
+    'habits_statsNotStarted': 'No check-ins yet',
+    'habits_statsTodayChart': 'Check-ins Today',
+    'habits_statsDailyChart': 'Last 7 Days',
+    'habits_statsDailyAvg': 'Avg @count / day',
+    'habits_statsCountLabel': '@count check-ins',
+    'habits_statsRanking': 'Top Habits',
     'habits_recordDeleted': 'Record deleted',
     'habits_deleteRecord': 'Delete Record',
     'habits_deleteRecordMessage':
@@ -76,8 +76,7 @@ class HabitsTranslationsEn {
     // Habit tracking related
 
     // Widget configuration
-    'habits_configureHabitGroupListWidget':
-        'Configure Habit Group List Widget',
+    'habits_configureHabitGroupListWidget': 'Configure Habit Group List Widget',
     'habits_configureHabitTimerWidget': 'Configure Habit Timer Widget',
     'habits_configureHabitWeeklyWidget': 'Configure Habit Weekly Widget',
 
@@ -99,30 +98,32 @@ class HabitsTranslationsEn {
 
     // Activity Stats Widget Strings
     'habits_activityStatsName': 'Activity Stats',
-    'habits_activityStatsDescription': 'Display habit activity statistics with date range and count filters',
+    'habits_activityStatsDescription':
+        'Display habit activity statistics with date range and count filters',
 
     // Habit Stats Widget Strings
     'habits_habitStatsName': 'Habit Stats',
-    'habits_habitStatsDescription': 'Display detailed statistics for a single habit',
+    'habits_habitStatsDescription':
+        'Display detailed statistics for a single habit',
 
     // Habit Actions
     'habits_habitActions': 'Habit Actions',
     'habits_confirmDelete': 'Confirm Delete',
     'habits_confirmDeleteHabit': 'Are you sure you want to delete this habit?',
-  
-  // const Text 硬编码迁移(en)
-  'habits_nfcStartTimer': 'Start Timer via NFC',
 
-  // Empty state placeholders
-  'habits_emptyTitle': 'No habits yet',
-  'habits_emptyHint': 'Create habits in the Habits plugin first',
-  'habits_noMatchingSkills': 'No matching skills',
-  'habits_searchKeyword': 'Search: @query',
+    // const Text 硬编码迁移(en)
+    'habits_nfcStartTimer': 'Start Timer via NFC',
 
-  // Sample data
-  'habits_sampleHabitsTitle': 'Sample habits & records',
-  'habits_sampleHabitsDesc': 'Create sample habits with completion records',
-  'habits_sampleSkillsTitle': 'Sample skills',
-  'habits_sampleSkillsDesc': 'Create sample skill categories for habits',
-};
+    // Empty state placeholders
+    'habits_emptyTitle': 'No habits yet',
+    'habits_emptyHint': 'Create habits in the Habits plugin first',
+    'habits_noMatchingSkills': 'No matching skills',
+    'habits_searchKeyword': 'Search: @query',
+
+    // Sample data
+    'habits_sampleHabitsTitle': 'Sample habits & records',
+    'habits_sampleHabitsDesc': 'Create sample habits with completion records',
+    'habits_sampleSkillsTitle': 'Sample skills',
+    'habits_sampleSkillsDesc': 'Create sample skill categories for habits',
+  };
 }
