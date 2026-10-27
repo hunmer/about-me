@@ -217,59 +217,6 @@ PluginHandlers createCalendarHandlers(PluginData data) {
       await save(s);
       return PluginResult.success({'inserted': inserted});
     },
-    'seedExamples': (_, p) async {
-      if (p['templateVersion'] != null && p['templateVersion'] != 1)
-        return const PluginResult.failure('未知示例版本', 'UNSUPPORTED');
-      if (await data.read('calendar', 'sdk_examples_v1.json') != null)
-        return PluginResult.success({'inserted': 0, 'templateVersion': 1});
-      final s = await state();
-      final rows = s['events'] as List;
-      final existing = {
-        for (final r in [...rows, ...s['completedEvents'] as List]) r['id'],
-      };
-      var inserted = 0;
-      final now = DateTime.now();
-      for (final sample in [
-        {
-          'id': 'sample_event_1',
-          'title': '团队周会',
-          'startTime': DateTime(
-            now.year,
-            now.month,
-            now.day,
-            10,
-          ).toIso8601String(),
-          'endTime': DateTime(
-            now.year,
-            now.month,
-            now.day,
-            11,
-          ).toIso8601String(),
-          'reminderMinutes': 15,
-        },
-        {
-          'id': 'sample_event_2',
-          'title': '健身时间',
-          'startTime': DateTime(
-            now.year,
-            now.month,
-            now.day,
-            18,
-            30,
-          ).toIso8601String(),
-        },
-      ]) {
-        if (existing.add(sample['id'])) {
-          rows.add(_event(sample));
-          inserted++;
-        }
-      }
-      await save(s);
-      await data.write('calendar', 'sdk_examples_v1.json', {
-        'templateVersion': 1,
-      });
-      return PluginResult.success({'inserted': inserted, 'templateVersion': 1});
-    },
   };
 }
 

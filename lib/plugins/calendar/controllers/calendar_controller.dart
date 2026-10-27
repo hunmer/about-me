@@ -228,13 +228,6 @@ class CalendarController extends ChangeNotifier {
     }
   }
 
-  Future<void> createSampleEvents() async {
-    await _command('seedExamples', {
-      'groups': ['events'],
-      'templateVersion': 1,
-    });
-  }
-
   // 获取所有事件（包括本地事件和系统日历事件）
   List<CalendarEvent> getAllEvents() {
     final mappingManager = CalendarMappingManager.instance;
