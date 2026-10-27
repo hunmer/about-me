@@ -85,6 +85,11 @@ const Map<String, String> storeTranslationsEn = {
   'store_descriptionLabel': 'Product Description',
   'store_noProducts': 'No Products',
   'store_productList': 'Product List',
+  'store_productDetail': 'Product Details',
+  'store_exchangePeriod': 'Redeem Period',
+  'store_useDurationLabel': 'Validity after redeem',
+  'store_useDurationDays': '@days days',
+  'store_stockCount': '@count left',
 
   // Success/failure operations
   'store_useSuccess': 'Used successfully',

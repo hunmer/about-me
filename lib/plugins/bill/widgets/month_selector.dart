@@ -326,7 +326,7 @@ class _MonthSelectorState extends State<MonthSelector> {
     if (_shouldScrollOnNextBuild) {
       _shouldScrollOnNextBuild = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToSelectedMonth();
+        _scrollToSelectedMonth(animate: false);
       });
     }
 

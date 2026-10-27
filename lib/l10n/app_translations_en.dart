@@ -283,6 +283,8 @@ const Map<String, String> appTranslationsEn = {
   'home_sortDefault': 'Default',
   'home_sortPriority': 'Priority',
   'home_sortTime': 'Time',
+  'home_scheduleTitle': 'Schedule',
+  'home_filterCardTypes': 'Card Types',
   'app_provider': 'Provider',
   'app_none': 'None',
   'app_reminders': 'Reminders',

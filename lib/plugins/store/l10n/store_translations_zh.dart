@@ -80,6 +80,11 @@ const Map<String, String> storeTranslationsZh = {
   'store_descriptionLabel': '商品描述',
   'store_noProducts': '暂无商品',
   'store_productList': '商品列表',
+  'store_productDetail': '商品详情',
+  'store_exchangePeriod': '兑换时间',
+  'store_useDurationLabel': '兑换后有效期',
+  'store_useDurationDays': '@days 天',
+  'store_stockCount': '@count 件',
 
   // 操作成功/失败
   'store_useSuccess': '使用成功',

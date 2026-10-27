@@ -4,6 +4,7 @@ import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/store/models/product.dart';
+import 'package:aboutme/plugins/store/widgets/store_view/product_detail_page.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
@@ -11,7 +12,10 @@ import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 class ProductCard extends StatelessWidget {
   final Product product;
 
-  /// 兑换商品（点击卡片确认后触发）
+  /// 进入商品详情（点击卡片触发）；提供时点击不再弹兑换确认
+  final VoidCallback? onTap;
+
+  /// 兑换商品（长按菜单触发）
   final VoidCallback? onExchange;
 
   /// 编辑商品（长按菜单触发）
@@ -20,6 +24,7 @@ class ProductCard extends StatelessWidget {
   const ProductCard({
     super.key,
     required this.product,
+    this.onTap,
     this.onExchange,
     this.onLongPress,
   });
@@ -156,7 +161,9 @@ class ProductCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onExchange != null ? () => _confirmExchange(context) : null,
+          onTap:
+              onTap ??
+              (onExchange != null ? () => _confirmExchange(context) : null),
           onLongPress: hasMenuActions ? () => _showMenu(context) : null,
           borderRadius: BorderRadius.circular(20),
           child: Padding(
@@ -259,7 +266,8 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  /// 图片区：网络图/资源图（含 SVG），无图/加载失败回退占位图标
+  /// 图片区：网络图/资源图（含 SVG），无图/加载失败回退占位图标。
+  /// 有图时包 Hero 与商品详情页大图联动（跳转需用 NavigationHelper.pushHero）
   Widget _buildImageSection(BuildContext context, double height) {
     final theme = DSThemeBridge.resolve(context);
     Widget placeholder() => Container(
@@ -271,7 +279,7 @@ class ProductCard extends StatelessWidget {
     );
 
     final url = product.image;
-    return SizedBox(
+    Widget section = SizedBox(
       height: height,
       width: double.infinity,
       child: AdaptiveImage(
@@ -281,5 +289,13 @@ class ProductCard extends StatelessWidget {
         defaultImage: placeholder(),
       ),
     );
+    // 无图占位不参与 Hero 飞行
+    if (url != null && url.isNotEmpty) {
+      section = Hero(
+        tag: ProductDetailPage.imageHeroTag(product.id),
+        child: section,
+      );
+    }
+    return section;
   }
 }

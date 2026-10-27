@@ -32,17 +32,15 @@ class SkillsList extends StatefulWidget {
   State<SkillsList> createState() => _SkillsListState();
 }
 
-class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
+class _SkillsListState extends State<SkillsList> {
   List<Skill> _skills = [];
   List<Skill> _filteredSkills = [];
   String _searchQuery = '';
-  int _refreshKey = 0; // 用于强制刷新统计数据
+  final int _refreshKey = 0; // 用于强制刷新统计数据
 
   @override
   void initState() {
     super.initState();
-    // 添加生命周期监听
-    WidgetsBinding.instance.addObserver(this);
     // 技能增删改后刷新列表（创建入口在 FAB，不在本组件内）
     EventManager.instance.subscribe('skill_data_changed', _onSkillDataChanged);
     _loadSkills();
@@ -64,36 +62,7 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
       'skill_data_changed',
       _onSkillDataChanged,
     );
-    // 移除生命周期监听
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    // 应用从后台恢复时重新加载数据并刷新统计
-    if (state == AppLifecycleState.resumed) {
-      debugPrint('SkillsList: 应用恢复，重新加载技能数据');
-      _reloadSkills();
-    }
-  }
-
-  /// 从存储重新加载技能数据（用于应用恢复时）
-  Future<void> _reloadSkills() async {
-    // 等待同步完成
-    await Future.delayed(const Duration(milliseconds: 300));
-    // 从存储重新加载
-    final skills = await widget.skillController.loadSkills();
-    if (mounted) {
-      setState(() {
-        _skills = skills;
-        _filteredSkills = _searchQuery.isEmpty
-            ? skills
-            : _filterSkillsList(skills, _searchQuery);
-        _refreshKey++; // 增加 key 强制刷新 FutureBuilder
-      });
-    }
   }
 
   /// 过滤技能列表的内部方法
@@ -310,7 +279,9 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
                       ),
                     ),
                   ),
-                  GridView.builder(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate:
@@ -486,6 +457,7 @@ class _SkillsListState extends State<SkillsList> with WidgetsBindingObserver {
                         },
                       );
                     },
+                  ),
                   ),
                 ],
               );

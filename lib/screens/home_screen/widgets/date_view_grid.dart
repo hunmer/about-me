@@ -21,7 +21,14 @@ class HomeDateViewGrid extends StatefulWidget {
   /// 网格列数（与主页默认网格一致，4 列可容纳 2/4 宽的卡片）
   final int crossAxisCount;
 
-  const HomeDateViewGrid({super.key, this.crossAxisCount = 4});
+  /// 隐藏的卡片类型 id（日程页多条件过滤栏筛选出的取消项）
+  final Set<String> hiddenWidgetIds;
+
+  const HomeDateViewGrid({
+    super.key,
+    this.crossAxisCount = 4,
+    this.hiddenWidgetIds = const {},
+  });
 
   @override
   State<HomeDateViewGrid> createState() => _HomeDateViewGridState();
@@ -162,12 +169,21 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
       return Center(child: DSLoadingDots(color: theme.textSub));
     }
 
-    // 该日期没有可展示的数据
-    if (visible.isEmpty) {
+    // 应用卡片类型筛选（日程页多条件过滤栏）
+    final shown =
+        widget.hiddenWidgetIds.isEmpty
+        ? visible
+        : visible
+              .where((w) => !widget.hiddenWidgetIds.contains(w.id))
+              .toList();
+
+    // 全部被筛掉时提示与"该日期无数据"区分开
+    if (shown.isEmpty) {
       return _buildHint(
         theme,
         icon: DsIconKind.block,
-        message: 'home_dateViewNoData'.tr,
+        message:
+            visible.isEmpty ? 'home_dateViewNoData'.tr : 'home_dateViewEmpty'.tr,
       );
     }
 
@@ -180,7 +196,7 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
         mainAxisSpacing: 16,
         crossAxisSpacing: 8,
         children:
-            visible.map((widgetDef) {
+            shown.map((widgetDef) {
               return StaggeredGridTile.count(
                 crossAxisCellCount: _clampCells(widgetDef.defaultSize.width, 2),
                 mainAxisCellCount: _clampCells(widgetDef.defaultSize.height, 2),

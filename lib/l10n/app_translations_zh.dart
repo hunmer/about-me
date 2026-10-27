@@ -269,6 +269,8 @@ const Map<String, String> appTranslationsZh = {
   'home_sortDefault': '默认',
   'home_sortPriority': '优先级',
   'home_sortTime': '时间',
+  'home_scheduleTitle': '日程',
+  'home_filterCardTypes': '卡片类型',
   'app_provider': '服务商',
   'app_none': '无',
   'app_reminders': '提醒',
