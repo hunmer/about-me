@@ -512,6 +512,8 @@ class _ImageSearchScreenState extends State<ImageSearchScreen> {
         initialIndex: index,
         // 搜索引擎图源原图直链多被墙，查看器内走系统代理下载
         networkViaProxy: true,
+        // header 右上角开启分享/保存（下载）操作
+        showFileActions: true,
       ),
     );
   }

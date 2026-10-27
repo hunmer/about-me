@@ -1693,6 +1693,21 @@ class GalleryFileActions {
     }
   }
 
+  /// 在线 URL 走系统代理 GET（失败返回 null，调用方回退直连）
+  static Future<http.Response?> _getViaProxy(String url) async {
+    http.Client? client;
+    try {
+      client = await createClientWithSystemProxy();
+      return await client
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 30));
+    } catch (_) {
+      return null;
+    } finally {
+      client?.close();
+    }
+  }
+
   /// 保存图片到系统相册：移动端经 photo_manager 写入相册（自动申请权限），
   /// 桌面端弹出保存文件对话框；在线 URL 先下载字节
   static Future<void> saveToAlbum(BuildContext context, String url) async {
@@ -1700,7 +1715,8 @@ class GalleryFileActions {
       Uint8List? bytes;
       var name = path.basename(url.split('?').first);
       if (_isHttpUrl(url)) {
-        final res = await http.get(Uri.parse(url));
+        // 在线 URL 先走系统代理下载（搜索引擎图源直链多被墙），失败回退直连
+        final res = await _getViaProxy(url) ?? await http.get(Uri.parse(url));
         if (res.statusCode != 200) {
           throw Exception('HTTP ${res.statusCode}');
         }
