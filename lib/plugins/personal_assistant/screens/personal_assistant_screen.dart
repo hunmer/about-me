@@ -375,7 +375,11 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.science_outlined, size: 18, color: theme.textSub),
+                    Icon(
+                      Icons.science_outlined,
+                      size: 18,
+                      color: theme.textSub,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '测试',
@@ -752,67 +756,72 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
       builder: (context, constraints) {
         // 气泡最大宽度：列表可视宽度的 80%，余量留给头像与留白
         final bubbleMaxWidth = constraints.maxWidth * 0.8;
-        return ListView.builder(
-          controller: _scrollController,
-          padding: EdgeInsets.fromLTRB(
-            theme.spacing.lg,
-            theme.spacing.md,
-            theme.spacing.lg,
-            theme.spacing.md,
-          ),
-          itemCount: messages.length + (showPlaceholder ? 1 : 0),
-          itemBuilder: (context, index) {
-            final isLast =
-                index == messages.length + (showPlaceholder ? 1 : 0) - 1;
-            if (showPlaceholder && index == messages.length) {
-              return _buildPlaceholderRow(theme, controller, isLast: isLast);
-            }
-            final message = messages[index];
-            if (message.isSessionDivider) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Center(
-                  child: Text(
-                    message.content,
-                    style: DsTypography.caption.copyWith(color: theme.textSub),
+        return ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: EdgeInsets.fromLTRB(
+              theme.spacing.lg,
+              theme.spacing.md,
+              theme.spacing.lg,
+              theme.spacing.md,
+            ),
+            itemCount: messages.length + (showPlaceholder ? 1 : 0),
+            itemBuilder: (context, index) {
+              final isLast =
+                  index == messages.length + (showPlaceholder ? 1 : 0) - 1;
+              if (showPlaceholder && index == messages.length) {
+                return _buildPlaceholderRow(theme, controller, isLast: isLast);
+              }
+              final message = messages[index];
+              if (message.isSessionDivider) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: Text(
+                      message.content,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
                   ),
+                );
+              }
+              return Padding(
+                padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: message.isUser
+                      ? [
+                          Expanded(
+                            child: _buildUserBubble(
+                              theme,
+                              message,
+                              maxWidth: bubbleMaxWidth,
+                            ),
+                          ),
+                          SizedBox(width: theme.spacing.sm),
+                          _buildUserAvatar(theme),
+                        ]
+                      : [
+                          _buildBotAvatar(
+                            theme,
+                            live: !showPlaceholder && message.id == lastAiId,
+                          ),
+                          SizedBox(width: theme.spacing.sm),
+                          Expanded(
+                            child: _buildAiBubble(
+                              theme,
+                              controller,
+                              message,
+                              maxWidth: bubbleMaxWidth,
+                            ),
+                          ),
+                        ],
                 ),
               );
-            }
-            return Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: message.isUser
-                    ? [
-                        Expanded(
-                          child: _buildUserBubble(
-                            theme,
-                            message,
-                            maxWidth: bubbleMaxWidth,
-                          ),
-                        ),
-                        SizedBox(width: theme.spacing.sm),
-                        _buildUserAvatar(theme),
-                      ]
-                    : [
-                        _buildBotAvatar(
-                          theme,
-                          live: !showPlaceholder && message.id == lastAiId,
-                        ),
-                        SizedBox(width: theme.spacing.sm),
-                        Expanded(
-                          child: _buildAiBubble(
-                            theme,
-                            controller,
-                            message,
-                            maxWidth: bubbleMaxWidth,
-                          ),
-                        ),
-                      ],
-              ),
-            );
-          },
+            },
+          ),
         );
       },
     );
@@ -846,9 +855,7 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: [
-                      DSLoadingDots(size: 6, color: theme.textSub)
-                    ],
+                    children: [DSLoadingDots(size: 6, color: theme.textSub)],
                   ),
                 ),
               ),
@@ -1022,9 +1029,8 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     final now = DateTime.now();
     String two(int v) => v.toString().padLeft(2, '0');
     final hm = '${two(time.hour)}:${two(time.minute)}';
-    final isToday = time.year == now.year &&
-        time.month == now.month &&
-        time.day == now.day;
+    final isToday =
+        time.year == now.year && time.month == now.month && time.day == now.day;
     return isToday ? hm : '${two(time.month)}-${two(time.day)} $hm';
   }
 

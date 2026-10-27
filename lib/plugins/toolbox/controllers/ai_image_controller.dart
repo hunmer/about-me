@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 import 'package:aboutme/core/services/toast_service.dart';
@@ -74,6 +76,20 @@ class AiImageController extends ChangeNotifier {
   void removeRefImage(int index) {
     if (index < 0 || index >= refImages.length) return;
     refImages.removeAt(index);
+    notifyListeners();
+  }
+
+  /// 应用预设：整体回填表单（与 [AiImagePreset] 共用结构），
+  /// 本地参考图已失效的自动丢弃
+  void applyPreset(AiImagePreset preset) {
+    prompt = preset.prompt;
+    model = preset.model;
+    aspectRatio = preset.aspectRatio;
+    n = preset.n.clamp(1, 4);
+    refImages = [
+      for (final p in preset.refImages)
+        if (p.startsWith(RegExp(r'https?://')) || File(p).existsSync()) p,
+    ];
     notifyListeners();
   }
 

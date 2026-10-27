@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 /// - 默认「堆叠模式」：5 份折叠报纸错落堆叠
 /// - 点击任意报纸 / 右下切换胶囊进入「轮播模式」
 /// - 轮播模式下支持左右拖拽、点击两侧报纸居中、点击中央报纸返回堆叠
-/// - 顶部日期滚轮可点击循环切换日期
 class NewspaperStandDemo extends StatefulWidget {
   const NewspaperStandDemo({super.key});
 
@@ -21,34 +20,9 @@ class _NewspaperStandDemoState extends State<NewspaperStandDemo> {
 
   bool _isStack = true;
   int _activeIndex = 1;
-  int _dateIndex = 2;
   int _navTab = 0;
   double _dragDelta = 0;
   bool _dragging = false;
-
-  static const _dateWheel = [
-    ('Sunday, Jun 02, 2024', 'Sunday, June 2, 2024', 'Last update Jun 2, 12 PM'),
-    (
-      'Monday, Jun 03, 2024',
-      'Monday, June 3, 2024',
-      'Last update Yesterday 12 PM',
-    ),
-    (
-      'Tuesday, Jun 04, 2024',
-      'Tuesday, June 4, 2024',
-      'Last update Today 12 PM',
-    ),
-    (
-      'Wednesday, Jun 05, 2024',
-      'Wednesday, June 5, 2024',
-      'Edition Preview · 12 PM',
-    ),
-    (
-      'Thursday, Jun 06, 2024',
-      'Thursday, June 6, 2024',
-      'Edition Preview · 12 PM',
-    ),
-  ];
 
   /// 堆叠模式下每张报纸的位移/旋转/缩放
   static const _stackTransforms = [
@@ -76,13 +50,6 @@ class _NewspaperStandDemoState extends State<NewspaperStandDemo> {
     } else {
       _setViewMode(true);
     }
-  }
-
-  void _cycleDate(int delta) {
-    setState(() {
-      _dateIndex = (_dateIndex + delta) % _dateWheel.length;
-      if (_dateIndex < 0) _dateIndex += _dateWheel.length;
-    });
   }
 
   void _onHorizontalDragStart(DragStartDetails details) {
@@ -144,210 +111,79 @@ class _NewspaperStandDemoState extends State<NewspaperStandDemo> {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(36),
-            child: Column(
+            child: Stack(
               children: [
-                _buildDateWheelHeader(),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      // 报纸舞台
-                      Positioned.fill(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.translucent,
-                          onHorizontalDragStart: _onHorizontalDragStart,
-                          onHorizontalDragUpdate: _onHorizontalDragUpdate,
-                          onHorizontalDragEnd: _onHorizontalDragEnd,
-                          child: _buildStage(),
-                        ),
-                      ),
-                      // 底部白色渐隐遮罩
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: 118,
-                        child: IgnorePointer(
-                          child: AnimatedOpacity(
-                            duration: const Duration(milliseconds: 450),
-                            opacity: _isStack ? 1 : 0.35,
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  stops: [0, 0.48, 0.8, 1],
-                                  colors: [
-                                    Color(0x00FFFFFF),
-                                    Color(0xB8FFFFFF),
-                                    Color(0xF5FFFFFF),
-                                    Color(0xFFFFFFFF),
-                                  ],
-                                ),
-                              ),
-                            ),
+                // 报纸舞台
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragStart: _onHorizontalDragStart,
+                    onHorizontalDragUpdate: _onHorizontalDragUpdate,
+                    onHorizontalDragEnd: _onHorizontalDragEnd,
+                    child: _buildStage(),
+                  ),
+                ),
+                // 底部白色渐隐遮罩
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 118,
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 450),
+                      opacity: _isStack ? 1 : 0.35,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: [0, 0.48, 0.8, 1],
+                            colors: [
+                              Color(0x00FFFFFF),
+                              Color(0xB8FFFFFF),
+                              Color(0xF5FFFFFF),
+                              Color(0xFFFFFFFF),
+                            ],
                           ),
                         ),
                       ),
-                      // 轮播分页短条
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 135,
-                        child: IgnorePointer(
-                          ignoring: _isStack,
-                          child: AnimatedOpacity(
-                            duration: const Duration(milliseconds: 400),
-                            opacity: _isStack ? 0 : 1,
-                            child: AnimatedSlide(
-                              duration: const Duration(milliseconds: 450),
-                              curve: _springCurve,
-                              offset: Offset(0, _isStack ? 0.4 : 0),
-                              child: _buildPaginationDashes(),
-                            ),
-                          ),
-                        ),
+                    ),
+                  ),
+                ),
+                // 轮播分页短条
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 135,
+                  child: IgnorePointer(
+                    ignoring: _isStack,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 400),
+                      opacity: _isStack ? 0 : 1,
+                      child: AnimatedSlide(
+                        duration: const Duration(milliseconds: 450),
+                        curve: _springCurve,
+                        offset: Offset(0, _isStack ? 0.4 : 0),
+                        child: _buildPaginationDashes(),
                       ),
-                      // 底部浮动控制条
-                      Positioned(
-                        left: 24,
-                        right: 24,
-                        bottom: 24,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [_buildNavPill(), _buildViewToggle()],
-                        ),
-                      ),
-                    ],
+                    ),
+                  ),
+                ),
+                // 底部浮动控制条
+                Positioned(
+                  left: 24,
+                  right: 24,
+                  bottom: 24,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [_buildNavPill(), _buildViewToggle()],
                   ),
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // ---------------- 顶部日期滚轮 ----------------
-
-  Widget _buildDateWheelHeader() {
-    final curr = _dateWheel[_dateIndex];
-    final prev = _dateWheel[(_dateIndex - 1 + _dateWheel.length) % _dateWheel.length];
-    final next = _dateWheel[(_dateIndex + 1) % _dateWheel.length];
-    return Container(
-      padding: const EdgeInsets.only(top: 22),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: [0.82, 1],
-          colors: [Colors.white, Color(0x00FFFFFF)],
-        ),
-      ),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: () => _cycleDate(-1),
-            child: Transform(
-              transform: Matrix4.identity()
-                ..translate(0.0, 7.0)
-                ..scale(0.94),
-              child: Text(
-                prev.$1,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFFC8C8C8),
-                  letterSpacing: -0.15,
-                  height: 18 / 15,
-                ),
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => _cycleDate(1),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFEAEAEA)),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x08000000),
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween(
-                          begin: const Offset(0, -0.25),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
-                      ),
-                    ),
-                    child: Text(
-                      curr.$2,
-                      key: ValueKey(curr.$2),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF1A1A1A),
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                  const Icon(
-                    Icons.calendar_month_outlined,
-                    size: 18,
-                    color: Color(0xFF666666),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => _cycleDate(1),
-            child: Transform(
-              transform: Matrix4.identity()
-                ..translate(0.0, -6.0)
-                ..scale(0.94),
-              child: Text(
-                next.$1,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFFD4D4D4),
-                  letterSpacing: -0.15,
-                  height: 14 / 14.5,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            curr.$3,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF9E9E9E),
-              letterSpacing: -0.1,
-            ),
-          ),
-        ],
       ),
     );
   }

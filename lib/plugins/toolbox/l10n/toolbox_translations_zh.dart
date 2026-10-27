@@ -56,6 +56,20 @@ const Map<String, String> toolboxTranslationsZh = {
   'toolbox_aiImage_historyEmpty': '还没有生成记录',
   'toolbox_aiImage_clearConfirm': '将删除全部历史记录及其图片文件，不可恢复',
 
+  // AI 绘画预设库
+  'toolbox_aiImage_presets': 'AI 绘画预设库',
+  'toolbox_aiImage_builtin': '内置',
+  'toolbox_aiImage_presetNew': '新建预设',
+  'toolbox_aiImage_presetEdit': '编辑预设',
+  'toolbox_aiImage_presetName': '预设名称',
+  'toolbox_aiImage_presetNameHint': '例如：我的头像风格',
+  'toolbox_aiImage_presetNameRequired': '请输入预设名称',
+  'toolbox_aiImage_presetIcon': '图标',
+  'toolbox_aiImage_presetDelete': '删除预设',
+  'toolbox_aiImage_presetDeleteConfirm': '确认删除该预设？',
+  'toolbox_aiImage_presetDeleted': '预设已删除',
+  'toolbox_aiImage_refInvalid': '参考图路径无效',
+
   // 图片编辑器
   'toolbox_photo_editor_name': '图片编辑器',
   'toolbox_photoEditor_pickImage': '选择图片开始编辑',

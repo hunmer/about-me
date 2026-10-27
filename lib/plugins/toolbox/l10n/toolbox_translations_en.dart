@@ -58,6 +58,20 @@ const Map<String, String> toolboxTranslationsEn = {
   'toolbox_aiImage_clearConfirm':
       'This deletes all history entries and their image files. This cannot be undone.',
 
+  // AI image presets
+  'toolbox_aiImage_presets': 'AI Presets',
+  'toolbox_aiImage_builtin': 'Built-in',
+  'toolbox_aiImage_presetNew': 'New preset',
+  'toolbox_aiImage_presetEdit': 'Edit preset',
+  'toolbox_aiImage_presetName': 'Preset name',
+  'toolbox_aiImage_presetNameHint': 'e.g. My avatar style',
+  'toolbox_aiImage_presetNameRequired': 'Preset name is required',
+  'toolbox_aiImage_presetIcon': 'Icon',
+  'toolbox_aiImage_presetDelete': 'Delete preset',
+  'toolbox_aiImage_presetDeleteConfirm': 'Delete this preset?',
+  'toolbox_aiImage_presetDeleted': 'Preset deleted',
+  'toolbox_aiImage_refInvalid': 'Invalid reference image path',
+
   // Photo editor
   'toolbox_photo_editor_name': 'Photo editor',
   'toolbox_photoEditor_pickImage': 'Pick an image to edit',

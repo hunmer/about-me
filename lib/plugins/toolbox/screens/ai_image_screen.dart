@@ -9,6 +9,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/toolbox/controllers/ai_image_controller.dart';
 import 'package:aboutme/plugins/toolbox/models/toolbox_models.dart';
 import 'package:aboutme/plugins/toolbox/screens/ai_image_history_screen.dart';
+import 'package:aboutme/plugins/toolbox/screens/ai_image_preset_screen.dart';
 import 'package:aboutme/plugins/toolbox/services/ai_image_service.dart';
 import 'package:aboutme/plugins/toolbox/widgets/toolbox_config_sheet.dart';
 import 'package:aboutme/utils/image_utils.dart';
@@ -94,6 +95,17 @@ class _AiImageScreenState extends State<AiImageScreen> {
     );
   }
 
+  /// 打开预设库；选中预设返回时整体回填表单
+  Future<void> _openPresets() async {
+    final preset = await NavigationHelper.push<AiImagePreset>(
+      context,
+      const AiImagePresetScreen(),
+    );
+    if (preset == null || !mounted) return;
+    _promptController.text = preset.prompt;
+    _controller.applyPreset(preset);
+  }
+
   /// 打开生成图库；选中"重新生成"的记录时回填表单
   Future<void> _openHistory() async {
     final entry = await NavigationHelper.push<Map<String, dynamic>>(
@@ -136,6 +148,14 @@ class _AiImageScreenState extends State<AiImageScreen> {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  DSIconButton(
+                    icon: DsIconKind.sparkle,
+                    size: 36,
+                    color: theme.surfaceAlt,
+                    iconColor: theme.textSub,
+                    tooltip: 'toolbox_aiImage_presets'.tr,
+                    onPressed: _openPresets,
+                  ),
                   DSIconButton(
                     icon: DsIconKind.layers,
                     size: 36,
