@@ -5,6 +5,8 @@ class ActivityTranslationsEn {
     'activity_name': 'Activity',
     'activity_dayCardName': 'Activity day card',
     'activity_dayCardDesc': 'Show activities for the selected date',
+    'activity_dateStatLabel': 'Activities',
+    'activity_dateStatUnit': '',
     'activity_dayCardEmpty': 'No activities on this day',
 
     // Widget related

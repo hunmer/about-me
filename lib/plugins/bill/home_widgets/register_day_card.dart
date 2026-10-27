@@ -7,6 +7,7 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'package:aboutme/plugins/bill/models/bill.dart';
@@ -20,11 +21,10 @@ bool _isSameDay(DateTime a, DateTime b) {
 /// 获取指定日期的账单（按业务日期 bill.date 归属，与账单日历视图一致）
 List<Bill> _billsForDate(DateTime date) {
   final controller = BillPlugin.instance.controller;
-  final bills =
-      controller.accounts
-          .expand((account) => account.bills)
-          .where((bill) => _isSameDay(bill.date, date))
-          .toList();
+  final bills = controller.accounts
+      .expand((account) => account.bills)
+      .where((bill) => _isSameDay(bill.date, date))
+      .toList();
 
   if (HomeDateController().sortOption == DateViewSortOption.time) {
     bills.sort((a, b) => a.date.compareTo(b.date));
@@ -35,10 +35,9 @@ List<Bill> _billsForDate(DateTime date) {
 /// 打开新建账单表单（预填该日日期）
 void _openBillEditor(BuildContext context, DateTime date) {
   final plugin = BillPlugin.instance;
-  final accountId =
-      plugin.controller.accounts.isNotEmpty
-          ? plugin.controller.accounts.first.id
-          : '';
+  final accountId = plugin.controller.accounts.isNotEmpty
+      ? plugin.controller.accounts.first.id
+      : '';
   NavigationHelper.openContainerWithHero(
     context,
     (context) => BillEditScreen(
@@ -75,6 +74,28 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
         } catch (_) {
           return false;
         }
+      },
+      dateCardRoute: AppRoutes.bill,
+      dateStatsProvider: (date) async {
+        final bills = _billsForDate(date);
+        final expense = bills
+            .where((b) => b.isExpense)
+            .fold<double>(0, (sum, b) => sum - b.amount);
+        final income = bills
+            .where((b) => !b.isExpense)
+            .fold<double>(0, (sum, b) => sum + b.amount);
+        return [
+          DateStatItem(
+            label: 'bill_dateStatExpenseLabel'.tr,
+            value: expense.toStringAsFixed(2),
+            unit: 'bill_dateStatUnit'.tr,
+          ),
+          DateStatItem(
+            label: 'bill_dateStatIncomeLabel'.tr,
+            value: income.toStringAsFixed(2),
+            unit: 'bill_dateStatUnit'.tr,
+          ),
+        ];
       },
       builder: (context, config) => const _BillDayCardHomeWidget(),
     ),

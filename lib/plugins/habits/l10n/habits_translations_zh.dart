@@ -5,6 +5,7 @@ class HabitsTranslationsZh {
     'habits_name': '习惯',
     'habits_dayCardName': '习惯日卡',
     'habits_dayCardDesc': '展示选中日期的习惯完成情况',
+    'habits_dateStatLabel': '习惯',
     'habits_dayCardEmpty': '还没有习惯',
     'habits_dayCardNotDone': '未完成',
     'habits_habitsList': '习惯列表',

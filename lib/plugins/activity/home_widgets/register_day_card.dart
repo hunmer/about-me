@@ -9,6 +9,7 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
@@ -69,6 +70,17 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
         } catch (_) {
           return false;
         }
+      },
+      dateCardRoute: AppRoutes.activity,
+      dateStatsProvider: (date) async {
+        final records = await _recordsForDate(date);
+        return [
+          DateStatItem(
+            label: 'activity_dateStatLabel'.tr,
+            value: records.length.toString(),
+            unit: 'activity_dateStatUnit'.tr,
+          ),
+        ];
       },
       builder: (context, config) => const _ActivityDayCardHomeWidget(),
     ),

@@ -4,6 +4,7 @@ class CheckinTranslationsZh {
     'checkin_name': '打卡',
     'checkin_dayCardName': '签到日卡',
     'checkin_dayCardDesc': '展示选中日期的签到状态，点击切换',
+    'checkin_dateStatLabel': '签到',
     'checkin_dayCardEmpty': '当天没有签到项',
     'checkin_todayCheckin': '今日打卡',
     'checkin_totalCheckinCount': '总打卡数',

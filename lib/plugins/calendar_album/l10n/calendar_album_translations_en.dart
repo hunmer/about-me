@@ -5,6 +5,8 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_name': 'Album',
     'calendar_album_dayCardName': 'Album day card',
     'calendar_album_dayCardDesc': 'Show photos and entries for the selected date',
+    'calendar_album_dateStatLabel': 'Album',
+    'calendar_album_dateStatUnit': '',
     'calendar_album_dayCardEmpty': 'No photos on this day',
 
     // Album Management

@@ -7,6 +7,7 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/calendar/calendar_plugin.dart';
 import 'package:aboutme/plugins/calendar/models/event.dart';
@@ -22,10 +23,11 @@ bool _isSameDay(DateTime a, DateTime b) {
 ///
 /// 日期视图的「时间」排序按开始时刻升序，其余保持合并顺序
 List<CalendarEvent> _eventsForDate(DateTime date) {
-  final events =
-      CalendarPlugin.instance.controller.getAllEvents().where((event) {
-        return _isSameDay(event.startTime, date);
-      }).toList();
+  final events = CalendarPlugin.instance.controller.getAllEvents().where((
+    event,
+  ) {
+    return _isSameDay(event.startTime, date);
+  }).toList();
 
   if (HomeDateController().sortOption == DateViewSortOption.time) {
     events.sort((a, b) => a.startTime.compareTo(b.startTime));
@@ -74,6 +76,13 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
           return false;
         }
       },
+      dateCardRoute: AppRoutes.calendar,
+      dateStatsProvider: (date) async {
+        final events = _eventsForDate(date);
+        return [
+          DateStatItem(label: 'calendar_dateStatLabel'.tr, value: events.length.toString(), unit: '个'),
+        ];
+      },
       builder: (context, config) => const _CalendarDayCardHomeWidget(),
     ),
   );
@@ -90,10 +99,7 @@ class _CalendarDayCardHomeWidget extends StatelessWidget {
 
       // 同时监听事件数据变化、主页选中日期和排序变化
       return AnimatedBuilder(
-        animation: Listenable.merge([
-          plugin.controller,
-          HomeDateController(),
-        ]),
+        animation: Listenable.merge([plugin.controller, HomeDateController()]),
         builder: (context, _) {
           final date = HomeDateController().date;
 

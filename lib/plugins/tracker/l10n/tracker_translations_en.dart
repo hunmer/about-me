@@ -4,6 +4,8 @@ class TrackerTranslationsEn {
     'tracker_goalsTitle': 'Goals',
     'tracker_dayCardName': 'Tracker day card',
     'tracker_dayCardDesc': 'Show goal records for the selected date',
+    'tracker_dateStatLabel': 'Records',
+    'tracker_dateStatUnit': '',
     'tracker_dayCardEmpty': 'No records on this day',
     'tracker_noGoals': 'Create a goal first',
     'tracker_goalName': 'Goal Name',

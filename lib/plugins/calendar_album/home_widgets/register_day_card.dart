@@ -7,6 +7,7 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
@@ -29,7 +30,12 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
       icon: Icons.photo_library,
       color: const Color.fromARGB(255, 245, 210, 52),
       defaultSize: const Wide2Size(),
-      supportedSizes: const [LargeSize(), Large3Size(), Wide2Size(), Wide3Size()],
+      supportedSizes: const [
+        LargeSize(),
+        Large3Size(),
+        Wide2Size(),
+        Wide3Size(),
+      ],
       category: 'home_categoryRecord'.tr,
       isDateDriven: true,
       hasDateData: (date) async {
@@ -38,6 +44,17 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
         } catch (_) {
           return false;
         }
+      },
+      dateCardRoute: AppRoutes.calendarAlbum,
+      dateStatsProvider: (date) async {
+        final entries = _entriesForDate(date);
+        return [
+          DateStatItem(
+            label: 'calendar_album_dateStatLabel'.tr,
+            value: entries.length.toString(),
+            unit: 'calendar_album_dateStatUnit'.tr,
+          ),
+        ];
       },
       builder: (context, config) => const _AlbumDayCardHomeWidget(),
     ),
@@ -71,7 +88,11 @@ class _AlbumDayCardHomeWidgetState extends State<_AlbumDayCardHomeWidget> {
   }
 
   /// 打开日记编辑弹层（编辑器保存依赖 CalendarController Provider 祖先）
-  void _openEditor({CalendarEntry? entry, DateTime? initialDate, required bool isEditing}) {
+  void _openEditor({
+    CalendarEntry? entry,
+    DateTime? initialDate,
+    required bool isEditing,
+  }) {
     final plugin = CalendarAlbumPlugin.instance;
     CalendarAlbumEntryForm.show(
       context,
@@ -98,8 +119,7 @@ class _AlbumDayCardHomeWidgetState extends State<_AlbumDayCardHomeWidget> {
             return AlbumDayCard(
               date: date,
               entries: _entriesForDate(date),
-              onEntryTap: (entry) =>
-                  _openEditor(entry: entry, isEditing: true),
+              onEntryTap: (entry) => _openEditor(entry: entry, isEditing: true),
               onAddEntry: (date) =>
                   _openEditor(initialDate: date, isEditing: false),
             );

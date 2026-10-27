@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:skribble/skribble.dart';
@@ -49,17 +51,22 @@ class _PluginListDialogState extends State<PluginListDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    // 获取屏幕宽度以计算合适的网格列数
-    final screenWidth = MediaQuery.of(context).size.width;
-    // 根据屏幕宽度计算合适的网格列数
-    final crossAxisCount = (screenWidth / 120).floor().clamp(2, 5);
+    final screenSize = MediaQuery.of(context).size;
+    // showDSDialog 外层已留水平 36 安全边距，面板宽度取两者较小值
+    final panelWidth = math.min(screenSize.width - 72, screenSize.width * 0.85);
+    // 根据面板实际宽度计算合适的网格列数
+    final crossAxisCount = (panelWidth / 120).floor().clamp(2, 5);
 
-    return Dialog(
-      child: Container(
-        width: screenWidth * 0.85,
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
-        ),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: panelWidth,
+        maxHeight: screenSize.height * 0.8,
+      ),
+      // 手绘面板外壳：纸底 + 墨线框随 showDSDialog 的描画动画入场
+      child: DsSketchPanel(
+        theme: theme,
+        radius: theme.radii.xxl,
+        progress: WiredDrawTransition.progressOf(context),
         // 去掉状态栏内边距，避免对话框内的导航栏被顶下来
         child: MediaQuery.removePadding(
           context: context,
@@ -74,8 +81,8 @@ class _PluginListDialogState extends State<PluginListDialog> {
             // 对话框叠在可能同样使用本组件的页面之上，必须关掉 Hero 转场
             transitionBetweenRoutes: false,
             stretch: false,
-            // 对话框场景不透出全局自定义背景
-            backgroundColor: theme.background,
+            // 透明以透出手绘面板纸底（显式传值同时避免透出全局自定义背景）
+            backgroundColor: Colors.transparent,
             actions: [
               DSIconButton(
                 icon: DsIconKind.gear,
@@ -280,9 +287,9 @@ void showPluginListDialog(
 
   _isDialogShowing = true;
 
-  showDialog(
+  // 手绘对话框入口：缩放淡入 + 遮罩点击关闭
+  showDSDialog(
     context: context,
-    barrierDismissible: true,
     builder: (context) => PluginListDialog(
       sortByRecentlyOpened: sortByRecentlyOpened,
     ),

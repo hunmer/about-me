@@ -356,12 +356,29 @@ final Map<String, String> screensTranslationsZh = {
   'screens_jellyLive2dUncategorized': '未分类',
 
   // const Text 硬编码迁移(zh)
-  'screens_batchEdit': 'Batch Edit',
-  'screens_selectCommonWidgetStyle': 'Select Common Widget Style',
-  'screens_live2dInitFailed': 'Live2D chat failed to initialize',
-  'screens_markBubbleRegion': 'Mark Bubble Regions',
-  'screens_markBubbleRegionDesc': 'After selecting a region, drag on the image to draw rectangles. Red for model name, blue for body text.',
-  'screens_configureTopPanel': 'Configure Top Info Panel',
+  'screens_batchEdit': '批量编辑',
+  'screens_selectCommonWidgetStyle': '选择公共小组件样式',
+
+  // common_widget_selector_page
+  'screens_commonWidgetSelectData': '选择数据',
+  'screens_commonWidgetTapToSelect': '点击选择数据',
+  'screens_commonWidgetSelectDataFirst': '请先在上方选择数据',
+  'screens_commonWidgetNoAvailable': '当前数据没有可用的公共组件',
+  'screens_commonWidgetSelectStyleCount': '选择组件样式（@count 个可用）',
+  'screens_commonWidgetSizeSmall': '小尺寸 (1x1)',
+  'screens_commonWidgetSizeMedium': '中尺寸 (2x1)',
+  'screens_commonWidgetSizeLarge': '大尺寸 (2x2)',
+  'screens_commonWidgetSizeWide': '中宽尺寸 (4x1)',
+  'screens_commonWidgetSizeWide2': '大宽尺寸 (4x2)',
+  'screens_commonWidgetConfigError': '组件配置错误',
+  'screens_commonWidgetReplaced': '已替换小组件',
+  'screens_commonWidgetAdded': '已添加小组件',
+
+  'screens_live2dInitFailed': 'Live2D 聊天初始化失败',
+  'screens_markBubbleRegion': '标记气泡区域',
+  'screens_markBubbleRegionDesc':
+      '选择区域后，在图片上拖动绘制矩形。红色为模型名称，蓝色为正文。',
+  'screens_configureTopPanel': '配置顶部信息面板',
   'screens_topPanelAvatarHint': '点击头像可更换。若 Live2D 档案设有封面，面板优先显示档案封面。',
   'screens_logSystem': '日志系统',
   'screens_confirmDeleteLogs': '删除所有日志文件？此操作不可撤销。',

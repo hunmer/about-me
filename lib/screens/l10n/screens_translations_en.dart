@@ -380,6 +380,23 @@ final Map<String, String> screensTranslationsEn = {
   // const Text 硬编码迁移(en)
   'screens_batchEdit': 'Batch Edit',
   'screens_selectCommonWidgetStyle': 'Select Common Widget Style',
+
+  // common_widget_selector_page
+  'screens_commonWidgetSelectData': 'Select Data',
+  'screens_commonWidgetTapToSelect': 'Tap to select data',
+  'screens_commonWidgetSelectDataFirst': 'Select data above first',
+  'screens_commonWidgetNoAvailable':
+      'No common widgets available for this data',
+  'screens_commonWidgetSelectStyleCount': 'Choose a style (@count available)',
+  'screens_commonWidgetSizeSmall': 'Small (1x1)',
+  'screens_commonWidgetSizeMedium': 'Medium (2x1)',
+  'screens_commonWidgetSizeLarge': 'Large (2x2)',
+  'screens_commonWidgetSizeWide': 'Wide (4x1)',
+  'screens_commonWidgetSizeWide2': 'Extra wide (4x2)',
+  'screens_commonWidgetConfigError': 'Widget config error',
+  'screens_commonWidgetReplaced': 'Widget replaced',
+  'screens_commonWidgetAdded': 'Widget added',
+
   'screens_live2dInitFailed': 'Live2D chat failed to initialize',
   'screens_markBubbleRegion': 'Mark Bubble Regions',
   'screens_markBubbleRegionDesc': 'After selecting a region, drag on the image to draw rectangles. Red for model name, blue for body text.',

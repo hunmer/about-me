@@ -122,6 +122,8 @@ const Map<String, String> todoTranslationsEn = {
   'todo_listWidgetDesc': 'Display todo task list',
   'todo_dayCardName': 'Todo Day Card',
   'todo_dayCardDesc': 'Show todos of the selected date with inline check, create and detail',
+  'todo_dateStatLabel': 'Todos',
+  'todo_dateStatUnit': 'items',
   'todo_quickCreateTask': 'New Todo',
 
   // Empty state messages

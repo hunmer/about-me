@@ -6,6 +6,8 @@ final Map<String, String> notesTranslationsEn = {
   'notes_name': 'Notes',
   'notes_dayCardName': 'Notes day card',
   'notes_dayCardDesc': 'Show notes created or edited on the selected date',
+  'notes_dateStatLabel': 'Notes',
+  'notes_dateStatUnit': '',
   'notes_dayCardEmpty': 'No notes on this day',
   'notes_dayCardUntitled': 'Untitled',
 

@@ -9,6 +9,7 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/habits/habits_plugin.dart';
@@ -25,12 +26,14 @@ Future<List<HabitDayStatus>> _statusesForDate(DateTime date) async {
   final habits = plugin.getHabitController().getHabits();
   return Future.wait(
     habits.map((habit) async {
-      final records =
-          await plugin.getRecordController().getHabitCompletionRecords(habit.id);
+      final records = await plugin
+          .getRecordController()
+          .getHabitCompletionRecords(habit.id);
       return HabitDayStatus(
         habit: habit,
-        records:
-            records.where((record) => _isSameDay(record.date, date)).toList(),
+        records: records
+            .where((record) => _isSameDay(record.date, date))
+            .toList(),
       );
     }),
   );
@@ -62,6 +65,20 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
         } catch (_) {
           return false;
         }
+      },
+      dateCardRoute: AppRoutes.habits,
+      dateStatsProvider: (date) async {
+        final statuses = await _statusesForDate(date);
+        final done = statuses
+            .where((status) => status.records.isNotEmpty)
+            .length;
+        return [
+          DateStatItem(
+            label: 'habits_dateStatLabel'.tr,
+            value: done.toString(),
+            unit: '/${statuses.length}',
+          ),
+        ];
       },
       builder: (context, config) => const _HabitsDayCardHomeWidget(),
     ),
@@ -134,11 +151,10 @@ class _HabitsDayCardHomeWidgetState extends State<_HabitsDayCardHomeWidget> {
     return HabitDayCard(
       date: HomeDateController().date,
       statuses: _statuses,
-      onHabitTap:
-          (habit) => NavigationHelper.push(
-            context,
-            HabitMonthlyListScreen(habitId: habit.id, habitTitle: habit.title),
-          ),
+      onHabitTap: (habit) => NavigationHelper.push(
+        context,
+        HabitMonthlyListScreen(habitId: habit.id, habitTitle: habit.title),
+      ),
     );
   }
 }

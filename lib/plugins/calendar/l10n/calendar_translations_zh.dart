@@ -3,6 +3,8 @@ const Map<String, String> calendarTranslationsZh = {
   'calendar_name': '日历',
   'calendar_dayCardName': '日历日卡',
   'calendar_dayCardDesc': '展示选中日期的活动日程',
+  'calendar_dateStatLabel': '日程',
+  'calendar_dateStatUnit': '个',
   'calendar_dayCardEmpty': '当天没有活动',
   'calendar_allDay': '全天',
   'calendar_calendar': '日历',

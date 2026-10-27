@@ -3,6 +3,8 @@ const Map<String, String> calendarTranslationsEn = {
   'calendar_name': 'Calendar',
   'calendar_dayCardName': 'Calendar day card',
   'calendar_dayCardDesc': 'Show events for the selected date',
+  'calendar_dateStatLabel': 'Events',
+  'calendar_dateStatUnit': '',
   'calendar_dayCardEmpty': 'No events on this day',
   'calendar_allDay': 'All day',
   'calendar_calendar': 'Calendar',

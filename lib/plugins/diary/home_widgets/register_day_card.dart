@@ -7,6 +7,7 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/route.dart';
 import '../widgets/diary_query_guard.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/diary/diary_plugin.dart';
@@ -36,6 +37,17 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
           // 查询失败时仍显示卡片，由 SDK watch 展示错误和重试。
           return true;
         }
+      },
+      dateCardRoute: AppRoutes.diary,
+      dateStatsProvider: (date) async {
+        final entry = await DiaryUtils.loadDiaryEntry(date);
+        return [
+          DateStatItem(
+            label: 'diary_dateStatLabel'.tr,
+            value: entry == null ? '0' : entry.content.length.toString(),
+            unit: 'diary_dateStatUnit'.tr,
+          ),
+        ];
       },
       builder: (context, config) => const _DiaryDayCardHomeWidget(),
     ),

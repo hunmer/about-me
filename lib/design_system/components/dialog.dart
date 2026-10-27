@@ -105,7 +105,7 @@ class DSDialog extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 320),
       child: DsSketchPanel(
         theme: theme,
-        radius: theme.radii.xxl,
+        radius: theme.radii.xxxl,
         padding: EdgeInsets.all(theme.spacing.xl),
         progress: progress,
         child: Column(

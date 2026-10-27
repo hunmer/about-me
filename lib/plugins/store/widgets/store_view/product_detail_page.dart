@@ -54,8 +54,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   /// 编辑/兑换会替换商品实例，按 id 取最新数据；null 表示商品已删除
-  Product? get _current =>
-      widget.controller.products.firstWhereOrNull((p) => p.id == widget.product.id);
+  Product? get _current => widget.controller.products.firstWhereOrNull(
+    (p) => p.id == widget.product.id,
+  );
 
   void _onControllerUpdate() {
     if (!mounted) return;
@@ -81,9 +82,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     });
     ImageStream? stream;
     try {
-      stream = ImageUtils.createImageProvider(url).resolve(
-        const ImageConfiguration(),
-      );
+      stream = ImageUtils.createImageProvider(
+        url,
+      ).resolve(const ImageConfiguration());
       stream.addListener(listener);
       final info = await completer.future.timeout(const Duration(seconds: 5));
       if (!mounted) return;
@@ -145,12 +146,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final ended = now.isAfter(product.exchangeEnd);
     final notStarted = now.isBefore(product.exchangeStart);
     final soldOut = product.stock <= 0;
-    final statusColor =
-        ended || soldOut
-            ? theme.danger
-            : notStarted
-            ? theme.warning
-            : theme.success;
+    final statusColor = ended || soldOut
+        ? theme.danger
+        : notStarted
+        ? theme.warning
+        : theme.success;
     final statusLabel = ended
         ? 'store_exchangeEnded'.tr
         : notStarted
@@ -160,189 +160,196 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         : 'store_exchanging'.tr;
     final categoryLabel =
         (product.category == null || product.category!.isEmpty)
-            ? StoreCategories.uncategorizedLabel
-            : StoreCategories.labelOf(product.category!);
+        ? StoreCategories.uncategorizedLabel
+        : StoreCategories.labelOf(product.category!);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('store_productDetail'.tr),
-        actions: [
-          DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return DSIconButton(
-                  icon: DsIconKind.edit,
-                  size: 38,
-                  color: theme.primary,
-                  onPressed: () => _openEdit(product),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+      backgroundColor: dsScaffoldBackground(theme),
       body: DSThemeBridge(
-        child: Builder(
-          builder: (context) {
-            final theme = DSThemeBridge.resolve(context);
-            return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                8,
-                16,
-                16 + MediaQuery.paddingOf(context).bottom,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: SafeArea(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
+              return Column(
                 children: [
-                  // 状态胶囊（参考详情页顶部评分胶囊）
-                  Center(
-                    child: DsSketchPanel(
-                      theme: theme,
-                      radius: BorderRadius.circular(30),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 6,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: statusColor,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              statusLabel,
-                              style: DsTypography.body.copyWith(
-                                color: theme.text,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                  // 轻量顶栏：返回 + 标题 + 编辑
+                  DSLightHeader(
+                    title: 'store_productDetail'.tr,
+                    trailing: DSIconButton(
+                      icon: DsIconKind.edit,
+                      size: 38,
+                      color: theme.surface,
+                      iconColor: theme.text,
+                      tooltip: 'store_editProduct'.tr,
+                      onPressed: () => _openEdit(product),
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // 商品大图：飘动展示（参考 moments 贴纸），点击全屏预览
-                  _FloatingSticker(child: _buildHeroImage(theme, product)),
-                  const SizedBox(height: 16),
-
-                  // 名称 + 价格
-                  Text(
-                    product.name,
-                    textAlign: TextAlign.center,
-                    style: DsTypography.heading.copyWith(
-                      color: theme.text,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'store_pricePoints'.trParams({'price': '${product.price}'}),
-                    textAlign: TextAlign.center,
-                    style: DsTypography.body.copyWith(
-                      color: theme.warning,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 基本信息卡
-                  DsSketchPanel(
-                    theme: theme,
-                    radius: BorderRadius.circular(20),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        8,
+                        16,
+                        16 + MediaQuery.paddingOf(context).bottom,
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _buildInfoRow(
-                            theme,
-                            icon: DsIconKind.layers,
-                            label: 'store_stockStatus'.tr,
-                            value: 'store_stockCount'.trParams({
-                              'count': '${product.stock}',
+                          // 状态胶囊（参考详情页顶部评分胶囊）
+                          Center(
+                            child: DsSketchPanel(
+                              theme: theme,
+                              radius: BorderRadius.circular(30),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 6,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: statusColor,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      statusLabel,
+                                      style: DsTypography.body.copyWith(
+                                        color: theme.text,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // 商品大图：飘动展示（参考 moments 贴纸），点击全屏预览
+                          _FloatingSticker(
+                            child: _buildHeroImage(theme, product),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // 名称 + 价格
+                          Text(
+                            product.name,
+                            textAlign: TextAlign.center,
+                            style: DsTypography.heading.copyWith(
+                              color: theme.text,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'store_pricePoints'.trParams({
+                              'price': '${product.price}',
                             }),
+                            textAlign: TextAlign.center,
+                            style: DsTypography.body.copyWith(
+                              color: theme.warning,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                          _buildInfoRow(
-                            theme,
-                            icon: DsIconKind.tag,
-                            label: 'store_categoryLabel'.tr,
-                            value: categoryLabel,
+                          const SizedBox(height: 16),
+
+                          // 基本信息卡
+                          DsSketchPanel(
+                            theme: theme,
+                            radius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildInfoRow(
+                                    theme,
+                                    icon: DsIconKind.layers,
+                                    label: 'store_stockStatus'.tr,
+                                    value: 'store_stockCount'.trParams({
+                                      'count': '${product.stock}',
+                                    }),
+                                  ),
+                                  _buildInfoRow(
+                                    theme,
+                                    icon: DsIconKind.tag,
+                                    label: 'store_categoryLabel'.tr,
+                                    value: categoryLabel,
+                                  ),
+                                  _buildInfoRow(
+                                    theme,
+                                    icon: DsIconKind.calendar,
+                                    label: 'store_exchangePeriod'.tr,
+                                    value:
+                                        '${_formatDate(product.exchangeStart)}'
+                                        ' ~ ${_formatDate(product.exchangeEnd)}',
+                                  ),
+                                  _buildInfoRow(
+                                    theme,
+                                    icon: DsIconKind.clock,
+                                    label: 'store_useDurationLabel'.tr,
+                                    value: 'store_useDurationDays'.trParams({
+                                      'days': '${product.useDuration}',
+                                    }),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          _buildInfoRow(
-                            theme,
-                            icon: DsIconKind.calendar,
-                            label: 'store_exchangePeriod'.tr,
-                            value:
-                                '${_formatDate(product.exchangeStart)}'
-                                ' ~ ${_formatDate(product.exchangeEnd)}',
-                          ),
-                          _buildInfoRow(
-                            theme,
-                            icon: DsIconKind.clock,
-                            label: 'store_useDurationLabel'.tr,
-                            value: 'store_useDurationDays'.trParams({
-                              'days': '${product.useDuration}',
-                            }),
+                          const SizedBox(height: 16),
+
+                          // 描述卡
+                          if (product.description.isNotEmpty)
+                            DsSketchPanel(
+                              theme: theme,
+                              radius: BorderRadius.circular(20),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'store_descriptionLabel'.tr,
+                                      style: DsTypography.heading.copyWith(
+                                        color: theme.text,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      product.description,
+                                      style: DsTypography.body.copyWith(
+                                        color: theme.textSub,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 24),
+
+                          // 兑换入口
+                          DSButton(
+                            label: 'store_redeem'.tr,
+                            icon: DsIconKind.gift,
+                            expand: true,
+                            onPressed: () => _confirmExchange(product),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // 描述卡
-                  if (product.description.isNotEmpty)
-                    DsSketchPanel(
-                      theme: theme,
-                      radius: BorderRadius.circular(20),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'store_descriptionLabel'.tr,
-                              style: DsTypography.heading.copyWith(
-                                color: theme.text,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              product.description,
-                              style: DsTypography.body.copyWith(
-                                color: theme.textSub,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 24),
-
-                  // 兑换入口
-                  DSButton(
-                    label: 'store_redeem'.tr,
-                    icon: DsIconKind.gift,
-                    expand: true,
-                    onPressed: () => _confirmExchange(product),
-                  ),
                 ],
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -382,7 +389,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       child: content,
     );
     if (hasImage) {
-      image = Hero(tag: ProductDetailPage.imageHeroTag(product.id), child: image);
+      image = Hero(
+        tag: ProductDetailPage.imageHeroTag(product.id),
+        child: image,
+      );
     }
     return GestureDetector(
       onTap: hasImage ? () => _previewImage(url) : null,
@@ -409,10 +419,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         children: [
           DsIcon(icon, size: 20, color: theme.primary),
           const SizedBox(width: 12),
-          Text(
-            label,
-            style: DsTypography.body.copyWith(color: theme.textSub),
-          ),
+          Text(label, style: DsTypography.body.copyWith(color: theme.textSub)),
           const Spacer(),
           Text(
             value,

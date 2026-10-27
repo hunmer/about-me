@@ -15,19 +15,27 @@ class IllustratedMetricData {
   final String title;
   final String value;
   final String unit;
-  final IconData icon;
-  final Color backgroundColor;
-  final Color illustrationBackgroundColor;
-  final Color iconColor;
+
+  /// 插画区图标（[IllustratedMetricCardWidget.showIllustration] 为 false 时可省略）
+  final IconData? icon;
+
+  /// 卡片底色（省略时回退主题 surfaceAlt）
+  final Color? backgroundColor;
+
+  /// 插画区底色（省略时回退 iconColor 的浅色）
+  final Color? illustrationBackgroundColor;
+
+  /// 图标颜色（省略时回退主题 primary）
+  final Color? iconColor;
 
   const IllustratedMetricData({
     required this.title,
     required this.value,
     this.unit = '',
-    required this.icon,
-    required this.backgroundColor,
-    required this.illustrationBackgroundColor,
-    this.iconColor = const Color(0xFF5B34AD),
+    this.icon,
+    this.backgroundColor,
+    this.illustrationBackgroundColor,
+    this.iconColor,
   });
 }
 
@@ -37,6 +45,16 @@ class IllustratedMetricCardWidget extends StatefulWidget {
   final IconData actionIcon;
   final Color? actionCutoutColor;
   final VoidCallback? onAction;
+
+  /// 是否显示左侧插画区（false 时为纯标题/数值布局，图标可省略）
+  final bool showIllustration;
+
+  /// 自定义插画内容（替换默认的手绘大图标装饰区）
+  final Widget? illustration;
+
+  /// 整卡点击回调
+  final VoidCallback? onTap;
+
   final bool inline;
   final HomeWidgetSize size;
 
@@ -47,6 +65,9 @@ class IllustratedMetricCardWidget extends StatefulWidget {
     this.actionIcon = Icons.north_east_rounded,
     this.actionCutoutColor,
     this.onAction,
+    this.showIllustration = true,
+    this.illustration,
+    this.onTap,
     this.inline = false,
     this.size = const Large3Size(),
   });
@@ -72,6 +93,7 @@ class IllustratedMetricCardWidget extends StatefulWidget {
         iconColor: _parseColor(props['iconColor'], const Color(0xFF5B34AD)),
       ),
       showAction: props['showAction'] as bool? ?? true,
+      showIllustration: props['showIllustration'] as bool? ?? true,
       actionIcon: _parseIcon(props['actionIcon'], Icons.north_east_rounded),
       actionCutoutColor: props['actionCutoutColor'] == null
           ? null
@@ -107,190 +129,202 @@ class _IllustratedMetricCardWidgetState
     final theme = AppTheme.of(context);
     final scale = widget.size.scale;
     final illustrationSize = _illustrationSize;
+    final showIllustration = widget.showIllustration;
+    final iconColor = widget.data.iconColor ?? theme.primary;
+    final illustrationBackground =
+        widget.data.illustrationBackgroundColor ??
+        iconColor.withValues(alpha: 0.3);
+
+    Widget buildTitleValueColumn() {
+      return SizedBox(
+        height: showIllustration ? illustrationSize : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.data.title,
+              style: TextStyle(
+                color: theme.text,
+                fontSize: widget.size.getTitleFontSize(),
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+            Text(
+              widget.data.value,
+              style: TextStyle(
+                color: theme.text,
+                fontSize: widget.size.getLargeFontSize() * 0.9,
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (widget.data.unit.isNotEmpty) ...[
+              SizedBox(height: 5 * scale),
+              Text(
+                widget.data.unit,
+                style: TextStyle(
+                  color: theme.textSub,
+                  fontSize: widget.size.getSubtitleFontSize(),
+                  fontWeight: FontWeight.w500,
+                  height: 1,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
+      );
+    }
 
     // 手绘纸卡：数据色纸底 + 淡排线 + rough 墨线框，WiredDraw 描画入场
     return WiredDraw(
       child: SizedBox(
         width: widget.inline ? double.maxFinite : 384 * scale,
         height: widget.inline ? double.maxFinite : _height,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ClipPath(
-                clipper: _ActivityCardClipper(
-                  scale: scale,
-                  showAction: widget.showAction,
-                ),
-                child: DsSketchPanel(
-                  theme: theme,
-                  radius: BorderRadius.circular(24 * scale),
-                  fillColor: widget.data.backgroundColor,
-                  padding: EdgeInsets.all(14 * scale),
-                  child: Stack(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.all(14 * scale),
-                        child: Row(
-                          children: [
-                            // 插画区：数据色实底 + 墨线描边 + 出血圆装饰
-                            Container(
-                              width: illustrationSize,
-                              height: illustrationSize,
-                              clipBehavior: Clip.antiAlias,
-                              decoration: dsSketchDecoration(
-                                theme: theme,
-                                radius: BorderRadius.circular(24 * scale),
-                                fillColor:
-                                    widget.data.illustrationBackgroundColor,
-                              ),
-                              child: Stack(
-                                children: [
-                                  Positioned(
-                                    top: -illustrationSize * 0.18,
-                                    right: -illustrationSize * 0.12,
-                                    child: Container(
-                                      width: illustrationSize * 0.68,
-                                      height: illustrationSize * 0.68,
-                                      decoration: BoxDecoration(
-                                        color: widget.data.iconColor
-                                            .withOpacity(0.08),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ClipPath(
+                  clipper: _ActivityCardClipper(
+                    scale: scale,
+                    showAction: widget.showAction,
+                  ),
+                  child: DsSketchPanel(
+                    theme: theme,
+                    radius: BorderRadius.circular(24 * scale),
+                    fillColor: widget.data.backgroundColor,
+                    padding: EdgeInsets.all(14 * scale),
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(14 * scale),
+                          child: Row(
+                            children: [
+                              // 插画区：数据色实底 + 墨线描边 + 出血圆装饰
+                              //（可隐藏或替换为自定义内容）
+                              if (showIllustration) ...[
+                                Container(
+                                  width: illustrationSize,
+                                  height: illustrationSize,
+                                  clipBehavior: Clip.antiAlias,
+                                  decoration: dsSketchDecoration(
+                                    theme: theme,
+                                    radius: BorderRadius.circular(24 * scale),
+                                    fillColor: illustrationBackground,
                                   ),
-                                  Positioned(
-                                    bottom: -illustrationSize * 0.24,
-                                    left: -illustrationSize * 0.16,
-                                    child: Container(
-                                      width: illustrationSize * 0.72,
-                                      height: illustrationSize * 0.72,
-                                      decoration: BoxDecoration(
-                                        color: theme.surface.withValues(
-                                          alpha: 0.2,
+                                  child: widget.illustration != null
+                                      ? Center(child: widget.illustration)
+                                      : Stack(
+                                          children: [
+                                            Positioned(
+                                              top: -illustrationSize * 0.18,
+                                              right: -illustrationSize * 0.12,
+                                              child: Container(
+                                                width: illustrationSize * 0.68,
+                                                height: illustrationSize * 0.68,
+                                                decoration: BoxDecoration(
+                                                  color: iconColor.withOpacity(
+                                                    0.08,
+                                                  ),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            ),
+                                            Positioned(
+                                              bottom: -illustrationSize * 0.24,
+                                              left: -illustrationSize * 0.16,
+                                              child: Container(
+                                                width: illustrationSize * 0.72,
+                                                height: illustrationSize * 0.72,
+                                                decoration: BoxDecoration(
+                                                  color: theme.surface
+                                                      .withValues(alpha: 0.2),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            ),
+                                            if (widget.data.icon != null)
+                                              Center(
+                                                child: WiredIcon(
+                                                  icon: widget.data.icon!,
+                                                  size: illustrationSize * 0.52,
+                                                  color: iconColor,
+                                                  drawConfig:
+                                                      theme.wired.drawConfig,
+                                                ),
+                                              ),
+                                          ],
                                         ),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                  Center(
-                                    child: WiredIcon(
-                                      icon: widget.data.icon,
-                                      size: illustrationSize * 0.52,
-                                      color: widget.data.iconColor,
-                                      drawConfig: theme.wired.drawConfig,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(width: 16 * scale),
-                            Expanded(
-                              child: SizedBox(
-                                height: illustrationSize,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      widget.data.title,
-                                      style: TextStyle(
-                                        color: theme.text,
-                                        fontSize: widget.size
-                                            .getTitleFontSize(),
-                                        fontWeight: FontWeight.w700,
-                                        height: 1.2,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      widget.data.value,
-                                      style: TextStyle(
-                                        color: theme.text,
-                                        fontSize:
-                                            widget.size.getLargeFontSize() *
-                                            0.9,
-                                        fontWeight: FontWeight.w800,
-                                        height: 1,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    if (widget.data.unit.isNotEmpty) ...[
-                                      SizedBox(height: 5 * scale),
-                                      Text(
-                                        widget.data.unit,
-                                        style: TextStyle(
-                                          color: theme.textSub,
-                                          fontSize: widget.size
-                                              .getSubtitleFontSize(),
-                                          fontWeight: FontWeight.w500,
-                                          height: 1,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ],
                                 ),
-                              ),
-                            ),
-                          ],
+                                SizedBox(width: 16 * scale),
+                              ],
+                              Expanded(child: buildTitleValueColumn()),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (widget.showAction) ...[
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: SizedBox(
+                      width: 98 * scale,
+                      height: 98 * scale,
+                      child: CustomPaint(
+                        painter: _ActivityCutoutPainter(
+                          stroke: theme.ink,
+                          scale: scale,
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-            if (widget.showAction) ...[
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: IgnorePointer(
-                  child: SizedBox(
-                    width: 98 * scale,
-                    height: 98 * scale,
-                    child: CustomPaint(
-                      painter: _ActivityCutoutPainter(
-                        stroke: theme.ink,
-                        scale: scale,
+                Positioned(
+                  bottom: 18 * scale,
+                  right: 18 * scale,
+                  child: GestureDetector(
+                    key: const Key('illustrated-metric-action'),
+                    onTap: widget.onAction,
+                    // 动作圆钮：墨底实底 + 数据色描边
+                    child: Container(
+                      width: 50 * scale,
+                      height: 50 * scale,
+                      // 大圆角被 rough 引擎自动钳制成圆
+                      decoration: dsSketchDecoration(
+                        theme: theme,
+                        radius: BorderRadius.circular(25 * scale),
+                        fillColor: theme.ink,
+                        stroke: widget.data.backgroundColor,
+                        strokeWidth: 3 * scale,
+                      ),
+                      child: Center(
+                        child: WiredIcon(
+                          icon: widget.actionIcon,
+                          size: 18 * scale,
+                          color: theme.surface,
+                          drawConfig: theme.wired.drawConfig,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                bottom: 18 * scale,
-                right: 18 * scale,
-                child: GestureDetector(
-                  key: const Key('illustrated-metric-action'),
-                  onTap: widget.onAction,
-                  // 动作圆钮：墨底实底 + 数据色描边
-                  child: Container(
-                    width: 50 * scale,
-                    height: 50 * scale,
-                    // 大圆角被 rough 引擎自动钳制成圆
-                    decoration: dsSketchDecoration(
-                      theme: theme,
-                      radius: BorderRadius.circular(25 * scale),
-                      fillColor: theme.ink,
-                      stroke: widget.data.backgroundColor,
-                      strokeWidth: 3 * scale,
-                    ),
-                    child: Center(
-                      child: WiredIcon(
-                        icon: widget.actionIcon,
-                        size: 18 * scale,
-                        color: theme.surface,
-                        drawConfig: theme.wired.drawConfig,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

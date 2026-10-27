@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selectable_item.dart';
-import 'package:extended_tabs/extended_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:skribble/skribble.dart' show WiredDraw;
 import 'package:aboutme/core/services/plugin_data_selector/plugin_data_selector_service.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 import 'package:aboutme/screens/home_screen/managers/home_layout_manager.dart';
@@ -57,10 +57,9 @@ class CommonWidgetSelectorPage extends StatefulWidget {
       _CommonWidgetSelectorPageState();
 }
 
-class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
-    with TickerProviderStateMixin {
-  /// Tab控制器
-  late TabController _tabController;
+class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage> {
+  /// 当前选中的组件样式 tab 下标
+  int _selectedTabIndex = 0;
 
   /// 当前选择的数据（经过 dataSelector 转换后的）
   Map<String, dynamic>? _selectedData;
@@ -74,7 +73,6 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 0, vsync: this);
 
     // 如果小组件不需要选择数据，直接加载公共小组件
     if (widget.pluginWidget.selectorId == null) {
@@ -128,13 +126,6 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
       }
     }
 
-    // 更新 TabController 长度
-    _tabController.dispose();
-    _tabController = TabController(
-      length: availableWidgets.length,
-      vsync: this,
-    );
-
     // 计算初始选中索引
     int initialIndex = 0;
     if (widget.initialCommonWidgetId != null) {
@@ -147,9 +138,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
       _selectedData = data;
       _availableCommonWidgets = availableWidgets;
       // 自动选中指定的组件或第一个组件
-      if (availableWidgets.isNotEmpty) {
-        _tabController.animateTo(initialIndex);
-      }
+      _selectedTabIndex = initialIndex;
     });
   }
 
@@ -232,13 +221,6 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
       }
     }
 
-    // 更新 TabController 长度
-    _tabController.dispose();
-    _tabController = TabController(
-      length: availableWidgets.length,
-      vsync: this,
-    );
-
     // 计算初始选中索引
     int initialIndex = 0;
     if (widget.initialCommonWidgetId != null) {
@@ -251,58 +233,47 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
       _selectedData = data;
       _availableCommonWidgets = availableWidgets;
       // 自动选中指定的组件或第一个组件
-      if (availableWidgets.isNotEmpty) {
-        _tabController.animateTo(initialIndex);
-      }
+      _selectedTabIndex = initialIndex;
     });
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('screens_selectCommonWidgetStyle'.tr),
-        leading: DSThemeBridge(
-          child: Builder(
-            builder: (context) {
-              final theme = DSThemeBridge.resolve(context);
-              return DSIconButton(
-                icon: DsIconKind.close,
-                size: 40,
-                color: theme.surfaceAlt,
-                iconColor: theme.textSub,
-                onPressed: () => Navigator.of(context).pop(),
-              );
-            },
-          ),
-        ),
-      ),
-      body: DSThemeBridge(
-        child: Builder(
-          builder: (context) {
-            final theme = DSThemeBridge.resolve(context);
-            return Column(
-              children: [
-                // 数据选择器区域
-                _buildDataSelectorSection(context, theme),
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Scaffold(
+            backgroundColor: dsScaffoldBackground(theme),
+              body: SafeArea(
+                bottom: false,
+                child: Column(
+                  children: [
+                    DSLightHeader(
+                      title: 'screens_selectCommonWidgetStyle'.tr,
+                      trailing: DSIconButton(
+                        icon: DsIconKind.check,
+                        size: 38,
+                        tooltip: 'app_confirm'.tr,
+                        onPressed:
+                            _availableCommonWidgets.isNotEmpty
+                                ? _confirmSelection
+                                : null,
+                      ),
+                    ),
 
-                Divider(height: 1, color: theme.stroke),
+                    // 数据选择器区域
+                    _buildDataSelectorSection(context, theme),
 
-                // 公共小组件预览区域 - 占据剩余空间
-                Expanded(child: _buildCommonWidgetsSection(context, theme)),
+                    Divider(height: 1, color: theme.stroke),
 
-                // 底部操作按钮
-                _buildActions(theme),
-              ],
-            );
-          },
-        ),
+                    // 公共小组件预览区域 - 占据剩余空间
+                    Expanded(child: _buildCommonWidgetsSection(context, theme)),
+                  ],
+                ),
+              ),
+          );
+        },
       ),
     );
   }
@@ -325,9 +296,12 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               Container(
                 width: 24,
                 height: 24,
-                decoration: BoxDecoration(
-                  color: _selectedData != null ? theme.success : theme.textSub,
-                  shape: BoxShape.circle,
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillColor: _selectedData != null
+                      ? theme.success
+                      : theme.textSub,
+                  circle: true,
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -341,7 +315,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               ),
               const SizedBox(width: 8),
               Text(
-                '选择数据',
+                'screens_commonWidgetSelectData'.tr,
                 style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
@@ -349,7 +323,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
           const SizedBox(height: 12),
           Center(
             child: DSButton(
-              label: '点击选择数据',
+              label: 'screens_commonWidgetTapToSelect'.tr,
               onPressed: _selectedData == null ? _openDataSelector : null,
             ),
           ),
@@ -357,9 +331,10 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: theme.success.withValues(alpha: 0.1),
-                borderRadius: theme.radii.sm,
+              decoration: dsSketchDecoration(
+                theme: theme,
+                fillColor: theme.success.withValues(alpha: 0.1),
+                radius: theme.radii.sm,
               ),
               child: Row(
                 children: [
@@ -372,7 +347,6 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
                             '  ',
                           ).convert(_selectedData),
                           style: TextStyle(
-                            fontFamily: 'monospace',
                             fontSize: 12,
                             color: theme.textSub,
                           ),
@@ -413,7 +387,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
             DsIcon(DsIconKind.chevronUp, size: 48, color: theme.disabled),
             const SizedBox(height: 16),
             Text(
-              '请先在上方选择数据',
+              'screens_commonWidgetSelectDataFirst'.tr,
               style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
@@ -429,7 +403,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
             DsIcon(DsIconKind.block, size: 48, color: theme.warning),
             const SizedBox(height: 16),
             Text(
-              '当前数据没有可用的公共组件',
+              'screens_commonWidgetNoAvailable'.tr,
               style: DsTypography.body.copyWith(color: theme.textSub),
             ),
           ],
@@ -447,9 +421,10 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               Container(
                 width: 24,
                 height: 24,
-                decoration: BoxDecoration(
-                  color: theme.success,
-                  shape: BoxShape.circle,
+                decoration: dsSketchDecoration(
+                  theme: theme,
+                  fillColor: theme.success,
+                  circle: true,
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -463,81 +438,62 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               ),
               const SizedBox(width: 8),
               Text(
-                '选择组件样式 (${_availableCommonWidgets.length}个可用)',
+                'screens_commonWidgetSelectStyleCount'.trParams({
+                  'count': _availableCommonWidgets.length.toString(),
+                }),
                 style: DsTypography.heading.copyWith(color: theme.text),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: Column(
-              children: [
-                // 顶部水平 TabBar
-                ExtendedTabBar(
-                  controller: _tabController,
-                  scrollDirection: Axis.horizontal,
-                  isScrollable: true,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  labelColor: theme.primary,
-                  unselectedLabelColor: theme.textSub,
-                  labelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  unselectedLabelStyle: const TextStyle(fontSize: 14),
-                  tabs:
-                      _availableCommonWidgets.keys.map((widgetId) {
-                        // 安全地查找匹配的 CommonWidgetId
-                        final matchingWidget = CommonWidgetId.values.firstWhere(
-                          (e) => e.name == widgetId,
-                          orElse: () {
-                            debugPrint(
-                              '[CommonWidgetSelectorPage] 未找到匹配的 CommonWidgetId: $widgetId',
-                            );
-                            return CommonWidgetId.activityProgressCard; // 使用默认值
-                          },
-                        );
-                        final metadata = CommonWidgetsRegistry.getMetadata(
-                          matchingWidget,
-                        );
-                        return Tab(text: metadata.name);
-                      }).toList(),
-                ),
-                const SizedBox(height: 8),
-                // 下方 TabBarView 展示预览
-                Expanded(
-                  child: ExtendedTabBarView(
-                    controller: _tabController,
-                    scrollDirection: Axis.horizontal,
-                    children:
-                        _availableCommonWidgets.keys.map((widgetId) {
-                          // 安全地查找匹配的 CommonWidgetId
-                          final matchingWidget = CommonWidgetId.values.firstWhere(
-                            (e) => e.name == widgetId,
-                            orElse: () {
-                              debugPrint(
-                                '[CommonWidgetSelectorPage] 未找到匹配的 CommonWidgetId: $widgetId',
-                              );
-                              return CommonWidgetId
-                                  .activityProgressCard; // 使用默认值
-                            },
-                          );
-                          final metadata = CommonWidgetsRegistry.getMetadata(
-                            matchingWidget,
-                          );
-                          return _buildCommonWidgetPreviews(
-                            theme,
-                            metadata,
-                            widgetId,
-                          );
-                        }).toList(),
-                  ),
-                ),
-              ],
+            // 组件样式区在数据选定后新挂载，WiredDraw 触发墨线描画入场
+            child: WiredDraw(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final widgetIds = _availableCommonWidgets.keys.toList();
+                  return DSTabs(
+                    labels: [
+                      for (final id in widgetIds)
+                        CommonWidgetsRegistry.getMetadata(
+                          _resolveCommonWidgetId(id),
+                        ).name,
+                    ],
+                    selected: _selectedTabIndex,
+                    onChanged: (index) =>
+                        setState(() => _selectedTabIndex = index),
+                    // PageView 需有界高度，取剩余空间
+                    contentHeight: constraints.maxHeight,
+                    children: [
+                      for (final id in widgetIds)
+                        _buildCommonWidgetPreviews(
+                          theme,
+                          CommonWidgetsRegistry.getMetadata(
+                            _resolveCommonWidgetId(id),
+                          ),
+                          id,
+                        ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// 安全地查找 widgetId 对应的 CommonWidgetId，未匹配时回落默认值
+  CommonWidgetId _resolveCommonWidgetId(String widgetId) {
+    return CommonWidgetId.values.firstWhere(
+      (e) => e.name == widgetId,
+      orElse: () {
+        debugPrint(
+          '[CommonWidgetSelectorPage] 未找到匹配的 CommonWidgetId: $widgetId',
+        );
+        return CommonWidgetId.activityProgressCard;
+      },
     );
   }
 
@@ -552,25 +508,10 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
     // 验证 props 是否为有效的 Map
     if (props == null) {
       debugPrint('[CommonWidgetSelectorPage] 未找到组件配置: $widgetId');
-      return const Center(child: Text('组件配置错误'));
+      return Center(child: Text('screens_commonWidgetConfigError'.tr));
     }
 
-    // 安全地查找匹配的 CommonWidgetId
-    CommonWidgetId matchingWidget;
-    try {
-      matchingWidget = CommonWidgetId.values.firstWhere(
-        (e) => e.name == widgetId,
-        orElse: () {
-          debugPrint(
-            '[CommonWidgetSelectorPage] 未找到匹配的 CommonWidgetId: $widgetId',
-          );
-          return CommonWidgetId.activityProgressCard; // 使用默认值
-        },
-      );
-    } catch (e) {
-      debugPrint('[CommonWidgetSelectorPage] 查找 CommonWidgetId 失败: $e');
-      matchingWidget = CommonWidgetId.activityProgressCard;
-    }
+    final matchingWidget = _resolveCommonWidgetId(widgetId);
 
     // 构建小组件预览的辅助方法
     Widget buildWidgetPreview(HomeWidgetSize size) {
@@ -587,11 +528,17 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        // 底部操作区已上移至 header，滚动内容自行补底部安全区
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.paddingOf(context).bottom + 16,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle(theme, '小尺寸 (1x1)'),
+            _buildSectionTitle(theme, 'screens_commonWidgetSizeSmall'.tr),
             const SizedBox(height: 8),
             Center(
               child: SizedBox(
@@ -601,7 +548,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               ),
             ),
             const SizedBox(height: 24),
-            _buildSectionTitle(theme, '中尺寸 (2x1)'),
+            _buildSectionTitle(theme, 'screens_commonWidgetSizeMedium'.tr),
             const SizedBox(height: 8),
             Center(
               child: SizedBox(
@@ -611,7 +558,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               ),
             ),
             const SizedBox(height: 24),
-            _buildSectionTitle(theme, '大尺寸 (2x2)'),
+            _buildSectionTitle(theme, 'screens_commonWidgetSizeLarge'.tr),
             const SizedBox(height: 8),
             Center(
               child: SizedBox(
@@ -621,7 +568,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               ),
             ),
             const SizedBox(height: 24),
-            _buildSectionTitle(theme, '中宽尺寸 (4x1)'),
+            _buildSectionTitle(theme, 'screens_commonWidgetSizeWide'.tr),
             const SizedBox(height: 8),
             SizedBox(
               width: MediaQuery.of(context).size.width - 32,
@@ -629,7 +576,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
               child: buildWidgetPreview(const WideSize()),
             ),
             const SizedBox(height: 24),
-            _buildSectionTitle(theme, '大宽尺寸 (4x2)'),
+            _buildSectionTitle(theme, 'screens_commonWidgetSizeWide2'.tr),
             const SizedBox(height: 8),
             SizedBox(
               width: MediaQuery.of(context).size.width - 32,
@@ -647,29 +594,6 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
     return Text(
       title,
       style: DsTypography.caption.copyWith(color: theme.textSub),
-    );
-  }
-
-  /// 构建底部操作按钮
-  Widget _buildActions(AppThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          DSButton(
-            label: '取消',
-            variant: DSButtonVariant.outline,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          const SizedBox(width: 8),
-          DSButton(
-            label: '确认',
-            onPressed:
-                _availableCommonWidgets.isNotEmpty ? _confirmSelection : null,
-          ),
-        ],
-      ),
     );
   }
 
@@ -726,15 +650,6 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
       }
     }
 
-    // 更新 TabController 长度
-    if (_tabController.length != availableWidgets.length) {
-      _tabController.dispose();
-      _tabController = TabController(
-        length: availableWidgets.length,
-        vsync: this,
-      );
-    }
-
     // 计算初始选中索引
     int initialIndex = 0;
     if (widget.initialCommonWidgetId != null) {
@@ -747,9 +662,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
       _selectedData = data;
       _availableCommonWidgets = availableWidgets;
       // 自动选中指定的组件或第一个组件
-      if (availableWidgets.isNotEmpty) {
-        _tabController.animateTo(initialIndex);
-      }
+      _selectedTabIndex = initialIndex;
     });
   }
 
@@ -781,8 +694,7 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
     }
 
     // 从当前激活的 tab 获取选中的 widgetId
-    final index = _tabController.index;
-    final widgetId = _availableCommonWidgets.keys.elementAt(index);
+    final widgetId = _availableCommonWidgets.keys.elementAt(_selectedTabIndex);
 
     final layoutManager = HomeLayoutManager();
 
@@ -846,7 +758,10 @@ class _CommonWidgetSelectorPageState extends State<CommonWidgetSelectorPage>
 
     Navigator.of(context).pop();
 
-    final action = widget.replaceWidgetItemId != null ? '替换' : '添加';
-    Toast.success('已$action小组件');
+    Toast.success(
+      widget.replaceWidgetItemId != null
+          ? 'screens_commonWidgetReplaced'.tr
+          : 'screens_commonWidgetAdded'.tr,
+    );
   }
 }

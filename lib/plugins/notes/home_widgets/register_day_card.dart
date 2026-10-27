@@ -7,6 +7,7 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/route.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/notes/notes_plugin.dart';
@@ -20,15 +21,16 @@ bool _isSameDay(DateTime a, DateTime b) {
 
 /// 获取指定日期创建/修改的笔记（按修改时间倒序）
 List<Note> _notesForDate(DateTime date) {
-  final notes =
-      NotesPlugin.instance.controller.getAllNotes().values
-          .expand((notes) => notes)
-          .where(
-            (note) =>
-                _isSameDay(note.updatedAt, date) ||
-                _isSameDay(note.createdAt, date),
-          )
-          .toList();
+  final notes = NotesPlugin.instance.controller
+      .getAllNotes()
+      .values
+      .expand((notes) => notes)
+      .where(
+        (note) =>
+            _isSameDay(note.updatedAt, date) ||
+            _isSameDay(note.createdAt, date),
+      )
+      .toList();
   notes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
   return notes;
 }
@@ -94,6 +96,13 @@ void registerDayCardWidget(HomeWidgetRegistry registry) {
         } catch (_) {
           return false;
         }
+      },
+      dateCardRoute: AppRoutes.notes,
+      dateStatsProvider: (date) async {
+        final notes = _notesForDate(date);
+        return [
+          DateStatItem(label: 'notes_dateStatLabel'.tr, value: notes.length.toString(), unit: '篇'),
+        ];
       },
       builder: (context, config) => const _NotesDayCardHomeWidget(),
     ),

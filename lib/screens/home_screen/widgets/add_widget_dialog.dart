@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -287,16 +288,13 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
   /// 处理小组件点击
   void _handleWidgetTap(HomeWidget widget) async {
     if (widget.supportsCommonWidgets) {
-      // 打开公共小组件选择页面
-      await Navigator.push(
+      // 打开公共小组件选择页面（平台路由：iOS 左滑返回 + 导航栏 hero 过渡）
+      await NavigationHelper.push(
         context,
-        MaterialPageRoute(
-          builder:
-              (context) => CommonWidgetSelectorPage(
-                pluginWidget: widget,
-                folderId: this.widget.folderId,
-                replaceWidgetItemId: this.widget.replaceWidgetItemId,
-              ),
+        CommonWidgetSelectorPage(
+          pluginWidget: widget,
+          folderId: this.widget.folderId,
+          replaceWidgetItemId: this.widget.replaceWidgetItemId,
         ),
       );
     } else {

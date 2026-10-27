@@ -217,6 +217,7 @@ class DsRadiiToken {
   BorderRadius get lg => DsRadii.lg;
   BorderRadius get xl => DsRadii.xl;
   BorderRadius get xxl => DsRadii.xxl;
+  BorderRadius get xxxl => DsRadii.xxxl;
   BorderRadius get pill => DsRadii.pill;
   BorderRadius get circle => DsRadii.circle;
   double get xxlValue => DsRadii.xxlValue;

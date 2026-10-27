@@ -14,7 +14,9 @@ class CutoutStatItemData {
   final String label;
   final String value;
   final String unit;
-  final IconData icon;
+
+  /// 图标（省略时不渲染左上角圆形图标徽章）
+  final IconData? icon;
   final Color backgroundColor;
   final Color iconBackgroundColor;
   final Color iconColor;
@@ -23,7 +25,7 @@ class CutoutStatItemData {
     required this.label,
     required this.value,
     this.unit = '',
-    required this.icon,
+    this.icon,
     required this.backgroundColor,
     required this.iconBackgroundColor,
     this.iconColor = const Color(0xFF222222),
@@ -35,6 +37,12 @@ class CutoutStatGridCardWidget extends StatefulWidget {
   final List<CutoutStatItemData> items;
   final Color? backgroundColor;
   final bool inline;
+
+  /// 统计项排列方向：horizontal 横排（默认，宽卡）/ vertical 竖排（窄卡）
+  final Axis direction;
+
+  /// 点击统计项回调（参数为条目索引）
+  final void Function(int index)? onItemTap;
   final HomeWidgetSize size;
 
   const CutoutStatGridCardWidget({
@@ -43,6 +51,8 @@ class CutoutStatGridCardWidget extends StatefulWidget {
     this.items = const [],
     this.backgroundColor,
     this.inline = false,
+    this.direction = Axis.horizontal,
+    this.onItemTap,
     this.size = const Large3Size(),
   });
 
@@ -59,7 +69,9 @@ class CutoutStatGridCardWidget extends StatefulWidget {
               label: map['label'] as String? ?? '',
               value: map['value']?.toString() ?? '0',
               unit: map['unit'] as String? ?? '',
-              icon: _parseIcon(map['icon'], Icons.school_rounded),
+              icon: map['icon'] == null
+                  ? null
+                  : _parseIcon(map['icon'], Icons.school_rounded),
               backgroundColor: _parseColor(
                 map['backgroundColor'],
                 const Color(0xFFC8B9EC),
@@ -80,6 +92,9 @@ class CutoutStatGridCardWidget extends StatefulWidget {
           ? null
           : _parseColor(props['backgroundColor'], const Color(0xFFEEF2F5)),
       inline: props['inline'] as bool? ?? false,
+      direction: props['direction'] == 'vertical'
+          ? Axis.vertical
+          : Axis.horizontal,
       size: size,
     );
   }
@@ -128,23 +143,51 @@ class _CutoutStatGridCardWidgetState extends State<CutoutStatGridCardWidget> {
               SizedBox(height: 14 * scale),
             ],
             Expanded(
-              child: Row(
-                children: [
-                  for (var index = 0; index < widget.items.length; index++) ...[
-                    if (index > 0) SizedBox(width: 9 * scale),
-                    Expanded(
-                      child: _CutoutStatItem(
-                        data: widget.items[index],
-                        size: widget.size,
-                      ),
+              child: widget.direction == Axis.vertical
+                  ? Column(
+                      children: [
+                        for (
+                          var index = 0;
+                          index < widget.items.length;
+                          index++
+                        ) ...[
+                          if (index > 0) SizedBox(height: 9 * scale),
+                          Expanded(child: _buildItem(index, vertical: true)),
+                        ],
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        for (
+                          var index = 0;
+                          index < widget.items.length;
+                          index++
+                        ) ...[
+                          if (index > 0) SizedBox(width: 9 * scale),
+                          Expanded(child: _buildItem(index, vertical: false)),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
-              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// 单个统计项（可点击）
+  Widget _buildItem(int index, {required bool vertical}) {
+    final item = _CutoutStatItem(
+      data: widget.items[index],
+      size: widget.size,
+      vertical: vertical,
+    );
+    final onTap = widget.onItemTap;
+    if (onTap == null) return item;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onTap(index),
+      child: item,
     );
   }
 }
@@ -153,12 +196,61 @@ class _CutoutStatItem extends StatelessWidget {
   final CutoutStatItemData data;
   final HomeWidgetSize size;
 
-  const _CutoutStatItem({required this.data, required this.size});
+  /// 竖排布局：图标徽章与文字左右并排（窄卡场景）
+  final bool vertical;
+
+  const _CutoutStatItem({
+    required this.data,
+    required this.size,
+    this.vertical = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
     final scale = size.scale;
+    final hasIcon = data.icon != null;
+
+    // 文字区：竖排时与徽章并排，横排时避开左上角徽章
+    final contentPadding = vertical
+        ? EdgeInsets.all(11 * scale)
+        : EdgeInsets.fromLTRB(
+            12 * scale,
+            hasIcon ? 62 * scale : 14 * scale,
+            12 * scale,
+            13 * scale,
+          );
+
+    Widget buildValue() {
+      return Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: data.value,
+              style: TextStyle(
+                color: theme.text,
+                fontSize: size.getTitleFontSize() * 1.15,
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
+            ),
+            if (data.unit.isNotEmpty)
+              TextSpan(
+                text: ' ${data.unit}',
+                style: TextStyle(
+                  color: theme.textSub,
+                  fontSize: size.getLegendFontSize(),
+                  fontWeight: FontWeight.w500,
+                  height: 1,
+                ),
+              ),
+          ],
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
     // 数据色实底 + 墨线描边（小控件档）
     return Stack(
       children: [
@@ -187,79 +279,75 @@ class _CutoutStatItem extends StatelessWidget {
             ),
           ),
         ),
-        Positioned(
-          top: 2 * scale,
-          left: 2 * scale,
-          child: Container(
-            width: 43 * scale,
-            height: 43 * scale,
-            decoration: dsSketchDecoration(
-              theme: theme,
-              circle: true,
-              fillColor: data.iconBackgroundColor,
-            ),
-            child: Center(
-              child: WiredIcon(
-                icon: data.icon,
-                size: 23 * scale,
-                color: data.iconColor,
-                drawConfig: theme.wired.drawConfig,
+        if (hasIcon)
+          Positioned(
+            top: 2 * scale,
+            left: 2 * scale,
+            child: Container(
+              width: 43 * scale,
+              height: 43 * scale,
+              decoration: dsSketchDecoration(
+                theme: theme,
+                circle: true,
+                fillColor: data.iconBackgroundColor,
+              ),
+              child: Center(
+                child: WiredIcon(
+                  icon: data.icon!,
+                  size: 23 * scale,
+                  color: data.iconColor,
+                  drawConfig: theme.wired.drawConfig,
+                ),
               ),
             ),
           ),
-        ),
         Positioned.fill(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              12 * scale,
-              62 * scale,
-              12 * scale,
-              13 * scale,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data.label,
-                  style: TextStyle(
-                    color: theme.text,
-                    fontSize: size.getSubtitleFontSize(),
-                    fontWeight: FontWeight.w600,
-                    height: 1.25,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const Spacer(),
-                Text.rich(
-                  TextSpan(
+            padding: contentPadding,
+            child: vertical
+                ? Row(
                     children: [
-                      TextSpan(
-                        text: data.value,
-                        style: TextStyle(
-                          color: theme.text,
-                          fontSize: size.getTitleFontSize() * 1.15,
-                          fontWeight: FontWeight.w800,
-                          height: 1,
+                      if (hasIcon) SizedBox(width: 47 * scale + 6 * scale),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              data.label,
+                              style: TextStyle(
+                                color: theme.text,
+                                fontSize: size.getSubtitleFontSize(),
+                                fontWeight: FontWeight.w600,
+                                height: 1.25,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const Spacer(),
+                            buildValue(),
+                          ],
                         ),
                       ),
-                      if (data.unit.isNotEmpty)
-                        TextSpan(
-                          text: ' ${data.unit}',
-                          style: TextStyle(
-                            color: theme.textSub,
-                            fontSize: size.getLegendFontSize(),
-                            fontWeight: FontWeight.w500,
-                            height: 1,
-                          ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data.label,
+                        style: TextStyle(
+                          color: theme.text,
+                          fontSize: size.getSubtitleFontSize(),
+                          fontWeight: FontWeight.w600,
+                          height: 1.25,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Spacer(),
+                      buildValue(),
                     ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
           ),
         ),
       ],
