@@ -1,4 +1,5 @@
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'jelly_live2d_panel.dart';
@@ -25,6 +26,7 @@ class JellyBottomNav extends StatelessWidget {
     this.onToggleChat,
     this.chatActive = false,
     this.live2dPanel,
+    this.live2dAppearanceAvailable,
   });
 
   /// 当前所在页签
@@ -43,6 +45,9 @@ class JellyBottomNav extends StatelessWidget {
 
   /// Live2D 底部资源面板开关（仅小屋页签显示对应的子栏图标）
   final ValueNotifier<JellyLive2dPanel?>? live2dPanel;
+
+  /// 当前 Live2D 模型是否存在动画或表情。
+  final ValueListenable<bool>? live2dAppearanceAvailable;
 
   @override
   Widget build(BuildContext context) {
@@ -138,14 +143,15 @@ class JellyBottomNav extends StatelessWidget {
                   activePanel,
                   theme,
                 ),
-                _live2dPanelAction(
-                  live2dPanel!,
-                  JellyLive2dPanel.appearance,
-                  '表情外观',
-                  DsIconKind.mood,
-                  activePanel,
-                  theme,
-                ),
+                if (live2dAppearanceAvailable?.value ?? false)
+                  _live2dPanelAction(
+                    live2dPanel!,
+                    JellyLive2dPanel.appearance,
+                    '动画/表情',
+                    DsIconKind.mood,
+                    activePanel,
+                    theme,
+                  ),
               ]
             : null,
       );
@@ -169,7 +175,13 @@ class JellyBottomNav extends StatelessWidget {
             ? ValueListenableBuilder<JellyLive2dPanel?>(
                 valueListenable: live2dPanel!,
                 builder: (context, activePanel, _) =>
-                    buildNavigation(activePanel),
+                    live2dAppearanceAvailable != null
+                    ? ValueListenableBuilder<bool>(
+                        valueListenable: live2dAppearanceAvailable!,
+                        builder: (context, _, _) =>
+                            buildNavigation(activePanel),
+                      )
+                    : buildNavigation(activePanel),
               )
             : buildNavigation(null),
       ),

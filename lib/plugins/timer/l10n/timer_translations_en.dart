@@ -1,6 +1,11 @@
 class TimerTranslationsEn {
   static const Map<String, String> keys = {
     'timer_name': 'Timer',
+
+    // Sample data
+    'timer_sampleTasksTitle': 'Sample timers',
+    'timer_sampleTasksDesc': 'Import count-up, countdown and pomodoro sample tasks',
+
     'timer_totalTimer': 'Total',
     'timer_countUpTimer': 'Count Up',
     'timer_countDownTimer': 'Count Down',

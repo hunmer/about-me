@@ -29,7 +29,7 @@ Widget buildFixedSymbolChild(
   return Text(value, style: style);
 }
 
-/// 气泡角落的固定符号角标（无背景，仅符号内容），点击弹出编辑弹层（onTap 由父级注入）
+/// 气泡角落的固定符号角标（圆形背景），点击弹出编辑弹层（onTap 由父级注入）
 class FixedSymbolWidget extends StatelessWidget {
   final String symbol;
 
@@ -49,9 +49,13 @@ class FixedSymbolWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
+      child: Container(
         width: badgeSize,
         height: badgeSize,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
         child: Center(
           child: buildFixedSymbolChild(
             symbol,

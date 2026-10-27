@@ -2,6 +2,10 @@ const Map<String, String> storeTranslationsEn = {
   // Basic info
   'store_name': 'Store',
 
+  // Sample data
+  'store_sampleDataTitle': 'Sample products & points',
+  'store_sampleDataDesc': 'Import sample products, user items and points logs',
+
   // Confirmations
   'store_confirmUse': 'Use Confirmation',
   'store_confirmUseMessage': 'Are you sure you want to use @productName?',

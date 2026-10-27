@@ -1,6 +1,11 @@
 class TimerTranslationsZh {
   static const Map<String, String> keys = {
     'timer_name': '计时器',
+
+    // 示例数据
+    'timer_sampleTasksTitle': '示例计时器',
+    'timer_sampleTasksDesc': '导入正计时、倒计时、番茄钟等示例任务',
+
     'timer_totalTimer': '总计时器',
     'timer_countUpTimer': '正计时',
     'timer_countDownTimer': '倒计时',

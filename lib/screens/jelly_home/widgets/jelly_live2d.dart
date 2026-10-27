@@ -70,6 +70,7 @@ class JellyLive2D extends StatefulWidget {
     this.topInset = 0,
     this.panel,
     this.statusPanel,
+    this.onAppearanceAvailabilityChanged,
   });
 
   /// 点击角色（命中或未命中可点击区域都会回调）时通知宿主，
@@ -109,6 +110,9 @@ class JellyLive2D extends StatefulWidget {
   /// 宿主提供的状态面板，与其他资源共用底部资源条展示。
   final Widget? statusPanel;
 
+  /// 当前模型是否存在动画或表情，用于控制资源入口显隐。
+  final ValueChanged<bool>? onAppearanceAvailabilityChanged;
+
   @override
   State<JellyLive2D> createState() => _JellyLive2DState();
 }
@@ -134,6 +138,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   int _lastAppliedVoiceLoadGeneration = -1;
   bool _wasModelLoaded = false;
   Timer? _voiceGazeTimer;
+  Timer? _tapGazeResetTimer;
   bool _jevMotionActive = false;
   double _voiceGazeXValue = 0;
   double _voiceGazeYValue = 0;
@@ -159,6 +164,10 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   double _displaySize = _defaultSize;
   double _bubbleOffsetX = 0;
   double _bubbleOffsetY = 0;
+
+  bool get _hasAppearanceResources =>
+      _selectedModel.motions.isNotEmpty ||
+      _selectedModel.expressions.isNotEmpty;
 
   /// 当前小屋背景图；null 表示不显示，经 Live2DPlugin 设置持久化
   String? _backgroundAsset = Live2DPlugin.instance.backgroundAsset;
@@ -204,6 +213,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
   @override
   void initState() {
     super.initState();
+    widget.onAppearanceAvailabilityChanged?.call(_hasAppearanceResources);
     // macOS 上平台视图会吃掉鼠标事件（WKWebView 默认弹 Reload 菜单），
     // 原生侧拦截后经 onContextMenu 回调转发到这里
     _controller.onContextMenu = _showControls;
@@ -285,6 +295,7 @@ class _JellyLive2DState extends State<JellyLive2D> with RouteAware {
     _jevReplyTimer?.cancel();
     _appearanceResetTimer?.cancel();
     _voiceGazeTimer?.cancel();
+    _tapGazeResetTimer?.cancel();
     _size.dispose();
     _hitAreasVisible.dispose();
     _borderVisible.dispose();

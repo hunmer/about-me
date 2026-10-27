@@ -19,6 +19,7 @@ import 'views/timer_task_details_page.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'services/timer_service.dart';
 import 'storage/timer_controller.dart';
+import 'sample_data.dart';
 
 // UseCase 架构相关导入
 import 'package:shared_models/usecases/timer/timer_usecase.dart';
@@ -174,6 +175,21 @@ class TimerPlugin extends BasePlugin with JSBridgePlugin {
   Widget buildMainView(BuildContext context) {
     return TimerMainView();
   }
+
+  @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'tasks',
+      title: 'timer_sampleTasksTitle'.tr,
+      description: 'timer_sampleTasksDesc'.tr,
+      apply: () async {
+        // 已有任务时跳过，避免重复灌入
+        if (_tasks.isNotEmpty) return;
+        _tasks.addAll(TimerSampleData.getSampleTasks());
+        await saveTasks();
+      },
+    ),
+  ];
 
   /// 设置事件监听器
   void _setupEventListeners() {
@@ -391,11 +407,7 @@ class TimerPlugin extends BasePlugin with JSBridgePlugin {
   Future<void> _loadTasks() async {
     final data = await timerController.loadTasks();
     _tasks = data['tasks'] as List<TimerTask>;
-    // 如果没有任何任务，添加默认示例任务
-    if (_tasks.isEmpty) {
-      _tasks.addAll(TimerController.createDefaultTasks());
-      await saveTasks();
-    }
+    // 首次打开为空时由引导页「示例数据选择」决定是否导入示例任务
   }
 
   // 保存任务到存储

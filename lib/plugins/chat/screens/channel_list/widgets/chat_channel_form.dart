@@ -48,6 +48,9 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
   /// 频道名称校验错误（DSInput 通过 errorText 展示）
   String? _titleError;
 
+  /// 提交状态，避免异步创建期间重复提交或误关闭其他路由
+  bool _isSubmitting = false;
+
   @override
   void initState() {
     super.initState();
@@ -55,10 +58,9 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
       // 编辑模式，初始化为现有频道数据
       _titleController = TextEditingController(text: widget.channel!.title);
       _groupController = TextEditingController(
-        text:
-            widget.channel!.groups.isNotEmpty
-                ? widget.channel!.groups.join(', ')
-                : '',
+        text: widget.channel!.groups.isNotEmpty
+            ? widget.channel!.groups.join(', ')
+            : '',
       );
       _selectedIcon = widget.channel!.icon;
       _selectedColor = widget.channel!.backgroundColor;
@@ -79,22 +81,26 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
+
     // DSInput 无内建 Form 校验，提交时手动校验
     if (_titleController.text.trim().isEmpty) {
       setState(() => _titleError = '请输入频道名称');
       return;
     }
-    setState(() => _titleError = null);
+    setState(() {
+      _titleError = null;
+      _isSubmitting = !widget.isEditMode;
+    });
 
-    final List<String> groups =
-        _groupController.text.isEmpty
-            ? []
-            : _groupController.text
-                .replaceAll('，', ',')
-                .split(',')
-                .map((e) => e.trim())
-                .where((e) => e.isNotEmpty)
-                .toList();
+    final List<String> groups = _groupController.text.isEmpty
+        ? []
+        : _groupController.text
+              .replaceAll('，', ',')
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
 
     if (widget.isEditMode && widget.channel != null) {
       // 编辑模式
@@ -112,43 +118,34 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
       );
 
       widget.onUpdateChannel!(updatedChannel);
-      Navigator.of(context).pop();
-    } else {
-      // 添加模式：显示加载指示器
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder:
-            (BuildContext context) =>
-                const DSThemeBridge(child: Center(child: DSLoadingDots())),
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+
+    try {
+      final newChannel = Channel(
+        id: const Uuid().v4(),
+        title: _titleController.text,
+        groups: groups,
+        icon: _selectedIcon,
+        backgroundColor: _selectedColor,
+        priority: 0,
+        messages: [], // 添加空的消息列表
       );
+      final formRoute = ModalRoute.of(context);
+      final navigator = Navigator.of(context);
 
-      try {
-        final newChannel = Channel(
-          id: const Uuid().v4(),
-          title: _titleController.text,
-          groups: groups,
-          icon: _selectedIcon,
-          backgroundColor: _selectedColor,
-          priority: 0,
-          messages: [], // 添加空的消息列表
-        );
+      // 异步调用添加频道。提交状态由表单按钮承载，避免额外 Dialog 抢占导航栈。
+      await widget.onAddChannel!(newChannel);
 
-        // 异步调用添加频道
-        await widget.onAddChannel!(newChannel);
-
-        // 关闭加载指示器和对话框
-        if (mounted) {
-          Navigator.of(context).pop(); // 关闭加载指示器
-          Navigator.of(context).pop(); // 关闭添加频道对话框
-        }
-      } catch (e) {
-        // 关闭加载指示器
-        if (mounted) {
-          Navigator.of(context).pop();
-          // 显示错误提示
-          toastService.showToast('${'chat_channelCreationFailed'.tr}: $e');
-        }
+      if (mounted && formRoute != null && formRoute.isActive) {
+        // 创建事件可能同步打开成就弹窗，直接移除表单路由避免误关成就弹窗。
+        navigator.removeRoute(formRoute);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        toastService.showToast('${'chat_channelCreationFailed'.tr}: $e');
       }
     }
   }
@@ -212,13 +209,18 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
                       child: DSButton(
                         label: 'chat_cancel'.tr,
                         variant: DSButtonVariant.outline,
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => Navigator.of(context).pop(),
                       ),
                     ),
                     SizedBox(width: theme.spacing.md),
                     Expanded(
                       child: DSButton(
-                        label: widget.isEditMode ? 'core_save'.tr : 'chat_create'.tr,
+                        label: widget.isEditMode
+                            ? 'core_save'.tr
+                            : 'chat_create'.tr,
+                        loading: _isSubmitting,
                         onPressed: _submit,
                       ),
                     ),

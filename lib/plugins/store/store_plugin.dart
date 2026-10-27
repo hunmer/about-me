@@ -226,6 +226,25 @@ class StorePlugin extends BasePlugin with JSBridgePlugin {
   }
 
   @override
+  List<PluginSampleDataGroup> getSampleDataGroups() => [
+    PluginSampleDataGroup(
+      id: 'default',
+      title: 'store_sampleDataTitle'.tr,
+      description: 'store_sampleDataDesc'.tr,
+      apply: () async {
+        final c = controller;
+        // 已有任何数据时跳过，避免重复灌入
+        if (c.getGoodsCount() > 0 ||
+            c.getItemsCount() > 0 ||
+            c.pointsLogs.isNotEmpty) {
+          return;
+        }
+        await c.initializeDefaultData();
+      },
+    ),
+  ];
+
+  @override
   Widget? buildCardView(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 

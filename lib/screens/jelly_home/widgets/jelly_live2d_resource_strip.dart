@@ -38,25 +38,48 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
 
   Widget _buildAppearanceStrip(AppThemeData theme) {
     final expressions = _selectedModel.expressions;
-    if (expressions.isEmpty) {
-      return Text('当前模型没有可用表情', style: DsTypography.caption.copyWith(color: theme.textSub));
+    final motions = _selectedModel.motions;
+    if (expressions.isEmpty && motions.isEmpty) {
+      return const SizedBox.shrink();
     }
     return SizedBox(
       height: 58,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: expressions.length,
+        itemCount: motions.length + expressions.length,
         separatorBuilder: (_, _) => SizedBox(width: theme.spacing.sm),
         itemBuilder: (_, index) {
-          final expression = expressions[index];
+          if (index < motions.length) {
+            final motion = motions[index];
+            return DSButton(
+              label: motion.label.tr,
+              size: DSButtonSize.sm,
+              onPressed: () => _playResourceMotion(motion),
+            );
+          }
+          final expression = expressions[index - motions.length];
           return DSButton(
-            label: expression.label,
+            label: expression.label.tr,
             size: DSButtonSize.sm,
             onPressed: () => _applyExpression(expression),
           );
         },
       ),
     );
+  }
+
+  Future<void> _playResourceMotion(Live2DMotionDefinition motion) async {
+    if (!_controller.value.isLoaded) return;
+    try {
+      await _controller.startMotion(
+        group: motion.group,
+        index: motion.index,
+        priority: 3,
+      );
+      _scheduleAppearanceReset();
+    } on Live2DException {
+      // 动作播放失败时保持当前动作。
+    }
   }
 
   Future<void> _applyExpression(Live2DExpressionDefinition expression) async {
@@ -152,9 +175,9 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
   /// 打开 Live2D 主界面（存档管理）；返回后刷新资源条，
   /// 选中档案的模型被改动时重载模型
   Future<void> _openModelList() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const Live2DMainScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const Live2DMainScreen()));
     if (!mounted) return;
     setState(() {});
     final model = modelDefinitionForArchive(

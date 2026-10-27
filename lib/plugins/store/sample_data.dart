@@ -595,26 +595,3 @@ List<UsedItem> getDefaultUsedItems() {
 int getDefaultPointsBalance() {
   return 47; // 根据积分记录计算得出
 }
-
-/// 初始化默认数据的完整结构
-class StoreDefaultData {
-  /// 获取包含所有默认数据的Map
-  static Map<String, dynamic> getAllData() {
-    return {
-      'products': {
-        'products': getDefaultProducts().map((p) => p.toJson()).toList(),
-      },
-      'archived_products': {'products': []},
-      'points': {
-        'value': getDefaultPointsBalance(),
-        'logs': getDefaultPointsLogs().map((log) => log.toJson()).toList(),
-      },
-      'user_items': {
-        'items': getDefaultUserItems().map((item) => item.toJson()).toList(),
-      },
-      'used_items': {
-        'items': getDefaultUsedItems().map((item) => item.toJson()).toList(),
-      },
-    };
-  }
-}

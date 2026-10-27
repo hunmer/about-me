@@ -624,7 +624,6 @@ class StoreController with ChangeNotifier {
     );
     if (snapshotResult['success'] != true) {
       debugPrint('Failed to load store snapshot: ${snapshotResult['error']}');
-      await initializeDefaultData();
       return;
     }
     final snapshot = Map<String, dynamic>.from(snapshotResult['data'] as Map);
@@ -647,9 +646,9 @@ class StoreController with ChangeNotifier {
     final hasPoints = snapshot['pointsFileExists'] == true;
     final hasUserItems = itemsData.isNotEmpty;
 
+    // 首次打开无数据时保持为空，由引导页「示例数据选择」决定是否导入示例数据
     if (!hasProducts && !hasPoints && !hasUserItems) {
-      debugPrint('No existing data found, initializing with default data');
-      await initializeDefaultData();
+      debugPrint('No existing data found, keep empty for onboarding');
       return;
     }
 
@@ -669,7 +668,6 @@ class StoreController with ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Failed to load products: $e');
-      await initializeDefaultData();
       return;
     }
 
@@ -739,47 +737,13 @@ class StoreController with ChangeNotifier {
     _updateStreams();
   }
 
-  // 初始化默认数据
+  // 初始化默认数据（导入示例商品、积分、用户物品）
   Future<void> initializeDefaultData() async {
-    // 加载默认示例数据
-    final defaultData = StoreDefaultData.getAllData();
-
-    // 加载默认商品
-    final productsData = defaultData['products'] as Map<String, dynamic>;
-    final productsList = productsData['products'] as List;
-    for (final productData in productsList) {
-      if (productData is Map<String, dynamic>) {
-        addProductFromJson(productData);
-      }
-    }
-
-    // 加载默认积分
-    final pointsData = defaultData['points'] as Map<String, dynamic>;
-    _userPoints = pointsData['value'] as int;
-    final logsList = pointsData['logs'] as List;
-    for (final logData in logsList) {
-      if (logData is Map<String, dynamic>) {
-        _pointsLogs.add(PointsLog.fromJson(logData));
-      }
-    }
-
-    // 加载默认用户物品
-    final userItemsData = defaultData['user_items'] as Map<String, dynamic>;
-    final itemsList = userItemsData['items'] as List;
-    for (final itemData in itemsList) {
-      if (itemData is Map<String, dynamic>) {
-        _userItems.add(UserItem.fromJson(itemData));
-      }
-    }
-
-    // 加载默认已使用物品
-    final usedItemsData = defaultData['used_items'] as Map<String, dynamic>;
-    final usedItemsList = usedItemsData['items'] as List;
-    for (final itemData in usedItemsList) {
-      if (itemData is Map<String, dynamic>) {
-        _usedItems.add(UsedItem.fromJson(itemData));
-      }
-    }
+    _products.addAll(getDefaultProducts());
+    _userPoints = getDefaultPointsBalance();
+    _pointsLogs.addAll(getDefaultPointsLogs());
+    _userItems.addAll(getDefaultUserItems());
+    _usedItems.addAll(getDefaultUsedItems());
 
     // 保存到存储
     await saveToStorage();

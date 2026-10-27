@@ -11,6 +11,7 @@ import 'package:aboutme/plugins/openai/aliveness/models/memory_library.dart';
 import 'package:aboutme/plugins/openai/aliveness/screens/memory_library_detail_screen.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 
 /// 记忆库管理页：创建、查看和选择 agent 要使用的独立记忆库。
@@ -105,79 +106,17 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
 
   Future<_MemoryLibraryFormResult?> _showLibraryEditor({
     MemoryLibrary? library,
-  }) async {
-    final nameController = TextEditingController(text: library?.name ?? '');
-    final descriptionController = TextEditingController(
-      text: library?.description ?? '',
-    );
-    final prefixesController = TextEditingController(
-      text: library?.allowedKeyPrefixes.join(', ') ?? '',
-    );
-    String? nameError;
-    final result = await showDSDialog<_MemoryLibraryFormResult>(
+  }) {
+    final formKey = GlobalKey<_LibraryFormFieldsState>();
+    return SmoothBottomSheet.showForm<_MemoryLibraryFormResult>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => DSDialog(
-          title: (library == null
-                  ? 'openai_memoryLibraryCreate'
-                  : 'openai_memoryLibraryEdit')
-              .tr,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DSInput(
-                controller: nameController,
-                label: 'openai_memoryLibraryNameLabel'.tr,
-                hint: 'openai_memoryLibraryNameHint'.tr,
-                errorText: nameError,
-              ),
-              const SizedBox(height: 12),
-              DSInput(
-                controller: descriptionController,
-                label: 'openai_memoryLibraryDescriptionLabel'.tr,
-                hint: 'openai_memoryLibraryDescriptionHint'.tr,
-              ),
-              const SizedBox(height: 12),
-              DSInput(
-                controller: prefixesController,
-                label: 'openai_memoryLibraryPrefixLabel'.tr,
-                hint: 'openai_memoryLibraryPrefixHint'.tr,
-              ),
-            ],
-          ),
-          confirmText: (library == null ? 'app_create' : 'app_save').tr,
-          cancelText: 'app_cancel'.tr,
-          onConfirm: () {
-            final name = nameController.text.trim();
-            if (name.isEmpty) {
-              setDialogState(() => nameError = 'openai_memoryLibraryNameRequired'.tr);
-              return;
-            }
-            final prefixes = prefixesController.text
-                .split(RegExp(r'[,，\n]'))
-                .map((prefix) => prefix.trim())
-                .where((prefix) => prefix.isNotEmpty)
-                .toSet()
-                .toList();
-            Navigator.of(dialogContext).pop(
-              _MemoryLibraryFormResult(
-                name: name,
-                description: descriptionController.text.trim(),
-                allowedKeyPrefixes: prefixes,
-              ),
-            );
-          },
-          onCancel: () => Navigator.of(dialogContext).pop(),
-        ),
-      ),
+      title: (library == null
+              ? 'openai_memoryLibraryCreate'
+              : 'openai_memoryLibraryEdit')
+          .tr,
+      onSave: () => formKey.currentState?.submit(),
+      child: _LibraryFormFields(key: formKey, library: library),
     );
-    // pop 结果早于退出动画结束，等输入框卸载后再释放控制器
-    await Future.delayed(const Duration(milliseconds: 400));
-    nameController.dispose();
-    descriptionController.dispose();
-    prefixesController.dispose();
-    return result;
   }
 
   Future<void> _copyId(String id) async {
@@ -347,6 +286,93 @@ class _MemoryManagerScreenState extends State<MemoryManagerScreen> {
 
   String _formatDate(DateTime date) =>
       '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
+}
+
+/// 记忆库表单字段（新建/编辑共用，底部弹层内容由标题栏保存按钮触发提交）
+class _LibraryFormFields extends StatefulWidget {
+  final MemoryLibrary? library;
+
+  const _LibraryFormFields({super.key, this.library});
+
+  @override
+  State<_LibraryFormFields> createState() => _LibraryFormFieldsState();
+}
+
+class _LibraryFormFieldsState extends State<_LibraryFormFields> {
+  late final _nameController = TextEditingController(
+    text: widget.library?.name ?? '',
+  );
+  late final _descriptionController = TextEditingController(
+    text: widget.library?.description ?? '',
+  );
+  late final _prefixesController = TextEditingController(
+    text: widget.library?.allowedKeyPrefixes.join(', ') ?? '',
+  );
+  String? _nameError;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _prefixesController.dispose();
+    super.dispose();
+  }
+
+  /// 校验并弹出结果（供外壳保存按钮调用）
+  void submit() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      setState(() => _nameError = 'openai_memoryLibraryNameRequired'.tr);
+      return;
+    }
+    final prefixes = _prefixesController.text
+        .split(RegExp(r'[,，\n]'))
+        .map((prefix) => prefix.trim())
+        .where((prefix) => prefix.isNotEmpty)
+        .toSet()
+        .toList();
+    Navigator.of(context).pop(
+      _MemoryLibraryFormResult(
+        name: name,
+        description: _descriptionController.text.trim(),
+        allowedKeyPrefixes: prefixes,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: theme.spacing.lg),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(height: theme.spacing.md),
+          DSInput(
+            controller: _nameController,
+            label: 'openai_memoryLibraryNameLabel'.tr,
+            hint: 'openai_memoryLibraryNameHint'.tr,
+            errorText: _nameError,
+          ),
+          SizedBox(height: theme.spacing.md),
+          DSInput(
+            controller: _descriptionController,
+            label: 'openai_memoryLibraryDescriptionLabel'.tr,
+            hint: 'openai_memoryLibraryDescriptionHint'.tr,
+          ),
+          SizedBox(height: theme.spacing.md),
+          DSInput(
+            controller: _prefixesController,
+            label: 'openai_memoryLibraryPrefixLabel'.tr,
+            hint: 'openai_memoryLibraryPrefixHint'.tr,
+          ),
+          SizedBox(height: theme.spacing.md),
+        ],
+      ),
+    );
+  }
 }
 
 class _MemoryLibraryFormResult {

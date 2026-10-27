@@ -15,6 +15,7 @@ class DSLightHeader extends StatelessWidget {
   const DSLightHeader({
     super.key,
     required this.title,
+    this.titleWidget,
     this.trailing,
     this.trailingWidth = _buttonSize,
     this.onBack,
@@ -23,6 +24,10 @@ class DSLightHeader extends StatelessWidget {
 
   /// 标题文本（居中，超出省略）
   final String title;
+
+  /// 自定义标题区（如 TabBar）；非空时优先于 [title] 文本，
+  /// 占满中间区域，对齐方式由内容自身决定
+  final Widget? titleWidget;
 
   /// 尾部动作（通常为 38px 圆形 DSIconButton）；null 时占位保持标题居中
   final Widget? trailing;
@@ -60,13 +65,15 @@ class DSLightHeader extends StatelessWidget {
           else
             const SizedBox(width: _buttonSize),
           Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: DsTypography.title.copyWith(color: theme.text),
-            ),
+            child:
+                titleWidget ??
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.title.copyWith(color: theme.text),
+                ),
           ),
           SizedBox(
             width: trailingWidth,

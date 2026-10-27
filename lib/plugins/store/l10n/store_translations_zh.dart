@@ -2,6 +2,10 @@ const Map<String, String> storeTranslationsZh = {
   // 基础信息
   'store_name': '商店',
 
+  // 示例数据
+  'store_sampleDataTitle': '示例商品与积分',
+  'store_sampleDataDesc': '导入示例商品、用户物品与积分记录',
+
   // 确认操作
   'store_confirmUse': '使用确认',
   'store_confirmUseMessage': '确定要使用 @productName 吗?',

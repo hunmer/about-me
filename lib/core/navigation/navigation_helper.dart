@@ -304,11 +304,12 @@ class NavigationHelper {
   }
 
   /// 返回小屋：优先复用已有页面；启动恢复场景没有小屋栈时重新创建。
+  /// 小屋切换页签会把路由名原地改写为 `/jelly_home/<n>`，按前缀一并识别
   static void returnToHome(BuildContext context) {
     final navigator = Navigator.of(context);
     var hasHomeRoute = false;
     navigator.popUntil((route) {
-      if (route.settings.name == AppRoutes.jellyHome) {
+      if (isJellyHomeRoute(route.settings.name)) {
         hasHomeRoute = true;
         return true;
       }
@@ -318,6 +319,11 @@ class NavigationHelper {
       navigator.pushNamedAndRemoveUntil(AppRoutes.jellyHome, (route) => false);
     }
   }
+
+  /// 是否小屋主页路由（含页签段 `/jelly_home/<n>`）
+  static bool isJellyHomeRoute(String? name) =>
+      name == AppRoutes.jellyHome ||
+      (name?.startsWith('${AppRoutes.jellyHome}/') ?? false);
 
   // ==================== 对话框和底部弹窗 ====================
 

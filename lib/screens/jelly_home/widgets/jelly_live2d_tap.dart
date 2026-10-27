@@ -13,6 +13,30 @@ extension _JellyLive2DTap on _JellyLive2DState {
     }
   }
 
+  /// 点击时短暂推动视线；桌面鼠标点击和移动端触屏点击都由原生视图转发到这里。
+  void _triggerTapGaze(double x, double y) {
+    _tapGazeResetTimer?.cancel();
+    unawaited(() async {
+      try {
+        await _controller.setDragging(x, y);
+      } on Live2DException {
+        return;
+      }
+    }());
+    _tapGazeResetTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted || !_controller.value.isLoaded) return;
+      unawaited(_resetTapGaze());
+    });
+  }
+
+  Future<void> _resetTapGaze() async {
+    try {
+      await _controller.setDragging(0, 0);
+    } on Live2DException {
+      // 点击视线恢复失败时保持当前模型状态。
+    }
+  }
+
   /// 点击角色：先通知宿主（陪伴数值互动），再播放动作 + 随机台词气泡
   void _handleTap(String? hitAreaId, String? hitAreaName, double x, double y) {
     if (_isSwitchingModel) return;
@@ -21,6 +45,7 @@ extension _JellyLive2DTap on _JellyLive2DState {
       return;
     }
     if (!_controller.value.isLoaded) return;
+    _triggerTapGaze(x, y);
     widget.onTap?.call(hitAreaId, hitAreaName);
     if (!hasJellyLive2DHitArea(hitAreaId, hitAreaName)) {
       return;

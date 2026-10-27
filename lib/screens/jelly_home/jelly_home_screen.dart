@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/core/services/ds_theme_color_controller.dart';
@@ -37,9 +38,18 @@ import 'package:get/get.dart' hide Value;
 /// 小屋（果冻风布局）/ 聊天助手（快捷速记）/ 日程（日期数据视图）/
 /// 看板（固定布局网格）/ 我的（个人主页）。
 ///
-/// 路由：/jelly_home
+/// 路由：`/jelly_home`（小屋）~ `/jelly_home/4`（我的），路径段即页签下标
 class JellyHomeScreen extends StatefulWidget {
-  const JellyHomeScreen({super.key});
+  const JellyHomeScreen({super.key, this.initialIndex = 0});
+
+  /// 初始页签下标：显式路由段（如 `/jelly_home/2`）或持久化的上次停留页签
+  final int initialIndex;
+
+  /// 页签总数（与底部导航 JellyTab 对应，路由表按它展开）
+  static int get tabCount => JellyTab.values.length;
+
+  /// 上次停留页签的持久化键
+  static const String tabConfigKey = 'jelly_home_tab_index';
 
   @override
   State<JellyHomeScreen> createState() => _JellyHomeScreenState();
@@ -55,10 +65,14 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
   /// 小屋页签的 JellyLive2D 读取并渲染资源列表
   final ValueNotifier<JellyLive2dPanel?> _live2dPanel =
       ValueNotifier<JellyLive2dPanel?>(null);
+  final ValueNotifier<bool> _live2dAppearanceAvailable = ValueNotifier<bool>(
+    false,
+  );
 
   @override
   void initState() {
     super.initState();
+    _tabIndex = widget.initialIndex.clamp(0, JellyTab.values.length - 1);
     if (!kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.android ||
             defaultTargetPlatform == TargetPlatform.iOS)) {
@@ -69,7 +83,20 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
   @override
   void dispose() {
     _live2dPanel.dispose();
+    _live2dAppearanceAvailable.dispose();
     super.dispose();
+  }
+
+  /// 持久化当前页签：热重启后 `/jelly_home` 路由读取它恢复对应页签。
+  /// 当前 SDK 的 `RouteSettings.name` 为 final，路由名无法原地改写，
+  /// 直达场景改由 `/jelly_home/<n>` 路径段承载页签
+  void _saveTab(int index) {
+    unawaited(
+      globalConfigManager.setAppConfigValue(
+        JellyHomeScreen.tabConfigKey,
+        index,
+      ),
+    );
   }
 
   @override
@@ -82,6 +109,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
         setState(() => _tabIndex = index);
         // 离开小屋页签时收起资源面板（IndexedStack 保活，不会自动消失）
         if (index != 0) _live2dPanel.value = null;
+        _saveTab(index);
       },
       chatActive: _chatVisible,
       onToggleChat: () {
@@ -90,12 +118,25 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
         if (_chatVisible) _live2dPanel.value = null;
       },
       live2dPanel: _live2dPanel,
+      live2dAppearanceAvailable: _live2dAppearanceAvailable,
       child: LazyIndexedStack(
         index: _tabIndex,
         builders: [
           (_) => HeroMode(
             enabled: _tabIndex == 0,
-            child: _CottageTab(chatVisible: _chatVisible, panel: _live2dPanel),
+            child: _CottageTab(
+              chatVisible: _chatVisible,
+              panel: _live2dPanel,
+              onAppearanceAvailabilityChanged: (available) {
+                if (_live2dAppearanceAvailable.value != available) {
+                  _live2dAppearanceAvailable.value = available;
+                }
+                if (!available &&
+                    _live2dPanel.value == JellyLive2dPanel.appearance) {
+                  _live2dPanel.value = null;
+                }
+              },
+            ),
           ),
           (_) => HeroMode(
             enabled: _tabIndex == 1,
@@ -109,7 +150,8 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
             enabled: _tabIndex == 3,
             child: const HomeScreen(asRoot: false),
           ),
-          (_) => HeroMode(enabled: _tabIndex == 4, child: const ProfileScreen()),
+          (_) =>
+              HeroMode(enabled: _tabIndex == 4, child: const ProfileScreen()),
         ],
       ),
     );
@@ -120,13 +162,19 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
 /// 底部可切换状态面板与右侧陪伴状态按钮，
 /// 底部聊天表单按需切换显示。
 class _CottageTab extends StatefulWidget {
-  const _CottageTab({this.chatVisible = false, this.panel});
+  const _CottageTab({
+    this.chatVisible = false,
+    this.panel,
+    this.onAppearanceAvailabilityChanged,
+  });
 
   /// Live2D 聊天表单是否显示
   final bool chatVisible;
 
   /// Live2D 底部资源面板开关（透传给 JellyLive2D 渲染资源列表）
   final ValueListenable<JellyLive2dPanel?>? panel;
+
+  final ValueChanged<bool>? onAppearanceAvailabilityChanged;
 
   @override
   State<_CottageTab> createState() => _CottageTabState();
@@ -206,6 +254,8 @@ class _CottageTabState extends State<_CottageTab> {
                       importedModels: Live2DPlugin.instance.importedModels,
                     ),
                     typingInterval: Live2DPlugin.instance.bubbleTypingInterval,
+                    onAppearanceAvailabilityChanged:
+                        widget.onAppearanceAvailabilityChanged,
                     onTap: (hitAreaId, _) {
                       if (hitAreaId != null) {
                         _companion.recordInteraction();
@@ -421,7 +471,10 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
   void initState() {
     super.initState();
     eventManager.subscribe('plugin_loaded', _onPluginLoaded);
-    eventManager.subscribe(Live2DPlugin.archiveSelectedEvent, _onArchiveChanged);
+    eventManager.subscribe(
+      Live2DPlugin.archiveSelectedEvent,
+      _onArchiveChanged,
+    );
   }
 
   /// 切换/编辑 Live2D 存档后 selected 变化不会自动触发本组件重建，
@@ -460,8 +513,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
         );
     // 临时会话跟随存档当前绑定的 Agent：存档换绑后旧会话仍指向旧 Agent
     //（如通用助手），这里校正为新绑定的 Agent 并退出链式模式
-    if (conversation.agentId != agentId ||
-        conversation.agentChain != null) {
+    if (conversation.agentId != agentId || conversation.agentChain != null) {
       conversation = conversation.copyWith(
         agentId: agentId,
         clearAgentChain: true,
