@@ -21,6 +21,15 @@ extension _JellyLive2DLoader on _JellyLive2DState {
   }
 
   Future<void> _playReaction() async {
+    if (_isVideo) {
+      final animations = _videoManifest?.animations ?? const [];
+      if (animations.isNotEmpty) {
+        _requestVideoAnimation(
+          animations[_random.nextInt(animations.length)].id,
+        );
+      }
+      return;
+    }
     if (_isSwitchingModel || !_controller.value.isLoaded) return;
     final candidates = _selectedModel.motions
         .where((motion) => motion.group.toLowerCase() != 'idle')
@@ -39,15 +48,54 @@ extension _JellyLive2DLoader on _JellyLive2DState {
   }
 
   Future<void> _resetGaze() async {
+    if (_isVideo) return;
     await _controller.setDragging(0, 0);
   }
 
   /// 模型身份按目录 + 文件名判定（在线模型每次都会生成新实例，不能比较引用）
   bool _isSameModel(Live2DModelDefinition a, Live2DModelDefinition b) =>
-      a.modelDir == b.modelDir && a.modelFile == b.modelFile;
+      a.displayMode == b.displayMode &&
+      a.modelDir == b.modelDir &&
+      a.modelFile == b.modelFile &&
+      (!a.isVideo ||
+          (jsonEncode(a.videoManifest?.toJson()) ==
+                  jsonEncode(b.videoManifest?.toJson()) &&
+              mapEquals(a.videoResolvedSources, b.videoResolvedSources)));
 
   Future<void> _loadModel(Live2DModelDefinition model) async {
     if (!_routeVisible) return;
+    final generation = ++_modelLoadGeneration;
+    if (model.isVideo) {
+      if (mounted) {
+        setState(() {
+          _isSwitchingModel = true;
+          _videoLoadError = null;
+          _bubbleMessage = null;
+          _videoManifest = null;
+        });
+      }
+      try {
+        await _unloadModel();
+        final manifest =
+            model.videoManifest ??
+            (await VideoPetImportService().loadDefault()).manifest;
+        if (!mounted || generation != _modelLoadGeneration) return;
+        setState(() {
+          _videoManifest = manifest;
+          _isSwitchingModel = false;
+        });
+        _notifyAppearanceAvailabilityChanged();
+      } catch (error) {
+        if (mounted && generation == _modelLoadGeneration) {
+          setState(() {
+            _videoLoadError = error.toString();
+            _isSwitchingModel = false;
+          });
+        }
+      }
+      return;
+    }
+    _videoManifest = null;
     debugPrint('[Live2D][Load] 请求加载模型: ${model.modelDir}/${model.modelFile}');
     if (mounted) {
       _bubbleTimer?.cancel();
@@ -58,8 +106,11 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     }
     try {
       final localModel = await Live2DOnlineCatalog.cacheDefinition(model);
+      if (!mounted || generation != _modelLoadGeneration) return;
       await _controller.whenAttached;
-      if (!mounted || !_routeVisible) return;
+      if (!mounted || !_routeVisible || generation != _modelLoadGeneration) {
+        return;
+      }
       if (_controller.value.isLoaded) {
         await _controller.unloadModel();
       }
@@ -71,14 +122,14 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     } on Live2DException {
       // The controller exposes the detailed error through Live2DViewState.
     } finally {
-      if (mounted) setState(() => _isSwitchingModel = false);
+      if (mounted && generation == _modelLoadGeneration) {
+        setState(() => _isSwitchingModel = false);
+      }
     }
   }
 
   Future<void> _selectModel(Live2DModelDefinition model) async {
-    if (_isSameModel(model, _selectedModel) ||
-        _isSwitchingModel ||
-        _controller.value.isLoadingModel) {
+    if (_isSameModel(model, _selectedModel)) {
       return;
     }
     setState(() {
@@ -153,6 +204,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
   }
 
   Future<void> _applyJevReply(String reply) async {
+    if (_isVideo) return;
     final archive = Live2DPlugin.instance.selected;
     if (archive?.jevEnabled != true) {
       debugPrint('[Live2D][Jev] 当前档案未开启 JEV，跳过自动表情动作');

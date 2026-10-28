@@ -87,6 +87,7 @@ dependencies:
   web_socket_channel: ^3.0.0
   crypto: ^3.0.3
   flutter_inappwebview: ^6.1.5
+  flutter_spritesheet_animation: ^1.2.0
   syncfusion_flutter_calendar: ^29.1.41
   syncfusion_localizations: ^29.1.41
   timeago: ^3.7.1
@@ -223,6 +224,12 @@ flutter:
     - assets/floating_ball_icons/  # Preset images for floating ball
     - assets/models/mao/
     - assets/models/mao/mao_pro.4096/
+    - assets/live2d/video/dsh_pet/manifest.json
+    - assets/live2d/video/dsh_pet/NOTICE.txt
+    - assets/live2d/video/dsh_pet/SOURCE-upstream.txt
+    - assets/live2d/video/dsh_pet/LICENSE-assets.txt
+    - assets/live2d/video/dsh_pet/LICENSE-code.txt
+    - assets/live2d/video/dsh_pet/spritesheet/
     - assets/models/mao/motions/
     - assets/models/mao/expressions/
     - lib/plugins/agent_chat/tools/

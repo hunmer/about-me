@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -46,6 +47,9 @@ class Live2DModelDefinition {
     this.category,
     this.isOnline = false,
     this.thumbPath,
+    this.displayMode = 'live2d',
+    this.videoManifest,
+    this.videoResolvedSources = const {},
   });
 
   final String label;
@@ -59,6 +63,11 @@ class Live2DModelDefinition {
   /// 缩略图路径：本地导入记录的用户上传图片（http/file 均可），
   /// 在线模型与内置模型为空
   final String? thumbPath;
+  final String displayMode;
+  final VideoPetManifest? videoManifest;
+  final Map<String, String> videoResolvedSources;
+
+  bool get isVideo => displayMode == 'video';
 }
 
 class Live2DOnlineModelItem {
@@ -441,10 +450,12 @@ class Live2DOnlineCatalog {
       final file = expression['File']?.toString().trim();
       if (file == null || file.isEmpty) continue;
       final name = expression['Name']?.toString().trim();
-      result.add(Live2DExpressionDefinition(
-        index: index,
-        label: name == null || name.isEmpty ? file : name,
-      ));
+      result.add(
+        Live2DExpressionDefinition(
+          index: index,
+          label: name == null || name.isEmpty ? file : name,
+        ),
+      );
     }
     return result;
   }

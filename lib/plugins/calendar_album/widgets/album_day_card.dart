@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cutout_stat_grid_card.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/plugins/calendar_album/models/calendar_entry.dart';
 
@@ -41,62 +41,47 @@ class AlbumDayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dsTheme = DSThemeBridge.resolve(context);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: dsSketchDecoration(
-          theme: dsTheme,
-          fillColor: dsTheme.surface,
-          radius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DayCardHeader(
-              color: color,
-              date: date,
-              count: entries.length,
-              onAdd: onAddEntry == null ? null : () => onAddEntry!(date),
-            ),
-            Expanded(
-              child:
-                  entries.isEmpty
-                      ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            DsIcon(
-                              DsIconKind.image,
-                              size: 32,
-                              color: dsTheme.disabled.withValues(alpha: 0.4),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'calendar_album_dayCardEmpty'.tr,
-                              style: TextStyle(
-                                color: dsTheme.disabled.withValues(
-                                  alpha: 0.4,
-                                ),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                      : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        itemCount: entries.length,
-                        itemBuilder: (context, index) {
-                          return _buildEntryItem(context, entries[index]);
-                        },
-                      ),
-            ),
-          ],
-        ),
+    return CutoutStatGridCardWidget(
+      inline: true,
+      accentColor: color,
+      icon: Icons.photo_library,
+      header: CutoutDayCardHeader(
+        color: color,
+        date: date,
+        count: entries.length,
+        onAdd: onAddEntry == null ? null : () => onAddEntry!(date),
       ),
+      child:
+          entries.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    DsIcon(
+                      DsIconKind.image,
+                      size: 32,
+                      color: dsTheme.disabled.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'calendar_album_dayCardEmpty'.tr,
+                      style: TextStyle(
+                        color: dsTheme.disabled.withValues(
+                          alpha: 0.4,
+                        ),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: entries.length,
+                itemBuilder: (context, index) {
+                  return _buildEntryItem(context, entries[index]);
+                },
+              ),
     );
   }
 

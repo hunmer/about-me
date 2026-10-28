@@ -201,13 +201,13 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
                 crossAxisCellCount: _clampCells(widgetDef.defaultSize.width, 2),
                 mainAxisCellCount: _clampCells(widgetDef.defaultSize.height, 2),
                 // 手绘便签:随机倾斜 + 小号贴条(4 列窄卡片,§11.2);
-                // 挂载即播墨线描画入场(§10)
+                // 挂载即播墨线描画入场(§10),卡片容器由日卡自带
                 child: HandDrawnStickyItem(
                   tiltKey: widgetDef.id,
                   tapeWidth: 56,
                   tapeHeight: 18,
                   child: WiredDraw(
-                    child: _buildCard(context, theme, widgetDef),
+                    child: _buildCard(context, widgetDef),
                   ),
                 ),
               );
@@ -243,25 +243,9 @@ class _HomeDateViewGridState extends State<HomeDateViewGrid> {
     return cells;
   }
 
-  /// 构建单个日期卡片(手绘墨线底,见 design.md §9)
-  Widget _buildCard(
-    BuildContext context,
-    AppThemeData theme,
-    HomeWidget widgetDef,
-  ) {
-    return ClipRRect(
-      borderRadius: theme.radii.md,
-      child: Container(
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: theme.surfaceAlt,
-          radius: theme.radii.md,
-          // 列表项传唯一 seed 让墨迹有变化(§9.4)
-          seed: widgetDef.id.hashCode & 0x7fffffff,
-        ),
-        child: widgetDef.build(context, const {}, widgetDef.defaultSize),
-      ),
-    );
+  /// 构建单个日期卡片（卡片容器由各日卡自带，此处不再外包卡片层）
+  Widget _buildCard(BuildContext context, HomeWidget widgetDef) {
+    return widgetDef.build(context, const {}, widgetDef.defaultSize);
   }
 }
 

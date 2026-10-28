@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cutout_stat_grid_card.dart';
 import 'package:aboutme/plugins/checkin/models/checkin_item.dart';
 
 /// 签到单日卡片 - 展示某一天各签到项的签到状态
@@ -35,59 +35,44 @@ class CheckinDayCard extends StatelessWidget {
     final theme = DSThemeBridge.resolve(context);
     final checkedCount = items.where(_isChecked).length;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: theme.surface,
-          radius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DayCardHeader(
-              color: color,
-              date: date,
-              count: items.isEmpty ? null : checkedCount,
-              summary: items.isEmpty ? null : '$checkedCount/${items.length}',
-            ),
-            Expanded(
-              child:
-                  items.isEmpty
-                      ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            DsIcon(
-                              DsIconKind.check,
-                              size: 32,
-                              color: theme.textSub.withValues(alpha: 0.4),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'checkin_dayCardEmpty'.tr,
-                              style: DsTypography.caption.copyWith(
-                                color: theme.textSub,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                      : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        itemCount: items.length,
-                        itemBuilder: (context, index) {
-                          return _buildItemRow(context, items[index]);
-                        },
-                      ),
-            ),
-          ],
-        ),
+    return CutoutStatGridCardWidget(
+      inline: true,
+      accentColor: color,
+      icon: Icons.check_circle,
+      header: CutoutDayCardHeader(
+        color: color,
+        date: date,
+        count: items.isEmpty ? null : checkedCount,
+        summary: items.isEmpty ? null : '$checkedCount/${items.length}',
       ),
+      child:
+          items.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    DsIcon(
+                      DsIconKind.check,
+                      size: 32,
+                      color: theme.textSub.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'checkin_dayCardEmpty'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  return _buildItemRow(context, items[index]);
+                },
+              ),
     );
   }
 

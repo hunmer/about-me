@@ -37,6 +37,22 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
   }
 
   Widget _buildAppearanceStrip(AppThemeData theme) {
+    if (_isVideo) {
+      final animations = _videoManifest?.animations ?? const [];
+      return SizedBox(
+        height: 58,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: animations.length,
+          separatorBuilder: (_, _) => SizedBox(width: theme.spacing.sm),
+          itemBuilder: (_, index) => DSButton(
+            label: animations[index].name,
+            size: DSButtonSize.sm,
+            onPressed: () => _requestVideoAnimation(animations[index].id),
+          ),
+        ),
+      );
+    }
     final expressions = _selectedModel.expressions;
     final motions = _selectedModel.motions;
     if (expressions.isEmpty && motions.isEmpty) {

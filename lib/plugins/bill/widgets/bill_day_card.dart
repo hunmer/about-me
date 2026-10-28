@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cutout_stat_grid_card.dart';
 import 'package:aboutme/plugins/bill/models/bill.dart';
 
 /// 账单单日卡片 - 展示某一天的账单列表
@@ -42,61 +42,46 @@ class BillDayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: theme.surface,
-          radius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DayCardHeader(
-              color: color,
-              date: date,
-              count: bills.length,
-              summary: _summaryText(),
-              onAdd: onAddBill == null ? null : () => onAddBill!(date),
-            ),
-            Expanded(
-              child:
-                  bills.isEmpty
-                      ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            DsIcon(
-                              DsIconKind.piggy,
-                              size: 32,
-                              color: theme.disabled.withValues(alpha: 0.4),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'bill_dayCardEmpty'.tr,
-                              style: TextStyle(
-                                color: theme.disabled.withValues(alpha: 0.4),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                      : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        itemCount: bills.length,
-                        itemBuilder: (context, index) {
-                          return _buildBillItem(context, bills[index]);
-                        },
-                      ),
-            ),
-          ],
-        ),
+    return CutoutStatGridCardWidget(
+      inline: true,
+      accentColor: color,
+      icon: Icons.account_balance_wallet,
+      header: CutoutDayCardHeader(
+        color: color,
+        date: date,
+        count: bills.length,
+        summary: _summaryText(),
+        onAdd: onAddBill == null ? null : () => onAddBill!(date),
       ),
+      child:
+          bills.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    DsIcon(
+                      DsIconKind.piggy,
+                      size: 32,
+                      color: theme.disabled.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'bill_dayCardEmpty'.tr,
+                      style: TextStyle(
+                        color: theme.disabled.withValues(alpha: 0.4),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: bills.length,
+                itemBuilder: (context, index) {
+                  return _buildBillItem(context, bills[index]);
+                },
+              ),
     );
   }
 

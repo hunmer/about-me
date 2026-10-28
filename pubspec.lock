@@ -1018,6 +1018,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.2.1"
+  flutter_spritesheet_animation:
+    dependency: "direct main"
+    description:
+      name: flutter_spritesheet_animation
+      sha256: "966ab0149f2e7bd16277e5a4c915e46c86bf7f9a852037b7e1f8cac43b59227f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   flutter_staggered_grid_view:
     dependency: "direct main"
     description:

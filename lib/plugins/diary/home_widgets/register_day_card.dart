@@ -7,6 +7,7 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cutout_stat_grid_card.dart';
 import '../widgets/diary_query_guard.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/plugins/diary/diary_plugin.dart';
@@ -54,44 +55,53 @@ class _DiaryDayCardHomeWidget extends StatelessWidget {
         final date = HomeDateController().date;
         return _buildContent(
           context,
+          date,
           entries[DateTime(date.year, date.month, date.day)],
         );
       },
     ),
   );
 
-  Widget _buildContent(BuildContext context, DiaryEntry? entry) {
+  Widget _buildContent(BuildContext context, DateTime date, DiaryEntry? entry) {
     final theme = Theme.of(context);
-    if (entry == null) {
-      // 空状态
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.menu_book_outlined,
-              size: 32,
-              color: theme.disabledColor.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'diary_dayCardEmpty'.tr,
-              style: TextStyle(
-                color: theme.disabledColor.withValues(alpha: 0.4),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(4),
-      child: DiaryEntryCard(
-        entry: entry,
-        onTap: () => _openEditor(context, entry),
+    return CutoutStatGridCardWidget(
+      inline: true,
+      accentColor: const Color(0xFFD8BFD8),
+      icon: Icons.menu_book,
+      header: CutoutDayCardHeader(
+        color: const Color(0xFFD8BFD8),
+        date: date,
       ),
+      child:
+          entry == null
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.menu_book_outlined,
+                      size: 32,
+                      color: theme.disabledColor.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'diary_dayCardEmpty'.tr,
+                      style: TextStyle(
+                        color: theme.disabledColor.withValues(alpha: 0.4),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(4),
+                child: DiaryEntryCard(
+                  entry: entry,
+                  onTap: () => _openEditor(context, entry),
+                ),
+              ),
     );
   }
 

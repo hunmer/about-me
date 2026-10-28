@@ -10,7 +10,7 @@ import 'package:aboutme/screens/home_screen/managers/home_widget_registry.dart';
 import 'package:aboutme/screens/home_screen/managers/home_date_controller.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/home_screen/widgets/home_widget.dart';
-import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cutout_stat_grid_card.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import 'package:aboutme/plugins/day/models/memorial_day.dart';
 import 'package:aboutme/plugins/day/widgets/memorial_day_edit_flow.dart';
@@ -125,65 +125,53 @@ class _MemorialDayCardHomeWidgetState extends State<_MemorialDayCardHomeWidget> 
 
     final date = HomeDateController().date;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(8),
+    return CutoutStatGridCardWidget(
+      inline: true,
+      accentColor: Colors.deepOrange,
+      icon: Icons.celebration,
+      header: CutoutDayCardHeader(
+        color: Colors.deepOrange,
+        date: date,
+        count: _memorials.length,
+        onAdd: () => openMemorialDayEditor(
+          context,
+          prefilled: MemorialDay(title: '', targetDate: date),
+        ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DayCardHeader(
-            color: Colors.deepOrange,
-            date: date,
-            count: _memorials.length,
-            onAdd: () => openMemorialDayEditor(
-              context,
-              prefilled: MemorialDay(title: '', targetDate: date),
-            ),
-          ),
-          Expanded(
-            child:
-                _memorials.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.celebration_outlined,
-                            size: 32,
-                            color: theme.disabledColor.withValues(alpha: 0.4),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'day_dayCardEmpty'.tr,
-                            style: TextStyle(
-                              color: theme.disabledColor.withValues(
-                                alpha: 0.4,
-                              ),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: _memorials.length,
-                      itemBuilder: (context, index) {
-                        return _buildMemorialItem(
-                          context,
-                          _memorials[index],
-                        );
-                      },
+      child:
+          _memorials.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.celebration_outlined,
+                      size: 32,
+                      color: theme.disabledColor.withValues(alpha: 0.4),
                     ),
-          ),
-        ],
-      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'day_dayCardEmpty'.tr,
+                      style: TextStyle(
+                        color: theme.disabledColor.withValues(
+                          alpha: 0.4,
+                        ),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: _memorials.length,
+                itemBuilder: (context, index) {
+                  return _buildMemorialItem(
+                    context,
+                    _memorials[index],
+                  );
+                },
+              ),
     );
   }
 

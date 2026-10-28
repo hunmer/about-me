@@ -13,6 +13,9 @@ import 'package:aboutme/screens/jelly_home/live2d_online_model_page.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
 import 'package:aboutme/widgets/form_fields/image_picker_field.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
+import '../video/video_pet_import.dart';
+import '../video/video_pet_manifest.dart';
+import 'video_pet_editor_screen.dart';
 
 /// Live2D 存档编辑表单：封面、名称、模型、Agent
 class Live2DArchiveFormScreen extends StatefulWidget {
@@ -52,19 +55,98 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
 
   /// 点击台词按部位的输入控制器（部位 id -> 多行文本，每行一条）
   final Map<String, TextEditingController> tapControllers = {
-    for (final part in live2DTapParts)
-      part.id: TextEditingController(),
+    for (final part in live2DTapParts) part.id: TextEditingController(),
   };
   List<AIAgent> agents = [];
   Live2DArchive? archive;
   String? _coverPath;
+  bool _loadingVideo = false;
+
+  String _videoText(String zh, String en) =>
+      (Get.locale?.languageCode ?? 'zh') == 'zh' ? zh : en;
+
+  Future<void> _setDisplayMode(String mode) async {
+    final current = archive;
+    if (current == null || _loadingVideo) return;
+    if (mode == 'video' && current.videoManifest == null) {
+      await _loadVideoPackage(useDefault: true);
+      return;
+    }
+    setState(() => current.displayMode = mode);
+  }
+
+  Future<void> _loadVideoPackage({bool useDefault = false}) async {
+    if (_loadingVideo) return;
+    setState(() => _loadingVideo = true);
+    try {
+      final service = VideoPetImportService();
+      final package = useDefault
+          ? await service.loadDefault()
+          : await service.importPackage();
+      if (!mounted || package == null) return;
+      setState(() {
+        archive!.displayMode = 'video';
+        archive!.videoManifest = package.manifest;
+        archive!.videoBaseUri = package.baseUri;
+        archive!.videoResolvedSources = package.resolvedSources;
+      });
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${_videoText('资源包加载失败', 'Package load failed')}: $error',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingVideo = false);
+    }
+  }
+
+  Future<void> _editVideo() async {
+    final current = archive;
+    final manifest = current?.videoManifest;
+    if (current == null || manifest == null) return;
+    try {
+      final package = await const VideoPetImportService().prepareForPlayback(
+        manifest,
+        baseUri: current.videoBaseUri,
+        resolvedSources: current.videoResolvedSources,
+      );
+      if (!mounted) return;
+      final result = await Navigator.of(context).push<VideoPetManifest>(
+        MaterialPageRoute(
+          builder: (_) => VideoPetEditorScreen(
+            manifest: package.manifest,
+            baseUri: package.baseUri,
+            resolvedSources: package.resolvedSources,
+          ),
+        ),
+      );
+      if (mounted && result != null) {
+        setState(() {
+          current.videoManifest = result;
+          current.videoBaseUri = package.baseUri;
+          current.videoResolvedSources = package.resolvedSources;
+        });
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('精灵图资源包加载失败：$error')));
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    archive =
+    final source =
         widget.draftArchive ??
         plugin.archives.where((a) => a.id == widget.archiveId).firstOrNull;
+    archive = source == null ? null : Live2DArchive.fromJson(source.toJson());
     nameController.text = archive?.name ?? '';
     noteController.text = archive?.note ?? '';
     _coverPath = archive?.coverPath;
@@ -176,7 +258,9 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
 
   Future<void> _save() async {
     final current = archive;
-    if (current == null) return;
+    if (current == null || _loadingVideo) return;
+    if (current.isVideo && current.videoManifest == null) return;
+    current.videoManifest?.validate();
     current.name = nameController.text.trim().isEmpty
         ? 'Live2D'
         : nameController.text.trim();
@@ -314,38 +398,97 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         const SizedBox(height: 20),
         DSInput(controller: nameController, label: 'live2d_nameLabel'.tr),
         const SizedBox(height: 12),
-        DSInput(controller: noteController, label: '模型注释（可选）', maxLines: 3, minLines: 2),
+        DSInput(
+          controller: noteController,
+          label: '模型注释（可选）',
+          maxLines: 3,
+          minLines: 2,
+        ),
         const SizedBox(height: 20),
-        DSListItem(
-          title: 'Jev 智能表情与动作',
-          subtitle: '根据 AI 回复自动选择合适的表情和动作',
-          leading: DsIcon(DsIconKind.moon, color: theme.primary),
-          trailing: DSSwitch(
-            value: current.jevEnabled,
-            onChanged: (value) => setState(() => current.jevEnabled = value),
+        DSSegmentedControl(
+          options: ['Live2D', _videoText('精灵图', 'Spritesheet')],
+          selected: current.displayMode == 'video' ? 1 : 0,
+          onChanged: _loadingVideo
+              ? null
+              : (index) => _setDisplayMode(index == 1 ? 'video' : 'live2d'),
+        ),
+        const SizedBox(height: 12),
+        if (current.isVideo) ...[
+          if (_loadingVideo) const LinearProgressIndicator(),
+          ListTile(
+            title: Text(
+              current.videoManifest?.name ??
+                  _videoText('尚未加载资源包', 'No package loaded'),
+            ),
+            subtitle: Text(
+              _videoText(
+                'JSON 资源包 · ${current.videoManifest?.animations.length ?? 0} 个动画',
+                'JSON package · ${current.videoManifest?.animations.length ?? 0} animations',
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        DSListItem(
-          title: 'live2d_modelSection'.tr,
-          subtitle: current.modelLabel,
-          showChevron: true,
-          onTap: _chooseModel,
-        ),
-        const SizedBox(height: 12),
-        DSListItem(
-          title: 'live2d_importedModelsEntry'.tr,
-          leading: DsIcon(DsIconKind.archive, color: theme.primary),
-          showChevron: true,
-          onTap: _chooseImportedModel,
-        ),
-        const SizedBox(height: 12),
-        DSListItem(
-          title: 'live2d_chooseOnlineModel'.tr,
-          leading: DsIcon(DsIconKind.download, color: theme.primary),
-          showChevron: true,
-          onTap: _chooseOnlineModel,
-        ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton(
+                onPressed: _loadingVideo
+                    ? null
+                    : () => _loadVideoPackage(useDefault: true),
+                child: Text(_videoText('默认资源包', 'Default package')),
+              ),
+              OutlinedButton(
+                onPressed: _loadingVideo ? null : () => _loadVideoPackage(),
+                child: Text(_videoText('导入 JSON / ZIP', 'Import JSON / ZIP')),
+              ),
+              FilledButton.icon(
+                onPressed: _loadingVideo || current.videoManifest == null
+                    ? null
+                    : _editVideo,
+                icon: const Icon(Icons.touch_app),
+                label: Text(_videoText('编辑交互区域', 'Edit interactions')),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _videoText(
+              '默认素材来自 dsh-pet，禁止商用；来源和许可保存在资源包中。',
+              'Default assets are from dsh-pet, for non-commercial use. Attribution and license are included in the package.',
+            ),
+          ),
+        ] else ...[
+          DSListItem(
+            title: 'Jev 智能表情与动作',
+            subtitle: '根据 AI 回复自动选择合适的表情和动作',
+            leading: DsIcon(DsIconKind.moon, color: theme.primary),
+            trailing: DSSwitch(
+              value: current.jevEnabled,
+              onChanged: (value) => setState(() => current.jevEnabled = value),
+            ),
+          ),
+          const SizedBox(height: 12),
+          DSListItem(
+            title: 'live2d_modelSection'.tr,
+            subtitle: current.modelLabel,
+            showChevron: true,
+            onTap: _chooseModel,
+          ),
+          const SizedBox(height: 12),
+          DSListItem(
+            title: 'live2d_importedModelsEntry'.tr,
+            leading: DsIcon(DsIconKind.archive, color: theme.primary),
+            showChevron: true,
+            onTap: _chooseImportedModel,
+          ),
+          const SizedBox(height: 12),
+          DSListItem(
+            title: 'live2d_chooseOnlineModel'.tr,
+            leading: DsIcon(DsIconKind.download, color: theme.primary),
+            showChevron: true,
+            onTap: _chooseOnlineModel,
+          ),
+        ],
         const SizedBox(height: 12),
         DSListItem(
           title: 'live2d_agentSection'.tr,

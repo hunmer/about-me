@@ -9,6 +9,9 @@ import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/live2d_voice_analyzer.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
+import 'package:aboutme/plugins/live2d/video/video_pet_import.dart';
+import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
+import 'package:aboutme/plugins/live2d/video/video_pet_player.dart';
 import 'package:aboutme/plugins/live2d/screens/live2d_archive_form_screen.dart';
 import 'package:aboutme/plugins/live2d/screens/live2d_main_screen.dart';
 import 'package:flutter/foundation.dart';
@@ -65,6 +68,7 @@ class JellyLive2D extends StatefulWidget {
     this.typingInterval = const Duration(milliseconds: 70),
     this.motionRequest,
     this.expressionRequest,
+    this.videoAnimationRequest,
     this.fill = false,
     this.fitContainer = false,
     this.topInset = 0,
@@ -102,6 +106,7 @@ class JellyLive2D extends StatefulWidget {
 
   /// 外部请求切换表达式（表情、皮肤、饰品）。
   final ValueListenable<Live2DExpressionDefinition?>? expressionRequest;
+  final ValueListenable<String?>? videoAnimationRequest;
 
   /// 底部资源面板开关（由底部导航子栏图标驱动）：
   /// 值非空时在底部导航上方展示水平可滚动的资源列表
@@ -136,6 +141,28 @@ class _JellyLive2DState extends State<JellyLive2D>
       widget.initialModel ?? availableJellyLive2DModels.first;
   JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
   bool _isSwitchingModel = true;
+  final ValueNotifier<String?> _videoAnimationRequest = ValueNotifier(null);
+  VideoPetManifest? _videoManifest;
+  String? _videoLoadError;
+  int _modelLoadGeneration = 0;
+
+  bool get _isVideo => _selectedModel.isVideo;
+
+  void _requestVideoAnimation(String id) {
+    _videoAnimationRequest.value = null;
+    _videoAnimationRequest.value = id;
+  }
+
+  void _handleExternalVideoRequest() {
+    final id = widget.videoAnimationRequest?.value;
+    if (id != null) _requestVideoAnimation(id);
+  }
+
+  void _handleVideoTap(String? id, String? name) {
+    widget.onTap?.call(id, name);
+    _showBubble(_pickBubbleMessage(id, name));
+  }
+
   bool _routeVisible = true;
   Future<void>? _routeUnload;
   Live2DMotionDefinition? _pendingMotion;
@@ -174,9 +201,13 @@ class _JellyLive2DState extends State<JellyLive2D>
   double _bubbleOffsetX = 0;
   double _bubbleOffsetY = 0;
 
-  bool get _hasAppearanceResources =>
-      _selectedModel.motions.isNotEmpty ||
-      _selectedModel.expressions.isNotEmpty;
+  bool get _hasAppearanceResources => _isVideo
+      ? (_videoManifest ?? _selectedModel.videoManifest)
+                ?.animations
+                .isNotEmpty ==
+            true
+      : _selectedModel.motions.isNotEmpty ||
+            _selectedModel.expressions.isNotEmpty;
 
   /// 当前小屋背景图；null 表示不显示，经 Live2DPlugin 设置持久化
   String? _backgroundAsset = Live2DPlugin.instance.backgroundAsset;
@@ -213,6 +244,12 @@ class _JellyLive2DState extends State<JellyLive2D>
       oldWidget.motionRequest?.removeListener(_handleMotionRequest);
       widget.motionRequest?.addListener(_handleMotionRequest);
     }
+    if (widget.videoAnimationRequest != oldWidget.videoAnimationRequest) {
+      oldWidget.videoAnimationRequest?.removeListener(
+        _handleExternalVideoRequest,
+      );
+      widget.videoAnimationRequest?.addListener(_handleExternalVideoRequest);
+    }
     if (widget.expressionRequest != oldWidget.expressionRequest) {
       oldWidget.expressionRequest?.removeListener(_handleExpressionRequest);
       widget.expressionRequest?.addListener(_handleExpressionRequest);
@@ -231,6 +268,7 @@ class _JellyLive2DState extends State<JellyLive2D>
     _controller.addListener(_onViewStateChanged);
     _voiceFrame.addListener(_handleVoiceFrame);
     widget.motionRequest?.addListener(_handleMotionRequest);
+    widget.videoAnimationRequest?.addListener(_handleExternalVideoRequest);
     widget.expressionRequest?.addListener(_handleExpressionRequest);
     _loadSavedCropRegion(_selectedModel);
     unawaited(_initialize());
@@ -256,20 +294,24 @@ class _JellyLive2DState extends State<JellyLive2D>
   @override
   void didPushNext() {
     debugPrint('[Live2D][Route] 页面被覆盖，准备卸载模型');
-    _routeVisible = false;
+    setState(() => _routeVisible = false);
     _routeUnload = _unloadModel();
   }
 
   @override
   void didPopNext() {
     debugPrint('[Live2D][Route] 返回页面，准备恢复模型');
-    _routeVisible = true;
+    setState(() => _routeVisible = true);
     unawaited(_restoreModel());
   }
 
   Future<void> _restoreModel() async {
     await _routeUnload;
     if (!mounted || !_routeVisible) return;
+    if (_isVideo) {
+      if (_videoManifest == null) await _loadModel(_selectedModel);
+      return;
+    }
     if (!_controller.value.isLoaded && !_controller.value.isLoadingModel) {
       await _loadModel(_selectedModel);
     }
@@ -304,6 +346,8 @@ class _JellyLive2DState extends State<JellyLive2D>
   void dispose() {
     RouteHistoryManager.instance.unsubscribe(this);
     widget.motionRequest?.removeListener(_handleMotionRequest);
+    widget.videoAnimationRequest?.removeListener(_handleExternalVideoRequest);
+    _videoAnimationRequest.dispose();
     widget.expressionRequest?.removeListener(_handleExpressionRequest);
     _controller.removeListener(_onViewStateChanged);
     _voiceFrame.removeListener(_handleVoiceFrame);
@@ -499,7 +543,9 @@ class _JellyLive2DState extends State<JellyLive2D>
             bottomReserve: bottomReserve,
             fill: widget.fill,
             fitContainer: widget.fitContainer,
-            modelViewportAspectRatio: _modelViewportAspectRatio,
+            modelViewportAspectRatio: _isVideo && _videoManifest != null
+                ? _videoManifest!.canvasWidth / _videoManifest!.canvasHeight
+                : _modelViewportAspectRatio,
             fillBottomReserve: _fillBottomReserve,
             minSize: _minSize,
             maxSize: _maxSize,
@@ -570,193 +616,226 @@ class _JellyLive2DState extends State<JellyLive2D>
                                 ),
                         ),
                       ),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: modelBottomInset,
-                      height: displaySize,
-                      child: AnimatedOpacity(
-                        // Android hybrid composition needs a painted view to
-                        // attach its TextureView surface and finish loading.
-                        opacity:
-                            !kIsWeb &&
-                                defaultTargetPlatform == TargetPlatform.android
-                            ? 1
-                            : _isSwitchingModel ||
-                                  _controller.value.lastError != null
-                            ? 0
-                            : 1,
-                        duration: const Duration(milliseconds: 160),
-                        child: OverflowBox(
-                          alignment: Alignment.bottomCenter,
-                          minWidth: 0,
-                          minHeight: 0,
-                          maxWidth: double.infinity,
-                          maxHeight: double.infinity,
-                          child: Transform.scale(
-                            scale: modelScale,
-                            alignment: Alignment.bottomCenter,
-                            child: AnimatedBuilder(
-                              animation: _tapSpringScale,
-                              builder: (context, child) => Transform.scale(
-                                scale: _tapSpringScale.value,
-                                alignment: Alignment.bottomCenter,
-                                child: child,
+                    if (_isVideo)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: modelBottomInset,
+                        height: displaySize,
+                        child: _videoManifest == null
+                            ? Center(
+                                child: _videoLoadError == null
+                                    ? const CircularProgressIndicator()
+                                    : TextButton(
+                                        onPressed: () =>
+                                            _loadModel(_selectedModel),
+                                        child: Text(_videoLoadError!),
+                                      ),
+                              )
+                            : VideoPetPlayer(
+                                key: ValueKey(
+                                  '${_selectedModel.modelDir}:${jsonEncode(_videoManifest!.toJson())}',
+                                ),
+                                manifest: _videoManifest!,
+                                baseUri: _selectedModel.modelDir,
+                                resolvedSources:
+                                    _selectedModel.videoResolvedSources,
+                                active: _routeVisible,
+                                animationRequest: _videoAnimationRequest,
+                                onTap: _handleVideoTap,
+                                onContextMenu: _showControls,
                               ),
-                              child: SizedBox(
-                                width: viewportSize.width,
-                                height: viewportSize.height,
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    ClipRect(
-                                      child: Transform.translate(
-                                        offset: _cropRegion.sourceTranslation(
-                                          viewportSize,
-                                        ),
-                                        child: Transform.scale(
-                                          scale: _cropRegion.zoom,
-                                          alignment: Alignment.topLeft,
-                                          child: RepaintBoundary(
-                                            key: _modelCaptureKey,
-                                            child: Live2DView(
-                                              controller: _controller,
+                      )
+                    else
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: modelBottomInset,
+                        height: displaySize,
+                        child: AnimatedOpacity(
+                          // Android hybrid composition needs a painted view to
+                          // attach its TextureView surface and finish loading.
+                          opacity:
+                              !kIsWeb &&
+                                  defaultTargetPlatform ==
+                                      TargetPlatform.android
+                              ? 1
+                              : _isSwitchingModel ||
+                                    _controller.value.lastError != null
+                              ? 0
+                              : 1,
+                          duration: const Duration(milliseconds: 160),
+                          child: OverflowBox(
+                            alignment: Alignment.bottomCenter,
+                            minWidth: 0,
+                            minHeight: 0,
+                            maxWidth: double.infinity,
+                            maxHeight: double.infinity,
+                            child: Transform.scale(
+                              scale: modelScale,
+                              alignment: Alignment.bottomCenter,
+                              child: AnimatedBuilder(
+                                animation: _tapSpringScale,
+                                builder: (context, child) => Transform.scale(
+                                  scale: _tapSpringScale.value,
+                                  alignment: Alignment.bottomCenter,
+                                  child: child,
+                                ),
+                                child: SizedBox(
+                                  width: viewportSize.width,
+                                  height: viewportSize.height,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      ClipRect(
+                                        child: Transform.translate(
+                                          offset: _cropRegion.sourceTranslation(
+                                            viewportSize,
+                                          ),
+                                          child: Transform.scale(
+                                            scale: _cropRegion.zoom,
+                                            alignment: Alignment.topLeft,
+                                            child: RepaintBoundary(
+                                              key: _modelCaptureKey,
+                                              child: Live2DView(
+                                                controller: _controller,
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    ValueListenableBuilder<bool>(
-                                      valueListenable: _borderVisible,
-                                      builder: (context, visible, _) => visible
-                                          ? IgnorePointer(
-                                              child: DecoratedBox(
-                                                decoration: BoxDecoration(
-                                                  border: Border.all(
-                                                    color: theme.danger,
-                                                    width: 1.5,
+                                      ValueListenableBuilder<bool>(
+                                        valueListenable: _borderVisible,
+                                        builder: (context, visible, _) =>
+                                            visible
+                                            ? IgnorePointer(
+                                                child: DecoratedBox(
+                                                  decoration: BoxDecoration(
+                                                    border: Border.all(
+                                                      color: theme.danger,
+                                                      width: 1.5,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                            )
-                                          : const SizedBox.shrink(),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    ValueListenableBuilder<Live2DViewState>(
-                      valueListenable: _controller,
-                      builder: (context, state, _) {
-                        final error = state.lastError;
-                        final showPlaceholder =
-                            _isSwitchingModel || error != null;
-                        if (!showPlaceholder) return const SizedBox.shrink();
-
-                        final progress = state.modelLoadProgress.clamp(
-                          0.0,
-                          1.0,
-                        );
-                        final percent = (progress * 100).round();
-                        return Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: modelBottomInset,
-                          height: math.max(
-                            0.0,
-                            layoutHeight - modelBottomInset,
-                          ),
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: error == null
-                                ? null
-                                : () => _loadModel(_selectedModel),
-                            child: MouseRegion(
-                              cursor: error == null
-                                  ? MouseCursor.defer
-                                  : SystemMouseCursors.click,
-                              child: Center(
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    maxWidth: 250,
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (error == null) ...[
-                                        const DSLoadingDots(size: 10),
-                                        SizedBox(height: theme.spacing.md),
-                                        Text(
-                                          '${_loadStageLabel(state.modelLoadStage)} '
-                                          '$percent%',
-                                          textAlign: TextAlign.center,
-                                          style: DsTypography.body.copyWith(
-                                            color: theme.text,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        SizedBox(height: theme.spacing.sm),
-                                        DSLinearProgress(
-                                          value: progress,
-                                          height: 8,
-                                        ),
-                                        SizedBox(height: theme.spacing.sm),
-                                        Text(
-                                          _selectedModel.label,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center,
-                                          style: DsTypography.caption.copyWith(
-                                            color: theme.textSub,
-                                          ),
-                                        ),
-                                      ] else ...[
-                                        DsIcon(
-                                          DsIconKind.refresh,
-                                          size: 30,
-                                          color: theme.danger,
-                                        ),
-                                        SizedBox(height: theme.spacing.md),
-                                        Text(
-                                          'screens_jellyLive2dLoadFailed'.tr,
-                                          textAlign: TextAlign.center,
-                                          style: DsTypography.body.copyWith(
-                                            color: theme.danger,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        SizedBox(height: theme.spacing.sm),
-                                        Text(
-                                          _loadErrorMessage(error),
-                                          maxLines: 4,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center,
-                                          style: DsTypography.caption.copyWith(
-                                            color: theme.textSub,
-                                          ),
-                                        ),
-                                        SizedBox(height: theme.spacing.md),
-                                        Text(
-                                          'screens_jellyLive2dTapToReload'.tr,
-                                          style: DsTypography.caption.copyWith(
-                                            color: theme.primary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
+                                              )
+                                            : const SizedBox.shrink(),
+                                      ),
                                     ],
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      ),
+                    if (!_isVideo)
+                      ValueListenableBuilder<Live2DViewState>(
+                        valueListenable: _controller,
+                        builder: (context, state, _) {
+                          final error = state.lastError;
+                          final showPlaceholder =
+                              _isSwitchingModel || error != null;
+                          if (!showPlaceholder) return const SizedBox.shrink();
+
+                          final progress = state.modelLoadProgress.clamp(
+                            0.0,
+                            1.0,
+                          );
+                          final percent = (progress * 100).round();
+                          return Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: modelBottomInset,
+                            height: math.max(
+                              0.0,
+                              layoutHeight - modelBottomInset,
+                            ),
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: error == null
+                                  ? null
+                                  : () => _loadModel(_selectedModel),
+                              child: MouseRegion(
+                                cursor: error == null
+                                    ? MouseCursor.defer
+                                    : SystemMouseCursors.click,
+                                child: Center(
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 250,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (error == null) ...[
+                                          const DSLoadingDots(size: 10),
+                                          SizedBox(height: theme.spacing.md),
+                                          Text(
+                                            '${_loadStageLabel(state.modelLoadStage)} '
+                                            '$percent%',
+                                            textAlign: TextAlign.center,
+                                            style: DsTypography.body.copyWith(
+                                              color: theme.text,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          SizedBox(height: theme.spacing.sm),
+                                          DSLinearProgress(
+                                            value: progress,
+                                            height: 8,
+                                          ),
+                                          SizedBox(height: theme.spacing.sm),
+                                          Text(
+                                            _selectedModel.label,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.center,
+                                            style: DsTypography.caption
+                                                .copyWith(color: theme.textSub),
+                                          ),
+                                        ] else ...[
+                                          DsIcon(
+                                            DsIconKind.refresh,
+                                            size: 30,
+                                            color: theme.danger,
+                                          ),
+                                          SizedBox(height: theme.spacing.md),
+                                          Text(
+                                            'screens_jellyLive2dLoadFailed'.tr,
+                                            textAlign: TextAlign.center,
+                                            style: DsTypography.body.copyWith(
+                                              color: theme.danger,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          SizedBox(height: theme.spacing.sm),
+                                          Text(
+                                            _loadErrorMessage(error),
+                                            maxLines: 4,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.center,
+                                            style: DsTypography.caption
+                                                .copyWith(color: theme.textSub),
+                                          ),
+                                          SizedBox(height: theme.spacing.md),
+                                          Text(
+                                            'screens_jellyLive2dTapToReload'.tr,
+                                            style: DsTypography.caption
+                                                .copyWith(
+                                                  color: theme.primary,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     _buildBubbleInContainer(
                       width: layoutWidth,
                       height: math.max(0.0, layoutHeight - widget.topInset),

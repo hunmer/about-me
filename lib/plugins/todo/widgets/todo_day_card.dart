@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cutout_stat_grid_card.dart';
 import 'package:aboutme/plugins/todo/models/task.dart';
 
 /// 待办单日卡片 - 展示某一天的待办事项（手绘纸墨风）
 ///
 /// 从周视图的单日卡片抽取的独立组件，
 /// 同时供插件页（周视图）和主页待办日卡使用，保持 UI 一致。
-/// 卡片走 [DsSketchPanel]（纸底 + 状态色排线 + 墨线框），
-/// 徽章等小控件走 [dsSketchDecoration]（纯色实底 + 墨线描边）。
+/// 容器走切角纸卡（[CutoutStatGridCardWidget]），头部按任务状态
+/// 取语义色，徽章等小控件走 [dsSketchDecoration]（纯色实底 + 墨线描边）。
 class TodoDayCard extends StatelessWidget {
   /// 卡片对应的日期
   final DateTime date;
@@ -75,108 +75,90 @@ class TodoDayCard extends StatelessWidget {
             cardColor = theme.success;
           }
 
-          // 大容器走手绘面板：纸底 + 状态色排线 + 墨线框；
-          // 今日卡片用主题色描边突出
-          return DsSketchPanel(
-            theme: theme,
-            radius: theme.radii.lg,
-            hachureColor: cardColor.withValues(alpha: theme.isDark ? 0.20 : 0.09),
-            stroke: isToday ? theme.primary : null,
-            seed: date.day,
-            progress: WiredDrawTransition.progressOf(context),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 卡片标题
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 4, 4),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+          // 切角纸卡容器：整卡状态色实底 + 左上切角徽章（cutout 设计）
+          return CutoutStatGridCardWidget(
+            inline: true,
+            accentColor: cardColor,
+            icon: Icons.event_available,
+            header: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    dayName,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: DsTypography.label.copyWith(
-                                      color: cardColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                            Flexible(
+                              child: Text(
+                                dayName,
+                                overflow: TextOverflow.ellipsis,
+                                style: DsTypography.label.copyWith(
+                                  color: theme.text,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                if (isToday) ...[
-                                  const SizedBox(width: 4),
-                                  _buildTodayBadge(context),
-                                ],
-                              ],
-                            ),
-                            Text(
-                              _formatShortDate(date),
-                              style: DsTypography.caption.copyWith(
-                                color: theme.textSub,
                               ),
                             ),
+                            if (isToday) ...[
+                              const SizedBox(width: 4),
+                              _buildTodayBadge(context),
+                            ],
                           ],
                         ),
-                      ),
-                      if (tasks.isNotEmpty)
-                        _buildCountBadge(
-                          context,
-                          count: tasks.length,
-                          color: cardColor,
-                        ),
-                      if (onAddTask != null)
-                        DSIconButton(
-                          icon: DsIconKind.plus,
-                          size: 30,
-                          color: theme.surfaceAlt,
-                          iconColor: cardColor,
-                          onPressed: () => onAddTask!(date),
-                        ),
-                    ],
-                  ),
-                ),
-                // 任务列表
-                Expanded(
-                  child:
-                      tasks.isEmpty
-                          ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                DsIcon(
-                                  DsIconKind.check,
-                                  size: 24,
-                                  color: theme.success.withValues(alpha: 0.35),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'todo_dayNoTasks'.tr,
-                                  style: DsTypography.caption.copyWith(
-                                    color: theme.textSub.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                          : ListView.builder(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            itemCount: tasks.length,
-                            itemBuilder: (context, index) {
-                              final task = tasks[index];
-                              return _buildTaskItem(context, task: task);
-                            },
+                        Text(
+                          _formatShortDate(date),
+                          style: DsTypography.caption.copyWith(
+                            color: theme.text.withValues(alpha: 0.7),
                           ),
-                ),
-              ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (tasks.isNotEmpty)
+                    _buildCountBadge(
+                      context,
+                      count: tasks.length,
+                      color: cardColor,
+                    ),
+                  if (onAddTask != null)
+                    DSIconButton(
+                      icon: DsIconKind.plus,
+                      size: 30,
+                      color: theme.surfaceAlt,
+                      iconColor: cardColor,
+                      onPressed: () => onAddTask!(date),
+                    ),
+                ],
             ),
+            // 任务列表
+            child:
+                tasks.isEmpty
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          DsIcon(
+                            DsIconKind.check,
+                            size: 24,
+                            color: theme.success.withValues(alpha: 0.35),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'todo_dayNoTasks'.tr,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                      padding: EdgeInsets.zero,
+                      itemCount: tasks.length,
+                      itemBuilder: (context, index) {
+                        final task = tasks[index];
+                        return _buildTaskItem(context, task: task);
+                      },
+                    ),
           );
         },
       ),
@@ -206,7 +188,7 @@ class TodoDayCard extends StatelessWidget {
     );
   }
 
-  /// 任务数徽章
+  /// 任务数徽章（切角色块上：卡底色胶囊 + 状态色文字）
   Widget _buildCountBadge(
     BuildContext context, {
     required int count,
@@ -219,9 +201,7 @@ class TodoDayCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: dsSketchDecoration(
         theme: theme,
-        fillColor: color.withValues(alpha: 0.14),
-        stroke: color.withValues(alpha: 0.6),
-        strokeWidth: 1.2,
+        fillColor: theme.surface,
         radius: theme.radii.pill,
       ),
       child: Text(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cutout_stat_grid_card.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
 
 /// 活动单日卡片 - 展示某一天的活动记录
@@ -38,59 +38,44 @@ class ActivityDayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: theme.surface,
-          radius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DayCardHeader(
-              color: color,
-              date: date,
-              count: records.length,
-              onAdd: onAddActivity == null ? null : () => onAddActivity!(date),
-            ),
-            Expanded(
-              child:
-                  records.isEmpty
-                      ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            DsIcon(
-                              DsIconKind.clock,
-                              size: 32,
-                              color: theme.disabled.withValues(alpha: 0.4),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'activity_dayCardEmpty'.tr,
-                              style: DsTypography.caption.copyWith(
-                                color: theme.disabled.withValues(alpha: 0.4),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                      : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        itemCount: records.length,
-                        itemBuilder: (context, index) {
-                          return _buildRecordItem(context, records[index]);
-                        },
-                      ),
-            ),
-          ],
-        ),
+    return CutoutStatGridCardWidget(
+      inline: true,
+      accentColor: color,
+      icon: Icons.timeline,
+      header: CutoutDayCardHeader(
+        color: color,
+        date: date,
+        count: records.length,
+        onAdd: onAddActivity == null ? null : () => onAddActivity!(date),
       ),
+      child:
+          records.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    DsIcon(
+                      DsIconKind.clock,
+                      size: 32,
+                      color: theme.disabled.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'activity_dayCardEmpty'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.disabled.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: records.length,
+                itemBuilder: (context, index) {
+                  return _buildRecordItem(context, records[index]);
+                },
+              ),
     );
   }
 

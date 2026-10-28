@@ -43,6 +43,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   TTSServiceConfig? _selectedTTSService;
 
   /// 向预览中的 JellyLive2D 发送动作播放请求（置空再赋值以便重复触发同一动作）
+  final ValueNotifier<String?> _videoAnimationRequest = ValueNotifier(null);
   final ValueNotifier<Live2DMotionDefinition?> _motionRequest =
       ValueNotifier<Live2DMotionDefinition?>(null);
 
@@ -144,6 +145,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   @override
   void dispose() {
     _motionRequest.dispose();
+    _videoAnimationRequest.dispose();
     super.dispose();
   }
 
@@ -188,10 +190,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   }
 
   Live2DModelDefinition? modelFor(Live2DArchive? value) =>
-      modelDefinitionForArchive(
-        value,
-        importedModels: plugin.importedModels,
-      );
+      modelDefinitionForArchive(value, importedModels: plugin.importedModels);
 
   @override
   Widget build(BuildContext context) {
@@ -284,7 +283,11 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                   plugin.updateSettings({'typingIntervalMs': value.round()}),
             ),
             const SizedBox(height: 16),
-            Text('live2d_modelLabel'.trParams({'model': current.modelLabel})),
+            Text(
+              'live2d_modelLabel'.trParams({
+                'model': current.displayModelLabel,
+              }),
+            ),
             const SizedBox(height: 8),
             FilledButton.icon(
               onPressed: () => setState(() => _showPreview = !_showPreview),
@@ -303,6 +306,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                   key: ValueKey('${current.modelDir}${current.modelFile}'),
                   initialModel: modelFor(current),
                   motionRequest: _motionRequest,
+                  videoAnimationRequest: _videoAnimationRequest,
                   typingInterval: Duration(
                     milliseconds: _typingIntervalMs.round(),
                   ),
@@ -313,7 +317,19 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                 'live2d_motionList'.tr,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              if ((modelFor(current)?.motions ?? const []).isEmpty)
+              if (current.isVideo)
+                for (final animation
+                    in current.videoManifest?.animations ?? const [])
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.play_arrow),
+                    title: Text(animation.name),
+                    onTap: () {
+                      _videoAnimationRequest.value = null;
+                      _videoAnimationRequest.value = animation.id;
+                    },
+                  )
+              else if ((modelFor(current)?.motions ?? const []).isEmpty)
                 Text('live2d_noMotions'.tr)
               else
                 for (final motion in modelFor(current)!.motions)

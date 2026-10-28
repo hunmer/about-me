@@ -60,10 +60,24 @@ Live2DModelDefinition? modelDefinitionForArchive(
   Live2DArchive? value, {
   List<Live2DModelDefinition> importedModels = const [],
 }) {
-  if (value == null || value.modelLabel.isEmpty) return null;
+  if (value == null) return null;
+  if (value.isVideo) {
+    return Live2DModelDefinition(
+      label: value.videoManifest?.name ?? value.modelLabel,
+      modelDir: value.videoBaseUri,
+      modelFile: 'manifest.json',
+      motions: const [],
+      displayMode: 'video',
+      videoManifest: value.videoManifest,
+      videoResolvedSources: value.videoResolvedSources,
+    );
+  }
+  if (value.modelLabel.isEmpty) return null;
   final imported = importedModels
       .where(
-        (model) => model.modelDir == value.modelDir && model.modelFile == value.modelFile,
+        (model) =>
+            model.modelDir == value.modelDir &&
+            model.modelFile == value.modelFile,
       )
       .firstOrNull;
   return availableJellyLive2DModels

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
-import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cutout_stat_grid_card.dart';
 import 'package:aboutme/plugins/notes/models/note.dart';
 
 /// 笔记单日卡片 - 展示某一天创建/修改的笔记
@@ -38,59 +38,45 @@ class NoteDayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
 
-    // 手绘墨线卡片容器(design.md §9),裁剪改外包 ClipRRect(参考 date_view_grid._buildCard)
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: theme.surface,
-          radius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DayCardHeader(
-              color: color,
-              date: date,
-              count: notes.length,
-              onAdd: onAddNote,
-            ),
-            Expanded(
-              child: notes.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          DsIcon(
-                            DsIconKind.book,
-                            size: 32,
-                            color: theme.textSub.withValues(alpha: 0.4),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'notes_dayCardEmpty'.tr,
-                            style: DsTypography.caption.copyWith(
-                              color: theme.textSub.withValues(alpha: 0.4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: notes.length,
-                      itemBuilder: (context, index) {
-                        return _buildNoteItem(context, notes[index]);
-                      },
-                    ),
-            ),
-          ],
-        ),
+    // 切角纸卡容器（整卡数据色 + 左上切角徽章）+ 自定义内容
+    return CutoutStatGridCardWidget(
+      inline: true,
+      accentColor: color,
+      icon: Icons.note,
+      header: CutoutDayCardHeader(
+        color: color,
+        date: date,
+        count: notes.length,
+        onAdd: onAddNote,
       ),
+      child:
+          notes.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    DsIcon(
+                      DsIconKind.book,
+                      size: 32,
+                      color: theme.textSub.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'notes_dayCardEmpty'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.textSub.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: notes.length,
+                itemBuilder: (context, index) {
+                  return _buildNoteItem(context, notes[index]);
+                },
+              ),
     );
   }
 

@@ -48,12 +48,12 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
   List<Live2DArchive> get _filteredArchives {
     final model = _multiFilters['model'] as String?;
     return plugin.archives.where((a) {
-      if (model != null && a.modelLabel != model) return false;
+      if (model != null && a.displayModelLabel != model) return false;
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
         final hit =
             a.name.toLowerCase().contains(q) ||
-            a.modelLabel.toLowerCase().contains(q);
+            a.displayModelLabel.toLowerCase().contains(q);
         if (!hit) return false;
       }
       return true;
@@ -61,8 +61,9 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
   }
 
   List<FilterItem> _buildFilterItems() {
-    final models = plugin.archives.map((a) => a.modelLabel).toSet().toList()
-      ..sort();
+    final models =
+        plugin.archives.map((a) => a.displayModelLabel).toSet().toList()
+          ..sort();
     if (models.isEmpty) return [];
     final options = {for (final m in models) m: m};
     return [
@@ -269,7 +270,7 @@ class _Live2DArchiveCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  archive.modelLabel,
+                  archive.displayModelLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: DsTypography.caption.copyWith(color: theme.primary),

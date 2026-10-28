@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import '../video/video_pet_manifest.dart';
 
 /// 点击台词的常见部位：id 用于存档持久化，label 为表单展示文案，
 /// keywords 匹配模型 HitArea 的 Id/Name（转小写后包含匹配）；
@@ -20,14 +21,34 @@ const List<Live2DTapPart> live2DTapParts = [
   Live2DTapPart(id: 'face', label: '脸部', keywords: ['face', '脸']),
   Live2DTapPart(id: 'body', label: '身体', keywords: ['body', '身', 'belly', '胸']),
   Live2DTapPart(id: 'hand', label: '手部', keywords: ['hand', 'arm', '手', '臂']),
-  Live2DTapPart(id: 'leg', label: '腿部', keywords: ['leg', 'foot', 'feet', '腿', '脚']),
+  Live2DTapPart(
+    id: 'leg',
+    label: '腿部',
+    keywords: ['leg', 'foot', 'feet', '腿', '脚'],
+  ),
   Live2DTapPart(id: 'miss', label: '点空', keywords: []),
 ];
 
 /// Live2D 存档：只保存 Agent 的 id，使用时经 [AgentController.getAgent]
 /// 按 id 读取最新配置，避免存档里残留过期的 Agent 快照
 class Live2DArchive {
-  Live2DArchive({required this.id, required this.name, required this.modelLabel, required this.modelDir, required this.modelFile, required this.agentId, this.coverPath, this.note = '', this.jevEnabled = false, this.tapMessagesEnabled = false, Map<String, String>? tapMessages}) : tapMessages = tapMessages ?? {};
+  Live2DArchive({
+    required this.id,
+    required this.name,
+    required this.modelLabel,
+    required this.modelDir,
+    required this.modelFile,
+    required this.agentId,
+    this.coverPath,
+    this.note = '',
+    this.jevEnabled = false,
+    this.tapMessagesEnabled = false,
+    this.displayMode = 'live2d',
+    this.videoManifest,
+    this.videoBaseUri = 'assets/live2d/video/dsh_pet/',
+    this.videoResolvedSources = const {},
+    Map<String, String>? tapMessages,
+  }) : tapMessages = tapMessages ?? {};
   final String id;
   String name;
   String modelLabel;
@@ -37,6 +58,14 @@ class Live2DArchive {
   String? coverPath;
   String note;
   bool jevEnabled;
+  String displayMode;
+  VideoPetManifest? videoManifest;
+  String videoBaseUri;
+  Map<String, String> videoResolvedSources;
+
+  bool get isVideo => displayMode == 'video';
+  String get displayModelLabel =>
+      isVideo ? videoManifest?.name ?? 'Video' : modelLabel;
 
   /// 点击台词总开关：开启后点击气泡优先使用 [tapMessages] 中的自定义台词
   bool tapMessagesEnabled;
@@ -51,7 +80,19 @@ class Live2DArchive {
       .where((line) => line.isNotEmpty)
       .toList();
 
-  factory Live2DArchive.create({required String modelLabel, required String modelDir, required String modelFile, String? agentId}) => Live2DArchive(id: const Uuid().v4(), name: '新 Live2D', modelLabel: modelLabel, modelDir: modelDir, modelFile: modelFile, agentId: agentId);
+  factory Live2DArchive.create({
+    required String modelLabel,
+    required String modelDir,
+    required String modelFile,
+    String? agentId,
+  }) => Live2DArchive(
+    id: const Uuid().v4(),
+    name: '新 Live2D',
+    modelLabel: modelLabel,
+    modelDir: modelDir,
+    modelFile: modelFile,
+    agentId: agentId,
+  );
   factory Live2DArchive.fromJson(Map<String, dynamic> json) => Live2DArchive(
     id: json['id'] as String? ?? const Uuid().v4(),
     name: json['name'] as String? ?? 'Live2D',
@@ -62,11 +103,41 @@ class Live2DArchive {
     coverPath: json['coverPath'] as String?,
     note: json['note'] as String? ?? '',
     jevEnabled: json['jevEnabled'] as bool? ?? false,
+    displayMode: json['displayMode'] == 'video' ? 'video' : 'live2d',
+    videoManifest: json['videoManifest'] is Map
+        ? VideoPetManifest.fromJson(
+            Map<String, dynamic>.from(json['videoManifest'] as Map),
+          )
+        : null,
+    videoBaseUri:
+        json['videoBaseUri'] as String? ?? 'assets/live2d/video/dsh_pet/',
+    videoResolvedSources:
+        (json['videoResolvedSources'] as Map?)?.map(
+          (key, value) => MapEntry(key.toString(), value.toString()),
+        ) ??
+        {},
     tapMessagesEnabled: json['tapMessagesEnabled'] as bool? ?? false,
     tapMessages:
-        (json['tapMessages'] as Map<String, dynamic>?)
-            ?.map((key, value) => MapEntry(key, value as String)) ??
+        (json['tapMessages'] as Map<String, dynamic>?)?.map(
+          (key, value) => MapEntry(key, value as String),
+        ) ??
         {},
   );
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'modelLabel': modelLabel, 'modelDir': modelDir, 'modelFile': modelFile, 'agentId': agentId, 'coverPath': coverPath, 'note': note, 'jevEnabled': jevEnabled, 'tapMessagesEnabled': tapMessagesEnabled, 'tapMessages': tapMessages};
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'modelLabel': modelLabel,
+    'modelDir': modelDir,
+    'modelFile': modelFile,
+    'agentId': agentId,
+    'coverPath': coverPath,
+    'note': note,
+    'jevEnabled': jevEnabled,
+    'displayMode': displayMode,
+    'videoManifest': videoManifest?.toJson(),
+    'videoBaseUri': videoBaseUri,
+    'videoResolvedSources': videoResolvedSources,
+    'tapMessagesEnabled': tapMessagesEnabled,
+    'tapMessages': tapMessages,
+  };
 }

@@ -2,7 +2,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/screens/home_screen/widgets/day_card_header.dart';
+import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/cutout_stat_grid_card.dart';
 import 'package:aboutme/core/services/toast_service.dart';
 import 'package:aboutme/plugins/tracker/tracker_plugin.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
@@ -47,61 +47,46 @@ class RecordDayCard extends StatelessWidget {
     final visible =
         records.where((record) => goalById.containsKey(record.goalId)).toList();
 
-    // 手绘墨线卡片容器(design.md §9),裁剪改外包 ClipRRect(参考 date_view_grid._buildCard)
-    return ClipRRect(
-      borderRadius: theme.radii.sm,
-      child: Container(
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: theme.surface,
-          radius: theme.radii.sm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DayCardHeader(
-              color: color,
-              date: date,
-              count: visible.length,
-              onAdd: onAddRecord,
-            ),
-            Expanded(
-              child:
-                  visible.isEmpty
-                      ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // DS 无旗帜图标，用图钉顶替
-                            DsIcon(
-                              DsIconKind.pin,
-                              size: 32,
-                              color: theme.disabled,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'tracker_dayCardEmpty'.tr,
-                              style: DsTypography.caption.copyWith(
-                                color: theme.disabled,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                      : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        itemCount: visible.length,
-                        itemBuilder: (context, index) {
-                          return _buildRecordItem(context, visible[index]);
-                        },
-                      ),
-            ),
-          ],
-        ),
+    // 切角纸卡容器（整卡数据色 + 左上切角徽章）+ 自定义内容
+    return CutoutStatGridCardWidget(
+      inline: true,
+      accentColor: color,
+      icon: Icons.flag,
+      header: CutoutDayCardHeader(
+        color: color,
+        date: date,
+        count: visible.length,
+        onAdd: onAddRecord,
       ),
+      child:
+          visible.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // DS 无旗帜图标，用图钉顶替
+                    DsIcon(
+                      DsIconKind.pin,
+                      size: 32,
+                      color: theme.disabled,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'tracker_dayCardEmpty'.tr,
+                      style: DsTypography.caption.copyWith(
+                        color: theme.disabled,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: visible.length,
+                itemBuilder: (context, index) {
+                  return _buildRecordItem(context, visible[index]);
+                },
+              ),
     );
   }
 
