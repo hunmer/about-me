@@ -205,6 +205,7 @@ final class ChatGPTTestViewModel: NSObject, ObservableObject, AVAudioRecorderDel
             guard let self else { return }
             let deadline = Date().addingTimeInterval(180)
             var lastConnectionError: String?
+            var unknownResponseCount = 0
             while !Task.isCancelled, Date() < deadline {
                 voiceStatus = WCSessionManager.shared.isReachable
                     ? "等待 iPhone 接收录音…" : "请在 iPhone 打开 aboutme"
@@ -212,6 +213,15 @@ final class ChatGPTTestViewModel: NSObject, ObservableObject, AVAudioRecorderDel
                     let response = try await WCSessionManager.shared.getAssistantResponse(requestId: requestId)
                     try Task.checkCancellation()
                     lastConnectionError = nil
+                    if response.known == false {
+                        unknownResponseCount += 1
+                        if unknownResponseCount >= 10 {
+                            fail("iPhone 未收到这次录音，请重新录音", queryAgain: false)
+                            return
+                        }
+                    } else {
+                        unknownResponseCount = 0
+                    }
                     if let transcription = response.transcription, !transcription.isEmpty,
                         let index = messages.firstIndex(where: { $0.id == self.userMessageId }) {
                         messages[index].text = transcription

@@ -725,6 +725,7 @@ struct WatchAssistantResponse: Decodable {
     let text: String?
     let transcription: String?
     let error: String?
+    let known: Bool?
 }
 
 private final class WatchAssistantReply {
@@ -772,12 +773,25 @@ class WCSessionManager: NSObject, ObservableObject {
 
 extension WCSessionManager {
 
-    @MainActor
-    func sendAssistantAudio(url: URL, requestId: String, sessionId: String, duration: Double) throws {
+    private func companionAppUnavailableError() -> NSError {
+        NSError(domain: "WatchAssistant", code: 7018, userInfo: [
+            NSLocalizedDescriptionKey: "请先在配对的 iPhone 安装并打开 aboutme，再重试"
+        ])
+    }
+
+    private func ensureCompanionAppAvailable() throws {
         guard WCSession.default.activationState == .activated else {
             throw NSError(domain: "WatchAssistant", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "正在连接 iPhone，请稍后重试"])
         }
+        guard WCSession.default.isCompanionAppInstalled else {
+            throw companionAppUnavailableError()
+        }
+    }
+
+    @MainActor
+    func sendAssistantAudio(url: URL, requestId: String, sessionId: String, duration: Double) throws {
+        try ensureCompanionAppAvailable()
         let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
         guard size > 0, size <= 1_000_000 else {
             throw NSError(domain: "WatchAssistant", code: -1,
@@ -785,6 +799,35 @@ extension WCSessionManager {
         }
         assistantTransferErrors.removeAll()
         UserDefaults.standard.removeObject(forKey: assistantTransferErrorKey)
+        if size <= 60_000 {
+            let audioData = try Data(contentsOf: url)
+            WCSession.default.sendMessage([
+                "request": "sendAssistantAudioData",
+                "requestId": requestId,
+                "sessionId": sessionId,
+                "duration": duration,
+                "audioData": audioData,
+            ], replyHandler: { response in
+                try? FileManager.default.removeItem(at: url)
+                guard response["success"] as? Bool != true else {
+                    self.logger.info("助手录音已通过即时消息送达 iPhone: \(requestId)")
+                    return
+                }
+                let message = response["error"] as? String ?? "iPhone 未接受录音"
+                Task { @MainActor in
+                    self.assistantTransferErrors[requestId] = message
+                    UserDefaults.standard.set(self.assistantTransferErrors, forKey: self.assistantTransferErrorKey)
+                }
+            }, errorHandler: { error in
+                try? FileManager.default.removeItem(at: url)
+                Task { @MainActor in
+                    self.assistantTransferErrors[requestId] = error.localizedDescription
+                    UserDefaults.standard.set(self.assistantTransferErrors, forKey: self.assistantTransferErrorKey)
+                }
+            })
+            logger.info("助手录音通过即时消息发送: \(requestId), \(size) bytes")
+            return
+        }
         WCSession.default.transferFile(url, metadata: [
             "request": "sendAssistantAudio",
             "requestId": requestId,
@@ -799,8 +842,9 @@ extension WCSessionManager {
     func getAssistantResponse(requestId: String) async throws -> WatchAssistantResponse {
         if let error = assistantTransferErrors[requestId] {
             return WatchAssistantResponse(status: "failed", text: nil, transcription: nil,
-                                          error: "录音传输失败，请重新录音：\(error)")
+                                          error: "录音传输失败，请重新录音：\(error)", known: true)
         }
+        try ensureCompanionAppAvailable()
         guard WCSession.default.isReachable else {
             throw NSError(domain: "WatchAssistant", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "请在 iPhone 打开 aboutme，等待连接后查询结果"])
@@ -1508,9 +1552,15 @@ extension WCSessionManager: WCSessionDelegate {
               let requestId = fileTransfer.file.metadata?["requestId"] as? String else { return }
         Task { @MainActor in
             if let error {
-                self.assistantTransferErrors[requestId] = error.localizedDescription
+                let message: String
+                if let wcError = error as? WCError, wcError.code == .companionAppNotInstalled {
+                    message = "请先在配对的 iPhone 安装并打开 aboutme，再重新录音"
+                } else {
+                    message = error.localizedDescription
+                }
+                self.assistantTransferErrors[requestId] = message
                 UserDefaults.standard.set(self.assistantTransferErrors, forKey: self.assistantTransferErrorKey)
-                self.logger.error("助手录音传输失败: \(requestId), \(error.localizedDescription)")
+                self.logger.error("助手录音传输失败: \(requestId), \(message)")
             } else {
                 self.logger.info("助手录音已送达 iPhone: \(requestId)")
             }
@@ -1522,7 +1572,7 @@ extension WCSessionManager: WCSessionDelegate {
     #if os(watchOS)
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {
         Task { @MainActor in
-            self.isConnected = (activationState == .activated)
+            self.isConnected = (activationState == .activated && session.isCompanionAppInstalled)
             self.isReachable = session.isReachable
             if let error = error {
                 self.logger.error("WCSession 激活失败: \(error.localizedDescription)")
@@ -1546,7 +1596,7 @@ extension WCSessionManager: WCSessionDelegate {
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {
         Task { @MainActor in
-            self.isConnected = (activationState == .activated)
+            self.isConnected = (activationState == .activated && session.isCompanionAppInstalled)
             self.isReachable = session.isReachable
             if let error = error {
                 self.logger.error("WCSession 激活失败: \(error.localizedDescription)")

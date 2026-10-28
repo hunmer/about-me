@@ -61,6 +61,7 @@ enum WatchRequest: String {
     case getCalendarEvents
     case getCalendarAlbumEntries
     case getAssistantResponse
+    case sendAssistantAudioData
 }
 
 // MARK: - WCSession Manager
@@ -330,14 +331,37 @@ extension WCSessionManager: WCSessionDelegate {
             DispatchQueue.main.async {
                 replyHandler(["success": true, "data": self.assistantResponse(for: requestId)])
             }
+        case .sendAssistantAudioData:
+            guard let requestId = message["requestId"] as? String, !requestId.isEmpty,
+                  let sessionId = message["sessionId"] as? String, !sessionId.isEmpty,
+                  let audioData = message["audioData"] as? Data, !audioData.isEmpty else {
+                replyHandler(["success": false, "error": "录音消息参数无效"])
+                return
+            }
+            let destination = FileManager.default.temporaryDirectory
+                .appendingPathComponent("watch_assistant_\(UUID().uuidString).m4a")
+            do {
+                try audioData.write(to: destination, options: .atomic)
+                let duration = (message["duration"] as? NSNumber)?.doubleValue ?? 0
+                handleAssistantAudioFile(url: destination, requestId: requestId,
+                                         sessionId: sessionId, duration: duration)
+                replyHandler(["success": true])
+            } catch {
+                replyHandler(["success": false, "error": "保存录音失败：\(error.localizedDescription)"])
+            }
         }
     }
 
     func session(_ session: WCSession, didReceive file: WCSessionFile) {
-        guard let metadata = file.metadata,
-              metadata["request"] as? String == "sendAssistantAudio",
+        let metadata = file.metadata ?? [:]
+        print("[WCSessionManager] 收到 Watch 文件: \(file.fileURL.lastPathComponent), metadata=\(metadata)")
+        logger.info("收到 Watch 文件，metadata keys: \(metadata.keys.sorted().joined(separator: ","))")
+        guard metadata["request"] as? String == "sendAssistantAudio",
               let requestId = metadata["requestId"] as? String, !requestId.isEmpty,
-              let sessionId = metadata["sessionId"] as? String, !sessionId.isEmpty else { return }
+              let sessionId = metadata["sessionId"] as? String, !sessionId.isEmpty else {
+            logger.error("收到 Watch 文件但元数据无效")
+            return
+        }
         let destination = FileManager.default.temporaryDirectory
             .appendingPathComponent("watch_assistant_\(UUID().uuidString).m4a")
         do {
@@ -1175,6 +1199,7 @@ extension WCSessionManager: WCSessionDelegate {
     // MARK: - Apple Watch 助手录音
 
     private func handleAssistantAudioFile(url: URL, requestId: String, sessionId: String, duration: Double) {
+        print("[WCSessionManager] 进入助手录音队列: \(requestId), flutterReady=\(flutterReady), appState=\(UIApplication.shared.applicationState.rawValue)")
         guard assistantStatuses[requestId] == nil else {
             try? FileManager.default.removeItem(at: url)
             return
@@ -1190,7 +1215,10 @@ extension WCSessionManager: WCSessionDelegate {
 
     private func dispatchPendingAssistantAudio() {
         guard flutterReady, methodChannel != nil, UIApplication.shared.applicationState == .active,
-              assistantPreparingRequests.isEmpty else { return }
+              assistantPreparingRequests.isEmpty else {
+            print("[WCSessionManager] 暂不派发助手录音: flutterReady=\(flutterReady), channel=\(methodChannel != nil), appState=\(UIApplication.shared.applicationState.rawValue), preparing=\(assistantPreparingRequests.count)")
+            return
+        }
         for requestId in Array(assistantPendingAudio.keys) {
             startAssistantTranscription(requestId: requestId)
             break
@@ -1346,8 +1374,13 @@ extension WCSessionManager: WCSessionDelegate {
     }
 
     private func assistantResponse(for requestId: String) -> [String: Any] {
-        guard let status = assistantStatuses[requestId] else { return ["status": "pending"] }
-        var response: [String: Any] = ["status": status["status"] as? String ?? "pending"]
+        guard let status = assistantStatuses[requestId] else {
+            return ["status": "pending", "known": false]
+        }
+        var response: [String: Any] = [
+            "status": status["status"] as? String ?? "pending",
+            "known": true,
+        ]
         for key in ["text", "transcription", "error"] {
             if let value = status[key] { response[key] = value }
         }
