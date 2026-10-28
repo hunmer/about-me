@@ -300,7 +300,8 @@
       "sources": {
         "webp": "spritesheet/原地左转奔跑.webp"
       },
-      "spritesheet": {
+      "moving": [[12, 100, 2.5]],
+       "spritesheet": {
         "frameWidth": 640,
         "frameHeight": 360,
         "columns": 8,
@@ -1513,7 +1514,6 @@
       "id": "螃蟹走路",
       "name": "螃蟹走路",
       "category": "移动",
-      "facing": "left",
       "sources": {
         "webp": "spritesheet/螃蟹走路.webp"
       },

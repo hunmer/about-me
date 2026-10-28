@@ -63,6 +63,76 @@ void main() {
     await tester.pump();
   }
 
+  testWidgets(
+    'actual frame events preserve skipped loops and freeze on pause',
+    (tester) async {
+      var paused = false;
+      String? movement = 'idle';
+      final frames = <VideoPetAnimationFrame>[];
+      Widget view() => MaterialApp(
+        home: SizedBox(
+          width: 200,
+          height: 200,
+          child: VideoPetPlayer(
+            manifest: manifest,
+            baseUri: '',
+            paused: paused,
+            movementAnimationId: movement,
+            onAnimationFrame: frames.add,
+          ),
+        ),
+      );
+      await tester.pumpWidget(view());
+      await loaded(tester);
+      expect(frames, isEmpty);
+      final sprite = tester.widget<SpriteAnimation>(
+        find.byType(SpriteAnimation),
+      );
+      expect(sprite.controller!.fps, 10);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(frames.map((e) => e.currentFrame), [1, 0, 1, 0, 1]);
+      expect(frames.map((e) => e.animationId).toSet(), {'idle'});
+      final generation = frames.last.generation;
+      frames.clear();
+      paused = true;
+      await tester.pumpWidget(view());
+      await tester.pump(const Duration(seconds: 2));
+      expect(frames, isEmpty);
+      paused = false;
+      await tester.pumpWidget(view());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(frames.single.currentFrame, 0);
+      expect(frames.single.generation, generation);
+      final stale = sprite.onFrame!;
+      frames.clear();
+      movement = 'click';
+      await tester.pumpWidget(view());
+      stale(1);
+      for (var i = 0; i < 30; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+        if (!identical(
+          tester
+              .widget<SpriteAnimation>(find.byType(SpriteAnimation))
+              .controller,
+          sprite.controller,
+        )) {
+          break;
+        }
+      }
+      await tester.pump();
+      expect(frames, isEmpty);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(frames.single.animationId, 'click');
+      expect(frames.single.generation, greaterThan(generation));
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('sprite playback pauses, resumes and completes a click', (
     tester,
   ) async {

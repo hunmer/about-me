@@ -669,6 +669,7 @@ class _JellyLive2DState extends State<JellyLive2D>
                                   dragAnimationId: playback.dragAnimationId,
                                   movementLoop: playback.loop,
                                   onMovementComplete: playback.onComplete,
+                                  onAnimationFrame: playback.onAnimationFrame,
                                   onPlaybackBusyChanged: playback.onBusyChanged,
                                   onDragStart: playback.onDragStart,
                                   onDragUpdate: playback.onDragUpdate,

@@ -29,6 +29,7 @@ class VideoPetPlayer extends StatefulWidget {
     this.dragAnimationId,
     this.movementLoop = true,
     this.onMovementComplete,
+    this.onAnimationFrame,
     this.onPlaybackBusyChanged,
     this.onDragStart,
     this.onDragUpdate,
@@ -51,6 +52,7 @@ class VideoPetPlayer extends StatefulWidget {
   final String? dragAnimationId;
   final bool movementLoop;
   final VoidCallback? onMovementComplete;
+  final ValueChanged<VideoPetAnimationFrame>? onAnimationFrame;
   final ValueChanged<bool>? onPlaybackBusyChanged;
   final GestureDragStartCallback? onDragStart;
   final GestureDragUpdateCallback? onDragUpdate;
@@ -417,6 +419,22 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
                       playing: _playing,
                       loop: request.loop,
                       onComplete: () => _complete(request),
+                      onFrame: (frame) {
+                        if (!mounted ||
+                            !_playing ||
+                            _error != null ||
+                            !identical(_request, request) ||
+                            request.generation != _playback.generation) {
+                          return;
+                        }
+                        widget.onAnimationFrame?.call(
+                          VideoPetAnimationFrame(
+                            animationId: request.animationId,
+                            currentFrame: frame,
+                            generation: request.generation,
+                          ),
+                        );
+                      },
                     ),
                   if (widget.showRegions)
                     IgnorePointer(
@@ -464,17 +482,33 @@ class _SpriteSurface extends StatefulWidget {
     required this.playing,
     required this.loop,
     required this.onComplete,
+    required this.onFrame,
   });
   final ImageProvider image;
   final VideoPetSpritesheet sheet;
   final bool playing;
   final bool loop;
   final VoidCallback onComplete;
+  final ValueChanged<int> onFrame;
   @override
   State<_SpriteSurface> createState() => _SpriteSurfaceState();
 }
 
 class _SpriteSurfaceState extends State<_SpriteSurface> {
+  int _frameEpoch = 0;
+
+  void _frameAdvanced(int _) {
+    if (!widget.playing || !_controller.isPlaying) return;
+    // onFrame fires for every step, including skipped frames and each wrap.
+    // Capture currentFrame now; reading it after paint would lose those steps.
+    final frame = _controller.currentFrame;
+    final epoch = _frameEpoch;
+    final deliver = widget.onFrame;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.playing && epoch == _frameEpoch) deliver(frame);
+    });
+  }
+
   late final SpriteAnimationController _controller = SpriteAnimationController(
     fps: widget.sheet.fps,
     loop: widget.loop,
@@ -492,6 +526,7 @@ class _SpriteSurfaceState extends State<_SpriteSurface> {
   void didUpdateWidget(covariant _SpriteSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.playing != oldWidget.playing) {
+      _frameEpoch++;
       if (widget.playing) {
         _controller.play();
       } else {
@@ -511,6 +546,7 @@ class _SpriteSurfaceState extends State<_SpriteSurface> {
       fps: widget.sheet.fps,
       loop: widget.loop,
       autoPlay: false,
+      onFrame: _frameAdvanced,
       onComplete: widget.onComplete,
       fit: BoxFit.contain,
     ),

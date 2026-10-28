@@ -6,6 +6,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
+import 'package:aboutme/plugins/live2d/video/video_pet_player_state.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_preferences.dart';
 
 /// 视频播放器与移动舞台之间的动作和交互回调。
@@ -16,6 +17,7 @@ class JellyVideoPetPlayback {
     required this.loop,
     required this.onComplete,
     required this.onBusyChanged,
+    required this.onAnimationFrame,
     required this.onDragStart,
     required this.onDragUpdate,
     required this.onDragEnd,
@@ -26,6 +28,7 @@ class JellyVideoPetPlayback {
   final bool loop;
   final VoidCallback onComplete;
   final ValueChanged<bool> onBusyChanged;
+  final ValueChanged<VideoPetAnimationFrame> onAnimationFrame;
   final GestureDragStartCallback onDragStart;
   final GestureDragUpdateCallback onDragUpdate;
   final GestureDragEndCallback onDragEnd;
@@ -100,6 +103,39 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
             ? widget.movement.leftAnimationId
             : widget.movement.rightAnimationId)
       : null;
+
+  List<VideoPetLocomotion>? get _moving {
+    for (final animation in widget.animations) {
+      if (animation.id == _movementAnimationId) return animation.moving;
+    }
+    return null;
+  }
+
+  int? _frameGeneration;
+
+  void _animationFrame(VideoPetAnimationFrame frame, int phase) {
+    if (!mounted ||
+        phase != _phase ||
+        !_walking ||
+        _turning ||
+        !_canWalk ||
+        frame.animationId != _movementAnimationId) {
+      return;
+    }
+    final moving = _moving;
+    if (moving == null) return;
+    if (_frameGeneration != null && frame.generation < _frameGeneration!) {
+      return;
+    }
+    _frameGeneration = frame.generation;
+    for (final segment in moving) {
+      if (frame.currentFrame >= segment.startFrame &&
+          frame.currentFrame <= segment.endFrame) {
+        _move(segment.speed);
+        return;
+      }
+    }
+  }
 
   bool get _flipX {
     if (_dragging || _busy) return false;
@@ -223,6 +259,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     _ticker.stop();
     _turning = false;
     _walking = false;
+    _frameGeneration = null;
   }
 
   void _schedule() {
@@ -277,7 +314,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
       'walk start left=$_left from=${_position.dx} target=$_target speed=${widget.movement.speed} phase=$_phase',
     );
     _previous = Duration.zero;
-    _ticker.start();
+    if (_moving == null) _ticker.start();
   }
 
   void _tick(Duration elapsed) {
@@ -288,7 +325,11 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
       setState(_stop);
       return;
     }
-    final distance = widget.movement.speed * seconds;
+    if (_moving != null) return;
+    _move(widget.movement.speed * seconds);
+  }
+
+  void _move(double distance) {
     final remaining = _target - _position.dx;
     setState(() {
       final x = remaining.abs() <= distance
@@ -431,6 +472,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
                       setState(_startWalking);
                     }
                   },
+                  onAnimationFrame: (frame) => _animationFrame(frame, phase),
                   onBusyChanged: (busy) {
                     if (_busy == busy || !mounted) return;
                     setState(() {

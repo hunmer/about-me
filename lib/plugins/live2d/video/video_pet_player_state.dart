@@ -4,6 +4,18 @@ import 'video_pet_manifest.dart';
 
 enum VideoPetPlaybackKind { idle, movement, hover, click, manual, drag }
 
+/// One actual controller advancement; initial display and pause emit nothing.
+class VideoPetAnimationFrame {
+  const VideoPetAnimationFrame({
+    required this.animationId,
+    required this.currentFrame,
+    required this.generation,
+  });
+  final String animationId;
+  final int currentFrame;
+  final int generation;
+}
+
 class VideoPetPlaybackRequest {
   const VideoPetPlaybackRequest({
     required this.animationId,

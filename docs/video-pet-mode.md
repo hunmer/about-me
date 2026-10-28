@@ -13,6 +13,23 @@
 
 动画配置示例（与 `sources`、`spritesheet` 一起放在 `animations` 对应条目）：`{"id": "螃蟹走路", "name": "螃蟹走路", "facing": "left"}`。
 
+动画可选 `moving` 数组，由用户按素材填写；不会为默认资源自动填值。例如以下条目（示例数值仅用于说明）：
+
+```json
+{
+  "id": "walk",
+  "name": "行走",
+  "sources": {"png": "walk.png"},
+  "spritesheet": {
+    "frameWidth": 64, "frameHeight": 64,
+    "columns": 8, "rows": 2, "frameCount": 16, "fps": 12
+  },
+  "moving": [[3, 6, 2.5], [10, 12, 1.5]]
+}
+```
+
+`moving` 每项为 `[startFrame, endFrame, speed]`，从 0 开始且包含两端，须满足 `0 <= startFrame <= endFrame < spritesheet.frameCount`；各段按 startFrame 升序且不得重叠。`speed` 必须为有限正数，单位为**水平逻辑像素/动画帧**。仅命中某段的实际推进帧移动，段间暂停；初始显示不算推进。跨过多帧或循环多圈时逐帧累计，暂停、加载、切图、拖拽和转向不额外位移。`spritesheet.fps` 完全不变；未配置 `moving`（null）时继续使用 `movement.speed` 的逻辑像素/秒连续移动，空数组明确全程不移动。读取旧 `locomotion` 对象时迁移为单段 `moving`，导出统一使用 `moving`。JSON 导入、导出及档案保存保留该配置，不增加编辑器表单。
+
 移动配置的 JSON 结构示例：
 
 ```json

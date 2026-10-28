@@ -260,6 +260,7 @@ class VideoPetAnimation {
     this.facing = '',
     this.sources = const {},
     this.spritesheet,
+    this.moving,
   });
 
   final String id;
@@ -268,6 +269,9 @@ class VideoPetAnimation {
   final String facing;
   final Map<String, String> sources;
   final VideoPetSpritesheet? spritesheet;
+
+  /// Null means legacy continuous movement; empty means explicitly no movement.
+  final List<VideoPetLocomotion>? moving;
 
   /// Validated spritesheets have exactly one image source.
   String? get imageFormat => sources.containsKey('webp')
@@ -289,12 +293,39 @@ class VideoPetAnimation {
       spritesheetJson == null || spritesheetJson is Map,
       'spritesheet must be an object',
     );
+    final movingJson = json['moving'];
+    _require(
+      movingJson == null || movingJson is List,
+      'moving must be an array',
+    );
+    final moving = movingJson == null
+        ? (json['locomotion'] == null
+              ? null
+              : [VideoPetLocomotion.fromJson(_object(json, 'locomotion'))])
+        : (movingJson as List).map((entry) {
+            _require(
+              entry is List && entry.length == 3,
+              'moving entries must contain exactly 3 numbers',
+            );
+            final values = entry as List;
+            _require(
+              values[0] is int && values[1] is int,
+              'moving start/end must be integers',
+            );
+            _require(values[2] is num, 'moving speed must be a number');
+            return VideoPetLocomotion(
+              startFrame: values[0] as int,
+              endFrame: values[1] as int,
+              speed: (values[2] as num).toDouble(),
+            );
+          }).toList();
     return VideoPetAnimation(
       id: _string(json, 'id'),
       name: _string(json, 'name'),
       category: _string(json, 'category'),
       facing: _string(json, 'facing'),
       sources: Map.unmodifiable(sources.cast<String, String>()),
+      moving: moving == null ? null : List.unmodifiable(moving),
       spritesheet: spritesheetJson == null
           ? null
           : VideoPetSpritesheet.fromJson(
@@ -310,6 +341,8 @@ class VideoPetAnimation {
     if (facing.isNotEmpty) 'facing': facing,
     'sources': Map<String, String>.of(sources),
     if (spritesheet != null) 'spritesheet': spritesheet!.toJson(),
+    if (moving != null)
+      'moving': moving!.map((item) => item.toJsonList()).toList(),
   };
 
   VideoPetAnimation copyWith({
@@ -319,6 +352,7 @@ class VideoPetAnimation {
     String? facing,
     Map<String, String>? sources,
     Object? spritesheet = _unset,
+    Object? moving = _unset,
   }) => VideoPetAnimation(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -328,6 +362,11 @@ class VideoPetAnimation {
     spritesheet: identical(spritesheet, _unset)
         ? this.spritesheet
         : spritesheet as VideoPetSpritesheet?,
+    moving: identical(moving, _unset)
+        ? this.moving
+        : moving == null
+        ? null
+        : List.unmodifiable(moving as List<VideoPetLocomotion>),
   );
 
   Uri? resolveSource(String format, Uri baseUri) {
@@ -350,6 +389,18 @@ class VideoPetAnimation {
         'Spritesheet animation $id must contain only a png or webp source and spritesheet metadata',
       );
       spritesheet!.validate();
+    }
+    if (moving != null) {
+      _require(spritesheet != null, 'moving requires a spritesheet');
+      var previousEnd = -1;
+      for (final segment in moving!) {
+        segment.validate(spritesheet!.frameCount);
+        _require(
+          segment.startFrame > previousEnd,
+          'moving segments must be sorted and non-overlapping',
+        );
+        previousEnd = segment.endFrame;
+      }
     }
     for (final entry in sources.entries) {
       _require(
@@ -377,6 +428,42 @@ class VideoPetAnimation {
         );
       }
     }
+  }
+}
+
+/// Horizontal logical pixels per advanced animation frame, inclusive range.
+class VideoPetLocomotion {
+  const VideoPetLocomotion({
+    required this.startFrame,
+    required this.endFrame,
+    required this.speed,
+  });
+
+  final int startFrame;
+  final int endFrame;
+  final double speed;
+
+  factory VideoPetLocomotion.fromJson(Map<String, dynamic> json) =>
+      VideoPetLocomotion(
+        startFrame: _integer(json, 'startFrame'),
+        endFrame: _integer(json, 'endFrame'),
+        speed: _number(json, 'speed', 0),
+      );
+
+  Map<String, dynamic> toJson() => {
+    'startFrame': startFrame,
+    'endFrame': endFrame,
+    'speed': speed,
+  };
+
+  List<dynamic> toJsonList() => [startFrame, endFrame, speed];
+
+  void validate(int frameCount) {
+    _require(
+      startFrame >= 0 && endFrame >= startFrame && endFrame < frameCount,
+      'Invalid locomotion frame range',
+    );
+    _require(speed.isFinite && speed > 0, 'locomotion.speed must be positive');
   }
 }
 
