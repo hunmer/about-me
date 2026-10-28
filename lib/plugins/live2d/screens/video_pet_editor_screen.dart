@@ -7,6 +7,8 @@ import 'package:get/get.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_player.dart';
 
+import 'video_pet_animation_resource_editor.dart';
+
 const _unchanged = Object();
 
 String videoPetText(String zh, String en) =>
@@ -78,9 +80,23 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
       .where((region) => region.id == _selectedRegionId)
       .firstOrNull;
 
+  // 逐动画资源编辑（facing / moving）针对的是「点播选中的动画」，
+  // 与交互区域选中状态无关。
+  VideoPetAnimation? get _selectedAnimation => _draft.animations
+      .where((animation) => animation.id == _selectedAnimationId)
+      .firstOrNull;
+
   void _setDraft(VideoPetManifest value) {
     setState(() => _draft = value);
   }
+
+  /// 用编辑后的单动画替换草稿中的对应项（按 id 匹配）。
+  void _updateAnimation(VideoPetAnimation next) => _setDraft(_draft.copyWith(
+    animations: [
+      for (final item in _draft.animations)
+        item.id == next.id ? next : item,
+    ],
+  ));
 
   void _save() {
     try {
@@ -938,6 +954,33 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
     );
   }
 
+  /// 当前点播选中动画的 facing / moving 资源编辑区；
+  /// 未选中动画时只给提示，不隐式修改任何动画。
+  Widget _buildAnimationResourceEditor() {
+    final selected = _selectedAnimation;
+    if (selected == null) {
+      return Text(
+        _text('videoPet_animationResourceHint', '选择上方动画以编辑朝向与分段移动'),
+        key: const ValueKey('videoPetAnimationResourceHint'),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          '动作资源：${selected.name.isEmpty ? selected.id : selected.name}',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        VideoPetAnimationResourceEditor(
+          key: ValueKey('animationResource-${selected.id}'),
+          animation: selected,
+          onChanged: _updateAnimation,
+        ),
+      ],
+    );
+  }
+
   Widget _buildBindingPanel() {
     final selected = _selectedRegion;
     if (selected == null) {
@@ -945,7 +988,11 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
         color: Theme.of(context).colorScheme.surfaceContainer,
         child: ListView(
           padding: const EdgeInsets.all(12),
-          children: [_buildMovementEditor()],
+          children: [
+            _buildMovementEditor(),
+            const Divider(height: 22),
+            _buildAnimationResourceEditor(),
+          ],
         ),
       );
     }
@@ -955,6 +1002,8 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
         padding: const EdgeInsets.all(12),
         children: [
           _buildMovementEditor(),
+          const Divider(height: 22),
+          _buildAnimationResourceEditor(),
           const Divider(height: 22),
           Text(
             _text('videoPet_regionProperties', '区域属性'),

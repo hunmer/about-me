@@ -91,3 +91,4 @@ packages/aboutme_server/aboutme-server-image.tar.gz
 packages/aboutme_server/aboutme-server-amd64.tar.gz
 # Local video-pet conversion inputs (only generated spritesheets are bundled)
 /assets/live2d/video/dsh_pet/webm/
+.team/

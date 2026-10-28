@@ -297,10 +297,11 @@
       "id": "原地左转奔跑",
       "name": "原地左转奔跑",
       "category": "移动",
+       "facing": "left",
       "sources": {
         "webp": "spritesheet/原地左转奔跑.webp"
       },
-      "moving": [[12, 100, 2.5]],
+      "moving": [[18, 56, 2.5]],
        "spritesheet": {
         "frameWidth": 640,
         "frameHeight": 360,
@@ -333,6 +334,8 @@
       "sources": {
         "webp": "spritesheet/原地漂浮踏步.webp"
       },
+       "facing": "left",
+        "moving": [[10, 107, 1.5]],
       "spritesheet": {
         "frameWidth": 640,
         "frameHeight": 360,
@@ -1514,6 +1517,8 @@
       "id": "螃蟹走路",
       "name": "螃蟹走路",
       "category": "移动",
+       "facing": "left",
+        "moving": [[14, 96, 1.5]],
       "sources": {
         "webp": "spritesheet/螃蟹走路.webp"
       },
