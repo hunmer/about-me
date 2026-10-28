@@ -978,12 +978,6 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
           ),
           const SizedBox(height: 12),
           _buildGlobalBindingEditor(
-            _text('videoPet_globalHover', '全局 Hover'),
-            _draft.hover,
-            (binding) => _updateGlobalBinding(hover: binding),
-          ),
-          const SizedBox(height: 12),
-          _buildGlobalBindingEditor(
             _text('videoPet_globalClick', '全局 Click'),
             _draft.click,
             (binding) => _updateGlobalBinding(click: binding),
@@ -1036,13 +1030,6 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
             (value) => _updateSelectedRegion(height: value.clamp(.01, 1)),
           ),
           const Divider(height: 22),
-          _buildBindingEditor(
-            _text('videoPet_hover', 'Hover 动画'),
-            selected.hover,
-            _draft.hover,
-            (binding) => _updateSelectedRegion(hover: binding),
-          ),
-          const SizedBox(height: 14),
           _buildBindingEditor(
             _text('videoPet_click', 'Click 动画'),
             selected.click,

@@ -211,14 +211,11 @@ void main() {
     },
   );
 
-  testWidgets('missing movement or no horizontal space stays idle', (
+  testWidgets('missing movement stays idle even with horizontal space', (
     tester,
   ) async {
-    await load(tester, config: const VideoPetMovement());
+    await load(tester, config: const VideoPetMovement(), width: 100);
     VideoPetPreferences.randomWalkEnabled.value = true;
-    await tester.pump(const Duration(seconds: 20));
-    expect(playback.animationId, isNull);
-    await load(tester, width: 100);
     await tester.pump(const Duration(seconds: 20));
     expect(playback.animationId, isNull);
     await tester.pumpWidget(const SizedBox());
@@ -242,38 +239,77 @@ void main() {
     expect(playback.dragAnimationId, isNull);
   });
 
-  testWidgets('full width logs actual blocked reason once per state change', (
+  testWidgets('full width stays centered and clamps, persists and resizes', (
     tester,
   ) async {
-    final logs = <String>[];
-    final previous = debugPrint;
-    debugPrint = (String? message, {int? wrapWidth}) {
-      if (message != null) logs.add(message);
-    };
-    try {
-      await load(tester, width: 100);
-      VideoPetPreferences.randomWalkEnabled.value = true;
-      await tester.pump();
-      expect(
-        logs.any(
-          (line) =>
-              line.contains('enabled=true') &&
-              line.contains('blocked=[noHorizontalSpace]'),
-        ),
-        true,
-      );
-      expect(logs.any((line) => line.contains('range=Size(0.0, 150.0)')), true);
-      final count = logs.length;
-      await tester.pump(const Duration(seconds: 20));
-      await tester.pumpWidget(stage(width: 100));
-      expect(logs.length, count);
-      expect(playback.animationId, isNull);
-      expect(tester.getSize(find.byKey(const ValueKey('pet'))).width, 100);
-      await tester.pumpWidget(const SizedBox());
-    } finally {
-      debugPrint = previous;
-    }
+    await load(tester, width: 100);
+    final pet = find.byKey(const ValueKey('pet'));
+    expect(tester.getRect(pet), const Rect.fromLTWH(0, 170, 100, 100));
+    await tester.drag(pet, const Offset(1000, -1000));
+    await tester.pump();
+    expect(tester.getTopLeft(pet), const Offset(50, 20));
+    var prefs = await SharedPreferences.getInstance();
+    final key = JellyVideoPetStage.preferenceKey('a');
+    expect(prefs.getDouble('$key.x'), 1);
+    await tester.dragFrom(const Offset(75, 60), const Offset(-1000, 1000));
+    await tester.pump();
+    expect(tester.getTopLeft(pet), const Offset(-50, 170));
+    expect(prefs.getDouble('$key.x'), 0);
+    // A fresh stage restores the normalized left edge on the new bounds.
+    await tester.pumpWidget(const SizedBox());
+    await load(tester, width: 80);
+    expect(tester.getTopLeft(pet), const Offset(-40, 190));
+    expect(tester.getSize(pet).width, 80);
+    await load(tester, width: 200);
+    expect(tester.getTopLeft(pet), const Offset(0, 170));
+    await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets(
+    'full width walks horizontally and mirrored drag follows pointer',
+    (tester) async {
+      final logs = <String>[];
+      final previous = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) {
+        if (message != null) logs.add(message);
+      };
+      try {
+        await load(tester, width: 100);
+        VideoPetPreferences.randomWalkEnabled.value = true;
+        await tester.pump(const Duration(seconds: 1));
+        expect(playback.animationId, 'turn');
+        playback.onComplete();
+        await tester.pump();
+        expect(playback.animationId, 'walk');
+        await tester.pump(const Duration(milliseconds: 500));
+        final pet = find.byKey(const ValueKey('pet'));
+        expect(tester.getRect(pet).left, closeTo(-20, .01));
+        expect(logs.any((line) => line.contains('xBounds=[-50.0,50.0]')), true);
+        expect(
+          logs.any((line) => line.contains('target selected x=-50.0')),
+          true,
+        );
+        expect(
+          logs.any((line) => line.contains('blocked=[noHorizontalSpace]')),
+          false,
+        );
+        VideoPetPreferences.randomWalkEnabled.value = false;
+        await tester.pump();
+        final before = tester.getRect(pet).left;
+        await tester.dragFrom(const Offset(40, 210), const Offset(30, 0));
+        await tester.pump();
+        expect(tester.getRect(pet).left, greaterThan(before));
+        final right = tester.getRect(pet).left;
+        await tester.dragFrom(const Offset(50, 210), const Offset(-30, 0));
+        await tester.pump();
+        expect(tester.getRect(pet).left, lessThan(right));
+        expect(tester.getSize(pet).width, 100);
+        await tester.pumpWidget(const SizedBox());
+      } finally {
+        debugPrint = previous;
+      }
+    },
+  );
 
   testWidgets('stale turn completion cannot start a later turn', (
     tester,

@@ -354,13 +354,8 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     if ((point != null) == _pointerInside && region?.id == _hoverRegion) return;
     _pointerInside = point != null;
     _hoverRegion = region?.id;
-    unawaited(
-      _present(
-        point == null
-            ? _playback.setHover(null)
-            : _playback.playHover(region?.hover ?? manifest.hover),
-      ),
-    );
+    // Keep region hit tracking for pointer/editor behavior without scheduling
+    // playback or marking the player busy on hover.
   }
 
   void _tap(Offset position, Size size) {

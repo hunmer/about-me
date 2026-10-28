@@ -74,6 +74,8 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
   Offset? _normalized;
   Offset _position = Offset.zero;
   Size _range = Size.zero;
+  double _minX = 0;
+  double get _maxX => _minX + _range.width;
   bool _loaded = false;
   bool _dragging = false;
   bool _busy = false;
@@ -107,6 +109,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     final status =
         'enabled=${widget.enabled.value} movement=${widget.movement.enabled} '
         'active=${widget.active} foreground=$_foreground range=$_range '
+        'xBounds=[$_minX,$_maxX] '
         'blocked=[${_blocked.join(',')}]';
     if (status == _lastStatus) return;
     _lastStatus = status;
@@ -213,8 +216,10 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
         _wait = null;
         _logStatus();
         if (!_canWalk) return;
-        _target = _random.nextDouble() * _range.width;
-        _log('target selected x=$_target from=${_position.dx} range=$_range');
+        _target = _minX + _random.nextDouble() * _range.width;
+        _log(
+          'target selected x=$_target from=${_position.dx} xBounds=[$_minX,$_maxX]',
+        );
         if ((_target - _position.dx).abs() < 1) {
           _schedule();
           return;
@@ -262,16 +267,18 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
       final x = remaining.abs() <= distance
           ? _target
           : _position.dx + (remaining.isNegative ? -distance : distance);
-      _position = Offset(x.clamp(0, _range.width), _position.dy);
+      _position = Offset(x.clamp(_minX, _maxX), _position.dy);
       _rememberPosition();
-      if (remaining.abs() <= distance || x <= 0 || x >= _range.width) _stop();
+      if (remaining.abs() <= distance || x <= _minX || x >= _maxX) _stop();
     });
     _schedule();
   }
 
   void _rememberPosition() {
     _normalized = Offset(
-      _range.width > 0 ? _position.dx / _range.width : (_normalized?.dx ?? 0.5),
+      _range.width > 0
+          ? ((_position.dx - _minX) / _range.width).clamp(0, 1)
+          : (_normalized?.dx ?? 0.5),
       _range.height > 0 ? _position.dy / _range.height : (_normalized?.dy ?? 1),
     );
   }
@@ -296,8 +303,8 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     setState(() {
       _position = Offset(
         (_position.dx + details.delta.dx * (mirror ? -1 : 1)).clamp(
-          0,
-          _range.width,
+          _minX,
+          _maxX,
         ),
         (_position.dy + details.delta.dy).clamp(0, _range.height),
       );
@@ -342,24 +349,33 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
         widget.petSize.width * scale,
         widget.petSize.height * scale,
       );
+      // Full-width transparent canvases move by their center anchor. Smaller
+      // pets retain the original whole-canvas bounds.
+      final fullWidth =
+          size.width > 0 && (size.width - constraints.maxWidth).abs() < 0.01;
+      final minX = fullWidth ? -size.width / 2 : 0.0;
+      final maxX = fullWidth
+          ? constraints.maxWidth - size.width / 2
+          : math.max(0.0, constraints.maxWidth - size.width);
       final range = Size(
-        math.max(0, constraints.maxWidth - size.width),
+        maxX - minX,
         math.max(0, availableHeight - size.height),
       );
-      if (_range != range) {
+      if (_range != range || _minX != minX) {
         _stop();
         _range = range;
+        _minX = minX;
         _log(
-          'range changed range=$range pet=$size requestedPet=${widget.petSize} constraints=$constraints',
+          'range changed range=$range xBounds=[$minX,$maxX] centerAnchor=$fullWidth pet=$size requestedPet=${widget.petSize} constraints=$constraints',
         );
       }
       _position = _normalized == null
           ? Offset(
-              range.width / 2,
+              minX + range.width / 2,
               (range.height - widget.initialBottomGap).clamp(0, range.height),
             )
           : Offset(
-              _normalized!.dx * range.width,
+              minX + _normalized!.dx * range.width,
               _normalized!.dy * range.height,
             );
       _schedule();

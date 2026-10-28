@@ -167,12 +167,24 @@ void main() {
   );
 
   testWidgets(
-    'busy changes safely for hover and manual, movement is not busy',
+    'hover preserves playback and edit pointers without busy, manual is busy',
     (tester) async {
       final manual = ValueNotifier<String?>(null);
       final busy = <bool>[];
+      final pointers = <String>[];
       final pet = manifest.copyWith(
         hover: const VideoPetBinding(animationIds: ['click']),
+        regions: const [
+          VideoPetRegion(
+            id: 'body',
+            name: 'body',
+            x: .25,
+            y: .25,
+            width: .5,
+            height: .5,
+            hover: VideoPetBinding(animationIds: ['click']),
+          ),
+        ],
       );
       var rebuilds = 0;
       await tester.pumpWidget(
@@ -186,6 +198,7 @@ void main() {
                 baseUri: '',
                 movementAnimationId: 'idle',
                 animationRequest: manual,
+                onEditPointer: (type, x, y) => pointers.add(type),
                 onPlaybackBusyChanged: (value) {
                   busy.add(value);
                   setState(() => rebuilds++);
@@ -197,12 +210,22 @@ void main() {
       );
       await loaded(tester, loop: true);
       expect(busy, isEmpty);
+      final controller = tester
+          .widget<SpriteAnimation>(find.byType(SpriteAnimation))
+          .controller;
       final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      await mouse.addPointer(location: const Offset(799, 599));
-      await mouse.moveTo(tester.getCenter(find.byType(VideoPetPlayer)));
-      await loaded(tester, loop: true);
+      await mouse.addPointer(location: Offset.zero);
+      final center = tester.getCenter(find.byType(VideoPetPlayer));
+      await mouse.moveTo(center);
+      await mouse.moveTo(center + const Offset(10, 0));
+      await mouse.moveTo(Offset.zero);
       await tester.pump();
-      expect(busy, [true]);
+      expect(busy, isEmpty);
+      expect(pointers, contains('hover'));
+      expect(
+        tester.widget<SpriteAnimation>(find.byType(SpriteAnimation)).controller,
+        same(controller),
+      );
       manual.value = 'click';
       await loaded(tester, loop: false);
       await mouse.moveTo(const Offset(799, 599));
