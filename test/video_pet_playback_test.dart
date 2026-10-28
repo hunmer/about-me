@@ -92,6 +92,44 @@ void main() {
     expect(state.ended(looping.generation), isNull);
   });
 
+  test(
+    'drag overrides interactions without busy and restores latest state',
+    () {
+      final state = VideoPetPlaybackState(manifest);
+      final drag = state.setDrag('idle')!;
+      expect(drag.kind, VideoPetPlaybackKind.drag);
+      expect(drag.loop, true);
+      expect(state.busy, false);
+      state.setMovement('click', loop: false);
+      state.setHover('hover');
+      state.playClick(const VideoPetBinding(animationIds: ['click']));
+      state.playManual('manual');
+      expect(state.current!.kind, VideoPetPlaybackKind.drag);
+      expect(state.current!.generation, drag.generation);
+      expect(state.ended(drag.generation), isNull);
+      final restored = state.setDrag(null)!;
+      expect(restored.animationId, 'manual');
+      expect(state.ended(drag.generation), isNull);
+      expect(state.ended(restored.generation)!.animationId, 'hover');
+      state.setHover(null);
+      expect(state.current!.kind, VideoPetPlaybackKind.movement);
+      state.setMovement(null);
+      state.setDrag('idle');
+      expect(state.setDrag(null)!.kind, VideoPetPlaybackKind.idle);
+    },
+  );
+
+  test('clearing manual during drag restores hover on release', () {
+    final state = VideoPetPlaybackState(manifest);
+    state.setHover('hover');
+    state.playManual('manual');
+    final drag = state.setDrag('idle')!;
+    state.playManual(null);
+    expect(state.current!.generation, drag.generation);
+    expect(state.current!.kind, VideoPetPlaybackKind.drag);
+    expect(state.setDrag(null)!.animationId, 'hover');
+  });
+
   test('contain coordinates ignore letterbox and invalid dimensions', () {
     ({double x, double y})? point(double x, double y) => videoPetContainPoint(
       x: x,

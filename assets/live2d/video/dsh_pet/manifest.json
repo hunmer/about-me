@@ -1708,6 +1708,7 @@
     "rightAnimationId": "螃蟹走路",
     "turnLeftAnimationId": "东张西望",
     "turnRightAnimationId": "东张西望",
+    "dragAnimationId": "被鼠标拖拽悬空反馈",
     "speed": 40,
     "minIdleSeconds": 5,
     "maxIdleSeconds": 15

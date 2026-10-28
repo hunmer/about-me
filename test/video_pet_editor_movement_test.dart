@@ -49,8 +49,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('随机移动'), findsOneWidget);
     final selectors = find.byType(DropdownButtonFormField<String>);
-    expect(selectors, findsNWidgets(4));
+    expect(selectors, findsNWidgets(5));
     await tester.tap(selectors.first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('自定义走路').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(selectors.last);
+    await tester.tap(selectors.last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('自定义走路').last);
     await tester.pumpAndSettle();
@@ -58,6 +63,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(saved, isNotNull);
     expect(saved!.movement.leftAnimationId, 'walk');
+    expect(saved!.movement.dragAnimationId, 'walk');
     expect(tester.takeException(), isNull);
   });
 }

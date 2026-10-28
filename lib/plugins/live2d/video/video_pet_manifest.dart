@@ -160,6 +160,7 @@ class VideoPetMovement {
     this.rightAnimationId = '',
     this.turnLeftAnimationId = '',
     this.turnRightAnimationId = '',
+    this.dragAnimationId = '',
     this.speed = 40,
     this.minIdleSeconds = 5,
     this.maxIdleSeconds = 15,
@@ -169,6 +170,7 @@ class VideoPetMovement {
   final String rightAnimationId;
   final String turnLeftAnimationId;
   final String turnRightAnimationId;
+  final String dragAnimationId;
 
   /// Logical pixels per second.
   final double speed;
@@ -184,6 +186,7 @@ class VideoPetMovement {
       rightAnimationId: _string(json, 'rightAnimationId'),
       turnLeftAnimationId: _string(json, 'turnLeftAnimationId'),
       turnRightAnimationId: _string(json, 'turnRightAnimationId'),
+      dragAnimationId: _string(json, 'dragAnimationId'),
       speed: _number(json, 'speed', 40),
       minIdleSeconds: _number(json, 'minIdleSeconds', 5),
       maxIdleSeconds: _number(json, 'maxIdleSeconds', 15),
@@ -197,6 +200,7 @@ class VideoPetMovement {
     'rightAnimationId': rightAnimationId,
     'turnLeftAnimationId': turnLeftAnimationId,
     'turnRightAnimationId': turnRightAnimationId,
+    'dragAnimationId': dragAnimationId,
     'speed': speed,
     'minIdleSeconds': minIdleSeconds,
     'maxIdleSeconds': maxIdleSeconds,
@@ -207,6 +211,7 @@ class VideoPetMovement {
     String? rightAnimationId,
     String? turnLeftAnimationId,
     String? turnRightAnimationId,
+    String? dragAnimationId,
     double? speed,
     double? minIdleSeconds,
     double? maxIdleSeconds,
@@ -215,6 +220,7 @@ class VideoPetMovement {
     rightAnimationId: rightAnimationId ?? this.rightAnimationId,
     turnLeftAnimationId: turnLeftAnimationId ?? this.turnLeftAnimationId,
     turnRightAnimationId: turnRightAnimationId ?? this.turnRightAnimationId,
+    dragAnimationId: dragAnimationId ?? this.dragAnimationId,
     speed: speed ?? this.speed,
     minIdleSeconds: minIdleSeconds ?? this.minIdleSeconds,
     maxIdleSeconds: maxIdleSeconds ?? this.maxIdleSeconds,
@@ -226,6 +232,7 @@ class VideoPetMovement {
       rightAnimationId,
       turnLeftAnimationId,
       turnRightAnimationId,
+      dragAnimationId,
     ]) {
       _require(
         id.isEmpty ||

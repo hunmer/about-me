@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'video_pet_manifest.dart';
 
-enum VideoPetPlaybackKind { idle, movement, hover, click, manual }
+enum VideoPetPlaybackKind { idle, movement, hover, click, manual, drag }
 
 class VideoPetPlaybackRequest {
   const VideoPetPlaybackRequest({
@@ -28,6 +28,7 @@ class VideoPetPlaybackState {
   String? _onceId;
   VideoPetPlaybackKind _onceKind = VideoPetPlaybackKind.click;
   String? _hoverId;
+  String? _dragId;
   String? _movementId;
   bool _movementLoop = true;
   bool _movementCompleted = false;
@@ -36,15 +37,26 @@ class VideoPetPlaybackState {
 
   int get generation => _generation;
   bool get playing => _active && !_paused;
+  List<String> get busyReasons => [
+    if (_dragId != null) 'drag',
+    if (_onceId != null) _onceKind.name,
+    if (_hoverId != null) 'hover',
+  ];
   bool get busy => _onceId != null || _hoverId != null;
   String? get _pendingMovementId => _movementCompleted ? null : _movementId;
   String get activeAnimationId =>
-      _onceId ?? _hoverId ?? _pendingMovementId ?? manifest.idleAnimationId;
+      _dragId ??
+      _onceId ??
+      _hoverId ??
+      _pendingMovementId ??
+      manifest.idleAnimationId;
   VideoPetPlaybackRequest? get current {
     if (manifest.animation(activeAnimationId) == null) return null;
     return VideoPetPlaybackRequest(
       animationId: activeAnimationId,
-      kind: _onceId != null
+      kind: _dragId != null
+          ? VideoPetPlaybackKind.drag
+          : _onceId != null
           ? _onceKind
           : _hoverId != null
           ? VideoPetPlaybackKind.hover
@@ -53,8 +65,11 @@ class VideoPetPlaybackState {
           : VideoPetPlaybackKind.idle,
       generation: _generation,
       loop:
-          _onceId == null &&
-          (_hoverId != null || _pendingMovementId == null || _movementLoop),
+          _dragId != null ||
+          (_onceId == null &&
+              (_hoverId != null ||
+                  _pendingMovementId == null ||
+                  _movementLoop)),
     );
   }
 
@@ -64,11 +79,18 @@ class VideoPetPlaybackState {
     return current; // Pause/resume freezes the same generation and frame.
   }
 
+  VideoPetPlaybackRequest? setDrag(String? animationId) {
+    final id = _valid(animationId);
+    if (id == _dragId) return current;
+    _dragId = id;
+    return _bump();
+  }
+
   VideoPetPlaybackRequest? setHover(String? animationId) {
     final id = _valid(animationId);
     if (id == _hoverId) return current;
     _hoverId = id;
-    return _onceId != null ? current : _bump();
+    return _dragId != null || _onceId != null ? current : _bump();
   }
 
   VideoPetPlaybackRequest? playHover(VideoPetBinding binding) =>
@@ -79,20 +101,20 @@ class VideoPetPlaybackState {
     if (id == null) return current;
     _onceId = id;
     _onceKind = VideoPetPlaybackKind.click;
-    return _bump();
+    return _dragId != null ? current : _bump();
   }
 
   VideoPetPlaybackRequest? playManual(String? animationId) {
     if (animationId == null) {
       if (_onceId == null) return current;
       _onceId = null;
-      return _bump();
+      return _dragId != null ? current : _bump();
     }
     final id = _valid(animationId);
     if (id == null) return current;
     _onceId = id;
     _onceKind = VideoPetPlaybackKind.manual;
-    return _bump();
+    return _dragId != null ? current : _bump();
   }
 
   VideoPetPlaybackRequest? setMovement(
@@ -104,11 +126,11 @@ class VideoPetPlaybackState {
     _movementId = id;
     _movementLoop = loop;
     _movementCompleted = false;
-    return busy ? current : _bump();
+    return _dragId != null || busy ? current : _bump();
   }
 
   VideoPetPlaybackRequest? ended(int generation) {
-    if (!playing || generation != _generation) return null;
+    if (!playing || generation != _generation || _dragId != null) return null;
     if (_onceId != null) {
       _onceId = null;
     } else if (_hoverId == null &&

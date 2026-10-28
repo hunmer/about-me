@@ -898,6 +898,12 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
           turnItems,
           (id) => update(movement.copyWith(turnRightAnimationId: id ?? '')),
         ),
+        selector(
+          _text('videoPet_drag', '拖拽悬空'),
+          movement.dragAnimationId,
+          movementItems,
+          (id) => update(movement.copyWith(dragAnimationId: id ?? '')),
+        ),
         _numberField(
           _text('videoPet_moveSpeed', '移动速度（像素/秒）'),
           movement.speed,

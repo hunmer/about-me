@@ -219,6 +219,47 @@ void main() {
     },
   );
 
+  testWidgets('drag interface overrides manual and restores it on release', (
+    tester,
+  ) async {
+    final manual = ValueNotifier<String?>('click');
+    String? drag;
+    final busy = <bool>[];
+    Widget view() => MaterialApp(
+      home: SizedBox(
+        width: 200,
+        height: 200,
+        child: VideoPetPlayer(
+          manifest: manifest,
+          baseUri: '',
+          animationRequest: manual,
+          dragAnimationId: drag,
+          onPlaybackBusyChanged: busy.add,
+        ),
+      ),
+    );
+    await tester.pumpWidget(view());
+    await loaded(tester, loop: false);
+    final stale = tester
+        .widget<SpriteAnimation>(find.byType(SpriteAnimation))
+        .onComplete!;
+    drag = 'idle';
+    await tester.pumpWidget(view());
+    await loaded(tester, loop: true);
+    stale();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      tester.widget<SpriteAnimation>(find.byType(SpriteAnimation)).loop,
+      true,
+    );
+    drag = null;
+    await tester.pumpWidget(view());
+    await loaded(tester, loop: false);
+    expect(busy, [true]);
+    await tester.pumpWidget(const SizedBox.shrink());
+    manual.dispose();
+  });
+
   testWidgets('drag forwards Flutter details without triggering tap', (
     tester,
   ) async {

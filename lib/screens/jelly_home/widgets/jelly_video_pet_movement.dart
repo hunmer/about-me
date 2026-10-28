@@ -6,11 +6,13 @@ import 'package:flutter/scheduler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
+import 'package:aboutme/plugins/live2d/video/video_pet_preferences.dart';
 
 /// 视频播放器与移动舞台之间的动作和交互回调。
 class JellyVideoPetPlayback {
   const JellyVideoPetPlayback({
     required this.animationId,
+    this.dragAnimationId,
     required this.loop,
     required this.onComplete,
     required this.onBusyChanged,
@@ -20,6 +22,7 @@ class JellyVideoPetPlayback {
     required this.onDragCancel,
   });
   final String? animationId;
+  final String? dragAnimationId;
   final bool loop;
   final VoidCallback onComplete;
   final ValueChanged<bool> onBusyChanged;
@@ -84,15 +87,32 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
   int _phase = 0;
   bool _facingLeft = false;
 
-  bool get _canWalk =>
-      _loaded &&
-      widget.enabled.value &&
-      widget.movement.enabled &&
-      widget.active &&
-      _foreground &&
-      !_dragging &&
-      !_busy &&
-      _range.width > 1;
+  String? _lastStatus;
+  void _log(String message) =>
+      debugPrint('[VideoPetStage] model=${widget.modelId} $message');
+
+  List<String> get _blocked => [
+    if (!_loaded) 'notLoaded',
+    if (!widget.enabled.value) 'disabled',
+    if (!widget.movement.enabled) 'missingMovement',
+    if (!widget.active) 'inactive',
+    if (!_foreground) 'background',
+    if (_dragging) 'dragging',
+    if (_busy) 'busy',
+    if (_range.width <= 1) 'noHorizontalSpace',
+  ];
+  bool get _canWalk => _blocked.isEmpty;
+
+  void _logStatus() {
+    final status =
+        'enabled=${widget.enabled.value} movement=${widget.movement.enabled} '
+        'active=${widget.active} foreground=$_foreground range=$_range '
+        'blocked=[${_blocked.join(',')}]';
+    if (status == _lastStatus) return;
+    _lastStatus = status;
+    _log(status);
+  }
+
   String get _key => JellyVideoPetStage.preferenceKey(widget.modelId);
 
   @override
@@ -102,6 +122,8 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     _foreground =
         WidgetsBinding.instance.lifecycleState == null ||
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    VideoPetPreferences.randomWalkEnabled.addListener(_syncEnabled);
+    _syncEnabled();
     widget.enabled.addListener(_enabledChanged);
     unawaited(_load());
   }
@@ -109,6 +131,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
   Future<void> _load() async {
     final generation = ++_generation;
     _loaded = false;
+    _logStatus();
     final prefs = await SharedPreferences.getInstance();
     if (!mounted || generation != _generation) return;
     _prefs = prefs;
@@ -117,7 +140,6 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     _normalized = x != null && y != null && x.isFinite && y.isFinite
         ? Offset(x.clamp(0, 1), y.clamp(0, 1))
         : null;
-    widget.enabled.value = prefs.getBool('$_key.walk') ?? false;
     setState(() => _loaded = true);
     _schedule();
   }
@@ -128,6 +150,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     if (oldWidget.enabled != widget.enabled) {
       oldWidget.enabled.removeListener(_enabledChanged);
       widget.enabled.addListener(_enabledChanged);
+      _syncEnabled();
     }
     if (oldWidget.modelId != widget.modelId) {
       _stop();
@@ -144,11 +167,12 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     }
   }
 
+  void _syncEnabled() {
+    widget.enabled.value = VideoPetPreferences.randomWalkEnabled.value;
+  }
+
   void _enabledChanged() {
     _stop();
-    if (_loaded) {
-      unawaited(_prefs!.setBool('$_key.walk', widget.enabled.value));
-    }
     if (mounted) setState(() {});
     _schedule();
   }
@@ -161,6 +185,11 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
   }
 
   void _stop() {
+    if (_turning) _log('turn cancelled phase=$_phase');
+    if (_walking) {
+      _log('walk end phase=$_phase position=$_position target=$_target');
+    }
+    if (_wait != null) _log('wait cancelled phase=$_phase');
     ++_phase;
     _wait?.cancel();
     _wait = null;
@@ -170,18 +199,22 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
   }
 
   void _schedule() {
+    _logStatus();
     if (!_canWalk || _wait != null || _turning || _walking) return;
     final movement = widget.movement;
     final seconds =
         movement.minIdleSeconds +
         _random.nextDouble() *
             (movement.maxIdleSeconds - movement.minIdleSeconds);
+    _log('wait seconds=${math.max(0.1, seconds)} phase=$_phase');
     _wait = Timer(
       Duration(microseconds: math.max(100000, (seconds * 1000000).round())),
       () {
         _wait = null;
+        _logStatus();
         if (!_canWalk) return;
         _target = _random.nextDouble() * _range.width;
+        _log('target selected x=$_target from=${_position.dx} range=$_range');
         if ((_target - _position.dx).abs() < 1) {
           _schedule();
           return;
@@ -194,6 +227,9 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
           ++_phase;
           _turning = left != _facingLeft && turn.isNotEmpty;
           _left = left;
+          if (_turning) {
+            _log('turn request animation=$turn left=$left phase=$_phase');
+          }
           if (!_turning) _startWalking();
         });
       },
@@ -205,6 +241,9 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     _facingLeft = _left;
     _turning = false;
     _walking = true;
+    _log(
+      'walk start left=$_left from=${_position.dx} target=$_target speed=${widget.movement.speed} phase=$_phase',
+    );
     _previous = Duration.zero;
     _ticker.start();
   }
@@ -213,6 +252,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     final seconds = (elapsed - _previous).inMicroseconds / 1000000;
     _previous = elapsed;
     if (!_canWalk) {
+      _logStatus();
       setState(_stop);
       return;
     }
@@ -241,6 +281,10 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     setState(() {
       _stop();
       _dragging = true;
+      _log(
+        'drag start animation=${widget.movement.dragAnimationId} position=$_position',
+      );
+      _logStatus();
     });
   }
 
@@ -261,9 +305,10 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     });
   }
 
-  void _dragEnd() {
+  void _dragEnd({bool cancelled = false}) {
     if (!_dragging) return;
-    _dragging = false;
+    setState(() => _dragging = false);
+    _log('drag end cancelled=$cancelled position=$_position');
     _rememberPosition();
     final position = _normalized!;
     final key = _key;
@@ -304,6 +349,9 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
       if (_range != range) {
         _stop();
         _range = range;
+        _log(
+          'range changed range=$range pet=$size requestedPet=${widget.petSize} constraints=$constraints',
+        );
       }
       _position = _normalized == null
           ? Offset(
@@ -339,9 +387,14 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
                 context,
                 JellyVideoPetPlayback(
                   animationId: animation,
+                  dragAnimationId:
+                      _dragging && movement.dragAnimationId.isNotEmpty
+                      ? movement.dragAnimationId
+                      : null,
                   loop: !_turning,
                   onComplete: () {
                     if (mounted && phase == _phase && _turning && _canWalk) {
+                      _log('turn complete phase=$phase');
                       setState(_startWalking);
                     }
                   },
@@ -356,7 +409,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
                   onDragStart: _dragStart,
                   onDragUpdate: _dragUpdate,
                   onDragEnd: (_) => _dragEnd(),
-                  onDragCancel: _dragEnd,
+                  onDragCancel: () => _dragEnd(cancelled: true),
                 ),
               ),
             ),
@@ -369,6 +422,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
   @override
   void dispose() {
     ++_generation;
+    VideoPetPreferences.randomWalkEnabled.removeListener(_syncEnabled);
     widget.enabled.removeListener(_enabledChanged);
     WidgetsBinding.instance.removeObserver(this);
     _stop();

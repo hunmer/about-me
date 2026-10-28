@@ -146,6 +146,8 @@ class _JellyLive2DState extends State<JellyLive2D>
   final ValueNotifier<bool> _videoWalkingEnabled = ValueNotifier(false);
   bool _videoControlsOpen = false;
   VideoPetManifest? _videoManifest;
+  String? _videoBaseUri;
+  Map<String, String> _videoResolvedSources = const {};
   String? _videoLoadError;
   int _modelLoadGeneration = 0;
 
@@ -532,9 +534,6 @@ class _JellyLive2DState extends State<JellyLive2D>
           final fitHeight = widget.fitContainer && containerHeight.isFinite
               ? containerHeight
               : null;
-          final fitWidth = widget.fitContainer && containerWidth.isFinite
-              ? containerWidth
-              : null;
           // Scaffold.extendBody exposes the complete radial bar footprint as
           // the bottom media padding (runtime value is 129px on macOS).
           final navigationPadding = MediaQuery.paddingOf(context).bottom;
@@ -554,7 +553,9 @@ class _JellyLive2DState extends State<JellyLive2D>
             minSize: _minSize,
             maxSize: _maxSize,
           );
-          final layoutWidth = fitWidth ?? displaySize;
+          final layoutWidth = containerWidth.isFinite
+              ? containerWidth
+              : displaySize;
           final layoutHeight = fitHeight ?? displaySize;
           final modelBottomInset = computeJellyLive2DModelBottomInset(
             layoutHeight: layoutHeight,
@@ -575,7 +576,7 @@ class _JellyLive2DState extends State<JellyLive2D>
                     defaultTargetPlatform == TargetPlatform.android),
           );
           final viewportSize = Size(
-            viewportLayout.viewportHeight * _modelViewportAspectRatio,
+            layoutWidth / viewportLayout.scale,
             viewportLayout.viewportHeight,
           );
           final modelScale = viewportLayout.scale;
@@ -644,8 +645,10 @@ class _JellyLive2DState extends State<JellyLive2D>
                                 topInset: widget.topInset,
                                 bottomInset: modelBottomInset,
                                 petSize: Size(
-                                  math.min(size, layoutWidth * 0.7),
-                                  math.min(size, layoutWidth * 0.7) *
+                                  layoutWidth * size / _defaultSize,
+                                  layoutWidth *
+                                      size /
+                                      _defaultSize *
                                       _videoManifest!.canvasHeight /
                                       _videoManifest!.canvasWidth,
                                 ),
@@ -654,14 +657,15 @@ class _JellyLive2DState extends State<JellyLive2D>
                                     '${_selectedModel.modelDir}:${jsonEncode(_videoManifest!.toJson())}',
                                   ),
                                   manifest: _videoManifest!,
-                                  baseUri: _selectedModel.modelDir,
-                                  resolvedSources:
-                                      _selectedModel.videoResolvedSources,
+                                  baseUri:
+                                      _videoBaseUri ?? _selectedModel.modelDir,
+                                  resolvedSources: _videoResolvedSources,
                                   active: _routeVisible,
                                   animationRequest: _videoAnimationRequest,
                                   onTap: _handleVideoTap,
                                   onContextMenu: _showControls,
                                   movementAnimationId: playback.animationId,
+                                  dragAnimationId: playback.dragAnimationId,
                                   movementLoop: playback.loop,
                                   onMovementComplete: playback.onComplete,
                                   onPlaybackBusyChanged: playback.onBusyChanged,

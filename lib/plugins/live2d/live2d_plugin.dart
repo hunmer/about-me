@@ -24,6 +24,7 @@ import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'live2d_voice_analyzer.dart';
 import 'screens/live2d_main_screen.dart';
 import 'screens/live2d_settings_screen.dart';
+import 'video/video_pet_preferences.dart';
 
 part 'live2d_data_selectors.dart';
 
@@ -174,6 +175,22 @@ class Live2DPlugin extends BasePlugin {
     _voiceAnalysisTimer?.cancel();
     _voiceAnalysisTimer = null;
     voiceFrame.value = null;
+  }
+
+  bool get videoRandomWalkEnabled =>
+      settings['videoRandomWalkEnabled'] as bool? ?? false;
+
+  ValueNotifier<bool> get videoRandomWalkEnabledNotifier =>
+      VideoPetPreferences.randomWalkEnabled;
+
+  Future<void> setVideoRandomWalkEnabled(bool enabled) =>
+      updateSettings({'videoRandomWalkEnabled': enabled});
+
+  @override
+  Future<void> updateSettings(Map<String, dynamic> newSettings) async {
+    final saving = super.updateSettings(newSettings);
+    videoRandomWalkEnabledNotifier.value = videoRandomWalkEnabled;
+    await saving;
   }
 
   Duration get bubbleTypingInterval => Duration(
@@ -442,11 +459,13 @@ class Live2DPlugin extends BasePlugin {
       'backgroundAsset': null,
       'backgroundBlur': defaultBackgroundBlur,
       'backgroundOpacity': defaultBackgroundOpacity,
+      'videoRandomWalkEnabled': false,
       'customBackgroundAssets': <String>[],
       'bubbleRegions': <String, dynamic>{},
       'customBubbleAssets': <String>[],
       'importedModels': <Map<String, dynamic>>[],
     });
+    videoRandomWalkEnabledNotifier.value = videoRandomWalkEnabled;
     final res = await AboutmeDataService.instance.call(
       'live2d',
       'getSnapshot',
@@ -606,6 +625,9 @@ class Live2DPlugin extends BasePlugin {
 
   @override
   Widget buildMainView(BuildContext context) => const Live2DMainScreen();
+  @override
+  bool get hasSettingsView => true;
+
   @override
   Widget buildSettingsView(BuildContext context) =>
       const Live2DSettingsScreen();

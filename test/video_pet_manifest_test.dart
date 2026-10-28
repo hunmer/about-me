@@ -193,12 +193,14 @@ void main() {
     expect(defaults.minIdleSeconds, 5);
     expect(defaults.maxIdleSeconds, 15);
     expect(defaults.enabled, isFalse);
+    expect(defaults.dragAnimationId, isEmpty);
     final movement = defaults.copyWith(leftAnimationId: 'idle');
     expect(movement.enabled, isFalse);
     final walking = movement.copyWith(
       rightAnimationId: 'idle',
       turnLeftAnimationId: 'idle',
       turnRightAnimationId: 'idle',
+      dragAnimationId: 'idle',
       speed: 60,
       minIdleSeconds: 0,
       maxIdleSeconds: 2,
@@ -214,6 +216,7 @@ void main() {
       walking.copyWith(rightAnimationId: 'missing'),
       walking.copyWith(turnLeftAnimationId: 'missing'),
       walking.copyWith(turnRightAnimationId: 'missing'),
+      walking.copyWith(dragAnimationId: 'missing'),
       walking.copyWith(speed: 0),
       walking.copyWith(speed: -1),
       walking.copyWith(speed: double.nan),

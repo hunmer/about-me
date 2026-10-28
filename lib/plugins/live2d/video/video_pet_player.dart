@@ -26,6 +26,7 @@ class VideoPetPlayer extends StatefulWidget {
     this.paused = false,
     this.animationRequest,
     this.movementAnimationId,
+    this.dragAnimationId,
     this.movementLoop = true,
     this.onMovementComplete,
     this.onPlaybackBusyChanged,
@@ -47,6 +48,7 @@ class VideoPetPlayer extends StatefulWidget {
   final bool paused;
   final ValueListenable<String?>? animationRequest;
   final String? movementAnimationId;
+  final String? dragAnimationId;
   final bool movementLoop;
   final VoidCallback? onMovementComplete;
   final ValueChanged<bool>? onPlaybackBusyChanged;
@@ -80,6 +82,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
   int _epoch = 0;
   int _packageEpoch = 0;
   bool _reportedBusy = false;
+  String? _reportedBusyReasons;
   bool _busyNotificationScheduled = false;
 
   void _notifyBusy() {
@@ -89,6 +92,13 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       _busyNotificationScheduled = false;
       if (!mounted) return;
       final busy = _playback.busy;
+      final reasons = _playback.busyReasons.join(',');
+      if (_reportedBusyReasons != reasons) {
+        _reportedBusyReasons = reasons;
+        debugPrint(
+          '[VideoPetPlayer] model=${widget.manifest.id} busy=$busy reasons=[$reasons]',
+        );
+      }
       if (busy == _reportedBusy) return;
       _reportedBusy = busy;
       widget.onPlaybackBusyChanged?.call(busy);
@@ -98,7 +108,11 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
 
   void _complete(VideoPetPlaybackRequest request) {
     // A decoded, currently displayed surface is the only completion source.
-    if (_released || !identical(_request, request)) return;
+    final accepted = !_released && identical(_request, request);
+    debugPrint(
+      '[VideoPetPlayer] complete animation=${request.animationId} generation=${request.generation} current=${_playback.generation} accepted=$accepted',
+    );
+    if (!accepted) return;
     final next = _playback.ended(request.generation);
     if (next == null) return;
     unawaited(_present(next));
@@ -124,6 +138,9 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
 
   Future<void> _prepare() async {
     final epoch = ++_packageEpoch;
+    debugPrint(
+      '[VideoPetPlayer] prepare start model=${widget.manifest.id} epoch=$epoch',
+    );
     _release();
     _package = null;
     try {
@@ -145,10 +162,16 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       );
       final id = widget.animationRequest?.value;
       if (id != null) _playback.playManual(id);
+      _playback.setDrag(widget.dragAnimationId);
+      debugPrint(
+        '[VideoPetPlayer] prepare success model=${widget.manifest.id} epoch=$epoch',
+      );
       await _present(_playback.current);
     } catch (error) {
       if (!mounted || epoch != _packageEpoch) return;
-      debugPrint('[SpritesheetPet] $error');
+      debugPrint(
+        '[VideoPetPlayer] load failed model=${widget.manifest.id} generation=${_playback.generation} error=$error',
+      );
       setState(() => _error = '精灵图资源加载失败：$error');
     }
   }
@@ -183,10 +206,12 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
         loop: widget.movementLoop,
       );
     }
+    final dragChanged = oldWidget.dragAnimationId != widget.dragAnimationId;
+    if (dragChanged) _playback.setDrag(widget.dragAnimationId);
     if (oldWidget.active != widget.active ||
         oldWidget.paused != widget.paused) {
       _lifecycle();
-    } else if (interactionChanged || movementChanged) {
+    } else if (interactionChanged || movementChanged || dragChanged) {
       unawaited(_present(_playback.current));
     }
     if (oldWidget.animationRequest != widget.animationRequest) _manual();
@@ -257,6 +282,9 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       return;
     }
     final epoch = ++_epoch;
+    debugPrint(
+      '[VideoPetPlayer] load start animation=${request.animationId} kind=${request.kind.name} generation=${request.generation} epoch=$epoch',
+    );
     MemoryImage? image;
     try {
       final animation = package.manifest.animation(request.animationId)!;
@@ -279,6 +307,9 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
         unawaited(image.evict());
         return;
       }
+      debugPrint(
+        '[VideoPetPlayer] load success animation=${request.animationId} generation=${request.generation} epoch=$epoch',
+      );
       final previous = _image;
       setState(() {
         _image = image;
@@ -289,7 +320,9 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     } catch (error) {
       if (image != null) unawaited(image.evict());
       if (!mounted || epoch != _epoch || _released) return;
-      debugPrint('[SpritesheetPet] $error');
+      debugPrint(
+        '[VideoPetPlayer] load failed model=${widget.manifest.id} generation=${_playback.generation} error=$error',
+      );
       setState(() => _error = '精灵图加载失败，点击重试\n$error');
     }
   }

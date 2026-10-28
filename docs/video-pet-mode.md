@@ -18,6 +18,7 @@
     "rightAnimationId": "螃蟹走路",
     "turnLeftAnimationId": "东张西望",
     "turnRightAnimationId": "东张西望",
+    "dragAnimationId": "被鼠标拖拽悬空反馈",
     "speed": 40,
     "minIdleSeconds": 5,
     "maxIdleSeconds": 15
@@ -25,7 +26,11 @@
 }
 ```
 
-7. 主页可直接拖拽宠物调整位置；位置和随机走路开关会在本机按模型保存。右键菜单或长按面板可打开随机走路开关，默认关闭。
+7. 主页可直接拖拽宠物调整位置，位置在本机按模型保存。进入 Live2D 独立设置，在视频（精灵图）模式下可看到“随机走路”开关，默认关闭，保存在插件配置中；主页和预览同步生效。
+8. Live2D 与视频模式默认保持全宽显示。宠物本体占满舞台宽度时，水平移动范围为 0，开启随机走路也不会横移；日志会明确显示 `noHorizontalSpace` 和实际范围，不会自动缩小角色。
+9. 编辑器“拖拽悬空”可配置 `movement.dragAnimationId`，留空表示不设置；默认绑定“被鼠标拖拽悬空反馈”。按住拖拽时优先于点播、点击、悬浮和走路，松开或取消立即恢复当前交互或待机。旧内置档案仅在包含对应资源且未配置拖拽时补齐绑定，保留已有移动设置。
+
+调试日志前缀为 `[VideoPetStage]` 和 `[VideoPetPlayer]`。舞台按状态变化输出模型、开关、移动范围和全部阻塞原因（`notLoaded/disabled/missingMovement/inactive/background/dragging/busy/noHorizontalSpace`），并记录等待秒数、目标、转向请求/完成/取消、走路和拖拽开始/结束；播放器记录 busy 原因、动作加载开始/成功/失败和完成 generation。日志不逐帧输出。
 
 编辑器取消关闭不会修改已保存配置。设置页和主页的动作点播结束后，会恢复当前悬浮动作或待机。
 

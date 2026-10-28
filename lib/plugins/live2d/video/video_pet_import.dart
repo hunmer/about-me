@@ -89,11 +89,21 @@ class VideoPetImportService {
           ),
         );
       }
+      var movement = _shouldFillDefaultMovement(manifest.movement)
+          ? _defaultMovement(
+              defaults.manifest,
+              migrated,
+            ).copyWith(dragAnimationId: manifest.movement.dragAnimationId)
+          : manifest.movement;
+      final dragId = defaults.manifest.movement.dragAnimationId;
+      if (movement.dragAnimationId.isEmpty &&
+          dragId.isNotEmpty &&
+          migrated.any((a) => a.id == dragId)) {
+        movement = movement.copyWith(dragAnimationId: dragId);
+      }
       final migratedManifest = manifest.copyWith(
         animations: migrated,
-        movement: _shouldFillDefaultMovement(manifest.movement)
-            ? _defaultMovement(defaults.manifest, migrated)
-            : manifest.movement,
+        movement: movement,
       );
       migratedManifest.validate();
       return VideoPetPackage(
@@ -137,7 +147,7 @@ class VideoPetImportService {
             migrated.any(
               (animation) => animation.id == movement.turnRightAnimationId,
             ))) {
-      return movement;
+      return movement.copyWith(dragAnimationId: '');
     }
     return const VideoPetMovement();
   }

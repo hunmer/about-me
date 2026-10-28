@@ -79,9 +79,22 @@ extension _JellyLive2DLoader on _JellyLive2DState {
         final manifest =
             model.videoManifest ??
             (await VideoPetImportService().loadDefault()).manifest;
+        final package = await const VideoPetImportService().prepareForPlayback(
+          manifest,
+          baseUri: model.modelDir,
+          resolvedSources: model.videoResolvedSources,
+        );
         if (!mounted || generation != _modelLoadGeneration) return;
+        debugPrint(
+          '[Live2D][Video] 模型=${manifest.id} '
+          '行走=${package.manifest.movement.enabled} '
+          '左=${package.manifest.movement.leftAnimationId} '
+          '右=${package.manifest.movement.rightAnimationId}',
+        );
         setState(() {
-          _videoManifest = manifest;
+          _videoManifest = package.manifest;
+          _videoBaseUri = package.baseUri;
+          _videoResolvedSources = package.resolvedSources;
           _isSwitchingModel = false;
         });
         _notifyAppearanceAvailabilityChanged();

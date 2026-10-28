@@ -109,26 +109,6 @@ extension _JellyLive2DControls on _JellyLive2DState {
                       ],
                     ),
                   ),
-                  if (_isVideo)
-                    ValueListenableBuilder<bool>(
-                      valueListenable: _videoWalkingEnabled,
-                      builder: (context, enabled, _) {
-                        final available =
-                            _videoManifest?.movement.enabled == true;
-                        return SwitchListTile(
-                          title: const Text('随机走路'),
-                          subtitle: Text(
-                            available
-                                ? '随机等待后水平走动，可拖拽调整位置'
-                                : '当前模型缺少左右行走动作，无法启用',
-                          ),
-                          value: available && enabled,
-                          onChanged: available
-                              ? (value) => _videoWalkingEnabled.value = value
-                              : null,
-                        );
-                      },
-                    ),
                   if (!_isVideo) ...[
                     SizedBox(height: theme.spacing.xl),
                     Text(
