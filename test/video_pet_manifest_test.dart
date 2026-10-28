@@ -190,8 +190,10 @@ void main() {
     expect(legacy.movement.speed, 40);
     final defaults = VideoPetMovement.fromJson({});
     expect(defaults.speed, 40);
-    expect(defaults.minIdleSeconds, 5);
-    expect(defaults.maxIdleSeconds, 15);
+    expect(defaults.minIdleSeconds, 10);
+    expect(defaults.maxIdleSeconds, 10);
+    expect(const VideoPetMovement().minIdleSeconds, 10);
+    expect(const VideoPetMovement().maxIdleSeconds, 10);
     expect(defaults.enabled, isFalse);
     expect(defaults.dragAnimationId, isEmpty);
     final movement = defaults.copyWith(leftAnimationId: 'idle');

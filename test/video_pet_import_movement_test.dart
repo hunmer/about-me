@@ -7,6 +7,49 @@ void main() {
   const service = VideoPetImportService();
 
   test(
+    'built-in old wait range migrates while custom ranges survive',
+    () async {
+      final defaults = (await service.loadDefault()).manifest;
+      expect(defaults.movement.minIdleSeconds, 10);
+      expect(defaults.movement.maxIdleSeconds, 10);
+      final oldMovement = defaults.movement.copyWith(
+        minIdleSeconds: 5,
+        maxIdleSeconds: 15,
+        speed: 63,
+        dragAnimationId: defaults.idleAnimationId,
+      );
+      final old = VideoPetManifest.fromJson(
+        defaults.copyWith(movement: oldMovement).toJson(),
+      );
+      final upgraded = await service.prepareForPlayback(old);
+      expect(
+        upgraded.manifest.movement.toJson(),
+        oldMovement.copyWith(minIdleSeconds: 10, maxIdleSeconds: 10).toJson(),
+      );
+      final again = await service.prepareForPlayback(upgraded.manifest);
+      expect(again.manifest.toJson(), upgraded.manifest.toJson());
+      final customRange = oldMovement.copyWith(
+        minIdleSeconds: 7,
+        maxIdleSeconds: 12,
+      );
+      expect(
+        (await service.prepareForPlayback(
+          defaults.copyWith(movement: customRange),
+        )).manifest.movement.toJson(),
+        customRange.toJson(),
+      );
+      // Separate packages retain even an explicit 5–15 range.
+      for (final custom in [old.copyWith(id: 'custom-pet'), old]) {
+        final prepared = await service.prepareForPlayback(
+          custom,
+          baseUri: 'file:///custom/',
+        );
+        expect(prepared.manifest.movement.toJson(), oldMovement.toJson());
+      }
+    },
+  );
+
+  test(
     'drag migration preserves walking, explicit binding and subset safety',
     () async {
       final defaults = (await service.loadDefault()).manifest;

@@ -640,6 +640,7 @@ class _JellyLive2DState extends State<JellyLive2D>
                                 modelId:
                                     '${_selectedModel.modelDir}:${_videoManifest!.id}',
                                 movement: _videoManifest!.movement,
+                                animations: _videoManifest!.animations,
                                 enabled: _videoWalkingEnabled,
                                 active: _routeVisible && !_videoControlsOpen,
                                 topInset: widget.topInset,

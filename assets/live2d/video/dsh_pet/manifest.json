@@ -1513,6 +1513,7 @@
       "id": "螃蟹走路",
       "name": "螃蟹走路",
       "category": "移动",
+      "facing": "left",
       "sources": {
         "webp": "spritesheet/螃蟹走路.webp"
       },
@@ -1710,8 +1711,8 @@
     "turnRightAnimationId": "东张西望",
     "dragAnimationId": "被鼠标拖拽悬空反馈",
     "speed": 40,
-    "minIdleSeconds": 5,
-    "maxIdleSeconds": 15
+    "minIdleSeconds": 10,
+    "maxIdleSeconds": 10
   },
   "hover": {
     "animationIds": [

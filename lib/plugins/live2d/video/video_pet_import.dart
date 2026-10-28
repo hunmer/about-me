@@ -86,6 +86,9 @@ class VideoPetImportService {
           animation.copyWith(
             sources: replacement.sources,
             spritesheet: replacement.spritesheet,
+            facing: animation.facing.isEmpty
+                ? replacement.facing
+                : animation.facing,
           ),
         );
       }
@@ -95,6 +98,10 @@ class VideoPetImportService {
               migrated,
             ).copyWith(dragAnimationId: manifest.movement.dragAnimationId)
           : manifest.movement;
+      // Refresh the old built-in wait range without overriding custom ranges.
+      if (movement.minIdleSeconds == 5 && movement.maxIdleSeconds == 15) {
+        movement = movement.copyWith(minIdleSeconds: 10, maxIdleSeconds: 10);
+      }
       final dragId = defaults.manifest.movement.dragAnimationId;
       if (movement.dragAnimationId.isEmpty &&
           dragId.isNotEmpty &&

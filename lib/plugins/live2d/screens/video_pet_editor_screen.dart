@@ -928,7 +928,10 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
           ),
         ),
         Text(
-          _text('videoPet_movementHint', '左右选择相同动作时，向左行走会自动镜像。'),
+          _text(
+            'videoPet_movementHint',
+            '在动画 JSON 中通过 facing 设置原始朝向（left/right），行走时按位移方向自动翻转。',
+          ),
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ],

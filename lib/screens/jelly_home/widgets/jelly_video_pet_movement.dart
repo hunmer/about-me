@@ -40,6 +40,7 @@ class JellyVideoPetStage extends StatefulWidget {
     required this.enabled,
     required this.petSize,
     required this.builder,
+    this.animations = const [],
     this.topInset = 0,
     this.bottomInset = 0,
     this.initialBottomGap = 0,
@@ -49,6 +50,7 @@ class JellyVideoPetStage extends StatefulWidget {
 
   final String modelId;
   final VideoPetMovement movement;
+  final List<VideoPetAnimation> animations;
   final ValueNotifier<bool> enabled;
   final Size petSize;
   final Widget Function(BuildContext, JellyVideoPetPlayback) builder;
@@ -88,6 +90,28 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
   int _generation = 0;
   int _phase = 0;
   bool _facingLeft = false;
+
+  String? get _movementAnimationId => _turning
+      ? (_left
+            ? widget.movement.turnLeftAnimationId
+            : widget.movement.turnRightAnimationId)
+      : _walking
+      ? (_left
+            ? widget.movement.leftAnimationId
+            : widget.movement.rightAnimationId)
+      : null;
+
+  bool get _flipX {
+    if (_dragging || _busy) return false;
+    final id = _movementAnimationId;
+    if (id == null) return false;
+    for (final animation in widget.animations) {
+      if (animation.id != id || animation.facing.isEmpty) continue;
+      return (animation.facing == 'left') != _left;
+    }
+    return _left &&
+        widget.movement.leftAnimationId == widget.movement.rightAnimationId;
+  }
 
   String? _lastStatus;
   void _log(String message) =>
@@ -217,13 +241,16 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
         _logStatus();
         if (!_canWalk) return;
         _target = _minX + _random.nextDouble() * _range.width;
-        _log(
-          'target selected x=$_target from=${_position.dx} xBounds=[$_minX,$_maxX]',
-        );
-        if ((_target - _position.dx).abs() < 1) {
-          _schedule();
-          return;
+        final minDistance = math.min(80.0, _range.width / 2);
+        if ((_target - _position.dx).abs() < minDistance) {
+          // Keep this walk opportunity even when randomness picks our position.
+          _target = _position.dx - _minX >= _maxX - _position.dx
+              ? _minX
+              : _maxX;
         }
+        _log(
+          'target selected x=$_target from=${_position.dx} minDistance=$minDistance xBounds=[$_minX,$_maxX]',
+        );
         final left = _target < _position.dx;
         final turn = left
             ? movement.turnLeftAnimationId
@@ -269,7 +296,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
           : _position.dx + (remaining.isNegative ? -distance : distance);
       _position = Offset(x.clamp(_minX, _maxX), _position.dy);
       _rememberPosition();
-      if (remaining.abs() <= distance || x <= _minX || x >= _maxX) _stop();
+      if (remaining.abs() <= distance) _stop();
     });
     _schedule();
   }
@@ -297,9 +324,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
 
   void _dragUpdate(DragUpdateDetails details) {
     if (!_dragging) return;
-    final mirror =
-        _left &&
-        widget.movement.leftAnimationId == widget.movement.rightAnimationId;
+    final mirror = _flipX;
     setState(() {
       _position = Offset(
         (_position.dx + details.delta.dx * (mirror ? -1 : 1)).clamp(
@@ -380,13 +405,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
             );
       _schedule();
       final movement = widget.movement;
-      final animation = _turning
-          ? (_left
-                ? movement.turnLeftAnimationId
-                : movement.turnRightAnimationId)
-          : _walking
-          ? (_left ? movement.leftAnimationId : movement.rightAnimationId)
-          : null;
+      final animation = _movementAnimationId;
       final phase = _phase;
       return Stack(
         children: [
@@ -396,9 +415,7 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
             width: size.width,
             height: size.height,
             child: Transform.flip(
-              flipX:
-                  _left &&
-                  movement.leftAnimationId == movement.rightAnimationId,
+              flipX: _flipX,
               child: widget.builder(
                 context,
                 JellyVideoPetPlayback(

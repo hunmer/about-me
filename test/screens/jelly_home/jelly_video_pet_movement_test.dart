@@ -8,8 +8,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FixedRandom implements Random {
+  FixedRandom([this.value = 0]);
+  final double value;
   @override
-  double nextDouble() => 0;
+  double nextDouble() => value;
   @override
   int nextInt(int max) => 0;
   @override
@@ -33,6 +35,8 @@ void main() {
     String model = 'a',
     bool active = true,
     double width = 400,
+    double randomValue = 0,
+    List<VideoPetAnimation> animations = const [],
     VideoPetMovement config = movement,
   }) => MaterialApp(
     home: Align(
@@ -43,12 +47,13 @@ void main() {
         child: JellyVideoPetStage(
           modelId: model,
           movement: config,
+          animations: animations,
           enabled: enabled,
           petSize: const Size(100, 100),
           topInset: 20,
           bottomInset: 30,
           active: active,
-          random: FixedRandom(),
+          random: FixedRandom(randomValue),
           builder: (context, value) {
             playback = value;
             return GestureDetector(
@@ -64,6 +69,52 @@ void main() {
     ),
   );
 
+  for (final facing in ['left', 'right']) {
+    for (final moveLeft in [true, false]) {
+      testWidgets(
+        '$facing resource mirrors correctly when moveLeft=$moveLeft',
+        (tester) async {
+          await tester.pumpWidget(
+            stage(
+              randomValue: moveLeft ? 0 : .99,
+              config: movement.copyWith(turnLeftAnimationId: ''),
+              animations: [
+                VideoPetAnimation(id: 'walk', name: 'walk', facing: facing),
+              ],
+            ),
+          );
+          await tester.pump();
+          VideoPetPreferences.randomWalkEnabled.value = true;
+          await tester.pump(const Duration(seconds: 1));
+          expect(playback.animationId, 'walk');
+          final transform = tester.widget<Transform>(
+            find
+                .ancestor(
+                  of: find.byKey(const ValueKey('pet')),
+                  matching: find.byType(Transform),
+                )
+                .first,
+          );
+          final flipped = transform.transform.entry(0, 0) < 0;
+          expect(flipped, (facing == 'left') != moveLeft);
+          playback.onDragStart(DragStartDetails());
+          await tester.pump();
+          final dragTransform = tester.widget<Transform>(
+            find
+                .ancestor(
+                  of: find.byKey(const ValueKey('pet')),
+                  matching: find.byType(Transform),
+                )
+                .first,
+          );
+          expect(dragTransform.transform.entry(0, 0), 1);
+          playback.onDragCancel();
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
+    }
+  }
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     VideoPetPreferences.randomWalkEnabled.value = false;
@@ -75,13 +126,106 @@ void main() {
     String model = 'a',
     bool active = true,
     double width = 400,
+    double randomValue = 0,
     VideoPetMovement config = movement,
   }) async {
     await tester.pumpWidget(
-      stage(model: model, active: active, width: width, config: config),
+      stage(
+        model: model,
+        active: active,
+        width: width,
+        randomValue: randomValue,
+        config: config,
+      ),
     );
     await tester.pump();
     await tester.pump();
+  }
+
+  testWidgets('default walk starts at 10 seconds, not 9.9', (tester) async {
+    await load(
+      tester,
+      config: const VideoPetMovement(
+        leftAnimationId: 'walk',
+        rightAnimationId: 'walk',
+      ),
+    );
+    VideoPetPreferences.randomWalkEnabled.value = true;
+    await tester.pump(const Duration(milliseconds: 9900));
+    expect(playback.animationId, isNull);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(playback.animationId, 'walk');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('busy completion starts a fresh full 10 second wait', (
+    tester,
+  ) async {
+    await load(
+      tester,
+      config: const VideoPetMovement(
+        leftAnimationId: 'walk',
+        rightAnimationId: 'walk',
+      ),
+    );
+    VideoPetPreferences.randomWalkEnabled.value = true;
+    await tester.pump(const Duration(seconds: 9));
+    playback.onBusyChanged(true);
+    await tester.pump(const Duration(seconds: 30));
+    expect(playback.animationId, isNull);
+    final before = tester.getTopLeft(find.byKey(const ValueKey('pet')));
+    playback.onBusyChanged(false);
+    await tester.pump(const Duration(milliseconds: 9900));
+    expect(playback.animationId, isNull);
+    expect(tester.getTopLeft(find.byKey(const ValueKey('pet'))), before);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(playback.animationId, 'walk');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('drag completion starts a fresh full 10 second wait', (
+    tester,
+  ) async {
+    await load(
+      tester,
+      config: const VideoPetMovement(
+        leftAnimationId: 'walk',
+        rightAnimationId: 'walk',
+      ),
+    );
+    VideoPetPreferences.randomWalkEnabled.value = true;
+    await tester.pump(const Duration(seconds: 9));
+    playback.onDragStart(DragStartDetails());
+    await tester.pump(const Duration(seconds: 30));
+    expect(playback.animationId, isNull);
+    playback.onDragEnd(DragEndDetails());
+    await tester.pump(const Duration(milliseconds: 9900));
+    expect(playback.animationId, isNull);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(playback.animationId, 'walk');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  for (final randomValue in [0.5, 0.501]) {
+    testWidgets(
+      'near target $randomValue keeps this walk and travels visibly',
+      (tester) async {
+        await load(tester, randomValue: randomValue);
+        VideoPetPreferences.randomWalkEnabled.value = true;
+        await tester.pump(const Duration(seconds: 1));
+        expect(playback.animationId, 'turn');
+        playback.onComplete();
+        await tester.pump();
+        expect(playback.animationId, 'walk');
+        await tester.pump(const Duration(seconds: 2));
+        expect(
+          tester.getRect(find.byKey(const ValueKey('pet'))).left,
+          closeTo(70, 0.01),
+        );
+        expect(playback.animationId, 'walk');
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
   }
 
   testWidgets(
@@ -333,26 +477,32 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('zero idle duration at the target remains bounded and idle', (
-    tester,
-  ) async {
-    await load(
-      tester,
-      config: movement.copyWith(minIdleSeconds: 0, maxIdleSeconds: 0),
-    );
-    playback.onDragStart(DragStartDetails());
-    playback.onDragUpdate(
-      DragUpdateDetails(
-        globalPosition: Offset.zero,
-        delta: const Offset(-150, 0),
-      ),
-    );
-    playback.onDragEnd(DragEndDetails());
-    VideoPetPreferences.randomWalkEnabled.value = true;
-    await tester.pump(const Duration(seconds: 10));
-    expect(playback.animationId, isNull);
-    await tester.pumpWidget(const SizedBox());
-  });
+  testWidgets(
+    'zero idle and target at current position walks without retry wait',
+    (tester) async {
+      await load(
+        tester,
+        config: movement.copyWith(minIdleSeconds: 0, maxIdleSeconds: 0),
+      );
+      playback.onDragStart(DragStartDetails());
+      playback.onDragUpdate(
+        DragUpdateDetails(
+          globalPosition: Offset.zero,
+          delta: const Offset(-150, 0),
+        ),
+      );
+      playback.onDragEnd(DragEndDetails());
+      VideoPetPreferences.randomWalkEnabled.value = true;
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(playback.animationId, 'walk');
+      await tester.pump(const Duration(seconds: 2));
+      expect(
+        tester.getTopLeft(find.byKey(const ValueKey('pet'))).dx,
+        closeTo(80, 0.01),
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets(
     'global setting overrides legacy model switch and stops immediately',

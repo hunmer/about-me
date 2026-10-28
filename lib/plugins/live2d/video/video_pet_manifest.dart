@@ -162,8 +162,8 @@ class VideoPetMovement {
     this.turnRightAnimationId = '',
     this.dragAnimationId = '',
     this.speed = 40,
-    this.minIdleSeconds = 5,
-    this.maxIdleSeconds = 15,
+    this.minIdleSeconds = 10,
+    this.maxIdleSeconds = 10,
   });
 
   final String leftAnimationId;
@@ -188,8 +188,8 @@ class VideoPetMovement {
       turnRightAnimationId: _string(json, 'turnRightAnimationId'),
       dragAnimationId: _string(json, 'dragAnimationId'),
       speed: _number(json, 'speed', 40),
-      minIdleSeconds: _number(json, 'minIdleSeconds', 5),
-      maxIdleSeconds: _number(json, 'maxIdleSeconds', 15),
+      minIdleSeconds: _number(json, 'minIdleSeconds', 10),
+      maxIdleSeconds: _number(json, 'maxIdleSeconds', 10),
     );
     result.validate();
     return result;
@@ -257,6 +257,7 @@ class VideoPetAnimation {
     required this.id,
     required this.name,
     this.category = '',
+    this.facing = '',
     this.sources = const {},
     this.spritesheet,
   });
@@ -264,6 +265,7 @@ class VideoPetAnimation {
   final String id;
   final String name;
   final String category;
+  final String facing;
   final Map<String, String> sources;
   final VideoPetSpritesheet? spritesheet;
 
@@ -291,6 +293,7 @@ class VideoPetAnimation {
       id: _string(json, 'id'),
       name: _string(json, 'name'),
       category: _string(json, 'category'),
+      facing: _string(json, 'facing'),
       sources: Map.unmodifiable(sources.cast<String, String>()),
       spritesheet: spritesheetJson == null
           ? null
@@ -304,6 +307,7 @@ class VideoPetAnimation {
     'id': id,
     'name': name,
     'category': category,
+    if (facing.isNotEmpty) 'facing': facing,
     'sources': Map<String, String>.of(sources),
     if (spritesheet != null) 'spritesheet': spritesheet!.toJson(),
   };
@@ -312,12 +316,14 @@ class VideoPetAnimation {
     String? id,
     String? name,
     String? category,
+    String? facing,
     Map<String, String>? sources,
     Object? spritesheet = _unset,
   }) => VideoPetAnimation(
     id: id ?? this.id,
     name: name ?? this.name,
     category: category ?? this.category,
+    facing: facing ?? this.facing,
     sources: Map.unmodifiable(sources ?? this.sources),
     spritesheet: identical(spritesheet, _unset)
         ? this.spritesheet
@@ -332,6 +338,10 @@ class VideoPetAnimation {
   void validate() {
     _require(id.trim().isNotEmpty, 'Animation id must not be empty');
     _require(name.trim().isNotEmpty, 'Animation name must not be empty');
+    _require(
+      facing.isEmpty || facing == 'left' || facing == 'right',
+      'Invalid animation facing: $facing',
+    );
     _require(sources.isNotEmpty, 'Animation $id has no sources');
     final hasImage = imageSource != null;
     if (spritesheet != null || hasImage) {
