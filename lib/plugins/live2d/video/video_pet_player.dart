@@ -25,6 +25,14 @@ class VideoPetPlayer extends StatefulWidget {
     this.active = true,
     this.paused = false,
     this.animationRequest,
+    this.movementAnimationId,
+    this.movementLoop = true,
+    this.onMovementComplete,
+    this.onPlaybackBusyChanged,
+    this.onDragStart,
+    this.onDragUpdate,
+    this.onDragEnd,
+    this.onDragCancel,
     this.onTap,
     this.onInteraction,
     this.interactive = true,
@@ -38,6 +46,14 @@ class VideoPetPlayer extends StatefulWidget {
   final bool active;
   final bool paused;
   final ValueListenable<String?>? animationRequest;
+  final String? movementAnimationId;
+  final bool movementLoop;
+  final VoidCallback? onMovementComplete;
+  final ValueChanged<bool>? onPlaybackBusyChanged;
+  final GestureDragStartCallback? onDragStart;
+  final GestureDragUpdateCallback? onDragUpdate;
+  final GestureDragEndCallback? onDragEnd;
+  final GestureDragCancelCallback? onDragCancel;
   final void Function(String? regionId, String? regionName)? onTap;
   final void Function(String? regionId, String? animationId)? onInteraction;
   final bool interactive;
@@ -63,6 +79,33 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
   String? _hoverRegion;
   int _epoch = 0;
   int _packageEpoch = 0;
+  bool _reportedBusy = false;
+  bool _busyNotificationScheduled = false;
+
+  void _notifyBusy() {
+    if (_busyNotificationScheduled) return;
+    _busyNotificationScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _busyNotificationScheduled = false;
+      if (!mounted) return;
+      final busy = _playback.busy;
+      if (busy == _reportedBusy) return;
+      _reportedBusy = busy;
+      widget.onPlaybackBusyChanged?.call(busy);
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _complete(VideoPetPlaybackRequest request) {
+    // A decoded, currently displayed surface is the only completion source.
+    if (_released || !identical(_request, request)) return;
+    final next = _playback.ended(request.generation);
+    if (next == null) return;
+    unawaited(_present(next));
+    if (request.kind == VideoPetPlaybackKind.movement && !request.loop) {
+      widget.onMovementComplete?.call();
+    }
+  }
 
   bool get _released => !widget.active || _background;
   bool get _playing => !_released && !widget.paused && !_inactive;
@@ -96,6 +139,10 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
         active: !_released,
         paused: widget.paused || _inactive,
       );
+      _playback.setMovement(
+        widget.movementAnimationId,
+        loop: widget.movementLoop,
+      );
       final id = widget.animationRequest?.value;
       if (id != null) _playback.playManual(id);
       await _present(_playback.current);
@@ -121,12 +168,27 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       unawaited(_prepare());
       return;
     }
-    if (oldWidget.interactive && !widget.interactive) {
+    final interactionChanged = oldWidget.interactive && !widget.interactive;
+    if (interactionChanged) {
       _playback.setHover(null);
       _pointerInside = false;
       _hoverRegion = null;
     }
-    _lifecycle();
+    final movementChanged =
+        oldWidget.movementAnimationId != widget.movementAnimationId ||
+        oldWidget.movementLoop != widget.movementLoop;
+    if (movementChanged) {
+      _playback.setMovement(
+        widget.movementAnimationId,
+        loop: widget.movementLoop,
+      );
+    }
+    if (oldWidget.active != widget.active ||
+        oldWidget.paused != widget.paused) {
+      _lifecycle();
+    } else if (interactionChanged || movementChanged) {
+      unawaited(_present(_playback.current));
+    }
     if (oldWidget.animationRequest != widget.animationRequest) _manual();
   }
 
@@ -145,6 +207,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       active: !_released,
       paused: widget.paused || _inactive,
     );
+    _notifyBusy();
     if (_released) {
       _release();
       if (mounted) setState(() {});
@@ -186,6 +249,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
   }
 
   Future<void> _present(VideoPetPlaybackRequest? request) async {
+    _notifyBusy();
     final package = _package;
     if (request == null || package == null || _released) return;
     if (_request?.generation == request.generation && _image != null) {
@@ -306,6 +370,10 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapUp: (details) => _tap(details.localPosition, size),
+              onPanStart: widget.onDragStart,
+              onPanUpdate: widget.onDragUpdate,
+              onPanEnd: widget.onDragEnd,
+              onPanCancel: widget.onDragCancel,
               onSecondaryTapUp: (_) => widget.onContextMenu?.call(),
               child: Stack(
                 fit: StackFit.expand,
@@ -320,9 +388,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
                       sheet: sheet,
                       playing: _playing,
                       loop: request.loop,
-                      onComplete: () => unawaited(
-                        _present(_playback.ended(request.generation)),
-                      ),
+                      onComplete: () => _complete(request),
                     ),
                   if (widget.showRegions)
                     IgnorePointer(

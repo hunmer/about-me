@@ -89,7 +89,12 @@ class VideoPetImportService {
           ),
         );
       }
-      final migratedManifest = manifest.copyWith(animations: migrated);
+      final migratedManifest = manifest.copyWith(
+        animations: migrated,
+        movement: _shouldFillDefaultMovement(manifest.movement)
+            ? _defaultMovement(defaults.manifest, migrated)
+            : manifest.movement,
+      );
       migratedManifest.validate();
       return VideoPetPackage(
         manifest: migratedManifest,
@@ -107,6 +112,34 @@ class VideoPetImportService {
       baseUri: packageBase,
       resolvedSources: Map.unmodifiable(resolvedSources),
     );
+  }
+
+  bool _shouldFillDefaultMovement(VideoPetMovement movement) =>
+      movement.leftAnimationId.isEmpty &&
+      movement.rightAnimationId.isEmpty &&
+      movement.turnLeftAnimationId.isEmpty &&
+      movement.turnRightAnimationId.isEmpty;
+  VideoPetMovement _defaultMovement(
+    VideoPetManifest defaults,
+    List<VideoPetAnimation> migrated,
+  ) {
+    final movement = defaults.movement;
+    if (movement.enabled &&
+        migrated.any((animation) => animation.id == movement.leftAnimationId) &&
+        migrated.any(
+          (animation) => animation.id == movement.rightAnimationId,
+        ) &&
+        (movement.turnLeftAnimationId.isEmpty ||
+            migrated.any(
+              (animation) => animation.id == movement.turnLeftAnimationId,
+            )) &&
+        (movement.turnRightAnimationId.isEmpty ||
+            migrated.any(
+              (animation) => animation.id == movement.turnRightAnimationId,
+            ))) {
+      return movement;
+    }
+    return const VideoPetMovement();
   }
 
   /// Cancellation returns null. Invalid or incomplete packages throw FormatException.

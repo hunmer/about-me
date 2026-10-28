@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_player.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spritesheet_animation/flutter_spritesheet_animation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -106,6 +107,196 @@ void main() {
     expect(sprite().loop, isTrue);
     await tester.pumpWidget(const SizedBox.shrink());
     request.dispose();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'movement completion is actual, once-only and cancellation-safe',
+    (tester) async {
+      String? movement = 'click';
+      var paused = false;
+      var completions = 0;
+      Widget view() => MaterialApp(
+        home: SizedBox(
+          width: 200,
+          height: 200,
+          child: VideoPetPlayer(
+            manifest: manifest,
+            baseUri: '',
+            movementAnimationId: movement,
+            movementLoop: false,
+            paused: paused,
+            onMovementComplete: () => completions++,
+          ),
+        ),
+      );
+      await tester.pumpWidget(view());
+      await loaded(tester, loop: false);
+      expect(completions, 0);
+      final stale = tester
+          .widget<SpriteAnimation>(find.byType(SpriteAnimation))
+          .onComplete!;
+      paused = true;
+      await tester.pumpWidget(view());
+      stale();
+      expect(completions, 0);
+      movement = null;
+      paused = false;
+      await tester.pumpWidget(view());
+      stale();
+      expect(completions, 0);
+      await loaded(tester, loop: true);
+      movement = 'click';
+      await tester.pumpWidget(view());
+      await loaded(tester, loop: false);
+      final complete = tester
+          .widget<SpriteAnimation>(find.byType(SpriteAnimation))
+          .onComplete!;
+      await tester.pump(const Duration(milliseconds: 10));
+      await tester.pump(const Duration(milliseconds: 300));
+      await loaded(tester, loop: true);
+      expect(completions, 1);
+      complete();
+      expect(completions, 1);
+      await tester.pumpWidget(view());
+      await tester.pump(const Duration(seconds: 1));
+      expect(completions, 1);
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'busy changes safely for hover and manual, movement is not busy',
+    (tester) async {
+      final manual = ValueNotifier<String?>(null);
+      final busy = <bool>[];
+      final pet = manifest.copyWith(
+        hover: const VideoPetBinding(animationIds: ['click']),
+      );
+      var rebuilds = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatefulBuilder(
+            builder: (context, setState) => SizedBox(
+              width: 200,
+              height: 200,
+              child: VideoPetPlayer(
+                manifest: pet,
+                baseUri: '',
+                movementAnimationId: 'idle',
+                animationRequest: manual,
+                onPlaybackBusyChanged: (value) {
+                  busy.add(value);
+                  setState(() => rebuilds++);
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await loaded(tester, loop: true);
+      expect(busy, isEmpty);
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: const Offset(799, 599));
+      await mouse.moveTo(tester.getCenter(find.byType(VideoPetPlayer)));
+      await loaded(tester, loop: true);
+      await tester.pump();
+      expect(busy, [true]);
+      manual.value = 'click';
+      await loaded(tester, loop: false);
+      await mouse.moveTo(const Offset(799, 599));
+      await tester.pump(const Duration(milliseconds: 10));
+      await tester.pump(const Duration(milliseconds: 300));
+      await loaded(tester, loop: true);
+      await tester.pump();
+      expect(busy, [true, false]);
+      expect(rebuilds, 2);
+      await mouse.removePointer();
+      await tester.pumpWidget(const SizedBox.shrink());
+      manual.dispose();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('drag forwards Flutter details without triggering tap', (
+    tester,
+  ) async {
+    final starts = <DragStartDetails>[];
+    final updates = <DragUpdateDetails>[];
+    final ends = <DragEndDetails>[];
+    var cancels = 0;
+    var taps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: SizedBox(
+            width: 200,
+            height: 200,
+            child: VideoPetPlayer(
+              manifest: manifest,
+              baseUri: '',
+              onTap: (_, _) => taps++,
+              onDragStart: starts.add,
+              onDragUpdate: updates.add,
+              onDragEnd: ends.add,
+              onDragCancel: () => cancels++,
+            ),
+          ),
+        ),
+      ),
+    );
+    await loaded(tester);
+    final center = tester.getCenter(find.byType(VideoPetPlayer));
+    final drag = await tester.startGesture(center);
+    await drag.moveBy(const Offset(40, 0));
+    await drag.moveBy(const Offset(20, 10));
+    await drag.up();
+    expect(starts, hasLength(1));
+    expect(updates, isNotEmpty);
+    expect(ends, hasLength(1));
+    expect(taps, 0);
+    final cancel = await tester.startGesture(center);
+    await cancel.cancel();
+    expect(cancels, 1);
+    expect(taps, 0);
+    await tester.tapAt(center);
+    expect(taps, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('identical parent rebuilds preserve movement loading', (
+    tester,
+  ) async {
+    Widget view() => MaterialApp(
+      home: SizedBox(
+        width: 200,
+        height: 200,
+        child: VideoPetPlayer(
+          manifest: manifest,
+          baseUri: '',
+          movementAnimationId: 'click',
+          movementLoop: false,
+        ),
+      ),
+    );
+    await tester.pumpWidget(view());
+    for (var i = 0; i < 10; i++) {
+      await tester.pumpWidget(view());
+    }
+    await loaded(tester, loop: false);
+    final controller = tester
+        .widget<SpriteAnimation>(find.byType(SpriteAnimation))
+        .controller;
+    for (var i = 0; i < 5; i++) {
+      await tester.pumpWidget(view());
+    }
+    expect(
+      tester.widget<SpriteAnimation>(find.byType(SpriteAnimation)).controller,
+      same(controller),
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
     expect(tester.takeException(), isNull);
   });
 

@@ -32,6 +32,7 @@ import 'jelly_live2d_interaction.dart';
 import 'jelly_live2d_layout.dart';
 import 'jelly_live2d_models.dart';
 import 'jelly_live2d_panel.dart';
+import 'jelly_video_pet_movement.dart';
 import 'jelly_speech_bubble.dart';
 
 export 'jelly_live2d_models.dart';
@@ -142,6 +143,8 @@ class _JellyLive2DState extends State<JellyLive2D>
   JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
   bool _isSwitchingModel = true;
   final ValueNotifier<String?> _videoAnimationRequest = ValueNotifier(null);
+  final ValueNotifier<bool> _videoWalkingEnabled = ValueNotifier(false);
+  bool _videoControlsOpen = false;
   VideoPetManifest? _videoManifest;
   String? _videoLoadError;
   int _modelLoadGeneration = 0;
@@ -348,6 +351,7 @@ class _JellyLive2DState extends State<JellyLive2D>
     widget.motionRequest?.removeListener(_handleMotionRequest);
     widget.videoAnimationRequest?.removeListener(_handleExternalVideoRequest);
     _videoAnimationRequest.dispose();
+    _videoWalkingEnabled.dispose();
     widget.expressionRequest?.removeListener(_handleExpressionRequest);
     _controller.removeListener(_onViewStateChanged);
     _voiceFrame.removeListener(_handleVoiceFrame);
@@ -617,11 +621,7 @@ class _JellyLive2DState extends State<JellyLive2D>
                         ),
                       ),
                     if (_isVideo)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: modelBottomInset,
-                        height: displaySize,
+                      Positioned.fill(
                         child: _videoManifest == null
                             ? Center(
                                 child: _videoLoadError == null
@@ -632,18 +632,44 @@ class _JellyLive2DState extends State<JellyLive2D>
                                         child: Text(_videoLoadError!),
                                       ),
                               )
-                            : VideoPetPlayer(
+                            : JellyVideoPetStage(
                                 key: ValueKey(
-                                  '${_selectedModel.modelDir}:${jsonEncode(_videoManifest!.toJson())}',
+                                  '${_selectedModel.modelDir}:${_videoManifest!.id}',
                                 ),
-                                manifest: _videoManifest!,
-                                baseUri: _selectedModel.modelDir,
-                                resolvedSources:
-                                    _selectedModel.videoResolvedSources,
-                                active: _routeVisible,
-                                animationRequest: _videoAnimationRequest,
-                                onTap: _handleVideoTap,
-                                onContextMenu: _showControls,
+                                modelId:
+                                    '${_selectedModel.modelDir}:${_videoManifest!.id}',
+                                movement: _videoManifest!.movement,
+                                enabled: _videoWalkingEnabled,
+                                active: _routeVisible && !_videoControlsOpen,
+                                topInset: widget.topInset,
+                                bottomInset: modelBottomInset,
+                                petSize: Size(
+                                  math.min(size, layoutWidth * 0.7),
+                                  math.min(size, layoutWidth * 0.7) *
+                                      _videoManifest!.canvasHeight /
+                                      _videoManifest!.canvasWidth,
+                                ),
+                                builder: (context, playback) => VideoPetPlayer(
+                                  key: ValueKey(
+                                    '${_selectedModel.modelDir}:${jsonEncode(_videoManifest!.toJson())}',
+                                  ),
+                                  manifest: _videoManifest!,
+                                  baseUri: _selectedModel.modelDir,
+                                  resolvedSources:
+                                      _selectedModel.videoResolvedSources,
+                                  active: _routeVisible,
+                                  animationRequest: _videoAnimationRequest,
+                                  onTap: _handleVideoTap,
+                                  onContextMenu: _showControls,
+                                  movementAnimationId: playback.animationId,
+                                  movementLoop: playback.loop,
+                                  onMovementComplete: playback.onComplete,
+                                  onPlaybackBusyChanged: playback.onBusyChanged,
+                                  onDragStart: playback.onDragStart,
+                                  onDragUpdate: playback.onDragUpdate,
+                                  onDragEnd: playback.onDragEnd,
+                                  onDragCancel: playback.onDragCancel,
+                                ),
                               ),
                       )
                     else

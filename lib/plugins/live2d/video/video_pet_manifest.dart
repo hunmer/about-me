@@ -15,6 +15,7 @@ class VideoPetManifest {
     this.idleAnimationId = '',
     this.hover = const VideoPetBinding(),
     this.click = const VideoPetBinding(),
+    this.movement = const VideoPetMovement(),
     this.regions = const [],
     this.metadata = const {},
   });
@@ -28,6 +29,7 @@ class VideoPetManifest {
   final String idleAnimationId;
   final VideoPetBinding hover;
   final VideoPetBinding click;
+  final VideoPetMovement movement;
   final List<VideoPetRegion> regions;
   final Map<String, dynamic> metadata;
 
@@ -49,6 +51,7 @@ class VideoPetManifest {
       idleAnimationId: _string(json, 'idleAnimationId'),
       hover: VideoPetBinding.fromJson(_object(json, 'hover')),
       click: VideoPetBinding.fromJson(_object(json, 'click')),
+      movement: VideoPetMovement.fromJson(_object(json, 'movement')),
       regions: List.unmodifiable(
         _objects(json, 'regions').map(VideoPetRegion.fromJson),
       ),
@@ -68,6 +71,7 @@ class VideoPetManifest {
     'idleAnimationId': idleAnimationId,
     'hover': hover.toJson(),
     'click': click.toJson(),
+    'movement': movement.toJson(),
     'regions': regions.map((r) => r.toJson()).toList(),
     'metadata': metadata,
   };
@@ -82,6 +86,7 @@ class VideoPetManifest {
     String? idleAnimationId,
     VideoPetBinding? hover,
     VideoPetBinding? click,
+    VideoPetMovement? movement,
     List<VideoPetRegion>? regions,
     Map<String, dynamic>? metadata,
   }) => VideoPetManifest(
@@ -94,6 +99,7 @@ class VideoPetManifest {
     idleAnimationId: idleAnimationId ?? this.idleAnimationId,
     hover: hover ?? this.hover,
     click: click ?? this.click,
+    movement: movement ?? this.movement,
     regions: List.unmodifiable(regions ?? this.regions),
     metadata: Map.unmodifiable(metadata ?? this.metadata),
   );
@@ -139,11 +145,103 @@ class VideoPetManifest {
     );
     hover.validate(ids);
     click.validate(ids);
+    movement.validate(ids);
     final regionIds = <String>{};
     for (final region in regions) {
       region.validate(ids);
       _require(regionIds.add(region.id), 'Duplicate region: ${region.id}');
     }
+  }
+}
+
+class VideoPetMovement {
+  const VideoPetMovement({
+    this.leftAnimationId = '',
+    this.rightAnimationId = '',
+    this.turnLeftAnimationId = '',
+    this.turnRightAnimationId = '',
+    this.speed = 40,
+    this.minIdleSeconds = 5,
+    this.maxIdleSeconds = 15,
+  });
+
+  final String leftAnimationId;
+  final String rightAnimationId;
+  final String turnLeftAnimationId;
+  final String turnRightAnimationId;
+
+  /// Logical pixels per second.
+  final double speed;
+  final double minIdleSeconds;
+  final double maxIdleSeconds;
+
+  /// Call after manifest validation; both walking directions are required.
+  bool get enabled => leftAnimationId.isNotEmpty && rightAnimationId.isNotEmpty;
+
+  factory VideoPetMovement.fromJson(Map<String, dynamic> json) {
+    final result = VideoPetMovement(
+      leftAnimationId: _string(json, 'leftAnimationId'),
+      rightAnimationId: _string(json, 'rightAnimationId'),
+      turnLeftAnimationId: _string(json, 'turnLeftAnimationId'),
+      turnRightAnimationId: _string(json, 'turnRightAnimationId'),
+      speed: _number(json, 'speed', 40),
+      minIdleSeconds: _number(json, 'minIdleSeconds', 5),
+      maxIdleSeconds: _number(json, 'maxIdleSeconds', 15),
+    );
+    result.validate();
+    return result;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'leftAnimationId': leftAnimationId,
+    'rightAnimationId': rightAnimationId,
+    'turnLeftAnimationId': turnLeftAnimationId,
+    'turnRightAnimationId': turnRightAnimationId,
+    'speed': speed,
+    'minIdleSeconds': minIdleSeconds,
+    'maxIdleSeconds': maxIdleSeconds,
+  };
+
+  VideoPetMovement copyWith({
+    String? leftAnimationId,
+    String? rightAnimationId,
+    String? turnLeftAnimationId,
+    String? turnRightAnimationId,
+    double? speed,
+    double? minIdleSeconds,
+    double? maxIdleSeconds,
+  }) => VideoPetMovement(
+    leftAnimationId: leftAnimationId ?? this.leftAnimationId,
+    rightAnimationId: rightAnimationId ?? this.rightAnimationId,
+    turnLeftAnimationId: turnLeftAnimationId ?? this.turnLeftAnimationId,
+    turnRightAnimationId: turnRightAnimationId ?? this.turnRightAnimationId,
+    speed: speed ?? this.speed,
+    minIdleSeconds: minIdleSeconds ?? this.minIdleSeconds,
+    maxIdleSeconds: maxIdleSeconds ?? this.maxIdleSeconds,
+  );
+
+  void validate([Set<String>? knownIds]) {
+    for (final id in [
+      leftAnimationId,
+      rightAnimationId,
+      turnLeftAnimationId,
+      turnRightAnimationId,
+    ]) {
+      _require(
+        id.isEmpty ||
+            (id.trim().isNotEmpty &&
+                (knownIds == null || knownIds.contains(id))),
+        'Unknown movement animation: $id',
+      );
+    }
+    _require(speed.isFinite && speed > 0, 'movement.speed must be positive');
+    _require(
+      minIdleSeconds.isFinite &&
+          minIdleSeconds >= 0 &&
+          maxIdleSeconds.isFinite &&
+          maxIdleSeconds >= minIdleSeconds,
+      'Invalid movement idle time range',
+    );
   }
 }
 

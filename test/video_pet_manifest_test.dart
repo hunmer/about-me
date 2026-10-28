@@ -182,6 +182,59 @@ void main() {
     },
   );
 
+  test('movement defaults, optional directions, roundtrip and validation', () {
+    final legacy = VideoPetManifest.fromJson(
+      _manifest.toJson()..remove('movement'),
+    );
+    expect(legacy.movement.enabled, isFalse);
+    expect(legacy.movement.speed, 40);
+    final defaults = VideoPetMovement.fromJson({});
+    expect(defaults.speed, 40);
+    expect(defaults.minIdleSeconds, 5);
+    expect(defaults.maxIdleSeconds, 15);
+    expect(defaults.enabled, isFalse);
+    final movement = defaults.copyWith(leftAnimationId: 'idle');
+    expect(movement.enabled, isFalse);
+    final walking = movement.copyWith(
+      rightAnimationId: 'idle',
+      turnLeftAnimationId: 'idle',
+      turnRightAnimationId: 'idle',
+      speed: 60,
+      minIdleSeconds: 0,
+      maxIdleSeconds: 2,
+    );
+    final configured = _manifest.copyWith(movement: walking);
+    final restored = VideoPetManifest.fromJson(configured.toJson());
+    expect(restored.movement.enabled, isTrue);
+    expect(restored.toJson(), configured.toJson());
+    expect(configured.copyWith().movement, same(walking));
+    expect(configured.copyWith(movement: null).movement, same(walking));
+    for (final bad in [
+      walking.copyWith(leftAnimationId: 'missing'),
+      walking.copyWith(rightAnimationId: 'missing'),
+      walking.copyWith(turnLeftAnimationId: 'missing'),
+      walking.copyWith(turnRightAnimationId: 'missing'),
+      walking.copyWith(speed: 0),
+      walking.copyWith(speed: -1),
+      walking.copyWith(speed: double.nan),
+      walking.copyWith(minIdleSeconds: -1),
+      walking.copyWith(minIdleSeconds: 3),
+      walking.copyWith(maxIdleSeconds: double.infinity),
+    ]) {
+      expect(
+        () => VideoPetManifest.fromJson(
+          _manifest.copyWith(movement: bad).toJson(),
+        ),
+        throwsFormatException,
+      );
+    }
+    expect(
+      () =>
+          VideoPetManifest.fromJson({..._manifest.toJson(), 'movement': 'bad'}),
+      throwsFormatException,
+    );
+  });
+
   test('custom fixture WebP roundtrip preserves source, format and grid', () {
     final webp = _manifest.copyWith(
       animations: [

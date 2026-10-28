@@ -832,16 +832,121 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
     );
   }
 
+  Widget _buildMovementEditor() {
+    final movement = _draft.movement;
+    final movementAnimations = _draft.animations;
+    final turnAnimations = _draft.animations;
+    final movementItems = [
+      const DropdownMenuItem<String>(value: '', child: Text('不设置')),
+      for (final animation in movementAnimations)
+        DropdownMenuItem(value: animation.id, child: Text(animation.name)),
+    ];
+    final turnItems = [
+      const DropdownMenuItem<String>(value: '', child: Text('不设置')),
+      for (final animation in turnAnimations)
+        DropdownMenuItem(value: animation.id, child: Text(animation.name)),
+    ];
+    void update(VideoPetMovement next) =>
+        _setDraft(_draft.copyWith(movement: next));
+    Widget selector(
+      String label,
+      String value,
+      List<DropdownMenuItem<String>> items,
+      ValueChanged<String?> onChanged,
+    ) => Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: DropdownButtonFormField<String>(
+        value: items.any((item) => item.value == value) ? value : '',
+        decoration: InputDecoration(
+          labelText: label,
+          isDense: true,
+          border: const OutlineInputBorder(),
+        ),
+        items: items,
+        onChanged: onChanged,
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          _text('videoPet_movement', '随机移动'),
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        selector(
+          _text('videoPet_moveLeft', '向左移动'),
+          movement.leftAnimationId,
+          movementItems,
+          (id) => update(movement.copyWith(leftAnimationId: id ?? '')),
+        ),
+        selector(
+          _text('videoPet_moveRight', '向右移动'),
+          movement.rightAnimationId,
+          movementItems,
+          (id) => update(movement.copyWith(rightAnimationId: id ?? '')),
+        ),
+        selector(
+          _text('videoPet_turnLeft', '向左转向'),
+          movement.turnLeftAnimationId,
+          turnItems,
+          (id) => update(movement.copyWith(turnLeftAnimationId: id ?? '')),
+        ),
+        selector(
+          _text('videoPet_turnRight', '向右转向'),
+          movement.turnRightAnimationId,
+          turnItems,
+          (id) => update(movement.copyWith(turnRightAnimationId: id ?? '')),
+        ),
+        _numberField(
+          _text('videoPet_moveSpeed', '移动速度（像素/秒）'),
+          movement.speed,
+          (value) => update(movement.copyWith(speed: value.clamp(.1, 10000))),
+        ),
+        _numberField(
+          _text('videoPet_minIdle', '最短等待（秒）'),
+          movement.minIdleSeconds,
+          (value) => update(
+            movement.copyWith(
+              minIdleSeconds: value.clamp(0, movement.maxIdleSeconds),
+            ),
+          ),
+        ),
+        _numberField(
+          _text('videoPet_maxIdle', '最长等待（秒）'),
+          movement.maxIdleSeconds,
+          (value) => update(
+            movement.copyWith(
+              maxIdleSeconds: value.clamp(movement.minIdleSeconds, 86400),
+            ),
+          ),
+        ),
+        Text(
+          _text('videoPet_movementHint', '左右选择相同动作时，向左行走会自动镜像。'),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+
   Widget _buildBindingPanel() {
     final selected = _selectedRegion;
     if (selected == null) {
-      return Center(child: Text(_text('videoPet_selectRegion', '选择一个区域开始编辑')));
+      return Material(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        child: ListView(
+          padding: const EdgeInsets.all(12),
+          children: [_buildMovementEditor()],
+        ),
+      );
     }
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainer,
       child: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          _buildMovementEditor(),
+          const Divider(height: 22),
           Text(
             _text('videoPet_regionProperties', '区域属性'),
             style: Theme.of(context).textTheme.titleMedium,

@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'video_pet_manifest.dart';
 
-enum VideoPetPlaybackKind { idle, hover, click, manual }
+enum VideoPetPlaybackKind { idle, movement, hover, click, manual }
 
 class VideoPetPlaybackRequest {
   const VideoPetPlaybackRequest({
@@ -28,13 +28,18 @@ class VideoPetPlaybackState {
   String? _onceId;
   VideoPetPlaybackKind _onceKind = VideoPetPlaybackKind.click;
   String? _hoverId;
+  String? _movementId;
+  bool _movementLoop = true;
+  bool _movementCompleted = false;
   bool _active = true;
   bool _paused = false;
 
   int get generation => _generation;
   bool get playing => _active && !_paused;
+  bool get busy => _onceId != null || _hoverId != null;
+  String? get _pendingMovementId => _movementCompleted ? null : _movementId;
   String get activeAnimationId =>
-      _onceId ?? _hoverId ?? manifest.idleAnimationId;
+      _onceId ?? _hoverId ?? _pendingMovementId ?? manifest.idleAnimationId;
   VideoPetPlaybackRequest? get current {
     if (manifest.animation(activeAnimationId) == null) return null;
     return VideoPetPlaybackRequest(
@@ -43,9 +48,13 @@ class VideoPetPlaybackState {
           ? _onceKind
           : _hoverId != null
           ? VideoPetPlaybackKind.hover
+          : _pendingMovementId != null
+          ? VideoPetPlaybackKind.movement
           : VideoPetPlaybackKind.idle,
       generation: _generation,
-      loop: _onceId == null,
+      loop:
+          _onceId == null &&
+          (_hoverId != null || _pendingMovementId == null || _movementLoop),
     );
   }
 
@@ -86,9 +95,29 @@ class VideoPetPlaybackState {
     return _bump();
   }
 
+  VideoPetPlaybackRequest? setMovement(
+    String? animationId, {
+    bool loop = true,
+  }) {
+    final id = _valid(animationId);
+    if (id == _movementId && loop == _movementLoop) return current;
+    _movementId = id;
+    _movementLoop = loop;
+    _movementCompleted = false;
+    return busy ? current : _bump();
+  }
+
   VideoPetPlaybackRequest? ended(int generation) {
-    if (!playing || generation != _generation || _onceId == null) return null;
-    _onceId = null;
+    if (!playing || generation != _generation) return null;
+    if (_onceId != null) {
+      _onceId = null;
+    } else if (_hoverId == null &&
+        _pendingMovementId != null &&
+        !_movementLoop) {
+      _movementCompleted = true;
+    } else {
+      return null;
+    }
     return _bump();
   }
 

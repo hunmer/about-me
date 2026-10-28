@@ -55,6 +55,43 @@ void main() {
     state.setLifecycle(paused: false);
     expect(state.ended(generation)!.animationId, 'idle');
   });
+  test('movement priority, busy and interrupted turn completion', () {
+    final state = VideoPetPlaybackState(manifest);
+    final turn = state.setMovement('manual', loop: false)!;
+    expect(turn.kind, VideoPetPlaybackKind.movement);
+    expect(turn.loop, isFalse);
+    expect(state.busy, isFalse);
+    state.setHover('hover');
+    expect(state.busy, isTrue);
+    expect(state.ended(turn.generation), isNull);
+    final click = state.playManual('click')!;
+    state.setMovement('idle', loop: false);
+    expect(state.current!.animationId, 'click');
+    expect(state.ended(click.generation)!.kind, VideoPetPlaybackKind.hover);
+    final resumed = state.setHover(null)!;
+    expect(resumed.kind, VideoPetPlaybackKind.movement);
+    expect(resumed.animationId, 'idle');
+    expect(state.busy, isFalse);
+    expect(state.ended(resumed.generation)!.kind, VideoPetPlaybackKind.idle);
+    expect(state.ended(resumed.generation), isNull);
+    expect(
+      state.setMovement('idle', loop: false)!.kind,
+      VideoPetPlaybackKind.idle,
+    );
+    state.setHover('hover');
+    expect(state.setHover(null)!.kind, VideoPetPlaybackKind.idle);
+    state.setMovement(null);
+    final next = state.setMovement('idle', loop: false)!;
+    state.setLifecycle(paused: true);
+    expect(state.ended(next.generation), isNull);
+    state.setMovement(null);
+    state.setLifecycle(paused: false);
+    expect(state.ended(next.generation), isNull);
+    final looping = state.setMovement('idle')!;
+    expect(looping.loop, isTrue);
+    expect(state.ended(looping.generation), isNull);
+  });
+
   test('contain coordinates ignore letterbox and invalid dimensions', () {
     ({double x, double y})? point(double x, double y) => videoPetContainPoint(
       x: x,

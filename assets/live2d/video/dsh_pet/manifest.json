@@ -1703,6 +1703,15 @@
     }
   ],
   "idleAnimationId": "待机呼吸休闲",
+  "movement": {
+    "leftAnimationId": "螃蟹走路",
+    "rightAnimationId": "螃蟹走路",
+    "turnLeftAnimationId": "东张西望",
+    "turnRightAnimationId": "东张西望",
+    "speed": 40,
+    "minIdleSeconds": 5,
+    "maxIdleSeconds": 15
+  },
   "hover": {
     "animationIds": [
       "东张西望"
