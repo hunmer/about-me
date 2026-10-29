@@ -14,6 +14,7 @@ import '../cute_notepad_card.dart' show captureCuteNotepadPng;
 import 'scrapbook_item_content.dart';
 import 'scrapbook_item_models.dart';
 import 'scrapbook_painters.dart';
+import 'scrapbook_transform_frame.dart';
 
 // 聚合入口：旧调用方仍从本文件拿到数据模型
 export 'scrapbook_item_models.dart';
@@ -110,6 +111,8 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   String? _selectedId;
   int _highestZ = 35;
   bool _doodleMode = false;
+  bool _resizeMode = false;
+  bool _transformingItem = false;
   Color _penColor = const Color(0xFF56A8E8);
   final List<ScrapStroke> _strokes = [];
 
@@ -186,7 +189,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   bool _pointerItemMoved = false;
 
   void _onItemPointerDown(ScrapItemData item) {
-    if (_doodleMode || widget.readOnly) return;
+    if (_doodleMode || widget.readOnly || _transformingItem) return;
     _pointerItemId = item.id;
     _pointerLastPosition = null;
     _pointerItemMoved = false;
@@ -194,33 +197,13 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     _selectItem(item);
   }
 
-  bool _isSelectedControlHit(Offset localPosition) {
-    final selectedId = _selectedId;
-    if (selectedId == null) return false;
-    ScrapItemData? item;
-    for (final candidate in _items) {
-      if (candidate.id == selectedId) {
-        item = candidate;
-        break;
-      }
-    }
-    if (item == null) return false;
-    final point = _screenToCanvas(localPosition);
-    return Rect.fromLTWH(
-      item.x + item.width * item.scale - 10,
-      item.y - 30,
-      126,
-      22,
-    ).contains(point);
-  }
-
   void _onCanvasPointerDown(PointerDownEvent event) {
-    if (_isSelectedControlHit(event.localPosition)) return;
     _pointerLastPosition = event.localPosition;
     _pointerItemMoved = false;
   }
 
   void _onCanvasPointerMove(PointerMoveEvent event) {
+    if (_transformingItem) return;
     final itemId = _pointerItemId;
     final previous = _pointerLastPosition;
     _pointerLastPosition = event.localPosition;
@@ -269,7 +252,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
   }
 
   void _onPointerSignal(PointerSignalEvent event) {
-    if (event is! PointerScrollEvent) return;
+    if (_transformingItem || event is! PointerScrollEvent) return;
     final factor = event.scrollDelta.dy < 0 ? 1.08 : 0.92;
     final nextZoom = (_zoom * factor).clamp(_minZoom, _maxZoom);
     final canvasPoint = (event.localPosition - Offset(_panX, _panY)) / _zoom;
@@ -567,6 +550,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     setState(() {
       _doodleMode = active;
       if (active) {
+        _resizeMode = false;
         _selectedId = null;
       }
     });
@@ -599,7 +583,8 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
         ? const Color(0xFF2C3A4F)
         : const Color(0xFFEFECE4);
 
-    return Container(
+    return SafeArea(
+      child: Container(
       width: widget.inline ? double.maxFinite : 384 * scale,
       height: widget.inline ? double.maxFinite : 560 * scale,
       decoration: BoxDecoration(
@@ -687,7 +672,16 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                 left: 0,
                 right: 0,
                 bottom: 18,
-                child: Center(child: _buildToolbar(isDark)),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_selectedId != null && !_doodleMode) ...[
+                      _buildSelectedControls(isDark),
+                      const SizedBox(height: 8),
+                    ],
+                    _buildToolbar(isDark),
+                  ],
+                ),
               ),
             // Toast
             Positioned(
@@ -731,6 +725,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -741,7 +736,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () {},
+            onTap: () {
+              if (_selectedId != null) setState(() => _selectedId = null);
+            },
             onScaleStart: _onScaleStart,
             onScaleUpdate: _onScaleUpdate,
             child: CustomPaint(
@@ -793,8 +790,6 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
                   ),
                 // 手帐条目（z 序升序，大的在上）
                 ..._sortedItems().map((item) => _buildItem(item, isDark)),
-                if (_selectedId != null && !widget.readOnly)
-                  _buildSelectedControls(),
               ],
             ),
           ),
@@ -810,6 +805,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
 
   Widget _buildItem(ScrapItemData item, bool isDark) {
     final selected = item.id == _selectedId;
+    final adjustable =
+        selected && _resizeMode && !_doodleMode && !widget.readOnly;
+    final padding = adjustable ? ScrapTransformFrame.padding : 0.0;
     final index = _items.indexOf(item);
     final start = (index * 0.05).clamp(0.0, 0.55);
     final anim = CurvedAnimation(
@@ -822,8 +820,8 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     );
 
     return Positioned(
-      left: item.x,
-      top: item.y,
+      left: item.x - padding,
+      top: item.y - padding,
       child: AnimatedBuilder(
         animation: anim,
         builder: (context, child) {
@@ -833,27 +831,44 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
             child: Transform.scale(scale: 0.6 + 0.4 * t, child: child),
           );
         },
-        child: Listener(
-          onPointerDown: (_) => _onItemPointerDown(item),
-          child: Transform.rotate(
-            angle: item.rotation * math.pi / 180,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              // 只读模式下注册 onTap 供双击检测使用
-              onTap: widget.readOnly ? () => _handleItemTap(item) : null,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  CustomPaint(
-                    painter: selected
-                        ? ScrapDashedRectPainter(
-                            color: const Color(0x8C001AFF),
-                            inset: -6,
-                          )
-                        : null,
-                    child: buildScrapItemContent(item, isDark, _showToast),
-                  ),
-                ],
+        child: Transform.rotate(
+          angle: item.rotation * math.pi / 180,
+          child: ScrapTransformFrame(
+            key: ValueKey(item.id),
+            item: item,
+            enabled: adjustable,
+            onStart: () {
+              _pointerItemId = null;
+              _pointerLastPosition = null;
+              _pointerItemMoved = false;
+              _transformingItem = true;
+              _pushHistory();
+            },
+            onUpdate: () => setState(() {}),
+            onEnd: () {
+              setState(() => _transformingItem = false);
+              _notifyChanged();
+            },
+            child: Listener(
+              onPointerDown: (_) => _onItemPointerDown(item),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                // 只读模式下注册 onTap 供双击检测使用
+                onTap: widget.readOnly ? () => _handleItemTap(item) : null,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    CustomPaint(
+                      painter: selected
+                          ? ScrapDashedRectPainter(
+                              color: const Color(0x8C001AFF),
+                              inset: -6,
+                            )
+                          : null,
+                      child: buildScrapItemContent(item, isDark, _showToast),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -876,7 +891,7 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     action();
   }
 
-  Widget _buildSelectedControls() {
+  Widget _buildSelectedControls(bool isDark) {
     ScrapItemData? item;
     for (final candidate in _items) {
       if (candidate.id == _selectedId) {
@@ -886,44 +901,61 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     }
     if (item == null) return const SizedBox.shrink();
     final selectedItem = item;
-    return Positioned(
-      left: selectedItem.x + selectedItem.width * selectedItem.scale - 10,
-      top: selectedItem.y - 30,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xD92A3648) : const Color(0xD9FBF9F4),
+        border: Border.all(
+          color: isDark ? const Color(0xFF3B4A61) : const Color(0xFFE5E0D4),
+        ),
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Tooltip(
-            message: '等比缩小',
-            child: _buildControlChip(
-              '−',
-              () => _resizeItem(selectedItem, 1 / 1.1),
-            ),
+          _buildToolbarButton(
+            icon: Icons.remove,
+            label: '等比缩小',
+            isDark: isDark,
+            onPressed: () => _resizeItem(selectedItem, 1 / 1.1),
           ),
-          const SizedBox(width: 4),
-          Tooltip(
-            message: '等比放大',
-            child: _buildControlChip('+', () => _resizeItem(selectedItem, 1.1)),
+          _buildToolbarButton(
+            icon: Icons.add,
+            label: '等比放大',
+            isDark: isDark,
+            onPressed: () => _resizeItem(selectedItem, 1.1),
           ),
-          const SizedBox(width: 4),
-          _buildControlChip(
-            '↺',
-            () => _runSelectedAction(
+          _buildToolbarDivider(isDark),
+          _buildToolbarButton(
+            icon: Icons.rotate_left,
+            label: '逆时针旋转',
+            isDark: isDark,
+            onPressed: () => _runSelectedAction(
               selectedItem,
               () => _rotateItemCounterClockwise(selectedItem),
             ),
           ),
-          const SizedBox(width: 4),
-          _buildControlChip(
-            '↻',
-            () => _runSelectedAction(
+          _buildToolbarButton(
+            icon: Icons.rotate_right,
+            label: '顺时针旋转',
+            isDark: isDark,
+            onPressed: () => _runSelectedAction(
               selectedItem,
               () => _rotateItem(selectedItem),
             ),
           ),
-          const SizedBox(width: 4),
-          _buildControlChip(
-            '×',
-            () => _runSelectedAction(
+          _buildToolbarButton(
+            icon: Icons.delete_outline,
+            label: '删除素材',
+            isDark: isDark,
+            onPressed: () => _runSelectedAction(
               selectedItem,
               () => _deleteItem(selectedItem),
             ),
@@ -983,37 +1015,6 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
               caption: photo.captions.isNotEmpty ? photo.captions.first : null,
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildControlChip(String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 22,
-        height: 22,
-        decoration: const BoxDecoration(
-          color: Color(0xFF111111),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x40000000),
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            height: 1,
-          ),
-        ),
       ),
     );
   }
@@ -1163,6 +1164,16 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
             onPressed: _redoStack.isEmpty ? null : _redo,
           ),
           _buildToolbarDivider(isDark),
+          _buildToolbarButton(
+            icon: Icons.open_with,
+            label: '尺寸调节',
+            isDark: isDark,
+            active: _resizeMode,
+            onPressed: () => setState(() {
+              _resizeMode = !_resizeMode;
+              if (_resizeMode) _doodleMode = false;
+            }),
+          ),
           _buildToolbarButton(
             icon: Icons.text_fields,
             label: 'Text',
