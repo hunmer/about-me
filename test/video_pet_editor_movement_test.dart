@@ -1,3 +1,4 @@
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/screens/video_pet_editor_screen.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:flutter/material.dart';
@@ -48,14 +49,16 @@ void main() {
     await tester.tap(find.text('打开编辑器'));
     await tester.pumpAndSettle();
     expect(find.text('随机移动'), findsOneWidget);
-    final selectors = find.byType(DropdownButtonFormField<String>);
-    expect(selectors, findsNWidgets(5));
-    await tester.tap(selectors.first);
+    // 移动动画 5 个选择器已切换为 DS 可搜索下拉（DSCombobox）。
+    final combos = find.byType(DSCombobox<String>);
+    expect(combos, findsNWidgets(5));
+    await tester.ensureVisible(combos.at(0));
+    await tester.tap(combos.at(0));
     await tester.pumpAndSettle();
     await tester.tap(find.text('自定义走路').last);
     await tester.pumpAndSettle();
-    await tester.ensureVisible(selectors.last);
-    await tester.tap(selectors.last);
+    await tester.ensureVisible(combos.at(4));
+    await tester.tap(combos.at(4));
     await tester.pumpAndSettle();
     await tester.tap(find.text('自定义走路').last);
     await tester.pumpAndSettle();
@@ -64,6 +67,67 @@ void main() {
     expect(saved, isNotNull);
     expect(saved!.movement.leftAnimationId, 'walk');
     expect(saved!.movement.dragAnimationId, 'walk');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('窄屏布局下可通过「移动与动作」Tab 编辑 facing / moving', (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => Navigator.of(context).push<VideoPetManifest>(
+              MaterialPageRoute(
+                builder: (_) => const VideoPetEditorScreen(
+                  manifest: manifest,
+                  baseUri: '',
+                ),
+              ),
+            ),
+            child: const Text('打开编辑器'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开编辑器'));
+    await tester.pumpAndSettle();
+
+    // 窄屏底部工具区有三个 Tab：区域 / 动画 / 移动与动作。
+    expect(find.byKey(const ValueKey('videoPetNarrowAnimationTab')), findsOneWidget);
+    final configTab = find.byKey(const ValueKey('videoPetNarrowConfigTab'));
+    expect(configTab, findsOneWidget);
+
+    // 先在「动画」Tab 点选动画，再切「移动与动作」编辑配置。
+    await tester.tap(find.byKey(const ValueKey('videoPetNarrowAnimationTab')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('自定义走路'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(configTab);
+    await tester.pumpAndSettle();
+    expect(find.text('随机移动'), findsOneWidget);
+
+    // 向下滚动配置面板直到 facing / moving 编辑器可见。
+    for (var i = 0; i < 6; i++) {
+      if (tester.any(find.byKey(const ValueKey('videoPetFacing')))) break;
+      await tester.drag(find.byType(TabBarView), const Offset(0, -300));
+      await tester.pumpAndSettle();
+    }
+    expect(find.byKey(const ValueKey('videoPetFacing')), findsOneWidget);
+    expect(find.byKey(const ValueKey('videoPetMovingMode')), findsOneWidget);
+    // 该 fixture 无 spritesheet（webm 源）：应有禁用说明。
+    expect(find.textContaining('缺少 spritesheet'), findsOneWidget);
+
+    // 拖拽分隔条可调整工具区高度。
+    final divider = find.byKey(const ValueKey('videoPetNarrowDivider'));
+    final tools = find.byType(DefaultTabController);
+    final before = tester.getSize(tools).height;
+    await tester.drag(divider, const Offset(0, -80));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(tools).height - before, closeTo(80, 2));
     expect(tester.takeException(), isNull);
   });
 }

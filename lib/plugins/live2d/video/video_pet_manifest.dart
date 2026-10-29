@@ -366,7 +366,11 @@ class VideoPetAnimation {
         ? this.moving
         : moving == null
         ? null
-        : List.unmodifiable(moving as List<VideoPetLocomotion>),
+        : // 参数声明为 Object?，字面量空列表会被推断成 List<dynamic>，
+          // 这里逐项 cast 而不是整体强转，避免 copyWith(moving: const []) 崩溃。
+        List.unmodifiable(
+            (moving as List).cast<VideoPetLocomotion>(),
+          ),
   );
 
   Uri? resolveSource(String format, Uri baseUri) {

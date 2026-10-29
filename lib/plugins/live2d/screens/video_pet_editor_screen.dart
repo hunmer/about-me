@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_player.dart';
 
@@ -46,6 +48,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
   bool _isPaused = false;
   bool _isTestMode = true;
   bool _showRegions = true;
+  double _narrowToolsHeight = 300;
   String? _lastHitRegion;
   String? _lastActionAnimation;
   Rect? _gestureRect;
@@ -91,12 +94,13 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
   }
 
   /// 用编辑后的单动画替换草稿中的对应项（按 id 匹配）。
-  void _updateAnimation(VideoPetAnimation next) => _setDraft(_draft.copyWith(
-    animations: [
-      for (final item in _draft.animations)
-        item.id == next.id ? next : item,
-    ],
-  ));
+  void _updateAnimation(VideoPetAnimation next) => _setDraft(
+    _draft.copyWith(
+      animations: [
+        for (final item in _draft.animations) item.id == next.id ? next : item,
+      ],
+    ),
+  );
 
   void _save() {
     try {
@@ -281,52 +285,44 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
     VideoPetBinding binding,
     ValueChanged<VideoPetBinding> onChanged,
   ) {
-    final selectedIds = binding.animationIds.toSet();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(title, style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 4),
-        DropdownButtonFormField<String>(
+        Text(
+          _text('videoPet_strategy', '播放策略'),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 4),
+        DSSelect<String>(
           value: binding.strategy,
-          decoration: InputDecoration(
-            labelText: _text('videoPet_strategy', '播放策略'),
-            isDense: true,
-            border: const OutlineInputBorder(),
-          ),
           items: const [
-            DropdownMenuItem(value: 'random', child: Text('random')),
-            DropdownMenuItem(value: 'sequence', child: Text('sequence')),
+            DSSelectItem(value: 'random', label: 'random'),
+            DSSelectItem(value: 'sequence', label: 'sequence'),
           ],
           onChanged: (value) =>
-              onChanged(_withBinding(binding, strategy: value ?? 'random')),
+              onChanged(_withBinding(binding, strategy: value)),
         ),
         const SizedBox(height: 6),
         Text(
           _text('videoPet_multiSelect', '可多选动画；清空即禁用'),
           style: Theme.of(context).textTheme.bodySmall,
         ),
-        Wrap(
-          spacing: 4,
-          runSpacing: 0,
-          children: _draft.animations.map((animation) {
-            final selected = selectedIds.contains(animation.id);
-            return FilterChip(
-              label: Text(
-                animation.name.isEmpty ? animation.id : animation.name,
+        const SizedBox(height: 6),
+        // 多选动画绑定：可搜索多选下拉（design_system combobox）。
+        DSMultiCombobox<String>(
+          items: [
+            for (final animation in _draft.animations)
+              DSSelectItem(
+                value: animation.id,
+                label: animation.name.isEmpty ? animation.id : animation.name,
               ),
-              selected: selected,
-              onSelected: (checked) {
-                final next = {...selectedIds};
-                if (checked) {
-                  next.add(animation.id);
-                } else {
-                  next.remove(animation.id);
-                }
-                onChanged(_withBinding(binding, animationIds: next.toList()));
-              },
-            );
-          }).toList(),
+          ],
+          values: binding.animationIds,
+          hint: _text('videoPet_selectAnimations', '选择动画'),
+          onChanged: (ids) =>
+              onChanged(_withBinding(binding, animationIds: ids)),
         ),
       ],
     );
@@ -447,54 +443,117 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_text('videoPet_editorTitle', '精灵图宠物编辑器')),
-        leading: IconButton(
-          tooltip: _text('core_cancel', '取消'),
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        actions: [
-          IconButton(
-            tooltip: _text('videoPet_importJson', '导入 JSON'),
-            icon: const Icon(Icons.file_upload_outlined),
-            onPressed: () => _showJsonDialog(importing: true),
-          ),
-          IconButton(
-            tooltip: _text('videoPet_exportJson', '导出 JSON'),
-            icon: const Icon(Icons.file_download_outlined),
-            onPressed: () => _showJsonDialog(importing: false),
-          ),
-          const SizedBox(width: 4),
-          FilledButton.icon(
-            onPressed: _save,
-            icon: const Icon(Icons.check),
-            label: Text(_text('videoPet_save', '保存')),
-          ),
-          const SizedBox(width: 12),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 900;
-          if (wide) {
-            return Row(
+    // 手绘纸墨风：DS 组件需要 AppTheme 祖先，由 DSThemeBridge 从
+    // Material 亮暗桥接（面板等处取色走 DSThemeBridge.resolve）。
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          final theme = DSThemeBridge.resolve(context);
+          return Scaffold(
+            backgroundColor: theme.background,
+            body: Column(
               children: [
-                SizedBox(width: 300, child: _buildRegionPanel()),
-                Expanded(child: _buildPreviewAndAnimationPanel()),
-                SizedBox(width: 330, child: _buildBindingPanel()),
+                // 编辑页轻量顶栏（design.md §2.1）：返回圆钮 + 居中标题 + 尾部动作。
+                DSLightHeader(
+                  title: _text('videoPet_editorTitle', '精灵图宠物编辑器'),
+                  onBack: () => Navigator.of(context).maybePop(),
+                  trailingWidth: 190,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DSIconButton(
+                        icon: DsIconKind.upload,
+                        size: 36,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        tooltip: _text('videoPet_importJson', '导入 JSON'),
+                        onPressed: () => _showJsonDialog(importing: true),
+                      ),
+                      const SizedBox(width: 4),
+                      DSIconButton(
+                        icon: DsIconKind.download,
+                        size: 36,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        tooltip: _text('videoPet_exportJson', '导出 JSON'),
+                        onPressed: () => _showJsonDialog(importing: false),
+                      ),
+                      const SizedBox(width: 8),
+                      DSButton(
+                        label: _text('videoPet_save', '保存'),
+                        icon: DsIconKind.save,
+                        size: DSButtonSize.sm,
+                        onPressed: _save,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 900;
+                      if (wide) {
+                        return Row(
+                          children: [
+                            SizedBox(width: 300, child: _buildRegionPanel()),
+                            Expanded(child: _buildPreviewAndAnimationPanel()),
+                            SizedBox(width: 330, child: _buildBindingPanel()),
+                          ],
+                        );
+                      }
+                      return _buildNarrowBody(context);
+                    },
+                  ),
+                ),
               ],
-            );
-          }
-          return Column(
-            children: [
-              Expanded(child: _buildPreviewAndAnimationPanel()),
-              SizedBox(height: 280, child: _buildRegionPanel(horizontal: true)),
-            ],
+            ),
           );
         },
       ),
+    );
+  }
+
+  /// 窄屏 body：预览填满 + 可拖拽分隔条 + Tab 工具区。
+  Widget _buildNarrowBody(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    return Column(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: _buildPreview(),
+          ),
+        ),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragUpdate: (details) => setState(() {
+            _narrowToolsHeight = (_narrowToolsHeight - details.delta.dy).clamp(
+              140.0,
+              MediaQuery.sizeOf(context).height * .8,
+            );
+          }),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.resizeRow,
+            child: SizedBox(
+              key: const ValueKey('videoPetNarrowDivider'),
+              height: 16,
+              width: double.infinity,
+              child: Center(
+                child: Container(
+                  width: 56,
+                  height: 4,
+                  decoration: dsSketchDecoration(
+                    theme: theme,
+                    fillColor: theme.surfaceAlt,
+                    strokeWidth: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: _narrowToolsHeight, child: _buildNarrowToolsPanel()),
+      ],
     );
   }
 
@@ -513,140 +572,189 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
   }
 
   Widget _buildPreview() {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-            child: Row(
+    final theme = DSThemeBridge.resolve(context);
+    return Container(
+      // 大容器手绘档（design.md §9.1）：纸底 + 墨线框替代 Material Card。
+      decoration: dsSketchDecoration(theme: theme, fillColor: theme.surface),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          children: [
+            Column(
               children: [
-                Expanded(
-                  child: Text(
-                    _isTestMode
-                        ? _text('videoPet_testPreview', '测试预览')
-                        : _text('videoPet_editPreview', '编辑预览'),
-                    style: Theme.of(context).textTheme.titleSmall,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _isTestMode
+                              ? _text('videoPet_testPreview', '测试预览')
+                              : _text('videoPet_editPreview', '编辑预览'),
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
+                      // DSSegmentedControl 需有界宽度（内部按 maxWidth 均分选项）。
+                      SizedBox(
+                        width: 150,
+                        child: DSSegmentedControl(
+                          options: [
+                            _text('videoPet_edit', '编辑'),
+                            _text('videoPet_test', '测试'),
+                          ],
+                          selected: _isTestMode ? 1 : 0,
+                          onChanged: (index) =>
+                              setState(() => _isTestMode = index == 1),
+                        ),
+                      ),
+                      DSIconButton(
+                        icon: _isPaused ? DsIconKind.play : DsIconKind.pause,
+                        size: 34,
+                        color: DSThemeBridge.resolve(context).surfaceAlt,
+                        iconColor: DSThemeBridge.resolve(context).textSub,
+                        tooltip: _isPaused
+                            ? _text('videoPet_resume', '继续')
+                            : _text('videoPet_pause', '暂停'),
+                        onPressed: () => setState(() => _isPaused = !_isPaused),
+                      ),
+                    ],
                   ),
                 ),
-                SegmentedButton<bool>(
-                  segments: [
-                    ButtonSegment(
-                      value: false,
-                      label: Text(_text('videoPet_edit', '编辑')),
-                      icon: const Icon(Icons.edit_outlined, size: 16),
-                    ),
-                    ButtonSegment(
-                      value: true,
-                      label: Text(_text('videoPet_test', '测试')),
-                      icon: const Icon(Icons.touch_app_outlined, size: 16),
-                    ),
-                  ],
-                  selected: {_isTestMode},
-                  onSelectionChanged: (values) =>
-                      setState(() => _isTestMode = values.first),
-                ),
-                IconButton(
-                  tooltip: _isPaused
-                      ? _text('videoPet_resume', '继续')
-                      : _text('videoPet_pause', '暂停'),
-                  icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
-                  onPressed: () => setState(() => _isPaused = !_isPaused),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Center(
+                        child: AspectRatio(
+                          aspectRatio: _draft.canvasWidth / _draft.canvasHeight,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: VideoPetPlayer(
+                                  manifest: _draft,
+                                  baseUri: widget.baseUri,
+                                  resolvedSources: widget.resolvedSources,
+                                  active: true,
+                                  paused: _isPaused,
+                                  animationRequest: _animationRequest,
+                                  interactive: _isTestMode,
+                                  onEditPointer: _isTestMode
+                                      ? null
+                                      : _onEditPointer,
+                                  showRegions: _showRegions,
+                                  onInteraction: (regionId, animationId) {
+                                    setState(() {
+                                      _selectedRegionId = regionId;
+                                      _lastHitRegion = regionId;
+                                      _lastActionAnimation = animationId;
+                                    });
+                                  },
+                                  onTap: (regionId, regionName) {
+                                    setState(
+                                      () => _lastHitRegion =
+                                          regionName ?? regionId,
+                                    );
+                                  },
+                                ),
+                              ),
+                              if (!_isTestMode &&
+                                  (_isAddingRegion ||
+                                      _gestureMode != _RegionGestureMode.none))
+                                Positioned.fill(
+                                  child: IgnorePointer(
+                                    child: CustomPaint(
+                                      painter: _RegionPainter(
+                                        regions: _draft.regions,
+                                        selectedId: _selectedRegionId,
+                                        draftRect: _gestureRect,
+                                        showLabels: true,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return Center(
-                  child: AspectRatio(
-                    aspectRatio: _draft.canvasWidth / _draft.canvasHeight,
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: VideoPetPlayer(
-                            manifest: _draft,
-                            baseUri: widget.baseUri,
-                            resolvedSources: widget.resolvedSources,
-                            active: true,
-                            paused: _isPaused,
-                            animationRequest: _animationRequest,
-                            interactive: _isTestMode,
-                            onEditPointer: _isTestMode ? null : _onEditPointer,
-                            showRegions: _showRegions,
-                            onInteraction: (regionId, animationId) {
-                              setState(() {
-                                _selectedRegionId = regionId;
-                                _lastHitRegion = regionId;
-                                _lastActionAnimation = animationId;
-                              });
-                            },
-                            onTap: (regionId, regionName) {
-                              setState(
-                                () => _lastHitRegion = regionName ?? regionId,
-                              );
-                            },
-                          ),
-                        ),
-                        if (!_isTestMode &&
-                            (_isAddingRegion ||
-                                _gestureMode != _RegionGestureMode.none))
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: CustomPaint(
-                                painter: _RegionPainter(
-                                  regions: _draft.regions,
-                                  selectedId: _selectedRegionId,
-                                  draftRect: _gestureRect,
-                                  showLabels: true,
-                                ),
-                              ),
-                            ),
-                          ),
-                        Positioned(
-                          left: 12,
-                          bottom: 12,
-                          child: IgnorePointer(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                child: Text(
-                                  _isTestMode
-                                      ? '${_text('videoPet_hit', '命中')}: ${_lastHitRegion ?? '-'}  ${_text('videoPet_action', '动作')}: ${_lastActionAnimation ?? '-'}'
-                                      : _text(
-                                          'videoPet_editHint',
-                                          '拖动区域移动，拖动右下角调整大小',
-                                        ),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+            _buildPreviewStatus(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildRegionPanel({bool horizontal = false}) {
+  /// 宠物当前状态角标：展示在**预览面板**左下角（不随宠物画布比例收缩）。
+  Widget _buildPreviewStatus() {
+    final dsTheme = DSThemeBridge.resolve(context);
+    return Positioned(
+      key: const ValueKey('videoPetPreviewStatus'),
+      left: 12,
+      bottom: 12,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: dsTheme.ink.withValues(alpha: .55),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Text(
+              _isTestMode
+                  ? '${_text('videoPet_hit', '命中')}: ${_lastHitRegion ?? '-'}  ${_text('videoPet_action', '动作')}: ${_lastActionAnimation ?? '-'}'
+                  : _text('videoPet_editHint', '拖动区域移动，拖动右下角调整大小'),
+              style: TextStyle(color: dsTheme.paper, fontSize: 11),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 窄屏底部工具区：区域 / 动画 / 移动与动作配置（含逐动画 facing / moving）
+  /// 用 TabBar 切换，保证窄窗口下也能编辑，且保持在树内实时刷新。
+  Widget _buildNarrowToolsPanel() {
+    final theme = DSThemeBridge.resolve(context);
+    return Material(
+      color: theme.surfaceAlt,
+      child: DefaultTabController(
+        length: 3,
+        child: Column(
+          children: [
+            TabBar(
+              tabAlignment: TabAlignment.start,
+              isScrollable: true,
+              tabs: [
+                Tab(text: _text('videoPet_regions', '区域')),
+                Tab(
+                  key: const ValueKey('videoPetNarrowAnimationTab'),
+                  text: _text('videoPet_animations', '动画'),
+                ),
+                Tab(
+                  key: const ValueKey('videoPetNarrowConfigTab'),
+                  text: _text('videoPet_movementAndActions', '移动与动作'),
+                ),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildRegionPanel(),
+                  _buildAnimationPanel(),
+                  _buildBindingPanel(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegionPanel() {
     final panel = Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -660,15 +768,21 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-              IconButton(
+              DSIconButton(
+                icon: _isAddingRegion ? DsIconKind.close : DsIconKind.grid,
+                size: 36,
+                color: DSThemeBridge.resolve(context).surfaceAlt,
+                iconColor: DSThemeBridge.resolve(context).textSub,
                 tooltip: _text('videoPet_addRegion', '框选新增区域'),
-                icon: Icon(_isAddingRegion ? Icons.close : Icons.crop_free),
                 onPressed: () =>
                     setState(() => _isAddingRegion = !_isAddingRegion),
               ),
-              IconButton(
+              DSIconButton(
+                icon: DsIconKind.trash,
+                size: 36,
+                color: DSThemeBridge.resolve(context).surfaceAlt,
+                iconColor: DSThemeBridge.resolve(context).textSub,
                 tooltip: _text('videoPet_deleteRegion', '删除区域'),
-                icon: const Icon(Icons.delete_outline),
                 onPressed: _deleteRegion,
               ),
             ],
@@ -681,48 +795,42 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
           const SizedBox(height: 4),
           Expanded(
             child: ListView.builder(
-              scrollDirection: horizontal ? Axis.horizontal : Axis.vertical,
+              scrollDirection: Axis.vertical,
               itemCount: _draft.regions.length,
               itemBuilder: (context, index) {
                 final region = _draft.regions[index];
-                return SizedBox(
-                  width: horizontal ? 220 : null,
-                  child: ListTile(
-                    dense: true,
-                    selected: region.id == _selectedRegionId,
-                    leading: CircleAvatar(
-                      radius: 12,
-                      child: Text('${index + 1}'),
-                    ),
-                    title: Text(
-                      region.name.isEmpty ? region.id : region.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      '${region.priority} · ${region.enabled ? _text('videoPet_enabled', '启用') : _text('videoPet_disabled', '停用')}',
-                    ),
-                    trailing: Icon(
-                      region.enabled
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      size: 18,
-                    ),
-                    onTap: () => setState(() => _selectedRegionId = region.id),
-                    onLongPress: () {
-                      setState(() => _selectedRegionId = region.id);
-                      showModalBottomSheet<void>(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (_) => SafeArea(
-                          child: SizedBox(
-                            height: MediaQuery.sizeOf(context).height * .75,
-                            child: _buildBindingPanel(),
-                          ),
-                        ),
-                      );
+                return ListTile(
+                  dense: true,
+                  selected: region.id == _selectedRegionId,
+                  leading: CircleAvatar(
+                    radius: 12,
+                    child: Text('${index + 1}'),
+                  ),
+                  title: Text(
+                    region.name.isEmpty ? region.id : region.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '${region.priority} · ${region.enabled ? _text('videoPet_enabled', '启用') : _text('videoPet_disabled', '停用')}',
+                  ),
+                  trailing: DSIconButton(
+                    icon: region.enabled ? DsIconKind.eye : DsIconKind.eyeOff,
+                    size: 32,
+                    color: DSThemeBridge.resolve(context).surfaceAlt,
+                    iconColor: region.enabled
+                        ? DSThemeBridge.resolve(context).text
+                        : DSThemeBridge.resolve(context).textSub,
+                    tooltip: region.enabled
+                        ? _text('videoPet_disableRegion', '停用区域')
+                        : _text('videoPet_enableRegion', '启用区域'),
+                    // 点击眼睛直接切换该区域启用状态（并选中该区域）。
+                    onPressed: () {
+                      _selectedRegionId = region.id;
+                      _updateSelectedRegion(enabled: !region.enabled);
                     },
                   ),
+                  onTap: () => setState(() => _selectedRegionId = region.id),
                 );
               },
             ),
@@ -731,14 +839,14 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
       ),
     );
     return Material(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      color: DSThemeBridge.resolve(context).surface,
       child: panel,
     );
   }
 
   Widget _buildAnimationPanel() {
     return Material(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      color: DSThemeBridge.resolve(context).surfaceAlt,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
         child: Column(
@@ -758,7 +866,11 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       isDense: true,
-                      prefixIcon: const Icon(Icons.search, size: 18),
+                      prefixIcon: DsIcon(
+                        DsIconKind.search,
+                        size: 18,
+                        color: DSThemeBridge.resolve(context).textSub,
+                      ),
                       hintText: _text('videoPet_searchAnimation', '搜索动画'),
                       border: const OutlineInputBorder(),
                     ),
@@ -767,79 +879,86 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
               ],
             ),
             const SizedBox(height: 6),
+            // 分类过滤：手绘 DSChip 横向单行滚动。
             SizedBox(
-              height: 28,
+              height: 36,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                children: _categories
-                    .map(
-                      (category) => Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ChoiceChip(
-                          label: Text(
-                            category == 'all'
-                                ? _text('videoPet_all', '全部')
-                                : category,
-                          ),
-                          selected: _category == category,
-                          onSelected: (_) =>
-                              setState(() => _category = category),
-                        ),
+                children: [
+                  for (final category in _categories)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: DSChip(
+                        label: category == 'all'
+                            ? _text('videoPet_all', '全部')
+                            : category,
+                        selected: _category == category,
+                        onSelected: (_) => setState(() => _category = category),
                       ),
-                    )
-                    .toList(),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 4),
+            // 一行多个、多行流式排布，纵向滚动。
             Expanded(
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _visibleAnimations.length,
-                itemBuilder: (context, index) {
-                  final animation = _visibleAnimations[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Card(
-                      child: InkWell(
-                        onTap: () => _requestAnimation(animation.id),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _selectedAnimationId == animation.id
-                                    ? Icons.play_circle
-                                    : Icons.animation,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 6),
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 160,
+              child: SingleChildScrollView(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    for (final animation in _visibleAnimations)
+                      // 手绘小控件档（design.md §9.1）：实底 + 墨线抖动描边。
+                      Container(
+                        decoration: dsSketchDecoration(
+                          theme: DSThemeBridge.resolve(context),
+                          fillColor: _selectedAnimationId == animation.id
+                              ? DSThemeBridge.resolve(context).hatch
+                              : DSThemeBridge.resolve(context).surface,
+                          radius: const BorderRadius.all(Radius.circular(10)),
+                        ),
+                        child: InkWell(
+                          onTap: () => _requestAnimation(animation.id),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                DsIcon(
+                                  _selectedAnimationId == animation.id
+                                      ? DsIconKind.play
+                                      : DsIconKind.animation,
+                                  size: 18,
+                                  color: DSThemeBridge.resolve(context).text,
                                 ),
-                                child: Text(
-                                  animation.name.isEmpty
-                                      ? animation.id
-                                      : animation.name,
-                                  overflow: TextOverflow.ellipsis,
+                                const SizedBox(width: 6),
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 160,
+                                  ),
+                                  child: Text(
+                                    animation.name.isEmpty
+                                        ? animation.id
+                                        : animation.name,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                animation.category,
-                                style: Theme.of(context).textTheme.labelSmall,
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                Text(
+                                  animation.category,
+                                  style: Theme.of(context).textTheme.labelSmall,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                  ],
+                ),
               ),
             ),
           ],
@@ -852,34 +971,44 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
     final movement = _draft.movement;
     final movementAnimations = _draft.animations;
     final turnAnimations = _draft.animations;
-    final movementItems = [
-      const DropdownMenuItem<String>(value: '', child: Text('不设置')),
+    final movementItems = <DSSelectItem<String>>[
+      DSSelectItem(value: '', label: _text('videoPet_notSet', '不设置')),
       for (final animation in movementAnimations)
-        DropdownMenuItem(value: animation.id, child: Text(animation.name)),
+        DSSelectItem(
+          value: animation.id,
+          label: animation.name.isEmpty ? animation.id : animation.name,
+        ),
     ];
-    final turnItems = [
-      const DropdownMenuItem<String>(value: '', child: Text('不设置')),
+    final turnItems = <DSSelectItem<String>>[
+      DSSelectItem(value: '', label: _text('videoPet_notSet', '不设置')),
       for (final animation in turnAnimations)
-        DropdownMenuItem(value: animation.id, child: Text(animation.name)),
+        DSSelectItem(
+          value: animation.id,
+          label: animation.name.isEmpty ? animation.id : animation.name,
+        ),
     ];
     void update(VideoPetMovement next) =>
         _setDraft(_draft.copyWith(movement: next));
     Widget selector(
       String label,
       String value,
-      List<DropdownMenuItem<String>> items,
-      ValueChanged<String?> onChanged,
+      List<DSSelectItem<String>> items,
+      ValueChanged<String> onChanged,
     ) => Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: DropdownButtonFormField<String>(
-        value: items.any((item) => item.value == value) ? value : '',
-        decoration: InputDecoration(
-          labelText: label,
-          isDense: true,
-          border: const OutlineInputBorder(),
-        ),
-        items: items,
-        onChanged: onChanged,
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 4),
+          // 可搜索下拉（design_system combobox）：动画多时可直接搜索。
+          DSCombobox<String>(
+            items: items,
+            value: items.any((item) => item.value == value) ? value : null,
+            hint: _text('videoPet_notSet', '不设置'),
+            onChanged: onChanged,
+          ),
+        ],
       ),
     );
     return Column(
@@ -894,31 +1023,31 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
           _text('videoPet_moveLeft', '向左移动'),
           movement.leftAnimationId,
           movementItems,
-          (id) => update(movement.copyWith(leftAnimationId: id ?? '')),
+          (id) => update(movement.copyWith(leftAnimationId: id)),
         ),
         selector(
           _text('videoPet_moveRight', '向右移动'),
           movement.rightAnimationId,
           movementItems,
-          (id) => update(movement.copyWith(rightAnimationId: id ?? '')),
+          (id) => update(movement.copyWith(rightAnimationId: id)),
         ),
         selector(
           _text('videoPet_turnLeft', '向左转向'),
           movement.turnLeftAnimationId,
           turnItems,
-          (id) => update(movement.copyWith(turnLeftAnimationId: id ?? '')),
+          (id) => update(movement.copyWith(turnLeftAnimationId: id)),
         ),
         selector(
           _text('videoPet_turnRight', '向右转向'),
           movement.turnRightAnimationId,
           turnItems,
-          (id) => update(movement.copyWith(turnRightAnimationId: id ?? '')),
+          (id) => update(movement.copyWith(turnRightAnimationId: id)),
         ),
         selector(
           _text('videoPet_drag', '拖拽悬空'),
           movement.dragAnimationId,
           movementItems,
-          (id) => update(movement.copyWith(dragAnimationId: id ?? '')),
+          (id) => update(movement.copyWith(dragAnimationId: id)),
         ),
         _numberField(
           _text('videoPet_moveSpeed', '移动速度（像素/秒）'),
@@ -985,7 +1114,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
     final selected = _selectedRegion;
     if (selected == null) {
       return Material(
-        color: Theme.of(context).colorScheme.surfaceContainer,
+        color: DSThemeBridge.resolve(context).surfaceAlt,
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
@@ -997,7 +1126,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
       );
     }
     return Material(
-      color: Theme.of(context).colorScheme.surfaceContainer,
+      color: DSThemeBridge.resolve(context).surfaceAlt,
       child: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -1010,23 +1139,27 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            value: _draft.idleAnimationId,
-            decoration: InputDecoration(
-              labelText: _text('videoPet_idleAnimation', 'Idle 动画'),
-              border: const OutlineInputBorder(),
-            ),
-            items: _draft.animations
-                .map(
-                  (animation) => DropdownMenuItem(
-                    value: animation.id,
-                    child: Text(animation.name),
-                  ),
+          Text(
+            _text('videoPet_idleAnimation', 'Idle 动画'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 4),
+          DSCombobox<String>(
+            value:
+                _draft.animations.any(
+                  (animation) => animation.id == _draft.idleAnimationId,
                 )
-                .toList(),
-            onChanged: (id) {
-              if (id != null) _setDraft(_draft.copyWith(idleAnimationId: id));
-            },
+                ? _draft.idleAnimationId
+                : null,
+            items: [
+              for (final animation in _draft.animations)
+                DSSelectItem(
+                  value: animation.id,
+                  label: animation.name.isEmpty ? animation.id : animation.name,
+                ),
+            ],
+            hint: _text('videoPet_selectAnimations', '选择动画'),
+            onChanged: (id) => _setDraft(_draft.copyWith(idleAnimationId: id)),
           ),
           const SizedBox(height: 12),
           _buildGlobalBindingEditor(
@@ -1044,11 +1177,14 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
             onChanged: (value) => _updateSelectedRegion(name: value),
           ),
           const SizedBox(height: 8),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(_text('videoPet_enabled', '启用')),
-            value: selected.enabled,
-            onChanged: (value) => _updateSelectedRegion(enabled: value),
+          Row(
+            children: [
+              Expanded(child: Text(_text('videoPet_enabled', '启用'))),
+              DSSwitch(
+                value: selected.enabled,
+                onChanged: (value) => _updateSelectedRegion(enabled: value),
+              ),
+            ],
           ),
           _numberField(
             _text('videoPet_priority', '优先级'),
@@ -1092,7 +1228,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(_text('videoPet_showRegions', '显示区域')),
-            trailing: Switch(
+            trailing: DSSwitch(
               value: _showRegions,
               onChanged: (value) => setState(() => _showRegions = value),
             ),
@@ -1109,19 +1245,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: TextFormField(
-        initialValue: value.toStringAsFixed(3),
-        keyboardType: const TextInputType.numberWithOptions(
-          decimal: true,
-          signed: true,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          isDense: true,
-          border: const OutlineInputBorder(),
-        ),
-        onFieldSubmitted: (text) => onChanged(double.tryParse(text) ?? value),
-      ),
+      child: _DsNumberField(label: label, value: value, onChanged: onChanged),
     );
   }
 
@@ -1133,59 +1257,54 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
   ) {
     final inherited = binding == null;
     final current = binding ?? globalBinding;
-    final selectedIds = current.animationIds.toSet();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(title, style: Theme.of(context).textTheme.titleSmall),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(_text('videoPet_inheritGlobal', '继承全局')),
-          value: inherited,
-          onChanged: (value) => onChanged(value ? null : current),
+        Row(
+          children: [
+            Expanded(child: Text(_text('videoPet_inheritGlobal', '继承全局'))),
+            DSSwitch(
+              value: inherited,
+              onChanged: (value) => onChanged(value ? null : current),
+            ),
+          ],
         ),
         if (!inherited) ...[
           const SizedBox(height: 4),
-          DropdownButtonFormField<String>(
+          Text(
+            _text('videoPet_strategy', '播放策略'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 4),
+          DSSelect<String>(
             value: current.strategy,
-            decoration: InputDecoration(
-              labelText: _text('videoPet_strategy', '播放策略'),
-              isDense: true,
-              border: const OutlineInputBorder(),
-            ),
             items: const [
-              DropdownMenuItem(value: 'random', child: Text('random')),
-              DropdownMenuItem(value: 'sequence', child: Text('sequence')),
+              DSSelectItem(value: 'random', label: 'random'),
+              DSSelectItem(value: 'sequence', label: 'sequence'),
             ],
             onChanged: (value) =>
-                onChanged(_withBinding(current, strategy: value ?? 'random')),
+                onChanged(_withBinding(current, strategy: value)),
           ),
           const SizedBox(height: 6),
           Text(
             _text('videoPet_multiSelect', '可多选动画；清空即禁用'),
             style: Theme.of(context).textTheme.bodySmall,
           ),
-          Wrap(
-            spacing: 4,
-            runSpacing: 0,
-            children: _draft.animations.map((animation) {
-              final selected = selectedIds.contains(animation.id);
-              return FilterChip(
-                label: Text(
-                  animation.name.isEmpty ? animation.id : animation.name,
+          const SizedBox(height: 6),
+          // 多选动画绑定：可搜索多选下拉（design_system combobox）。
+          DSMultiCombobox<String>(
+            items: [
+              for (final animation in _draft.animations)
+                DSSelectItem(
+                  value: animation.id,
+                  label: animation.name.isEmpty ? animation.id : animation.name,
                 ),
-                selected: selected,
-                onSelected: (checked) {
-                  final next = {...selectedIds};
-                  if (checked) {
-                    next.add(animation.id);
-                  } else {
-                    next.remove(animation.id);
-                  }
-                  onChanged(_withBinding(current, animationIds: next.toList()));
-                },
-              );
-            }).toList(),
+            ],
+            values: current.animationIds,
+            hint: _text('videoPet_selectAnimations', '选择动画'),
+            onChanged: (ids) =>
+                onChanged(_withBinding(current, animationIds: ids)),
           ),
         ],
       ],
@@ -1194,6 +1313,67 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
 }
 
 enum _RegionGestureMode { none, add, move, resize }
+
+/// 数值输入：DSInput + 本地 controller；输入可解析即提交（不可解析的
+/// 中间态不提交），外部 clamp 改变值时回写文本。
+class _DsNumberField extends StatefulWidget {
+  const _DsNumberField({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  State<_DsNumberField> createState() => _DsNumberFieldState();
+}
+
+class _DsNumberFieldState extends State<_DsNumberField> {
+  late final _controller = TextEditingController(
+    text: widget.value.toStringAsFixed(3),
+  );
+
+  @override
+  void didUpdateWidget(covariant _DsNumberField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 外部 clamp / 联动改变值且当前输入不可解析为该值时同步文本。
+    if (widget.value != oldWidget.value &&
+        double.tryParse(_controller.text) != widget.value) {
+      _controller.text = widget.value.toStringAsFixed(3);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(widget.label, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 4),
+        DSInput(
+          controller: _controller,
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+            signed: true,
+          ),
+          onChanged: (text) {
+            final parsed = double.tryParse(text);
+            if (parsed != null) widget.onChanged(parsed);
+          },
+        ),
+      ],
+    );
+  }
+}
 
 class _RegionPainter extends CustomPainter {
   const _RegionPainter({

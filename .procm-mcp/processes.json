@@ -1817,6 +1817,137 @@
         "PROCM_ROOM_ID": "aboutme",
         "PROCM_CLIENT_NAME": "aboutme-app-windows"
       }
+    },
+    {
+      "id": "77em4Kw0",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:\\about-me",
+      "status": "exited",
+      "pid": 12308,
+      "exitCode": 1,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1793238531532,
+      "lastStartedAt": 1793238531532,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\c6CuoG(10008)\\processes\\77em4Kw0-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\c6CuoG(10008)\\processes\\77em4Kw0-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
+    },
+    {
+      "id": "InbJhRkE",
+      "name": "probe-ctx",
+      "script": "cmd.exe",
+      "args": [
+        "/c",
+        "D:\\about-me\\.tmp\\probe_ctx.cmd > D:\\about-me\\.tmp\\probe_out.txt 2>&1"
+      ],
+      "cwd": "D:\\about-me",
+      "status": "exited",
+      "pid": 11960,
+      "exitCode": 0,
+      "error": null,
+      "desc": "验证 procm 进程令牌是否受限",
+      "group": null,
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1793238743732,
+      "lastStartedAt": 1793238743732,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\c6CuoG(10008)\\processes\\InbJhRkE-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\c6CuoG(10008)\\processes\\InbJhRkE-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "JgswihU4",
+      "name": "probe-dart",
+      "script": "D:\\flutter\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+      "args": [
+        "D:\\about-me\\.tmp\\probe_tmp.dart"
+      ],
+      "cwd": "D:\\about-me\\.tmp",
+      "status": "exited",
+      "pid": 6320,
+      "exitCode": 0,
+      "error": null,
+      "desc": "procm 沙箱链内直接跑 Dart createTemp 探针",
+      "group": null,
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1793238868159,
+      "lastStartedAt": 1793238868159,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\c6CuoG(10008)\\processes\\JgswihU4-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\c6CuoG(10008)\\processes\\JgswihU4-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "ax6ZPmQJ",
+      "name": "probe-app",
+      "script": "D:\\about-me\\build\\windows\\x64\\runner\\Debug\\aboutme.exe",
+      "args": [],
+      "cwd": "D:\\about-me\\build\\windows\\x64\\runner\\Debug",
+      "status": "exited",
+      "pid": 11464,
+      "exitCode": 3221226525,
+      "error": null,
+      "desc": "单独运行 Debug 版 aboutme.exe 以便直连其 VM Service",
+      "group": null,
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1793238926722,
+      "lastStartedAt": 1793238926722,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\c6CuoG(10008)\\processes\\ax6ZPmQJ-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\c6CuoG(10008)\\processes\\ax6ZPmQJ-stderr.log",
+      "envs": {}
+    },
+    {
+      "id": "ZIb971yb",
+      "name": "app-windows",
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "cwd": "D:\\about-me",
+      "status": "exited",
+      "pid": 26704,
+      "exitCode": 0,
+      "error": null,
+      "desc": "Run the Flutter app on Windows with procm room logging",
+      "group": "aboutme",
+      "port": null,
+      "roomId": null,
+      "favorite": false,
+      "startedAt": 1793239535783,
+      "lastStartedAt": 1793239535783,
+      "stoppedAt": null,
+      "stdoutLogPath": "D:\\about-me\\.procm-mcp\\c6CuoG(10008)\\processes\\ZIb971yb-stdout.log",
+      "stderrLogPath": "D:\\about-me\\.procm-mcp\\c6CuoG(10008)\\processes\\ZIb971yb-stderr.log",
+      "envs": {
+        "PROCM_WS_URL": "ws://127.0.0.1:7331/room",
+        "PROCM_ROOM_ID": "aboutme",
+        "PROCM_CLIENT_NAME": "aboutme-app-windows"
+      }
     }
   ]
 }

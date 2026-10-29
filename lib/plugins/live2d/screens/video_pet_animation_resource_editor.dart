@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 
 /// 单个动画的 facing / moving 资源编辑器。
@@ -315,11 +317,14 @@ class _VideoPetAnimationResourceEditorState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dsTheme = DSThemeBridge.resolve(context);
     final spritesheet = _spritesheet;
     final facing = <String>['', 'left', 'right'].contains(_latest.facing)
         ? _latest.facing
         : '';
-    return Column(
+    // 自带主题桥：脱离 DS 主题树（如测试）也能安全使用 DS 组件。
+    return DSThemeBridge(
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         DropdownButtonFormField<String>(
@@ -371,10 +376,13 @@ class _VideoPetAnimationResourceEditorState
           Row(
             children: <Widget>[
               if (spritesheet != null)
-                IconButton(
+                DSIconButton(
                   key: const ValueKey('videoPetMovingAdd'),
+                  icon: DsIconKind.plus,
+                  size: 32,
+                  color: dsTheme.surfaceAlt,
+                  iconColor: dsTheme.textSub,
                   tooltip: _t('新增一段移动区间', 'Add a moving segment'),
-                  icon: const Icon(Icons.add),
                   onPressed: _addSegment,
                 ),
               if (_segments.length >= 2)
@@ -388,7 +396,8 @@ class _VideoPetAnimationResourceEditorState
           for (var i = 0; i < _segments.length; i++)
             _buildSegmentRow(context, i),
         ],
-      ],
+        ],
+      ),
     );
   }
 
@@ -409,6 +418,7 @@ class _VideoPetAnimationResourceEditorState
   }
 
   Widget _buildSegmentRow(BuildContext context, int index) {
+    final dsTheme = DSThemeBridge.resolve(context);
     final draft = _segments[index];
     final parsed = _parseSegment(index);
     final errorStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error);
@@ -447,10 +457,13 @@ class _VideoPetAnimationResourceEditorState
                   decimal: true,
                 ),
               ),
-              IconButton(
+              DSIconButton(
                 key: ValueKey('videoPetMovingDelete-$index'),
+                icon: DsIconKind.trash,
+                size: 30,
+                color: dsTheme.surfaceAlt,
+                iconColor: dsTheme.danger,
                 tooltip: _t('删除该段', 'Delete this segment'),
-                icon: const Icon(Icons.delete_outline),
                 onPressed: () => _deleteSegment(index),
               ),
             ],
@@ -472,17 +485,13 @@ class _VideoPetAnimationResourceEditorState
     required String label,
     required bool decimal,
   }) {
-    return TextFormField(
+    return DSInput(
       key: key,
       controller: controller,
+      hint: label,
       keyboardType: TextInputType.numberWithOptions(
         decimal: decimal,
         signed: decimal,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        isDense: true,
-        border: const OutlineInputBorder(),
       ),
       onChanged: (_) => _onSegmentEdited(),
     );
