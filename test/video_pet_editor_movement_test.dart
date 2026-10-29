@@ -95,20 +95,23 @@ void main() {
     await tester.tap(find.text('打开编辑器'));
     await tester.pumpAndSettle();
 
-    // 窄屏底部工具区有三个 Tab：区域 / 动画 / 移动与动作。
-    expect(find.byKey(const ValueKey('videoPetNarrowAnimationTab')), findsOneWidget);
-    final configTab = find.byKey(const ValueKey('videoPetNarrowConfigTab'));
-    expect(configTab, findsOneWidget);
+    // 窄屏底部工具区有四个 Tab：区域 / 动画 / 随机移动 / 动作编辑。
+    expect(
+      find.byKey(const ValueKey('videoPetNarrowAnimationTab')),
+      findsOneWidget,
+    );
+    final actionTab = find.byKey(const ValueKey('videoPetNarrowActionTab'));
+    expect(actionTab, findsOneWidget);
 
-    // 先在「动画」Tab 点选动画，再切「移动与动作」编辑配置。
+    // 先在「动画」Tab 点选动画，再切「动作编辑」配置 facing / moving。
     await tester.tap(find.byKey(const ValueKey('videoPetNarrowAnimationTab')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('自定义走路'));
     await tester.pumpAndSettle();
 
-    await tester.tap(configTab);
+    await tester.tap(actionTab);
     await tester.pumpAndSettle();
-    expect(find.text('随机移动'), findsOneWidget);
+    expect(find.textContaining(RegExp('动作资源|选择上方动画')), findsOneWidget);
 
     // 向下滚动配置面板直到 facing / moving 编辑器可见。
     for (var i = 0; i < 6; i++) {

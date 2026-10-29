@@ -13,20 +13,21 @@ Widget buildScrapItemContent(
   bool isDark,
   void Function(String message) showToast,
 ) {
-  switch (item.kind) {
-    case ScrapItemKind.header:
-      return _buildHeaderItem(item, isDark);
-    case ScrapItemKind.photo:
-      return _buildPhotoItem(item, isDark);
-    case ScrapItemKind.text:
-      return _buildTextItem(item, isDark);
-    case ScrapItemKind.companions:
-      return _buildCompanionsItem(item, isDark);
-    case ScrapItemKind.gift:
-      return _buildGiftItem(isDark, showToast);
-    case ScrapItemKind.svg:
-      return _buildSvgItem(item);
-  }
+  final content = switch (item.kind) {
+    ScrapItemKind.header => _buildHeaderItem(item, isDark),
+    ScrapItemKind.photo => _buildPhotoItem(item, isDark),
+    ScrapItemKind.text => _buildTextItem(item, isDark),
+    ScrapItemKind.companions => _buildCompanionsItem(item, isDark),
+    ScrapItemKind.gift => _buildGiftItem(isDark, showToast),
+    ScrapItemKind.svg => _buildSvgItem(item),
+  };
+  if (item.scale == 1) return content;
+  // 布局尺寸与绘制尺寸一起缩放，选中框和命中区域保持一致。
+  return Align(
+    widthFactor: item.scale,
+    heightFactor: item.scale,
+    child: Transform.scale(scale: item.scale, child: content),
+  );
 }
 
 /// SVG 贴纸：由源码直接渲染，不依赖文件系统

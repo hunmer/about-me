@@ -207,9 +207,9 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     if (item == null) return false;
     final point = _screenToCanvas(localPosition);
     return Rect.fromLTWH(
-      item.x + item.width - 10,
+      item.x + item.width * item.scale - 10,
       item.y - 30,
-      74,
+      126,
       22,
     ).contains(point);
   }
@@ -862,6 +862,14 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     );
   }
 
+  void _resizeItem(ScrapItemData item, double factor) {
+    final nextScale = (item.scale * factor).clamp(0.2, 4.0);
+    if (nextScale == item.scale) return;
+    _pushHistory();
+    setState(() => item.scale = nextScale);
+    _notifyChanged();
+  }
+
   void _runSelectedAction(ScrapItemData item, VoidCallback action) {
     if (!_items.any((candidate) => candidate.id == item.id)) return;
     if (_selectedId != item.id) _selectItem(item);
@@ -879,11 +887,24 @@ class _ScrapbookCanvasCardWidgetState extends State<ScrapbookCanvasCardWidget>
     if (item == null) return const SizedBox.shrink();
     final selectedItem = item;
     return Positioned(
-      left: selectedItem.x + selectedItem.width - 10,
+      left: selectedItem.x + selectedItem.width * selectedItem.scale - 10,
       top: selectedItem.y - 30,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Tooltip(
+            message: '等比缩小',
+            child: _buildControlChip(
+              '−',
+              () => _resizeItem(selectedItem, 1 / 1.1),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Tooltip(
+            message: '等比放大',
+            child: _buildControlChip('+', () => _resizeItem(selectedItem, 1.1)),
+          ),
+          const SizedBox(width: 4),
           _buildControlChip(
             '↺',
             () => _runSelectedAction(

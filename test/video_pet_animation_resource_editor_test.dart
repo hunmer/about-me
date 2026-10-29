@@ -3,16 +3,34 @@ import 'package:aboutme/plugins/live2d/screens/video_pet_animation_resource_edit
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 
 /// 逐动画 facing / moving 编辑器（VideoPetAnimationResourceEditor）的
-/// widget 回归：三态语义、非法输入不外泄、切换动画重置草稿。
+/// widget 回归：三态语义、分帧 sheet 选择起止帧、重叠/速度校验、
+/// 切换动画重置草稿。
 void main() {
+  // 4 列 x 2 行 = 8 帧精灵图，生成真实 PNG data URI 供分帧网格加载。
+  final sheetImage = img.Image(width: 128, height: 64, numChannels: 4);
+  for (var frame = 0; frame < 8; frame++) {
+    final x0 = (frame % 4) * 32;
+    final y0 = (frame ~/ 4) * 32;
+    for (var y = y0; y < y0 + 32; y++) {
+      for (var x = x0; x < x0 + 32; x++) {
+        sheetImage.setPixelRgba(x, y, 40 + frame * 20, 120, 200, 255);
+      }
+    }
+  }
+  final pngUri = Uri.dataFromBytes(
+    img.encodePng(sheetImage),
+    mimeType: 'image/png',
+  ).toString();
+
   const spritesheet = VideoPetSpritesheet(
     frameWidth: 32,
     frameHeight: 32,
-    columns: 10,
-    rows: 10,
-    frameCount: 100,
+    columns: 4,
+    rows: 2,
+    frameCount: 8,
     fps: 12,
   );
 
@@ -24,7 +42,7 @@ void main() {
     id: id,
     name: id,
     facing: facing,
-    sources: const {'webp': 'a.webp'},
+    sources: {'png': pngUri},
     spritesheet: spritesheet,
     moving: moving,
   );
@@ -33,6 +51,11 @@ void main() {
   late _HarnessState harness;
 
   Future<void> pump(WidgetTester tester, VideoPetAnimation initial) async {
+    // 放大视口：分帧 sheet 较高，默认 800x600 会裁剪帧格。
+    tester.view.physicalSize = const Size(1400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -50,6 +73,21 @@ void main() {
     await tester.tap(find.byKey(key));
     await tester.pumpAndSettle();
   }
+
+  /// 打开新增区间 sheet。
+  Future<void> openAddSheet(WidgetTester tester) async {
+    await tester.tap(find.byKey(const ValueKey('videoPetMovingAdd')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('videoPetMovingSheet')), findsOneWidget);
+  }
+
+  bool confirmEnabled(WidgetTester tester) =>
+      tester
+          .widget<DSButton>(
+            find.byKey(const ValueKey('videoPetMovingSheetConfirm')),
+          )
+          .onPressed !=
+      null;
 
   group('facing 下拉', () {
     testWidgets('未设置/向左/向右三态分别提交 ""/left/right', (tester) async {
@@ -90,43 +128,26 @@ void main() {
       expect(harness.current.moving, isNull);
     });
 
-    testWidgets('切到分段模式补一段默认段并立即提交', (tester) async {
+    testWidgets('切到分段模式为空列表起步并展示新增按钮', (tester) async {
       await pump(tester, anim());
       await openDropdown(tester, const ValueKey('videoPetMovingMode'));
       await tester.tap(find.text('分段移动').last);
       await tester.pumpAndSettle();
       expect(harness.current.moving, isNotNull);
-      expect(
-        harness.current.moving!.single.toJsonList(),
-        [0, 0, 1.0],
-      );
+      expect(harness.current.moving, isEmpty);
+      expect(find.byKey(const ValueKey('videoPetMovingAdd')), findsOneWidget);
     });
 
-    testWidgets('已有分段回填输入框；删光所有段 = 全程不位移', (tester) async {
+    testWidgets('已有分段展示为段列表；删光所有段 = 全程不位移', (tester) async {
       await pump(
         tester,
         anim(moving: const [
-          VideoPetLocomotion(startFrame: 10, endFrame: 30, speed: 2.5),
+          VideoPetLocomotion(startFrame: 1, endFrame: 3, speed: 2.5),
         ]),
       );
-      expect(
-        tester.widget<DSInput>(
-          find.byKey(const ValueKey('videoPetMovingStart-0')),
-        ).controller!.text,
-        '10',
-      );
-      expect(
-        tester.widget<DSInput>(
-          find.byKey(const ValueKey('videoPetMovingEnd-0')),
-        ).controller!.text,
-        '30',
-      );
-      expect(
-        tester.widget<DSInput>(
-          find.byKey(const ValueKey('videoPetMovingSpeed-0')),
-        ).controller!.text,
-        '2.5',
-      );
+      expect(find.byKey(const ValueKey('videoPetMovingSegment-0')), findsOneWidget);
+      expect(find.textContaining('帧 1–3'), findsOneWidget);
+      expect(find.textContaining('2.5'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('videoPetMovingDelete-0')));
       await tester.pumpAndSettle();
@@ -135,251 +156,233 @@ void main() {
     });
   });
 
-  group('分段编辑与校验', () {
-    testWidgets('新增两段不同速度，按序提交为三元数组', (tester) async {
+  group('分帧 sheet 新增', () {
+    testWidgets('点选起止帧后插入默认速度 1 的段', (tester) async {
       await pump(tester, anim());
       await openDropdown(tester, const ValueKey('videoPetMovingMode'));
       await tester.tap(find.text('分段移动').last);
       await tester.pumpAndSettle();
 
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingStart-0')),
-        '10',
+      await openAddSheet(tester);
+      expect(confirmEnabled(tester), isFalse);
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-1')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-3')));
+      await tester.pump();
+      expect(confirmEnabled(tester), isTrue);
+
+      await tester.tap(
+        find.byKey(const ValueKey('videoPetMovingSheetConfirm')),
       );
+      await tester.pumpAndSettle();
+      expect(harness.current.moving!.single.toJsonList(), [1, 3, 1.0]);
+    });
+
+    testWidgets('反序点选自动交换起止；速度可编辑', (tester) async {
+      await pump(tester, anim());
+      await openDropdown(tester, const ValueKey('videoPetMovingMode'));
+      await tester.tap(find.text('分段移动').last);
+      await tester.pumpAndSettle();
+      await openAddSheet(tester);
+
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-5')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-2')));
+      await tester.pump();
       await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingEnd-0')),
-        '30',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingSpeed-0')),
+        find.byKey(const ValueKey('videoPetMovingSheetSpeed')),
         '2.5',
       );
       await tester.pump();
 
-      await tester.tap(find.byKey(const ValueKey('videoPetMovingAdd')));
+      await tester.tap(
+        find.byKey(const ValueKey('videoPetMovingSheetConfirm')),
+      );
       await tester.pumpAndSettle();
-      // 新段默认从上一段 end+1 开始（31..31，速度 1），先改速度。
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingEnd-1')),
-        '60',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingSpeed-1')),
-        '4.0',
-      );
-      await tester.pump();
-
-      expect(
-        harness.current.moving!
-            .map((segment) => segment.toJsonList())
-            .toList(),
-        [
-          [10, 30, 2.5],
-          [31, 60, 4.0],
-        ],
-      );
-      // 导出仍是三元数组。
-      final movingJson = harness.current.toJson()['moving'] as List<dynamic>;
-      expect(movingJson, [
-        [10, 30, 2.5],
-        [31, 60, 4.0],
-      ]);
+      expect(harness.current.moving!.single.toJsonList(), [2, 5, 2.5]);
     });
 
-    testWidgets('非法输入显示错误且不外泄非法值：越界 / 非整数 / 逆序 / 零速度 / 重叠',
-        (tester) async {
-      await pump(
-        tester,
-        anim(moving: const [
-          VideoPetLocomotion(startFrame: 10, endFrame: 30, speed: 2.5),
-        ]),
-      );
-      // 注意：逐字段输入可能产生「瞬时合法」的中间提交（合法即提交是既有
-      // 行为），因此这里断言不变量：任何时刻草稿都是合法 moving，且刚输入
-      // 的非法组合绝不出现在已提交值里。
-      void expectDraftLegal() {
-        // ignore: avoid_catches_without_on_clauses
-        expect(() => harness.current.validate(), returnsNormally);
-      }
+    testWidgets('非法速度禁用确认；取消不改动', (tester) async {
+      await pump(tester, anim());
+      await openDropdown(tester, const ValueKey('videoPetMovingMode'));
+      await tester.tap(find.text('分段移动').last);
+      await tester.pumpAndSettle();
+      await openAddSheet(tester);
 
-      Future<void> editSegment0(String start, String end, String speed) async {
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-0')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-7')));
+      await tester.pump();
+      expect(confirmEnabled(tester), isTrue);
+
+      for (final bad in ['0', '-1', 'abc', '']) {
         await tester.enterText(
-          find.byKey(const ValueKey('videoPetMovingStart-0')),
-          start,
-        );
-        await tester.enterText(
-          find.byKey(const ValueKey('videoPetMovingEnd-0')),
-          end,
-        );
-        await tester.enterText(
-          find.byKey(const ValueKey('videoPetMovingSpeed-0')),
-          speed,
+          find.byKey(const ValueKey('videoPetMovingSheetSpeed')),
+          bad,
         );
         await tester.pump();
+        expect(confirmEnabled(tester), isFalse, reason: 'speed "$bad"');
       }
 
-      // 帧号越界（end == frameCount）。
-      await editSegment0('0', '100', '2');
-      expect(find.byKey(const ValueKey('videoPetMovingError-0')), findsOneWidget);
-      expectDraftLegal();
-      expect(harness.current.moving!.every((s) => s.endFrame < 100), isTrue);
-
-      // 非整数帧号。
-      await editSegment0('1.5', '30', '2');
-      expect(find.byKey(const ValueKey('videoPetMovingError-0')), findsOneWidget);
-      expectDraftLegal();
-      expect(harness.current.moving!.every((s) => s.startFrame != 1), isTrue);
-
-      // 逆序。
-      await editSegment0('30', '10', '2');
-      expect(find.byKey(const ValueKey('videoPetMovingError-0')), findsOneWidget);
-      expectDraftLegal();
-      expect(
-        harness.current.moving!.every((s) => s.startFrame <= s.endFrame),
-        isTrue,
+      // 取消：无任何提交。
+      await tester.tap(
+        find.byKey(const ValueKey('videoPetMovingSheetCancel')),
       );
-
-      // 零速度与负速度。
-      for (final bad in ['0', '-1']) {
-        await editSegment0('10', '30', bad);
-        expect(
-          find.byKey(const ValueKey('videoPetMovingError-0')),
-          findsOneWidget,
-        );
-        expectDraftLegal();
-        expect(harness.current.moving!.every((s) => s.speed > 0), isTrue);
-      }
-
-      // 修正后错误消失并提交。
-      await editSegment0('10', '30', '3');
-      expect(
-        find.byKey(const ValueKey('videoPetMovingError-0')),
-        findsNothing,
-      );
-      expect(harness.current.moving!.single.speed, 3);
+      await tester.pumpAndSettle();
+      expect(harness.current.moving, isEmpty);
     });
+  });
 
-    testWidgets('重叠段阻止提交；「按起始帧排序」可修复顺序', (tester) async {
-      // 放大视口，保证排序按钮不被裁剪、tap 能命中。
-      tester.view.physicalSize = const Size(1600, 1400);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  group('分帧 sheet 重叠校验与编辑', () {
+    testWidgets('与既有段重叠禁选禁确认；不重叠可插入并按起始帧排序', (
+      tester,
+    ) async {
       await pump(
         tester,
         anim(moving: const [
-          VideoPetLocomotion(startFrame: 10, endFrame: 40, speed: 2),
+          VideoPetLocomotion(startFrame: 0, endFrame: 2, speed: 1),
         ]),
       );
-      await tester.tap(find.byKey(const ValueKey('videoPetMovingAdd')));
-      await tester.pumpAndSettle();
-      // 新段默认 41..41；改成起始帧更小的 5..8（乱序：起始帧小于第一段）。
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingStart-1')),
-        '5',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingEnd-1')),
-        '8',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingSpeed-1')),
-        '3',
+      await openAddSheet(tester);
+
+      // 帧重叠：选 1（落在既有 0..2 内，被禁选不生效），只能选 3 起。
+      await tester.tap(
+        find.byKey(const ValueKey('videoPetFrameCell-1')),
+        warnIfMissed: false,
       );
       await tester.pump();
-      expect(find.byKey(const ValueKey('videoPetMovingError-1')), findsOneWidget);
+      // 既有区间占用的帧未成为起点。
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-3')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-4')));
+      await tester.pump();
+      expect(confirmEnabled(tester), isTrue);
 
-      await tester.tap(find.byKey(const ValueKey('videoPetMovingSort')));
+      await tester.tap(
+        find.byKey(const ValueKey('videoPetMovingSheetConfirm')),
+      );
       await tester.pumpAndSettle();
-      // 排序后 5..8 在前、10..40 在后，顺序合法，错误消失并提交。
-      expect(find.byKey(const ValueKey('videoPetMovingError-1')), findsNothing);
       expect(
         harness.current.moving!
             .map((segment) => segment.toJsonList())
             .toList(),
         [
-          [5, 8, 3.0],
-          [10, 40, 2.0],
+          [0, 2, 1.0],
+          [3, 4, 1.0],
         ],
       );
     });
 
-    testWidgets('中间输入态（空字符串、小数点）不外泄非法值', (tester) async {
+    testWidgets('手选重叠区间显示错误并禁用确认', (tester) async {
       await pump(
         tester,
         anim(moving: const [
-          VideoPetLocomotion(startFrame: 0, endFrame: 5, speed: 1),
+          VideoPetLocomotion(startFrame: 2, endFrame: 4, speed: 1),
         ]),
       );
-      final lastValid = harness.current;
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingSpeed-0')),
-        '',
+      await openAddSheet(tester);
+
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-0')));
+      await tester.pump();
+      // 2..4 被占用不可选，但 0..5 区间整体与 2..4 重叠。
+      await tester.tap(
+        find.byKey(const ValueKey('videoPetFrameCell-2')),
+        warnIfMissed: false,
       );
       await tester.pump();
-      expect(harness.current, same(lastValid));
-
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingSpeed-0')),
-        '2.',
-      );
+      // 占用帧点击无效，起点仍是 0；改点 5 作终点 → 0..5 与 2..4 重叠。
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-5')));
       await tester.pump();
-      expect(harness.current, same(lastValid));
+      expect(confirmEnabled(tester), isFalse);
+      expect(
+        find.byKey(const ValueKey('videoPetMovingSheetError')),
+        findsOneWidget,
+      );
 
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingSpeed-0')),
+      // 换成不重叠的 6..7 后可确认。
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-6')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('videoPetFrameCell-7')));
+      await tester.pump();
+      expect(confirmEnabled(tester), isTrue);
+    });
+
+    testWidgets('编辑既有段：回填选择与速度，保存后替换', (tester) async {
+      await pump(
+        tester,
+        anim(moving: const [
+          VideoPetLocomotion(startFrame: 1, endFrame: 3, speed: 2.5),
+        ]),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('videoPetMovingEdit-0')));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<DSInput>(
+              find.byKey(const ValueKey('videoPetMovingSheetSpeed')),
+            )
+            .controller!
+            .text,
         '2.5',
       );
+      // 回填后直接可保存。
+      expect(confirmEnabled(tester), isTrue);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('videoPetMovingSheetSpeed')),
+        '4',
+      );
       await tester.pump();
-      expect(harness.current.moving!.single.speed, 2.5);
+      await tester.tap(
+        find.byKey(const ValueKey('videoPetMovingSheetConfirm')),
+      );
+      await tester.pumpAndSettle();
+      expect(harness.current.moving!.single.toJsonList(), [1, 3, 4.0]);
+    });
+
+    testWidgets('删除一段保留其余段', (tester) async {
+      await pump(
+        tester,
+        anim(moving: const [
+          VideoPetLocomotion(startFrame: 0, endFrame: 1, speed: 1),
+          VideoPetLocomotion(startFrame: 4, endFrame: 5, speed: 2),
+        ]),
+      );
+      await tester.tap(find.byKey(const ValueKey('videoPetMovingDelete-0')));
+      // 消化 DSIconButton tooltip 的 150ms 隐藏定时器。
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(harness.current.moving!.single.toJsonList(), [4, 5, 2.0]);
     });
   });
 
   group('切换动画', () {
-    testWidgets('切到另一动画重置输入草稿；回切保留已提交配置', (tester) async {
+    testWidgets('切到另一动画重置；回切保留已提交配置', (tester) async {
       final left = anim(
         id: 'left',
         facing: 'left',
         moving: const [
-          VideoPetLocomotion(startFrame: 10, endFrame: 30, speed: 2.5),
+          VideoPetLocomotion(startFrame: 1, endFrame: 3, speed: 2.5),
         ],
       );
       final right = anim(id: 'right');
       await pump(tester, left);
 
-      // 先编辑 left 的分段速度。
-      await tester.enterText(
-        find.byKey(const ValueKey('videoPetMovingSpeed-0')),
-        '9',
-      );
-      await tester.pump();
-      final leftEdited = harness.current;
-      expect(leftEdited.moving!.single.speed, 9);
-
       // 切到 right：无分段，模式回默认。
       harness.replace(right);
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey('videoPetMovingStart-0')),
+        find.byKey(const ValueKey('videoPetMovingSegment-0')),
         findsNothing,
       );
 
-      // 回切 left：显示的是已提交的 9，而不是原始的 2.5。
-      harness.replace(leftEdited);
+      // 回切 left：段列表仍在，已提交配置保留。
+      harness.replace(left);
       await tester.pumpAndSettle();
-      expect(
-        tester.widget<DSInput>(
-          find.byKey(const ValueKey('videoPetMovingStart-0')),
-        ).controller!.text,
-        '10',
-      );
-      expect(
-        tester.widget<DSInput>(
-          find.byKey(const ValueKey('videoPetMovingSpeed-0')),
-        ).controller!.text,
-        '9',
-      );
-      expect(harness.current.moving!.single.speed, 9);
+      expect(find.byKey(const ValueKey('videoPetMovingSegment-0')), findsOneWidget);
+      expect(find.textContaining('帧 1–3'), findsOneWidget);
+      expect(harness.current.moving!.single.speed, 2.5);
     });
   });
 

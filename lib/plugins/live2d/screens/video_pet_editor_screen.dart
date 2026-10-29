@@ -714,14 +714,18 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
     );
   }
 
-  /// 窄屏底部工具区：区域 / 动画 / 移动与动作配置（含逐动画 facing / moving）
-  /// 用 TabBar 切换，保证窄窗口下也能编辑，且保持在树内实时刷新。
+  /// 窄屏底部工具区：区域 / 动画 / 随机移动 / 动作编辑四个 Tab，
+  /// 保持在树内实时刷新。
   Widget _buildNarrowToolsPanel() {
     final theme = DSThemeBridge.resolve(context);
+    Widget configPanel(Widget child) => Material(
+      color: theme.surfaceAlt,
+      child: ListView(padding: const EdgeInsets.all(12), children: [child]),
+    );
     return Material(
       color: theme.surfaceAlt,
       child: DefaultTabController(
-        length: 3,
+        length: 4,
         child: Column(
           children: [
             TabBar(
@@ -735,7 +739,11 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
                 ),
                 Tab(
                   key: const ValueKey('videoPetNarrowConfigTab'),
-                  text: _text('videoPet_movementAndActions', '移动与动作'),
+                  text: _text('videoPet_movement', '随机移动'),
+                ),
+                Tab(
+                  key: const ValueKey('videoPetNarrowActionTab'),
+                  text: _text('videoPet_actionEdit', '动作编辑'),
                 ),
               ],
             ),
@@ -744,7 +752,8 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
                 children: [
                   _buildRegionPanel(),
                   _buildAnimationPanel(),
-                  _buildBindingPanel(),
+                  configPanel(_buildMovementEditor()),
+                  configPanel(_buildAnimationResourceEditor()),
                 ],
               ),
             ),
@@ -860,20 +869,11 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
                   ),
                 ),
                 SizedBox(
-                  width: 180,
-                  child: TextField(
+                  width: 200,
+                  child: DSInput.search(
                     controller: _searchController,
+                    hint: _text('videoPet_searchAnimation', '搜索动画'),
                     onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      prefixIcon: DsIcon(
-                        DsIconKind.search,
-                        size: 18,
-                        color: DSThemeBridge.resolve(context).textSub,
-                      ),
-                      hintText: _text('videoPet_searchAnimation', '搜索动画'),
-                      border: const OutlineInputBorder(),
-                    ),
                   ),
                 ),
               ],
@@ -1105,6 +1105,8 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
           key: ValueKey('animationResource-${selected.id}'),
           animation: selected,
           onChanged: _updateAnimation,
+          baseUri: widget.baseUri,
+          resolvedSources: widget.resolvedSources,
         ),
       ],
     );

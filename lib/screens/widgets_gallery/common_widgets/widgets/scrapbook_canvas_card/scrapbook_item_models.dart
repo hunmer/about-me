@@ -69,7 +69,9 @@ class ScrapStroke {
 
   Map<String, dynamic> toMap() => {
     'color': _colorToHex(color),
-    'points': [for (final p in points) [p.dx, p.dy]],
+    'points': [
+      for (final p in points) [p.dx, p.dy],
+    ],
   };
 }
 
@@ -125,6 +127,9 @@ class ScrapItemData {
   double rotation;
   int zIndex;
 
+  /// 素材整体的等比缩放倍率（包含文字和装饰）。
+  double scale;
+
   // header
   final String? dateLabel;
   final String? title;
@@ -161,6 +166,7 @@ class ScrapItemData {
     required this.y,
     this.rotation = 0,
     this.zIndex = 20,
+    this.scale = 1,
     this.dateLabel,
     this.title,
     this.subtitle,
@@ -188,30 +194,26 @@ class ScrapItemData {
       y: (map['y'] as num?)?.toDouble() ?? 0,
       rotation: (map['rotation'] as num?)?.toDouble() ?? 0,
       zIndex: (map['zIndex'] as num?)?.toInt() ?? 20,
+      scale: (map['scale'] as num?)?.toDouble() ?? 1,
       dateLabel: map['dateLabel'] as String?,
       title: map['title'] as String?,
       subtitle: map['subtitle'] as String?,
       imageUrl: map['imageUrl'] as String?,
       width: (map['width'] as num?)?.toDouble() ?? 96,
       height: (map['height'] as num?)?.toDouble() ?? 132,
-      fallbackColor: _parseColor(
-        map['fallbackColor'],
-        const Color(0xFFE5E0D5),
-      ),
+      fallbackColor: _parseColor(map['fallbackColor'], const Color(0xFFE5E0D5)),
       captions:
           (map['captions'] as List?)
               ?.map((e) => e.toString())
               .toList(growable: false) ??
           const [],
-      captionColor:
-          map['captionColor'] != null
-              ? _parseColor(map['captionColor'], const Color(0xFFD9388A))
-              : null,
+      captionColor: map['captionColor'] != null
+          ? _parseColor(map['captionColor'], const Color(0xFFD9388A))
+          : null,
       artStyle: map['artStyle'] as String?,
-      tape:
-          map['tape'] is Map<String, dynamic>
-              ? ScrapTapeData.fromMap(map['tape'] as Map<String, dynamic>)
-              : null,
+      tape: map['tape'] is Map<String, dynamic>
+          ? ScrapTapeData.fromMap(map['tape'] as Map<String, dynamic>)
+          : null,
       bubbleText: map['bubbleText'] as String?,
       narutomakiBorder: map['narutomakiBorder'] as bool? ?? false,
       sparklesDecor: map['sparklesDecor'] as bool? ?? false,
@@ -233,6 +235,7 @@ class ScrapItemData {
     'y': y,
     'rotation': rotation,
     'zIndex': zIndex,
+    if (scale != 1) 'scale': scale,
     if (dateLabel != null) 'dateLabel': dateLabel,
     if (title != null) 'title': title,
     if (subtitle != null) 'subtitle': subtitle,

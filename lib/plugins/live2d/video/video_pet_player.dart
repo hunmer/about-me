@@ -17,6 +17,27 @@ export 'video_pet_player_state.dart';
 
 const kDefaultVideoPetAssetBase = 'assets/live2d/video/dsh_pet/';
 
+/// 读取视频宠物精灵图图片字节（data / file / http(s) / blob / asset 五类来源）。
+/// 播放器与编辑器（分帧选择）共用。
+Future<Uint8List> readVideoPetImageBytes(Uri uri) async {
+  if (uri.scheme == 'data') return uri.data!.contentAsBytes();
+  if (uri.scheme == 'file') {
+    final bytes = await platform.readFile(uri);
+    if (bytes == null) throw StateError('找不到图片：$uri');
+    return bytes;
+  }
+  if (uri.scheme == 'http' || uri.scheme == 'https' || uri.scheme == 'blob') {
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw StateError('图片 HTTP ${response.statusCode}');
+    }
+    return response.bodyBytes;
+  }
+  if (uri.hasScheme) throw FormatException('不支持的图片来源：$uri');
+  final data = await rootBundle.load(Uri.decodeFull(uri.toString()));
+  return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+}
+
 class VideoPetPlayer extends StatefulWidget {
   const VideoPetPlayer({
     super.key,
@@ -256,24 +277,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     if (image != null) unawaited(image.evict());
   }
 
-  Future<Uint8List> _readImage(Uri uri) async {
-    if (uri.scheme == 'data') return uri.data!.contentAsBytes();
-    if (uri.scheme == 'file') {
-      final bytes = await platform.readFile(uri);
-      if (bytes == null) throw StateError('找不到图片：$uri');
-      return bytes;
-    }
-    if (uri.scheme == 'http' || uri.scheme == 'https' || uri.scheme == 'blob') {
-      final response = await http.get(uri);
-      if (response.statusCode != 200) {
-        throw StateError('图片 HTTP ${response.statusCode}');
-      }
-      return response.bodyBytes;
-    }
-    if (uri.hasScheme) throw FormatException('不支持的图片来源：$uri');
-    final data = await rootBundle.load(Uri.decodeFull(uri.toString()));
-    return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-  }
+  Future<Uint8List> _readImage(Uri uri) => readVideoPetImageBytes(uri);
 
   Future<void> _present(VideoPetPlaybackRequest? request) async {
     _notifyBusy();
