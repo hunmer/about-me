@@ -5,9 +5,11 @@ import 'package:skribble/skribble.dart' show WiredDraw, WiredDrawTransition;
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/markdown_content.dart';
 import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
 import 'package:aboutme/widgets/message_input/message_input.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 通用聊天记录气泡数据（各插件的消息模型映射成此结构后展示）
 class ChatThreadBubbleData {
@@ -280,8 +282,9 @@ class _ChatThreadSheetState extends State<ChatThreadSheet> {
               msg.content,
               style: DsTypography.body.copyWith(color: fgColor),
             )
-          // AI 回复可能含 markdown（代码块/列表等），与 agent_chat 消息渲染保持一致
-          : MarkdownContent(content: msg.content, textColor: fgColor),
+          // AI 回复可能含 markdown（代码块/列表等）与内联 think 标签，
+          // 与 agent_chat 消息渲染保持一致
+          : _buildAiTextContent(context, msg, fgColor),
     );
 
     return Padding(
@@ -300,6 +303,72 @@ class _ChatThreadSheetState extends State<ChatThreadSheet> {
             ),
           bubble,
         ],
+      ),
+    );
+  }
+
+  /// AI 文本内容：抽出内联 `<think>` 思考块（复用 agent_chat 的
+  /// ChatMessage.splitThink），思考过程经"查看思考过程"入口在底部
+  /// sheet 查看，正文只渲染剥离后的部分（与 agent_chat 消息一致）
+  Widget _buildAiTextContent(
+    BuildContext context,
+    ChatThreadBubbleData msg,
+    Color textColor,
+  ) {
+    final (thinking, visible) = ChatMessage.splitThink(msg.content);
+    if (thinking.isEmpty) {
+      return MarkdownContent(content: msg.content, textColor: textColor);
+    }
+
+    final theme = DSThemeBridge.resolve(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 思考过程入口（样式复用 agent_chat 的时间戳行思考入口）
+        Pressable(
+          onPressed: () => _showThinkingSheet(context, thinking),
+          semanticLabel: 'chat_threadViewThinking'.tr,
+          builder: (context, states) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DsIcon(DsIconKind.bot, size: 12, color: theme.primary),
+              const SizedBox(width: 4),
+              Text(
+                'chat_threadViewThinking'.tr,
+                style: DsTypography.caption.copyWith(color: theme.primary),
+              ),
+            ],
+          ),
+        ),
+        if (visible.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          MarkdownContent(content: visible, textColor: textColor),
+        ],
+      ],
+    );
+  }
+
+  /// 底部 sheet 显示思考过程（复用 agent_chat _showThinkingSheet 模式）
+  void _showThinkingSheet(BuildContext context, String thinking) {
+    SmoothBottomSheet.showWithTitle(
+      context: context,
+      title: 'chat_threadThinkingProcess'.tr,
+      child: DSThemeBridge(
+        child: Builder(
+          builder: (ctx) {
+            final theme = DSThemeBridge.resolve(ctx);
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(ctx).height * 0.6,
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
+                child: MarkdownContent(content: thinking),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

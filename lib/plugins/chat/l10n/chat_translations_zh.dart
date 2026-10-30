@@ -205,6 +205,8 @@ class ChatTranslationsZh {
   'chat_threadTitle': 'AI 回复',
   'chat_threadTyping': '正在输入…',
   'chat_threadThinking': '正在想…',
+  'chat_threadViewThinking': '查看思考过程',
+  'chat_threadThinkingProcess': '思考过程',
   'chat_threadInputHint': '发送消息…',
   'chat_threadSendFailed': '发送失败: @error',
 

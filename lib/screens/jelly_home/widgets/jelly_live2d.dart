@@ -202,9 +202,6 @@ class _JellyLive2DState extends State<JellyLive2D>
   /// Live2D 实际显示视口的边框开关，仅用于界面调试，不持久化
   final ValueNotifier<bool> _borderVisible = ValueNotifier<bool>(false);
 
-  /// 当前生效的显示尺寸（fill 模式下按视口高度自适应），
-  /// 气泡宽度等布局按它计算
-  double _displaySize = _defaultSize;
   double _bubbleOffsetX = 0;
   double _bubbleOffsetY = 0;
 
@@ -601,7 +598,6 @@ class _JellyLive2DState extends State<JellyLive2D>
             viewportLayout.viewportHeight,
           );
           final modelScale = viewportLayout.scale;
-          _displaySize = displaySize;
           return MouseRegion(
             onExit: (_) => resetGaze(),
             child: AnimatedContainer(

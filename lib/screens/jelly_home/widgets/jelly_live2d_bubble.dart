@@ -158,8 +158,10 @@ extension _JellyLive2DBubble on _JellyLive2DState {
     const bubbleBaseHeight = 150.0;
     final availableWidth = math.max(0.0, width - margin * 2);
     final availableHeight = math.max(0.0, height);
+    // 基础宽度只由容器决定（不随模型显示尺寸变化），
+    // 保证 live2d 与 video-pet 两模式气泡同大小
     final baseWidth = math.min(
-      math.min(_displaySize * 0.8, availableWidth),
+      availableWidth,
       availableHeight * bubbleBaseWidth / bubbleBaseHeight,
     );
     if (baseWidth <= 0) return const SizedBox.shrink();

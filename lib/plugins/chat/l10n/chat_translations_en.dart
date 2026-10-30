@@ -208,6 +208,8 @@ class ChatTranslationsEn {
   'chat_threadTitle': 'AI Replies',
   'chat_threadTyping': 'Typing…',
   'chat_threadThinking': 'Thinking…',
+  'chat_threadViewThinking': 'View thinking process',
+  'chat_threadThinkingProcess': 'Thinking Process',
   'chat_threadInputHint': 'Send a message…',
   'chat_threadSendFailed': 'Failed to send: @error',
 
