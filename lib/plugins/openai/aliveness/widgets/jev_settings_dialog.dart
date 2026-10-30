@@ -19,6 +19,9 @@ Future<void> showJevSettingsDialog(BuildContext context) async {
   final modelCtrl = TextEditingController(
     text: settings['jevModel'] as String? ?? 'jev-latest',
   );
+  final proxyCtrl = TextEditingController(
+    text: settings['jevProxy'] as String? ?? '',
+  );
   final thresholdCtrl = TextEditingController(
     text: '${settings['confidenceThreshold'] ?? 0.65}',
   );
@@ -53,6 +56,14 @@ Future<void> showJevSettingsDialog(BuildContext context) async {
                 decoration: const InputDecoration(
                   labelText: '模型',
                   hintText: 'jev-latest',
+                ),
+              ),
+              TextField(
+                controller: proxyCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'HTTP 代理（可选，绕过地区限制）',
+                  hintText: '127.0.0.1:7890 或 http://127.0.0.1:7890',
+                  helperText: '留空直连；不支持 SOCKS 与带认证代理',
                 ),
               ),
               TextField(
@@ -91,6 +102,7 @@ Future<void> showJevSettingsDialog(BuildContext context) async {
                 'jevModel': modelCtrl.text.trim().isEmpty
                     ? 'jev-latest'
                     : modelCtrl.text.trim(),
+                'jevProxy': proxyCtrl.text.trim(),
                 'confidenceThreshold': threshold.clamp(0.0, 1.0),
                 'keepAliveEnabled': keepAlive,
                 // 语音声线已改为 per-agent 配置（编辑页 TTS 选择器），保留旧值兼容

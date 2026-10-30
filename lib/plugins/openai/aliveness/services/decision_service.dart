@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/agent_state.dart';
 import 'package:aboutme/plugins/openai/aliveness/models/aliveness_config.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
+import 'package:aboutme/plugins/openai/aliveness/services/jev_proxy.dart';
 
 /// 回复策略（Jev Choice 选项，与注入指令一一对应）
 enum ReplyStrategy { minimal, normal, detailed, shiftTopic }
@@ -60,9 +61,11 @@ class DecisionService {
     required List<String> expressions,
     required List<String> motions,
     String note = '',
+    bool requireConfidence = true,
   }) async {
     final fallback = <String, String>{};
     final settings = await _store.loadSettings();
+    _syncProxy(settings);
     final key = settings['jevApiKey'] as String?;
     debugPrint(
       '[Live2D][Jev] 开始决策 | reply=${_debugPreview(reply)} '
@@ -133,7 +136,10 @@ class DecisionService {
           '[Live2D][Jev] $key | choice=${choice ?? "null"} '
           'confidence=${confidence?.toStringAsFixed(3) ?? "null"}',
         );
-        if (choice != null && confidence != null && confidence >= 0.55) {
+        // 视频桌宠（requireConfidence=false）：有 choice 即采纳，不卡置信度。
+        final confident = !requireConfidence ||
+            (confidence != null && confidence >= 0.55);
+        if (choice != null && confident) {
           if (choice != '不改变') result[key] = choice;
         }
       }
@@ -153,6 +159,20 @@ class DecisionService {
     }
   }
 
+  /// 按设置同步 Jev 请求代理（设置变化时重建 adapter，未变化时跳过）。
+  void _syncProxy(Map<String, dynamic> settings) {
+    final proxy = (settings['jevProxy'] as String?)?.trim();
+    if (proxy == _lastProxy) return;
+    _lastProxy = proxy;
+    applyJevProxy(_dio, proxy);
+    if (proxy != null && proxy.isNotEmpty) {
+      debugPrint('[Live2D][Jev] 应用代理 | proxy=$proxy');
+    } else {
+      debugPrint('[Live2D][Jev] 未配置代理，直连');
+    }
+  }
+
+  String? _lastProxy;
   String _debugPreview(String value) {
     final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
     return normalized.length <= 80
@@ -168,6 +188,7 @@ class DecisionService {
   }) async {
     try {
       final settings = await _store.loadSettings();
+      _syncProxy(settings);
       final key = settings['jevApiKey'] as String?;
       if (key == null || key.isEmpty) return null;
       final response = await _dio.post<Map<String, dynamic>>(
@@ -226,6 +247,7 @@ class DecisionService {
     );
     try {
       final settings = await _store.loadSettings();
+      _syncProxy(settings);
       final apiKey = settings['jevApiKey'] as String?;
       if (apiKey == null || apiKey.isEmpty) {
         debugPrint(

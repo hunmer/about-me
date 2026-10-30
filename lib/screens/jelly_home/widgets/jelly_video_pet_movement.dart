@@ -311,8 +311,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
         !widget.movement.enabled ||
         !widget.active ||
         !_foreground ||
-        _dragging ||
-        _range.width <= 1) {
+        _dragging) {
       _logStatus();
       return;
     }
@@ -326,6 +325,18 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
       _stop();
       ++_interruptToken;
     });
+    if (_range.width <= 1) {
+      // 无水平空间（人物区域已填满容器）时按钮不再被忽略：
+      // 指定方向直接触发撞墙效果，方便测试撞墙动画（无位移）。
+      if (left != null) {
+        _target = left ? _minX : _maxX;
+        _log(
+          'target selected x=$_target from=${_position.dx} left=$left xBounds=[$_minX,$_maxX] (wall test, no space)',
+        );
+        _bumpWall();
+      }
+      return;
+    }
     _beginWalk(left: left);
   }
 

@@ -208,9 +208,6 @@ class _JellyLive2DState extends State<JellyLive2D>
   double _bubbleOffsetX = 0;
   double _bubbleOffsetY = 0;
 
-  /// 气泡显示大小倍数（用户设置，SharedPreferences 持久化）
-  double _bubbleScale = 1.0;
-
   bool get _hasAppearanceResources => _isVideo
       ? (_videoManifest ?? _selectedModel.videoManifest)
                 ?.animations

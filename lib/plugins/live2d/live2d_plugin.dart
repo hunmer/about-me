@@ -615,7 +615,8 @@ class Live2DPlugin extends BasePlugin {
   }
 
   /// [videoAnimations] 非空时按视频桌宠处理：候选动作来自该列表
-  /// （编辑器中启用的动画），不使用 Live2D 模型的表情/动作。
+  /// （编辑器中启用的动画），不使用 Live2D 模型的表情/动作，
+  /// 且不卡置信度门槛（choice 即采纳）。
   Future<Map<String, String>> decideAppearance(
     String reply, {
     required Live2DModelDefinition model,
@@ -623,6 +624,7 @@ class Live2DPlugin extends BasePlugin {
   }) => DecisionService.instance.decideLive2D(
     reply: reply,
     note: selected?.note ?? '',
+    requireConfidence: videoAnimations == null,
     expressions: videoAnimations == null
         ? model.expressions.map((item) => item.label).toList()
         : const <String>[],
