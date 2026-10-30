@@ -145,7 +145,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
       final reason = !mounted
           ? 'unmounted'
           : phase != _phase
-          ? 'stalePhase($phase/${_phase})'
+          ? 'stalePhase($phase/$_phase)'
           : !_walking
           ? 'notWalking'
           : _turning
@@ -219,9 +219,11 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _foreground =
-        WidgetsBinding.instance.lifecycleState == null ||
-        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    _foreground = switch (
+      WidgetsBinding.instance.lifecycleState) {
+      null || AppLifecycleState.resumed || AppLifecycleState.inactive => true,
+      _ => false,
+    };
     widget.enabled.addListener(_enabledChanged);
     unawaited(_load());
   }
@@ -278,7 +280,11 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _foreground = state == AppLifecycleState.resumed;
+    // inactive 仅失焦（窗口仍可见，桌面端点菜单/浮层失焦是常态），
+    // 不视为后台；只有 paused/hidden/detached 才停止走动。
+    _foreground =
+        state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive;
     setState(_stop);
     _schedule();
   }
@@ -449,7 +455,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
     _lastFrameReject = null;
     _log(
       'walk start left=$_left from=${_position.dx} target=$_target speed=${widget.movement.speed} '
-      'drive=${_moving == null ? 'ticker' : 'frames(${_movementAnimationId})'} phase=$_phase',
+      'drive=${_moving == null ? 'ticker' : 'frames($_movementAnimationId)'} phase=$_phase',
     );
     _previous = Duration.zero;
     if (_moving == null) _ticker.start();
